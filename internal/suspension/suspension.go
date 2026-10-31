@@ -155,6 +155,46 @@ func SetAbuseExempt(ctx context.Context, bus *events.Bus, workspaceID int64, by 
 	return changed, nil
 }
 
+// SetSendCap sets the Workspace's Send cap (ADR 0067) to sendCap, or removes it when sendCap is
+// nil, recorded in its Audit log for the actor `by` with the old and new values. It reports
+// whether the Send cap changed. Whether the Instance has Send caps at all is the caller's to
+// decide.
+func SetSendCap(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, sendCap *int) (bool, error) {
+	if err := by.validate(); err != nil {
+		return false, fmt.Errorf("set send cap: %w", err)
+	}
+	changed := false
+	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		ws, err := tx.Workspace.Get(ctx, workspaceID)
+		if err != nil {
+			return err
+		}
+		if equalCap(ws.SendCap, sendCap) {
+			return nil
+		}
+		u := tx.Workspace.UpdateOneID(workspaceID)
+		if sendCap == nil {
+			u.ClearSendCap()
+		} else {
+			u.SetSendCap(*sendCap)
+		}
+		if err := u.Exec(ctx); err != nil {
+			return err
+		}
+		changed = true
+		return recordWorkspaceAudit(ctx, tx, pub, workspaceID, by, events.ActionWorkspaceSendCap,
+			map[string]any{"send_cap": events.Change(ws.SendCap, sendCap)})
+	})
+	if err != nil {
+		return false, fmt.Errorf("set send cap of workspace %d: %w", workspaceID, err)
+	}
+	return changed, nil
+}
+
+func equalCap(a, b *int) bool {
+	return (a == nil) == (b == nil) && (a == nil || *a == *b)
+}
+
 // recordWorkspaceAudit publishes the Audit entry of a suspension change.
 func recordWorkspaceAudit(ctx context.Context, tx *ent.Client, pub events.Publisher, workspaceID int64, by Actor, action string, diff map[string]any) error {
 	ws, err := tx.Workspace.Get(ctx, workspaceID)

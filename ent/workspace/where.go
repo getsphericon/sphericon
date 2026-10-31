@@ -170,6 +170,11 @@ func AbuseFreezeNotifiedAt(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldAbuseFreezeNotifiedAt, v))
 }
 
+// SendCap applies equality check predicate on the "send_cap" field. It's identical to SendCapEQ.
+func SendCap(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldSendCap, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldCreatedAt, v))
@@ -1360,6 +1365,56 @@ func AbuseFreezeNotifiedAtNotNil() predicate.Workspace {
 	return predicate.Workspace(sql.FieldNotNull(FieldAbuseFreezeNotifiedAt))
 }
 
+// SendCapEQ applies the EQ predicate on the "send_cap" field.
+func SendCapEQ(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldSendCap, v))
+}
+
+// SendCapNEQ applies the NEQ predicate on the "send_cap" field.
+func SendCapNEQ(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldSendCap, v))
+}
+
+// SendCapIn applies the In predicate on the "send_cap" field.
+func SendCapIn(vs ...int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldSendCap, vs...))
+}
+
+// SendCapNotIn applies the NotIn predicate on the "send_cap" field.
+func SendCapNotIn(vs ...int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldSendCap, vs...))
+}
+
+// SendCapGT applies the GT predicate on the "send_cap" field.
+func SendCapGT(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldSendCap, v))
+}
+
+// SendCapGTE applies the GTE predicate on the "send_cap" field.
+func SendCapGTE(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldSendCap, v))
+}
+
+// SendCapLT applies the LT predicate on the "send_cap" field.
+func SendCapLT(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldSendCap, v))
+}
+
+// SendCapLTE applies the LTE predicate on the "send_cap" field.
+func SendCapLTE(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldSendCap, v))
+}
+
+// SendCapIsNil applies the IsNil predicate on the "send_cap" field.
+func SendCapIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldSendCap))
+}
+
+// SendCapNotNil applies the NotNil predicate on the "send_cap" field.
+func SendCapNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldSendCap))
+}
+
 // HasContacts applies the HasEdge predicate on the "contacts" edge.
 func HasContacts() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {
@@ -1674,6 +1729,29 @@ func HasProviderLimiters() predicate.Workspace {
 func HasProviderLimitersWith(preds ...predicate.ProviderLimiter) predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {
 		step := newProviderLimitersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSendLimiters applies the HasEdge predicate on the "send_limiters" edge.
+func HasSendLimiters() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SendLimitersTable, SendLimitersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSendLimitersWith applies the HasEdge predicate on the "send_limiters" edge with a given conditions (other predicates).
+func HasSendLimitersWith(preds ...predicate.SendLimiter) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newSendLimitersStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

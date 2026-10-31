@@ -13,6 +13,10 @@ type StaffWorkspaceAuditListRes interface {
 	staffWorkspaceAuditListRes()
 }
 
+type StaffWorkspacesClearSendCapRes interface {
+	staffWorkspacesClearSendCapRes()
+}
+
 type StaffWorkspacesExemptRes interface {
 	staffWorkspacesExemptRes()
 }
@@ -23,6 +27,10 @@ type StaffWorkspacesGetRes interface {
 
 type StaffWorkspacesListRes interface {
 	staffWorkspacesListRes()
+}
+
+type StaffWorkspacesSetSendCapRes interface {
+	staffWorkspacesSetSendCapRes()
 }
 
 type StaffWorkspacesSuspendRes interface {

@@ -239,9 +239,11 @@ func (c *StaffConverterImpl) WorkspaceDetailToResource(source *ent.Workspace) st
 		staffeeapiStaffWorkspaceDetailResource.Suspension = workspaceSuspension(c, source)
 		staffeeapiStaffWorkspaceDetailResource.Exempt = (*source).AbuseExempt
 		staffeeapiStaffWorkspaceDetailResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
+		staffeeapiStaffWorkspaceDetailResource.SendCap = optNilCount((*source).SendCap)
 		// staffeeapiStaffWorkspaceDetailResource.Holds: ignore
 		// staffeeapiStaffWorkspaceDetailResource.Deliverability: ignore
 		// staffeeapiStaffWorkspaceDetailResource.Abuse: ignore
+		// staffeeapiStaffWorkspaceDetailResource.SendCaps: ignore
 	}
 	return staffeeapiStaffWorkspaceDetailResource
 }
@@ -256,6 +258,7 @@ func (c *StaffConverterImpl) WorkspaceToResource(source *ent.Workspace) staffee.
 		staffeeapiStaffWorkspaceResource.Suspension = workspaceSuspension(c, source)
 		staffeeapiStaffWorkspaceResource.Exempt = (*source).AbuseExempt
 		staffeeapiStaffWorkspaceResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
+		staffeeapiStaffWorkspaceResource.SendCap = optNilCount((*source).SendCap)
 	}
 	return staffeeapiStaffWorkspaceResource
 }

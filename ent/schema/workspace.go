@@ -151,6 +151,13 @@ func (Workspace) Fields() []ent.Field {
 		field.Time("abuse_freeze_notified_at").
 			Optional().
 			Nillable(),
+		// The Send cap (ADR 0067): the most messages the Workspace may send per rolling 24
+		// hours across all its Integrations, set only by a Staff member and applied only on a
+		// saas Instance. Nil is no Send cap.
+		field.Int("send_cap").
+			Optional().
+			Nillable().
+			Range(1, 100_000_000),
 	}
 }
 
@@ -177,6 +184,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("sending_domains", SendingDomain.Type),
 		edge.To("join_domains", JoinDomain.Type),
 		edge.To("provider_limiters", ProviderLimiter.Type),
+		edge.To("send_limiters", SendLimiter.Type),
 		edge.To("holds", Hold.Type),
 		edge.To("broadcasts", Broadcast.Type),
 		edge.To("broadcast_recipients", BroadcastRecipient.Type),

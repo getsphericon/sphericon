@@ -41,6 +41,16 @@ func (UnimplementedHandler) StaffWorkspaceAuditList(ctx context.Context, params 
 	return r, ht.ErrNotImplemented
 }
 
+// StaffWorkspacesClearSendCap implements StaffWorkspaces_clearSendCap operation.
+//
+// Remove a Workspace's Send cap: only its Provider limits slow it. 404 on an Instance without Send
+// caps. Audited. Idempotent.
+//
+// DELETE /workspaces/{workspaceId}/send-cap
+func (UnimplementedHandler) StaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (r StaffWorkspacesClearSendCapRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // StaffWorkspacesExempt implements StaffWorkspaces_exempt operation.
 //
 // Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
@@ -67,6 +77,16 @@ func (UnimplementedHandler) StaffWorkspacesGet(ctx context.Context, params Staff
 //
 // GET /workspaces
 func (UnimplementedHandler) StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (r StaffWorkspacesListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// StaffWorkspacesSetSendCap implements StaffWorkspaces_setSendCap operation.
+//
+// Set a Workspace's Send cap (ADR 0067): its sends beyond it in a rolling 24 hours wait for the window
+// to free up. Only an Instance with Send caps has this operation (404 elsewhere). Audited. Idempotent.
+//
+// PUT /workspaces/{workspaceId}/send-cap
+func (UnimplementedHandler) StaffWorkspacesSetSendCap(ctx context.Context, req *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (r StaffWorkspacesSetSendCapRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

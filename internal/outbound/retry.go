@@ -27,6 +27,10 @@ const (
 	deferralFloor = time.Second
 	// deferralCeiling bounds a Deferral's wait so a raised limit is noticed within the hour.
 	deferralCeiling = time.Hour
+	// sendCapCeiling bounds the wait of a Deferral caused by the Send cap (ADR 0067), before
+	// its jitter, so a Send cap a Staff member raises takes effect within minutes, with no job
+	// rewritten.
+	sendCapCeiling = 10 * time.Minute
 	// deferralJitter is the share of the delay added at random so a wave of deferred jobs
 	// does not wake in the same instant.
 	deferralJitter = 0.2
@@ -49,20 +53,24 @@ func (r Result) Retry(backlog int) Retry {
 	case Held:
 		return HoldRetry()
 	case Deferral:
-		return deferralRetry(r.Wait, backlog, rand.Float64())
+		ceiling := deferralCeiling
+		if r.SendCap {
+			ceiling = sendCapCeiling
+		}
+		return deferralRetry(r.Wait, backlog, ceiling, rand.Float64())
 	default:
 		return Retry{}
 	}
 }
 
-// deferralRetry is the Deferral policy with the jitter, in [0, 1), given.
-func deferralRetry(wait time.Duration, backlog int, jitter float64) Retry {
+// deferralRetry is the Deferral policy with the ceiling and the jitter, in [0, 1), given.
+func deferralRetry(wait time.Duration, backlog int, ceiling time.Duration, jitter float64) Retry {
 	// The product saturates at the ceiling instead of overflowing int64: a long wait
 	// behind a large backlog would otherwise wrap negative and wake the job after the floor.
 	ahead := int64(1 + backlog)
-	base := deferralCeiling
-	if int64(wait) <= int64(deferralCeiling)/ahead {
-		base = min(max(time.Duration(int64(wait)*ahead), deferralFloor), deferralCeiling)
+	base := ceiling
+	if int64(wait) <= int64(ceiling)/ahead {
+		base = min(max(time.Duration(int64(wait)*ahead), deferralFloor), ceiling)
 	}
 	return Retry{Wanted: true, After: base + time.Duration(float64(base)*deferralJitter*jitter)}
 }

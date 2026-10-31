@@ -65,6 +65,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
@@ -187,6 +188,8 @@ type Client struct {
 	SchemaState *SchemaStateClient
 	// Segment is the client for interacting with the Segment builders.
 	Segment *SegmentClient
+	// SendLimiter is the client for interacting with the SendLimiter builders.
+	SendLimiter *SendLimiterClient
 	// SendingDomain is the client for interacting with the SendingDomain builders.
 	SendingDomain *SendingDomainClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
@@ -279,6 +282,7 @@ func (c *Client) init() {
 	c.RuleVersionTrigger = NewRuleVersionTriggerClient(c.config)
 	c.SchemaState = NewSchemaStateClient(c.config)
 	c.Segment = NewSegmentClient(c.config)
+	c.SendLimiter = NewSendLimiterClient(c.config)
 	c.SendingDomain = NewSendingDomainClient(c.config)
 	c.ServiceCredential = NewServiceCredentialClient(c.config)
 	c.SignupItem = NewSignupItemClient(c.config)
@@ -436,6 +440,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		RuleVersionTrigger:   NewRuleVersionTriggerClient(cfg),
 		SchemaState:          NewSchemaStateClient(cfg),
 		Segment:              NewSegmentClient(cfg),
+		SendLimiter:          NewSendLimiterClient(cfg),
 		SendingDomain:        NewSendingDomainClient(cfg),
 		ServiceCredential:    NewServiceCredentialClient(cfg),
 		SignupItem:           NewSignupItemClient(cfg),
@@ -520,6 +525,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		RuleVersionTrigger:   NewRuleVersionTriggerClient(cfg),
 		SchemaState:          NewSchemaStateClient(cfg),
 		Segment:              NewSegmentClient(cfg),
+		SendLimiter:          NewSendLimiterClient(cfg),
 		SendingDomain:        NewSendingDomainClient(cfg),
 		ServiceCredential:    NewServiceCredentialClient(cfg),
 		SignupItem:           NewSignupItemClient(cfg),
@@ -575,7 +581,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.OutboxDeadLetter, c.OutboxMessage, c.OutboxOffset, c.Passkey,
 		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
 		c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring, c.RuleVersion,
-		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendingDomain,
+		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
 		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
 		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
 		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
@@ -598,7 +604,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.OutboxDeadLetter, c.OutboxMessage, c.OutboxOffset, c.Passkey,
 		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
 		c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring, c.RuleVersion,
-		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendingDomain,
+		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
 		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
 		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
 		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
@@ -708,6 +714,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SchemaState.mutate(ctx, m)
 	case *SegmentMutation:
 		return c.Segment.mutate(ctx, m)
+	case *SendLimiterMutation:
+		return c.SendLimiter.mutate(ctx, m)
 	case *SendingDomainMutation:
 		return c.SendingDomain.mutate(ctx, m)
 	case *ServiceCredentialMutation:
@@ -8925,6 +8933,155 @@ func (c *SegmentClient) mutate(ctx context.Context, m *SegmentMutation) (Value, 
 	}
 }
 
+// SendLimiterClient is a client for the SendLimiter schema.
+type SendLimiterClient struct {
+	config
+}
+
+// NewSendLimiterClient returns a client for the SendLimiter from the given config.
+func NewSendLimiterClient(c config) *SendLimiterClient {
+	return &SendLimiterClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sendlimiter.Hooks(f(g(h())))`.
+func (c *SendLimiterClient) Use(hooks ...Hook) {
+	c.hooks.SendLimiter = append(c.hooks.SendLimiter, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sendlimiter.Intercept(f(g(h())))`.
+func (c *SendLimiterClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SendLimiter = append(c.inters.SendLimiter, interceptors...)
+}
+
+// Create returns a builder for creating a SendLimiter entity.
+func (c *SendLimiterClient) Create() *SendLimiterCreate {
+	mutation := newSendLimiterMutation(c.config, OpCreate)
+	return &SendLimiterCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SendLimiter entities.
+func (c *SendLimiterClient) CreateBulk(builders ...*SendLimiterCreate) *SendLimiterCreateBulk {
+	return &SendLimiterCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SendLimiterClient) MapCreateBulk(slice any, setFunc func(*SendLimiterCreate, int)) *SendLimiterCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SendLimiterCreateBulk{err: fmt.Errorf("calling to SendLimiterClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SendLimiterCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SendLimiterCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SendLimiter.
+func (c *SendLimiterClient) Update() *SendLimiterUpdate {
+	mutation := newSendLimiterMutation(c.config, OpUpdate)
+	return &SendLimiterUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SendLimiterClient) UpdateOne(_m *SendLimiter) *SendLimiterUpdateOne {
+	mutation := newSendLimiterMutation(c.config, OpUpdateOne, withSendLimiter(_m))
+	return &SendLimiterUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SendLimiterClient) UpdateOneID(id int64) *SendLimiterUpdateOne {
+	mutation := newSendLimiterMutation(c.config, OpUpdateOne, withSendLimiterID(id))
+	return &SendLimiterUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SendLimiter.
+func (c *SendLimiterClient) Delete() *SendLimiterDelete {
+	mutation := newSendLimiterMutation(c.config, OpDelete)
+	return &SendLimiterDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SendLimiterClient) DeleteOne(_m *SendLimiter) *SendLimiterDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SendLimiterClient) DeleteOneID(id int64) *SendLimiterDeleteOne {
+	builder := c.Delete().Where(sendlimiter.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SendLimiterDeleteOne{builder}
+}
+
+// Query returns a query builder for SendLimiter.
+func (c *SendLimiterClient) Query() *SendLimiterQuery {
+	return &SendLimiterQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSendLimiter},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SendLimiter entity by its id.
+func (c *SendLimiterClient) Get(ctx context.Context, id int64) (*SendLimiter, error) {
+	return c.Query().Where(sendlimiter.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SendLimiterClient) GetX(ctx context.Context, id int64) *SendLimiter {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a SendLimiter.
+func (c *SendLimiterClient) QueryWorkspace(_m *SendLimiter) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sendlimiter.Table, sendlimiter.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sendlimiter.WorkspaceTable, sendlimiter.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SendLimiterClient) Hooks() []Hook {
+	return c.hooks.SendLimiter
+}
+
+// Interceptors returns the client interceptors.
+func (c *SendLimiterClient) Interceptors() []Interceptor {
+	return c.inters.SendLimiter
+}
+
+func (c *SendLimiterClient) mutate(ctx context.Context, m *SendLimiterMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SendLimiterCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SendLimiterUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SendLimiterUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SendLimiterDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SendLimiter mutation op: %q", m.Op())
+	}
+}
+
 // SendingDomainClient is a client for the SendingDomain schema.
 type SendingDomainClient struct {
 	config
@@ -11620,6 +11777,22 @@ func (c *WorkspaceClient) QueryProviderLimiters(_m *Workspace) *ProviderLimiterQ
 	return query
 }
 
+// QuerySendLimiters queries the send_limiters edge of a Workspace.
+func (c *WorkspaceClient) QuerySendLimiters(_m *Workspace) *SendLimiterQuery {
+	query := (&SendLimiterClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(sendlimiter.Table, sendlimiter.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.SendLimitersTable, workspace.SendLimitersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryHolds queries the holds edge of a Workspace.
 func (c *WorkspaceClient) QueryHolds(_m *Workspace) *HoldQuery {
 	query := (&HoldClient{config: c.config}).Query()
@@ -12024,10 +12197,10 @@ type (
 		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, OutboxDeadLetter,
 		OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge, PendingSignup,
 		PrivateRelayRange, ProviderLimiter, RecoveryCode, RiverJob, Rule, RuleFiring,
-		RuleVersion, RuleVersionTrigger, SchemaState, Segment, SendingDomain,
-		ServiceCredential, SignupItem, SignupSurveyResponse, StaffMember, Suppression,
-		Tag, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, Workspace []ent.Hook
+		RuleVersion, RuleVersionTrigger, SchemaState, Segment, SendLimiter,
+		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
+		StaffMember, Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User,
+		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
@@ -12038,10 +12211,11 @@ type (
 		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, OutboxDeadLetter,
 		OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge, PendingSignup,
 		PrivateRelayRange, ProviderLimiter, RecoveryCode, RiverJob, Rule, RuleFiring,
-		RuleVersion, RuleVersionTrigger, SchemaState, Segment, SendingDomain,
-		ServiceCredential, SignupItem, SignupSurveyResponse, StaffMember, Suppression,
-		Tag, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		RuleVersion, RuleVersionTrigger, SchemaState, Segment, SendLimiter,
+		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
+		StaffMember, Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User,
+		UserIdentity, UserTombstone, Visitor, WebhookEndpoint,
+		Workspace []ent.Interceptor
 	}
 )
 

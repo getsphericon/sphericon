@@ -112,6 +112,8 @@ type Tx struct {
 	SchemaState *SchemaStateClient
 	// Segment is the client for interacting with the Segment builders.
 	Segment *SegmentClient
+	// SendLimiter is the client for interacting with the SendLimiter builders.
+	SendLimiter *SendLimiterClient
 	// SendingDomain is the client for interacting with the SendingDomain builders.
 	SendingDomain *SendingDomainClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
@@ -324,6 +326,7 @@ func (tx *Tx) init() {
 	tx.RuleVersionTrigger = NewRuleVersionTriggerClient(tx.config)
 	tx.SchemaState = NewSchemaStateClient(tx.config)
 	tx.Segment = NewSegmentClient(tx.config)
+	tx.SendLimiter = NewSendLimiterClient(tx.config)
 	tx.SendingDomain = NewSendingDomainClient(tx.config)
 	tx.ServiceCredential = NewServiceCredentialClient(tx.config)
 	tx.SignupItem = NewSignupItemClient(tx.config)

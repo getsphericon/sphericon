@@ -48,6 +48,13 @@ type Invoker interface {
 	//
 	// GET /workspaces/{workspaceId}/audit-entries
 	StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (StaffWorkspaceAuditListRes, error)
+	// StaffWorkspacesClearSendCap invokes StaffWorkspaces_clearSendCap operation.
+	//
+	// Remove a Workspace's Send cap: only its Provider limits slow it. 404 on an Instance without Send
+	// caps. Audited. Idempotent.
+	//
+	// DELETE /workspaces/{workspaceId}/send-cap
+	StaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (StaffWorkspacesClearSendCapRes, error)
 	// StaffWorkspacesExempt invokes StaffWorkspaces_exempt operation.
 	//
 	// Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
@@ -68,6 +75,13 @@ type Invoker interface {
 	//
 	// GET /workspaces
 	StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (StaffWorkspacesListRes, error)
+	// StaffWorkspacesSetSendCap invokes StaffWorkspaces_setSendCap operation.
+	//
+	// Set a Workspace's Send cap (ADR 0067): its sends beyond it in a rolling 24 hours wait for the window
+	// to free up. Only an Instance with Send caps has this operation (404 elsewhere). Audited. Idempotent.
+	//
+	// PUT /workspaces/{workspaceId}/send-cap
+	StaffWorkspacesSetSendCap(ctx context.Context, request *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (StaffWorkspacesSetSendCapRes, error)
 	// StaffWorkspacesSuspend invokes StaffWorkspaces_suspend operation.
 	//
 	// Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the signed-in Staff
@@ -552,6 +566,142 @@ func (c *Client) sendStaffWorkspaceAuditList(ctx context.Context, params StaffWo
 	return result, nil
 }
 
+// StaffWorkspacesClearSendCap invokes StaffWorkspaces_clearSendCap operation.
+//
+// Remove a Workspace's Send cap: only its Provider limits slow it. 404 on an Instance without Send
+// caps. Audited. Idempotent.
+//
+// DELETE /workspaces/{workspaceId}/send-cap
+func (c *Client) StaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (StaffWorkspacesClearSendCapRes, error) {
+	res, err := c.sendStaffWorkspacesClearSendCap(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendStaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (res StaffWorkspacesClearSendCapRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("StaffWorkspaces_clearSendCap"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/send-cap"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffWorkspacesClearSendCapOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/send-cap"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, StaffWorkspacesClearSendCapOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeStaffWorkspacesClearSendCapResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // StaffWorkspacesExempt invokes StaffWorkspaces_exempt operation.
 //
 // Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
@@ -1001,6 +1151,145 @@ func (c *Client) sendStaffWorkspacesList(ctx context.Context, params StaffWorksp
 
 	stage = "DecodeResponse"
 	result, err := decodeStaffWorkspacesListResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// StaffWorkspacesSetSendCap invokes StaffWorkspaces_setSendCap operation.
+//
+// Set a Workspace's Send cap (ADR 0067): its sends beyond it in a rolling 24 hours wait for the window
+// to free up. Only an Instance with Send caps has this operation (404 elsewhere). Audited. Idempotent.
+//
+// PUT /workspaces/{workspaceId}/send-cap
+func (c *Client) StaffWorkspacesSetSendCap(ctx context.Context, request *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (StaffWorkspacesSetSendCapRes, error) {
+	res, err := c.sendStaffWorkspacesSetSendCap(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendStaffWorkspacesSetSendCap(ctx context.Context, request *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (res StaffWorkspacesSetSendCapRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("StaffWorkspaces_setSendCap"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/send-cap"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffWorkspacesSetSendCapOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/send-cap"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeStaffWorkspacesSetSendCapRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, StaffWorkspacesSetSendCapOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeStaffWorkspacesSetSendCapResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

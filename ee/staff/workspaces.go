@@ -51,6 +51,42 @@ func (m *Module) SuspendWorkspace(ctx context.Context, bus *events.Bus, sender m
 	return ws, changed, err
 }
 
+// ErrNoSendCaps refuses a Send cap change on an Instance without Send caps (ADR 0067: only the
+// saas Mode has them).
+var ErrNoSendCaps = errors.New("staff: this Instance has no Send caps")
+
+// SetSendCap sets the Workspace's Send cap, or removes it when sendCap is nil, as the Staff
+// member, recorded in its Audit log (suspension.SetSendCap). It reports whether it changed.
+func (m *Module) SetSendCap(ctx context.Context, bus *events.Bus, publicID string, by *ent.StaffMember, sendCap *int) (*ent.Workspace, bool, error) {
+	if err := m.licensed(); err != nil {
+		return nil, false, err
+	}
+	if !m.sendCaps {
+		return nil, false, ErrNoSendCaps
+	}
+	w, err := m.workspace(ctx, publicID)
+	if err != nil {
+		return nil, false, err
+	}
+	changed, err := suspension.SetSendCap(ctx, bus, w.ID, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), sendCap)
+	if err != nil {
+		return nil, false, err
+	}
+	ws, err := m.ent.Workspace.Get(ctx, w.ID)
+	return ws, changed, err
+}
+
+// shown is the Workspace as the console shows it: on an Instance without Send caps, a Send cap
+// stored on it (a restored dump, say) applies to nothing and is left out.
+func (m *Module) shown(w *ent.Workspace) *ent.Workspace {
+	if m.sendCaps || w.SendCap == nil {
+		return w
+	}
+	c := *w
+	c.SendCap = nil
+	return &c
+}
+
 // UnsuspendWorkspace lifts the Workspace's suspension as the Staff member; held sends
 // resume on their own. It reports whether the Workspace was suspended.
 func (m *Module) UnsuspendWorkspace(ctx context.Context, bus *events.Bus, publicID string, by *ent.StaffMember) (*ent.Workspace, bool, error) {

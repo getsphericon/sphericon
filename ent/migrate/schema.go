@@ -2122,6 +2122,36 @@ var (
 			},
 		},
 	}
+	// SendLimitersColumns holds the columns for the "send_limiters" table.
+	SendLimitersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "day_fill", Type: field.TypeFloat64},
+		{Name: "refilled_at", Type: field.TypeTime},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// SendLimitersTable holds the schema information for the "send_limiters" table.
+	SendLimitersTable = &schema.Table{
+		Name:       "send_limiters",
+		Columns:    SendLimitersColumns,
+		PrimaryKey: []*schema.Column{SendLimitersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "send_limiters_workspaces_send_limiters",
+				Columns:    []*schema.Column{SendLimitersColumns[5]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sendlimiter_workspace_id",
+				Unique:  true,
+				Columns: []*schema.Column{SendLimitersColumns[5]},
+			},
+		},
+	}
 	// SendingDomainsColumns holds the columns for the "sending_domains" table.
 	SendingDomainsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2655,6 +2685,7 @@ var (
 		{Name: "abuse_exempt", Type: field.TypeBool, Default: false},
 		{Name: "abuse_warning_notified_at", Type: field.TypeTime, Nullable: true},
 		{Name: "abuse_freeze_notified_at", Type: field.TypeTime, Nullable: true},
+		{Name: "send_cap", Type: field.TypeInt, Nullable: true},
 	}
 	// WorkspacesTable holds the schema information for the "workspaces" table.
 	WorkspacesTable = &schema.Table{
@@ -2716,6 +2747,7 @@ var (
 		RuleVersionTriggersTable,
 		SchemaStateTable,
 		SegmentsTable,
+		SendLimitersTable,
 		SendingDomainsTable,
 		ServiceCredentialsTable,
 		SignupItemsTable,
@@ -3015,6 +3047,10 @@ func init() {
 	SegmentsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SegmentsTable.Annotation = &entsql.Annotation{
 		Table: "segments",
+	}
+	SendLimitersTable.ForeignKeys[0].RefTable = WorkspacesTable
+	SendLimitersTable.Annotation = &entsql.Annotation{
+		Table: "send_limiters",
 	}
 	SendingDomainsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SendingDomainsTable.Annotation = &entsql.Annotation{

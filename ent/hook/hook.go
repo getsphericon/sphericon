@@ -597,6 +597,18 @@ func (f SegmentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SegmentMutation", m)
 }
 
+// The SendLimiterFunc type is an adapter to allow the use of ordinary
+// function as SendLimiter mutator.
+type SendLimiterFunc func(context.Context, *ent.SendLimiterMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SendLimiterFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SendLimiterMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SendLimiterMutation", m)
+}
+
 // The SendingDomainFunc type is an adapter to allow the use of ordinary
 // function as SendingDomain mutator.
 type SendingDomainFunc func(context.Context, *ent.SendingDomainMutation) (ent.Value, error)

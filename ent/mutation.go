@@ -64,6 +64,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
@@ -139,6 +140,7 @@ const (
 	TypeRuleVersionTrigger   = "RuleVersionTrigger"
 	TypeSchemaState          = "SchemaState"
 	TypeSegment              = "Segment"
+	TypeSendLimiter          = "SendLimiter"
 	TypeSendingDomain        = "SendingDomain"
 	TypeServiceCredential    = "ServiceCredential"
 	TypeSignupItem           = "SignupItem"
@@ -47329,6 +47331,644 @@ func (m *SegmentMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Segment edge %s", name)
 }
 
+// SendLimiterMutation represents an operation that mutates the SendLimiter nodes in the graph.
+type SendLimiterMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	day_fill         *float64
+	addday_fill      *float64
+	refilled_at      *time.Time
+	clearedFields    map[string]struct{}
+	workspace        *int64
+	clearedworkspace bool
+	done             bool
+	oldValue         func(context.Context) (*SendLimiter, error)
+	predicates       []predicate.SendLimiter
+}
+
+var _ ent.Mutation = (*SendLimiterMutation)(nil)
+
+// sendlimiterOption allows management of the mutation configuration using functional options.
+type sendlimiterOption func(*SendLimiterMutation)
+
+// newSendLimiterMutation creates new mutation for the SendLimiter entity.
+func newSendLimiterMutation(c config, op Op, opts ...sendlimiterOption) *SendLimiterMutation {
+	m := &SendLimiterMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSendLimiter,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSendLimiterID sets the ID field of the mutation.
+func withSendLimiterID(id int64) sendlimiterOption {
+	return func(m *SendLimiterMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SendLimiter
+		)
+		m.oldValue = func(ctx context.Context) (*SendLimiter, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SendLimiter.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSendLimiter sets the old SendLimiter of the mutation.
+func withSendLimiter(node *SendLimiter) sendlimiterOption {
+	return func(m *SendLimiterMutation) {
+		m.oldValue = func(context.Context) (*SendLimiter, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SendLimiterMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SendLimiterMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SendLimiter entities.
+func (m *SendLimiterMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SendLimiterMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SendLimiterMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SendLimiter.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SendLimiterMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SendLimiterMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SendLimiter entity.
+// If the SendLimiter object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendLimiterMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SendLimiterMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SendLimiterMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SendLimiterMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SendLimiter entity.
+// If the SendLimiter object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendLimiterMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SendLimiterMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *SendLimiterMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *SendLimiterMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the SendLimiter entity.
+// If the SendLimiter object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendLimiterMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *SendLimiterMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetDayFill sets the "day_fill" field.
+func (m *SendLimiterMutation) SetDayFill(f float64) {
+	m.day_fill = &f
+	m.addday_fill = nil
+}
+
+// DayFill returns the value of the "day_fill" field in the mutation.
+func (m *SendLimiterMutation) DayFill() (r float64, exists bool) {
+	v := m.day_fill
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDayFill returns the old "day_fill" field's value of the SendLimiter entity.
+// If the SendLimiter object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendLimiterMutation) OldDayFill(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDayFill is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDayFill requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDayFill: %w", err)
+	}
+	return oldValue.DayFill, nil
+}
+
+// AddDayFill adds f to the "day_fill" field.
+func (m *SendLimiterMutation) AddDayFill(f float64) {
+	if m.addday_fill != nil {
+		*m.addday_fill += f
+	} else {
+		m.addday_fill = &f
+	}
+}
+
+// AddedDayFill returns the value that was added to the "day_fill" field in this mutation.
+func (m *SendLimiterMutation) AddedDayFill() (r float64, exists bool) {
+	v := m.addday_fill
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDayFill resets all changes to the "day_fill" field.
+func (m *SendLimiterMutation) ResetDayFill() {
+	m.day_fill = nil
+	m.addday_fill = nil
+}
+
+// SetRefilledAt sets the "refilled_at" field.
+func (m *SendLimiterMutation) SetRefilledAt(t time.Time) {
+	m.refilled_at = &t
+}
+
+// RefilledAt returns the value of the "refilled_at" field in the mutation.
+func (m *SendLimiterMutation) RefilledAt() (r time.Time, exists bool) {
+	v := m.refilled_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRefilledAt returns the old "refilled_at" field's value of the SendLimiter entity.
+// If the SendLimiter object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendLimiterMutation) OldRefilledAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRefilledAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRefilledAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRefilledAt: %w", err)
+	}
+	return oldValue.RefilledAt, nil
+}
+
+// ResetRefilledAt resets all changes to the "refilled_at" field.
+func (m *SendLimiterMutation) ResetRefilledAt() {
+	m.refilled_at = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *SendLimiterMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[sendlimiter.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *SendLimiterMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *SendLimiterMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *SendLimiterMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the SendLimiterMutation builder.
+func (m *SendLimiterMutation) Where(ps ...predicate.SendLimiter) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SendLimiterMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SendLimiterMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SendLimiter, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SendLimiterMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SendLimiterMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SendLimiter).
+func (m *SendLimiterMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SendLimiterMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.created_at != nil {
+		fields = append(fields, sendlimiter.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, sendlimiter.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, sendlimiter.FieldWorkspaceID)
+	}
+	if m.day_fill != nil {
+		fields = append(fields, sendlimiter.FieldDayFill)
+	}
+	if m.refilled_at != nil {
+		fields = append(fields, sendlimiter.FieldRefilledAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SendLimiterMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sendlimiter.FieldCreatedAt:
+		return m.CreatedAt()
+	case sendlimiter.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case sendlimiter.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case sendlimiter.FieldDayFill:
+		return m.DayFill()
+	case sendlimiter.FieldRefilledAt:
+		return m.RefilledAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SendLimiterMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sendlimiter.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case sendlimiter.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case sendlimiter.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case sendlimiter.FieldDayFill:
+		return m.OldDayFill(ctx)
+	case sendlimiter.FieldRefilledAt:
+		return m.OldRefilledAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown SendLimiter field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SendLimiterMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sendlimiter.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case sendlimiter.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case sendlimiter.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case sendlimiter.FieldDayFill:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDayFill(v)
+		return nil
+	case sendlimiter.FieldRefilledAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRefilledAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SendLimiter field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SendLimiterMutation) AddedFields() []string {
+	var fields []string
+	if m.addday_fill != nil {
+		fields = append(fields, sendlimiter.FieldDayFill)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SendLimiterMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case sendlimiter.FieldDayFill:
+		return m.AddedDayFill()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SendLimiterMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case sendlimiter.FieldDayFill:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDayFill(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SendLimiter numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SendLimiterMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SendLimiterMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SendLimiterMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown SendLimiter nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SendLimiterMutation) ResetField(name string) error {
+	switch name {
+	case sendlimiter.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case sendlimiter.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case sendlimiter.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case sendlimiter.FieldDayFill:
+		m.ResetDayFill()
+		return nil
+	case sendlimiter.FieldRefilledAt:
+		m.ResetRefilledAt()
+		return nil
+	}
+	return fmt.Errorf("unknown SendLimiter field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SendLimiterMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, sendlimiter.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SendLimiterMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sendlimiter.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SendLimiterMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SendLimiterMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SendLimiterMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, sendlimiter.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SendLimiterMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sendlimiter.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SendLimiterMutation) ClearEdge(name string) error {
+	switch name {
+	case sendlimiter.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown SendLimiter unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SendLimiterMutation) ResetEdge(name string) error {
+	switch name {
+	case sendlimiter.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown SendLimiter edge %s", name)
+}
+
 // SendingDomainMutation represents an operation that mutates the SendingDomain nodes in the graph.
 type SendingDomainMutation struct {
 	config
@@ -60938,6 +61578,8 @@ type WorkspaceMutation struct {
 	abuse_exempt                 *bool
 	abuse_warning_notified_at    *time.Time
 	abuse_freeze_notified_at     *time.Time
+	send_cap                     *int
+	addsend_cap                  *int
 	clearedFields                map[string]struct{}
 	contacts                     map[int64]struct{}
 	removedcontacts              map[int64]struct{}
@@ -60981,6 +61623,9 @@ type WorkspaceMutation struct {
 	provider_limiters            map[int64]struct{}
 	removedprovider_limiters     map[int64]struct{}
 	clearedprovider_limiters     bool
+	send_limiters                map[int64]struct{}
+	removedsend_limiters         map[int64]struct{}
+	clearedsend_limiters         bool
 	holds                        map[int64]struct{}
 	removedholds                 map[int64]struct{}
 	clearedholds                 bool
@@ -62266,6 +62911,76 @@ func (m *WorkspaceMutation) ResetAbuseFreezeNotifiedAt() {
 	delete(m.clearedFields, workspace.FieldAbuseFreezeNotifiedAt)
 }
 
+// SetSendCap sets the "send_cap" field.
+func (m *WorkspaceMutation) SetSendCap(i int) {
+	m.send_cap = &i
+	m.addsend_cap = nil
+}
+
+// SendCap returns the value of the "send_cap" field in the mutation.
+func (m *WorkspaceMutation) SendCap() (r int, exists bool) {
+	v := m.send_cap
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSendCap returns the old "send_cap" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldSendCap(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSendCap is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSendCap requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSendCap: %w", err)
+	}
+	return oldValue.SendCap, nil
+}
+
+// AddSendCap adds i to the "send_cap" field.
+func (m *WorkspaceMutation) AddSendCap(i int) {
+	if m.addsend_cap != nil {
+		*m.addsend_cap += i
+	} else {
+		m.addsend_cap = &i
+	}
+}
+
+// AddedSendCap returns the value that was added to the "send_cap" field in this mutation.
+func (m *WorkspaceMutation) AddedSendCap() (r int, exists bool) {
+	v := m.addsend_cap
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSendCap clears the value of the "send_cap" field.
+func (m *WorkspaceMutation) ClearSendCap() {
+	m.send_cap = nil
+	m.addsend_cap = nil
+	m.clearedFields[workspace.FieldSendCap] = struct{}{}
+}
+
+// SendCapCleared returns if the "send_cap" field was cleared in this mutation.
+func (m *WorkspaceMutation) SendCapCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldSendCap]
+	return ok
+}
+
+// ResetSendCap resets all changes to the "send_cap" field.
+func (m *WorkspaceMutation) ResetSendCap() {
+	m.send_cap = nil
+	m.addsend_cap = nil
+	delete(m.clearedFields, workspace.FieldSendCap)
+}
+
 // AddContactIDs adds the "contacts" edge to the Contact entity by ids.
 func (m *WorkspaceMutation) AddContactIDs(ids ...int64) {
 	if m.contacts == nil {
@@ -63020,6 +63735,60 @@ func (m *WorkspaceMutation) ResetProviderLimiters() {
 	m.provider_limiters = nil
 	m.clearedprovider_limiters = false
 	m.removedprovider_limiters = nil
+}
+
+// AddSendLimiterIDs adds the "send_limiters" edge to the SendLimiter entity by ids.
+func (m *WorkspaceMutation) AddSendLimiterIDs(ids ...int64) {
+	if m.send_limiters == nil {
+		m.send_limiters = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.send_limiters[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSendLimiters clears the "send_limiters" edge to the SendLimiter entity.
+func (m *WorkspaceMutation) ClearSendLimiters() {
+	m.clearedsend_limiters = true
+}
+
+// SendLimitersCleared reports if the "send_limiters" edge to the SendLimiter entity was cleared.
+func (m *WorkspaceMutation) SendLimitersCleared() bool {
+	return m.clearedsend_limiters
+}
+
+// RemoveSendLimiterIDs removes the "send_limiters" edge to the SendLimiter entity by IDs.
+func (m *WorkspaceMutation) RemoveSendLimiterIDs(ids ...int64) {
+	if m.removedsend_limiters == nil {
+		m.removedsend_limiters = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.send_limiters, ids[i])
+		m.removedsend_limiters[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSendLimiters returns the removed IDs of the "send_limiters" edge to the SendLimiter entity.
+func (m *WorkspaceMutation) RemovedSendLimitersIDs() (ids []int64) {
+	for id := range m.removedsend_limiters {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SendLimitersIDs returns the "send_limiters" edge IDs in the mutation.
+func (m *WorkspaceMutation) SendLimitersIDs() (ids []int64) {
+	for id := range m.send_limiters {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSendLimiters resets all changes to the "send_limiters" edge.
+func (m *WorkspaceMutation) ResetSendLimiters() {
+	m.send_limiters = nil
+	m.clearedsend_limiters = false
+	m.removedsend_limiters = nil
 }
 
 // AddHoldIDs adds the "holds" edge to the Hold entity by ids.
@@ -64298,7 +65067,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 25)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -64371,6 +65140,9 @@ func (m *WorkspaceMutation) Fields() []string {
 	if m.abuse_freeze_notified_at != nil {
 		fields = append(fields, workspace.FieldAbuseFreezeNotifiedAt)
 	}
+	if m.send_cap != nil {
+		fields = append(fields, workspace.FieldSendCap)
+	}
 	return fields
 }
 
@@ -64427,6 +65199,8 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.AbuseWarningNotifiedAt()
 	case workspace.FieldAbuseFreezeNotifiedAt:
 		return m.AbuseFreezeNotifiedAt()
+	case workspace.FieldSendCap:
+		return m.SendCap()
 	}
 	return nil, false
 }
@@ -64484,6 +65258,8 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldAbuseWarningNotifiedAt(ctx)
 	case workspace.FieldAbuseFreezeNotifiedAt:
 		return m.OldAbuseFreezeNotifiedAt(ctx)
+	case workspace.FieldSendCap:
+		return m.OldSendCap(ctx)
 	}
 	return nil, fmt.Errorf("unknown Workspace field %s", name)
 }
@@ -64661,6 +65437,13 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAbuseFreezeNotifiedAt(v)
 		return nil
+	case workspace.FieldSendCap:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSendCap(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Workspace field %s", name)
 }
@@ -64678,6 +65461,9 @@ func (m *WorkspaceMutation) AddedFields() []string {
 	if m.addfeed_position != nil {
 		fields = append(fields, workspace.FieldFeedPosition)
 	}
+	if m.addsend_cap != nil {
+		fields = append(fields, workspace.FieldSendCap)
+	}
 	return fields
 }
 
@@ -64692,6 +65478,8 @@ func (m *WorkspaceMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedAttributionWindowDays()
 	case workspace.FieldFeedPosition:
 		return m.AddedFeedPosition()
+	case workspace.FieldSendCap:
+		return m.AddedSendCap()
 	}
 	return nil, false
 }
@@ -64721,6 +65509,13 @@ func (m *WorkspaceMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddFeedPosition(v)
+		return nil
+	case workspace.FieldSendCap:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSendCap(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Workspace numeric field %s", name)
@@ -64771,6 +65566,9 @@ func (m *WorkspaceMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(workspace.FieldAbuseFreezeNotifiedAt) {
 		fields = append(fields, workspace.FieldAbuseFreezeNotifiedAt)
+	}
+	if m.FieldCleared(workspace.FieldSendCap) {
+		fields = append(fields, workspace.FieldSendCap)
 	}
 	return fields
 }
@@ -64827,6 +65625,9 @@ func (m *WorkspaceMutation) ClearField(name string) error {
 		return nil
 	case workspace.FieldAbuseFreezeNotifiedAt:
 		m.ClearAbuseFreezeNotifiedAt()
+		return nil
+	case workspace.FieldSendCap:
+		m.ClearSendCap()
 		return nil
 	}
 	return fmt.Errorf("unknown Workspace nullable field %s", name)
@@ -64908,13 +65709,16 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 	case workspace.FieldAbuseFreezeNotifiedAt:
 		m.ResetAbuseFreezeNotifiedAt()
 		return nil
+	case workspace.FieldSendCap:
+		m.ResetSendCap()
+		return nil
 	}
 	return fmt.Errorf("unknown Workspace field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 37)
+	edges := make([]string, 0, 38)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -64956,6 +65760,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.provider_limiters != nil {
 		edges = append(edges, workspace.EdgeProviderLimiters)
+	}
+	if m.send_limiters != nil {
+		edges = append(edges, workspace.EdgeSendLimiters)
 	}
 	if m.holds != nil {
 		edges = append(edges, workspace.EdgeHolds)
@@ -65117,6 +65924,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeSendLimiters:
+		ids := make([]ent.Value, 0, len(m.send_limiters))
+		for id := range m.send_limiters {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeHolds:
 		ids := make([]ent.Value, 0, len(m.holds))
 		for id := range m.holds {
@@ -65261,7 +66074,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 37)
+	edges := make([]string, 0, 38)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -65303,6 +66116,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedprovider_limiters != nil {
 		edges = append(edges, workspace.EdgeProviderLimiters)
+	}
+	if m.removedsend_limiters != nil {
+		edges = append(edges, workspace.EdgeSendLimiters)
 	}
 	if m.removedholds != nil {
 		edges = append(edges, workspace.EdgeHolds)
@@ -65464,6 +66280,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeSendLimiters:
+		ids := make([]ent.Value, 0, len(m.removedsend_limiters))
+		for id := range m.removedsend_limiters {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeHolds:
 		ids := make([]ent.Value, 0, len(m.removedholds))
 		for id := range m.removedholds {
@@ -65608,7 +66430,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 37)
+	edges := make([]string, 0, 38)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -65650,6 +66472,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedprovider_limiters {
 		edges = append(edges, workspace.EdgeProviderLimiters)
+	}
+	if m.clearedsend_limiters {
+		edges = append(edges, workspace.EdgeSendLimiters)
 	}
 	if m.clearedholds {
 		edges = append(edges, workspace.EdgeHolds)
@@ -65755,6 +66580,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedjoin_domains
 	case workspace.EdgeProviderLimiters:
 		return m.clearedprovider_limiters
+	case workspace.EdgeSendLimiters:
+		return m.clearedsend_limiters
 	case workspace.EdgeHolds:
 		return m.clearedholds
 	case workspace.EdgeBroadcasts:
@@ -65858,6 +66685,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeProviderLimiters:
 		m.ResetProviderLimiters()
+		return nil
+	case workspace.EdgeSendLimiters:
+		m.ResetSendLimiters()
 		return nil
 	case workspace.EdgeHolds:
 		m.ResetHolds()

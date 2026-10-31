@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -371,6 +372,20 @@ func (_c *WorkspaceCreate) SetNillableAbuseFreezeNotifiedAt(v *time.Time) *Works
 	return _c
 }
 
+// SetSendCap sets the "send_cap" field.
+func (_c *WorkspaceCreate) SetSendCap(v int) *WorkspaceCreate {
+	_c.mutation.SetSendCap(v)
+	return _c
+}
+
+// SetNillableSendCap sets the "send_cap" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableSendCap(v *int) *WorkspaceCreate {
+	if v != nil {
+		_c.SetSendCap(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *WorkspaceCreate) SetID(v int64) *WorkspaceCreate {
 	_c.mutation.SetID(v)
@@ -585,6 +600,21 @@ func (_c *WorkspaceCreate) AddProviderLimiters(v ...*ProviderLimiter) *Workspace
 		ids[i] = v[i].ID
 	}
 	return _c.AddProviderLimiterIDs(ids...)
+}
+
+// AddSendLimiterIDs adds the "send_limiters" edge to the SendLimiter entity by IDs.
+func (_c *WorkspaceCreate) AddSendLimiterIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddSendLimiterIDs(ids...)
+	return _c
+}
+
+// AddSendLimiters adds the "send_limiters" edges to the SendLimiter entity.
+func (_c *WorkspaceCreate) AddSendLimiters(v ...*SendLimiter) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSendLimiterIDs(ids...)
 }
 
 // AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
@@ -1068,6 +1098,11 @@ func (_c *WorkspaceCreate) check() error {
 	if _, ok := _c.mutation.AbuseExempt(); !ok {
 		return &ValidationError{Name: "abuse_exempt", err: errors.New(`ent: missing required field "Workspace.abuse_exempt"`)}
 	}
+	if v, ok := _c.mutation.SendCap(); ok {
+		if err := workspace.SendCapValidator(v); err != nil {
+			return &ValidationError{Name: "send_cap", err: fmt.Errorf(`ent: validator failed for field "Workspace.send_cap": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1196,6 +1231,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.AbuseFreezeNotifiedAt(); ok {
 		_spec.SetField(workspace.FieldAbuseFreezeNotifiedAt, field.TypeTime, value)
 		_node.AbuseFreezeNotifiedAt = &value
+	}
+	if value, ok := _c.mutation.SendCap(); ok {
+		_spec.SetField(workspace.FieldSendCap, field.TypeInt, value)
+		_node.SendCap = &value
 	}
 	if nodes := _c.mutation.ContactsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1414,6 +1453,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SendLimitersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendLimitersTable,
+			Columns: []string{workspace.SendLimitersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -2207,6 +2262,30 @@ func (u *WorkspaceUpsert) ClearAbuseFreezeNotifiedAt() *WorkspaceUpsert {
 	return u
 }
 
+// SetSendCap sets the "send_cap" field.
+func (u *WorkspaceUpsert) SetSendCap(v int) *WorkspaceUpsert {
+	u.Set(workspace.FieldSendCap, v)
+	return u
+}
+
+// UpdateSendCap sets the "send_cap" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateSendCap() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldSendCap)
+	return u
+}
+
+// AddSendCap adds v to the "send_cap" field.
+func (u *WorkspaceUpsert) AddSendCap(v int) *WorkspaceUpsert {
+	u.Add(workspace.FieldSendCap, v)
+	return u
+}
+
+// ClearSendCap clears the value of the "send_cap" field.
+func (u *WorkspaceUpsert) ClearSendCap() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldSendCap)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -2685,6 +2764,34 @@ func (u *WorkspaceUpsertOne) UpdateAbuseFreezeNotifiedAt() *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) ClearAbuseFreezeNotifiedAt() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearAbuseFreezeNotifiedAt()
+	})
+}
+
+// SetSendCap sets the "send_cap" field.
+func (u *WorkspaceUpsertOne) SetSendCap(v int) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetSendCap(v)
+	})
+}
+
+// AddSendCap adds v to the "send_cap" field.
+func (u *WorkspaceUpsertOne) AddSendCap(v int) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.AddSendCap(v)
+	})
+}
+
+// UpdateSendCap sets the "send_cap" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateSendCap() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateSendCap()
+	})
+}
+
+// ClearSendCap clears the value of the "send_cap" field.
+func (u *WorkspaceUpsertOne) ClearSendCap() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearSendCap()
 	})
 }
 
@@ -3332,6 +3439,34 @@ func (u *WorkspaceUpsertBulk) UpdateAbuseFreezeNotifiedAt() *WorkspaceUpsertBulk
 func (u *WorkspaceUpsertBulk) ClearAbuseFreezeNotifiedAt() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearAbuseFreezeNotifiedAt()
+	})
+}
+
+// SetSendCap sets the "send_cap" field.
+func (u *WorkspaceUpsertBulk) SetSendCap(v int) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetSendCap(v)
+	})
+}
+
+// AddSendCap adds v to the "send_cap" field.
+func (u *WorkspaceUpsertBulk) AddSendCap(v int) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.AddSendCap(v)
+	})
+}
+
+// UpdateSendCap sets the "send_cap" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateSendCap() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateSendCap()
+	})
+}
+
+// ClearSendCap clears the value of the "send_cap" field.
+func (u *WorkspaceUpsertBulk) ClearSendCap() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearSendCap()
 	})
 }
 

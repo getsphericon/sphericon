@@ -70,6 +70,24 @@ type Scoped struct {
 // Scoped returns the client confined to the given Workspace.
 func (c *Client) Scoped(ws int64) *Scoped { return &Scoped{c: c, ws: ws} }
 
+// Atomic runs fn with the scope over one transaction: the scope's own when it was built from a
+// transaction's client, else a new one, committed when fn returns nil and rolled back otherwise.
+func (s *Scoped) Atomic(ctx context.Context, fn func(*Scoped) error) error {
+	tx, err := s.c.Tx(ctx)
+	if errors.Is(err, ErrTxStarted) {
+		return fn(s)
+	}
+	if err != nil {
+		return err
+	}
+	in := *s
+	in.c = tx.Client()
+	if err := fn(&in); err != nil {
+		return errors.Join(err, tx.Rollback())
+	}
+	return tx.Commit()
+}
+
 // WorkspaceID returns the Workspace the client is confined to.
 func (s *Scoped) WorkspaceID() int64 { return s.ws }
 

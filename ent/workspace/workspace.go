@@ -63,6 +63,8 @@ const (
 	FieldAbuseWarningNotifiedAt = "abuse_warning_notified_at"
 	// FieldAbuseFreezeNotifiedAt holds the string denoting the abuse_freeze_notified_at field in the database.
 	FieldAbuseFreezeNotifiedAt = "abuse_freeze_notified_at"
+	// FieldSendCap holds the string denoting the send_cap field in the database.
+	FieldSendCap = "send_cap"
 	// EdgeContacts holds the string denoting the contacts edge name in mutations.
 	EdgeContacts = "contacts"
 	// EdgeCustomFields holds the string denoting the custom_fields edge name in mutations.
@@ -91,6 +93,8 @@ const (
 	EdgeJoinDomains = "join_domains"
 	// EdgeProviderLimiters holds the string denoting the provider_limiters edge name in mutations.
 	EdgeProviderLimiters = "provider_limiters"
+	// EdgeSendLimiters holds the string denoting the send_limiters edge name in mutations.
+	EdgeSendLimiters = "send_limiters"
 	// EdgeHolds holds the string denoting the holds edge name in mutations.
 	EdgeHolds = "holds"
 	// EdgeBroadcasts holds the string denoting the broadcasts edge name in mutations.
@@ -237,6 +241,13 @@ const (
 	ProviderLimitersInverseTable = "provider_limiters"
 	// ProviderLimitersColumn is the table column denoting the provider_limiters relation/edge.
 	ProviderLimitersColumn = "workspace_id"
+	// SendLimitersTable is the table that holds the send_limiters relation/edge.
+	SendLimitersTable = "send_limiters"
+	// SendLimitersInverseTable is the table name for the SendLimiter entity.
+	// It exists in this package in order to avoid circular dependency with the "sendlimiter" package.
+	SendLimitersInverseTable = "send_limiters"
+	// SendLimitersColumn is the table column denoting the send_limiters relation/edge.
+	SendLimitersColumn = "workspace_id"
 	// HoldsTable is the table that holds the holds relation/edge.
 	HoldsTable = "holds"
 	// HoldsInverseTable is the table name for the Hold entity.
@@ -427,6 +438,7 @@ var Columns = []string{
 	FieldAbuseExempt,
 	FieldAbuseWarningNotifiedAt,
 	FieldAbuseFreezeNotifiedAt,
+	FieldSendCap,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -470,6 +482,8 @@ var (
 	DefaultFeedPosition int64
 	// DefaultAbuseExempt holds the default value on creation for the "abuse_exempt" field.
 	DefaultAbuseExempt bool
+	// SendCapValidator is a validator for the "send_cap" field. It is called by the builders before save.
+	SendCapValidator func(int) error
 )
 
 // SuspendedByKind defines the type for the "suspended_by_kind" enum field.
@@ -622,6 +636,11 @@ func ByAbuseWarningNotifiedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByAbuseFreezeNotifiedAt orders the results by the abuse_freeze_notified_at field.
 func ByAbuseFreezeNotifiedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAbuseFreezeNotifiedAt, opts...).ToFunc()
+}
+
+// BySendCap orders the results by the send_cap field.
+func BySendCap(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSendCap, opts...).ToFunc()
 }
 
 // ByContactsCount orders the results by contacts count.
@@ -817,6 +836,20 @@ func ByProviderLimitersCount(opts ...sql.OrderTermOption) OrderOption {
 func ByProviderLimiters(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newProviderLimitersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySendLimitersCount orders the results by send_limiters count.
+func BySendLimitersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSendLimitersStep(), opts...)
+	}
+}
+
+// BySendLimiters orders the results by send_limiters terms.
+func BySendLimiters(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSendLimitersStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -1237,6 +1270,13 @@ func newProviderLimitersStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ProviderLimitersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ProviderLimitersTable, ProviderLimitersColumn),
+	)
+}
+func newSendLimitersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SendLimitersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SendLimitersTable, SendLimitersColumn),
 	)
 }
 func newHoldsStep() *sqlgraph.Step {

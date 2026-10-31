@@ -30,8 +30,8 @@ So there are two limits with two owners, and each gets its own name.
     values, the warmup and the Send cap. A spent Send cap is a **Deferral**, not a Hold: sending
     slows, it does not stop. A Broadcast shows its ETA and that the platform's Send cap is the
     cause, and the Workspace's settings show the cap read-only. A Broadcast larger than the cap is
-    not refused: it is warned about before it starts and goes out over several days, faster as
-    soon as Staff raises the cap.
+    not refused: it is warned about before it starts and goes out over several days, faster within
+    minutes of Staff raising the cap.
   - **No exceptions.** Transactional sends count against it and, as in ADR 0023, are never delayed
     by it. The Test inbox counts like any Integration, so a test shows what real sending would do.
   - **Set by hand, no expiry.** A Staff member sets a default for new Workspaces and a value per

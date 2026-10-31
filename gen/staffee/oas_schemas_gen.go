@@ -127,6 +127,74 @@ func (o OptInt32) Or(d int32) int32 {
 	return d
 }
 
+// NewOptNilInt32 returns new OptNilInt32 with value set to v.
+func NewOptNilInt32(v int32) OptNilInt32 {
+	return OptNilInt32{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilInt32 is optional nullable int32.
+type OptNilInt32 struct {
+	Value int32
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilInt32 was set.
+func (o OptNilInt32) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilInt32) Reset() {
+	var v int32
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilInt32) SetTo(v int32) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilInt32) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilInt32) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v int32
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilInt32) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilInt32) Get() (v int32, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilInt32) Or(d int32) int32 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilStaffAbuseWarning returns new OptNilStaffAbuseWarning with value set to v.
 func NewOptNilStaffAbuseWarning(v StaffAbuseWarning) OptNilStaffAbuseWarning {
 	return OptNilStaffAbuseWarning{
@@ -1822,6 +1890,53 @@ func (s *StaffRate) SetRate(val NilFloat64) {
 	s.Rate = val
 }
 
+// The outcome of a Send cap change: the Workspace as it now stands, and whether anything changed.
+// Ref: #/components/schemas/StaffSendCapChange
+type StaffSendCapChange struct {
+	Changed   bool                   `json:"changed"`
+	Workspace StaffWorkspaceResource `json:"workspace"`
+}
+
+// GetChanged returns the value of Changed.
+func (s *StaffSendCapChange) GetChanged() bool {
+	return s.Changed
+}
+
+// GetWorkspace returns the value of Workspace.
+func (s *StaffSendCapChange) GetWorkspace() StaffWorkspaceResource {
+	return s.Workspace
+}
+
+// SetChanged sets the value of Changed.
+func (s *StaffSendCapChange) SetChanged(val bool) {
+	s.Changed = val
+}
+
+// SetWorkspace sets the value of Workspace.
+func (s *StaffSendCapChange) SetWorkspace(val StaffWorkspaceResource) {
+	s.Workspace = val
+}
+
+func (*StaffSendCapChange) staffWorkspacesClearSendCapRes() {}
+func (*StaffSendCapChange) staffWorkspacesSetSendCapRes()   {}
+
+// A Workspace's Send cap (ADR 0067) as a Staff member sets it.
+// Ref: #/components/schemas/StaffSendCapInput
+type StaffSendCapInput struct {
+	// The most messages the Workspace may send per rolling 24 hours, across its Integrations.
+	SendCap int32 `json:"sendCap"`
+}
+
+// GetSendCap returns the value of SendCap.
+func (s *StaffSendCapInput) GetSendCap() int32 {
+	return s.SendCap
+}
+
+// SetSendCap sets the value of SendCap.
+func (s *StaffSendCapInput) SetSendCap(val int32) {
+	s.SendCap = val
+}
+
 // How many people work at the User's company (second question).
 // Ref: #/components/schemas/StaffSignupCompanySize
 type StaffSignupCompanySize string
@@ -2668,10 +2783,15 @@ type StaffWorkspaceDetailResource struct {
 	Exempt bool `json:"exempt"`
 	// The owners were warned and the Workspace has not left the warning tier since.
 	Warned bool `json:"warned"`
+	// The Send cap (ADR 0067): the most messages the Workspace may send per rolling 24 hours, set by a
+	// Staff member. Absent when it has none, and always on an Instance without Send caps.
+	SendCap OptNilInt32 `json:"sendCap"`
 	// Active Staff holds by key; a lapsed hold is not listed.
 	Holds          []StaffHold         `json:"holds"`
 	Deliverability StaffDeliverability `json:"deliverability"`
 	Abuse          StaffAbuse          `json:"abuse"`
+	// Whether this Instance has Send caps (ADR 0067); without, a Workspace has none and none can be set.
+	SendCaps bool `json:"sendCaps"`
 }
 
 // GetID returns the value of ID.
@@ -2714,6 +2834,11 @@ func (s *StaffWorkspaceDetailResource) GetWarned() bool {
 	return s.Warned
 }
 
+// GetSendCap returns the value of SendCap.
+func (s *StaffWorkspaceDetailResource) GetSendCap() OptNilInt32 {
+	return s.SendCap
+}
+
 // GetHolds returns the value of Holds.
 func (s *StaffWorkspaceDetailResource) GetHolds() []StaffHold {
 	return s.Holds
@@ -2727,6 +2852,11 @@ func (s *StaffWorkspaceDetailResource) GetDeliverability() StaffDeliverability {
 // GetAbuse returns the value of Abuse.
 func (s *StaffWorkspaceDetailResource) GetAbuse() StaffAbuse {
 	return s.Abuse
+}
+
+// GetSendCaps returns the value of SendCaps.
+func (s *StaffWorkspaceDetailResource) GetSendCaps() bool {
+	return s.SendCaps
 }
 
 // SetID sets the value of ID.
@@ -2769,6 +2899,11 @@ func (s *StaffWorkspaceDetailResource) SetWarned(val bool) {
 	s.Warned = val
 }
 
+// SetSendCap sets the value of SendCap.
+func (s *StaffWorkspaceDetailResource) SetSendCap(val OptNilInt32) {
+	s.SendCap = val
+}
+
 // SetHolds sets the value of Holds.
 func (s *StaffWorkspaceDetailResource) SetHolds(val []StaffHold) {
 	s.Holds = val
@@ -2782,6 +2917,11 @@ func (s *StaffWorkspaceDetailResource) SetDeliverability(val StaffDeliverability
 // SetAbuse sets the value of Abuse.
 func (s *StaffWorkspaceDetailResource) SetAbuse(val StaffAbuse) {
 	s.Abuse = val
+}
+
+// SetSendCaps sets the value of SendCaps.
+func (s *StaffWorkspaceDetailResource) SetSendCaps(val bool) {
+	s.SendCaps = val
 }
 
 func (*StaffWorkspaceDetailResource) staffWorkspacesGetRes() {}
@@ -2805,6 +2945,9 @@ type StaffWorkspaceResource struct {
 	Exempt bool `json:"exempt"`
 	// The owners were warned and the Workspace has not left the warning tier since.
 	Warned bool `json:"warned"`
+	// The Send cap (ADR 0067): the most messages the Workspace may send per rolling 24 hours, set by a
+	// Staff member. Absent when it has none, and always on an Instance without Send caps.
+	SendCap OptNilInt32 `json:"sendCap"`
 }
 
 // GetID returns the value of ID.
@@ -2847,6 +2990,11 @@ func (s *StaffWorkspaceResource) GetWarned() bool {
 	return s.Warned
 }
 
+// GetSendCap returns the value of SendCap.
+func (s *StaffWorkspaceResource) GetSendCap() OptNilInt32 {
+	return s.SendCap
+}
+
 // SetID sets the value of ID.
 func (s *StaffWorkspaceResource) SetID(val WorkspaceId) {
 	s.ID = val
@@ -2885,6 +3033,11 @@ func (s *StaffWorkspaceResource) SetExempt(val bool) {
 // SetWarned sets the value of Warned.
 func (s *StaffWorkspaceResource) SetWarned(val bool) {
 	s.Warned = val
+}
+
+// SetSendCap sets the value of SendCap.
+func (s *StaffWorkspaceResource) SetSendCap(val OptNilInt32) {
+	s.SendCap = val
 }
 
 // Which Workspaces the list surfaces for review.
@@ -2936,6 +3089,14 @@ func (s *StaffWorkspaceReview) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+type StaffWorkspacesClearSendCapNotFound ProblemDetails
+
+func (*StaffWorkspacesClearSendCapNotFound) staffWorkspacesClearSendCapRes() {}
+
+type StaffWorkspacesClearSendCapUnauthorized ProblemDetails
+
+func (*StaffWorkspacesClearSendCapUnauthorized) staffWorkspacesClearSendCapRes() {}
 
 type StaffWorkspacesExemptNotFound ProblemDetails
 
@@ -3018,6 +3179,18 @@ func (s *StaffWorkspacesListOK) SetTotalPages(val int32) {
 }
 
 func (*StaffWorkspacesListOK) staffWorkspacesListRes() {}
+
+type StaffWorkspacesSetSendCapNotFound ProblemDetails
+
+func (*StaffWorkspacesSetSendCapNotFound) staffWorkspacesSetSendCapRes() {}
+
+type StaffWorkspacesSetSendCapUnauthorized ProblemDetails
+
+func (*StaffWorkspacesSetSendCapUnauthorized) staffWorkspacesSetSendCapRes() {}
+
+type StaffWorkspacesSetSendCapUnprocessableEntity ProblemDetails
+
+func (*StaffWorkspacesSetSendCapUnprocessableEntity) staffWorkspacesSetSendCapRes() {}
 
 type StaffWorkspacesSuspendNotFound ProblemDetails
 

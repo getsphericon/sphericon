@@ -87,8 +87,10 @@ const (
 	ActionWorkspaceUnsuspend          = "workspace.unsuspend"
 	ActionWorkspaceAbuseExempt        = "workspace.abuse_exempt"
 	ActionWorkspaceAbuseUnexempt      = "workspace.abuse_unexempt"
-	ActionContactImport               = "contact.import"
-	ActionAuditLogExport              = "audit_log.export"
+	// ActionWorkspaceSendCap: a Staff member set, changed or removed the Workspace's Send cap (ADR 0067).
+	ActionWorkspaceSendCap = "workspace.send_cap"
+	ActionContactImport    = "contact.import"
+	ActionAuditLogExport   = "audit_log.export"
 	// ActionWebhookEndpointTest: a sample event was sent to a Webhook endpoint (ADR 0039): no row changes.
 	ActionWebhookEndpointTest = "webhook_endpoint.test"
 )
@@ -120,6 +122,7 @@ var ExplicitAuditActions = []string{
 	ActionWorkspaceUnsuspend,
 	ActionWorkspaceAbuseExempt,
 	ActionWorkspaceAbuseUnexempt,
+	ActionWorkspaceSendCap,
 	ActionContactImport,
 	ActionAuditLogExport,
 	ActionWebhookEndpointTest,

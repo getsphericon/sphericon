@@ -51,6 +51,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
@@ -1120,6 +1121,21 @@ func init() {
 	segmentDescName := segmentFields[1].Descriptor()
 	// segment.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	segment.NameValidator = segmentDescName.Validators[0].(func(string) error)
+	sendlimiterMixin := schema.SendLimiter{}.Mixin()
+	sendlimiterMixinFields0 := sendlimiterMixin[0].Fields()
+	_ = sendlimiterMixinFields0
+	sendlimiterFields := schema.SendLimiter{}.Fields()
+	_ = sendlimiterFields
+	// sendlimiterDescCreatedAt is the schema descriptor for created_at field.
+	sendlimiterDescCreatedAt := sendlimiterMixinFields0[0].Descriptor()
+	// sendlimiter.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sendlimiter.DefaultCreatedAt = sendlimiterDescCreatedAt.Default.(func() time.Time)
+	// sendlimiterDescUpdatedAt is the schema descriptor for updated_at field.
+	sendlimiterDescUpdatedAt := sendlimiterMixinFields0[1].Descriptor()
+	// sendlimiter.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	sendlimiter.DefaultUpdatedAt = sendlimiterDescUpdatedAt.Default.(func() time.Time)
+	// sendlimiter.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	sendlimiter.UpdateDefaultUpdatedAt = sendlimiterDescUpdatedAt.UpdateDefault.(func() time.Time)
 	sendingdomainMixin := schema.SendingDomain{}.Mixin()
 	sendingdomainMixinFields0 := sendingdomainMixin[0].Fields()
 	_ = sendingdomainMixinFields0
@@ -1594,4 +1610,8 @@ func init() {
 	workspaceDescAbuseExempt := workspaceFields[19].Descriptor()
 	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
 	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
+	// workspaceDescSendCap is the schema descriptor for send_cap field.
+	workspaceDescSendCap := workspaceFields[22].Descriptor()
+	// workspace.SendCapValidator is a validator for the "send_cap" field. It is called by the builders before save.
+	workspace.SendCapValidator = workspaceDescSendCap.Validators[0].(func(int) error)
 }

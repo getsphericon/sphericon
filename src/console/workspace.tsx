@@ -16,6 +16,7 @@ import { formatPercent } from '../utils/percent.ts'
 import { AuditLogCard } from './AuditLogCard.tsx'
 import { DeliverabilityCard } from './deliverability.tsx'
 import { HoldsCard } from './HoldsCard.tsx'
+import { SendCapCard } from './SendCapCard.tsx'
 import { ExemptionAction, SuspensionActions } from './SuspensionActions.tsx'
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -147,6 +148,7 @@ function WorkspaceCards({ workspaceId }: { workspaceId: string }) {
       </Card>
       <SuspensionCard workspaceId={workspace.id} suspension={workspace.suspension} />
       <AbuseCard workspaceId={workspace.id} abuse={workspace.abuse} />
+      {workspace.sendCaps && <SendCapCard workspaceId={workspace.id} sendCap={workspace.sendCap} />}
       <HoldsCard holds={workspace.holds} />
       <DeliverabilityCard deliverability={workspace.deliverability} />
       <AuditLogCard workspaceId={workspace.id} />

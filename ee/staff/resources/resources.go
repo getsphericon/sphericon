@@ -42,6 +42,7 @@ const PeriodLayout = "2006-01"
 // goverter:extend nilFloat64
 // goverter:extend count
 // goverter:extend optNilSource
+// goverter:extend optNilCount
 type StaffConverter interface {
 	// The console's view of a Workspace: metadata and suspension state only. The Staff
 	// member sees the real actor id, which a customer never does.
@@ -61,6 +62,7 @@ type StaffConverter interface {
 	// goverter:ignore Holds
 	// goverter:ignore Abuse
 	// goverter:ignore Deliverability
+	// goverter:ignore SendCaps
 	WorkspaceDetailToResource(source *ent.Workspace) staffeeapi.StaffWorkspaceDetailResource
 
 	HoldToResource(source *ent.Hold) staffeeapi.StaffHold
@@ -247,6 +249,14 @@ func count(n int) int32 { return narrow.Int32(n) }
 
 func optNilSource(c StaffConverter, v *signupsurveyresponse.HeardFrom) staffeeapi.OptNilStaffSignupSource {
 	return convert.OptVia[staffeeapi.OptNilStaffSignupSource](v, c.SignupSourceToResource)
+}
+
+// optNilCount narrows an optional count (a Send cap) to the contract's nullable int32.
+func optNilCount(v *int) staffeeapi.OptNilInt32 {
+	if v == nil {
+		return staffeeapi.OptNilInt32{}
+	}
+	return staffeeapi.NewOptNilInt32(narrow.Int32(*v))
 }
 
 func windowHours(d time.Duration) int32 { return narrow.Int32(d / time.Hour) }

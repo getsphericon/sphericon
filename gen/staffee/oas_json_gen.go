@@ -134,6 +134,57 @@ func (s *OptInt32) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes int32 as json.
+func (o OptNilInt32) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Int32(int32(o.Value))
+}
+
+// Decode decodes int32 from json.
+func (o *OptNilInt32) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilInt32 to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v int32
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	v, err := d.Int32()
+	if err != nil {
+		return err
+	}
+	o.Value = int32(v)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilInt32) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilInt32) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes StaffAbuseWarning as json.
 func (o OptNilStaffAbuseWarning) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -2940,6 +2991,213 @@ func (s *StaffRate) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode implements json.Marshaler.
+func (s *StaffSendCapChange) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *StaffSendCapChange) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("changed")
+		e.Bool(s.Changed)
+	}
+	{
+		e.FieldStart("workspace")
+		s.Workspace.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfStaffSendCapChange = [2]string{
+	0: "changed",
+	1: "workspace",
+}
+
+// Decode decodes StaffSendCapChange from json.
+func (s *StaffSendCapChange) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSendCapChange to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "changed":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Bool()
+				s.Changed = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"changed\"")
+			}
+		case "workspace":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Workspace.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"workspace\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode StaffSendCapChange")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfStaffSendCapChange) {
+					name = jsonFieldsNameOfStaffSendCapChange[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSendCapChange) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSendCapChange) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *StaffSendCapInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *StaffSendCapInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("sendCap")
+		e.Int32(s.SendCap)
+	}
+}
+
+var jsonFieldsNameOfStaffSendCapInput = [1]string{
+	0: "sendCap",
+}
+
+// Decode decodes StaffSendCapInput from json.
+func (s *StaffSendCapInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSendCapInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "sendCap":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Int32()
+				s.SendCap = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sendCap\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode StaffSendCapInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfStaffSendCapInput) {
+					name = jsonFieldsNameOfStaffSendCapInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSendCapInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSendCapInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes StaffSignupCompanySize as json.
 func (s StaffSignupCompanySize) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -4962,6 +5220,12 @@ func (s *StaffWorkspaceDetailResource) encodeFields(e *jx.Encoder) {
 		e.Bool(s.Warned)
 	}
 	{
+		if s.SendCap.Set {
+			e.FieldStart("sendCap")
+			s.SendCap.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("holds")
 		e.ArrStart()
 		for _, elem := range s.Holds {
@@ -4977,9 +5241,13 @@ func (s *StaffWorkspaceDetailResource) encodeFields(e *jx.Encoder) {
 		e.FieldStart("abuse")
 		s.Abuse.Encode(e)
 	}
+	{
+		e.FieldStart("sendCaps")
+		e.Bool(s.SendCaps)
+	}
 }
 
-var jsonFieldsNameOfStaffWorkspaceDetailResource = [11]string{
+var jsonFieldsNameOfStaffWorkspaceDetailResource = [13]string{
 	0:  "id",
 	1:  "name",
 	2:  "createdAt",
@@ -4988,9 +5256,11 @@ var jsonFieldsNameOfStaffWorkspaceDetailResource = [11]string{
 	5:  "suspension",
 	6:  "exempt",
 	7:  "warned",
-	8:  "holds",
-	9:  "deliverability",
-	10: "abuse",
+	8:  "sendCap",
+	9:  "holds",
+	10: "deliverability",
+	11: "abuse",
+	12: "sendCaps",
 }
 
 // Decode decodes StaffWorkspaceDetailResource from json.
@@ -5088,8 +5358,18 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"warned\"")
 			}
+		case "sendCap":
+			if err := func() error {
+				s.SendCap.Reset()
+				if err := s.SendCap.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sendCap\"")
+			}
 		case "holds":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				s.Holds = make([]StaffHold, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -5107,7 +5387,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"holds\"")
 			}
 		case "deliverability":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.Deliverability.Decode(d); err != nil {
 					return err
@@ -5117,7 +5397,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"deliverability\"")
 			}
 		case "abuse":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				if err := s.Abuse.Decode(d); err != nil {
 					return err
@@ -5125,6 +5405,18 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"abuse\"")
+			}
+		case "sendCaps":
+			requiredBitSet[1] |= 1 << 4
+			if err := func() error {
+				v, err := d.Bool()
+				s.SendCaps = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sendCaps\"")
 			}
 		default:
 			return d.Skip()
@@ -5137,7 +5429,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b11000111,
-		0b00000111,
+		0b00011110,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -5230,9 +5522,15 @@ func (s *StaffWorkspaceResource) encodeFields(e *jx.Encoder) {
 		e.FieldStart("warned")
 		e.Bool(s.Warned)
 	}
+	{
+		if s.SendCap.Set {
+			e.FieldStart("sendCap")
+			s.SendCap.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfStaffWorkspaceResource = [8]string{
+var jsonFieldsNameOfStaffWorkspaceResource = [9]string{
 	0: "id",
 	1: "name",
 	2: "createdAt",
@@ -5241,6 +5539,7 @@ var jsonFieldsNameOfStaffWorkspaceResource = [8]string{
 	5: "suspension",
 	6: "exempt",
 	7: "warned",
+	8: "sendCap",
 }
 
 // Decode decodes StaffWorkspaceResource from json.
@@ -5248,7 +5547,7 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode StaffWorkspaceResource to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -5338,6 +5637,16 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"warned\"")
 			}
+		case "sendCap":
+			if err := func() error {
+				s.SendCap.Reset()
+				if err := s.SendCap.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sendCap\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -5347,8 +5656,9 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
+	for i, mask := range [2]uint8{
 		0b11000111,
+		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -5390,6 +5700,82 @@ func (s *StaffWorkspaceResource) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *StaffWorkspaceResource) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffWorkspacesClearSendCapNotFound as json.
+func (s *StaffWorkspacesClearSendCapNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffWorkspacesClearSendCapNotFound from json.
+func (s *StaffWorkspacesClearSendCapNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffWorkspacesClearSendCapNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffWorkspacesClearSendCapNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffWorkspacesClearSendCapNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffWorkspacesClearSendCapNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffWorkspacesClearSendCapUnauthorized as json.
+func (s *StaffWorkspacesClearSendCapUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffWorkspacesClearSendCapUnauthorized from json.
+func (s *StaffWorkspacesClearSendCapUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffWorkspacesClearSendCapUnauthorized to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffWorkspacesClearSendCapUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffWorkspacesClearSendCapUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffWorkspacesClearSendCapUnauthorized) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -5716,6 +6102,120 @@ func (s *StaffWorkspacesListOK) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *StaffWorkspacesListOK) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffWorkspacesSetSendCapNotFound as json.
+func (s *StaffWorkspacesSetSendCapNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffWorkspacesSetSendCapNotFound from json.
+func (s *StaffWorkspacesSetSendCapNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffWorkspacesSetSendCapNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffWorkspacesSetSendCapNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffWorkspacesSetSendCapNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffWorkspacesSetSendCapNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffWorkspacesSetSendCapUnauthorized as json.
+func (s *StaffWorkspacesSetSendCapUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffWorkspacesSetSendCapUnauthorized from json.
+func (s *StaffWorkspacesSetSendCapUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffWorkspacesSetSendCapUnauthorized to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffWorkspacesSetSendCapUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffWorkspacesSetSendCapUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffWorkspacesSetSendCapUnauthorized) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffWorkspacesSetSendCapUnprocessableEntity as json.
+func (s *StaffWorkspacesSetSendCapUnprocessableEntity) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffWorkspacesSetSendCapUnprocessableEntity from json.
+func (s *StaffWorkspacesSetSendCapUnprocessableEntity) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffWorkspacesSetSendCapUnprocessableEntity to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffWorkspacesSetSendCapUnprocessableEntity(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffWorkspacesSetSendCapUnprocessableEntity) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffWorkspacesSetSendCapUnprocessableEntity) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

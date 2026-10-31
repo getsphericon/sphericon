@@ -3,7 +3,7 @@
 
 import { http, type HttpHandler, HttpResponse, type HttpResponseResolver, type RequestHandlerOptions as RequestHandlerOptions2 } from 'msw';
 
-import type { ClientOptions, StaffSignupSurveyCountsResponses, StaffSignupSurveyGetResponses, StaffWorkspaceAuditListResponses, StaffWorkspacesExemptResponses, StaffWorkspacesGetResponses, StaffWorkspacesListResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
+import type { ClientOptions, StaffSignupSurveyCountsResponses, StaffSignupSurveyGetResponses, StaffWorkspaceAuditListResponses, StaffWorkspacesClearSendCapResponses, StaffWorkspacesExemptResponses, StaffWorkspacesGetResponses, StaffWorkspacesListResponses, StaffWorkspacesSetSendCapData, StaffWorkspacesSetSendCapResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
 
 export type RequestHandlerOptions = RequestHandlerOptions2 & {
   baseUrl?: ClientOptions['baseUrl'];
@@ -188,6 +188,68 @@ export function handleStaffWorkspacesExempt(response?: HandleStaffWorkspacesExem
   }, options);
 }
 
+export type HandleStaffWorkspacesClearSendCapResponse = {
+  body: StaffWorkspacesClearSendCapResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `DELETE /workspaces/{workspaceId}/send-cap` operation.
+ */
+export function handleStaffWorkspacesClearSendCap(response?: HandleStaffWorkspacesClearSendCapResponse | HttpResponseResolver<{
+  workspaceId: string;
+}, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.delete<{
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/send-cap`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleStaffWorkspacesSetSendCapResponse = {
+  body: StaffWorkspacesSetSendCapResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `PUT /workspaces/{workspaceId}/send-cap` operation.
+ */
+export function handleStaffWorkspacesSetSendCap(response?: HandleStaffWorkspacesSetSendCapResponse | HttpResponseResolver<{
+  workspaceId: string;
+}, StaffWorkspacesSetSendCapData['body']>, options?: RequestHandlerOptions): HttpHandler {
+  return http.put<{
+    workspaceId: string;
+  }, StaffWorkspacesSetSendCapData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/send-cap`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
 export type HandleStaffWorkspacesSuspendResponse = {
   body: StaffWorkspacesSuspendResponses[200];
   status?: 200;
@@ -307,6 +369,14 @@ export type MswHandlerFactories = {
    */
   staffWorkspacesExempt: typeof handleStaffWorkspacesExempt;
   /**
+   * Handler for the `DELETE /workspaces/{workspaceId}/send-cap` operation.
+   */
+  staffWorkspacesClearSendCap: typeof handleStaffWorkspacesClearSendCap;
+  /**
+   * Handler for the `PUT /workspaces/{workspaceId}/send-cap` operation.
+   */
+  staffWorkspacesSetSendCap: typeof handleStaffWorkspacesSetSendCap;
+  /**
    * Handler for the `POST /workspaces/{workspaceId}/suspend` operation.
    */
   staffWorkspacesSuspend: typeof handleStaffWorkspacesSuspend;
@@ -341,6 +411,8 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     staffWorkspacesGet: wrap(handleStaffWorkspacesGet),
     staffWorkspaceAuditList: wrap(handleStaffWorkspaceAuditList),
     staffWorkspacesExempt: wrap(handleStaffWorkspacesExempt),
+    staffWorkspacesClearSendCap: wrap(handleStaffWorkspacesClearSendCap),
+    staffWorkspacesSetSendCap: wrap(handleStaffWorkspacesSetSendCap),
     staffWorkspacesSuspend: wrap(handleStaffWorkspacesSuspend),
     staffWorkspacesUnexempt: wrap(handleStaffWorkspacesUnexempt),
     staffWorkspacesUnsuspend: wrap(handleStaffWorkspacesUnsuspend)
@@ -358,6 +430,8 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
       invoke(pick.staffSignupSurveyGet, overrides.staffSignupSurveyGet),
       invoke(pick.staffWorkspaceAuditList, overrides.staffWorkspaceAuditList),
       invoke(pick.staffWorkspacesExempt, overrides.staffWorkspacesExempt),
+      invoke(pick.staffWorkspacesClearSendCap, overrides.staffWorkspacesClearSendCap),
+      invoke(pick.staffWorkspacesSetSendCap, overrides.staffWorkspacesSetSendCap),
       invoke(pick.staffWorkspacesSuspend, overrides.staffWorkspacesSuspend),
       invoke(pick.staffWorkspacesUnexempt, overrides.staffWorkspacesUnexempt),
       invoke(pick.staffWorkspacesUnsuspend, overrides.staffWorkspacesUnsuspend),

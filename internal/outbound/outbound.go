@@ -41,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/suppression"
@@ -168,6 +169,10 @@ type Result struct {
 	// Captured is true for a Test send that went through a sender that delivers nowhere
 	// outside: the message was kept, not sent to the address named (ADR 0058).
 	Captured bool
+	// SendCap is true for a Deferral caused by the Workspace's Send cap (ADR 0067), not its
+	// Integration's Provider limit: its retry is bounded tighter, so a raised Send cap is
+	// noticed within minutes.
+	SendCap bool
 }
 
 // Senders builds the email provider adapter for the Integration a Send route resolved; a nil one is
@@ -211,6 +216,8 @@ type Module struct {
 	testBudget TestSendBudget
 	// now is the clock the Provider limit and the claim lease are read at.
 	now func() time.Time
+	// sendCap applies the Workspace's Send cap (ADR 0067); off, a stored Send cap has no effect.
+	sendCap bool
 }
 
 // Option customizes a Module.
@@ -223,6 +230,11 @@ func WithLease(d time.Duration) Option { return func(m *Module) { m.lease = d } 
 // a message from a Sending domain whose Tracking domain is serving gets its links on
 // track.<domain>. Off, every link uses the Instance's host (ADR 0038).
 func WithTrackingDomains() Option { return func(m *Module) { m.trackingDomains = true } }
+
+// WithSendCap turns on the Send cap (ADR 0067), which only a saas Instance has: every send of a
+// Workspace with a Send cap spends from its 24-hour bucket too. Off, a Send cap stored on a
+// Workspace (a restored dump, say) has no effect.
+func WithSendCap() Option { return func(m *Module) { m.sendCap = true } }
 
 // WithSystemSender gives the module the Instance's System sender, which a Test send falls
 // back to while the Workspace has no verified Sending domain (ADR 0041).
@@ -392,14 +404,14 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 
 	// Provider limit: the last gate before the provider, so a message that was
 	// Skipped, Held or failed to render never spends capacity.
-	if wait, err := m.reserve(ctx, s, req, g.route); err != nil {
+	if wait, cause, err := m.reserve(ctx, s, req, g.route, ws); err != nil {
 		m.release(ctx, s, msg)
 		return Result{}, err
 	} else if wait > 0 {
 		// Busy, not blocked: drop the claim so the retry starts clean and no attempt
 		// is consumed.
 		m.dropClaim(ctx, s, msg)
-		return Result{Outcome: Deferral, Wait: wait}, nil
+		return Result{Outcome: Deferral, Wait: wait, SendCap: cause == providerlimit.CauseSendCap}, nil
 	}
 
 	receipt, err := g.route.Sender.Send(ctx, built.msg)

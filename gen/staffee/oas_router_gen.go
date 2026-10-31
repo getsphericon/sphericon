@@ -11,7 +11,10 @@ import (
 )
 
 var (
-	rn11AllowedHeaders = map[string]string{
+	rn9AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn13AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 )
@@ -254,31 +257,76 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								return
 							}
 
-						case 's': // Prefix: "suspend"
+						case 's': // Prefix: "s"
 
-							if l := len("suspend"); len(elem) >= l && elem[0:l] == "suspend" {
+							if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
 								elem = elem[l:]
 							} else {
 								break
 							}
 
 							if len(elem) == 0 {
-								// Leaf node.
-								switch r.Method {
-								case "POST":
-									s.handleStaffWorkspacesSuspendRequest([1]string{
-										args[0],
-									}, elemIsEscaped, w, r)
-								default:
-									s.notAllowed(w, r, notAllowedParams{
-										allowedMethods: "POST",
-										allowedHeaders: rn11AllowedHeaders,
-										acceptPost:     "application/json",
-										acceptPatch:    "",
-									})
+								break
+							}
+							switch elem[0] {
+							case 'e': // Prefix: "end-cap"
+
+								if l := len("end-cap"); len(elem) >= l && elem[0:l] == "end-cap" {
+									elem = elem[l:]
+								} else {
+									break
 								}
 
-								return
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "DELETE":
+										s.handleStaffWorkspacesClearSendCapRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									case "PUT":
+										s.handleStaffWorkspacesSetSendCapRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "DELETE,PUT",
+											allowedHeaders: rn9AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							case 'u': // Prefix: "uspend"
+
+								if l := len("uspend"); len(elem) >= l && elem[0:l] == "uspend" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleStaffWorkspacesSuspendRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: rn13AllowedHeaders,
+											acceptPost:     "application/json",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
 							}
 
 						case 'u': // Prefix: "un"
@@ -634,29 +682,77 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								}
 							}
 
-						case 's': // Prefix: "suspend"
+						case 's': // Prefix: "s"
 
-							if l := len("suspend"); len(elem) >= l && elem[0:l] == "suspend" {
+							if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
 								elem = elem[l:]
 							} else {
 								break
 							}
 
 							if len(elem) == 0 {
-								// Leaf node.
-								switch method {
-								case "POST":
-									r.name = StaffWorkspacesSuspendOperation
-									r.summary = ""
-									r.operationID = "StaffWorkspaces_suspend"
-									r.operationGroup = ""
-									r.pathPattern = "/workspaces/{workspaceId}/suspend"
-									r.args = args
-									r.count = 1
-									return r, true
-								default:
-									return
+								break
+							}
+							switch elem[0] {
+							case 'e': // Prefix: "end-cap"
+
+								if l := len("end-cap"); len(elem) >= l && elem[0:l] == "end-cap" {
+									elem = elem[l:]
+								} else {
+									break
 								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "DELETE":
+										r.name = StaffWorkspacesClearSendCapOperation
+										r.summary = ""
+										r.operationID = "StaffWorkspaces_clearSendCap"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{workspaceId}/send-cap"
+										r.args = args
+										r.count = 1
+										return r, true
+									case "PUT":
+										r.name = StaffWorkspacesSetSendCapOperation
+										r.summary = ""
+										r.operationID = "StaffWorkspaces_setSendCap"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{workspaceId}/send-cap"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							case 'u': // Prefix: "uspend"
+
+								if l := len("uspend"); len(elem) >= l && elem[0:l] == "uspend" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = StaffWorkspacesSuspendOperation
+										r.summary = ""
+										r.operationID = "StaffWorkspaces_suspend"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{workspaceId}/suspend"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
 							}
 
 						case 'u': // Prefix: "un"

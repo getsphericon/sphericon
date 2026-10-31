@@ -405,6 +405,7 @@ var editionPackage = do.Package(
 			SupportEmail:  cfg.SupportEmail,
 			HoldMaxExpiry: cfg.StaffHoldMaxExpiry,
 			Clock:         do.MustInvoke[Clock](i),
+			SendCaps:      cfg.Mode.SaaS(),
 		})
 	}),
 	// A Workspace's freezes on the send chokepoint (ADR 0009, 0015), gated by the license: one
@@ -561,6 +562,10 @@ var deliveryPackage = do.Package(
 		}
 		if cfg.TrackingCNAMETarget != "" {
 			opts = append(opts, outbound.WithTrackingDomains())
+		}
+		// Only a saas Instance has Send caps (ADR 0067): elsewhere a stored one has no effect.
+		if cfg.Mode.SaaS() {
+			opts = append(opts, outbound.WithSendCap())
 		}
 		return outbound.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*holds.Holds](i), do.MustInvoke[outbound.Senders](i), do.MustInvoke[*tracking.Tracker](i), opts...), nil
 	}),

@@ -43,6 +43,9 @@ type Config struct {
 	// HoldMaxExpiry is how far ahead a Staff hold's expiry may be set
 	// (SPHERICON_STAFF_HOLD_MAX_EXPIRY); zero is DefaultHoldMaxExpiry.
 	HoldMaxExpiry time.Duration
+	// SendCaps is true on an Instance that has Send caps (the saas Mode, ADR 0067): only there
+	// does a Staff member set one, and only there does the console show one.
+	SendCaps bool
 }
 
 // Module is the domain of the console's Enterprise sections and of the service endpoints.
@@ -55,6 +58,8 @@ type Module struct {
 	support string
 	holdMax time.Duration
 	survey  *signupsurvey.Reader
+	// sendCaps: the Instance has Send caps (Config.SendCaps).
+	sendCaps bool
 }
 
 // NewModule builds the module over the raw client.
@@ -69,6 +74,7 @@ func NewModule(client *ent.Client, lic *licensekey.License, auditLog *audit.Log,
 	}
 	return &Module{
 		ent: client, lic: lic, audit: auditLog, now: now, watch: abuse.NewWatch(lic, cfg.Abuse), support: cfg.SupportEmail, holdMax: holdMax, survey: signupsurvey.NewReader(client),
+		sendCaps: cfg.SendCaps,
 	}
 }
 

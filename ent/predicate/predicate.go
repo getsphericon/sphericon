@@ -153,6 +153,9 @@ type SchemaState func(*sql.Selector)
 // Segment is the predicate function for segment builders.
 type Segment func(*sql.Selector)
 
+// SendLimiter is the predicate function for sendlimiter builders.
+type SendLimiter func(*sql.Selector)
+
 // SendingDomain is the predicate function for sendingdomain builders.
 type SendingDomain func(*sql.Selector)
 

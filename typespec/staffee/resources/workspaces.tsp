@@ -54,6 +54,11 @@ model StaffWorkspaceResource {
 
   /** The owners were warned and the Workspace has not left the warning tier since */
   warned: boolean;
+
+  /** The Send cap (ADR 0067): the most messages the Workspace may send per rolling 24 hours,
+   * set by a Staff member. Absent when it has none, and always on an Instance without Send
+   * caps. */
+  sendCap?: int32 | null;
 }
 
 /** Which metric of a Sending domain breached the abuse detector's warning limit */
@@ -166,6 +171,10 @@ model StaffWorkspaceDetailResource {
 
   deliverability: StaffDeliverability;
   abuse: StaffAbuse;
+
+  /** Whether this Instance has Send caps (ADR 0067); without, a Workspace has none and none
+   * can be set */
+  sendCaps: boolean;
 }
 
 /** Which Workspaces the list surfaces for review */
@@ -195,6 +204,21 @@ model StaffSuspendInput {
   /** The reason, required: the Workspace owner is told why sending stopped */
   @minLength(1)
   reason: string;
+}
+
+/** A Workspace's Send cap (ADR 0067) as a Staff member sets it */
+model StaffSendCapInput {
+  /** The most messages the Workspace may send per rolling 24 hours, across its Integrations */
+  @minValue(1)
+  @maxValue(100000000)
+  sendCap: int32;
+}
+
+/** The outcome of a Send cap change: the Workspace as it now stands, and whether anything
+ * changed */
+model StaffSendCapChange {
+  changed: boolean;
+  workspace: StaffWorkspaceResource;
 }
 
 /** The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether
@@ -255,6 +279,26 @@ namespace StaffWorkspaces {
   @post
   op exempt(@path workspaceId: WorkspaceId):
     | StaffExemptionChange
+    | UnauthorizedProblem
+    | NotFoundProblem;
+
+  /** Set a Workspace's Send cap (ADR 0067): its sends beyond it in a rolling 24 hours wait for
+   * the window to free up. Only an Instance with Send caps has this operation (404
+   * elsewhere). Audited. Idempotent. */
+  @route("/{workspaceId}/send-cap")
+  @put
+  op setSendCap(@path workspaceId: WorkspaceId, @body body: StaffSendCapInput):
+    | StaffSendCapChange
+    | UnauthorizedProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Remove a Workspace's Send cap: only its Provider limits slow it. 404 on an Instance
+   * without Send caps. Audited. Idempotent. */
+  @route("/{workspaceId}/send-cap")
+  @delete
+  op clearSendCap(@path workspaceId: WorkspaceId):
+    | StaffSendCapChange
     | UnauthorizedProblem
     | NotFoundProblem;
 

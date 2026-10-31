@@ -164,6 +164,13 @@ export const zStaffDeliverability = z.object({
 });
 
 /**
+ * A Workspace's Send cap (ADR 0067) as a Staff member sets it
+ */
+export const zStaffSendCapInput = z.object({
+  sendCap: z.int().gte(1).lte(100000000)
+});
+
+/**
  * How many people work at the User's company (second question)
  */
 export const zStaffSignupCompanySize = z.enum([
@@ -452,9 +459,11 @@ export const zStaffWorkspaceDetailResource = z.object({
   suspension: z.exactOptional(zStaffSuspension.nullable()),
   exempt: z.boolean(),
   warned: z.boolean(),
+  sendCap: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable()),
   holds: z.array(zStaffHold),
   deliverability: zStaffDeliverability,
-  abuse: zStaffAbuse
+  abuse: zStaffAbuse,
+  sendCaps: z.boolean()
 });
 
 /**
@@ -469,7 +478,8 @@ export const zStaffWorkspaceResource = z.object({
   erasedAt: z.exactOptional(zTimestamp.nullable()),
   suspension: z.exactOptional(zStaffSuspension.nullable()),
   exempt: z.boolean(),
-  warned: z.boolean()
+  warned: z.boolean(),
+  sendCap: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable())
 });
 
 /**
@@ -477,6 +487,15 @@ export const zStaffWorkspaceResource = z.object({
  * anything changed
  */
 export const zStaffExemptionChange = z.object({
+  changed: z.boolean(),
+  workspace: zStaffWorkspaceResource
+});
+
+/**
+ * The outcome of a Send cap change: the Workspace as it now stands, and whether anything
+ * changed
+ */
+export const zStaffSendCapChange = z.object({
   changed: z.boolean(),
   workspace: zStaffWorkspaceResource
 });
@@ -575,6 +594,26 @@ export const zStaffWorkspacesExemptPath = z.object({
  * The request has succeeded.
  */
 export const zStaffWorkspacesExemptResponse = zStaffExemptionChange;
+
+export const zStaffWorkspacesClearSendCapPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffWorkspacesClearSendCapResponse = zStaffSendCapChange;
+
+export const zStaffWorkspacesSetSendCapBody = zStaffSendCapInput;
+
+export const zStaffWorkspacesSetSendCapPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffWorkspacesSetSendCapResponse = zStaffSendCapChange;
 
 export const zStaffWorkspacesSuspendBody = zStaffSuspendInput;
 

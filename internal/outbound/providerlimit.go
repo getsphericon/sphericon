@@ -16,19 +16,26 @@ import (
 // Transactional is never delayed by the limit, but it is spent from both buckets
 // unconditionally, so they may go negative and later marketing sends wait longer.
 // A route with no Integration row (a test double) has no limit to spend.
-func (m *Module) reserve(ctx context.Context, s *ent.Scoped, req Request, r Route) (time.Duration, error) {
+//
+// With Send caps on (WithSendCap), the Workspace's Send cap (ADR 0067) is spent with the Provider
+// limit, all or none, and the returned cause says which one is short.
+func (m *Module) reserve(ctx context.Context, s *ent.Scoped, req Request, r Route, ws *ent.Workspace) (time.Duration, providerlimit.Cause, error) {
 	if r.Integration == nil {
-		return 0, nil
+		return 0, "", nil
+	}
+	var sendCap *int
+	if m.sendCap {
+		sendCap = ws.SendCap
 	}
 	if req.Kind == outboundmessage.KindTransactional {
-		if err := providerlimit.Spend(ctx, s, r.Integration.ID, r.Limits, m.now()); err != nil {
-			return 0, fmt.Errorf("outbound: spend send capacity: %w", err)
+		if err := providerlimit.SpendAll(ctx, s, r.Integration.ID, r.Limits, sendCap, m.now()); err != nil {
+			return 0, "", fmt.Errorf("outbound: spend send capacity: %w", err)
 		}
-		return 0, nil
+		return 0, "", nil
 	}
-	wait, err := providerlimit.Reserve(ctx, s, r.Integration.ID, r.Limits, m.now())
+	wait, cause, err := providerlimit.ReserveAll(ctx, s, r.Integration.ID, r.Limits, sendCap, m.now())
 	if err != nil {
-		return 0, fmt.Errorf("outbound: reserve send capacity: %w", err)
+		return 0, "", fmt.Errorf("outbound: reserve send capacity: %w", err)
 	}
-	return wait, nil
+	return wait, cause, nil
 }

@@ -741,6 +741,23 @@
         "window": "Last {{hours}} hours"
       },
       "reason": "Reason",
+      "sendCap": {
+        "change": "Change Send cap",
+        "clear": "Remove Send cap",
+        "clearDescription": "The Workspace will send as fast as its Provider limits allow.",
+        "clearTitle": "Remove the Send cap?",
+        "description": "Outbound messages in any 24 hours. Past it, marketing waits; Transactional still goes out and counts.",
+        "done": "The Send cap is saved.",
+        "error": "Could not change the Send cap",
+        "label": "Messages per 24 hours",
+        "none": "No Send cap: the Workspace sends as fast as its Provider limits allow.",
+        "save": "Save",
+        "set": "Set Send cap",
+        "title": "Send cap",
+        "unchanged": "The Send cap was already that.",
+        "value_one": "{{formatted}} message per 24 hours",
+        "value_other": "{{formatted}} messages per 24 hours"
+      },
       "suspend": {
         "button": "Suspend sending",
         "cancel": "Cancel",

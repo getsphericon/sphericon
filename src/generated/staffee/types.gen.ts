@@ -479,6 +479,25 @@ export type StaffRate = {
 };
 
 /**
+ * The outcome of a Send cap change: the Workspace as it now stands, and whether anything
+ * changed
+ */
+export type StaffSendCapChange = {
+  changed: boolean;
+  workspace: StaffWorkspaceResource;
+};
+
+/**
+ * A Workspace's Send cap (ADR 0067) as a Staff member sets it
+ */
+export type StaffSendCapInput = {
+  /**
+   * The most messages the Workspace may send per rolling 24 hours, across its Integrations
+   */
+  sendCap: number;
+};
+
+/**
  * How many people work at the User's company (second question)
  */
 export const StaffSignupCompanySize = {
@@ -750,11 +769,22 @@ export type StaffWorkspaceDetailResource = {
    */
   warned: boolean;
   /**
+   * The Send cap (ADR 0067): the most messages the Workspace may send per rolling 24 hours,
+   * set by a Staff member. Absent when it has none, and always on an Instance without Send
+   * caps.
+   */
+  sendCap?: number | null;
+  /**
    * Active Staff holds by key; a lapsed hold is not listed
    */
   holds: Array<StaffHold>;
   deliverability: StaffDeliverability;
   abuse: StaffAbuse;
+  /**
+   * Whether this Instance has Send caps (ADR 0067); without, a Workspace has none and none
+   * can be set
+   */
+  sendCaps: boolean;
 };
 
 /**
@@ -791,6 +821,12 @@ export type StaffWorkspaceResource = {
    * The owners were warned and the Workspace has not left the warning tier since
    */
   warned: boolean;
+  /**
+   * The Send cap (ADR 0067): the most messages the Workspace may send per rolling 24 hours,
+   * set by a Staff member. Absent when it has none, and always on an Instance without Send
+   * caps.
+   */
+  sendCap?: number | null;
 };
 
 /**
@@ -1115,6 +1151,72 @@ export type StaffWorkspacesExemptResponses = {
 };
 
 export type StaffWorkspacesExemptResponse = StaffWorkspacesExemptResponses[keyof StaffWorkspacesExemptResponses];
+
+export type StaffWorkspacesClearSendCapData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/send-cap';
+};
+
+export type StaffWorkspacesClearSendCapErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type StaffWorkspacesClearSendCapError = StaffWorkspacesClearSendCapErrors[keyof StaffWorkspacesClearSendCapErrors];
+
+export type StaffWorkspacesClearSendCapResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffSendCapChange;
+};
+
+export type StaffWorkspacesClearSendCapResponse = StaffWorkspacesClearSendCapResponses[keyof StaffWorkspacesClearSendCapResponses];
+
+export type StaffWorkspacesSetSendCapData = {
+  body: StaffSendCapInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/send-cap';
+};
+
+export type StaffWorkspacesSetSendCapErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type StaffWorkspacesSetSendCapError = StaffWorkspacesSetSendCapErrors[keyof StaffWorkspacesSetSendCapErrors];
+
+export type StaffWorkspacesSetSendCapResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffSendCapChange;
+};
+
+export type StaffWorkspacesSetSendCapResponse = StaffWorkspacesSetSendCapResponses[keyof StaffWorkspacesSetSendCapResponses];
 
 export type StaffWorkspacesSuspendData = {
   body: StaffSuspendInput;

@@ -3,8 +3,10 @@ import { beforeEach, expect, test } from 'vitest'
 
 import {
   handleStaffWorkspaceAuditList,
+  handleStaffWorkspacesClearSendCap,
   handleStaffWorkspacesExempt,
   handleStaffWorkspacesGet,
+  handleStaffWorkspacesSetSendCap,
   handleStaffWorkspacesSuspend,
   handleStaffWorkspacesUnexempt,
   handleStaffWorkspacesUnsuspend,
@@ -37,6 +39,7 @@ const HOOLI: StaffWorkspaceDetailResource = {
   exempt: false,
   warned: false,
   abuse: { exempt: false },
+  sendCaps: false,
 }
 
 const ABOVE_FLOOR = {
@@ -429,4 +432,55 @@ test('an exempt workspace offers to police it again', async () => {
   await screen.getByRole('dialog').getByRole('button', { name: 'Police again' }).click()
 
   await expect.poll(() => policed).toEqual(['HooliWs5'])
+})
+
+test('a self-hosted instance shows no Send cap', async () => {
+  worker.use(handleStaffWorkspacesGet({ body: HOOLI }))
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await expect.element(screen.getByText('Abuse detector')).toBeInTheDocument()
+  await expect.element(screen.getByText('Send cap', { exact: true })).not.toBeInTheDocument()
+})
+
+test('setting a Send cap checks the number, then sends it', async () => {
+  const set: unknown[] = []
+  worker.use(
+    handleStaffWorkspacesGet({ body: { ...HOOLI, sendCaps: true } }),
+    handleStaffWorkspacesSetSendCap(async ({ request, params }) => {
+      set.push({ id: params.workspaceId, body: await request.json() })
+      return HttpResponse.json({ changed: true, workspace: { ...HOOLI, sendCap: 5000 } })
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await expect.element(screen.getByText(/^No Send cap/)).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Set Send cap' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Save' }).click()
+  await expect.element(dialog.getByText('This field is required')).toBeInTheDocument()
+  expect(set).toEqual([])
+
+  await dialog.getByRole('textbox', { name: /Messages per 24 hours/ }).fill('5000')
+  await dialog.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => set).toEqual([{ id: 'HooliWs5', body: { sendCap: 5000 } }])
+})
+
+test('a Send cap shows, and removing it asks first', async () => {
+  const cleared: string[] = []
+  worker.use(
+    handleStaffWorkspacesGet({ body: { ...HOOLI, sendCaps: true, sendCap: 1000 } }),
+    handleStaffWorkspacesClearSendCap(({ params }) => {
+      cleared.push(params.workspaceId)
+      return HttpResponse.json({ changed: true, workspace: HOOLI })
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await expect.element(screen.getByText('1,000 messages per 24 hours')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Remove Send cap' }).click()
+  expect(cleared).toEqual([])
+  await screen.getByRole('dialog').getByRole('button', { name: 'Remove Send cap' }).click()
+
+  await expect.poll(() => cleared).toEqual(['HooliWs5'])
 })

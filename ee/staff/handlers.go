@@ -67,7 +67,7 @@ func (h *Handlers) StaffWorkspacesList(ctx context.Context, params staffeeapi.St
 	}
 	items := make([]staffeeapi.StaffWorkspaceResource, 0, len(page.Items))
 	for _, w := range page.Items {
-		items = append(items, staffMapper.WorkspaceToResource(w))
+		items = append(items, staffMapper.WorkspaceToResource(h.module.shown(w)))
 	}
 	return &staffeeapi.StaffWorkspacesListOK{
 		Items:      items,
@@ -113,13 +113,14 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.Sta
 	if err != nil {
 		return nil, err
 	}
-	res := staffMapper.WorkspaceDetailToResource(w)
+	res := staffMapper.WorkspaceDetailToResource(h.module.shown(w))
 	res.Holds = staffMapper.HoldsToResources(active)
 	res.Abuse = staffMapper.AbuseToResource(w)
 	if breach.Tier != abuse.TierNone {
 		res.Abuse.Warning = staffeeapi.NewOptNilStaffAbuseWarning(staffMapper.BreachToWarning(breach))
 	}
 	res.Deliverability = staffMapper.DeliverabilityToResource(d)
+	res.SendCaps = h.module.sendCaps
 	return &res, nil
 }
 
@@ -160,7 +161,7 @@ func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.S
 	if err != nil {
 		return nil, err
 	}
-	return change(staffMapper.WorkspaceToResource(w), changed), nil
+	return change(staffMapper.WorkspaceToResource(h.module.shown(w)), changed), nil
 }
 
 // StaffWorkspacesUnsuspend lifts a Workspace's suspension as the signed-in Staff member.
@@ -174,7 +175,35 @@ func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeea
 	if err != nil {
 		return nil, err
 	}
-	return change(staffMapper.WorkspaceToResource(w), changed), nil
+	return change(staffMapper.WorkspaceToResource(h.module.shown(w)), changed), nil
+}
+
+// StaffWorkspacesSetSendCap sets a Workspace's Send cap (ADR 0067) as the signed-in Staff
+// member. An Instance without Send caps has no such operation: 404.
+func (h *Handlers) StaffWorkspacesSetSendCap(ctx context.Context, req *staffeeapi.StaffSendCapInput, params staffeeapi.StaffWorkspacesSetSendCapParams) (staffeeapi.StaffWorkspacesSetSendCapRes, error) {
+	sendCap := int(req.SendCap)
+	w, changed, err := h.module.SetSendCap(ctx, h.bus, string(params.WorkspaceId), staffmembers.Current(ctx), &sendCap)
+	if ent.IsNotFound(err) || errors.Is(err, ErrNoSendCaps) {
+		p := staffeeapi.StaffWorkspacesSetSendCapNotFound(notFoundProblem())
+		return &p, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &staffeeapi.StaffSendCapChange{Changed: changed, Workspace: staffMapper.WorkspaceToResource(h.module.shown(w))}, nil
+}
+
+// StaffWorkspacesClearSendCap removes a Workspace's Send cap as the signed-in Staff member.
+func (h *Handlers) StaffWorkspacesClearSendCap(ctx context.Context, params staffeeapi.StaffWorkspacesClearSendCapParams) (staffeeapi.StaffWorkspacesClearSendCapRes, error) {
+	w, changed, err := h.module.SetSendCap(ctx, h.bus, string(params.WorkspaceId), staffmembers.Current(ctx), nil)
+	if ent.IsNotFound(err) || errors.Is(err, ErrNoSendCaps) {
+		p := staffeeapi.StaffWorkspacesClearSendCapNotFound(notFoundProblem())
+		return &p, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &staffeeapi.StaffSendCapChange{Changed: changed, Workspace: staffMapper.WorkspaceToResource(h.module.shown(w))}, nil
 }
 
 // StaffWorkspacesExempt exempts a Workspace from the abuse detector as the signed-in
@@ -188,7 +217,7 @@ func (h *Handlers) StaffWorkspacesExempt(ctx context.Context, params staffeeapi.
 	if err != nil {
 		return nil, err
 	}
-	return &staffeeapi.StaffExemptionChange{Changed: changed, Workspace: staffMapper.WorkspaceToResource(w)}, nil
+	return &staffeeapi.StaffExemptionChange{Changed: changed, Workspace: staffMapper.WorkspaceToResource(h.module.shown(w))}, nil
 }
 
 // StaffWorkspacesUnexempt puts a Workspace back under the abuse detector.
@@ -201,7 +230,7 @@ func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffeeap
 	if err != nil {
 		return nil, err
 	}
-	return &staffeeapi.StaffExemptionChange{Changed: changed, Workspace: staffMapper.WorkspaceToResource(w)}, nil
+	return &staffeeapi.StaffExemptionChange{Changed: changed, Workspace: staffMapper.WorkspaceToResource(h.module.shown(w))}, nil
 }
 
 func (h *Handlers) setExempt(ctx context.Context, wsID staffeeapi.WorkspaceId, exempt bool) (w *ent.Workspace, changed, notFound bool, err error) {
