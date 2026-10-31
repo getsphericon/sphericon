@@ -6,14 +6,15 @@ import { useTranslation } from 'react-i18next'
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import { siteAnalyticsEventsOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
+import { useDateFormat } from '../../../hooks/useDateFormat.ts'
 import { Route as eventsRoute } from '../../../routes/workspaces/$workspaceId/analytics/events.tsx'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
-import { formatDateTime } from '../../../utils/datetime.ts'
 import { ReportState } from './ReportState.tsx'
 
 // EventsReportPage is the Events report: every action of the section's window with how often it
 // happened, for how many Contacts and when it last did. An action opens Recent activity on it.
 export function EventsReportPage() {
+  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const { workspaceId } = eventsRoute.useParams()
   const range = useAnalyticsRange()

@@ -1621,7 +1621,7 @@
       },
       "put": {
         "operationId": "SiteUser_updateMe",
-        "description": "Update the authenticated user's profile (name and/or password). A password\nchange ends every session of the user (ADR 0020); the acting one continues\nunder the fresh session cookie set in this response. A wrong current password feeds the\nLogin throttle, which answers 429 even for a right one while its delay runs.",
+        "description": "Update the authenticated user's profile (name, time zone and/or password). A password\nchange ends every session of the user (ADR 0020); the acting one continues\nunder the fresh session cookie set in this response. A wrong current password feeds the\nLogin throttle, which answers 429 even for a right one while its delay runs.",
         "parameters": [],
         "responses": {
           "200": {
@@ -20454,6 +20454,16 @@
             "type": "string",
             "description": "New display name"
           },
+          "timezone": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeZoneName"
+              }
+            ],
+            "nullable": true,
+            "description": "New User time zone, an IANA name (422 when the zone database does not know it); null\nclears it, so the app follows the browser again"
+          },
           "currentPassword": {
             "type": "string",
             "description": "Current password — required when changing the password"
@@ -20592,6 +20602,7 @@
           "name",
           "email",
           "emailVerified",
+          "timezone",
           "signupSurveyDue",
           "acceptancesPending",
           "createdAt"
@@ -20620,6 +20631,16 @@
           "emailVerified": {
             "type": "boolean",
             "description": "Whether the user has confirmed ownership of their email"
+          },
+          "timezone": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeZoneName"
+              }
+            ],
+            "nullable": true,
+            "description": "The User time zone (ADR 0068): the IANA zone the app shows times in and the User's mail\nprints dates in. Null follows the browser in the app and is UTC in mail. Reports count in\nthe Workspace time zone, never this one."
           },
           "signupSurveyDue": {
             "type": "boolean",

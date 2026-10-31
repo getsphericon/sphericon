@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
+	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
@@ -62,7 +63,7 @@ func (h *Handlers) SiteUserAcceptPending(ctx context.Context, req *siteapi.SiteA
 	return h.userResource(ctx, u)
 }
 
-// SiteUserUpdateMe changes the authenticated User's name and/or password through accounts,
+// SiteUserUpdateMe changes the authenticated User's name, time zone and/or password through accounts,
 // which holds the profile rules. The email is the login identity and is not editable here. A
 // password change ended every session; the acting one continues under a fresh cookie.
 func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdateMeInput) (siteapi.SiteUserUpdateMeRes, error) {
@@ -74,7 +75,12 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 	if err != nil {
 		return nil, err
 	}
-	change := accounts.ProfileChange{NewPassword: req.NewPassword.Or(""), CurrentPassword: req.CurrentPassword.Or("")}
+	change := accounts.ProfileChange{
+		Timezone:        convert.StringPtr(req.Timezone),
+		ClearTimezone:   req.Timezone.IsNull(),
+		NewPassword:     req.NewPassword.Or(""),
+		CurrentPassword: req.CurrentPassword.Or(""),
+	}
 	if name, ok := req.Name.Get(); ok {
 		change.Name = &name
 	}

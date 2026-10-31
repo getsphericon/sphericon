@@ -591,8 +591,14 @@ _Avoid_: Reputation, deliverability (those name the Sending-domain rates)
 **Workspace time zone**:
 The IANA time zone a Workspace reads its reports in (UTC until set). It decides where a **Report day**
 begins and ends and which hour an event falls in. Not a Contact's own time zone, which is about
-where that person is.
+where that person is, nor the **User time zone**, which only moves where a time is shown.
 _Avoid_: Locale, region
+
+**User time zone**:
+The IANA time zone a User chooses on their profile: the app shows times in it and the User's mail
+prints dates in it. Empty until chosen, which is the browser's zone in the app and UTC in mail.
+Never read by a report: a **Report day** is in the **Workspace time zone**.
+_Avoid_: Locale
 
 **Report day**:
 A calendar day in the **Workspace time zone**: the one bucket every analytics report counts by, so

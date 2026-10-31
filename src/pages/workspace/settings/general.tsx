@@ -10,6 +10,7 @@ import {
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
 import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
+import { TIME_ZONES } from '../../../utils/datetime.ts'
 import { can } from '../../../utils/permissions.ts'
 import { DangerZoneSection } from './DangerZoneSection.tsx'
 import { RevenueSettingsSection } from './RevenueSettingsSection.tsx'
@@ -72,9 +73,6 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   )
 }
 
-// The zones a browser knows; UTC is the default and not always among them.
-const TIMEZONES = ['UTC', ...Intl.supportedValuesOf('timeZone').filter((zone) => zone !== 'UTC')]
-
 // TimezoneSection sets the Workspace time zone (ADR 0057): the zone every report counts its days
 // in. Changing it needs workspace:timezone; anyone else sees it read-only.
 function TimezoneSection({ workspace }: { workspace: SiteWorkspaceResource }) {
@@ -102,7 +100,7 @@ function TimezoneSection({ workspace }: { workspace: SiteWorkspaceResource }) {
         <Select
           label={t(($) => $.settings.timezoneLabel)}
           description={t(($) => $.settings.timezoneDescription)}
-          data={TIMEZONES}
+          data={TIME_ZONES}
           searchable
           allowDeselect={false}
           disabled={!canEdit}

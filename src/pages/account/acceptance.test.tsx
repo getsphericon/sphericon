@@ -29,6 +29,7 @@ const gated: SiteUserResource = {
   name: 'John',
   email: 'info@getsphericon.com',
   emailVerified: true,
+  timezone: null,
   signupSurveyDue: false,
   acceptancesPending: [
     {

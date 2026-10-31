@@ -1939,16 +1939,6 @@ export const zSiteUpdateIntegrationInput = z.object({
 });
 
 /**
- * Update the authenticated user's profile. To change the password, provide
- * both currentPassword and newPassword.
- */
-export const zSiteUpdateMeInput = z.object({
-  name: z.exactOptional(z.string()),
-  currentPassword: z.exactOptional(z.string()),
-  newPassword: z.exactOptional(z.string())
-});
-
-/**
  * Change a member's role. Only an owner may grant/transfer the owner role.
  */
 export const zSiteUpdateMembershipInput = z.object({
@@ -2056,6 +2046,17 @@ export const zSiteUpdateContactInput = z.object({
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
   customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
   tags: z.exactOptional(z.array(z.string()))
+});
+
+/**
+ * Update the authenticated user's profile. To change the password, provide
+ * both currentPassword and newPassword.
+ */
+export const zSiteUpdateMeInput = z.object({
+  name: z.exactOptional(z.string()),
+  timezone: z.exactOptional(zTimeZoneName.nullable()),
+  currentPassword: z.exactOptional(z.string()),
+  newPassword: z.exactOptional(z.string())
 });
 
 /**
@@ -2785,6 +2786,7 @@ export const zSiteUserResource = z.object({
   name: z.string(),
   email: zEmailAddress,
   emailVerified: z.boolean(),
+  timezone: zTimeZoneName.nullable(),
   signupSurveyDue: z.boolean(),
   acceptancesPending: z.array(zSiteSignupItem),
   createdAt: zTimestamp

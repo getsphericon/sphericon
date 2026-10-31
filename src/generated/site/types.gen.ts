@@ -5518,6 +5518,11 @@ export type SiteUpdateMeInput = {
    */
   name?: string;
   /**
+   * New User time zone, an IANA name (422 when the zone database does not know it); null
+   * clears it, so the app follows the browser again
+   */
+  timezone?: TimeZoneName | null;
+  /**
    * Current password — required when changing the password
    */
   currentPassword?: string;
@@ -5629,6 +5634,12 @@ export type SiteUserResource = {
    * Whether the user has confirmed ownership of their email
    */
   emailVerified: boolean;
+  /**
+   * The User time zone (ADR 0068): the IANA zone the app shows times in and the User's mail
+   * prints dates in. Null follows the browser in the app and is UTC in mail. Reports count in
+   * the Workspace time zone, never this one.
+   */
+  timezone: TimeZoneName | null;
   /**
    * Whether the User owes the Sign-up survey: computed on the server, so the app reads this
    * one field and never the Instance setting. True after a public sign-up on an Instance that

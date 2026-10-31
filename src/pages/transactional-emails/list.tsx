@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { siteTransactionalEmailsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteTransactionalEmailStatus } from '../../generated/site/types.gen.ts'
+import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { Route as transactionalEmailsRoute } from '../../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
-import { formatDateTime } from '../../utils/datetime.ts'
 
 const STATUS_COLORS: Record<SiteTransactionalEmailStatus, string> = {
   pending: 'yellow',
@@ -24,6 +24,7 @@ function StatusBadge({ t, status }: { t: TFunction; status: SiteTransactionalEma
 }
 
 export function TransactionalEmailsListPage() {
+  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const { workspaceId } = transactionalEmailsRoute.useParams()
 

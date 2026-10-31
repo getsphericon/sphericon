@@ -42,6 +42,8 @@ type User struct {
 	SecondFactorLastStep int64 `json:"second_factor_last_step,omitempty"`
 	// SignupSurveyDueAt holds the value of the "signup_survey_due_at" field.
 	SignupSurveyDueAt *time.Time `json:"signup_survey_due_at,omitempty"`
+	// Timezone holds the value of the "timezone" field.
+	Timezone *string `json:"timezone,omitempty"`
 	// FeedPosition holds the value of the "feed_position" field.
 	FeedPosition int64 `json:"feed_position,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -143,7 +145,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldID, user.FieldSessionEpoch, user.FieldSecondFactorLastStep, user.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
-		case user.FieldName, user.FieldEmail, user.FieldPasswordHash, user.FieldSecondFactorSecretEncrypted:
+		case user.FieldName, user.FieldEmail, user.FieldPasswordHash, user.FieldSecondFactorSecretEncrypted, user.FieldTimezone:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldEmailVerifiedAt, user.FieldEmailProvenAt, user.FieldSecondFactorConfirmedAt, user.FieldSignupSurveyDueAt:
 			values[i] = new(sql.NullTime)
@@ -243,6 +245,13 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SignupSurveyDueAt = new(time.Time)
 				*_m.SignupSurveyDueAt = value.Time
+			}
+		case user.FieldTimezone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field timezone", values[i])
+			} else if value.Valid {
+				_m.Timezone = new(string)
+				*_m.Timezone = value.String
 			}
 		case user.FieldFeedPosition:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -361,6 +370,11 @@ func (_m *User) String() string {
 	if v := _m.SignupSurveyDueAt; v != nil {
 		builder.WriteString("signup_survey_due_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.Timezone; v != nil {
+		builder.WriteString("timezone=")
+		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
 	builder.WriteString("feed_position=")

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
 
@@ -72,13 +73,13 @@ func NotifySecondFactorRequired(ctx context.Context, client *ent.Client, sender 
 }
 
 // sendSecondFactorMail renders the email of the given message id prefix (subject and
-// body) for the Membership's User and sends it. The deadline is shown in UTC: the
-// locale is the instance's, the User's time zone is unknown.
+// body) for the Membership's User and sends it. The deadline is shown in the User time zone
+// (ADR 0068); the locale is the instance's.
 func sendSecondFactorMail(ctx context.Context, sender messaging.EmailSender, appURL, prefix string, m *ent.Membership, deadline time.Time) error {
 	u := m.Edges.User
 	data := map[string]any{
 		"Workspace": m.Edges.Workspace.Name,
-		"Deadline":  deadline.UTC().Format("2006-01-02 15:04 UTC"),
+		"Deadline":  mailTime(deadline, u.Timezone),
 		"Link":      strings.TrimRight(appURL, "/") + secondFactorSetupPath,
 	}
 	if _, err := sender.Send(ctx, messaging.EmailMessage{
@@ -126,4 +127,15 @@ func RemindSecondFactorDeadlines(ctx context.Context, client *ent.Client, sender
 	return secondfactor.RemindDeadlines(ctx, client, now, func(ctx context.Context, m *ent.Membership, deadline time.Time) error {
 		return sendSecondFactorMail(ctx, sender, appURL, "email.second_factor_reminder", m, deadline)
 	})
+}
+
+// mailTime is t as a User's mail prints it: the wall clock in the User time zone (ADR 0068) and
+// the zone's name, which, unlike an abbreviation, every zone has. A User with none, or with a
+// name the zone database no longer knows, reads UTC.
+func mailTime(t time.Time, zone *string) string {
+	loc, err := reportday.Location(zone)
+	if err != nil {
+		loc = time.UTC
+	}
+	return t.In(loc).Format("2006-01-02 15:04") + " " + loc.String()
 }

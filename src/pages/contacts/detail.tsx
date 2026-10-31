@@ -29,11 +29,11 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useContactExport } from '../../hooks/useContactExport.ts'
+import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
-import { formatDateTime } from '../../utils/datetime.ts'
 import { can } from '../../utils/permissions.ts'
 
 const EVENTS_PAGE_SIZE = 10
@@ -121,6 +121,7 @@ function ContactActions({ workspaceId, contactId }: { workspaceId: string; conta
 }
 
 function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contactId: string }) {
+  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
   const [showMachine, setShowMachine] = useState(false)
@@ -195,6 +196,7 @@ function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contac
 }
 
 export function ContactDetailPage() {
+  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const { workspaceId, contactId } = contactsDetailRoute.useParams()
   const contactQuery = useQuery(siteContactsGetOptions({ path: { workspaceId, id: contactId } }))

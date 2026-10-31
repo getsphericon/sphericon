@@ -58,6 +58,44 @@ func TestSiteUserUpdateMeRejectsBlankName(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteUserUpdateMeUnprocessableEntity{}, res)
 }
 
+// The User time zone (ADR 0068) is set and cleared through the profile, and a change of the name
+// alone keeps it.
+func TestSiteUserUpdateMeTimezone(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+
+	me, err := c.SiteUserGetMe(ctx)
+	require.NoError(t, err)
+	assert.True(t, me.Timezone.IsNull(), "no zone until the User chooses one")
+
+	_, err = c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{Timezone: siteapi.NewOptNilTimeZoneName("Europe/Berlin")})
+	require.NoError(t, err)
+	_, err = c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptString("Renamed")})
+	require.NoError(t, err)
+	me, err = c.SiteUserGetMe(ctx)
+	require.NoError(t, err)
+	zone, ok := me.Timezone.Get()
+	require.True(t, ok)
+	assert.Equal(t, siteapi.TimeZoneName("Europe/Berlin"), zone)
+
+	_, err = c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{Timezone: siteapi.OptNilTimeZoneName{Set: true, Null: true}})
+	require.NoError(t, err)
+	me, err = c.SiteUserGetMe(ctx)
+	require.NoError(t, err)
+	assert.True(t, me.Timezone.IsNull(), "null clears the zone")
+}
+
+func TestSiteUserUpdateMeRejectsUnknownTimezone(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	res, err := c.SiteUserUpdateMe(context.Background(),
+		&siteapi.SiteUpdateMeInput{Timezone: siteapi.NewOptNilTimeZoneName("Mars/Olympus")})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteUserUpdateMeUnprocessableEntity{}, res)
+}
+
 func TestSiteUserUpdateMePasswordWrongCurrent(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)

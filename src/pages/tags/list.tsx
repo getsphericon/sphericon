@@ -8,11 +8,12 @@ import {
   siteTagsListOptions,
   siteTagsListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { Route as tagsRoute } from '../../routes/workspaces/$workspaceId/tags/index.tsx'
-import { formatDateTime } from '../../utils/datetime.ts'
 
 export function TagsListPage() {
+  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const { workspaceId } = tagsRoute.useParams()
 

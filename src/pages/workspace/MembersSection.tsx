@@ -40,8 +40,8 @@ import {
 import type { SiteInvitableRole, SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
 import { zSiteInvitableRole, zSiteMembershipRole } from '../../generated/site/zod.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
+import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { formatDate } from '../../utils/datetime.ts'
 import { can } from '../../utils/permissions.ts'
 
 const MEMBER_ROLES = zSiteMembershipRole.options
@@ -51,6 +51,7 @@ const INVITABLE_ROLES = zSiteInvitableRole.options
 // invitation, changing a Role and removing a member are offered only with members:manage, and
 // resetting a Second factor only with second_factor:manage (the API refuses everyone else).
 export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource }) {
+  const { formatDate } = useDateFormat()
   const workspaceId = workspace.id
   const { t } = useTranslation()
   const confirmRemove = useConfirmation()

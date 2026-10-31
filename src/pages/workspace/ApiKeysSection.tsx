@@ -33,8 +33,8 @@ import {
 import type { ApiTokenScope } from '../../generated/site/types.gen.ts'
 import { zApiTokenScope } from '../../generated/site/zod.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
+import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { formatDate } from '../../utils/datetime.ts'
 import { ScopePicker } from './ScopePicker.tsx'
 
 // Scopes offered in the UI: the contract's ApiTokenScope vocabulary.
@@ -49,6 +49,7 @@ export function ApiKeysSection({
   workspaceId: string
   canManage: boolean
 }) {
+  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   const confirmRevoke = useConfirmation()
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)

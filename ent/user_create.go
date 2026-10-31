@@ -181,6 +181,20 @@ func (_c *UserCreate) SetNillableSignupSurveyDueAt(v *time.Time) *UserCreate {
 	return _c
 }
 
+// SetTimezone sets the "timezone" field.
+func (_c *UserCreate) SetTimezone(v string) *UserCreate {
+	_c.mutation.SetTimezone(v)
+	return _c
+}
+
+// SetNillableTimezone sets the "timezone" field if the given value is not nil.
+func (_c *UserCreate) SetNillableTimezone(v *string) *UserCreate {
+	if v != nil {
+		_c.SetTimezone(*v)
+	}
+	return _c
+}
+
 // SetFeedPosition sets the "feed_position" field.
 func (_c *UserCreate) SetFeedPosition(v int64) *UserCreate {
 	_c.mutation.SetFeedPosition(v)
@@ -397,6 +411,11 @@ func (_c *UserCreate) check() error {
 	if _, ok := _c.mutation.SecondFactorLastStep(); !ok {
 		return &ValidationError{Name: "second_factor_last_step", err: errors.New(`ent: missing required field "User.second_factor_last_step"`)}
 	}
+	if v, ok := _c.mutation.Timezone(); ok {
+		if err := user.TimezoneValidator(v); err != nil {
+			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "User.timezone": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.FeedPosition(); !ok {
 		return &ValidationError{Name: "feed_position", err: errors.New(`ent: missing required field "User.feed_position"`)}
 	}
@@ -480,6 +499,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SignupSurveyDueAt(); ok {
 		_spec.SetField(user.FieldSignupSurveyDueAt, field.TypeTime, value)
 		_node.SignupSurveyDueAt = &value
+	}
+	if value, ok := _c.mutation.Timezone(); ok {
+		_spec.SetField(user.FieldTimezone, field.TypeString, value)
+		_node.Timezone = &value
 	}
 	if value, ok := _c.mutation.FeedPosition(); ok {
 		_spec.SetField(user.FieldFeedPosition, field.TypeInt64, value)
@@ -829,6 +852,24 @@ func (u *UserUpsert) ClearSignupSurveyDueAt() *UserUpsert {
 	return u
 }
 
+// SetTimezone sets the "timezone" field.
+func (u *UserUpsert) SetTimezone(v string) *UserUpsert {
+	u.Set(user.FieldTimezone, v)
+	return u
+}
+
+// UpdateTimezone sets the "timezone" field to the value that was provided on create.
+func (u *UserUpsert) UpdateTimezone() *UserUpsert {
+	u.SetExcluded(user.FieldTimezone)
+	return u
+}
+
+// ClearTimezone clears the value of the "timezone" field.
+func (u *UserUpsert) ClearTimezone() *UserUpsert {
+	u.SetNull(user.FieldTimezone)
+	return u
+}
+
 // SetFeedPosition sets the "feed_position" field.
 func (u *UserUpsert) SetFeedPosition(v int64) *UserUpsert {
 	u.Set(user.FieldFeedPosition, v)
@@ -1105,6 +1146,27 @@ func (u *UserUpsertOne) UpdateSignupSurveyDueAt() *UserUpsertOne {
 func (u *UserUpsertOne) ClearSignupSurveyDueAt() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearSignupSurveyDueAt()
+	})
+}
+
+// SetTimezone sets the "timezone" field.
+func (u *UserUpsertOne) SetTimezone(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetTimezone(v)
+	})
+}
+
+// UpdateTimezone sets the "timezone" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateTimezone() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateTimezone()
+	})
+}
+
+// ClearTimezone clears the value of the "timezone" field.
+func (u *UserUpsertOne) ClearTimezone() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearTimezone()
 	})
 }
 
@@ -1553,6 +1615,27 @@ func (u *UserUpsertBulk) UpdateSignupSurveyDueAt() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearSignupSurveyDueAt() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearSignupSurveyDueAt()
+	})
+}
+
+// SetTimezone sets the "timezone" field.
+func (u *UserUpsertBulk) SetTimezone(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetTimezone(v)
+	})
+}
+
+// UpdateTimezone sets the "timezone" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateTimezone() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateTimezone()
+	})
+}
+
+// ClearTimezone clears the value of the "timezone" field.
+func (u *UserUpsertBulk) ClearTimezone() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearTimezone()
 	})
 }
 

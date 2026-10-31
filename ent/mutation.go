@@ -54601,6 +54601,7 @@ type UserMutation struct {
 	second_factor_last_step        *int64
 	addsecond_factor_last_step     *int64
 	signup_survey_due_at           *time.Time
+	timezone                       *string
 	feed_position                  *int64
 	addfeed_position               *int64
 	clearedFields                  map[string]struct{}
@@ -55283,6 +55284,55 @@ func (m *UserMutation) ResetSignupSurveyDueAt() {
 	delete(m.clearedFields, user.FieldSignupSurveyDueAt)
 }
 
+// SetTimezone sets the "timezone" field.
+func (m *UserMutation) SetTimezone(s string) {
+	m.timezone = &s
+}
+
+// Timezone returns the value of the "timezone" field in the mutation.
+func (m *UserMutation) Timezone() (r string, exists bool) {
+	v := m.timezone
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTimezone returns the old "timezone" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldTimezone(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTimezone is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTimezone requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTimezone: %w", err)
+	}
+	return oldValue.Timezone, nil
+}
+
+// ClearTimezone clears the value of the "timezone" field.
+func (m *UserMutation) ClearTimezone() {
+	m.timezone = nil
+	m.clearedFields[user.FieldTimezone] = struct{}{}
+}
+
+// TimezoneCleared returns if the "timezone" field was cleared in this mutation.
+func (m *UserMutation) TimezoneCleared() bool {
+	_, ok := m.clearedFields[user.FieldTimezone]
+	return ok
+}
+
+// ResetTimezone resets all changes to the "timezone" field.
+func (m *UserMutation) ResetTimezone() {
+	m.timezone = nil
+	delete(m.clearedFields, user.FieldTimezone)
+}
+
 // SetFeedPosition sets the "feed_position" field.
 func (m *UserMutation) SetFeedPosition(i int64) {
 	m.feed_position = &i
@@ -55736,7 +55786,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -55773,6 +55823,9 @@ func (m *UserMutation) Fields() []string {
 	if m.signup_survey_due_at != nil {
 		fields = append(fields, user.FieldSignupSurveyDueAt)
 	}
+	if m.timezone != nil {
+		fields = append(fields, user.FieldTimezone)
+	}
 	if m.feed_position != nil {
 		fields = append(fields, user.FieldFeedPosition)
 	}
@@ -55808,6 +55861,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.SecondFactorLastStep()
 	case user.FieldSignupSurveyDueAt:
 		return m.SignupSurveyDueAt()
+	case user.FieldTimezone:
+		return m.Timezone()
 	case user.FieldFeedPosition:
 		return m.FeedPosition()
 	}
@@ -55843,6 +55898,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldSecondFactorLastStep(ctx)
 	case user.FieldSignupSurveyDueAt:
 		return m.OldSignupSurveyDueAt(ctx)
+	case user.FieldTimezone:
+		return m.OldTimezone(ctx)
 	case user.FieldFeedPosition:
 		return m.OldFeedPosition(ctx)
 	}
@@ -55938,6 +55995,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSignupSurveyDueAt(v)
 		return nil
+	case user.FieldTimezone:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTimezone(v)
+		return nil
 	case user.FieldFeedPosition:
 		v, ok := value.(int64)
 		if !ok {
@@ -56032,6 +56096,9 @@ func (m *UserMutation) ClearedFields() []string {
 	if m.FieldCleared(user.FieldSignupSurveyDueAt) {
 		fields = append(fields, user.FieldSignupSurveyDueAt)
 	}
+	if m.FieldCleared(user.FieldTimezone) {
+		fields = append(fields, user.FieldTimezone)
+	}
 	return fields
 }
 
@@ -56063,6 +56130,9 @@ func (m *UserMutation) ClearField(name string) error {
 		return nil
 	case user.FieldSignupSurveyDueAt:
 		m.ClearSignupSurveyDueAt()
+		return nil
+	case user.FieldTimezone:
+		m.ClearTimezone()
 		return nil
 	}
 	return fmt.Errorf("unknown User nullable field %s", name)
@@ -56107,6 +56177,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldSignupSurveyDueAt:
 		m.ResetSignupSurveyDueAt()
+		return nil
+	case user.FieldTimezone:
+		m.ResetTimezone()
 		return nil
 	case user.FieldFeedPosition:
 		m.ResetFeedPosition()

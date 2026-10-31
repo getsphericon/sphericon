@@ -24,6 +24,7 @@ const user: SiteUserResource = {
   name: 'John',
   email: 'info@getsphericon.com',
   emailVerified: true,
+  timezone: null,
   signupSurveyDue: false,
   acceptancesPending: [],
   createdAt: '2026-01-01T00:00:00Z',

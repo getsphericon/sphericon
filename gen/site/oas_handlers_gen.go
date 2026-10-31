@@ -33454,10 +33454,10 @@ func (s *Server) handleSiteUserSignOutEverywhereRequest(args [0]string, argsEsca
 
 // handleSiteUserUpdateMeRequest handles SiteUser_updateMe operation.
 //
-// Update the authenticated user's profile (name and/or password). A password change ends every session
-// of the user (ADR 0020); the acting one continues under the fresh session cookie set in this
-// response. A wrong current password feeds the Login throttle, which answers 429 even for a right one
-// while its delay runs.
+// Update the authenticated user's profile (name, time zone and/or password). A password change ends
+// every session of the user (ADR 0020); the acting one continues under the fresh session cookie set in
+// this response. A wrong current password feeds the Login throttle, which answers 429 even for a right
+// one while its delay runs.
 //
 // PUT /me
 func (s *Server) handleSiteUserUpdateMeRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

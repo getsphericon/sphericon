@@ -1415,8 +1415,12 @@ func init() {
 	userDescSecondFactorLastStep := userFields[9].Descriptor()
 	// user.DefaultSecondFactorLastStep holds the default value on creation for the second_factor_last_step field.
 	user.DefaultSecondFactorLastStep = userDescSecondFactorLastStep.Default.(int64)
+	// userDescTimezone is the schema descriptor for timezone field.
+	userDescTimezone := userFields[11].Descriptor()
+	// user.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
+	user.TimezoneValidator = userDescTimezone.Validators[0].(func(string) error)
 	// userDescFeedPosition is the schema descriptor for feed_position field.
-	userDescFeedPosition := userFields[11].Descriptor()
+	userDescFeedPosition := userFields[12].Descriptor()
 	// user.DefaultFeedPosition holds the default value on creation for the feed_position field.
 	user.DefaultFeedPosition = userDescFeedPosition.Default.(int64)
 	useridentityMixin := schema.UserIdentity{}.Mixin()

@@ -17,6 +17,7 @@ import {
 import type { SitePasskey } from '../generated/site/types.gen.ts'
 import { zPasskeyName } from '../generated/site/zod.gen.ts'
 import { useActionModal } from '../hooks/useActionModal.tsx'
+import { useDateFormat } from '../hooks/useDateFormat.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { IdentityProof } from './IdentityProof.tsx'
 import { BlockSkeleton } from './Skeletons.tsx'
@@ -240,6 +241,7 @@ interface PasskeyRowProps {
 // the User's other sessions (ADR 0052).
 function PasskeyRow({ passkey, passwordless, needsProvider, returnTo }: PasskeyRowProps) {
   const { t } = useTranslation()
+  const { formatDate } = useDateFormat()
   const rename = useActionModal(
     t(($) => $.security.passkeys.renameButton),
     (close) => <RenamePasskeyForm passkey={passkey} onClose={close} />,
@@ -269,7 +271,7 @@ function PasskeyRow({ passkey, passwordless, needsProvider, returnTo }: PasskeyR
           <Text size="sm" c="dimmed">
             {passkey.lastUsedAt
               ? t(($) => $.security.passkeys.lastUsed, {
-                  date: new Date(passkey.lastUsedAt).toLocaleDateString(),
+                  date: formatDate(passkey.lastUsedAt),
                 })
               : t(($) => $.security.passkeys.neverUsed)}
           </Text>

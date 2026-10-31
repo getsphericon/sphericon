@@ -16,15 +16,16 @@ import {
   siteUserGetMeQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteSignupItem, SiteSoleOwnedWorkspace } from '../../generated/site/types.gen.ts'
+import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useLogout } from '../../hooks/useLogout.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as acceptanceRoute } from '../../routes/acceptance.tsx'
 import { Route as indexRoute } from '../../routes/index.tsx'
-import { formatDate } from '../../utils/datetime.ts'
 import { DeleteUserSection } from './DeleteUserForm.tsx'
 
 // PendingDocument is the current text of one required acceptance the User has not accepted.
 function PendingDocument({ item }: { item: SiteSignupItem }) {
+  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   const query = useQuery({
     ...siteLegalDocumentsGetOptions({ path: { key: item.key } }),

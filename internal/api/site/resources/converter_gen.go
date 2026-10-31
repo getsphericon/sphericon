@@ -812,6 +812,7 @@ func (c *ConverterImpl) UserToResource(source *ent.User) *site.SiteUserResource 
 		siteapiSiteUserResource.Name = (*source).Name
 		siteapiSiteUserResource.Email = site.EmailAddress((*source).Email)
 		siteapiSiteUserResource.EmailVerified = emailVerified((*source).EmailVerifiedAt)
+		siteapiSiteUserResource.Timezone = nilTimeZone((*source).Timezone)
 		siteapiSiteUserResource.CreatedAt = timestamp((*source).CreatedAt)
 		pSiteapiSiteUserResource = &siteapiSiteUserResource
 	}

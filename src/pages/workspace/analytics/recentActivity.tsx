@@ -18,9 +18,9 @@ import { useTranslation } from 'react-i18next'
 import { DetailedEventRowDetails } from '../../../components/EventRowDetails.tsx'
 import { TableSkeleton } from '../../../components/Skeletons.tsx'
 import { siteEventsListOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
+import { useDateFormat } from '../../../hooks/useDateFormat.ts'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as workspaceRoute } from '../../../routes/workspaces/$workspaceId/route.tsx'
-import { formatDateTime } from '../../../utils/datetime.ts'
 
 const PAGE_SIZE = 25
 const LIVE_REFETCH_MS = 5000
@@ -29,6 +29,7 @@ const LIVE_REFETCH_MS = 5000
 // recent first. Live mode polls so newly tracked events surface without a
 // manual reload — the primary way to verify that tracking works.
 export function RecentActivityPage() {
+  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
   const [page, setPage] = useState(1)

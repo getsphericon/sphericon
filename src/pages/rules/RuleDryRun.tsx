@@ -9,11 +9,12 @@ import {
   siteRulesDryRunMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { SiteRuleDryRunOutcome } from '../../generated/site/types.gen.ts'
-import { formatDateTime } from '../../utils/datetime.ts'
+import { useDateFormat } from '../../hooks/useDateFormat.ts'
 
 // Tries the saved Rule on one stored Event: whether it would fire and which Actions would run.
 // A dry run writes and runs nothing, so it is safe to repeat.
 export function RuleDryRun({ workspaceId, ruleId }: { workspaceId: string; ruleId: string }) {
+  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const [eventId, setEventId] = useState<string | null>(null)
   const events = useQuery(
