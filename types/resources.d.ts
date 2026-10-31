@@ -1453,6 +1453,7 @@ export default interface Resources {
         "defaultError": "Failed to change the default provider",
         "description": "Connect an email provider so this workspace can send mail.",
         "empty": "No providers connected yet",
+        "emptyArchived": "No archived providers",
         "fields": {
           "accessKeyId": "Access key ID",
           "endpoint": "Custom endpoint",
@@ -1537,6 +1538,8 @@ export default interface Resources {
           "smtpHint": "Any SMTP server."
         },
         "removeError": "Failed to remove provider",
+        "restoreError": "Failed to restore the provider",
+        "restored": "Provider restored",
         "saved": "Provider saved",
         "title": "Providers"
       },

@@ -25,6 +25,7 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ArchiveViewControl } from '../../components/ArchiveViewControl.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
@@ -32,6 +33,7 @@ import {
   siteIntegrationsCreateMutation,
   siteIntegrationsArchiveMutation,
   siteIntegrationsListOptions,
+  siteIntegrationsUnarchiveMutation,
   siteIntegrationsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
@@ -133,31 +135,37 @@ function buildConfig(values: IntegrationFormValues): IntegrationConfigInput {
   }
 }
 
-// The Workspace's active providers, read by the list and by the create form.
-const integrationsOptions = (workspaceId: string) =>
-  siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } })
+// The Workspace's providers, the kept ones (read by the list and by the create form) or the
+// archived ones.
+const integrationsOptions = (workspaceId: string, archived = false) =>
+  siteIntegrationsListOptions({ path: { workspaceId }, query: { archived } })
 
-// IntegrationsList shows the providers with the warnings about their send limits; the section's
-// boundary shows the load and its failure.
+// IntegrationsList shows the kept providers with the warnings about their send limits, or the
+// archived ones to restore; the section's boundary shows the load and its failure.
 function IntegrationsList({
   workspaceId,
+  archived,
   canManage,
   onMakeDefault,
   onEditLimits,
   onInbound,
   onRemove,
+  onRestore,
 }: {
   workspaceId: string
+  archived: boolean
   canManage: boolean
   onMakeDefault: (id: string) => void
   onEditLimits: (record: SiteIntegrationResource) => void
   onInbound: (record: SiteIntegrationResource) => void
   onRemove: (id: string) => void
+  onRestore: (id: string) => void
 }) {
   const { t } = useTranslation()
-  const records = useSuspenseQuery(integrationsOptions(workspaceId)).data
+  const records = useSuspenseQuery(integrationsOptions(workspaceId, archived)).data
+  // An archived provider sends nothing, so its limits are nothing to warn about.
   const withWarning = (warning: SiteProviderLimitWarning) =>
-    records.filter((record) => record.providerLimit.warnings.includes(warning))
+    archived ? [] : records.filter((record) => record.providerLimit.warnings.includes(warning))
   const unlimited = withWarning('unlimited')
   // What the provider says about each account (ADR 0067): a stopped account holds its sends, so
   // it is flagged red; the rest are warnings.
@@ -247,7 +255,14 @@ function IntegrationsList({
                   targetType={AUDIT_TARGET_INTEGRATION}
                   targetId={record.id}
                 />
-                {canManage ? (
+                {canManage && archived ? (
+                  <RowActionsMenu>
+                    <Menu.Item onClick={() => onRestore(record.id)}>
+                      {t(($) => $.actions.unarchive)}
+                    </Menu.Item>
+                  </RowActionsMenu>
+                ) : null}
+                {canManage && !archived ? (
                   <RowActionsMenu>
                     {record.isDefault ? null : (
                       <Menu.Item onClick={() => onMakeDefault(record.id)}>
@@ -269,7 +284,15 @@ function IntegrationsList({
             ),
           },
         ]}
-        emptyState={<EmptyState title={t(($) => $.settings.integrations.empty)} />}
+        emptyState={
+          <EmptyState
+            title={
+              archived
+                ? t(($) => $.settings.integrations.emptyArchived)
+                : t(($) => $.settings.integrations.empty)
+            }
+          />
+        }
       />
     </>
   )
@@ -281,6 +304,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [advanced, { toggle: toggleAdvanced, close: closeAdvanced }] = useDisclosure(false)
   const [tile, setTile] = useState<Tile | null>(null)
+  const [archived, setArchived] = useState(false)
   const canManageIntegrations = can(workspace, 'integrations:manage')
 
   // The list the boundary below loads, read here only to know whether a provider exists yet.
@@ -313,6 +337,12 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
   const removeMutation = useResourceMutation({
     mutation: siteIntegrationsArchiveMutation(),
     errorTitle: t(($) => $.settings.integrations.removeError),
+  })
+
+  const restoreMutation = useResourceMutation({
+    mutation: siteIntegrationsUnarchiveMutation(),
+    successMessage: t(($) => $.settings.integrations.restored),
+    errorTitle: t(($) => $.settings.integrations.restoreError),
   })
 
   // Promoting a provider clears the channel's current default on the server.
@@ -372,12 +402,14 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
         {t(($) => $.settings.integrations.description)}
       </Text>
 
+      <ArchiveViewControl archived={archived} onChange={setArchived} mb="sm" />
       <QueryBoundary
         fallback={<TableSkeleton />}
         errorTitle={t(($) => $.settings.integrations.loadError)}
       >
         <IntegrationsList
           workspaceId={workspaceId}
+          archived={archived}
           canManage={canManageIntegrations}
           onMakeDefault={(id) =>
             defaultMutation.mutate({ path: { workspaceId, id }, body: { isDefault: true } })
@@ -385,6 +417,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
           onEditLimits={setEditing}
           onInbound={setInbound}
           onRemove={(id) => removeMutation.mutate({ path: { workspaceId, id } })}
+          onRestore={(id) => restoreMutation.mutate({ path: { workspaceId, id } })}
         />
       </QueryBoundary>
       {canManageIntegrations ? (

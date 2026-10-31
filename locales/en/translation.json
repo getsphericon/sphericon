@@ -1463,6 +1463,7 @@
       "defaultError": "Failed to change the default provider",
       "description": "Connect an email provider so this workspace can send mail.",
       "empty": "No providers connected yet",
+      "emptyArchived": "No archived providers",
       "fields": {
         "accessKeyId": "Access key ID",
         "endpoint": "Custom endpoint",
@@ -1547,6 +1548,8 @@
         "smtpHint": "Any SMTP server."
       },
       "removeError": "Failed to remove provider",
+      "restored": "Provider restored",
+      "restoreError": "Failed to restore the provider",
       "saved": "Provider saved",
       "title": "Providers"
     },
