@@ -208,6 +208,15 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
   }
   const isSes = form.values.provider === 'ses'
   const compatible = tile === 'sesCompatible'
+  // An SES-compatible service needs its Provider limit (ADR 0067), so there the fields are required
+  // and shown beside the credentials; for any other provider they are optional, in Advanced settings.
+  const limitFields = (
+    <ProviderLimitFields
+      perSecondProps={form.getInputProps('maxPerSecond')}
+      perDayProps={form.getInputProps('maxPerDay')}
+      required={compatible}
+    />
+  )
   // The first provider of a Workspace is its default; later ones ask.
   const hasActive = (integrationsQuery.data ?? []).length > 0
   const records = integrationsQuery.data ?? []
@@ -444,11 +453,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                     <Text c="dimmed" size="sm">
                       {t(($) => $.settings.integrations.providerLimit.descriptionRequired)}
                     </Text>
-                    <ProviderLimitFields
-                      perSecondProps={form.getInputProps('maxPerSecond')}
-                      perDayProps={form.getInputProps('maxPerDay')}
-                      required
-                    />
+                    {limitFields}
                   </>
                 ) : null}
 
@@ -470,12 +475,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                         {...form.getInputProps('fromName')}
                       />
                     </Group>
-                    {compatible ? null : (
-                      <ProviderLimitFields
-                        perSecondProps={form.getInputProps('maxPerSecond')}
-                        perDayProps={form.getInputProps('maxPerDay')}
-                      />
-                    )}
+                    {compatible ? null : limitFields}
                     {hasActive ? (
                       <Checkbox
                         label={t(($) => $.settings.integrations.makeDefault)}

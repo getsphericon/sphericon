@@ -486,15 +486,11 @@ func (m *Module) keepsProviderLimit(row *ent.Integration, in UpdateInput) error 
 	if in.Config != nil && in.Config.SES != nil {
 		endpoint = in.Config.SES.Endpoint
 	} else {
-		plaintext, err := m.cipher.Decrypt(row.ConfigEncrypted)
+		stored, err := m.Redact(row)
 		if err != nil {
 			return err
 		}
-		var stored ses.Config
-		if err := json.Unmarshal(plaintext, &stored); err != nil {
-			return err
-		}
-		endpoint = stored.Endpoint
+		endpoint = stored.SES.Endpoint
 	}
 	return requireProviderLimit(endpoint, in.MaxPerSecond.after(row.MaxPerSecond), in.MaxPerDay.after(row.MaxPerDay))
 }
