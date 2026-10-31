@@ -313,21 +313,103 @@ model SiteAutomationReport {
 
   /** One entry per clicked link, most clicked first */
   links: SiteLinkClicks[];
+
+  /** What the automation's enrollments did over the chosen period and the period before it */
+  results: SiteAutomationResults;
+}
+
+/** The length of the period an automation's results are read over, in Report days (ADR 0057), today included */
+enum SiteAutomationReportPeriod {
+  `7d`,
+  `14d`,
+  `30d`,
+  `90d`,
+}
+
+/** How many enrollments began, and how many ended with each outcome */
+model SiteAutomationResultCounts {
+  /** Enrollments that began: their triggering Event occurred in it */
+  entered: int32;
+
+  /** Enrollments that walked every step and ended in it */
+  completed: int32;
+
+  /** Enrollments that ended in it because their goal event was recorded */
+  goalReached: int32;
+
+  /** Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event */
+  exited: int32;
+
+  /** Enrollments that ended in it on a step that failed */
+  failed: int32;
+}
+
+/**
+ * One period of an automation's results. Each count is what happened in the period: an
+ * enrollment counts as entered on the Report day it began and under its outcome on the Report day
+ * it ended, whenever it began, so an enrollment still running counts as entered only.
+ */
+model SiteAutomationPeriodResults {
+  ...SiteAutomationResultCounts;
+
+  /** The period's first Report day, `YYYY-MM-DD` in the Workspace time zone */
+  from: string;
+
+  /** The period's last Report day, included */
+  to: string;
+
+  /** Mean time in whole seconds from the beginning to the end of the enrollments that ended in
+   * the period, whatever their outcome; null when none ended */
+  averageDurationSeconds: int64 | null;
+
+  /** The orders credited to the automation that were completed in the period, and the net change
+   * of its revenue in the period: every Movement of a credited Order counts on its own day (ADR 0064) */
+  revenue: SiteMessageRevenue;
+}
+
+/** One Report day of an automation's results */
+model SiteAutomationResultsPoint {
+  ...SiteAutomationResultCounts;
+
+  /** The Report day, `YYYY-MM-DD` in the Workspace time zone */
+  date: string;
+}
+
+/** An automation's results over a period of Report days, read from its enrollments, with the
+ * period just before it to compare with */
+model SiteAutomationResults {
+  /** The period the results are read over */
+  period: SiteAutomationReportPeriod;
+
+  /** The period ending today */
+  current: SiteAutomationPeriodResults;
+
+  /** As many Report days just before it */
+  previous: SiteAutomationPeriodResults;
+
+  /** The current period by Report day, oldest first, a day with nothing at zero */
+  series: SiteAutomationResultsPoint[];
 }
 
 @route("/workspaces/{workspaceId}/automations/{automationId}/report")
 @tag("Site Automations")
 namespace SiteAutomationReports {
   /**
-   * The opens and clicks of an automation's emails, with a count per clicked link. They come from
-   * the `email.opened` and `email.clicked` Events, so they cover the Event retention window.
+   * The opens and clicks of an automation's emails, with a count per clicked link, and its results
+   * over a period. The engagement figures are the automation's whole history: opens and clicks come
+   * from the `email.opened` and `email.clicked` Events, so they cover the Event retention window.
+   * The results are read from its enrollments for the chosen period and the one before it.
    */
   @get
   @extension("x-required-permissions", #[])
-  op get(@path workspaceId: WorkspaceId, @path automationId: EntityId):
-    | SiteAutomationReport
-    | BadRequestProblem
-    | NotFoundProblem;
+  op get(
+    @path workspaceId: WorkspaceId,
+    @path automationId: EntityId,
+
+    /** The period the results are read over (defaults to 30d) */
+    @query
+    period?: SiteAutomationReportPeriod = SiteAutomationReportPeriod.`30d`,
+  ): SiteAutomationReport | BadRequestProblem | NotFoundProblem;
 }
 
 @@extension(SiteAutomations.create, "x-required-permissions", #[]);

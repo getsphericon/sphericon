@@ -253,7 +253,7 @@ func (m *Module) FinishHTTPStep(ctx context.Context, s *ent.Scoped, runID int64,
 // FailHTTPStep ends the Enrollment `failed` with the record of the call that could not
 // succeed. An Enrollment that already left `active` (an exit won) or is gone stays as it is.
 func (m *Module) FailHTTPStep(ctx context.Context, s *ent.Scoped, runID int64, f automations.Failure) error {
-	return quiet(automations.Fail(ctx, s, runID, f))
+	return quiet(automations.Fail(ctx, s, runID, m.now(), f))
 }
 
 func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, v *ent.AutomationVersion, step int, st automations.Step) error {
@@ -294,7 +294,7 @@ func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 		// An ineligible destination (suppressed, or unsubscribed from this Automation or from
 		// everything) exits the Enrollment: a run never silently keeps walking steps while
 		// skipping every email.
-		return quiet(automations.ExitRun(ctx, s, run.ID))
+		return quiet(automations.ExitRun(ctx, s, run.ID, m.now()))
 	default: // outbound.Failed
 		return m.fail(ctx, s, run.ID, fmt.Errorf("email step %d: %s", step, res.Reason))
 	}
@@ -345,13 +345,13 @@ func scheduled(at *time.Time) *river.InsertOpts {
 
 // complete ends the Enrollment `completed`; one that is no longer active stays as it is.
 func (m *Module) complete(ctx context.Context, s *ent.Scoped, runID int64) error {
-	return quiet(automations.Complete(ctx, s, runID))
+	return quiet(automations.Complete(ctx, s, runID, m.now()))
 }
 
 // fail ends the Enrollment `failed` and returns cause for the job, or nothing when the run
 // had already left `active`. A failed write is returned with the cause, never dropped.
 func (m *Module) fail(ctx context.Context, s *ent.Scoped, runID int64, cause error) error {
-	err := automations.Fail(ctx, s, runID, automations.Failure{})
+	err := automations.Fail(ctx, s, runID, m.now(), automations.Failure{})
 	if automations.Stale(err) {
 		return nil
 	}

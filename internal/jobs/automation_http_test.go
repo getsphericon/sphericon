@@ -358,7 +358,7 @@ func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
 func TestHTTPStepOnAnExitedRunCallsNothingAndQueuesNothing(t *testing.T) {
 	h := newHTTPStepHarness(t, `{"ok":true}`, true)
 	runID := h.enroll(t, fixtures.ContactAliceID)
-	require.NoError(t, automations.ExitRun(context.Background(), h.DB.Scoped(fixtures.AcmeID), runID))
+	require.NoError(t, automations.ExitRun(context.Background(), h.DB.Scoped(fixtures.AcmeID), runID, time.Now()))
 
 	require.NoError(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
 

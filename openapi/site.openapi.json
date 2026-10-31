@@ -4789,7 +4789,7 @@
     "/workspaces/{workspaceId}/automations/{automationId}/report": {
       "get": {
         "operationId": "SiteAutomationReports_get",
-        "description": "The opens and clicks of an automation's emails, with a count per clicked link. They come from\nthe `email.opened` and `email.clicked` Events, so they cover the Event retention window.",
+        "description": "The opens and clicks of an automation's emails, with a count per clicked link, and its results\nover a period. The engagement figures are the automation's whole history: opens and clicks come\nfrom the `email.opened` and `email.clicked` Events, so they cover the Event retention window.\nThe results are read from its enrollments for the chosen period and the one before it.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -4806,6 +4806,21 @@
             "schema": {
               "$ref": "#/components/schemas/EntityId"
             }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "description": "The period the results are read over (defaults to 30d)",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SiteAutomationReportPeriod"
+                }
+              ],
+              "default": "30d"
+            },
+            "explode": false
           }
         ],
         "responses": {
@@ -15289,6 +15304,70 @@
         },
         "description": "One request header of an HTTP step. The value is a secret: it is never returned."
       },
+      "SiteAutomationPeriodResults": {
+        "type": "object",
+        "required": [
+          "entered",
+          "completed",
+          "goalReached",
+          "exited",
+          "failed",
+          "from",
+          "to",
+          "averageDurationSeconds",
+          "revenue"
+        ],
+        "properties": {
+          "entered": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that began: their triggering Event occurred in it"
+          },
+          "completed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that walked every step and ended in it"
+          },
+          "goalReached": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that ended in it because their goal event was recorded"
+          },
+          "exited": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that ended in it on a step that failed"
+          },
+          "from": {
+            "type": "string",
+            "description": "The period's first Report day, `YYYY-MM-DD` in the Workspace time zone"
+          },
+          "to": {
+            "type": "string",
+            "description": "The period's last Report day, included"
+          },
+          "averageDurationSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Mean time in whole seconds from the beginning to the end of the enrollments that ended in\nthe period, whatever their outcome; null when none ended"
+          },
+          "revenue": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteMessageRevenue"
+              }
+            ],
+            "description": "The orders credited to the automation that were completed in the period, and the net change\nof its revenue in the period: every Movement of a credited Order counts on its own day (ADR 0064)"
+          }
+        },
+        "description": "One period of an automation's results. Each count is what happened in the period: an\nenrollment counts as entered on the Report day it began and under its outcome on the Report day\nit ended, whenever it began, so an enrollment still running counts as entered only."
+      },
       "SiteAutomationReport": {
         "type": "object",
         "required": [
@@ -15299,7 +15378,8 @@
           "complained",
           "captured",
           "revenue",
-          "links"
+          "links",
+          "results"
         ],
         "properties": {
           "opens": {
@@ -15346,9 +15426,22 @@
               "$ref": "#/components/schemas/SiteLinkClicks"
             },
             "description": "One entry per clicked link, most clicked first"
+          },
+          "results": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAutomationResults"
+              }
+            ],
+            "description": "What the automation's enrollments did over the chosen period and the period before it"
           }
         },
         "description": "An automation's engagement figures"
+      },
+      "SiteAutomationReportPeriod": {
+        "type": "string",
+        "enum": ["7d", "14d", "30d", "90d"],
+        "description": "The length of the period an automation's results are read over, in Report days (ADR 0057), today included"
       },
       "SiteAutomationResource": {
         "type": "object",
@@ -15430,6 +15523,112 @@
           }
         },
         "description": "Automation resource used by the site UI"
+      },
+      "SiteAutomationResultCounts": {
+        "type": "object",
+        "required": ["entered", "completed", "goalReached", "exited", "failed"],
+        "properties": {
+          "entered": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that began: their triggering Event occurred in it"
+          },
+          "completed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that walked every step and ended in it"
+          },
+          "goalReached": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that ended in it because their goal event was recorded"
+          },
+          "exited": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that ended in it on a step that failed"
+          }
+        },
+        "description": "How many enrollments began, and how many ended with each outcome"
+      },
+      "SiteAutomationResults": {
+        "type": "object",
+        "required": ["period", "current", "previous", "series"],
+        "properties": {
+          "period": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAutomationReportPeriod"
+              }
+            ],
+            "description": "The period the results are read over"
+          },
+          "current": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAutomationPeriodResults"
+              }
+            ],
+            "description": "The period ending today"
+          },
+          "previous": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAutomationPeriodResults"
+              }
+            ],
+            "description": "As many Report days just before it"
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAutomationResultsPoint"
+            },
+            "description": "The current period by Report day, oldest first, a day with nothing at zero"
+          }
+        },
+        "description": "An automation's results over a period of Report days, read from its enrollments, with the\nperiod just before it to compare with"
+      },
+      "SiteAutomationResultsPoint": {
+        "type": "object",
+        "required": ["entered", "completed", "goalReached", "exited", "failed", "date"],
+        "properties": {
+          "entered": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that began: their triggering Event occurred in it"
+          },
+          "completed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that walked every step and ended in it"
+          },
+          "goalReached": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that ended in it because their goal event was recorded"
+          },
+          "exited": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that ended in it on a step that failed"
+          },
+          "date": {
+            "type": "string",
+            "description": "The Report day, `YYYY-MM-DD` in the Workspace time zone"
+          }
+        },
+        "description": "One Report day of an automation's results"
       },
       "SiteAutomationStatus": {
         "type": "string",

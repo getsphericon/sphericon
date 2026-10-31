@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/patch"
@@ -104,6 +105,62 @@ func TestAnEventAfterTheTriggerEndsAnEnrollmentMadeAfterIt(t *testing.T) {
 
 	status := statusOf(t, env, runID)
 	assert.Equal(t, automationrun.StatusGoalReached, status)
+}
+
+// An Enrollment an exit or goal Event ends, ends when that Event occurred, on the clock its
+// beginning was read on, not when the Event was handled (#753).
+func TestAnEnrollmentEndsWhenItsEndingEventOccurred(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	c := enrollable(t, s, 0)
+	triggered := time.Now().Add(-2 * time.Hour)
+	paid := triggered.Add(time.Hour)
+	runID, _, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID, c.ID, automations.Origin{Action: "payment_failed", OccurredAt: triggered})
+	require.NoError(t, err)
+
+	require.NoError(t, automations.EndOnEvent(ctx, s, c.ID, recoveryGoal, paid))
+
+	run, err := env.DB.AutomationRun.Get(ctx, runID)
+	require.NoError(t, err)
+	require.NotNil(t, run.EndedAt)
+	assert.WithinDuration(t, paid, *run.EndedAt, time.Microsecond)
+}
+
+// An Enrollment made already ended ends when the first exit or goal Event since its trigger
+// occurred (fixture: account_closed 5 days ago for ContactPaidBeforeEnrolled).
+func TestAnEnrollmentMadeEndedEndsWhenThatEventOccurred(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	closed, err := env.DB.Event.Query().
+		Where(event.ContactID(fixtures.ContactPaidBeforeEnrolledID), event.Action(recoveryExit)).
+		Only(ctx)
+	require.NoError(t, err)
+
+	runID, _, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID,
+		fixtures.ContactPaidBeforeEnrolledID, automations.Origin{Action: "payment_failed", OccurredAt: time.Now().Add(-6 * 24 * time.Hour)})
+	require.NoError(t, err)
+
+	run, err := env.DB.AutomationRun.Get(ctx, runID)
+	require.NoError(t, err)
+	assert.Equal(t, automationrun.StatusExited, run.Status)
+	assert.Equal(t, closed.OccurredAt, run.EndedAt)
+}
+
+// A step ends an Enrollment at the moment its caller's clock gives.
+func TestAStepEndsAnEnrollmentAtTheCallersClock(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	at := time.Date(2026, 3, 12, 9, 30, 0, 0, time.UTC)
+
+	require.NoError(t, automations.Complete(ctx, s, fixtures.AutomationRunTagOnEngagementAliceID, at))
+
+	run, err := env.DB.AutomationRun.Get(ctx, fixtures.AutomationRunTagOnEngagementAliceID)
+	require.NoError(t, err)
+	require.NotNil(t, run.EndedAt)
+	assert.True(t, at.Equal(*run.EndedAt), "ended at %s", run.EndedAt)
 }
 
 // The exit or goal Event was handled before the Enrollment was made, with nothing to end: the

@@ -62,3 +62,34 @@ func TestTrailingWindowsAreWholeConsecutiveLocalDays(t *testing.T) {
 		}
 	})
 }
+
+func TestThePreviousWindowIsAsManyLocalDaysEndingWhereTheWindowBegins(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		loc, err := reportday.Load(rapid.SampledFrom(zones).Draw(t, "zone"))
+		require.NoError(t, err)
+		now := time.Unix(rapid.Int64Range(1_600_000_000, 1_900_000_000).Draw(t, "now"), 0)
+		days := rapid.SampledFrom([]int{7, 14, 30, 90}).Draw(t, "days")
+		w := reportday.Trailing(now, loc, days)
+
+		prev := w.Previous()
+
+		require.Len(t, prev.Dates, days)
+		assert.Equal(t, w.Since, prev.Until, "the previous window ends where the window begins")
+		since := prev.Since.In(loc)
+		assert.Equal(t, 0, since.Hour()+since.Minute(), "the previous window starts at local midnight")
+		assert.Equal(t, since.Format(reportday.Format), prev.Dates[0])
+		last, err := time.Parse(reportday.Format, prev.Dates[days-1])
+		require.NoError(t, err)
+		assert.Equal(t, last.AddDate(0, 0, 1).Format(reportday.Format), w.Dates[0], "no day is skipped or repeated between them")
+	})
+}
+
+func TestThePreviousWindowOverADaylightSavingChangeHoldsItsShortDay(t *testing.T) {
+	loc, err := reportday.Load("America/New_York")
+	require.NoError(t, err)
+
+	prev := reportday.Trailing(time.Date(2026, 3, 17, 12, 0, 0, 0, time.UTC), loc, 7).Previous()
+
+	assert.Equal(t, []string{"2026-03-04", "2026-03-05", "2026-03-06", "2026-03-07", "2026-03-08", "2026-03-09", "2026-03-10"}, prev.Dates)
+	assert.Equal(t, 7*24*time.Hour-time.Hour, prev.Until.Sub(prev.Since), "the window holds the 23-hour day")
+}

@@ -6,6 +6,7 @@ package convert
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/go-faster/jx"
 
@@ -161,4 +162,29 @@ func DocObject[M ~map[string]jx.Raw](doc json.RawMessage) M {
 		out[k] = jx.Raw(v)
 	}
 	return out
+}
+
+// Nil is the ogen Nil* value N of v (NilInt64, NilCurrencyCode, ...): null when v is nil. Every
+// surface's package has its own N, so its mapper names the type and the rule stays here.
+func Nil[N any, T any, P interface {
+	*N
+	SetTo(v T)
+	SetToNull()
+}](v *T) N {
+	var n N
+	if v == nil {
+		P(&n).SetToNull()
+	} else {
+		P(&n).SetTo(*v)
+	}
+	return n
+}
+
+// WholeSeconds is d in whole seconds, nil when there is no duration.
+func WholeSeconds(d *time.Duration) *int64 {
+	if d == nil {
+		return nil
+	}
+	seconds := int64(d.Seconds())
+	return &seconds
 }

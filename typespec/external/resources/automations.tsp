@@ -201,6 +201,130 @@ model AutomationsListFilter {
   @query archived?: boolean;
 }
 
+/** Orders credited to a broadcast or an automation and their net revenue (ADR 0064) */
+model MessageRevenue {
+  /** The Reporting currency, null until an owner or admin chooses it; every figure is zero until then */
+  reportingCurrency: CurrencyCode | null;
+
+  /** Orders completed that are credited to it, in the Reporting currency */
+  orders: int32;
+
+  /** Net revenue of those Orders, in the minor unit of the Reporting currency (cents for USD) */
+  amount: int64;
+}
+
+/** How often one link of an automation's emails was clicked */
+model LinkClicks {
+  /** The link's destination URL */
+  url: string;
+
+  /** Clicks recorded on it, every click counted (not unique per contact); bounded by Event retention */
+  clicks: int32;
+}
+
+/** The length of the period an automation's results are read over, in Report days (ADR 0057), today included */
+enum AutomationReportPeriod {
+  `7d`,
+  `14d`,
+  `30d`,
+  `90d`,
+}
+
+/** How many enrollments began, and how many ended with each outcome */
+model AutomationResultCounts {
+  /** Enrollments that began: their triggering Event occurred in it */
+  entered: int32;
+
+  /** Enrollments that walked every step and ended in it */
+  completed: int32;
+
+  /** Enrollments that ended in it because their goal event was recorded */
+  goalReached: int32;
+
+  /** Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event */
+  exited: int32;
+
+  /** Enrollments that ended in it on a step that failed */
+  failed: int32;
+}
+
+/**
+ * One period of an automation's results. Each count is what happened in the period: an
+ * enrollment counts as entered on the Report day it began and under its outcome on the Report day
+ * it ended, whenever it began, so an enrollment still running counts as entered only.
+ */
+model AutomationPeriodResults {
+  ...AutomationResultCounts;
+
+  /** The period's first Report day, `YYYY-MM-DD` in the Workspace time zone */
+  from: string;
+
+  /** The period's last Report day, included */
+  to: string;
+
+  /** Mean time in whole seconds from the beginning to the end of the enrollments that ended in
+   * the period, whatever their outcome; null when none ended */
+  averageDurationSeconds: int64 | null;
+
+  /** The orders credited to the automation that were completed in the period, and the net change
+   * of its revenue in the period: every Movement of a credited Order counts on its own day (ADR 0064) */
+  revenue: MessageRevenue;
+}
+
+/** One Report day of an automation's results */
+model AutomationResultsPoint {
+  ...AutomationResultCounts;
+
+  /** The Report day, `YYYY-MM-DD` in the Workspace time zone */
+  date: string;
+}
+
+/** An automation's results over a period of Report days, read from its enrollments, with the
+ * period just before it to compare with */
+model AutomationResults {
+  /** The period the results are read over */
+  period: AutomationReportPeriod;
+
+  /** The period ending today */
+  current: AutomationPeriodResults;
+
+  /** As many Report days just before it */
+  previous: AutomationPeriodResults;
+
+  /** The current period by Report day, oldest first, a day with nothing at zero */
+  series: AutomationResultsPoint[];
+}
+
+/** An automation's engagement figures over its whole history and its results over a period */
+model AutomationReport {
+  /** Opens recorded on the automation's emails, every open counted; bounded by Event retention */
+  opens: int32;
+
+  /** Clicks recorded on the automation's emails, every click counted; bounded by Event retention */
+  clicks: int32;
+
+  /** Messages the provider reported delivered, read from the delivery result stamped on each message; not bounded by Event retention */
+  delivered: int32;
+
+  /** Messages the provider reported bounced, read from the delivery result stamped on each message; not bounded by Event retention */
+  bounced: int32;
+
+  /** Messages a recipient complained about, read from the delivery result stamped on each message; not bounded by Event retention */
+  complained: int32;
+
+  /** Messages that went through a Test inbox: captured, not delivered; they count as delivered too */
+  captured: int32;
+
+  /** Orders credited to the automation and their net revenue, over its whole history (ADR 0064) */
+  revenue: MessageRevenue;
+
+  /** One entry per clicked link, most clicked first */
+  links: LinkClicks[];
+
+  /** What the automation's enrollments did over the chosen period and the period before it */
+  results: AutomationResults;
+}
+
 /**
  * Delete removes an automation that has no enrollments and has sent nothing for good; one with
  * either is history and is archived instead (ADR 0049), so a delete of it is a 409 whose `usedBy`
@@ -269,6 +393,27 @@ interface Automations
     | TooManyRequestsProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
+
+  /** Read the report: the engagement of the automation's emails over its whole history, and its
+   * results over a period of Report days in the Workspace time zone (entered, completed,
+   * goal_reached, exited and failed enrollments, their average duration and the revenue credited),
+   * each with the period just before it. Needs the automations:read scope. */
+  @action("report")
+  @get
+  @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.automationsRead])
+  report(
+    ...ResourceParameters<AutomationResource>,
+
+    /** The period the results are read over (defaults to 30d) */
+    @query period?: AutomationReportPeriod = AutomationReportPeriod.`30d`,
+  ):
+    | AutomationReport
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | ForbiddenProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem;
 
   /** Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write scope. */
   @action("deactivate")

@@ -320,8 +320,10 @@ func (UnimplementedHandler) SiteAuthVerifyEmail(ctx context.Context, req *SiteVe
 
 // SiteAutomationReportsGet implements SiteAutomationReports_get operation.
 //
-// The opens and clicks of an automation's emails, with a count per clicked link. They come from the
-// `email.opened` and `email.clicked` Events, so they cover the Event retention window.
+// The opens and clicks of an automation's emails, with a count per clicked link, and its results over
+// a period. The engagement figures are the automation's whole history: opens and clicks come from the
+// `email.opened` and `email.clicked` Events, so they cover the Event retention window. The results are
+// read from its enrollments for the chosen period and the one before it.
 //
 // GET /workspaces/{workspaceId}/automations/{automationId}/report
 func (UnimplementedHandler) SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (r SiteAutomationReportsGetRes, _ error) {

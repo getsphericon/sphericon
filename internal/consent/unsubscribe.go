@@ -5,6 +5,7 @@ package consent
 
 import (
 	"context"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -78,7 +79,7 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 		// Automation: unsubscribing from an automation also exits its active
 		// enrollment (ADR: two effects from one action).
 		if isAutomation && target.ContactID != 0 {
-			if _, err := automations.Exit(ctx, sc, automationID, target.ContactID); err != nil {
+			if _, err := automations.Exit(ctx, sc, automationID, target.ContactID, time.Now()); err != nil {
 				return err
 			}
 		}

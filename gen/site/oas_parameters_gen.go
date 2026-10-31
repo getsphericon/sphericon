@@ -3257,6 +3257,8 @@ func decodeSiteAuthVerifyEmailParams(args [0]string, argsEscaped bool, r *http.R
 type SiteAutomationReportsGetParams struct {
 	WorkspaceId  WorkspaceId
 	AutomationId EntityId
+	// The period the results are read over (defaults to 30d).
+	Period OptSiteAutomationReportsGetPeriod `json:",omitempty,omitzero"`
 }
 
 func unpackSiteAutomationReportsGetParams(packed middleware.Parameters) (params SiteAutomationReportsGetParams) {
@@ -3274,10 +3276,20 @@ func unpackSiteAutomationReportsGetParams(packed middleware.Parameters) (params 
 		}
 		params.AutomationId = packed[key].(EntityId)
 	}
+	{
+		key := middleware.ParameterKey{
+			Name: "period",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Period = v.(OptSiteAutomationReportsGetPeriod)
+		}
+	}
 	return params
 }
 
 func decodeSiteAutomationReportsGetParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteAutomationReportsGetParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
 	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
@@ -3387,6 +3399,67 @@ func decodeSiteAutomationReportsGetParams(args [2]string, argsEscaped bool, r *h
 		return params, &ogenerrors.DecodeParamError{
 			Name: "automationId",
 			In:   "path",
+			Err:  err,
+		}
+	}
+	// Set default value for query: period.
+	{
+		val := SiteAutomationReportsGetPeriod("30d")
+		params.Period.SetTo(val)
+	}
+	// Decode query: period.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "period",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPeriodVal SiteAutomationReportsGetPeriod
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPeriodVal = SiteAutomationReportsGetPeriod(c)
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Period.SetTo(paramsDotPeriodVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.Period.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "period",
+			In:   "query",
 			Err:  err,
 		}
 	}

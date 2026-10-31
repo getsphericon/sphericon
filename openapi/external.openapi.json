@@ -2126,6 +2126,130 @@
         }
       }
     },
+    "/automations/{id}/report": {
+      "get": {
+        "operationId": "Automations_report",
+        "description": "Read the report: the engagement of the automation's emails over its whole history, and its\nresults over a period of Report days in the Workspace time zone (entered, completed,\ngoal_reached, exited and failed enrollments, their average duration and the revenue credited),\neach with the period just before it. Needs the automations:read scope.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AutomationResourceKey"
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "description": "The period the results are read over (defaults to 30d)",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/AutomationReportPeriod"
+                }
+              ],
+              "default": "30d"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationReport"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Automations"],
+        "x-required-scopes": ["automations:read"]
+      }
+    },
     "/automations/{id}/revert": {
       "post": {
         "operationId": "Automations_revert",
@@ -13761,6 +13885,145 @@
         },
         "description": "One request header of an HTTP step. The value is a secret: it is never returned."
       },
+      "AutomationPeriodResults": {
+        "type": "object",
+        "required": [
+          "entered",
+          "completed",
+          "goalReached",
+          "exited",
+          "failed",
+          "from",
+          "to",
+          "averageDurationSeconds",
+          "revenue"
+        ],
+        "properties": {
+          "entered": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that began: their triggering Event occurred in it"
+          },
+          "completed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that walked every step and ended in it"
+          },
+          "goalReached": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that ended in it because their goal event was recorded"
+          },
+          "exited": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that ended in it on a step that failed"
+          },
+          "from": {
+            "type": "string",
+            "description": "The period's first Report day, `YYYY-MM-DD` in the Workspace time zone"
+          },
+          "to": {
+            "type": "string",
+            "description": "The period's last Report day, included"
+          },
+          "averageDurationSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Mean time in whole seconds from the beginning to the end of the enrollments that ended in\nthe period, whatever their outcome; null when none ended"
+          },
+          "revenue": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MessageRevenue"
+              }
+            ],
+            "description": "The orders credited to the automation that were completed in the period, and the net change\nof its revenue in the period: every Movement of a credited Order counts on its own day (ADR 0064)"
+          }
+        },
+        "description": "One period of an automation's results. Each count is what happened in the period: an\nenrollment counts as entered on the Report day it began and under its outcome on the Report day\nit ended, whenever it began, so an enrollment still running counts as entered only."
+      },
+      "AutomationReport": {
+        "type": "object",
+        "required": [
+          "opens",
+          "clicks",
+          "delivered",
+          "bounced",
+          "complained",
+          "captured",
+          "revenue",
+          "links",
+          "results"
+        ],
+        "properties": {
+          "opens": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Opens recorded on the automation's emails, every open counted; bounded by Event retention"
+          },
+          "clicks": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Clicks recorded on the automation's emails, every click counted; bounded by Event retention"
+          },
+          "delivered": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the provider reported delivered, read from the delivery result stamped on each message; not bounded by Event retention"
+          },
+          "bounced": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the provider reported bounced, read from the delivery result stamped on each message; not bounded by Event retention"
+          },
+          "complained": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages a recipient complained about, read from the delivery result stamped on each message; not bounded by Event retention"
+          },
+          "captured": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages that went through a Test inbox: captured, not delivered; they count as delivered too"
+          },
+          "revenue": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MessageRevenue"
+              }
+            ],
+            "description": "Orders credited to the automation and their net revenue, over its whole history (ADR 0064)"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LinkClicks"
+            },
+            "description": "One entry per clicked link, most clicked first"
+          },
+          "results": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationResults"
+              }
+            ],
+            "description": "What the automation's enrollments did over the chosen period and the period before it"
+          }
+        },
+        "description": "An automation's engagement figures over its whole history and its results over a period"
+      },
+      "AutomationReportPeriod": {
+        "type": "string",
+        "enum": ["7d", "14d", "30d", "90d"],
+        "description": "The length of the period an automation's results are read over, in Report days (ADR 0057), today included"
+      },
       "AutomationResource": {
         "type": "object",
         "required": ["id", "name", "status", "live", "draft", "createdAt", "updatedAt"],
@@ -13833,6 +14096,112 @@
           }
         },
         "description": "An Automation: an event-triggered, ordered sequence of steps. Edits write a draft beside the\nlive version, and only publishing (a send-class operation) changes what it does. Created\nautomations are always inactive, with the definition as their draft."
+      },
+      "AutomationResultCounts": {
+        "type": "object",
+        "required": ["entered", "completed", "goalReached", "exited", "failed"],
+        "properties": {
+          "entered": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that began: their triggering Event occurred in it"
+          },
+          "completed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that walked every step and ended in it"
+          },
+          "goalReached": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that ended in it because their goal event was recorded"
+          },
+          "exited": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that ended in it on a step that failed"
+          }
+        },
+        "description": "How many enrollments began, and how many ended with each outcome"
+      },
+      "AutomationResults": {
+        "type": "object",
+        "required": ["period", "current", "previous", "series"],
+        "properties": {
+          "period": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationReportPeriod"
+              }
+            ],
+            "description": "The period the results are read over"
+          },
+          "current": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPeriodResults"
+              }
+            ],
+            "description": "The period ending today"
+          },
+          "previous": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPeriodResults"
+              }
+            ],
+            "description": "As many Report days just before it"
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationResultsPoint"
+            },
+            "description": "The current period by Report day, oldest first, a day with nothing at zero"
+          }
+        },
+        "description": "An automation's results over a period of Report days, read from its enrollments, with the\nperiod just before it to compare with"
+      },
+      "AutomationResultsPoint": {
+        "type": "object",
+        "required": ["entered", "completed", "goalReached", "exited", "failed", "date"],
+        "properties": {
+          "entered": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that began: their triggering Event occurred in it"
+          },
+          "completed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that walked every step and ended in it"
+          },
+          "goalReached": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that ended in it because their goal event was recorded"
+          },
+          "exited": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that ended in it on a step that failed"
+          },
+          "date": {
+            "type": "string",
+            "description": "The Report day, `YYYY-MM-DD` in the Workspace time zone"
+          }
+        },
+        "description": "One Report day of an automation's results"
       },
       "AutomationStatus": {
         "type": "string",
@@ -15825,6 +16194,11 @@
         },
         "description": "Request body for creating a webhook endpoint"
       },
+      "CurrencyCode": {
+        "type": "string",
+        "pattern": "^[A-Z]{3}$",
+        "description": "An ISO 4217 alphabetic currency code in capitals, such as `EUR`. Which codes exist is decided\nby the server, which refuses an unknown one with a reason."
+      },
       "CustomFieldResource": {
         "type": "object",
         "required": ["id", "key", "name", "type", "createdAt", "updatedAt"],
@@ -17250,6 +17624,22 @@
         },
         "description": "A sending-provider Integration. Credentials are write-only: the config is returned with secrets redacted."
       },
+      "LinkClicks": {
+        "type": "object",
+        "required": ["url", "clicks"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The link's destination URL"
+          },
+          "clicks": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Clicks recorded on it, every click counted (not unique per contact); bounded by Event retention"
+          }
+        },
+        "description": "How often one link of an automation's emails was clicked"
+      },
       "LintCode": {
         "type": "string",
         "enum": [
@@ -17344,6 +17734,33 @@
         "minimum": 1,
         "maximum": 10000,
         "description": "A per-second Provider limit the caller may set"
+      },
+      "MessageRevenue": {
+        "type": "object",
+        "required": ["reportingCurrency", "orders", "amount"],
+        "properties": {
+          "reportingCurrency": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrencyCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The Reporting currency, null until an owner or admin chooses it; every figure is zero until then"
+          },
+          "orders": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Orders completed that are credited to it, in the Reporting currency"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Net revenue of those Orders, in the minor unit of the Reporting currency (cents for USD)"
+          }
+        },
+        "description": "Orders credited to a broadcast or an automation and their net revenue (ADR 0064)"
       },
       "Permission": {
         "type": "string",

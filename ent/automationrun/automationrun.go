@@ -35,6 +35,8 @@ const (
 	FieldEventAction = "event_action"
 	// FieldEventProperties holds the string denoting the event_properties field in the database.
 	FieldEventProperties = "event_properties"
+	// FieldEndedAt holds the string denoting the ended_at field in the database.
+	FieldEndedAt = "ended_at"
 	// FieldCurrentStep holds the string denoting the current_step field in the database.
 	FieldCurrentStep = "current_step"
 	// FieldResumeAt holds the string denoting the resume_at field in the database.
@@ -98,6 +100,7 @@ var Columns = []string{
 	FieldBeganAt,
 	FieldEventAction,
 	FieldEventProperties,
+	FieldEndedAt,
 	FieldCurrentStep,
 	FieldResumeAt,
 	FieldFailureKind,
@@ -236,6 +239,11 @@ func ByBeganAt(opts ...sql.OrderTermOption) OrderOption {
 // ByEventAction orders the results by the event_action field.
 func ByEventAction(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEventAction, opts...).ToFunc()
+}
+
+// ByEndedAt orders the results by the ended_at field.
+func ByEndedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEndedAt, opts...).ToFunc()
 }
 
 // ByCurrentStep orders the results by the current_step field.

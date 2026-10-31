@@ -126,6 +126,20 @@ func (_c *AutomationRunCreate) SetEventProperties(v map[string]interface{}) *Aut
 	return _c
 }
 
+// SetEndedAt sets the "ended_at" field.
+func (_c *AutomationRunCreate) SetEndedAt(v time.Time) *AutomationRunCreate {
+	_c.mutation.SetEndedAt(v)
+	return _c
+}
+
+// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableEndedAt(v *time.Time) *AutomationRunCreate {
+	if v != nil {
+		_c.SetEndedAt(*v)
+	}
+	return _c
+}
+
 // SetCurrentStep sets the "current_step" field.
 func (_c *AutomationRunCreate) SetCurrentStep(v int) *AutomationRunCreate {
 	_c.mutation.SetCurrentStep(v)
@@ -392,6 +406,10 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 		_spec.SetField(automationrun.FieldEventProperties, field.TypeJSON, value)
 		_node.EventProperties = value
 	}
+	if value, ok := _c.mutation.EndedAt(); ok {
+		_spec.SetField(automationrun.FieldEndedAt, field.TypeTime, value)
+		_node.EndedAt = &value
+	}
 	if value, ok := _c.mutation.CurrentStep(); ok {
 		_spec.SetField(automationrun.FieldCurrentStep, field.TypeInt, value)
 		_node.CurrentStep = value
@@ -601,6 +619,24 @@ func (u *AutomationRunUpsert) SetStatus(v automationrun.Status) *AutomationRunUp
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *AutomationRunUpsert) UpdateStatus() *AutomationRunUpsert {
 	u.SetExcluded(automationrun.FieldStatus)
+	return u
+}
+
+// SetEndedAt sets the "ended_at" field.
+func (u *AutomationRunUpsert) SetEndedAt(v time.Time) *AutomationRunUpsert {
+	u.Set(automationrun.FieldEndedAt, v)
+	return u
+}
+
+// UpdateEndedAt sets the "ended_at" field to the value that was provided on create.
+func (u *AutomationRunUpsert) UpdateEndedAt() *AutomationRunUpsert {
+	u.SetExcluded(automationrun.FieldEndedAt)
+	return u
+}
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (u *AutomationRunUpsert) ClearEndedAt() *AutomationRunUpsert {
+	u.SetNull(automationrun.FieldEndedAt)
 	return u
 }
 
@@ -841,6 +877,27 @@ func (u *AutomationRunUpsertOne) SetStatus(v automationrun.Status) *AutomationRu
 func (u *AutomationRunUpsertOne) UpdateStatus() *AutomationRunUpsertOne {
 	return u.Update(func(s *AutomationRunUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetEndedAt sets the "ended_at" field.
+func (u *AutomationRunUpsertOne) SetEndedAt(v time.Time) *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetEndedAt(v)
+	})
+}
+
+// UpdateEndedAt sets the "ended_at" field to the value that was provided on create.
+func (u *AutomationRunUpsertOne) UpdateEndedAt() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateEndedAt()
+	})
+}
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (u *AutomationRunUpsertOne) ClearEndedAt() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.ClearEndedAt()
 	})
 }
 
@@ -1263,6 +1320,27 @@ func (u *AutomationRunUpsertBulk) SetStatus(v automationrun.Status) *AutomationR
 func (u *AutomationRunUpsertBulk) UpdateStatus() *AutomationRunUpsertBulk {
 	return u.Update(func(s *AutomationRunUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetEndedAt sets the "ended_at" field.
+func (u *AutomationRunUpsertBulk) SetEndedAt(v time.Time) *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetEndedAt(v)
+	})
+}
+
+// UpdateEndedAt sets the "ended_at" field to the value that was provided on create.
+func (u *AutomationRunUpsertBulk) UpdateEndedAt() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateEndedAt()
+	})
+}
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (u *AutomationRunUpsertBulk) ClearEndedAt() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.ClearEndedAt()
 	})
 }
 

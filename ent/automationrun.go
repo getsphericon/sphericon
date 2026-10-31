@@ -42,6 +42,8 @@ type AutomationRun struct {
 	EventAction *string `json:"event_action,omitempty"`
 	// EventProperties holds the value of the "event_properties" field.
 	EventProperties map[string]interface{} `json:"event_properties,omitempty"`
+	// EndedAt holds the value of the "ended_at" field.
+	EndedAt *time.Time `json:"ended_at,omitempty"`
 	// CurrentStep holds the value of the "current_step" field.
 	CurrentStep int `json:"current_step,omitempty"`
 	// ResumeAt holds the value of the "resume_at" field.
@@ -128,7 +130,7 @@ func (*AutomationRun) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case automationrun.FieldStatus, automationrun.FieldEventAction, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
 			values[i] = new(sql.NullString)
-		case automationrun.FieldCreatedAt, automationrun.FieldUpdatedAt, automationrun.FieldBeganAt, automationrun.FieldResumeAt:
+		case automationrun.FieldCreatedAt, automationrun.FieldUpdatedAt, automationrun.FieldBeganAt, automationrun.FieldEndedAt, automationrun.FieldResumeAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -213,6 +215,13 @@ func (_m *AutomationRun) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.EventProperties); err != nil {
 					return fmt.Errorf("unmarshal field event_properties: %w", err)
 				}
+			}
+		case automationrun.FieldEndedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field ended_at", values[i])
+			} else if value.Valid {
+				_m.EndedAt = new(time.Time)
+				*_m.EndedAt = value.Time
 			}
 		case automationrun.FieldCurrentStep:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -335,6 +344,11 @@ func (_m *AutomationRun) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("event_properties=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EventProperties))
+	builder.WriteString(", ")
+	if v := _m.EndedAt; v != nil {
+		builder.WriteString("ended_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("current_step=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CurrentStep))

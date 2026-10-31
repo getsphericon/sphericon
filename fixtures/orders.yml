@@ -16,3 +16,31 @@
   workspace_id: 2
   created_at: '{{daysAgo 200}}'
   updated_at: '{{daysAgo 200}}'
+
+# Gotham (workspace 61, Reporting currency USD): Orders credited to Gotham results (6100), for the
+# revenue of its periods (#753). Their Movements are in order_movements.yml.
+- id: 6100
+  order_id: gotham-current
+  contact_id: 20049
+  currency: USD
+  automation_id: 6100
+  workspace_id: 61
+  created_at: '2026-03-12 15:00:00+00'
+  updated_at: '2026-03-12 15:00:00+00'
+- id: 6101
+  order_id: gotham-previous
+  contact_id: 20054
+  currency: USD
+  automation_id: 6100
+  workspace_id: 61
+  created_at: '2026-03-05 15:00:00+00'
+  updated_at: '2026-03-05 15:00:00+00'
+# In another currency: stored, counted in no sum.
+- id: 6102
+  order_id: gotham-euro
+  contact_id: 20050
+  currency: EUR
+  automation_id: 6100
+  workspace_id: 61
+  created_at: '2026-03-12 16:00:00+00'
+  updated_at: '2026-03-12 16:00:00+00'

@@ -856,6 +856,299 @@ func (s *AutomationHttpHeader) SetValue(val OptString) {
 	s.Value = val
 }
 
+// One period of an automation's results. Each count is what happened in the period: an enrollment
+// counts as entered on the Report day it began and under its outcome on the Report day it ended,
+// whenever it began, so an enrollment still running counts as entered only.
+// Ref: #/components/schemas/AutomationPeriodResults
+type AutomationPeriodResults struct {
+	// Enrollments that began: their triggering Event occurred in it.
+	Entered int32 `json:"entered"`
+	// Enrollments that walked every step and ended in it.
+	Completed int32 `json:"completed"`
+	// Enrollments that ended in it because their goal event was recorded.
+	GoalReached int32 `json:"goalReached"`
+	// Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event.
+	Exited int32 `json:"exited"`
+	// Enrollments that ended in it on a step that failed.
+	Failed int32 `json:"failed"`
+	// The period's first Report day, `YYYY-MM-DD` in the Workspace time zone.
+	From string `json:"from"`
+	// The period's last Report day, included.
+	To string `json:"to"`
+	// Mean time in whole seconds from the beginning to the end of the enrollments that ended in the
+	// period, whatever their outcome; null when none ended.
+	AverageDurationSeconds NilInt64 `json:"averageDurationSeconds"`
+	// The orders credited to the automation that were completed in the period, and the net change of its
+	// revenue in the period: every Movement of a credited Order counts on its own day (ADR 0064).
+	Revenue MessageRevenue `json:"revenue"`
+}
+
+// GetEntered returns the value of Entered.
+func (s *AutomationPeriodResults) GetEntered() int32 {
+	return s.Entered
+}
+
+// GetCompleted returns the value of Completed.
+func (s *AutomationPeriodResults) GetCompleted() int32 {
+	return s.Completed
+}
+
+// GetGoalReached returns the value of GoalReached.
+func (s *AutomationPeriodResults) GetGoalReached() int32 {
+	return s.GoalReached
+}
+
+// GetExited returns the value of Exited.
+func (s *AutomationPeriodResults) GetExited() int32 {
+	return s.Exited
+}
+
+// GetFailed returns the value of Failed.
+func (s *AutomationPeriodResults) GetFailed() int32 {
+	return s.Failed
+}
+
+// GetFrom returns the value of From.
+func (s *AutomationPeriodResults) GetFrom() string {
+	return s.From
+}
+
+// GetTo returns the value of To.
+func (s *AutomationPeriodResults) GetTo() string {
+	return s.To
+}
+
+// GetAverageDurationSeconds returns the value of AverageDurationSeconds.
+func (s *AutomationPeriodResults) GetAverageDurationSeconds() NilInt64 {
+	return s.AverageDurationSeconds
+}
+
+// GetRevenue returns the value of Revenue.
+func (s *AutomationPeriodResults) GetRevenue() MessageRevenue {
+	return s.Revenue
+}
+
+// SetEntered sets the value of Entered.
+func (s *AutomationPeriodResults) SetEntered(val int32) {
+	s.Entered = val
+}
+
+// SetCompleted sets the value of Completed.
+func (s *AutomationPeriodResults) SetCompleted(val int32) {
+	s.Completed = val
+}
+
+// SetGoalReached sets the value of GoalReached.
+func (s *AutomationPeriodResults) SetGoalReached(val int32) {
+	s.GoalReached = val
+}
+
+// SetExited sets the value of Exited.
+func (s *AutomationPeriodResults) SetExited(val int32) {
+	s.Exited = val
+}
+
+// SetFailed sets the value of Failed.
+func (s *AutomationPeriodResults) SetFailed(val int32) {
+	s.Failed = val
+}
+
+// SetFrom sets the value of From.
+func (s *AutomationPeriodResults) SetFrom(val string) {
+	s.From = val
+}
+
+// SetTo sets the value of To.
+func (s *AutomationPeriodResults) SetTo(val string) {
+	s.To = val
+}
+
+// SetAverageDurationSeconds sets the value of AverageDurationSeconds.
+func (s *AutomationPeriodResults) SetAverageDurationSeconds(val NilInt64) {
+	s.AverageDurationSeconds = val
+}
+
+// SetRevenue sets the value of Revenue.
+func (s *AutomationPeriodResults) SetRevenue(val MessageRevenue) {
+	s.Revenue = val
+}
+
+// An automation's engagement figures over its whole history and its results over a period.
+// Ref: #/components/schemas/AutomationReport
+type AutomationReport struct {
+	// Opens recorded on the automation's emails, every open counted; bounded by Event retention.
+	Opens int32 `json:"opens"`
+	// Clicks recorded on the automation's emails, every click counted; bounded by Event retention.
+	Clicks int32 `json:"clicks"`
+	// Messages the provider reported delivered, read from the delivery result stamped on each message; not
+	// bounded by Event retention.
+	Delivered int32 `json:"delivered"`
+	// Messages the provider reported bounced, read from the delivery result stamped on each message; not
+	// bounded by Event retention.
+	Bounced int32 `json:"bounced"`
+	// Messages a recipient complained about, read from the delivery result stamped on each message; not
+	// bounded by Event retention.
+	Complained int32 `json:"complained"`
+	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too.
+	Captured int32 `json:"captured"`
+	// Orders credited to the automation and their net revenue, over its whole history (ADR 0064).
+	Revenue MessageRevenue `json:"revenue"`
+	// One entry per clicked link, most clicked first.
+	Links []LinkClicks `json:"links"`
+	// What the automation's enrollments did over the chosen period and the period before it.
+	Results AutomationResults `json:"results"`
+}
+
+// GetOpens returns the value of Opens.
+func (s *AutomationReport) GetOpens() int32 {
+	return s.Opens
+}
+
+// GetClicks returns the value of Clicks.
+func (s *AutomationReport) GetClicks() int32 {
+	return s.Clicks
+}
+
+// GetDelivered returns the value of Delivered.
+func (s *AutomationReport) GetDelivered() int32 {
+	return s.Delivered
+}
+
+// GetBounced returns the value of Bounced.
+func (s *AutomationReport) GetBounced() int32 {
+	return s.Bounced
+}
+
+// GetComplained returns the value of Complained.
+func (s *AutomationReport) GetComplained() int32 {
+	return s.Complained
+}
+
+// GetCaptured returns the value of Captured.
+func (s *AutomationReport) GetCaptured() int32 {
+	return s.Captured
+}
+
+// GetRevenue returns the value of Revenue.
+func (s *AutomationReport) GetRevenue() MessageRevenue {
+	return s.Revenue
+}
+
+// GetLinks returns the value of Links.
+func (s *AutomationReport) GetLinks() []LinkClicks {
+	return s.Links
+}
+
+// GetResults returns the value of Results.
+func (s *AutomationReport) GetResults() AutomationResults {
+	return s.Results
+}
+
+// SetOpens sets the value of Opens.
+func (s *AutomationReport) SetOpens(val int32) {
+	s.Opens = val
+}
+
+// SetClicks sets the value of Clicks.
+func (s *AutomationReport) SetClicks(val int32) {
+	s.Clicks = val
+}
+
+// SetDelivered sets the value of Delivered.
+func (s *AutomationReport) SetDelivered(val int32) {
+	s.Delivered = val
+}
+
+// SetBounced sets the value of Bounced.
+func (s *AutomationReport) SetBounced(val int32) {
+	s.Bounced = val
+}
+
+// SetComplained sets the value of Complained.
+func (s *AutomationReport) SetComplained(val int32) {
+	s.Complained = val
+}
+
+// SetCaptured sets the value of Captured.
+func (s *AutomationReport) SetCaptured(val int32) {
+	s.Captured = val
+}
+
+// SetRevenue sets the value of Revenue.
+func (s *AutomationReport) SetRevenue(val MessageRevenue) {
+	s.Revenue = val
+}
+
+// SetLinks sets the value of Links.
+func (s *AutomationReport) SetLinks(val []LinkClicks) {
+	s.Links = val
+}
+
+// SetResults sets the value of Results.
+func (s *AutomationReport) SetResults(val AutomationResults) {
+	s.Results = val
+}
+
+func (*AutomationReport) automationsReportRes() {}
+
+// The length of the period an automation's results are read over, in Report days (ADR 0057), today
+// included.
+// Ref: #/components/schemas/AutomationReportPeriod
+type AutomationReportPeriod string
+
+const (
+	AutomationReportPeriod7d  AutomationReportPeriod = "7d"
+	AutomationReportPeriod14d AutomationReportPeriod = "14d"
+	AutomationReportPeriod30d AutomationReportPeriod = "30d"
+	AutomationReportPeriod90d AutomationReportPeriod = "90d"
+)
+
+// AllValues returns all AutomationReportPeriod values.
+func (AutomationReportPeriod) AllValues() []AutomationReportPeriod {
+	return []AutomationReportPeriod{
+		AutomationReportPeriod7d,
+		AutomationReportPeriod14d,
+		AutomationReportPeriod30d,
+		AutomationReportPeriod90d,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AutomationReportPeriod) MarshalText() ([]byte, error) {
+	switch s {
+	case AutomationReportPeriod7d:
+		return []byte(s), nil
+	case AutomationReportPeriod14d:
+		return []byte(s), nil
+	case AutomationReportPeriod30d:
+		return []byte(s), nil
+	case AutomationReportPeriod90d:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AutomationReportPeriod) UnmarshalText(data []byte) error {
+	switch AutomationReportPeriod(data) {
+	case AutomationReportPeriod7d:
+		*s = AutomationReportPeriod7d
+		return nil
+	case AutomationReportPeriod14d:
+		*s = AutomationReportPeriod14d
+		return nil
+	case AutomationReportPeriod30d:
+		*s = AutomationReportPeriod30d
+		return nil
+	case AutomationReportPeriod90d:
+		*s = AutomationReportPeriod90d
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // An Automation: an event-triggered, ordered sequence of steps. Edits write a draft beside the live
 // version, and only publishing (a send-class operation) changes what it does. Created automations are
 // always inactive, with the definition as their draft.
@@ -967,6 +1260,137 @@ func (*AutomationResource) automationsPublishRes()    {}
 func (*AutomationResource) automationsRevertRes()     {}
 func (*AutomationResource) automationsUnarchiveRes()  {}
 func (*AutomationResource) automationsUpdateRes()     {}
+
+// An automation's results over a period of Report days, read from its enrollments, with the period
+// just before it to compare with.
+// Ref: #/components/schemas/AutomationResults
+type AutomationResults struct {
+	// The period the results are read over.
+	Period AutomationReportPeriod `json:"period"`
+	// The period ending today.
+	Current AutomationPeriodResults `json:"current"`
+	// As many Report days just before it.
+	Previous AutomationPeriodResults `json:"previous"`
+	// The current period by Report day, oldest first, a day with nothing at zero.
+	Series []AutomationResultsPoint `json:"series"`
+}
+
+// GetPeriod returns the value of Period.
+func (s *AutomationResults) GetPeriod() AutomationReportPeriod {
+	return s.Period
+}
+
+// GetCurrent returns the value of Current.
+func (s *AutomationResults) GetCurrent() AutomationPeriodResults {
+	return s.Current
+}
+
+// GetPrevious returns the value of Previous.
+func (s *AutomationResults) GetPrevious() AutomationPeriodResults {
+	return s.Previous
+}
+
+// GetSeries returns the value of Series.
+func (s *AutomationResults) GetSeries() []AutomationResultsPoint {
+	return s.Series
+}
+
+// SetPeriod sets the value of Period.
+func (s *AutomationResults) SetPeriod(val AutomationReportPeriod) {
+	s.Period = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *AutomationResults) SetCurrent(val AutomationPeriodResults) {
+	s.Current = val
+}
+
+// SetPrevious sets the value of Previous.
+func (s *AutomationResults) SetPrevious(val AutomationPeriodResults) {
+	s.Previous = val
+}
+
+// SetSeries sets the value of Series.
+func (s *AutomationResults) SetSeries(val []AutomationResultsPoint) {
+	s.Series = val
+}
+
+// One Report day of an automation's results.
+// Ref: #/components/schemas/AutomationResultsPoint
+type AutomationResultsPoint struct {
+	// Enrollments that began: their triggering Event occurred in it.
+	Entered int32 `json:"entered"`
+	// Enrollments that walked every step and ended in it.
+	Completed int32 `json:"completed"`
+	// Enrollments that ended in it because their goal event was recorded.
+	GoalReached int32 `json:"goalReached"`
+	// Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event.
+	Exited int32 `json:"exited"`
+	// Enrollments that ended in it on a step that failed.
+	Failed int32 `json:"failed"`
+	// The Report day, `YYYY-MM-DD` in the Workspace time zone.
+	Date string `json:"date"`
+}
+
+// GetEntered returns the value of Entered.
+func (s *AutomationResultsPoint) GetEntered() int32 {
+	return s.Entered
+}
+
+// GetCompleted returns the value of Completed.
+func (s *AutomationResultsPoint) GetCompleted() int32 {
+	return s.Completed
+}
+
+// GetGoalReached returns the value of GoalReached.
+func (s *AutomationResultsPoint) GetGoalReached() int32 {
+	return s.GoalReached
+}
+
+// GetExited returns the value of Exited.
+func (s *AutomationResultsPoint) GetExited() int32 {
+	return s.Exited
+}
+
+// GetFailed returns the value of Failed.
+func (s *AutomationResultsPoint) GetFailed() int32 {
+	return s.Failed
+}
+
+// GetDate returns the value of Date.
+func (s *AutomationResultsPoint) GetDate() string {
+	return s.Date
+}
+
+// SetEntered sets the value of Entered.
+func (s *AutomationResultsPoint) SetEntered(val int32) {
+	s.Entered = val
+}
+
+// SetCompleted sets the value of Completed.
+func (s *AutomationResultsPoint) SetCompleted(val int32) {
+	s.Completed = val
+}
+
+// SetGoalReached sets the value of GoalReached.
+func (s *AutomationResultsPoint) SetGoalReached(val int32) {
+	s.GoalReached = val
+}
+
+// SetExited sets the value of Exited.
+func (s *AutomationResultsPoint) SetExited(val int32) {
+	s.Exited = val
+}
+
+// SetFailed sets the value of Failed.
+func (s *AutomationResultsPoint) SetFailed(val int32) {
+	s.Failed = val
+}
+
+// SetDate sets the value of Date.
+func (s *AutomationResultsPoint) SetDate(val string) {
+	s.Date = val
+}
 
 // Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
 // Ref: #/components/schemas/AutomationStatus
@@ -1549,6 +1973,78 @@ func (*AutomationsPublishUnauthorized) automationsPublishRes() {}
 type AutomationsPublishUnprocessableEntity ProblemDetails
 
 func (*AutomationsPublishUnprocessableEntity) automationsPublishRes() {}
+
+type AutomationsReportBadRequest ProblemDetails
+
+func (*AutomationsReportBadRequest) automationsReportRes() {}
+
+type AutomationsReportForbidden ProblemDetails
+
+func (*AutomationsReportForbidden) automationsReportRes() {}
+
+type AutomationsReportNotFound ProblemDetails
+
+func (*AutomationsReportNotFound) automationsReportRes() {}
+
+// Merged schema.
+type AutomationsReportPeriod string
+
+const (
+	AutomationsReportPeriod7d  AutomationsReportPeriod = "7d"
+	AutomationsReportPeriod14d AutomationsReportPeriod = "14d"
+	AutomationsReportPeriod30d AutomationsReportPeriod = "30d"
+	AutomationsReportPeriod90d AutomationsReportPeriod = "90d"
+)
+
+// AllValues returns all AutomationsReportPeriod values.
+func (AutomationsReportPeriod) AllValues() []AutomationsReportPeriod {
+	return []AutomationsReportPeriod{
+		AutomationsReportPeriod7d,
+		AutomationsReportPeriod14d,
+		AutomationsReportPeriod30d,
+		AutomationsReportPeriod90d,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AutomationsReportPeriod) MarshalText() ([]byte, error) {
+	switch s {
+	case AutomationsReportPeriod7d:
+		return []byte(s), nil
+	case AutomationsReportPeriod14d:
+		return []byte(s), nil
+	case AutomationsReportPeriod30d:
+		return []byte(s), nil
+	case AutomationsReportPeriod90d:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AutomationsReportPeriod) UnmarshalText(data []byte) error {
+	switch AutomationsReportPeriod(data) {
+	case AutomationsReportPeriod7d:
+		*s = AutomationsReportPeriod7d
+		return nil
+	case AutomationsReportPeriod14d:
+		*s = AutomationsReportPeriod14d
+		return nil
+	case AutomationsReportPeriod30d:
+		*s = AutomationsReportPeriod30d
+		return nil
+	case AutomationsReportPeriod90d:
+		*s = AutomationsReportPeriod90d
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type AutomationsReportUnauthorized ProblemDetails
+
+func (*AutomationsReportUnauthorized) automationsReportRes() {}
 
 type AutomationsRevertBadRequest ProblemDetails
 
@@ -5985,6 +6481,8 @@ func (s *CreateWebhookInput) SetEnabled(val OptBool) {
 	s.Enabled = val
 }
 
+type CurrencyCode string
+
 // Custom field definition: a typed, named Contact attribute (ADR 0006).
 // Ref: #/components/schemas/CustomFieldResource
 type CustomFieldResource struct {
@@ -8640,6 +9138,35 @@ type IntegrationsUpdateUnprocessableEntity ProblemDetails
 
 func (*IntegrationsUpdateUnprocessableEntity) integrationsUpdateRes() {}
 
+// How often one link of an automation's emails was clicked.
+// Ref: #/components/schemas/LinkClicks
+type LinkClicks struct {
+	// The link's destination URL.
+	URL string `json:"url"`
+	// Clicks recorded on it, every click counted (not unique per contact); bounded by Event retention.
+	Clicks int32 `json:"clicks"`
+}
+
+// GetURL returns the value of URL.
+func (s *LinkClicks) GetURL() string {
+	return s.URL
+}
+
+// GetClicks returns the value of Clicks.
+func (s *LinkClicks) GetClicks() int32 {
+	return s.Clicks
+}
+
+// SetURL sets the value of URL.
+func (s *LinkClicks) SetURL(val string) {
+	s.URL = val
+}
+
+// SetClicks sets the value of Clicks.
+func (s *LinkClicks) SetClicks(val int32) {
+	s.Clicks = val
+}
+
 // What a lint finding is about (ADR 0040).
 // Ref: #/components/schemas/LintCode
 type LintCode string
@@ -8857,6 +9384,47 @@ type MaxPerDay int32
 
 type MaxPerSecond int32
 
+// Orders credited to a broadcast or an automation and their net revenue (ADR 0064).
+// Ref: #/components/schemas/MessageRevenue
+type MessageRevenue struct {
+	// The Reporting currency, null until an owner or admin chooses it; every figure is zero until then.
+	ReportingCurrency NilCurrencyCode `json:"reportingCurrency"`
+	// Orders completed that are credited to it, in the Reporting currency.
+	Orders int32 `json:"orders"`
+	// Net revenue of those Orders, in the minor unit of the Reporting currency (cents for USD).
+	Amount int64 `json:"amount"`
+}
+
+// GetReportingCurrency returns the value of ReportingCurrency.
+func (s *MessageRevenue) GetReportingCurrency() NilCurrencyCode {
+	return s.ReportingCurrency
+}
+
+// GetOrders returns the value of Orders.
+func (s *MessageRevenue) GetOrders() int32 {
+	return s.Orders
+}
+
+// GetAmount returns the value of Amount.
+func (s *MessageRevenue) GetAmount() int64 {
+	return s.Amount
+}
+
+// SetReportingCurrency sets the value of ReportingCurrency.
+func (s *MessageRevenue) SetReportingCurrency(val NilCurrencyCode) {
+	s.ReportingCurrency = val
+}
+
+// SetOrders sets the value of Orders.
+func (s *MessageRevenue) SetOrders(val int32) {
+	s.Orders = val
+}
+
+// SetAmount sets the value of Amount.
+func (s *MessageRevenue) SetAmount(val int64) {
+	s.Amount = val
+}
+
 // NewNilAutomationVersion returns new NilAutomationVersion with value set to v.
 func NewNilAutomationVersion(v AutomationVersion) NilAutomationVersion {
 	return NilAutomationVersion{
@@ -8896,6 +9464,51 @@ func (o NilAutomationVersion) Get() (v AutomationVersion, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilAutomationVersion) Or(d AutomationVersion) AutomationVersion {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilCurrencyCode returns new NilCurrencyCode with value set to v.
+func NewNilCurrencyCode(v CurrencyCode) NilCurrencyCode {
+	return NilCurrencyCode{
+		Value: v,
+	}
+}
+
+// NilCurrencyCode is nullable CurrencyCode.
+type NilCurrencyCode struct {
+	Value CurrencyCode
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilCurrencyCode) SetTo(v CurrencyCode) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilCurrencyCode) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilCurrencyCode) SetToNull() {
+	o.Null = true
+	var v CurrencyCode
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilCurrencyCode) Get() (v CurrencyCode, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilCurrencyCode) Or(d CurrencyCode) CurrencyCode {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -9031,6 +9644,51 @@ func (o NilInt32) Get() (v int32, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilInt32) Or(d int32) int32 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilInt64 returns new NilInt64 with value set to v.
+func NewNilInt64(v int64) NilInt64 {
+	return NilInt64{
+		Value: v,
+	}
+}
+
+// NilInt64 is nullable int64.
+type NilInt64 struct {
+	Value int64
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilInt64) SetTo(v int64) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilInt64) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilInt64) SetToNull() {
+	o.Null = true
+	var v int64
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilInt64) Get() (v int64, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilInt64) Or(d int64) int64 {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -9304,6 +9962,52 @@ func (o OptAutomationStepDoc) Get() (v AutomationStepDoc, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptAutomationStepDoc) Or(d AutomationStepDoc) AutomationStepDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptAutomationsReportPeriod returns new OptAutomationsReportPeriod with value set to v.
+func NewOptAutomationsReportPeriod(v AutomationsReportPeriod) OptAutomationsReportPeriod {
+	return OptAutomationsReportPeriod{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptAutomationsReportPeriod is optional AutomationsReportPeriod.
+type OptAutomationsReportPeriod struct {
+	Value AutomationsReportPeriod
+	Set   bool
+}
+
+// IsSet returns true if OptAutomationsReportPeriod was set.
+func (o OptAutomationsReportPeriod) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptAutomationsReportPeriod) Reset() {
+	var v AutomationsReportPeriod
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptAutomationsReportPeriod) SetTo(v AutomationsReportPeriod) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptAutomationsReportPeriod) Get() (v AutomationsReportPeriod, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptAutomationsReportPeriod) Or(d AutomationsReportPeriod) AutomationsReportPeriod {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -12397,6 +13101,7 @@ func (*ProblemDetailsHeaders) automationsDryRunHttpStepRes() {}
 func (*ProblemDetailsHeaders) automationsGetRes()            {}
 func (*ProblemDetailsHeaders) automationsListRes()           {}
 func (*ProblemDetailsHeaders) automationsPublishRes()        {}
+func (*ProblemDetailsHeaders) automationsReportRes()         {}
 func (*ProblemDetailsHeaders) automationsRevertRes()         {}
 func (*ProblemDetailsHeaders) automationsUnarchiveRes()      {}
 func (*ProblemDetailsHeaders) automationsUpdateRes()         {}

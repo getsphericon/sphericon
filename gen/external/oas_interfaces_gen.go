@@ -57,6 +57,10 @@ type AutomationsPublishRes interface {
 	automationsPublishRes()
 }
 
+type AutomationsReportRes interface {
+	automationsReportRes()
+}
+
 type AutomationsRevertRes interface {
 	automationsRevertRes()
 }

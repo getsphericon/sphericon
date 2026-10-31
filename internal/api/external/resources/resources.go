@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -113,6 +114,8 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 // goverter:extend optTrackingReason
 // goverter:extend auditDiff
 // goverter:extend optWebhookDisabledReason
+// goverter:extend nilCurrencyCode
+// goverter:extend durationSeconds
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	// The contract names the discarded state "archived" (ADR 0049).
@@ -134,6 +137,19 @@ type Converter interface {
 	// goverter:map Stats OpenRate | openRate
 	// goverter:map Stats ClickRate | clickRate
 	BroadcastReportToResource(source broadcasts.Report) externalapi.BroadcastReport
+	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
+	// goverter:autoMap Credited
+	// goverter:map Currency ReportingCurrency
+	MessageRevenueToResource(source orders.Revenue) externalapi.MessageRevenue
+	AutomationReportToResource(source automations.Report) externalapi.AutomationReport
+	// goverter:autoMap ResultCounts
+	// goverter:map AverageDuration AverageDurationSeconds
+	AutomationPeriodResultsToResource(source automations.PeriodResults) externalapi.AutomationPeriodResults
+	// goverter:autoMap ResultCounts
+	AutomationResultsPointToResource(source automations.ResultsPoint) externalapi.AutomationResultsPoint
+	// The period is the one the request named: the handler attaches it.
+	// goverter:ignore Period
+	AutomationResultsToResource(source automations.Results) externalapi.AutomationResults
 	ApiTokenToInfo(source *ent.ApiToken) externalapi.ApiTokenInfo
 	// The contract names the discarded state \"archived\" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
@@ -292,6 +308,16 @@ func clickRate(st broadcasts.Stats) float32 { return st.ClickRate() }
 
 // count narrows a message count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }
+
+// nilCurrencyCode is the Reporting currency, null until an Owner or Admin chooses one (ADR 0064).
+func nilCurrencyCode(v *string) externalapi.NilCurrencyCode {
+	return convert.Nil[externalapi.NilCurrencyCode]((*externalapi.CurrencyCode)(v))
+}
+
+// durationSeconds is a duration in whole seconds, null when there was nothing to measure.
+func durationSeconds(d *time.Duration) externalapi.NilInt64 {
+	return convert.Nil[externalapi.NilInt64](convert.WholeSeconds(d))
+}
 
 // nilString renders an optional value: null when there is none.
 func nilString(v *string) externalapi.NilString {

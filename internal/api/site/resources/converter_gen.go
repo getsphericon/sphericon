@@ -9,12 +9,14 @@ import (
 	site "github.com/getsphericon/sphericon/gen/site"
 	analytics "github.com/getsphericon/sphericon/internal/analytics"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
+	automations "github.com/getsphericon/sphericon/internal/automations"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	instance "github.com/getsphericon/sphericon/internal/instance"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
+	orders "github.com/getsphericon/sphericon/internal/orders"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -35,6 +37,54 @@ func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) site.SiteAudi
 	siteapiSiteAuditEntryResource.IP = optNilString(source.IP)
 	siteapiSiteAuditEntryResource.UserAgent = optNilString(source.UserAgent)
 	return siteapiSiteAuditEntryResource
+}
+func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) site.SiteAutomationPeriodResults {
+	var siteapiSiteAutomationPeriodResults site.SiteAutomationPeriodResults
+	siteapiSiteAutomationPeriodResults.Entered = count(source.ResultCounts.Entered)
+	siteapiSiteAutomationPeriodResults.Completed = count(source.ResultCounts.Completed)
+	siteapiSiteAutomationPeriodResults.GoalReached = count(source.ResultCounts.GoalReached)
+	siteapiSiteAutomationPeriodResults.Exited = count(source.ResultCounts.Exited)
+	siteapiSiteAutomationPeriodResults.Failed = count(source.ResultCounts.Failed)
+	siteapiSiteAutomationPeriodResults.From = source.From
+	siteapiSiteAutomationPeriodResults.To = source.To
+	siteapiSiteAutomationPeriodResults.AverageDurationSeconds = durationSeconds(source.AverageDuration)
+	siteapiSiteAutomationPeriodResults.Revenue = c.MessageRevenueToResource(source.Revenue)
+	return siteapiSiteAutomationPeriodResults
+}
+func (c *ConverterImpl) AutomationReportToResource(source automations.Report) site.SiteAutomationReport {
+	var siteapiSiteAutomationReport site.SiteAutomationReport
+	siteapiSiteAutomationReport.Opens = count(source.Opens)
+	siteapiSiteAutomationReport.Clicks = count(source.Clicks)
+	siteapiSiteAutomationReport.Delivered = count(source.Delivered)
+	siteapiSiteAutomationReport.Bounced = count(source.Bounced)
+	siteapiSiteAutomationReport.Complained = count(source.Complained)
+	siteapiSiteAutomationReport.Captured = count(source.Captured)
+	siteapiSiteAutomationReport.Revenue = c.MessageRevenueToResource(source.Revenue)
+	siteapiSiteAutomationReport.Links = c.LinkClicksToResource(source.Links)
+	siteapiSiteAutomationReport.Results = c.AutomationResultsToResource(source.Results)
+	return siteapiSiteAutomationReport
+}
+func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) site.SiteAutomationResultsPoint {
+	var siteapiSiteAutomationResultsPoint site.SiteAutomationResultsPoint
+	siteapiSiteAutomationResultsPoint.Entered = count(source.ResultCounts.Entered)
+	siteapiSiteAutomationResultsPoint.Completed = count(source.ResultCounts.Completed)
+	siteapiSiteAutomationResultsPoint.GoalReached = count(source.ResultCounts.GoalReached)
+	siteapiSiteAutomationResultsPoint.Exited = count(source.ResultCounts.Exited)
+	siteapiSiteAutomationResultsPoint.Failed = count(source.ResultCounts.Failed)
+	siteapiSiteAutomationResultsPoint.Date = source.Date
+	return siteapiSiteAutomationResultsPoint
+}
+func (c *ConverterImpl) AutomationResultsToResource(source automations.Results) site.SiteAutomationResults {
+	var siteapiSiteAutomationResults site.SiteAutomationResults
+	siteapiSiteAutomationResults.Current = c.AutomationPeriodResultsToResource(source.Current)
+	siteapiSiteAutomationResults.Previous = c.AutomationPeriodResultsToResource(source.Previous)
+	if source.Series != nil {
+		siteapiSiteAutomationResults.Series = make([]site.SiteAutomationResultsPoint, len(source.Series))
+		for i := 0; i < len(source.Series); i++ {
+			siteapiSiteAutomationResults.Series[i] = c.AutomationResultsPointToResource(source.Series[i])
+		}
+	}
+	return siteapiSiteAutomationResults
 }
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAutomationResource {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
@@ -444,6 +494,13 @@ func (c *ConverterImpl) MembershipToResource(source *ent.Membership) site.SiteMe
 		siteapiSiteMembershipResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteMembershipResource
+}
+func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) site.SiteMessageRevenue {
+	var siteapiSiteMessageRevenue site.SiteMessageRevenue
+	siteapiSiteMessageRevenue.ReportingCurrency = nilCurrencyCode(source.Currency)
+	siteapiSiteMessageRevenue.Orders = count(source.Credited.Orders)
+	siteapiSiteMessageRevenue.Amount = source.Credited.Amount
+	return siteapiSiteMessageRevenue
 }
 func (c *ConverterImpl) OptionalConsentToSite(source consentrecords.OptionalConsent) site.SiteOptionalConsent {
 	var siteapiSiteOptionalConsent site.SiteOptionalConsent

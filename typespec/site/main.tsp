@@ -3,6 +3,7 @@ import "@typespec/rest";
 import "@typespec/openapi";
 
 import "../common/scalars.tsp";
+import "../common/money.tsp";
 import "../common/pagination.tsp";
 import "../common/errors.tsp";
 // scopes.tsp before crud.tsp: the external CRUD templates constrain their scope parameters to

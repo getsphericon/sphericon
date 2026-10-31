@@ -207,6 +207,109 @@ export type AutomationHttpHeader = {
 };
 
 /**
+ * One period of an automation's results. Each count is what happened in the period: an
+ * enrollment counts as entered on the Report day it began and under its outcome on the Report day
+ * it ended, whenever it began, so an enrollment still running counts as entered only.
+ */
+export type AutomationPeriodResults = {
+  /**
+   * Enrollments that began: their triggering Event occurred in it
+   */
+  entered: number;
+  /**
+   * Enrollments that walked every step and ended in it
+   */
+  completed: number;
+  /**
+   * Enrollments that ended in it because their goal event was recorded
+   */
+  goalReached: number;
+  /**
+   * Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event
+   */
+  exited: number;
+  /**
+   * Enrollments that ended in it on a step that failed
+   */
+  failed: number;
+  /**
+   * The period's first Report day, `YYYY-MM-DD` in the Workspace time zone
+   */
+  from: string;
+  /**
+   * The period's last Report day, included
+   */
+  to: string;
+  /**
+   * Mean time in whole seconds from the beginning to the end of the enrollments that ended in
+   * the period, whatever their outcome; null when none ended
+   */
+  averageDurationSeconds: number | null;
+  /**
+   * The orders credited to the automation that were completed in the period, and the net change
+   * of its revenue in the period: every Movement of a credited Order counts on its own day (ADR 0064)
+   */
+  revenue: MessageRevenue;
+};
+
+/**
+ * An automation's engagement figures over its whole history and its results over a period
+ */
+export type AutomationReport = {
+  /**
+   * Opens recorded on the automation's emails, every open counted; bounded by Event retention
+   */
+  opens: number;
+  /**
+   * Clicks recorded on the automation's emails, every click counted; bounded by Event retention
+   */
+  clicks: number;
+  /**
+   * Messages the provider reported delivered, read from the delivery result stamped on each message; not bounded by Event retention
+   */
+  delivered: number;
+  /**
+   * Messages the provider reported bounced, read from the delivery result stamped on each message; not bounded by Event retention
+   */
+  bounced: number;
+  /**
+   * Messages a recipient complained about, read from the delivery result stamped on each message; not bounded by Event retention
+   */
+  complained: number;
+  /**
+   * Messages that went through a Test inbox: captured, not delivered; they count as delivered too
+   */
+  captured: number;
+  /**
+   * Orders credited to the automation and their net revenue, over its whole history (ADR 0064)
+   */
+  revenue: MessageRevenue;
+  /**
+   * One entry per clicked link, most clicked first
+   */
+  links: Array<LinkClicks>;
+  /**
+   * What the automation's enrollments did over the chosen period and the period before it
+   */
+  results: AutomationResults;
+};
+
+/**
+ * The length of the period an automation's results are read over, in Report days (ADR 0057), today included
+ */
+export const AutomationReportPeriod = {
+  '7D': '7d',
+  '14D': '14d',
+  '30D': '30d',
+  '90D': '90d'
+} as const;
+
+/**
+ * The length of the period an automation's results are read over, in Report days (ADR 0057), today included
+ */
+export type AutomationReportPeriod = typeof AutomationReportPeriod[keyof typeof AutomationReportPeriod];
+
+/**
  * An Automation: an event-triggered, ordered sequence of steps. Edits write a draft beside the
  * live version, and only publishing (a send-class operation) changes what it does. Created
  * automations are always inactive, with the definition as their draft.
@@ -244,6 +347,85 @@ export type AutomationResource = {
    * Last update timestamp
    */
   updatedAt: Timestamp;
+};
+
+/**
+ * How many enrollments began, and how many ended with each outcome
+ */
+export type AutomationResultCounts = {
+  /**
+   * Enrollments that began: their triggering Event occurred in it
+   */
+  entered: number;
+  /**
+   * Enrollments that walked every step and ended in it
+   */
+  completed: number;
+  /**
+   * Enrollments that ended in it because their goal event was recorded
+   */
+  goalReached: number;
+  /**
+   * Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event
+   */
+  exited: number;
+  /**
+   * Enrollments that ended in it on a step that failed
+   */
+  failed: number;
+};
+
+/**
+ * An automation's results over a period of Report days, read from its enrollments, with the
+ * period just before it to compare with
+ */
+export type AutomationResults = {
+  /**
+   * The period the results are read over
+   */
+  period: AutomationReportPeriod;
+  /**
+   * The period ending today
+   */
+  current: AutomationPeriodResults;
+  /**
+   * As many Report days just before it
+   */
+  previous: AutomationPeriodResults;
+  /**
+   * The current period by Report day, oldest first, a day with nothing at zero
+   */
+  series: Array<AutomationResultsPoint>;
+};
+
+/**
+ * One Report day of an automation's results
+ */
+export type AutomationResultsPoint = {
+  /**
+   * Enrollments that began: their triggering Event occurred in it
+   */
+  entered: number;
+  /**
+   * Enrollments that walked every step and ended in it
+   */
+  completed: number;
+  /**
+   * Enrollments that ended in it because their goal event was recorded
+   */
+  goalReached: number;
+  /**
+   * Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event
+   */
+  exited: number;
+  /**
+   * Enrollments that ended in it on a step that failed
+   */
+  failed: number;
+  /**
+   * The Report day, `YYYY-MM-DD` in the Workspace time zone
+   */
+  date: string;
 };
 
 /**
@@ -1617,6 +1799,12 @@ export type CreateWebhookInput = {
 };
 
 /**
+ * An ISO 4217 alphabetic currency code in capitals, such as `EUR`. Which codes exist is decided
+ * by the server, which refuses an unknown one with a reason.
+ */
+export type CurrencyCode = string;
+
+/**
  * Custom field definition: a typed, named Contact attribute (ADR 0006)
  */
 export type CustomFieldResource = {
@@ -2537,6 +2725,20 @@ export type IntegrationResource = {
 };
 
 /**
+ * How often one link of an automation's emails was clicked
+ */
+export type LinkClicks = {
+  /**
+   * The link's destination URL
+   */
+  url: string;
+  /**
+   * Clicks recorded on it, every click counted (not unique per contact); bounded by Event retention
+   */
+  clicks: number;
+};
+
+/**
  * What a lint finding is about (ADR 0040)
  */
 export const LintCode = {
@@ -2621,6 +2823,24 @@ export type MaxPerDay = number;
  * A per-second Provider limit the caller may set
  */
 export type MaxPerSecond = number;
+
+/**
+ * Orders credited to a broadcast or an automation and their net revenue (ADR 0064)
+ */
+export type MessageRevenue = {
+  /**
+   * The Reporting currency, null until an owner or admin chooses it; every figure is zero until then
+   */
+  reportingCurrency: CurrencyCode | null;
+  /**
+   * Orders completed that are credited to it, in the Reporting currency
+   */
+  orders: number;
+  /**
+   * Net revenue of those Orders, in the minor unit of the Reporting currency (cents for USD)
+   */
+  amount: number;
+};
 
 /**
  * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
@@ -5132,6 +5352,57 @@ export type AutomationsPublishResponses = {
 };
 
 export type AutomationsPublishResponse = AutomationsPublishResponses[keyof AutomationsPublishResponses];
+
+export type AutomationsReportData = {
+  body?: never;
+  path: {
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: {
+    /**
+     * The period the results are read over (defaults to 30d)
+     */
+    period?: AutomationReportPeriod;
+  };
+  url: '/automations/{id}/report';
+};
+
+export type AutomationsReportErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type AutomationsReportError = AutomationsReportErrors[keyof AutomationsReportErrors];
+
+export type AutomationsReportResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: AutomationReport;
+};
+
+export type AutomationsReportResponse = AutomationsReportResponses[keyof AutomationsReportResponses];
 
 export type AutomationsRevertData = {
   body?: never;

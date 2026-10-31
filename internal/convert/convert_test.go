@@ -2,6 +2,7 @@ package convert_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/go-faster/jx"
 	"github.com/stretchr/testify/assert"
@@ -88,6 +89,36 @@ func TestPtr(t *testing.T) {
 	assert.Equal(t, 7, *got)
 
 	assert.Nil(t, convert.Ptr[int](optInt{v: 7, set: false}))
+}
+
+// nilInt mimics an ogen NilInt64: a value, or null.
+type nilInt struct {
+	v    int64
+	null bool
+}
+
+func (n *nilInt) SetTo(v int64) { n.v, n.null = v, false }
+func (n *nilInt) SetToNull()    { n.v, n.null = 0, true }
+
+func TestNilIsNullWithoutAValue(t *testing.T) {
+	seven := int64(7)
+
+	set := convert.Nil[nilInt](&seven)
+	unset := convert.Nil[nilInt]((*int64)(nil))
+
+	assert.Equal(t, nilInt{v: 7}, set)
+	assert.Equal(t, nilInt{null: true}, unset)
+}
+
+func TestWholeSecondsDropsTheFraction(t *testing.T) {
+	d := 90*time.Second + 999*time.Millisecond
+
+	got := convert.WholeSeconds(&d)
+	none := convert.WholeSeconds(nil)
+
+	require.NotNil(t, got)
+	assert.Equal(t, int64(90), *got)
+	assert.Nil(t, none)
 }
 
 func TestStringPtr(t *testing.T) {

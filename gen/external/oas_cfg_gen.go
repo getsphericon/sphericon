@@ -19,6 +19,7 @@ import (
 
 var regexMap = map[string]ogenregex.Regexp{
 	"^[0-9]{1,18}$": ogenregex.MustCompile("^[0-9]{1,18}$"),
+	"^[A-Z]{3}$":    ogenregex.MustCompile("^[A-Z]{3}$"),
 }
 var (
 	// Allocate option closure once.

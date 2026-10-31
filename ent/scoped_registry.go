@@ -330,6 +330,9 @@ func ScopedEntities() []ScopedEntity {
 				if !reflect.ValueOf(src.EventProperties).IsZero() {
 					b.SetEventProperties(src.EventProperties)
 				}
+				if src.EndedAt != nil {
+					b.SetEndedAt(*src.EndedAt)
+				}
 				b.SetCurrentStep(src.CurrentStep)
 				if src.ResumeAt != nil {
 					b.SetResumeAt(*src.ResumeAt)

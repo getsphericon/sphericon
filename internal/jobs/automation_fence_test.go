@@ -164,7 +164,7 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 
 	exited := make(chan exitResult, 1)
 	go func() {
-		ended, err := automations.Exit(ctx, e.scoped, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID)
+		ended, err := automations.Exit(ctx, e.scoped, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID, time.Now())
 		exited <- exitResult{err: err, afterTheSend: settled(bs.done), ended: ended}
 	}()
 	bs.release()
@@ -231,7 +231,7 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	require.True(t, e.runRowIsLocked(t, runID), "an in-flight call holds the Enrollment")
 
 	exited := make(chan error, 1)
-	go func() { exited <- automations.ExitRun(ctx, e.scoped, runID) }()
+	go func() { exited <- automations.ExitRun(ctx, e.scoped, runID, time.Now()) }()
 	release()
 
 	require.NoError(t, <-workDone)

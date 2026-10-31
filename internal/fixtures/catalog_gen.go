@@ -57,6 +57,12 @@ const (
 	AutomationGlobexID = 900
 	// AutomationGlobexName is from fixtures/automations.
 	AutomationGlobexName = "Globex automation"
+	// AutomationGothamResultsID is from fixtures/automations.
+	AutomationGothamResultsID = 6100
+	// AutomationGothamResultsName is from fixtures/automations.
+	AutomationGothamResultsName = "Gotham results"
+	// AutomationGothamResultsVersionID is from fixtures/automation_versions.
+	AutomationGothamResultsVersionID = 6100
 	// AutomationHoldDemoID is from fixtures/automations.
 	AutomationHoldDemoID = 103
 	// AutomationHoldDemoName is from fixtures/automations.

@@ -7,7 +7,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -30,7 +29,7 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 	return &siteapi.SiteAutomationsListOK{
 		Items: lo.Map(page.Items, func(a *ent.Automation, _ int) siteapi.SiteAutomationResource {
 			res := mapper.AutomationToResource(a)
-			res.Revenue = siteapi.NewOptSiteMessageRevenue(resources.MessageRevenue(revenue.Only(a.ID)))
+			res.Revenue = siteapi.NewOptSiteMessageRevenue(mapper.MessageRevenueToResource(revenue.Of(a.ID)))
 			return res
 		}),
 		Page:       narrow.Int32(page.Page),
@@ -69,7 +68,7 @@ func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAu
 		return nil, err
 	}
 	res := mapper.AutomationToResource(a)
-	res.Revenue = siteapi.NewOptSiteMessageRevenue(resources.MessageRevenue(revenue.Only(a.ID)))
+	res.Revenue = siteapi.NewOptSiteMessageRevenue(mapper.MessageRevenueToResource(revenue.Of(a.ID)))
 	return &res, nil
 }
 

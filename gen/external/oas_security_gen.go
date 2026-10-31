@@ -47,6 +47,7 @@ var operationRolesBearerAuth = map[string][]string{
 	AutomationsGetOperation:            []string{},
 	AutomationsListOperation:           []string{},
 	AutomationsPublishOperation:        []string{},
+	AutomationsReportOperation:         []string{},
 	AutomationsRevertOperation:         []string{},
 	AutomationsUnarchiveOperation:      []string{},
 	AutomationsUpdateOperation:         []string{},

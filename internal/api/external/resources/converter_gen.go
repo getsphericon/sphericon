@@ -8,9 +8,12 @@ import (
 	schema "github.com/getsphericon/sphericon/ent/schema"
 	external "github.com/getsphericon/sphericon/gen/external"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
+	automations "github.com/getsphericon/sphericon/internal/automations"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
+	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
+	orders "github.com/getsphericon/sphericon/internal/orders"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -49,6 +52,59 @@ func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) external.Audi
 	externalapiAuditEntryResource.IP = optNilString(source.IP)
 	externalapiAuditEntryResource.UserAgent = optNilString(source.UserAgent)
 	return externalapiAuditEntryResource
+}
+func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) external.AutomationPeriodResults {
+	var externalapiAutomationPeriodResults external.AutomationPeriodResults
+	externalapiAutomationPeriodResults.Entered = count(source.ResultCounts.Entered)
+	externalapiAutomationPeriodResults.Completed = count(source.ResultCounts.Completed)
+	externalapiAutomationPeriodResults.GoalReached = count(source.ResultCounts.GoalReached)
+	externalapiAutomationPeriodResults.Exited = count(source.ResultCounts.Exited)
+	externalapiAutomationPeriodResults.Failed = count(source.ResultCounts.Failed)
+	externalapiAutomationPeriodResults.From = source.From
+	externalapiAutomationPeriodResults.To = source.To
+	externalapiAutomationPeriodResults.AverageDurationSeconds = durationSeconds(source.AverageDuration)
+	externalapiAutomationPeriodResults.Revenue = c.MessageRevenueToResource(source.Revenue)
+	return externalapiAutomationPeriodResults
+}
+func (c *ConverterImpl) AutomationReportToResource(source automations.Report) external.AutomationReport {
+	var externalapiAutomationReport external.AutomationReport
+	externalapiAutomationReport.Opens = count(source.Opens)
+	externalapiAutomationReport.Clicks = count(source.Clicks)
+	externalapiAutomationReport.Delivered = count(source.Delivered)
+	externalapiAutomationReport.Bounced = count(source.Bounced)
+	externalapiAutomationReport.Complained = count(source.Complained)
+	externalapiAutomationReport.Captured = count(source.Captured)
+	externalapiAutomationReport.Revenue = c.MessageRevenueToResource(source.Revenue)
+	if source.Links != nil {
+		externalapiAutomationReport.Links = make([]external.LinkClicks, len(source.Links))
+		for i := 0; i < len(source.Links); i++ {
+			externalapiAutomationReport.Links[i] = c.linkclicksClicksToExternalapiLinkClicks(source.Links[i])
+		}
+	}
+	externalapiAutomationReport.Results = c.AutomationResultsToResource(source.Results)
+	return externalapiAutomationReport
+}
+func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) external.AutomationResultsPoint {
+	var externalapiAutomationResultsPoint external.AutomationResultsPoint
+	externalapiAutomationResultsPoint.Entered = count(source.ResultCounts.Entered)
+	externalapiAutomationResultsPoint.Completed = count(source.ResultCounts.Completed)
+	externalapiAutomationResultsPoint.GoalReached = count(source.ResultCounts.GoalReached)
+	externalapiAutomationResultsPoint.Exited = count(source.ResultCounts.Exited)
+	externalapiAutomationResultsPoint.Failed = count(source.ResultCounts.Failed)
+	externalapiAutomationResultsPoint.Date = source.Date
+	return externalapiAutomationResultsPoint
+}
+func (c *ConverterImpl) AutomationResultsToResource(source automations.Results) external.AutomationResults {
+	var externalapiAutomationResults external.AutomationResults
+	externalapiAutomationResults.Current = c.AutomationPeriodResultsToResource(source.Current)
+	externalapiAutomationResults.Previous = c.AutomationPeriodResultsToResource(source.Previous)
+	if source.Series != nil {
+		externalapiAutomationResults.Series = make([]external.AutomationResultsPoint, len(source.Series))
+		for i := 0; i < len(source.Series); i++ {
+			externalapiAutomationResults.Series[i] = c.AutomationResultsPointToResource(source.Series[i])
+		}
+	}
+	return externalapiAutomationResults
 }
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.AutomationResource {
 	var externalapiAutomationResource external.AutomationResource
@@ -323,6 +379,13 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) external.
 	}
 	return externalapiIntegrationResource
 }
+func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) external.MessageRevenue {
+	var externalapiMessageRevenue external.MessageRevenue
+	externalapiMessageRevenue.ReportingCurrency = nilCurrencyCode(source.Currency)
+	externalapiMessageRevenue.Orders = count(source.Credited.Orders)
+	externalapiMessageRevenue.Amount = source.Credited.Amount
+	return externalapiMessageRevenue
+}
 func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) external.ContactExportOutboundMessage {
 	var externalapiContactExportOutboundMessage external.ContactExportOutboundMessage
 	if source != nil {
@@ -556,6 +619,12 @@ func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.
 		externalapiWebhookResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiWebhookResource
+}
+func (c *ConverterImpl) linkclicksClicksToExternalapiLinkClicks(source linkclicks.Clicks) external.LinkClicks {
+	var externalapiLinkClicks external.LinkClicks
+	externalapiLinkClicks.URL = source.URL
+	externalapiLinkClicks.Clicks = count(source.Clicks)
+	return externalapiLinkClicks
 }
 func (c *ConverterImpl) providerlimitValueToExternalapiProviderLimitValue(source providerlimit.Value) external.ProviderLimitValue {
 	var externalapiProviderLimitValue external.ProviderLimitValue

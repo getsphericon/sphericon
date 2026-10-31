@@ -309,3 +309,13 @@
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
+
+- id: 6100 # fixture: AutomationGothamResultsVersion
+  automation_id: 6100
+  trigger_event: gotham_results_trigger
+  goal_event: gotham_results_goal
+  version: 1
+  steps: '[{"type":"wait","seconds":86400}]'
+  workspace_id: 61
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

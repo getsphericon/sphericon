@@ -2,6 +2,7 @@ package orders
 
 import (
 	"context"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 
@@ -28,15 +29,17 @@ type Figures struct {
 	ByID     map[int64]Credited
 }
 
-// Only narrows the Figures to one id, for a report of one Broadcast or Automation. An id with
-// nothing credited has no entry, so the Figures of a message with no orders are the zero value
-// until a Reporting currency is chosen.
-func (f Figures) Only(id int64) Figures {
-	out := Figures{Currency: f.Currency}
-	if c := f.ByID[id]; c != (Credited{}) {
-		out.ByID = map[int64]Credited{id: c}
-	}
-	return out
+// Revenue is what one Broadcast or Automation earned, with the Reporting currency it is in: nil
+// until an Owner or Admin chooses it, every figure zero until then.
+type Revenue struct {
+	Credited
+
+	Currency *string
+}
+
+// Of is the Revenue of one id of the Figures: zero when nothing is credited to it.
+func (f Figures) Of(id int64) Revenue {
+	return Revenue{Credited: f.ByID[id], Currency: f.Currency}
 }
 
 // CreditedToBroadcasts reads the figures of the given Broadcasts in one grouped query.
@@ -49,7 +52,15 @@ func CreditedToAutomations(ctx context.Context, s *ent.Scoped, ids ...int64) (Fi
 	return credited(ctx, s, ids, order.FieldAutomationID, order.AutomationIDIn(ids...))
 }
 
-func credited(ctx context.Context, s *ent.Scoped, ids []int64, column string, ofThem predicate.Order) (Figures, error) {
+// CreditedToAutomationsBetween reads the figures of the given Automations from the Movements that
+// fell in [since, until) only: the Orders completed then, and the net change of their revenue
+// then. Every Movement keeps its own day (ADR 0064), so the figures of a past period do not change.
+func CreditedToAutomationsBetween(ctx context.Context, s *ent.Scoped, since, until time.Time, ids ...int64) (Figures, error) {
+	return credited(ctx, s, ids, order.FieldAutomationID, order.AutomationIDIn(ids...),
+		ordermovement.OccurredAtGTE(since), ordermovement.OccurredAtLT(until))
+}
+
+func credited(ctx context.Context, s *ent.Scoped, ids []int64, column string, ofThem predicate.Order, within ...predicate.OrderMovement) (Figures, error) {
 	ws, err := s.Workspace(ctx)
 	if err != nil {
 		return Figures{}, err
@@ -68,6 +79,7 @@ func credited(ctx context.Context, s *ent.Scoped, ids []int64, column string, of
 	}
 	err = s.OrderMovement().Query().
 		Where(ordermovement.HasOrderWith(ofThem, order.Currency(*out.Currency))).
+		Where(within...).
 		Modify(func(sel *sql.Selector) {
 			o := sql.Table(order.Table)
 			sel.Join(o).On(sel.C(ordermovement.FieldOrderID), o.C(order.FieldID)).

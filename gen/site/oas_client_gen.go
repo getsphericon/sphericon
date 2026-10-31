@@ -255,8 +255,10 @@ type Invoker interface {
 	SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (SiteAuthVerifyEmailRes, error)
 	// SiteAutomationReportsGet invokes SiteAutomationReports_get operation.
 	//
-	// The opens and clicks of an automation's emails, with a count per clicked link. They come from the
-	// `email.opened` and `email.clicked` Events, so they cover the Event retention window.
+	// The opens and clicks of an automation's emails, with a count per clicked link, and its results over
+	// a period. The engagement figures are the automation's whole history: opens and clicks come from the
+	// `email.opened` and `email.clicked` Events, so they cover the Event retention window. The results are
+	// read from its enrollments for the chosen period and the one before it.
 	//
 	// GET /workspaces/{workspaceId}/automations/{automationId}/report
 	SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (SiteAutomationReportsGetRes, error)
@@ -5106,8 +5108,10 @@ func (c *Client) sendSiteAuthVerifyEmail(ctx context.Context, request *SiteVerif
 
 // SiteAutomationReportsGet invokes SiteAutomationReports_get operation.
 //
-// The opens and clicks of an automation's emails, with a count per clicked link. They come from the
-// `email.opened` and `email.clicked` Events, so they cover the Event retention window.
+// The opens and clicks of an automation's emails, with a count per clicked link, and its results over
+// a period. The engagement figures are the automation's whole history: opens and clicks come from the
+// `email.opened` and `email.clicked` Events, so they cover the Event retention window. The results are
+// read from its enrollments for the chosen period and the one before it.
 //
 // GET /workspaces/{workspaceId}/automations/{automationId}/report
 func (c *Client) SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (SiteAutomationReportsGetRes, error) {
@@ -5199,6 +5203,27 @@ func (c *Client) sendSiteAutomationReportsGet(ctx context.Context, params SiteAu
 	}
 	pathParts[4] = "/report"
 	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "period" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "period",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Period.Get(); ok {
+				return e.EncodeValue(conv.StringToString(string(val)))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
 
 	stage = "EncodeRequest"
 	r, err := ht.NewRequest(ctx, "GET", u)
