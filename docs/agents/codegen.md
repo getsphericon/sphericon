@@ -38,6 +38,14 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   each package's `resources.go`; the impl (`ConverterImpl`) is generated. Adding a DTO
   field that has no source mapping fails generation — that completeness check is the point.
 
+- **Contract decorators** (`typespec/lib`): `x-mcp` is declared with the typed `@mcp`, which
+  checks its argument at `tsp compile` (and in the editor) and then writes the same extension with
+  `setExtension`. The other `x-*` extensions (`x-required-permissions`, `x-required-scopes`,
+  `x-untrusted`, the acceptance and withheld marks) are still raw `@extension` and move to typed
+  decorators the same way: `main.tsp` declares the decorator in the `SphericonLib` namespace
+  (outside the service namespace, so its argument models stay out of the OpenAPI documents), and
+  `decorators.js` implements it.
+
 - `mise run generate` — full cycle: typespec → openapi → backend (ent + ogen) → fixture catalog → frontend → i18n types → format.
 - `mise run generate:typespec` / `mise run generate:backend` / `mise run generate:openapi` — partial regens.
 - The README claims echo + oapi-codegen; that is **outdated**. The HTTP stack is **ogen**
