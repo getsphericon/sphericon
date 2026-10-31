@@ -10,9 +10,16 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/auditapi"
@@ -87,7 +94,7 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 // goverter:annotate:unmapped
 // goverter:output:file ./converter_gen.go
 // goverter:matchIgnoreCase
-// goverter:enum no
+// goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
 // goverter:extend optNilString
@@ -108,7 +115,6 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 // goverter:extend nilString
 // goverter:extend count
 // goverter:extend omitEmpty
-// goverter:extend providerLimitWarning
 // goverter:extend providerLimitSource
 // goverter:extend optTimestamp
 // goverter:extend optInt32
@@ -318,6 +324,51 @@ type Converter interface {
 	ConfirmationToExport(source *ent.Confirmation) externalapi.ContactExportConfirmation
 	OutboundMessageToExport(source *ent.OutboundMessage) externalapi.ContactExportOutboundMessage
 	BroadcastRecipientToExport(source *ent.BroadcastRecipient) externalapi.ContactExportBroadcastRecipient
+
+	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
+	// counterpart is mapped with enum:map.
+	// goverter:enum:transform value
+	AutomationStatusToResource(source automation.Status) externalapi.AutomationStatus
+	// goverter:enum:transform value
+	BroadcastStatusToResource(source broadcast.Status) externalapi.BroadcastStatus
+	// goverter:enum:transform value
+	CapturedMessageSurfaceToResource(source capturedmessage.Surface) externalapi.CapturedMessageSurface
+	// goverter:enum:transform value
+	ContactExportSourceToResource(source contact.Source) externalapi.ContactExportSource
+	// goverter:enum:transform value
+	CustomFieldTypeToResource(source customfield.Type) externalapi.CustomFieldType
+	// goverter:enum:transform value
+	EnrollmentFailureKindToResource(source automationrun.FailureKind) externalapi.EnrollmentFailureKind
+	// goverter:enum:transform value
+	EnrollmentStatusToResource(source automationrun.Status) externalapi.EnrollmentStatus
+	// goverter:enum:transform value
+	IntegrationChannelToResource(source integration.Channel) externalapi.IntegrationChannel
+	// goverter:enum:transform value
+	IntegrationProviderToResource(source integration.Provider) externalapi.IntegrationProvider
+	// goverter:enum:transform value
+	LintCodeToResource(source emailrender.Code) externalapi.LintCode
+	// goverter:enum:transform value
+	ProviderLimitSourceToResource(source providerlimit.Source) externalapi.ProviderLimitSource
+	// goverter:enum:transform value
+	ProviderLimitWarningToResource(source providerlimit.Warning) externalapi.ProviderLimitWarning
+	// goverter:enum:transform value
+	RuleActionStatusToResource(source rules.Outcome) externalapi.RuleActionStatus
+	// goverter:enum:transform value
+	RuleActionTypeToResource(source rules.ActionType) externalapi.RuleActionType
+	// goverter:enum:transform value
+	RuleDryRunOutcomeToResource(source rules.DryRunOutcome) externalapi.RuleDryRunOutcome
+	// goverter:enum:transform value
+	RuleStatusToResource(source rule.Status) externalapi.RuleStatus
+	// goverter:enum:transform value
+	SuppressionReasonToResource(source suppression.Reason) externalapi.SuppressionReason
+	// goverter:enum:transform value
+	TrackingReasonToResource(source sendingdomain.TrackingReason) externalapi.TrackingReason
+	// goverter:enum:transform value
+	TrackingStateToResource(source sendingdomain.TrackingState) externalapi.TrackingState
+	// goverter:enum:transform value
+	WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) externalapi.WebhookDisabledReason
+	// goverter:enum:transform value
+	WebhookErrorKindToResource(source webhookendpoint.LastErrorKind) externalapi.WebhookErrorKind
 }
 
 // ExportMapper adapts the Converter to contactexport.Mapper.
@@ -341,11 +392,6 @@ func (m ExportMapper) OutboundMessage(r *ent.OutboundMessage) json.Marshaler {
 }
 func (m ExportMapper) BroadcastRecipient(r *ent.BroadcastRecipient) json.Marshaler {
 	return new(m.BroadcastRecipientToExport(r))
-}
-
-// providerLimitWarning casts: providerlimit's warnings are the contract's enum values.
-func providerLimitWarning(w providerlimit.Warning) externalapi.ProviderLimitWarning {
-	return externalapi.ProviderLimitWarning(w)
 }
 
 // count narrows a message count to the contract's int32.
@@ -377,11 +423,11 @@ func nilInt32(v *int) externalapi.NilInt32 {
 }
 
 // providerLimitSource is null exactly when the window has no limit (its source is empty).
-func providerLimitSource(v providerlimit.Source) externalapi.NilProviderLimitSource {
+func providerLimitSource(c Converter, v providerlimit.Source) externalapi.NilProviderLimitSource {
 	if v == "" {
 		return externalapi.NilProviderLimitSource{Null: true}
 	}
-	return externalapi.NewNilProviderLimitSource(externalapi.ProviderLimitSource(v))
+	return externalapi.NewNilProviderLimitSource(c.ProviderLimitSourceToResource(v))
 }
 
 func optNilInt32(v *int) externalapi.OptNilInt32 {
@@ -458,17 +504,17 @@ func optString(v *string) externalapi.OptString {
 	return convert.Opt[externalapi.OptString](v)
 }
 
-func optTrackingReason(v *sendingdomain.TrackingReason) externalapi.OptTrackingReason {
-	return convert.Opt[externalapi.OptTrackingReason]((*externalapi.TrackingReason)(v))
+func optTrackingReason(c Converter, v *sendingdomain.TrackingReason) externalapi.OptTrackingReason {
+	return convert.OptVia[externalapi.OptTrackingReason](v, c.TrackingReasonToResource)
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.
-func enrollmentFailure(r ent.AutomationRun) externalapi.OptEnrollmentFailure {
+func enrollmentFailure(c Converter, r ent.AutomationRun) externalapi.OptEnrollmentFailure {
 	if r.FailureKind == nil {
 		return externalapi.OptEnrollmentFailure{}
 	}
 	return externalapi.NewOptEnrollmentFailure(externalapi.EnrollmentFailure{
-		Kind:    externalapi.EnrollmentFailureKind(*r.FailureKind),
+		Kind:    c.EnrollmentFailureKindToResource(*r.FailureKind),
 		Status:  optInt32(r.FailureStatus),
 		Excerpt: optString(r.FailureExcerpt),
 	})
@@ -495,7 +541,7 @@ func auditDiff(d map[string]jx.Raw) externalapi.OptNilAuditEntryResourceDiff {
 }
 
 // webhookFailure is the endpoint's failure state; it is absent while the endpoint is healthy.
-func webhookFailure(e ent.WebhookEndpoint) externalapi.OptWebhookFailure {
+func webhookFailure(c Converter, e ent.WebhookEndpoint) externalapi.OptWebhookFailure {
 	if e.ConsecutiveFailures == nil || e.FailingSince == nil || e.LastFailureAt == nil || e.LastErrorKind == nil {
 		return externalapi.OptWebhookFailure{}
 	}
@@ -503,14 +549,14 @@ func webhookFailure(e ent.WebhookEndpoint) externalapi.OptWebhookFailure {
 		ConsecutiveFailures: narrow.Int32(*e.ConsecutiveFailures),
 		Since:               externalapi.Timestamp(*e.FailingSince),
 		LastFailureAt:       externalapi.Timestamp(*e.LastFailureAt),
-		Kind:                externalapi.WebhookErrorKind(*e.LastErrorKind),
+		Kind:                c.WebhookErrorKindToResource(*e.LastErrorKind),
 		Status:              optInt32(e.LastErrorStatus),
 	})
 }
 
 // optWebhookDisabledReason is why the endpoint turned itself off; absent otherwise.
-func optWebhookDisabledReason(v *webhookendpoint.DisabledReason) externalapi.OptWebhookDisabledReason {
-	return convert.Opt[externalapi.OptWebhookDisabledReason]((*externalapi.WebhookDisabledReason)(v))
+func optWebhookDisabledReason(c Converter, v *webhookendpoint.DisabledReason) externalapi.OptWebhookDisabledReason {
+	return convert.OptVia[externalapi.OptWebhookDisabledReason](v, c.WebhookDisabledReasonToResource)
 }
 
 // omitEmpty is unset for an empty value, so redacted optional fields are omitted.
@@ -551,14 +597,14 @@ func optNonEmpty(s string) externalapi.OptString {
 // ruleActions decodes a Rule's stored Actions into the typed DTO. Stored text the module cannot
 // decode (only ever written by the module itself) yields none, and is logged: a converter has
 // no way to fail a response, and no caller can act on it.
-func ruleActions(stored string) []externalapi.RuleAction {
+func ruleActions(c Converter, stored string) []externalapi.RuleAction {
 	actions, err := rules.DecodeActions(stored)
 	if err != nil {
 		slog.Error("rule: stored actions cannot be decoded", "error", err)
 		return nil
 	}
 	return lo.Map(actions, func(a rules.Action, _ int) externalapi.RuleAction {
-		out := externalapi.RuleAction{Type: externalapi.RuleActionType(a.Type), Tag: optNonEmpty(a.Tag)}
+		out := externalapi.RuleAction{Type: c.RuleActionTypeToResource(a.Type), Tag: optNonEmpty(a.Tag)}
 		if a.Type == rules.ActionEnroll {
 			out.AutomationId = externalapi.NewOptEntityId(externalapi.EntityId(a.AutomationID))
 		}
@@ -577,7 +623,7 @@ func ruleActions(stored string) []externalapi.RuleAction {
 
 // ruleResults decodes a Firing's stored results into the typed DTO; stored text the module
 // cannot decode yields none and is logged, as ruleActions does.
-func ruleResults(stored string) []externalapi.RuleActionResult {
+func ruleResults(c Converter, stored string) []externalapi.RuleActionResult {
 	results, err := rules.DecodeResults(stored)
 	if err != nil {
 		slog.Error("rule: stored results cannot be decoded", "error", err)
@@ -585,15 +631,15 @@ func ruleResults(stored string) []externalapi.RuleActionResult {
 	}
 	return lo.Map(results, func(r rules.Result, _ int) externalapi.RuleActionResult {
 		return externalapi.RuleActionResult{
-			Type:   externalapi.RuleActionType(r.Type),
-			Status: externalapi.RuleActionStatus(r.Status),
+			Type:   c.RuleActionTypeToResource(r.Type),
+			Status: c.RuleActionStatusToResource(r.Status),
 			Detail: optNonEmpty(r.Detail),
 		}
 	})
 }
 
-func optNilContactSource(v *contact.Source) externalapi.OptNilContactExportSource {
-	return convert.Opt[externalapi.OptNilContactExportSource]((*externalapi.ContactExportSource)(v))
+func optNilContactSource(c Converter, v *contact.Source) externalapi.OptNilContactExportSource {
+	return convert.OptVia[externalapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
 }
 
 // schemaExample is the agent schema's example document as the contract's opaque object.

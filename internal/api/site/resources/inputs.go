@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent/invitation"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/apitokens"
@@ -35,7 +36,7 @@ import (
 // goverter:name InputsImpl
 // goverter:output:file ./inputs_gen.go
 // goverter:matchIgnoreCase
-// goverter:enum no
+// goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend stringPatch
 // goverter:extend nilStringPatch
@@ -126,6 +127,13 @@ type Inputs interface {
 	// The inviting User is the session's, not the request's: the handler sets it.
 	// goverter:ignore InvitedBy
 	InvitationCreate(source *siteapi.SiteCreateInvitationInput) accounts.InviteInput
+
+	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
+	// counterpart is mapped with enum:map.
+	// goverter:enum:transform value
+	InvitableRole(source siteapi.SiteInvitableRole) invitation.Role
+	// goverter:enum:transform value
+	RuleActionType(source siteapi.SiteRuleActionType) rules.ActionType
 }
 
 func stringPatch(o siteapi.OptString) patch.Field[string]            { return convert.Patch(o) }

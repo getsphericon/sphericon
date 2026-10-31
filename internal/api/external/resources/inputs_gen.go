@@ -4,6 +4,7 @@
 package resources
 
 import (
+	"fmt"
 	external "github.com/getsphericon/sphericon/gen/external"
 	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
@@ -245,6 +246,22 @@ func (c *InputsImpl) IntegrationUpdate(source *external.UpdateIntegrationInput) 
 	}
 	return integrationsUpdateInput, nil
 }
+func (c *InputsImpl) RuleActionType(source external.RuleActionType) rules.ActionType {
+	var rulesActionType rules.ActionType
+	switch source {
+	case external.RuleActionTypeApplyTag:
+		rulesActionType = rules.ActionApplyTag
+	case external.RuleActionTypeEnrollAutomation:
+		rulesActionType = rules.ActionEnroll
+	case external.RuleActionTypeHTTP:
+		rulesActionType = rules.ActionHTTP
+	case external.RuleActionTypeRemoveTag:
+		rulesActionType = rules.ActionRemoveTag
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return rulesActionType
+}
 func (c *InputsImpl) RuleActions(source []external.RuleAction) []rules.Action {
 	var rulesActionList []rules.Action
 	if source != nil {
@@ -379,7 +396,7 @@ func (c *InputsImpl) externalapiAutomationHttpHeaderToHttpcallHeader(source exte
 }
 func (c *InputsImpl) externalapiRuleActionToRulesAction(source external.RuleAction) rules.Action {
 	var rulesAction rules.Action
-	rulesAction.Type = rules.ActionType(source.Type)
+	rulesAction.Type = c.RuleActionType(source.Type)
 	rulesAction.Tag = stringIn(source.Tag)
 	rulesAction.AutomationID = entityIDIn(source.AutomationId)
 	rulesAction.ID = stringIn(source.ID)

@@ -4,8 +4,11 @@
 package resources
 
 import (
+	"fmt"
 	abuse "github.com/getsphericon/sphericon/ee/abuse"
 	ent "github.com/getsphericon/sphericon/ent"
+	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
+	workspace "github.com/getsphericon/sphericon/ent/workspace"
 	staffee "github.com/getsphericon/sphericon/gen/staffee"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	reputation "github.com/getsphericon/sphericon/internal/reputation"
@@ -13,6 +16,18 @@ import (
 
 type StaffConverterImpl struct{}
 
+func (c *StaffConverterImpl) AbuseMetricToResource(source abuse.Metric) staffee.StaffAbuseMetric {
+	var staffeeapiStaffAbuseMetric staffee.StaffAbuseMetric
+	switch source {
+	case abuse.Bounce:
+		staffeeapiStaffAbuseMetric = staffee.StaffAbuseMetricBounce
+	case abuse.Complaint:
+		staffeeapiStaffAbuseMetric = staffee.StaffAbuseMetricComplaint
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return staffeeapiStaffAbuseMetric
+}
 func (c *StaffConverterImpl) AbuseToResource(source *ent.Workspace) staffee.StaffAbuse {
 	var staffeeapiStaffAbuse staffee.StaffAbuse
 	if source != nil {
@@ -54,7 +69,7 @@ func (c *StaffConverterImpl) AuditTargetToResource(source auditapi.View) staffee
 func (c *StaffConverterImpl) BreachToWarning(source abuse.Breach) staffee.StaffAbuseWarning {
 	var staffeeapiStaffAbuseWarning staffee.StaffAbuseWarning
 	staffeeapiStaffAbuseWarning.Domain = source.Domain
-	staffeeapiStaffAbuseWarning.Metric = staffee.StaffAbuseMetric(source.Metric)
+	staffeeapiStaffAbuseWarning.Metric = c.AbuseMetricToResource(source.Metric)
 	staffeeapiStaffAbuseWarning.Rate = breachRate(source)
 	return staffeeapiStaffAbuseWarning
 }
@@ -107,21 +122,111 @@ func (c *StaffConverterImpl) RateToResource(source reputation.Rate) staffee.Staf
 	staffeeapiStaffRate.Rate = nilFloat64(source.Rate)
 	return staffeeapiStaffRate
 }
+func (c *StaffConverterImpl) SignupCompanySizeToResource(source signupsurveyresponse.CompanySize) staffee.StaffSignupCompanySize {
+	var staffeeapiStaffSignupCompanySize staffee.StaffSignupCompanySize
+	switch source {
+	case signupsurveyresponse.CompanySize1:
+		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySize1
+	case signupsurveyresponse.CompanySize1000Plus:
+		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySize1000Plus
+	case signupsurveyresponse.CompanySize1150:
+		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySize1150
+	case signupsurveyresponse.CompanySize2011000:
+		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySize2011000
+	case signupsurveyresponse.CompanySize210:
+		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySize210
+	case signupsurveyresponse.CompanySize51200:
+		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySize51200
+	case signupsurveyresponse.CompanySizeOther:
+		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySizeOther
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return staffeeapiStaffSignupCompanySize
+}
+func (c *StaffConverterImpl) SignupGoalToResource(source signupsurveyresponse.MainGoal) staffee.StaffSignupGoal {
+	var staffeeapiStaffSignupGoal staffee.StaffSignupGoal
+	switch source {
+	case signupsurveyresponse.MainGoalAutomations:
+		staffeeapiStaffSignupGoal = staffee.StaffSignupGoalAutomations
+	case signupsurveyresponse.MainGoalBroadcasts:
+		staffeeapiStaffSignupGoal = staffee.StaffSignupGoalBroadcasts
+	case signupsurveyresponse.MainGoalMigrating:
+		staffeeapiStaffSignupGoal = staffee.StaffSignupGoalMigrating
+	case signupsurveyresponse.MainGoalOther:
+		staffeeapiStaffSignupGoal = staffee.StaffSignupGoalOther
+	case signupsurveyresponse.MainGoalTracking:
+		staffeeapiStaffSignupGoal = staffee.StaffSignupGoalTracking
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return staffeeapiStaffSignupGoal
+}
+func (c *StaffConverterImpl) SignupRoleToResource(source signupsurveyresponse.Role) staffee.StaffSignupRole {
+	var staffeeapiStaffSignupRole staffee.StaffSignupRole
+	switch source {
+	case signupsurveyresponse.RoleDeveloper:
+		staffeeapiStaffSignupRole = staffee.StaffSignupRoleDeveloper
+	case signupsurveyresponse.RoleFounder:
+		staffeeapiStaffSignupRole = staffee.StaffSignupRoleFounder
+	case signupsurveyresponse.RoleMarketer:
+		staffeeapiStaffSignupRole = staffee.StaffSignupRoleMarketer
+	case signupsurveyresponse.RoleOther:
+		staffeeapiStaffSignupRole = staffee.StaffSignupRoleOther
+	case signupsurveyresponse.RoleProduct:
+		staffeeapiStaffSignupRole = staffee.StaffSignupRoleProduct
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return staffeeapiStaffSignupRole
+}
+func (c *StaffConverterImpl) SignupSourceToResource(source signupsurveyresponse.HeardFrom) staffee.StaffSignupSource {
+	var staffeeapiStaffSignupSource staffee.StaffSignupSource
+	switch source {
+	case signupsurveyresponse.HeardFromGithub:
+		staffeeapiStaffSignupSource = staffee.StaffSignupSourceGithub
+	case signupsurveyresponse.HeardFromOther:
+		staffeeapiStaffSignupSource = staffee.StaffSignupSourceOther
+	case signupsurveyresponse.HeardFromRecommendation:
+		staffeeapiStaffSignupSource = staffee.StaffSignupSourceRecommendation
+	case signupsurveyresponse.HeardFromSearch:
+		staffeeapiStaffSignupSource = staffee.StaffSignupSourceSearch
+	case signupsurveyresponse.HeardFromSocial:
+		staffeeapiStaffSignupSource = staffee.StaffSignupSourceSocial
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return staffeeapiStaffSignupSource
+}
 func (c *StaffConverterImpl) SignupSurveyResponseToResource(source *ent.SignupSurveyResponse) staffee.StaffSignupSurveyResponseResource {
 	var staffeeapiStaffSignupSurveyResponseResource staffee.StaffSignupSurveyResponseResource
 	if source != nil {
 		staffeeapiStaffSignupSurveyResponseResource.UserId = staffee.EntityId((*source).UserID)
-		staffeeapiStaffSignupSurveyResponseResource.Role = staffee.StaffSignupRole((*source).Role)
+		staffeeapiStaffSignupSurveyResponseResource.Role = c.SignupRoleToResource((*source).Role)
 		staffeeapiStaffSignupSurveyResponseResource.RoleOtherText = nilableString((*source).RoleOtherText)
-		staffeeapiStaffSignupSurveyResponseResource.CompanySize = staffee.StaffSignupCompanySize((*source).CompanySize)
+		staffeeapiStaffSignupSurveyResponseResource.CompanySize = c.SignupCompanySizeToResource((*source).CompanySize)
 		staffeeapiStaffSignupSurveyResponseResource.CompanySizeOtherText = nilableString((*source).CompanySizeOtherText)
-		staffeeapiStaffSignupSurveyResponseResource.MainGoal = staffee.StaffSignupGoal((*source).MainGoal)
+		staffeeapiStaffSignupSurveyResponseResource.MainGoal = c.SignupGoalToResource((*source).MainGoal)
 		staffeeapiStaffSignupSurveyResponseResource.MainGoalOtherText = nilableString((*source).MainGoalOtherText)
-		staffeeapiStaffSignupSurveyResponseResource.HeardFrom = optNilSource((*source).HeardFrom)
+		staffeeapiStaffSignupSurveyResponseResource.HeardFrom = optNilSource(c, (*source).HeardFrom)
 		staffeeapiStaffSignupSurveyResponseResource.HeardFromOtherText = nilableString((*source).HeardFromOtherText)
 		staffeeapiStaffSignupSurveyResponseResource.AnsweredAt = staffTimestamp((*source).CreatedAt)
 	}
 	return staffeeapiStaffSignupSurveyResponseResource
+}
+func (c *StaffConverterImpl) SuspensionActorKindToResource(source workspace.SuspendedByKind) staffee.StaffSuspensionActorKind {
+	var staffeeapiStaffSuspensionActorKind staffee.StaffSuspensionActorKind
+	switch source {
+	case workspace.SuspendedByKindCli:
+		staffeeapiStaffSuspensionActorKind = staffee.StaffSuspensionActorKindCli
+	case workspace.SuspendedByKindStaff:
+		staffeeapiStaffSuspensionActorKind = staffee.StaffSuspensionActorKindStaff
+	case workspace.SuspendedByKindSystem:
+		staffeeapiStaffSuspensionActorKind = staffee.StaffSuspensionActorKindSystem
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return staffeeapiStaffSuspensionActorKind
 }
 func (c *StaffConverterImpl) WorkspaceDetailToResource(source *ent.Workspace) staffee.StaffWorkspaceDetailResource {
 	var staffeeapiStaffWorkspaceDetailResource staffee.StaffWorkspaceDetailResource
@@ -131,7 +236,7 @@ func (c *StaffConverterImpl) WorkspaceDetailToResource(source *ent.Workspace) st
 		staffeeapiStaffWorkspaceDetailResource.CreatedAt = staffTimestamp((*source).CreatedAt)
 		staffeeapiStaffWorkspaceDetailResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		staffeeapiStaffWorkspaceDetailResource.ErasedAt = optNilTimestamp((*source).ErasedAt)
-		staffeeapiStaffWorkspaceDetailResource.Suspension = workspaceSuspension(source)
+		staffeeapiStaffWorkspaceDetailResource.Suspension = workspaceSuspension(c, source)
 		staffeeapiStaffWorkspaceDetailResource.Exempt = (*source).AbuseExempt
 		staffeeapiStaffWorkspaceDetailResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
 		// staffeeapiStaffWorkspaceDetailResource.Holds: ignore
@@ -148,7 +253,7 @@ func (c *StaffConverterImpl) WorkspaceToResource(source *ent.Workspace) staffee.
 		staffeeapiStaffWorkspaceResource.CreatedAt = staffTimestamp((*source).CreatedAt)
 		staffeeapiStaffWorkspaceResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		staffeeapiStaffWorkspaceResource.ErasedAt = optNilTimestamp((*source).ErasedAt)
-		staffeeapiStaffWorkspaceResource.Suspension = workspaceSuspension(source)
+		staffeeapiStaffWorkspaceResource.Suspension = workspaceSuspension(c, source)
 		staffeeapiStaffWorkspaceResource.Exempt = (*source).AbuseExempt
 		staffeeapiStaffWorkspaceResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
 	}

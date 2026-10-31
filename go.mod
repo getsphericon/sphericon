@@ -37,6 +37,7 @@ require (
 	github.com/itchyny/gojq v0.12.19
 	github.com/jackc/pgerrcode v0.0.0-20250907135507-afb5586c32a6
 	github.com/jackc/pgx/v5 v5.12.0
+	github.com/jmattheis/goverter v1.11.1
 	github.com/joho/godotenv v1.5.1
 	github.com/k3a/html2text v1.5.1
 	github.com/lmittmann/tint v1.2.1
@@ -84,6 +85,7 @@ require (
 	golang.org/x/net v0.62.0
 	golang.org/x/oauth2 v0.37.0
 	golang.org/x/text v0.43.0
+	golang.org/x/tools v0.52.0
 	gopkg.in/yaml.v3 v3.0.1
 	pgregory.net/rapid v1.3.0
 )
@@ -153,7 +155,6 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/jessevdk/go-flags v1.6.1 // indirect
-	github.com/jmattheis/goverter v1.11.1 // indirect
 	github.com/jonbaldie/go-mutesting/v2 v2.10.40 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.1 // indirect
 	github.com/leodido/go-urn v1.5.0 // indirect
@@ -234,7 +235,6 @@ require (
 	golang.org/x/telemetry v0.0.0-20261021172232-6cd571d43fbb // indirect
 	golang.org/x/term v0.47.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
-	golang.org/x/tools v0.52.0 // indirect
 	golang.org/x/vuln v1.9.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20261026165753-2ffab32bce7e // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20261026165753-2ffab32bce7e // indirect
@@ -244,7 +244,6 @@ require (
 )
 
 tool (
-	github.com/jmattheis/goverter/cmd/goverter
 	github.com/jonbaldie/go-mutesting/v2/cmd/go-mutesting
 	github.com/matryer/moq
 	github.com/ogen-go/ogen/cmd/ogen

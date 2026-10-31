@@ -2,6 +2,7 @@ package convert_test
 
 import (
 	"math"
+	"strconv"
 	"testing"
 	"time"
 
@@ -123,6 +124,14 @@ func TestOptIsAbsentWithoutAValue(t *testing.T) {
 
 	assert.Equal(t, optText{v: "hi", set: true}, convert.Opt[optText](&text))
 	assert.Equal(t, optText{}, convert.Opt[optText]((*string)(nil)))
+}
+
+func TestOptViaMapsAValueAndLeavesNoneAbsent(t *testing.T) {
+	upper := func(v int) string { return strconv.Itoa(v * 10) }
+	seven := 7
+
+	assert.Equal(t, optText{v: "70", set: true}, convert.OptVia[optText](&seven, upper))
+	assert.Equal(t, optText{}, convert.OptVia[optText]((*int)(nil), upper))
 }
 
 func TestOptNonZeroLeavesOutTheZeroValue(t *testing.T) {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/signupitem"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/instance"
@@ -21,7 +22,7 @@ import (
 // goverter:name ConverterImpl
 // goverter:output:file ./converter_gen.go
 // goverter:matchIgnoreCase
-// goverter:enum no
+// goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
 // goverter:extend optTimestamp
@@ -40,6 +41,15 @@ type Converter interface {
 	SignupItemsToResources(source []signupitems.Item) []staffapi.StaffSignupItemResource
 	VersionToResource(source signupitems.Version) staffapi.StaffLegalDocumentVersion
 	VersionsToResources(source []signupitems.Version) []staffapi.StaffLegalDocumentVersion
+
+	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
+	// counterpart is mapped with enum:map.
+	// The Staff member deciding is no lock: optLock leaves it out.
+	// goverter:enum:transform value
+	// goverter:enum:map LockNone @panic
+	InstanceTelemetryLockToResource(source instance.Lock) staffapi.StaffInstanceTelemetryLock
+	// goverter:enum:transform value
+	SignupItemKindToResource(source signupitem.Kind) staffapi.SignupItemKind
 }
 
 func timestamp(t time.Time) staffapi.Timestamp { return staffapi.Timestamp(t) }
@@ -63,8 +73,11 @@ func optLapse(t time.Time) staffapi.OptTimestamp {
 }
 
 // optLock is what decides the Telemetry report, absent while the Staff member does.
-func optLock(l instance.Lock) staffapi.OptStaffInstanceTelemetryLock {
-	return convert.OptNonZero[staffapi.OptStaffInstanceTelemetryLock](staffapi.StaffInstanceTelemetryLock(l))
+func optLock(c Converter, l instance.Lock) staffapi.OptStaffInstanceTelemetryLock {
+	if l == instance.LockNone {
+		return staffapi.OptStaffInstanceTelemetryLock{}
+	}
+	return staffapi.NewOptStaffInstanceTelemetryLock(c.InstanceTelemetryLockToResource(l))
 }
 
 func optDraft(d *string) staffapi.OptLegalDocumentMarkdown {

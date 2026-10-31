@@ -469,7 +469,7 @@ run = [
   "heavy -- go tool ogen --target gen/staffee --package staffeeapi --clean openapi/staffee.openapi.json",
   "heavy -- go tool ogen --target gen/service --package serviceapi --clean openapi/service.openapi.json",
   "heavy -- go tool ogen --config ogen.telemetry.yml --target gen/telemetry --package telemetryapi --clean openapi/telemetry.openapi.json",
-  "heavy -- go tool goverter gen ./internal/api/site/resources ./internal/api/external/resources ./internal/api/staff/resources ./ee/staff/resources",
+  "heavy -- go run ./cmd/goverter gen ./internal/api/site/resources ./internal/api/external/resources ./internal/api/staff/resources ./ee/staff/resources",
 ]
 
 ["generate:mocks"]

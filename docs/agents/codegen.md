@@ -15,7 +15,7 @@ typespec/{site,external,collect,staff,staffee,service,telemetry}   ──tsp com
 src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack Router file-based route tree)
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
-ent + gen/{site,external,staff,staffee,service}  ──goverter──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
+ent + gen/{site,external,staff,staffee,service}  ──goverter (cmd/goverter)──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
 gen/{site,external} request bodies  ──goverter──▶ internal/api/{site,external}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/patch fields)
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
 openapi/service (`x-required-scopes` per operation, from `@requiresServiceScopes`) ──cmd/scopegen──▶ ee/staff/service_scopes_gen.go (`ServiceOperationScopes`)
@@ -41,7 +41,18 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   []*ent.Contact) []…`) marked `// goverter:useEmptyOnNil:slice`, so no rows answer `[]`, never
   null; a handler does not wrap the single-item method in `lo.Map`. `annotate:unmapped` writes a
   `// Field: ignore` line into the generated code for each field the converter leaves to the
-  handler.
+  handler. The extends' bodies are the generic helpers of `internal/convert` (`Opt`, `Nil`, `OptVia`, …),
+  which hold the absent-or-null rule once for every surface.
+- **Enums go member by member.** `mise run generate:backend` runs our build of goverter
+  (`cmd/goverter`), which adds the `value` transformer (`internal/goverterenum`): members match by
+  value, as ent and the contracts name them differently. Each pair of enums is a method in the
+  converter's Enums block, `// goverter:enum:transform value`; goverter then refuses a member with
+  no counterpart until the method maps it (`goverter:enum:map DecisionShown @panic`). A nested enum
+  field never takes a method's own transform, and goverter casts an enum whose package the
+  converter's file does not import (it sees the package through ent's export data, without its
+  constants), so the method is what makes the check happen. `TestConvertersConvertNoEnumByCast`
+  (`internal/goverterenum`) fails on any enum-to-enum cast left in a converter package, generated
+  or hand-written; a pointer goes through `convert.OptVia` and the enum method.
 
 - **Contract decorators** (ADR 0069): every `x-*` extension a Go reader depends on is written by
   a typed decorator, never by a raw `@extension`, which `tsp compile` refuses for these keys.

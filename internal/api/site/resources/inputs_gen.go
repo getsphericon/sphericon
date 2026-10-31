@@ -4,6 +4,7 @@
 package resources
 
 import (
+	"fmt"
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	site "github.com/getsphericon/sphericon/gen/site"
 	accounts "github.com/getsphericon/sphericon/internal/accounts"
@@ -204,11 +205,23 @@ func (c *InputsImpl) IntegrationUpdate(source *site.UpdateIntegrationInput) (int
 	}
 	return integrationsUpdateInput, nil
 }
+func (c *InputsImpl) InvitableRole(source site.SiteInvitableRole) invitation.Role {
+	var invitationRole invitation.Role
+	switch source {
+	case site.SiteInvitableRoleAdmin:
+		invitationRole = invitation.RoleAdmin
+	case site.SiteInvitableRoleMember:
+		invitationRole = invitation.RoleMember
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return invitationRole
+}
 func (c *InputsImpl) InvitationCreate(source *site.SiteCreateInvitationInput) accounts.InviteInput {
 	var accountsInviteInput accounts.InviteInput
 	if source != nil {
 		accountsInviteInput.Email = string((*source).Email)
-		accountsInviteInput.Role = invitation.Role((*source).Role)
+		accountsInviteInput.Role = c.InvitableRole((*source).Role)
 		// accountsInviteInput.InvitedBy: ignore
 	}
 	return accountsInviteInput
@@ -220,7 +233,7 @@ func (c *InputsImpl) PersonalTokenCreate(source *site.SiteCreatePersonalTokenInp
 		if (*source).Scopes != nil {
 			apitokensPersonalInput.Scopes = make([]site.PersonalScope, len((*source).Scopes))
 			for i := 0; i < len((*source).Scopes); i++ {
-				apitokensPersonalInput.Scopes[i] = site.PersonalScope((*source).Scopes[i])
+				apitokensPersonalInput.Scopes[i] = c.siteapiPersonalScopeToSiteapiPersonalScope((*source).Scopes[i])
 			}
 		}
 		apitokensPersonalInput.ExpiresAt = timestampPtrIn((*source).ExpiresAt)
@@ -236,6 +249,22 @@ func (c *InputsImpl) ReAcceptances(source []site.SiteAcceptance) []consentrecord
 		}
 	}
 	return consentrecordsReAcceptanceList
+}
+func (c *InputsImpl) RuleActionType(source site.SiteRuleActionType) rules.ActionType {
+	var rulesActionType rules.ActionType
+	switch source {
+	case site.SiteRuleActionTypeApplyTag:
+		rulesActionType = rules.ActionApplyTag
+	case site.SiteRuleActionTypeEnrollAutomation:
+		rulesActionType = rules.ActionEnroll
+	case site.SiteRuleActionTypeHTTP:
+		rulesActionType = rules.ActionHTTP
+	case site.SiteRuleActionTypeRemoveTag:
+		rulesActionType = rules.ActionRemoveTag
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return rulesActionType
 }
 func (c *InputsImpl) RuleActions(source []site.SiteRuleAction) []rules.Action {
 	var rulesActionList []rules.Action
@@ -390,6 +419,70 @@ func (c *InputsImpl) WebhookUpdate(source *site.UpdateWebhookInput) webhooks.Upd
 	}
 	return webhooksUpdateInput
 }
+func (c *InputsImpl) siteapiPersonalScopeToSiteapiPersonalScope(source site.PersonalScope) site.PersonalScope {
+	var siteapiPersonalScope site.PersonalScope
+	switch source {
+	case site.PersonalScopeAutomationsPublish:
+		siteapiPersonalScope = site.PersonalScopeAutomationsPublish
+	case site.PersonalScopeAutomationsRead:
+		siteapiPersonalScope = site.PersonalScopeAutomationsRead
+	case site.PersonalScopeAutomationsWrite:
+		siteapiPersonalScope = site.PersonalScopeAutomationsWrite
+	case site.PersonalScopeBroadcastsRead:
+		siteapiPersonalScope = site.PersonalScopeBroadcastsRead
+	case site.PersonalScopeBroadcastsSend:
+		siteapiPersonalScope = site.PersonalScopeBroadcastsSend
+	case site.PersonalScopeBroadcastsWrite:
+		siteapiPersonalScope = site.PersonalScopeBroadcastsWrite
+	case site.PersonalScopeContactsExport:
+		siteapiPersonalScope = site.PersonalScopeContactsExport
+	case site.PersonalScopeContactsRead:
+		siteapiPersonalScope = site.PersonalScopeContactsRead
+	case site.PersonalScopeContactsWrite:
+		siteapiPersonalScope = site.PersonalScopeContactsWrite
+	case site.PersonalScopeCustomFieldsRead:
+		siteapiPersonalScope = site.PersonalScopeCustomFieldsRead
+	case site.PersonalScopeEmailsSend:
+		siteapiPersonalScope = site.PersonalScopeEmailsSend
+	case site.PersonalScopeEnrollmentsRead:
+		siteapiPersonalScope = site.PersonalScopeEnrollmentsRead
+	case site.PersonalScopeEventsRead:
+		siteapiPersonalScope = site.PersonalScopeEventsRead
+	case site.PersonalScopeEventsWrite:
+		siteapiPersonalScope = site.PersonalScopeEventsWrite
+	case site.PersonalScopeIntegrationsRead:
+		siteapiPersonalScope = site.PersonalScopeIntegrationsRead
+	case site.PersonalScopeIntegrationsWrite:
+		siteapiPersonalScope = site.PersonalScopeIntegrationsWrite
+	case site.PersonalScopeMcpSend:
+		siteapiPersonalScope = site.PersonalScopeMcpSend
+	case site.PersonalScopeSegmentsRead:
+		siteapiPersonalScope = site.PersonalScopeSegmentsRead
+	case site.PersonalScopeSegmentsWrite:
+		siteapiPersonalScope = site.PersonalScopeSegmentsWrite
+	case site.PersonalScopeSendingDomainsRead:
+		siteapiPersonalScope = site.PersonalScopeSendingDomainsRead
+	case site.PersonalScopeSendingDomainsWrite:
+		siteapiPersonalScope = site.PersonalScopeSendingDomainsWrite
+	case site.PersonalScopeSuppressionsWrite:
+		siteapiPersonalScope = site.PersonalScopeSuppressionsWrite
+	case site.PersonalScopeTemplatesRead:
+		siteapiPersonalScope = site.PersonalScopeTemplatesRead
+	case site.PersonalScopeTemplatesWrite:
+		siteapiPersonalScope = site.PersonalScopeTemplatesWrite
+	case site.PersonalScopeWebhooksRead:
+		siteapiPersonalScope = site.PersonalScopeWebhooksRead
+	case site.PersonalScopeWebhooksRegenerate:
+		siteapiPersonalScope = site.PersonalScopeWebhooksRegenerate
+	case site.PersonalScopeWebhooksTest:
+		siteapiPersonalScope = site.PersonalScopeWebhooksTest
+	case site.PersonalScopeWebhooksWrite:
+		siteapiPersonalScope = site.PersonalScopeWebhooksWrite
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiPersonalScope
+}
 func (c *InputsImpl) siteapiSiteAcceptanceToConsentrecordsReAcceptance(source site.SiteAcceptance) consentrecords.ReAcceptance {
 	var consentrecordsReAcceptance consentrecords.ReAcceptance
 	consentrecordsReAcceptance.Key = string(source.Key)
@@ -404,7 +497,7 @@ func (c *InputsImpl) siteapiSiteAutomationHttpHeaderToHttpcallHeader(source site
 }
 func (c *InputsImpl) siteapiSiteRuleActionToRulesAction(source site.SiteRuleAction) rules.Action {
 	var rulesAction rules.Action
-	rulesAction.Type = rules.ActionType(source.Type)
+	rulesAction.Type = c.RuleActionType(source.Type)
 	rulesAction.Tag = stringIn(source.Tag)
 	rulesAction.AutomationID = entityIDIn(source.AutomationId)
 	rulesAction.ID = stringIn(source.ID)

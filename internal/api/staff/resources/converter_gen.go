@@ -4,7 +4,9 @@
 package resources
 
 import (
+	"fmt"
 	ent "github.com/getsphericon/sphericon/ent"
+	signupitem "github.com/getsphericon/sphericon/ent/signupitem"
 	staff "github.com/getsphericon/sphericon/gen/staff"
 	instance "github.com/getsphericon/sphericon/internal/instance"
 	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
@@ -21,12 +23,40 @@ func (c *ConverterImpl) InstanceStateToResource(source instance.State) staff.Sta
 	staffapiStaffInstanceState.TelemetrySchemaUrl = source.TelemetrySchemaURL
 	return staffapiStaffInstanceState
 }
+func (c *ConverterImpl) InstanceTelemetryLockToResource(source instance.Lock) staff.StaffInstanceTelemetryLock {
+	var staffapiStaffInstanceTelemetryLock staff.StaffInstanceTelemetryLock
+	switch source {
+	case instance.LockDoNotTrack:
+		staffapiStaffInstanceTelemetryLock = staff.StaffInstanceTelemetryLockDoNotTrack
+	case instance.LockEnvironment:
+		staffapiStaffInstanceTelemetryLock = staff.StaffInstanceTelemetryLockEnvironment
+	case instance.LockNone:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return staffapiStaffInstanceTelemetryLock
+}
+func (c *ConverterImpl) SignupItemKindToResource(source signupitem.Kind) staff.SignupItemKind {
+	var staffapiSignupItemKind staff.SignupItemKind
+	switch source {
+	case signupitem.KindNotice:
+		staffapiSignupItemKind = staff.SignupItemKindNotice
+	case signupitem.KindOptionalConsent:
+		staffapiSignupItemKind = staff.SignupItemKindOptionalConsent
+	case signupitem.KindRequiredAcceptance:
+		staffapiSignupItemKind = staff.SignupItemKindRequiredAcceptance
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return staffapiSignupItemKind
+}
 func (c *ConverterImpl) SignupItemToResource(source signupitems.Item) staff.StaffSignupItemResource {
 	var staffapiStaffSignupItemResource staff.StaffSignupItemResource
 	staffapiStaffSignupItemResource.ID = staff.EntityId(source.ID)
 	staffapiStaffSignupItemResource.Key = staff.SignupItemKey(source.Key)
 	staffapiStaffSignupItemResource.Title = staff.SignupItemTitle(source.Title)
-	staffapiStaffSignupItemResource.Kind = staff.SignupItemKind(source.Kind)
+	staffapiStaffSignupItemResource.Kind = c.SignupItemKindToResource(source.Kind)
 	staffapiStaffSignupItemResource.Position = position(source.Position)
 	staffapiStaffSignupItemResource.MailingsConsent = source.MailingsConsent
 	staffapiStaffSignupItemResource.Draft = optDraft(source.Draft)
@@ -74,6 +104,6 @@ func (c *ConverterImpl) instanceSettingToStaffapiStaffInstanceTelemetry(source i
 	var staffapiStaffInstanceTelemetry staff.StaffInstanceTelemetry
 	staffapiStaffInstanceTelemetry.Enabled = source.Enabled
 	staffapiStaffInstanceTelemetry.Locked = source.Locked
-	staffapiStaffInstanceTelemetry.LockedBy = optLock(source.LockedBy)
+	staffapiStaffInstanceTelemetry.LockedBy = optLock(c, source.LockedBy)
 	return staffapiStaffInstanceTelemetry
 }

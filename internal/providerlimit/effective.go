@@ -91,7 +91,7 @@ func (e Effective) Limits() Limits {
 func (e Effective) Unlimited() bool { return !e.Limits().Any() }
 
 // Warning names something a user should look at on an Integration's limit. The
-// values are the API's warning enum, so each surface converts with a plain cast.
+// values are the API's warning enum; each surface maps them member by member (goverter).
 type Warning string
 
 const (

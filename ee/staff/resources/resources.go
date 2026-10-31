@@ -33,7 +33,7 @@ const PeriodLayout = "2006-01"
 // goverter:name StaffConverterImpl
 // goverter:output:file ./staff_converter_gen.go
 // goverter:matchIgnoreCase
-// goverter:enum no
+// goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend staffTimestamp
 // goverter:extend nilableString
@@ -100,6 +100,21 @@ type StaffConverter interface {
 	// goverter:map UserID UserId
 	// goverter:map CreatedAt AnsweredAt
 	SignupSurveyResponseToResource(source *ent.SignupSurveyResponse) staffeeapi.StaffSignupSurveyResponseResource
+
+	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
+	// counterpart is mapped with enum:map.
+	// goverter:enum:transform value
+	AbuseMetricToResource(source abuse.Metric) staffeeapi.StaffAbuseMetric
+	// goverter:enum:transform value
+	SignupCompanySizeToResource(source signupsurveyresponse.CompanySize) staffeeapi.StaffSignupCompanySize
+	// goverter:enum:transform value
+	SignupGoalToResource(source signupsurveyresponse.MainGoal) staffeeapi.StaffSignupGoal
+	// goverter:enum:transform value
+	SignupRoleToResource(source signupsurveyresponse.Role) staffeeapi.StaffSignupRole
+	// goverter:enum:transform value
+	SignupSourceToResource(source signupsurveyresponse.HeardFrom) staffeeapi.StaffSignupSource
+	// goverter:enum:transform value
+	SuspensionActorKindToResource(source workspace.SuspendedByKind) staffeeapi.StaffSuspensionActorKind
 }
 
 // ServiceConverter maps ent rows and the usage figures to the service API resources.
@@ -109,7 +124,7 @@ type StaffConverter interface {
 // goverter:name ServiceConverterImpl
 // goverter:output:file ./service_converter_gen.go
 // goverter:matchIgnoreCase
-// goverter:enum no
+// goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend serviceTimestamp
 // goverter:extend serviceNilableString
@@ -153,6 +168,11 @@ type ServiceConverter interface {
 	// goverter:ignore WorkspaceId
 	// goverter:map Period Period | periodString
 	UsageToResource(source usage.WorkspaceUsage) serviceapi.WorkspaceUsageResource
+
+	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
+	// counterpart is mapped with enum:map.
+	// goverter:enum:transform value
+	UsageMetricToResource(source usage.Metric) serviceapi.UsageMetric
 }
 
 func staffTimestamp(t time.Time) staffeeapi.Timestamp { return staffeeapi.Timestamp(t) }
@@ -196,13 +216,13 @@ func breachRate(b abuse.Breach) float64 { return b.Rate() }
 func periodString(t time.Time) string { return t.Format(PeriodLayout) }
 
 // workspaceSuspension is the Workspace's suspension and who set it; absent unless it is suspended.
-func workspaceSuspension(w *ent.Workspace) staffeeapi.OptNilStaffSuspension {
+func workspaceSuspension(c StaffConverter, w *ent.Workspace) staffeeapi.OptNilStaffSuspension {
 	if w.SuspendedAt == nil {
 		return staffeeapi.OptNilStaffSuspension{}
 	}
 	actor := staffeeapi.StaffSuspensionActor{}
 	if w.SuspendedByKind != nil {
-		actor.Kind = staffeeapi.StaffSuspensionActorKind(*w.SuspendedByKind)
+		actor.Kind = c.SuspensionActorKindToResource(*w.SuspendedByKind)
 	}
 	if w.SuspendedByKind != nil && *w.SuspendedByKind == workspace.SuspendedByKindStaff && w.SuspendedByID != nil {
 		actor.ID = staffeeapi.NewOptNilString(*w.SuspendedByID)
@@ -225,8 +245,8 @@ func nilFloat64(v *float64) staffeeapi.NilFloat64 {
 // count narrows a count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }
 
-func optNilSource(v *signupsurveyresponse.HeardFrom) staffeeapi.OptNilStaffSignupSource {
-	return convert.Opt[staffeeapi.OptNilStaffSignupSource]((*staffeeapi.StaffSignupSource)(v))
+func optNilSource(c StaffConverter, v *signupsurveyresponse.HeardFrom) staffeeapi.OptNilStaffSignupSource {
+	return convert.OptVia[staffeeapi.OptNilStaffSignupSource](v, c.SignupSourceToResource)
 }
 
 func windowHours(d time.Duration) int32 { return narrow.Int32(d / time.Hour) }

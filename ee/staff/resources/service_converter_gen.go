@@ -4,6 +4,7 @@
 package resources
 
 import (
+	"fmt"
 	usage "github.com/getsphericon/sphericon/ee/usage"
 	ent "github.com/getsphericon/sphericon/ent"
 	service "github.com/getsphericon/sphericon/gen/service"
@@ -58,11 +59,25 @@ func (c *ServiceConverterImpl) TombstoneToResource(source *ent.UserTombstone) se
 }
 func (c *ServiceConverterImpl) UsageFigureToResource(source usage.Figure) service.UsageFigure {
 	var serviceapiUsageFigure service.UsageFigure
-	serviceapiUsageFigure.Metric = service.UsageMetric(source.Metric)
+	serviceapiUsageFigure.Metric = c.UsageMetricToResource(source.Metric)
 	serviceapiUsageFigure.Value = source.Value
 	serviceapiUsageFigure.Final = source.Final
 	serviceapiUsageFigure.ComputedAt = serviceTimestamp(source.ComputedAt)
 	return serviceapiUsageFigure
+}
+func (c *ServiceConverterImpl) UsageMetricToResource(source usage.Metric) service.UsageMetric {
+	var serviceapiUsageMetric service.UsageMetric
+	switch source {
+	case usage.Contacts:
+		serviceapiUsageMetric = service.UsageMetricContacts
+	case usage.EmailsSent:
+		serviceapiUsageMetric = service.UsageMetricEmailsSent
+	case usage.InFlightSends:
+		serviceapiUsageMetric = service.UsageMetricInFlightSends
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return serviceapiUsageMetric
 }
 func (c *ServiceConverterImpl) UsageToResource(source usage.WorkspaceUsage) service.WorkspaceUsageResource {
 	var serviceapiWorkspaceUsageResource service.WorkspaceUsageResource

@@ -199,6 +199,17 @@ func Opt[O any, T any, P setter[O, T]](v *T) O {
 	return o
 }
 
+// OptVia is Opt of v mapped through f, absent when v is nil: an optional enum goes through its
+// converter's enum method, OptVia[siteapi.OptSiteTrackingReason](v, c.TrackingReasonToResource).
+func OptVia[O any, S any, T any, P setter[O, T]](v *S, f func(S) T) O {
+	if v == nil {
+		var o O
+		return o
+	}
+	t := f(*v)
+	return Opt[O, T, P](&t)
+}
+
 // OptNonZero is the ogen Opt* or OptNil* value O of v, absent when v is its zero value: an empty
 // text a contract leaves out rather than sending "".
 func OptNonZero[O any, T comparable, P setter[O, T]](v T) O {

@@ -33,7 +33,7 @@ import (
 // goverter:name InputsImpl
 // goverter:output:file ./inputs_gen.go
 // goverter:matchIgnoreCase
-// goverter:enum no
+// goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend stringPatch
 // goverter:extend nilStringPatch
@@ -130,6 +130,11 @@ type Inputs interface {
 	Event(source externalapi.EventInput, backfill bool) (eventlog.Input, error)
 	// goverter:context backfill
 	Events(source []externalapi.EventInput, backfill bool) ([]eventlog.Input, error)
+
+	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
+	// counterpart is mapped with enum:map.
+	// goverter:enum:transform value
+	RuleActionType(source externalapi.RuleActionType) rules.ActionType
 }
 
 // goverter:context backfill

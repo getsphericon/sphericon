@@ -10,12 +10,21 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/signupitem"
+	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/auditapi"
@@ -54,7 +63,7 @@ import (
 // goverter:annotate:unmapped
 // goverter:output:file ./converter_gen.go
 // goverter:matchIgnoreCase
-// goverter:enum no
+// goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
 // goverter:extend optNilString
@@ -85,7 +94,6 @@ import (
 // goverter:extend nilInt32
 // goverter:extend nilString
 // goverter:extend count
-// goverter:extend providerLimitWarning
 // goverter:extend providerLimitSource
 // goverter:extend optTimestamp
 // goverter:extend optInt32
@@ -406,6 +414,65 @@ type Converter interface {
 	OptionalConsentsToSite(source []consentrecords.OptionalConsent) []siteapi.SiteOptionalConsent
 	// The banner of a newer release, the one part of the Instance a Workspace's owner sees (ADR 0032).
 	InstanceReleaseToResource(source instance.Release) siteapi.SiteInstanceRelease
+
+	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
+	// counterpart is mapped with enum:map.
+	// goverter:enum:transform value
+	AutomationStatusToResource(source automation.Status) siteapi.SiteAutomationStatus
+	// goverter:enum:transform value
+	BroadcastStatusToResource(source broadcast.Status) siteapi.SiteBroadcastStatus
+	// goverter:enum:transform value
+	CapturedMessageSurfaceToResource(source capturedmessage.Surface) siteapi.SiteCapturedMessageSurface
+	// goverter:enum:transform value
+	ContactExportSourceToResource(source contact.Source) siteapi.ContactExportSource
+	// goverter:enum:transform value
+	CustomFieldTypeToResource(source customfield.Type) siteapi.SiteCustomFieldType
+	// goverter:enum:transform value
+	EnrollmentFailureKindToResource(source automationrun.FailureKind) siteapi.SiteEnrollmentFailureKind
+	// goverter:enum:transform value
+	EnrollmentStatusToResource(source automationrun.Status) siteapi.SiteEnrollmentStatus
+	// goverter:enum:transform value
+	IntegrationChannelToResource(source integration.Channel) siteapi.SiteIntegrationChannel
+	// goverter:enum:transform value
+	IntegrationProviderToResource(source integration.Provider) siteapi.SiteIntegrationProvider
+	// goverter:enum:transform value
+	InvitableRoleToResource(source invitation.Role) siteapi.SiteInvitableRole
+	// goverter:enum:transform value
+	LintCodeToResource(source emailrender.Code) siteapi.LintCode
+	// goverter:enum:transform value
+	MembershipRoleToResource(source membership.Role) siteapi.SiteMembershipRole
+	// goverter:enum:transform value
+	MembershipSourceToResource(source membership.Source) siteapi.SiteMembershipSource
+	// A User's answer is never `shown`, which only a notice is (ADR 0062).
+	// goverter:enum:transform value
+	// goverter:enum:map DecisionShown @panic
+	OptionalConsentDecisionToResource(source consentrecord.Decision) siteapi.SiteOptionalConsentDecision
+	// goverter:enum:transform value
+	ProviderLimitSourceToResource(source providerlimit.Source) siteapi.SiteProviderLimitSource
+	// goverter:enum:transform value
+	ProviderLimitWarningToResource(source providerlimit.Warning) siteapi.SiteProviderLimitWarning
+	// goverter:enum:transform value
+	RuleActionStatusToResource(source rules.Outcome) siteapi.SiteRuleActionStatus
+	// goverter:enum:transform value
+	RuleActionTypeToResource(source rules.ActionType) siteapi.SiteRuleActionType
+	// goverter:enum:transform value
+	RuleDryRunOutcomeToResource(source rules.DryRunOutcome) siteapi.SiteRuleDryRunOutcome
+	// goverter:enum:transform value
+	RuleStatusToResource(source rule.Status) siteapi.SiteRuleStatus
+	// goverter:enum:transform value
+	SignupItemKindToResource(source signupitem.Kind) siteapi.SignupItemKind
+	// goverter:enum:transform value
+	SuppressionChannelToResource(source suppression.Channel) siteapi.SiteSuppressionChannel
+	// goverter:enum:transform value
+	SuppressionReasonToResource(source suppression.Reason) siteapi.SiteSuppressionReason
+	// goverter:enum:transform value
+	TrackingReasonToResource(source sendingdomain.TrackingReason) siteapi.SiteTrackingReason
+	// goverter:enum:transform value
+	TrackingStateToResource(source sendingdomain.TrackingState) siteapi.SiteTrackingState
+	// goverter:enum:transform value
+	WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) siteapi.SiteWebhookDisabledReason
+	// goverter:enum:transform value
+	WebhookErrorKindToResource(source webhookendpoint.LastErrorKind) siteapi.SiteWebhookErrorKind
 }
 
 // ExportMapper adapts the Converter to contactexport.Mapper.
@@ -431,11 +498,6 @@ func (m ExportMapper) BroadcastRecipient(r *ent.BroadcastRecipient) json.Marshal
 	return new(m.BroadcastRecipientToExport(r))
 }
 
-// providerLimitWarning casts: providerlimit's warnings are the contract's enum values.
-func providerLimitWarning(w providerlimit.Warning) siteapi.SiteProviderLimitWarning {
-	return siteapi.SiteProviderLimitWarning(w)
-}
-
 // count narrows a message count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }
 
@@ -455,11 +517,11 @@ func nilInt32(v *int) siteapi.NilInt32 {
 }
 
 // providerLimitSource is null exactly when the window has no limit (its source is empty).
-func providerLimitSource(v providerlimit.Source) siteapi.NilSiteProviderLimitSource {
+func providerLimitSource(c Converter, v providerlimit.Source) siteapi.NilSiteProviderLimitSource {
 	if v == "" {
 		return siteapi.NilSiteProviderLimitSource{Null: true}
 	}
-	return siteapi.NewNilSiteProviderLimitSource(siteapi.SiteProviderLimitSource(v))
+	return siteapi.NewNilSiteProviderLimitSource(c.ProviderLimitSourceToResource(v))
 }
 
 func optNilInt32(v *int) siteapi.OptNilInt32 {
@@ -643,18 +705,18 @@ func optString(v *string) siteapi.OptString {
 	return convert.Opt[siteapi.OptString](v)
 }
 
-func optMembershipSource(v *membership.Source) siteapi.OptSiteMembershipSource {
-	return convert.Opt[siteapi.OptSiteMembershipSource]((*siteapi.SiteMembershipSource)(v))
+func optMembershipSource(c Converter, v *membership.Source) siteapi.OptSiteMembershipSource {
+	return convert.OptVia[siteapi.OptSiteMembershipSource](v, c.MembershipSourceToResource)
 }
 
 // optConsentDecision is a User's current answer to an optional consent, absent with none; it is
 // never `shown`, which only a notice is.
-func optConsentDecision(v *consentrecord.Decision) siteapi.OptSiteOptionalConsentDecision {
-	return convert.Opt[siteapi.OptSiteOptionalConsentDecision]((*siteapi.SiteOptionalConsentDecision)(v))
+func optConsentDecision(c Converter, v *consentrecord.Decision) siteapi.OptSiteOptionalConsentDecision {
+	return convert.OptVia[siteapi.OptSiteOptionalConsentDecision](v, c.OptionalConsentDecisionToResource)
 }
 
-func optTrackingReason(v *sendingdomain.TrackingReason) siteapi.OptSiteTrackingReason {
-	return convert.Opt[siteapi.OptSiteTrackingReason]((*siteapi.SiteTrackingReason)(v))
+func optTrackingReason(c Converter, v *sendingdomain.TrackingReason) siteapi.OptSiteTrackingReason {
+	return convert.OptVia[siteapi.OptSiteTrackingReason](v, c.TrackingReasonToResource)
 }
 
 // tagNames lists the names of a contact's loaded tags, in the order they were read.
@@ -687,12 +749,12 @@ func inviterEmail(inv ent.Invitation) siteapi.OptNilString {
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.
-func enrollmentFailure(r ent.AutomationRun) siteapi.OptSiteEnrollmentFailure {
+func enrollmentFailure(c Converter, r ent.AutomationRun) siteapi.OptSiteEnrollmentFailure {
 	if r.FailureKind == nil {
 		return siteapi.OptSiteEnrollmentFailure{}
 	}
 	return siteapi.NewOptSiteEnrollmentFailure(siteapi.SiteEnrollmentFailure{
-		Kind:    siteapi.SiteEnrollmentFailureKind(*r.FailureKind),
+		Kind:    c.EnrollmentFailureKindToResource(*r.FailureKind),
 		Status:  optInt32(r.FailureStatus),
 		Excerpt: optString(r.FailureExcerpt),
 	})
@@ -727,7 +789,7 @@ func auditDiff(d map[string]jx.Raw) siteapi.OptNilSiteAuditEntryResourceDiff {
 }
 
 // webhookFailure is the endpoint's failure state; it is absent while the endpoint is healthy.
-func webhookFailure(e ent.WebhookEndpoint) siteapi.OptSiteWebhookFailure {
+func webhookFailure(c Converter, e ent.WebhookEndpoint) siteapi.OptSiteWebhookFailure {
 	if e.ConsecutiveFailures == nil || e.FailingSince == nil || e.LastFailureAt == nil || e.LastErrorKind == nil {
 		return siteapi.OptSiteWebhookFailure{}
 	}
@@ -735,14 +797,14 @@ func webhookFailure(e ent.WebhookEndpoint) siteapi.OptSiteWebhookFailure {
 		ConsecutiveFailures: narrow.Int32(*e.ConsecutiveFailures),
 		Since:               siteapi.Timestamp(*e.FailingSince),
 		LastFailureAt:       siteapi.Timestamp(*e.LastFailureAt),
-		Kind:                siteapi.SiteWebhookErrorKind(*e.LastErrorKind),
+		Kind:                c.WebhookErrorKindToResource(*e.LastErrorKind),
 		Status:              optInt32(e.LastErrorStatus),
 	})
 }
 
 // optWebhookDisabledReason is why the endpoint turned itself off; absent otherwise.
-func optWebhookDisabledReason(v *webhookendpoint.DisabledReason) siteapi.OptSiteWebhookDisabledReason {
-	return convert.Opt[siteapi.OptSiteWebhookDisabledReason]((*siteapi.SiteWebhookDisabledReason)(v))
+func optWebhookDisabledReason(c Converter, v *webhookendpoint.DisabledReason) siteapi.OptSiteWebhookDisabledReason {
+	return convert.OptVia[siteapi.OptSiteWebhookDisabledReason](v, c.WebhookDisabledReasonToResource)
 }
 
 // omitEmpty is unset for an empty value, so redacted optional fields are omitted.
@@ -783,14 +845,14 @@ func optNonEmpty(s string) siteapi.OptString {
 // ruleActions decodes a Rule's stored Actions into the typed DTO. Stored text the module cannot
 // decode (only ever written by the module itself) yields none, and is logged: a converter has
 // no way to fail a response, and nobody reading the page can act on it.
-func ruleActions(stored string) []siteapi.SiteRuleAction {
+func ruleActions(c Converter, stored string) []siteapi.SiteRuleAction {
 	actions, err := rules.DecodeActions(stored)
 	if err != nil {
 		slog.Error("rule: stored actions cannot be decoded", "error", err)
 		return nil
 	}
 	return lo.Map(actions, func(a rules.Action, _ int) siteapi.SiteRuleAction {
-		out := siteapi.SiteRuleAction{Type: siteapi.SiteRuleActionType(a.Type), Tag: optNonEmpty(a.Tag)}
+		out := siteapi.SiteRuleAction{Type: c.RuleActionTypeToResource(a.Type), Tag: optNonEmpty(a.Tag)}
 		if a.Type == rules.ActionEnroll {
 			out.AutomationId = siteapi.NewOptEntityId(siteapi.EntityId(a.AutomationID))
 		}
@@ -809,7 +871,7 @@ func ruleActions(stored string) []siteapi.SiteRuleAction {
 
 // ruleResults decodes a Firing's stored results into the typed DTO; stored text the module
 // cannot decode yields none and is logged, as ruleActions does.
-func ruleResults(stored string) []siteapi.SiteRuleActionResult {
+func ruleResults(c Converter, stored string) []siteapi.SiteRuleActionResult {
 	results, err := rules.DecodeResults(stored)
 	if err != nil {
 		slog.Error("rule: stored results cannot be decoded", "error", err)
@@ -817,15 +879,15 @@ func ruleResults(stored string) []siteapi.SiteRuleActionResult {
 	}
 	return lo.Map(results, func(r rules.Result, _ int) siteapi.SiteRuleActionResult {
 		return siteapi.SiteRuleActionResult{
-			Type:   siteapi.SiteRuleActionType(r.Type),
-			Status: siteapi.SiteRuleActionStatus(r.Status),
+			Type:   c.RuleActionTypeToResource(r.Type),
+			Status: c.RuleActionStatusToResource(r.Status),
 			Detail: optNonEmpty(r.Detail),
 		}
 	})
 }
 
-func optNilContactSource(v *contact.Source) siteapi.OptNilContactExportSource {
-	return convert.Opt[siteapi.OptNilContactExportSource]((*siteapi.ContactExportSource)(v))
+func optNilContactSource(c Converter, v *contact.Source) siteapi.OptNilContactExportSource {
+	return convert.OptVia[siteapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
 }
 
 // customFieldRuleOperators is the operators a rule leaf may test on a Custom field of the type: the

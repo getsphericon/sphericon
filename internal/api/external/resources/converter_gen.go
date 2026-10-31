@@ -5,8 +5,20 @@ package resources
 
 import (
 	jsontext "encoding/json/jsontext"
+	"fmt"
 	ent "github.com/getsphericon/sphericon/ent"
+	automation "github.com/getsphericon/sphericon/ent/automation"
+	automationrun "github.com/getsphericon/sphericon/ent/automationrun"
+	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
+	capturedmessage "github.com/getsphericon/sphericon/ent/capturedmessage"
+	contact "github.com/getsphericon/sphericon/ent/contact"
+	customfield "github.com/getsphericon/sphericon/ent/customfield"
+	integration "github.com/getsphericon/sphericon/ent/integration"
+	rule "github.com/getsphericon/sphericon/ent/rule"
 	schema "github.com/getsphericon/sphericon/ent/schema"
+	sendingdomain "github.com/getsphericon/sphericon/ent/sendingdomain"
+	suppression "github.com/getsphericon/sphericon/ent/suppression"
+	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	external "github.com/getsphericon/sphericon/gen/external"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
@@ -125,12 +137,25 @@ func (c *ConverterImpl) AutomationResultsToResource(source automations.Results) 
 	}
 	return externalapiAutomationResults
 }
+func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) external.AutomationStatus {
+	var externalapiAutomationStatus external.AutomationStatus
+	switch source {
+	case automation.DefaultStatus:
+		externalapiAutomationStatus = external.AutomationStatusInactive
+	case automation.StatusActive:
+		externalapiAutomationStatus = external.AutomationStatusActive
+	// Skipped StatusInactive(inactive) -> AutomationStatusInactive(inactive) because it duplicates DefaultStatus(inactive) -> AutomationStatusInactive(inactive)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiAutomationStatus
+}
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.AutomationResource {
 	var externalapiAutomationResource external.AutomationResource
 	if source != nil {
 		externalapiAutomationResource.ID = external.EntityId((*source).ID)
 		externalapiAutomationResource.Name = (*source).Name
-		externalapiAutomationResource.Status = external.AutomationStatus((*source).Status)
+		externalapiAutomationResource.Status = c.AutomationStatusToResource((*source).Status)
 		externalapiAutomationResource.Live = automationVersionOrNull(c, (*source).Edges.LiveVersion)
 		externalapiAutomationResource.Draft = automationVersionOrNull(c, (*source).Edges.DraftVersion)
 		externalapiAutomationResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
@@ -193,7 +218,7 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 }
 func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) external.BroadcastReport {
 	var externalapiBroadcastReport external.BroadcastReport
-	externalapiBroadcastReport.Status = external.BroadcastStatus(source.Status)
+	externalapiBroadcastReport.Status = c.BroadcastStatusToResource(source.Status)
 	externalapiBroadcastReport.HoldReason = optNilString(source.HoldReason)
 	externalapiBroadcastReport.RecipientsTotal = count(source.Stats.Recipients)
 	externalapiBroadcastReport.SentCount = count(source.Stats.Sent)
@@ -210,6 +235,25 @@ func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) exte
 	externalapiBroadcastReport.ClickRate = source.Stats.ClickRate()
 	return externalapiBroadcastReport
 }
+func (c *ConverterImpl) BroadcastStatusToResource(source broadcast.Status) external.BroadcastStatus {
+	var externalapiBroadcastStatus external.BroadcastStatus
+	switch source {
+	case broadcast.DefaultStatus:
+		externalapiBroadcastStatus = external.BroadcastStatusDraft
+	// Skipped StatusDraft(draft) -> BroadcastStatusDraft(draft) because it duplicates DefaultStatus(draft) -> BroadcastStatusDraft(draft)
+	case broadcast.StatusFailed:
+		externalapiBroadcastStatus = external.BroadcastStatusFailed
+	case broadcast.StatusScheduled:
+		externalapiBroadcastStatus = external.BroadcastStatusScheduled
+	case broadcast.StatusSending:
+		externalapiBroadcastStatus = external.BroadcastStatusSending
+	case broadcast.StatusSent:
+		externalapiBroadcastStatus = external.BroadcastStatusSent
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiBroadcastStatus
+}
 func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.BroadcastResource {
 	var externalapiBroadcastResource external.BroadcastResource
 	if source != nil {
@@ -222,7 +266,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 		externalapiBroadcastResource.Doc = broadcastDoc((*source).Doc)
 		externalapiBroadcastResource.EditorVersion = optNilString((*source).EditorVersion)
 		externalapiBroadcastResource.SegmentId = optNilEntityID((*source).SegmentID)
-		externalapiBroadcastResource.Status = external.BroadcastStatus((*source).Status)
+		externalapiBroadcastResource.Status = c.BroadcastStatusToResource((*source).Status)
 		externalapiBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
 		externalapiBroadcastResource.SentAt = optNilTimestamp((*source).SentAt)
 		externalapiBroadcastResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
@@ -239,13 +283,29 @@ func (c *ConverterImpl) BroadcastsToResources(source []*ent.Broadcast) []externa
 	}
 	return externalapiBroadcastResourceList
 }
+func (c *ConverterImpl) CapturedMessageSurfaceToResource(source capturedmessage.Surface) external.CapturedMessageSurface {
+	var externalapiCapturedMessageSurface external.CapturedMessageSurface
+	switch source {
+	case capturedmessage.SurfaceAutomation:
+		externalapiCapturedMessageSurface = external.CapturedMessageSurfaceAutomation
+	case capturedmessage.SurfaceBroadcast:
+		externalapiCapturedMessageSurface = external.CapturedMessageSurfaceBroadcast
+	case capturedmessage.SurfaceTest:
+		externalapiCapturedMessageSurface = external.CapturedMessageSurfaceTest
+	case capturedmessage.SurfaceTransactional:
+		externalapiCapturedMessageSurface = external.CapturedMessageSurfaceTransactional
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiCapturedMessageSurface
+}
 func (c *ConverterImpl) CapturedMessageToResource(source *ent.CapturedMessage) external.CapturedMessageResource {
 	var externalapiCapturedMessageResource external.CapturedMessageResource
 	if source != nil {
 		externalapiCapturedMessageResource.ID = external.EntityId((*source).ID)
 		externalapiCapturedMessageResource.IntegrationId = external.EntityId((*source).IntegrationID)
 		externalapiCapturedMessageResource.OutboundMessageId = nilEntityID((*source).OutboundMessageID)
-		externalapiCapturedMessageResource.Surface = external.CapturedMessageSurface((*source).Surface)
+		externalapiCapturedMessageResource.Surface = c.CapturedMessageSurfaceToResource((*source).Surface)
 		externalapiCapturedMessageResource.SendingSource = nilString((*source).SendingSource)
 		externalapiCapturedMessageResource.Recipient = (*source).Recipient
 		externalapiCapturedMessageResource.From = (*source).FromEmail
@@ -276,7 +336,7 @@ func (c *ConverterImpl) CapturedMessageToSummary(source *ent.CapturedMessage) ex
 		externalapiCapturedMessageSummary.ID = external.EntityId((*source).ID)
 		externalapiCapturedMessageSummary.IntegrationId = external.EntityId((*source).IntegrationID)
 		externalapiCapturedMessageSummary.OutboundMessageId = nilEntityID((*source).OutboundMessageID)
-		externalapiCapturedMessageSummary.Surface = external.CapturedMessageSurface((*source).Surface)
+		externalapiCapturedMessageSummary.Surface = c.CapturedMessageSurfaceToResource((*source).Surface)
 		externalapiCapturedMessageSummary.SendingSource = nilString((*source).SendingSource)
 		externalapiCapturedMessageSummary.Recipient = (*source).Recipient
 		externalapiCapturedMessageSummary.From = (*source).FromEmail
@@ -298,6 +358,20 @@ func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) external.
 	}
 	return externalapiContactExportConfirmation
 }
+func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) external.ContactExportSource {
+	var externalapiContactExportSource external.ContactExportSource
+	switch source {
+	case contact.SourceAPI:
+		externalapiContactExportSource = external.ContactExportSourceAPI
+	case contact.SourceManual:
+		externalapiContactExportSource = external.ContactExportSourceManual
+	case contact.SourceTracker:
+		externalapiContactExportSource = external.ContactExportSourceTracker
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiContactExportSource
+}
 func (c *ConverterImpl) ContactToExport(source *ent.Contact) external.ContactExportContact {
 	var externalapiContactExportContact external.ContactExportContact
 	if source != nil {
@@ -309,7 +383,7 @@ func (c *ConverterImpl) ContactToExport(source *ent.Contact) external.ContactExp
 		externalapiContactExportContact.LastName = optNilString((*source).LastName)
 		externalapiContactExportContact.TimeZone = optNilString((*source).TimeZone)
 		externalapiContactExportContact.CustomFields = exportJSON((*source).CustomFields)
-		externalapiContactExportContact.Source = optNilContactSource((*source).Source)
+		externalapiContactExportContact.Source = optNilContactSource(c, (*source).Source)
 		externalapiContactExportContact.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiContactExportContact.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -345,12 +419,29 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) external.
 		externalapiCustomFieldResource.ID = external.EntityId((*source).ID)
 		externalapiCustomFieldResource.Key = (*source).Key
 		externalapiCustomFieldResource.Name = (*source).Name
-		externalapiCustomFieldResource.Type = external.CustomFieldType((*source).Type)
+		externalapiCustomFieldResource.Type = c.CustomFieldTypeToResource((*source).Type)
 		externalapiCustomFieldResource.RuleOperators = customFieldRuleOperators((*source).Type)
 		externalapiCustomFieldResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiCustomFieldResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiCustomFieldResource
+}
+func (c *ConverterImpl) CustomFieldTypeToResource(source customfield.Type) external.CustomFieldType {
+	var externalapiCustomFieldType external.CustomFieldType
+	switch source {
+	case customfield.DefaultType:
+		externalapiCustomFieldType = external.CustomFieldTypeString
+	case customfield.TypeBool:
+		externalapiCustomFieldType = external.CustomFieldTypeBool
+	case customfield.TypeDatetime:
+		externalapiCustomFieldType = external.CustomFieldTypeDatetime
+	case customfield.TypeNumber:
+		externalapiCustomFieldType = external.CustomFieldTypeNumber
+	// Skipped TypeString(string) -> CustomFieldTypeString(string) because it duplicates DefaultType(string) -> CustomFieldTypeString(string)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiCustomFieldType
 }
 func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) external.DnsRecord {
 	var externalapiDnsRecord external.DnsRecord
@@ -402,16 +493,53 @@ func (c *ConverterImpl) EmailTemplatesToResources(source []*ent.EmailTemplate) [
 	}
 	return externalapiTemplateResourceList
 }
+func (c *ConverterImpl) EnrollmentFailureKindToResource(source automationrun.FailureKind) external.EnrollmentFailureKind {
+	var externalapiEnrollmentFailureKind external.EnrollmentFailureKind
+	switch source {
+	case automationrun.FailureKindBlockedAddress:
+		externalapiEnrollmentFailureKind = external.EnrollmentFailureKindBlockedAddress
+	case automationrun.FailureKindHTTPStatus:
+		externalapiEnrollmentFailureKind = external.EnrollmentFailureKindHTTPStatus
+	case automationrun.FailureKindInvalidBody:
+		externalapiEnrollmentFailureKind = external.EnrollmentFailureKindInvalidBody
+	case automationrun.FailureKindNetwork:
+		externalapiEnrollmentFailureKind = external.EnrollmentFailureKindNetwork
+	case automationrun.FailureKindTimeout:
+		externalapiEnrollmentFailureKind = external.EnrollmentFailureKindTimeout
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEnrollmentFailureKind
+}
+func (c *ConverterImpl) EnrollmentStatusToResource(source automationrun.Status) external.EnrollmentStatus {
+	var externalapiEnrollmentStatus external.EnrollmentStatus
+	switch source {
+	case automationrun.DefaultStatus:
+		externalapiEnrollmentStatus = external.EnrollmentStatusActive
+	// Skipped StatusActive(active) -> EnrollmentStatusActive(active) because it duplicates DefaultStatus(active) -> EnrollmentStatusActive(active)
+	case automationrun.StatusCompleted:
+		externalapiEnrollmentStatus = external.EnrollmentStatusCompleted
+	case automationrun.StatusExited:
+		externalapiEnrollmentStatus = external.EnrollmentStatusExited
+	case automationrun.StatusFailed:
+		externalapiEnrollmentStatus = external.EnrollmentStatusFailed
+	case automationrun.StatusGoalReached:
+		externalapiEnrollmentStatus = external.EnrollmentStatusGoalReached
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEnrollmentStatus
+}
 func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external.EnrollmentResource {
 	var externalapiEnrollmentResource external.EnrollmentResource
 	if source != nil {
 		externalapiEnrollmentResource.ID = external.EntityId((*source).ID)
 		externalapiEnrollmentResource.AutomationId = external.EntityId((*source).AutomationID)
 		externalapiEnrollmentResource.ContactId = external.EntityId((*source).ContactID)
-		externalapiEnrollmentResource.Status = external.EnrollmentStatus((*source).Status)
+		externalapiEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
 		externalapiEnrollmentResource.CurrentStep = count((*source).CurrentStep)
 		externalapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
-		externalapiEnrollmentResource.Failure = enrollmentFailure((*source))
+		externalapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
 		externalapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -442,13 +570,40 @@ func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportE
 	}
 	return externalapiContactExportEvent
 }
+func (c *ConverterImpl) IntegrationChannelToResource(source integration.Channel) external.IntegrationChannel {
+	var externalapiIntegrationChannel external.IntegrationChannel
+	switch source {
+	case integration.ChannelEmail:
+		externalapiIntegrationChannel = external.IntegrationChannelEmail
+	case integration.ChannelSms:
+		externalapiIntegrationChannel = external.IntegrationChannelSMS
+	// Skipped DefaultChannel(email) -> IntegrationChannelEmail(email) because it duplicates ChannelEmail(email) -> IntegrationChannelEmail(email)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiIntegrationChannel
+}
+func (c *ConverterImpl) IntegrationProviderToResource(source integration.Provider) external.IntegrationProvider {
+	var externalapiIntegrationProvider external.IntegrationProvider
+	switch source {
+	case integration.ProviderInbox:
+		externalapiIntegrationProvider = external.IntegrationProviderInbox
+	case integration.ProviderSMTP:
+		externalapiIntegrationProvider = external.IntegrationProviderSMTP
+	case integration.ProviderSes:
+		externalapiIntegrationProvider = external.IntegrationProviderSes
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiIntegrationProvider
+}
 func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) external.IntegrationResource {
 	var externalapiIntegrationResource external.IntegrationResource
 	if source != nil {
 		externalapiIntegrationResource.ID = external.EntityId((*source).ID)
 		externalapiIntegrationResource.Name = (*source).Name
-		externalapiIntegrationResource.Channel = external.IntegrationChannel((*source).Channel)
-		externalapiIntegrationResource.Provider = external.IntegrationProvider((*source).Provider)
+		externalapiIntegrationResource.Channel = c.IntegrationChannelToResource((*source).Channel)
+		externalapiIntegrationResource.Provider = c.IntegrationProviderToResource((*source).Provider)
 		externalapiIntegrationResource.Enabled = (*source).Enabled
 		externalapiIntegrationResource.IsDefault = (*source).IsDefault
 		externalapiIntegrationResource.MaxPerSecond = nilInt32((*source).MaxPerSecond)
@@ -465,9 +620,29 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) external.
 	}
 	return externalapiIntegrationResource
 }
+func (c *ConverterImpl) LintCodeToResource(source emailrender.Code) external.LintCode {
+	var externalapiLintCode external.LintCode
+	switch source {
+	case emailrender.CodeInvalidContent:
+		externalapiLintCode = external.LintCodeInvalidContent
+	case emailrender.CodeLowContrast:
+		externalapiLintCode = external.LintCodeLowContrast
+	case emailrender.CodeMissingAlt:
+		externalapiLintCode = external.LintCodeMissingAlt
+	case emailrender.CodeOffBrandColor:
+		externalapiLintCode = external.LintCodeOffBrandColor
+	case emailrender.CodeOffBrandFont:
+		externalapiLintCode = external.LintCodeOffBrandFont
+	case emailrender.CodeUnknownConstruct:
+		externalapiLintCode = external.LintCodeUnknownConstruct
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiLintCode
+}
 func (c *ConverterImpl) LintFindingToResource(source emailrender.Finding) external.LintFinding {
 	var externalapiLintFinding external.LintFinding
-	externalapiLintFinding.Code = external.LintCode(source.Code)
+	externalapiLintFinding.Code = c.LintCodeToResource(source.Code)
 	externalapiLintFinding.Message = source.Message
 	externalapiLintFinding.Element = optNonEmpty(source.Element)
 	externalapiLintFinding.Detail = optNonEmpty(source.Detail)
@@ -514,6 +689,18 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 	}
 	return externalapiContactExportOutboundMessage
 }
+func (c *ConverterImpl) ProviderLimitSourceToResource(source providerlimit.Source) external.ProviderLimitSource {
+	var externalapiProviderLimitSource external.ProviderLimitSource
+	switch source {
+	case providerlimit.SourceManual:
+		externalapiProviderLimitSource = external.ProviderLimitSourceManual
+	case providerlimit.SourceProvider:
+		externalapiProviderLimitSource = external.ProviderLimitSourceProvider
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiProviderLimitSource
+}
 func (c *ConverterImpl) ProviderLimitToStatus(source providerlimit.Status) external.ProviderLimitStatus {
 	var externalapiProviderLimitStatus external.ProviderLimitStatus
 	externalapiProviderLimitStatus.PerSecond = c.providerlimitValueToExternalapiProviderLimitValue(source.PerSecond)
@@ -522,14 +709,84 @@ func (c *ConverterImpl) ProviderLimitToStatus(source providerlimit.Status) exter
 	if source.Warnings != nil {
 		externalapiProviderLimitStatus.Warnings = make([]external.ProviderLimitWarning, len(source.Warnings))
 		for i := 0; i < len(source.Warnings); i++ {
-			externalapiProviderLimitStatus.Warnings[i] = providerLimitWarning(source.Warnings[i])
+			externalapiProviderLimitStatus.Warnings[i] = c.ProviderLimitWarningToResource(source.Warnings[i])
 		}
 	}
 	return externalapiProviderLimitStatus
 }
+func (c *ConverterImpl) ProviderLimitWarningToResource(source providerlimit.Warning) external.ProviderLimitWarning {
+	var externalapiProviderLimitWarning external.ProviderLimitWarning
+	switch source {
+	case providerlimit.WarningProviderProbation:
+		externalapiProviderLimitWarning = external.ProviderLimitWarningProviderProbation
+	case providerlimit.WarningProviderQuotaUnavailable:
+		externalapiProviderLimitWarning = external.ProviderLimitWarningProviderQuotaUnavailable
+	case providerlimit.WarningProviderSandbox:
+		externalapiProviderLimitWarning = external.ProviderLimitWarningProviderSandbox
+	case providerlimit.WarningProviderStopped:
+		externalapiProviderLimitWarning = external.ProviderLimitWarningProviderStopped
+	case providerlimit.WarningUnlimited:
+		externalapiProviderLimitWarning = external.ProviderLimitWarningUnlimited
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiProviderLimitWarning
+}
+func (c *ConverterImpl) RuleActionStatusToResource(source rules.Outcome) external.RuleActionStatus {
+	var externalapiRuleActionStatus external.RuleActionStatus
+	switch source {
+	case rules.Failed:
+		externalapiRuleActionStatus = external.RuleActionStatusFailed
+	case rules.Pending:
+		externalapiRuleActionStatus = external.RuleActionStatusPending
+	case rules.Skipped:
+		externalapiRuleActionStatus = external.RuleActionStatusSkipped
+	case rules.Succeeded:
+		externalapiRuleActionStatus = external.RuleActionStatusSucceeded
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiRuleActionStatus
+}
+func (c *ConverterImpl) RuleActionTypeToResource(source rules.ActionType) external.RuleActionType {
+	var externalapiRuleActionType external.RuleActionType
+	switch source {
+	case rules.ActionApplyTag:
+		externalapiRuleActionType = external.RuleActionTypeApplyTag
+	case rules.ActionEnroll:
+		externalapiRuleActionType = external.RuleActionTypeEnrollAutomation
+	case rules.ActionHTTP:
+		externalapiRuleActionType = external.RuleActionTypeHTTP
+	case rules.ActionRemoveTag:
+		externalapiRuleActionType = external.RuleActionTypeRemoveTag
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiRuleActionType
+}
+func (c *ConverterImpl) RuleDryRunOutcomeToResource(source rules.DryRunOutcome) external.RuleDryRunOutcome {
+	var externalapiRuleDryRunOutcome external.RuleDryRunOutcome
+	switch source {
+	case rules.Backfill:
+		externalapiRuleDryRunOutcome = external.RuleDryRunOutcomeBackfill
+	case rules.ConditionNotMet:
+		externalapiRuleDryRunOutcome = external.RuleDryRunOutcomeConditionNotMet
+	case rules.Machine:
+		externalapiRuleDryRunOutcome = external.RuleDryRunOutcomeMachine
+	case rules.NoContact:
+		externalapiRuleDryRunOutcome = external.RuleDryRunOutcomeNoContact
+	case rules.NotTriggered:
+		externalapiRuleDryRunOutcome = external.RuleDryRunOutcomeNotTriggered
+	case rules.WouldFire:
+		externalapiRuleDryRunOutcome = external.RuleDryRunOutcomeWouldFire
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiRuleDryRunOutcome
+}
 func (c *ConverterImpl) RuleDryRunToResource(source rules.DryRun) external.RuleDryRunResource {
 	var externalapiRuleDryRunResource external.RuleDryRunResource
-	externalapiRuleDryRunResource.Outcome = external.RuleDryRunOutcome(source.Outcome)
+	externalapiRuleDryRunResource.Outcome = c.RuleDryRunOutcomeToResource(source.Outcome)
 	if source.Actions != nil {
 		externalapiRuleDryRunResource.Actions = make([]external.RuleDryRunAction, len(source.Actions))
 		for i := 0; i < len(source.Actions); i++ {
@@ -546,7 +803,7 @@ func (c *ConverterImpl) RuleFiringToResource(source *ent.RuleFiring) external.Ru
 		externalapiRuleFiringResource.ContactId = external.EntityId((*source).ContactID)
 		externalapiRuleFiringResource.Action = (*source).Action
 		externalapiRuleFiringResource.EventSourceId = (*source).SourceID
-		externalapiRuleFiringResource.Results = ruleResults((*source).Results)
+		externalapiRuleFiringResource.Results = ruleResults(c, (*source).Results)
 		externalapiRuleFiringResource.CompletedAt = optTimestamp((*source).CompletedAt)
 		externalapiRuleFiringResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
@@ -560,12 +817,25 @@ func (c *ConverterImpl) RuleFiringsToResources(source []*ent.RuleFiring) []exter
 	}
 	return externalapiRuleFiringResourceList
 }
+func (c *ConverterImpl) RuleStatusToResource(source rule.Status) external.RuleStatus {
+	var externalapiRuleStatus external.RuleStatus
+	switch source {
+	case rule.DefaultStatus:
+		externalapiRuleStatus = external.RuleStatusInactive
+	case rule.StatusActive:
+		externalapiRuleStatus = external.RuleStatusActive
+	// Skipped StatusInactive(inactive) -> RuleStatusInactive(inactive) because it duplicates DefaultStatus(inactive) -> RuleStatusInactive(inactive)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiRuleStatus
+}
 func (c *ConverterImpl) RuleToResource(source *ent.Rule) external.RuleResource {
 	var externalapiRuleResource external.RuleResource
 	if source != nil {
 		externalapiRuleResource.ID = external.EntityId((*source).ID)
 		externalapiRuleResource.Name = (*source).Name
-		externalapiRuleResource.Status = external.RuleStatus((*source).Status)
+		externalapiRuleResource.Status = c.RuleStatusToResource((*source).Status)
 		externalapiRuleResource.Live = ruleVersionOrNull(c, (*source).Edges.LiveVersion)
 		externalapiRuleResource.Draft = ruleVersionOrNull(c, (*source).Edges.DraftVersion)
 		externalapiRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
@@ -581,7 +851,7 @@ func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) external.
 		externalapiRuleVersion.Number = count((*source).Version)
 		externalapiRuleVersion.TriggerEvents = ruleTriggerEvents(source)
 		externalapiRuleVersion.Condition = segmentCondition((*source).Condition)
-		externalapiRuleVersion.Actions = ruleActions((*source).Actions)
+		externalapiRuleVersion.Actions = ruleActions(c, (*source).Actions)
 	}
 	return externalapiRuleVersion
 }
@@ -653,6 +923,21 @@ func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) e
 	externalapiSmtpConfig.FromName = omitEmpty(source.FromName)
 	return externalapiSmtpConfig
 }
+func (c *ConverterImpl) SuppressionReasonToResource(source suppression.Reason) external.SuppressionReason {
+	var externalapiSuppressionReason external.SuppressionReason
+	switch source {
+	case suppression.DefaultReason:
+		externalapiSuppressionReason = external.SuppressionReasonManual
+	case suppression.ReasonBounce:
+		externalapiSuppressionReason = external.SuppressionReasonBounce
+	case suppression.ReasonComplaint:
+		externalapiSuppressionReason = external.SuppressionReasonComplaint
+	// Skipped ReasonManual(manual) -> SuppressionReasonManual(manual) because it duplicates DefaultReason(manual) -> SuppressionReasonManual(manual)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiSuppressionReason
+}
 func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) external.ContactExportSuppression {
 	var externalapiContactExportSuppression external.ContactExportSuppression
 	if source != nil {
@@ -670,7 +955,7 @@ func (c *ConverterImpl) SuppressionToResource(source *ent.Suppression) external.
 	if source != nil {
 		externalapiSuppressionResource.ID = external.EntityId((*source).ID)
 		externalapiSuppressionResource.Destination = (*source).Destination
-		externalapiSuppressionResource.Reason = external.SuppressionReason((*source).Reason)
+		externalapiSuppressionResource.Reason = c.SuppressionReasonToResource((*source).Reason)
 		externalapiSuppressionResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiSuppressionResource
@@ -701,16 +986,41 @@ func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []external.TagResourc
 	}
 	return externalapiTagResourceList
 }
+func (c *ConverterImpl) TrackingReasonToResource(source sendingdomain.TrackingReason) external.TrackingReason {
+	var externalapiTrackingReason external.TrackingReason
+	switch source {
+	case sendingdomain.TrackingReasonHostTaken:
+		externalapiTrackingReason = external.TrackingReasonHostTaken
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiTrackingReason
+}
 func (c *ConverterImpl) TrackingRecordToResource(source sendingdomains.TrackingRecord) external.TrackingRecord {
 	var externalapiTrackingRecord external.TrackingRecord
 	externalapiTrackingRecord.Type = trackingRecordType(source)
 	externalapiTrackingRecord.Host = source.Host
 	externalapiTrackingRecord.Target = source.Target
-	externalapiTrackingRecord.State = external.TrackingState(source.State)
-	externalapiTrackingRecord.Reason = optTrackingReason(source.Reason)
+	externalapiTrackingRecord.State = c.TrackingStateToResource(source.State)
+	externalapiTrackingRecord.Reason = optTrackingReason(c, source.Reason)
 	externalapiTrackingRecord.LastCheckedAt = optNilTimestamp(source.CheckedAt)
 	externalapiTrackingRecord.StateChangedAt = optNilTimestamp(source.StateChangedAt)
 	return externalapiTrackingRecord
+}
+func (c *ConverterImpl) TrackingStateToResource(source sendingdomain.TrackingState) external.TrackingState {
+	var externalapiTrackingState external.TrackingState
+	switch source {
+	case sendingdomain.DefaultTrackingState:
+		externalapiTrackingState = external.TrackingStatePending
+	case sendingdomain.TrackingStateDNSVerified:
+		externalapiTrackingState = external.TrackingStateDNSVerified
+	// Skipped TrackingStatePending(pending) -> TrackingStatePending(pending) because it duplicates DefaultTrackingState(pending) -> TrackingStatePending(pending)
+	case sendingdomain.TrackingStateServing:
+		externalapiTrackingState = external.TrackingStateServing
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiTrackingState
 }
 func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) external.ContactExportUnsubscribe {
 	var externalapiContactExportUnsubscribe external.ContactExportUnsubscribe
@@ -743,6 +1053,36 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) external.ContactExp
 	}
 	return externalapiContactExportVisitor
 }
+func (c *ConverterImpl) WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) external.WebhookDisabledReason {
+	var externalapiWebhookDisabledReason external.WebhookDisabledReason
+	switch source {
+	case webhookendpoint.DisabledReasonGone:
+		externalapiWebhookDisabledReason = external.WebhookDisabledReasonGone
+	case webhookendpoint.DisabledReasonOwner:
+		externalapiWebhookDisabledReason = external.WebhookDisabledReasonOwner
+	case webhookendpoint.DisabledReasonPersistentFailure:
+		externalapiWebhookDisabledReason = external.WebhookDisabledReasonPersistentFailure
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiWebhookDisabledReason
+}
+func (c *ConverterImpl) WebhookErrorKindToResource(source webhookendpoint.LastErrorKind) external.WebhookErrorKind {
+	var externalapiWebhookErrorKind external.WebhookErrorKind
+	switch source {
+	case webhookendpoint.LastErrorKindBlockedAddress:
+		externalapiWebhookErrorKind = external.WebhookErrorKindBlockedAddress
+	case webhookendpoint.LastErrorKindHTTPStatus:
+		externalapiWebhookErrorKind = external.WebhookErrorKindHTTPStatus
+	case webhookendpoint.LastErrorKindNetwork:
+		externalapiWebhookErrorKind = external.WebhookErrorKindNetwork
+	case webhookendpoint.LastErrorKindTimeout:
+		externalapiWebhookErrorKind = external.WebhookErrorKindTimeout
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiWebhookErrorKind
+}
 func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.WebhookResource {
 	var externalapiWebhookResource external.WebhookResource
 	if source != nil {
@@ -754,8 +1094,8 @@ func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.
 		}
 		externalapiWebhookResource.Enabled = webhookEnabled((*source))
 		externalapiWebhookResource.DisabledAt = optTimestamp((*source).DisabledAt)
-		externalapiWebhookResource.DisabledReason = optWebhookDisabledReason((*source).DisabledReason)
-		externalapiWebhookResource.Failure = webhookFailure((*source))
+		externalapiWebhookResource.DisabledReason = optWebhookDisabledReason(c, (*source).DisabledReason)
+		externalapiWebhookResource.Failure = webhookFailure(c, (*source))
 		externalapiWebhookResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiWebhookResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -823,7 +1163,7 @@ func (c *ConverterImpl) mapStringEmaildocAgentTypeToExternalapiEmailSchemaResult
 func (c *ConverterImpl) providerlimitValueToExternalapiProviderLimitValue(source providerlimit.Value) external.ProviderLimitValue {
 	var externalapiProviderLimitValue external.ProviderLimitValue
 	externalapiProviderLimitValue.Limit = nilInt32(source.Limit)
-	externalapiProviderLimitValue.Source = providerLimitSource(source.Source)
+	externalapiProviderLimitValue.Source = providerLimitSource(c, source.Source)
 	return externalapiProviderLimitValue
 }
 func (c *ConverterImpl) rulesPlannedActionToExternalapiRuleDryRunAction(source rules.PlannedAction) external.RuleDryRunAction {
