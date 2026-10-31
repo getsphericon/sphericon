@@ -305,7 +305,8 @@ type Config struct {
 }
 
 // environment is every variable Load reads, with the defaults that do not depend on
-// the environment name. Those that do (rate limits in the e2e profile, the log
+// the environment name and the rules each value must hold on its own (`validate`, checked by
+// validateEnvironment). Those that do (rate limits in the e2e profile, the log
 // format, SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS) are seeded into the variable map by seedDefaults.
 type environment struct {
 	DatabaseURL string `env:"DATABASE_URL,required,notEmpty"`
@@ -319,7 +320,7 @@ type environment struct {
 	CORSOrigins        string        `env:"SPHERICON_CORS_ORIGINS"`
 	JWTSecret          string        `env:"SPHERICON_JWT_SECRET"`
 	JWTSecretSecondary string        `env:"SPHERICON_JWT_SECRET_SECONDARY"`
-	SessionTTL         time.Duration `env:"SPHERICON_SESSION_TTL" envDefault:"24h"`
+	SessionTTL         time.Duration `env:"SPHERICON_SESSION_TTL" envDefault:"24h" validate:"gt=0"`
 	EncryptionKey      string        `env:"SPHERICON_ENCRYPTION_KEY"`
 	LicenseKey         string        `env:"SPHERICON_LICENSE_KEY"`
 
@@ -329,52 +330,52 @@ type environment struct {
 	SMTPPass string `env:"SPHERICON_SMTP_PASS"`
 	SMTPFrom string `env:"SPHERICON_SMTP_FROM"`
 
-	AccountLinkURL        string `env:"SPHERICON_ACCOUNT_LINK_URL"`
-	AccountLinkSigningKey string `env:"SPHERICON_ACCOUNT_LINK_SIGNING_KEY"`
+	AccountLinkURL        string `env:"SPHERICON_ACCOUNT_LINK_URL" validate:"required_with=AccountLinkSigningKey"`
+	AccountLinkSigningKey string `env:"SPHERICON_ACCOUNT_LINK_SIGNING_KEY" validate:"required_with=AccountLinkURL"`
 
 	StaffJWTSecret     string        `env:"SPHERICON_STAFF_JWT_SECRET"`
-	StaffSessionTTL    time.Duration `env:"SPHERICON_STAFF_SESSION_TTL" envDefault:"4h"`
-	StaffHoldMaxExpiry time.Duration `env:"SPHERICON_STAFF_HOLD_MAX_EXPIRY" envDefault:"720h"`
+	StaffSessionTTL    time.Duration `env:"SPHERICON_STAFF_SESSION_TTL" envDefault:"4h" validate:"gt=0"`
+	StaffHoldMaxExpiry time.Duration `env:"SPHERICON_STAFF_HOLD_MAX_EXPIRY" envDefault:"720h" validate:"gt=0"`
 
-	AbuseVolumeFloor            int     `env:"SPHERICON_ABUSE_VOLUME_FLOOR" envDefault:"1000"`
-	AbuseWarnComplaintPercent   float64 `env:"SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT" envDefault:"0.1"`
-	AbuseWarnBouncePercent      float64 `env:"SPHERICON_ABUSE_WARN_BOUNCE_PERCENT" envDefault:"5"`
-	AbuseFreezeComplaintPercent float64 `env:"SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT" envDefault:"0.3"`
-	AbuseFreezeBouncePercent    float64 `env:"SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT" envDefault:"10"`
+	AbuseVolumeFloor            int     `env:"SPHERICON_ABUSE_VOLUME_FLOOR" envDefault:"1000" validate:"gt=0"`
+	AbuseWarnComplaintPercent   float64 `env:"SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT" envDefault:"0.1" validate:"gt=0,ltfield=AbuseFreezeComplaintPercent"`
+	AbuseWarnBouncePercent      float64 `env:"SPHERICON_ABUSE_WARN_BOUNCE_PERCENT" envDefault:"5" validate:"gt=0,ltfield=AbuseFreezeBouncePercent"`
+	AbuseFreezeComplaintPercent float64 `env:"SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT" envDefault:"0.3" validate:"lte=100"`
+	AbuseFreezeBouncePercent    float64 `env:"SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT" envDefault:"10" validate:"lte=100"`
 
 	SupportEmail string `env:"SPHERICON_SUPPORT_EMAIL"`
 	AutoMigrate  bool   `env:"SPHERICON_DB_AUTO_MIGRATE"`
 
 	MigrateTimeout time.Duration `env:"SPHERICON_DB_MIGRATE_TIMEOUT" envDefault:"10m"`
 
-	MaxBodyBytes         int64 `env:"SPHERICON_MAX_BODY_BYTES" envDefault:"1048576"`
-	CollectMaxBodyBytes  int64 `env:"SPHERICON_COLLECT_MAX_BODY_BYTES" envDefault:"512000"`
-	CollectMaxEventBytes int64 `env:"SPHERICON_COLLECT_MAX_EVENT_BYTES" envDefault:"32768"`
+	MaxBodyBytes         int64 `env:"SPHERICON_MAX_BODY_BYTES" envDefault:"1048576" validate:"gt=0"`
+	CollectMaxBodyBytes  int64 `env:"SPHERICON_COLLECT_MAX_BODY_BYTES" envDefault:"512000" validate:"gt=0"`
+	CollectMaxEventBytes int64 `env:"SPHERICON_COLLECT_MAX_EVENT_BYTES" envDefault:"32768" validate:"gt=0"`
 
-	RateLimitHuman         int `env:"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE"`
-	RateLimitAPIBurst      int `env:"SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND"`
-	RateLimitAPIPerMinute  int `env:"SPHERICON_RATE_LIMIT_API_PER_MINUTE"`
-	RateLimitFailedAuth    int `env:"SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE"`
-	RateLimitTracking      int `env:"SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE"`
-	RateLimitLoginFailures int `env:"SPHERICON_RATE_LIMIT_LOGIN_FAILURES"`
-	RateLimitLoginIP       int `env:"SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE"`
-	RateLimitCollect       int `env:"SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE"`
-	RateLimitCollectIP     int `env:"SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE"`
-	RateLimitService       int `env:"SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE"`
-	RateLimitForgotAddress int `env:"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR"`
-	RateLimitForgotIP      int `env:"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR"`
+	RateLimitHuman         int `env:"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE" validate:"gte=0"`
+	RateLimitAPIBurst      int `env:"SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND" validate:"gte=0"`
+	RateLimitAPIPerMinute  int `env:"SPHERICON_RATE_LIMIT_API_PER_MINUTE" validate:"gte=0"`
+	RateLimitFailedAuth    int `env:"SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE" validate:"gte=0"`
+	RateLimitTracking      int `env:"SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE" validate:"gte=0"`
+	RateLimitLoginFailures int `env:"SPHERICON_RATE_LIMIT_LOGIN_FAILURES" validate:"gte=0"`
+	RateLimitLoginIP       int `env:"SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE" validate:"gte=0"`
+	RateLimitCollect       int `env:"SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE" validate:"gte=0"`
+	RateLimitCollectIP     int `env:"SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE" validate:"gte=0"`
+	RateLimitService       int `env:"SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE" validate:"gte=0"`
+	RateLimitForgotAddress int `env:"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR" validate:"gte=0"`
+	RateLimitForgotIP      int `env:"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR" validate:"gte=0"`
 
-	OutboxFloorDays             int `env:"SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS" envDefault:"7"`
-	EventsRetentionDays         int `env:"SPHERICON_EVENTS_RETENTION_DAYS" envDefault:"400"`
-	UnverifiedUserRetentionDays int `env:"SPHERICON_UNVERIFIED_USER_RETENTION_DAYS" envDefault:"7"`
-	EventLiveWindowHours        int `env:"SPHERICON_EVENT_LIVE_WINDOW_HOURS" envDefault:"72"`
-	TestInboxRetentionDays      int `env:"SPHERICON_TEST_INBOX_RETENTION_DAYS" envDefault:"7"`
-	TestInboxMaxMessages        int `env:"SPHERICON_TEST_INBOX_MAX_MESSAGES" envDefault:"200"`
+	OutboxFloorDays             int `env:"SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS" envDefault:"7" validate:"gte=0"`
+	EventsRetentionDays         int `env:"SPHERICON_EVENTS_RETENTION_DAYS" envDefault:"400" validate:"gte=0"`
+	UnverifiedUserRetentionDays int `env:"SPHERICON_UNVERIFIED_USER_RETENTION_DAYS" envDefault:"7" validate:"gte=0"`
+	EventLiveWindowHours        int `env:"SPHERICON_EVENT_LIVE_WINDOW_HOURS" envDefault:"72" validate:"gte=1"`
+	TestInboxRetentionDays      int `env:"SPHERICON_TEST_INBOX_RETENTION_DAYS" envDefault:"7" validate:"gte=1"`
+	TestInboxMaxMessages        int `env:"SPHERICON_TEST_INBOX_MAX_MESSAGES" envDefault:"200" validate:"gte=1"`
 
-	DBMaxOpenConns    int           `env:"SPHERICON_DB_MAX_OPEN_CONNS" envDefault:"15"`
-	DBMaxIdleConns    *int          `env:"SPHERICON_DB_MAX_IDLE_CONNS"`
-	DBConnMaxLifetime time.Duration `env:"SPHERICON_DB_CONN_MAX_LIFETIME" envDefault:"30m"`
-	RiverMaxConns     int32         `env:"SPHERICON_RIVER_DB_MAX_CONNS" envDefault:"25"`
+	DBMaxOpenConns    int           `env:"SPHERICON_DB_MAX_OPEN_CONNS" envDefault:"15" validate:"gt=0"`
+	DBMaxIdleConns    *int          `env:"SPHERICON_DB_MAX_IDLE_CONNS" validate:"omitnil,gte=0,ltefield=DBMaxOpenConns"`
+	DBConnMaxLifetime time.Duration `env:"SPHERICON_DB_CONN_MAX_LIFETIME" envDefault:"30m" validate:"gt=0"`
+	RiverMaxConns     int32         `env:"SPHERICON_RIVER_DB_MAX_CONNS" envDefault:"25" validate:"gt=0"`
 
 	SMTPAllowPrivateHosts bool   `env:"SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS"`
 	OutboundAllow         string `env:"SPHERICON_OUTBOUND_ALLOW"`
@@ -471,6 +472,19 @@ func Port(envName string) (string, error) {
 	return e.Port, nil
 }
 
+// parseEnvironment reads the variables into the environment and refuses a value that breaks its
+// field's rule.
+func parseEnvironment(vars map[string]string) (environment, error) {
+	var e environment
+	if err := env.ParseWithOptions(&e, env.Options{Environment: vars}); err != nil {
+		return environment{}, fmt.Errorf("read environment: %w", err)
+	}
+	if err := validateEnvironment(&e); err != nil {
+		return environment{}, err
+	}
+	return e, nil
+}
+
 // Load reads the configuration from the process environment layered over the .env
 // files (see envFiles): a variable the process sets wins over every file.
 func Load(envName string) (*Config, error) {
@@ -480,9 +494,9 @@ func Load(envName string) (*Config, error) {
 	}
 	seedDefaults(vars, envName)
 
-	var e environment
-	if err := env.ParseWithOptions(&e, env.Options{Environment: vars}); err != nil {
-		return nil, fmt.Errorf("read environment: %w", err)
+	e, err := parseEnvironment(vars)
+	if err != nil {
+		return nil, err
 	}
 
 	mode, err := ParseMode(e.Mode)
@@ -797,9 +811,6 @@ func (c *Config) validate(envName string) error {
 	if err := c.validateSecrets(envName); err != nil {
 		return err
 	}
-	if err := firstViolation(c.requirements()); err != nil {
-		return err
-	}
 	if err := c.validateMode(); err != nil {
 		return err
 	}
@@ -851,50 +862,6 @@ func firstViolation(rs []requirement) error {
 		}
 	}
 	return nil
-}
-
-// requirements lists the invariants of the settings that stand alone, in the order they are
-// reported.
-func (c *Config) requirements() []requirement {
-	const noNegative = " must not be negative (0 disables)"
-	rl := c.RateLimits
-	pool := c.DBPool
-	return []requirement{
-		{c.SessionTTL > 0, "SPHERICON_SESSION_TTL must be positive"},
-		{c.StaffSessionTTL > 0, "SPHERICON_STAFF_SESSION_TTL must be positive"},
-		{c.StaffHoldMaxExpiry > 0, "SPHERICON_STAFF_HOLD_MAX_EXPIRY must be positive"},
-		{c.AbuseVolumeFloor > 0, "SPHERICON_ABUSE_VOLUME_FLOOR must be positive"},
-		{0 < c.AbuseWarnComplaintPercent && c.AbuseWarnComplaintPercent < c.AbuseFreezeComplaintPercent && c.AbuseFreezeComplaintPercent <= 100,
-			"SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT must be above 0 and below SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT, which is at most 100"},
-		{0 < c.AbuseWarnBouncePercent && c.AbuseWarnBouncePercent < c.AbuseFreezeBouncePercent && c.AbuseFreezeBouncePercent <= 100,
-			"SPHERICON_ABUSE_WARN_BOUNCE_PERCENT must be above 0 and below SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT, which is at most 100"},
-		{(c.AccountLinkURL == "") == (c.AccountLinkSigningKey == ""), "SPHERICON_ACCOUNT_LINK_URL and SPHERICON_ACCOUNT_LINK_SIGNING_KEY must be set together"},
-		{c.BodyLimits.Default > 0, "SPHERICON_MAX_BODY_BYTES must be positive"},
-		{c.BodyLimits.Collect > 0, "SPHERICON_COLLECT_MAX_BODY_BYTES must be positive"},
-		{c.BodyLimits.CollectEvent > 0, "SPHERICON_COLLECT_MAX_EVENT_BYTES must be positive"},
-		{rl.Human >= 0, "SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE" + noNegative},
-		{rl.APIBurst >= 0, "SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND" + noNegative},
-		{rl.APIPerMinute >= 0, "SPHERICON_RATE_LIMIT_API_PER_MINUTE" + noNegative},
-		{rl.FailedAuth >= 0, "SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE" + noNegative},
-		{rl.Tracking >= 0, "SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE" + noNegative},
-		{rl.LoginFailures >= 0, "SPHERICON_RATE_LIMIT_LOGIN_FAILURES" + noNegative},
-		{rl.LoginIP >= 0, "SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE" + noNegative},
-		{rl.Collect >= 0, "SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE" + noNegative},
-		{rl.CollectIP >= 0, "SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE" + noNegative},
-		{rl.ServicePerMinute >= 0, "SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE" + noNegative},
-		{rl.ForgotAddress >= 0, "SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR" + noNegative},
-		{rl.ForgotIP >= 0, "SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR" + noNegative},
-		{c.OutboxFloor >= 0, "SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS must not be negative"},
-		{c.EventsRetention >= 0, "SPHERICON_EVENTS_RETENTION_DAYS must not be negative"},
-		{c.EventLiveWindow >= time.Hour, "SPHERICON_EVENT_LIVE_WINDOW_HOURS must be at least 1"},
-		{c.UnverifiedUserRetention >= 0, "SPHERICON_UNVERIFIED_USER_RETENTION_DAYS must not be negative"},
-		{c.TestInboxRetention >= 24*time.Hour, "SPHERICON_TEST_INBOX_RETENTION_DAYS must be at least 1"},
-		{c.TestInboxMaxMessages >= 1, "SPHERICON_TEST_INBOX_MAX_MESSAGES must be at least 1"},
-		{pool.MaxOpenConns > 0, "SPHERICON_DB_MAX_OPEN_CONNS must be positive"},
-		{pool.MaxIdleConns >= 0 && pool.MaxIdleConns <= pool.MaxOpenConns, "SPHERICON_DB_MAX_IDLE_CONNS must be between 0 and SPHERICON_DB_MAX_OPEN_CONNS"},
-		{pool.ConnMaxLifetime > 0, "SPHERICON_DB_CONN_MAX_LIFETIME must be positive"},
-		{pool.RiverMaxConns > 0, "SPHERICON_RIVER_DB_MAX_CONNS must be positive"},
-	}
 }
 
 // parseSystemEmailFrom splits SPHERICON_SYSTEM_EMAIL_FROM into its address and optional display
