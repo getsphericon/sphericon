@@ -2,10 +2,12 @@ package site_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -13,7 +15,33 @@ import (
 )
 
 // Orders and Revenue of a Broadcast and of an Automation (ADR 0064): read from the Movements of
-// the Orders credited to it, in the Reporting currency, never stored.
+// the Orders credited to it, in the Reporting currency, never stored. Which Order is credited to
+// which is the orders module's, tested there; these tests read what the reports sum.
+
+// clicked stores one email.clicked Event of Alice at the given time, as the tracker and the
+// persist subscriber would have left it: the click an Order of hers after it is credited by.
+func clicked(t *testing.T, env *testhelper.TestEnv, click events.EmailEngagement, at time.Time) {
+	t.Helper()
+	click.Action = events.NameEmailClicked
+	click.WorkspaceID = fixtures.AcmeID
+	click.ContactID = fixtures.ContactAliceID
+	click.Email = fixtures.ContactAliceEmail
+	click.URL = "https://shop.test/"
+	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
+		return pub.Publish(t.Context(), &click)
+	}))
+	sent := env.OutboxEnvelopes(t, events.NameEmailClicked)
+	stored := sent[len(sent)-1]
+	stored.OccurredAt = at
+	require.NoError(t, events.Persist(t.Context(), env.DB, stored))
+}
+
+func setupCredit(t *testing.T) *testhelper.TestEnv {
+	t.Helper()
+	env := testhelper.Setup(t)
+	chooseCurrency(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "USD")
+	return env
+}
 
 func broadcastRevenue(t *testing.T, c *siteapi.Client, id int64) siteapi.SiteMessageRevenue {
 	t.Helper()
@@ -138,4 +166,22 @@ func TestAnUnattributedOrderIsCreditedToNoBroadcastAndNoAutomation(t *testing.T)
 	assert.Zero(t, broadcastRevenue(t, c, int64(fixtures.BroadcastSentUntrackedID)).Amount)
 	report, _, _ := automationRevenue(t, c, int64(fixtures.AutomationWelcomeSeriesID))
 	assert.Zero(t, report.Amount)
+}
+
+// The overview splits the revenue credited to messages from the total: an Order placed before
+// the click is in the total only.
+func TestTheOverviewCountsThePartOfRevenueCreditedToMessages(t *testing.T) {
+	env := setupCredit(t)
+	s := newShop(t, env)
+	clicked(t, env, events.EmailEngagement{BroadcastID: fixtures.BroadcastSentUntrackedID}, noonDaysAgo(4))
+	s.at(noonDaysAgo(3), "Order Completed", orderProps("B-1", "20.00"))
+	s.at(noonDaysAgo(10), "Order Completed", orderProps("U-1", "7.25"))
+	env.DeliverOrders(t)
+
+	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
+
+	assert.EqualValues(t, 2725, got.Total)
+	assert.EqualValues(t, 2, got.Orders)
+	assert.EqualValues(t, 2000, got.Credited)
+	assert.EqualValues(t, 1, got.CreditedOrders)
 }

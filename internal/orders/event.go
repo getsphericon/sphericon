@@ -1,6 +1,10 @@
 // Package orders reads the order Events of a Workspace's shop into Orders (ADR 0064). An order
 // Event keeps the names of the RudderStack E-Commerce Events spec; this package checks its
 // amounts at ingest and builds the Order and its Movements from it once it is stored.
+//
+// It owns attribution (attribution.go: which click counts, the Attribution window and the credit)
+// and every read of revenue (revenue.go): the overview, a Broadcast's and an Automation's figures
+// read it here and never query the Movements themselves.
 package orders
 
 import (

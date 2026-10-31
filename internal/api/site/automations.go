@@ -5,31 +5,21 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/narrow"
-	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
 func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteAutomationsListParams) (siteapi.SiteAutomationsListRes, error) {
 	ws := workspaceScope(ctx)
 
-	page, err := h.automations.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
-	if err != nil {
-		return nil, err
-	}
-
-	revenue, err := orders.CreditedToAutomations(ctx, ws, lo.Map(page.Items, func(a *ent.Automation, _ int) int64 { return a.ID })...)
+	page, err := h.automations.ListWithRevenue(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
 	return &siteapi.SiteAutomationsListOK{
-		Items: lo.Map(page.Items, func(a *ent.Automation, _ int) siteapi.SiteAutomationResource {
-			res := mapper.AutomationToResource(a)
-			res.Revenue = siteapi.NewOptSiteMessageRevenue(mapper.MessageRevenueToResource(revenue.Of(a.ID)))
-			return res
-		}),
+		Items:      lo.Map(page.Items, func(a automations.WithRevenue, _ int) siteapi.SiteAutomationResource { return automationWithRevenue(a) }),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),
@@ -51,18 +41,19 @@ func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteC
 func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAutomationsGetParams) (siteapi.SiteAutomationsGetRes, error) {
 	ws := workspaceScope(ctx)
 
-	id := int64(params.ID)
-	a, err := h.automations.Get(ctx, ws, id)
+	a, err := h.automations.GetWithRevenue(ctx, ws, int64(params.ID))
 	if err != nil {
 		return nil, err
 	}
-	revenue, err := orders.CreditedToAutomations(ctx, ws, a.ID)
-	if err != nil {
-		return nil, err
-	}
-	res := mapper.AutomationToResource(a)
-	res.Revenue = siteapi.NewOptSiteMessageRevenue(mapper.MessageRevenueToResource(revenue.Of(a.ID)))
+	res := automationWithRevenue(a)
 	return &res, nil
+}
+
+// automationWithRevenue maps an Automation with the revenue the automations module read for it.
+func automationWithRevenue(a automations.WithRevenue) siteapi.SiteAutomationResource {
+	res := mapper.AutomationToResource(a.Automation)
+	res.Revenue = siteapi.NewOptSiteMessageRevenue(mapper.MessageRevenueToResource(a.Revenue))
+	return res
 }
 
 func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteUpdateAutomationInput, params siteapi.SiteAutomationsUpdateParams) (siteapi.SiteAutomationsUpdateRes, error) {
