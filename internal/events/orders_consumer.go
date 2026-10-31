@@ -3,7 +3,6 @@ package events
 import (
 	"cmp"
 	"context"
-	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"time"
@@ -32,9 +31,9 @@ type OrderRecorder interface {
 // Automations and Rules, not this consumer.
 func ordersConsumer(client *ent.Client, recorder OrderRecorder) message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
-		var env Envelope
-		if err := json.Unmarshal(msg.Payload, &env); err != nil {
-			return fmt.Errorf("unmarshal envelope: %w", err)
+		env, err := EnvelopeOf(msg)
+		if err != nil {
+			return err
 		}
 		return RecordOrder(msg.Context(), client, recorder, env)
 	}

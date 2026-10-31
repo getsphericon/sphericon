@@ -231,11 +231,9 @@ func recorded(t *testing.T, id string, contactID int64, action string) *message.
 	data, err := json.Marshal(ev)
 	require.NoError(t, err)
 	now := time.Now()
-	body, err := json.Marshal(events.Envelope{
+	return events.Message(events.Envelope{
 		ID: id, Name: ev.EventName(), Version: ev.EventVersion(), WorkspaceID: fixtures.AcmeID, OccurredAt: now, RecordedAt: now, Data: data,
 	})
-	require.NoError(t, err)
-	return message.NewMessage(id, body)
 }
 
 // A Rule's Condition counts the Contact's Events, the one that fired it included: RuleSecondRevisit

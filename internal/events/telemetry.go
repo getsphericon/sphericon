@@ -1,6 +1,7 @@
 package events
 
 import (
+	"context"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -8,6 +9,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -39,8 +41,12 @@ func otelMiddleware() message.HandlerMiddleware {
 	return func(next message.HandlerFunc) message.HandlerFunc {
 		return func(msg *message.Message) ([]*message.Message, error) {
 			handler := message.HandlerNameFromCtx(msg.Context())
+			// The publisher's span, from the trace context the bus put in the metadata: the
+			// handler's span is linked to it (a consumer runs later, in a trace of its own).
+			published := otel.GetTextMapPropagator().Extract(context.Background(), propagation.MapCarrier(msg.Metadata))
 			ctx, span := tracer.Start(msg.Context(), "process "+handler,
 				trace.WithSpanKind(trace.SpanKindConsumer),
+				trace.WithLinks(trace.LinkFromContext(published)),
 				trace.WithAttributes(
 					attribute.String("messaging.system", "watermill"),
 					attribute.String("messaging.destination.name", TopicDomainEvents),

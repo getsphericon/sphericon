@@ -64,9 +64,9 @@ func TestAFailingHandlerDeadLettersTheEventAndItsGroupMovesOn(t *testing.T) {
 			require.NoError(t, json.Unmarshal(letters[0].Metadata, &metadata))
 			assert.Equal(t, "flaky", metadata[events.MetadataConsumerGroup])
 			assert.Contains(t, metadata[middleware.ReasonForPoisonedKey], c.reason)
-			var env events.Envelope
-			require.NoError(t, json.Unmarshal(letters[0].Payload, &env))
-			assert.Equal(t, events.NameContactCreated, env.Name)
+			env, err := events.EnvelopeFrom(letters[0].UUID, letters[0].Payload, metadata)
+			require.NoError(t, err)
+			assert.Equal(t, events.NameContactCreated, env.Name, "the dead letter keeps the envelope")
 
 			replayed, err := events.ReplayDeadLetters(ctx, client, "flaky", func(*message.Message) error { return nil })
 			require.NoError(t, err)
@@ -118,8 +118,8 @@ func publish(ctx context.Context, t *testing.T, sqlDB *sql.DB, email string) {
 
 // emailOf is the address of the ContactCreated event msg carries, empty for anything else.
 func emailOf(msg *message.Message) string {
-	var env events.Envelope
-	if err := json.Unmarshal(msg.Payload, &env); err != nil {
+	env, err := events.EnvelopeOf(msg)
+	if err != nil {
 		return ""
 	}
 	ev, err := events.Decode(env)

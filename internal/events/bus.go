@@ -12,7 +12,6 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/ThreeDotsLabs/watermill"
 	watermillsql "github.com/ThreeDotsLabs/watermill-sql/v4/pkg/sql"
-	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/emailcase"
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
@@ -165,7 +164,7 @@ type txPublisher struct {
 	client *ent.Client
 }
 
-func (p *txPublisher) Publish(_ context.Context, ev DomainEvent) error {
+func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 	data, err := json.Marshal(ev)
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
@@ -191,10 +190,8 @@ func (p *txPublisher) Publish(_ context.Context, ev DomainEvent) error {
 		Data:        data,
 		DedupKey:    dedupKey,
 	}
-	body, err := json.Marshal(env)
-	if err != nil {
-		return fmt.Errorf("marshal envelope: %w", err)
-	}
-	msg := message.NewMessage(env.ID, body)
+	stamp(ctx, &env)
+	msg := Message(env)
+	injectTrace(ctx, msg)
 	return p.wm.Publish(TopicDomainEvents, msg)
 }

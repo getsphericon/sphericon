@@ -86,10 +86,11 @@ func NewRouter(db *sql.DB, opts ...RouterOption) (*message.Router, error) {
 		return nil, err
 	}
 	// The first is the outermost: the dead-lettering of an event the retries gave up on, over the
-	// per-handler OTel spans + metrics (global providers; no-op when disabled), which so count an
-	// event that failed past its retries as one error, over the retries, over the recovery of a
-	// panic into an error.
-	router.AddMiddleware(dead, otelMiddleware(), cfg.retry.Middleware, middleware.Recoverer)
+	// per-handler OTel spans + metrics (global providers; no-op when disabled; linked to the
+	// publisher's span), which so count an event that failed past its retries as one error, over
+	// the handler's context for the event's chain (correlation.go), over the retries, over the
+	// recovery of a panic into an error.
+	router.AddMiddleware(dead, otelMiddleware(), correlationMiddleware, cfg.retry.Middleware, middleware.Recoverer)
 	return router, nil
 }
 
@@ -190,9 +191,9 @@ type Consumer struct {
 // Handler adapts the consumer to a watermill handler that decodes the envelope.
 func (c Consumer) Handler() message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
-		var env Envelope
-		if err := json.Unmarshal(msg.Payload, &env); err != nil {
-			return fmt.Errorf("unmarshal envelope: %w", err)
+		env, err := EnvelopeOf(msg)
+		if err != nil {
+			return err
 		}
 		return c.Handle(msg.Context(), env)
 	}
@@ -202,9 +203,9 @@ func (c Consumer) Handler() message.NoPublishHandlerFunc {
 // when the action implies it (hard bounce, complaint).
 func suppressionConsumer(client *ent.Client) message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
-		var env Envelope
-		if err := json.Unmarshal(msg.Payload, &env); err != nil {
-			return fmt.Errorf("unmarshal envelope: %w", err)
+		env, err := EnvelopeOf(msg)
+		if err != nil {
+			return err
 		}
 		return Suppress(msg.Context(), client, env)
 	}
@@ -255,9 +256,9 @@ type webhookPayload struct {
 // carries only a Workspace id, so the scope handed to the dispatcher is built here.
 func WebhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
-		var env Envelope
-		if err := json.Unmarshal(msg.Payload, &env); err != nil {
-			return fmt.Errorf("unmarshal envelope: %w", err)
+		env, err := EnvelopeOf(msg)
+		if err != nil {
+			return err
 		}
 		ev, err := Decode(env)
 		if err != nil {
@@ -311,9 +312,9 @@ func WebhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.
 // neither enroll nor end anything.
 func AutomationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
-		var env Envelope
-		if err := json.Unmarshal(msg.Payload, &env); err != nil {
-			return fmt.Errorf("unmarshal envelope: %w", err)
+		env, err := EnvelopeOf(msg)
+		if err != nil {
+			return err
 		}
 		ev, err := Decode(env)
 		if err != nil {
@@ -377,9 +378,9 @@ func machineEvent(ev DomainEvent) bool { return ev.Project().Machine }
 // fired the Rule, whichever consumer runs first.
 func RulesConsumer(client *ent.Client, rules RuleEvaluator) message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
-		var env Envelope
-		if err := json.Unmarshal(msg.Payload, &env); err != nil {
-			return fmt.Errorf("unmarshal envelope: %w", err)
+		env, err := EnvelopeOf(msg)
+		if err != nil {
+			return err
 		}
 		if env.CausedBy != "" {
 			return nil // an Action's own event: Rules never chain
@@ -448,9 +449,9 @@ func WithSchemaAdapter(a watermillsql.SchemaAdapter) SubscribeOption {
 
 func persistConsumer(client *ent.Client) message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
-		var env Envelope
-		if err := json.Unmarshal(msg.Payload, &env); err != nil {
-			return fmt.Errorf("unmarshal envelope: %w", err)
+		env, err := EnvelopeOf(msg)
+		if err != nil {
+			return err
 		}
 		return Persist(msg.Context(), client, env)
 	}
