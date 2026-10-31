@@ -44,7 +44,7 @@ export function addedToCart(course: string, price: number): void {
 // The subject id has the shape of the Brightpath fixtures (`user:<email>`). The storefront's
 // server sends `purchase` with the same email and subject id, so both sides land on one
 // Contact (ADR 0002).
-export function subjectIdFor(email: string): string {
+function subjectIdFor(email: string): string {
   return `user:${email}`
 }
 

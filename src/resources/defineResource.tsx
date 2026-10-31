@@ -19,7 +19,7 @@ import type { SchemaForm } from './schemaForm.ts'
 // The form a resource's form component receives. Validation comes from the schema (parse
 // direction, errors only); the same schema yields the payload via transformValues once
 // validation has passed.
-export type ResourceForm<TPayload> = SchemaForm<FormValues, TPayload>
+type ResourceForm<TPayload> = SchemaForm<FormValues, TPayload>
 
 // What a resource's form component receives. `form` validates through the resource's form
 // schema and `onSubmit` is handed the normalized API payload; the component only renders
@@ -32,7 +32,7 @@ export interface ResourceFormProps<TPayload> {
   onCancel?: () => void
 }
 
-export interface ResourceTexts {
+interface ResourceTexts {
   createTitle: string
   editTitle: string
   created: string

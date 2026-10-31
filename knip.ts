@@ -11,14 +11,11 @@ const config: KnipConfig = {
     'internal/contractcopy/testdata/**',
   ],
   ignoreDependencies: [
-    '@jsonforms/core',
-    '@jsonforms/react',
     '@typespec/.*',
     'npm-check-updates',
     // Run by `mise run generate:routes` (tsr generate), which knip cannot see.
     '@tanstack/router-cli',
   ],
-  ignoreExportsUsedInFile: true,
   workspaces: {
     '.': {
       // The scripts that node runs: mise tasks, the CI workflows and the hook of .claude/settings.json.

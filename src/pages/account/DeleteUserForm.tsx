@@ -35,7 +35,7 @@ function soleOwnedHandler(onSoleOwned?: OnSoleOwned) {
 // SoleOwnedWindowAlert warns that a Workspace in its deletion window, whose only Owner the
 // User is, can no longer be restored once the User is gone (User deletion, ADR 0050). Nothing
 // is shown when there is no such Workspace.
-export function SoleOwnedWindowAlert() {
+function SoleOwnedWindowAlert() {
   const { t } = useTranslation()
   const deletedQuery = useQuery(siteWorkspacesListDeletedOptions())
   const doomed = (deletedQuery.data ?? []).filter((workspace) => workspace.onlyOwner)

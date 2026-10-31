@@ -14,12 +14,6 @@ importers:
 
   .:
     dependencies:
-      '@jsonforms/core':
-        specifier: ^3.8.0
-        version: 3.8.0
-      '@jsonforms/react':
-        specifier: ^3.8.0
-        version: 3.8.0(@jsonforms/core@3.8.0)(react@19.3.1)
       '@mantine/charts':
         specifier: ^9.7.4
         version: 9.7.4(@mantine/core@9.7.4(@mantine/hooks@9.7.4(react@19.3.1))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@mantine/hooks@9.7.4(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(recharts@3.10.1(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react-is@16.13.1)(react@19.3.1)(redux@5.0.1))
@@ -5592,7 +5586,7 @@ snapshots:
     dependencies:
       '@types/json-schema': 7.0.15
       ajv: 8.20.0
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1(ajv@8.20.0)
       lodash: 4.18.1
 
   '@jsonforms/react@3.8.0(@jsonforms/core@3.8.0)(react@19.3.1)':
@@ -7383,8 +7377,8 @@ snapshots:
     optionalDependencies:
       ajv: 8.20.0
 
-  ajv-formats@2.1.1:
-    dependencies:
+  ajv-formats@2.1.1(ajv@8.20.0):
+    optionalDependencies:
       ajv: 8.20.0
 
   ajv-formats@3.0.1:

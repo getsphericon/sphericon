@@ -9,7 +9,7 @@ import en from '../locales/en/translation.json' with { type: 'json' }
 // detection. The backend substitutes window.__APP_LOCALE__ into index.html at
 // serve time (see internal/server/spa/spa.go); Vite does the same in dev. We read it
 // synchronously here, so no extra request is needed at boot.
-export const SUPPORTED_LOCALES = ['en'] as const
+const SUPPORTED_LOCALES = ['en'] as const
 export type Locale = (typeof SUPPORTED_LOCALES)[number]
 
 function isLocale(value: unknown): value is Locale {

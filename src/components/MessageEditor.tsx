@@ -17,7 +17,7 @@ const VisualEditor = lazy(async () =>
 
 // What an edit leaves behind: the document written in the editor, or the source text of a
 // message with no document. A caller stores one and clears the other.
-export type MessageEdit = { doc: MessageDoc } | { body: string }
+type MessageEdit = { doc: MessageDoc } | { body: string }
 
 export interface MessageEditorProps {
   // The message as stored: its document, or null for a message that arrived as HTML.

@@ -26,8 +26,6 @@
     "lint:fix": "oxlint --fix"
   },
   "dependencies": {
-    "@jsonforms/core": "^3.8.0",
-    "@jsonforms/react": "^3.8.0",
     "@mantine/charts": "^9.7.4",
     "@mantine/core": "^9.7.4",
     "@mantine/dates": "^9.7.4",

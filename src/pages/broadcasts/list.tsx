@@ -1,6 +1,5 @@
-import { Badge, Group, Menu, Stack, Title } from '@mantine/core'
+import { Group, Menu, Stack, Title } from '@mantine/core'
 import { useNavigate } from '@tanstack/react-router'
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
 import { ArchiveViewControl } from '../../components/ArchiveViewControl.tsx'
@@ -13,7 +12,6 @@ import {
   siteBroadcastsListOptions,
   siteBroadcastsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteBroadcastStatus } from '../../generated/site/types.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
@@ -23,22 +21,7 @@ import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspa
 import { withPage } from '../../searchSchemas.ts'
 import { messageRevenueCells } from '../../utils/messageRevenue.ts'
 import { BroadcastHoldBadge } from './BroadcastHold.tsx'
-
-const STATUS_COLORS: Record<SiteBroadcastStatus, string> = {
-  draft: 'gray',
-  scheduled: 'blue',
-  sending: 'yellow',
-  sent: 'teal',
-  failed: 'red',
-}
-
-function StatusBadge({ t, status }: { t: TFunction; status: SiteBroadcastStatus }) {
-  return (
-    <Badge color={STATUS_COLORS[status]} variant="light">
-      {t(($) => $.broadcasts.status[status])}
-    </Badge>
-  )
-}
+import { BroadcastStatusBadge } from './BroadcastStatusBadge.tsx'
 
 export function BroadcastsListPage() {
   const { t } = useTranslation()
@@ -109,7 +92,7 @@ export function BroadcastsListPage() {
             title: t(($) => $.broadcasts.statusLabel),
             render: (record) => (
               <Group gap="xs">
-                <StatusBadge t={t} status={record.status} />
+                <BroadcastStatusBadge status={record.status} />
                 {record.holdReason && <BroadcastHoldBadge />}
               </Group>
             ),
