@@ -35,8 +35,5 @@ namespace Workspace {
    * much of the day's sending is left. Read-only: no API call changes the Send cap. */
   @get
   @requiresScopes(#[])
-  op get():
-    | WorkspaceResource
-    | UnauthorizedProblem
-    | TooManyRequestsProblem;
+  op get(): WorkspaceResource | UnauthorizedProblem | TooManyRequestsProblem;
 }
