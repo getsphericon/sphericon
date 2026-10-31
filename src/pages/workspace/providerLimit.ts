@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
+import type { SiteIntegrationProvider } from '../../generated/site/types.gen.ts'
 import { zSiteMaxPerDay, zSiteMaxPerSecond } from '../../generated/site/zod.gen.ts'
 
 // A limit field holds a number, or an empty string when the user left it blank
@@ -33,7 +34,10 @@ export function fromLimit(limit: number | null): number | string {
 
 // Whether an Integration must carry both values (ADR 0067): an SES one with its own endpoint is an
 // SES-compatible service, which cannot report its limits. The server refuses it otherwise.
-export function requiresProviderLimit(kind: string, endpoint: string | null | undefined): boolean {
+export function requiresProviderLimit(
+  kind: SiteIntegrationProvider,
+  endpoint: string | null | undefined,
+): boolean {
   return kind === 'ses' && (endpoint ?? '').trim() !== ''
 }
 

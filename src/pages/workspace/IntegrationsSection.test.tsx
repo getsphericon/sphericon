@@ -412,6 +412,34 @@ test('edits only the limits of an existing provider, and a blank clears one', as
   await expect.poll(() => bodies).toEqual([{ maxPerSecond: 20, maxPerDay: null }])
 })
 
+test('an SES-compatible service keeps both values: a blank is not saved', async () => {
+  const postbox: SiteIntegrationResource = {
+    ...limited,
+    provider: 'ses',
+    config: {
+      kind: 'ses',
+      region: 'ru-central1',
+      from: 'hi@acme.com',
+      endpoint: 'https://postbox.cloud.yandex.net',
+    },
+  }
+  const bodies: unknown[] = []
+  worker.use(list([postbox]), update(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Provider limit' }).click()
+  const dialog = screen.getByRole('dialog')
+  const perDay = dialog.getByLabelText(/^Max per 24 hours/)
+  await expect.element(perDay).toBeRequired()
+  await perDay.clear()
+  await dialog.getByRole('button', { name: 'Save limits' }).click()
+
+  await expect.element(perDay).toBeInvalid()
+  await expect.element(dialog).toBeInTheDocument()
+  expect(bodies).toEqual([])
+})
+
 test('makes another provider the default, and the default offers no such action', async () => {
   const backup: SiteIntegrationResource = {
     ...smtp,
