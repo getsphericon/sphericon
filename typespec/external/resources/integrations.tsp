@@ -57,7 +57,7 @@ model IntegrationResource {
   id: EntityId;
 
   /** Human-readable label */
-  @extension("x-untrusted", true)
+  @untrusted
   name: string;
 
   /** Delivery channel */
@@ -122,7 +122,7 @@ interface Integrations {
   @listsResource(IntegrationResource)
   @get
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.integrationsRead])
+  @requiresScopes(#[ApiTokenScope.integrationsRead])
   list(
     ...ResourceCollectionParameters<IntegrationResource>,
     ...PageQuery,
@@ -139,7 +139,7 @@ interface Integrations {
   @createsResource(IntegrationResource)
   @post
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.integrationsWrite])
+  @requiresScopes(#[ApiTokenScope.integrationsWrite])
   create(
     ...ResourceCollectionParameters<IntegrationResource>,
     @body body: CreateIntegrationInput,
@@ -159,7 +159,7 @@ interface Integrations {
   @readsResource(IntegrationResource)
   @get
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.integrationsRead])
+  @requiresScopes(#[ApiTokenScope.integrationsRead])
   get(...ResourceParameters<IntegrationResource>):
     | IntegrationResource
     | BadRequestProblem
@@ -172,7 +172,7 @@ interface Integrations {
   @updatesResource(IntegrationResource)
   @put
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.integrationsWrite])
+  @requiresScopes(#[ApiTokenScope.integrationsWrite])
   update(
     ...ResourceParameters<IntegrationResource>,
     @body body: UpdateIntegrationInput,
@@ -189,7 +189,7 @@ interface Integrations {
   /** Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them). */
   @action("archive")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.integrationsWrite])
+  @requiresScopes(#[ApiTokenScope.integrationsWrite])
   archive(...ResourceParameters<IntegrationResource>):
     | IntegrationResource
     | BadRequestProblem
@@ -202,7 +202,7 @@ interface Integrations {
   /** Restore an archived integration to the list. It is not the default; promote it with an update */
   @action("unarchive")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.integrationsWrite])
+  @requiresScopes(#[ApiTokenScope.integrationsWrite])
   unarchive(...ResourceParameters<IntegrationResource>):
     | IntegrationResource
     | BadRequestProblem
@@ -215,7 +215,7 @@ interface Integrations {
   /** Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider. Needs a person: hidden from MCP. */
   @action("regenerate-key")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.integrationsWrite])
+  @requiresScopes(#[ApiTokenScope.integrationsWrite])
   regenerateKey(...ResourceParameters<IntegrationResource>):
     | IntegrationResource
     | BadRequestProblem
@@ -250,7 +250,7 @@ model PresetResource {
 namespace Presets {
   /** List the Presets the Instance offers, with the params schema of each */
   @get
-  @extension("x-required-scopes", #[ApiTokenScope.integrationsRead])
+  @requiresScopes(#[ApiTokenScope.integrationsRead])
   op list():
     | Page<PresetResource>
     | UnauthorizedProblem

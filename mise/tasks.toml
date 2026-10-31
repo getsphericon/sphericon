@@ -369,6 +369,10 @@ run = [
 description = "Frontend tests in watch mode"
 run = "pnpm exec vitest"
 
+["test:typespec"]
+description = "The contract decorators (typespec/lib) against their fixtures: node's test runner, as the TypeSpec compiler needs node and Vitest runs in the browser"
+run = "node --test typespec/lib/*.test.ts"
+
 ["test:frontend"]
 description = "One-shot frontend run, logic and UI tests, with v8 coverage and thresholds (Vitest Browser Mode, headless Chromium); html report in coverage/. A pull request runs test:frontend:logic; the nightly workflow runs the whole suite as test:frontend:shard + test:frontend:merge"
 run = "heavy -- pnpm exec vitest run --coverage"

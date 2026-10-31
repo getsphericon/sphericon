@@ -57,7 +57,7 @@ namespace SiteLegalDocuments {
    * version's label. Public; empty when the Instance has none. Answered while an acceptance
    * is pending (ADR 0062). */
   @useAuth(NoAuth)
-  @extension("x-allowed-while-acceptance-pending", true)
+  @allowedWhileAcceptancePending
   @get
   @route("/signup-items")
   op signupItems(): {
@@ -69,7 +69,7 @@ namespace SiteLegalDocuments {
    * for an unknown or archived item and for one with no published version. Answered while an
    * acceptance is pending, for the screen that shows the new texts (ADR 0062). */
   @useAuth(NoAuth)
-  @extension("x-allowed-while-acceptance-pending", true)
+  @allowedWhileAcceptancePending
   @get
   @route("/legal-documents/{key}")
   op get(@path key: SignupItemKey): SiteLegalDocument | NotFoundProblem;

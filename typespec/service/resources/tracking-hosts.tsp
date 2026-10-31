@@ -58,7 +58,7 @@ namespace ServiceTrackingHostFeed {
    * rebuilds the whole set. Delivery is at-least-once: replaying a cursor returns the same
    * entries, so applying one twice must change nothing. */
   @get
-  @extension("x-required-scopes", #[ServiceScope.domainsRead])
+  @requiresServiceScopes(#[ServiceScope.domainsRead])
   op list(
     /** The `nextCursor` of a page the caller has saved; empty starts from the beginning */
     @query cursor?: string,

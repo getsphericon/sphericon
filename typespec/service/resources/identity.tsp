@@ -1,7 +1,15 @@
+import "../../lib/main.tsp";
+
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
 namespace Sphericon;
+
+/** The scopes a /service operation needs (ADR 0026), as `x-required-scopes`: a credential must carry all of them, `#[]` for none */
+extern dec requiresServiceScopes(
+  target: Reflection.Operation,
+  scopes: valueof ServiceScope[]
+);
 
 /** A scope a Service credential may carry */
 enum ServiceScope {
@@ -38,7 +46,7 @@ model ServiceIdentityResource {
 namespace ServiceIdentity {
   /** The calling credential's own name, scopes and expiry */
   @get
-  @extension("x-required-scopes", #[])
+  @requiresServiceScopes(#[])
   op get():
     | ServiceIdentityResource
     | UnauthorizedProblem

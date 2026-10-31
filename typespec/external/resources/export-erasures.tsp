@@ -50,7 +50,7 @@ namespace Export {
    */
   @get
   @route("/erasures")
-  @extension("x-required-scopes", #[ApiTokenScope.exportRead])
+  @requiresScopes(#[ApiTokenScope.exportRead])
   op erasures(...ExportPageQuery):
     | ExportPage
     | BadRequestProblem

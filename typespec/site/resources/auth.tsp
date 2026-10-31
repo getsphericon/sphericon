@@ -363,7 +363,7 @@ namespace SiteAuth {
   /** End the session on this browser: clears the session cookie. Answered while an
    * acceptance is pending (ADR 0062), so a gated User can sign out. */
   @useAuth(NoAuth)
-  @extension("x-allowed-while-acceptance-pending", true)
+  @allowedWhileAcceptancePending
   @post
   @route("/logout")
   op logout(): {

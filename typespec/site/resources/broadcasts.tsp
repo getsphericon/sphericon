@@ -220,7 +220,7 @@ interface SiteBroadcasts
    */
   @action("archive")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   archive(...ResourceParameters<SiteBroadcastResource>):
     | SiteBroadcastResource
     | BadRequestProblem
@@ -230,7 +230,7 @@ interface SiteBroadcasts
   /** Restore an archived broadcast to the list */
   @action("unarchive")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   unarchive(...ResourceParameters<SiteBroadcastResource>):
     | SiteBroadcastResource
     | BadRequestProblem
@@ -239,7 +239,7 @@ interface SiteBroadcasts
   /** Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. */
   @action("send")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   send(...ResourceParameters<SiteBroadcastResource>):
     | SiteBroadcastResource
     | BadRequestProblem
@@ -249,7 +249,7 @@ interface SiteBroadcasts
   /** Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. */
   @action("schedule")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   schedule(
     ...ResourceParameters<SiteBroadcastResource>,
     @body body: ScheduleBroadcastInput,
@@ -266,7 +266,7 @@ interface SiteBroadcasts
    */
   @action("test-send")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   testSend(
     ...ResourceParameters<SiteBroadcastResource>,
     @body body: TestSendBroadcastInput,
@@ -293,15 +293,15 @@ namespace SiteBroadcastLinks {
    * click figure in the broadcast's stats does not.
    */
   @get
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(@path workspaceId: WorkspaceId, @path broadcastId: EntityId):
     | SiteBroadcastLinkClicksList
     | BadRequestProblem
     | NotFoundProblem;
 }
 
-@@extension(SiteBroadcasts.create, "x-required-permissions", #[]);
-@@extension(SiteBroadcasts.delete, "x-required-permissions", #[]);
-@@extension(SiteBroadcasts.get, "x-required-permissions", #[]);
-@@extension(SiteBroadcasts.list, "x-required-permissions", #[]);
-@@extension(SiteBroadcasts.update, "x-required-permissions", #[]);
+@@requiresPermissions(SiteBroadcasts.create, #[]);
+@@requiresPermissions(SiteBroadcasts.delete, #[]);
+@@requiresPermissions(SiteBroadcasts.get, #[]);
+@@requiresPermissions(SiteBroadcasts.list, #[]);
+@@requiresPermissions(SiteBroadcasts.update, #[]);

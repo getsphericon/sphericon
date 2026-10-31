@@ -91,7 +91,7 @@ namespace Export {
    */
   @get
   @route("/messages")
-  @extension("x-required-scopes", #[ApiTokenScope.exportRead])
+  @requiresScopes(#[ApiTokenScope.exportRead])
   op messages(...ExportPageQuery):
     | ExportPage
     | BadRequestProblem

@@ -199,7 +199,7 @@ interface SiteRules
    */
   @action("archive")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   archive(...ResourceParameters<SiteRuleResource>):
     | SiteRuleResource
     | BadRequestProblem
@@ -208,7 +208,7 @@ interface SiteRules
   /** Restore an archived Rule to the list, inactive */
   @action("unarchive")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   unarchive(...ResourceParameters<SiteRuleResource>):
     | SiteRuleResource
     | BadRequestProblem
@@ -217,7 +217,7 @@ interface SiteRules
   /** Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with neither draft nor live version. */
   @action("publish")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   publish(...ResourceParameters<SiteRuleResource>):
     | SiteRuleResource
     | BadRequestProblem
@@ -227,7 +227,7 @@ interface SiteRules
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. */
   @action("revert")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   revert(...ResourceParameters<SiteRuleResource>):
     | SiteRuleResource
     | BadRequestProblem
@@ -237,7 +237,7 @@ interface SiteRules
   /** Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs nothing. */
   @action("dry-run")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   dryRun(
     ...ResourceParameters<SiteRuleResource>,
     @body body: SiteDryRunRuleInput,
@@ -246,7 +246,7 @@ interface SiteRules
   /** Deactivate a Rule: it stops firing */
   @action("deactivate")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   deactivate(...ResourceParameters<SiteRuleResource>):
     | SiteRuleResource
     | BadRequestProblem
@@ -285,7 +285,7 @@ model SiteRuleFiringResource {
 namespace SiteRuleFirings {
   /** List a Rule's Firings, newest first */
   @get
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(
     @path workspaceId: WorkspaceId,
     @path ruleId: EntityId,
@@ -293,8 +293,8 @@ namespace SiteRuleFirings {
   ): Page<SiteRuleFiringResource> | BadRequestProblem | NotFoundProblem;
 }
 
-@@extension(SiteRules.create, "x-required-permissions", #[]);
-@@extension(SiteRules.delete, "x-required-permissions", #[]);
-@@extension(SiteRules.get, "x-required-permissions", #[]);
-@@extension(SiteRules.list, "x-required-permissions", #[]);
-@@extension(SiteRules.update, "x-required-permissions", #[]);
+@@requiresPermissions(SiteRules.create, #[]);
+@@requiresPermissions(SiteRules.delete, #[]);
+@@requiresPermissions(SiteRules.get, #[]);
+@@requiresPermissions(SiteRules.list, #[]);
+@@requiresPermissions(SiteRules.update, #[]);

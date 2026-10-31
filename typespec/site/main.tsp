@@ -72,4 +72,5 @@ using TypeSpec.Http;
 @info(#{ version: "1.0.0" })
 @server("http://localhost:3000", "Local development site API")
 @useAuth(ApiKeyAuth<ApiKeyLocation.cookie, "JWT">)
+@everyOperationDeclares("workspacePermissions")
 namespace Sphericon;

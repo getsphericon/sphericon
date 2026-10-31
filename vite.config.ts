@@ -116,7 +116,8 @@ export default defineConfig({
   test: {
     testTimeout: 10_000,
     // .cache holds the Go module cache, whose dependencies ship their own *.test.* files.
-    exclude: [...configDefaults.exclude, '.cache/**', '.claude/**'],
+    // typespec/lib's tests compile TypeSpec, which needs node: `mise run test:typespec` runs them.
+    exclude: [...configDefaults.exclude, '.cache/**', '.claude/**', 'typespec/**'],
     setupFiles: ['./src/test/setup.tsx'],
     coverage: {
       provider: 'v8',

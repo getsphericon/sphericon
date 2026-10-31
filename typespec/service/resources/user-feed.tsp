@@ -59,7 +59,7 @@ namespace ServiceUserFeed {
    * at-least-once: replaying a cursor returns the same entries, and an empty cursor starts
    * from the beginning. */
   @get
-  @extension("x-required-scopes", #[ServiceScope.usersRead])
+  @requiresServiceScopes(#[ServiceScope.usersRead])
   op list(
     /** The `nextCursor` of a page the caller has saved; empty starts from the beginning */
     @query cursor?: string,

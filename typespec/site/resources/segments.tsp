@@ -228,7 +228,7 @@ interface SiteSegments
   /** Preview how many active contacts match a rule definition */
   @collectionAction(SiteSegmentResource, "preview")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   preview(
     ...ResourceCollectionParameters<SiteSegmentResource>,
     @body body: SitePreviewSegmentInput,
@@ -247,7 +247,7 @@ namespace SiteSegmentContacts {
    * condition that no longer fits the contact schema is a 422.
    */
   @get
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(
     @path workspaceId: WorkspaceId,
     @path segmentId: EntityId,
@@ -259,9 +259,9 @@ namespace SiteSegmentContacts {
     | UnprocessableEntityProblem;
 }
 
-@@extension(SiteSegments.archive, "x-required-permissions", #[]);
-@@extension(SiteSegments.create, "x-required-permissions", #[]);
-@@extension(SiteSegments.get, "x-required-permissions", #[]);
-@@extension(SiteSegments.list, "x-required-permissions", #[]);
-@@extension(SiteSegments.unarchive, "x-required-permissions", #[]);
-@@extension(SiteSegments.update, "x-required-permissions", #[]);
+@@requiresPermissions(SiteSegments.archive, #[]);
+@@requiresPermissions(SiteSegments.create, #[]);
+@@requiresPermissions(SiteSegments.get, #[]);
+@@requiresPermissions(SiteSegments.list, #[]);
+@@requiresPermissions(SiteSegments.unarchive, #[]);
+@@requiresPermissions(SiteSegments.update, #[]);

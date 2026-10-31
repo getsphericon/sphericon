@@ -84,7 +84,7 @@ namespace SiteSecondFactor {
   /** The authenticated User's Second factor status. Answered while an acceptance is pending, for
    * the account deletion form (ADR 0062). */
   @get
-  @extension("x-allowed-while-acceptance-pending", true)
+  @allowedWhileAcceptancePending
   op getStatus(): {
     @statusCode statusCode: 200;
     @body body: SiteSecondFactorStatus;

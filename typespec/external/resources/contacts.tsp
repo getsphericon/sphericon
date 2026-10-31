@@ -23,18 +23,18 @@ model ContactResource {
   phone?: string | null;
 
   /** First name */
-  @extension("x-untrusted", true)
+  @untrusted
   firstName?: string | null;
 
   /** Last name */
-  @extension("x-untrusted", true)
+  @untrusted
   lastName?: string | null;
 
   /** IANA time zone identifier */
   timeZone?: TimeZoneName | null;
 
   /** Typed custom field values keyed by the field's machine key */
-  @extension("x-untrusted", true)
+  @untrusted
   customFields?: Record<unknown> | null;
 
   /** Creation timestamp */
@@ -80,8 +80,8 @@ interface Contacts
   // address, the User also needs contacts:erase, as on /site.
   @collectionAction(ContactResource, "export")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.contactsExport])
-  @extension("x-required-permissions", #[Permission.contactsErase])
+  @requiresScopes(#[ApiTokenScope.contactsExport])
+  @requiresPermissions(#[Permission.contactsErase])
   export(
     ...ResourceCollectionParameters<ContactResource>,
 
@@ -108,7 +108,7 @@ interface Contacts
   @collectionAction(ContactResource, "erase")
   @delete
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.contactsErase])
+  @requiresScopes(#[ApiTokenScope.contactsErase])
   eraseBy(
     ...ResourceCollectionParameters<ContactResource>,
 
@@ -191,7 +191,7 @@ model UpsertContactsResult {
 namespace ContactsBatch {
   /** Upsert up to 1000 contacts by alias keys; a failing item does not affect the others */
   @post
-  @extension("x-required-scopes", #[ApiTokenScope.contactsWrite])
+  @requiresScopes(#[ApiTokenScope.contactsWrite])
   op upsert(@body body: UpsertContactsInput):
     | UpsertContactsResult
     | UnauthorizedProblem

@@ -106,7 +106,7 @@ interface SiteWebhooks {
   @listsResource(SiteWebhookEndpointResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[Permission.webhooksManage])
+  @requiresPermissions(#[Permission.webhooksManage])
   list(
     ...ResourceCollectionParameters<SiteWebhookEndpointResource>,
     ...PageQuery,
@@ -121,7 +121,7 @@ interface SiteWebhooks {
   @createsResource(SiteWebhookEndpointResource)
   @post
   @autoRoute
-  @extension("x-required-permissions", #[Permission.webhooksManage])
+  @requiresPermissions(#[Permission.webhooksManage])
   create(
     ...ResourceCollectionParameters<SiteWebhookEndpointResource>,
     @body body: CreateWebhookInput,
@@ -138,7 +138,7 @@ interface SiteWebhooks {
   @readsResource(SiteWebhookEndpointResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[Permission.webhooksManage])
+  @requiresPermissions(#[Permission.webhooksManage])
   get(...ResourceParameters<SiteWebhookEndpointResource>):
     | SiteWebhookEndpointResource
     | BadRequestProblem
@@ -149,7 +149,7 @@ interface SiteWebhooks {
   @updatesResource(SiteWebhookEndpointResource)
   @put
   @autoRoute
-  @extension("x-required-permissions", #[Permission.webhooksManage])
+  @requiresPermissions(#[Permission.webhooksManage])
   update(
     ...ResourceParameters<SiteWebhookEndpointResource>,
     @body body: UpdateWebhookInput,
@@ -164,7 +164,7 @@ interface SiteWebhooks {
   @deletesResource(SiteWebhookEndpointResource)
   @delete
   @autoRoute
-  @extension("x-required-permissions", #[Permission.webhooksManage])
+  @requiresPermissions(#[Permission.webhooksManage])
   delete(...ResourceParameters<SiteWebhookEndpointResource>):
     | NoContentResponse
     | BadRequestProblem
@@ -174,7 +174,7 @@ interface SiteWebhooks {
   /** Replace the signing secret. The old one stops verifying at once; the new one is in the response. Owners and admins only. */
   @action("regenerate-secret")
   @autoRoute
-  @extension("x-required-permissions", #[Permission.webhooksManage])
+  @requiresPermissions(#[Permission.webhooksManage])
   regenerateSecret(...ResourceParameters<SiteWebhookEndpointResource>):
     | SiteWebhookEndpointResource
     | BadRequestProblem
@@ -184,7 +184,7 @@ interface SiteWebhooks {
   /** Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer. Owners and admins only. */
   @action("test")
   @autoRoute
-  @extension("x-required-permissions", #[Permission.webhooksManage])
+  @requiresPermissions(#[Permission.webhooksManage])
   test(
     ...ResourceParameters<SiteWebhookEndpointResource>,
     @body body: TestWebhookInput,

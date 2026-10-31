@@ -119,7 +119,7 @@ interface SiteSendingDomains {
   @listsResource(SiteSendingDomainResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   list(
     ...ResourceCollectionParameters<SiteSendingDomainResource>,
     ...PageQuery,
@@ -134,7 +134,7 @@ interface SiteSendingDomains {
   @createsResource(SiteSendingDomainResource)
   @post
   @autoRoute
-  @extension("x-required-permissions", #[Permission.sendingDomainsManage])
+  @requiresPermissions(#[Permission.sendingDomainsManage])
   create(
     ...ResourceCollectionParameters<SiteSendingDomainResource>,
     @body body: CreateSendingDomainInput,
@@ -152,7 +152,7 @@ interface SiteSendingDomains {
   @readsResource(SiteSendingDomainResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   get(...ResourceParameters<SiteSendingDomainResource>):
     | SiteSendingDomainResource
     | BadRequestProblem
@@ -165,7 +165,7 @@ interface SiteSendingDomains {
    */
   @action("archive")
   @autoRoute
-  @extension("x-required-permissions", #[Permission.sendingDomainsManage])
+  @requiresPermissions(#[Permission.sendingDomainsManage])
   archive(...ResourceParameters<SiteSendingDomainResource>):
     | SiteSendingDomainResource
     | BadRequestProblem
@@ -180,7 +180,7 @@ interface SiteSendingDomains {
    */
   @action("unarchive")
   @autoRoute
-  @extension("x-required-permissions", #[Permission.sendingDomainsManage])
+  @requiresPermissions(#[Permission.sendingDomainsManage])
   unarchive(...ResourceParameters<SiteSendingDomainResource>):
     | SiteSendingDomainResource
     | BadRequestProblem
@@ -194,7 +194,7 @@ interface SiteSendingDomains {
    */
   @action("verify")
   @autoRoute
-  @extension("x-required-permissions", #[Permission.sendingDomainsManage])
+  @requiresPermissions(#[Permission.sendingDomainsManage])
   verify(...ResourceParameters<SiteSendingDomainResource>):
     | SiteSendingDomainResource
     | BadRequestProblem

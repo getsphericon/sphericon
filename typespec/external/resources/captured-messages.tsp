@@ -17,10 +17,10 @@ enum CapturedMessageSurface {
 
 /** One header line of a Captured message */
 model CapturedMessageHeader {
-  @extension("x-untrusted", true)
+  @untrusted
   name: string;
 
-  @extension("x-untrusted", true)
+  @untrusted
   value: string;
 }
 
@@ -45,11 +45,11 @@ model CapturedMessageFields {
   from: string;
 
   /** The From name; null when the message has none */
-  @extension("x-untrusted", true)
+  @untrusted
   fromName: string | null;
 
   /** The subject */
-  @extension("x-untrusted", true)
+  @untrusted
   subject: string;
 
   /** True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside */
@@ -78,18 +78,18 @@ model CapturedMessageResource {
   ...CapturedMessageFields;
 
   /** The HTML part */
-  @extension("x-untrusted", true)
+  @untrusted
   html: string;
 
   /** The text part */
-  @extension("x-untrusted", true)
+  @untrusted
   text: string;
 
   /** The header lines the message would carry on the wire, in order */
   headers: CapturedMessageHeader[];
 
   /** The URLs of the links of the HTML part, tracker links as the recipient would get them */
-  @extension("x-untrusted", true)
+  @untrusted
   links: string[];
 }
 
@@ -100,7 +100,7 @@ interface CapturedMessages {
   @listsResource(CapturedMessageResource)
   @get
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.capturedMessagesRead])
+  @requiresScopes(#[ApiTokenScope.capturedMessagesRead])
   list(...ResourceCollectionParameters<CapturedMessageResource>, ...PageQuery):
     | Page<CapturedMessageSummary>
     | BadRequestProblem
@@ -113,7 +113,7 @@ interface CapturedMessages {
   @readsResource(CapturedMessageResource)
   @get
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.capturedMessagesRead])
+  @requiresScopes(#[ApiTokenScope.capturedMessagesRead])
   get(...ResourceParameters<CapturedMessageResource>):
     | CapturedMessageResource
     | BadRequestProblem
@@ -126,7 +126,7 @@ interface CapturedMessages {
   @deletesResource(CapturedMessageResource)
   @delete
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.capturedMessagesWrite])
+  @requiresScopes(#[ApiTokenScope.capturedMessagesWrite])
   delete(...ResourceParameters<CapturedMessageResource>):
     | NoContentResponse
     | BadRequestProblem
@@ -139,7 +139,7 @@ interface CapturedMessages {
   @collectionAction(CapturedMessageResource, "all")
   @delete
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.capturedMessagesWrite])
+  @requiresScopes(#[ApiTokenScope.capturedMessagesWrite])
   deleteAll(...ResourceCollectionParameters<CapturedMessageResource>):
     | NoContentResponse
     | UnauthorizedProblem

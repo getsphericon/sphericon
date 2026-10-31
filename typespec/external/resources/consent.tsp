@@ -69,7 +69,7 @@ namespace Suppressions {
   // The suppressions:write scope needs suppressions:manage to be granted, and a
   // Connection's User holds it on every request, as on /site (ADR 0061).
   @post
-  @extension("x-required-scopes", #[ApiTokenScope.suppressionsWrite])
+  @requiresScopes(#[ApiTokenScope.suppressionsWrite])
   op create(@body body: CreateSuppressionInput):
     | {
         @statusCode statusCode: 201;
@@ -90,7 +90,7 @@ namespace Unsubscribes {
    * `broadcasts`). Idempotent. Resubscribing is not available through the API.
    */
   @post
-  @extension("x-required-scopes", #[ApiTokenScope.contactsWrite])
+  @requiresScopes(#[ApiTokenScope.contactsWrite])
   op create(@body body: CreateUnsubscribeInput):
     | {
         @statusCode statusCode: 201;

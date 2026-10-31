@@ -93,7 +93,7 @@ namespace SiteCapturedMessages {
   @listsResource(SiteCapturedMessageResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(
     ...ResourceCollectionParameters<SiteCapturedMessageResource>,
     ...PageQuery,
@@ -107,7 +107,7 @@ namespace SiteCapturedMessages {
   @readsResource(SiteCapturedMessageResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op get(...ResourceParameters<SiteCapturedMessageResource>):
     | SiteCapturedMessageResource
     | BadRequestProblem
@@ -117,7 +117,7 @@ namespace SiteCapturedMessages {
   @deletesResource(SiteCapturedMessageResource)
   @delete
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op delete(...ResourceParameters<SiteCapturedMessageResource>):
     | NoContentResponse
     | BadRequestProblem
@@ -127,7 +127,7 @@ namespace SiteCapturedMessages {
   @collectionAction(SiteCapturedMessageResource, "all")
   @delete
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op deleteAll(...ResourceCollectionParameters<SiteCapturedMessageResource>):
     | NoContentResponse
     | NotFoundProblem;

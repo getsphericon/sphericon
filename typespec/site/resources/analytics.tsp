@@ -311,7 +311,7 @@ namespace SiteAnalytics {
   /** Aggregate metrics for the workspace dashboard */
   @get
   @route("/overview")
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op overview(
     @path workspaceId: WorkspaceId,
 
@@ -323,7 +323,7 @@ namespace SiteAnalytics {
    * Open to every member. */
   @get
   @route("/revenue")
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op revenue(
     @path workspaceId: WorkspaceId,
 
@@ -334,7 +334,7 @@ namespace SiteAnalytics {
   /** New people report: Contacts created per Report day, split by Contact source */
   @get
   @route("/new-people")
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op newPeople(
     @path workspaceId: WorkspaceId,
 
@@ -345,7 +345,7 @@ namespace SiteAnalytics {
   /** Subscribed people report: who subscribed and unsubscribed per Report day, and how many are subscribed now */
   @get
   @route("/subscribed-people")
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op subscribedPeople(
     @path workspaceId: WorkspaceId,
 
@@ -356,7 +356,7 @@ namespace SiteAnalytics {
   /** Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link */
   @get
   @route("/clicks-by-link")
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op clicksByLink(
     @path workspaceId: WorkspaceId,
 
@@ -367,7 +367,7 @@ namespace SiteAnalytics {
   /** Human opens by hour of day and day of week in the Workspace time zone */
   @get
   @route("/opens-by-hour")
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op opensByHour(
     @path workspaceId: WorkspaceId,
 
@@ -378,7 +378,7 @@ namespace SiteAnalytics {
   /** Events in the range, grouped by action */
   @get
   @route("/events")
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op events(
     @path workspaceId: WorkspaceId,
 

@@ -70,7 +70,7 @@ namespace SiteSuppressions {
   @createsResource(SiteSuppressionResource)
   @post
   @autoRoute
-  @extension("x-required-permissions", #[Permission.suppressionsManage])
+  @requiresPermissions(#[Permission.suppressionsManage])
   op create(
     ...ResourceCollectionParameters<SiteSuppressionResource>,
     @body body: SiteCreateSuppressionInput,
@@ -87,7 +87,7 @@ namespace SiteSuppressions {
   @listsResource(SiteSuppressionResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(
     ...ResourceCollectionParameters<SiteSuppressionResource>,
     ...PageQuery,
@@ -103,7 +103,7 @@ namespace SiteSuppressions {
   @deletesResource(SiteSuppressionResource)
   @delete
   @autoRoute
-  @extension("x-required-permissions", #[Permission.suppressionsManage])
+  @requiresPermissions(#[Permission.suppressionsManage])
   op delete(...ResourceParameters<SiteSuppressionResource>):
     | NoContentResponse
     | BadRequestProblem

@@ -66,7 +66,7 @@ namespace SiteTransactionalEmails {
   @listsResource(SiteTransactionalEmailResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(
     ...ResourceCollectionParameters<SiteTransactionalEmailResource>,
     ...PageQuery,

@@ -1,4 +1,16 @@
+import "../lib/main.tsp";
+
 namespace Sphericon;
+
+/**
+ * The Permissions the operation needs (ADR 0061), as `x-required-permissions`: on /site its
+ * caller's Role must hold them in the Workspace, `#[]` for any member; on /api a Connection's User
+ * must, beyond the token's scopes.
+ */
+extern dec requiresPermissions(
+  target: Reflection.Operation,
+  permissions: valueof Permission[]
+);
 
 /** A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
  * written `resource:verb` like the API token scopes. A Role is a set of them; the table

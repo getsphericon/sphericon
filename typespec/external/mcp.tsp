@@ -1,7 +1,5 @@
 import "../lib/main.tsp";
 
-using SphericonLib;
-
 namespace Sphericon;
 
 // MCP projection overrides (ADR 0016), declared with `@mcp` (typespec/lib), which writes the

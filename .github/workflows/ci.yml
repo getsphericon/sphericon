@@ -176,6 +176,10 @@ jobs:
       - name: Check generated code is up to date
         run: mise run generate:check
 
+      # The contract decorators refuse what generate:check cannot see: a malformed declaration.
+      - name: Test the contract decorators
+        run: mise run test:typespec
+
       # The tracker is shipped to customer sites; keep it within the size budget.
       - name: Check the tracker size budget
         run: mise run check:tracker-size

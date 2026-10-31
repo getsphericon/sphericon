@@ -127,7 +127,7 @@ interface SendingDomains {
   @listsResource(SendingDomainResource)
   @get
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.sendingDomainsRead])
+  @requiresScopes(#[ApiTokenScope.sendingDomainsRead])
   list(
     ...ResourceCollectionParameters<SendingDomainResource>,
     ...PageQuery,
@@ -144,7 +144,7 @@ interface SendingDomains {
   @createsResource(SendingDomainResource)
   @post
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.sendingDomainsWrite])
+  @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])
   create(
     ...ResourceCollectionParameters<SendingDomainResource>,
     @body body: CreateSendingDomainInput,
@@ -164,7 +164,7 @@ interface SendingDomains {
   @readsResource(SendingDomainResource)
   @get
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.sendingDomainsRead])
+  @requiresScopes(#[ApiTokenScope.sendingDomainsRead])
   get(...ResourceParameters<SendingDomainResource>):
     | SendingDomainResource
     | BadRequestProblem
@@ -177,7 +177,7 @@ interface SendingDomains {
   @updatesResource(SendingDomainResource)
   @put
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.sendingDomainsWrite])
+  @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])
   update(
     ...ResourceParameters<SendingDomainResource>,
     @body body: UpdateSendingDomainInput,
@@ -194,7 +194,7 @@ interface SendingDomains {
   /** Archive a Sending domain: it leaves the list, serves no Tracking domain host and can be restored. Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends from it. */
   @action("archive")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.sendingDomainsWrite])
+  @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])
   archive(...ResourceParameters<SendingDomainResource>):
     | SendingDomainResource
     | BadRequestProblem
@@ -207,7 +207,7 @@ interface SendingDomains {
   /** Restore an archived Sending domain. It starts a new DNS check and serves its Tracking domain host again only once that passes. Refused with 409 when the same domain was added again meanwhile. */
   @action("unarchive")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.sendingDomainsWrite])
+  @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])
   unarchive(...ResourceParameters<SendingDomainResource>):
     | SendingDomainResource
     | BadRequestProblem
@@ -220,7 +220,7 @@ interface SendingDomains {
   /** Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller. */
   @action("verify")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.sendingDomainsWrite])
+  @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])
   verify(...ResourceParameters<SendingDomainResource>):
     | SendingDomainResource
     | BadRequestProblem

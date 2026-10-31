@@ -229,7 +229,7 @@ interface Segments
   /** Count the contacts matching an unsaved rule definition */
   @collectionAction(SegmentResource, "preview")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.segmentsRead])
+  @requiresScopes(#[ApiTokenScope.segmentsRead])
   preview(
     ...ResourceCollectionParameters<SegmentResource>,
     @body body: PreviewSegmentInput,

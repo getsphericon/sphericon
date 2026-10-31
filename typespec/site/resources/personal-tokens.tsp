@@ -69,7 +69,7 @@ namespace SitePersonalTokens {
   @listsResource(SitePersonalTokenResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(...ResourceCollectionParameters<SitePersonalTokenResource>):
     | {
         @statusCode statusCode: 200;
@@ -84,7 +84,7 @@ namespace SitePersonalTokens {
   @createsResource(SitePersonalTokenResource)
   @post
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op create(
     ...ResourceCollectionParameters<SitePersonalTokenResource>,
     @body body: SiteCreatePersonalTokenInput,
@@ -102,7 +102,7 @@ namespace SitePersonalTokens {
   @deletesResource(SitePersonalTokenResource)
   @delete
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op delete(...ResourceParameters<SitePersonalTokenResource>):
     | NoContentResponse
     | NotFoundProblem;
@@ -111,7 +111,7 @@ namespace SitePersonalTokens {
    * vocabulary's order: the mint form offers these and no other. */
   @get
   @route("/workspaces/{workspaceId}/personal-token-scopes")
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op grantableScopes(@path workspaceId: WorkspaceId):
     | {
         @statusCode statusCode: 200;

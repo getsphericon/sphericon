@@ -18,11 +18,11 @@ ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, 
 ent + gen/{site,external,staff,staffee,service}  ──goverter──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
 gen/{site,external} request bodies  ──goverter──▶ internal/api/{site,external}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/patch fields)
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
-openapi/service (`x-required-scopes` per operation, declared in TypeSpec) ──cmd/scopegen──▶ ee/staff/service_scopes_gen.go (`ServiceOperationScopes`)
-openapi/external (`x-required-scopes` per operation, declared in TypeSpec) ──cmd/scopegen──▶ internal/api/auth/external_scopes_gen.go (`ExternalOperationScopes`)
-openapi/external (`x-required-permissions`, optional per operation: what a Connection's User must hold) ──cmd/scopegen──▶ internal/api/auth/external_permissions_gen.go (`ExternalOperationPermissions`)
-openapi/site (`x-required-permissions`, `x-allowed-while-withheld`, `x-allowed-while-acceptance-pending` per operation) ──cmd/scopegen──▶ internal/api/site/access_gen.go (`operationAccess`)
-openapi/site (`x-grant-permissions` on each grantable scope enum) ──cmd/scopegen──▶ internal/accounts/grant_permissions_gen.go (`GrantPermissions`)
+openapi/service (`x-required-scopes` per operation, from `@requiresServiceScopes`) ──cmd/scopegen──▶ ee/staff/service_scopes_gen.go (`ServiceOperationScopes`)
+openapi/external (`x-required-scopes` per operation, from `@requiresScopes`) ──cmd/scopegen──▶ internal/api/auth/external_scopes_gen.go (`ExternalOperationScopes`)
+openapi/external (`x-required-permissions` from `@requiresPermissions`, optional per operation: what a Connection's User must hold) ──cmd/scopegen──▶ internal/api/auth/external_permissions_gen.go (`ExternalOperationPermissions`)
+openapi/site (`x-required-permissions`, `x-allowed-while-withheld`, `x-allowed-while-acceptance-pending` per operation, from `@requiresPermissions`, `@allowedWhileWithheld`, `@allowedWhileAcceptancePending`) ──cmd/scopegen──▶ internal/api/site/access_gen.go (`operationAccess`)
+openapi/site (`x-grant-permissions` on each grantable scope enum, from `@grantable` and `@grantedWith`) ──cmd/scopegen──▶ internal/accounts/grant_permissions_gen.go (`GrantPermissions`)
 openapi/site (`Permission` enum) ──cmd/scopegen──▶ internal/accounts/permissions_gen.go (`Permission` and its `Perm…` constants)
 openapi/external (`ApiTokenScope` enum) ──cmd/scopegen──▶ internal/apitokens/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary); the files are `scopegen.Tables`
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
@@ -38,13 +38,26 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   each package's `resources.go`; the impl (`ConverterImpl`) is generated. Adding a DTO
   field that has no source mapping fails generation — that completeness check is the point.
 
-- **Contract decorators** (`typespec/lib`): `x-mcp` is declared with the typed `@mcp`, which
-  checks its argument at `tsp compile` (and in the editor) and then writes the same extension with
-  `setExtension`. The other `x-*` extensions (`x-required-permissions`, `x-required-scopes`,
-  `x-untrusted`, the acceptance and withheld marks) are still raw `@extension` and move to typed
-  decorators the same way: `main.tsp` declares the decorator in the `SphericonLib` namespace
-  (outside the service namespace, so its argument models stay out of the OpenAPI documents), and
-  `decorators.js` implements it.
+- **Contract decorators** (ADR 0069): every `x-*` extension a Go reader depends on is written by
+  a typed decorator, never by a raw `@extension`, which `tsp compile` refuses for these keys.
+
+  | Decorator                                                                  | Extension                | Declared in                      |
+  | -------------------------------------------------------------------------- | ------------------------ | -------------------------------- |
+  | `@requiresPermissions(#[Permission.…])`                                    | `x-required-permissions` | `common/permissions.tsp`         |
+  | `@requiresScopes(#[ApiTokenScope.…])`                                      | `x-required-scopes`      | `common/scopes.tsp`              |
+  | `@requiresServiceScopes(#[ServiceScope.…])`                                | `x-required-scopes`      | `service/resources/identity.tsp` |
+  | `@grantable` on an enum, `@grantedWith(Permission.…)` on a member          | `x-grant-permissions`    | `common/scopes.tsp`              |
+  | `@allowedWhileWithheld`, `@allowedWhileAcceptancePending`                  | `x-allowed-while-…`      | `lib/main.tsp`                   |
+  | `@untrusted`                                                               | `x-untrusted`            | `lib/main.tsp`                   |
+  | `@mcp(#{ hidden?, name?, send? })`                                         | `x-mcp`                  | `lib/main.tsp`                   |
+  | `@everyOperationDeclares("scopes" \| "workspacePermissions")` on a surface | (a check)                | `lib/main.tsp`                   |
+
+  A decorator typed by a contract enum is declared beside it; `lib/decorators.js` implements them
+  all and checks, in `$onValidate`, what each surface's operations must declare (the checks
+  `cmd/scopegen` repeats on the OpenAPI document). The OpenAPI output is what a raw `@extension`
+  wrote. A new extension a Go reader depends on gets a decorator here, a fixture under
+  `typespec/lib/testdata/` (`// expect-next-line: <code>` marks a statement that must fail) and a
+  case in `decorators.test.ts`; `mise run test:typespec` runs them.
 
 - `mise run generate` — full cycle: typespec → openapi → backend (ent + ogen) → fixture catalog → frontend → i18n types → format.
 - `mise run generate:typespec` / `mise run generate:backend` / `mise run generate:openapi` — partial regens.

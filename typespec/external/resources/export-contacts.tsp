@@ -46,7 +46,7 @@ namespace Export {
    */
   @get
   @route("/contacts")
-  @extension("x-required-scopes", #[ApiTokenScope.exportRead])
+  @requiresScopes(#[ApiTokenScope.exportRead])
   op contacts(...ExportPageQuery):
     | ExportPage
     | BadRequestProblem

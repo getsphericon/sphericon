@@ -149,6 +149,8 @@ unowned:
   - mise/**
   - cmd/**
   - e2e/**
+  # The TypeSpec contract's decorators (ADR 0069), loaded by the TypeSpec compiler.
+  - typespec/**
   # Tool configs and the two embed files at the repository root.
   - '*.ts'
   - '*.go'
