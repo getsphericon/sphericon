@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ThreeDotsLabs/watermill"
-	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,11 +29,9 @@ func deliveryBody(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent) 
 	}))
 	envelopes := env.OutboxEnvelopes(t)
 	require.Len(t, envelopes, before+1)
-	raw, err := json.Marshal(envelopes[before])
-	require.NoError(t, err)
 
 	queued := len(env.JobsOf(t, jobkind.DeliverWebhook.Kind))
-	require.NoError(t, events.WebhooksConsumer(env.DB, queueingJobs(t, env))(message.NewMessage(watermill.NewUUID(), raw)))
+	require.NoError(t, events.WebhooksConsumer(env.DB, queueingJobs(t, env))(events.Message(envelopes[before])))
 	after := env.JobsOf(t, jobkind.DeliverWebhook.Kind)
 	require.Len(t, after, queued+1)
 	encoded, err := json.Marshal(after[queued])

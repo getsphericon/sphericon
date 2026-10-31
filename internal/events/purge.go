@@ -50,27 +50,40 @@ func (p *txPublisher) PurgeOutbox(ctx context.Context, workspaceID, contactID in
 	return err
 }
 
-// outboxNamesSubject selects a Workspace's outbox envelopes that name a data subject. The
-// payload is the JSON-encoded Envelope; events name the Contact as data.contactId and the
-// address as data.email. The paths are ent's JSON predicates; only the case-insensitive
-// address match is written by hand (the lower() of a JSON path has no predicate), around
-// ent's own path expression.
+// outboxNamesSubject selects a Workspace's outbox envelopes that name a data subject. An
+// envelope's Workspace is its metadata's workspace_id, and its payload is the event, which names
+// the Contact as contactId and the address as email. A row published before the envelope moved to
+// the metadata (EnvelopeFrom) has the whole envelope as its payload: its Workspace is workspaceId
+// and the event is under data. The paths are ent's JSON predicates; only the case-insensitive
+// address match is written by hand (the lower() of a JSON path has no predicate), around ent's
+// own path expression.
 func outboxNamesSubject(workspaceID int64, contactID string, lowered []string) predicate.OutboxMessage {
 	return predicate.OutboxMessage(func(s *sql.Selector) {
-		payload := s.C(outboxmessage.FieldPayload)
+		payload, metadata := s.C(outboxmessage.FieldPayload), s.C(outboxmessage.FieldMetadata)
 		s.Where(sql.And(
-			sqljson.ValueEQ(payload, workspaceID, sqljson.Path("workspaceId"), sqljson.Cast("bigint")),
 			sql.Or(
+				sqljson.ValueEQ(metadata, strconv.FormatInt(workspaceID, 10), sqljson.Path(MetaWorkspaceID)),
+				sqljson.ValueEQ(payload, workspaceID, sqljson.Path("workspaceId"), sqljson.Cast("bigint")),
+			),
+			sql.Or(
+				sqljson.ValueEQ(payload, contactID, sqljson.Path("contactId")),
 				sqljson.ValueEQ(payload, contactID, sqljson.Path("data", "contactId")),
-				// raw sql: lower() of a JSON path compared with ANY(array); ent's JSON predicates
-				// have no function over a path.
-				sql.P(func(b *sql.Builder) {
-					b.WriteString("lower(").
-						Join(sqljson.ValuePath(payload, sqljson.Path("data", "email"), sqljson.Unquote(true))).
-						WriteString(") = ANY(").Arg(lowered).WriteString(")")
-				}),
+				addressIn(payload, lowered, sqljson.Path("email")),
+				addressIn(payload, lowered, sqljson.Path("data", "email")),
 			),
 		))
+	})
+}
+
+// addressIn matches the address at path of the JSON column, case-insensitively, against the
+// lowered addresses.
+func addressIn(column string, lowered []string, path sqljson.Option) *sql.Predicate {
+	// raw sql: lower() of a JSON path compared with ANY(array); ent's JSON predicates have no
+	// function over a path.
+	return sql.P(func(b *sql.Builder) {
+		b.WriteString("lower(").
+			Join(sqljson.ValuePath(column, path, sqljson.Unquote(true))).
+			WriteString(") = ANY(").Arg(lowered).WriteString(")")
 	})
 }
 

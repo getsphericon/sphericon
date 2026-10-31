@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -14,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -155,4 +157,27 @@ func TestExternalContactsEraseClearsQueuedHTTPStepCallsAndFailureExcerpts(t *tes
 	require.NoError(t, err)
 	require.NotNil(t, kept.FailureExcerpt)
 	assert.Equal(t, "ben@initech.test rejected", *kept.FailureExcerpt)
+}
+
+// An outbox row published before the envelope moved to the metadata (the whole envelope as its
+// payload) that names the erased Contact goes too.
+func TestExternalContactsEraseClearsOutboxRowsOfThePreviousShape(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	for i, data := range []string{
+		fmt.Sprintf(`{"contactId":%d,"email":"erin@initech.test"}`, fixtures.ContactErasableID),
+		`{"email":"Erin@Initech.test"}`,
+		fmt.Sprintf(`{"contactId":%d,"email":"ben@initech.test"}`, fixtures.ContactBystanderID),
+	} {
+		// test writes: a row of the previous shape is only ever written by the previous version.
+		env.DB.OutboxMessage.Create().SetUUID(fmt.Sprintf("old-%d", i)).SetCreatedAt(time.Now()).SetTransactionID("1").
+			SetPayload([]byte(fmt.Sprintf(`{"id":"old-%d","name":"email.sent","version":1,"workspaceId":%d,"data":%s}`, i, fixtures.InitechID, data))).
+			ExecX(ctx)
+	}
+
+	eraseErasable(t, env)
+
+	left := env.DB.OutboxMessage.Query().Where(outboxmessage.UUIDHasPrefix("old-")).AllX(ctx)
+	require.Len(t, left, 1, "only the bystander's row is left")
+	assert.Contains(t, string(left[0].Payload), "ben@initech.test")
 }

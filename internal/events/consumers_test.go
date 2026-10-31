@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,9 +50,7 @@ func msgAt(t *testing.T, ev events.DomainEvent, occurred time.Time) *message.Mes
 	t.Helper()
 	data, err := json.Marshal(ev)
 	require.NoError(t, err)
-	body, err := json.Marshal(events.Envelope{ID: "evt_test", Name: ev.EventName(), Version: ev.EventVersion(), WorkspaceID: ev.Workspace(), OccurredAt: occurred, Data: data})
-	require.NoError(t, err)
-	return message.NewMessage(watermill.NewUUID(), body)
+	return events.Message(events.Envelope{ID: "evt_test", Name: ev.EventName(), Version: ev.EventVersion(), WorkspaceID: ev.Workspace(), OccurredAt: occurred, Data: data})
 }
 
 // delivery is a queued webhook delivery with its body decoded.

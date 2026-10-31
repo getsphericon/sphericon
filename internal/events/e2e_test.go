@@ -2,7 +2,6 @@ package events_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -36,8 +35,8 @@ func TestDomainEventsRouterDelivery(t *testing.T) {
 	got := make(chan events.Envelope, 1)
 	router.AddConsumerHandler("capture", events.TopicDomainEvents, sub,
 		func(msg *message.Message) error {
-			var env events.Envelope
-			if err := json.Unmarshal(msg.Payload, &env); err != nil {
+			env, err := events.EnvelopeOf(msg)
+			if err != nil {
 				return err
 			}
 			select {
@@ -86,8 +85,8 @@ func TestDeliveryIgnoresTransactionsOfOtherDatabases(t *testing.T) {
 	require.NoError(t, err)
 	got := make(chan events.Envelope, 1)
 	router.AddConsumerHandler("capture", events.TopicDomainEvents, sub, func(msg *message.Message) error {
-		var env events.Envelope
-		if err := json.Unmarshal(msg.Payload, &env); err != nil {
+		env, err := events.EnvelopeOf(msg)
+		if err != nil {
 			return err
 		}
 		got <- env

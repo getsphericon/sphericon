@@ -132,6 +132,12 @@ type Envelope struct {
 Each event also has a typed Go struct (`ContactCreated{WorkspaceID, ContactID,
 Email}`) marshaled into `Payload`. Consumers unmarshal by `Name`+`Version`.
 
+On the wire the envelope is a watermill message the way watermill intends one: the payload is the
+event itself, and the name, version, Workspace, occurred-at, recorded-at, dedup key and cause are
+message metadata (`events.Message`, `events.EnvelopeOf`), so a middleware routes or filters
+without decoding the body. A message of the previous shape (the whole envelope as the payload) is
+still read, for the rows in the outbox at an upgrade.
+
 ## Cross-cutting
 
 - **Idempotency** — at-least-once ⇒ consumers dedupe on `Envelope.ID` (or natural
