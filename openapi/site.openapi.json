@@ -156,9 +156,7 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
+        "tags": ["Site Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -169,9 +167,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ]
+        "security": [{}]
       }
     },
     "/auth/forgot-password": {
@@ -228,9 +224,7 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
+        "tags": ["Site Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -241,9 +235,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ]
+        "security": [{}]
       }
     },
     "/auth/login": {
@@ -336,9 +328,7 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
+        "tags": ["Site Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -349,9 +339,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ]
+        "security": [{}]
       }
     },
     "/auth/logout": {
@@ -373,12 +361,8 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
-        "security": [
-          {}
-        ],
+        "tags": ["Site Auth"],
+        "security": [{}],
         "x-allowed-while-acceptance-pending": true
       }
     },
@@ -418,12 +402,8 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
-        "security": [
-          {}
-        ]
+        "tags": ["Site Auth"],
+        "security": [{}]
       }
     },
     "/auth/passkey/finish": {
@@ -517,9 +497,7 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
+        "tags": ["Site Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -530,9 +508,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ]
+        "security": [{}]
       }
     },
     "/auth/resend-verification": {
@@ -600,9 +576,7 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
+        "tags": ["Site Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -613,9 +587,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ]
+        "security": [{}]
       }
     },
     "/auth/reset-password": {
@@ -648,9 +620,7 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
+        "tags": ["Site Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -661,9 +631,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ]
+        "security": [{}]
       }
     },
     "/auth/second-factor": {
@@ -746,9 +714,7 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
+        "tags": ["Site Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -759,9 +725,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ]
+        "security": [{}]
       }
     },
     "/auth/sign-up": {
@@ -847,9 +811,7 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
+        "tags": ["Site Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -860,9 +822,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ]
+        "security": [{}]
       }
     },
     "/auth/signin-not-me": {
@@ -885,9 +845,7 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
+        "tags": ["Site Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -898,9 +856,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ]
+        "security": [{}]
       }
     },
     "/auth/signin-pending": {
@@ -940,12 +896,8 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
-        "security": [
-          {}
-        ]
+        "tags": ["Site Auth"],
+        "security": [{}]
       },
       "post": {
         "operationId": "SiteAuth_signinPendingSubmit",
@@ -985,9 +937,7 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
+        "tags": ["Site Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -998,9 +948,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ]
+        "security": [{}]
       }
     },
     "/auth/signin-pending/decline": {
@@ -1013,9 +961,7 @@
             "description": "There is no content to send for this request, but the headers may be useful."
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
+        "tags": ["Site Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -1026,9 +972,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ]
+        "security": [{}]
       }
     },
     "/auth/signin-providers": {
@@ -1048,12 +992,8 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
-        "security": [
-          {}
-        ]
+        "tags": ["Site Auth"],
+        "security": [{}]
       }
     },
     "/auth/signin/{provider}/callback": {
@@ -1141,12 +1081,8 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
-        "security": [
-          {}
-        ]
+        "tags": ["Site Auth"],
+        "security": [{}]
       }
     },
     "/auth/signin/{provider}/start": {
@@ -1214,12 +1150,8 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
-        "security": [
-          {}
-        ]
+        "tags": ["Site Auth"],
+        "security": [{}]
       }
     },
     "/auth/verify-email": {
@@ -1333,9 +1265,7 @@
             }
           }
         },
-        "tags": [
-          "Site Auth"
-        ],
+        "tags": ["Site Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -1346,9 +1276,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ]
+        "security": [{}]
       }
     },
     "/confirmations/{token}": {
@@ -1434,12 +1362,8 @@
             }
           }
         },
-        "tags": [
-          "Site Consent"
-        ],
-        "security": [
-          {}
-        ]
+        "tags": ["Site Consent"],
+        "security": [{}]
       }
     },
     "/instance/release": {
@@ -1469,9 +1393,7 @@
             }
           }
         },
-        "tags": [
-          "Site Instance"
-        ]
+        "tags": ["Site Instance"]
       }
     },
     "/invitations/{token}": {
@@ -1510,12 +1432,8 @@
             }
           }
         },
-        "tags": [
-          "Site Invitations"
-        ],
-        "security": [
-          {}
-        ]
+        "tags": ["Site Invitations"],
+        "security": [{}]
       }
     },
     "/invitations/{token}/accept": {
@@ -1621,9 +1539,7 @@
             }
           }
         },
-        "tags": [
-          "Site Invitations"
-        ],
+        "tags": ["Site Invitations"],
         "requestBody": {
           "required": true,
           "content": {
@@ -1678,12 +1594,8 @@
             }
           }
         },
-        "tags": [
-          "Site Legal Documents"
-        ],
-        "security": [
-          {}
-        ],
+        "tags": ["Site Legal Documents"],
+        "security": [{}],
         "x-allowed-while-acceptance-pending": true
       }
     },
@@ -1704,9 +1616,7 @@
             }
           }
         },
-        "tags": [
-          "Site User"
-        ],
+        "tags": ["Site User"],
         "x-allowed-while-acceptance-pending": true
       },
       "put": {
@@ -1798,9 +1708,7 @@
             }
           }
         },
-        "tags": [
-          "Site User"
-        ],
+        "tags": ["Site User"],
         "requestBody": {
           "required": true,
           "content": {
@@ -1840,9 +1748,7 @@
             }
           }
         },
-        "tags": [
-          "Site User"
-        ],
+        "tags": ["Site User"],
         "requestBody": {
           "required": true,
           "content": {
@@ -1949,9 +1855,7 @@
             }
           }
         },
-        "tags": [
-          "Site User"
-        ],
+        "tags": ["Site User"],
         "requestBody": {
           "required": true,
           "content": {
@@ -1985,9 +1889,7 @@
             }
           }
         },
-        "tags": [
-          "Site User"
-        ],
+        "tags": ["Site User"],
         "requestBody": {
           "required": true,
           "content": {
@@ -2075,9 +1977,7 @@
             }
           }
         },
-        "tags": [
-          "Site User"
-        ],
+        "tags": ["Site User"],
         "requestBody": {
           "required": true,
           "content": {
@@ -2107,9 +2007,7 @@
             }
           }
         },
-        "tags": [
-          "Site Linked Identities"
-        ]
+        "tags": ["Site Linked Identities"]
       }
     },
     "/me/identities/{id}": {
@@ -2160,9 +2058,7 @@
             }
           }
         },
-        "tags": [
-          "Site Linked Identities"
-        ]
+        "tags": ["Site Linked Identities"]
       }
     },
     "/me/identities/{provider}/link": {
@@ -2220,9 +2116,7 @@
             }
           }
         },
-        "tags": [
-          "Site Linked Identities"
-        ]
+        "tags": ["Site Linked Identities"]
       }
     },
     "/me/optional-consents": {
@@ -2242,9 +2136,7 @@
             }
           }
         },
-        "tags": [
-          "Site User"
-        ]
+        "tags": ["Site User"]
       }
     },
     "/me/optional-consents/{key}": {
@@ -2293,9 +2185,7 @@
             }
           }
         },
-        "tags": [
-          "Site User"
-        ],
+        "tags": ["Site User"],
         "requestBody": {
           "required": true,
           "content": {
@@ -2325,9 +2215,7 @@
             }
           }
         },
-        "tags": [
-          "Site Passkeys"
-        ]
+        "tags": ["Site Passkeys"]
       }
     },
     "/me/passkeys/check": {
@@ -2366,9 +2254,7 @@
             }
           }
         },
-        "tags": [
-          "Site Passkeys"
-        ]
+        "tags": ["Site Passkeys"]
       }
     },
     "/me/passkeys/check/finish": {
@@ -2421,9 +2307,7 @@
             }
           }
         },
-        "tags": [
-          "Site Passkeys"
-        ],
+        "tags": ["Site Passkeys"],
         "requestBody": {
           "required": true,
           "content": {
@@ -2472,9 +2356,7 @@
             }
           }
         },
-        "tags": [
-          "Site Passkeys"
-        ]
+        "tags": ["Site Passkeys"]
       }
     },
     "/me/passkeys/registration/finish": {
@@ -2588,9 +2470,7 @@
             }
           }
         },
-        "tags": [
-          "Site Passkeys"
-        ],
+        "tags": ["Site Passkeys"],
         "requestBody": {
           "required": true,
           "content": {
@@ -2649,9 +2529,7 @@
             }
           }
         },
-        "tags": [
-          "Site Passkeys"
-        ],
+        "tags": ["Site Passkeys"],
         "requestBody": {
           "required": true,
           "content": {
@@ -2764,9 +2642,7 @@
             }
           }
         },
-        "tags": [
-          "Site Passkeys"
-        ],
+        "tags": ["Site Passkeys"],
         "requestBody": {
           "required": true,
           "content": {
@@ -2796,9 +2672,7 @@
             }
           }
         },
-        "tags": [
-          "Site Second Factor"
-        ],
+        "tags": ["Site Second Factor"],
         "x-allowed-while-acceptance-pending": true
       }
     },
@@ -2895,9 +2769,7 @@
             }
           }
         },
-        "tags": [
-          "Site Second Factor"
-        ],
+        "tags": ["Site Second Factor"],
         "requestBody": {
           "required": true,
           "content": {
@@ -2991,9 +2863,7 @@
             }
           }
         },
-        "tags": [
-          "Site Second Factor"
-        ],
+        "tags": ["Site Second Factor"],
         "requestBody": {
           "required": true,
           "content": {
@@ -3106,9 +2976,7 @@
             }
           }
         },
-        "tags": [
-          "Site Second Factor"
-        ],
+        "tags": ["Site Second Factor"],
         "requestBody": {
           "required": true,
           "content": {
@@ -3211,9 +3079,7 @@
             }
           }
         },
-        "tags": [
-          "Site Second Factor"
-        ],
+        "tags": ["Site Second Factor"],
         "requestBody": {
           "required": true,
           "content": {
@@ -3245,9 +3111,7 @@
             }
           }
         },
-        "tags": [
-          "Site User"
-        ]
+        "tags": ["Site User"]
       }
     },
     "/me/signup-survey": {
@@ -3324,9 +3188,7 @@
             }
           }
         },
-        "tags": [
-          "Site User"
-        ],
+        "tags": ["Site User"],
         "requestBody": {
           "required": true,
           "content": {
@@ -3404,9 +3266,7 @@
             }
           }
         },
-        "tags": [
-          "Site OAuth"
-        ]
+        "tags": ["Site OAuth"]
       },
       "post": {
         "operationId": "SiteOAuth_decide",
@@ -3454,9 +3314,7 @@
             }
           }
         },
-        "tags": [
-          "Site OAuth"
-        ],
+        "tags": ["Site OAuth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -3489,9 +3347,7 @@
             }
           }
         },
-        "tags": [
-          "Site Integrations"
-        ]
+        "tags": ["Site Integrations"]
       }
     },
     "/schema/migrations": {
@@ -3514,12 +3370,8 @@
             }
           }
         },
-        "tags": [
-          "Site Schema"
-        ],
-        "security": [
-          {}
-        ]
+        "tags": ["Site Schema"],
+        "security": [{}]
       }
     },
     "/signup-items": {
@@ -3539,12 +3391,8 @@
             }
           }
         },
-        "tags": [
-          "Site Legal Documents"
-        ],
-        "security": [
-          {}
-        ],
+        "tags": ["Site Legal Documents"],
+        "security": [{}],
         "x-allowed-while-acceptance-pending": true
       }
     },
@@ -3577,12 +3425,8 @@
             }
           }
         },
-        "tags": [
-          "Site Consent"
-        ],
-        "security": [
-          {}
-        ]
+        "tags": ["Site Consent"],
+        "security": [{}]
       }
     },
     "/workspaces": {
@@ -3605,9 +3449,7 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ]
+        "tags": ["Site Workspaces"]
       },
       "post": {
         "operationId": "SiteWorkspaces_create",
@@ -3645,9 +3487,7 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ],
+        "tags": ["Site Workspaces"],
         "requestBody": {
           "required": true,
           "content": {
@@ -3680,9 +3520,7 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ],
+        "tags": ["Site Workspaces"],
         "x-allowed-while-acceptance-pending": true
       }
     },
@@ -3732,9 +3570,7 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ]
+        "tags": ["Site Workspaces"]
       }
     },
     "/workspaces/{workspaceId}": {
@@ -3793,9 +3629,7 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ],
+        "tags": ["Site Workspaces"],
         "requestBody": {
           "required": true,
           "content": {
@@ -3806,9 +3640,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "workspace:update"
-        ]
+        "x-required-permissions": ["workspace:update"]
       }
     },
     "/workspaces/{workspaceId}/account-link": {
@@ -3857,12 +3689,8 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ],
-        "x-required-permissions": [
-          "account_link:open"
-        ]
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": ["account_link:open"]
       }
     },
     "/workspaces/{workspaceId}/analytics/clicks-by-link": {
@@ -3911,9 +3739,7 @@
             }
           }
         },
-        "tags": [
-          "Site Analytics"
-        ],
+        "tags": ["Site Analytics"],
         "x-required-permissions": []
       }
     },
@@ -3963,9 +3789,7 @@
             }
           }
         },
-        "tags": [
-          "Site Analytics"
-        ],
+        "tags": ["Site Analytics"],
         "x-required-permissions": []
       }
     },
@@ -4015,9 +3839,7 @@
             }
           }
         },
-        "tags": [
-          "Site Analytics"
-        ],
+        "tags": ["Site Analytics"],
         "x-required-permissions": []
       }
     },
@@ -4067,9 +3889,7 @@
             }
           }
         },
-        "tags": [
-          "Site Analytics"
-        ],
+        "tags": ["Site Analytics"],
         "x-required-permissions": []
       }
     },
@@ -4119,9 +3939,7 @@
             }
           }
         },
-        "tags": [
-          "Site Analytics"
-        ],
+        "tags": ["Site Analytics"],
         "x-required-permissions": []
       }
     },
@@ -4176,9 +3994,7 @@
             }
           }
         },
-        "tags": [
-          "Site Analytics"
-        ],
+        "tags": ["Site Analytics"],
         "x-required-permissions": []
       }
     },
@@ -4228,9 +4044,7 @@
             }
           }
         },
-        "tags": [
-          "Site Analytics"
-        ],
+        "tags": ["Site Analytics"],
         "x-required-permissions": []
       }
     },
@@ -4351,12 +4165,8 @@
             }
           }
         },
-        "tags": [
-          "Site Audit"
-        ],
-        "x-required-permissions": [
-          "audit:read"
-        ]
+        "tags": ["Site Audit"],
+        "x-required-permissions": ["audit:read"]
       }
     },
     "/workspaces/{workspaceId}/audit-entries/export": {
@@ -4450,12 +4260,8 @@
             }
           }
         },
-        "tags": [
-          "Site Audit"
-        ],
-        "x-required-permissions": [
-          "audit:read"
-        ]
+        "tags": ["Site Audit"],
+        "x-required-permissions": ["audit:read"]
       }
     },
     "/workspaces/{workspaceId}/audit-entries/retention": {
@@ -4514,12 +4320,8 @@
             }
           }
         },
-        "tags": [
-          "Site Audit"
-        ],
-        "x-required-permissions": [
-          "audit:configure"
-        ]
+        "tags": ["Site Audit"],
+        "x-required-permissions": ["audit:configure"]
       },
       "put": {
         "operationId": "SiteAudit_setRetention",
@@ -4586,9 +4388,7 @@
             }
           }
         },
-        "tags": [
-          "Site Audit"
-        ],
+        "tags": ["Site Audit"],
         "requestBody": {
           "required": true,
           "content": {
@@ -4599,9 +4399,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "audit:configure"
-        ]
+        "x-required-permissions": ["audit:configure"]
       }
     },
     "/workspaces/{workspaceId}/automations": {
@@ -4629,13 +4427,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -4701,9 +4493,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "x-required-permissions": []
       },
       "post": {
@@ -4746,9 +4536,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "requestBody": {
           "required": true,
           "content": {
@@ -4813,9 +4601,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "requestBody": {
           "required": true,
           "content": {
@@ -4874,13 +4660,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -4936,9 +4716,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "x-required-permissions": []
       }
     },
@@ -5004,9 +4782,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "x-required-permissions": []
       }
     },
@@ -5079,9 +4855,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "x-required-permissions": []
       }
     },
@@ -5129,9 +4903,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "x-required-permissions": []
       },
       "put": {
@@ -5187,9 +4959,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "requestBody": {
           "required": true,
           "content": {
@@ -5248,9 +5018,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "x-required-permissions": []
       }
     },
@@ -5308,9 +5076,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "x-required-permissions": []
       }
     },
@@ -5358,9 +5124,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "x-required-permissions": []
       }
     },
@@ -5428,9 +5192,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "x-required-permissions": []
       }
     },
@@ -5488,9 +5250,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "x-required-permissions": []
       }
     },
@@ -5538,9 +5298,7 @@
             }
           }
         },
-        "tags": [
-          "Site Automations"
-        ],
+        "tags": ["Site Automations"],
         "x-required-permissions": []
       }
     },
@@ -5580,9 +5338,7 @@
             }
           }
         },
-        "tags": [
-          "Site Brand Kit"
-        ],
+        "tags": ["Site Brand Kit"],
         "x-required-permissions": []
       },
       "put": {
@@ -5640,9 +5396,7 @@
             }
           }
         },
-        "tags": [
-          "Site Brand Kit"
-        ],
+        "tags": ["Site Brand Kit"],
         "requestBody": {
           "required": true,
           "content": {
@@ -5653,9 +5407,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "brand_kit:manage"
-        ]
+        "x-required-permissions": ["brand_kit:manage"]
       }
     },
     "/workspaces/{workspaceId}/brand-kit/starter-templates": {
@@ -5717,12 +5469,8 @@
             }
           }
         },
-        "tags": [
-          "Site Brand Kit"
-        ],
-        "x-required-permissions": [
-          "brand_kit:manage"
-        ]
+        "tags": ["Site Brand Kit"],
+        "x-required-permissions": ["brand_kit:manage"]
       }
     },
     "/workspaces/{workspaceId}/broadcasts": {
@@ -5750,13 +5498,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -5822,9 +5564,7 @@
             }
           }
         },
-        "tags": [
-          "Site Broadcasts"
-        ],
+        "tags": ["Site Broadcasts"],
         "x-required-permissions": []
       },
       "post": {
@@ -5867,9 +5607,7 @@
             }
           }
         },
-        "tags": [
-          "Site Broadcasts"
-        ],
+        "tags": ["Site Broadcasts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -5937,9 +5675,7 @@
             }
           }
         },
-        "tags": [
-          "Site Broadcasts"
-        ],
+        "tags": ["Site Broadcasts"],
         "x-required-permissions": []
       }
     },
@@ -5987,9 +5723,7 @@
             }
           }
         },
-        "tags": [
-          "Site Broadcasts"
-        ],
+        "tags": ["Site Broadcasts"],
         "x-required-permissions": []
       },
       "put": {
@@ -6045,9 +5779,7 @@
             }
           }
         },
-        "tags": [
-          "Site Broadcasts"
-        ],
+        "tags": ["Site Broadcasts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -6106,9 +5838,7 @@
             }
           }
         },
-        "tags": [
-          "Site Broadcasts"
-        ],
+        "tags": ["Site Broadcasts"],
         "x-required-permissions": []
       }
     },
@@ -6166,9 +5896,7 @@
             }
           }
         },
-        "tags": [
-          "Site Broadcasts"
-        ],
+        "tags": ["Site Broadcasts"],
         "x-required-permissions": []
       }
     },
@@ -6236,9 +5964,7 @@
             }
           }
         },
-        "tags": [
-          "Site Broadcasts"
-        ],
+        "tags": ["Site Broadcasts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -6306,9 +6032,7 @@
             }
           }
         },
-        "tags": [
-          "Site Broadcasts"
-        ],
+        "tags": ["Site Broadcasts"],
         "x-required-permissions": []
       }
     },
@@ -6410,9 +6134,7 @@
             }
           }
         },
-        "tags": [
-          "Site Broadcasts"
-        ],
+        "tags": ["Site Broadcasts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -6470,9 +6192,7 @@
             }
           }
         },
-        "tags": [
-          "Site Broadcasts"
-        ],
+        "tags": ["Site Broadcasts"],
         "x-required-permissions": []
       }
     },
@@ -6498,13 +6218,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -6570,9 +6284,7 @@
             }
           }
         },
-        "tags": [
-          "Site Captured Messages"
-        ],
+        "tags": ["Site Captured Messages"],
         "x-required-permissions": []
       }
     },
@@ -6600,9 +6312,7 @@
             }
           }
         },
-        "tags": [
-          "Site Captured Messages"
-        ],
+        "tags": ["Site Captured Messages"],
         "x-required-permissions": []
       }
     },
@@ -6650,9 +6360,7 @@
             }
           }
         },
-        "tags": [
-          "Site Captured Messages"
-        ],
+        "tags": ["Site Captured Messages"],
         "x-required-permissions": []
       },
       "delete": {
@@ -6691,9 +6399,7 @@
             }
           }
         },
-        "tags": [
-          "Site Captured Messages"
-        ],
+        "tags": ["Site Captured Messages"],
         "x-required-permissions": []
       }
     },
@@ -6731,9 +6437,7 @@
             }
           }
         },
-        "tags": [
-          "Site Connections"
-        ],
+        "tags": ["Site Connections"],
         "x-required-permissions": []
       }
     },
@@ -6764,9 +6468,7 @@
             }
           }
         },
-        "tags": [
-          "Site Connections"
-        ],
+        "tags": ["Site Connections"],
         "x-required-permissions": []
       }
     },
@@ -6795,13 +6497,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -6867,9 +6563,7 @@
             }
           }
         },
-        "tags": [
-          "Site Contacts"
-        ],
+        "tags": ["Site Contacts"],
         "x-required-permissions": []
       },
       "post": {
@@ -6922,9 +6616,7 @@
             }
           }
         },
-        "tags": [
-          "Site Contacts"
-        ],
+        "tags": ["Site Contacts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -6993,12 +6685,8 @@
             }
           }
         },
-        "tags": [
-          "Site Contacts"
-        ],
-        "x-required-permissions": [
-          "contacts:erase"
-        ]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": ["contacts:erase"]
       }
     },
     "/workspaces/{workspaceId}/contacts/export": {
@@ -7086,12 +6774,8 @@
             }
           }
         },
-        "tags": [
-          "Site Contacts"
-        ],
-        "x-required-permissions": [
-          "contacts:export"
-        ]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": ["contacts:export"]
       }
     },
     "/workspaces/{workspaceId}/contacts/lookup": {
@@ -7156,12 +6840,8 @@
             }
           }
         },
-        "tags": [
-          "Site Contacts"
-        ],
-        "x-required-permissions": [
-          "contacts:erase"
-        ]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": ["contacts:erase"]
       }
     },
     "/workspaces/{workspaceId}/contacts/{contactId}/tags": {
@@ -7199,13 +6879,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -7271,9 +6945,7 @@
             }
           }
         },
-        "tags": [
-          "Site Tags"
-        ],
+        "tags": ["Site Tags"],
         "x-required-permissions": []
       },
       "post": {
@@ -7339,9 +7011,7 @@
             }
           }
         },
-        "tags": [
-          "Site Tags"
-        ],
+        "tags": ["Site Tags"],
         "requestBody": {
           "required": true,
           "content": {
@@ -7410,9 +7080,7 @@
             }
           }
         },
-        "tags": [
-          "Site Tags"
-        ],
+        "tags": ["Site Tags"],
         "x-required-permissions": []
       }
     },
@@ -7460,9 +7128,7 @@
             }
           }
         },
-        "tags": [
-          "Site Contacts"
-        ],
+        "tags": ["Site Contacts"],
         "x-required-permissions": []
       },
       "put": {
@@ -7528,9 +7194,7 @@
             }
           }
         },
-        "tags": [
-          "Site Contacts"
-        ],
+        "tags": ["Site Contacts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -7589,12 +7253,8 @@
             }
           }
         },
-        "tags": [
-          "Site Contacts"
-        ],
-        "x-required-permissions": [
-          "contacts:erase"
-        ]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": ["contacts:erase"]
       }
     },
     "/workspaces/{workspaceId}/custom-fields": {
@@ -7613,13 +7273,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -7675,9 +7329,7 @@
             }
           }
         },
-        "tags": [
-          "Site Custom Fields"
-        ],
+        "tags": ["Site Custom Fields"],
         "x-required-permissions": []
       }
     },
@@ -7737,9 +7389,7 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ],
+        "tags": ["Site Workspaces"],
         "requestBody": {
           "required": true,
           "content": {
@@ -7751,9 +7401,7 @@
           }
         },
         "x-allowed-while-acceptance-pending": true,
-        "x-required-permissions": [
-          "workspace:delete"
-        ]
+        "x-required-permissions": ["workspace:delete"]
       }
     },
     "/workspaces/{workspaceId}/domain-join": {
@@ -7802,12 +7450,8 @@
             }
           }
         },
-        "tags": [
-          "Site Join Domains"
-        ],
-        "x-required-permissions": [
-          "join_domains:manage"
-        ]
+        "tags": ["Site Join Domains"],
+        "x-required-permissions": ["join_domains:manage"]
       },
       "put": {
         "operationId": "SiteDomainJoin_set",
@@ -7854,9 +7498,7 @@
             }
           }
         },
-        "tags": [
-          "Site Join Domains"
-        ],
+        "tags": ["Site Join Domains"],
         "requestBody": {
           "required": true,
           "content": {
@@ -7867,9 +7509,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "join_domains:manage"
-        ]
+        "x-required-permissions": ["join_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/events": {
@@ -7934,13 +7574,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -7986,9 +7620,7 @@
             }
           }
         },
-        "tags": [
-          "Site Events"
-        ],
+        "tags": ["Site Events"],
         "x-required-permissions": []
       }
     },
@@ -8023,9 +7655,7 @@
             }
           }
         },
-        "tags": [
-          "Site Events"
-        ],
+        "tags": ["Site Events"],
         "x-required-permissions": []
       }
     },
@@ -8066,9 +7696,7 @@
             }
           }
         },
-        "tags": [
-          "Site Integrations"
-        ],
+        "tags": ["Site Integrations"],
         "x-required-permissions": []
       },
       "post": {
@@ -8131,9 +7759,7 @@
             }
           }
         },
-        "tags": [
-          "Site Integrations"
-        ],
+        "tags": ["Site Integrations"],
         "requestBody": {
           "required": true,
           "content": {
@@ -8144,9 +7770,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "integrations:manage"
-        ]
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/integrations/{id}": {
@@ -8193,9 +7817,7 @@
             }
           }
         },
-        "tags": [
-          "Site Integrations"
-        ],
+        "tags": ["Site Integrations"],
         "x-required-permissions": []
       },
       "put": {
@@ -8271,9 +7893,7 @@
             }
           }
         },
-        "tags": [
-          "Site Integrations"
-        ],
+        "tags": ["Site Integrations"],
         "requestBody": {
           "required": true,
           "content": {
@@ -8284,9 +7904,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "integrations:manage"
-        ]
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/integrations/{id}/archive": {
@@ -8353,12 +7971,8 @@
             }
           }
         },
-        "tags": [
-          "Site Integrations"
-        ],
-        "x-required-permissions": [
-          "integrations:manage"
-        ]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/integrations/{id}/regenerate-key": {
@@ -8415,12 +8029,8 @@
             }
           }
         },
-        "tags": [
-          "Site Integrations"
-        ],
-        "x-required-permissions": [
-          "integrations:manage"
-        ]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/integrations/{id}/unarchive": {
@@ -8487,12 +8097,8 @@
             }
           }
         },
-        "tags": [
-          "Site Integrations"
-        ],
-        "x-required-permissions": [
-          "integrations:manage"
-        ]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/invitations": {
@@ -8529,9 +8135,7 @@
             }
           }
         },
-        "tags": [
-          "Site Invitations"
-        ],
+        "tags": ["Site Invitations"],
         "x-required-permissions": []
       },
       "post": {
@@ -8594,9 +8198,7 @@
             }
           }
         },
-        "tags": [
-          "Site Invitations"
-        ],
+        "tags": ["Site Invitations"],
         "requestBody": {
           "required": true,
           "content": {
@@ -8607,9 +8209,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "members:manage"
-        ]
+        "x-required-permissions": ["members:manage"]
       }
     },
     "/workspaces/{workspaceId}/invitations/{id}": {
@@ -8649,12 +8249,8 @@
             }
           }
         },
-        "tags": [
-          "Site Invitations"
-        ],
-        "x-required-permissions": [
-          "members:manage"
-        ]
+        "tags": ["Site Invitations"],
+        "x-required-permissions": ["members:manage"]
       }
     },
     "/workspaces/{workspaceId}/join-domains": {
@@ -8706,12 +8302,8 @@
             }
           }
         },
-        "tags": [
-          "Site Join Domains"
-        ],
-        "x-required-permissions": [
-          "join_domains:manage"
-        ]
+        "tags": ["Site Join Domains"],
+        "x-required-permissions": ["join_domains:manage"]
       },
       "post": {
         "operationId": "SiteJoinDomains_add",
@@ -8778,9 +8370,7 @@
             }
           }
         },
-        "tags": [
-          "Site Join Domains"
-        ],
+        "tags": ["Site Join Domains"],
         "requestBody": {
           "required": true,
           "content": {
@@ -8791,9 +8381,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "join_domains:manage"
-        ]
+        "x-required-permissions": ["join_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/join-domains/{id}": {
@@ -8843,12 +8431,8 @@
             }
           }
         },
-        "tags": [
-          "Site Join Domains"
-        ],
-        "x-required-permissions": [
-          "join_domains:manage"
-        ]
+        "tags": ["Site Join Domains"],
+        "x-required-permissions": ["join_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/join-domains/{id}/verify": {
@@ -8925,12 +8509,8 @@
             }
           }
         },
-        "tags": [
-          "Site Join Domains"
-        ],
-        "x-required-permissions": [
-          "join_domains:manage"
-        ]
+        "tags": ["Site Join Domains"],
+        "x-required-permissions": ["join_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/leave": {
@@ -8972,9 +8552,7 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ],
+        "tags": ["Site Workspaces"],
         "x-required-permissions": []
       }
     },
@@ -9012,9 +8590,7 @@
             }
           }
         },
-        "tags": [
-          "Site Memberships"
-        ],
+        "tags": ["Site Memberships"],
         "x-required-permissions": []
       }
     },
@@ -9072,9 +8648,7 @@
             }
           }
         },
-        "tags": [
-          "Site Memberships"
-        ],
+        "tags": ["Site Memberships"],
         "requestBody": {
           "required": true,
           "content": {
@@ -9085,9 +8659,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "members:manage"
-        ]
+        "x-required-permissions": ["members:manage"]
       },
       "delete": {
         "operationId": "SiteMemberships_delete",
@@ -9135,12 +8707,8 @@
             }
           }
         },
-        "tags": [
-          "Site Memberships"
-        ],
-        "x-required-permissions": [
-          "members:manage"
-        ]
+        "tags": ["Site Memberships"],
+        "x-required-permissions": ["members:manage"]
       }
     },
     "/workspaces/{workspaceId}/memberships/{id}/reset-second-factor": {
@@ -9190,12 +8758,8 @@
             }
           }
         },
-        "tags": [
-          "Site Memberships"
-        ],
-        "x-required-permissions": [
-          "second_factor:manage"
-        ]
+        "tags": ["Site Memberships"],
+        "x-required-permissions": ["second_factor:manage"]
       }
     },
     "/workspaces/{workspaceId}/personal-token-scopes": {
@@ -9237,9 +8801,7 @@
             }
           }
         },
-        "tags": [
-          "Site Personal Tokens"
-        ],
+        "tags": ["Site Personal Tokens"],
         "x-required-permissions": []
       }
     },
@@ -9277,9 +8839,7 @@
             }
           }
         },
-        "tags": [
-          "Site Personal Tokens"
-        ],
+        "tags": ["Site Personal Tokens"],
         "x-required-permissions": []
       },
       "post": {
@@ -9342,9 +8902,7 @@
             }
           }
         },
-        "tags": [
-          "Site Personal Tokens"
-        ],
+        "tags": ["Site Personal Tokens"],
         "requestBody": {
           "required": true,
           "content": {
@@ -9385,9 +8943,7 @@
             }
           }
         },
-        "tags": [
-          "Site Personal Tokens"
-        ],
+        "tags": ["Site Personal Tokens"],
         "x-required-permissions": []
       }
     },
@@ -9427,9 +8983,7 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ],
+        "tags": ["Site Workspaces"],
         "x-required-permissions": []
       },
       "put": {
@@ -9487,9 +9041,7 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ],
+        "tags": ["Site Workspaces"],
         "requestBody": {
           "required": true,
           "content": {
@@ -9500,9 +9052,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "revenue:configure"
-        ]
+        "x-required-permissions": ["revenue:configure"]
       }
     },
     "/workspaces/{workspaceId}/rules": {
@@ -9530,13 +9080,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -9602,9 +9146,7 @@
             }
           }
         },
-        "tags": [
-          "Site Rules"
-        ],
+        "tags": ["Site Rules"],
         "x-required-permissions": []
       },
       "post": {
@@ -9647,9 +9189,7 @@
             }
           }
         },
-        "tags": [
-          "Site Rules"
-        ],
+        "tags": ["Site Rules"],
         "requestBody": {
           "required": true,
           "content": {
@@ -9707,9 +9247,7 @@
             }
           }
         },
-        "tags": [
-          "Site Rules"
-        ],
+        "tags": ["Site Rules"],
         "x-required-permissions": []
       },
       "put": {
@@ -9765,9 +9303,7 @@
             }
           }
         },
-        "tags": [
-          "Site Rules"
-        ],
+        "tags": ["Site Rules"],
         "requestBody": {
           "required": true,
           "content": {
@@ -9826,9 +9362,7 @@
             }
           }
         },
-        "tags": [
-          "Site Rules"
-        ],
+        "tags": ["Site Rules"],
         "x-required-permissions": []
       }
     },
@@ -9876,9 +9410,7 @@
             }
           }
         },
-        "tags": [
-          "Site Rules"
-        ],
+        "tags": ["Site Rules"],
         "x-required-permissions": []
       }
     },
@@ -9926,9 +9458,7 @@
             }
           }
         },
-        "tags": [
-          "Site Rules"
-        ],
+        "tags": ["Site Rules"],
         "x-required-permissions": []
       }
     },
@@ -9976,9 +9506,7 @@
             }
           }
         },
-        "tags": [
-          "Site Rules"
-        ],
+        "tags": ["Site Rules"],
         "requestBody": {
           "required": true,
           "content": {
@@ -10046,9 +9574,7 @@
             }
           }
         },
-        "tags": [
-          "Site Rules"
-        ],
+        "tags": ["Site Rules"],
         "x-required-permissions": []
       }
     },
@@ -10106,9 +9632,7 @@
             }
           }
         },
-        "tags": [
-          "Site Rules"
-        ],
+        "tags": ["Site Rules"],
         "x-required-permissions": []
       }
     },
@@ -10156,9 +9680,7 @@
             }
           }
         },
-        "tags": [
-          "Site Rules"
-        ],
+        "tags": ["Site Rules"],
         "x-required-permissions": []
       }
     },
@@ -10197,13 +9719,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -10259,9 +9775,7 @@
             }
           }
         },
-        "tags": [
-          "Site Rules"
-        ],
+        "tags": ["Site Rules"],
         "x-required-permissions": []
       }
     },
@@ -10311,12 +9825,8 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ],
-        "x-required-permissions": [
-          "second_factor:manage"
-        ]
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": ["second_factor:manage"]
       },
       "delete": {
         "operationId": "SiteWorkspaces_liftSecondFactorRequirement",
@@ -10363,12 +9873,8 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ],
-        "x-required-permissions": [
-          "second_factor:manage"
-        ],
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": ["second_factor:manage"],
         "x-allowed-while-withheld": true
       }
     },
@@ -10397,13 +9903,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -10469,9 +9969,7 @@
             }
           }
         },
-        "tags": [
-          "Site Segments"
-        ],
+        "tags": ["Site Segments"],
         "x-required-permissions": []
       },
       "post": {
@@ -10514,9 +10012,7 @@
             }
           }
         },
-        "tags": [
-          "Site Segments"
-        ],
+        "tags": ["Site Segments"],
         "requestBody": {
           "required": true,
           "content": {
@@ -10581,9 +10077,7 @@
             }
           }
         },
-        "tags": [
-          "Site Segments"
-        ],
+        "tags": ["Site Segments"],
         "requestBody": {
           "required": true,
           "content": {
@@ -10641,9 +10135,7 @@
             }
           }
         },
-        "tags": [
-          "Site Segments"
-        ],
+        "tags": ["Site Segments"],
         "x-required-permissions": []
       },
       "put": {
@@ -10699,9 +10191,7 @@
             }
           }
         },
-        "tags": [
-          "Site Segments"
-        ],
+        "tags": ["Site Segments"],
         "requestBody": {
           "required": true,
           "content": {
@@ -10769,9 +10259,7 @@
             }
           }
         },
-        "tags": [
-          "Site Segments"
-        ],
+        "tags": ["Site Segments"],
         "x-required-permissions": []
       }
     },
@@ -10819,9 +10307,7 @@
             }
           }
         },
-        "tags": [
-          "Site Segments"
-        ],
+        "tags": ["Site Segments"],
         "x-required-permissions": []
       }
     },
@@ -10860,13 +10346,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -10932,9 +10412,7 @@
             }
           }
         },
-        "tags": [
-          "Site Segments"
-        ],
+        "tags": ["Site Segments"],
         "x-required-permissions": []
       }
     },
@@ -10963,13 +10441,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -11035,9 +10507,7 @@
             }
           }
         },
-        "tags": [
-          "Site Sending Domains"
-        ],
+        "tags": ["Site Sending Domains"],
         "x-required-permissions": []
       },
       "post": {
@@ -11100,9 +10570,7 @@
             }
           }
         },
-        "tags": [
-          "Site Sending Domains"
-        ],
+        "tags": ["Site Sending Domains"],
         "requestBody": {
           "required": true,
           "content": {
@@ -11113,9 +10581,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "sending_domains:manage"
-        ]
+        "x-required-permissions": ["sending_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/sending-domains/{id}": {
@@ -11162,9 +10628,7 @@
             }
           }
         },
-        "tags": [
-          "Site Sending Domains"
-        ],
+        "tags": ["Site Sending Domains"],
         "x-required-permissions": []
       }
     },
@@ -11232,12 +10696,8 @@
             }
           }
         },
-        "tags": [
-          "Site Sending Domains"
-        ],
-        "x-required-permissions": [
-          "sending_domains:manage"
-        ]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": ["sending_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/sending-domains/{id}/unarchive": {
@@ -11304,12 +10764,8 @@
             }
           }
         },
-        "tags": [
-          "Site Sending Domains"
-        ],
-        "x-required-permissions": [
-          "sending_domains:manage"
-        ]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": ["sending_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/sending-domains/{id}/verify": {
@@ -11366,12 +10822,8 @@
             }
           }
         },
-        "tags": [
-          "Site Sending Domains"
-        ],
-        "x-required-permissions": [
-          "sending_domains:manage"
-        ]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": ["sending_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/setup-checklist": {
@@ -11410,9 +10862,7 @@
             }
           }
         },
-        "tags": [
-          "Site Setup Checklist"
-        ],
+        "tags": ["Site Setup Checklist"],
         "x-required-permissions": []
       }
     },
@@ -11467,9 +10917,7 @@
             }
           }
         },
-        "tags": [
-          "Site Suppressions"
-        ],
+        "tags": ["Site Suppressions"],
         "requestBody": {
           "required": true,
           "content": {
@@ -11480,9 +10928,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "suppressions:manage"
-        ]
+        "x-required-permissions": ["suppressions:manage"]
       },
       "get": {
         "operationId": "SiteSuppressions_list",
@@ -11508,13 +10954,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -11580,9 +11020,7 @@
             }
           }
         },
-        "tags": [
-          "Site Suppressions"
-        ],
+        "tags": ["Site Suppressions"],
         "x-required-permissions": []
       }
     },
@@ -11633,12 +11071,8 @@
             }
           }
         },
-        "tags": [
-          "Site Suppressions"
-        ],
-        "x-required-permissions": [
-          "suppressions:manage"
-        ]
+        "tags": ["Site Suppressions"],
+        "x-required-permissions": ["suppressions:manage"]
       }
     },
     "/workspaces/{workspaceId}/tags": {
@@ -11668,13 +11102,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -11740,9 +11168,7 @@
             }
           }
         },
-        "tags": [
-          "Site Tags"
-        ],
+        "tags": ["Site Tags"],
         "x-required-permissions": []
       }
     },
@@ -11803,9 +11229,7 @@
             }
           }
         },
-        "tags": [
-          "Site Tags"
-        ],
+        "tags": ["Site Tags"],
         "x-required-permissions": []
       }
     },
@@ -11831,13 +11255,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -11903,9 +11321,7 @@
             }
           }
         },
-        "tags": [
-          "Site Templates"
-        ],
+        "tags": ["Site Templates"],
         "x-required-permissions": []
       },
       "post": {
@@ -11948,9 +11364,7 @@
             }
           }
         },
-        "tags": [
-          "Site Templates"
-        ],
+        "tags": ["Site Templates"],
         "requestBody": {
           "required": true,
           "content": {
@@ -12008,9 +11422,7 @@
             }
           }
         },
-        "tags": [
-          "Site Templates"
-        ],
+        "tags": ["Site Templates"],
         "x-required-permissions": []
       },
       "put": {
@@ -12066,9 +11478,7 @@
             }
           }
         },
-        "tags": [
-          "Site Templates"
-        ],
+        "tags": ["Site Templates"],
         "requestBody": {
           "required": true,
           "content": {
@@ -12117,9 +11527,7 @@
             }
           }
         },
-        "tags": [
-          "Site Templates"
-        ],
+        "tags": ["Site Templates"],
         "x-required-permissions": []
       }
     },
@@ -12179,9 +11587,7 @@
             }
           }
         },
-        "tags": [
-          "Site Workspaces"
-        ],
+        "tags": ["Site Workspaces"],
         "requestBody": {
           "required": true,
           "content": {
@@ -12192,9 +11598,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "workspace:timezone"
-        ]
+        "x-required-permissions": ["workspace:timezone"]
       }
     },
     "/workspaces/{workspaceId}/tokens": {
@@ -12231,9 +11635,7 @@
             }
           }
         },
-        "tags": [
-          "Site Tokens"
-        ],
+        "tags": ["Site Tokens"],
         "x-required-permissions": []
       },
       "post": {
@@ -12286,9 +11688,7 @@
             }
           }
         },
-        "tags": [
-          "Site Tokens"
-        ],
+        "tags": ["Site Tokens"],
         "requestBody": {
           "required": true,
           "content": {
@@ -12299,9 +11699,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "tokens:manage"
-        ]
+        "x-required-permissions": ["tokens:manage"]
       }
     },
     "/workspaces/{workspaceId}/tokens/{id}": {
@@ -12358,9 +11756,7 @@
             }
           }
         },
-        "tags": [
-          "Site Tokens"
-        ],
+        "tags": ["Site Tokens"],
         "requestBody": {
           "required": true,
           "content": {
@@ -12371,9 +11767,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "tokens:manage"
-        ]
+        "x-required-permissions": ["tokens:manage"]
       },
       "delete": {
         "operationId": "SiteTokens_delete",
@@ -12421,12 +11815,8 @@
             }
           }
         },
-        "tags": [
-          "Site Tokens"
-        ],
-        "x-required-permissions": [
-          "tokens:manage"
-        ]
+        "tags": ["Site Tokens"],
+        "x-required-permissions": ["tokens:manage"]
       }
     },
     "/workspaces/{workspaceId}/transactional-emails": {
@@ -12451,13 +11841,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -12523,9 +11907,7 @@
             }
           }
         },
-        "tags": [
-          "Site Transactional Emails"
-        ],
+        "tags": ["Site Transactional Emails"],
         "x-required-permissions": []
       }
     },
@@ -12551,13 +11933,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -12633,12 +12009,8 @@
             }
           }
         },
-        "tags": [
-          "Site Webhooks"
-        ],
-        "x-required-permissions": [
-          "webhooks:manage"
-        ]
+        "tags": ["Site Webhooks"],
+        "x-required-permissions": ["webhooks:manage"]
       },
       "post": {
         "operationId": "SiteWebhooks_create",
@@ -12690,9 +12062,7 @@
             }
           }
         },
-        "tags": [
-          "Site Webhooks"
-        ],
+        "tags": ["Site Webhooks"],
         "requestBody": {
           "required": true,
           "content": {
@@ -12703,9 +12073,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "webhooks:manage"
-        ]
+        "x-required-permissions": ["webhooks:manage"]
       }
     },
     "/workspaces/{workspaceId}/webhooks/{id}": {
@@ -12762,12 +12130,8 @@
             }
           }
         },
-        "tags": [
-          "Site Webhooks"
-        ],
-        "x-required-permissions": [
-          "webhooks:manage"
-        ]
+        "tags": ["Site Webhooks"],
+        "x-required-permissions": ["webhooks:manage"]
       },
       "put": {
         "operationId": "SiteWebhooks_update",
@@ -12832,9 +12196,7 @@
             }
           }
         },
-        "tags": [
-          "Site Webhooks"
-        ],
+        "tags": ["Site Webhooks"],
         "requestBody": {
           "required": true,
           "content": {
@@ -12845,9 +12207,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "webhooks:manage"
-        ]
+        "x-required-permissions": ["webhooks:manage"]
       },
       "delete": {
         "operationId": "SiteWebhooks_delete",
@@ -12895,12 +12255,8 @@
             }
           }
         },
-        "tags": [
-          "Site Webhooks"
-        ],
-        "x-required-permissions": [
-          "webhooks:manage"
-        ]
+        "tags": ["Site Webhooks"],
+        "x-required-permissions": ["webhooks:manage"]
       }
     },
     "/workspaces/{workspaceId}/webhooks/{id}/regenerate-secret": {
@@ -12957,12 +12313,8 @@
             }
           }
         },
-        "tags": [
-          "Site Webhooks"
-        ],
-        "x-required-permissions": [
-          "webhooks:manage"
-        ]
+        "tags": ["Site Webhooks"],
+        "x-required-permissions": ["webhooks:manage"]
       }
     },
     "/workspaces/{workspaceId}/webhooks/{id}/test": {
@@ -13029,9 +12381,7 @@
             }
           }
         },
-        "tags": [
-          "Site Webhooks"
-        ],
+        "tags": ["Site Webhooks"],
         "requestBody": {
           "required": true,
           "content": {
@@ -13042,9 +12392,7 @@
             }
           }
         },
-        "x-required-permissions": [
-          "webhooks:manage"
-        ]
+        "x-required-permissions": ["webhooks:manage"]
       }
     }
   },
@@ -13746,9 +13094,7 @@
       },
       "ApplyTagInput": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
@@ -13766,11 +13112,7 @@
       },
       "ContactExportBroadcastRecipient": {
         "type": "object",
-        "required": [
-          "id",
-          "broadcastId",
-          "createdAt"
-        ],
+        "required": ["id", "broadcastId", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -13831,13 +13173,7 @@
       },
       "ContactExportConfirmation": {
         "type": "object",
-        "required": [
-          "id",
-          "channel",
-          "destination",
-          "provenance",
-          "createdAt"
-        ],
+        "required": ["id", "channel", "destination", "provenance", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -13872,11 +13208,7 @@
       },
       "ContactExportContact": {
         "type": "object",
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -14037,14 +13369,7 @@
       },
       "ContactExportEvent": {
         "type": "object",
-        "required": [
-          "id",
-          "subjectId",
-          "action",
-          "occurredAt",
-          "backfill",
-          "createdAt"
-        ],
+        "required": ["id", "subjectId", "action", "occurredAt", "backfill", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -14278,22 +13603,12 @@
       },
       "ContactExportSource": {
         "type": "string",
-        "enum": [
-          "manual",
-          "api",
-          "tracker"
-        ],
+        "enum": ["manual", "api", "tracker"],
         "description": "How the contact first came to exist"
       },
       "ContactExportSuppression": {
         "type": "object",
-        "required": [
-          "id",
-          "channel",
-          "destination",
-          "reason",
-          "createdAt"
-        ],
+        "required": ["id", "channel", "destination", "reason", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -14338,11 +13653,7 @@
       },
       "ContactExportTag": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "createdAt"
-        ],
+        "required": ["id", "name", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -14369,13 +13680,7 @@
       },
       "ContactExportUnsubscribe": {
         "type": "object",
-        "required": [
-          "id",
-          "channel",
-          "destination",
-          "sendingSource",
-          "createdAt"
-        ],
+        "required": ["id", "channel", "destination", "sendingSource", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -14410,12 +13715,7 @@
       },
       "ContactExportVisitor": {
         "type": "object",
-        "required": [
-          "id",
-          "visitorId",
-          "lastSeenAt",
-          "createdAt"
-        ],
+        "required": ["id", "visitorId", "lastSeenAt", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -14450,9 +13750,7 @@
       },
       "CreateBroadcastInput": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
@@ -14563,10 +13861,7 @@
       },
       "CreateIntegrationInput": {
         "type": "object",
-        "required": [
-          "name",
-          "config"
-        ],
+        "required": ["name", "config"],
         "properties": {
           "name": {
             "type": "string"
@@ -14615,9 +13910,7 @@
       },
       "CreateSendingDomainInput": {
         "type": "object",
-        "required": [
-          "domain"
-        ],
+        "required": ["domain"],
         "properties": {
           "domain": {
             "type": "string",
@@ -14632,9 +13925,7 @@
       },
       "CreateTemplateInput": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
@@ -14658,9 +13949,7 @@
       },
       "CreateWebhookInput": {
         "type": "object",
-        "required": [
-          "url"
-        ],
+        "required": ["url"],
         "properties": {
           "url": {
             "type": "string",
@@ -14800,9 +14089,7 @@
       },
       "InUseProblemDetails": {
         "type": "object",
-        "required": [
-          "usedBy"
-        ],
+        "required": ["usedBy"],
         "properties": {
           "code": {
             "allOf": [
@@ -14879,15 +14166,11 @@
       },
       "InboxConfigInput": {
         "type": "object",
-        "required": [
-          "kind"
-        ],
+        "required": ["kind"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "inbox"
-            ]
+            "enum": ["inbox"]
           }
         },
         "description": "The Test inbox takes no credentials: a Workspace has at most one"
@@ -14940,10 +14223,7 @@
       },
       "LintFinding": {
         "type": "object",
-        "required": [
-          "code",
-          "message"
-        ],
+        "required": ["code", "message"],
         "properties": {
           "code": {
             "allOf": [
@@ -15064,11 +14344,7 @@
       },
       "ProblemDebug": {
         "type": "object",
-        "required": [
-          "error",
-          "method",
-          "path"
-        ],
+        "required": ["error", "method", "path"],
         "properties": {
           "error": {
             "type": "string",
@@ -15171,9 +14447,7 @@
       },
       "ScheduleBroadcastInput": {
         "type": "object",
-        "required": [
-          "scheduledAt"
-        ],
+        "required": ["scheduledAt"],
         "properties": {
           "scheduledAt": {
             "allOf": [
@@ -15188,12 +14462,7 @@
       },
       "SendScope": {
         "type": "string",
-        "enum": [
-          "emails:send",
-          "broadcasts:send",
-          "automations:publish",
-          "mcp:send"
-        ],
+        "enum": ["emails:send", "broadcasts:send", "automations:publish", "mcp:send"],
         "description": "Send-class scopes (ADR 0016, \"Send is a second lock\"). An OAuth client gets them\nonly when the user explicitly opts in. mcp:send is the MCP-specific key: send-class\ntools are not listed over /mcp without it, so any send-class grant brings it along.",
         "x-grant-permissions": [
           {
@@ -15212,19 +14481,11 @@
       },
       "SesConfigInput": {
         "type": "object",
-        "required": [
-          "kind",
-          "region",
-          "accessKeyId",
-          "secretAccessKey",
-          "from"
-        ],
+        "required": ["kind", "region", "accessKeyId", "secretAccessKey", "from"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "ses"
-            ]
+            "enum": ["ses"]
           },
           "region": {
             "type": "string"
@@ -15252,10 +14513,7 @@
       },
       "SetupScope": {
         "type": "string",
-        "enum": [
-          "sending_domains:write",
-          "integrations:write"
-        ],
+        "enum": ["sending_domains:write", "integrations:write"],
         "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Integrations and the provider credentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send.",
         "x-grant-permissions": [
           {
@@ -15277,11 +14535,7 @@
       },
       "SignupItemKind": {
         "type": "string",
-        "enum": [
-          "required_acceptance",
-          "optional_consent",
-          "notice"
-        ],
+        "enum": ["required_acceptance", "optional_consent", "notice"],
         "description": "What a Sign-up item asks of a person (ADR 0062)"
       },
       "SignupItemTitle": {
@@ -15292,19 +14546,12 @@
       },
       "SiteAbuseMetric": {
         "type": "string",
-        "enum": [
-          "complaint",
-          "bounce"
-        ],
+        "enum": ["complaint", "bounce"],
         "description": "The metric of a Sending domain that is over a warning limit of the abuse detector"
       },
       "SiteAbuseWarning": {
         "type": "object",
-        "required": [
-          "domain",
-          "metric",
-          "rate"
-        ],
+        "required": ["domain", "metric", "rate"],
         "properties": {
           "domain": {
             "type": "string",
@@ -15347,9 +14594,7 @@
       },
       "SiteAcceptPendingInput": {
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "properties": {
           "items": {
             "type": "array",
@@ -15363,10 +14608,7 @@
       },
       "SiteAcceptance": {
         "type": "object",
-        "required": [
-          "key",
-          "version"
-        ],
+        "required": ["key", "version"],
         "properties": {
           "key": {
             "$ref": "#/components/schemas/SignupItemKey"
@@ -15384,11 +14626,7 @@
       },
       "SiteAccountLinkResource": {
         "type": "object",
-        "required": [
-          "url",
-          "token",
-          "expiresAt"
-        ],
+        "required": ["url", "token", "expiresAt"],
         "properties": {
           "url": {
             "type": "string",
@@ -15411,9 +14649,7 @@
       },
       "SiteAddJoinDomainInput": {
         "type": "object",
-        "required": [
-          "domain"
-        ],
+        "required": ["domain"],
         "properties": {
           "domain": {
             "type": "string",
@@ -15424,12 +14660,7 @@
       },
       "SiteAnalyticsAutomations": {
         "type": "object",
-        "required": [
-          "total",
-          "active",
-          "runsActive",
-          "runsCompleted"
-        ],
+        "required": ["total", "active", "runsActive", "runsCompleted"],
         "properties": {
           "total": {
             "type": "integer",
@@ -15456,10 +14687,7 @@
       },
       "SiteAnalyticsClicksByLink": {
         "type": "object",
-        "required": [
-          "links",
-          "eventsRetentionDays"
-        ],
+        "required": ["links", "eventsRetentionDays"],
         "properties": {
           "links": {
             "type": "array",
@@ -15478,12 +14706,7 @@
       },
       "SiteAnalyticsContacts": {
         "type": "object",
-        "required": [
-          "total",
-          "active",
-          "unsubscribed",
-          "newInRange"
-        ],
+        "required": ["total", "active", "unsubscribed", "newInRange"],
         "properties": {
           "total": {
             "type": "integer",
@@ -15554,12 +14777,7 @@
       },
       "SiteAnalyticsEventAction": {
         "type": "object",
-        "required": [
-          "action",
-          "count",
-          "contacts",
-          "lastAt"
-        ],
+        "required": ["action", "count", "contacts", "lastAt"],
         "properties": {
           "action": {
             "type": "string",
@@ -15588,9 +14806,7 @@
       },
       "SiteAnalyticsEvents": {
         "type": "object",
-        "required": [
-          "actions"
-        ],
+        "required": ["actions"],
         "properties": {
           "actions": {
             "type": "array",
@@ -15604,11 +14820,7 @@
       },
       "SiteAnalyticsLink": {
         "type": "object",
-        "required": [
-          "url",
-          "clicks",
-          "owners"
-        ],
+        "required": ["url", "clicks", "owners"],
         "properties": {
           "url": {
             "type": "string",
@@ -15631,12 +14843,7 @@
       },
       "SiteAnalyticsLinkOwner": {
         "type": "object",
-        "required": [
-          "kind",
-          "id",
-          "name",
-          "clicks"
-        ],
+        "required": ["kind", "id", "name", "clicks"],
         "properties": {
           "kind": {
             "allOf": [
@@ -15668,10 +14875,7 @@
       },
       "SiteAnalyticsOpensByHour": {
         "type": "object",
-        "required": [
-          "cells",
-          "total"
-        ],
+        "required": ["cells", "total"],
         "properties": {
           "cells": {
             "type": "array",
@@ -15689,11 +14893,7 @@
       },
       "SiteAnalyticsOpensCell": {
         "type": "object",
-        "required": [
-          "weekday",
-          "hour",
-          "opens"
-        ],
+        "required": ["weekday", "hour", "opens"],
         "properties": {
           "weekday": {
             "type": "integer",
@@ -15715,12 +14915,7 @@
       },
       "SiteAnalyticsOverview": {
         "type": "object",
-        "required": [
-          "contacts",
-          "email",
-          "automations",
-          "timeseries"
-        ],
+        "required": ["contacts", "email", "automations", "timeseries"],
         "properties": {
           "contacts": {
             "$ref": "#/components/schemas/SiteAnalyticsContacts"
@@ -15753,20 +14948,12 @@
       },
       "SiteAnalyticsOwnerKind": {
         "type": "string",
-        "enum": [
-          "broadcast",
-          "automation"
-        ],
+        "enum": ["broadcast", "automation"],
         "description": "What carried a clicked link: a Broadcast or an Automation"
       },
       "SiteAnalyticsPoint": {
         "type": "object",
-        "required": [
-          "date",
-          "sent",
-          "opened",
-          "clicked"
-        ],
+        "required": ["date", "sent", "opened", "clicked"],
         "properties": {
           "date": {
             "type": "string",
@@ -15792,11 +14979,7 @@
       },
       "SiteAnalyticsRange": {
         "type": "string",
-        "enum": [
-          "7d",
-          "30d",
-          "90d"
-        ],
+        "enum": ["7d", "30d", "90d"],
         "description": "Selectable window for the analytics overview"
       },
       "SiteAnalyticsRevenue": {
@@ -15858,10 +15041,7 @@
       },
       "SiteAnalyticsSubscribedPeople": {
         "type": "object",
-        "required": [
-          "current",
-          "series"
-        ],
+        "required": ["current", "series"],
         "properties": {
           "current": {
             "type": "integer",
@@ -15880,12 +15060,7 @@
       },
       "SiteAnalyticsSubscribedPoint": {
         "type": "object",
-        "required": [
-          "date",
-          "subscribed",
-          "unsubscribed",
-          "net"
-        ],
+        "required": ["date", "subscribed", "unsubscribed", "net"],
         "properties": {
           "date": {
             "type": "string",
@@ -15911,13 +15086,7 @@
       },
       "SiteApiTokenResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "prefix",
-          "scopes",
-          "createdAt"
-        ],
+        "required": ["id", "name", "prefix", "scopes", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -15985,9 +15154,7 @@
       },
       "SiteAuditActor": {
         "type": "object",
-        "required": [
-          "kind"
-        ],
+        "required": ["kind"],
         "properties": {
           "kind": {
             "allOf": [
@@ -16012,19 +15179,12 @@
       },
       "SiteAuditActorKind": {
         "type": "string",
-        "enum": [
-          "user",
-          "api_token",
-          "staff",
-          "system"
-        ],
+        "enum": ["user", "api_token", "staff", "system"],
         "description": "Who performed an audited change"
       },
       "SiteAuditEntryList": {
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "properties": {
           "items": {
             "type": "array",
@@ -16042,13 +15202,7 @@
       },
       "SiteAuditEntryResource": {
         "type": "object",
-        "required": [
-          "id",
-          "occurredAt",
-          "actor",
-          "action",
-          "target"
-        ],
+        "required": ["id", "occurredAt", "actor", "action", "target"],
         "properties": {
           "id": {
             "allOf": [
@@ -16112,9 +15266,7 @@
       },
       "SiteAuditRetention": {
         "type": "object",
-        "required": [
-          "retentionDays"
-        ],
+        "required": ["retentionDays"],
         "properties": {
           "retentionDays": {
             "type": "integer",
@@ -16131,9 +15283,7 @@
       },
       "SiteAuditTarget": {
         "type": "object",
-        "required": [
-          "type"
-        ],
+        "required": ["type"],
         "properties": {
           "type": {
             "type": "string",
@@ -16154,16 +15304,12 @@
       },
       "SiteAutomationHttpErrorKind": {
         "type": "string",
-        "enum": [
-          "invalid_body"
-        ],
+        "enum": ["invalid_body"],
         "description": "Closed error kind of an HTTP step's body"
       },
       "SiteAutomationHttpHeader": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
@@ -16312,25 +15458,12 @@
       },
       "SiteAutomationReportPeriod": {
         "type": "string",
-        "enum": [
-          "7d",
-          "14d",
-          "30d",
-          "90d"
-        ],
+        "enum": ["7d", "14d", "30d", "90d"],
         "description": "The length of the period an automation's results are read over, in Report days (ADR 0057), today included"
       },
       "SiteAutomationResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "status",
-          "live",
-          "draft",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "status", "live", "draft", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -16411,13 +15544,7 @@
       },
       "SiteAutomationResultCounts": {
         "type": "object",
-        "required": [
-          "entered",
-          "completed",
-          "goalReached",
-          "exited",
-          "failed"
-        ],
+        "required": ["entered", "completed", "goalReached", "exited", "failed"],
         "properties": {
           "entered": {
             "type": "integer",
@@ -16449,12 +15576,7 @@
       },
       "SiteAutomationResults": {
         "type": "object",
-        "required": [
-          "period",
-          "current",
-          "previous",
-          "series"
-        ],
+        "required": ["period", "current", "previous", "series"],
         "properties": {
           "period": {
             "allOf": [
@@ -16492,14 +15614,7 @@
       },
       "SiteAutomationResultsPoint": {
         "type": "object",
-        "required": [
-          "entered",
-          "completed",
-          "goalReached",
-          "exited",
-          "failed",
-          "date"
-        ],
+        "required": ["entered", "completed", "goalReached", "exited", "failed", "date"],
         "properties": {
           "entered": {
             "type": "integer",
@@ -16535,17 +15650,12 @@
       },
       "SiteAutomationStatus": {
         "type": "string",
-        "enum": [
-          "active",
-          "inactive"
-        ],
+        "enum": ["active", "inactive"],
         "description": "Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody"
       },
       "SiteAutomationStep": {
         "type": "object",
-        "required": [
-          "type"
-        ],
+        "required": ["type"],
         "properties": {
           "type": {
             "allOf": [
@@ -16613,24 +15723,12 @@
       },
       "SiteAutomationStepType": {
         "type": "string",
-        "enum": [
-          "email",
-          "wait",
-          "apply_tag",
-          "remove_tag",
-          "http"
-        ],
+        "enum": ["email", "wait", "apply_tag", "remove_tag", "http"],
         "description": "Kind of automation step"
       },
       "SiteAutomationVersion": {
         "type": "object",
-        "required": [
-          "number",
-          "triggerEvent",
-          "exitEvents",
-          "goalEvent",
-          "steps"
-        ],
+        "required": ["number", "triggerEvent", "exitEvents", "goalEvent", "steps"],
         "properties": {
           "number": {
             "type": "integer",
@@ -16748,9 +15846,7 @@
       },
       "SiteBroadcastLinkClicksList": {
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "properties": {
           "items": {
             "type": "array",
@@ -16764,10 +15860,7 @@
       },
       "SiteBroadcastProgress": {
         "type": "object",
-        "required": [
-          "processedCount",
-          "remainingCount"
-        ],
+        "required": ["processedCount", "remainingCount"],
         "properties": {
           "processedCount": {
             "type": "integer",
@@ -16794,16 +15887,7 @@
       },
       "SiteBroadcastResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "subject",
-          "body",
-          "status",
-          "stats",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "subject", "body", "status", "stats", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -17073,13 +16157,7 @@
       },
       "SiteBroadcastStatus": {
         "type": "string",
-        "enum": [
-          "draft",
-          "scheduled",
-          "sending",
-          "sent",
-          "failed"
-        ],
+        "enum": ["draft", "scheduled", "sending", "sent", "failed"],
         "description": "Broadcast lifecycle status"
       },
       "SiteCapturedMessageFields": {
@@ -17162,10 +16240,7 @@
       },
       "SiteCapturedMessageHeader": {
         "type": "object",
-        "required": [
-          "name",
-          "value"
-        ],
+        "required": ["name", "value"],
         "properties": {
           "name": {
             "type": "string"
@@ -17378,36 +16453,21 @@
       },
       "SiteCapturedMessageSurface": {
         "type": "string",
-        "enum": [
-          "broadcast",
-          "automation",
-          "transactional",
-          "test"
-        ],
+        "enum": ["broadcast", "automation", "transactional", "test"],
         "description": "The surface that asked for the send a Captured message belongs to"
       },
       "SiteConditionCombinator": {
         "type": "string",
-        "enum": [
-          "and",
-          "or"
-        ],
+        "enum": ["and", "or"],
         "description": "How a condition group combines its entries"
       },
       "SiteConditionDateLeaf": {
         "type": "object",
-        "required": [
-          "kind",
-          "field",
-          "operator",
-          "at"
-        ],
+        "required": ["kind", "field", "operator", "at"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "date"
-            ]
+            "enum": ["date"]
           },
           "field": {
             "type": "string",
@@ -17434,25 +16494,16 @@
       },
       "SiteConditionDateOperator": {
         "type": "string",
-        "enum": [
-          "before",
-          "after"
-        ],
+        "enum": ["before", "after"],
         "description": "Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the\ntwo split time at `at`"
       },
       "SiteConditionDateWithinLeaf": {
         "type": "object",
-        "required": [
-          "kind",
-          "field",
-          "withinDays"
-        ],
+        "required": ["kind", "field", "withinDays"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "dateWithin"
-            ]
+            "enum": ["dateWithin"]
           },
           "field": {
             "type": "string",
@@ -17469,18 +16520,11 @@
       },
       "SiteConditionEventLeaf": {
         "type": "object",
-        "required": [
-          "kind",
-          "action",
-          "operator",
-          "times"
-        ],
+        "required": ["kind", "action", "operator", "times"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "event"
-            ]
+            "enum": ["event"]
           },
           "action": {
             "type": "string",
@@ -17511,25 +16555,16 @@
       },
       "SiteConditionEventOperator": {
         "type": "string",
-        "enum": [
-          "atLeast",
-          "atMost"
-        ],
+        "enum": ["atLeast", "atMost"],
         "description": "How an event leaf bounds the count: at least `times`, or at most `times`"
       },
       "SiteConditionGroup": {
         "type": "object",
-        "required": [
-          "kind",
-          "combinator",
-          "rules"
-        ],
+        "required": ["kind", "combinator", "rules"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "group"
-            ]
+            "enum": ["group"]
           },
           "combinator": {
             "allOf": [
@@ -17555,17 +16590,11 @@
       },
       "SiteConditionLeaf": {
         "type": "object",
-        "required": [
-          "kind",
-          "field",
-          "operator"
-        ],
+        "required": ["kind", "field", "operator"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "rule"
-            ]
+            "enum": ["rule"]
           },
           "field": {
             "type": "string",
@@ -17623,18 +16652,11 @@
       },
       "SiteConditionNumberLeaf": {
         "type": "object",
-        "required": [
-          "kind",
-          "field",
-          "operator",
-          "value"
-        ],
+        "required": ["kind", "field", "operator", "value"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "number"
-            ]
+            "enum": ["number"]
           },
           "field": {
             "type": "string",
@@ -17658,33 +16680,17 @@
       },
       "SiteConditionNumberOperator": {
         "type": "string",
-        "enum": [
-          "gt",
-          "gte",
-          "lt",
-          "lte"
-        ],
+        "enum": ["gt", "gte", "lt", "lte"],
         "description": "How a number leaf compares the field with `value`: greater than, greater than or equal,\nless than, or less than or equal"
       },
       "SiteConditionOperator": {
         "type": "string",
-        "enum": [
-          "eq",
-          "neq",
-          "contains",
-          "beginsWith",
-          "null",
-          "notNull",
-          "has",
-          "doesNotHave"
-        ],
+        "enum": ["eq", "neq", "contains", "beginsWith", "null", "notNull", "has", "doesNotHave"],
         "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; the tag field takes has and doesNotHave; a custom field takes the operators of its type,\nwhich the custom field lists as `ruleOperators` (a number custom field is also compared by a\nnumber leaf, a datetime one tested by the date leaves)."
       },
       "SiteConfirmEmailChangeInput": {
         "type": "object",
-        "required": [
-          "token"
-        ],
+        "required": ["token"],
         "properties": {
           "token": {
             "type": "string"
@@ -17694,15 +16700,7 @@
       },
       "SiteConnectionResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "scopes",
-          "userId",
-          "userName",
-          "userEmail",
-          "createdAt"
-        ],
+        "required": ["id", "name", "scopes", "userId", "userName", "userEmail", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -17799,12 +16797,7 @@
       },
       "SiteContactResource": {
         "type": "object",
-        "required": [
-          "id",
-          "tags",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "tags", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -17888,10 +16881,7 @@
       },
       "SiteCreateAutomationInput": {
         "type": "object",
-        "required": [
-          "name",
-          "triggerEvent"
-        ],
+        "required": ["name", "triggerEvent"],
         "properties": {
           "name": {
             "type": "string"
@@ -17991,10 +16981,7 @@
       },
       "SiteCreateInvitationInput": {
         "type": "object",
-        "required": [
-          "email",
-          "role"
-        ],
+        "required": ["email", "role"],
         "properties": {
           "email": {
             "$ref": "#/components/schemas/EmailAddress"
@@ -18007,10 +16994,7 @@
       },
       "SiteCreateInvitationResponse": {
         "type": "object",
-        "required": [
-          "inviteUrl",
-          "resource"
-        ],
+        "required": ["inviteUrl", "resource"],
         "properties": {
           "inviteUrl": {
             "type": "string"
@@ -18023,10 +17007,7 @@
       },
       "SiteCreatePersonalTokenInput": {
         "type": "object",
-        "required": [
-          "name",
-          "scopes"
-        ],
+        "required": ["name", "scopes"],
         "properties": {
           "name": {
             "type": "string"
@@ -18052,10 +17033,7 @@
       },
       "SiteCreatePersonalTokenResponse": {
         "type": "object",
-        "required": [
-          "token",
-          "resource"
-        ],
+        "required": ["token", "resource"],
         "properties": {
           "token": {
             "type": "string"
@@ -18068,10 +17046,7 @@
       },
       "SiteCreateRuleInput": {
         "type": "object",
-        "required": [
-          "name",
-          "triggerEvents"
-        ],
+        "required": ["name", "triggerEvents"],
         "properties": {
           "name": {
             "type": "string"
@@ -18099,10 +17074,7 @@
       },
       "SiteCreateSegmentInput": {
         "type": "object",
-        "required": [
-          "name",
-          "condition"
-        ],
+        "required": ["name", "condition"],
         "properties": {
           "name": {
             "type": "string",
@@ -18121,9 +17093,7 @@
       },
       "SiteCreateSuppressionInput": {
         "type": "object",
-        "required": [
-          "destination"
-        ],
+        "required": ["destination"],
         "properties": {
           "channel": {
             "allOf": [
@@ -18142,10 +17112,7 @@
       },
       "SiteCreateTokenInput": {
         "type": "object",
-        "required": [
-          "name",
-          "scopes"
-        ],
+        "required": ["name", "scopes"],
         "properties": {
           "name": {
             "type": "string"
@@ -18170,10 +17137,7 @@
       },
       "SiteCreateTokenResponse": {
         "type": "object",
-        "required": [
-          "token",
-          "resource"
-        ],
+        "required": ["token", "resource"],
         "properties": {
           "token": {
             "type": "string"
@@ -18186,9 +17150,7 @@
       },
       "SiteCreateWorkspaceInput": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
@@ -18199,15 +17161,7 @@
       },
       "SiteCustomFieldResource": {
         "type": "object",
-        "required": [
-          "id",
-          "key",
-          "name",
-          "type",
-          "ruleOperators",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "key", "name", "type", "ruleOperators", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -18261,19 +17215,12 @@
       },
       "SiteCustomFieldType": {
         "type": "string",
-        "enum": [
-          "string",
-          "number",
-          "bool",
-          "datetime"
-        ],
+        "enum": ["string", "number", "bool", "datetime"],
         "description": "A Custom field's value type"
       },
       "SiteDeleteUserInput": {
         "type": "object",
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "properties": {
           "email": {
             "allOf": [
@@ -18300,9 +17247,7 @@
       },
       "SiteDeleteUserLinkInput": {
         "type": "object",
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "properties": {
           "email": {
             "allOf": [
@@ -18317,9 +17262,7 @@
       },
       "SiteDeleteUserProblemDetails": {
         "type": "object",
-        "required": [
-          "workspaces"
-        ],
+        "required": ["workspaces"],
         "properties": {
           "code": {
             "allOf": [
@@ -18396,9 +17339,7 @@
       },
       "SiteDeleteWorkspaceInput": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
@@ -18409,13 +17350,7 @@
       },
       "SiteDeletedWorkspaceResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "discardedAt",
-          "eraseAt",
-          "onlyOwner"
-        ],
+        "required": ["id", "name", "discardedAt", "eraseAt", "onlyOwner"],
         "properties": {
           "id": {
             "allOf": [
@@ -18454,17 +17389,11 @@
       },
       "SiteDnsRecord": {
         "type": "object",
-        "required": [
-          "type",
-          "host",
-          "value"
-        ],
+        "required": ["type", "host", "value"],
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "TXT"
-            ],
+            "enum": ["TXT"],
             "description": "The record type (always TXT for the records we generate)"
           },
           "host": {
@@ -18480,9 +17409,7 @@
       },
       "SiteDomainJoinResource": {
         "type": "object",
-        "required": [
-          "enabled"
-        ],
+        "required": ["enabled"],
         "properties": {
           "enabled": {
             "type": "boolean",
@@ -18493,10 +17420,7 @@
       },
       "SiteDryRunHttpStepInput": {
         "type": "object",
-        "required": [
-          "body",
-          "contactId"
-        ],
+        "required": ["body", "contactId"],
         "properties": {
           "body": {
             "type": "string",
@@ -18537,9 +17461,7 @@
       },
       "SiteDryRunRuleInput": {
         "type": "object",
-        "required": [
-          "eventId"
-        ],
+        "required": ["eventId"],
         "properties": {
           "eventId": {
             "allOf": [
@@ -18554,10 +17476,7 @@
       },
       "SiteEmailChangeInput": {
         "type": "object",
-        "required": [
-          "newEmail",
-          "currentPassword"
-        ],
+        "required": ["newEmail", "currentPassword"],
         "properties": {
           "newEmail": {
             "allOf": [
@@ -18576,14 +17495,7 @@
       },
       "SiteEmailTemplateResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "subject",
-          "body",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "subject", "body", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -18644,9 +17556,7 @@
       },
       "SiteEnrollmentFailure": {
         "type": "object",
-        "required": [
-          "kind"
-        ],
+        "required": ["kind"],
         "properties": {
           "kind": {
             "allOf": [
@@ -18670,13 +17580,7 @@
       },
       "SiteEnrollmentFailureKind": {
         "type": "string",
-        "enum": [
-          "invalid_body",
-          "timeout",
-          "blocked_address",
-          "http_status",
-          "network"
-        ],
+        "enum": ["invalid_body", "timeout", "blocked_address", "http_status", "network"],
         "description": "Why an Enrollment failed. A closed set: `invalid_body`, `timeout`, `blocked_address`,\n`http_status` (see `status`) and `network`."
       },
       "SiteEnrollmentResource": {
@@ -18765,20 +17669,12 @@
       },
       "SiteEnrollmentStatus": {
         "type": "string",
-        "enum": [
-          "active",
-          "completed",
-          "failed",
-          "exited",
-          "goal_reached"
-        ],
+        "enum": ["active", "completed", "failed", "exited", "goal_reached"],
         "description": "Where a Contact is in an Automation"
       },
       "SiteEventActionsResult": {
         "type": "object",
-        "required": [
-          "actions"
-        ],
+        "required": ["actions"],
         "properties": {
           "actions": {
             "type": "array",
@@ -18791,13 +17687,7 @@
       },
       "SiteEventResource": {
         "type": "object",
-        "required": [
-          "id",
-          "subjectId",
-          "action",
-          "occurredAt",
-          "createdAt"
-        ],
+        "required": ["id", "subjectId", "action", "occurredAt", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -18847,9 +17737,7 @@
       },
       "SiteForgotPasswordInput": {
         "type": "object",
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "properties": {
           "email": {
             "$ref": "#/components/schemas/EmailAddress"
@@ -18859,15 +17747,11 @@
       },
       "SiteInboxConfig": {
         "type": "object",
-        "required": [
-          "kind"
-        ],
+        "required": ["kind"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "inbox"
-            ]
+            "enum": ["inbox"]
           }
         },
         "description": "The Test inbox has no settings"
@@ -18884,10 +17768,7 @@
       },
       "SiteIntegrationChannel": {
         "type": "string",
-        "enum": [
-          "email",
-          "sms"
-        ],
+        "enum": ["email", "sms"],
         "description": "Delivery channel an integration belongs to"
       },
       "SiteIntegrationConfig": {
@@ -18915,11 +17796,7 @@
       },
       "SiteIntegrationProvider": {
         "type": "string",
-        "enum": [
-          "smtp",
-          "ses",
-          "inbox"
-        ],
+        "enum": ["smtp", "ses", "inbox"],
         "description": "Concrete sending provider"
       },
       "SiteIntegrationResource": {
@@ -19059,18 +17936,12 @@
       },
       "SiteInvitableRole": {
         "type": "string",
-        "enum": [
-          "admin",
-          "member"
-        ],
+        "enum": ["admin", "member"],
         "description": "Roles that may be invited. owner is never invited — it is transferred."
       },
       "SiteInvitationLookupResult": {
         "type": "object",
-        "required": [
-          "workspaceName",
-          "email"
-        ],
+        "required": ["workspaceName", "email"],
         "properties": {
           "workspaceName": {
             "type": "string",
@@ -19089,13 +17960,7 @@
       },
       "SiteInvitationResource": {
         "type": "object",
-        "required": [
-          "id",
-          "email",
-          "role",
-          "expiresAt",
-          "createdAt"
-        ],
+        "required": ["id", "email", "role", "expiresAt", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -19147,14 +18012,7 @@
       },
       "SiteJoinDomainResource": {
         "type": "object",
-        "required": [
-          "id",
-          "domain",
-          "verified",
-          "record",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "domain", "verified", "record", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -19221,13 +18079,7 @@
       },
       "SiteLegalDocument": {
         "type": "object",
-        "required": [
-          "key",
-          "title",
-          "version",
-          "markdown",
-          "publishedAt"
-        ],
+        "required": ["key", "title", "version", "markdown", "publishedAt"],
         "properties": {
           "key": {
             "$ref": "#/components/schemas/SignupItemKey"
@@ -19260,10 +18112,7 @@
       },
       "SiteLinkClicks": {
         "type": "object",
-        "required": [
-          "url",
-          "clicks"
-        ],
+        "required": ["url", "clicks"],
         "properties": {
           "url": {
             "type": "string",
@@ -19279,9 +18128,7 @@
       },
       "SiteLinkedIdentities": {
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "properties": {
           "items": {
             "type": "array",
@@ -19294,12 +18141,7 @@
       },
       "SiteLinkedIdentity": {
         "type": "object",
-        "required": [
-          "id",
-          "provider",
-          "displayName",
-          "createdAt"
-        ],
+        "required": ["id", "provider", "displayName", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -19330,10 +18172,7 @@
       },
       "SiteLoginInput": {
         "type": "object",
-        "required": [
-          "email",
-          "password"
-        ],
+        "required": ["email", "password"],
         "properties": {
           "email": {
             "type": "string"
@@ -19346,17 +18185,12 @@
       },
       "SiteLoginOutcome": {
         "type": "string",
-        "enum": [
-          "session",
-          "challenge"
-        ],
+        "enum": ["session", "challenge"],
         "description": "What a login granted (ADR 0020). `session`: the session cookie is set.\n`challenge`: the password was right but the User has a Second factor; no session\nexists yet, and the `challenge` goes with a code to `/auth/second-factor`."
       },
       "SiteLoginResult": {
         "type": "object",
-        "required": [
-          "outcome"
-        ],
+        "required": ["outcome"],
         "properties": {
           "outcome": {
             "$ref": "#/components/schemas/SiteLoginOutcome"
@@ -19369,10 +18203,7 @@
       },
       "SiteLoginSecondFactorInput": {
         "type": "object",
-        "required": [
-          "challenge",
-          "code"
-        ],
+        "required": ["challenge", "code"],
         "properties": {
           "challenge": {
             "type": "string"
@@ -19386,14 +18217,7 @@
       },
       "SiteMembershipResource": {
         "type": "object",
-        "required": [
-          "id",
-          "userId",
-          "email",
-          "name",
-          "role",
-          "createdAt"
-        ],
+        "required": ["id", "userId", "email", "name", "role", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -19452,29 +18276,17 @@
       },
       "SiteMembershipRole": {
         "type": "string",
-        "enum": [
-          "owner",
-          "admin",
-          "member"
-        ],
+        "enum": ["owner", "admin", "member"],
         "description": "A User's permission level in a Workspace"
       },
       "SiteMembershipSource": {
         "type": "string",
-        "enum": [
-          "creator",
-          "invitation",
-          "domain"
-        ],
+        "enum": ["creator", "invitation", "domain"],
         "description": "How a member got in"
       },
       "SiteMessageRevenue": {
         "type": "object",
-        "required": [
-          "reportingCurrency",
-          "orders",
-          "amount"
-        ],
+        "required": ["reportingCurrency", "orders", "amount"],
         "properties": {
           "reportingCurrency": {
             "type": "string",
@@ -19501,13 +18313,7 @@
       },
       "SiteNewPeoplePoint": {
         "type": "object",
-        "required": [
-          "date",
-          "manual",
-          "api",
-          "tracker",
-          "unknown"
-        ],
+        "required": ["date", "manual", "api", "tracker", "unknown"],
         "properties": {
           "date": {
             "type": "string",
@@ -19538,10 +18344,7 @@
       },
       "SiteNewPeopleReport": {
         "type": "object",
-        "required": [
-          "total",
-          "timeseries"
-        ],
+        "required": ["total", "timeseries"],
         "properties": {
           "total": {
             "type": "integer",
@@ -19619,13 +18422,7 @@
       },
       "SiteOAuthDecisionInput": {
         "type": "object",
-        "required": [
-          "clientId",
-          "redirectUri",
-          "codeChallenge",
-          "workspaceId",
-          "approve"
-        ],
+        "required": ["clientId", "redirectUri", "codeChallenge", "workspaceId", "approve"],
         "properties": {
           "clientId": {
             "type": "string"
@@ -19670,9 +18467,7 @@
       },
       "SiteOAuthDecisionResult": {
         "type": "object",
-        "required": [
-          "redirectUrl"
-        ],
+        "required": ["redirectUrl"],
         "properties": {
           "redirectUrl": {
             "type": "string"
@@ -19682,11 +18477,7 @@
       },
       "SiteOptionalConsent": {
         "type": "object",
-        "required": [
-          "key",
-          "title",
-          "version"
-        ],
+        "required": ["key", "title", "version"],
         "properties": {
           "key": {
             "$ref": "#/components/schemas/SignupItemKey"
@@ -19724,10 +18515,7 @@
       },
       "SiteOptionalConsentChange": {
         "type": "object",
-        "required": [
-          "version",
-          "accepted"
-        ],
+        "required": ["version", "accepted"],
         "properties": {
           "version": {
             "allOf": [
@@ -19746,18 +18534,12 @@
       },
       "SiteOptionalConsentDecision": {
         "type": "string",
-        "enum": [
-          "accepted",
-          "declined",
-          "withdrawn"
-        ],
+        "enum": ["accepted", "declined", "withdrawn"],
         "description": "A User's current answer to an optional consent: the decision of their latest Consent record on\nit (ADR 0062)"
       },
       "SiteOptionalConsentList": {
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "properties": {
           "items": {
             "type": "array",
@@ -19770,11 +18552,7 @@
       },
       "SitePasskey": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "createdAt"
-        ],
+        "required": ["id", "name", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -19821,38 +18599,25 @@
         "properties": {
           "authenticatorAttachment": {
             "type": "string",
-            "enum": [
-              "platform",
-              "cross-platform"
-            ]
+            "enum": ["platform", "cross-platform"]
           },
           "requireResidentKey": {
             "type": "boolean"
           },
           "residentKey": {
             "type": "string",
-            "enum": [
-              "discouraged",
-              "preferred",
-              "required"
-            ]
+            "enum": ["discouraged", "preferred", "required"]
           },
           "userVerification": {
             "type": "string",
-            "enum": [
-              "required",
-              "preferred",
-              "discouraged"
-            ]
+            "enum": ["required", "preferred", "discouraged"]
           }
         },
         "description": "What the authenticator must be able to do. Credentials are discoverable and user\nverification is required (ADR 0051)."
       },
       "SitePasskeyCheckBegun": {
         "type": "object",
-        "required": [
-          "options"
-        ],
+        "required": ["options"],
         "properties": {
           "options": {
             "$ref": "#/components/schemas/SitePasskeyRequestOptions"
@@ -19862,9 +18627,7 @@
       },
       "SitePasskeyCheckInput": {
         "type": "object",
-        "required": [
-          "credential"
-        ],
+        "required": ["credential"],
         "properties": {
           "credential": {
             "allOf": [
@@ -19879,12 +18642,7 @@
       },
       "SitePasskeyCreationOptions": {
         "type": "object",
-        "required": [
-          "rp",
-          "user",
-          "challenge",
-          "pubKeyCredParams"
-        ],
+        "required": ["rp", "user", "challenge", "pubKeyCredParams"],
         "properties": {
           "rp": {
             "$ref": "#/components/schemas/SitePasskeyRelyingParty"
@@ -19919,28 +18677,18 @@
           },
           "attestation": {
             "type": "string",
-            "enum": [
-              "none",
-              "indirect",
-              "direct",
-              "enterprise"
-            ]
+            "enum": ["none", "indirect", "direct", "enterprise"]
           }
         },
         "description": "The options a browser passes to `navigator.credentials.create` to register a Passkey: the\nW3C `PublicKeyCredentialCreationOptionsJSON` dictionary, as the WebAuthn library produced it.\nAttestation is not requested."
       },
       "SitePasskeyDescriptor": {
         "type": "object",
-        "required": [
-          "type",
-          "id"
-        ],
+        "required": ["type", "id"],
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "public-key"
-            ]
+            "enum": ["public-key"]
           },
           "id": {
             "type": "string",
@@ -19950,13 +18698,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": [
-                "ble",
-                "hybrid",
-                "internal",
-                "nfc",
-                "usb"
-              ]
+              "enum": ["ble", "hybrid", "internal", "nfc", "usb"]
             }
           }
         },
@@ -19964,12 +18706,7 @@
       },
       "SitePasskeyList": {
         "type": "object",
-        "required": [
-          "items",
-          "available",
-          "passwordSet",
-          "identityProofFresh"
-        ],
+        "required": ["items", "available", "passwordSet", "identityProofFresh"],
         "properties": {
           "items": {
             "type": "array",
@@ -19994,9 +18731,7 @@
       },
       "SitePasskeyLoginBegun": {
         "type": "object",
-        "required": [
-          "options"
-        ],
+        "required": ["options"],
         "properties": {
           "options": {
             "$ref": "#/components/schemas/SitePasskeyRequestOptions"
@@ -20006,9 +18741,7 @@
       },
       "SitePasskeyLoginInput": {
         "type": "object",
-        "required": [
-          "credential"
-        ],
+        "required": ["credential"],
         "properties": {
           "credential": {
             "allOf": [
@@ -20023,16 +18756,11 @@
       },
       "SitePasskeyParameter": {
         "type": "object",
-        "required": [
-          "type",
-          "alg"
-        ],
+        "required": ["type", "alg"],
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "public-key"
-            ]
+            "enum": ["public-key"]
           },
           "alg": {
             "type": "integer",
@@ -20044,9 +18772,7 @@
       },
       "SitePasskeyRegistrationBegun": {
         "type": "object",
-        "required": [
-          "options"
-        ],
+        "required": ["options"],
         "properties": {
           "options": {
             "$ref": "#/components/schemas/SitePasskeyCreationOptions"
@@ -20056,10 +18782,7 @@
       },
       "SitePasskeyRegistrationInput": {
         "type": "object",
-        "required": [
-          "name",
-          "credential"
-        ],
+        "required": ["name", "credential"],
         "properties": {
           "currentPassword": {
             "type": "string",
@@ -20091,9 +18814,7 @@
       },
       "SitePasskeyRelyingParty": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "id": {
             "type": "string",
@@ -20117,9 +18838,7 @@
       },
       "SitePasskeyRenameInput": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "allOf": [
@@ -20134,9 +18853,7 @@
       },
       "SitePasskeyRequestOptions": {
         "type": "object",
-        "required": [
-          "challenge"
-        ],
+        "required": ["challenge"],
         "properties": {
           "challenge": {
             "type": "string",
@@ -20159,11 +18876,7 @@
           },
           "userVerification": {
             "type": "string",
-            "enum": [
-              "required",
-              "preferred",
-              "discouraged"
-            ],
+            "enum": ["required", "preferred", "discouraged"],
             "description": "Always `required`: an authenticator that cannot verify the person is refused"
           }
         },
@@ -20171,11 +18884,7 @@
       },
       "SitePasskeyUserEntity": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "displayName"
-        ],
+        "required": ["id", "name", "displayName"],
         "properties": {
           "id": {
             "type": "string",
@@ -20192,11 +18901,7 @@
       },
       "SitePendingSignup": {
         "type": "object",
-        "required": [
-          "provider",
-          "email",
-          "name"
-        ],
+        "required": ["provider", "email", "name"],
         "properties": {
           "provider": {
             "type": "string",
@@ -20296,11 +19001,7 @@
       },
       "SitePresetResource": {
         "type": "object",
-        "required": [
-          "name",
-          "description",
-          "paramsSchema"
-        ],
+        "required": ["name", "description", "paramsSchema"],
         "properties": {
           "name": {
             "type": "string",
@@ -20334,9 +19035,7 @@
       },
       "SitePreviewSegmentResult": {
         "type": "object",
-        "required": [
-          "count"
-        ],
+        "required": ["count"],
         "properties": {
           "count": {
             "type": "integer",
@@ -20348,20 +19047,12 @@
       },
       "SiteProviderLimitSource": {
         "type": "string",
-        "enum": [
-          "manual",
-          "provider"
-        ],
+        "enum": ["manual", "provider"],
         "description": "Where an effective Provider limit comes from"
       },
       "SiteProviderLimitStatus": {
         "type": "object",
-        "required": [
-          "perSecond",
-          "perDay",
-          "sentLast24h",
-          "warnings"
-        ],
+        "required": ["perSecond", "perDay", "sentLast24h", "warnings"],
         "properties": {
           "perSecond": {
             "allOf": [
@@ -20396,10 +19087,7 @@
       },
       "SiteProviderLimitValue": {
         "type": "object",
-        "required": [
-          "limit",
-          "source"
-        ],
+        "required": ["limit", "source"],
         "properties": {
           "limit": {
             "type": "integer",
@@ -20432,9 +19120,7 @@
       },
       "SiteRecoveryCodes": {
         "type": "object",
-        "required": [
-          "codes"
-        ],
+        "required": ["codes"],
         "properties": {
           "codes": {
             "type": "array",
@@ -20458,9 +19144,7 @@
       },
       "SiteResendVerificationInput": {
         "type": "object",
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "properties": {
           "email": {
             "$ref": "#/components/schemas/EmailAddress"
@@ -20470,10 +19154,7 @@
       },
       "SiteResetPasswordInput": {
         "type": "object",
-        "required": [
-          "token",
-          "password"
-        ],
+        "required": ["token", "password"],
         "properties": {
           "token": {
             "type": "string"
@@ -20486,11 +19167,7 @@
       },
       "SiteRevenuePoint": {
         "type": "object",
-        "required": [
-          "date",
-          "amount",
-          "orders"
-        ],
+        "required": ["date", "amount", "orders"],
         "properties": {
           "date": {
             "type": "string",
@@ -20511,10 +19188,7 @@
       },
       "SiteRevenueSettingsResource": {
         "type": "object",
-        "required": [
-          "reportingCurrency",
-          "attributionWindowDays"
-        ],
+        "required": ["reportingCurrency", "attributionWindowDays"],
         "properties": {
           "reportingCurrency": {
             "type": "string",
@@ -20539,9 +19213,7 @@
       },
       "SiteRuleAction": {
         "type": "object",
-        "required": [
-          "type"
-        ],
+        "required": ["type"],
         "properties": {
           "type": {
             "allOf": [
@@ -20599,10 +19271,7 @@
       },
       "SiteRuleActionResult": {
         "type": "object",
-        "required": [
-          "type",
-          "status"
-        ],
+        "required": ["type", "status"],
         "properties": {
           "type": {
             "allOf": [
@@ -20629,30 +19298,17 @@
       },
       "SiteRuleActionStatus": {
         "type": "string",
-        "enum": [
-          "succeeded",
-          "failed",
-          "skipped",
-          "pending"
-        ],
+        "enum": ["succeeded", "failed", "skipped", "pending"],
         "description": "How one Action of a Firing ended"
       },
       "SiteRuleActionType": {
         "type": "string",
-        "enum": [
-          "apply_tag",
-          "remove_tag",
-          "enroll_automation",
-          "http"
-        ],
+        "enum": ["apply_tag", "remove_tag", "enroll_automation", "http"],
         "description": "Kind of Rule action"
       },
       "SiteRuleDryRunAction": {
         "type": "object",
-        "required": [
-          "type",
-          "summary"
-        ],
+        "required": ["type", "summary"],
         "properties": {
           "type": {
             "type": "string",
@@ -20679,10 +19335,7 @@
       },
       "SiteRuleDryRunResource": {
         "type": "object",
-        "required": [
-          "outcome",
-          "actions"
-        ],
+        "required": ["outcome", "actions"],
         "properties": {
           "outcome": {
             "allOf": [
@@ -20774,15 +19427,7 @@
       },
       "SiteRuleResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "status",
-          "live",
-          "draft",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "status", "live", "draft", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -20865,19 +19510,12 @@
       },
       "SiteRuleStatus": {
         "type": "string",
-        "enum": [
-          "active",
-          "inactive"
-        ],
+        "enum": ["active", "inactive"],
         "description": "Rule lifecycle status: active reacts to Events, inactive acts on nothing"
       },
       "SiteRuleVersion": {
         "type": "object",
-        "required": [
-          "number",
-          "triggerEvents",
-          "actions"
-        ],
+        "required": ["number", "triggerEvents", "actions"],
         "properties": {
           "number": {
             "type": "integer",
@@ -20969,9 +19607,7 @@
       },
       "SiteSecondFactorConfirmInput": {
         "type": "object",
-        "required": [
-          "code"
-        ],
+        "required": ["code"],
         "properties": {
           "currentPassword": {
             "type": "string",
@@ -20986,9 +19622,7 @@
       },
       "SiteSecondFactorDisableInput": {
         "type": "object",
-        "required": [
-          "code"
-        ],
+        "required": ["code"],
         "properties": {
           "currentPassword": {
             "type": "string",
@@ -21003,11 +19637,7 @@
       },
       "SiteSecondFactorEnrollment": {
         "type": "object",
-        "required": [
-          "secret",
-          "otpauthUri",
-          "qrCode"
-        ],
+        "required": ["secret", "otpauthUri", "qrCode"],
         "properties": {
           "secret": {
             "type": "string",
@@ -21070,12 +19700,7 @@
       },
       "SiteSegmentResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -21128,10 +19753,7 @@
       },
       "SiteSendCap": {
         "type": "object",
-        "required": [
-          "perDay",
-          "sentLast24h"
-        ],
+        "required": ["perDay", "sentLast24h"],
         "properties": {
           "perDay": {
             "type": "integer",
@@ -21273,17 +19895,11 @@
       },
       "SiteSesConfig": {
         "type": "object",
-        "required": [
-          "kind",
-          "region",
-          "from"
-        ],
+        "required": ["kind", "region", "from"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "ses"
-            ]
+            "enum": ["ses"]
           },
           "region": {
             "type": "string"
@@ -21310,9 +19926,7 @@
       },
       "SiteSetDomainJoinInput": {
         "type": "object",
-        "required": [
-          "enabled"
-        ],
+        "required": ["enabled"],
         "properties": {
           "enabled": {
             "type": "boolean",
@@ -21323,10 +19937,7 @@
       },
       "SiteSetupProgress": {
         "type": "object",
-        "required": [
-          "steps",
-          "complete"
-        ],
+        "required": ["steps", "complete"],
         "properties": {
           "steps": {
             "$ref": "#/components/schemas/SiteSetupSteps"
@@ -21340,21 +19951,12 @@
       },
       "SiteSetupStepStatus": {
         "type": "string",
-        "enum": [
-          "todo",
-          "pending",
-          "done"
-        ],
+        "enum": ["todo", "pending", "done"],
         "description": "Where one Setup checklist step stands, read off the Workspace's own data"
       },
       "SiteSetupSteps": {
         "type": "object",
-        "required": [
-          "integration",
-          "sendingDomain",
-          "contact",
-          "sentEmail"
-        ],
+        "required": ["integration", "sendingDomain", "contact", "sentEmail"],
         "properties": {
           "integration": {
             "allOf": [
@@ -21393,10 +19995,7 @@
       },
       "SiteSignUpInput": {
         "type": "object",
-        "required": [
-          "name",
-          "email"
-        ],
+        "required": ["name", "email"],
         "properties": {
           "name": {
             "type": "string"
@@ -21435,9 +20034,7 @@
       },
       "SiteSigninNotMeInput": {
         "type": "object",
-        "required": [
-          "token"
-        ],
+        "required": ["token"],
         "properties": {
           "token": {
             "type": "string"
@@ -21447,9 +20044,7 @@
       },
       "SiteSigninPendingDeclineInput": {
         "type": "object",
-        "required": [
-          "token"
-        ],
+        "required": ["token"],
         "properties": {
           "token": {
             "type": "string",
@@ -21460,9 +20055,7 @@
       },
       "SiteSigninPendingSubmitInput": {
         "type": "object",
-        "required": [
-          "token"
-        ],
+        "required": ["token"],
         "properties": {
           "token": {
             "type": "string",
@@ -21480,10 +20073,7 @@
       },
       "SiteSigninProvider": {
         "type": "object",
-        "required": [
-          "name",
-          "displayName"
-        ],
+        "required": ["name", "displayName"],
         "properties": {
           "name": {
             "type": "string",
@@ -21498,9 +20088,7 @@
       },
       "SiteSigninProviders": {
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "properties": {
           "items": {
             "type": "array",
@@ -21513,36 +20101,17 @@
       },
       "SiteSignupCompanySize": {
         "type": "string",
-        "enum": [
-          "1",
-          "2_10",
-          "11_50",
-          "51_200",
-          "201_1000",
-          "1000_plus",
-          "other"
-        ],
+        "enum": ["1", "2_10", "11_50", "51_200", "201_1000", "1000_plus", "other"],
         "description": "How many people work at the User's company (second question)"
       },
       "SiteSignupGoal": {
         "type": "string",
-        "enum": [
-          "broadcasts",
-          "automations",
-          "tracking",
-          "migrating",
-          "other"
-        ],
+        "enum": ["broadcasts", "automations", "tracking", "migrating", "other"],
         "description": "What the User mainly wants to do with the product (third question)"
       },
       "SiteSignupItem": {
         "type": "object",
-        "required": [
-          "key",
-          "title",
-          "kind",
-          "version"
-        ],
+        "required": ["key", "title", "kind", "version"],
         "properties": {
           "key": {
             "$ref": "#/components/schemas/SignupItemKey"
@@ -21567,10 +20136,7 @@
       },
       "SiteSignupItemAnswer": {
         "type": "object",
-        "required": [
-          "key",
-          "version"
-        ],
+        "required": ["key", "version"],
         "properties": {
           "key": {
             "$ref": "#/components/schemas/SignupItemKey"
@@ -21592,9 +20158,7 @@
       },
       "SiteSignupItemList": {
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "properties": {
           "items": {
             "type": "array",
@@ -21607,33 +20171,17 @@
       },
       "SiteSignupRole": {
         "type": "string",
-        "enum": [
-          "founder",
-          "marketer",
-          "developer",
-          "product",
-          "other"
-        ],
+        "enum": ["founder", "marketer", "developer", "product", "other"],
         "description": "What the User does (Sign-up survey, first question)"
       },
       "SiteSignupSource": {
         "type": "string",
-        "enum": [
-          "search",
-          "github",
-          "social",
-          "recommendation",
-          "other"
-        ],
+        "enum": ["search", "github", "social", "recommendation", "other"],
         "description": "Where the User heard about the product (fourth question, optional)"
       },
       "SiteSignupSurveyInput": {
         "type": "object",
-        "required": [
-          "role",
-          "companySize",
-          "mainGoal"
-        ],
+        "required": ["role", "companySize", "mainGoal"],
         "properties": {
           "role": {
             "allOf": [
@@ -21692,18 +20240,11 @@
       },
       "SiteSmtpConfig": {
         "type": "object",
-        "required": [
-          "kind",
-          "host",
-          "port",
-          "from"
-        ],
+        "required": ["kind", "host", "port", "from"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "smtp"
-            ]
+            "enum": ["smtp"]
           },
           "host": {
             "type": "string"
@@ -21728,10 +20269,7 @@
       },
       "SiteSoleOwnedWorkspace": {
         "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
+        "required": ["id", "name"],
         "properties": {
           "id": {
             "allOf": [
@@ -21750,30 +20288,17 @@
       },
       "SiteSuppressionChannel": {
         "type": "string",
-        "enum": [
-          "email"
-        ],
+        "enum": ["email"],
         "description": "The channel a suppression applies to (email today; sms reserved)"
       },
       "SiteSuppressionReason": {
         "type": "string",
-        "enum": [
-          "bounce",
-          "complaint",
-          "manual"
-        ],
+        "enum": ["bounce", "complaint", "manual"],
         "description": "Why a destination is on the suppression (do-not-send) list. Unsubscribe is\nnot a suppression — it is a separate, per-source opt-out."
       },
       "SiteSuppressionResource": {
         "type": "object",
-        "required": [
-          "id",
-          "channel",
-          "destination",
-          "reason",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "channel", "destination", "reason", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -21834,11 +20359,7 @@
       },
       "SiteTagResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "createdAt"
-        ],
+        "required": ["id", "name", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -21865,10 +20386,7 @@
       },
       "SiteTestSendBroadcastResult": {
         "type": "object",
-        "required": [
-          "from",
-          "captured"
-        ],
+        "required": ["from", "captured"],
         "properties": {
           "from": {
             "allOf": [
@@ -21887,25 +20405,16 @@
       },
       "SiteTrackingReason": {
         "type": "string",
-        "enum": [
-          "host_taken"
-        ],
+        "enum": ["host_taken"],
         "description": "Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)"
       },
       "SiteTrackingRecord": {
         "type": "object",
-        "required": [
-          "type",
-          "host",
-          "target",
-          "state"
-        ],
+        "required": ["type", "host", "target", "state"],
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "CNAME"
-            ],
+            "enum": ["CNAME"],
             "description": "The record type (always CNAME)"
           },
           "host": {
@@ -21957,18 +20466,12 @@
       },
       "SiteTrackingState": {
         "type": "string",
-        "enum": [
-          "pending",
-          "dns_verified",
-          "serving"
-        ],
+        "enum": ["pending", "dns_verified", "serving"],
         "description": "State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving`"
       },
       "SiteTransactionalEmailChannel": {
         "type": "string",
-        "enum": [
-          "email"
-        ],
+        "enum": ["email"],
         "description": "The channel a transactional send went out on (email today; sms reserved)"
       },
       "SiteTransactionalEmailResource": {
@@ -22051,12 +20554,7 @@
       },
       "SiteTransactionalEmailStatus": {
         "type": "string",
-        "enum": [
-          "pending",
-          "sent",
-          "suppressed",
-          "failed"
-        ],
+        "enum": ["pending", "sent", "suppressed", "failed"],
         "description": "Outcome of a transactional send"
       },
       "SiteUpdateAutomationInput": {
@@ -22188,9 +20686,7 @@
       },
       "SiteUpdateMembershipInput": {
         "type": "object",
-        "required": [
-          "role"
-        ],
+        "required": ["role"],
         "properties": {
           "role": {
             "$ref": "#/components/schemas/SiteMembershipRole"
@@ -22267,9 +20763,7 @@
       },
       "SiteUpdateTokenInput": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string"
@@ -22279,9 +20773,7 @@
       },
       "SiteUpdateWorkspaceInput": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
@@ -22365,9 +20857,7 @@
       },
       "SiteVerifyEmailInput": {
         "type": "object",
-        "required": [
-          "token"
-        ],
+        "required": ["token"],
         "properties": {
           "token": {
             "type": "string"
@@ -22381,9 +20871,7 @@
       },
       "SiteVerifyEmailResult": {
         "type": "object",
-        "required": [
-          "landingWorkspaceId"
-        ],
+        "required": ["landingWorkspaceId"],
         "properties": {
           "landingWorkspaceId": {
             "allOf": [
@@ -22398,24 +20886,12 @@
       },
       "SiteWebhookDisabledReason": {
         "type": "string",
-        "enum": [
-          "owner",
-          "gone",
-          "persistent_failure"
-        ],
+        "enum": ["owner", "gone", "persistent_failure"],
         "description": "Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the\nreceiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer\nthan the window). Absent while the endpoint is enabled."
       },
       "SiteWebhookEndpointResource": {
         "type": "object",
-        "required": [
-          "id",
-          "url",
-          "secret",
-          "eventTypes",
-          "enabled",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "url", "secret", "eventTypes", "enabled", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -22489,22 +20965,12 @@
       },
       "SiteWebhookErrorKind": {
         "type": "string",
-        "enum": [
-          "timeout",
-          "blocked_address",
-          "http_status",
-          "network"
-        ],
+        "enum": ["timeout", "blocked_address", "http_status", "network"],
         "description": "Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in\ntime), `blocked_address` (the URL names an address this instance does not permit),\n`http_status` (a non-2xx answer, see `status`) and `network` (any other transport\nfailure)."
       },
       "SiteWebhookFailure": {
         "type": "object",
-        "required": [
-          "consecutiveFailures",
-          "since",
-          "lastFailureAt",
-          "kind"
-        ],
+        "required": ["consecutiveFailures", "since", "lastFailureAt", "kind"],
         "properties": {
           "consecutiveFailures": {
             "type": "integer",
@@ -22545,9 +21011,7 @@
       },
       "SiteWebhookTestResult": {
         "type": "object",
-        "required": [
-          "delivered"
-        ],
+        "required": ["delivered"],
         "properties": {
           "delivered": {
             "type": "boolean",
@@ -22571,12 +21035,7 @@
       },
       "SiteWorkspaceHold": {
         "type": "object",
-        "required": [
-          "key",
-          "reasonCode",
-          "message",
-          "since"
-        ],
+        "required": ["key", "reasonCode", "message", "since"],
         "properties": {
           "key": {
             "type": "string",
@@ -22749,9 +21208,7 @@
       },
       "SiteWorkspaceTimezoneInput": {
         "type": "object",
-        "required": [
-          "timezone"
-        ],
+        "required": ["timezone"],
         "properties": {
           "timezone": {
             "allOf": [
@@ -22766,18 +21223,11 @@
       },
       "SmtpConfigInput": {
         "type": "object",
-        "required": [
-          "kind",
-          "host",
-          "port",
-          "from"
-        ],
+        "required": ["kind", "host", "port", "from"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "smtp"
-            ]
+            "enum": ["smtp"]
           },
           "host": {
             "type": "string"
@@ -22806,9 +21256,7 @@
       },
       "TestSendBroadcastInput": {
         "type": "object",
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "properties": {
           "email": {
             "allOf": [
@@ -22823,9 +21271,7 @@
       },
       "TestWebhookInput": {
         "type": "object",
-        "required": [
-          "eventType"
-        ],
+        "required": ["eventType"],
         "properties": {
           "eventType": {
             "type": "string",
@@ -23062,11 +21508,7 @@
       },
       "UsedBy": {
         "type": "object",
-        "required": [
-          "kind",
-          "id",
-          "name"
-        ],
+        "required": ["kind", "id", "name"],
         "properties": {
           "kind": {
             "allOf": [
@@ -23098,15 +21540,7 @@
       },
       "UsedByKind": {
         "type": "string",
-        "enum": [
-          "broadcast",
-          "automation",
-          "segment",
-          "rule",
-          "enrollment",
-          "firing",
-          "message"
-        ],
+        "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "firing", "message"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "WorkspaceId": {

@@ -224,12 +224,8 @@
             }
           }
         },
-        "tags": [
-          "Audit"
-        ],
-        "x-required-scopes": [
-          "audit:read"
-        ],
+        "tags": ["Audit"],
+        "x-required-scopes": ["audit:read"],
         "x-mcp": {
           "hidden": true
         }
@@ -315,9 +311,7 @@
             }
           }
         },
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "x-required-scopes": [],
         "x-mcp": {
           "name": "whoami"
@@ -424,9 +418,7 @@
             }
           }
         },
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -437,9 +429,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "tokens:write"
-        ],
+        "x-required-scopes": ["tokens:write"],
         "x-mcp": {
           "hidden": true
         }
@@ -523,12 +513,8 @@
             }
           }
         },
-        "tags": [
-          "Auth"
-        ],
-        "x-required-scopes": [
-          "tokens:read"
-        ],
+        "tags": ["Auth"],
+        "x-required-scopes": ["tokens:read"],
         "x-mcp": {
           "hidden": true
         }
@@ -643,9 +629,7 @@
             }
           }
         },
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -656,9 +640,7 @@
             }
           }
         },
-        "security": [
-          {}
-        ],
+        "security": [{}],
         "x-required-scopes": [],
         "x-mcp": {
           "hidden": true
@@ -767,12 +749,8 @@
             }
           }
         },
-        "tags": [
-          "Auth"
-        ],
-        "x-required-scopes": [
-          "tokens:write"
-        ],
+        "tags": ["Auth"],
+        "x-required-scopes": ["tokens:write"],
         "x-mcp": {
           "hidden": true
         }
@@ -800,13 +778,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -926,12 +898,8 @@
             }
           }
         },
-        "tags": [
-          "Automations"
-        ],
-        "x-required-scopes": [
-          "automations:read"
-        ]
+        "tags": ["Automations"],
+        "x-required-scopes": ["automations:read"]
       },
       "post": {
         "operationId": "Automations_create",
@@ -1033,9 +1001,7 @@
             }
           }
         },
-        "tags": [
-          "Automations"
-        ],
+        "tags": ["Automations"],
         "requestBody": {
           "required": true,
           "content": {
@@ -1046,9 +1012,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "x-required-scopes": ["automations:write"]
       }
     },
     "/automations/dry-run-http-step": {
@@ -1162,9 +1126,7 @@
             }
           }
         },
-        "tags": [
-          "Automations"
-        ],
+        "tags": ["Automations"],
         "requestBody": {
           "required": true,
           "content": {
@@ -1175,10 +1137,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "automations:write",
-          "contacts:read"
-        ]
+        "x-required-scopes": ["automations:write", "contacts:read"]
       }
     },
     "/automations/{automationId}/enrollments": {
@@ -1218,13 +1177,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -1344,12 +1297,8 @@
             }
           }
         },
-        "tags": [
-          "Enrollments"
-        ],
-        "x-required-scopes": [
-          "enrollments:read"
-        ]
+        "tags": ["Enrollments"],
+        "x-required-scopes": ["enrollments:read"]
       }
     },
     "/automations/{automationId}/enrollments/{enrollmentId}": {
@@ -1470,12 +1419,8 @@
             }
           }
         },
-        "tags": [
-          "Enrollments"
-        ],
-        "x-required-scopes": [
-          "enrollments:read"
-        ]
+        "tags": ["Enrollments"],
+        "x-required-scopes": ["enrollments:read"]
       }
     },
     "/automations/{id}": {
@@ -1583,12 +1528,8 @@
             }
           }
         },
-        "tags": [
-          "Automations"
-        ],
-        "x-required-scopes": [
-          "automations:read"
-        ]
+        "tags": ["Automations"],
+        "x-required-scopes": ["automations:read"]
       },
       "put": {
         "operationId": "Automations_update",
@@ -1704,9 +1645,7 @@
             }
           }
         },
-        "tags": [
-          "Automations"
-        ],
+        "tags": ["Automations"],
         "requestBody": {
           "required": true,
           "content": {
@@ -1717,9 +1656,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "x-required-scopes": ["automations:write"]
       },
       "delete": {
         "operationId": "Automations_delete",
@@ -1838,12 +1775,8 @@
             }
           }
         },
-        "tags": [
-          "Automations"
-        ],
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "tags": ["Automations"],
+        "x-required-scopes": ["automations:write"]
       }
     },
     "/automations/{id}/archive": {
@@ -1961,12 +1894,8 @@
             }
           }
         },
-        "tags": [
-          "Automations"
-        ],
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "tags": ["Automations"],
+        "x-required-scopes": ["automations:write"]
       }
     },
     "/automations/{id}/deactivate": {
@@ -2074,12 +2003,8 @@
             }
           }
         },
-        "tags": [
-          "Automations"
-        ],
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "tags": ["Automations"],
+        "x-required-scopes": ["automations:write"]
       }
     },
     "/automations/{id}/publish": {
@@ -2207,12 +2132,8 @@
             }
           }
         },
-        "tags": [
-          "Automations"
-        ],
-        "x-required-scopes": [
-          "automations:publish"
-        ],
+        "tags": ["Automations"],
+        "x-required-scopes": ["automations:publish"],
         "x-mcp": {
           "send": true
         }
@@ -2338,12 +2259,8 @@
             }
           }
         },
-        "tags": [
-          "Automations"
-        ],
-        "x-required-scopes": [
-          "automations:read"
-        ]
+        "tags": ["Automations"],
+        "x-required-scopes": ["automations:read"]
       }
     },
     "/automations/{id}/revert": {
@@ -2461,12 +2378,8 @@
             }
           }
         },
-        "tags": [
-          "Automations"
-        ],
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "tags": ["Automations"],
+        "x-required-scopes": ["automations:write"]
       }
     },
     "/automations/{id}/unarchive": {
@@ -2574,12 +2487,8 @@
             }
           }
         },
-        "tags": [
-          "Automations"
-        ],
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "tags": ["Automations"],
+        "x-required-scopes": ["automations:write"]
       }
     },
     "/brand-kit": {
@@ -2663,12 +2572,8 @@
             }
           }
         },
-        "tags": [
-          "Brand Kit"
-        ],
-        "x-required-scopes": [
-          "templates:read"
-        ],
+        "tags": ["Brand Kit"],
+        "x-required-scopes": ["templates:read"],
         "x-mcp": {
           "name": "brand_get"
         }
@@ -2696,13 +2601,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -2822,12 +2721,8 @@
             }
           }
         },
-        "tags": [
-          "Broadcasts"
-        ],
-        "x-required-scopes": [
-          "broadcasts:read"
-        ]
+        "tags": ["Broadcasts"],
+        "x-required-scopes": ["broadcasts:read"]
       },
       "post": {
         "operationId": "Broadcasts_create",
@@ -2929,9 +2824,7 @@
             }
           }
         },
-        "tags": [
-          "Broadcasts"
-        ],
+        "tags": ["Broadcasts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -2942,9 +2835,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "broadcasts:write"
-        ]
+        "x-required-scopes": ["broadcasts:write"]
       }
     },
     "/broadcasts/{id}": {
@@ -3052,12 +2943,8 @@
             }
           }
         },
-        "tags": [
-          "Broadcasts"
-        ],
-        "x-required-scopes": [
-          "broadcasts:read"
-        ]
+        "tags": ["Broadcasts"],
+        "x-required-scopes": ["broadcasts:read"]
       },
       "put": {
         "operationId": "Broadcasts_update",
@@ -3173,9 +3060,7 @@
             }
           }
         },
-        "tags": [
-          "Broadcasts"
-        ],
+        "tags": ["Broadcasts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -3186,9 +3071,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "broadcasts:write"
-        ]
+        "x-required-scopes": ["broadcasts:write"]
       },
       "delete": {
         "operationId": "Broadcasts_delete",
@@ -3297,12 +3180,8 @@
             }
           }
         },
-        "tags": [
-          "Broadcasts"
-        ],
-        "x-required-scopes": [
-          "broadcasts:write"
-        ]
+        "tags": ["Broadcasts"],
+        "x-required-scopes": ["broadcasts:write"]
       }
     },
     "/broadcasts/{id}/archive": {
@@ -3420,12 +3299,8 @@
             }
           }
         },
-        "tags": [
-          "Broadcasts"
-        ],
-        "x-required-scopes": [
-          "broadcasts:write"
-        ]
+        "tags": ["Broadcasts"],
+        "x-required-scopes": ["broadcasts:write"]
       }
     },
     "/broadcasts/{id}/report": {
@@ -3533,12 +3408,8 @@
             }
           }
         },
-        "tags": [
-          "Broadcasts"
-        ],
-        "x-required-scopes": [
-          "broadcasts:read"
-        ]
+        "tags": ["Broadcasts"],
+        "x-required-scopes": ["broadcasts:read"]
       }
     },
     "/broadcasts/{id}/schedule": {
@@ -3666,9 +3537,7 @@
             }
           }
         },
-        "tags": [
-          "Broadcasts"
-        ],
+        "tags": ["Broadcasts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -3679,9 +3548,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "broadcasts:send"
-        ],
+        "x-required-scopes": ["broadcasts:send"],
         "x-mcp": {
           "send": true
         }
@@ -3802,9 +3669,7 @@
             }
           }
         },
-        "tags": [
-          "Broadcasts"
-        ],
+        "tags": ["Broadcasts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -3815,9 +3680,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "broadcasts:write"
-        ]
+        "x-required-scopes": ["broadcasts:write"]
       }
     },
     "/broadcasts/{id}/test-send": {
@@ -3928,9 +3791,7 @@
             }
           }
         },
-        "tags": [
-          "Broadcasts"
-        ],
+        "tags": ["Broadcasts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -3941,9 +3802,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "broadcasts:write"
-        ]
+        "x-required-scopes": ["broadcasts:write"]
       }
     },
     "/broadcasts/{id}/unarchive": {
@@ -4051,12 +3910,8 @@
             }
           }
         },
-        "tags": [
-          "Broadcasts"
-        ],
-        "x-required-scopes": [
-          "broadcasts:write"
-        ]
+        "tags": ["Broadcasts"],
+        "x-required-scopes": ["broadcasts:write"]
       }
     },
     "/broadcasts/{id}/unschedule": {
@@ -4174,12 +4029,8 @@
             }
           }
         },
-        "tags": [
-          "Broadcasts"
-        ],
-        "x-required-scopes": [
-          "broadcasts:send"
-        ],
+        "tags": ["Broadcasts"],
+        "x-required-scopes": ["broadcasts:send"],
         "x-mcp": {
           "send": true
         }
@@ -4204,13 +4055,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -4330,12 +4175,8 @@
             }
           }
         },
-        "tags": [
-          "Captured Messages"
-        ],
-        "x-required-scopes": [
-          "captured_messages:read"
-        ]
+        "tags": ["Captured Messages"],
+        "x-required-scopes": ["captured_messages:read"]
       }
     },
     "/captured-messages/all": {
@@ -4412,12 +4253,8 @@
             }
           }
         },
-        "tags": [
-          "Captured Messages"
-        ],
-        "x-required-scopes": [
-          "captured_messages:write"
-        ],
+        "tags": ["Captured Messages"],
+        "x-required-scopes": ["captured_messages:write"],
         "x-mcp": {
           "hidden": true
         }
@@ -4528,12 +4365,8 @@
             }
           }
         },
-        "tags": [
-          "Captured Messages"
-        ],
-        "x-required-scopes": [
-          "captured_messages:read"
-        ]
+        "tags": ["Captured Messages"],
+        "x-required-scopes": ["captured_messages:read"]
       },
       "delete": {
         "operationId": "CapturedMessages_delete",
@@ -4632,12 +4465,8 @@
             }
           }
         },
-        "tags": [
-          "Captured Messages"
-        ],
-        "x-required-scopes": [
-          "captured_messages:write"
-        ]
+        "tags": ["Captured Messages"],
+        "x-required-scopes": ["captured_messages:write"]
       }
     },
     "/contacts": {
@@ -4659,13 +4488,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -4785,12 +4608,8 @@
             }
           }
         },
-        "tags": [
-          "Contacts"
-        ],
-        "x-required-scopes": [
-          "contacts:read"
-        ]
+        "tags": ["Contacts"],
+        "x-required-scopes": ["contacts:read"]
       },
       "post": {
         "operationId": "Contacts_create",
@@ -4902,9 +4721,7 @@
             }
           }
         },
-        "tags": [
-          "Contacts"
-        ],
+        "tags": ["Contacts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -4915,9 +4732,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "contacts:write"
-        ]
+        "x-required-scopes": ["contacts:write"]
       }
     },
     "/contacts/batch": {
@@ -5021,9 +4836,7 @@
             }
           }
         },
-        "tags": [
-          "Contacts"
-        ],
+        "tags": ["Contacts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -5034,9 +4847,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "contacts:write"
-        ],
+        "x-required-scopes": ["contacts:write"],
         "x-mcp": {
           "name": "contacts_upsert_batch"
         }
@@ -5157,12 +4968,8 @@
             }
           }
         },
-        "tags": [
-          "Contacts"
-        ],
-        "x-required-scopes": [
-          "contacts:erase"
-        ]
+        "tags": ["Contacts"],
+        "x-required-scopes": ["contacts:erase"]
       }
     },
     "/contacts/export": {
@@ -5301,15 +5108,9 @@
             }
           }
         },
-        "tags": [
-          "Contacts"
-        ],
-        "x-required-permissions": [
-          "contacts:erase"
-        ],
-        "x-required-scopes": [
-          "contacts:export"
-        ]
+        "tags": ["Contacts"],
+        "x-required-permissions": ["contacts:erase"],
+        "x-required-scopes": ["contacts:export"]
       }
     },
     "/contacts/{contactId}/tags": {
@@ -5339,13 +5140,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -5475,12 +5270,8 @@
             }
           }
         },
-        "tags": [
-          "Tags"
-        ],
-        "x-required-scopes": [
-          "contacts:read"
-        ]
+        "tags": ["Tags"],
+        "x-required-scopes": ["contacts:read"]
       },
       "post": {
         "operationId": "Tags_apply",
@@ -5601,9 +5392,7 @@
             }
           }
         },
-        "tags": [
-          "Tags"
-        ],
+        "tags": ["Tags"],
         "requestBody": {
           "required": true,
           "content": {
@@ -5614,9 +5403,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "contacts:write"
-        ]
+        "x-required-scopes": ["contacts:write"]
       }
     },
     "/contacts/{contactId}/tags/{name}": {
@@ -5730,12 +5517,8 @@
             }
           }
         },
-        "tags": [
-          "Tags"
-        ],
-        "x-required-scopes": [
-          "contacts:write"
-        ]
+        "tags": ["Tags"],
+        "x-required-scopes": ["contacts:write"]
       }
     },
     "/contacts/{id}": {
@@ -5843,12 +5626,8 @@
             }
           }
         },
-        "tags": [
-          "Contacts"
-        ],
-        "x-required-scopes": [
-          "contacts:read"
-        ]
+        "tags": ["Contacts"],
+        "x-required-scopes": ["contacts:read"]
       },
       "put": {
         "operationId": "Contacts_update",
@@ -5974,9 +5753,7 @@
             }
           }
         },
-        "tags": [
-          "Contacts"
-        ],
+        "tags": ["Contacts"],
         "requestBody": {
           "required": true,
           "content": {
@@ -5987,9 +5764,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "contacts:write"
-        ]
+        "x-required-scopes": ["contacts:write"]
       },
       "delete": {
         "operationId": "Contacts_delete",
@@ -6098,12 +5873,8 @@
             }
           }
         },
-        "tags": [
-          "Contacts"
-        ],
-        "x-required-scopes": [
-          "contacts:erase"
-        ]
+        "tags": ["Contacts"],
+        "x-required-scopes": ["contacts:erase"]
       }
     },
     "/custom-fields": {
@@ -6118,13 +5889,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -6224,12 +5989,8 @@
             }
           }
         },
-        "tags": [
-          "Custom fields"
-        ],
-        "x-required-scopes": [
-          "custom_fields:read"
-        ],
+        "tags": ["Custom fields"],
+        "x-required-scopes": ["custom_fields:read"],
         "x-mcp": {
           "name": "custom_fields_list"
         }
@@ -6366,9 +6127,7 @@
             }
           }
         },
-        "tags": [
-          "Emails"
-        ],
+        "tags": ["Emails"],
         "requestBody": {
           "required": true,
           "content": {
@@ -6379,9 +6138,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "emails:send"
-        ],
+        "x-required-scopes": ["emails:send"],
         "x-mcp": {
           "send": true
         }
@@ -6488,9 +6245,7 @@
             }
           }
         },
-        "tags": [
-          "Emails"
-        ],
+        "tags": ["Emails"],
         "requestBody": {
           "required": true,
           "content": {
@@ -6501,9 +6256,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "templates:read"
-        ],
+        "x-required-scopes": ["templates:read"],
         "x-mcp": {
           "name": "email_lint"
         }
@@ -6590,12 +6343,8 @@
             }
           }
         },
-        "tags": [
-          "Emails"
-        ],
-        "x-required-scopes": [
-          "templates:read"
-        ],
+        "tags": ["Emails"],
+        "x-required-scopes": ["templates:read"],
         "x-mcp": {
           "name": "email_schema"
         }
@@ -6695,9 +6444,7 @@
             }
           }
         },
-        "tags": [
-          "Events"
-        ],
+        "tags": ["Events"],
         "requestBody": {
           "required": true,
           "content": {
@@ -6708,9 +6455,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "events:write"
-        ],
+        "x-required-scopes": ["events:write"],
         "x-mcp": {
           "name": "events_record"
         }
@@ -6735,13 +6480,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -6861,12 +6600,8 @@
             }
           }
         },
-        "tags": [
-          "Events"
-        ],
-        "x-required-scopes": [
-          "events:read"
-        ],
+        "tags": ["Events"],
+        "x-required-scopes": ["events:read"],
         "x-mcp": {
           "name": "events_actions_list"
         }
@@ -6973,9 +6708,7 @@
             }
           }
         },
-        "tags": [
-          "Events"
-        ],
+        "tags": ["Events"],
         "requestBody": {
           "required": true,
           "content": {
@@ -6986,9 +6719,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "events:write"
-        ],
+        "x-required-scopes": ["events:write"],
         "x-mcp": {
           "name": "events_record_batch"
         }
@@ -7068,12 +6799,8 @@
             }
           }
         },
-        "tags": [
-          "Export"
-        ],
-        "x-required-scopes": [
-          "export:read"
-        ],
+        "tags": ["Export"],
+        "x-required-scopes": ["export:read"],
         "x-mcp": {
           "hidden": true
         }
@@ -7153,12 +6880,8 @@
             }
           }
         },
-        "tags": [
-          "Export"
-        ],
-        "x-required-scopes": [
-          "export:read"
-        ],
+        "tags": ["Export"],
+        "x-required-scopes": ["export:read"],
         "x-mcp": {
           "hidden": true
         }
@@ -7238,12 +6961,8 @@
             }
           }
         },
-        "tags": [
-          "Export"
-        ],
-        "x-required-scopes": [
-          "export:read"
-        ],
+        "tags": ["Export"],
+        "x-required-scopes": ["export:read"],
         "x-mcp": {
           "hidden": true
         }
@@ -7323,12 +7042,8 @@
             }
           }
         },
-        "tags": [
-          "Export"
-        ],
-        "x-required-scopes": [
-          "export:read"
-        ],
+        "tags": ["Export"],
+        "x-required-scopes": ["export:read"],
         "x-mcp": {
           "hidden": true
         }
@@ -7408,12 +7123,8 @@
             }
           }
         },
-        "tags": [
-          "Export"
-        ],
-        "x-required-scopes": [
-          "export:read"
-        ],
+        "tags": ["Export"],
+        "x-required-scopes": ["export:read"],
         "x-mcp": {
           "hidden": true
         }
@@ -7441,13 +7152,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -7567,12 +7272,8 @@
             }
           }
         },
-        "tags": [
-          "Integrations"
-        ],
-        "x-required-scopes": [
-          "integrations:read"
-        ],
+        "tags": ["Integrations"],
+        "x-required-scopes": ["integrations:read"],
         "x-mcp": {
           "name": "integrations_list"
         }
@@ -7687,9 +7388,7 @@
             }
           }
         },
-        "tags": [
-          "Integrations"
-        ],
+        "tags": ["Integrations"],
         "requestBody": {
           "required": true,
           "content": {
@@ -7700,9 +7399,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "integrations:write"
-        ]
+        "x-required-scopes": ["integrations:write"]
       }
     },
     "/integrations/{id}": {
@@ -7810,12 +7507,8 @@
             }
           }
         },
-        "tags": [
-          "Integrations"
-        ],
-        "x-required-scopes": [
-          "integrations:read"
-        ]
+        "tags": ["Integrations"],
+        "x-required-scopes": ["integrations:read"]
       },
       "put": {
         "operationId": "Integrations_update",
@@ -7941,9 +7634,7 @@
             }
           }
         },
-        "tags": [
-          "Integrations"
-        ],
+        "tags": ["Integrations"],
         "requestBody": {
           "required": true,
           "content": {
@@ -7954,9 +7645,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "integrations:write"
-        ]
+        "x-required-scopes": ["integrations:write"]
       }
     },
     "/integrations/{id}/archive": {
@@ -8074,12 +7763,8 @@
             }
           }
         },
-        "tags": [
-          "Integrations"
-        ],
-        "x-required-scopes": [
-          "integrations:write"
-        ]
+        "tags": ["Integrations"],
+        "x-required-scopes": ["integrations:write"]
       }
     },
     "/integrations/{id}/regenerate-key": {
@@ -8187,12 +7872,8 @@
             }
           }
         },
-        "tags": [
-          "Integrations"
-        ],
-        "x-required-scopes": [
-          "integrations:write"
-        ],
+        "tags": ["Integrations"],
+        "x-required-scopes": ["integrations:write"],
         "x-mcp": {
           "hidden": true
         }
@@ -8313,12 +7994,8 @@
             }
           }
         },
-        "tags": [
-          "Integrations"
-        ],
-        "x-required-scopes": [
-          "integrations:write"
-        ]
+        "tags": ["Integrations"],
+        "x-required-scopes": ["integrations:write"]
       }
     },
     "/presets": {
@@ -8333,13 +8010,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -8439,12 +8110,8 @@
             }
           }
         },
-        "tags": [
-          "Integrations"
-        ],
-        "x-required-scopes": [
-          "integrations:read"
-        ],
+        "tags": ["Integrations"],
+        "x-required-scopes": ["integrations:read"],
         "x-mcp": {
           "name": "presets_list"
         }
@@ -8472,13 +8139,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -8598,12 +8259,8 @@
             }
           }
         },
-        "tags": [
-          "Rules"
-        ],
-        "x-required-scopes": [
-          "automations:read"
-        ]
+        "tags": ["Rules"],
+        "x-required-scopes": ["automations:read"]
       },
       "post": {
         "operationId": "Rules_create",
@@ -8705,9 +8362,7 @@
             }
           }
         },
-        "tags": [
-          "Rules"
-        ],
+        "tags": ["Rules"],
         "requestBody": {
           "required": true,
           "content": {
@@ -8718,9 +8373,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "x-required-scopes": ["automations:write"]
       }
     },
     "/rules/{id}": {
@@ -8828,12 +8481,8 @@
             }
           }
         },
-        "tags": [
-          "Rules"
-        ],
-        "x-required-scopes": [
-          "automations:read"
-        ]
+        "tags": ["Rules"],
+        "x-required-scopes": ["automations:read"]
       },
       "put": {
         "operationId": "Rules_update",
@@ -8949,9 +8598,7 @@
             }
           }
         },
-        "tags": [
-          "Rules"
-        ],
+        "tags": ["Rules"],
         "requestBody": {
           "required": true,
           "content": {
@@ -8962,9 +8609,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "x-required-scopes": ["automations:write"]
       },
       "delete": {
         "operationId": "Rules_delete",
@@ -9083,12 +8728,8 @@
             }
           }
         },
-        "tags": [
-          "Rules"
-        ],
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "tags": ["Rules"],
+        "x-required-scopes": ["automations:write"]
       }
     },
     "/rules/{id}/archive": {
@@ -9196,12 +8837,8 @@
             }
           }
         },
-        "tags": [
-          "Rules"
-        ],
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "tags": ["Rules"],
+        "x-required-scopes": ["automations:write"]
       }
     },
     "/rules/{id}/deactivate": {
@@ -9309,12 +8946,8 @@
             }
           }
         },
-        "tags": [
-          "Rules"
-        ],
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "tags": ["Rules"],
+        "x-required-scopes": ["automations:write"]
       }
     },
     "/rules/{id}/dry-run": {
@@ -9422,9 +9055,7 @@
             }
           }
         },
-        "tags": [
-          "Rules"
-        ],
+        "tags": ["Rules"],
         "requestBody": {
           "required": true,
           "content": {
@@ -9435,9 +9066,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "automations:read"
-        ]
+        "x-required-scopes": ["automations:read"]
       }
     },
     "/rules/{id}/publish": {
@@ -9555,12 +9184,8 @@
             }
           }
         },
-        "tags": [
-          "Rules"
-        ],
-        "x-required-scopes": [
-          "automations:publish"
-        ],
+        "tags": ["Rules"],
+        "x-required-scopes": ["automations:publish"],
         "x-mcp": {
           "send": true
         }
@@ -9681,12 +9306,8 @@
             }
           }
         },
-        "tags": [
-          "Rules"
-        ],
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "tags": ["Rules"],
+        "x-required-scopes": ["automations:write"]
       }
     },
     "/rules/{id}/unarchive": {
@@ -9794,12 +9415,8 @@
             }
           }
         },
-        "tags": [
-          "Rules"
-        ],
-        "x-required-scopes": [
-          "automations:write"
-        ]
+        "tags": ["Rules"],
+        "x-required-scopes": ["automations:write"]
       }
     },
     "/rules/{ruleId}/firings": {
@@ -9829,13 +9446,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -9955,12 +9566,8 @@
             }
           }
         },
-        "tags": [
-          "Rules"
-        ],
-        "x-required-scopes": [
-          "automations:read"
-        ]
+        "tags": ["Rules"],
+        "x-required-scopes": ["automations:read"]
       }
     },
     "/segments": {
@@ -9985,13 +9592,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -10111,12 +9712,8 @@
             }
           }
         },
-        "tags": [
-          "Segments"
-        ],
-        "x-required-scopes": [
-          "segments:read"
-        ]
+        "tags": ["Segments"],
+        "x-required-scopes": ["segments:read"]
       },
       "post": {
         "operationId": "Segments_create",
@@ -10218,9 +9815,7 @@
             }
           }
         },
-        "tags": [
-          "Segments"
-        ],
+        "tags": ["Segments"],
         "requestBody": {
           "required": true,
           "content": {
@@ -10231,9 +9826,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "segments:write"
-        ]
+        "x-required-scopes": ["segments:write"]
       }
     },
     "/segments/preview": {
@@ -10337,9 +9930,7 @@
             }
           }
         },
-        "tags": [
-          "Segments"
-        ],
+        "tags": ["Segments"],
         "requestBody": {
           "required": true,
           "content": {
@@ -10350,9 +9941,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "segments:read"
-        ]
+        "x-required-scopes": ["segments:read"]
       }
     },
     "/segments/{id}": {
@@ -10460,12 +10049,8 @@
             }
           }
         },
-        "tags": [
-          "Segments"
-        ],
-        "x-required-scopes": [
-          "segments:read"
-        ]
+        "tags": ["Segments"],
+        "x-required-scopes": ["segments:read"]
       },
       "put": {
         "operationId": "Segments_update",
@@ -10581,9 +10166,7 @@
             }
           }
         },
-        "tags": [
-          "Segments"
-        ],
+        "tags": ["Segments"],
         "requestBody": {
           "required": true,
           "content": {
@@ -10594,9 +10177,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "segments:write"
-        ]
+        "x-required-scopes": ["segments:write"]
       }
     },
     "/segments/{id}/archive": {
@@ -10714,12 +10295,8 @@
             }
           }
         },
-        "tags": [
-          "Segments"
-        ],
-        "x-required-scopes": [
-          "segments:write"
-        ]
+        "tags": ["Segments"],
+        "x-required-scopes": ["segments:write"]
       }
     },
     "/segments/{id}/unarchive": {
@@ -10827,12 +10404,8 @@
             }
           }
         },
-        "tags": [
-          "Segments"
-        ],
-        "x-required-scopes": [
-          "segments:write"
-        ]
+        "tags": ["Segments"],
+        "x-required-scopes": ["segments:write"]
       }
     },
     "/sending-domains": {
@@ -10857,13 +10430,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -10983,12 +10550,8 @@
             }
           }
         },
-        "tags": [
-          "Sending domains"
-        ],
-        "x-required-scopes": [
-          "sending_domains:read"
-        ],
+        "tags": ["Sending domains"],
+        "x-required-scopes": ["sending_domains:read"],
         "x-mcp": {
           "name": "sending_domains_list"
         }
@@ -11103,9 +10666,7 @@
             }
           }
         },
-        "tags": [
-          "Sending domains"
-        ],
+        "tags": ["Sending domains"],
         "requestBody": {
           "required": true,
           "content": {
@@ -11116,9 +10677,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "sending_domains:write"
-        ]
+        "x-required-scopes": ["sending_domains:write"]
       }
     },
     "/sending-domains/rates": {
@@ -11148,13 +10707,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -11264,12 +10817,8 @@
             }
           }
         },
-        "tags": [
-          "Sending domains"
-        ],
-        "x-required-scopes": [
-          "sending_domains:read"
-        ],
+        "tags": ["Sending domains"],
+        "x-required-scopes": ["sending_domains:read"],
         "x-mcp": {
           "name": "sending_domains_rates"
         }
@@ -11380,12 +10929,8 @@
             }
           }
         },
-        "tags": [
-          "Sending domains"
-        ],
-        "x-required-scopes": [
-          "sending_domains:read"
-        ]
+        "tags": ["Sending domains"],
+        "x-required-scopes": ["sending_domains:read"]
       },
       "put": {
         "operationId": "SendingDomains_update",
@@ -11511,9 +11056,7 @@
             }
           }
         },
-        "tags": [
-          "Sending domains"
-        ],
+        "tags": ["Sending domains"],
         "requestBody": {
           "required": true,
           "content": {
@@ -11524,9 +11067,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "sending_domains:write"
-        ]
+        "x-required-scopes": ["sending_domains:write"]
       }
     },
     "/sending-domains/{id}/archive": {
@@ -11644,12 +11185,8 @@
             }
           }
         },
-        "tags": [
-          "Sending domains"
-        ],
-        "x-required-scopes": [
-          "sending_domains:write"
-        ]
+        "tags": ["Sending domains"],
+        "x-required-scopes": ["sending_domains:write"]
       }
     },
     "/sending-domains/{id}/unarchive": {
@@ -11767,12 +11304,8 @@
             }
           }
         },
-        "tags": [
-          "Sending domains"
-        ],
-        "x-required-scopes": [
-          "sending_domains:write"
-        ]
+        "tags": ["Sending domains"],
+        "x-required-scopes": ["sending_domains:write"]
       }
     },
     "/sending-domains/{id}/verify": {
@@ -11880,12 +11413,8 @@
             }
           }
         },
-        "tags": [
-          "Sending domains"
-        ],
-        "x-required-scopes": [
-          "sending_domains:write"
-        ]
+        "tags": ["Sending domains"],
+        "x-required-scopes": ["sending_domains:write"]
       }
     },
     "/suppressions": {
@@ -11989,9 +11518,7 @@
             }
           }
         },
-        "tags": [
-          "Consent"
-        ],
+        "tags": ["Consent"],
         "requestBody": {
           "required": true,
           "content": {
@@ -12002,9 +11529,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "suppressions:write"
-        ]
+        "x-required-scopes": ["suppressions:write"]
       }
     },
     "/tags": {
@@ -12026,13 +11551,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -12152,12 +11671,8 @@
             }
           }
         },
-        "tags": [
-          "Tags"
-        ],
-        "x-required-scopes": [
-          "contacts:read"
-        ]
+        "tags": ["Tags"],
+        "x-required-scopes": ["contacts:read"]
       }
     },
     "/tags/{id}": {
@@ -12273,12 +11788,8 @@
             }
           }
         },
-        "tags": [
-          "Tags"
-        ],
-        "x-required-scopes": [
-          "contacts:write"
-        ]
+        "tags": ["Tags"],
+        "x-required-scopes": ["contacts:write"]
       }
     },
     "/templates": {
@@ -12300,13 +11811,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -12426,12 +11931,8 @@
             }
           }
         },
-        "tags": [
-          "Templates"
-        ],
-        "x-required-scopes": [
-          "templates:read"
-        ]
+        "tags": ["Templates"],
+        "x-required-scopes": ["templates:read"]
       },
       "post": {
         "operationId": "Templates_create",
@@ -12533,9 +12034,7 @@
             }
           }
         },
-        "tags": [
-          "Templates"
-        ],
+        "tags": ["Templates"],
         "requestBody": {
           "required": true,
           "content": {
@@ -12546,9 +12045,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "templates:write"
-        ]
+        "x-required-scopes": ["templates:write"]
       }
     },
     "/templates/{id}": {
@@ -12656,12 +12153,8 @@
             }
           }
         },
-        "tags": [
-          "Templates"
-        ],
-        "x-required-scopes": [
-          "templates:read"
-        ]
+        "tags": ["Templates"],
+        "x-required-scopes": ["templates:read"]
       },
       "put": {
         "operationId": "Templates_update",
@@ -12777,9 +12270,7 @@
             }
           }
         },
-        "tags": [
-          "Templates"
-        ],
+        "tags": ["Templates"],
         "requestBody": {
           "required": true,
           "content": {
@@ -12790,9 +12281,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "templates:write"
-        ]
+        "x-required-scopes": ["templates:write"]
       },
       "delete": {
         "operationId": "Templates_delete",
@@ -12901,12 +12390,8 @@
             }
           }
         },
-        "tags": [
-          "Templates"
-        ],
-        "x-required-scopes": [
-          "templates:write"
-        ]
+        "tags": ["Templates"],
+        "x-required-scopes": ["templates:write"]
       }
     },
     "/unsubscribes": {
@@ -13010,9 +12495,7 @@
             }
           }
         },
-        "tags": [
-          "Consent"
-        ],
+        "tags": ["Consent"],
         "requestBody": {
           "required": true,
           "content": {
@@ -13023,9 +12506,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "contacts:write"
-        ]
+        "x-required-scopes": ["contacts:write"]
       }
     },
     "/webhooks": {
@@ -13047,13 +12528,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -13173,12 +12648,8 @@
             }
           }
         },
-        "tags": [
-          "Webhooks"
-        ],
-        "x-required-scopes": [
-          "webhooks:read"
-        ]
+        "tags": ["Webhooks"],
+        "x-required-scopes": ["webhooks:read"]
       },
       "post": {
         "operationId": "Webhooks_create",
@@ -13280,9 +12751,7 @@
             }
           }
         },
-        "tags": [
-          "Webhooks"
-        ],
+        "tags": ["Webhooks"],
         "requestBody": {
           "required": true,
           "content": {
@@ -13293,9 +12762,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "webhooks:write"
-        ]
+        "x-required-scopes": ["webhooks:write"]
       }
     },
     "/webhooks/{id}": {
@@ -13403,12 +12870,8 @@
             }
           }
         },
-        "tags": [
-          "Webhooks"
-        ],
-        "x-required-scopes": [
-          "webhooks:read"
-        ]
+        "tags": ["Webhooks"],
+        "x-required-scopes": ["webhooks:read"]
       },
       "put": {
         "operationId": "Webhooks_update",
@@ -13524,9 +12987,7 @@
             }
           }
         },
-        "tags": [
-          "Webhooks"
-        ],
+        "tags": ["Webhooks"],
         "requestBody": {
           "required": true,
           "content": {
@@ -13537,9 +12998,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "webhooks:write"
-        ]
+        "x-required-scopes": ["webhooks:write"]
       },
       "delete": {
         "operationId": "Webhooks_delete",
@@ -13648,12 +13107,8 @@
             }
           }
         },
-        "tags": [
-          "Webhooks"
-        ],
-        "x-required-scopes": [
-          "webhooks:write"
-        ]
+        "tags": ["Webhooks"],
+        "x-required-scopes": ["webhooks:write"]
       }
     },
     "/webhooks/{id}/regenerate-secret": {
@@ -13761,12 +13216,8 @@
             }
           }
         },
-        "tags": [
-          "Webhooks"
-        ],
-        "x-required-scopes": [
-          "webhooks:regenerate"
-        ]
+        "tags": ["Webhooks"],
+        "x-required-scopes": ["webhooks:regenerate"]
       }
     },
     "/webhooks/{id}/test": {
@@ -13884,9 +13335,7 @@
             }
           }
         },
-        "tags": [
-          "Webhooks"
-        ],
+        "tags": ["Webhooks"],
         "requestBody": {
           "required": true,
           "content": {
@@ -13897,9 +13346,7 @@
             }
           }
         },
-        "x-required-scopes": [
-          "webhooks:test"
-        ]
+        "x-required-scopes": ["webhooks:test"]
       }
     },
     "/workspace": {
@@ -13973,9 +13420,7 @@
             }
           }
         },
-        "tags": [
-          "Workspace"
-        ],
+        "tags": ["Workspace"],
         "x-required-scopes": [],
         "x-mcp": {
           "name": "workspace_get"
@@ -14275,13 +13720,7 @@
     "schemas": {
       "ApiTokenInfo": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "scopes",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "scopes", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "$ref": "#/components/schemas/EntityId"
@@ -14332,9 +13771,7 @@
       },
       "ApiTokenListResponse": {
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "properties": {
           "items": {
             "type": "array",
@@ -14387,9 +13824,7 @@
       },
       "ApplyTagInput": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
@@ -14400,9 +13835,7 @@
       },
       "AuditActor": {
         "type": "object",
-        "required": [
-          "kind"
-        ],
+        "required": ["kind"],
         "properties": {
           "kind": {
             "allOf": [
@@ -14427,19 +13860,12 @@
       },
       "AuditActorKind": {
         "type": "string",
-        "enum": [
-          "user",
-          "api_token",
-          "staff",
-          "system"
-        ],
+        "enum": ["user", "api_token", "staff", "system"],
         "description": "Who performed an audited change"
       },
       "AuditEntryList": {
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "properties": {
           "items": {
             "type": "array",
@@ -14457,13 +13883,7 @@
       },
       "AuditEntryResource": {
         "type": "object",
-        "required": [
-          "id",
-          "occurredAt",
-          "actor",
-          "action",
-          "target"
-        ],
+        "required": ["id", "occurredAt", "actor", "action", "target"],
         "properties": {
           "id": {
             "allOf": [
@@ -14527,9 +13947,7 @@
       },
       "AuditTarget": {
         "type": "object",
-        "required": [
-          "type"
-        ],
+        "required": ["type"],
         "properties": {
           "type": {
             "type": "string",
@@ -14550,16 +13968,12 @@
       },
       "AutomationHttpErrorKind": {
         "type": "string",
-        "enum": [
-          "invalid_body"
-        ],
+        "enum": ["invalid_body"],
         "description": "Closed error kind of an HTTP step's body"
       },
       "AutomationHttpHeader": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
@@ -14708,25 +14122,12 @@
       },
       "AutomationReportPeriod": {
         "type": "string",
-        "enum": [
-          "7d",
-          "14d",
-          "30d",
-          "90d"
-        ],
+        "enum": ["7d", "14d", "30d", "90d"],
         "description": "The length of the period an automation's results are read over, in Report days (ADR 0057), today included"
       },
       "AutomationResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "status",
-          "live",
-          "draft",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "status", "live", "draft", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -14799,13 +14200,7 @@
       },
       "AutomationResultCounts": {
         "type": "object",
-        "required": [
-          "entered",
-          "completed",
-          "goalReached",
-          "exited",
-          "failed"
-        ],
+        "required": ["entered", "completed", "goalReached", "exited", "failed"],
         "properties": {
           "entered": {
             "type": "integer",
@@ -14837,12 +14232,7 @@
       },
       "AutomationResults": {
         "type": "object",
-        "required": [
-          "period",
-          "current",
-          "previous",
-          "series"
-        ],
+        "required": ["period", "current", "previous", "series"],
         "properties": {
           "period": {
             "allOf": [
@@ -14880,14 +14270,7 @@
       },
       "AutomationResultsPoint": {
         "type": "object",
-        "required": [
-          "entered",
-          "completed",
-          "goalReached",
-          "exited",
-          "failed",
-          "date"
-        ],
+        "required": ["entered", "completed", "goalReached", "exited", "failed", "date"],
         "properties": {
           "entered": {
             "type": "integer",
@@ -14923,17 +14306,12 @@
       },
       "AutomationStatus": {
         "type": "string",
-        "enum": [
-          "active",
-          "inactive"
-        ],
+        "enum": ["active", "inactive"],
         "description": "Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody"
       },
       "AutomationStep": {
         "type": "object",
-        "required": [
-          "type"
-        ],
+        "required": ["type"],
         "properties": {
           "type": {
             "allOf": [
@@ -15001,24 +14379,12 @@
       },
       "AutomationStepType": {
         "type": "string",
-        "enum": [
-          "email",
-          "wait",
-          "apply_tag",
-          "remove_tag",
-          "http"
-        ],
+        "enum": ["email", "wait", "apply_tag", "remove_tag", "http"],
         "description": "Kind of automation step"
       },
       "AutomationVersion": {
         "type": "object",
-        "required": [
-          "number",
-          "triggerEvent",
-          "exitEvents",
-          "goalEvent",
-          "steps"
-        ],
+        "required": ["number", "triggerEvent", "exitEvents", "goalEvent", "steps"],
         "properties": {
           "number": {
             "type": "integer",
@@ -15236,15 +14602,7 @@
       },
       "BroadcastResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "subject",
-          "body",
-          "status",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "subject", "body", "status", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -15361,13 +14719,7 @@
       },
       "BroadcastStatus": {
         "type": "string",
-        "enum": [
-          "draft",
-          "scheduled",
-          "sending",
-          "sent",
-          "failed"
-        ],
+        "enum": ["draft", "scheduled", "sending", "sent", "failed"],
         "description": "Broadcast lifecycle status"
       },
       "CapturedMessageFields": {
@@ -15452,10 +14804,7 @@
       },
       "CapturedMessageHeader": {
         "type": "object",
-        "required": [
-          "name",
-          "value"
-        ],
+        "required": ["name", "value"],
         "properties": {
           "name": {
             "type": "string",
@@ -15677,36 +15026,21 @@
       },
       "CapturedMessageSurface": {
         "type": "string",
-        "enum": [
-          "broadcast",
-          "automation",
-          "transactional",
-          "test"
-        ],
+        "enum": ["broadcast", "automation", "transactional", "test"],
         "description": "The surface that asked for the send a Captured message belongs to"
       },
       "ConditionCombinator": {
         "type": "string",
-        "enum": [
-          "and",
-          "or"
-        ],
+        "enum": ["and", "or"],
         "description": "How a condition group combines its entries"
       },
       "ConditionDateLeaf": {
         "type": "object",
-        "required": [
-          "kind",
-          "field",
-          "operator",
-          "at"
-        ],
+        "required": ["kind", "field", "operator", "at"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "date"
-            ]
+            "enum": ["date"]
           },
           "field": {
             "type": "string",
@@ -15733,25 +15067,16 @@
       },
       "ConditionDateOperator": {
         "type": "string",
-        "enum": [
-          "before",
-          "after"
-        ],
+        "enum": ["before", "after"],
         "description": "Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the\ntwo split time at `at`"
       },
       "ConditionDateWithinLeaf": {
         "type": "object",
-        "required": [
-          "kind",
-          "field",
-          "withinDays"
-        ],
+        "required": ["kind", "field", "withinDays"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "dateWithin"
-            ]
+            "enum": ["dateWithin"]
           },
           "field": {
             "type": "string",
@@ -15768,18 +15093,11 @@
       },
       "ConditionEventLeaf": {
         "type": "object",
-        "required": [
-          "kind",
-          "action",
-          "operator",
-          "times"
-        ],
+        "required": ["kind", "action", "operator", "times"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "event"
-            ]
+            "enum": ["event"]
           },
           "action": {
             "type": "string",
@@ -15810,25 +15128,16 @@
       },
       "ConditionEventOperator": {
         "type": "string",
-        "enum": [
-          "atLeast",
-          "atMost"
-        ],
+        "enum": ["atLeast", "atMost"],
         "description": "How an event leaf bounds the count: at least `times`, or at most `times`"
       },
       "ConditionGroup": {
         "type": "object",
-        "required": [
-          "kind",
-          "combinator",
-          "rules"
-        ],
+        "required": ["kind", "combinator", "rules"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "group"
-            ]
+            "enum": ["group"]
           },
           "combinator": {
             "allOf": [
@@ -15854,17 +15163,11 @@
       },
       "ConditionLeaf": {
         "type": "object",
-        "required": [
-          "kind",
-          "field",
-          "operator"
-        ],
+        "required": ["kind", "field", "operator"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "rule"
-            ]
+            "enum": ["rule"]
           },
           "field": {
             "type": "string",
@@ -15922,18 +15225,11 @@
       },
       "ConditionNumberLeaf": {
         "type": "object",
-        "required": [
-          "kind",
-          "field",
-          "operator",
-          "value"
-        ],
+        "required": ["kind", "field", "operator", "value"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "number"
-            ]
+            "enum": ["number"]
           },
           "field": {
             "type": "string",
@@ -15957,34 +15253,17 @@
       },
       "ConditionNumberOperator": {
         "type": "string",
-        "enum": [
-          "gt",
-          "gte",
-          "lt",
-          "lte"
-        ],
+        "enum": ["gt", "gte", "lt", "lte"],
         "description": "How a number leaf compares the field with `value`: greater than, greater than or equal,\nless than, or less than or equal"
       },
       "ConditionOperator": {
         "type": "string",
-        "enum": [
-          "eq",
-          "neq",
-          "contains",
-          "beginsWith",
-          "null",
-          "notNull",
-          "has",
-          "doesNotHave"
-        ],
+        "enum": ["eq", "neq", "contains", "beginsWith", "null", "notNull", "has", "doesNotHave"],
         "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; the tag field takes has and doesNotHave; a custom field takes the operators of its type,\nwhich the custom field lists as `ruleOperators` (a number custom field is also compared by a\nnumber leaf, a datetime one tested by the date leaves)."
       },
       "ContactBatchItemResult": {
         "type": "object",
-        "required": [
-          "index",
-          "status"
-        ],
+        "required": ["index", "status"],
         "properties": {
           "index": {
             "type": "integer",
@@ -16016,20 +15295,12 @@
       },
       "ContactBatchStatus": {
         "type": "string",
-        "enum": [
-          "created",
-          "updated",
-          "failed"
-        ],
+        "enum": ["created", "updated", "failed"],
         "description": "Outcome of one item of a contacts batch"
       },
       "ContactExportBroadcastRecipient": {
         "type": "object",
-        "required": [
-          "id",
-          "broadcastId",
-          "createdAt"
-        ],
+        "required": ["id", "broadcastId", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -16090,13 +15361,7 @@
       },
       "ContactExportConfirmation": {
         "type": "object",
-        "required": [
-          "id",
-          "channel",
-          "destination",
-          "provenance",
-          "createdAt"
-        ],
+        "required": ["id", "channel", "destination", "provenance", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -16131,11 +15396,7 @@
       },
       "ContactExportContact": {
         "type": "object",
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -16296,14 +15557,7 @@
       },
       "ContactExportEvent": {
         "type": "object",
-        "required": [
-          "id",
-          "subjectId",
-          "action",
-          "occurredAt",
-          "backfill",
-          "createdAt"
-        ],
+        "required": ["id", "subjectId", "action", "occurredAt", "backfill", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -16537,22 +15791,12 @@
       },
       "ContactExportSource": {
         "type": "string",
-        "enum": [
-          "manual",
-          "api",
-          "tracker"
-        ],
+        "enum": ["manual", "api", "tracker"],
         "description": "How the contact first came to exist"
       },
       "ContactExportSuppression": {
         "type": "object",
-        "required": [
-          "id",
-          "channel",
-          "destination",
-          "reason",
-          "createdAt"
-        ],
+        "required": ["id", "channel", "destination", "reason", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -16597,11 +15841,7 @@
       },
       "ContactExportTag": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "createdAt"
-        ],
+        "required": ["id", "name", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -16628,13 +15868,7 @@
       },
       "ContactExportUnsubscribe": {
         "type": "object",
-        "required": [
-          "id",
-          "channel",
-          "destination",
-          "sendingSource",
-          "createdAt"
-        ],
+        "required": ["id", "channel", "destination", "sendingSource", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -16669,12 +15903,7 @@
       },
       "ContactExportVisitor": {
         "type": "object",
-        "required": [
-          "id",
-          "visitorId",
-          "lastSeenAt",
-          "createdAt"
-        ],
+        "required": ["id", "visitorId", "lastSeenAt", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -16709,11 +15938,7 @@
       },
       "ContactResource": {
         "type": "object",
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -16793,10 +16018,7 @@
       },
       "CreateApiTokenInput": {
         "type": "object",
-        "required": [
-          "name",
-          "scopes"
-        ],
+        "required": ["name", "scopes"],
         "properties": {
           "name": {
             "type": "string"
@@ -16820,10 +16042,7 @@
       },
       "CreateApiTokenResponse": {
         "type": "object",
-        "required": [
-          "token",
-          "tokenInfo"
-        ],
+        "required": ["token", "tokenInfo"],
         "properties": {
           "token": {
             "type": "string"
@@ -16835,10 +16054,7 @@
       },
       "CreateAutomationInput": {
         "type": "object",
-        "required": [
-          "name",
-          "triggerEvent"
-        ],
+        "required": ["name", "triggerEvent"],
         "properties": {
           "name": {
             "type": "string"
@@ -16879,9 +16095,7 @@
       },
       "CreateBroadcastInput": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
@@ -16992,10 +16206,7 @@
       },
       "CreateIntegrationInput": {
         "type": "object",
-        "required": [
-          "name",
-          "config"
-        ],
+        "required": ["name", "config"],
         "properties": {
           "name": {
             "type": "string"
@@ -17044,10 +16255,7 @@
       },
       "CreateRuleInput": {
         "type": "object",
-        "required": [
-          "name",
-          "triggerEvents"
-        ],
+        "required": ["name", "triggerEvents"],
         "properties": {
           "name": {
             "type": "string"
@@ -17075,10 +16283,7 @@
       },
       "CreateSegmentInput": {
         "type": "object",
-        "required": [
-          "name",
-          "condition"
-        ],
+        "required": ["name", "condition"],
         "properties": {
           "name": {
             "type": "string",
@@ -17097,9 +16302,7 @@
       },
       "CreateSendingDomainInput": {
         "type": "object",
-        "required": [
-          "domain"
-        ],
+        "required": ["domain"],
         "properties": {
           "domain": {
             "type": "string",
@@ -17114,9 +16317,7 @@
       },
       "CreateSuppressionInput": {
         "type": "object",
-        "required": [
-          "destination"
-        ],
+        "required": ["destination"],
         "properties": {
           "destination": {
             "allOf": [
@@ -17131,9 +16332,7 @@
       },
       "CreateTemplateInput": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
@@ -17157,9 +16356,7 @@
       },
       "CreateUnsubscribeInput": {
         "type": "object",
-        "required": [
-          "destination"
-        ],
+        "required": ["destination"],
         "properties": {
           "destination": {
             "allOf": [
@@ -17178,9 +16375,7 @@
       },
       "CreateWebhookInput": {
         "type": "object",
-        "required": [
-          "url"
-        ],
+        "required": ["url"],
         "properties": {
           "url": {
             "type": "string",
@@ -17207,15 +16402,7 @@
       },
       "CustomFieldResource": {
         "type": "object",
-        "required": [
-          "id",
-          "key",
-          "name",
-          "type",
-          "ruleOperators",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "key", "name", "type", "ruleOperators", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -17271,27 +16458,16 @@
       },
       "CustomFieldType": {
         "type": "string",
-        "enum": [
-          "string",
-          "number",
-          "bool",
-          "datetime"
-        ],
+        "enum": ["string", "number", "bool", "datetime"],
         "description": "A Custom field's value type"
       },
       "DnsRecord": {
         "type": "object",
-        "required": [
-          "type",
-          "host",
-          "value"
-        ],
+        "required": ["type", "host", "value"],
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "TXT"
-            ],
+            "enum": ["TXT"],
             "description": "The record type (always TXT for the records we generate)"
           },
           "host": {
@@ -17307,10 +16483,7 @@
       },
       "DryRunHttpStepInput": {
         "type": "object",
-        "required": [
-          "body",
-          "contactId"
-        ],
+        "required": ["body", "contactId"],
         "properties": {
           "body": {
             "type": "string",
@@ -17351,9 +16524,7 @@
       },
       "DryRunRuleInput": {
         "type": "object",
-        "required": [
-          "eventId"
-        ],
+        "required": ["eventId"],
         "properties": {
           "eventId": {
             "allOf": [
@@ -17373,10 +16544,7 @@
       },
       "EmailSchemaAttribute": {
         "type": "object",
-        "required": [
-          "type",
-          "rule"
-        ],
+        "required": ["type", "rule"],
         "properties": {
           "default": {
             "description": "The value the editor gives the attribute when the document omits it"
@@ -17401,13 +16569,7 @@
       },
       "EmailSchemaResult": {
         "type": "object",
-        "required": [
-          "editorVersion",
-          "nodes",
-          "marks",
-          "rules",
-          "example"
-        ],
+        "required": ["editorVersion", "nodes", "marks", "rules", "example"],
         "properties": {
           "editorVersion": {
             "type": "string",
@@ -17444,9 +16606,7 @@
       },
       "EmailSchemaType": {
         "type": "object",
-        "required": [
-          "attrs"
-        ],
+        "required": ["attrs"],
         "properties": {
           "content": {
             "type": "string",
@@ -17468,9 +16628,7 @@
       },
       "EnrollmentFailure": {
         "type": "object",
-        "required": [
-          "kind"
-        ],
+        "required": ["kind"],
         "properties": {
           "kind": {
             "allOf": [
@@ -17494,13 +16652,7 @@
       },
       "EnrollmentFailureKind": {
         "type": "string",
-        "enum": [
-          "invalid_body",
-          "timeout",
-          "blocked_address",
-          "http_status",
-          "network"
-        ],
+        "enum": ["invalid_body", "timeout", "blocked_address", "http_status", "network"],
         "description": "Why an Enrollment failed. A closed set: `invalid_body` (an HTTP step's body did not render\nto valid JSON), `timeout` (no answer in time), `blocked_address` (the URL names an address\nthis instance does not permit), `http_status` (a non-2xx answer, see `status`) and\n`network` (any other transport failure)."
       },
       "EnrollmentResource": {
@@ -17589,13 +16741,7 @@
       },
       "EnrollmentStatus": {
         "type": "string",
-        "enum": [
-          "active",
-          "completed",
-          "failed",
-          "exited",
-          "goal_reached"
-        ],
+        "enum": ["active", "completed", "failed", "exited", "goal_reached"],
         "description": "Where a Contact is in an Automation"
       },
       "EntityId": {
@@ -17606,9 +16752,7 @@
       },
       "EventActionResource": {
         "type": "object",
-        "required": [
-          "action"
-        ],
+        "required": ["action"],
         "properties": {
           "action": {
             "type": "string",
@@ -17620,10 +16764,7 @@
       },
       "EventBatchItemResult": {
         "type": "object",
-        "required": [
-          "index",
-          "status"
-        ],
+        "required": ["index", "status"],
         "properties": {
           "index": {
             "type": "integer",
@@ -17647,18 +16788,12 @@
       },
       "EventBatchStatus": {
         "type": "string",
-        "enum": [
-          "accepted",
-          "failed"
-        ],
+        "enum": ["accepted", "failed"],
         "description": "Outcome of one item of an events batch"
       },
       "EventInput": {
         "type": "object",
-        "required": [
-          "subjectId",
-          "action"
-        ],
+        "required": ["subjectId", "action"],
         "properties": {
           "subjectId": {
             "type": "string",
@@ -18294,9 +17429,7 @@
       },
       "GoneProblem": {
         "type": "object",
-        "required": [
-          "body"
-        ],
+        "required": ["body"],
         "properties": {
           "body": {
             "$ref": "#/components/schemas/ProblemDetails"
@@ -18408,9 +17541,7 @@
       },
       "InUseProblemDetails": {
         "type": "object",
-        "required": [
-          "usedBy"
-        ],
+        "required": ["usedBy"],
         "properties": {
           "code": {
             "allOf": [
@@ -18487,40 +17618,29 @@
       },
       "InboxConfig": {
         "type": "object",
-        "required": [
-          "kind"
-        ],
+        "required": ["kind"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "inbox"
-            ]
+            "enum": ["inbox"]
           }
         },
         "description": "The Test inbox has no settings"
       },
       "InboxConfigInput": {
         "type": "object",
-        "required": [
-          "kind"
-        ],
+        "required": ["kind"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "inbox"
-            ]
+            "enum": ["inbox"]
           }
         },
         "description": "The Test inbox takes no credentials: a Workspace has at most one"
       },
       "IntegrationChannel": {
         "type": "string",
-        "enum": [
-          "email",
-          "sms"
-        ],
+        "enum": ["email", "sms"],
         "description": "Delivery channel an integration belongs to"
       },
       "IntegrationConfig": {
@@ -18571,11 +17691,7 @@
       },
       "IntegrationProvider": {
         "type": "string",
-        "enum": [
-          "smtp",
-          "ses",
-          "inbox"
-        ],
+        "enum": ["smtp", "ses", "inbox"],
         "description": "Concrete sending provider"
       },
       "IntegrationResource": {
@@ -18716,10 +17832,7 @@
       },
       "LinkClicks": {
         "type": "object",
-        "required": [
-          "url",
-          "clicks"
-        ],
+        "required": ["url", "clicks"],
         "properties": {
           "url": {
             "type": "string",
@@ -18766,10 +17879,7 @@
       },
       "LintEmailResult": {
         "type": "object",
-        "required": [
-          "errors",
-          "warnings"
-        ],
+        "required": ["errors", "warnings"],
         "properties": {
           "errors": {
             "type": "array",
@@ -18790,10 +17900,7 @@
       },
       "LintFinding": {
         "type": "object",
-        "required": [
-          "code",
-          "message"
-        ],
+        "required": ["code", "message"],
         "properties": {
           "code": {
             "allOf": [
@@ -18836,11 +17943,7 @@
       },
       "MessageRevenue": {
         "type": "object",
-        "required": [
-          "reportingCurrency",
-          "orders",
-          "amount"
-        ],
+        "required": ["reportingCurrency", "orders", "amount"],
         "properties": {
           "reportingCurrency": {
             "type": "string",
@@ -18894,9 +17997,7 @@
       },
       "PreconditionRequiredProblem": {
         "type": "object",
-        "required": [
-          "body"
-        ],
+        "required": ["body"],
         "properties": {
           "body": {
             "$ref": "#/components/schemas/ProblemDetails"
@@ -18906,11 +18007,7 @@
       },
       "PresetResource": {
         "type": "object",
-        "required": [
-          "name",
-          "description",
-          "paramsSchema"
-        ],
+        "required": ["name", "description", "paramsSchema"],
         "properties": {
           "name": {
             "type": "string",
@@ -18944,9 +18041,7 @@
       },
       "PreviewSegmentResult": {
         "type": "object",
-        "required": [
-          "count"
-        ],
+        "required": ["count"],
         "properties": {
           "count": {
             "type": "integer",
@@ -18969,11 +18064,7 @@
       },
       "ProblemDebug": {
         "type": "object",
-        "required": [
-          "error",
-          "method",
-          "path"
-        ],
+        "required": ["error", "method", "path"],
         "properties": {
           "error": {
             "type": "string",
@@ -19069,20 +18160,12 @@
       },
       "ProviderLimitSource": {
         "type": "string",
-        "enum": [
-          "manual",
-          "provider"
-        ],
+        "enum": ["manual", "provider"],
         "description": "Where an effective Provider limit comes from"
       },
       "ProviderLimitStatus": {
         "type": "object",
-        "required": [
-          "perSecond",
-          "perDay",
-          "sentLast24h",
-          "warnings"
-        ],
+        "required": ["perSecond", "perDay", "sentLast24h", "warnings"],
         "properties": {
           "perSecond": {
             "allOf": [
@@ -19117,10 +18200,7 @@
       },
       "ProviderLimitValue": {
         "type": "object",
-        "required": [
-          "limit",
-          "source"
-        ],
+        "required": ["limit", "source"],
         "properties": {
           "limit": {
             "type": "integer",
@@ -19153,11 +18233,7 @@
       },
       "RateTriple": {
         "type": "object",
-        "required": [
-          "numerator",
-          "denominator",
-          "rate"
-        ],
+        "required": ["numerator", "denominator", "rate"],
         "properties": {
           "numerator": {
             "type": "integer",
@@ -19180,9 +18256,7 @@
       },
       "RecordEventsBatchInput": {
         "type": "object",
-        "required": [
-          "events"
-        ],
+        "required": ["events"],
         "properties": {
           "backfill": {
             "type": "boolean",
@@ -19202,9 +18276,7 @@
       },
       "RecordEventsBatchResult": {
         "type": "object",
-        "required": [
-          "results"
-        ],
+        "required": ["results"],
         "properties": {
           "results": {
             "type": "array",
@@ -19218,9 +18290,7 @@
       },
       "RecordEventsInput": {
         "type": "object",
-        "required": [
-          "events"
-        ],
+        "required": ["events"],
         "properties": {
           "events": {
             "type": "array",
@@ -19234,9 +18304,7 @@
       },
       "RuleAction": {
         "type": "object",
-        "required": [
-          "type"
-        ],
+        "required": ["type"],
         "properties": {
           "type": {
             "allOf": [
@@ -19294,10 +18362,7 @@
       },
       "RuleActionResult": {
         "type": "object",
-        "required": [
-          "type",
-          "status"
-        ],
+        "required": ["type", "status"],
         "properties": {
           "type": {
             "allOf": [
@@ -19324,30 +18389,17 @@
       },
       "RuleActionStatus": {
         "type": "string",
-        "enum": [
-          "succeeded",
-          "failed",
-          "skipped",
-          "pending"
-        ],
+        "enum": ["succeeded", "failed", "skipped", "pending"],
         "description": "How one Action of a Firing ended"
       },
       "RuleActionType": {
         "type": "string",
-        "enum": [
-          "apply_tag",
-          "remove_tag",
-          "enroll_automation",
-          "http"
-        ],
+        "enum": ["apply_tag", "remove_tag", "enroll_automation", "http"],
         "description": "Kind of Rule action"
       },
       "RuleDryRunAction": {
         "type": "object",
-        "required": [
-          "type",
-          "summary"
-        ],
+        "required": ["type", "summary"],
         "properties": {
           "type": {
             "type": "string",
@@ -19374,10 +18426,7 @@
       },
       "RuleDryRunResource": {
         "type": "object",
-        "required": [
-          "outcome",
-          "actions"
-        ],
+        "required": ["outcome", "actions"],
         "properties": {
           "outcome": {
             "allOf": [
@@ -19469,15 +18518,7 @@
       },
       "RuleResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "status",
-          "live",
-          "draft",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "status", "live", "draft", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -19560,19 +18601,12 @@
       },
       "RuleStatus": {
         "type": "string",
-        "enum": [
-          "active",
-          "inactive"
-        ],
+        "enum": ["active", "inactive"],
         "description": "Rule lifecycle status: active reacts to Events, inactive acts on nothing"
       },
       "RuleVersion": {
         "type": "object",
-        "required": [
-          "number",
-          "triggerEvents",
-          "actions"
-        ],
+        "required": ["number", "triggerEvents", "actions"],
         "properties": {
           "number": {
             "type": "integer",
@@ -19606,9 +18640,7 @@
       },
       "ScheduleBroadcastInput": {
         "type": "object",
-        "required": [
-          "scheduledAt"
-        ],
+        "required": ["scheduledAt"],
         "properties": {
           "scheduledAt": {
             "allOf": [
@@ -19623,12 +18655,7 @@
       },
       "SegmentResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -19681,10 +18708,7 @@
       },
       "SendCap": {
         "type": "object",
-        "required": [
-          "perDay",
-          "sentLast24h"
-        ],
+        "required": ["perDay", "sentLast24h"],
         "properties": {
           "perDay": {
             "type": "integer",
@@ -19701,12 +18725,7 @@
       },
       "SendScope": {
         "type": "string",
-        "enum": [
-          "emails:send",
-          "broadcasts:send",
-          "automations:publish",
-          "mcp:send"
-        ],
+        "enum": ["emails:send", "broadcasts:send", "automations:publish", "mcp:send"],
         "description": "Send-class scopes (ADR 0016, \"Send is a second lock\"). An OAuth client gets them\nonly when the user explicitly opts in. mcp:send is the MCP-specific key: send-class\ntools are not listed over /mcp without it, so any send-class grant brings it along.",
         "x-grant-permissions": [
           {
@@ -19725,10 +18744,7 @@
       },
       "SendTransactionalEmailInput": {
         "type": "object",
-        "required": [
-          "templateId",
-          "destination"
-        ],
+        "required": ["templateId", "destination"],
         "properties": {
           "templateId": {
             "allOf": [
@@ -19761,11 +18777,7 @@
       },
       "SendTransactionalEmailResponse": {
         "type": "object",
-        "required": [
-          "id",
-          "status",
-          "destination"
-        ],
+        "required": ["id", "status", "destination"],
         "properties": {
           "id": {
             "allOf": [
@@ -19792,13 +18804,7 @@
       },
       "SendingDomainRatesResource": {
         "type": "object",
-        "required": [
-          "sendingDomainId",
-          "domain",
-          "windowDays",
-          "complaintRate",
-          "bounceRate"
-        ],
+        "required": ["sendingDomainId", "domain", "windowDays", "complaintRate", "bounceRate"],
         "properties": {
           "sendingDomainId": {
             "allOf": [
@@ -19963,17 +18969,11 @@
       },
       "SesConfig": {
         "type": "object",
-        "required": [
-          "kind",
-          "region",
-          "from"
-        ],
+        "required": ["kind", "region", "from"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "ses"
-            ]
+            "enum": ["ses"]
           },
           "region": {
             "type": "string"
@@ -20000,19 +19000,11 @@
       },
       "SesConfigInput": {
         "type": "object",
-        "required": [
-          "kind",
-          "region",
-          "accessKeyId",
-          "secretAccessKey",
-          "from"
-        ],
+        "required": ["kind", "region", "accessKeyId", "secretAccessKey", "from"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "ses"
-            ]
+            "enum": ["ses"]
           },
           "region": {
             "type": "string"
@@ -20040,9 +19032,7 @@
       },
       "SetBroadcastSegmentInput": {
         "type": "object",
-        "required": [
-          "segmentId"
-        ],
+        "required": ["segmentId"],
         "properties": {
           "segmentId": {
             "type": "string",
@@ -20059,10 +19049,7 @@
       },
       "SetupScope": {
         "type": "string",
-        "enum": [
-          "sending_domains:write",
-          "integrations:write"
-        ],
+        "enum": ["sending_domains:write", "integrations:write"],
         "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Integrations and the provider credentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send.",
         "x-grant-permissions": [
           {
@@ -20077,18 +19064,11 @@
       },
       "SmtpConfig": {
         "type": "object",
-        "required": [
-          "kind",
-          "host",
-          "port",
-          "from"
-        ],
+        "required": ["kind", "host", "port", "from"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "smtp"
-            ]
+            "enum": ["smtp"]
           },
           "host": {
             "type": "string"
@@ -20113,18 +19093,11 @@
       },
       "SmtpConfigInput": {
         "type": "object",
-        "required": [
-          "kind",
-          "host",
-          "port",
-          "from"
-        ],
+        "required": ["kind", "host", "port", "from"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "smtp"
-            ]
+            "enum": ["smtp"]
           },
           "host": {
             "type": "string"
@@ -20153,21 +19126,12 @@
       },
       "SuppressionReason": {
         "type": "string",
-        "enum": [
-          "bounce",
-          "complaint",
-          "manual"
-        ],
+        "enum": ["bounce", "complaint", "manual"],
         "description": "Why a destination is on the suppression (do-not-send) list"
       },
       "SuppressionResource": {
         "type": "object",
-        "required": [
-          "id",
-          "destination",
-          "reason",
-          "createdAt"
-        ],
+        "required": ["id", "destination", "reason", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -20202,11 +19166,7 @@
       },
       "TagResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "createdAt"
-        ],
+        "required": ["id", "name", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -20234,14 +19194,7 @@
       },
       "TemplateResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "subject",
-          "body",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "subject", "body", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -20295,9 +19248,7 @@
       },
       "TestSendBroadcastInput": {
         "type": "object",
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "properties": {
           "email": {
             "allOf": [
@@ -20312,9 +19263,7 @@
       },
       "TestWebhookInput": {
         "type": "object",
-        "required": [
-          "eventType"
-        ],
+        "required": ["eventType"],
         "properties": {
           "eventType": {
             "type": "string",
@@ -20345,25 +19294,16 @@
       },
       "TrackingReason": {
         "type": "string",
-        "enum": [
-          "host_taken"
-        ],
+        "enum": ["host_taken"],
         "description": "Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)"
       },
       "TrackingRecord": {
         "type": "object",
-        "required": [
-          "type",
-          "host",
-          "target",
-          "state"
-        ],
+        "required": ["type", "host", "target", "state"],
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "CNAME"
-            ],
+            "enum": ["CNAME"],
             "description": "The record type (always CNAME)"
           },
           "host": {
@@ -20415,29 +19355,17 @@
       },
       "TrackingState": {
         "type": "string",
-        "enum": [
-          "pending",
-          "dns_verified",
-          "serving"
-        ],
+        "enum": ["pending", "dns_verified", "serving"],
         "description": "State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving`"
       },
       "TransactionalSendStatus": {
         "type": "string",
-        "enum": [
-          "sent",
-          "suppressed"
-        ],
+        "enum": ["sent", "suppressed"],
         "description": "Outcome of a transactional send"
       },
       "UnsubscribeResource": {
         "type": "object",
-        "required": [
-          "id",
-          "destination",
-          "sendingSource",
-          "createdAt"
-        ],
+        "required": ["id", "destination", "sendingSource", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -20821,9 +19749,7 @@
       },
       "UpsertContactsInput": {
         "type": "object",
-        "required": [
-          "contacts"
-        ],
+        "required": ["contacts"],
         "properties": {
           "contacts": {
             "type": "array",
@@ -20839,9 +19765,7 @@
       },
       "UpsertContactsResult": {
         "type": "object",
-        "required": [
-          "results"
-        ],
+        "required": ["results"],
         "properties": {
           "results": {
             "type": "array",
@@ -20855,11 +19779,7 @@
       },
       "UsedBy": {
         "type": "object",
-        "required": [
-          "kind",
-          "id",
-          "name"
-        ],
+        "required": ["kind", "id", "name"],
         "properties": {
           "kind": {
             "allOf": [
@@ -20891,50 +19811,26 @@
       },
       "UsedByKind": {
         "type": "string",
-        "enum": [
-          "broadcast",
-          "automation",
-          "segment",
-          "rule",
-          "enrollment",
-          "firing",
-          "message"
-        ],
+        "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "firing", "message"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "Versions": {
         "type": "string",
-        "enum": [
-          "1.0.0"
-        ]
+        "enum": ["1.0.0"]
       },
       "WebhookDisabledReason": {
         "type": "string",
-        "enum": [
-          "owner",
-          "gone",
-          "persistent_failure"
-        ],
+        "enum": ["owner", "gone", "persistent_failure"],
         "description": "Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the\nreceiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer\nthan the window). Absent while the endpoint is enabled."
       },
       "WebhookErrorKind": {
         "type": "string",
-        "enum": [
-          "timeout",
-          "blocked_address",
-          "http_status",
-          "network"
-        ],
+        "enum": ["timeout", "blocked_address", "http_status", "network"],
         "description": "Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in\ntime), `blocked_address` (the URL names an address this instance does not permit),\n`http_status` (a non-2xx answer, see `status`) and `network` (any other transport\nfailure)."
       },
       "WebhookFailure": {
         "type": "object",
-        "required": [
-          "consecutiveFailures",
-          "since",
-          "lastFailureAt",
-          "kind"
-        ],
+        "required": ["consecutiveFailures", "since", "lastFailureAt", "kind"],
         "properties": {
           "consecutiveFailures": {
             "type": "integer",
@@ -20975,14 +19871,7 @@
       },
       "WebhookResource": {
         "type": "object",
-        "required": [
-          "id",
-          "url",
-          "eventTypes",
-          "enabled",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "url", "eventTypes", "enabled", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -21052,9 +19941,7 @@
       },
       "WebhookTestResult": {
         "type": "object",
-        "required": [
-          "delivered"
-        ],
+        "required": ["delivered"],
         "properties": {
           "delivered": {
             "type": "boolean",
@@ -21083,11 +19970,7 @@
       },
       "WorkspaceResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "sendCap"
-        ],
+        "required": ["id", "name", "sendCap"],
         "properties": {
           "id": {
             "allOf": [
