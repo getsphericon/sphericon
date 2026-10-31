@@ -21236,6 +21236,391 @@ func (s *SiteConditionCombinator) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *SiteConditionDateLeaf) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteConditionDateLeaf) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("field")
+		e.Str(s.Field)
+	}
+	{
+		e.FieldStart("operator")
+		s.Operator.Encode(e)
+	}
+	{
+		e.FieldStart("at")
+		s.At.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSiteConditionDateLeaf = [4]string{
+	0: "kind",
+	1: "field",
+	2: "operator",
+	3: "at",
+}
+
+// Decode decodes SiteConditionDateLeaf from json.
+func (s *SiteConditionDateLeaf) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConditionDateLeaf to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "field":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Field = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"field\"")
+			}
+		case "operator":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Operator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"operator\"")
+			}
+		case "at":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.At.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"at\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteConditionDateLeaf")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteConditionDateLeaf) {
+					name = jsonFieldsNameOfSiteConditionDateLeaf[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteConditionDateLeaf) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConditionDateLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConditionDateLeafKind as json.
+func (s SiteConditionDateLeafKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteConditionDateLeafKind from json.
+func (s *SiteConditionDateLeafKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConditionDateLeafKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteConditionDateLeafKind(v) {
+	case SiteConditionDateLeafKindDate:
+		*s = SiteConditionDateLeafKindDate
+	default:
+		*s = SiteConditionDateLeafKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteConditionDateLeafKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConditionDateLeafKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConditionDateOperator as json.
+func (s SiteConditionDateOperator) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteConditionDateOperator from json.
+func (s *SiteConditionDateOperator) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConditionDateOperator to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteConditionDateOperator(v) {
+	case SiteConditionDateOperatorBefore:
+		*s = SiteConditionDateOperatorBefore
+	case SiteConditionDateOperatorAfter:
+		*s = SiteConditionDateOperatorAfter
+	default:
+		*s = SiteConditionDateOperator(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteConditionDateOperator) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConditionDateOperator) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteConditionDateWithinLeaf) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteConditionDateWithinLeaf) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("field")
+		e.Str(s.Field)
+	}
+	{
+		e.FieldStart("withinDays")
+		e.Int32(s.WithinDays)
+	}
+}
+
+var jsonFieldsNameOfSiteConditionDateWithinLeaf = [3]string{
+	0: "kind",
+	1: "field",
+	2: "withinDays",
+}
+
+// Decode decodes SiteConditionDateWithinLeaf from json.
+func (s *SiteConditionDateWithinLeaf) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConditionDateWithinLeaf to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "field":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Field = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"field\"")
+			}
+		case "withinDays":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Int32()
+				s.WithinDays = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"withinDays\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteConditionDateWithinLeaf")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteConditionDateWithinLeaf) {
+					name = jsonFieldsNameOfSiteConditionDateWithinLeaf[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteConditionDateWithinLeaf) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConditionDateWithinLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConditionDateWithinLeafKind as json.
+func (s SiteConditionDateWithinLeafKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteConditionDateWithinLeafKind from json.
+func (s *SiteConditionDateWithinLeafKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConditionDateWithinLeafKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteConditionDateWithinLeafKind(v) {
+	case SiteConditionDateWithinLeafKindDateWithin:
+		*s = SiteConditionDateWithinLeafKindDateWithin
+	default:
+		*s = SiteConditionDateWithinLeafKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteConditionDateWithinLeafKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConditionDateWithinLeafKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *SiteConditionEventLeaf) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -21948,6 +22333,56 @@ func (s SiteConditionNodeSum) encodeFields(e *jx.Encoder) {
 				}
 			}
 		}
+	case SiteConditionNumberLeafSiteConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("number")
+		{
+			s := s.SiteConditionNumberLeaf
+			{
+				e.FieldStart("field")
+				e.Str(s.Field)
+			}
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+			{
+				e.FieldStart("value")
+				e.Float64(s.Value)
+			}
+		}
+	case SiteConditionDateLeafSiteConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("date")
+		{
+			s := s.SiteConditionDateLeaf
+			{
+				e.FieldStart("field")
+				e.Str(s.Field)
+			}
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+			{
+				e.FieldStart("at")
+				s.At.Encode(e)
+			}
+		}
+	case SiteConditionDateWithinLeafSiteConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("dateWithin")
+		{
+			s := s.SiteConditionDateWithinLeaf
+			{
+				e.FieldStart("field")
+				e.Str(s.Field)
+			}
+			{
+				e.FieldStart("withinDays")
+				e.Int32(s.WithinDays)
+			}
+		}
 	case SiteConditionGroupSiteConditionNodeSum:
 		e.FieldStart("kind")
 		e.Str("group")
@@ -22004,6 +22439,15 @@ func (s *SiteConditionNodeSum) Decode(d *jx.Decoder) error {
 				case "event":
 					s.Type = SiteConditionEventLeafSiteConditionNodeSum
 					found = true
+				case "number":
+					s.Type = SiteConditionNumberLeafSiteConditionNodeSum
+					found = true
+				case "date":
+					s.Type = SiteConditionDateLeafSiteConditionNodeSum
+					found = true
+				case "dateWithin":
+					s.Type = SiteConditionDateWithinLeafSiteConditionNodeSum
+					found = true
 				case "group":
 					s.Type = SiteConditionGroupSiteConditionNodeSum
 					found = true
@@ -22029,6 +22473,18 @@ func (s *SiteConditionNodeSum) Decode(d *jx.Decoder) error {
 		if err := s.SiteConditionEventLeaf.Decode(d); err != nil {
 			return err
 		}
+	case SiteConditionNumberLeafSiteConditionNodeSum:
+		if err := s.SiteConditionNumberLeaf.Decode(d); err != nil {
+			return err
+		}
+	case SiteConditionDateLeafSiteConditionNodeSum:
+		if err := s.SiteConditionDateLeaf.Decode(d); err != nil {
+			return err
+		}
+	case SiteConditionDateWithinLeafSiteConditionNodeSum:
+		if err := s.SiteConditionDateWithinLeaf.Decode(d); err != nil {
+			return err
+		}
 	case SiteConditionGroupSiteConditionNodeSum:
 		if err := s.SiteConditionGroup.Decode(d); err != nil {
 			return err
@@ -22048,6 +22504,231 @@ func (s SiteConditionNodeSum) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteConditionNodeSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteConditionNumberLeaf) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteConditionNumberLeaf) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("field")
+		e.Str(s.Field)
+	}
+	{
+		e.FieldStart("operator")
+		s.Operator.Encode(e)
+	}
+	{
+		e.FieldStart("value")
+		e.Float64(s.Value)
+	}
+}
+
+var jsonFieldsNameOfSiteConditionNumberLeaf = [4]string{
+	0: "kind",
+	1: "field",
+	2: "operator",
+	3: "value",
+}
+
+// Decode decodes SiteConditionNumberLeaf from json.
+func (s *SiteConditionNumberLeaf) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConditionNumberLeaf to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "field":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Field = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"field\"")
+			}
+		case "operator":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Operator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"operator\"")
+			}
+		case "value":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Float64()
+				s.Value = float64(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"value\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteConditionNumberLeaf")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteConditionNumberLeaf) {
+					name = jsonFieldsNameOfSiteConditionNumberLeaf[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteConditionNumberLeaf) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConditionNumberLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConditionNumberLeafKind as json.
+func (s SiteConditionNumberLeafKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteConditionNumberLeafKind from json.
+func (s *SiteConditionNumberLeafKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConditionNumberLeafKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteConditionNumberLeafKind(v) {
+	case SiteConditionNumberLeafKindNumber:
+		*s = SiteConditionNumberLeafKindNumber
+	default:
+		*s = SiteConditionNumberLeafKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteConditionNumberLeafKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConditionNumberLeafKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConditionNumberOperator as json.
+func (s SiteConditionNumberOperator) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteConditionNumberOperator from json.
+func (s *SiteConditionNumberOperator) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConditionNumberOperator to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteConditionNumberOperator(v) {
+	case SiteConditionNumberOperatorGt:
+		*s = SiteConditionNumberOperatorGt
+	case SiteConditionNumberOperatorGte:
+		*s = SiteConditionNumberOperatorGte
+	case SiteConditionNumberOperatorLt:
+		*s = SiteConditionNumberOperatorLt
+	case SiteConditionNumberOperatorLte:
+		*s = SiteConditionNumberOperatorLte
+	default:
+		*s = SiteConditionNumberOperator(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteConditionNumberOperator) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConditionNumberOperator) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -25744,6 +26425,14 @@ func (s *SiteCustomFieldResource) encodeFields(e *jx.Encoder) {
 		s.Type.Encode(e)
 	}
 	{
+		e.FieldStart("ruleOperators")
+		e.ArrStart()
+		for _, elem := range s.RuleOperators {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
@@ -25753,13 +26442,14 @@ func (s *SiteCustomFieldResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteCustomFieldResource = [6]string{
+var jsonFieldsNameOfSiteCustomFieldResource = [7]string{
 	0: "id",
 	1: "key",
 	2: "name",
 	3: "type",
-	4: "createdAt",
-	5: "updatedAt",
+	4: "ruleOperators",
+	5: "createdAt",
+	6: "updatedAt",
 }
 
 // Decode decodes SiteCustomFieldResource from json.
@@ -25815,8 +26505,26 @@ func (s *SiteCustomFieldResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"type\"")
 			}
-		case "createdAt":
+		case "ruleOperators":
 			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				s.RuleOperators = make([]SiteConditionOperator, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SiteConditionOperator
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.RuleOperators = append(s.RuleOperators, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"ruleOperators\"")
+			}
+		case "createdAt":
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -25826,7 +26534,7 @@ func (s *SiteCustomFieldResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -25845,7 +26553,7 @@ func (s *SiteCustomFieldResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00111111,
+		0b01111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

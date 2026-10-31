@@ -99,6 +99,15 @@
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
+# Compares a number property of its Trigger event: tags a promoter, nps_submitted with score >= 9.
+- id: 130 # fixture: RulePromoters
+  name: Tag a promoter
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  live_version_id: 130
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
 # Keeps the wait-first Automation (it has no Enrollments) from being removed.
 - id: 109 # fixture: RuleEnrollWaitFirst
   name: Enroll in the wait-first automation

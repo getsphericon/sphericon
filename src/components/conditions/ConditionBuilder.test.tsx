@@ -7,6 +7,7 @@ import {
   handleSiteEventsActions,
   handleSiteSegmentsPreview,
 } from '../../generated/site/msw.gen.ts'
+import { SiteConditionOperator } from '../../generated/site/types.gen.ts'
 import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -20,8 +21,31 @@ function serve(previewBodies: unknown[] = []) {
     handleSiteEventsActions({ body: { actions: ['purchase'] } }),
     handleSiteCustomFieldsList({
       body: page([
-        { id: '1', key: 'plan', name: 'Plan', type: 'string', ...TIMESTAMPS },
-        { id: '2', key: 'age', name: 'Age', type: 'number', ...TIMESTAMPS },
+        {
+          id: '1',
+          key: 'plan',
+          name: 'Plan',
+          type: 'string',
+          ruleOperators: [
+            SiteConditionOperator.EQ,
+            SiteConditionOperator.NEQ,
+            SiteConditionOperator.CONTAINS,
+            SiteConditionOperator.NOT_NULL,
+          ],
+          ...TIMESTAMPS,
+        },
+        {
+          id: '2',
+          key: 'age',
+          name: 'Age',
+          type: 'number',
+          ruleOperators: [
+            SiteConditionOperator.EQ,
+            SiteConditionOperator.NEQ,
+            SiteConditionOperator.NOT_NULL,
+          ],
+          ...TIMESTAMPS,
+        },
       ]),
     }),
     handleSiteSegmentsPreview(async ({ request }) => {
@@ -182,4 +206,21 @@ test('a loaded count of at least once shows as the performed preset, with only i
   await expect.element(screen.getByTestId('operators')).toHaveValue('performed')
   await expect.element(screen.getByLabelText('In the last (days)')).toHaveValue('')
   await expect.element(screen.getByLabelText('Times')).not.toBeInTheDocument()
+})
+
+// A number field offers the comparisons beside the operators the server lists for it, and takes a
+// number: the loaded comparison shows its operator and its number.
+test('a number custom field shows a comparison with its number', async () => {
+  serve()
+  const value: SiteConditionGroup = {
+    kind: 'group',
+    combinator: 'and',
+    rules: [{ kind: 'number', field: 'custom:age', operator: 'gte', value: 30 }],
+  }
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder workspaceId="TestWs01" initialValue={value} onChange={vi.fn<() => void>()} />,
+  )
+
+  await expect.element(screen.getByTestId('operators')).toHaveValue('greater than or equal to')
+  await expect.element(screen.getByTestId('value-editor')).toHaveValue('30')
 })

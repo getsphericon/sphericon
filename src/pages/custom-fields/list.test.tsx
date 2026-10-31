@@ -11,8 +11,22 @@ import { CustomFieldsListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(customFieldsRoute, { workspaceId: 'TestWs01' })
 
-const PLAN = { id: '1', key: 'plan', name: 'Plan', type: 'string' as const, ...TIMESTAMPS }
-const SEATS = { id: '2', key: 'seats', name: 'Seats', type: 'number' as const, ...TIMESTAMPS }
+const PLAN = {
+  id: '1',
+  key: 'plan',
+  name: 'Plan',
+  type: 'string' as const,
+  ruleOperators: [],
+  ...TIMESTAMPS,
+}
+const SEATS = {
+  id: '2',
+  key: 'seats',
+  name: 'Seats',
+  type: 'number' as const,
+  ruleOperators: [],
+  ...TIMESTAMPS,
+}
 
 test('lists the custom fields with their key and type', async () => {
   worker.use(handleSiteCustomFieldsList({ body: page([PLAN, SEATS], 2) }))

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -224,6 +225,7 @@ type Converter interface {
 	ProviderLimitToStatus(source providerlimit.Status) siteapi.SiteProviderLimitStatus
 	PasskeyToResource(source *ent.Passkey) siteapi.SitePasskey
 	SuppressionToResource(source *ent.Suppression) siteapi.SiteSuppressionResource
+	// goverter:map Type RuleOperators | customFieldRuleOperators
 	CustomFieldToResource(source *ent.CustomField) siteapi.SiteCustomFieldResource
 	TagToResource(source *ent.Tag) siteapi.SiteTagResource
 
@@ -932,4 +934,10 @@ func optNilContactSource(v *contact.Source) siteapi.OptNilContactExportSource {
 		return siteapi.OptNilContactExportSource{}
 	}
 	return siteapi.NewOptNilContactExportSource(siteapi.ContactExportSource(*v))
+}
+
+// customFieldRuleOperators is the operators a rule leaf may test on a Custom field of the type: the
+// Condition's table, listed so a client offers what the server takes.
+func customFieldRuleOperators(t customfield.Type) []siteapi.SiteConditionOperator {
+	return lo.Map(condition.RuleOperators(t), func(op string, _ int) siteapi.SiteConditionOperator { return siteapi.SiteConditionOperator(op) })
 }

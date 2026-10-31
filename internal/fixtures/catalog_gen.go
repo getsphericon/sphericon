@@ -535,6 +535,24 @@ const (
 	CustomFieldInitrodeInjectionKey = "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a"
 	// CustomFieldInitrodeInjectionName is from fixtures/custom_fields.
 	CustomFieldInitrodeInjectionName = "Injection-looking key"
+	// CustomFieldWonkaPlanID is from fixtures/custom_fields.
+	CustomFieldWonkaPlanID = 5572
+	// CustomFieldWonkaPlanKey is from fixtures/custom_fields.
+	CustomFieldWonkaPlanKey = "plan"
+	// CustomFieldWonkaPlanName is from fixtures/custom_fields.
+	CustomFieldWonkaPlanName = "Plan"
+	// CustomFieldWonkaScoreID is from fixtures/custom_fields.
+	CustomFieldWonkaScoreID = 5570
+	// CustomFieldWonkaScoreKey is from fixtures/custom_fields.
+	CustomFieldWonkaScoreKey = "score"
+	// CustomFieldWonkaScoreName is from fixtures/custom_fields.
+	CustomFieldWonkaScoreName = "Score"
+	// CustomFieldWonkaSeenAtID is from fixtures/custom_fields.
+	CustomFieldWonkaSeenAtID = 5571
+	// CustomFieldWonkaSeenAtKey is from fixtures/custom_fields.
+	CustomFieldWonkaSeenAtKey = "seen_at"
+	// CustomFieldWonkaSeenAtName is from fixtures/custom_fields.
+	CustomFieldWonkaSeenAtName = "Seen at"
 	// CyberdyneCollectKey is from fixtures/workspaces.
 	CyberdyneCollectKey = "omck_test_cyberdyne_collect_key"
 	// CyberdyneID is from fixtures/workspaces.
@@ -1669,6 +1687,10 @@ const (
 	RuleMultiTriggerID = 103
 	// RuleMultiTriggerName is from fixtures/rules.
 	RuleMultiTriggerName = "Either of two events"
+	// RulePromotersID is from fixtures/rules.
+	RulePromotersID = 130
+	// RulePromotersName is from fixtures/rules.
+	RulePromotersName = "Tag a promoter"
 	// RuleSecondRevisitID is from fixtures/rules.
 	RuleSecondRevisitID = 111
 	// RuleSecondRevisitName is from fixtures/rules.
@@ -2255,4 +2277,52 @@ const (
 	WebhookInitechID = 300
 	// WebhookInitechURL is from fixtures/webhook_endpoints.
 	WebhookInitechURL = "https://initech.example/hook"
+	// WonkaCollectKey is from fixtures/workspaces.
+	WonkaCollectKey = "omck_test_wonka_collect_key"
+	// WonkaFlagEmail is from fixtures/contacts.
+	WonkaFlagEmail = "flag@wonka.test"
+	// WonkaFlagID is from fixtures/contacts.
+	WonkaFlagID = 5574
+	// WonkaID is from fixtures/workspaces.
+	WonkaID = 62
+	// WonkaListEmail is from fixtures/contacts.
+	WonkaListEmail = "list@wonka.test"
+	// WonkaListID is from fixtures/contacts.
+	WonkaListID = 5576
+	// WonkaMinusEmail is from fixtures/contacts.
+	WonkaMinusEmail = "minus@wonka.test"
+	// WonkaMinusID is from fixtures/contacts.
+	WonkaMinusID = 5572
+	// WonkaName is from fixtures/workspaces.
+	WonkaName = "Wonka"
+	// WonkaNineAndAHalfEmail is from fixtures/contacts.
+	WonkaNineAndAHalfEmail = "nine@wonka.test"
+	// WonkaNineAndAHalfID is from fixtures/contacts.
+	WonkaNineAndAHalfID = 5571
+	// WonkaNoneEmail is from fixtures/contacts.
+	WonkaNoneEmail = "none@wonka.test"
+	// WonkaNoneID is from fixtures/contacts.
+	WonkaNoneID = 5577
+	// WonkaNullEmail is from fixtures/contacts.
+	WonkaNullEmail = "null@wonka.test"
+	// WonkaNullID is from fixtures/contacts.
+	WonkaNullID = 5575
+	// WonkaOffsetEmail is from fixtures/contacts.
+	WonkaOffsetEmail = "offset@wonka.test"
+	// WonkaOffsetID is from fixtures/contacts.
+	WonkaOffsetID = 5579
+	// WonkaPublicID is from fixtures/workspaces.
+	WonkaPublicID = "WonkaW62"
+	// WonkaTenEmail is from fixtures/contacts.
+	WonkaTenEmail = "ten@wonka.test"
+	// WonkaTenID is from fixtures/contacts.
+	WonkaTenID = 5570
+	// WonkaTextEmail is from fixtures/contacts.
+	WonkaTextEmail = "text@wonka.test"
+	// WonkaTextID is from fixtures/contacts.
+	WonkaTextID = 5573
+	// WonkaZuluEmail is from fixtures/contacts.
+	WonkaZuluEmail = "zulu@wonka.test"
+	// WonkaZuluID is from fixtures/contacts.
+	WonkaZuluID = 5578
 )

@@ -2523,6 +2523,57 @@ export const SiteConditionCombinator = { AND: 'and', OR: 'or' } as const;
 export type SiteConditionCombinator = typeof SiteConditionCombinator[keyof typeof SiteConditionCombinator];
 
 /**
+ * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
+ * is before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date
+ * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
+ * false.
+ */
+export type SiteConditionDateLeaf = {
+  kind: 'date';
+  /**
+   * What it tests: "custom:<key>" for a datetime custom field
+   */
+  field: string;
+  /**
+   * Which side of `at` the moment is on
+   */
+  operator: SiteConditionDateOperator;
+  /**
+   * The moment the field's is compared with
+   */
+  at: Timestamp;
+};
+
+/**
+ * Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the
+ * two split time at `at`
+ */
+export const SiteConditionDateOperator = { BEFORE: 'before', AFTER: 'after' } as const;
+
+/**
+ * Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the
+ * two split time at `at`
+ */
+export type SiteConditionDateOperator = typeof SiteConditionDateOperator[keyof typeof SiteConditionDateOperator];
+
+/**
+ * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
+ * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
+ * date-time with a UTC offset is a moment, as for the date leaf.
+ */
+export type SiteConditionDateWithinLeaf = {
+  kind: 'dateWithin';
+  /**
+   * What it tests: "custom:<key>" for a datetime custom field
+   */
+  field: string;
+  /**
+   * The window, in days back from now
+   */
+  withinDays: number;
+};
+
+/**
  * A test of how many times a contact performed an Event action, over all time or within the
  * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
  * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
@@ -2587,7 +2638,8 @@ export type SiteConditionLeaf = {
    * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
    * time_zone), "tag", "custom:<key>" for a custom field of the workspace, or "trigger:<key>"
    * (a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the
-   * text operators, and is false when the Event lacks the key or holds a value that is not text)
+   * text operators, and is false when the Event lacks the key or holds a value that is not text; a
+   * number property is compared by a number leaf)
    */
   field: string;
   /**
@@ -2601,21 +2653,67 @@ export type SiteConditionLeaf = {
 };
 
 /**
- * A leaf (a test of a field, or an event count) or a nested group inside a condition group,
- * discriminated by `kind`.
+ * A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
+ * group inside a condition group, discriminated by `kind`.
  */
 export type SiteConditionNode = ({
   kind: 'rule';
 } & SiteConditionLeaf) | ({
   kind: 'event';
 } & SiteConditionEventLeaf) | ({
+  kind: 'number';
+} & SiteConditionNumberLeaf) | ({
+  kind: 'date';
+} & SiteConditionDateLeaf) | ({
+  kind: 'dateWithin';
+} & SiteConditionDateWithinLeaf) | ({
   kind: 'group';
 } & SiteConditionGroup);
 
 /**
+ * A comparison of a number: a custom field of the workspace whose type is number
+ * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
+ * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
+ * leaf false.
+ */
+export type SiteConditionNumberLeaf = {
+  kind: 'number';
+  /**
+   * What it compares: "custom:<key>" for a number custom field, or "trigger:<key>"
+   */
+  field: string;
+  /**
+   * How the field compares with `value`
+   */
+  operator: SiteConditionNumberOperator;
+  /**
+   * The number the field is compared with
+   */
+  value: number;
+};
+
+/**
+ * How a number leaf compares the field with `value`: greater than, greater than or equal,
+ * less than, or less than or equal
+ */
+export const SiteConditionNumberOperator = {
+  GT: 'gt',
+  GTE: 'gte',
+  LT: 'lt',
+  LTE: 'lte'
+} as const;
+
+/**
+ * How a number leaf compares the field with `value`: greater than, greater than or equal,
+ * less than, or less than or equal
+ */
+export type SiteConditionNumberOperator = typeof SiteConditionNumberOperator[keyof typeof SiteConditionNumberOperator];
+
+/**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; a custom field takes eq, neq, contains and notNull; the tag field takes has and
- * doesNotHave.
+ * notNull; the tag field takes has and doesNotHave; a custom field takes the operators of its type,
+ * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
+ * number leaf, a datetime one tested by the date leaves).
  */
 export const SiteConditionOperator = {
   EQ: 'eq',
@@ -2630,8 +2728,9 @@ export const SiteConditionOperator = {
 
 /**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; a custom field takes eq, neq, contains and notNull; the tag field takes has and
- * doesNotHave.
+ * notNull; the tag field takes has and doesNotHave; a custom field takes the operators of its type,
+ * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
+ * number leaf, a datetime one tested by the date leaves).
  */
 export type SiteConditionOperator = typeof SiteConditionOperator[keyof typeof SiteConditionOperator];
 
@@ -2956,6 +3055,10 @@ export type SiteCustomFieldResource = {
    * Inferred value type
    */
   type: SiteCustomFieldType;
+  /**
+   * The operators a rule leaf on this field takes, by its type
+   */
+  ruleOperators: Array<SiteConditionOperator>;
   /**
    * Creation timestamp
    */

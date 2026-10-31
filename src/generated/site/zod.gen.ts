@@ -714,6 +714,23 @@ export const zSiteCapturedMessageSurface = z.enum([
 export const zSiteConditionCombinator = z.enum(['and', 'or']);
 
 /**
+ * Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the
+ * two split time at `at`
+ */
+export const zSiteConditionDateOperator = z.enum(['before', 'after']);
+
+/**
+ * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
+ * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
+ * date-time with a UTC offset is a moment, as for the date leaf.
+ */
+export const zSiteConditionDateWithinLeaf = z.object({
+  kind: z.enum(['dateWithin']),
+  field: z.string(),
+  withinDays: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * How an event leaf bounds the count: at least `times`, or at most `times`
  */
 export const zSiteConditionEventOperator = z.enum(['atLeast', 'atMost']);
@@ -733,9 +750,34 @@ export const zSiteConditionEventLeaf = z.object({
 });
 
 /**
+ * How a number leaf compares the field with `value`: greater than, greater than or equal,
+ * less than, or less than or equal
+ */
+export const zSiteConditionNumberOperator = z.enum([
+  'gt',
+  'gte',
+  'lt',
+  'lte'
+]);
+
+/**
+ * A comparison of a number: a custom field of the workspace whose type is number
+ * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
+ * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
+ * leaf false.
+ */
+export const zSiteConditionNumberLeaf = z.object({
+  kind: z.enum(['number']),
+  field: z.string(),
+  operator: zSiteConditionNumberOperator,
+  value: z.number()
+});
+
+/**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; a custom field takes eq, neq, contains and notNull; the tag field takes has and
- * doesNotHave.
+ * notNull; the tag field takes has and doesNotHave; a custom field takes the operators of its type,
+ * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
+ * number leaf, a datetime one tested by the date leaves).
  */
 export const zSiteConditionOperator = z.enum([
   'eq',
@@ -2440,6 +2482,19 @@ export const zSiteCapturedMessageSummary = z.object({
 });
 
 /**
+ * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
+ * is before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date
+ * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
+ * false.
+ */
+export const zSiteConditionDateLeaf = z.object({
+  kind: z.enum(['date']),
+  field: z.string(),
+  operator: zSiteConditionDateOperator,
+  at: zTimestamp
+});
+
+/**
  * A Connection: the access a User gave an application (an MCP client) to the Workspace by
  * consenting to it (ADR 0061). It belongs to that User's Membership, can do no more than the
  * User's Role allows and ends with the Membership. Connections are not API tokens and are not
@@ -2507,6 +2562,7 @@ export const zSiteCustomFieldResource = z.object({
   key: z.string(),
   name: z.string(),
   type: zSiteCustomFieldType,
+  ruleOperators: z.array(zSiteConditionOperator),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3082,12 +3138,15 @@ export const zSiteConditionGroup = z.object({
 });
 
 /**
- * A leaf (a test of a field, or an event count) or a nested group inside a condition group,
- * discriminated by `kind`.
+ * A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
+ * group inside a condition group, discriminated by `kind`.
  */
 export const zSiteConditionNode = z.discriminatedUnion('kind', [
   zSiteConditionLeaf.extend({ kind: z.literal('rule') }),
   zSiteConditionEventLeaf.extend({ kind: z.literal('event') }),
+  zSiteConditionNumberLeaf.extend({ kind: z.literal('number') }),
+  zSiteConditionDateLeaf.extend({ kind: z.literal('date') }),
+  zSiteConditionDateWithinLeaf.extend({ kind: z.literal('dateWithin') }),
   zSiteConditionGroup.extend({ kind: z.literal('group') })
 ]);
 

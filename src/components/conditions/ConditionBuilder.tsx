@@ -11,35 +11,21 @@ import {
   siteEventsActionsOptions,
   siteSegmentsPreviewMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import {
-  SiteConditionEventOperator,
-  SiteConditionOperator,
-} from '../../generated/site/types.gen.ts'
+import { SiteConditionEventOperator } from '../../generated/site/types.gen.ts'
 import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
+import { useTimeZone } from '../../hooks/useDateFormat.ts'
 import { eventFieldPrefix, eventPresets, toCondition, toDraft, toQuery } from './condition.ts'
 import type { ConditionDraft } from './condition.ts'
 import { EventCountEditor } from './EventCountEditor.tsx'
+import {
+  inputTypeOf,
+  inputTypeOfField,
+  operatorsOf,
+  textOperators,
+  triggerOperatorsOf,
+} from './fieldOperators.ts'
 import { triggerFieldPrefix } from './triggerFieldPrefix.ts'
 import { TriggerFieldSelector } from './TriggerFieldSelector.tsx'
-
-// What the backend segment engine compiles for each kind of field.
-const textOperators: Operator[] = [
-  { name: SiteConditionOperator.EQ, label: 'is' },
-  { name: SiteConditionOperator.NEQ, label: 'is not' },
-  { name: SiteConditionOperator.CONTAINS, label: 'contains' },
-  { name: SiteConditionOperator.BEGINS_WITH, label: 'begins with' },
-  { name: SiteConditionOperator.NULL, label: 'is empty' },
-  { name: SiteConditionOperator.NOT_NULL, label: 'is set' },
-]
-
-// A custom field is a key of a JSON column: it can be compared, or tested for membership
-// of an array, but not for a prefix or for being empty.
-const customFieldOperators: Operator[] = [
-  { name: SiteConditionOperator.EQ, label: 'is' },
-  { name: SiteConditionOperator.NEQ, label: 'is not' },
-  { name: SiteConditionOperator.CONTAINS, label: 'contains' },
-  { name: SiteConditionOperator.NOT_NULL, label: 'is set' },
-]
 
 // Event conditions count the action (per-field overrides the global operator set): the presets
 // "performed" and "not performed", or at least / at most a number of times. EventCountEditor
@@ -66,7 +52,8 @@ interface ConditionBuilderProps {
   // operator the user picked stays picked, a count can be blank while it is typed), so a later
   // change of this value is not read: a form that loads another Condition remounts the builder.
   initialValue: SiteConditionGroup
-  // Every edit, as a draft: toCondition is undefined while an event count is blank.
+  // Every edit, as a draft: toCondition is undefined while an event count, a number or a day is
+  // blank.
   onChange: (draft: ConditionDraft) => void
   // Offer the tests on the triggering Event's properties. Only a Rule has an Event: a
   // Segment refuses them, and so does the segment preview, which is hidden with them.
@@ -83,7 +70,9 @@ export function ConditionBuilder({
   triggerLeaves = false,
 }: ConditionBuilderProps) {
   const { t } = useTranslation()
-  const [initialQuery] = useState(() => toQuery(initialValue))
+  // The days of before and after are days in the User time zone (ADR 0068).
+  const timeZone = useTimeZone()
+  const [initialQuery] = useState(() => toQuery(initialValue, timeZone))
   const [draft, setDraft] = useState<ConditionDraft>(initialValue)
   const condition = toCondition(draft)
   const preview = useMutation(siteSegmentsPreviewMutation())
@@ -92,14 +81,16 @@ export function ConditionBuilder({
   // event leaf: a count of the action in the events log.
   const actionsQuery = useQuery(siteEventsActionsOptions({ path: { workspaceId } }))
   // The typed Custom field catalogue (ADR 0006) becomes targetable fields
-  // ("custom:<key>") alongside the core fields — one governed attribute list.
+  // ("custom:<key>") alongside the core fields — one governed attribute list. Each offers the
+  // operators the server lists for it and the leaves of its type; the operator picks the value
+  // input (inputTypeOf), a number field's own is a number.
   const customFieldsQuery = useQuery(siteCustomFieldsListOptions({ path: { workspaceId } }))
   const fields = useMemo<Field[]>(() => {
     const customFields = (customFieldsQuery.data?.items ?? []).map<Field>((f) => ({
       name: `custom:${f.key}`,
       label: f.name,
-      operators: customFieldOperators,
-      inputType: f.type === 'number' ? 'number' : 'text',
+      operators: operatorsOf(f),
+      inputType: inputTypeOfField(f),
     }))
     const eventFields = (actionsQuery.data?.actions ?? []).map<Field>((action) => ({
       name: `${eventFieldPrefix}${action}`,
@@ -119,6 +110,8 @@ export function ConditionBuilder({
         <QueryBuilder
           fields={fields}
           operators={textOperators}
+          getOperators={triggerOperatorsOf}
+          getInputType={(_field, operator, { fieldData }) => inputTypeOf(operator, fieldData)}
           defaultQuery={initialQuery}
           enableMountQueryChange={false}
           controlElements={{
@@ -126,7 +119,7 @@ export function ConditionBuilder({
             ...(triggerLeaves ? { fieldSelector: TriggerFieldSelector } : {}),
           }}
           onQueryChange={(q) => {
-            const next = toDraft(q)
+            const next = toDraft(q, timeZone)
             setDraft(next)
             onChange(next)
           }}

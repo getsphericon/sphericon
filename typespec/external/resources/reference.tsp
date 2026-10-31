@@ -28,6 +28,9 @@ model CustomFieldResource {
   /** Inferred value type */
   type: CustomFieldType;
 
+  /** The operators a rule leaf on this field takes, by its type */
+  ruleOperators: ConditionOperator[];
+
   /** Creation timestamp */
   createdAt: Timestamp;
 

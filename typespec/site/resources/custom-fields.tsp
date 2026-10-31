@@ -32,6 +32,9 @@ model SiteCustomFieldResource {
   /** Inferred value type */
   type: SiteCustomFieldType;
 
+  /** The operators a rule leaf on this field takes, by its type */
+  ruleOperators: SiteConditionOperator[];
+
   /** Creation timestamp */
   createdAt: Timestamp;
 

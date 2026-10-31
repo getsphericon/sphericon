@@ -9,6 +9,17 @@ status: accepted
 > `event:<action>` compiled to `contact.HasEventsWith`. It compiles to a subquery that counts the
 > Events linked by `contact_id`, built with ent's builder and the generated Event predicates.
 
+> **Amended by #750:** a `number` leaf (`gt`, `gte`, `lt`, `lte`) on a number Custom field, a
+> `date` leaf (`before` or `after` a moment `at`, which split time at it) and a `dateWithin` leaf
+> (the last N days up to now) on a datetime one compile to a Postgres jsonpath filter in silent
+> mode, a raw fragment: ent's JSON comparisons cast the value, and one Contact's value of another
+> type would fail the whole query, where the filter is false. The key, the filter and its operands
+> are bound arguments. Only a date-time with an offset is a moment, so a value is never read in the
+> server's time zone; a trailing Z is written +00:00 first, since jsonpath reads an offset only as
+> ±hh[:mm] on Postgres 14. Each leaf takes only a Custom field of its type, and a `rule` leaf on a
+> Custom field only the operators of its type, a table the compiler holds once and the API lists as
+> each Custom field's `ruleOperators`.
+
 A Segment's Condition is compiled into ent's generated predicates (`contact.EmailEQ`,
 `contact.HasTagsWith`, `contact.HasEventsWith`), not into SQL assembled from table and column
 names. The compiler takes the Workspace's scoped client, so a Condition can only name what that

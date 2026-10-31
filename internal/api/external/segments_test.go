@@ -142,6 +142,48 @@ func TestExternalSegmentsStoreAnEventCount(t *testing.T) {
 	assert.Equal(t, externalapi.NewOptConditionGroup(sent), stored.Condition)
 }
 
+// A number leaf takes a number custom field, a date leaf a datetime one, as on /site: Acme's
+// courses_completed is a number and plan a string.
+func TestExternalSegmentsPreviewFitsNumberAndDateLeavesToTheFieldType(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "segments:read")
+	preview := func(leaf string) externalapi.SegmentsPreviewRes {
+		t.Helper()
+		out, err := c.SegmentsPreview(context.Background(), &externalapi.PreviewSegmentInput{
+			Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[`+leaf+`]}`)),
+		})
+		require.NoError(t, err)
+		return out
+	}
+
+	onNumber := preview(`{"kind":"number","field":"custom:courses_completed","operator":"gte","value":3}`)
+	numberOnText := preview(`{"kind":"number","field":"custom:plan","operator":"gte","value":3}`)
+	dateOnNumber := preview(`{"kind":"dateWithin","field":"custom:courses_completed","withinDays":7}`)
+
+	assert.IsType(t, &externalapi.PreviewSegmentResult{}, onNumber)
+	assert.IsType(t, &externalapi.SegmentsPreviewUnprocessableEntity{}, numberOnText)
+	assert.IsType(t, &externalapi.SegmentsPreviewUnprocessableEntity{}, dateOnNumber)
+}
+
+// A Segment created with a number leaf reads back as it was sent.
+func TestExternalSegmentsStoreANumberLeaf(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	c := env.ExternalScoped(t, "segments:read", "segments:write")
+	sent := testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"number","field":"custom:courses_completed","operator":"lt","value":1.5}]}`)
+
+	out, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Barely started", Condition: sent})
+	require.NoError(t, err)
+	created, ok := out.(*externalapi.SegmentResource)
+	require.Truef(t, ok, "got %T", out)
+	got, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: created.ID})
+	require.NoError(t, err)
+	stored, ok := got.(*externalapi.SegmentResource)
+	require.Truef(t, ok, "got %T", got)
+
+	assert.Equal(t, externalapi.NewOptConditionGroup(sent), stored.Condition)
+}
+
 func TestExternalSegmentsScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()

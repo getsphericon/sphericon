@@ -70,6 +70,14 @@
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 40}}'
+- id: 130
+  rule_id: 130
+  version: 1
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"number","field":"trigger:score","operator":"gte","value":9}]}'
+  actions: '[{"type":"apply_tag","tag":"promoter"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
 - id: 106
   rule_id: 106
   version: 1
