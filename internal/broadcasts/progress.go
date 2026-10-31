@@ -29,8 +29,8 @@ type Detail struct {
 	Progress *Progress
 }
 
-// DetailOf reads a Broadcast's figures and, when it is sending, its Progress.
-func DetailOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (Detail, error) {
+// Detail reads a Broadcast's figures and, when it is sending, its Progress.
+func (m *Module) Detail(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (Detail, error) {
 	figures, err := StatsOf(ctx, s, b.ID)
 	if err != nil {
 		return Detail{}, err
@@ -39,16 +39,16 @@ func DetailOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Tim
 	if b.Status != broadcast.StatusSending {
 		return d, nil
 	}
-	d.Progress, err = progressOf(ctx, s, b, d.Stats, now)
+	d.Progress, err = m.progressOf(ctx, s, b, d.Stats, now)
 	return d, err
 }
 
 // progressOf computes the progress of a sending Broadcast from its figures.
 // The estimate is the last scheduled recipient job while that is still ahead; once it
 // has passed (jobs were deferred, or the limit was lowered mid-send) it falls back to
-// the remaining recipients at the Integration's current rate. A hold has no estimate:
-// the source is blocked, not busy, and nothing says when it lifts.
-func progressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, st Stats, now time.Time) (*Progress, error) {
+// the remaining recipients at the current rate of its Send route. A hold has no estimate,
+// recorded or the route's own: the source is blocked, not busy, and nothing says when it lifts.
+func (m *Module) progressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, st Stats, now time.Time) (*Progress, error) {
 	pending := st.Pending
 	p := &Progress{Remaining: pending, Processed: st.Processed()}
 	if pending == 0 || b.HoldReason != nil {
@@ -58,11 +58,14 @@ func progressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, st Stats, 
 		p.EstimatedCompletion = b.LastScheduledAt
 		return p, nil
 	}
-	step, err := interval(ctx, s, b)
+	route, err := m.out.Route(ctx, s, b.IntegrationID)
 	if err != nil {
 		return nil, err
 	}
-	if step > 0 {
+	if route.Held() {
+		return p, nil
+	}
+	if step := route.Interval(); step > 0 {
 		eta := now.Add(time.Duration(pending) * step)
 		p.EstimatedCompletion = &eta
 	}

@@ -82,7 +82,9 @@ type Handler interface {
 	// AutomationsPublish implements Automations_publish operation.
 	//
 	// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
-	// draft, the live version is resumed. 422 with neither. Needs the automations:publish scope.
+	// draft, the live version is resumed. 422 with neither. 409 when the version going live has an email
+	// step and the integration it sends through cannot send (disabled or archived, or no default): a draft
+	// may name such an integration, only publishing it is refused. Needs the automations:publish scope.
 	//
 	// POST /automations/{id}/publish
 	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error)
@@ -163,8 +165,10 @@ type Handler interface {
 	//
 	// Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its
 	// segment's condition: recipients are resolved at send time from that copy, so a later edit of the
-	// segment changes nothing for it, and rescheduling keeps it. An archived segment is refused.
-	// Send-class: needs the broadcasts:send scope, and mcp:send over MCP.
+	// segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when
+	// the integration it sends through cannot send (disabled or archived, or no default): a draft may name
+	// such an integration, only scheduling it is refused. Send-class: needs the broadcasts:send scope, and
+	// mcp:send over MCP.
 	//
 	// POST /broadcasts/{id}/schedule
 	BroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params BroadcastsScheduleParams) (BroadcastsScheduleRes, error)

@@ -45,6 +45,12 @@ stays authoring or ingest, as before.
   at send time, from the copy, so a Contact who matches after scheduling still receives it. Unschedule
   drops the copy. The Segment reference stays as provenance only.
 
+(Amended by #787: Publish arms the sends, so an Automation whose version going live has an email step
+is refused, 409, while its Send route cannot send: the Integration it names is disabled or archived,
+or the Workspace has no default. A draft may still name such an Integration. Publish without a draft,
+which makes an inactive live version active again, is checked the same way. A Broadcast's Schedule is
+refused alike.)
+
 ## Considered options
 
 - **Refuse an edit of an armed object without the send scope.** Closes the hole with a status check,

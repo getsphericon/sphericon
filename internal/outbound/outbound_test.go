@@ -41,12 +41,17 @@ func (s senders) EmailSender(context.Context, *ent.Scoped, *ent.Integration) (me
 	return s.sender, s.err
 }
 
-// newCoreModule is newModule for a test under testing/synctest, which ignores Staff holds:
-// fake time starts in 2000, before the fixture hold's real-clock expiry, so it would read active.
-func newCoreModule(env *testhelper.TestEnv, opts ...outbound.Option) *outbound.Module {
-	return outbound.New(env.Bus, env.CoreHolds(), senders{sender: env.CustomerMail},
-		tracking.New("test-secret", "http://local"), opts...)
-}
+// clock is the module's clock in a test (outbound.WithClock): it stands still until the test
+// moves it, so the Provider limit and the claim lease are read at a time the test chose.
+type clock struct{ at time.Time }
+
+// startClock starts a clock at the real time, so the fixtures' times keep their meaning.
+func startClock() *clock { return &clock{at: time.Now()} }
+
+func (c *clock) now() time.Time { return c.at }
+
+// elapse lets d pass on the clock.
+func (c *clock) elapse(d time.Duration) { c.at = c.at.Add(d) }
 
 func newModule(env *testhelper.TestEnv, opts ...outbound.Option) *outbound.Module {
 	return outbound.New(env.Bus, env.Holds, senders{sender: env.CustomerMail},

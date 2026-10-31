@@ -10557,6 +10557,10 @@ type SiteAutomationsPublishBadRequest ProblemDetails
 
 func (*SiteAutomationsPublishBadRequest) siteAutomationsPublishRes() {}
 
+type SiteAutomationsPublishConflict ProblemDetails
+
+func (*SiteAutomationsPublishConflict) siteAutomationsPublishRes() {}
+
 type SiteAutomationsPublishNotFound ProblemDetails
 
 func (*SiteAutomationsPublishNotFound) siteAutomationsPublishRes() {}
@@ -11510,6 +11514,10 @@ func (*SiteBroadcastsListUnprocessableEntity) siteBroadcastsListRes() {}
 type SiteBroadcastsScheduleBadRequest ProblemDetails
 
 func (*SiteBroadcastsScheduleBadRequest) siteBroadcastsScheduleRes() {}
+
+type SiteBroadcastsScheduleConflict ProblemDetails
+
+func (*SiteBroadcastsScheduleConflict) siteBroadcastsScheduleRes() {}
 
 type SiteBroadcastsScheduleNotFound ProblemDetails
 

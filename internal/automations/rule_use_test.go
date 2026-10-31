@@ -18,7 +18,7 @@ import (
 // the refusal names the Rule (ADR 0049, ADR 0054, spec #767). An archived Rule does not hold it.
 func TestAnAutomationARuleEnrollsInIsNotRemoved(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 	named := []inuse.User{{Kind: inuse.Rule, ID: fixtures.RuleEnrollWaitFirstID, Name: fixtures.RuleEnrollWaitFirstName}}

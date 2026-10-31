@@ -24,7 +24,7 @@ func httpStep(url string) automations.Step {
 
 func TestDryRunEscapesAHostileContactNameAndKeepsTheStructure(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	_, err := acme.Contact().UpdateOneID(fixtures.ContactAliceID).
@@ -43,7 +43,7 @@ func TestDryRunEscapesAHostileContactNameAndKeepsTheStructure(t *testing.T) {
 
 func TestDryRunNamesTheErrorKindOfAnInvalidBody(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	res, err := m.DryRun(context.Background(), acme, fixtures.ContactAliceID, `{"n": {{ missing }}}`)
@@ -58,14 +58,14 @@ func TestDryRunNamesTheErrorKindOfAnInvalidBody(t *testing.T) {
 
 func TestDryRunOfAContactOfAnotherWorkspaceIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	_, err := m.DryRun(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceID, slackBody)
 	assert.ErrorIs(t, err, automations.ErrContactNotFound)
 }
 
 func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 
@@ -117,7 +117,7 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 
 func TestFixtureHTTPStepOpensAndItsBodyRenders(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	a, err := m.Get(context.Background(), acme, fixtures.AutomationNotifySlackID)
@@ -135,7 +135,7 @@ func TestFixtureHTTPStepOpensAndItsBodyRenders(t *testing.T) {
 
 func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 

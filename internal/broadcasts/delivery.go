@@ -131,8 +131,9 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 		return &HeldError{Reason: res.Reason}
 	}
 	// The Integration is busy, not blocked: the Broadcast stays sending with no hold
-	// reason and this recipient stays pending, retried after the wait.
-	now := time.Now()
+	// reason and this recipient stays pending, retried after the wait. The wait is measured on
+	// Outbound send's clock, so the time it is due is too.
+	now := d.out.Now()
 	ahead, cerr := s.BroadcastRecipient().Query().
 		Where(
 			broadcastrecipient.BroadcastID(rec.BroadcastID),

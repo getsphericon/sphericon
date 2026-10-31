@@ -209,7 +209,8 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 		Headers: []automations.Header{{Name: "Authorization"}},
 	}}
 	bus := e.bus(t)
-	mod := automations.New(cipher, bus, testhelper.Renderer())
+	out := outbound.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(&fakeSender{}), tracking.New("test-secret", "http://local"))
+	mod := automations.New(cipher, bus, testhelper.Renderer(), out)
 	_, err = mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
 	require.NoError(t, err)
 	// The edit is a draft until it is published (ADR 0065); the Enrollment begins on the live one.

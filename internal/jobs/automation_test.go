@@ -452,7 +452,7 @@ func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	mod := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	mod := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 
 	early := enrollVia(t, env, fixtures.AutomationJobsEditableID, fixtures.ContactAliceID)
 	// The first step (the wait) runs; the Enrollment now stands on the email step.

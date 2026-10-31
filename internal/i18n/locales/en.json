@@ -257,6 +257,7 @@
   "errors.token_not_found": "token not found",
   "errors.bootstrap_token_invalid": "invalid bootstrap token",
   "errors.sending_held": "the message was not sent",
+  "errors.send_route_held": "the email integration it sends through cannot send: enable it, choose another one or set a default",
   "errors.test_send_refused": "the test send was not sent",
   "errors.destination_empty": "destination must not be empty",
   "errors.variables_invalid": "invalid variables",

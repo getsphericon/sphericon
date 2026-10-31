@@ -244,7 +244,9 @@ interface SiteAutomations
 
   /**
    * Publish an automation: the draft becomes live and the automation active, enrolling contacts;
-   * with no draft, the live version is resumed. 422 with neither.
+   * with no draft, the live version is resumed. 422 with neither. 409 when the version going live
+   * has an email step and the integration it sends through cannot send (disabled or archived, or no
+   * default): a draft may name such an integration, only publishing it is refused.
    */
   @action("publish")
   @autoRoute
@@ -253,6 +255,7 @@ interface SiteAutomations
     | SiteAutomationResource
     | BadRequestProblem
     | NotFoundProblem
+    | ConflictProblem
     | UnprocessableEntityProblem;
 
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. */

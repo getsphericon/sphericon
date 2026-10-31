@@ -221,7 +221,7 @@ func TestAnUnlistedEventOrAnotherContactsEventEndsNothing(t *testing.T) {
 // that changes them, or a Deactivate, does not change what ends it.
 func TestAnEnrollmentEndsByTheEventsOfTheVersionItStandsOn(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
@@ -268,7 +268,7 @@ func TestARuleEnrollmentWithoutItsStoredEventBeginsNow(t *testing.T) {
 
 func TestCreateKeepsExitAndGoalEventsInTheDraft(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	goal := " subscription_expanded "
 
 	created, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
@@ -299,7 +299,7 @@ func TestCreateRefusesAnExitOrGoalEventThatCannotEndAnEnrollment(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+			m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 			tc.in.Name = "Refused"
 
 			_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), tc.in)
@@ -313,7 +313,7 @@ func TestCreateRefusesAnExitOrGoalEventThatCannotEndAnEnrollment(t *testing.T) {
 // event is refused, though the edit names no exit event.
 func TestUpdateRefusesATriggerEqualToAStoredExitEvent(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 
 	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{
 		TriggerEvent: new(recoveryExit),
@@ -326,7 +326,7 @@ func TestUpdateRefusesATriggerEqualToAStoredExitEvent(t *testing.T) {
 // live version as it was.
 func TestEditingExitAndGoalEventsWritesTheDraft(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 

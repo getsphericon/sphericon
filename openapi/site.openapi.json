@@ -5131,7 +5131,7 @@
     "/workspaces/{workspaceId}/automations/{id}/publish": {
       "post": {
         "operationId": "SiteAutomations_publish",
-        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts;\nwith no draft, the live version is resumed. 422 with neither.",
+        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts;\nwith no draft, the live version is resumed. 422 with neither. 409 when the version going live\nhas an email step and the integration it sends through cannot send (disabled or archived, or no\ndefault): a draft may name such an integration, only publishing it is refused.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -5163,6 +5163,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5893,7 +5903,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/schedule": {
       "post": {
         "operationId": "SiteBroadcasts_schedule",
-        "description": "Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused.",
+        "description": "Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -5925,6 +5935,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {

@@ -37,7 +37,7 @@ func (q failingQueue) InsertTx(context.Context, *sql.Tx, river.JobArgs, *river.I
 
 func TestSendMovesDraftToSendingAndQueuesTheJobImmediately(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus, testhelper.Renderer())
+	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 
 	b, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
 	require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestSendMovesDraftToSendingAndQueuesTheJobImmediately(t *testing.T) {
 
 func TestSendClearsTheScheduleOfAScheduledBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus, testhelper.Renderer())
+	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 
 	b, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID)
 	require.NoError(t, err)
@@ -65,7 +65,7 @@ func TestSendLeavesTheBroadcastADraftWhenTheJobCannotBeQueued(t *testing.T) {
 	boom := errors.New("queue down")
 	env.Bus.UseJobs(failingQueue{err: boom})
 
-	_, err := broadcasts.New(env.Bus, testhelper.Renderer()).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
+	_, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
 
 	require.ErrorIs(t, err, boom)
 	assert.Equal(t, broadcast.StatusDraft, env.DB.Broadcast.GetX(context.Background(), fixtures.BroadcastDraftID).Status)
@@ -79,7 +79,7 @@ func TestSendLeavesTheBroadcastADraftWhenTheQueueAndTheRequestFailTogether(t *te
 	t.Cleanup(cancel)
 	env.Bus.UseJobs(failingQueue{err: errors.New("queue is down"), onInsert: cancel})
 
-	_, err := broadcasts.New(env.Bus, testhelper.Renderer()).Send(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
+	_, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Send(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
 
 	require.Error(t, err)
 	got := env.DB.Broadcast.GetX(context.Background(), fixtures.BroadcastDraftID)
@@ -88,7 +88,7 @@ func TestSendLeavesTheBroadcastADraftWhenTheQueueAndTheRequestFailTogether(t *te
 
 func TestScheduleSetsTimeAndQueuesTheJobForThen(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus, testhelper.Renderer())
+	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 	when := time.Now().Add(24 * time.Hour).Truncate(time.Second)
 
 	b, err := m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, when)
@@ -110,7 +110,7 @@ func TestScheduleLeavesTheBroadcastADraftWithNoTimeWhenTheJobCannotBeQueued(t *t
 	boom := errors.New("queue down")
 	env.Bus.UseJobs(failingQueue{err: boom})
 
-	_, err := broadcasts.New(env.Bus, testhelper.Renderer()).Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, time.Now().Add(time.Hour))
+	_, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, time.Now().Add(time.Hour))
 
 	require.ErrorIs(t, err, boom)
 	got := env.DB.Broadcast.GetX(context.Background(), fixtures.BroadcastDraftID)
@@ -120,7 +120,7 @@ func TestScheduleLeavesTheBroadcastADraftWithNoTimeWhenTheJobCannotBeQueued(t *t
 
 func TestTransitionsOutOfSendingAreRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus, testhelper.Renderer())
+	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 
 	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID)
 	require.ErrorIs(t, err, broadcasts.ErrNotSendable)
@@ -131,7 +131,7 @@ func TestTransitionsOutOfSendingAreRefused(t *testing.T) {
 
 func TestUnscheduleReturnsAScheduledBroadcastToDraft(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus, testhelper.Renderer())
+	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 
 	b, err := m.Unschedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID)
 	require.NoError(t, err)
@@ -145,7 +145,7 @@ func TestUnscheduleReturnsAScheduledBroadcastToDraft(t *testing.T) {
 
 func TestUnscheduleRefusesWhatIsNotScheduled(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus, testhelper.Renderer())
+	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 
 	for _, id := range []int64{fixtures.BroadcastDraftID, fixtures.BroadcastSendingID} {
 		_, err := m.Unschedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), id)
@@ -159,7 +159,7 @@ func TestUnscheduleRefusesWhatIsNotScheduled(t *testing.T) {
 
 func TestUnknownOrForeignBroadcastIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus, testhelper.Renderer())
+	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 
 	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID+1000), fixtures.BroadcastDraftID)
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)

@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -165,6 +166,7 @@ func validate(steps []Step) error {
 type Module struct {
 	cipher   *secrets.Cipher
 	renderer *emaildoc.Renderer
+	out      *outbound.Module
 	life     *drafts.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
 	// now is the clock a report's period ends by.
 	now func() time.Time
@@ -173,9 +175,10 @@ type Module struct {
 // New builds the automations module. It holds no client: every call takes the
 // Workspace's scoped client (ADR 0017). The cipher seals an HTTP step's secrets; the bus
 // opens the transaction of each move of the definition (internal/drafts); the renderer builds an
-// email step's body from its document.
-func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer) *Module {
-	m := &Module{cipher: cipher, renderer: renderer, now: time.Now}
+// email step's body from its document; out is Outbound send, whose Send route Publish asks
+// whether the Automation's email steps can send.
+func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outbound.Module) *Module {
+	m := &Module{cipher: cipher, renderer: renderer, out: out, now: time.Now}
 	m.life = drafts.New(bus, versioned{m: m}, drafts.Errors{
 		NotFound:         ErrNotFound,
 		NothingToPublish: ErrNothingToPublish,
@@ -584,13 +587,37 @@ func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int
 	return created.ID, nil
 }
 
-// Publishable checks the draft's Trigger, exit and goal events again, and its Integration must
-// still be kept.
-func (versioned) Publishable(ctx context.Context, ts *ent.Scoped, draft *ent.AutomationVersion) error {
-	if err := validateEvents(definition{trigger: draft.TriggerEvent, exits: draft.ExitEvents, goal: draft.GoalEvent}); err != nil {
+// Publishable checks the Trigger, exit and goal events of the version going live again, and its
+// Integration must still be kept. Publish arms its email steps, so a version with one is refused
+// with outbound.ErrRouteHeld while its Send route cannot send (the Integration it names is
+// disabled, or the Workspace has no default): an edit may name such an Integration, only Publish is
+// refused, and a route that stops sending after it holds each send instead.
+func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent.AutomationVersion) error {
+	if err := validateEvents(definition{trigger: version.TriggerEvent, exits: version.ExitEvents, goal: version.GoalEvent}); err != nil {
 		return err
 	}
-	return checkIntegration(ctx, ts, draft.IntegrationID)
+	if err := checkIntegration(ctx, ts, version.IntegrationID); err != nil {
+		return err
+	}
+	sends, err := sendsEmail(version)
+	if err != nil || !sends {
+		return err
+	}
+	route, err := v.m.out.Route(ctx, ts, version.IntegrationID)
+	if err != nil {
+		return err
+	}
+	return route.Armable()
+}
+
+// sendsEmail reports whether the version has an email step: one that has none sends through no
+// Integration, so its Send route is not asked.
+func sendsEmail(version *ent.AutomationVersion) (bool, error) {
+	steps, err := Decode(version.Steps)
+	if err != nil {
+		return false, err
+	}
+	return slices.ContainsFunc(steps, func(s Step) bool { return s.Type == StepEmail }), nil
 }
 
 // Archivable refuses to archive an Automation a kept Rule enrolls Contacts in, or one with active
@@ -696,8 +723,9 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.A
 // Publish makes the draft live and the Automation active (internal/drafts): new Enrollments begin
 // on the draft's definition, and the old live version stays as history; the Enrollments already on
 // it finish there. With no draft it makes an inactive live version active again and leaves an
-// active one as it is; with neither it is refused. The draft's Trigger, exit and goal events are
-// checked again and its Integration must still be kept. Publish is send-class (ADR 0065): the surfaces gate it by the
+// active one as it is; with neither it is refused. The Trigger, exit and goal events of the version
+// going live are checked again and its Integration must still be kept; with an email step, its Send
+// route must be able to send (outbound.ErrRouteHeld). Publish is send-class (ADR 0065): the surfaces gate it by the
 // publish scope. An archived Automation enrolls nobody and is restored before it is published, so
 // it is as good as absent here: ErrNotFound.
 func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {

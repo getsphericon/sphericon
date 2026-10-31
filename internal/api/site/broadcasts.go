@@ -31,8 +31,8 @@ func withStats(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.Si
 // broadcastResource maps a Broadcast and, while it is sending, attaches its progress
 // and ETA (ADR 0023), derived on the server from its recipients. Only the single-row
 // responses (get, send) use it: the list leaves progress out.
-func broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.SiteBroadcastResource, error) {
-	d, err := broadcasts.DetailOf(ctx, s, b, time.Now())
+func (h *Handlers) broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.SiteBroadcastResource, error) {
+	d, err := h.broadcasts.Detail(ctx, s, b, time.Now())
 	if err != nil {
 		return siteapi.SiteBroadcastResource{}, err
 	}
@@ -96,7 +96,7 @@ func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBro
 	if err != nil {
 		return nil, err
 	}
-	res, err := broadcastResource(ctx, ws, b)
+	res, err := h.broadcastResource(ctx, ws, b)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +177,7 @@ func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBr
 	if err != nil {
 		return nil, err
 	}
-	res, err := broadcastResource(ctx, ws, b)
+	res, err := h.broadcastResource(ctx, ws, b)
 	if err != nil {
 		return nil, err
 	}

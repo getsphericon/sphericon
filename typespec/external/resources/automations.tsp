@@ -368,7 +368,7 @@ interface Automations
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. Needs the automations:publish scope. */
+  /** Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when the version going live has an email step and the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only publishing it is refused. Needs the automations:publish scope. */
   @action("publish")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsPublish])
@@ -379,6 +379,7 @@ interface Automations
     | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
+    | ConflictProblem
     | UnprocessableEntityProblem;
 
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. Needs the automations:write scope. */
