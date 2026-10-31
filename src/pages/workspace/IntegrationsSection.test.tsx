@@ -10,6 +10,7 @@ import {
   handleSiteIntegrationsArchive,
   handleSiteIntegrationsList,
   handleSiteIntegrationsUpdate,
+  handleSiteIntegrationsUnarchive,
 } from '../../generated/site/msw.gen.ts'
 import type {
   Permission,
@@ -582,4 +583,50 @@ test('regenerates the hook URL after a confirmation', async () => {
     .click()
 
   await expect.poll(() => calls).toEqual(['1'])
+})
+
+test('switches to the archived providers and restores one', async () => {
+  const restored: string[] = []
+  const archivedSmtp = {
+    ...smtp,
+    id: '9',
+    name: 'Old SMTP',
+    isDefault: false,
+    archivedAt: '2026-02-01T00:00:00Z',
+  }
+  worker.use(
+    handleSiteIntegrationsList(({ request }) =>
+      HttpResponse.json(
+        new URL(request.url).searchParams.get('archived') === 'true' ? [archivedSmtp] : [smtp],
+      ),
+    ),
+    handleSiteIntegrationsUnarchive(({ params }) => {
+      restored.push(String(params.id))
+      return HttpResponse.json({ ...archivedSmtp, archivedAt: null })
+    }),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
+  await screen.getByText('Archived', { exact: true }).click()
+  await expect.element(screen.getByText('Old SMTP')).toBeInTheDocument()
+  await expect.element(screen.getByText('Primary SMTP')).not.toBeInTheDocument()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await expect.element(screen.getByRole('menuitem', { name: 'Remove' })).not.toBeInTheDocument()
+  await screen.getByRole('menuitem', { name: 'Restore' }).click()
+
+  await expect.poll(() => restored).toEqual(['9'])
+})
+
+test('an empty archive says so', async () => {
+  worker.use(
+    handleSiteIntegrationsList(({ request }) =>
+      HttpResponse.json(new URL(request.url).searchParams.get('archived') === 'true' ? [] : [smtp]),
+    ),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await screen.getByText('Archived', { exact: true }).click()
+
+  await expect.element(screen.getByText('No archived providers')).toBeInTheDocument()
 })
