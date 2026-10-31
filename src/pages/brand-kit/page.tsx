@@ -28,10 +28,11 @@ import type { SiteBrandKitResource, SiteSaveBrandKitInput } from '../../generate
 import { zSiteSaveBrandKitInput } from '../../generated/site/zod.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as brandKitRoute } from '../../routes/workspaces/$workspaceId/brand-kit.tsx'
+import { boundsOf } from '../../utils/bounds.ts'
 import { can } from '../../utils/permissions.ts'
 
 // The contract's bounds (TypeSpec -> zod) are the single source for the inputs' range.
-const RADIUS = zSiteSaveBrandKitInput.shape.buttonRadius
+const RADIUS = boundsOf(zSiteSaveBrandKitInput.shape.buttonRadius)
 const FOOTER = zSiteSaveBrandKitInput.shape.footerText
 
 function valuesOf(kit: SiteBrandKitResource): SiteSaveBrandKitInput {
@@ -144,8 +145,8 @@ function BrandKitForm({
           />
           <NumberInput
             label={t(($) => $.brandKit.buttonRadiusLabel)}
-            min={RADIUS.minValue ?? 0}
-            max={RADIUS.maxValue ?? 0}
+            min={RADIUS.min}
+            max={RADIUS.max}
             allowDecimal={false}
             disabled={!canChange}
             {...form.getInputProps('buttonRadius')}

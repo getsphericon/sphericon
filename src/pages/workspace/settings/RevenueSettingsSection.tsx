@@ -13,11 +13,11 @@ import type {
 } from '../../../generated/site/types.gen.ts'
 import { zAttributionWindowDays } from '../../../generated/site/zod.gen.ts'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
+import { boundsOf } from '../../../utils/bounds.ts'
 import { can } from '../../../utils/permissions.ts'
 
 // The bounds the contract declares for the Attribution window, read off its generated schema.
-const MIN_WINDOW_DAYS = zAttributionWindowDays.minValue ?? undefined
-const MAX_WINDOW_DAYS = zAttributionWindowDays.maxValue ?? undefined
+const WINDOW_DAYS = boundsOf(zAttributionWindowDays)
 
 const CURRENCIES = Intl.supportedValuesOf('currency')
 
@@ -70,8 +70,8 @@ function RevenueSettingsForm({
         <NumberInput
           label={t(($) => $.settings.revenue.windowLabel)}
           description={t(($) => $.settings.revenue.windowDescription)}
-          min={MIN_WINDOW_DAYS}
-          max={MAX_WINDOW_DAYS}
+          min={WINDOW_DAYS.min}
+          max={WINDOW_DAYS.max}
           allowDecimal={false}
           allowNegative={false}
           clampBehavior="strict"

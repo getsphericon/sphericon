@@ -139,6 +139,24 @@ test('applying the form hands the new filter up, and reset clears it', async () 
   expect(onFilterChange).toHaveBeenLastCalledWith({})
 })
 
+test('the period and the kind of actor of the filter are applied again as they stand', async () => {
+  worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
+  const onFilterChange = vi.fn<(filter: AuditFilter) => void>()
+  const period: AuditFilter = { from: '2026-01-01', to: '2026-01-31', actorKind: 'api_token' }
+  const { screen } = await renderWithRouter(
+    <AuditLogSection
+      workspaceId={WORKSPACE_ID}
+      filter={period}
+      onFilterChange={onFilterChange}
+      canConfigureRetention
+    />,
+  )
+
+  await screen.getByRole('button', { name: 'Apply filters' }).click()
+
+  expect(onFilterChange).toHaveBeenCalledWith(period)
+})
+
 test('says so when the filter matches nothing', async () => {
   worker.use(handleSiteAuditList({ body: { items: [] } }))
   const { screen } = await renderWithRouter(

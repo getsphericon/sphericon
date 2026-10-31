@@ -82,5 +82,6 @@ export async function renderWithRouter(
     .mockResolvedValue(undefined)
 
   const screen = await renderWithProviders(<RouterProvider router={router} />)
-  return { screen, navigate }
+  // `router.history` moves the URL as the browser's back and forward do, past the stubbed navigate.
+  return { screen, navigate, router }
 }
