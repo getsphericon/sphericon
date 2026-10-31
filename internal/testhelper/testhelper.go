@@ -455,6 +455,10 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		}, nil
 	})
 
+	// The job queue's UI is River UI's own; a test reaches a stand-in through the Staff session
+	// guard (JobsUIStub).
+	do.OverrideValue(injector, &app.JobsUI{Handler: JobsUIStub})
+
 	handler, err := do.Invoke[app.Handler](injector)
 	require.NoError(t, err, "build server")
 	internal, err := do.Invoke[app.InternalHandler](injector)

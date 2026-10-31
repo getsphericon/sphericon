@@ -70,3 +70,9 @@ type staffEnterpriseCookieSource struct{ token string }
 func (s staffEnterpriseCookieSource) ApiKeyAuth(context.Context, staffeeapi.OperationName) (staffeeapi.ApiKeyAuth, error) {
 	return staffeeapi.ApiKeyAuth{APIKey: s.token}, nil
 }
+
+// JobsUIStub stands in for the job queue's UI (River UI) in tests: it answers 200 with the path it
+// was asked for, so a test sees which requests the Staff session guard let through.
+var JobsUIStub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	_, _ = w.Write([]byte("jobs ui " + r.URL.Path))
+})

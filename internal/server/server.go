@@ -208,7 +208,10 @@ type StaffSections interface {
 // and none is restated here. While the Staff sign-in is off (no Staff member secret) there is
 // no handler, which New mounts as a 404; nil sections (no `staff` license) leave every path the
 // core does not route a 404.
-func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, inst *instance.Module, sections StaffSections) (http.Handler, error) {
+//
+// jobs is the job queue's UI (River UI), served under paths.StaffJobs to a signed-in Staff member
+// only; nil leaves that path to the contract's server (a 404).
+func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, inst *instance.Module, sections StaffSections, jobs http.Handler) (http.Handler, error) {
 	core := apistaff.NewSurface(members, items, inst)
 	if core == nil {
 		return nil, nil
@@ -221,7 +224,14 @@ func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, inst *
 		}
 		rest = h
 	}
-	return core.Server(staffapi.WithErrorHandler(ProblemErrorHandler), staffapi.WithNotFound(rest.ServeHTTP))
+	api, err := core.Server(staffapi.WithErrorHandler(ProblemErrorHandler), staffapi.WithNotFound(rest.ServeHTTP))
+	if err != nil || jobs == nil {
+		return api, err
+	}
+	mux := http.NewServeMux()
+	mux.Handle(paths.StaffJobs+"/", apistaff.RequireSession(members.Sessions(), jobs))
+	mux.Handle("/", api)
+	return mux, nil
 }
 
 // ServiceSurface is the service endpoints of the Staff surface (ee/staff), built

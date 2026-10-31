@@ -237,6 +237,20 @@ type externalAPI struct{ http.Handler }
 // mcpHandler is the /mcp surface (ADR 0016), projected from the external contract.
 type mcpHandler struct{ http.Handler }
 
+// JobsUI is the job queue's UI (River UI) the Staff console links to; Shutdown stops its
+// background queries.
+type JobsUI struct {
+	http.Handler
+
+	stop context.CancelFunc
+}
+
+func (u *JobsUI) Shutdown() {
+	if u.stop != nil {
+		u.stop()
+	}
+}
+
 // staffHandler is the /staff surface (ADR 0026, ADR 0063); nil inside while the Staff sign-in
 // is off, which server.New mounts as a 404.
 type staffHandler struct{ http.Handler }
@@ -712,11 +726,35 @@ var surfacesPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*staffHandler, error) {
 		edition := do.MustInvoke[*ee.Edition](i)
 		sections := edition.StaffSections(do.MustInvoke[*events.Bus](i), do.MustInvoke[SystemSender](i).EmailSender)
-		h, err := server.NewStaffAPI(do.MustInvoke[*staffmembers.Module](i), do.MustInvoke[*signupitems.Module](i), do.MustInvoke[*instance.Module](i), sections)
+		members := do.MustInvoke[*staffmembers.Module](i)
+		var jobsUI http.Handler
+		// The job queue's UI is built only where a Staff member can sign in to reach it.
+		if members.Sessions() != nil {
+			ui, err := do.Invoke[*JobsUI](i)
+			if err != nil {
+				return nil, err
+			}
+			jobsUI = ui
+		}
+		h, err := server.NewStaffAPI(members, do.MustInvoke[*signupitems.Module](i), do.MustInvoke[*instance.Module](i), sections, jobsUI)
 		if err != nil {
 			return nil, err
 		}
 		return &staffHandler{h}, nil
+	}),
+	// The job queue's UI (River UI) for the Staff console, running its background queries until
+	// shutdown.
+	do.Lazy(func(i do.Injector) (*JobsUI, error) {
+		h, err := server.NewJobsUI(do.MustInvoke[*riverPool](i).DB)
+		if err != nil {
+			return nil, err
+		}
+		ctx, stop := context.WithCancel(context.Background())
+		if err := h.Start(ctx); err != nil {
+			stop()
+			return nil, err
+		}
+		return &JobsUI{Handler: h, stop: stop}, nil
 	}),
 	// The handler of the internal listener (ADR 0026): the service endpoints of the
 	// Staff surface (with the `staff` license) and the edge's TLS ask (always).

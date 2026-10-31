@@ -6,6 +6,10 @@ package paths
 // Staff member is the prefix of the platform Staff member API (ADR 0026).
 const Staff = "/staff"
 
+// StaffJobs is where the job queue's UI (River UI) is served to a signed-in Staff member: under
+// Staff, so the Staff member cookie reaches it.
+const StaffJobs = Staff + "/jobs"
+
 // Service is the prefix of the service endpoints of the Staff surface, served only
 // by the internal listener (ADR 0026).
 const Service = "/service"
