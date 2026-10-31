@@ -7,8 +7,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -42,12 +40,7 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteCreateAutomationInput, _ siteapi.SiteAutomationsCreateParams) (siteapi.SiteAutomationsCreateRes, error) {
 	ws := workspaceScope(ctx)
 
-	in := automations.CreateInput{
-		Name: req.Name, TriggerEvent: req.TriggerEvent, ExitEvents: req.ExitEvents,
-		GoalEvent: convert.StringPtr(req.GoalEvent), IntegrationID: convert.Int64Ptr(req.IntegrationId),
-		Steps: inputs.AutomationSteps(req.Steps),
-	}
-	a, err := h.automations.Create(ctx, ws, in)
+	a, err := h.automations.Create(ctx, ws, inputs.AutomationCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -76,20 +69,7 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	in := automations.UpdateInput{
-		Name:          convert.StringPtr(req.Name),
-		TriggerEvent:  convert.StringPtr(req.TriggerEvent),
-		GoalEvent:     convert.StringPatch(req.GoalEvent),
-		IntegrationID: convert.Int64Patch(req.IntegrationId),
-	}
-	if req.ExitEvents != nil {
-		in.ExitEvents = &req.ExitEvents
-	}
-	if req.Steps != nil {
-		steps := inputs.AutomationSteps(req.Steps)
-		in.Steps = &steps
-	}
-	a, err := h.automations.Update(ctx, ws, id, in)
+	a, err := h.automations.Update(ctx, ws, id, inputs.AutomationUpdate(req))
 	if err != nil {
 		return nil, err
 	}

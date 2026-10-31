@@ -78,7 +78,7 @@ func (h *Handlers) SiteAuthSigninPendingSubmit(ctx context.Context, req *siteapi
 	if err != nil {
 		return nil, err
 	}
-	consents, err := h.consentRecords.Check(ctx, signupAnswers(req.SignupItems), consentrecord.SourceProviderScreen)
+	consents, err := h.consentRecords.Check(ctx, inputs.SignupAnswers(req.SignupItems), consentrecord.SourceProviderScreen)
 	if err != nil {
 		return nil, err
 	}

@@ -3,9 +3,6 @@ package external
 import (
 	"context"
 	"fmt"
-	"time"
-
-	"github.com/samber/lo"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -39,7 +36,7 @@ func (h *Handlers) AuthTokensList(ctx context.Context) (externalapi.AuthTokensLi
 func (h *Handlers) AuthTokensCreate(ctx context.Context, req *externalapi.CreateApiTokenInput) (externalapi.AuthTokensCreateRes, error) {
 	// A token can only mint scopes it holds itself (tokens:write is not a way to
 	// gain send or any other power).
-	minted, err := apitokens.MintWithin(ctx, auth.TokenScoped(ctx), auth.GetTokenAuth(ctx).Scopes, mintInput(req))
+	minted, err := apitokens.MintWithin(ctx, auth.TokenScoped(ctx), auth.GetTokenAuth(ctx).Scopes, inputs.ApiTokenCreate(req))
 	if err != nil {
 		return nil, fmt.Errorf("create token: %w", err)
 	}
@@ -56,7 +53,7 @@ func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.Cre
 	if err != nil {
 		return nil, fmt.Errorf("bootstrap scope: %w", err)
 	}
-	minted, err := apitokens.Mint(ctx, s, mintInput(req))
+	minted, err := apitokens.Mint(ctx, s, inputs.ApiTokenCreate(req))
 	if err != nil {
 		return nil, fmt.Errorf("create token: %w", err)
 	}
@@ -71,17 +68,6 @@ func (h *Handlers) AuthTokensDelete(ctx context.Context, params externalapi.Auth
 		return nil, err
 	}
 	return &externalapi.AuthTokensDeleteNoContent{}, nil
-}
-
-func mintInput(req *externalapi.CreateApiTokenInput) apitokens.Input {
-	in := apitokens.Input{
-		Name:   req.Name,
-		Scopes: lo.Map(req.Scopes, func(sc externalapi.ApiTokenScope, _ int) string { return string(sc) }),
-	}
-	if v, ok := req.ExpiresAt.Get(); ok {
-		in.ExpiresAt = new(time.Time(v))
-	}
-	return in
 }
 
 func mintedResponse(m apitokens.Minted) *externalapi.CreateApiTokenResponse {

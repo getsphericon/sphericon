@@ -8,11 +8,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/condition"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/rules"
 )
 
 // Rules reuse the Automation scopes: a Rule is the light form of an Automation, so reading
@@ -35,16 +32,10 @@ func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListPa
 
 // RulesCreate always stores an inactive Rule: publishing is the send-class operation.
 func (h *Handlers) RulesCreate(ctx context.Context, req *externalapi.CreateRuleInput) (externalapi.RulesCreateRes, error) {
-	in := rules.CreateInput{
-		Name:          req.Name,
-		TriggerEvents: req.TriggerEvents,
-		Actions:       inputs.RuleActions(req.Actions),
-	}
-	def, err := condition.EncodeOptional(req.Condition)
+	in, err := inputs.RuleCreate(req)
 	if err != nil {
 		return nil, err
 	}
-	in.Condition = def
 	r, err := h.rules.Create(ctx, auth.TokenScoped(ctx), in)
 	if err != nil {
 		return nil, err
@@ -63,19 +54,10 @@ func (h *Handlers) RulesGet(ctx context.Context, params externalapi.RulesGetPara
 }
 
 func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleInput, params externalapi.RulesUpdateParams) (externalapi.RulesUpdateRes, error) {
-	in := rules.UpdateInput{Name: convert.StringPtr(req.Name)}
-	if req.TriggerEvents != nil {
-		in.TriggerEvents = &req.TriggerEvents
-	}
-	if req.Actions != nil {
-		actions := inputs.RuleActions(req.Actions)
-		in.Actions = &actions
-	}
-	def, err := condition.EncodeOptional(req.Condition)
+	in, err := inputs.RuleUpdate(req)
 	if err != nil {
 		return nil, err
 	}
-	in.Condition = def
 	r, err := h.rules.Update(ctx, auth.TokenScoped(ctx), int64(params.ID), in)
 	if err != nil {
 		return nil, err

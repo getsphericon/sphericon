@@ -2,9 +2,6 @@ package site
 
 import (
 	"context"
-	"time"
-
-	"github.com/samber/lo"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/apitokens"
@@ -32,12 +29,8 @@ func (h *Handlers) SiteTokensList(ctx context.Context, _ siteapi.SiteTokensListP
 func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreateTokenInput, _ siteapi.SiteTokensCreateParams) (siteapi.SiteTokensCreateRes, error) {
 	scoped := workspaceScope(ctx)
 
-	in := apitokens.Input{Name: req.Name, Scopes: lo.Map(req.Scopes, func(s siteapi.ApiTokenScope, _ int) string { return string(s) })}
-	if v, ok := req.ExpiresAt.Get(); ok {
-		in.ExpiresAt = new(time.Time(v))
-	}
 	// Owners and admins may grant any scope of the vocabulary.
-	minted, err := apitokens.Mint(ctx, scoped, in)
+	minted, err := apitokens.Mint(ctx, scoped, inputs.TokenCreate(req))
 	if err != nil {
 		return nil, err
 	}

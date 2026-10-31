@@ -1,14 +1,25 @@
-// Package handmapper enforces rule 1 of docs/standards/review-rules.md: an ent entity becomes an API
-// resource only through the generated goverter converter. A function that takes an ent entity and
-// returns a type of a generated API package (gen/...) is a hand-written mapper, unless it is a
-// helper the package registers with `goverter:extend` or a `goverter:map ... | helper` line, or a
-// function that maps through a converter method and only attaches the fields the converter ignores. Test
-// files are not API code and are skipped.
+// Package handmapper enforces rule 1 of docs/standards/review-rules.md in both directions of the API
+// contract, each of which goverter generates.
+//
+// Output: an ent entity becomes an API resource only through the generated goverter converter. A
+// function that takes an ent entity and returns a type of a generated API package (gen/...) is a
+// hand-written mapper, unless it is a helper the package registers with `goverter:extend` or a
+// `goverter:map ... | helper` line, or a function that maps through a converter method and only
+// attaches the fields the converter ignores.
+//
+// Input: a request becomes a module's input only through the generated goverter Inputs of its
+// surface (resources/inputs.go). A struct literal of a module input type in a /site or /api handler
+// package is a hand-written mapping. A field the request does not carry (the actor) is a
+// `goverter:ignore` with its reason, and the handler assigns it after the call; an assignment is not
+// a literal and is not reported.
+//
+// Test files are not API code and are skipped, and so are generated files.
 package handmapper
 
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"go/types"
 	"regexp"
 	"strings"
@@ -20,10 +31,10 @@ import (
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 )
 
-// Analyzer reports a hand-written ent-to-resource mapper.
+// Analyzer reports a hand-written ent-to-resource mapper and a hand-built module input in a handler.
 var Analyzer = &analysis.Analyzer{
 	Name:     "handmapper",
-	Doc:      "refuses a hand-written mapper from an ent entity to an API resource outside the goverter converter",
+	Doc:      "refuses a hand-written mapping between the API types and ent entities or module inputs outside goverter",
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
 	Run:      run,
 }
@@ -41,6 +52,9 @@ func run(pass *analysis.Pass) (any, error) {
 		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
 	}
 	via := viaConverter(pass, insp)
+	if isHandlerPackage(pass.Pkg.Path()) {
+		reportInputLiterals(pass, insp)
+	}
 	insp.Preorder([]ast.Node{(*ast.FuncDecl)(nil)}, func(n ast.Node) {
 		fn, isNode := n.(*ast.FuncDecl)
 		if !isNode {
@@ -68,6 +82,68 @@ func run(pass *analysis.Pass) (any, error) {
 			"add a method to the surface's goverter Converter (or register a goverter:extend helper) and call it"))
 	})
 	return nil, nil
+}
+
+// handlerPackages are the packages of the /site and /api handlers, which hand a module what the
+// request says. Their subpackages are not handlers: resources holds the goverter Inputs and its
+// extend helpers, the one place a module input is built by hand (a oneOf is beyond goverter).
+var handlerPackages = []string{"/internal/api/site", "/internal/api/external"}
+
+func isHandlerPackage(path string) bool {
+	for _, p := range handlerPackages {
+		if strings.HasSuffix(path, p) {
+			return true
+		}
+	}
+	return false
+}
+
+// reportInputLiterals reports each struct literal of a module input type in a handler package.
+func reportInputLiterals(pass *analysis.Pass, insp *inspector.Inspector) {
+	insp.Preorder([]ast.Node{(*ast.CompositeLit)(nil)}, func(n ast.Node) {
+		lit, isLit := n.(*ast.CompositeLit)
+		if !isLit || skippedFile(pass, lit.Pos()) {
+			return
+		}
+		named, ok := types.Unalias(pass.TypesInfo.TypeOf(lit)).(*types.Named)
+		if !ok || !isModuleInput(pass.Pkg, named) {
+			return
+		}
+		name := named.Obj().Pkg().Name() + "." + named.Obj().Name()
+		pass.Reportf(lit.Pos(), "%s", rule.Message(1,
+			name+" is built by hand from the request",
+			"add a method to the surface's goverter Inputs (resources/inputs.go), call it, and assign after it only the fields it ignores"))
+	})
+}
+
+// isModuleInput is a module's input: a struct type named ...Input declared in a package under
+// internal/ other than the one checked. The name is the modules' own convention for what an
+// operation takes (automations.CreateInput, apitokens.Input, eventlog.Input), so a new module is
+// covered the day it is written, where a list of types would go stale. A type of a generated API
+// package (siteapi.SiteCreateAutomationInput) is the request itself, and a type the handler package
+// declares is its own.
+func isModuleInput(self *types.Package, n *types.Named) bool {
+	pkg := n.Obj().Pkg()
+	if pkg == nil || pkg == self || isResource(n) || !strings.HasSuffix(n.Obj().Name(), "Input") {
+		return false
+	}
+	if !strings.HasPrefix(pkg.Path(), "internal/") && !strings.Contains(pkg.Path(), "/internal/") {
+		return false
+	}
+	_, isStruct := n.Underlying().(*types.Struct)
+	return isStruct
+}
+
+func skippedFile(pass *analysis.Pass, pos token.Pos) bool {
+	if strings.HasSuffix(pass.Fset.File(pos).Name(), "_test.go") {
+		return true
+	}
+	for _, f := range pass.Files {
+		if f.FileStart <= pos && pos < f.FileEnd {
+			return ast.IsGenerated(f)
+		}
+	}
+	return false
 }
 
 // viaConverter is the set of functions of the package that map through a goverter converter: they

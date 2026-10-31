@@ -7,7 +7,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
@@ -49,11 +48,7 @@ func (h *Handlers) SiteUserAcceptPending(ctx context.Context, req *siteapi.SiteA
 	if a == nil {
 		return nil, auth.ErrUnauthorized
 	}
-	accepted := make([]consentrecords.ReAcceptance, len(req.Items))
-	for i, item := range req.Items {
-		accepted[i] = consentrecords.ReAcceptance{Key: string(item.Key), Version: string(item.Version)}
-	}
-	if err := h.consentRecords.AcceptPending(ctx, a.UserID, accepted); err != nil {
+	if err := h.consentRecords.AcceptPending(ctx, a.UserID, inputs.ReAcceptances(req.Items)); err != nil {
 		return nil, err
 	}
 	u, err := h.accounts.User(ctx, a.UserID)

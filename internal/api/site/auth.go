@@ -17,9 +17,7 @@ import (
 // (whatever the address, ADR 0031). No session starts and no Workspace is made here; they
 // follow the proof.
 func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpInput) (siteapi.SiteAuthSignUpRes, error) {
-	res, err := h.signup.SignUp(ctx, signup.Input{
-		Name: req.Name, Email: string(req.Email), Password: req.Password.Or(""), SignupItems: signupAnswers(req.SignupItems),
-	})
+	res, err := h.signup.SignUp(ctx, inputs.SignUp(req))
 	if err != nil {
 		return nil, err
 	}
@@ -79,15 +77,6 @@ func (h *Handlers) newSignUp() *signup.Module {
 		RequireVerification: h.requireVerification,
 		SurveyDue:           h.signupSurvey.Enabled,
 	})
-}
-
-// signupAnswers is the Sign-up items' answers of a form as the consentrecords module takes them.
-func signupAnswers(answers []siteapi.SiteSignupItemAnswer) []consentrecords.Answer {
-	out := make([]consentrecords.Answer, len(answers))
-	for i, a := range answers {
-		out[i] = consentrecords.Answer{Key: string(a.Key), Version: string(a.Version), Accepted: a.Accepted.Or(false)}
-	}
-	return out
 }
 
 // SiteAuthResendVerification sends the verification link again to an Unverified User
