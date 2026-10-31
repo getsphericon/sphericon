@@ -22,6 +22,15 @@ function paramsOf(preset: SitePresetResource): { name: string; secret: boolean }
   }))
 }
 
+// The names of a Preset's secrets.
+function secretsOf(preset: SitePresetResource): Set<string> {
+  return new Set(
+    paramsOf(preset)
+      .filter((p) => p.secret)
+      .map((p) => p.name),
+  )
+}
+
 // The secrets that have a stored value: the server names one by its mask, never its value.
 export function savedSecrets(preset: SitePresetResource, params: PresetParams): Set<string> {
   return new Set(
@@ -35,11 +44,7 @@ export function savedSecrets(preset: SitePresetResource, params: PresetParams): 
 
 // The form's starting values: the stored params without the secrets, which are never filled in.
 export function formValues(preset: SitePresetResource, params: PresetParams): PresetParams {
-  const secrets = new Set(
-    paramsOf(preset)
-      .filter((p) => p.secret)
-      .map((p) => p.name),
-  )
+  const secrets = secretsOf(preset)
   return Object.fromEntries(Object.entries(params).filter(([name]) => !secrets.has(name)))
 }
 
@@ -74,11 +79,7 @@ export function formUi(
 
 // The params to save: a blank secret is left out, so the stored one is kept.
 export function paramsToSave(preset: SitePresetResource, values: PresetParams): PresetParams {
-  const secrets = new Set(
-    paramsOf(preset)
-      .filter((p) => p.secret)
-      .map((p) => p.name),
-  )
+  const secrets = secretsOf(preset)
   return Object.fromEntries(
     Object.entries(values).filter(
       ([name, value]) => !(secrets.has(name) && (value === undefined || value === '')),
