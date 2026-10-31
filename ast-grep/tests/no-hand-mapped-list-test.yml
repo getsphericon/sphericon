@@ -1,0 +1,36 @@
+id: no-hand-mapped-list
+valid:
+  - |
+    func (h *Handlers) SiteTokensList(ctx context.Context, params siteapi.SiteTokensListParams) (siteapi.SiteTokensListRes, error) {
+    	tokens, err := apitokens.List(ctx, workspaceScope(ctx))
+    	if err != nil {
+    		return nil, err
+    	}
+    	items := mapper.TokensToResources(tokens)
+    	return &items, nil
+    }
+  - |
+    func withStats(page []*ent.Broadcast, figures map[int64]broadcasts.Stats) []siteapi.SiteBroadcastResource {
+    	return lo.Map(page, func(b *ent.Broadcast, _ int) siteapi.SiteBroadcastResource {
+    		res := mapper.BroadcastToResource(b)
+    		res.Stats = mapper.BroadcastStatsToResource(figures[b.ID])
+    		return res
+    	})
+    }
+invalid:
+  - |
+    func list(tokens []*ent.ApiToken) []siteapi.SiteApiTokenResource {
+    	items := make([]siteapi.SiteApiTokenResource, len(tokens))
+    	for i, t := range tokens {
+    		items[i] = mapper.TokenToResource(t)
+    	}
+    	return items
+    }
+  - |
+    func list(tokens []*ent.ApiToken) []siteapi.SiteApiTokenResource {
+    	var items []siteapi.SiteApiTokenResource
+    	for _, t := range tokens {
+    		items = append(items, mapper.TokenToResource(t))
+    	}
+    	return items
+    }

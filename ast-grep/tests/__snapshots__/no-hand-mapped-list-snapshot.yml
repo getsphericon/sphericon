@@ -1,0 +1,28 @@
+id: no-hand-mapped-list
+snapshots:
+  "func list(tokens []*ent.ApiToken) []siteapi.SiteApiTokenResource {\n\titems := make([]siteapi.SiteApiTokenResource, len(tokens))\n\tfor i, t := range tokens {\n\t\titems[i] = mapper.TokenToResource(t)\n\t}\n\treturn items\n}\n":
+    labels:
+      - source: items[i] = mapper.TokenToResource(t)
+        style: primary
+        start: 157
+        end: 193
+      - source: |-
+          for i, t := range tokens {
+          		items[i] = mapper.TokenToResource(t)
+          	}
+        style: secondary
+        start: 128
+        end: 196
+  "func list(tokens []*ent.ApiToken) []siteapi.SiteApiTokenResource {\n\tvar items []siteapi.SiteApiTokenResource\n\tfor _, t := range tokens {\n\t\titems = append(items, mapper.TokenToResource(t))\n\t}\n\treturn items\n}\n":
+    labels:
+      - source: items = append(items, mapper.TokenToResource(t))
+        style: primary
+        start: 139
+        end: 187
+      - source: |-
+          for _, t := range tokens {
+          		items = append(items, mapper.TokenToResource(t))
+          	}
+        style: secondary
+        start: 110
+        end: 190

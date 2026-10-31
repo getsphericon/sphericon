@@ -18,10 +18,7 @@ func (h *Handlers) SiteTransactionalEmailsList(ctx context.Context, params sitea
 		return nil, err
 	}
 
-	res := make([]siteapi.SiteTransactionalEmailResource, len(page.Items))
-	for i, t := range page.Items {
-		res[i] = mapper.TransactionalMessageToResource(t)
-	}
+	res := mapper.TransactionalMessagesToResources(page.Items)
 	return &siteapi.SiteTransactionalEmailsListOK{
 		Items:      res,
 		Page:       narrow.Int32(page.Page),

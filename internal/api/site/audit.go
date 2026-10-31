@@ -42,10 +42,7 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 	if err != nil {
 		return nil, err
 	}
-	out := &siteapi.SiteAuditEntryList{Items: make([]siteapi.SiteAuditEntryResource, len(rows))}
-	for i, e := range rows {
-		out.Items[i] = mapper.AuditEntryToResource(auditapi.ViewOf(e))
-	}
+	out := &siteapi.SiteAuditEntryList{Items: mapper.AuditEntriesToResources(auditapi.ViewsOf(rows))}
 	if next > 0 {
 		out.NextCursor = siteapi.NewOptNilString(auditapi.NextCursor(next))
 	}

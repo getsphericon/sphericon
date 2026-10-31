@@ -20,10 +20,7 @@ func (h *Handlers) SiteCustomFieldsList(ctx context.Context, _ siteapi.SiteCusto
 		return nil, err
 	}
 
-	resources := make([]siteapi.SiteCustomFieldResource, len(items))
-	for i, f := range items {
-		resources[i] = mapper.CustomFieldToResource(f)
-	}
+	resources := mapper.CustomFieldsToResources(items)
 	return &siteapi.SiteCustomFieldsListOK{
 		Items:      resources,
 		Page:       1,

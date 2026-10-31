@@ -26,10 +26,7 @@ func (h *Handlers) SitePasskeysList(ctx context.Context) (*siteapi.SitePasskeyLi
 	if err != nil {
 		return nil, err
 	}
-	items := make([]siteapi.SitePasskey, len(rows))
-	for i, row := range rows {
-		items[i] = mapper.PasskeyToResource(row)
-	}
+	items := mapper.PasskeysToResources(rows)
 	return &siteapi.SitePasskeyList{
 		Items: items, Available: h.passkeys.Available(), PasswordSet: u.PasswordHash != "", IdentityProofFresh: u.PasswordHash == "" && h.identityProofFresh(ctx),
 	}, nil

@@ -17,10 +17,7 @@ func (h *Handlers) SiteMembershipsList(ctx context.Context, _ siteapi.SiteMember
 		return nil, err
 	}
 
-	items := make(siteapi.SiteMembershipsListOKApplicationJSON, len(members))
-	for i, m := range members {
-		items[i] = mapper.MembershipToResource(m)
-	}
+	items := mapper.MembershipsToResources(members)
 	return &items, nil
 }
 

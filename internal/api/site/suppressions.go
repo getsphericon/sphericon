@@ -17,10 +17,7 @@ func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.Site
 		return nil, err
 	}
 
-	resources := make([]siteapi.SiteSuppressionResource, len(page.Items))
-	for i, item := range page.Items {
-		resources[i] = mapper.SuppressionToResource(item)
-	}
+	resources := mapper.SuppressionsToResources(page.Items)
 	return &siteapi.SiteSuppressionsListOK{
 		Items:      resources,
 		Page:       narrow.Int32(page.Page),

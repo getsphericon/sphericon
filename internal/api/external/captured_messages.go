@@ -18,10 +18,7 @@ func (h *Handlers) CapturedMessagesList(ctx context.Context, params externalapi.
 	if err != nil {
 		return nil, err
 	}
-	items := make([]externalapi.CapturedMessageSummary, len(page.Items))
-	for i, m := range page.Items {
-		items[i] = mapper.CapturedMessageToSummary(m)
-	}
+	items := mapper.CapturedMessagesToSummaries(page.Items)
 	return &externalapi.CapturedMessagesListOK{
 		Items:      items,
 		Page:       narrow.Int32(page.Page),

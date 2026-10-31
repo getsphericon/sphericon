@@ -41,10 +41,7 @@ func (h *Handlers) AuditEntriesList(ctx context.Context, params externalapi.Audi
 	if err != nil {
 		return nil, err
 	}
-	out := &externalapi.AuditEntryList{Items: make([]externalapi.AuditEntryResource, len(rows))}
-	for i, e := range rows {
-		out.Items[i] = mapper.AuditEntryToResource(auditapi.ViewOf(e))
-	}
+	out := &externalapi.AuditEntryList{Items: mapper.AuditEntriesToResources(auditapi.ViewsOf(rows))}
 	if next > 0 {
 		out.NextCursor = externalapi.NewOptNilString(auditapi.NextCursor(next))
 	}

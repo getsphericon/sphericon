@@ -1,0 +1,23 @@
+id: no-hand-mapped-list
+language: Go
+severity: error
+message: 'codegen: a handler maps a list element by element; fix: declare a list method of the goverter Converter (`XsToResources(source []*ent.X) []…`, marked `// goverter:useEmptyOnNil:slice`) and call it'
+note: >-
+  A list of resources is a list method of the surface's Converter (docs/agents/codegen.md): goverter
+  generates its loop from the single-item method, and `useEmptyOnNil:slice` answers `[]`, never
+  null, for no rows. A loop that fills a slice with the single-item method is a hand-written copy
+  of that generated code. A list that attaches something per item the converter cannot (a
+  Broadcast's stats) maps it in the handler with the extra, which this rule does not match.
+rule:
+  any:
+    - pattern: $LIST[$I] = mapper.$METHOD($$$ARGS)
+    - pattern: $LIST = append($LIST, mapper.$METHOD($$$ARGS))
+  inside:
+    kind: for_statement
+    stopBy: end
+files:
+  - internal/api/**/*.go
+  - ee/staff/**/*.go
+ignores:
+  - '**/*_test.go'
+  - '**/*_gen.go'

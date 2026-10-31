@@ -39,7 +39,8 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   field that has no source mapping fails generation — that completeness check is the point.
   A list of resources is a list method of the `Converter` (`ContactsToResources(source
   []*ent.Contact) []…`) marked `// goverter:useEmptyOnNil:slice`, so no rows answer `[]`, never
-  null; a handler does not wrap the single-item method in `lo.Map`. `annotate:unmapped` writes a
+  null; a handler does not wrap the single-item method in `lo.Map` or a loop (ast-grep rule
+  `no-hand-mapped-list`). `annotate:unmapped` writes a
   `// Field: ignore` line into the generated code for each field the converter leaves to the
   handler. The extends' bodies are the generic helpers of `internal/convert` (`Opt`, `Nil`, `OptVia`, …),
   which hold the absent-or-null rule once for every surface.

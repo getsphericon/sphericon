@@ -17,10 +17,7 @@ func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFiel
 	if err != nil {
 		return nil, err
 	}
-	resources := make([]externalapi.CustomFieldResource, len(items))
-	for i, f := range items {
-		resources[i] = mapper.CustomFieldToResource(f)
-	}
+	resources := mapper.CustomFieldsToResources(items)
 	return &externalapi.CustomFieldsListOK{
 		Items:      resources,
 		Page:       1,

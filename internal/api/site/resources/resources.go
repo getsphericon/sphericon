@@ -118,18 +118,24 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	SegmentsToResources(source []*ent.Segment) []siteapi.SiteSegmentResource
 	TokenToResource(source *ent.ApiToken) siteapi.SiteApiTokenResource
+	// goverter:useEmptyOnNil:slice
+	TokensToResources(source []*ent.ApiToken) siteapi.SiteTokensListOKApplicationJSON
 	// A Connection is an API token read with its Membership and that Membership's User loaded
 	// (apitokens.Connections); the User is who it belongs to.
 	// goverter:map Edges.Membership.UserID UserId
 	// goverter:map Edges.Membership.Edges.User.Name UserName
 	// goverter:map Edges.Membership.Edges.User.Email UserEmail
 	ConnectionToResource(source *ent.ApiToken) siteapi.SiteConnectionResource
+	// goverter:useEmptyOnNil:slice
+	ConnectionsToResources(source []*ent.ApiToken) siteapi.SiteConnectionsListOKApplicationJSON
 	// A Personal token is an API token read with its Membership and that Membership's User loaded
 	// (apitokens.PersonalTokens, MintPersonal); the User is who it belongs to.
 	// goverter:map Edges.Membership.UserID UserId
 	// goverter:map Edges.Membership.Edges.User.Name UserName
 	// goverter:map Edges.Membership.Edges.User.Email UserEmail
 	PersonalTokenToResource(source *ent.ApiToken) siteapi.SitePersonalTokenResource
+	// goverter:useEmptyOnNil:slice
+	PersonalTokensToResources(source []*ent.ApiToken) siteapi.SitePersonalTokensListOKApplicationJSON
 
 	// Verification is derived: a non-nil email_verified_at means verified.
 	// The Sign-up survey is due only while the Instance still asks it, which the mapper cannot
@@ -167,6 +173,8 @@ type Converter interface {
 	// goverter:map Currency ReportingCurrency
 	RevenueToResource(source *analytics.Revenue) siteapi.SiteAnalyticsRevenue
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
+	// goverter:useEmptyOnNil:slice
+	EventsToResources(source []*ent.Event) []siteapi.SiteEventResource
 	LinkClicksToResource(source []linkclicks.Clicks) []siteapi.SiteLinkClicks
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:autoMap Credited
@@ -260,9 +268,15 @@ type Converter interface {
 	// goverter:map Sent24h SentLast24h
 	ProviderLimitToStatus(source providerlimit.Status) siteapi.SiteProviderLimitStatus
 	PasskeyToResource(source *ent.Passkey) siteapi.SitePasskey
+	// goverter:useEmptyOnNil:slice
+	PasskeysToResources(source []*ent.Passkey) []siteapi.SitePasskey
 	SuppressionToResource(source *ent.Suppression) siteapi.SiteSuppressionResource
+	// goverter:useEmptyOnNil:slice
+	SuppressionsToResources(source []*ent.Suppression) []siteapi.SiteSuppressionResource
 	// goverter:map Type RuleOperators | customFieldRuleOperators
 	CustomFieldToResource(source *ent.CustomField) siteapi.SiteCustomFieldResource
+	// goverter:useEmptyOnNil:slice
+	CustomFieldsToResources(source []*ent.CustomField) []siteapi.SiteCustomFieldResource
 	TagToResource(source *ent.Tag) siteapi.SiteTagResource
 	// goverter:useEmptyOnNil:slice
 	TagsToResources(source []*ent.Tag) []siteapi.SiteTagResource
@@ -275,6 +289,8 @@ type Converter interface {
 	// goverter:map . Error | transactionalError
 	// goverter:map TemplateID TemplateId
 	TransactionalMessageToResource(source *ent.OutboundMessage) siteapi.SiteTransactionalEmailResource
+	// goverter:useEmptyOnNil:slice
+	TransactionalMessagesToResources(source []*ent.OutboundMessage) []siteapi.SiteTransactionalEmailResource
 
 	// A Captured message names its From as the contract does, and the nullable parts as null.
 	// goverter:map FromEmail From
@@ -290,14 +306,20 @@ type Converter interface {
 	// goverter:map FromName FromName | nilString
 	// goverter:map SendingSource SendingSource | nilString
 	CapturedMessageToSummary(source *ent.CapturedMessage) siteapi.SiteCapturedMessageSummary
+	// goverter:useEmptyOnNil:slice
+	CapturedMessagesToSummaries(source []*ent.CapturedMessage) []siteapi.SiteCapturedMessageSummary
 
 	// The member's identity comes from the loaded User edge.
 	// goverter:map Edges.User.Email Email
 	// goverter:map Edges.User.Name Name
 	MembershipToResource(source *ent.Membership) siteapi.SiteMembershipResource
+	// goverter:useEmptyOnNil:slice
+	MembershipsToResources(source []*ent.Membership) siteapi.SiteMembershipsListOKApplicationJSON
 
 	// goverter:map . InvitedByEmail | inviterEmail
 	InvitationToResource(source *ent.Invitation) siteapi.SiteInvitationResource
+	// goverter:useEmptyOnNil:slice
+	InvitationsToResources(source []*ent.Invitation) siteapi.SiteInvitationsListOKApplicationJSON
 
 	// The contract names the discarded state "archived" (ADR 0049). The live version and the draft
 	// are the edges the rules module loads (ADR 0065).
@@ -371,6 +393,8 @@ type Converter interface {
 	// goverter:map . Target
 	// goverter:map Diff Diff | auditDiff
 	AuditEntryToResource(source auditapi.View) siteapi.SiteAuditEntryResource
+	// goverter:useEmptyOnNil:slice
+	AuditEntriesToResources(source []auditapi.View) []siteapi.SiteAuditEntryResource
 	// An entry's actor and target are columns of the entry, nested in the contract.
 	// goverter:map ActorKind Kind
 	// goverter:map ActorID ID

@@ -26,10 +26,7 @@ func (h *Handlers) AuthTokensList(ctx context.Context) (externalapi.AuthTokensLi
 		return nil, err
 	}
 
-	items := make([]externalapi.ApiTokenInfo, len(tokens))
-	for i, t := range tokens {
-		items[i] = mapper.ApiTokenToInfo(t)
-	}
+	items := mapper.ApiTokensToInfos(tokens)
 	return &externalapi.ApiTokenListResponse{Items: items}, nil
 }
 

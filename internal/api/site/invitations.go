@@ -20,10 +20,7 @@ func (h *Handlers) SiteInvitationsList(ctx context.Context, _ siteapi.SiteInvita
 		return nil, err
 	}
 
-	items := make(siteapi.SiteInvitationsListOKApplicationJSON, len(invites))
-	for i, inv := range invites {
-		items[i] = mapper.InvitationToResource(inv)
-	}
+	items := mapper.InvitationsToResources(invites)
 	return &items, nil
 }
 

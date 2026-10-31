@@ -163,6 +163,8 @@ type Converter interface {
 	// goverter:ignore Period
 	AutomationResultsToResource(source automations.Results) externalapi.AutomationResults
 	ApiTokenToInfo(source *ent.ApiToken) externalapi.ApiTokenInfo
+	// goverter:useEmptyOnNil:slice
+	ApiTokensToInfos(source []*ent.ApiToken) []externalapi.ApiTokenInfo
 	// The contract names the discarded state \"archived\" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
 	SegmentToResource(source *ent.Segment) externalapi.SegmentResource
@@ -189,6 +191,8 @@ type Converter interface {
 	EmailSchemaTypeToResource(source emaildoc.AgentType) externalapi.EmailSchemaType
 	// goverter:map Type RuleOperators | customFieldRuleOperators
 	CustomFieldToResource(source *ent.CustomField) externalapi.CustomFieldResource
+	// goverter:useEmptyOnNil:slice
+	CustomFieldsToResources(source []*ent.CustomField) []externalapi.CustomFieldResource
 	TagToResource(source *ent.Tag) externalapi.TagResource
 	// goverter:useEmptyOnNil:slice
 	TagsToResources(source []*ent.Tag) []externalapi.TagResource
@@ -232,6 +236,8 @@ type Converter interface {
 	// goverter:map FromName FromName | nilString
 	// goverter:map SendingSource SendingSource | nilString
 	CapturedMessageToSummary(source *ent.CapturedMessage) externalapi.CapturedMessageSummary
+	// goverter:useEmptyOnNil:slice
+	CapturedMessagesToSummaries(source []*ent.CapturedMessage) []externalapi.CapturedMessageSummary
 	// The redacted provider configs: the handler only wraps the one that is set in the
 	// contract's oneOf, which goverter cannot express. Empty optional fields are omitted.
 	// goverter:map . Kind | smtpConfigKind
@@ -300,6 +306,8 @@ type Converter interface {
 	// goverter:map . Actor
 	// goverter:map . Target
 	AuditEntryToResource(source auditapi.View) externalapi.AuditEntryResource
+	// goverter:useEmptyOnNil:slice
+	AuditEntriesToResources(source []auditapi.View) []externalapi.AuditEntryResource
 	// An entry's actor and target are columns of the entry, nested in the contract.
 	// goverter:map ActorKind Kind
 	// goverter:map ActorID ID
