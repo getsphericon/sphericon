@@ -38,13 +38,13 @@ import (
 )
 
 // ErrDefaultConflict means another default Integration already exists for the channel.
-var ErrDefaultConflict = validation.Conflict("a default provider already exists for this channel", "errors.integration_default_conflict")
+var ErrDefaultConflict = validation.Conflict("a default provider already exists for this channel", i18n.ErrorsIntegrationDefaultConflict)
 
 // ErrNotFound means there is no such Integration in this Workspace.
-var ErrNotFound = validation.NotFound("integrations: integration not found", "errors.integration_not_found")
+var ErrNotFound = validation.NotFound("integrations: integration not found", i18n.ErrorsIntegrationNotFound)
 
 // ErrOneInbox means the Workspace already keeps a Test inbox: it has at most one (ADR 0058).
-var ErrOneInbox = validation.Conflict("a workspace has at most one Test inbox", "errors.integration_one_inbox")
+var ErrOneInbox = validation.Conflict("a workspace has at most one Test inbox", i18n.ErrorsIntegrationOneInbox)
 
 // oneInboxIndex is the partial unique index that keeps at most one kept Test inbox per Workspace.
 const oneInboxIndex = "integrations_one_inbox_per_workspace"
@@ -285,7 +285,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	isDefault, _ := in.IsDefault.Get()
 	promote := isDefault && !row.IsDefault
 	if promote && row.DiscardedAt != nil {
-		return nil, &validation.Error{Field: "isDefault", Message: i18n.T("errors.integration_archived_default", nil)}
+		return nil, &validation.Error{Field: "isDefault", Message: i18n.T(i18n.ErrorsIntegrationArchivedDefault, nil)}
 	}
 
 	var updated *ent.Integration
@@ -323,7 +323,7 @@ func (m *Module) sealEditedConfig(row *ent.Integration, cfg *ConfigInput) (*stri
 		return nil, err
 	}
 	if provider.String() != row.Provider.String() {
-		return nil, &validation.Error{Field: "config", Message: i18n.T("errors.integration_kind_mismatch", nil)}
+		return nil, &validation.Error{Field: "config", Message: i18n.T(i18n.ErrorsIntegrationKindMismatch, nil)}
 	}
 	prev, err := m.cipher.Decrypt(row.ConfigEncrypted)
 	if err != nil {
@@ -444,7 +444,7 @@ func requireProviderLimit(endpoint string, perSecond, perDay *int) error {
 	if endpoint == "" {
 		return nil
 	}
-	msg := i18n.T("errors.integration_provider_limit_required", nil)
+	msg := i18n.T(i18n.ErrorsIntegrationProviderLimitRequired, nil)
 	missing := map[string][]string{}
 	if perSecond == nil {
 		missing[validation.FieldMaxPerSecond] = []string{msg}
@@ -480,7 +480,7 @@ func (m *Module) keepsProviderLimit(row *ent.Integration, in UpdateInput) error 
 func validName(raw string) (string, error) {
 	name := strings.TrimSpace(raw)
 	if name == "" {
-		msg := i18n.T("errors.name_empty", nil)
+		msg := i18n.T(i18n.ErrorsNameEmpty, nil)
 		return "", &validation.Error{Field: "name", Message: msg}
 	}
 	return name, nil
@@ -616,7 +616,7 @@ func mergeSecrets(provider integration.Provider, next, prev []byte) ([]byte, err
 }
 
 func secretRequired() *validation.Error {
-	return &validation.Error{Field: "config", Message: i18n.T("errors.integration_secret_required", nil)}
+	return &validation.Error{Field: "config", Message: i18n.T(i18n.ErrorsIntegrationSecretRequired, nil)}
 }
 
 // RedactedConfig is the read-side provider config: no password, no secret key.

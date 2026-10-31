@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
@@ -22,9 +23,9 @@ import (
 var (
 	// ErrInvalidCondition: the condition does not parse or does not fit the
 	// Contact schema. The wrapped message is safe to show to the author.
-	ErrInvalidCondition = validation.Refuse("segments: invalid condition", "errors.segment_condition_invalid")
+	ErrInvalidCondition = validation.Refuse("segments: invalid condition", i18n.ErrorsSegmentConditionInvalid)
 	// ErrNotFound: no such Segment in this Workspace.
-	ErrNotFound = validation.NotFound("segments: segment not found", "errors.segment_not_found")
+	ErrNotFound = validation.NotFound("segments: segment not found", i18n.ErrorsSegmentNotFound)
 )
 
 // Module is the one place a Segment is written, validated, previewed and counted

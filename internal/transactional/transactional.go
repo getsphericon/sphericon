@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/templates"
@@ -30,17 +31,17 @@ import (
 // emailrender.ErrInvalidContent, each with its reason.
 var (
 	// ErrEmptyDestination: the address is empty once normalized.
-	ErrEmptyDestination = validation.Refuse("transactional: destination must not be empty", "errors.destination_empty")
+	ErrEmptyDestination = validation.Refuse("transactional: destination must not be empty", i18n.ErrorsDestinationEmpty)
 	// ErrTemplateNotFound: no such Template in the Workspace.
-	ErrTemplateNotFound = validation.NotFound("transactional: template not found", "errors.template_not_found")
+	ErrTemplateNotFound = validation.NotFound("transactional: template not found", i18n.ErrorsTemplateNotFound)
 	// ErrInvalidVariables: a per-call variable is not valid JSON; it is made With the variable
 	// and why.
-	ErrInvalidVariables = validation.Refuse("transactional: invalid variables", "errors.variables_invalid")
+	ErrInvalidVariables = validation.Refuse("transactional: invalid variables", i18n.ErrorsVariablesInvalid)
 	// ErrInProgress: a send with this Idempotency-Key is still in flight.
-	ErrInProgress = validation.Conflict("transactional: a send with this key is in progress", "errors.send_in_progress")
+	ErrInProgress = validation.Conflict("transactional: a send with this key is in progress", i18n.ErrorsSendInProgress)
 	// ErrReplayedFailed: the Idempotency-Key was spent by a send that failed; retry under a new
 	// key.
-	ErrReplayedFailed = validation.Conflict("transactional: a send with this key failed", "errors.send_key_failed")
+	ErrReplayedFailed = validation.Conflict("transactional: a send with this key failed", i18n.ErrorsSendKeyFailed)
 	// ErrInvariant: Outbound answered with something a Transactional request can never get.
 	// It is a bug, reported loudly, not a refusal the caller can act on.
 	ErrInvariant = errors.New("transactional: invariant violated")

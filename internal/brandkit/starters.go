@@ -26,33 +26,33 @@ type node = map[string]any
 func Starters(k Kit) []Starter {
 	b := brand{k}
 	return []Starter{
-		b.starter("welcome",
+		b.starter(i18n.BrandkitWelcomeName, i18n.BrandkitWelcomeSubject,
 			b.logo(),
-			b.heading(1, i18n.T("brandkit.welcome.heading", mergeTags)),
-			b.paragraph(i18n.T("brandkit.welcome.body", nil)),
-			b.button(i18n.T("brandkit.welcome.button", nil)),
+			b.heading(1, i18n.T(i18n.BrandkitWelcomeHeading, mergeTags)),
+			b.paragraph(i18n.T(i18n.BrandkitWelcomeBody, nil)),
+			b.button(i18n.T(i18n.BrandkitWelcomeButton, nil)),
 		),
-		b.starter("receipt",
+		b.starter(i18n.BrandkitReceiptName, i18n.BrandkitReceiptSubject,
 			b.logo(),
-			b.heading(1, i18n.T("brandkit.receipt.heading", nil)),
-			b.paragraph(i18n.T("brandkit.receipt.body", nil)),
-			b.paragraph(i18n.T("brandkit.receipt.order", mergeTags)),
-			b.paragraph(i18n.T("brandkit.receipt.total", mergeTags)),
+			b.heading(1, i18n.T(i18n.BrandkitReceiptHeading, nil)),
+			b.paragraph(i18n.T(i18n.BrandkitReceiptBody, nil)),
+			b.paragraph(i18n.T(i18n.BrandkitReceiptOrder, mergeTags)),
+			b.paragraph(i18n.T(i18n.BrandkitReceiptTotal, mergeTags)),
 		),
-		b.starter("digest",
+		b.starter(i18n.BrandkitDigestName, i18n.BrandkitDigestSubject,
 			b.logo(),
-			b.heading(1, i18n.T("brandkit.digest.heading", nil)),
-			b.paragraph(i18n.T("brandkit.digest.intro", nil)),
-			b.heading(2, i18n.T("brandkit.digest.first_title", nil)),
-			b.paragraph(i18n.T("brandkit.digest.first_body", nil)),
+			b.heading(1, i18n.T(i18n.BrandkitDigestHeading, nil)),
+			b.paragraph(i18n.T(i18n.BrandkitDigestIntro, nil)),
+			b.heading(2, i18n.T(i18n.BrandkitDigestFirstTitle, nil)),
+			b.paragraph(i18n.T(i18n.BrandkitDigestFirstBody, nil)),
 			b.rule(),
-			b.heading(2, i18n.T("brandkit.digest.second_title", nil)),
-			b.paragraph(i18n.T("brandkit.digest.second_body", nil)),
+			b.heading(2, i18n.T(i18n.BrandkitDigestSecondTitle, nil)),
+			b.paragraph(i18n.T(i18n.BrandkitDigestSecondBody, nil)),
 		),
-		b.starter("button",
+		b.starter(i18n.BrandkitButtonName, i18n.BrandkitButtonSubject,
 			b.logo(),
-			b.paragraph(i18n.T("brandkit.button.body", nil)),
-			b.button(i18n.T("brandkit.button.button", nil)),
+			b.paragraph(i18n.T(i18n.BrandkitButtonBody, nil)),
+			b.button(i18n.T(i18n.BrandkitButtonButton, nil)),
 		),
 	}
 }
@@ -68,7 +68,7 @@ var mergeTags = map[string]any{
 // brand turns the kit into document nodes.
 type brand struct{ kit Kit }
 
-func (b brand) starter(key string, nodes ...node) Starter {
+func (b brand) starter(name, subject i18n.ID, nodes ...node) Starter {
 	content := make([]node, 0, len(nodes)+2)
 	for _, n := range nodes {
 		if n != nil {
@@ -83,11 +83,11 @@ func (b brand) starter(key string, nodes ...node) Starter {
 	raw, err := json.Marshal(doc)
 	if err != nil {
 		// A map of strings and numbers always marshals.
-		panic(fmt.Sprintf("brandkit: marshal the %s starter: %v", key, err))
+		panic(fmt.Sprintf("brandkit: marshal the %s starter: %v", name.Key(), err))
 	}
 	return Starter{
-		Name:    i18n.T("brandkit."+key+".name", nil),
-		Subject: i18n.T("brandkit."+key+".subject", nil),
+		Name:    i18n.T(name, nil),
+		Subject: i18n.T(subject, nil),
 		Doc:     raw,
 	}
 }
@@ -149,6 +149,6 @@ func (b brand) logo() node {
 	if b.kit.LogoURL == "" {
 		return nil
 	}
-	attrs := node{"src": b.kit.LogoURL, "alt": i18n.T("brandkit.logo_alt", nil), "alignment": "left", "width": "120", "height": "auto"}
+	attrs := node{"src": b.kit.LogoURL, "alt": i18n.T(i18n.BrandkitLogoAlt, nil), "alignment": "left", "width": "120", "height": "auto"}
 	return element("image", attrs)
 }

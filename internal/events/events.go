@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -74,7 +75,7 @@ func DedupKey(source string, workspaceID int64, clientEventID string) string {
 
 // ErrRejected is a customer's Event the platform refuses; Reject makes it With the reason, worded
 // for the caller.
-var ErrRejected = validation.Refuse("events: event rejected", "errors.event_rejected")
+var ErrRejected = validation.Refuse("events: event rejected", i18n.ErrorsEventRejected)
 
 // Reject is the refusal of a customer's Event for reason.
 func Reject(reason string) error { return ErrRejected.With(reason) }

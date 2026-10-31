@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holds"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -857,9 +858,9 @@ const TestSubjectPrefix = "[Test] "
 // Transactional request), each carrying the reason worded by Detail.
 var (
 	// ErrHeld: the source cannot send right now (a Hold); it clears once the hold is lifted.
-	ErrHeld = validation.Refuse("outbound: sending is held", "errors.sending_held")
+	ErrHeld = validation.Refuse("outbound: sending is held", i18n.ErrorsSendingHeld)
 	// ErrTestRefused: the System sender will not make this Test send (ADR 0041).
-	ErrTestRefused = validation.Refuse("outbound: the test send is refused", "errors.test_send_refused")
+	ErrTestRefused = validation.Refuse("outbound: the test send is refused", i18n.ErrorsTestSendRefused)
 )
 
 // SendBroadcastTest sends the Broadcast to one address with sample merge data for an author to

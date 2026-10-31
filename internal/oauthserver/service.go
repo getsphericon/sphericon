@@ -22,16 +22,17 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 var (
 	// ErrUnknownClient means the client_id was never registered.
-	ErrUnknownClient = validation.NotFound("unknown client", "errors.oauth_client_unknown")
+	ErrUnknownClient = validation.NotFound("unknown client", i18n.ErrorsOauthClientUnknown)
 	// ErrInvalidRequest means the authorization request is malformed or does not
 	// match the client's registration (the message is safe to show).
-	ErrInvalidRequest = validation.Refuse("invalid authorization request", "errors.oauth_request_invalid")
+	ErrInvalidRequest = validation.Refuse("invalid authorization request", i18n.ErrorsOauthRequestInvalid)
 )
 
 const (

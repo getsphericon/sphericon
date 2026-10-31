@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
@@ -115,8 +116,15 @@ func (m *Module) notifyOwners(ctx context.Context, s *ent.Scoped, e *ent.Webhook
 		"Failures":  DisableFailures,
 		"Window":    DisableWindow.String(),
 	}
-	data["Reason"] = i18n.T("email.webhook_disabled.reason_"+string(reason), data)
-	m.notify.TellBestEffort(ctx, ws.ID, "email.webhook_disabled", data, "endpoint_id", e.ID)
+	data["Reason"] = i18n.T(disabledReasons[reason], data)
+	m.notify.TellBestEffort(ctx, ws.ID, ownernotice.Notice{Subject: i18n.EmailWebhookDisabledSubject, Body: i18n.EmailWebhookDisabledBody}, data, "endpoint_id", e.ID)
+}
+
+// disabledReasons words why the delivery disabled an endpoint, in the notice to the Owners. An
+// Owner disabling one is told nothing.
+var disabledReasons = map[webhookendpoint.DisabledReason]i18n.ID{
+	webhookendpoint.DisabledReasonGone:              i18n.EmailWebhookDisabledReasonGone,
+	webhookendpoint.DisabledReasonPersistentFailure: i18n.EmailWebhookDisabledReasonPersistentFailure,
 }
 
 // originOf keeps scheme and host of an endpoint URL for a mail: the path and query may

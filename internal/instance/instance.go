@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -26,7 +27,7 @@ const stateID int64 = 1
 
 // ErrTelemetryLocked is returned when a Staff member tries to change a setting the environment
 // decides.
-var ErrTelemetryLocked = validation.Conflict("instance: the telemetry setting is decided by the environment", "errors.telemetry_locked")
+var ErrTelemetryLocked = validation.Conflict("instance: the telemetry setting is decided by the environment", i18n.ErrorsTelemetryLocked)
 
 // Environment is what the deployment says about the Instance: its Mode's say over the Telemetry
 // report (ADR 0060), DO_NOT_TRACK=1, whether the Mode makes the Release check and the version

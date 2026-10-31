@@ -80,7 +80,7 @@ func TestABlankProfileNameIsRefused(t *testing.T) {
 
 	_, err := r.acc.ChangeProfile(t.Context(), r.john, accounts.ProfileChange{Name: new("   ")}, proveByHash)
 
-	assert.Equal(t, map[string][]string{"name": {i18n.T("errors.name_empty", nil)}}, refusedFields(t, err))
+	assert.Equal(t, map[string][]string{"name": {i18n.T(i18n.ErrorsNameEmpty, nil)}}, refusedFields(t, err))
 	assert.Equal(t, r.john.Name, r.stored(t).Name)
 }
 
@@ -102,7 +102,7 @@ func TestANewPasswordNeedsTheCurrentOne(t *testing.T) {
 
 	_, err := r.acc.ChangeProfile(t.Context(), r.john, accounts.ProfileChange{NewPassword: "newsecret123"}, proveByHash)
 
-	assert.Equal(t, map[string][]string{"currentPassword": {i18n.T("errors.current_password_required", nil)}}, refusedFields(t, err))
+	assert.Equal(t, map[string][]string{"currentPassword": {i18n.T(i18n.ErrorsCurrentPasswordRequired, nil)}}, refusedFields(t, err))
 	assert.Equal(t, r.john.PasswordHash, r.stored(t).PasswordHash)
 }
 

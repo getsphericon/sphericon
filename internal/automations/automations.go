@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -71,28 +72,28 @@ type Step struct {
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrNotFound: no such Automation in this Workspace.
-	ErrNotFound = validation.NotFound("automations: automation not found", "errors.automation_not_found")
+	ErrNotFound = validation.NotFound("automations: automation not found", i18n.ErrorsAutomationNotFound)
 	// ErrEnrollmentNotFound: no such Enrollment of the Automation in this Workspace.
-	ErrEnrollmentNotFound = validation.NotFound("automations: enrollment not found", "errors.enrollment_not_found")
+	ErrEnrollmentNotFound = validation.NotFound("automations: enrollment not found", i18n.ErrorsEnrollmentNotFound)
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
 	// without a tag name, or an email step whose content cannot render.
-	ErrInvalidStep = validation.Refuse("automations: invalid step", "errors.automation_step_invalid")
+	ErrInvalidStep = validation.Refuse("automations: invalid step", i18n.ErrorsAutomationStepInvalid)
 	// ErrInvalidTrigger: the trigger is an infrastructure Event (a send or a delivery notice)
 	// that no Automation may start from (ADR 0053).
-	ErrInvalidTrigger = validation.Refuse("automations: invalid trigger", "errors.automation_trigger_invalid")
+	ErrInvalidTrigger = validation.Refuse("automations: invalid trigger", i18n.ErrorsAutomationTriggerInvalid)
 	// ErrInvalidExitEvent: an exit event is empty, an infrastructure Event, or the trigger itself.
-	ErrInvalidExitEvent = validation.Refuse("automations: invalid exit event", "errors.automation_exit_event_invalid")
+	ErrInvalidExitEvent = validation.Refuse("automations: invalid exit event", i18n.ErrorsAutomationExitEventInvalid)
 	// ErrInvalidGoalEvent: the goal event is empty, an infrastructure Event, the trigger itself or
 	// one of the exit events.
-	ErrInvalidGoalEvent = validation.Refuse("automations: invalid goal event", "errors.automation_goal_event_invalid")
+	ErrInvalidGoalEvent = validation.Refuse("automations: invalid goal event", i18n.ErrorsAutomationGoalEventInvalid)
 	// ErrIntegrationNotFound: the Integration does not exist in this Workspace or is archived.
-	ErrIntegrationNotFound = validation.Refuse("automations: integration not found", "errors.automation_integration_not_found")
+	ErrIntegrationNotFound = validation.Refuse("automations: integration not found", i18n.ErrorsAutomationIntegrationNotFound)
 
 	// ErrNothingToPublish: the Automation has neither a draft nor a live version.
-	ErrNothingToPublish = validation.Refuse("automations: nothing to publish", "errors.automation_nothing_to_publish")
+	ErrNothingToPublish = validation.Refuse("automations: nothing to publish", i18n.ErrorsAutomationNothingToPublish)
 	// ErrNothingToRevert: the Automation has no draft above a live version. A never-published
 	// Automation's draft is its whole definition, so it is not reverted either.
-	ErrNothingToRevert = validation.Refuse("automations: nothing to revert", "errors.automation_nothing_to_revert")
+	ErrNothingToRevert = validation.Refuse("automations: nothing to revert", i18n.ErrorsAutomationNothingToRevert)
 
 	// ErrNoVersion: the Automation has no live version: it was never published, so nobody can
 	// be enrolled in it.

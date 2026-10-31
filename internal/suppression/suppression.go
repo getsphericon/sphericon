@@ -14,6 +14,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -21,9 +22,9 @@ import (
 var (
 	// ErrDestinationEmpty: the destination is blank after normalization. Every surface answers
 	// it alike, on the `destination` field (review rule 15).
-	ErrDestinationEmpty = validation.RefuseField("destination", "suppression: destination must not be empty", "errors.destination_invalid")
+	ErrDestinationEmpty = validation.RefuseField("destination", "suppression: destination must not be empty", i18n.ErrorsDestinationInvalid)
 	// ErrNotFound: no such Suppression in this Workspace.
-	ErrNotFound = validation.NotFound("suppression: not found", "errors.suppression_not_found")
+	ErrNotFound = validation.NotFound("suppression: not found", i18n.ErrorsSuppressionNotFound)
 )
 
 // NormalizeDestination is the single definition of "normalized destination":

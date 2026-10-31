@@ -132,7 +132,7 @@ func notFoundProblem() staffeeapi.ProblemDetails {
 	return staffeeapi.ProblemDetails{
 		Status: staffeeapi.NewOptInt32(http.StatusNotFound),
 		Title:  staffeeapi.NewOptString(http.StatusText(http.StatusNotFound)),
-		Detail: staffeeapi.NewOptString(i18n.T("errors.workspace_not_found", nil)),
+		Detail: staffeeapi.NewOptString(i18n.T(i18n.ErrorsWorkspaceNotFound, nil)),
 	}
 }
 
@@ -149,7 +149,7 @@ func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.S
 		p := staffeeapi.StaffWorkspacesSuspendUnprocessableEntity{
 			Status: staffeeapi.NewOptInt32(http.StatusUnprocessableEntity),
 			Title:  staffeeapi.NewOptString(http.StatusText(http.StatusUnprocessableEntity)),
-			Detail: staffeeapi.NewOptString(i18n.T("errors.suspension_reason_required", nil)),
+			Detail: staffeeapi.NewOptString(i18n.T(i18n.ErrorsSuspensionReasonRequired, nil)),
 		}
 		return &p, nil
 	}

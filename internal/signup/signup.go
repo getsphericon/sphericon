@@ -38,12 +38,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/credentials"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrEmailTaken refuses a Sign-up of an address that belongs to a User, on an Instance that does
 // not require email verification (ADR 0031's one exception): nothing was created.
-var ErrEmailTaken = validation.ConflictField(validation.FieldEmail, "signup: the address belongs to a user", "errors.email_exists")
+var ErrEmailTaken = validation.ConflictField(validation.FieldEmail, "signup: the address belongs to a user", i18n.ErrorsEmailExists)
 
 // ErrTaken is what a Store's create returns when the unique email refuses the address.
 var ErrTaken = errors.New("signup: address taken")

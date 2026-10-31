@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/httpcall"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -28,7 +29,7 @@ const ErrorKindInvalidBody = "invalid_body"
 
 var (
 	// ErrContactNotFound: no such Contact in this Workspace.
-	ErrContactNotFound = validation.NotFound("automations: contact not found", "errors.contact_not_found")
+	ErrContactNotFound = validation.NotFound("automations: contact not found", i18n.ErrorsContactNotFound)
 	// ErrInvalidBody: the body did not render to valid JSON within the size limit.
 	ErrInvalidBody = httpcall.ErrInvalidBody
 )

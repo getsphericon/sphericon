@@ -32,6 +32,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/credentials"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -65,21 +66,21 @@ const (
 var (
 	// ErrInvalidCredentials is the password step's refusal of an unknown address, a wrong
 	// password or an account without a password, indistinguishably. The failure is counted.
-	ErrInvalidCredentials = validation.Unauthorized("login: invalid credentials", "errors.invalid_credentials")
+	ErrInvalidCredentials = validation.Unauthorized("login: invalid credentials", i18n.ErrorsInvalidCredentials)
 	// ErrChallengeInvalid is the second step's refusal of a challenge that no longer stands
 	// (forged, expired, spent, moved, its account gone or its factor gone). It has no trusted
 	// address, so nothing is counted. An adapter's Parse and Verify return it too.
-	ErrChallengeInvalid = validation.Unauthorized("login: challenge invalid", "errors.login_challenge_invalid")
+	ErrChallengeInvalid = validation.Unauthorized("login: challenge invalid", i18n.ErrorsLoginChallengeInvalid)
 	// ErrInvalidCode is the second step's refusal of a wrong code, counted against the same
 	// budget as a wrong password. An adapter's Verify returns it too.
-	ErrInvalidCode = validation.Unauthorized("login: invalid code", "errors.second_factor_code_invalid")
+	ErrInvalidCode = validation.Unauthorized("login: invalid code", i18n.ErrorsSecondFactorCodeInvalid)
 	// ErrPasskeyFailed is every refusal of a Passkey login, indistinguishably: an unknown
 	// credential, a response that does not verify (no user verification included), a spent or
 	// expired challenge, an account the verification gate refuses. Nothing is counted.
-	ErrPasskeyFailed = validation.Unauthorized("login: passkey sign-in failed", "errors.passkey_login_failed")
+	ErrPasskeyFailed = validation.Unauthorized("login: passkey sign-in failed", i18n.ErrorsPasskeyLoginFailed)
 	// ErrPasswordIncorrect is Prove's refusal of a password that is not the account's (or of an
 	// account without one). The failure is counted on the same budget as a login failure.
-	ErrPasswordIncorrect = validation.Denied("login: current password incorrect", "errors.current_password_incorrect")
+	ErrPasswordIncorrect = validation.Denied("login: current password incorrect", i18n.ErrorsCurrentPasswordIncorrect)
 )
 
 // PasskeyOutcome is what the Passkey step decided (ADR 0052).

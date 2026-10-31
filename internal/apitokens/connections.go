@@ -6,12 +6,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrConnectionNotFound refuses a Connection that is not in the Workspace, is already revoked or
 // is another User's while the caller may not see it.
-var ErrConnectionNotFound = validation.NotFound("apitokens: connection not found", "errors.connection_not_found")
+var ErrConnectionNotFound = validation.NotFound("apitokens: connection not found", i18n.ErrorsConnectionNotFound)
 
 // Connections lists the active Connections of the Workspace s that caller (the User's Membership
 // of it) may see, oldest first, each with its Membership and that Membership's User: the User's

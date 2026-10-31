@@ -38,7 +38,7 @@ func (w *Workspace) SaveBrandKit() {
 }
 
 // StarterWelcomeName is the name of the welcome starter Template in the instance's locale.
-func StarterWelcomeName() string { return i18n.T("brandkit.welcome.name", nil) }
+func StarterWelcomeName() string { return i18n.T(i18n.BrandkitWelcomeName, nil) }
 
 // agentScopes are what an agent that only drafts holds: no send scope and no mcp:send.
 var agentScopes = scopeStrings(

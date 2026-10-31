@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
 	"github.com/getsphericon/sphericon/ent/useridentity"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -42,22 +43,22 @@ var (
 	ErrChallengeSpent = errors.New("secondfactor: passkey challenge already spent")
 	// ErrPasskeysUnavailable: the Instance's public URL has no host name a Passkey can be bound
 	// to (an IP address), so no Passkey can be registered or used on it.
-	ErrPasskeysUnavailable = validation.NotFound("secondfactor: passkeys need a host name, not an IP address", "errors.passkeys_unavailable")
+	ErrPasskeysUnavailable = validation.NotFound("secondfactor: passkeys need a host name, not an IP address", i18n.ErrorsPasskeysUnavailable)
 	// ErrPasskeyRefused: the authenticator's response is not acceptable: malformed, not
 	// signed for this challenge or origin, made without user verification, or for a
 	// credential that is already registered.
 	ErrPasskeyRefused = errors.New("secondfactor: passkey response refused")
 	// ErrPasskeyNotFound: no Passkey of that id belongs to the User (another User's counts as
 	// none).
-	ErrPasskeyNotFound = validation.NotFound("secondfactor: passkey not found", "errors.passkey_not_found")
+	ErrPasskeyNotFound = validation.NotFound("secondfactor: passkey not found", i18n.ErrorsPasskeyNotFound)
 	// ErrPasskeyNameEmpty: the name given to a Passkey is empty once trimmed.
-	ErrPasskeyNameEmpty = validation.RefuseField("name", "secondfactor: passkey name is empty", "errors.passkey_name_invalid")
+	ErrPasskeyNameEmpty = validation.RefuseField("name", "secondfactor: passkey name is empty", i18n.ErrorsPasskeyNameInvalid)
 	// ErrRegistrationFailed: a registration ceremony that cannot finish (CeremonyFailed); the
 	// User starts it again.
-	ErrRegistrationFailed = validation.Refuse("secondfactor: passkey registration failed", "errors.passkey_registration_failed")
+	ErrRegistrationFailed = validation.Refuse("secondfactor: passkey registration failed", i18n.ErrorsPasskeyRegistrationFailed)
 	// ErrLastSignIn: the Passkey is the last way the User can sign in: no password, no Linked
 	// identity and no other Passkey.
-	ErrLastSignIn = validation.Conflict("secondfactor: the passkey is the last way to sign in", "errors.passkey_last_sign_in")
+	ErrLastSignIn = validation.Conflict("secondfactor: the passkey is the last way to sign in", i18n.ErrorsPasskeyLastSignIn)
 )
 
 type ceremonyPurpose string

@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/otpcode"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -44,21 +45,21 @@ var (
 	// Recovery code of the User. It refuses the `code` field of the User's own steps
 	// (confirming an enrollment, disabling); the login adapter answers it as the login
 	// module's ErrInvalidCode.
-	ErrInvalidCode = validation.RefuseField("code", "secondfactor: invalid code", "errors.second_factor_code_invalid")
+	ErrInvalidCode = validation.RefuseField("code", "secondfactor: invalid code", i18n.ErrorsSecondFactorCodeInvalid)
 	// ErrNotActive: the User has no confirmed Second factor, so their own step that needs one
 	// (regenerating the Recovery codes, disabling) has nothing to act on.
-	ErrNotActive = validation.Conflict("secondfactor: no active second factor", "errors.second_factor_not_active")
+	ErrNotActive = validation.Conflict("secondfactor: no active second factor", i18n.ErrorsSecondFactorNotActive)
 	// ErrNothingToReset: the member has neither a Second factor nor a Passkey, so a reset has
 	// nothing to clear. It refuses the `member` the reset names.
-	ErrNothingToReset = validation.RefuseField("member", "secondfactor: the member has no second factor or passkey", "errors.second_factor_reset_nothing")
+	ErrNothingToReset = validation.RefuseField("member", "secondfactor: the member has no second factor or passkey", i18n.ErrorsSecondFactorResetNothing)
 	// ErrDeletionCodeInvalid: the code that confirms the User's own deletion is wrong. Like a
 	// wrong password it fails the proof of who asks (403), and the caller counts it on the
 	// Login throttle (ADR 0025).
-	ErrDeletionCodeInvalid = validation.Denied("secondfactor: invalid deletion code", "errors.second_factor_code_invalid")
+	ErrDeletionCodeInvalid = validation.Denied("secondfactor: invalid deletion code", i18n.ErrorsSecondFactorCodeInvalid)
 	// ErrAlreadyActive: enrollment is refused while a Second factor is active.
-	ErrAlreadyActive = validation.Conflict("secondfactor: second factor already active", "errors.second_factor_already_active")
+	ErrAlreadyActive = validation.Conflict("secondfactor: second factor already active", i18n.ErrorsSecondFactorAlreadyActive)
 	// ErrNoPending: there is no pending enrollment to confirm.
-	ErrNoPending = validation.Conflict("secondfactor: no pending enrollment", "errors.second_factor_no_pending")
+	ErrNoPending = validation.Conflict("secondfactor: no pending enrollment", i18n.ErrorsSecondFactorNoPending)
 	// ErrBindingMoved: the challenge binding a second step was started under has
 	// moved (another second step, an epoch bump or a password change got there
 	// first), so the challenge is spent.

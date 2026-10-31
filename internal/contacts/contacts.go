@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/tags"
@@ -44,18 +45,18 @@ const (
 )
 
 // ErrNotFound means the Contact does not exist in the Workspace.
-var ErrNotFound = validation.NotFound("contacts: contact not found", "errors.contact_not_found")
+var ErrNotFound = validation.NotFound("contacts: contact not found", i18n.ErrorsContactNotFound)
 
 // ErrIdentityRequired means an upsert was given none of the alias keys, so there is
 // nothing to resolve or anchor a Contact by.
-var ErrIdentityRequired = validation.Refuse("contacts: subject_id, email or phone is required", "errors.contact_identity_required")
+var ErrIdentityRequired = validation.Refuse("contacts: subject_id, email or phone is required", i18n.ErrorsContactIdentityRequired)
 
 // An alias key already held by another Contact of the Workspace, one per key: the answer names
 // the key's field.
 var (
-	ErrEmailTaken     = validation.ConflictField(FieldEmail, "contacts: email already exists", "errors.email_exists")
-	ErrPhoneTaken     = validation.ConflictField(FieldPhone, "contacts: phone already exists", "errors.phone_exists")
-	ErrSubjectIDTaken = validation.ConflictField(FieldSubjectID, "contacts: subject_id already exists", "errors.subject_id_exists")
+	ErrEmailTaken     = validation.ConflictField(FieldEmail, "contacts: email already exists", i18n.ErrorsEmailExists)
+	ErrPhoneTaken     = validation.ConflictField(FieldPhone, "contacts: phone already exists", i18n.ErrorsPhoneExists)
+	ErrSubjectIDTaken = validation.ConflictField(FieldSubjectID, "contacts: subject_id already exists", i18n.ErrorsSubjectIdExists)
 )
 
 // taken is the conflict of each alias key, in the order a unique violation is matched by its

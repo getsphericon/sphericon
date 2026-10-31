@@ -112,12 +112,12 @@ func buildAuthMail(appURL string, args SendAuthMailArgs) (messaging.EmailMessage
 	if args.Flow == flowUserDeleted {
 		return buildUserDeletedMail(args.Email), nil
 	}
-	subjectID, path, introID := authMailCopy(args.Flow)
-	if path == "" {
+	subjectID, path, introID, ok := authMailCopy(args.Flow)
+	if !ok {
 		return messaging.EmailMessage{}, fmt.Errorf("send auth mail: unknown flow %q", args.Flow)
 	}
 	link := strings.TrimRight(appURL, "/") + path + "?token=" + url.QueryEscape(args.Token)
-	body := fmt.Sprintf("%s\n\n%s\n\n%s\n", i18n.T(introID, nil), link, i18n.T("email.auth.footer", nil))
+	body := fmt.Sprintf("%s\n\n%s\n\n%s\n", i18n.T(introID, nil), link, i18n.T(i18n.EmailAuthFooter, nil))
 	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(subjectID, nil), Text: body}, nil
 }
 
@@ -126,32 +126,32 @@ func buildAuthMail(appURL string, args SendAuthMailArgs) (messaging.EmailMessage
 func buildAddressTakenMail(appURL, to string) messaging.EmailMessage {
 	base := strings.TrimRight(appURL, "/")
 	body := fmt.Sprintf("%s\n\n%s %s\n%s %s\n\n%s\n",
-		i18n.T("email.address_taken.intro", nil),
-		i18n.T("email.address_taken.sign_in", nil), base+"/login",
-		i18n.T("email.address_taken.reset", nil), base+"/forgot-password",
-		i18n.T("email.auth.footer", nil))
-	return messaging.EmailMessage{To: to, Subject: i18n.T("email.address_taken.subject", nil), Text: body}
+		i18n.T(i18n.EmailAddressTakenIntro, nil),
+		i18n.T(i18n.EmailAddressTakenSignIn, nil), base+"/login",
+		i18n.T(i18n.EmailAddressTakenReset, nil), base+"/forgot-password",
+		i18n.T(i18n.EmailAuthFooter, nil))
+	return messaging.EmailMessage{To: to, Subject: i18n.T(i18n.EmailAddressTakenSubject, nil), Text: body}
 }
 
 // buildUserDeletedMail renders the one mail a User deletion sends the address: the owner of
 // the mailbox learns of a deletion they did not make.
 func buildUserDeletedMail(to string) messaging.EmailMessage {
-	body := fmt.Sprintf("%s\n\n%s\n", i18n.T("email.user_deleted.intro", nil), i18n.T("email.user_deleted.not_me", nil))
-	return messaging.EmailMessage{To: to, Subject: i18n.T("email.user_deleted.subject", nil), Text: body}
+	body := fmt.Sprintf("%s\n\n%s\n", i18n.T(i18n.EmailUserDeletedIntro, nil), i18n.T(i18n.EmailUserDeletedNotMe, nil))
+	return messaging.EmailMessage{To: to, Subject: i18n.T(i18n.EmailUserDeletedSubject, nil), Text: body}
 }
 
 // buildPasskeyChangedMail renders the notice a Passkey change sends the owner of the account.
 func buildPasskeyChangedMail(args SendAuthMailArgs) (messaging.EmailMessage, error) {
-	var subjectID, introID string
+	var subjectID, introID i18n.ID
 	switch args.Change {
 	case PasskeyAdded:
-		subjectID, introID = "email.passkey_added.subject", "email.passkey_added.intro"
+		subjectID, introID = i18n.EmailPasskeyAddedSubject, i18n.EmailPasskeyAddedIntro
 	case PasskeyRemoved:
-		subjectID, introID = "email.passkey_removed.subject", "email.passkey_removed.intro"
+		subjectID, introID = i18n.EmailPasskeyRemovedSubject, i18n.EmailPasskeyRemovedIntro
 	default:
 		return messaging.EmailMessage{}, fmt.Errorf("send auth mail: unknown passkey change %q", args.Change)
 	}
-	body := fmt.Sprintf("%s\n\n%s\n", i18n.T(introID, map[string]any{"Name": args.Name}), i18n.T("email.passkey_changed.not_me", nil))
+	body := fmt.Sprintf("%s\n\n%s\n", i18n.T(introID, map[string]any{"Name": args.Name}), i18n.T(i18n.EmailPasskeyChangedNotMe, nil))
 	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(subjectID, nil), Text: body}, nil
 }
 
@@ -160,27 +160,26 @@ func buildPasskeyChangedMail(args SendAuthMailArgs) (messaging.EmailMessage, err
 func buildIdentityLinkedMail(appURL string, args SendAuthMailArgs) messaging.EmailMessage {
 	link := strings.TrimRight(appURL, "/") + "/signin-not-me?token=" + url.QueryEscape(args.Token)
 	body := fmt.Sprintf("%s\n\n%s\n%s\n\n%s\n",
-		i18n.T("email.identity_linked.intro", map[string]any{"Provider": args.Provider}),
-		i18n.T("email.identity_linked.not_me", nil), link,
-		i18n.T("email.auth.footer", nil))
-	return messaging.EmailMessage{To: args.Email, Subject: i18n.T("email.identity_linked.subject", nil), Text: body}
+		i18n.T(i18n.EmailIdentityLinkedIntro, map[string]any{"Provider": args.Provider}),
+		i18n.T(i18n.EmailIdentityLinkedNotMe, nil), link,
+		i18n.T(i18n.EmailAuthFooter, nil))
+	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(i18n.EmailIdentityLinkedSubject, nil), Text: body}
 }
 
-// authMailCopy returns the subject message id, SPA path, and intro message id
-// for a flow (empty path signals an unknown flow). The copy itself is localized
-// by internal/i18n at send time.
-func authMailCopy(flow string) (subjectID, path, introID string) {
+// authMailCopy returns the subject message, SPA path and intro message for a flow (false for an
+// unknown flow). The copy itself is localized by internal/i18n at send time.
+func authMailCopy(flow string) (subject i18n.ID, path string, intro i18n.ID, ok bool) {
 	switch flow {
 	case flowPasswordReset:
-		return "email.password_reset.subject", "/reset-password", "email.password_reset.intro"
+		return i18n.EmailPasswordResetSubject, "/reset-password", i18n.EmailPasswordResetIntro, true
 	case flowEmailVerify:
-		return "email.email_verify.subject", "/verify-email", "email.email_verify.intro"
+		return i18n.EmailEmailVerifySubject, "/verify-email", i18n.EmailEmailVerifyIntro, true
 	case flowEmailChange:
-		return "email.email_change.subject", "/confirm-email-change", "email.email_change.intro"
+		return i18n.EmailEmailChangeSubject, "/confirm-email-change", i18n.EmailEmailChangeIntro, true
 	case flowUserDeletion:
-		return "email.user_deletion.subject", "/delete-account", "email.user_deletion.intro"
+		return i18n.EmailUserDeletionSubject, "/delete-account", i18n.EmailUserDeletionIntro, true
 	default:
-		return "", "", ""
+		return i18n.ID{}, "", i18n.ID{}, false
 	}
 }
 

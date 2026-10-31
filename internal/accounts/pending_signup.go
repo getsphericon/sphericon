@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -22,7 +23,7 @@ const PendingSignupTTL = 10 * time.Minute
 
 // ErrPendingSignupGone is a pending sign-up that can no longer be completed: expired, completed,
 // declined, or overtaken (its address or provider account taken, its Invitation no longer pending).
-var ErrPendingSignupGone = validation.UnknownReference("accounts: the pending sign-up is gone", "errors.signin_pending_gone")
+var ErrPendingSignupGone = validation.UnknownReference("accounts: the pending sign-up is gone", i18n.ErrorsSigninPendingGone)
 
 // holdPending keeps what the provider proved as a pending sign-up instead of creating the User
 // (ADR 0062), open until PendingSignupTTL after now. A pending sign-up of the same provider account

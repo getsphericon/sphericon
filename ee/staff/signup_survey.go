@@ -78,7 +78,7 @@ func (h *Handlers) StaffSignupSurveyGet(ctx context.Context, params staffeeapi.S
 	row, err := h.module.SignupSurveyResponse(ctx, int64(params.UserId))
 	if ent.IsNotFound(err) {
 		p := notFoundProblem()
-		p.Detail = staffeeapi.NewOptString(i18n.T("errors.signup_survey_response_not_found", nil))
+		p.Detail = staffeeapi.NewOptString(i18n.T(i18n.ErrorsSignupSurveyResponseNotFound, nil))
 		v := staffeeapi.StaffSignupSurveyGetNotFound(p)
 		return &v, nil
 	}

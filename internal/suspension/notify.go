@@ -47,12 +47,12 @@ func NotifyOwners(ctx context.Context, client *ent.Client, notify ownernotice.No
 		reason = *ws.SuspensionReason
 	}
 	// The owner never sees a Staff member's id: the CLI and every Staff member are "Sphericon staff".
-	actorKey := "email.workspace_suspended.actor_staff"
+	actorKey := i18n.EmailWorkspaceSuspendedActorStaff
 	if ws.SuspendedByKind != nil && *ws.SuspendedByKind == workspace.SuspendedByKindSystem {
-		actorKey = "email.workspace_suspended.actor_system"
+		actorKey = i18n.EmailWorkspaceSuspendedActorSystem
 	}
 	data := map[string]any{"Workspace": ws.Name, "Reason": reason, "Actor": i18n.T(actorKey, nil), "Support": supportEmail}
-	if err := notify.Tell(ctx, ws.ID, "email.workspace_suspended", data); err != nil {
+	if err := notify.Tell(ctx, ws.ID, ownernotice.Notice{Subject: i18n.EmailWorkspaceSuspendedSubject, Body: i18n.EmailWorkspaceSuspendedBody}, data); err != nil {
 		return err
 	}
 	return client.Workspace.UpdateOneID(ws.ID).SetAbuseFreezeNotifiedAt(time.Now()).Exec(ctx)

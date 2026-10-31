@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -35,10 +36,10 @@ import (
 const pageSize = 500
 
 // ErrNotFound means no Contact in the Workspace matches the identifier.
-var ErrNotFound = validation.NotFound("contactexport: contact not found", "errors.contact_not_found")
+var ErrNotFound = validation.NotFound("contactexport: contact not found", i18n.ErrorsContactNotFound)
 
 // ErrIdentifier means the request named neither or both of id and email.
-var ErrIdentifier = validation.Refuse("contactexport: exactly one of id or email is required", "errors.contact_export_identifier")
+var ErrIdentifier = validation.Refuse("contactexport: exactly one of id or email is required", i18n.ErrorsContactExportIdentifier)
 
 // Ref is the optional string of a query parameter read as "(value, present)": nil
 // when absent. It lets a handler pass its generated Opt parameters straight to Find.

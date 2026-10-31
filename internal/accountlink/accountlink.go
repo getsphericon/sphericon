@@ -17,10 +17,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // TTL is how long a token is valid.
@@ -31,7 +33,7 @@ const JWKSPath = "/.well-known/jwks.json"
 
 // ErrNotConfigured is the Account link of an installation that configured none: there is no
 // page to open.
-var ErrNotConfigured = validation.NotFound("accountlink: the account link is not configured", "errors.account_link_not_configured")
+var ErrNotConfigured = validation.NotFound("accountlink: the account link is not configured", i18n.ErrorsAccountLinkNotConfigured)
 
 // Link signs Account link tokens for one configured address.
 type Link struct {

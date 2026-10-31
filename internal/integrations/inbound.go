@@ -140,13 +140,13 @@ func (m *Module) sealInbound(row *ent.Integration, in inboundChange) (inbound, e
 	}
 	if name == nil {
 		if len(in.params) > 0 {
-			return inbound{}, &validation.Error{Field: "params", Message: i18n.T("errors.preset_params_without_preset", nil)}
+			return inbound{}, &validation.Error{Field: "params", Message: i18n.T(i18n.ErrorsPresetParamsWithoutPreset, nil)}
 		}
 		return inbound{apply: row != nil && changed}, nil
 	}
 	p, ok := m.presets.Get(*name)
 	if !ok {
-		return inbound{}, &validation.Error{Field: "preset", Message: i18n.T("errors.preset_unknown", map[string]any{"Name": *name})}
+		return inbound{}, &validation.Error{Field: "preset", Message: i18n.T(i18n.ErrorsPresetUnknown, map[string]any{"Name": *name})}
 	}
 
 	var prev map[string]any
@@ -158,7 +158,7 @@ func (m *Module) sealInbound(row *ent.Integration, in inboundChange) (inbound, e
 	}
 	stored, plain := mergeParams(p, prev, in.params)
 	if err := p.ValidateParams(plain); err != nil {
-		return inbound{}, &validation.Error{Field: "params", Message: i18n.T("errors.preset_params_invalid", map[string]any{"Detail": err.Error()})}
+		return inbound{}, &validation.Error{Field: "params", Message: i18n.T(i18n.ErrorsPresetParamsInvalid, map[string]any{"Detail": err.Error()})}
 	}
 	if in.retireSecrets {
 		for _, s := range p.SecretParams() {

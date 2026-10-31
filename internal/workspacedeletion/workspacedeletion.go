@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -44,11 +45,11 @@ const DeletionWindow = 30 * 24 * time.Hour
 func EraseDate(discardedAt time.Time) time.Time { return discardedAt.Add(DeletionWindow) }
 
 // ErrNameMismatch refuses deleting a Workspace whose typed name differs from the stored one.
-var ErrNameMismatch = validation.RefuseField("name", "workspacedeletion: the typed name does not match the workspace name", "errors.workspace_name_mismatch")
+var ErrNameMismatch = validation.RefuseField("name", "workspacedeletion: the typed name does not match the workspace name", i18n.ErrorsWorkspaceNameMismatch)
 
 // ErrNotRestorable refuses restoring a Workspace past its deletion window or already erased. It
 // wraps the lifecycle.ErrInvalidTransition the cycle refused the move with.
-var ErrNotRestorable = validation.Conflict("workspacedeletion: the workspace can no longer be restored", "errors.workspace_not_restorable")
+var ErrNotRestorable = validation.Conflict("workspacedeletion: the workspace can no longer be restored", i18n.ErrorsWorkspaceNotRestorable)
 
 // State is where a Workspace is in the deletion cycle.
 type State string

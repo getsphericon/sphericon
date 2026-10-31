@@ -11,11 +11,12 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrInvalidFeedCursor refuses a cursor the feed never handed out.
-var ErrInvalidFeedCursor = validation.UnknownReference("staff: the cursor is not one the feed returned", "errors.feed_cursor_invalid")
+var ErrInvalidFeedCursor = validation.UnknownReference("staff: the cursor is not one the feed returned", i18n.ErrorsFeedCursorInvalid)
 
 // FeedEntry is a Workspace as the feed reports it: its identity and all of its owners.
 type FeedEntry struct {

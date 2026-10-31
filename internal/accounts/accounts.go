@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -153,7 +154,7 @@ func PendingInvitations(ctx context.Context, s *ent.Scoped) ([]*ent.Invitation, 
 
 // ErrResetOwnSecondFactor refuses a caller resetting their own Second factor as a member's: they
 // disable it in their account, which takes a password and a code.
-var ErrResetOwnSecondFactor = validation.RefuseField("member", "accounts: cannot reset your own second factor", "errors.second_factor_reset_self")
+var ErrResetOwnSecondFactor = validation.RefuseField("member", "accounts: cannot reset your own second factor", i18n.ErrorsSecondFactorResetSelf)
 
 // SecondFactorResetTarget loads the Membership targetID of the Workspace s as the target of a
 // Second factor reset by the User callerID holding callerRole: resetting an Owner's needs
@@ -291,11 +292,11 @@ func (a *Accounts) SetTimezone(ctx context.Context, s *ent.Scoped, actor events.
 }
 
 // ErrUnknownCurrency refuses a Reporting currency code that is not in ISO 4217.
-var ErrUnknownCurrency = validation.RefuseField("reportingCurrency", "accounts: unknown currency code", "errors.currency_unknown")
+var ErrUnknownCurrency = validation.RefuseField("reportingCurrency", "accounts: unknown currency code", i18n.ErrorsCurrencyUnknown)
 
 // ErrUnknownZone refuses a Workspace or a User time zone the zone database does not know. It
 // wraps reportday.ErrUnknownZone.
-var ErrUnknownZone = validation.RefuseField("timezone", "accounts: unknown time zone", "errors.timezone_unknown")
+var ErrUnknownZone = validation.RefuseField("timezone", "accounts: unknown time zone", i18n.ErrorsTimezoneUnknown)
 
 // checkZone refuses with ErrUnknownZone an IANA name the zone database does not know.
 func checkZone(name string) error {
@@ -404,12 +405,12 @@ func ptrEqual(a, b *int) bool {
 }
 
 // ErrWorkspaceNameEmpty refuses a Workspace name that is empty once trimmed.
-var ErrWorkspaceNameEmpty = validation.RefuseField("name", "accounts: workspace name is empty", "errors.name_empty")
+var ErrWorkspaceNameEmpty = validation.RefuseField("name", "accounts: workspace name is empty", i18n.ErrorsNameEmpty)
 
 // ErrEmailNotVerified refuses a User whose email is not proven yet (ADR 0030): creating a
 // Workspace, so sign-up verification is not bypassed by creating Workspaces first, and the
 // verification gate of the password login.
-var ErrEmailNotVerified = validation.Unverified("accounts: the email is not verified", "errors.email_verification_required")
+var ErrEmailNotVerified = validation.Unverified("accounts: the email is not verified", i18n.ErrorsEmailVerificationRequired)
 
 // CreateWorkspace creates a Workspace named name for a Verified User, who becomes its
 // Owner (ADR 0043). Names are free text and need not be unique. The Workspace, the Owner

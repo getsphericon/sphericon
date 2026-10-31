@@ -57,86 +57,86 @@ type RefusalError struct {
 	kind  Kind
 	field string
 	text  string
-	key   string
+	key   i18n.ID
 }
 
 // Refuse makes the sentinel for a refused input (KindRefused): text is its Error() and key the
 // i18n message a user is shown.
-func Refuse(text, key string) *RefusalError {
+func Refuse(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindRefused, text: text, key: key}
 }
 
 // RefuseField is Refuse for a refusal of one request field, named by its json name: the answer
 // lists the message under that field.
-func RefuseField(field, text, key string) *RefusalError {
+func RefuseField(field, text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindRefused, field: field, text: text, key: key}
 }
 
 // ConflictField is Conflict for a subject whose state refuses one request field, named by its json
 // name: the answer lists the message under that field (an address another Contact already has).
-func ConflictField(field, text, key string) *RefusalError {
+func ConflictField(field, text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindConflict, field: field, text: text, key: key}
 }
 
 // NotFound makes the sentinel for a subject that does not exist in this Workspace (KindNotFound).
-func NotFound(text, key string) *RefusalError {
+func NotFound(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindNotFound, text: text, key: key}
 }
 
 // Conflict makes the sentinel for a subject whose state does not allow the request now
 // (KindConflict).
-func Conflict(text, key string) *RefusalError {
+func Conflict(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindConflict, text: text, key: key}
 }
 
 // Forbidden makes the sentinel for a caller whose Role lacks the Permission the request needs
 // (KindForbidden).
-func Forbidden(text, key string) *RefusalError {
+func Forbidden(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindForbidden, text: text, key: key}
 }
 
 // Unauthorized makes the sentinel for a sign-in that does not hold (KindUnauthorized).
-func Unauthorized(text, key string) *RefusalError {
+func Unauthorized(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindUnauthorized, text: text, key: key}
 }
 
 // Denied makes the sentinel for a caller who did not prove what the step asks for, or who is
 // not the one the subject is for (KindDenied).
-func Denied(text, key string) *RefusalError {
+func Denied(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindDenied, text: text, key: key}
 }
 
 // Unverified makes the sentinel for a User whose address is not proven yet (KindUnverified).
-func Unverified(text, key string) *RefusalError {
+func Unverified(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindUnverified, text: text, key: key}
 }
 
 // LinkInvalid makes the sentinel for a mailed link that does not stand (KindLinkInvalid).
-func LinkInvalid(text, key string) *RefusalError {
+func LinkInvalid(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindLinkInvalid, text: text, key: key}
 }
 
 // Incomplete makes the sentinel for a request that lacks an input this case alone needs
 // (KindIncomplete).
-func Incomplete(text, key string) *RefusalError {
+func Incomplete(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindIncomplete, text: text, key: key}
 }
 
 // UnknownReference makes the sentinel for a reference the request carries that names nothing the
 // module can read (KindUnknownReference).
-func UnknownReference(text, key string) *RefusalError {
+func UnknownReference(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindUnknownReference, text: text, key: key}
 }
 
 // AcceptancePending makes the sentinel for a User with a required acceptance pending
 // (KindAcceptancePending).
-func AcceptancePending(text, key string) *RefusalError {
+func AcceptancePending(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindAcceptancePending, text: text, key: key}
 }
 
 // SecondFactorRequired makes the sentinel for a User the Two-factor requirement withholds
 // (KindSecondFactorRequired).
-func SecondFactorRequired(text, key string) *RefusalError {
+func SecondFactorRequired(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindSecondFactorRequired, text: text, key: key}
 }
 

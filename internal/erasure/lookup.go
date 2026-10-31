@@ -12,11 +12,12 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrInvalidEmail means the address of a Privacy request is not a plain email address.
-var ErrInvalidEmail = validation.RefuseField("email", "erasure: invalid email address", "errors.privacy_email_invalid")
+var ErrInvalidEmail = validation.RefuseField("email", "erasure: invalid email address", i18n.ErrorsPrivacyEmailInvalid)
 
 // Holdings is what a Workspace holds for one email address, as counts (a Privacy
 // request lookup). Nothing held is the zero value.
