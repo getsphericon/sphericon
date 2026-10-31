@@ -60,12 +60,13 @@ type delivery struct {
 	s   *ent.Scoped
 }
 
-func newDelivery(t *testing.T) *delivery {
+// newDelivery builds the delivery over an Outbound send module with opts (a clock of the test's).
+func newDelivery(t *testing.T, opts ...outbound.Option) *delivery {
 	t.Helper()
 	env := testhelper.Setup(t)
 	box := &mailbox{}
 	res := &provider{sender: box}
-	out := outbound.New(env.Bus, env.Holds, res, tracking.New("test-secret", "http://local"))
+	out := outbound.New(env.Bus, env.Holds, res, tracking.New("test-secret", "http://local"), opts...)
 	return &delivery{
 		t: t, env: env, box: box, res: res,
 		out: out, del: broadcasts.NewDelivery(out),
@@ -73,20 +74,9 @@ func newDelivery(t *testing.T) *delivery {
 	}
 }
 
-// newCoreDelivery is newDelivery on the core holds only, for a test inside a testing/synctest
-// bubble: the bubble's clock starts in 2000, before the fixture Staff holds lapsed, so the
-// Edition's holds would hold every send.
-func newCoreDelivery(t *testing.T) *delivery {
-	t.Helper()
-	env := testhelper.Setup(t)
-	box := &mailbox{}
-	res := &provider{sender: box}
-	out := outbound.New(env.Bus, env.CoreHolds(), res, tracking.New("test-secret", "http://local"))
-	return &delivery{
-		t: t, env: env, box: box, res: res,
-		out: out, del: broadcasts.NewDelivery(out),
-		s: env.DB.Scoped(fixtures.AcmeID),
-	}
+// detail is the sending Broadcast's figures and progress at now, paced by the delivery's Outbound send.
+func (d *delivery) detail(now time.Time) (broadcasts.Detail, error) {
+	return broadcasts.New(d.env.Bus, testhelper.Renderer(), d.out).Detail(d.t.Context(), d.s, d.broadcastRow(), now)
 }
 
 // recipient adds a pending recipient row for a Contact to the sending Broadcast.

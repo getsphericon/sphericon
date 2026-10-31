@@ -197,7 +197,7 @@ func TestIsActiveReadsTheLifecycle(t *testing.T) {
 // active, or whose live version starts on another Event, enrolls nobody.
 func TestEnrollOnTriggerEnrollsOnlyWhileActiveOnThatTrigger(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{TriggerEvent: new("hold_demo_moved")})

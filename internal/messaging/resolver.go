@@ -68,14 +68,16 @@ func DefaultEmailIntegration(ctx context.Context, s *ent.Scoped) (*ent.Integrati
 // IntegrationKept reports whether the Workspace has a kept Integration with the id: new work
 // may name it. An archived one leaves new work (ADR 0049), though work already naming it keeps
 // it as history, and one of another Workspace is not there. It says nothing of whether the
-// Integration can send: a send checks that itself (EmailIntegration).
+// Integration can send: the Send route of outbound decides that, for a send and for the moments
+// that arm one (an Automation's Publish, a Broadcast's Schedule).
 func IntegrationKept(ctx context.Context, s *ent.Scoped, id int64) (bool, error) {
 	return s.Integration().Query().Where(integration.ID(id)).Exist(ctx)
 }
 
 // EmailIntegration is the enabled email Integration a send goes through: the one named by
 // id, or the Workspace's default when id is nil. A named Integration that is disabled or
-// discarded is ErrNoProvider, never the default in its place.
+// discarded is ErrNoProvider, never the default in its place. A send asks the Send route of
+// outbound (outbound.Module.Route), which reads it, never this directly.
 func EmailIntegration(ctx context.Context, s *ent.Scoped, id *int64) (*ent.Integration, error) {
 	which := integration.IsDefault(true)
 	if id != nil {

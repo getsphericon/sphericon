@@ -26,6 +26,10 @@ Through a Test inbox, which sends nothing outside, the Test send goes through th
 else the Workspace's default. A Broadcast whose Integration cannot send gets no System sender: the
 Test send is held, as a real send is.)
 
+(Amended by #787: the Send route of that Integration decides it, resolved once for the Test send:
+whether it delivers outside, and whether it is held for a named Integration or for want of a
+default.)
+
 ## Considered options
 
 - **Keep the gate on Test send (ADR 0015 as written).** No exception, but the first email waits on DNS

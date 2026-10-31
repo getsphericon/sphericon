@@ -64,6 +64,11 @@ We add a **Send rate limit** to the **Integration** (GLOSSARY) and a new reversi
   plus dedicated-IP management) is EE. The core exposes one mutable ceiling field and no plugin interface; an
   interface appears when a second consumer exists.
 
+(Amended by #787: the planner paces by the Send route of the Broadcast's Integration, the one lookup
+that Outbound send's gate also uses. A route that cannot send is not paced at once: the Broadcast is
+held with the route's reason, as each of its sends would be. Outbound send reads the limit on its own
+clock, `outbound.WithClock`, which tests move instead of the wall.)
+
 ## Considered options
 
 - **River's own limiting.** River v0.40 offers only `MaxWorkers` per queue; there is no rate limit or per-key limit.

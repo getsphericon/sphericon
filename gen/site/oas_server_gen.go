@@ -288,7 +288,9 @@ type Handler interface {
 	// SiteAutomationsPublish implements SiteAutomations_publish operation.
 	//
 	// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
-	// draft, the live version is resumed. 422 with neither.
+	// draft, the live version is resumed. 422 with neither. 409 when the version going live has an email
+	// step and the integration it sends through cannot send (disabled or archived, or no default): a draft
+	// may name such an integration, only publishing it is refused.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/publish
 	SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (SiteAutomationsPublishRes, error)
@@ -375,7 +377,9 @@ type Handler interface {
 	//
 	// Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients
 	// are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and
-	// rescheduling keeps it. An archived segment is refused.
+	// rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through
+	// cannot send (disabled or archived, or no default): a draft may name such an integration, only
+	// scheduling it is refused.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
 	SiteBroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (SiteBroadcastsScheduleRes, error)

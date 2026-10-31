@@ -246,7 +246,7 @@ interface SiteBroadcasts
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. */
+  /** Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. */
   @action("schedule")
   @autoRoute
   @extension("x-required-permissions", #[])
@@ -257,6 +257,7 @@ interface SiteBroadcasts
     | SiteBroadcastResource
     | BadRequestProblem
     | NotFoundProblem
+    | ConflictProblem
     | UnprocessableEntityProblem;
 
   /**

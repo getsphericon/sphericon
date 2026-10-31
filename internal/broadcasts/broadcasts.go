@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -68,22 +69,37 @@ func (SendArgs) Kind() string { return "send_broadcast" }
 type Module struct {
 	bus      *events.Bus
 	renderer *emaildoc.Renderer
+	out      *outbound.Module
 }
 
-func New(bus *events.Bus, renderer *emaildoc.Renderer) *Module {
-	return &Module{bus: bus, renderer: renderer}
+// New builds the module. The bus runs a claim and its send job in one transaction; the renderer
+// builds a body from its document; out is Outbound send, whose Send route Schedule asks whether the
+// Broadcast can send and the progress estimate paces by.
+func New(bus *events.Bus, renderer *emaildoc.Renderer, out *outbound.Module) *Module {
+	return &Module{bus: bus, renderer: renderer, out: out}
 }
 
 // Send moves a draft or scheduled Broadcast to sending (dropping any schedule) and queues
 // its send job in the same transaction: either both happen or neither does.
 func (m *Module) Send(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
-	return m.claim(ctx, s, id, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil)
+	return m.claim(ctx, s, id, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil, nil)
 }
 
 // Schedule moves a draft or scheduled Broadcast to scheduled at `when` and queues a delayed
-// job in the same transaction.
+// job in the same transaction. Scheduling arms the send, so a Broadcast whose Send route cannot
+// send (its Integration is disabled or archived, or the Workspace has no default) is refused with
+// outbound.ErrRouteHeld and stays as it was; a route that stops sending after it holds the plan.
 func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id int64, when time.Time) (*ent.Broadcast, error) {
-	return m.claim(ctx, s, id, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when)
+	return m.claim(ctx, s, id, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when, m.armable)
+}
+
+// armable refuses a claimed Broadcast whose Send route cannot send.
+func (m *Module) armable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
+	route, err := m.out.Route(ctx, ts, b.IntegrationID)
+	if err != nil {
+		return err
+	}
+	return route.Armable()
 }
 
 // Unschedule returns a scheduled Broadcast to draft and drops its schedule. The
@@ -102,23 +118,28 @@ func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 // claim makes a move out of draft or scheduled through the transition table and queues the
 // send job (at `at`, nil for as soon as possible) in the same transaction. The write is a
 // compare-and-swap on the status, so two racing requests cannot both win, and a job that
-// cannot be queued rolls the claim back with it.
-func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update, at *time.Time) (*ent.Broadcast, error) {
+// cannot be queued rolls the claim back with it. check, when given, may refuse the claimed
+// Broadcast after the move, which rolls the move back.
+func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update, at *time.Time, check func(context.Context, *ent.Scoped, *ent.Broadcast) error) (*ent.Broadcast, error) {
 	var claimed *ent.Broadcast
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
 		if err := fire(ctx, ts, id, t, set); err != nil {
 			return notSendable(err)
 		}
+		var err error
+		if claimed, err = ts.Broadcast().Get(ctx, id); err != nil {
+			return err
+		}
+		if check != nil {
+			if err := check(ctx, ts, claimed); err != nil {
+				return err
+			}
+		}
 		opts := &river.InsertOpts{Queue: Queue}
 		if at != nil {
 			opts.ScheduledAt = *at
 		}
-		if err := q.Enqueue(ctx, SendArgs{BroadcastID: id, ScheduledAt: at}, opts); err != nil {
-			return err
-		}
-		var err error
-		claimed, err = ts.Broadcast().Get(ctx, id)
-		return err
+		return q.Enqueue(ctx, SendArgs{BroadcastID: id, ScheduledAt: at}, opts)
 	})
 	if err != nil {
 		return nil, err

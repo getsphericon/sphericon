@@ -36,8 +36,9 @@ type Definition[O, V, E, B any] interface {
 	// Write stores body as the object's draft: it rewrites draft in place, or, when draft is nil,
 	// inserts the version numbered number. It returns the version's id.
 	Write(ctx context.Context, ts *ent.Scoped, id int64, number int, draft *V, body B) (int64, error)
-	// Publishable refuses a draft that cannot go live.
-	Publishable(ctx context.Context, ts *ent.Scoped, draft *V) error
+	// Publishable refuses a version that cannot go live: the draft Publish promotes, or the
+	// inactive live version Publish makes active again. Either arms the object.
+	Publishable(ctx context.Context, ts *ent.Scoped, version *V) error
 	// Archivable refuses to archive the object while live work still needs it.
 	Archivable(ctx context.Context, ts *ent.Scoped, row *O) error
 }
@@ -176,7 +177,8 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 // the work already on it finishes there. With no draft it makes an inactive live version active
 // again and leaves an active one as it is; with neither it is refused (NothingToPublish). An object
 // moving from inactive to active records the moment (activated_at); one already active keeps its
-// own. A draft the definition finds unpublishable is refused and stays. Publish is send-class: the
+// own. A version the definition finds unpublishable is refused and stays as it was: the draft, or
+// the inactive live version a Publish without a draft would make active again. Publish is send-class: the
 // surfaces gate it by the publish scope. An archived object acts on nothing and is restored before
 // it is published, so it is as good as absent here (NotFound).
 func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
@@ -205,6 +207,9 @@ func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id i
 		case st.Active:
 			return nil // live and active already
 		default:
+			if err := l.def.Publishable(ctx, ts, st.Live); err != nil {
+				return err
+			}
 			return store.Activate(ctx, id, now)
 		}
 	})

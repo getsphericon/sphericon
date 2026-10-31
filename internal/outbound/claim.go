@@ -35,7 +35,7 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 		SetKind(req.Kind).
 		SetIdempotencyKey(req.Key).
 		SetDestination(dest).
-		SetClaimedAt(claimTime())
+		SetClaimedAt(m.claimTime())
 	if m.tracker != nil {
 		create.SetAppOrigin(m.tracker.Origin())
 	}
@@ -101,12 +101,12 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 // one we read, so of several racing retries exactly one wins; everyone else, and
 // any retry that finds a live claim, gets ErrInProgress.
 func (m *Module) takeOver(ctx context.Context, s *ent.Scoped, existing *ent.OutboundMessage) (*ent.OutboundMessage, error) {
-	if time.Since(existing.ClaimedAt) < m.lease {
+	if m.now().Sub(existing.ClaimedAt) < m.lease {
 		return nil, ErrInProgress
 	}
 	n, err := s.OutboundMessage().Update().
 		Where(ownsClaim(existing)...).
-		SetClaimedAt(claimTime()).
+		SetClaimedAt(m.claimTime()).
 		Save(ctx)
 	if err != nil {
 		return nil, err
@@ -117,9 +117,9 @@ func (m *Module) takeOver(ctx context.Context, s *ent.Scoped, existing *ent.Outb
 	return s.OutboundMessage().Get(ctx, existing.ID)
 }
 
-// claimTime is "now" at the precision the database stores (microseconds), so a claim
-// token read back from the row compares equal to the one we wrote.
-func claimTime() time.Time { return time.Now().Truncate(time.Microsecond) }
+// claimTime is the module's "now" at the precision the database stores (microseconds), so a
+// claim token read back from the row compares equal to the one we wrote.
+func (m *Module) claimTime() time.Time { return m.now().Truncate(time.Microsecond) }
 
 // ownsClaim is the fence for every write an attempt makes to its own claim: the row must
 // still be pending AND still carry the exact claimed_at token the attempt holds. An

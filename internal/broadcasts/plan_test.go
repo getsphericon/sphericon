@@ -4,7 +4,6 @@ import (
 	"context"
 	"slices"
 	"testing"
-	"testing/synctest"
 	"time"
 
 	"github.com/samber/lo"
@@ -32,6 +31,10 @@ func (d *delivery) recipientCount(id int64) int {
 // fixedNow is the clock of every pacing test: the module is handed the time, so no test
 // reads or waits for the real one.
 var fixedNow = time.Date(2030, time.March, 4, 10, 0, 0, 0, time.UTC)
+
+// atFixedNow is Outbound send's clock standing still at fixedNow, so the Provider limit's
+// buckets refill nothing between the sends of a test.
+func atFixedNow() outbound.Option { return outbound.WithClock(func() time.Time { return fixedNow }) }
 
 // recordingScheduler is the scheduling seam recording what it is asked, so a test asserts
 // the pacing times without waiting for them.
@@ -324,7 +327,7 @@ func TestProgressEstimateUsesThePlannersInterval(t *testing.T) {
 	d.recipient(fixtures.ContactBobID)
 	now := fixedNow
 
-	detail, err := broadcasts.DetailOf(d.t.Context(), d.s, d.broadcastRow(), now)
+	detail, err := d.detail(now)
 
 	require.NoError(t, err)
 	p := detail.Progress
@@ -340,7 +343,7 @@ func TestProgressEstimateUsesTheBroadcastsOwnIntegration(t *testing.T) {
 	d.recipient(fixtures.ContactAliceID)
 	d.recipient(fixtures.ContactBobID)
 
-	detail, err := broadcasts.DetailOf(d.t.Context(), d.s, d.broadcastRow(), fixedNow)
+	detail, err := d.detail(fixedNow)
 
 	require.NoError(t, err)
 	require.NotNil(t, detail.Progress.EstimatedCompletion)
@@ -493,59 +496,54 @@ func TestSuppressionDuringPacingIsHonouredAtSendTime(t *testing.T) {
 }
 
 // Lowering the limit after a Broadcast was planned takes effect through Deferral: the sends
-// already planned are deferred instead of exceeding the new ceiling. The token bucket reads the
-// clock, so the test runs under testing/synctest, whose time stands still between the sends
-// (on the core holds, see newCoreDelivery).
+// already planned are deferred instead of exceeding the new ceiling. The token bucket reads
+// Outbound send's clock, which stands still between the sends.
 func TestLoweringTheLimitMidSendDefersTheRemainingRecipients(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		d := newCoreDelivery(t)
-		sched, err := d.run(fixtures.BroadcastDraftID) // planned unlimited: every send due now
-		require.NoError(t, err)
-		require.Greater(t, len(sched.sends), 2)
-		d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.t.Context())
+	d := newDelivery(t, atFixedNow())
+	sched, err := d.run(fixtures.BroadcastDraftID) // planned unlimited: every send due now
+	require.NoError(t, err)
+	require.Greater(t, len(sched.sends), 2)
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.t.Context())
 
-		results := make([]error, len(sched.sends))
-		for i, send := range sched.sends {
-			results[i] = d.del.SendRecipient(d.t.Context(), d.s, send.RecipientID)
-		}
+	results := make([]error, len(sched.sends))
+	for i, send := range sched.sends {
+		results[i] = d.del.SendRecipient(d.t.Context(), d.s, send.RecipientID)
+	}
 
-		require.NoError(t, results[0], "the first takes the second's one token")
-		for _, err := range results[1:] {
-			var de *broadcasts.DeferredError
-			require.ErrorAs(t, err, &de)
-		}
-		assert.Len(t, d.box.sent, 1, "one second's worth went out")
-		hold := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID).HoldReason
-		assert.Nil(t, hold, "busy is not a hold")
-	})
+	require.NoError(t, results[0], "the first takes the second's one token")
+	for _, err := range results[1:] {
+		var de *broadcasts.DeferredError
+		require.ErrorAs(t, err, &de)
+	}
+	assert.Len(t, d.box.sent, 1, "one second's worth went out")
+	hold := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID).HoldReason
+	assert.Nil(t, hold, "busy is not a hold")
 }
 
 // A deferred recipient waits behind only the recipients that are awake and ahead of it: one
 // asleep on its own Deferral is not queueing for a token, so it must not stretch the wait
-// of later ones (ADR 0023, "scaled by the backlog ahead"). Under testing/synctest, as above.
+// of later ones (ADR 0023, "scaled by the backlog ahead"). On a clock that stands still, as above.
 func TestDeferralBacklogIgnoresRecipientsAsleepOnTheirOwnDeferral(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		d := newCoreDelivery(t)
-		sched, err := d.run(fixtures.BroadcastDraftID)
-		require.NoError(t, err)
-		require.Greater(t, len(sched.sends), 2)
-		d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.t.Context())
-		ids := make([]int64, len(sched.sends))
-		for i, send := range sched.sends {
-			ids[i] = send.RecipientID
-		}
-		slices.Sort(ids)
+	d := newDelivery(t, atFixedNow())
+	sched, err := d.run(fixtures.BroadcastDraftID)
+	require.NoError(t, err)
+	require.Greater(t, len(sched.sends), 2)
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.t.Context())
+	ids := make([]int64, len(sched.sends))
+	for i, send := range sched.sends {
+		ids[i] = send.RecipientID
+	}
+	slices.Sort(ids)
 
-		require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, ids[0])) // spends the second's one token
-		var first *broadcasts.DeferredError
-		require.ErrorAs(t, d.del.SendRecipient(d.t.Context(), d.s, ids[1]), &first) // now asleep
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, ids[0])) // spends the second's one token
+	var first *broadcasts.DeferredError
+	require.ErrorAs(t, d.del.SendRecipient(d.t.Context(), d.s, ids[1]), &first) // now asleep
 
-		var second *broadcasts.DeferredError
-		require.ErrorAs(t, d.del.SendRecipient(d.t.Context(), d.s, ids[2]), &second)
-		// Recipient 1 is pending with a lower id but asleep: nobody is ahead, so the wait is
-		// about a second plus jitter, not the two tokens' worth it would be.
-		assert.LessOrEqual(t, second.Delay, 1300*time.Millisecond)
-	})
+	var second *broadcasts.DeferredError
+	require.ErrorAs(t, d.del.SendRecipient(d.t.Context(), d.s, ids[2]), &second)
+	// Recipient 1 is pending with a lower id but asleep: nobody is ahead, so the wait is
+	// about a second plus jitter, not the two tokens' worth it would be.
+	assert.LessOrEqual(t, second.Delay, 1300*time.Millisecond)
 }
 
 // Whatever the rate, the start and the number of sends, pacing starts at the start, puts the

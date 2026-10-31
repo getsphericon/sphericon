@@ -280,6 +280,16 @@ rendering, the unsubscribe footer and headers, DKIM signing, the provider call, 
 the result. Every surface goes through it; none re-implements any part.
 _Avoid_: Delivery pipeline, send path (unqualified), mailer
 
+**Send route**:
+The one answer to how a send leaves through an Integration: the one it names, else the Workspace's
+default, with the sender built for it, whether that sender delivers outside, its Provider limit and
+why it cannot send, if it cannot. A named Integration that is disabled or archived holds the route
+(`no_integration`), never the default in its place. Every send asks it (Outbound send, a Test send,
+the Broadcast planner's pace), and so do the moments that arm a send: an Automation's Publish (with
+an email step) and a Broadcast's Schedule are refused while the route cannot send. A draft may still
+name such an Integration, and one disabled after Publish holds the sends.
+_Avoid_: Provider resolution, sender lookup
+
 **Test send**:
 A Broadcast's author sending it to one address they name, to see the mail before it goes out. It
 skips Send-eligibility and leaves no Outbound message or `email.sent` Event, so it never shows in
@@ -520,7 +530,7 @@ erased Workspace leaves)
 A workspace-scoped, **outbound** connection to a sending provider, external or built in (the Test
 inbox) — channel-agnostic by design (email today via smtp/ses/inbox; sms reserved), with encrypted
 credentials where the provider has any and at most one default per (workspace, channel). Broadcasts and Automations send _through_ an Integration (the
-workspace default when unspecified). Sending is one half of a loop: bounces and complaints come
+workspace default when unspecified), by its Send route. Sending is one half of a loop: bounces and complaints come
 back via the Integration's Ingest hook and land in Suppression.
 _Avoid_: Provider (alone), ESP, sender, connector
 

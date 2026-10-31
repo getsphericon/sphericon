@@ -1703,7 +1703,9 @@ export const siteAutomationsDeactivate = <ThrowOnError extends boolean = false>(
 
 /**
  * Publish an automation: the draft becomes live and the automation active, enrolling contacts;
- * with no draft, the live version is resumed. 422 with neither.
+ * with no draft, the live version is resumed. 422 with neither. 409 when the version going live
+ * has an email step and the integration it sends through cannot send (disabled or archived, or no
+ * default): a draft may name such an integration, only publishing it is refused.
  */
 export const siteAutomationsPublish = <ThrowOnError extends boolean = false>(options: Options<SiteAutomationsPublishData, ThrowOnError>): RequestResult<SiteAutomationsPublishResponses, SiteAutomationsPublishErrors, ThrowOnError> => (options.client ?? client).post<SiteAutomationsPublishResponses, SiteAutomationsPublishErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -1958,7 +1960,7 @@ export const siteBroadcastsArchive = <ThrowOnError extends boolean = false>(opti
 });
 
 /**
- * Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused.
+ * Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused.
  */
 export const siteBroadcastsSchedule = <ThrowOnError extends boolean = false>(options: Options<SiteBroadcastsScheduleData, ThrowOnError>): RequestResult<SiteBroadcastsScheduleResponses, SiteBroadcastsScheduleErrors, ThrowOnError> => (options.client ?? client).post<SiteBroadcastsScheduleResponses, SiteBroadcastsScheduleErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

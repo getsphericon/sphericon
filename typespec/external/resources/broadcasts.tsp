@@ -200,7 +200,7 @@ interface Broadcasts
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
+  /** Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
   @action("schedule")
   @autoRoute
   @extension("x-required-scopes", #[ApiTokenScope.broadcastsSend])
@@ -214,6 +214,7 @@ interface Broadcasts
     | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
+    | ConflictProblem
     | UnprocessableEntityProblem;
 
   /** Cancel a scheduled broadcast and return it to draft, dropping the copy of its segment's condition: scheduling again copies the segment's current one. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"testing/synctest"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -85,17 +84,16 @@ func TestTransactionalBusyReplyIsARetryableErrorNotADeferral(t *testing.T) {
 }
 
 func TestGenuineProviderFailureStillFailsTheMessage(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		env := testhelper.Setup(t)
-		m := newCoreModule(env, outbound.WithLease(time.Nanosecond))
-		ctx := context.Background()
+	env := testhelper.Setup(t)
+	c := startClock()
+	m := newModule(env, outbound.WithLease(time.Nanosecond), outbound.WithClock(c.now))
+	ctx := context.Background()
 
-		env.CustomerMail.SetErr(errors.New("554 mailbox does not exist"))
-		_, err := m.Send(ctx, acme(env), marketing(t, env, "bc:perm", fixtures.ContactAliceID))
-		require.Error(t, err, "a real failure is still an error, not a Deferral")
+	env.CustomerMail.SetErr(errors.New("554 mailbox does not exist"))
+	_, err := m.Send(ctx, acme(env), marketing(t, env, "bc:perm", fixtures.ContactAliceID))
+	require.Error(t, err, "a real failure is still an error, not a Deferral")
 
-		testhelper.Elapse(time.Millisecond)
-		require.NoError(t, m.MarkFailed(ctx, acme(env), "bc:perm", err))
-		assert.Equal(t, outboundmessage.StatusFailed, byKey(t, env, "bc:perm").Status)
-	})
+	c.elapse(time.Millisecond)
+	require.NoError(t, m.MarkFailed(ctx, acme(env), "bc:perm", err))
+	assert.Equal(t, outboundmessage.StatusFailed, byKey(t, env, "bc:perm").Status)
 }

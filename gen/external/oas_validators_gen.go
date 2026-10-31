@@ -1024,6 +1024,14 @@ func (s *AutomationsPublishBadRequest) Validate() error {
 	return nil
 }
 
+func (s *AutomationsPublishConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AutomationsPublishForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1583,6 +1591,14 @@ func (s *BroadcastsReportUnauthorized) Validate() error {
 }
 
 func (s *BroadcastsScheduleBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *BroadcastsScheduleConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

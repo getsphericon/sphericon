@@ -1958,6 +1958,10 @@ type AutomationsPublishBadRequest ProblemDetails
 
 func (*AutomationsPublishBadRequest) automationsPublishRes() {}
 
+type AutomationsPublishConflict ProblemDetails
+
+func (*AutomationsPublishConflict) automationsPublishRes() {}
+
 type AutomationsPublishForbidden ProblemDetails
 
 func (*AutomationsPublishForbidden) automationsPublishRes() {}
@@ -2914,6 +2918,10 @@ func (*BroadcastsReportUnauthorized) broadcastsReportRes() {}
 type BroadcastsScheduleBadRequest ProblemDetails
 
 func (*BroadcastsScheduleBadRequest) broadcastsScheduleRes() {}
+
+type BroadcastsScheduleConflict ProblemDetails
+
+func (*BroadcastsScheduleConflict) broadcastsScheduleRes() {}
 
 type BroadcastsScheduleForbidden ProblemDetails
 

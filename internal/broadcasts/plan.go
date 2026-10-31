@@ -14,8 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
 // recipientInsertChunk bounds a single CreateBulk so a very large audience is planned in
@@ -242,20 +240,6 @@ func copiedCondition(ctx context.Context, s *ent.Scoped, id int64) ([]predicate.
 	return []predicate.Contact{pred}, nil
 }
 
-// interval is the step between two sends of the Broadcast's Integration (the Workspace's
-// default when it names none) at its effective Provider limit (ADR 0023): zero when nothing
-// limits it (or there is no Integration). The planner and the progress estimate both pace by it.
-func interval(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (time.Duration, error) {
-	integ, err := messaging.EmailIntegration(ctx, s, b.IntegrationID)
-	if errors.Is(err, messaging.ErrNoProvider) {
-		return 0, nil
-	}
-	if err != nil {
-		return 0, err
-	}
-	return providerlimit.EffectiveOf(integ).Limits().Interval(), nil
-}
-
 // spread is the i-th send's time: i steps after start.
 func spread(start time.Time, step time.Duration, n int) []time.Time {
 	times := make([]time.Time, n)
@@ -265,22 +249,31 @@ func spread(start time.Time, step time.Duration, n int) []time.Time {
 	return times
 }
 
-// Pace spreads n recipient sends over time for a Broadcast whose Integration has a Send rate
-// limit (ADR 0023): the i-th send is scheduled i steps after the start, a step being one over
-// the effective rate, so the limiter is a guard and a Deferral the rare case. The start is
-// now, or the Broadcast's scheduled time when that is later. It records the last scheduled
-// time on the Broadcast, from which the progress estimate is derived, and returns nil (every
-// send at once) when nothing limits the Integration. Pacing decides only when a send runs:
-// eligibility is still checked per message at send time.
+// Pace spreads n recipient sends over time at the Provider limit of the Broadcast's Send route
+// (ADR 0023): the i-th send is scheduled i steps after the start, a step being one over the
+// effective rate, so the limiter is a guard and a Deferral the rare case. The start is now, or
+// the Broadcast's scheduled time when that is later. It records the last scheduled time on the
+// Broadcast, from which the progress estimate is derived, and returns nil (every send at once)
+// when nothing limits the route. A route that cannot send is not paced: the Broadcast is held
+// (*HeldError, its reason recorded), as Send would hold each of its messages, so the pace and the
+// hold never disagree. Pacing decides only when a send runs: eligibility is still checked per
+// message at send time.
 func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, n int, now time.Time) ([]time.Time, error) {
 	b, err := s.Broadcast().Get(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("load broadcast %d: %w", id, err)
 	}
-	step, err := interval(ctx, s, b)
+	route, err := d.out.Route(ctx, s, b.IntegrationID)
 	if err != nil {
 		return nil, err
 	}
+	if route.Held() {
+		if err := setHold(ctx, s, b.ID, route.Hold); err != nil {
+			return nil, err
+		}
+		return nil, &HeldError{Reason: route.Hold}
+	}
+	step := route.Interval()
 	if step <= 0 || n == 0 {
 		return nil, s.Broadcast().UpdateOneID(b.ID).ClearLastScheduledAt().Exec(ctx)
 	}

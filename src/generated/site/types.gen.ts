@@ -9342,6 +9342,10 @@ export type SiteAutomationsPublishErrors = {
    */
   404: ProblemDetails;
   /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -9871,6 +9875,10 @@ export type SiteBroadcastsScheduleErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 validation response
    */

@@ -1493,7 +1493,12 @@ func registerContent(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		return automations.New(cipher, bus.Bus, renderer), nil
+		// Publish asks the Send route of Outbound send whether the email steps can send.
+		sender, err := do.Invoke[*outboundModule](i)
+		if err != nil {
+			return nil, err
+		}
+		return automations.New(cipher, bus.Bus, renderer, sender.Module), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*rules.Module, error) {
@@ -1542,7 +1547,12 @@ func registerContent(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		return broadcasts.New(bus.Bus, renderer), nil
+		// Schedule and the progress estimate ask the Send route of Outbound send.
+		sender, err := do.Invoke[*outboundModule](i)
+		if err != nil {
+			return nil, err
+		}
+		return broadcasts.New(bus.Bus, renderer, sender.Module), nil
 	})
 }
 

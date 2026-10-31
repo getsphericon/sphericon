@@ -1771,7 +1771,9 @@ export const siteAutomationsDeactivateMutation = (options?: Partial<Options<Site
 
 /**
  * Publish an automation: the draft becomes live and the automation active, enrolling contacts;
- * with no draft, the live version is resumed. 422 with neither.
+ * with no draft, the live version is resumed. 422 with neither. 409 when the version going live
+ * has an email step and the integration it sends through cannot send (disabled or archived, or no
+ * default): a draft may name such an integration, only publishing it is refused.
  */
 export const siteAutomationsPublishMutation = (options?: Partial<Options<SiteAutomationsPublishData>>): UseMutationOptions<SiteAutomationsPublishResponse, SiteAutomationsPublishError, Options<SiteAutomationsPublishData>> => {
   const mutationOptions: UseMutationOptions<SiteAutomationsPublishResponse, SiteAutomationsPublishError, Options<SiteAutomationsPublishData>> = {
@@ -2035,7 +2037,7 @@ export const siteBroadcastsArchiveMutation = (options?: Partial<Options<SiteBroa
 };
 
 /**
- * Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused.
+ * Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused.
  */
 export const siteBroadcastsScheduleMutation = (options?: Partial<Options<SiteBroadcastsScheduleData>>): UseMutationOptions<SiteBroadcastsScheduleResponse, SiteBroadcastsScheduleError, Options<SiteBroadcastsScheduleData>> => {
   const mutationOptions: UseMutationOptions<SiteBroadcastsScheduleResponse, SiteBroadcastsScheduleError, Options<SiteBroadcastsScheduleData>> = {

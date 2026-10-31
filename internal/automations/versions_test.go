@@ -71,7 +71,7 @@ func versionOfRun(t *testing.T, env *testhelper.TestEnv, runID int64) int {
 // draft in place.
 func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	before, err := m.Get(ctx, acme, fixtures.AutomationHoldDemoID)
@@ -100,7 +100,7 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 // Saving the live steps again creates no draft: steps compare in the form a version stores them.
 func TestSavingUnchangedStepsStoresNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	before, err := m.Get(ctx, acme, fixtures.AutomationHoldDemoID)
@@ -118,7 +118,7 @@ func TestSavingUnchangedStepsStoresNothing(t *testing.T) {
 // stays on the version it began on, and the old live version stays as history.
 func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	first, _, err := automations.Enroll(ctx, acme, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
@@ -151,7 +151,7 @@ func TestANeverPublishedAutomationEnrollsNobody(t *testing.T) {
 // Publish refuses a draft whose Integration was archived after it was saved, and changes nothing.
 func TestPublishRefusesADraftWhoseIntegrationIsArchived(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{IntegrationID: patch.Set(int64(fixtures.IntegrationAcmeMailgunID))})

@@ -40,7 +40,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/suppression"
@@ -126,7 +125,7 @@ func Detail(reason string) string {
 	}
 	switch reason {
 	case HoldNoIntegration:
-		return "no default email provider configured"
+		return "no email integration can send: the one named is disabled or archived, or there is no default"
 	case HoldUnverifiedDomain:
 		return "sender domain is not a verified sending domain"
 	case HoldProviderStopped:
@@ -170,8 +169,8 @@ type Result struct {
 	Captured bool
 }
 
-// Senders builds the email provider adapter for an Integration the caller already resolved
-// (messaging.EmailIntegration); a nil one is ErrNoProvider. *messaging.Resolver satisfies it.
+// Senders builds the email provider adapter for the Integration a Send route resolved; a nil one is
+// ErrNoProvider. *messaging.Resolver satisfies it.
 type Senders interface {
 	EmailSender(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error)
 }
@@ -209,6 +208,8 @@ type Module struct {
 	system messaging.EmailSender
 	// testBudget caps Test sends from the System sender; nil means uncapped.
 	testBudget TestSendBudget
+	// now is the clock the Provider limit and the claim lease are read at.
+	now func() time.Time
 }
 
 // Option customizes a Module.
@@ -229,6 +230,14 @@ func WithSystemSender(s messaging.EmailSender) Option { return func(m *Module) {
 // WithTestSendBudget caps the Test sends made from the System sender.
 func WithTestSendBudget(b TestSendBudget) Option { return func(m *Module) { m.testBudget = b } }
 
+// WithClock replaces the wall clock the module reads: the Provider limit's token buckets, the
+// claim lease and the moment a message is recorded sent. Tests move it instead of waiting.
+func WithClock(now func() time.Time) Option { return func(m *Module) { m.now = now } }
+
+// Now reads the module's clock (WithClock): the moment a Deferral's Wait is measured from, so a
+// caller that records when the deferred send is due uses the same clock.
+func (m *Module) Now() time.Time { return m.now() }
+
 // AsSystem returns s acting as the `system` actor (ADR 0022), for a job or automation
 // step that changes an audited entity in the normal course of work.
 func (m *Module) AsSystem(s *ent.Scoped) *ent.Scoped {
@@ -237,7 +246,7 @@ func (m *Module) AsSystem(s *ent.Scoped) *ent.Scoped {
 
 // New builds the module. tracker may be nil only if no marketing Request is sent.
 func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *tracking.Tracker, opts ...Option) *Module {
-	m := &Module{bus: bus, holds: hs, senders: senders, tracker: tracker, lease: DefaultLease}
+	m := &Module{bus: bus, holds: hs, senders: senders, tracker: tracker, lease: DefaultLease, now: time.Now}
 	for _, o := range opts {
 		o(m)
 	}
@@ -283,8 +292,8 @@ type Request struct {
 	FromName  string
 
 	// IntegrationID is the Integration the message goes through; nil is the Workspace's
-	// default. One that cannot send holds the message (no_integration): it never falls
-	// back to the default.
+	// default. Its Send route decides: one that cannot send holds the message
+	// (no_integration), never falling back to the default.
 	IntegrationID *int64
 
 	// Track turns on open/click tracking for this message: the tracking token names the
@@ -339,7 +348,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	if err != nil {
 		return Result{}, err
 	}
-	g, err := m.gate(ctx, s, req.FromEmail, req.FromName, req.IntegrationID)
+	g, err := m.gate(ctx, s, req.IntegrationID, req.FromEmail, req.FromName)
 	if err != nil {
 		return Result{}, err
 	}
@@ -382,7 +391,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 
 	// Provider limit: the last gate before the provider, so a message that was
 	// Skipped, Held or failed to render never spends capacity.
-	if wait, err := m.reserve(ctx, s, req, g.integration); err != nil {
+	if wait, err := m.reserve(ctx, s, req, g.route); err != nil {
 		m.release(ctx, s, msg)
 		return Result{}, err
 	} else if wait > 0 {
@@ -392,7 +401,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return Result{Outcome: Deferral, Wait: wait}, nil
 	}
 
-	receipt, err := g.sender.Send(ctx, built.msg)
+	receipt, err := g.route.Sender.Send(ctx, built.msg)
 	if err != nil {
 		if errors.Is(err, messaging.ErrUnverifiedSendingDomain) {
 			// The domain lost verification between our check and the signer's: a hold,
@@ -432,9 +441,9 @@ func (m *Module) contactErased(ctx context.Context, s *ent.Scoped, req Request) 
 // uses the Integration's configured sender) through the Integration integrationID names (nil
 // is the default), without sending or recording anything.
 // Planning code (Broadcast) calls it to fail or pause fast instead of finding out
-// per recipient; the answer is the same gate Send applies.
+// per recipient; the answer is the same Send route and gate Send applies.
 func (m *Module) Preflight(ctx context.Context, s *ent.Scoped, fromEmail string, integrationID *int64) (hold string, err error) {
-	g, err := m.gate(ctx, s, fromEmail, "", integrationID)
+	g, err := m.gate(ctx, s, integrationID, fromEmail, "")
 	if err != nil {
 		return "", err
 	}
@@ -453,7 +462,7 @@ func (m *Module) MarkFailed(ctx context.Context, s *ent.Scoped, key string, caus
 	// (a definite provider failure) or whose lease has expired. The fence is the lease, and
 	// the move is a no-op when the message is final or the lease is live.
 	err = move(ctx, s, msg, []predicate.OutboundMessage{
-		outboundmessage.ClaimedAtLT(time.Now().Add(-m.lease)),
+		outboundmessage.ClaimedAtLT(m.now().Add(-m.lease)),
 	}, outboundmessage.StatusFailed, func(u *ent.OutboundMessageScopedUpdate) { u.SetReason(cause.Error()) })
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return nil
@@ -502,11 +511,11 @@ func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, rec *ent.Broa
 	if msg.Status != outboundmessage.StatusPending {
 		return replayResult(msg), nil
 	}
-	if time.Since(msg.ClaimedAt) < m.lease {
+	if m.now().Sub(msg.ClaimedAt) < m.lease {
 		return Result{}, ErrInProgress
 	}
 	err = move(ctx, s, msg, []predicate.OutboundMessage{
-		outboundmessage.ClaimedAtLT(time.Now().Add(-m.lease)),
+		outboundmessage.ClaimedAtLT(m.now().Add(-m.lease)),
 	}, outboundmessage.StatusFailed, func(u *ent.OutboundMessageScopedUpdate) { u.SetReason(cause.Error()) })
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return Result{}, ErrInProgress // the claim moved under us: look again later
@@ -529,56 +538,47 @@ func (m *Module) workspace(ctx context.Context, s *ent.Scoped) (*ent.Workspace, 
 // gateResult is the outcome of the source-level checks plus what they resolved.
 type gateResult struct {
 	hold string
-	// integration is the Integration the message goes through (the Request's, else the
-	// default); nil when the sender has no Integration row (a test double).
-	integration *ent.Integration
-	sender      messaging.EmailSender
-	from        string
-	fromName    string
-	domain      string
-	// captured is the sender's own word that its mail stays inside (ADR 0058).
-	captured bool
+	// route is the Send route the message goes through.
+	route    Route
+	from     string
+	fromName string
+	domain   string
 }
 
+// captured is the sender's own word that its mail stays inside (ADR 0058).
+func (g gateResult) captured() bool { return !g.route.DeliversOutside }
+
 // gate runs the source-level checks, in order: Workspace freeze (the reason holds names:
-// deletion, suspension, Staff hold, in that priority; a Test send from the System sender
-// passes it too), an Integration to send through whose provider has not stopped its
-// account, and a verified Sending domain for the effective From address.
-func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName string, integrationID *int64) (gateResult, error) {
+// deletion, suspension, Staff hold, in that priority; a Test send from the System sender passes it
+// too), then the Send route of the Integration integrationID names (nil is the default) and its
+// own hold, and a verified Sending domain for the effective From address (through).
+func (m *Module) gate(ctx context.Context, s *ent.Scoped, integrationID *int64, fromEmail, fromName string) (gateResult, error) {
 	hold, err := m.holds.Reason(ctx, s)
 	if err != nil || hold != "" {
 		return gateResult{hold: hold}, err
 	}
-
-	// The one Integration this send goes through, resolved once: the sender is built for
-	// it, and the limiter and the stamped integration_id come from it. Without a row (a test
-	// double), a default send still goes on.
-	integ, err := messaging.EmailIntegration(ctx, s, integrationID)
-	if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
-		return gateResult{}, fmt.Errorf("outbound: load integration: %w", err)
-	}
-	if integ == nil && integrationID != nil {
-		return gateResult{hold: HoldNoIntegration}, nil
-	}
-	if integ != nil && providerlimit.Stopped(integ) {
-		return gateResult{hold: HoldProviderStopped}, nil
-	}
-	sender, err := m.senders.EmailSender(ctx, s, integ)
-	if errors.Is(err, messaging.ErrNoProvider) {
-		return gateResult{hold: HoldNoIntegration}, nil
-	}
+	route, err := m.Route(ctx, s, integrationID)
 	if err != nil {
-		return gateResult{}, fmt.Errorf("outbound: resolve sender: %w", err)
+		return gateResult{}, err
+	}
+	return m.through(ctx, s, route, fromEmail, fromName)
+}
+
+// through runs the checks of a send through a resolved Send route, after the Workspace freeze: the
+// route's own hold, then a verified Sending domain for the effective From address.
+func (m *Module) through(ctx context.Context, s *ent.Scoped, route Route, fromEmail, fromName string) (gateResult, error) {
+	if route.Held() {
+		return gateResult{hold: route.Hold}, nil
 	}
 
 	// The effective From is the Request's, else the Integration's configured one —
 	// the address that will really go on the wire, so the domain gate and the
 	// Sending-domain stamp agree with the DKIM signer.
-	from, name := effectiveFrom(sender, fromEmail, fromName)
+	from, name := effectiveFrom(route.Sender, fromEmail, fromName)
 	// Only a sender that delivers outside needs a verified Sending domain: nothing a
 	// sender that keeps its mail sends can reach anyone under a domain the Workspace
 	// does not own (ADR 0058).
-	if messaging.DeliversOutside(sender) {
+	if route.DeliversOutside {
 		verified, err := messaging.HasVerifiedSendingDomain(ctx, s, from)
 		if err != nil {
 			return gateResult{}, fmt.Errorf("outbound: check sending domain: %w", err)
@@ -587,7 +587,7 @@ func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName st
 			return gateResult{hold: HoldUnverifiedDomain}, nil
 		}
 	}
-	return gateResult{sender: sender, integration: integ, from: from, fromName: name, domain: messaging.DomainOf(from), captured: !messaging.DeliversOutside(sender)}, nil
+	return gateResult{route: route, from: from, fromName: name, domain: messaging.DomainOf(from)}, nil
 }
 
 // effectiveFrom is the From the message goes out with: the given one, else the sender's
@@ -765,20 +765,20 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 	if req.Contact != nil {
 		contactID = req.Contact.ID
 	}
-	now := time.Now()
+	now := m.now()
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		// A lost fence: our claim was taken over while the provider call ran (we outlived
 		// the lease). The taker owns the record; rolling back keeps it, and its
 		// email.sent Event, the only ones.
 		if err := moveOrStale(ctx, ts, msg, outboundmessage.StatusSent, func(upd *ent.OutboundMessageScopedUpdate) {
 			upd.SetSentAt(now)
-			if g.integration != nil {
-				upd.SetIntegrationID(g.integration.ID)
+			if g.route.Integration != nil {
+				upd.SetIntegrationID(g.route.Integration.ID)
 			}
 			if receipt.MessageID != "" {
 				upd.SetProviderMessageID(receipt.MessageID)
 			}
-			if g.captured {
+			if g.captured() {
 				upd.SetCaptured(true)
 			}
 		}); err != nil {
@@ -797,7 +797,7 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 			AutomationID:      req.Ref.AutomationID,
 			OutboundMessageID: msg.ID,
 			ProviderMessageID: receipt.MessageID,
-			Captured:          g.captured,
+			Captured:          g.captured(),
 		}); err != nil {
 			return err
 		}
@@ -822,7 +822,7 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 			SendingSource:     req.Source,
 			BroadcastID:       req.Ref.BroadcastID,
 			AutomationID:      req.Ref.AutomationID,
-			Captured:          g.captured,
+			Captured:          g.captured(),
 		})
 	})
 	if err != nil {
@@ -841,8 +841,8 @@ type TestRequest struct {
 	FromEmail string
 	FromName  string
 	// IntegrationID is the Integration the Test send goes through, as for a Request: nil is the
-	// Workspace's default, and one that cannot send holds the Test send (no_integration) without
-	// the System sender standing in.
+	// Workspace's default, and a named one whose Send route cannot send holds the Test send
+	// (no_integration) without the System sender standing in.
 	IntegrationID *int64
 	// Asker is the User who asks. Set, it lets a Workspace with no verified Sending domain
 	// send from the System sender, to Asker.Email only (ADR 0041). Nil (an API token) keeps
@@ -896,20 +896,6 @@ func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Br
 	return res, nil
 }
 
-// integrationSender is the sender of the Integration id names, else of the Workspace's default:
-// messaging.ErrNoProvider when it has none that can send.
-func (m *Module) integrationSender(ctx context.Context, s *ent.Scoped, id *int64) (messaging.EmailSender, error) {
-	integ, err := messaging.EmailIntegration(ctx, s, id)
-	if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
-		return nil, fmt.Errorf("outbound: load integration: %w", err)
-	}
-	sender, err := m.senders.EmailSender(ctx, s, integ)
-	if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
-		return nil, fmt.Errorf("outbound: resolve sender: %w", err)
-	}
-	return sender, err
-}
-
 // SendTest sends one message for an author to preview. The author names the
 // address, so it skips Send-eligibility and carries no unsubscribe or tracking, and
 // it records no Outbound message and no email.sent Event — but it still passes the
@@ -917,42 +903,41 @@ func (m *Module) integrationSender(ctx context.Context, s *ent.Scoped, id *int64
 // suspended Workspace sends nothing, test or not (ADR 0015). Outcomes are Sent,
 // Failed (the content did not render) or Held; there is no replay.
 //
-// The Test send goes through the Integration the request names, else the Workspace's default,
-// as a real send does (#663). With an Asker, no verified Sending domain in the Workspace and
-// that Integration neither delivering nowhere outside (a Test inbox) nor one that was named and
-// cannot send, it goes from the System sender instead (ADR 0041, ADR 0058): after the same
-// freeze check, only to the Asker's own address, within the per-User and per-Workspace caps,
-// and Refused when the Instance has no System sender. A Test inbox takes the Test send itself
-// and the Result is Captured; a named Integration that cannot send holds it (no_integration).
-// The gate stays here: no other module decides which sender a Test send uses.
+// The Test send goes through the Send route of the Integration the request names, else of the
+// Workspace's default, as a real send does (#663). With an Asker, no verified Sending domain in
+// the Workspace and that route either delivering outside or held for want of a default, it goes
+// from the System sender instead (ADR 0041, ADR 0058): after the same freeze check, only to the
+// Asker's own address, within the per-User and per-Workspace caps, and Refused when the Instance
+// has no System sender. A route that keeps its mail (a Test inbox) takes the Test send itself and
+// the Result is Captured; a named Integration that cannot send holds it (no_integration). The
+// route is resolved once and decides both: no other module decides which sender a Test send uses.
 func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (Result, error) {
 	ws, err := m.workspace(ctx, s)
 	if err != nil {
 		return Result{}, err
 	}
+	// The freeze holds a Test send whichever sender would make it.
+	hold, err := m.holds.Reason(ctx, s)
+	if err != nil {
+		return Result{}, err
+	}
+	if hold != "" {
+		return Result{Outcome: Held, Reason: hold}, nil
+	}
+	route, err := m.Route(ctx, s, req.IntegrationID)
+	if err != nil {
+		return Result{}, err
+	}
 	if req.Asker != nil {
-		anyVerified, err := s.SendingDomain().Query().Where(dkimstate.Verified()).Exist(ctx)
+		system, err := m.systemStandsIn(ctx, s, route, req.IntegrationID)
 		if err != nil {
-			return Result{}, fmt.Errorf("outbound: check sending domains: %w", err)
+			return Result{}, err
 		}
-		if !anyVerified {
-			// The System sender stands in only where no Integration of the Workspace
-			// would deliver outside; a sender that keeps its mail takes the Test send
-			// itself, so it is captured (ADR 0041, ADR 0058).
-			sender, err := m.integrationSender(ctx, s, req.IntegrationID)
-			if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
-				return Result{}, err
-			}
-			// A named Integration that cannot send is no reason for the System sender: the gate
-			// holds the Test send, as it holds a real one.
-			deliversOutside := err == nil && messaging.DeliversOutside(sender)
-			noneToSendThrough := err != nil && req.IntegrationID == nil
-			if deliversOutside || noneToSendThrough {
-				return m.sendTestFromSystem(ctx, s, ws, req)
-			}
+		if system {
+			return m.sendTestFromSystem(ctx, s, ws, req)
 		}
 	}
-	g, err := m.gate(ctx, s, req.FromEmail, req.FromName, req.IntegrationID)
+	g, err := m.through(ctx, s, route, req.FromEmail, req.FromName)
 	if err != nil {
 		return Result{}, err
 	}
@@ -964,9 +949,29 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 	if err != nil {
 		return failedContent(err)
 	}
-	res, err := sendTestMessage(ctx, g.sender, msg, g.from, g.fromName, to)
-	res.Captured = res.Outcome == Sent && !messaging.DeliversOutside(g.sender)
+	res, err := sendTestMessage(ctx, g.route.Sender, msg, g.from, g.fromName, to)
+	res.Captured = res.Outcome == Sent && g.captured()
 	return res, err
+}
+
+// systemStandsIn reports whether the System sender makes an asked-for Test send in place of the
+// route (ADR 0041, ADR 0058): only while none of the Workspace's Sending domains is verified, and
+// only where the route would deliver outside or the Workspace has no default to send through. A
+// route that keeps its mail takes the Test send itself, so it is captured; a named Integration that
+// cannot send is no reason for the System sender, and the gate holds the Test send as it holds a
+// real one.
+func (m *Module) systemStandsIn(ctx context.Context, s *ent.Scoped, route Route, integrationID *int64) (bool, error) {
+	anyVerified, err := s.SendingDomain().Query().Where(dkimstate.Verified()).Exist(ctx)
+	if err != nil {
+		return false, fmt.Errorf("outbound: check sending domains: %w", err)
+	}
+	if anyVerified {
+		return false, nil
+	}
+	if route.Held() {
+		return integrationID == nil, nil
+	}
+	return route.DeliversOutside, nil
 }
 
 // failedContent is a Test send whose compose failed: a content error is the Failed result, any other
@@ -997,15 +1002,9 @@ func sendTestMessage(ctx context.Context, sender messaging.EmailSender, msg mess
 	return Result{Outcome: Sent, From: from}, nil
 }
 
-// sendTestFromSystem is the Test send of a Workspace with no verified Sending domain.
+// sendTestFromSystem is the Test send of a Workspace with no verified Sending domain, past the
+// Workspace freeze.
 func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, req TestRequest) (Result, error) {
-	hold, err := m.holds.Reason(ctx, s)
-	if err != nil {
-		return Result{}, err
-	}
-	if hold != "" {
-		return Result{Outcome: Held, Reason: hold}, nil
-	}
 	to := suppression.NormalizeDestination(req.To)
 	if to != suppression.NormalizeDestination(req.Asker.Email) {
 		return Result{Outcome: Refused, Reason: RefuseOtherRecipient}, nil

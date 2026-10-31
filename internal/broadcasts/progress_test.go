@@ -31,6 +31,11 @@ func sendingWithPending(t *testing.T, env *testhelper.TestEnv, n int) *broadcast
 
 type broadcastsFixture struct{ id int64 }
 
+// detailOf is the module that reads a Broadcast's figures and progress, over the env's Outbound send.
+func detailOf(env *testhelper.TestEnv) *broadcasts.Module {
+	return broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
+}
+
 // With no job scheduled ahead the ETA is the remaining recipients at the effective
 // rate, and the effective rate includes the provider-discovered ceiling (ADR 0023).
 func TestProgressETAFallsBackToTheEffectiveRate(t *testing.T) {
@@ -54,7 +59,7 @@ func TestProgressETAFallsBackToTheEffectiveRate(t *testing.T) {
 			b := env.DB.Broadcast.GetX(ctx, f.id)
 
 			now := time.Now()
-			detail, err := broadcasts.DetailOf(ctx, env.DB.Scoped(fixtures.AcmeID), b, now)
+			detail, err := detailOf(env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), b, now)
 			require.NoError(t, err)
 			p := detail.Progress
 			require.NotNil(t, p.EstimatedCompletion)
@@ -68,7 +73,7 @@ func TestProgressHasNoETAWithoutALimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	f := sendingWithPending(t, env, 3)
-	detail, err := broadcasts.DetailOf(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id), time.Now())
+	detail, err := detailOf(env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id), time.Now())
 	require.NoError(t, err)
 	p := detail.Progress
 	require.NotNil(t, p)
@@ -83,13 +88,13 @@ func TestDetailHasProgressOnlyWhileSending(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	sent, err := broadcasts.DetailOf(ctx, s, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID), time.Now())
+	sent, err := detailOf(env).Detail(ctx, s, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID), time.Now())
 	require.NoError(t, err)
 	assert.Nil(t, sent.Progress)
 	assert.Equal(t, 11, sent.Stats.Sent)
 
 	f := sendingWithPending(t, env, 2)
-	sending, err := broadcasts.DetailOf(ctx, s, env.DB.Broadcast.GetX(ctx, f.id), time.Now())
+	sending, err := detailOf(env).Detail(ctx, s, env.DB.Broadcast.GetX(ctx, f.id), time.Now())
 	require.NoError(t, err)
 	require.NotNil(t, sending.Progress)
 	assert.Equal(t, sending.Stats.Pending, sending.Progress.Remaining)

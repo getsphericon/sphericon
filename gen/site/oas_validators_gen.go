@@ -2524,6 +2524,14 @@ func (s *SiteAutomationsPublishBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteAutomationsPublishConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteAutomationsPublishNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -3044,6 +3052,14 @@ func (s *SiteBroadcastsListUnprocessableEntity) Validate() error {
 }
 
 func (s *SiteBroadcastsScheduleBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBroadcastsScheduleConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

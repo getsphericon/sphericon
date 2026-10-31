@@ -106,7 +106,7 @@ func newHTTPStepHarness(t *testing.T, body string, signed bool) *httpStepHarness
 		Headers: []automations.Header{{Name: "Authorization"}}, ClearSecret: !signed,
 	}
 	steps := []automations.Step{step, {Type: automations.StepApplyTag, Tag: "notified"}}
-	mod := automations.New(e.cipher, e.Bus, testhelper.Renderer())
+	mod := automations.New(e.cipher, e.Bus, testhelper.Renderer(), e.OutboundModule())
 	acme := e.DB.Scoped(fixtures.AcmeID)
 	_, err := mod.Update(context.Background(), acme, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
 	require.NoError(t, err)
