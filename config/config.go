@@ -299,6 +299,9 @@ type Config struct {
 	SESRegion          string
 	SESAccessKeyID     string
 	SESSecretAccessKey string
+
+	// secrets are the values of the secret variables as Load read them (SecretValues).
+	secrets []string
 }
 
 // environment is every variable Load reads, with the defaults that do not depend on
@@ -426,6 +429,20 @@ func loadVars(envName string) (map[string]string, error) {
 		return nil, err
 	}
 	return vars, nil
+}
+
+// Variables are the names of every environment variable Load reads.
+func Variables() []string {
+	params, err := env.GetFieldParams(&environment{})
+	if err != nil {
+		// The struct's tags are fixed at compile time; a malformed one fails every Load too.
+		panic(fmt.Sprintf("config: read the environment tags: %v", err))
+	}
+	names := make([]string, 0, len(params))
+	for _, p := range params {
+		names = append(names, p.Key)
+	}
+	return names
 }
 
 // EncryptionKey is SPHERICON_ENCRYPTION_KEY as the process sees it (a `_FILE` sibling
@@ -601,6 +618,8 @@ func Load(envName string) (*Config, error) {
 		SESRegion:           e.SESRegion,
 		SESAccessKeyID:      e.SESAccessKeyID,
 		SESSecretAccessKey:  e.SESSecretAccessKey,
+
+		secrets: secretsOf(vars),
 	}
 
 	cfg.ApplyMode(mode)
@@ -659,22 +678,40 @@ func readEnvFiles(files []string) (map[string]string, error) {
 	return vars, nil
 }
 
-// secretVars are the variables that also accept a `<NAME>_FILE` sibling, the path of a file
-// holding the value (Docker and Kubernetes mount secrets as files).
-var secretVars = []string{
+// secretVariables are the variables whose values are secrets: each also accepts a `<NAME>_FILE`
+// sibling, the path of a file holding the value (Docker and Kubernetes mount secrets as files),
+// and `sphericon doctor` redacts each value from everything it prints. This is the one list of
+// them; TestEverySecretVariableIsRedacted fails when a secret-looking variable is missing.
+var secretVariables = []string{
 	"DATABASE_URL",
 	"SPHERICON_JWT_SECRET",
 	"SPHERICON_JWT_SECRET_SECONDARY",
+	"SPHERICON_STAFF_JWT_SECRET",
 	"SPHERICON_ENCRYPTION_KEY",
 	"SPHERICON_SMTP_PASS",
 	"SPHERICON_LICENSE_KEY",
+	"SPHERICON_SES_ACCESS_KEY_ID",
+	"SPHERICON_SES_SECRET_ACCESS_KEY",
+	"SPHERICON_ACCOUNT_LINK_SIGNING_KEY",
+	"SPHERICON_BOOTSTRAP_TOKEN",
+	"SPHERICON_SIGNIN_GOOGLE_CLIENT_SECRET",
+	"SPHERICON_SIGNIN_GITHUB_CLIENT_SECRET",
+}
+
+// secretsOf is the value of every secret variable in vars.
+func secretsOf(vars map[string]string) []string {
+	values := make([]string, 0, len(secretVariables))
+	for _, name := range secretVariables {
+		values = append(values, vars[name])
+	}
+	return values
 }
 
 // readSecretFiles fills each secret variable from its `_FILE` sibling, trimming the trailing
 // newline. A value set directly wins and its file is never read; an unreadable or empty
 // file is an error naming the `_FILE` variable.
 func readSecretFiles(vars map[string]string) error {
-	for _, name := range secretVars {
+	for _, name := range secretVariables {
 		fileVar := name + "_FILE"
 		path := vars[fileVar]
 		if path == "" || vars[name] != "" {
@@ -1025,32 +1062,17 @@ func envFiles(rootDir, envName string) []string {
 	}
 }
 
-// secretEnvNames are the variables whose values must never be printed.
-var secretEnvNames = []string{
-	"DATABASE_URL",
-	"SPHERICON_JWT_SECRET",
-	"SPHERICON_JWT_SECRET_SECONDARY",
-	"SPHERICON_STAFF_JWT_SECRET",
-	"SPHERICON_ENCRYPTION_KEY",
-	"SPHERICON_SMTP_PASS",
-	"SPHERICON_LICENSE_KEY",
-	"SPHERICON_SES_ACCESS_KEY_ID",
-	"SPHERICON_SES_SECRET_ACCESS_KEY",
-	"SPHERICON_ACCOUNT_LINK_SIGNING_KEY",
-	"SPHERICON_BOOTSTRAP_TOKEN",
-}
-
-// SecretValues lists every secret value of the process: the ones in cfg (nil when the load
-// failed) and the ones still in the environment, plus the password inside DATABASE_URL, raw
-// and as the URL spells it. `sphericon doctor` redacts them from everything it prints.
+// SecretValues lists every secret value of the process: the ones the configuration read (none
+// when cfg is nil, a load that failed) and the ones still in the environment, plus the password
+// inside DATABASE_URL, raw and as the URL spells it. `sphericon doctor` redacts them from
+// everything it prints.
 func SecretValues(cfg *Config) []string {
 	var values []string
-	for _, name := range secretEnvNames {
+	for _, name := range secretVariables {
 		values = append(values, os.Getenv(name))
 	}
 	if cfg != nil {
-		values = append(values, cfg.DatabaseURL, cfg.JWTSecret, cfg.JWTSecretSecondary, cfg.StaffJWTSecret, cfg.EncryptionKey, cfg.SMTPPass,
-			cfg.LicenseKey, cfg.SESAccessKeyID, cfg.SESSecretAccessKey, cfg.AccountLinkSigningKey, cfg.BootstrapToken)
+		values = append(values, cfg.secrets...)
 	}
 	for _, v := range slices.Clone(values) {
 		if u, err := url.Parse(v); err == nil && u.User != nil {

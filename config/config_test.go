@@ -3,10 +3,13 @@ package config_test
 import (
 	"os"
 	"path/filepath"
+	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -645,4 +648,57 @@ func TestConfigLoadEventLiveWindow(t *testing.T) {
 	t.Setenv("SPHERICON_EVENT_LIVE_WINDOW_HOURS", "0")
 	_, err = config.Load("test")
 	require.Error(t, err, "a live window under an hour must be rejected: it cannot be switched off")
+}
+
+// publicVariables are the variables whose names look secret but whose values are not: the collect
+// site key ships in every customer page.
+var publicVariables = []string{"SPHERICON_COLLECT_SITE_KEY"}
+
+var secretLooking = regexp.MustCompile(`SECRET|TOKEN|_PASS$|_KEY$|_KEY_ID$|^DATABASE_URL$`)
+
+// secretVariables are the variables Load reads whose names look secret. Their companions are set,
+// for a secret Load refuses alone: the account link's URL, the sign-in providers' client ids.
+func secretVariables(t *testing.T) []string {
+	t.Helper()
+	t.Setenv("SPHERICON_ACCOUNT_LINK_URL", "https://account.example.com")
+	t.Setenv("SPHERICON_SIGNIN_GOOGLE_CLIENT_ID", "google-client")
+	t.Setenv("SPHERICON_SIGNIN_GITHUB_CLIENT_ID", "github-client")
+	secrets := lo.Filter(config.Variables(), func(name string, _ int) bool {
+		return secretLooking.MatchString(name) && !slices.Contains(publicVariables, name)
+	})
+	require.NotEmpty(t, secrets)
+	return secrets
+}
+
+func TestEverySecretVariableIsRedacted(t *testing.T) {
+	secrets := secretVariables(t)
+	for _, name := range secrets {
+		t.Setenv(name, "value-of-"+name)
+	}
+
+	cfg, err := config.Load("test")
+	require.NoError(t, err)
+	values := config.SecretValues(cfg)
+	for _, name := range secrets {
+		require.Containsf(t, values, "value-of-"+name, "%s is not redacted", name)
+	}
+}
+
+func TestEverySecretVariableAcceptsAFile(t *testing.T) {
+	// .env.test sets the encryption key, and a value set directly wins over its file.
+	secrets := lo.Without(secretVariables(t), "SPHERICON_ENCRYPTION_KEY")
+	dir := t.TempDir()
+	for _, name := range secrets {
+		t.Setenv(name, "")
+		path := filepath.Join(dir, name)
+		require.NoError(t, os.WriteFile(path, []byte("file-of-"+name+"\n"), 0o600))
+		t.Setenv(name+"_FILE", path)
+	}
+
+	cfg, err := config.Load("test")
+	require.NoError(t, err)
+	values := config.SecretValues(cfg)
+	for _, name := range secrets {
+		require.Containsf(t, values, "file-of-"+name, "%s_FILE is not read", name)
+	}
 }
