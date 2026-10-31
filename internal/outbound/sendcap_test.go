@@ -28,6 +28,12 @@ func capped(t *testing.T, env *testhelper.TestEnv, workspaceID int64, sendCap in
 	require.NoError(t, err)
 }
 
+// acmeBucket is what Acme's Send cap bucket holds, to show it was not written.
+func acmeBucket(env *testhelper.TestEnv) [2]any {
+	row := acme(env).SendLimiter().Query().OnlyX(context.Background())
+	return [2]any{row.DayFill, row.UpdatedAt}
+}
+
 func TestASpentSendCapDefersMarketingWithABoundedRetry(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
@@ -89,19 +95,22 @@ func TestAStoredSendCapHasNoEffectWithoutSendCaps(t *testing.T) {
 	m := newModule(env, outbound.WithClock(c.now))
 	capped(t, env, fixtures.AcmeID, 1)
 
+	before := acmeBucket(env)
+
 	for _, key := range []string{"bc:1", "bc:2", "bc:3"} {
 		assert.Equal(t, outbound.Sent, send(t, m, env, key).Outcome, key)
 	}
-	assert.Zero(t, acme(env).SendLimiter().Query().CountX(context.Background()), "no bucket is written")
+	assert.Equal(t, before, acmeBucket(env), "no bucket is written")
 }
 
 func TestNoSendCapCostsNoWrite(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := newModule(env, outbound.WithClock(startClock().now), outbound.WithSendCap())
+	before := acmeBucket(env)
 
 	require.Equal(t, outbound.Sent, send(t, m, env, "bc:1").Outcome)
 
-	assert.Zero(t, acme(env).SendLimiter().Query().CountX(context.Background()))
+	assert.Equal(t, before, acmeBucket(env))
 }
 
 func TestTestInboxSendsCountAgainstTheSendCap(t *testing.T) {

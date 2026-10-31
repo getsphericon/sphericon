@@ -1,5 +1,11 @@
-# Send cap state (ADR 0067), one row per Workspace that sent under a Send cap. Globex's
-# bucket is full; Acme has none, so tests of lazy creation start from a clean slate.
+# Send cap state (ADR 0067), one row per Workspace that sent under a Send cap. Both buckets are
+# full; a Workspace without a row has its bucket created full on its first capped send.
+- id: 1 # fixture: SendLimiterAcme
+  day_fill: 1.0
+  refilled_at: '{{daysAgo 1}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
 - id: 900 # fixture: SendLimiterGlobex
   day_fill: 1.0
   refilled_at: '{{daysAgo 1}}'

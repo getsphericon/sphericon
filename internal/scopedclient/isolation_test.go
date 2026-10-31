@@ -17,7 +17,7 @@ const acme, globex int64 = fixtures.AcmeID, fixtures.GlobexID
 
 // singletonEntities hold at most one row per Workspace (a unique index on workspace_id). A test
 // that plants a second row in Acme first removes Acme's own.
-var singletonEntities = map[string]bool{"BrandKit": true}
+var singletonEntities = map[string]bool{"BrandKit": true, "SendLimiter": true}
 
 // firstID returns the lowest id of the entity's rows in the Workspace, read through
 // the raw client. A missing row means a fixture row is missing for the entity.

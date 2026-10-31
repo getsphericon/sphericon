@@ -41,9 +41,7 @@
             }
           }
         },
-        "tags": [
-          "StaffMember Sign-up survey"
-        ]
+        "tags": ["StaffMember Sign-up survey"]
       }
     },
     "/signup-survey/users/{userId}": {
@@ -92,9 +90,7 @@
             }
           }
         },
-        "tags": [
-          "StaffMember Sign-up survey"
-        ]
+        "tags": ["StaffMember Sign-up survey"]
       }
     },
     "/workspaces": {
@@ -122,13 +118,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "page",
-                    "pageSize",
-                    "totalItems",
-                    "totalPages"
-                  ],
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -174,9 +164,7 @@
             }
           }
         },
-        "tags": [
-          "StaffMember Workspaces"
-        ]
+        "tags": ["StaffMember Workspaces"]
       }
     },
     "/workspaces/{workspaceId}": {
@@ -225,9 +213,7 @@
             }
           }
         },
-        "tags": [
-          "StaffMember Workspaces"
-        ]
+        "tags": ["StaffMember Workspaces"]
       }
     },
     "/workspaces/{workspaceId}/audit-entries": {
@@ -310,9 +296,7 @@
             }
           }
         },
-        "tags": [
-          "StaffMember Workspaces"
-        ]
+        "tags": ["StaffMember Workspaces"]
       }
     },
     "/workspaces/{workspaceId}/exempt": {
@@ -361,9 +345,7 @@
             }
           }
         },
-        "tags": [
-          "StaffMember Workspaces"
-        ]
+        "tags": ["StaffMember Workspaces"]
       }
     },
     "/workspaces/{workspaceId}/send-cap": {
@@ -422,9 +404,7 @@
             }
           }
         },
-        "tags": [
-          "StaffMember Workspaces"
-        ],
+        "tags": ["StaffMember Workspaces"],
         "requestBody": {
           "required": true,
           "content": {
@@ -481,9 +461,7 @@
             }
           }
         },
-        "tags": [
-          "StaffMember Workspaces"
-        ]
+        "tags": ["StaffMember Workspaces"]
       }
     },
     "/workspaces/{workspaceId}/suspend": {
@@ -542,9 +520,7 @@
             }
           }
         },
-        "tags": [
-          "StaffMember Workspaces"
-        ],
+        "tags": ["StaffMember Workspaces"],
         "requestBody": {
           "required": true,
           "content": {
@@ -603,9 +579,7 @@
             }
           }
         },
-        "tags": [
-          "StaffMember Workspaces"
-        ]
+        "tags": ["StaffMember Workspaces"]
       }
     },
     "/workspaces/{workspaceId}/unsuspend": {
@@ -654,9 +628,7 @@
             }
           }
         },
-        "tags": [
-          "StaffMember Workspaces"
-        ]
+        "tags": ["StaffMember Workspaces"]
       }
     }
   },
@@ -718,9 +690,7 @@
     "schemas": {
       "ConflictProblem": {
         "type": "object",
-        "required": [
-          "body"
-        ],
+        "required": ["body"],
         "properties": {
           "body": {
             "$ref": "#/components/schemas/ProblemDetails"
@@ -741,9 +711,7 @@
       },
       "ForbiddenProblem": {
         "type": "object",
-        "required": [
-          "body"
-        ],
+        "required": ["body"],
         "properties": {
           "body": {
             "$ref": "#/components/schemas/ProblemDetails"
@@ -753,9 +721,7 @@
       },
       "GoneProblem": {
         "type": "object",
-        "required": [
-          "body"
-        ],
+        "required": ["body"],
         "properties": {
           "body": {
             "$ref": "#/components/schemas/ProblemDetails"
@@ -765,9 +731,7 @@
       },
       "InUseProblem": {
         "type": "object",
-        "required": [
-          "body"
-        ],
+        "required": ["body"],
         "properties": {
           "body": {
             "$ref": "#/components/schemas/InUseProblemDetails"
@@ -777,9 +741,7 @@
       },
       "InUseProblemDetails": {
         "type": "object",
-        "required": [
-          "usedBy"
-        ],
+        "required": ["usedBy"],
         "properties": {
           "code": {
             "allOf": [
@@ -856,9 +818,7 @@
       },
       "PaymentRequiredProblem": {
         "type": "object",
-        "required": [
-          "body"
-        ],
+        "required": ["body"],
         "properties": {
           "body": {
             "$ref": "#/components/schemas/ProblemDetails"
@@ -868,9 +828,7 @@
       },
       "PreconditionRequiredProblem": {
         "type": "object",
-        "required": [
-          "body"
-        ],
+        "required": ["body"],
         "properties": {
           "body": {
             "$ref": "#/components/schemas/ProblemDetails"
@@ -891,11 +849,7 @@
       },
       "ProblemDebug": {
         "type": "object",
-        "required": [
-          "error",
-          "method",
-          "path"
-        ],
+        "required": ["error", "method", "path"],
         "properties": {
           "error": {
             "type": "string",
@@ -991,9 +945,7 @@
       },
       "StaffAbuse": {
         "type": "object",
-        "required": [
-          "exempt"
-        ],
+        "required": ["exempt"],
         "properties": {
           "exempt": {
             "type": "boolean",
@@ -1044,19 +996,12 @@
       },
       "StaffAbuseMetric": {
         "type": "string",
-        "enum": [
-          "complaint",
-          "bounce"
-        ],
+        "enum": ["complaint", "bounce"],
         "description": "Which metric of a Sending domain breached the abuse detector's warning limit"
       },
       "StaffAbuseWarning": {
         "type": "object",
-        "required": [
-          "domain",
-          "metric",
-          "rate"
-        ],
+        "required": ["domain", "metric", "rate"],
         "properties": {
           "domain": {
             "type": "string"
@@ -1074,9 +1019,7 @@
       },
       "StaffAuditActor": {
         "type": "object",
-        "required": [
-          "kind"
-        ],
+        "required": ["kind"],
         "properties": {
           "kind": {
             "allOf": [
@@ -1101,20 +1044,12 @@
       },
       "StaffAuditActorKind": {
         "type": "string",
-        "enum": [
-          "user",
-          "api_token",
-          "staff",
-          "service",
-          "system"
-        ],
+        "enum": ["user", "api_token", "staff", "service", "system"],
         "description": "Who performed an audited change, as the Workspace's own team sees it"
       },
       "StaffAuditEntryList": {
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "properties": {
           "items": {
             "type": "array",
@@ -1132,13 +1067,7 @@
       },
       "StaffAuditEntryResource": {
         "type": "object",
-        "required": [
-          "id",
-          "occurredAt",
-          "actor",
-          "action",
-          "target"
-        ],
+        "required": ["id", "occurredAt", "actor", "action", "target"],
         "properties": {
           "id": {
             "allOf": [
@@ -1202,9 +1131,7 @@
       },
       "StaffAuditTarget": {
         "type": "object",
-        "required": [
-          "type"
-        ],
+        "required": ["type"],
         "properties": {
           "type": {
             "type": "string",
@@ -1225,12 +1152,7 @@
       },
       "StaffDeliverability": {
         "type": "object",
-        "required": [
-          "windowHours",
-          "volumeFloor",
-          "sendVolume",
-          "domains"
-        ],
+        "required": ["windowHours", "volumeFloor", "sendVolume", "domains"],
         "properties": {
           "windowHours": {
             "type": "integer",
@@ -1259,12 +1181,7 @@
       },
       "StaffDomainRates": {
         "type": "object",
-        "required": [
-          "sendingDomainId",
-          "domain",
-          "complaintRate",
-          "bounceRate"
-        ],
+        "required": ["sendingDomainId", "domain", "complaintRate", "bounceRate"],
         "properties": {
           "sendingDomainId": {
             "allOf": [
@@ -1299,10 +1216,7 @@
       },
       "StaffExemptionChange": {
         "type": "object",
-        "required": [
-          "changed",
-          "workspace"
-        ],
+        "required": ["changed", "workspace"],
         "properties": {
           "changed": {
             "type": "boolean"
@@ -1315,14 +1229,7 @@
       },
       "StaffHold": {
         "type": "object",
-        "required": [
-          "key",
-          "reasonCode",
-          "message",
-          "createdAt",
-          "expiresAt",
-          "setBy"
-        ],
+        "required": ["key", "reasonCode", "message", "createdAt", "expiresAt", "setBy"],
         "properties": {
           "key": {
             "type": "string",
@@ -1366,11 +1273,7 @@
       },
       "StaffRate": {
         "type": "object",
-        "required": [
-          "numerator",
-          "denominator",
-          "rate"
-        ],
+        "required": ["numerator", "denominator", "rate"],
         "properties": {
           "numerator": {
             "type": "integer",
@@ -1393,10 +1296,7 @@
       },
       "StaffSendCapChange": {
         "type": "object",
-        "required": [
-          "changed",
-          "workspace"
-        ],
+        "required": ["changed", "workspace"],
         "properties": {
           "changed": {
             "type": "boolean"
@@ -1409,9 +1309,7 @@
       },
       "StaffSendCapInput": {
         "type": "object",
-        "required": [
-          "sendCap"
-        ],
+        "required": ["sendCap"],
         "properties": {
           "sendCap": {
             "type": "integer",
@@ -1425,23 +1323,12 @@
       },
       "StaffSignupCompanySize": {
         "type": "string",
-        "enum": [
-          "1",
-          "2_10",
-          "11_50",
-          "51_200",
-          "201_1000",
-          "1000_plus",
-          "other"
-        ],
+        "enum": ["1", "2_10", "11_50", "51_200", "201_1000", "1000_plus", "other"],
         "description": "How many people work at the User's company (second question)"
       },
       "StaffSignupCompanySizeCount": {
         "type": "object",
-        "required": [
-          "choice",
-          "count"
-        ],
+        "required": ["choice", "count"],
         "properties": {
           "choice": {
             "$ref": "#/components/schemas/StaffSignupCompanySize"
@@ -1455,21 +1342,12 @@
       },
       "StaffSignupGoal": {
         "type": "string",
-        "enum": [
-          "broadcasts",
-          "automations",
-          "tracking",
-          "migrating",
-          "other"
-        ],
+        "enum": ["broadcasts", "automations", "tracking", "migrating", "other"],
         "description": "What the User mainly wants to do with the product (third question)"
       },
       "StaffSignupGoalCount": {
         "type": "object",
-        "required": [
-          "choice",
-          "count"
-        ],
+        "required": ["choice", "count"],
         "properties": {
           "choice": {
             "$ref": "#/components/schemas/StaffSignupGoal"
@@ -1483,10 +1361,7 @@
       },
       "StaffSignupOtherTextCount": {
         "type": "object",
-        "required": [
-          "text",
-          "count"
-        ],
+        "required": ["text", "count"],
         "properties": {
           "text": {
             "type": "string"
@@ -1500,21 +1375,12 @@
       },
       "StaffSignupRole": {
         "type": "string",
-        "enum": [
-          "founder",
-          "marketer",
-          "developer",
-          "product",
-          "other"
-        ],
+        "enum": ["founder", "marketer", "developer", "product", "other"],
         "description": "What the User does (Sign-up survey, first question)"
       },
       "StaffSignupRoleCount": {
         "type": "object",
-        "required": [
-          "choice",
-          "count"
-        ],
+        "required": ["choice", "count"],
         "properties": {
           "choice": {
             "$ref": "#/components/schemas/StaffSignupRole"
@@ -1528,21 +1394,12 @@
       },
       "StaffSignupSource": {
         "type": "string",
-        "enum": [
-          "search",
-          "github",
-          "social",
-          "recommendation",
-          "other"
-        ],
+        "enum": ["search", "github", "social", "recommendation", "other"],
         "description": "Where the User heard about the product (fourth question, optional)"
       },
       "StaffSignupSourceCount": {
         "type": "object",
-        "required": [
-          "choice",
-          "count"
-        ],
+        "required": ["choice", "count"],
         "properties": {
           "choice": {
             "$ref": "#/components/schemas/StaffSignupSource"
@@ -1627,13 +1484,7 @@
       },
       "StaffSignupSurveyResponseResource": {
         "type": "object",
-        "required": [
-          "userId",
-          "role",
-          "companySize",
-          "mainGoal",
-          "answeredAt"
-        ],
+        "required": ["userId", "role", "companySize", "mainGoal", "answeredAt"],
         "properties": {
           "userId": {
             "allOf": [
@@ -1709,9 +1560,7 @@
       },
       "StaffSuspendInput": {
         "type": "object",
-        "required": [
-          "reason"
-        ],
+        "required": ["reason"],
         "properties": {
           "reason": {
             "type": "string",
@@ -1723,10 +1572,7 @@
       },
       "StaffSuspension": {
         "type": "object",
-        "required": [
-          "at",
-          "actor"
-        ],
+        "required": ["at", "actor"],
         "properties": {
           "at": {
             "allOf": [
@@ -1754,9 +1600,7 @@
       },
       "StaffSuspensionActor": {
         "type": "object",
-        "required": [
-          "kind"
-        ],
+        "required": ["kind"],
         "properties": {
           "kind": {
             "$ref": "#/components/schemas/StaffSuspensionActorKind"
@@ -1771,19 +1615,12 @@
       },
       "StaffSuspensionActorKind": {
         "type": "string",
-        "enum": [
-          "system",
-          "cli",
-          "staff"
-        ],
+        "enum": ["system", "cli", "staff"],
         "description": "Who set a Workspace suspension (ADR 0026)"
       },
       "StaffSuspensionChange": {
         "type": "object",
-        "required": [
-          "changed",
-          "workspace"
-        ],
+        "required": ["changed", "workspace"],
         "properties": {
           "changed": {
             "type": "boolean"
@@ -1893,13 +1730,7 @@
       },
       "StaffWorkspaceResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "createdAt",
-          "exempt",
-          "warned"
-        ],
+        "required": ["id", "name", "createdAt", "exempt", "warned"],
         "properties": {
           "id": {
             "allOf": [
@@ -1969,11 +1800,7 @@
       },
       "StaffWorkspaceReview": {
         "type": "string",
-        "enum": [
-          "warned",
-          "systemFrozen",
-          "deleted"
-        ],
+        "enum": ["warned", "systemFrozen", "deleted"],
         "description": "Which Workspaces the list surfaces for review"
       },
       "TimeZoneName": {
@@ -1985,9 +1812,7 @@
       },
       "TooManyRequestsProblem": {
         "type": "object",
-        "required": [
-          "body"
-        ],
+        "required": ["body"],
         "properties": {
           "body": {
             "$ref": "#/components/schemas/ProblemDetails"
@@ -1997,11 +1822,7 @@
       },
       "UsedBy": {
         "type": "object",
-        "required": [
-          "kind",
-          "id",
-          "name"
-        ],
+        "required": ["kind", "id", "name"],
         "properties": {
           "kind": {
             "allOf": [
@@ -2033,15 +1854,7 @@
       },
       "UsedByKind": {
         "type": "string",
-        "enum": [
-          "broadcast",
-          "automation",
-          "segment",
-          "rule",
-          "enrollment",
-          "firing",
-          "message"
-        ],
+        "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "firing", "message"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "WorkspaceId": {
