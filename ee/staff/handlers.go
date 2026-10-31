@@ -68,17 +68,13 @@ func (h *Handlers) StaffWorkspacesList(ctx context.Context, params staffeeapi.St
 	return staffMapper.WorkspacesListPage(page), nil
 }
 
+// review is the review state the list is filtered by; none narrows it to no state.
 func review(p staffeeapi.OptStaffWorkspaceReview) abuse.Review {
-	switch p.Value {
-	case staffeeapi.StaffWorkspaceReviewWarned:
-		return abuse.ReviewWarned
-	case staffeeapi.StaffWorkspaceReviewSystemFrozen:
-		return abuse.ReviewSystemFrozen
-	case staffeeapi.StaffWorkspaceReviewDeleted:
-		return abuse.ReviewDeleted
-	default:
+	v, ok := p.Get()
+	if !ok {
 		return abuse.ReviewNone
 	}
+	return staffMapper.ReviewIn(v)
 }
 
 // StaffWorkspacesGet is one Workspace's metadata and suspension state.

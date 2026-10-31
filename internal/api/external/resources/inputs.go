@@ -130,6 +130,8 @@ type Inputs interface {
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
 	// goverter:enum:transform value
+	AutomationStepType(source externalapi.AutomationStepType) automations.StepType
+	// goverter:enum:transform value
 	RuleActionType(source externalapi.RuleActionType) rules.ActionType
 }
 

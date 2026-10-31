@@ -509,6 +509,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) siteapi.SiteAutomationStatus
 	// goverter:enum:transform value
+	AutomationStepTypeToResource(source automations.StepType) siteapi.SiteAutomationStepType
+	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) siteapi.SiteBroadcastStatus
 	// goverter:enum:transform value
 	CapturedMessageSurfaceToResource(source capturedmessage.Surface) siteapi.SiteCapturedMessageSurface
@@ -737,7 +739,7 @@ func automationVersionOrNull(c Converter, v *ent.AutomationVersion) siteapi.NilS
 
 // automationSteps decodes the steps of an Automation version into the typed steps DTO.
 // Malformed steps yield no steps rather than an error.
-func automationSteps(v *ent.AutomationVersion) []siteapi.SiteAutomationStep {
+func automationSteps(c Converter, v *ent.AutomationVersion) []siteapi.SiteAutomationStep {
 	stored, err := automations.Decode(v.Steps)
 	if err != nil {
 		return nil
@@ -745,7 +747,7 @@ func automationSteps(v *ent.AutomationVersion) []siteapi.SiteAutomationStep {
 	steps := make([]siteapi.SiteAutomationStep, 0, len(stored))
 	for i := range stored {
 		s := &stored[i]
-		step := siteapi.SiteAutomationStep{Type: siteapi.SiteAutomationStepType(s.Type)}
+		step := siteapi.SiteAutomationStep{Type: c.AutomationStepTypeToResource(s.Type)}
 		switch s.Type {
 		case automations.StepWait:
 			step.Seconds = siteapi.NewOptInt32(narrow.Int32(s.Seconds))

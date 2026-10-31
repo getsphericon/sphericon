@@ -9,27 +9,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 )
 
-// analyticsWindow maps the selectable range to the module's window; 7d is the
-// default when the param is absent or unrecognized.
-func analyticsWindow(r siteapi.OptSiteAnalyticsRange) analytics.Window {
-	if v, ok := r.Get(); ok {
-		switch v {
-		case siteapi.SiteAnalyticsRange7d:
-			return analytics.Window7Days
-		case siteapi.SiteAnalyticsRange90d:
-			return analytics.Window90Days
-		case siteapi.SiteAnalyticsRange30d:
-			return analytics.Window30Days
-		}
-	}
-	return analytics.Window7Days
-}
-
 // analyticsReport is the shell every report handler shares: it reads the selected window and hands
 // it, with the scope of the Workspace of the path, to build, which maps the module's report onto
 // the operation's response.
 func analyticsReport[Res any](ctx context.Context, rng siteapi.OptSiteAnalyticsRange, build func(*ent.Scoped, analytics.Window) (Res, error)) (Res, error) {
-	return build(workspaceScope(ctx), analyticsWindow(rng))
+	// 7d is the window of a request that names none.
+	return build(workspaceScope(ctx), inputs.AnalyticsWindow(rng.Or(siteapi.SiteAnalyticsRange7d)))
 }
 
 // SiteAnalyticsOverview maps the analytics module's Overview onto the DTO.
@@ -173,23 +158,10 @@ func (h *Handlers) SiteAnalyticsNewPeople(ctx context.Context, params siteapi.Si
 // operation's default range is 30 days, declared in the contract.
 func (h *Handlers) SiteAnalyticsRevenue(ctx context.Context, params siteapi.SiteAnalyticsRevenueParams) (siteapi.SiteAnalyticsRevenueRes, error) {
 	s := workspaceScope(ctx)
-	report, err := h.analytics.Revenue(ctx, s, revenueWindow(params.Range))
+	report, err := h.analytics.Revenue(ctx, s, inputs.AnalyticsRevenueWindow(params.Range.Or(siteapi.SiteAnalyticsRevenueRange30d)))
 	if err != nil {
 		return nil, err
 	}
 	r := mapper.RevenueToResource(report)
 	return &r, nil
-}
-
-// revenueWindow maps the selectable range to the module's window. The range is always set: the
-// contract gives it its default.
-func revenueWindow(r siteapi.OptSiteAnalyticsRevenueRange) analytics.Window {
-	switch r.Value {
-	case siteapi.SiteAnalyticsRevenueRange7d:
-		return analytics.Window7Days
-	case siteapi.SiteAnalyticsRevenueRange90d:
-		return analytics.Window90Days
-	default:
-		return analytics.Window30Days
-	}
 }

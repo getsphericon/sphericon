@@ -140,6 +140,24 @@ func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) sit
 	}
 	return siteapiSiteAutomationStatus
 }
+func (c *ConverterImpl) AutomationStepTypeToResource(source automations.StepType) site.SiteAutomationStepType {
+	var siteapiSiteAutomationStepType site.SiteAutomationStepType
+	switch source {
+	case automations.StepApplyTag:
+		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeApplyTag
+	case automations.StepEmail:
+		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeEmail
+	case automations.StepHTTP:
+		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeHTTP
+	case automations.StepRemoveTag:
+		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeRemoveTag
+	case automations.StepWait:
+		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeWait
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteAutomationStepType
+}
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAutomationResource {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
 	if source != nil {
@@ -168,7 +186,7 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 		}
 		siteapiSiteAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
 		siteapiSiteAutomationVersion.IntegrationId = optNilEntityID((*source).IntegrationID)
-		siteapiSiteAutomationVersion.Steps = automationSteps(source)
+		siteapiSiteAutomationVersion.Steps = automationSteps(c, source)
 	}
 	return siteapiSiteAutomationVersion
 }

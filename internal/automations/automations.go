@@ -34,22 +34,25 @@ import (
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
+// StepType is the kind of a Step.
+type StepType string
+
 // Step kinds.
 const (
-	StepEmail     = "email"
-	StepWait      = "wait"
-	StepApplyTag  = "apply_tag"
-	StepRemoveTag = "remove_tag"
-	StepHTTP      = "http"
+	StepEmail     StepType = "email"
+	StepWait      StepType = "wait"
+	StepApplyTag  StepType = "apply_tag"
+	StepRemoveTag StepType = "remove_tag"
+	StepHTTP      StepType = "http"
 )
 
 // Step is one node of an Automation's linear sequence, in the executor's on-disk
 // JSON form. Email steps carry Subject and Body (HTML), wait steps Seconds, tag
 // steps Tag (the Tag name).
 type Step struct {
-	Type    string `json:"type"`
-	Subject string `json:"subject,omitempty"`
-	Body    string `json:"body,omitempty"`
+	Type    StepType `json:"type"`
+	Subject string   `json:"subject,omitempty"`
+	Body    string   `json:"body,omitempty"`
 	// Doc is the editor's JSON document an email step's Body was built from, and EditorVersion
 	// the editor that rendered it (ADR 0040). A step written as HTML has neither. A step being
 	// saved carries a Doc or a Body, not both: the save renders the Doc to the Body.
