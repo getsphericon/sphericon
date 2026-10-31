@@ -589,6 +589,10 @@ func init() {
 	integrationDescMaxPerDay := integrationFields[11].Descriptor()
 	// integration.MaxPerDayValidator is a validator for the "max_per_day" field. It is called by the builders before save.
 	integration.MaxPerDayValidator = integrationDescMaxPerDay.Validators[0].(func(int) error)
+	// integrationDescProviderSandbox is the schema descriptor for provider_sandbox field.
+	integrationDescProviderSandbox := integrationFields[15].Descriptor()
+	// integration.DefaultProviderSandbox holds the default value on creation for the provider_sandbox field.
+	integration.DefaultProviderSandbox = integrationDescProviderSandbox.Default.(bool)
 	invitationMixin := schema.Invitation{}.Mixin()
 	invitationMixinFields0 := invitationMixin[0].Fields()
 	_ = invitationMixinFields0

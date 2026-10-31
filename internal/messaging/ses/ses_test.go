@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -208,6 +209,36 @@ func quotaReader(t *testing.T, endpoint string) messaging.QuotaReader {
 	return reader
 }
 
+func accountBody(enforcement string, productionAccess bool) string {
+	return fmt.Sprintf(`{"SendQuota":{"Max24HourSend":50000.0,"MaxSendRate":14.0,"SentLast24Hours":7.0},"EnforcementStatus":%q,"ProductionAccessEnabled":%t}`, enforcement, productionAccess)
+}
+
+// toServer sends every request to the server at target, whatever host it was addressed to, so
+// a sender with no endpoint of its own (AWS) reaches the stand-in.
+type toServer struct{ target string }
+
+func (r toServer) RoundTrip(req *http.Request) (*http.Response, error) {
+	target, err := url.Parse(r.target)
+	if err != nil {
+		return nil, err
+	}
+	req = req.Clone(req.Context())
+	req.URL.Scheme, req.URL.Host = target.Scheme, target.Host
+	return http.DefaultTransport.RoundTrip(req)
+}
+
+// awsQuotaReader is the quota reader of an Integration on AWS itself (no endpoint), its
+// requests answered by the stand-in at serverURL.
+func awsQuotaReader(t *testing.T, serverURL string) messaging.QuotaReader {
+	t.Helper()
+	raw := `{"region":"eu-west-1","accessKeyId":"AKIATEST","secretAccessKey":"shh","from":"noreply@acme.com"}`
+	built, err := ses.NewDescriptor(&http.Client{Transport: toServer{target: serverURL}}).Build([]byte(raw), messaging.Deps{})
+	require.NoError(t, err)
+	reader, ok := built.(messaging.QuotaReader)
+	require.True(t, ok)
+	return reader
+}
+
 func TestSendQuota(t *testing.T) {
 	ctx := context.Background()
 
@@ -235,6 +266,57 @@ func TestSendQuota(t *testing.T) {
 		require.NoError(t, err)
 		assert.Nil(t, got.PerSecond)
 		assert.Nil(t, got.PerDay)
+	})
+
+	t.Run("a healthy account with production access reports nothing to flag", func(t *testing.T) {
+		api := newSESAPI(t, http.StatusOK, accountBody("HEALTHY", true))
+		got, err := quotaReader(t, api.srv.URL).SendQuota(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, messaging.EnforcementNone, got.Enforcement)
+		assert.False(t, got.Sandbox)
+	})
+
+	t.Run("reads the enforcement status", func(t *testing.T) {
+		for status, want := range map[string]messaging.Enforcement{
+			"PROBATION": messaging.EnforcementProbation,
+			"SHUTDOWN":  messaging.EnforcementShutdown,
+			"HEALTHY":   messaging.EnforcementNone,
+			"SOMETHING": messaging.EnforcementNone,
+		} {
+			api := newSESAPI(t, http.StatusOK, accountBody(status, true))
+			got, err := quotaReader(t, api.srv.URL).SendQuota(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, want, got.Enforcement, status)
+		}
+	})
+
+	t.Run("an answer without an enforcement status is no enforcement", func(t *testing.T) {
+		api := newSESAPI(t, http.StatusOK, quotaBody("200.0", "1.0"))
+		got, err := quotaReader(t, api.srv.URL).SendQuota(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, messaging.EnforcementNone, got.Enforcement)
+	})
+
+	t.Run("an AWS account without production access is in the sandbox", func(t *testing.T) {
+		api := newSESAPI(t, http.StatusOK, accountBody("HEALTHY", false))
+		got, err := awsQuotaReader(t, api.srv.URL).SendQuota(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, "/v2/email/account", api.path)
+		assert.True(t, got.Sandbox)
+	})
+
+	t.Run("an AWS account with production access is not in the sandbox", func(t *testing.T) {
+		api := newSESAPI(t, http.StatusOK, accountBody("HEALTHY", true))
+		got, err := awsQuotaReader(t, api.srv.URL).SendQuota(ctx)
+		require.NoError(t, err)
+		assert.False(t, got.Sandbox)
+	})
+
+	t.Run("an SES-compatible service has no sandbox, whatever it answers", func(t *testing.T) {
+		api := newSESAPI(t, http.StatusOK, quotaBody("200.0", "1.0"))
+		got, err := quotaReader(t, api.srv.URL).SendQuota(ctx)
+		require.NoError(t, err)
+		assert.False(t, got.Sandbox, "an answer without ProductionAccessEnabled is no sandbox")
 	})
 
 	t.Run("a denied lookup is an error", func(t *testing.T) {

@@ -15955,7 +15955,7 @@
           "holdReason": {
             "type": "string",
             "nullable": true,
-            "description": "Why sending is currently held, when it is: `workspace_suspended`,\n`unverified_domain` or `no_integration`. A hold is reversible and not a failure:\nthe broadcast keeps its status and the remaining recipients send once it lifts."
+            "description": "Why sending is currently held, when it is: `workspace_suspended`,\n`unverified_domain`, `no_integration` or `provider_stopped` (the provider has\nstopped the account). A hold is reversible and not a failure:\nthe broadcast keeps its status and the remaining recipients send once it lifts."
           },
           "scheduledAt": {
             "type": "string",
@@ -18984,7 +18984,13 @@
       },
       "SiteProviderLimitWarning": {
         "type": "string",
-        "enum": ["unlimited", "providerQuotaUnavailable"],
+        "enum": [
+          "unlimited",
+          "providerQuotaUnavailable",
+          "providerStopped",
+          "providerProbation",
+          "providerSandbox"
+        ],
         "description": "A reason to look at an Integration's Provider limit"
       },
       "SiteRecoveryCodes": {

@@ -40,6 +40,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/suppression"
@@ -102,6 +103,9 @@ const SkipContactErased = "contact_erased"
 const (
 	HoldNoIntegration    = "no_integration"
 	HoldUnverifiedDomain = "unverified_domain"
+	// HoldProviderStopped: the provider has stopped the account behind the Integration (SES
+	// EnforcementStatus SHUTDOWN, ADR 0067); it lifts when a quota read finds it sending again.
+	HoldProviderStopped = "provider_stopped"
 )
 
 // Reasons a Test send from the System sender is Refused (ADR 0041).
@@ -125,6 +129,8 @@ func Detail(reason string) string {
 		return "no default email provider configured"
 	case HoldUnverifiedDomain:
 		return "sender domain is not a verified sending domain"
+	case HoldProviderStopped:
+		return "the email provider has stopped sending from this account"
 	case RefuseOtherRecipient:
 		return "until a sending domain is verified, a test send can only go to your own address"
 	case RefuseNoSystemSender:
@@ -536,8 +542,8 @@ type gateResult struct {
 
 // gate runs the source-level checks, in order: Workspace freeze (the reason holds names:
 // deletion, suspension, Staff hold, in that priority; a Test send from the System sender
-// passes it too), an Integration to
-// send through, and a verified Sending domain for the effective From address.
+// passes it too), an Integration to send through whose provider has not stopped its
+// account, and a verified Sending domain for the effective From address.
 func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName string, integrationID *int64) (gateResult, error) {
 	hold, err := m.holds.Reason(ctx, s)
 	if err != nil || hold != "" {
@@ -553,6 +559,9 @@ func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName st
 	}
 	if integ == nil && integrationID != nil {
 		return gateResult{hold: HoldNoIntegration}, nil
+	}
+	if integ != nil && providerlimit.EffectiveOf(integ).Enforcement == messaging.EnforcementShutdown {
+		return gateResult{hold: HoldProviderStopped}, nil
 	}
 	sender, err := m.senders.EmailSender(ctx, s, integ)
 	if errors.Is(err, messaging.ErrNoProvider) {

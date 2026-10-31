@@ -223,6 +223,34 @@ func (_c *IntegrationCreate) SetNillableProviderMaxPerDay(v *int) *IntegrationCr
 	return _c
 }
 
+// SetProviderEnforcement sets the "provider_enforcement" field.
+func (_c *IntegrationCreate) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationCreate {
+	_c.mutation.SetProviderEnforcement(v)
+	return _c
+}
+
+// SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
+func (_c *IntegrationCreate) SetNillableProviderEnforcement(v *integration.ProviderEnforcement) *IntegrationCreate {
+	if v != nil {
+		_c.SetProviderEnforcement(*v)
+	}
+	return _c
+}
+
+// SetProviderSandbox sets the "provider_sandbox" field.
+func (_c *IntegrationCreate) SetProviderSandbox(v bool) *IntegrationCreate {
+	_c.mutation.SetProviderSandbox(v)
+	return _c
+}
+
+// SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
+func (_c *IntegrationCreate) SetNillableProviderSandbox(v *bool) *IntegrationCreate {
+	if v != nil {
+		_c.SetProviderSandbox(*v)
+	}
+	return _c
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (_c *IntegrationCreate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationCreate {
 	_c.mutation.SetProviderQuotaCheckedAt(v)
@@ -351,6 +379,10 @@ func (_c *IntegrationCreate) defaults() {
 		v := integration.DefaultIsDefault
 		_c.mutation.SetIsDefault(v)
 	}
+	if _, ok := _c.mutation.ProviderSandbox(); !ok {
+		v := integration.DefaultProviderSandbox
+		_c.mutation.SetProviderSandbox(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -419,6 +451,14 @@ func (_c *IntegrationCreate) check() error {
 		if err := integration.MaxPerDayValidator(v); err != nil {
 			return &ValidationError{Name: "max_per_day", err: fmt.Errorf(`ent: validator failed for field "Integration.max_per_day": %w`, err)}
 		}
+	}
+	if v, ok := _c.mutation.ProviderEnforcement(); ok {
+		if err := integration.ProviderEnforcementValidator(v); err != nil {
+			return &ValidationError{Name: "provider_enforcement", err: fmt.Errorf(`ent: validator failed for field "Integration.provider_enforcement": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ProviderSandbox(); !ok {
+		return &ValidationError{Name: "provider_sandbox", err: errors.New(`ent: missing required field "Integration.provider_sandbox"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Integration.workspace"`)}
@@ -519,6 +559,14 @@ func (_c *IntegrationCreate) createSpec() (*Integration, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ProviderMaxPerDay(); ok {
 		_spec.SetField(integration.FieldProviderMaxPerDay, field.TypeInt, value)
 		_node.ProviderMaxPerDay = &value
+	}
+	if value, ok := _c.mutation.ProviderEnforcement(); ok {
+		_spec.SetField(integration.FieldProviderEnforcement, field.TypeEnum, value)
+		_node.ProviderEnforcement = &value
+	}
+	if value, ok := _c.mutation.ProviderSandbox(); ok {
+		_spec.SetField(integration.FieldProviderSandbox, field.TypeBool, value)
+		_node.ProviderSandbox = value
 	}
 	if value, ok := _c.mutation.ProviderQuotaCheckedAt(); ok {
 		_spec.SetField(integration.FieldProviderQuotaCheckedAt, field.TypeTime, value)
@@ -884,6 +932,36 @@ func (u *IntegrationUpsert) AddProviderMaxPerDay(v int) *IntegrationUpsert {
 // ClearProviderMaxPerDay clears the value of the "provider_max_per_day" field.
 func (u *IntegrationUpsert) ClearProviderMaxPerDay() *IntegrationUpsert {
 	u.SetNull(integration.FieldProviderMaxPerDay)
+	return u
+}
+
+// SetProviderEnforcement sets the "provider_enforcement" field.
+func (u *IntegrationUpsert) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationUpsert {
+	u.Set(integration.FieldProviderEnforcement, v)
+	return u
+}
+
+// UpdateProviderEnforcement sets the "provider_enforcement" field to the value that was provided on create.
+func (u *IntegrationUpsert) UpdateProviderEnforcement() *IntegrationUpsert {
+	u.SetExcluded(integration.FieldProviderEnforcement)
+	return u
+}
+
+// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
+func (u *IntegrationUpsert) ClearProviderEnforcement() *IntegrationUpsert {
+	u.SetNull(integration.FieldProviderEnforcement)
+	return u
+}
+
+// SetProviderSandbox sets the "provider_sandbox" field.
+func (u *IntegrationUpsert) SetProviderSandbox(v bool) *IntegrationUpsert {
+	u.Set(integration.FieldProviderSandbox, v)
+	return u
+}
+
+// UpdateProviderSandbox sets the "provider_sandbox" field to the value that was provided on create.
+func (u *IntegrationUpsert) UpdateProviderSandbox() *IntegrationUpsert {
+	u.SetExcluded(integration.FieldProviderSandbox)
 	return u
 }
 
@@ -1272,6 +1350,41 @@ func (u *IntegrationUpsertOne) UpdateProviderMaxPerDay() *IntegrationUpsertOne {
 func (u *IntegrationUpsertOne) ClearProviderMaxPerDay() *IntegrationUpsertOne {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.ClearProviderMaxPerDay()
+	})
+}
+
+// SetProviderEnforcement sets the "provider_enforcement" field.
+func (u *IntegrationUpsertOne) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetProviderEnforcement(v)
+	})
+}
+
+// UpdateProviderEnforcement sets the "provider_enforcement" field to the value that was provided on create.
+func (u *IntegrationUpsertOne) UpdateProviderEnforcement() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateProviderEnforcement()
+	})
+}
+
+// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
+func (u *IntegrationUpsertOne) ClearProviderEnforcement() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.ClearProviderEnforcement()
+	})
+}
+
+// SetProviderSandbox sets the "provider_sandbox" field.
+func (u *IntegrationUpsertOne) SetProviderSandbox(v bool) *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetProviderSandbox(v)
+	})
+}
+
+// UpdateProviderSandbox sets the "provider_sandbox" field to the value that was provided on create.
+func (u *IntegrationUpsertOne) UpdateProviderSandbox() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateProviderSandbox()
 	})
 }
 
@@ -1832,6 +1945,41 @@ func (u *IntegrationUpsertBulk) UpdateProviderMaxPerDay() *IntegrationUpsertBulk
 func (u *IntegrationUpsertBulk) ClearProviderMaxPerDay() *IntegrationUpsertBulk {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.ClearProviderMaxPerDay()
+	})
+}
+
+// SetProviderEnforcement sets the "provider_enforcement" field.
+func (u *IntegrationUpsertBulk) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetProviderEnforcement(v)
+	})
+}
+
+// UpdateProviderEnforcement sets the "provider_enforcement" field to the value that was provided on create.
+func (u *IntegrationUpsertBulk) UpdateProviderEnforcement() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateProviderEnforcement()
+	})
+}
+
+// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
+func (u *IntegrationUpsertBulk) ClearProviderEnforcement() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.ClearProviderEnforcement()
+	})
+}
+
+// SetProviderSandbox sets the "provider_sandbox" field.
+func (u *IntegrationUpsertBulk) SetProviderSandbox(v bool) *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetProviderSandbox(v)
+	})
+}
+
+// UpdateProviderSandbox sets the "provider_sandbox" field to the value that was provided on create.
+func (u *IntegrationUpsertBulk) UpdateProviderSandbox() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateProviderSandbox()
 	})
 }
 

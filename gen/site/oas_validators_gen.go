@@ -7399,6 +7399,12 @@ func (s SiteProviderLimitWarning) Validate() error {
 		return nil
 	case "providerQuotaUnavailable":
 		return nil
+	case "providerStopped":
+		return nil
+	case "providerProbation":
+		return nil
+	case "providerSandbox":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

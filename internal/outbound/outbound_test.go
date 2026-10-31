@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/eligibility"
@@ -299,6 +300,36 @@ func TestNoIntegrationIsHeld(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)
 	assert.Equal(t, outbound.HoldNoIntegration, res.Reason)
+}
+
+func TestStoppedProviderAccountIsHeldUntilItSendsAgain(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	m := newModule(env)
+	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).
+		SetProviderEnforcement(integration.ProviderEnforcementShutdown).ExecX(ctx)
+
+	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:stopped", "a@example.com"))
+	require.NoError(t, err)
+	assert.Equal(t, outbound.Held, res.Outcome)
+	assert.Equal(t, outbound.HoldProviderStopped, res.Reason)
+	assert.Empty(t, env.CustomerMail.Messages(), "nothing is handed to a stopped account")
+
+	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).ClearProviderEnforcement().ExecX(ctx)
+	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:stopped", "a@example.com"))
+	require.NoError(t, err)
+	assert.Equal(t, outbound.Sent, res.Outcome, "the same Request goes out once the account sends again")
+}
+
+func TestProviderOnProbationStillSends(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).
+		SetProviderEnforcement(integration.ProviderEnforcementProbation).SetProviderSandbox(true).ExecX(ctx)
+
+	res, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:probation", "a@example.com"))
+	require.NoError(t, err)
+	assert.Equal(t, outbound.Sent, res.Outcome, "probation and the sandbox are warnings, not holds")
 }
 
 func TestProviderErrorIsRetryableAndReleasesTheClaim(t *testing.T) {

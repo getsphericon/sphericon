@@ -22134,6 +22134,8 @@ type IntegrationMutation struct {
 	addprovider_max_per_second *int
 	provider_max_per_day       *int
 	addprovider_max_per_day    *int
+	provider_enforcement       *integration.ProviderEnforcement
+	provider_sandbox           *bool
 	provider_quota_checked_at  *time.Time
 	provider_quota_failed_at   *time.Time
 	clearedFields              map[string]struct{}
@@ -23040,6 +23042,91 @@ func (m *IntegrationMutation) ResetProviderMaxPerDay() {
 	delete(m.clearedFields, integration.FieldProviderMaxPerDay)
 }
 
+// SetProviderEnforcement sets the "provider_enforcement" field.
+func (m *IntegrationMutation) SetProviderEnforcement(ie integration.ProviderEnforcement) {
+	m.provider_enforcement = &ie
+}
+
+// ProviderEnforcement returns the value of the "provider_enforcement" field in the mutation.
+func (m *IntegrationMutation) ProviderEnforcement() (r integration.ProviderEnforcement, exists bool) {
+	v := m.provider_enforcement
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderEnforcement returns the old "provider_enforcement" field's value of the Integration entity.
+// If the Integration object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationMutation) OldProviderEnforcement(ctx context.Context) (v *integration.ProviderEnforcement, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderEnforcement is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderEnforcement requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderEnforcement: %w", err)
+	}
+	return oldValue.ProviderEnforcement, nil
+}
+
+// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
+func (m *IntegrationMutation) ClearProviderEnforcement() {
+	m.provider_enforcement = nil
+	m.clearedFields[integration.FieldProviderEnforcement] = struct{}{}
+}
+
+// ProviderEnforcementCleared returns if the "provider_enforcement" field was cleared in this mutation.
+func (m *IntegrationMutation) ProviderEnforcementCleared() bool {
+	_, ok := m.clearedFields[integration.FieldProviderEnforcement]
+	return ok
+}
+
+// ResetProviderEnforcement resets all changes to the "provider_enforcement" field.
+func (m *IntegrationMutation) ResetProviderEnforcement() {
+	m.provider_enforcement = nil
+	delete(m.clearedFields, integration.FieldProviderEnforcement)
+}
+
+// SetProviderSandbox sets the "provider_sandbox" field.
+func (m *IntegrationMutation) SetProviderSandbox(b bool) {
+	m.provider_sandbox = &b
+}
+
+// ProviderSandbox returns the value of the "provider_sandbox" field in the mutation.
+func (m *IntegrationMutation) ProviderSandbox() (r bool, exists bool) {
+	v := m.provider_sandbox
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderSandbox returns the old "provider_sandbox" field's value of the Integration entity.
+// If the Integration object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationMutation) OldProviderSandbox(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderSandbox is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderSandbox requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderSandbox: %w", err)
+	}
+	return oldValue.ProviderSandbox, nil
+}
+
+// ResetProviderSandbox resets all changes to the "provider_sandbox" field.
+func (m *IntegrationMutation) ResetProviderSandbox() {
+	m.provider_sandbox = nil
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (m *IntegrationMutation) SetProviderQuotaCheckedAt(t time.Time) {
 	m.provider_quota_checked_at = &t
@@ -23292,7 +23379,7 @@ func (m *IntegrationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *IntegrationMutation) Fields() []string {
-	fields := make([]string, 0, 19)
+	fields := make([]string, 0, 21)
 	if m.created_at != nil {
 		fields = append(fields, integration.FieldCreatedAt)
 	}
@@ -23344,6 +23431,12 @@ func (m *IntegrationMutation) Fields() []string {
 	if m.provider_max_per_day != nil {
 		fields = append(fields, integration.FieldProviderMaxPerDay)
 	}
+	if m.provider_enforcement != nil {
+		fields = append(fields, integration.FieldProviderEnforcement)
+	}
+	if m.provider_sandbox != nil {
+		fields = append(fields, integration.FieldProviderSandbox)
+	}
 	if m.provider_quota_checked_at != nil {
 		fields = append(fields, integration.FieldProviderQuotaCheckedAt)
 	}
@@ -23392,6 +23485,10 @@ func (m *IntegrationMutation) Field(name string) (ent.Value, bool) {
 		return m.ProviderMaxPerSecond()
 	case integration.FieldProviderMaxPerDay:
 		return m.ProviderMaxPerDay()
+	case integration.FieldProviderEnforcement:
+		return m.ProviderEnforcement()
+	case integration.FieldProviderSandbox:
+		return m.ProviderSandbox()
 	case integration.FieldProviderQuotaCheckedAt:
 		return m.ProviderQuotaCheckedAt()
 	case integration.FieldProviderQuotaFailedAt:
@@ -23439,6 +23536,10 @@ func (m *IntegrationMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldProviderMaxPerSecond(ctx)
 	case integration.FieldProviderMaxPerDay:
 		return m.OldProviderMaxPerDay(ctx)
+	case integration.FieldProviderEnforcement:
+		return m.OldProviderEnforcement(ctx)
+	case integration.FieldProviderSandbox:
+		return m.OldProviderSandbox(ctx)
 	case integration.FieldProviderQuotaCheckedAt:
 		return m.OldProviderQuotaCheckedAt(ctx)
 	case integration.FieldProviderQuotaFailedAt:
@@ -23571,6 +23672,20 @@ func (m *IntegrationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProviderMaxPerDay(v)
 		return nil
+	case integration.FieldProviderEnforcement:
+		v, ok := value.(integration.ProviderEnforcement)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderEnforcement(v)
+		return nil
+	case integration.FieldProviderSandbox:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderSandbox(v)
+		return nil
 	case integration.FieldProviderQuotaCheckedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -23687,6 +23802,9 @@ func (m *IntegrationMutation) ClearedFields() []string {
 	if m.FieldCleared(integration.FieldProviderMaxPerDay) {
 		fields = append(fields, integration.FieldProviderMaxPerDay)
 	}
+	if m.FieldCleared(integration.FieldProviderEnforcement) {
+		fields = append(fields, integration.FieldProviderEnforcement)
+	}
 	if m.FieldCleared(integration.FieldProviderQuotaCheckedAt) {
 		fields = append(fields, integration.FieldProviderQuotaCheckedAt)
 	}
@@ -23727,6 +23845,9 @@ func (m *IntegrationMutation) ClearField(name string) error {
 		return nil
 	case integration.FieldProviderMaxPerDay:
 		m.ClearProviderMaxPerDay()
+		return nil
+	case integration.FieldProviderEnforcement:
+		m.ClearProviderEnforcement()
 		return nil
 	case integration.FieldProviderQuotaCheckedAt:
 		m.ClearProviderQuotaCheckedAt()
@@ -23792,6 +23913,12 @@ func (m *IntegrationMutation) ResetField(name string) error {
 		return nil
 	case integration.FieldProviderMaxPerDay:
 		m.ResetProviderMaxPerDay()
+		return nil
+	case integration.FieldProviderEnforcement:
+		m.ResetProviderEnforcement()
+		return nil
+	case integration.FieldProviderSandbox:
+		m.ResetProviderSandbox()
 		return nil
 	case integration.FieldProviderQuotaCheckedAt:
 		m.ResetProviderQuotaCheckedAt()

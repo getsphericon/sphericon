@@ -30879,6 +30879,12 @@ func (s *ProviderLimitWarning) Decode(d *jx.Decoder) error {
 		*s = ProviderLimitWarningUnlimited
 	case ProviderLimitWarningProviderQuotaUnavailable:
 		*s = ProviderLimitWarningProviderQuotaUnavailable
+	case ProviderLimitWarningProviderStopped:
+		*s = ProviderLimitWarningProviderStopped
+	case ProviderLimitWarningProviderProbation:
+		*s = ProviderLimitWarningProviderProbation
+	case ProviderLimitWarningProviderSandbox:
+		*s = ProviderLimitWarningProviderSandbox
 	default:
 		*s = ProviderLimitWarning(v)
 	}

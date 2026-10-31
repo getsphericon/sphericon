@@ -49,6 +49,10 @@ const (
 	FieldProviderMaxPerSecond = "provider_max_per_second"
 	// FieldProviderMaxPerDay holds the string denoting the provider_max_per_day field in the database.
 	FieldProviderMaxPerDay = "provider_max_per_day"
+	// FieldProviderEnforcement holds the string denoting the provider_enforcement field in the database.
+	FieldProviderEnforcement = "provider_enforcement"
+	// FieldProviderSandbox holds the string denoting the provider_sandbox field in the database.
+	FieldProviderSandbox = "provider_sandbox"
 	// FieldProviderQuotaCheckedAt holds the string denoting the provider_quota_checked_at field in the database.
 	FieldProviderQuotaCheckedAt = "provider_quota_checked_at"
 	// FieldProviderQuotaFailedAt holds the string denoting the provider_quota_failed_at field in the database.
@@ -104,6 +108,8 @@ var Columns = []string{
 	FieldMaxPerDay,
 	FieldProviderMaxPerSecond,
 	FieldProviderMaxPerDay,
+	FieldProviderEnforcement,
+	FieldProviderSandbox,
 	FieldProviderQuotaCheckedAt,
 	FieldProviderQuotaFailedAt,
 }
@@ -139,6 +145,8 @@ var (
 	MaxPerSecondValidator func(int) error
 	// MaxPerDayValidator is a validator for the "max_per_day" field. It is called by the builders before save.
 	MaxPerDayValidator func(int) error
+	// DefaultProviderSandbox holds the default value on creation for the "provider_sandbox" field.
+	DefaultProviderSandbox bool
 )
 
 // Channel defines the type for the "channel" enum field.
@@ -188,6 +196,29 @@ func ProviderValidator(pr Provider) error {
 		return nil
 	default:
 		return fmt.Errorf("integration: invalid enum value for provider field: %q", pr)
+	}
+}
+
+// ProviderEnforcement defines the type for the "provider_enforcement" enum field.
+type ProviderEnforcement string
+
+// ProviderEnforcement values.
+const (
+	ProviderEnforcementProbation ProviderEnforcement = "probation"
+	ProviderEnforcementShutdown  ProviderEnforcement = "shutdown"
+)
+
+func (pe ProviderEnforcement) String() string {
+	return string(pe)
+}
+
+// ProviderEnforcementValidator is a validator for the "provider_enforcement" field enum values. It is called by the builders before save.
+func ProviderEnforcementValidator(pe ProviderEnforcement) error {
+	switch pe {
+	case ProviderEnforcementProbation, ProviderEnforcementShutdown:
+		return nil
+	default:
+		return fmt.Errorf("integration: invalid enum value for provider_enforcement field: %q", pe)
 	}
 }
 
@@ -282,6 +313,16 @@ func ByProviderMaxPerSecond(opts ...sql.OrderTermOption) OrderOption {
 // ByProviderMaxPerDay orders the results by the provider_max_per_day field.
 func ByProviderMaxPerDay(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProviderMaxPerDay, opts...).ToFunc()
+}
+
+// ByProviderEnforcement orders the results by the provider_enforcement field.
+func ByProviderEnforcement(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProviderEnforcement, opts...).ToFunc()
+}
+
+// ByProviderSandbox orders the results by the provider_sandbox field.
+func ByProviderSandbox(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProviderSandbox, opts...).ToFunc()
 }
 
 // ByProviderQuotaCheckedAt orders the results by the provider_quota_checked_at field.

@@ -39,6 +39,7 @@ import type {
   IntegrationConfigInput,
   SiteIntegrationProvider,
   SiteIntegrationResource,
+  SiteProviderLimitWarning,
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -156,10 +157,32 @@ function IntegrationsList({
 }) {
   const { t } = useTranslation()
   const records = useSuspenseQuery(integrationsOptions(workspaceId)).data
-  const unlimited = records.filter((record) => record.providerLimit.warnings.includes('unlimited'))
-  const quotaUnavailable = records.filter((record) =>
-    record.providerLimit.warnings.includes('providerQuotaUnavailable'),
-  )
+  const withWarning = (warning: SiteProviderLimitWarning) =>
+    records.filter((record) => record.providerLimit.warnings.includes(warning))
+  const unlimited = withWarning('unlimited')
+  // What the provider says about each account (ADR 0067): a stopped account holds its sends, so
+  // it is flagged red; the rest are warnings.
+  const accountAlerts = [
+    ...withWarning('providerStopped').map((record) => ({
+      record,
+      color: 'red',
+      title: t(($) => $.settings.integrations.providerLimit.stoppedTitle, { name: record.name }),
+      body: t(($) => $.settings.integrations.providerLimit.stoppedWarning),
+    })),
+    ...withWarning('providerProbation').map((record) => ({
+      record,
+      color: 'yellow',
+      title: t(($) => $.settings.integrations.providerLimit.probationTitle, { name: record.name }),
+      body: t(($) => $.settings.integrations.providerLimit.probationWarning),
+    })),
+    ...withWarning('providerSandbox').map((record) => ({
+      record,
+      color: 'yellow',
+      title: t(($) => $.settings.integrations.providerLimit.sandboxTitle, { name: record.name }),
+      body: t(($) => $.settings.integrations.providerLimit.sandboxWarning),
+    })),
+  ]
+  const quotaUnavailable = withWarning('providerQuotaUnavailable')
 
   return (
     <>
@@ -174,6 +197,12 @@ function IntegrationsList({
           mb="sm"
         >
           {t(($) => $.settings.integrations.providerLimit.unlimitedWarning)}
+        </Alert>
+      ))}
+
+      {accountAlerts.map(({ record, color, title, body }) => (
+        <Alert key={`${record.id}-${title}`} color={color} variant="light" title={title} mb="sm">
+          {body}
         </Alert>
       ))}
 

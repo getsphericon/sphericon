@@ -1,0 +1,10 @@
+-- +goose NO TRANSACTION
+-- +goose Up
+-- modify "integrations" table: the provider account's standing, read with its quota (ADR 0067)
+ALTER TABLE "integrations" ADD COLUMN "provider_enforcement" character varying NULL, ADD COLUMN "provider_sandbox" boolean NOT NULL DEFAULT false;
+ALTER TABLE "integrations" ADD CONSTRAINT "integrations_provider_enforcement_check" CHECK ((provider_enforcement)::text = ANY ((ARRAY['probation'::character varying, 'shutdown'::character varying])::text[])) NOT VALID;
+ALTER TABLE "integrations" VALIDATE CONSTRAINT "integrations_provider_enforcement_check";
+
+-- +goose Down
+-- reverse: modify "integrations" table
+ALTER TABLE "integrations" DROP COLUMN "provider_sandbox", DROP COLUMN "provider_enforcement", DROP CONSTRAINT "integrations_provider_enforcement_check";

@@ -8,7 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -61,6 +63,14 @@ func TestEffectiveOfReportsAnUnavailableProviderQuota(t *testing.T) {
 	assert.True(t, providerlimit.EffectiveOf(&ent.Integration{ProviderQuotaFailedAt: new(time.Now())}).ProviderQuotaUnavailable)
 }
 
+func TestEffectiveOfReportsTheAccountStanding(t *testing.T) {
+	assert.Equal(t, messaging.EnforcementNone, providerlimit.EffectiveOf(&ent.Integration{}).Enforcement)
+	stopped := integration.ProviderEnforcementShutdown
+	eff := providerlimit.EffectiveOf(&ent.Integration{ProviderEnforcement: &stopped, ProviderSandbox: true})
+	assert.Equal(t, messaging.EnforcementShutdown, eff.Enforcement)
+	assert.True(t, eff.Sandbox)
+}
+
 func TestUsageCountsSentMessagesPerIntegrationOverTheLastDay(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
@@ -84,6 +94,12 @@ func TestWarningsListsWhatIsWorthFlaggedInAStableOrder(t *testing.T) {
 		{"no ceiling at all", providerlimit.Effective{}, []providerlimit.Warning{providerlimit.WarningUnlimited}},
 		{"provider quota unreadable", providerlimit.Effective{PerDay: limited, ProviderQuotaUnavailable: true}, []providerlimit.Warning{providerlimit.WarningProviderQuotaUnavailable}},
 		{"both", providerlimit.Effective{ProviderQuotaUnavailable: true}, []providerlimit.Warning{providerlimit.WarningUnlimited, providerlimit.WarningProviderQuotaUnavailable}},
+		{"account stopped", providerlimit.Effective{PerSecond: limited, Enforcement: messaging.EnforcementShutdown}, []providerlimit.Warning{providerlimit.WarningProviderStopped}},
+		{"account on probation", providerlimit.Effective{PerSecond: limited, Enforcement: messaging.EnforcementProbation}, []providerlimit.Warning{providerlimit.WarningProviderProbation}},
+		{"account in the sandbox", providerlimit.Effective{PerSecond: limited, Sandbox: true}, []providerlimit.Warning{providerlimit.WarningProviderSandbox}},
+		{"all", providerlimit.Effective{ProviderQuotaUnavailable: true, Enforcement: messaging.EnforcementShutdown, Sandbox: true}, []providerlimit.Warning{
+			providerlimit.WarningUnlimited, providerlimit.WarningProviderQuotaUnavailable, providerlimit.WarningProviderStopped, providerlimit.WarningProviderSandbox,
+		}},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

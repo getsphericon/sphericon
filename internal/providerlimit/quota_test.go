@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
@@ -172,4 +173,54 @@ func TestRefreshQuotaReturnsAnErrorWhenTheStoredConfigCannotBeRead(t *testing.T)
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	assert.Nil(t, row.ProviderMaxPerSecond, "no provider value is stored from a config that could not be read")
 	assert.Nil(t, row.ProviderQuotaCheckedAt)
+}
+
+func TestRefreshQuotaStoresTheAccountStanding(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	ses := &testhelper.FakeSES{}
+	cipher, catalog := envCipher(t), ses.Catalog()
+	ses.SetQuota(messaging.Quota{Enforcement: messaging.EnforcementProbation, Sandbox: true})
+
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+
+	row := reload(t, s, fixtures.IntegrationAcmeSesID)
+	require.NotNil(t, row.ProviderEnforcement)
+	assert.Equal(t, integration.ProviderEnforcementProbation, *row.ProviderEnforcement)
+	assert.True(t, row.ProviderSandbox)
+	assert.Equal(t, []providerlimit.Warning{
+		providerlimit.WarningUnlimited, providerlimit.WarningProviderProbation, providerlimit.WarningProviderSandbox,
+	}, providerlimit.EffectiveOf(row).Warnings())
+}
+
+func TestRefreshQuotaClearsTheStandingWhenTheAccountRecovers(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	ses := &testhelper.FakeSES{}
+	cipher, catalog := envCipher(t), ses.Catalog()
+	ses.SetQuota(messaging.Quota{Enforcement: messaging.EnforcementShutdown, Sandbox: true})
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+
+	ses.SetQuota(messaging.Quota{})
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+
+	row := reload(t, s, fixtures.IntegrationAcmeSesID)
+	assert.Nil(t, row.ProviderEnforcement)
+	assert.False(t, row.ProviderSandbox)
+}
+
+func TestRefreshQuotaFailureKeepsTheLastKnownStanding(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	ses := &testhelper.FakeSES{}
+	cipher, catalog := envCipher(t), ses.Catalog()
+	ses.SetQuota(messaging.Quota{Enforcement: messaging.EnforcementShutdown})
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+
+	ses.SetQuotaErr(errors.New("timeout"))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+
+	row := reload(t, s, fixtures.IntegrationAcmeSesID)
+	require.NotNil(t, row.ProviderEnforcement, "a failed read says nothing about the account, so the last answer stands")
+	assert.Equal(t, integration.ProviderEnforcementShutdown, *row.ProviderEnforcement)
 }

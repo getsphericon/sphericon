@@ -66,6 +66,15 @@ enum ProviderLimitWarning {
 
   /** The provider's send quota could not be read (no permission, or a compatible service without the call), so only the manual limit applies */
   providerQuotaUnavailable,
+
+  /** The provider has stopped the account (SES enforcement SHUTDOWN): sends through the Integration are held until it sends again */
+  providerStopped,
+
+  /** The provider has put the account under review (SES enforcement PROBATION); it still sends */
+  providerProbation,
+
+  /** The account is in the provider's sandbox (SES without production access): it delivers only to verified addresses */
+  providerSandbox,
 }
 
 /** One effective ceiling: the lowest of the manual and provider values, manual on a tie */

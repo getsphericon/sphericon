@@ -130,6 +130,11 @@ func ProviderMaxPerDay(v int) predicate.Integration {
 	return predicate.Integration(sql.FieldEQ(FieldProviderMaxPerDay, v))
 }
 
+// ProviderSandbox applies equality check predicate on the "provider_sandbox" field. It's identical to ProviderSandboxEQ.
+func ProviderSandbox(v bool) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldProviderSandbox, v))
+}
+
 // ProviderQuotaCheckedAt applies equality check predicate on the "provider_quota_checked_at" field. It's identical to ProviderQuotaCheckedAtEQ.
 func ProviderQuotaCheckedAt(v time.Time) predicate.Integration {
 	return predicate.Integration(sql.FieldEQ(FieldProviderQuotaCheckedAt, v))
@@ -893,6 +898,46 @@ func ProviderMaxPerDayIsNil() predicate.Integration {
 // ProviderMaxPerDayNotNil applies the NotNil predicate on the "provider_max_per_day" field.
 func ProviderMaxPerDayNotNil() predicate.Integration {
 	return predicate.Integration(sql.FieldNotNull(FieldProviderMaxPerDay))
+}
+
+// ProviderEnforcementEQ applies the EQ predicate on the "provider_enforcement" field.
+func ProviderEnforcementEQ(v ProviderEnforcement) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldProviderEnforcement, v))
+}
+
+// ProviderEnforcementNEQ applies the NEQ predicate on the "provider_enforcement" field.
+func ProviderEnforcementNEQ(v ProviderEnforcement) predicate.Integration {
+	return predicate.Integration(sql.FieldNEQ(FieldProviderEnforcement, v))
+}
+
+// ProviderEnforcementIn applies the In predicate on the "provider_enforcement" field.
+func ProviderEnforcementIn(vs ...ProviderEnforcement) predicate.Integration {
+	return predicate.Integration(sql.FieldIn(FieldProviderEnforcement, vs...))
+}
+
+// ProviderEnforcementNotIn applies the NotIn predicate on the "provider_enforcement" field.
+func ProviderEnforcementNotIn(vs ...ProviderEnforcement) predicate.Integration {
+	return predicate.Integration(sql.FieldNotIn(FieldProviderEnforcement, vs...))
+}
+
+// ProviderEnforcementIsNil applies the IsNil predicate on the "provider_enforcement" field.
+func ProviderEnforcementIsNil() predicate.Integration {
+	return predicate.Integration(sql.FieldIsNull(FieldProviderEnforcement))
+}
+
+// ProviderEnforcementNotNil applies the NotNil predicate on the "provider_enforcement" field.
+func ProviderEnforcementNotNil() predicate.Integration {
+	return predicate.Integration(sql.FieldNotNull(FieldProviderEnforcement))
+}
+
+// ProviderSandboxEQ applies the EQ predicate on the "provider_sandbox" field.
+func ProviderSandboxEQ(v bool) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldProviderSandbox, v))
+}
+
+// ProviderSandboxNEQ applies the NEQ predicate on the "provider_sandbox" field.
+func ProviderSandboxNEQ(v bool) predicate.Integration {
+	return predicate.Integration(sql.FieldNEQ(FieldProviderSandbox, v))
 }
 
 // ProviderQuotaCheckedAtEQ applies the EQ predicate on the "provider_quota_checked_at" field.

@@ -78,7 +78,8 @@ model BroadcastReport {
 
   /**
    * Why sending is currently held, when it is: `workspace_suspended`,
-   * `unverified_domain` or `no_integration`. A hold is reversible, not a failure.
+   * `unverified_domain`, `no_integration` or `provider_stopped` (the provider has
+   * stopped the account). A hold is reversible, not a failure.
    */
   holdReason?: string | null;
 

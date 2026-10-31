@@ -353,6 +353,35 @@ test('warns when the provider send quota could not be read', async () => {
     .toBeInTheDocument()
 })
 
+test.each([
+  [
+    'providerStopped' as const,
+    'Amazon SES: the provider has stopped this account',
+    'mail through it is on hold',
+  ],
+  [
+    'providerProbation' as const,
+    'Amazon SES: the provider has put this account under review',
+    'Mail still goes out',
+  ],
+  [
+    'providerSandbox' as const,
+    "Amazon SES: the account is in the provider's sandbox",
+    'only to verified addresses',
+  ],
+])('warns about the provider account standing: %s', async (warning, title, body) => {
+  const ses: SiteIntegrationResource = {
+    ...limited,
+    name: 'Amazon SES',
+    providerLimit: { ...limited.providerLimit, warnings: [warning] },
+  }
+  worker.use(list([ses]))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await expect.element(screen.getByText(title)).toBeInTheDocument()
+  await expect.element(screen.getByText(body, { exact: false })).toBeInTheDocument()
+})
+
 test('shows no quota warning when the provider quota is known', async () => {
   worker.use(list([limited]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)

@@ -40208,6 +40208,12 @@ func (s *SiteProviderLimitWarning) Decode(d *jx.Decoder) error {
 		*s = SiteProviderLimitWarningUnlimited
 	case SiteProviderLimitWarningProviderQuotaUnavailable:
 		*s = SiteProviderLimitWarningProviderQuotaUnavailable
+	case SiteProviderLimitWarningProviderStopped:
+		*s = SiteProviderLimitWarningProviderStopped
+	case SiteProviderLimitWarningProviderProbation:
+		*s = SiteProviderLimitWarningProviderProbation
+	case SiteProviderLimitWarningProviderSandbox:
+		*s = SiteProviderLimitWarningProviderSandbox
 	default:
 		*s = SiteProviderLimitWarning(v)
 	}

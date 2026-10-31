@@ -105,6 +105,25 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningProviderQuotaUnavailable}, status.Warnings)
 }
 
+// The read also brings the account's standing (ADR 0067): a stopped account, probation and
+// the sandbox are reported as warnings on the Integration.
+func TestSiteIntegrationsReportTheProviderAccountStanding(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	env.SES.SetQuota(messaging.Quota{PerSecond: new(1), Enforcement: messaging.EnforcementShutdown, Sandbox: true})
+
+	created, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.SiteCreateIntegrationInput{
+		Params: sesTopicParams,
+		Name:   "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
+	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+
+	status := reread(t, c, created.(*siteapi.SiteIntegrationResource).ID)
+	assert.Equal(t, []siteapi.SiteProviderLimitWarning{
+		siteapi.SiteProviderLimitWarningProviderStopped, siteapi.SiteProviderLimitWarningProviderSandbox,
+	}, status.Warnings)
+}
+
 // SMTP has no provider quota, so saving it asks nothing and never warns about one.
 func TestSiteIntegrationsSMTPSaveDoesNotLookUpAQuota(t *testing.T) {
 	env := testhelper.Setup(t)
