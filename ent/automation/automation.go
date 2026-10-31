@@ -23,26 +23,28 @@ const (
 	FieldWorkspaceID = "workspace_id"
 	// FieldDiscardedAt holds the string denoting the discarded_at field in the database.
 	FieldDiscardedAt = "discarded_at"
-	// FieldName holds the string denoting the name field in the database.
-	FieldName = "name"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldActivatedAt holds the string denoting the activated_at field in the database.
+	FieldActivatedAt = "activated_at"
 	// FieldLiveVersionID holds the string denoting the live_version_id field in the database.
 	FieldLiveVersionID = "live_version_id"
 	// FieldDraftVersionID holds the string denoting the draft_version_id field in the database.
 	FieldDraftVersionID = "draft_version_id"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
-	// EdgeRuns holds the string denoting the runs edge name in mutations.
-	EdgeRuns = "runs"
 	// EdgeVersions holds the string denoting the versions edge name in mutations.
 	EdgeVersions = "versions"
-	// EdgeOutboundMessages holds the string denoting the outbound_messages edge name in mutations.
-	EdgeOutboundMessages = "outbound_messages"
 	// EdgeLiveVersion holds the string denoting the live_version edge name in mutations.
 	EdgeLiveVersion = "live_version"
 	// EdgeDraftVersion holds the string denoting the draft_version edge name in mutations.
 	EdgeDraftVersion = "draft_version"
+	// EdgeRuns holds the string denoting the runs edge name in mutations.
+	EdgeRuns = "runs"
+	// EdgeOutboundMessages holds the string denoting the outbound_messages edge name in mutations.
+	EdgeOutboundMessages = "outbound_messages"
 	// Table holds the table name of the automation in the database.
 	Table = "automations"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -52,13 +54,6 @@ const (
 	WorkspaceInverseTable = "workspaces"
 	// WorkspaceColumn is the table column denoting the workspace relation/edge.
 	WorkspaceColumn = "workspace_id"
-	// RunsTable is the table that holds the runs relation/edge.
-	RunsTable = "automation_runs"
-	// RunsInverseTable is the table name for the AutomationRun entity.
-	// It exists in this package in order to avoid circular dependency with the "automationrun" package.
-	RunsInverseTable = "automation_runs"
-	// RunsColumn is the table column denoting the runs relation/edge.
-	RunsColumn = "automation_id"
 	// VersionsTable is the table that holds the versions relation/edge.
 	VersionsTable = "automation_versions"
 	// VersionsInverseTable is the table name for the AutomationVersion entity.
@@ -66,13 +61,6 @@ const (
 	VersionsInverseTable = "automation_versions"
 	// VersionsColumn is the table column denoting the versions relation/edge.
 	VersionsColumn = "automation_id"
-	// OutboundMessagesTable is the table that holds the outbound_messages relation/edge.
-	OutboundMessagesTable = "outbound_messages"
-	// OutboundMessagesInverseTable is the table name for the OutboundMessage entity.
-	// It exists in this package in order to avoid circular dependency with the "outboundmessage" package.
-	OutboundMessagesInverseTable = "outbound_messages"
-	// OutboundMessagesColumn is the table column denoting the outbound_messages relation/edge.
-	OutboundMessagesColumn = "automation_id"
 	// LiveVersionTable is the table that holds the live_version relation/edge.
 	LiveVersionTable = "automations"
 	// LiveVersionInverseTable is the table name for the AutomationVersion entity.
@@ -87,6 +75,20 @@ const (
 	DraftVersionInverseTable = "automation_versions"
 	// DraftVersionColumn is the table column denoting the draft_version relation/edge.
 	DraftVersionColumn = "draft_version_id"
+	// RunsTable is the table that holds the runs relation/edge.
+	RunsTable = "automation_runs"
+	// RunsInverseTable is the table name for the AutomationRun entity.
+	// It exists in this package in order to avoid circular dependency with the "automationrun" package.
+	RunsInverseTable = "automation_runs"
+	// RunsColumn is the table column denoting the runs relation/edge.
+	RunsColumn = "automation_id"
+	// OutboundMessagesTable is the table that holds the outbound_messages relation/edge.
+	OutboundMessagesTable = "outbound_messages"
+	// OutboundMessagesInverseTable is the table name for the OutboundMessage entity.
+	// It exists in this package in order to avoid circular dependency with the "outboundmessage" package.
+	OutboundMessagesInverseTable = "outbound_messages"
+	// OutboundMessagesColumn is the table column denoting the outbound_messages relation/edge.
+	OutboundMessagesColumn = "automation_id"
 )
 
 // Columns holds all SQL columns for automation fields.
@@ -96,10 +98,11 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldWorkspaceID,
 	FieldDiscardedAt,
-	FieldName,
 	FieldStatus,
+	FieldActivatedAt,
 	FieldLiveVersionID,
 	FieldDraftVersionID,
+	FieldName,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -177,14 +180,14 @@ func ByDiscardedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDiscardedAt, opts...).ToFunc()
 }
 
-// ByName orders the results by the name field.
-func ByName(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldName, opts...).ToFunc()
-}
-
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByActivatedAt orders the results by the activated_at field.
+func ByActivatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldActivatedAt, opts...).ToFunc()
 }
 
 // ByLiveVersionID orders the results by the live_version_id field.
@@ -197,24 +200,15 @@ func ByDraftVersionID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDraftVersionID, opts...).ToFunc()
 }
 
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
 // ByWorkspaceField orders the results by workspace field.
 func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newWorkspaceStep(), sql.OrderByField(field, opts...))
-	}
-}
-
-// ByRunsCount orders the results by runs count.
-func ByRunsCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newRunsStep(), opts...)
-	}
-}
-
-// ByRuns orders the results by runs terms.
-func ByRuns(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newRunsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -232,20 +226,6 @@ func ByVersions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByOutboundMessagesCount orders the results by outbound_messages count.
-func ByOutboundMessagesCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newOutboundMessagesStep(), opts...)
-	}
-}
-
-// ByOutboundMessages orders the results by outbound_messages terms.
-func ByOutboundMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newOutboundMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // ByLiveVersionField orders the results by live_version field.
 func ByLiveVersionField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -259,6 +239,34 @@ func ByDraftVersionField(field string, opts ...sql.OrderTermOption) OrderOption 
 		sqlgraph.OrderByNeighborTerms(s, newDraftVersionStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByRunsCount orders the results by runs count.
+func ByRunsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRunsStep(), opts...)
+	}
+}
+
+// ByRuns orders the results by runs terms.
+func ByRuns(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRunsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByOutboundMessagesCount orders the results by outbound_messages count.
+func ByOutboundMessagesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOutboundMessagesStep(), opts...)
+	}
+}
+
+// ByOutboundMessages orders the results by outbound_messages terms.
+func ByOutboundMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOutboundMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -266,25 +274,11 @@ func newWorkspaceStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
 	)
 }
-func newRunsStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(RunsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, RunsTable, RunsColumn),
-	)
-}
 func newVersionsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(VersionsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, VersionsTable, VersionsColumn),
-	)
-}
-func newOutboundMessagesStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(OutboundMessagesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, true, OutboundMessagesTable, OutboundMessagesColumn),
 	)
 }
 func newLiveVersionStep() *sqlgraph.Step {
@@ -299,5 +293,19 @@ func newDraftVersionStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(DraftVersionInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, DraftVersionTable, DraftVersionColumn),
+	)
+}
+func newRunsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RunsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RunsTable, RunsColumn),
+	)
+}
+func newOutboundMessagesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OutboundMessagesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, OutboundMessagesTable, OutboundMessagesColumn),
 	)
 }

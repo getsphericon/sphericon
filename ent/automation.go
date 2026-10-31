@@ -27,14 +27,16 @@ type Automation struct {
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// DiscardedAt holds the value of the "discarded_at" field.
 	DiscardedAt *time.Time `json:"discarded_at,omitempty"`
-	// Name holds the value of the "name" field.
-	Name string `json:"name,omitempty"`
 	// Status holds the value of the "status" field.
 	Status automation.Status `json:"status,omitempty"`
+	// ActivatedAt holds the value of the "activated_at" field.
+	ActivatedAt *time.Time `json:"activated_at,omitempty"`
 	// LiveVersionID holds the value of the "live_version_id" field.
 	LiveVersionID *int64 `json:"live_version_id,omitempty"`
 	// DraftVersionID holds the value of the "draft_version_id" field.
 	DraftVersionID *int64 `json:"draft_version_id,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationQuery when eager-loading is set.
 	Edges        AutomationEdges `json:"edges"`
@@ -45,16 +47,16 @@ type Automation struct {
 type AutomationEdges struct {
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
-	// Runs holds the value of the runs edge.
-	Runs []*AutomationRun `json:"runs,omitempty"`
 	// Versions holds the value of the versions edge.
 	Versions []*AutomationVersion `json:"versions,omitempty"`
-	// OutboundMessages holds the value of the outbound_messages edge.
-	OutboundMessages []*OutboundMessage `json:"outbound_messages,omitempty"`
 	// LiveVersion holds the value of the live_version edge.
 	LiveVersion *AutomationVersion `json:"live_version,omitempty"`
 	// DraftVersion holds the value of the draft_version edge.
 	DraftVersion *AutomationVersion `json:"draft_version,omitempty"`
+	// Runs holds the value of the runs edge.
+	Runs []*AutomationRun `json:"runs,omitempty"`
+	// OutboundMessages holds the value of the outbound_messages edge.
+	OutboundMessages []*OutboundMessage `json:"outbound_messages,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [6]bool
@@ -71,31 +73,13 @@ func (e AutomationEdges) WorkspaceOrErr() (*Workspace, error) {
 	return nil, &NotLoadedError{edge: "workspace"}
 }
 
-// RunsOrErr returns the Runs value or an error if the edge
-// was not loaded in eager-loading.
-func (e AutomationEdges) RunsOrErr() ([]*AutomationRun, error) {
-	if e.loadedTypes[1] {
-		return e.Runs, nil
-	}
-	return nil, &NotLoadedError{edge: "runs"}
-}
-
 // VersionsOrErr returns the Versions value or an error if the edge
 // was not loaded in eager-loading.
 func (e AutomationEdges) VersionsOrErr() ([]*AutomationVersion, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[1] {
 		return e.Versions, nil
 	}
 	return nil, &NotLoadedError{edge: "versions"}
-}
-
-// OutboundMessagesOrErr returns the OutboundMessages value or an error if the edge
-// was not loaded in eager-loading.
-func (e AutomationEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
-	if e.loadedTypes[3] {
-		return e.OutboundMessages, nil
-	}
-	return nil, &NotLoadedError{edge: "outbound_messages"}
 }
 
 // LiveVersionOrErr returns the LiveVersion value or an error if the edge
@@ -103,7 +87,7 @@ func (e AutomationEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
 func (e AutomationEdges) LiveVersionOrErr() (*AutomationVersion, error) {
 	if e.LiveVersion != nil {
 		return e.LiveVersion, nil
-	} else if e.loadedTypes[4] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: automationversion.Label}
 	}
 	return nil, &NotLoadedError{edge: "live_version"}
@@ -114,10 +98,28 @@ func (e AutomationEdges) LiveVersionOrErr() (*AutomationVersion, error) {
 func (e AutomationEdges) DraftVersionOrErr() (*AutomationVersion, error) {
 	if e.DraftVersion != nil {
 		return e.DraftVersion, nil
-	} else if e.loadedTypes[5] {
+	} else if e.loadedTypes[3] {
 		return nil, &NotFoundError{label: automationversion.Label}
 	}
 	return nil, &NotLoadedError{edge: "draft_version"}
+}
+
+// RunsOrErr returns the Runs value or an error if the edge
+// was not loaded in eager-loading.
+func (e AutomationEdges) RunsOrErr() ([]*AutomationRun, error) {
+	if e.loadedTypes[4] {
+		return e.Runs, nil
+	}
+	return nil, &NotLoadedError{edge: "runs"}
+}
+
+// OutboundMessagesOrErr returns the OutboundMessages value or an error if the edge
+// was not loaded in eager-loading.
+func (e AutomationEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
+	if e.loadedTypes[5] {
+		return e.OutboundMessages, nil
+	}
+	return nil, &NotLoadedError{edge: "outbound_messages"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -127,9 +129,9 @@ func (*Automation) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case automation.FieldID, automation.FieldWorkspaceID, automation.FieldLiveVersionID, automation.FieldDraftVersionID:
 			values[i] = new(sql.NullInt64)
-		case automation.FieldName, automation.FieldStatus:
+		case automation.FieldStatus, automation.FieldName:
 			values[i] = new(sql.NullString)
-		case automation.FieldCreatedAt, automation.FieldUpdatedAt, automation.FieldDiscardedAt:
+		case automation.FieldCreatedAt, automation.FieldUpdatedAt, automation.FieldDiscardedAt, automation.FieldActivatedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -177,17 +179,18 @@ func (_m *Automation) assignValues(columns []string, values []any) error {
 				_m.DiscardedAt = new(time.Time)
 				*_m.DiscardedAt = value.Time
 			}
-		case automation.FieldName:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field name", values[i])
-			} else if value.Valid {
-				_m.Name = value.String
-			}
 		case automation.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				_m.Status = automation.Status(value.String)
+			}
+		case automation.FieldActivatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field activated_at", values[i])
+			} else if value.Valid {
+				_m.ActivatedAt = new(time.Time)
+				*_m.ActivatedAt = value.Time
 			}
 		case automation.FieldLiveVersionID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -202,6 +205,12 @@ func (_m *Automation) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DraftVersionID = new(int64)
 				*_m.DraftVersionID = value.Int64
+			}
+		case automation.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				_m.Name = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -221,19 +230,9 @@ func (_m *Automation) QueryWorkspace() *WorkspaceQuery {
 	return NewAutomationClient(_m.config).QueryWorkspace(_m)
 }
 
-// QueryRuns queries the "runs" edge of the Automation entity.
-func (_m *Automation) QueryRuns() *AutomationRunQuery {
-	return NewAutomationClient(_m.config).QueryRuns(_m)
-}
-
 // QueryVersions queries the "versions" edge of the Automation entity.
 func (_m *Automation) QueryVersions() *AutomationVersionQuery {
 	return NewAutomationClient(_m.config).QueryVersions(_m)
-}
-
-// QueryOutboundMessages queries the "outbound_messages" edge of the Automation entity.
-func (_m *Automation) QueryOutboundMessages() *OutboundMessageQuery {
-	return NewAutomationClient(_m.config).QueryOutboundMessages(_m)
 }
 
 // QueryLiveVersion queries the "live_version" edge of the Automation entity.
@@ -244,6 +243,16 @@ func (_m *Automation) QueryLiveVersion() *AutomationVersionQuery {
 // QueryDraftVersion queries the "draft_version" edge of the Automation entity.
 func (_m *Automation) QueryDraftVersion() *AutomationVersionQuery {
 	return NewAutomationClient(_m.config).QueryDraftVersion(_m)
+}
+
+// QueryRuns queries the "runs" edge of the Automation entity.
+func (_m *Automation) QueryRuns() *AutomationRunQuery {
+	return NewAutomationClient(_m.config).QueryRuns(_m)
+}
+
+// QueryOutboundMessages queries the "outbound_messages" edge of the Automation entity.
+func (_m *Automation) QueryOutboundMessages() *OutboundMessageQuery {
+	return NewAutomationClient(_m.config).QueryOutboundMessages(_m)
 }
 
 // Update returns a builder for updating this Automation.
@@ -283,11 +292,13 @@ func (_m *Automation) String() string {
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
-	builder.WriteString("name=")
-	builder.WriteString(_m.Name)
-	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))
+	builder.WriteString(", ")
+	if v := _m.ActivatedAt; v != nil {
+		builder.WriteString("activated_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	if v := _m.LiveVersionID; v != nil {
 		builder.WriteString("live_version_id=")
@@ -298,6 +309,9 @@ func (_m *Automation) String() string {
 		builder.WriteString("draft_version_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("name=")
+	builder.WriteString(_m.Name)
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -27,8 +27,6 @@ type Rule struct {
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// DiscardedAt holds the value of the "discarded_at" field.
 	DiscardedAt *time.Time `json:"discarded_at,omitempty"`
-	// Name holds the value of the "name" field.
-	Name string `json:"name,omitempty"`
 	// Status holds the value of the "status" field.
 	Status rule.Status `json:"status,omitempty"`
 	// ActivatedAt holds the value of the "activated_at" field.
@@ -37,6 +35,8 @@ type Rule struct {
 	LiveVersionID *int64 `json:"live_version_id,omitempty"`
 	// DraftVersionID holds the value of the "draft_version_id" field.
 	DraftVersionID *int64 `json:"draft_version_id,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RuleQuery when eager-loading is set.
 	Edges        RuleEdges `json:"edges"`
@@ -118,7 +118,7 @@ func (*Rule) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case rule.FieldID, rule.FieldWorkspaceID, rule.FieldLiveVersionID, rule.FieldDraftVersionID:
 			values[i] = new(sql.NullInt64)
-		case rule.FieldName, rule.FieldStatus:
+		case rule.FieldStatus, rule.FieldName:
 			values[i] = new(sql.NullString)
 		case rule.FieldCreatedAt, rule.FieldUpdatedAt, rule.FieldDiscardedAt, rule.FieldActivatedAt:
 			values[i] = new(sql.NullTime)
@@ -168,12 +168,6 @@ func (_m *Rule) assignValues(columns []string, values []any) error {
 				_m.DiscardedAt = new(time.Time)
 				*_m.DiscardedAt = value.Time
 			}
-		case rule.FieldName:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field name", values[i])
-			} else if value.Valid {
-				_m.Name = value.String
-			}
 		case rule.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
@@ -200,6 +194,12 @@ func (_m *Rule) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DraftVersionID = new(int64)
 				*_m.DraftVersionID = value.Int64
+			}
+		case rule.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				_m.Name = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -276,9 +276,6 @@ func (_m *Rule) String() string {
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
-	builder.WriteString("name=")
-	builder.WriteString(_m.Name)
-	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))
 	builder.WriteString(", ")
@@ -296,6 +293,9 @@ func (_m *Rule) String() string {
 		builder.WriteString("draft_version_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("name=")
+	builder.WriteString(_m.Name)
 	builder.WriteByte(')')
 	return builder.String()
 }

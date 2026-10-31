@@ -262,8 +262,9 @@ type Invoker interface {
 	SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (SiteAutomationReportsGetRes, error)
 	// SiteAutomationsArchive invokes SiteAutomations_archive operation.
 	//
-	// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
-	// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
+	// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
+	// (`usedBy` carries their count).
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/archive
 	SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (SiteAutomationsArchiveRes, error)
@@ -318,7 +319,7 @@ type Invoker interface {
 	SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (SiteAutomationsRevertRes, error)
 	// SiteAutomationsUnarchive invokes SiteAutomations_unarchive operation.
 	//
-	// Restore an archived automation to the list.
+	// Restore an archived automation to the list, inactive: only publish makes it enroll again.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/unarchive
 	SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (SiteAutomationsUnarchiveRes, error)
@@ -5282,8 +5283,9 @@ func (c *Client) sendSiteAutomationReportsGet(ctx context.Context, params SiteAu
 
 // SiteAutomationsArchive invokes SiteAutomations_archive operation.
 //
-// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
-// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
+// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
+// (`usedBy` carries their count).
 //
 // POST /workspaces/{workspaceId}/automations/{id}/archive
 func (c *Client) SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (SiteAutomationsArchiveRes, error) {
@@ -6690,7 +6692,7 @@ func (c *Client) sendSiteAutomationsRevert(ctx context.Context, params SiteAutom
 
 // SiteAutomationsUnarchive invokes SiteAutomations_unarchive operation.
 //
-// Restore an archived automation to the list.
+// Restore an archived automation to the list, inactive: only publish makes it enroll again.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/unarchive
 func (c *Client) SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (SiteAutomationsUnarchiveRes, error) {

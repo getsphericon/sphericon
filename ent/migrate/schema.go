@@ -153,8 +153,9 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
-		{Name: "name", Type: field.TypeString},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "inactive"}, Default: "inactive"},
+		{Name: "activated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "name", Type: field.TypeString},
 		{Name: "live_version_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "draft_version_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -167,38 +168,38 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automations_automation_versions_live_version",
-				Columns:    []*schema.Column{AutomationsColumns[6]},
-				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "automations_automation_versions_draft_version",
 				Columns:    []*schema.Column{AutomationsColumns[7]},
 				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
-				Symbol:     "automations_workspaces_automations",
+				Symbol:     "automations_automation_versions_draft_version",
 				Columns:    []*schema.Column{AutomationsColumns[8]},
+				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "automations_workspaces_automations",
+				Columns:    []*schema.Column{AutomationsColumns[9]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "automation_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{AutomationsColumns[8]},
-			},
-			{
 				Name:    "automation_live_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationsColumns[6]},
+				Columns: []*schema.Column{AutomationsColumns[7]},
 			},
 			{
 				Name:    "automation_draft_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationsColumns[7]},
+				Columns: []*schema.Column{AutomationsColumns[8]},
+			},
+			{
+				Name:    "automation_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationsColumns[9]},
 			},
 		},
 	}
@@ -1817,9 +1818,9 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
-		{Name: "name", Type: field.TypeString},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "inactive"}, Default: "inactive"},
 		{Name: "activated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "name", Type: field.TypeString},
 		{Name: "live_version_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "draft_version_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -1851,11 +1852,6 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "rule_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{RulesColumns[9]},
-			},
-			{
 				Name:    "rule_live_version_id",
 				Unique:  false,
 				Columns: []*schema.Column{RulesColumns[7]},
@@ -1864,6 +1860,11 @@ var (
 				Name:    "rule_draft_version_id",
 				Unique:  false,
 				Columns: []*schema.Column{RulesColumns[8]},
+			},
+			{
+				Name:    "rule_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{RulesColumns[9]},
 			},
 		},
 	}
@@ -1879,7 +1880,7 @@ var (
 		{Name: "completed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "rule_id", Type: field.TypeInt64},
 		{Name: "contact_id", Type: field.TypeInt64},
-		{Name: "version_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "version_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// RuleFiringsTable holds the schema information for the "rule_firings" table.

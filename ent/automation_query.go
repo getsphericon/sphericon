@@ -29,11 +29,11 @@ type AutomationQuery struct {
 	inters               []Interceptor
 	predicates           []predicate.Automation
 	withWorkspace        *WorkspaceQuery
-	withRuns             *AutomationRunQuery
 	withVersions         *AutomationVersionQuery
-	withOutboundMessages *OutboundMessageQuery
 	withLiveVersion      *AutomationVersionQuery
 	withDraftVersion     *AutomationVersionQuery
+	withRuns             *AutomationRunQuery
+	withOutboundMessages *OutboundMessageQuery
 	modifiers            []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -93,28 +93,6 @@ func (_q *AutomationQuery) QueryWorkspace() *WorkspaceQuery {
 	return query
 }
 
-// QueryRuns chains the current query on the "runs" edge.
-func (_q *AutomationQuery) QueryRuns() *AutomationRunQuery {
-	query := (&AutomationRunClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(automation.Table, automation.FieldID, selector),
-			sqlgraph.To(automationrun.Table, automationrun.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, automation.RunsTable, automation.RunsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
 // QueryVersions chains the current query on the "versions" edge.
 func (_q *AutomationQuery) QueryVersions() *AutomationVersionQuery {
 	query := (&AutomationVersionClient{config: _q.config}).Query()
@@ -130,28 +108,6 @@ func (_q *AutomationQuery) QueryVersions() *AutomationVersionQuery {
 			sqlgraph.From(automation.Table, automation.FieldID, selector),
 			sqlgraph.To(automationversion.Table, automationversion.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, automation.VersionsTable, automation.VersionsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryOutboundMessages chains the current query on the "outbound_messages" edge.
-func (_q *AutomationQuery) QueryOutboundMessages() *OutboundMessageQuery {
-	query := (&OutboundMessageClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(automation.Table, automation.FieldID, selector),
-			sqlgraph.To(outboundmessage.Table, outboundmessage.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, automation.OutboundMessagesTable, automation.OutboundMessagesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -196,6 +152,50 @@ func (_q *AutomationQuery) QueryDraftVersion() *AutomationVersionQuery {
 			sqlgraph.From(automation.Table, automation.FieldID, selector),
 			sqlgraph.To(automationversion.Table, automationversion.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, automation.DraftVersionTable, automation.DraftVersionColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRuns chains the current query on the "runs" edge.
+func (_q *AutomationQuery) QueryRuns() *AutomationRunQuery {
+	query := (&AutomationRunClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automation.Table, automation.FieldID, selector),
+			sqlgraph.To(automationrun.Table, automationrun.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, automation.RunsTable, automation.RunsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOutboundMessages chains the current query on the "outbound_messages" edge.
+func (_q *AutomationQuery) QueryOutboundMessages() *OutboundMessageQuery {
+	query := (&OutboundMessageClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automation.Table, automation.FieldID, selector),
+			sqlgraph.To(outboundmessage.Table, outboundmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, automation.OutboundMessagesTable, automation.OutboundMessagesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -396,11 +396,11 @@ func (_q *AutomationQuery) Clone() *AutomationQuery {
 		inters:               append([]Interceptor{}, _q.inters...),
 		predicates:           append([]predicate.Automation{}, _q.predicates...),
 		withWorkspace:        _q.withWorkspace.Clone(),
-		withRuns:             _q.withRuns.Clone(),
 		withVersions:         _q.withVersions.Clone(),
-		withOutboundMessages: _q.withOutboundMessages.Clone(),
 		withLiveVersion:      _q.withLiveVersion.Clone(),
 		withDraftVersion:     _q.withDraftVersion.Clone(),
+		withRuns:             _q.withRuns.Clone(),
+		withOutboundMessages: _q.withOutboundMessages.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -419,17 +419,6 @@ func (_q *AutomationQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *Automat
 	return _q
 }
 
-// WithRuns tells the query-builder to eager-load the nodes that are connected to
-// the "runs" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *AutomationQuery) WithRuns(opts ...func(*AutomationRunQuery)) *AutomationQuery {
-	query := (&AutomationRunClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withRuns = query
-	return _q
-}
-
 // WithVersions tells the query-builder to eager-load the nodes that are connected to
 // the "versions" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *AutomationQuery) WithVersions(opts ...func(*AutomationVersionQuery)) *AutomationQuery {
@@ -438,17 +427,6 @@ func (_q *AutomationQuery) WithVersions(opts ...func(*AutomationVersionQuery)) *
 		opt(query)
 	}
 	_q.withVersions = query
-	return _q
-}
-
-// WithOutboundMessages tells the query-builder to eager-load the nodes that are connected to
-// the "outbound_messages" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *AutomationQuery) WithOutboundMessages(opts ...func(*OutboundMessageQuery)) *AutomationQuery {
-	query := (&OutboundMessageClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withOutboundMessages = query
 	return _q
 }
 
@@ -471,6 +449,28 @@ func (_q *AutomationQuery) WithDraftVersion(opts ...func(*AutomationVersionQuery
 		opt(query)
 	}
 	_q.withDraftVersion = query
+	return _q
+}
+
+// WithRuns tells the query-builder to eager-load the nodes that are connected to
+// the "runs" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *AutomationQuery) WithRuns(opts ...func(*AutomationRunQuery)) *AutomationQuery {
+	query := (&AutomationRunClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withRuns = query
+	return _q
+}
+
+// WithOutboundMessages tells the query-builder to eager-load the nodes that are connected to
+// the "outbound_messages" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *AutomationQuery) WithOutboundMessages(opts ...func(*OutboundMessageQuery)) *AutomationQuery {
+	query := (&OutboundMessageClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withOutboundMessages = query
 	return _q
 }
 
@@ -554,11 +554,11 @@ func (_q *AutomationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*A
 		_spec       = _q.querySpec()
 		loadedTypes = [6]bool{
 			_q.withWorkspace != nil,
-			_q.withRuns != nil,
 			_q.withVersions != nil,
-			_q.withOutboundMessages != nil,
 			_q.withLiveVersion != nil,
 			_q.withDraftVersion != nil,
+			_q.withRuns != nil,
+			_q.withOutboundMessages != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -588,26 +588,10 @@ func (_q *AutomationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*A
 			return nil, err
 		}
 	}
-	if query := _q.withRuns; query != nil {
-		if err := _q.loadRuns(ctx, query, nodes,
-			func(n *Automation) { n.Edges.Runs = []*AutomationRun{} },
-			func(n *Automation, e *AutomationRun) { n.Edges.Runs = append(n.Edges.Runs, e) }); err != nil {
-			return nil, err
-		}
-	}
 	if query := _q.withVersions; query != nil {
 		if err := _q.loadVersions(ctx, query, nodes,
 			func(n *Automation) { n.Edges.Versions = []*AutomationVersion{} },
 			func(n *Automation, e *AutomationVersion) { n.Edges.Versions = append(n.Edges.Versions, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withOutboundMessages; query != nil {
-		if err := _q.loadOutboundMessages(ctx, query, nodes,
-			func(n *Automation) { n.Edges.OutboundMessages = []*OutboundMessage{} },
-			func(n *Automation, e *OutboundMessage) {
-				n.Edges.OutboundMessages = append(n.Edges.OutboundMessages, e)
-			}); err != nil {
 			return nil, err
 		}
 	}
@@ -620,6 +604,22 @@ func (_q *AutomationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*A
 	if query := _q.withDraftVersion; query != nil {
 		if err := _q.loadDraftVersion(ctx, query, nodes, nil,
 			func(n *Automation, e *AutomationVersion) { n.Edges.DraftVersion = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withRuns; query != nil {
+		if err := _q.loadRuns(ctx, query, nodes,
+			func(n *Automation) { n.Edges.Runs = []*AutomationRun{} },
+			func(n *Automation, e *AutomationRun) { n.Edges.Runs = append(n.Edges.Runs, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withOutboundMessages; query != nil {
+		if err := _q.loadOutboundMessages(ctx, query, nodes,
+			func(n *Automation) { n.Edges.OutboundMessages = []*OutboundMessage{} },
+			func(n *Automation, e *OutboundMessage) {
+				n.Edges.OutboundMessages = append(n.Edges.OutboundMessages, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -655,36 +655,6 @@ func (_q *AutomationQuery) loadWorkspace(ctx context.Context, query *WorkspaceQu
 	}
 	return nil
 }
-func (_q *AutomationQuery) loadRuns(ctx context.Context, query *AutomationRunQuery, nodes []*Automation, init func(*Automation), assign func(*Automation, *AutomationRun)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int64]*Automation)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(automationrun.FieldAutomationID)
-	}
-	query.Where(predicate.AutomationRun(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(automation.RunsColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.AutomationID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "automation_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
 func (_q *AutomationQuery) loadVersions(ctx context.Context, query *AutomationVersionQuery, nodes []*Automation, init func(*Automation), assign func(*Automation, *AutomationVersion)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int64]*Automation)
@@ -710,39 +680,6 @@ func (_q *AutomationQuery) loadVersions(ctx context.Context, query *AutomationVe
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "automation_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *AutomationQuery) loadOutboundMessages(ctx context.Context, query *OutboundMessageQuery, nodes []*Automation, init func(*Automation), assign func(*Automation, *OutboundMessage)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int64]*Automation)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(outboundmessage.FieldAutomationID)
-	}
-	query.Where(predicate.OutboundMessage(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(automation.OutboundMessagesColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.AutomationID
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "automation_id" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "automation_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -809,6 +746,69 @@ func (_q *AutomationQuery) loadDraftVersion(ctx context.Context, query *Automati
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (_q *AutomationQuery) loadRuns(ctx context.Context, query *AutomationRunQuery, nodes []*Automation, init func(*Automation), assign func(*Automation, *AutomationRun)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Automation)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(automationrun.FieldAutomationID)
+	}
+	query.Where(predicate.AutomationRun(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(automation.RunsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.AutomationID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "automation_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *AutomationQuery) loadOutboundMessages(ctx context.Context, query *OutboundMessageQuery, nodes []*Automation, init func(*Automation), assign func(*Automation, *OutboundMessage)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Automation)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(outboundmessage.FieldAutomationID)
+	}
+	query.Where(predicate.OutboundMessage(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(automation.OutboundMessagesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.AutomationID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "automation_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "automation_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

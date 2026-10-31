@@ -73,20 +73,6 @@ func (_u *AutomationUpdate) ClearDiscardedAt() *AutomationUpdate {
 	return _u
 }
 
-// SetName sets the "name" field.
-func (_u *AutomationUpdate) SetName(v string) *AutomationUpdate {
-	_u.mutation.SetName(v)
-	return _u
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (_u *AutomationUpdate) SetNillableName(v *string) *AutomationUpdate {
-	if v != nil {
-		_u.SetName(*v)
-	}
-	return _u
-}
-
 // SetStatus sets the "status" field.
 func (_u *AutomationUpdate) SetStatus(v automation.Status) *AutomationUpdate {
 	_u.mutation.SetStatus(v)
@@ -98,6 +84,26 @@ func (_u *AutomationUpdate) SetNillableStatus(v *automation.Status) *AutomationU
 	if v != nil {
 		_u.SetStatus(*v)
 	}
+	return _u
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (_u *AutomationUpdate) SetActivatedAt(v time.Time) *AutomationUpdate {
+	_u.mutation.SetActivatedAt(v)
+	return _u
+}
+
+// SetNillableActivatedAt sets the "activated_at" field if the given value is not nil.
+func (_u *AutomationUpdate) SetNillableActivatedAt(v *time.Time) *AutomationUpdate {
+	if v != nil {
+		_u.SetActivatedAt(*v)
+	}
+	return _u
+}
+
+// ClearActivatedAt clears the value of the "activated_at" field.
+func (_u *AutomationUpdate) ClearActivatedAt() *AutomationUpdate {
+	_u.mutation.ClearActivatedAt()
 	return _u
 }
 
@@ -141,24 +147,23 @@ func (_u *AutomationUpdate) ClearDraftVersionID() *AutomationUpdate {
 	return _u
 }
 
-// SetWorkspace sets the "workspace" edge to the Workspace entity.
-func (_u *AutomationUpdate) SetWorkspace(v *Workspace) *AutomationUpdate {
-	return _u.SetWorkspaceID(v.ID)
-}
-
-// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
-func (_u *AutomationUpdate) AddRunIDs(ids ...int64) *AutomationUpdate {
-	_u.mutation.AddRunIDs(ids...)
+// SetName sets the "name" field.
+func (_u *AutomationUpdate) SetName(v string) *AutomationUpdate {
+	_u.mutation.SetName(v)
 	return _u
 }
 
-// AddRuns adds the "runs" edges to the AutomationRun entity.
-func (_u *AutomationUpdate) AddRuns(v ...*AutomationRun) *AutomationUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetNillableName sets the "name" field if the given value is not nil.
+func (_u *AutomationUpdate) SetNillableName(v *string) *AutomationUpdate {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return _u.AddRunIDs(ids...)
+	return _u
+}
+
+// SetWorkspace sets the "workspace" edge to the Workspace entity.
+func (_u *AutomationUpdate) SetWorkspace(v *Workspace) *AutomationUpdate {
+	return _u.SetWorkspaceID(v.ID)
 }
 
 // AddVersionIDs adds the "versions" edge to the AutomationVersion entity by IDs.
@@ -176,6 +181,31 @@ func (_u *AutomationUpdate) AddVersions(v ...*AutomationVersion) *AutomationUpda
 	return _u.AddVersionIDs(ids...)
 }
 
+// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdate) SetLiveVersion(v *AutomationVersion) *AutomationUpdate {
+	return _u.SetLiveVersionID(v.ID)
+}
+
+// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdate) SetDraftVersion(v *AutomationVersion) *AutomationUpdate {
+	return _u.SetDraftVersionID(v.ID)
+}
+
+// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
+func (_u *AutomationUpdate) AddRunIDs(ids ...int64) *AutomationUpdate {
+	_u.mutation.AddRunIDs(ids...)
+	return _u
+}
+
+// AddRuns adds the "runs" edges to the AutomationRun entity.
+func (_u *AutomationUpdate) AddRuns(v ...*AutomationRun) *AutomationUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRunIDs(ids...)
+}
+
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
 func (_u *AutomationUpdate) AddOutboundMessageIDs(ids ...int64) *AutomationUpdate {
 	_u.mutation.AddOutboundMessageIDs(ids...)
@@ -191,16 +221,6 @@ func (_u *AutomationUpdate) AddOutboundMessages(v ...*OutboundMessage) *Automati
 	return _u.AddOutboundMessageIDs(ids...)
 }
 
-// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
-func (_u *AutomationUpdate) SetLiveVersion(v *AutomationVersion) *AutomationUpdate {
-	return _u.SetLiveVersionID(v.ID)
-}
-
-// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
-func (_u *AutomationUpdate) SetDraftVersion(v *AutomationVersion) *AutomationUpdate {
-	return _u.SetDraftVersionID(v.ID)
-}
-
 // Mutation returns the AutomationMutation object of the builder.
 func (_u *AutomationUpdate) Mutation() *AutomationMutation {
 	return _u.mutation
@@ -209,6 +229,39 @@ func (_u *AutomationUpdate) Mutation() *AutomationMutation {
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (_u *AutomationUpdate) ClearWorkspace() *AutomationUpdate {
 	_u.mutation.ClearWorkspace()
+	return _u
+}
+
+// ClearVersions clears all "versions" edges to the AutomationVersion entity.
+func (_u *AutomationUpdate) ClearVersions() *AutomationUpdate {
+	_u.mutation.ClearVersions()
+	return _u
+}
+
+// RemoveVersionIDs removes the "versions" edge to AutomationVersion entities by IDs.
+func (_u *AutomationUpdate) RemoveVersionIDs(ids ...int64) *AutomationUpdate {
+	_u.mutation.RemoveVersionIDs(ids...)
+	return _u
+}
+
+// RemoveVersions removes "versions" edges to AutomationVersion entities.
+func (_u *AutomationUpdate) RemoveVersions(v ...*AutomationVersion) *AutomationUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveVersionIDs(ids...)
+}
+
+// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdate) ClearLiveVersion() *AutomationUpdate {
+	_u.mutation.ClearLiveVersion()
+	return _u
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdate) ClearDraftVersion() *AutomationUpdate {
+	_u.mutation.ClearDraftVersion()
 	return _u
 }
 
@@ -233,27 +286,6 @@ func (_u *AutomationUpdate) RemoveRuns(v ...*AutomationRun) *AutomationUpdate {
 	return _u.RemoveRunIDs(ids...)
 }
 
-// ClearVersions clears all "versions" edges to the AutomationVersion entity.
-func (_u *AutomationUpdate) ClearVersions() *AutomationUpdate {
-	_u.mutation.ClearVersions()
-	return _u
-}
-
-// RemoveVersionIDs removes the "versions" edge to AutomationVersion entities by IDs.
-func (_u *AutomationUpdate) RemoveVersionIDs(ids ...int64) *AutomationUpdate {
-	_u.mutation.RemoveVersionIDs(ids...)
-	return _u
-}
-
-// RemoveVersions removes "versions" edges to AutomationVersion entities.
-func (_u *AutomationUpdate) RemoveVersions(v ...*AutomationVersion) *AutomationUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveVersionIDs(ids...)
-}
-
 // ClearOutboundMessages clears all "outbound_messages" edges to the OutboundMessage entity.
 func (_u *AutomationUpdate) ClearOutboundMessages() *AutomationUpdate {
 	_u.mutation.ClearOutboundMessages()
@@ -273,18 +305,6 @@ func (_u *AutomationUpdate) RemoveOutboundMessages(v ...*OutboundMessage) *Autom
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOutboundMessageIDs(ids...)
-}
-
-// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
-func (_u *AutomationUpdate) ClearLiveVersion() *AutomationUpdate {
-	_u.mutation.ClearLiveVersion()
-	return _u
-}
-
-// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
-func (_u *AutomationUpdate) ClearDraftVersion() *AutomationUpdate {
-	_u.mutation.ClearDraftVersion()
-	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -325,14 +345,14 @@ func (_u *AutomationUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *AutomationUpdate) check() error {
-	if v, ok := _u.mutation.Name(); ok {
-		if err := automation.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Automation.name": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := automation.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Automation.status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Name(); ok {
+		if err := automation.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Automation.name": %w`, err)}
 		}
 	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
@@ -368,11 +388,17 @@ func (_u *AutomationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	if _u.mutation.DiscardedAtCleared() {
 		_spec.ClearField(automation.FieldDiscardedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.Name(); ok {
-		_spec.SetField(automation.FieldName, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(automation.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.ActivatedAt(); ok {
+		_spec.SetField(automation.FieldActivatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ActivatedAtCleared() {
+		_spec.ClearField(automation.FieldActivatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Name(); ok {
+		_spec.SetField(automation.FieldName, field.TypeString, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -396,51 +422,6 @@ func (_u *AutomationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.RunsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   automation.RunsTable,
-			Columns: []string{automation.RunsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedRunsIDs(); len(nodes) > 0 && !_u.mutation.RunsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   automation.RunsTable,
-			Columns: []string{automation.RunsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RunsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   automation.RunsTable,
-			Columns: []string{automation.RunsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -486,51 +467,6 @@ func (_u *AutomationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.OutboundMessagesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   automation.OutboundMessagesTable,
-			Columns: []string{automation.OutboundMessagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedOutboundMessagesIDs(); len(nodes) > 0 && !_u.mutation.OutboundMessagesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   automation.OutboundMessagesTable,
-			Columns: []string{automation.OutboundMessagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.OutboundMessagesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   automation.OutboundMessagesTable,
-			Columns: []string{automation.OutboundMessagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -589,6 +525,96 @@ func (_u *AutomationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RunsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   automation.RunsTable,
+			Columns: []string{automation.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRunsIDs(); len(nodes) > 0 && !_u.mutation.RunsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   automation.RunsTable,
+			Columns: []string{automation.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RunsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   automation.RunsTable,
+			Columns: []string{automation.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OutboundMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOutboundMessagesIDs(); len(nodes) > 0 && !_u.mutation.OutboundMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OutboundMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -658,20 +684,6 @@ func (_u *AutomationUpdateOne) ClearDiscardedAt() *AutomationUpdateOne {
 	return _u
 }
 
-// SetName sets the "name" field.
-func (_u *AutomationUpdateOne) SetName(v string) *AutomationUpdateOne {
-	_u.mutation.SetName(v)
-	return _u
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (_u *AutomationUpdateOne) SetNillableName(v *string) *AutomationUpdateOne {
-	if v != nil {
-		_u.SetName(*v)
-	}
-	return _u
-}
-
 // SetStatus sets the "status" field.
 func (_u *AutomationUpdateOne) SetStatus(v automation.Status) *AutomationUpdateOne {
 	_u.mutation.SetStatus(v)
@@ -683,6 +695,26 @@ func (_u *AutomationUpdateOne) SetNillableStatus(v *automation.Status) *Automati
 	if v != nil {
 		_u.SetStatus(*v)
 	}
+	return _u
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (_u *AutomationUpdateOne) SetActivatedAt(v time.Time) *AutomationUpdateOne {
+	_u.mutation.SetActivatedAt(v)
+	return _u
+}
+
+// SetNillableActivatedAt sets the "activated_at" field if the given value is not nil.
+func (_u *AutomationUpdateOne) SetNillableActivatedAt(v *time.Time) *AutomationUpdateOne {
+	if v != nil {
+		_u.SetActivatedAt(*v)
+	}
+	return _u
+}
+
+// ClearActivatedAt clears the value of the "activated_at" field.
+func (_u *AutomationUpdateOne) ClearActivatedAt() *AutomationUpdateOne {
+	_u.mutation.ClearActivatedAt()
 	return _u
 }
 
@@ -726,24 +758,23 @@ func (_u *AutomationUpdateOne) ClearDraftVersionID() *AutomationUpdateOne {
 	return _u
 }
 
-// SetWorkspace sets the "workspace" edge to the Workspace entity.
-func (_u *AutomationUpdateOne) SetWorkspace(v *Workspace) *AutomationUpdateOne {
-	return _u.SetWorkspaceID(v.ID)
-}
-
-// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
-func (_u *AutomationUpdateOne) AddRunIDs(ids ...int64) *AutomationUpdateOne {
-	_u.mutation.AddRunIDs(ids...)
+// SetName sets the "name" field.
+func (_u *AutomationUpdateOne) SetName(v string) *AutomationUpdateOne {
+	_u.mutation.SetName(v)
 	return _u
 }
 
-// AddRuns adds the "runs" edges to the AutomationRun entity.
-func (_u *AutomationUpdateOne) AddRuns(v ...*AutomationRun) *AutomationUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetNillableName sets the "name" field if the given value is not nil.
+func (_u *AutomationUpdateOne) SetNillableName(v *string) *AutomationUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return _u.AddRunIDs(ids...)
+	return _u
+}
+
+// SetWorkspace sets the "workspace" edge to the Workspace entity.
+func (_u *AutomationUpdateOne) SetWorkspace(v *Workspace) *AutomationUpdateOne {
+	return _u.SetWorkspaceID(v.ID)
 }
 
 // AddVersionIDs adds the "versions" edge to the AutomationVersion entity by IDs.
@@ -761,6 +792,31 @@ func (_u *AutomationUpdateOne) AddVersions(v ...*AutomationVersion) *AutomationU
 	return _u.AddVersionIDs(ids...)
 }
 
+// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdateOne) SetLiveVersion(v *AutomationVersion) *AutomationUpdateOne {
+	return _u.SetLiveVersionID(v.ID)
+}
+
+// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdateOne) SetDraftVersion(v *AutomationVersion) *AutomationUpdateOne {
+	return _u.SetDraftVersionID(v.ID)
+}
+
+// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
+func (_u *AutomationUpdateOne) AddRunIDs(ids ...int64) *AutomationUpdateOne {
+	_u.mutation.AddRunIDs(ids...)
+	return _u
+}
+
+// AddRuns adds the "runs" edges to the AutomationRun entity.
+func (_u *AutomationUpdateOne) AddRuns(v ...*AutomationRun) *AutomationUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRunIDs(ids...)
+}
+
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
 func (_u *AutomationUpdateOne) AddOutboundMessageIDs(ids ...int64) *AutomationUpdateOne {
 	_u.mutation.AddOutboundMessageIDs(ids...)
@@ -776,16 +832,6 @@ func (_u *AutomationUpdateOne) AddOutboundMessages(v ...*OutboundMessage) *Autom
 	return _u.AddOutboundMessageIDs(ids...)
 }
 
-// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
-func (_u *AutomationUpdateOne) SetLiveVersion(v *AutomationVersion) *AutomationUpdateOne {
-	return _u.SetLiveVersionID(v.ID)
-}
-
-// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
-func (_u *AutomationUpdateOne) SetDraftVersion(v *AutomationVersion) *AutomationUpdateOne {
-	return _u.SetDraftVersionID(v.ID)
-}
-
 // Mutation returns the AutomationMutation object of the builder.
 func (_u *AutomationUpdateOne) Mutation() *AutomationMutation {
 	return _u.mutation
@@ -794,6 +840,39 @@ func (_u *AutomationUpdateOne) Mutation() *AutomationMutation {
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (_u *AutomationUpdateOne) ClearWorkspace() *AutomationUpdateOne {
 	_u.mutation.ClearWorkspace()
+	return _u
+}
+
+// ClearVersions clears all "versions" edges to the AutomationVersion entity.
+func (_u *AutomationUpdateOne) ClearVersions() *AutomationUpdateOne {
+	_u.mutation.ClearVersions()
+	return _u
+}
+
+// RemoveVersionIDs removes the "versions" edge to AutomationVersion entities by IDs.
+func (_u *AutomationUpdateOne) RemoveVersionIDs(ids ...int64) *AutomationUpdateOne {
+	_u.mutation.RemoveVersionIDs(ids...)
+	return _u
+}
+
+// RemoveVersions removes "versions" edges to AutomationVersion entities.
+func (_u *AutomationUpdateOne) RemoveVersions(v ...*AutomationVersion) *AutomationUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveVersionIDs(ids...)
+}
+
+// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdateOne) ClearLiveVersion() *AutomationUpdateOne {
+	_u.mutation.ClearLiveVersion()
+	return _u
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdateOne) ClearDraftVersion() *AutomationUpdateOne {
+	_u.mutation.ClearDraftVersion()
 	return _u
 }
 
@@ -818,27 +897,6 @@ func (_u *AutomationUpdateOne) RemoveRuns(v ...*AutomationRun) *AutomationUpdate
 	return _u.RemoveRunIDs(ids...)
 }
 
-// ClearVersions clears all "versions" edges to the AutomationVersion entity.
-func (_u *AutomationUpdateOne) ClearVersions() *AutomationUpdateOne {
-	_u.mutation.ClearVersions()
-	return _u
-}
-
-// RemoveVersionIDs removes the "versions" edge to AutomationVersion entities by IDs.
-func (_u *AutomationUpdateOne) RemoveVersionIDs(ids ...int64) *AutomationUpdateOne {
-	_u.mutation.RemoveVersionIDs(ids...)
-	return _u
-}
-
-// RemoveVersions removes "versions" edges to AutomationVersion entities.
-func (_u *AutomationUpdateOne) RemoveVersions(v ...*AutomationVersion) *AutomationUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveVersionIDs(ids...)
-}
-
 // ClearOutboundMessages clears all "outbound_messages" edges to the OutboundMessage entity.
 func (_u *AutomationUpdateOne) ClearOutboundMessages() *AutomationUpdateOne {
 	_u.mutation.ClearOutboundMessages()
@@ -858,18 +916,6 @@ func (_u *AutomationUpdateOne) RemoveOutboundMessages(v ...*OutboundMessage) *Au
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOutboundMessageIDs(ids...)
-}
-
-// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
-func (_u *AutomationUpdateOne) ClearLiveVersion() *AutomationUpdateOne {
-	_u.mutation.ClearLiveVersion()
-	return _u
-}
-
-// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
-func (_u *AutomationUpdateOne) ClearDraftVersion() *AutomationUpdateOne {
-	_u.mutation.ClearDraftVersion()
-	return _u
 }
 
 // Where appends a list predicates to the AutomationUpdate builder.
@@ -923,14 +969,14 @@ func (_u *AutomationUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *AutomationUpdateOne) check() error {
-	if v, ok := _u.mutation.Name(); ok {
-		if err := automation.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Automation.name": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := automation.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Automation.status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Name(); ok {
+		if err := automation.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Automation.name": %w`, err)}
 		}
 	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
@@ -983,11 +1029,17 @@ func (_u *AutomationUpdateOne) sqlSave(ctx context.Context) (_node *Automation, 
 	if _u.mutation.DiscardedAtCleared() {
 		_spec.ClearField(automation.FieldDiscardedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.Name(); ok {
-		_spec.SetField(automation.FieldName, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(automation.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.ActivatedAt(); ok {
+		_spec.SetField(automation.FieldActivatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ActivatedAtCleared() {
+		_spec.ClearField(automation.FieldActivatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Name(); ok {
+		_spec.SetField(automation.FieldName, field.TypeString, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1011,51 +1063,6 @@ func (_u *AutomationUpdateOne) sqlSave(ctx context.Context) (_node *Automation, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.RunsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   automation.RunsTable,
-			Columns: []string{automation.RunsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedRunsIDs(); len(nodes) > 0 && !_u.mutation.RunsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   automation.RunsTable,
-			Columns: []string{automation.RunsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RunsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   automation.RunsTable,
-			Columns: []string{automation.RunsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1101,51 +1108,6 @@ func (_u *AutomationUpdateOne) sqlSave(ctx context.Context) (_node *Automation, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.OutboundMessagesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   automation.OutboundMessagesTable,
-			Columns: []string{automation.OutboundMessagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedOutboundMessagesIDs(); len(nodes) > 0 && !_u.mutation.OutboundMessagesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   automation.OutboundMessagesTable,
-			Columns: []string{automation.OutboundMessagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.OutboundMessagesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   automation.OutboundMessagesTable,
-			Columns: []string{automation.OutboundMessagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1204,6 +1166,96 @@ func (_u *AutomationUpdateOne) sqlSave(ctx context.Context) (_node *Automation, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RunsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   automation.RunsTable,
+			Columns: []string{automation.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRunsIDs(); len(nodes) > 0 && !_u.mutation.RunsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   automation.RunsTable,
+			Columns: []string{automation.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RunsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   automation.RunsTable,
+			Columns: []string{automation.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OutboundMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOutboundMessagesIDs(); len(nodes) > 0 && !_u.mutation.OutboundMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OutboundMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

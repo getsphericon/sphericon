@@ -1785,8 +1785,9 @@ export const siteAutomationsUpdateMutation = (options?: Partial<Options<SiteAuto
 };
 
 /**
- * Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can
- * be restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+ * Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and
+ * keeps its enrollments. It can be restored, inactive. Refused with 409 while it has active
+ * enrollments (`usedBy` carries their count).
  */
 export const siteAutomationsArchiveMutation = (options?: Partial<Options<SiteAutomationsArchiveData>>): UseMutationOptions<SiteAutomationsArchiveResponse, SiteAutomationsArchiveError, Options<SiteAutomationsArchiveData>> => {
   const mutationOptions: UseMutationOptions<SiteAutomationsArchiveResponse, SiteAutomationsArchiveError, Options<SiteAutomationsArchiveData>> = {
@@ -1855,7 +1856,7 @@ export const siteAutomationsRevertMutation = (options?: Partial<Options<SiteAuto
 };
 
 /**
- * Restore an archived automation to the list
+ * Restore an archived automation to the list, inactive: only publish makes it enroll again
  */
 export const siteAutomationsUnarchiveMutation = (options?: Partial<Options<SiteAutomationsUnarchiveData>>): UseMutationOptions<SiteAutomationsUnarchiveResponse, SiteAutomationsUnarchiveError, Options<SiteAutomationsUnarchiveData>> => {
   const mutationOptions: UseMutationOptions<SiteAutomationsUnarchiveResponse, SiteAutomationsUnarchiveError, Options<SiteAutomationsUnarchiveData>> = {

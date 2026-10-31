@@ -330,8 +330,9 @@ func (UnimplementedHandler) SiteAutomationReportsGet(ctx context.Context, params
 
 // SiteAutomationsArchive implements SiteAutomations_archive operation.
 //
-// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
-// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
+// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
+// (`usedBy` carries their count).
 //
 // POST /workspaces/{workspaceId}/automations/{id}/archive
 func (UnimplementedHandler) SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (r SiteAutomationsArchiveRes, _ error) {
@@ -413,7 +414,7 @@ func (UnimplementedHandler) SiteAutomationsRevert(ctx context.Context, params Si
 
 // SiteAutomationsUnarchive implements SiteAutomations_unarchive operation.
 //
-// Restore an archived automation to the list.
+// Restore an archived automation to the list, inactive: only publish makes it enroll again.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/unarchive
 func (UnimplementedHandler) SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (r SiteAutomationsUnarchiveRes, _ error) {

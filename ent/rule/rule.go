@@ -23,8 +23,6 @@ const (
 	FieldWorkspaceID = "workspace_id"
 	// FieldDiscardedAt holds the string denoting the discarded_at field in the database.
 	FieldDiscardedAt = "discarded_at"
-	// FieldName holds the string denoting the name field in the database.
-	FieldName = "name"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldActivatedAt holds the string denoting the activated_at field in the database.
@@ -33,6 +31,8 @@ const (
 	FieldLiveVersionID = "live_version_id"
 	// FieldDraftVersionID holds the string denoting the draft_version_id field in the database.
 	FieldDraftVersionID = "draft_version_id"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeVersions holds the string denoting the versions edge name in mutations.
@@ -89,11 +89,11 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldWorkspaceID,
 	FieldDiscardedAt,
-	FieldName,
 	FieldStatus,
 	FieldActivatedAt,
 	FieldLiveVersionID,
 	FieldDraftVersionID,
+	FieldName,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -171,11 +171,6 @@ func ByDiscardedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDiscardedAt, opts...).ToFunc()
 }
 
-// ByName orders the results by the name field.
-func ByName(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldName, opts...).ToFunc()
-}
-
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
@@ -194,6 +189,11 @@ func ByLiveVersionID(opts ...sql.OrderTermOption) OrderOption {
 // ByDraftVersionID orders the results by the draft_version_id field.
 func ByDraftVersionID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDraftVersionID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

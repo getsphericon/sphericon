@@ -48,26 +48,6 @@ func TestArchiveHidesARuleFromTheListAndStopsItFiring(t *testing.T) {
 	assert.NotNil(t, got.DiscardedAt)
 }
 
-func TestUnarchiveBringsARuleBackInactive(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
-	require.NoError(t, m.Archive(ctx, acme(env), fixtures.RuleTagClickedID))
-
-	require.NoError(t, m.Unarchive(ctx, acme(env), fixtures.RuleTagClickedID))
-
-	got, err := m.Get(ctx, acme(env), fixtures.RuleTagClickedID)
-	require.NoError(t, err)
-	assert.Nil(t, got.DiscardedAt)
-	assert.Equal(t, rule.StatusInactive, got.Status)
-}
-
-func TestArchiveOfAnotherWorkspacesRuleIsNotFound(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	assert.ErrorIs(t, rules.New(env.Cipher, env.Bus).Archive(context.Background(), acme(env), fixtures.RuleGlobexID), rules.ErrNotFound)
-}
-
 func TestArchivingAnArchivedRuleChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()

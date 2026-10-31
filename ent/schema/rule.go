@@ -21,13 +21,18 @@ type Rule struct {
 
 func (Rule) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("rules", Rule{}.Fields()),
+		TableWithEnumChecks("rules", append(Rule{}.Fields(), VersionedMixin{}.Fields()...)),
 		Audited{Action: "rule", NameField: nameField},
 	}
 }
 
 func (Rule) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "rules"}, DiscardMixin{}}
+	return []ent.Mixin{
+		TimeMixin{}, WorkspaceMixin{Ref: "rules"}, DiscardMixin{},
+		// The status, activated_at (an active Rule reacts only to Events recorded at or after it)
+		// and the pointers to the live and draft versions.
+		VersionedMixin{Version: RuleVersion.Type},
+	}
 }
 
 func (Rule) Fields() []ent.Field {
@@ -37,43 +42,11 @@ func (Rule) Fields() []ent.Field {
 			Immutable(),
 		field.String(nameField).
 			NotEmpty(),
-		// inactive: acts on nothing; active: reacts to Events recorded after activated_at. Publish
-		// makes a Rule active, Deactivate inactive (ADR 0065).
-		field.Enum("status").
-			Values("active", "inactive").
-			Default("inactive"),
-		// When the Rule last became active by Publish. A Rule acts only on Events recorded at or
-		// after it, so publishing never replays history, and deactivating then publishing again
-		// does not replay what happened in between. Kept when the Rule is deactivated.
-		field.Time("activated_at").
-			Optional().
-			Nillable(),
-		// The version the Rule runs; nil until it is first published.
-		field.Int64("live_version_id").
-			Optional().
-			Nillable(),
-		// The unpublished version, the one above live; nil when there are no unpublished changes.
-		field.Int64("draft_version_id").
-			Optional().
-			Nillable(),
 	}
 }
 
 func (Rule) Edges() []ent.Edge {
 	return []ent.Edge{
-		// Purging a Rule (only one with no Firings) purges its versions with it.
-		edge.To("versions", RuleVersion.Type).
-			Annotations(entsql.OnDelete(entsql.Cascade)),
-		// The two pointers into the versions. SET NULL breaks the circle of keys between a Rule and
-		// its versions: a purge of the Rule cascades to the versions it points at.
-		edge.To("live_version", RuleVersion.Type).
-			Field("live_version_id").
-			Unique().
-			Annotations(entsql.OnDelete(entsql.SetNull)),
-		edge.To("draft_version", RuleVersion.Type).
-			Field("draft_version_id").
-			Unique().
-			Annotations(entsql.OnDelete(entsql.SetNull)),
 		// A Firing dies with its Rule's row (the key cascades, for the Workspace's erasure).
 		// Rules.Delete purges only a Rule with no Firings, so in use the cascade removes
 		// nothing: a Rule with Firings is archived and its Firings stay readable.
@@ -85,8 +58,6 @@ func (Rule) Edges() []ent.Edge {
 func (Rule) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("workspace_id"),
-		index.Fields("live_version_id"),
-		index.Fields("draft_version_id"),
 	}
 }
 
@@ -106,18 +77,16 @@ func (RuleVersion) Annotations() []schema.Annotation {
 }
 
 func (RuleVersion) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "rule_versions"}}
+	return []ent.Mixin{
+		TimeMixin{}, WorkspaceMixin{Ref: "rule_versions"},
+		VersionMixin{Owner: "rule", OwnerType: Rule.Type, Table: "rule_versions"},
+	}
 }
 
 func (RuleVersion) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int64("id").
 			StorageKey("id").
-			Immutable(),
-		field.Int64("rule_id"),
-		// 1 for the first, plus one per version after it, within one Rule.
-		field.Int("version").
-			Positive().
 			Immutable(),
 		// The Condition tree (internal/condition) as JSON; empty means every Contact.
 		field.String("condition").
@@ -133,11 +102,6 @@ func (RuleVersion) Fields() []ent.Field {
 
 func (RuleVersion) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("rule", Rule.Type).
-			Ref("versions").
-			Field("rule_id").
-			Required().
-			Unique(),
 		// The Trigger events die with their version.
 		edge.To("triggers", RuleVersionTrigger.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
@@ -145,15 +109,6 @@ func (RuleVersion) Edges() []ent.Edge {
 		// stands on a draft, so the key never has to act.
 		edge.To("firings", RuleFiring.Type).
 			Annotations(entsql.OnDelete(entsql.NoAction)),
-	}
-}
-
-func (RuleVersion) Indexes() []ent.Index {
-	return []ent.Index{
-		index.Fields("workspace_id", "rule_id", "version").
-			Unique().
-			StorageKey("rule_versions_workspace_id_rule_id_version"),
-		index.Fields("rule_id"),
 	}
 }
 
@@ -236,10 +191,8 @@ func (RuleFiring) Fields() []ent.Field {
 		field.String("source_id").
 			NotEmpty(),
 		// The Rule version that fired: its Actions are what this Firing runs and what its results
-		// index into. A version that has fired is never rewritten (ADR 0065). Every Firing has
-		// one; the column stays nullable because a NOT NULL would lock the live table (ADR 0033).
-		field.Int64("version_id").
-			Optional(),
+		// index into. A version that has fired is never rewritten (ADR 0065).
+		field.Int64("version_id"),
 		// The Event's properties as JSON, for the Actions to template (an http Action's body sees
 		// them as `event.properties`). Personal data: it goes with the Contact on Erasure. Empty
 		// when the Event had none or more than events.RulePropertiesBound, which the Rule's Condition
@@ -270,6 +223,7 @@ func (RuleFiring) Edges() []ent.Edge {
 		edge.From("version", RuleVersion.Type).
 			Ref("firings").
 			Field("version_id").
+			Required().
 			Unique(),
 	}
 }

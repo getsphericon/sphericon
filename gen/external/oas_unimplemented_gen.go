@@ -59,8 +59,9 @@ func (UnimplementedHandler) AuthTokensList(ctx context.Context) (r AuthTokensLis
 
 // AutomationsArchive implements Automations_archive operation.
 //
-// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
-// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
+// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
+// (`usedBy` carries their count).
 //
 // POST /automations/{id}/archive
 func (UnimplementedHandler) AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (r AutomationsArchiveRes, _ error) {
@@ -144,7 +145,7 @@ func (UnimplementedHandler) AutomationsRevert(ctx context.Context, params Automa
 
 // AutomationsUnarchive implements Automations_unarchive operation.
 //
-// Restore an archived automation to the list.
+// Restore an archived automation to the list, inactive: only publish makes it enroll again.
 //
 // POST /automations/{id}/unarchive
 func (UnimplementedHandler) AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (r AutomationsUnarchiveRes, _ error) {

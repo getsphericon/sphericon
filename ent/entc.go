@@ -69,6 +69,35 @@ func scopedFuncs() template.FuncMap {
 		// discardable reports whether n embeds the DiscardMixin (ADR 0049): its scoped
 		// wrapper gets Discard, Undiscard and Purge instead of Delete.
 		"discardable": func(n *gen.Type) bool { return isScoped(n) && isDiscardable(n) },
+		// versioned reports whether n embeds the VersionedMixin (ADR 0065, GLOSSARY: Versioned
+		// definition): its scoped wrapper gets the pointer operations (<N>Pointers) that
+		// internal/drafts runs the lifecycle on.
+		"versioned": isVersioned,
+		// versionedNodes lists the Versioned definitions.
+		"versionedNodes": func(g *gen.Graph) []*gen.Type {
+			var out []*gen.Type
+			for _, n := range g.Nodes {
+				if isVersioned(n) {
+					out = append(out, n)
+				}
+			}
+			return out
+		},
+		// versionOf returns the version entity of a Versioned definition: the target of its
+		// live_version edge.
+		"versionOf": versionOf,
+		// versionOwnerField returns the version's column that names its owner (automation_id).
+		"versionOwnerField": func(n *gen.Type) *gen.Field {
+			for _, e := range n.Edges {
+				if e.Name == "versions" && e.Ref != nil {
+					if f := e.Ref.Field(); f != nil {
+						return f
+					}
+				}
+			}
+			log.Fatalf("%s: a Versioned definition needs the versions edge of VersionedMixin, and its version the owner edge of VersionMixin", n.Name)
+			return nil
+		},
 		// scopedEdges lists the edges of n that point at another scoped entity.
 		"scopedEdges": func(n *gen.Type) []*gen.Edge {
 			var out []*gen.Edge
@@ -216,6 +245,30 @@ func isDiscardable(t *gen.Type) bool {
 		}
 	}
 	return false
+}
+
+// isVersioned reports whether t embeds the VersionedMixin, found by its mixed-in live_version_id.
+// A Versioned definition is Workspace-owned and discardable: the lifecycle archives it.
+func isVersioned(t *gen.Type) bool {
+	for _, f := range t.Fields {
+		if f.Name == "live_version_id" && f.Position != nil && f.Position.MixedIn {
+			if !isScoped(t) || !isDiscardable(t) {
+				log.Fatalf("%s: a Versioned definition needs WorkspaceMixin and DiscardMixin", t.Name)
+			}
+			return true
+		}
+	}
+	return false
+}
+
+func versionOf(t *gen.Type) *gen.Type {
+	for _, e := range t.Edges {
+		if e.Name == "live_version" {
+			return e.Type
+		}
+	}
+	log.Fatalf("%s: a Versioned definition needs the live_version edge of VersionedMixin", t.Name)
+	return nil
 }
 
 func annotatedTarget(g *gen.Graph, f *gen.Field) *gen.Type {

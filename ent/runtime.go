@@ -160,6 +160,8 @@ func init() {
 	automationMixin := schema.Automation{}.Mixin()
 	automationMixinFields0 := automationMixin[0].Fields()
 	_ = automationMixinFields0
+	automationMixinFields3 := automationMixin[3].Fields()
+	_ = automationMixinFields3
 	automationFields := schema.Automation{}.Fields()
 	_ = automationFields
 	// automationDescCreatedAt is the schema descriptor for created_at field.
@@ -200,6 +202,8 @@ func init() {
 	automationversionMixin := schema.AutomationVersion{}.Mixin()
 	automationversionMixinFields0 := automationversionMixin[0].Fields()
 	_ = automationversionMixinFields0
+	automationversionMixinFields2 := automationversionMixin[2].Fields()
+	_ = automationversionMixinFields2
 	automationversionFields := schema.AutomationVersion{}.Fields()
 	_ = automationversionFields
 	// automationversionDescCreatedAt is the schema descriptor for created_at field.
@@ -213,11 +217,11 @@ func init() {
 	// automationversion.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	automationversion.UpdateDefaultUpdatedAt = automationversionDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// automationversionDescVersion is the schema descriptor for version field.
-	automationversionDescVersion := automationversionFields[2].Descriptor()
+	automationversionDescVersion := automationversionMixinFields2[1].Descriptor()
 	// automationversion.VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	automationversion.VersionValidator = automationversionDescVersion.Validators[0].(func(int) error)
 	// automationversionDescSteps is the schema descriptor for steps field.
-	automationversionDescSteps := automationversionFields[3].Descriptor()
+	automationversionDescSteps := automationversionFields[1].Descriptor()
 	// automationversion.DefaultSteps holds the default value on creation for the steps field.
 	automationversion.DefaultSteps = automationversionDescSteps.Default.(string)
 	brandkitMixin := schema.BrandKit{}.Mixin()
@@ -954,6 +958,8 @@ func init() {
 	ruleMixin := schema.Rule{}.Mixin()
 	ruleMixinFields0 := ruleMixin[0].Fields()
 	_ = ruleMixinFields0
+	ruleMixinFields3 := ruleMixin[3].Fields()
+	_ = ruleMixinFields3
 	ruleFields := schema.Rule{}.Fields()
 	_ = ruleFields
 	// ruleDescCreatedAt is the schema descriptor for created_at field.
@@ -1000,6 +1006,8 @@ func init() {
 	ruleversionMixin := schema.RuleVersion{}.Mixin()
 	ruleversionMixinFields0 := ruleversionMixin[0].Fields()
 	_ = ruleversionMixinFields0
+	ruleversionMixinFields2 := ruleversionMixin[2].Fields()
+	_ = ruleversionMixinFields2
 	ruleversionFields := schema.RuleVersion{}.Fields()
 	_ = ruleversionFields
 	// ruleversionDescCreatedAt is the schema descriptor for created_at field.
@@ -1013,11 +1021,11 @@ func init() {
 	// ruleversion.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	ruleversion.UpdateDefaultUpdatedAt = ruleversionDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// ruleversionDescVersion is the schema descriptor for version field.
-	ruleversionDescVersion := ruleversionFields[2].Descriptor()
+	ruleversionDescVersion := ruleversionMixinFields2[1].Descriptor()
 	// ruleversion.VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	ruleversion.VersionValidator = ruleversionDescVersion.Validators[0].(func(int) error)
 	// ruleversionDescActions is the schema descriptor for actions field.
-	ruleversionDescActions := ruleversionFields[4].Descriptor()
+	ruleversionDescActions := ruleversionFields[2].Descriptor()
 	// ruleversion.DefaultActions holds the default value on creation for the actions field.
 	ruleversion.DefaultActions = ruleversionDescActions.Default.(string)
 	ruleversiontriggerMixin := schema.RuleVersionTrigger{}.Mixin()

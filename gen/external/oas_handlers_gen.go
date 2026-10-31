@@ -1128,8 +1128,9 @@ func (s *Server) handleAuthTokensListRequest(args [0]string, argsEscaped bool, w
 
 // handleAutomationsArchiveRequest handles Automations_archive operation.
 //
-// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
-// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
+// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
+// (`usedBy` carries their count).
 //
 // POST /automations/{id}/archive
 func (s *Server) handleAutomationsArchiveRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -2823,7 +2824,7 @@ func (s *Server) handleAutomationsRevertRequest(args [1]string, argsEscaped bool
 
 // handleAutomationsUnarchiveRequest handles Automations_unarchive operation.
 //
-// Restore an archived automation to the list.
+// Restore an archived automation to the list, inactive: only publish makes it enroll again.
 //
 // POST /automations/{id}/unarchive
 func (s *Server) handleAutomationsUnarchiveRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

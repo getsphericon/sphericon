@@ -87,7 +87,8 @@ func TestSiteAutomationsArchiveAndRestore(t *testing.T) {
 	assert.Contains(t, listAutomations(t, c, false), id)
 }
 
-// An archived Automation enrolls nobody, even though its status is active.
+// An archived Automation enrolls nobody: archiving deactivates it, so restoring it does not re-arm
+// it either. Only Publish makes it enroll again.
 func TestArchivedAutomationEnrollsNobody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -103,7 +104,12 @@ func TestArchivedAutomationEnrollsNobody(t *testing.T) {
 	_, err = c.SiteAutomationsUnarchive(ctx, siteapi.SiteAutomationsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
 	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, "hold_demo", 0))
-	assert.Len(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()), 1, "the unarchived Automation enrolls the Contact")
+	assert.Empty(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()), "the unarchived Automation is inactive")
+
+	_, err = c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
+	require.NoError(t, err)
+	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, "hold_demo", 0))
+	assert.Len(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()), 1, "the published Automation enrolls the Contact")
 }
 
 // Delete purges an Automation with no Enrollments; one with any Enrollment is history and

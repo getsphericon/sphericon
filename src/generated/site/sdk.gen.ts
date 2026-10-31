@@ -1721,8 +1721,9 @@ export const siteAutomationsUpdate = <ThrowOnError extends boolean = false>(opti
 });
 
 /**
- * Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can
- * be restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+ * Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and
+ * keeps its enrollments. It can be restored, inactive. Refused with 409 while it has active
+ * enrollments (`usedBy` carries their count).
  */
 export const siteAutomationsArchive = <ThrowOnError extends boolean = false>(options: Options<SiteAutomationsArchiveData, ThrowOnError>): RequestResult<SiteAutomationsArchiveResponses, SiteAutomationsArchiveErrors, ThrowOnError> => (options.client ?? client).post<SiteAutomationsArchiveResponses, SiteAutomationsArchiveErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -1795,7 +1796,7 @@ export const siteAutomationsRevert = <ThrowOnError extends boolean = false>(opti
 });
 
 /**
- * Restore an archived automation to the list
+ * Restore an archived automation to the list, inactive: only publish makes it enroll again
  */
 export const siteAutomationsUnarchive = <ThrowOnError extends boolean = false>(options: Options<SiteAutomationsUnarchiveData, ThrowOnError>): RequestResult<SiteAutomationsUnarchiveResponses, SiteAutomationsUnarchiveErrors, ThrowOnError> => (options.client ?? client).post<SiteAutomationsUnarchiveResponses, SiteAutomationsUnarchiveErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

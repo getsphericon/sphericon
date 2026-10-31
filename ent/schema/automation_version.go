@@ -25,18 +25,16 @@ func (AutomationVersion) Annotations() []schema.Annotation {
 }
 
 func (AutomationVersion) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "automation_versions"}}
+	return []ent.Mixin{
+		TimeMixin{}, WorkspaceMixin{Ref: "automation_versions"},
+		VersionMixin{Owner: "automation", OwnerType: Automation.Type, Table: "automation_versions"},
+	}
 }
 
 func (AutomationVersion) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int64("id").
 			StorageKey("id").
-			Immutable(),
-		field.Int64("automation_id"),
-		// 1 for the first, plus one per version after it, within one Automation.
-		field.Int("version").
-			Positive().
 			Immutable(),
 		// JSON array of steps: [{"type":"email","subject":..,"body":<html>},
 		// {"type":"wait","seconds":N}]. Sensitive: HTTP steps carry sealed URL, header
@@ -57,11 +55,6 @@ func (AutomationVersion) Fields() []ent.Field {
 
 func (AutomationVersion) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("automation", Automation.Type).
-			Ref("versions").
-			Field("automation_id").
-			Required().
-			Unique(),
 		edge.To("runs", AutomationRun.Type),
 		// An Integration is discarded, never deleted (ADR 0049), so the reference always
 		// resolves. Only Workspace erasure purges it, after the versions.
@@ -74,10 +67,6 @@ func (AutomationVersion) Edges() []ent.Edge {
 
 func (AutomationVersion) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("workspace_id", "automation_id", "version").
-			Unique().
-			StorageKey("automation_versions_workspace_id_automation_id_version"),
-		index.Fields("automation_id"),
 		// Trigger lookup: the live versions for a given event action.
 		index.Fields("workspace_id", "trigger_event"),
 		index.Fields("integration_id"),

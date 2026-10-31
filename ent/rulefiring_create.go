@@ -90,14 +90,6 @@ func (_c *RuleFiringCreate) SetVersionID(v int64) *RuleFiringCreate {
 	return _c
 }
 
-// SetNillableVersionID sets the "version_id" field if the given value is not nil.
-func (_c *RuleFiringCreate) SetNillableVersionID(v *int64) *RuleFiringCreate {
-	if v != nil {
-		_c.SetVersionID(*v)
-	}
-	return _c
-}
-
 // SetProperties sets the "properties" field.
 func (_c *RuleFiringCreate) SetProperties(v string) *RuleFiringCreate {
 	_c.mutation.SetProperties(v)
@@ -248,6 +240,9 @@ func (_c *RuleFiringCreate) check() error {
 			return &ValidationError{Name: "source_id", err: fmt.Errorf(`ent: validator failed for field "RuleFiring.source_id": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.VersionID(); !ok {
+		return &ValidationError{Name: "version_id", err: errors.New(`ent: missing required field "RuleFiring.version_id"`)}
+	}
 	if _, ok := _c.mutation.Results(); !ok {
 		return &ValidationError{Name: "results", err: errors.New(`ent: missing required field "RuleFiring.results"`)}
 	}
@@ -259,6 +254,9 @@ func (_c *RuleFiringCreate) check() error {
 	}
 	if len(_c.mutation.ContactIDs()) == 0 {
 		return &ValidationError{Name: "contact", err: errors.New(`ent: missing required edge "RuleFiring.contact"`)}
+	}
+	if len(_c.mutation.VersionIDs()) == 0 {
+		return &ValidationError{Name: "version", err: errors.New(`ent: missing required edge "RuleFiring.version"`)}
 	}
 	return nil
 }
@@ -525,12 +523,6 @@ func (u *RuleFiringUpsert) UpdateVersionID() *RuleFiringUpsert {
 	return u
 }
 
-// ClearVersionID clears the value of the "version_id" field.
-func (u *RuleFiringUpsert) ClearVersionID() *RuleFiringUpsert {
-	u.SetNull(rulefiring.FieldVersionID)
-	return u
-}
-
 // SetProperties sets the "properties" field.
 func (u *RuleFiringUpsert) SetProperties(v string) *RuleFiringUpsert {
 	u.Set(rulefiring.FieldProperties, v)
@@ -725,13 +717,6 @@ func (u *RuleFiringUpsertOne) SetVersionID(v int64) *RuleFiringUpsertOne {
 func (u *RuleFiringUpsertOne) UpdateVersionID() *RuleFiringUpsertOne {
 	return u.Update(func(s *RuleFiringUpsert) {
 		s.UpdateVersionID()
-	})
-}
-
-// ClearVersionID clears the value of the "version_id" field.
-func (u *RuleFiringUpsertOne) ClearVersionID() *RuleFiringUpsertOne {
-	return u.Update(func(s *RuleFiringUpsert) {
-		s.ClearVersionID()
 	})
 }
 
@@ -1103,13 +1088,6 @@ func (u *RuleFiringUpsertBulk) SetVersionID(v int64) *RuleFiringUpsertBulk {
 func (u *RuleFiringUpsertBulk) UpdateVersionID() *RuleFiringUpsertBulk {
 	return u.Update(func(s *RuleFiringUpsert) {
 		s.UpdateVersionID()
-	})
-}
-
-// ClearVersionID clears the value of the "version_id" field.
-func (u *RuleFiringUpsertBulk) ClearVersionID() *RuleFiringUpsertBulk {
-	return u.Update(func(s *RuleFiringUpsert) {
-		s.ClearVersionID()
 	})
 }
 

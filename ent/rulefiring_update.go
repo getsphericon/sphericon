@@ -123,12 +123,6 @@ func (_u *RuleFiringUpdate) SetNillableVersionID(v *int64) *RuleFiringUpdate {
 	return _u
 }
 
-// ClearVersionID clears the value of the "version_id" field.
-func (_u *RuleFiringUpdate) ClearVersionID() *RuleFiringUpdate {
-	_u.mutation.ClearVersionID()
-	return _u
-}
-
 // SetProperties sets the "properties" field.
 func (_u *RuleFiringUpdate) SetProperties(v string) *RuleFiringUpdate {
 	_u.mutation.SetProperties(v)
@@ -288,6 +282,9 @@ func (_u *RuleFiringUpdate) check() error {
 	}
 	if _u.mutation.ContactCleared() && len(_u.mutation.ContactIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "RuleFiring.contact"`)
+	}
+	if _u.mutation.VersionCleared() && len(_u.mutation.VersionIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "RuleFiring.version"`)
 	}
 	return nil
 }
@@ -562,12 +559,6 @@ func (_u *RuleFiringUpdateOne) SetNillableVersionID(v *int64) *RuleFiringUpdateO
 	return _u
 }
 
-// ClearVersionID clears the value of the "version_id" field.
-func (_u *RuleFiringUpdateOne) ClearVersionID() *RuleFiringUpdateOne {
-	_u.mutation.ClearVersionID()
-	return _u
-}
-
 // SetProperties sets the "properties" field.
 func (_u *RuleFiringUpdateOne) SetProperties(v string) *RuleFiringUpdateOne {
 	_u.mutation.SetProperties(v)
@@ -740,6 +731,9 @@ func (_u *RuleFiringUpdateOne) check() error {
 	}
 	if _u.mutation.ContactCleared() && len(_u.mutation.ContactIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "RuleFiring.contact"`)
+	}
+	if _u.mutation.VersionCleared() && len(_u.mutation.VersionIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "RuleFiring.version"`)
 	}
 	return nil
 }

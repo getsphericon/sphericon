@@ -61,24 +61,9 @@ func versionOfRun(t *testing.T, env *testhelper.TestEnv, runID int64) int {
 	return v.Version
 }
 
-// A never-published Automation's draft is its whole definition: editing it rewrites the draft,
-// so a sequence edited many times is one version, and nothing is live.
-func TestEditingANeverPublishedAutomationRewritesItsDraft(t *testing.T) {
-	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
-	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-
-	_, err := m.Update(ctx, acme, fixtures.AutomationWinBackID, automations.UpdateInput{Steps: &[]automations.Step{{Type: automations.StepWait, Seconds: 2}}})
-	require.NoError(t, err)
-	updated, err := m.Update(ctx, acme, fixtures.AutomationWinBackID, automations.UpdateInput{Steps: &[]automations.Step{{Type: automations.StepWait, Seconds: 3}}})
-	require.NoError(t, err)
-
-	assert.Equal(t, []automations.Step{{Type: automations.StepWait, Seconds: 3}}, draftSteps(t, updated))
-	live, _ := automations.LiveAndDraft(updated)
-	assert.Nil(t, live, "nothing is live until it is published")
-	assert.Equal(t, []int{1}, versionsOf(t, env, fixtures.AutomationWinBackID))
-}
+// The lifecycle the Automation shares with the Rule (edit, Publish, Revert, Archive) is tested once,
+// for both, in internal/drafts. These are what only an Automation has: Enrollments on a version,
+// steps, and the Integration.
 
 // Editing a live Automation writes a draft above the live version and never rewrites the live
 // one: the next Enrollment still begins on what was published (#748). Later edits rewrite the
@@ -111,8 +96,8 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 	assert.Equal(t, 1, versionOfRun(t, env, runID), "the Enrollment begins on the live version")
 }
 
-// Saving the live definition again creates no draft; saving the draft's again changes nothing.
-func TestSavingAnUnchangedDefinitionStoresNothing(t *testing.T) {
+// Saving the live steps again creates no draft: steps compare in the form a version stores them.
+func TestSavingUnchangedStepsStoresNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 	ctx := context.Background()
@@ -155,22 +140,6 @@ func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testi
 	assert.Equal(t, []int{1, 2}, versionsOf(t, env, fixtures.AutomationHoldDemoID))
 }
 
-// With no draft, Publish resumes the live version of a deactivated Automation as it was.
-func TestPublishWithoutADraftResumesTheLiveVersion(t *testing.T) {
-	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
-	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	before, err := m.Deactivate(ctx, acme, fixtures.AutomationHoldDemoID)
-	require.NoError(t, err)
-
-	resumed, err := m.Publish(ctx, acme, fixtures.AutomationHoldDemoID)
-	require.NoError(t, err)
-	assert.Equal(t, automation.StatusActive, resumed.Status)
-	assert.Equal(t, liveSteps(t, before), liveSteps(t, resumed))
-	assert.Equal(t, []int{1}, versionsOf(t, env, fixtures.AutomationHoldDemoID))
-}
-
 // A never-published Automation enrolls nobody: it has no live version.
 func TestANeverPublishedAutomationEnrollsNobody(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -195,40 +164,6 @@ func TestPublishRefusesADraftWhoseIntegrationIsArchived(t *testing.T) {
 	live, draft := automations.LiveAndDraft(after)
 	assert.Nil(t, live.IntegrationID, "the live version still sends through the default")
 	assert.NotNil(t, draft, "the draft stays")
-}
-
-// Revert drops the draft above a live version; the live version is again the latest.
-func TestRevertDropsTheDraft(t *testing.T) {
-	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
-	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	before, err := m.Get(ctx, acme, fixtures.AutomationWelcomeSeriesID)
-	require.NoError(t, err)
-
-	reverted, err := m.Revert(ctx, acme, fixtures.AutomationWelcomeSeriesID)
-	require.NoError(t, err)
-	_, draft := automations.LiveAndDraft(reverted)
-	assert.Nil(t, draft)
-	assert.Equal(t, liveSteps(t, before), liveSteps(t, reverted))
-	assert.Equal(t, []int{1}, versionsOf(t, env, fixtures.AutomationWelcomeSeriesID))
-
-	_, err = m.Revert(ctx, acme, fixtures.AutomationWelcomeSeriesID)
-	require.ErrorIs(t, err, automations.ErrNothingToRevert, "there is no draft any more")
-}
-
-// A never-published Automation's draft is its whole definition, so it is not reverted.
-func TestRevertRefusesANeverPublishedAutomation(t *testing.T) {
-	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
-	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-
-	_, err := m.Revert(ctx, acme, fixtures.AutomationWinBackID)
-	require.ErrorIs(t, err, automations.ErrNothingToRevert)
-	after, err := m.Get(ctx, acme, fixtures.AutomationWinBackID)
-	require.NoError(t, err)
-	assert.NotEmpty(t, draftSteps(t, after), "the draft stays")
 }
 
 // The fixture Automation whose steps were edited with Enrollments on the first version.

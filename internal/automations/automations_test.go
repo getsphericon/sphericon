@@ -208,8 +208,8 @@ func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 }
 
 // An archived Automation enrolls nobody, so it is neither published nor deactivated: both are
-// "not found" until it is restored, and its status stays as it was.
-func TestAnArchivedAutomationKeepsItsStatus(t *testing.T) {
+// "not found" until it is restored, and change nothing.
+func TestAnArchivedAutomationIsNeitherPublishedNorDeactivated(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 	ctx := context.Background()

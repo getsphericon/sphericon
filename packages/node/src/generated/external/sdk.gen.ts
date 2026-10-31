@@ -150,7 +150,7 @@ export const automationsUpdate = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+ * Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments (`usedBy` carries their count).
  */
 export const automationsArchive = <ThrowOnError extends boolean = false>(options: Options<AutomationsArchiveData, ThrowOnError>): RequestResult<AutomationsArchiveResponses, AutomationsArchiveErrors, ThrowOnError> => (options.client ?? client).post<AutomationsArchiveResponses, AutomationsArchiveErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -186,7 +186,7 @@ export const automationsRevert = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * Restore an archived automation to the list
+ * Restore an archived automation to the list, inactive: only publish makes it enroll again
  */
 export const automationsUnarchive = <ThrowOnError extends boolean = false>(options: Options<AutomationsUnarchiveData, ThrowOnError>): RequestResult<AutomationsUnarchiveResponses, AutomationsUnarchiveErrors, ThrowOnError> => (options.client ?? client).post<AutomationsUnarchiveResponses, AutomationsUnarchiveErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],

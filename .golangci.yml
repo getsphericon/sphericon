@@ -155,6 +155,15 @@ linters:
         - pattern: '^ent\.(OAuthClient|\w*[^dekt]|\w*[^e]d|\w*[^p]ed|\w*[^o]ped|\w*[^c]oped|\w*[^S]coped|\w*[^n]e|\w*[^O]ne|\w*[^t]One|\w*[^r]tOne|\w*[^e]rtOne|\w*[^s]ertOne|\w*[^p]sertOne|\w*[^U]psertOne|\w*[^l]k|\w*[^u]lk|\w*[^B]ulk|\w*[^t]Bulk|\w*[^r]tBulk|\w*[^e]rtBulk|\w*[^s]ertBulk|\w*[^p]sertBulk|\w*[^U]psertBulk|\w*[^n]t|\w*[^e]nt|\w*[^i]ent|\w*[^l]ient|\w*[^C]l[i]ent)\.Update$'
           pkg: '^github\.com/getsphericon/sphericon/ent$'
           msg: entity-level Update() bypasses the workspace scope; use the scoped client's UpdateOneID (ADR 0017)
+        # ADR 0065: the pointers of a Versioned definition (an Automation's or a Rule's live and
+        # draft versions) and its state move only through the lifecycle in internal/drafts, which
+        # calls the generated <N>Pointers through ent.VersionedStore. Reading the edges stays open.
+        - pattern: ^ent\.\w+\.(SetLiveVersionID|SetDraftVersionID|ClearDraftVersionID)$
+          pkg: '^github\.com/getsphericon/sphericon/ent$'
+          msg: a Versioned definition's pointers move only through internal/drafts (ADR 0065); call the module's Update, Publish or Revert
+        - pattern: ^ent\.(\w+Pointers|VersionedStore(\[.*\])?)\.(SetDraft|ClearDraft|Promote|Activate|Deactivate|DeleteVersion|Discard|Undiscard)$
+          pkg: '^github\.com/getsphericon/sphericon/ent$'
+          msg: a Versioned definition's pointers move only through internal/drafts (ADR 0065); call the module's Update, Publish or Revert
         - pattern: ^time\.Sleep$
           msg: no sleeps; wait on the condition, take a clock, or call testhelper.Elapse inside a synctest bubble (CODING_STANDARDS.md)
         - pattern: sql\.DB\)?\.(Exec|Query|QueryRow)(Context)?$
@@ -341,6 +350,11 @@ linters:
         linters:
           - forbidigo
         text: no direct SQL in tests
+      # internal/drafts is the one place the pointers of a Versioned definition move (ADR 0065).
+      - path: ^internal/drafts/
+        linters:
+          - forbidigo
+        text: pointers move only through internal/drafts
       # gosec's taint rules (G702-G705, G710) and the cookie rule (G124) cannot see a check that
       # is made before the sink. Each exclusion below names the files and the reason; every
       # finding was read, and the ones that were defects are fixed in code.

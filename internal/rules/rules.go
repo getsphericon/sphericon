@@ -10,7 +10,6 @@
 package rules
 
 import (
-	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -31,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/drafts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/inuse"
@@ -162,11 +162,21 @@ type ActionRunners map[ActionType]Runner
 type Module struct {
 	cipher *secrets.Cipher
 	bus    *events.Bus
+	life   *drafts.Lifecycle[ent.Rule, ent.RuleVersion, UpdateInput, definition]
 }
 
 // New builds the Rules module. The cipher seals an http Action's secrets; the bus runs a Firing
-// and the job that executes it in one transaction.
-func New(cipher *secrets.Cipher, bus *events.Bus) *Module { return &Module{cipher: cipher, bus: bus} }
+// and the job that executes it in one transaction, and each move of a Rule's definition
+// (internal/drafts).
+func New(cipher *secrets.Cipher, bus *events.Bus) *Module {
+	m := &Module{cipher: cipher, bus: bus}
+	m.life = drafts.New(bus, versioned{m: m}, drafts.Errors{
+		NotFound:         ErrNotFound,
+		NothingToPublish: ErrNothingToPublish,
+		NothingToRevert:  ErrNothingToRevert,
+	})
+	return m
+}
 
 // CreateInput is a new Rule, always inactive: its definition is the draft, version 1.
 type CreateInput struct {
@@ -218,76 +228,61 @@ func normalCondition(cond *string) *string {
 
 // Create validates and stores an inactive Rule whose definition is its draft, version 1.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.Rule, error) {
-	var id int64
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		def, err := m.merge(ctx, ts, nil, UpdateInput{TriggerEvents: &in.TriggerEvents, Condition: in.Condition, Actions: &in.Actions})
-		if err != nil {
-			return err
-		}
+	owner := func(ctx context.Context, ts *ent.Scoped) (int64, error) {
 		r, err := ts.Rule().Create().SetName(in.Name).Save(ctx)
 		if err != nil {
-			return err
+			return 0, err
 		}
-		id = r.ID
-		v, err := saveVersion(ctx, ts, id, 1, def)
-		if err != nil {
-			return err
-		}
-		return ts.Rule().UpdateOneID(id).SetDraftVersionID(v.ID).Exec(ctx)
-	})
-	if err != nil {
-		return nil, err
+		return r.ID, nil
 	}
-	return m.Get(ctx, s, id)
+	return m.life.Create(ctx, s, owner, UpdateInput{TriggerEvents: &in.TriggerEvents, Condition: in.Condition, Actions: &in.Actions})
 }
 
 // Update changes a Rule's name, and writes its Trigger events, Condition and Actions to the draft
-// (ADR 0065), validated as Create validates: the live version is never rewritten, so an edit
-// changes what the Rule does only once it is published. The draft is rewritten in place; a Rule
-// with none gets one, the version above the newest. A definition equal to the one it starts from
-// stores nothing. The status is untouched.
+// (ADR 0065, internal/drafts), validated as Create validates: the live version is never rewritten,
+// so an edit changes what the Rule does only once it is published. The draft is rewritten in
+// place; a Rule with none gets one, the version above the newest. A definition equal to the one it
+// starts from stores nothing. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Rule, error) {
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		r, err := m.lock(ctx, ts, id)
-		if err != nil {
-			return err
-		}
-		if in.Name != nil && *in.Name != r.Name {
-			if err := ts.Rule().UpdateOneID(id).SetName(*in.Name).Exec(ctx); err != nil {
-				return err
-			}
-		}
-		if in.TriggerEvents == nil && in.Condition == nil && in.Actions == nil {
+	rename := func(ctx context.Context, ts *ent.Scoped, r *ent.Rule) error {
+		if in.Name == nil || *in.Name == r.Name {
 			return nil
 		}
-		live, draft := LiveAndDraft(r)
-		base := cmp.Or(draft, live)
-		def, err := m.merge(ctx, ts, base, in)
-		if err != nil {
-			return err
-		}
-		unchanged := base != nil && def.equal(definitionOf(base))
-		if unchanged {
-			return nil
-		}
-		if draft != nil {
-			return rewrite(ctx, ts, draft, def)
-		}
-		number, err := nextNumber(ctx, ts, id)
-		if err != nil {
-			return err
-		}
-		v, err := saveVersion(ctx, ts, id, number, def)
-		if err != nil {
-			return err
-		}
-		return ts.Rule().UpdateOneID(id).SetDraftVersionID(v.ID).Exec(ctx)
-	})
-	if err != nil {
-		return nil, err
+		return ts.Rule().UpdateOneID(r.ID).SetName(*in.Name).Exec(ctx)
 	}
-	return m.Get(ctx, s, id)
+	return m.life.Edit(ctx, s, id, rename, in)
 }
+
+// versioned is the Rule's part of the lifecycle (drafts.Definition).
+type versioned struct{ m *Module }
+
+func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Rule, ent.RuleVersion] {
+	return s.Rule().Pointers(withTriggers)
+}
+
+func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.RuleVersion, in UpdateInput) (definition, error) {
+	return v.m.merge(ctx, ts, base, in)
+}
+
+func (versioned) Equal(v *ent.RuleVersion, def definition) bool { return def.equal(definitionOf(v)) }
+
+func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int, draft *ent.RuleVersion, def definition) (int64, error) {
+	if draft != nil {
+		return draft.ID, rewrite(ctx, ts, draft, def)
+	}
+	v, err := saveVersion(ctx, ts, id, number, def)
+	if err != nil {
+		return 0, err
+	}
+	return v.ID, nil
+}
+
+func (versioned) Publishable(ctx context.Context, ts *ent.Scoped, draft *ent.RuleVersion) error {
+	return publishable(ctx, ts, draft)
+}
+
+// Archivable never refuses: a Rule's Firings are history that stays with an archived Rule.
+func (versioned) Archivable(context.Context, *ent.Scoped, *ent.Rule) error { return nil }
 
 // merge lays the fields of an edit over the version it starts from (nil for a new Rule) and
 // validates what it changes. An http Action that names one of the base's Actions by ID keeps the
@@ -328,15 +323,6 @@ func (m *Module) merge(ctx context.Context, s *ent.Scoped, base *ent.RuleVersion
 	return def, nil
 }
 
-// lock takes the Rule's row, archived or not, for the rest of the transaction, so a concurrent
-// Update, Publish or Revert of it waits; it returns the Rule with its versions.
-func (m *Module) lock(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
-	if _, err := s.Rule().QueryWithDiscarded().Where(rule.ID(id)).ForUpdate().OnlyID(ctx); err != nil {
-		return nil, notFound(err)
-	}
-	return m.Get(ctx, s, id)
-}
-
 // saveVersion stores a new version of the Rule with its Trigger events.
 func saveVersion(ctx context.Context, s *ent.Scoped, ruleID int64, number int, def definition) (*ent.RuleVersion, error) {
 	v, err := s.RuleVersion().Create().
@@ -366,21 +352,6 @@ func rewrite(ctx context.Context, s *ent.Scoped, draft *ent.RuleVersion, def def
 		return err
 	}
 	return saveTriggers(ctx, s, draft.ID, def.triggers)
-}
-
-// nextNumber is the number of a new draft: one above the Rule's newest version.
-func nextNumber(ctx context.Context, s *ent.Scoped, ruleID int64) (int, error) {
-	newest, err := s.RuleVersion().Query().
-		Where(ruleversion.RuleID(ruleID)).
-		Order(ent.Desc(ruleversion.FieldVersion)).
-		First(ctx)
-	if ent.IsNotFound(err) {
-		return 1, nil
-	}
-	if err != nil {
-		return 0, err
-	}
-	return newest.Version + 1, nil
 }
 
 // Get returns one Rule of the Workspace with its live and draft versions, archived or not.
@@ -418,7 +389,7 @@ func withTriggers(q *ent.RuleVersionQuery) { q.WithTriggers(byAction) }
 // LiveAndDraft returns the Rule's live version (what it does; nil until first published) and its
 // draft (the unpublished changes above live; nil when there are none), as Get and List load them.
 func LiveAndDraft(r *ent.Rule) (live, draft *ent.RuleVersion) {
-	return r.Edges.LiveVersion, r.Edges.DraftVersion
+	return drafts.LiveAndDraft(r)
 }
 
 // versions are the Rule's live and draft versions that exist.
@@ -427,33 +398,18 @@ func versions(r *ent.Rule) []*ent.RuleVersion {
 	return lo.Compact([]*ent.RuleVersion{live, draft})
 }
 
-// Archive discards a Rule (ADR 0049): it leaves the lists and acts on nothing, and its Firings
-// stay. Archiving also deactivates it, so restoring it brings back an inactive Rule that cannot
-// start firing before someone publishes it again. Archiving an archived Rule changes nothing.
+// Archive discards a Rule (ADR 0049, internal/drafts): it leaves the lists and acts on nothing, and
+// its Firings stay. Archiving also deactivates it under the lock Publish takes, so no Rule is ever
+// archived and active, and restoring it brings back an inactive Rule that cannot start firing
+// before someone publishes it again. Archiving an archived Rule changes nothing.
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
-	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		// The write that deactivates also locks the row, so a concurrent Publish (which only
-		// moves a kept inactive Rule) waits for the commit and then finds the Rule archived: no Rule is
-		// ever archived and active. It matches no row for an archived or a missing Rule.
-		n, err := ts.Rule().Update().
-			Where(rule.ID(id), rule.DiscardedAtIsNil()).
-			SetStatus(rule.StatusInactive).
-			Save(ctx)
-		if err != nil {
-			return err
-		}
-		if n == 0 {
-			_, err := m.Get(ctx, ts, id) // archived already: nothing to do; missing: ErrNotFound
-			return err
-		}
-		return notFound(ts.Rule().Discard(ctx, id))
-	})
+	return m.life.Archive(ctx, s, id)
 }
 
 // Unarchive brings an archived Rule back to the lists, inactive. Restoring one that is not
 // archived changes nothing.
 func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
-	return notFound(s.Rule().Restore(ctx, id))
+	return m.life.Unarchive(ctx, s, id)
 }
 
 // Delete purges a Rule that has no Firings (ADR 0049), with its versions. One with any Firing is
@@ -517,13 +473,6 @@ func namesTag(v *ent.RuleVersion, name string) (bool, error) {
 	return slices.ContainsFunc(actions, func(a Action) bool { return a.NamesTag(name) }), nil
 }
 
-func notFound(err error) error {
-	if ent.IsNotFound(err) {
-		return ErrNotFound
-	}
-	return err
-}
-
 // Publish makes the Rule's draft its live version and the Rule active (ADR 0065); with no draft,
 // it makes the live version active again. An inactive Rule reacts to the Events recorded from now
 // on (it never replays history); a Rule already active keeps its activation time, so publishing a
@@ -532,37 +481,7 @@ func notFound(err error) error {
 // enrolls in an Automation that is gone; a Rule with neither draft nor live version has nothing to
 // publish (ErrNothingToPublish). The old live version stays, with its Firings, as history.
 func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		r, err := m.lock(ctx, ts, id)
-		if err != nil {
-			return err
-		}
-		if r.DiscardedAt != nil {
-			return ErrNotFound // an archived Rule acts on nothing: restore it first
-		}
-		live, draft := LiveAndDraft(r)
-		inactive := r.Status != rule.StatusActive
-		update := ts.Rule().UpdateOneID(id)
-		switch {
-		case draft != nil:
-			if err := publishable(ctx, ts, draft); err != nil {
-				return err
-			}
-			update.SetLiveVersionID(draft.ID).ClearDraftVersionID()
-		case live == nil:
-			return ErrNothingToPublish
-		case !inactive:
-			return nil // live and active already
-		}
-		if inactive {
-			update.SetStatus(rule.StatusActive).SetActivatedAt(time.Now())
-		}
-		return update.Exec(ctx)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return m.Get(ctx, s, id)
+	return m.life.Publish(ctx, s, id)
 }
 
 // publishable refuses a version that cannot run: one with no Actions, or with an enroll Action
@@ -582,40 +501,13 @@ func publishable(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion) error {
 // authoring, and an audited write of the Rule. A Rule with no draft, or one never published
 // (whose draft is its whole definition), has nothing to revert (ErrNothingToRevert).
 func (m *Module) Revert(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		r, err := m.lock(ctx, ts, id)
-		if err != nil {
-			return err
-		}
-		live, draft := LiveAndDraft(r)
-		if live == nil || draft == nil {
-			return ErrNothingToRevert
-		}
-		if err := ts.Rule().UpdateOneID(id).ClearDraftVersionID().Exec(ctx); err != nil {
-			return err
-		}
-		return ts.RuleVersion().DeleteOneID(draft.ID).Exec(ctx)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return m.Get(ctx, s, id)
+	return m.life.Revert(ctx, s, id)
 }
 
 // Deactivate makes a Rule inactive: it stops firing, and keeps its live version. Deactivating an
 // inactive Rule leaves it as it is. It is authoring: it can only stop a Rule, never start one.
 func (m *Module) Deactivate(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
-	n, err := s.Rule().Update().
-		Where(rule.ID(id), rule.DiscardedAtIsNil()).
-		SetStatus(rule.StatusInactive).
-		Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if n == 0 {
-		return nil, ErrNotFound
-	}
-	return m.Get(ctx, s, id)
+	return m.life.Deactivate(ctx, s, id)
 }
 
 // Firings returns one page of a Rule's Firings, newest first.

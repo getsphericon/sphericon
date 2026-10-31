@@ -3345,24 +3345,25 @@ type AutomationMutation struct {
 	created_at               *time.Time
 	updated_at               *time.Time
 	discarded_at             *time.Time
-	name                     *string
 	status                   *automation.Status
+	activated_at             *time.Time
+	name                     *string
 	clearedFields            map[string]struct{}
 	workspace                *int64
 	clearedworkspace         bool
-	runs                     map[int64]struct{}
-	removedruns              map[int64]struct{}
-	clearedruns              bool
 	versions                 map[int64]struct{}
 	removedversions          map[int64]struct{}
 	clearedversions          bool
-	outbound_messages        map[int64]struct{}
-	removedoutbound_messages map[int64]struct{}
-	clearedoutbound_messages bool
 	live_version             *int64
 	clearedlive_version      bool
 	draft_version            *int64
 	cleareddraft_version     bool
+	runs                     map[int64]struct{}
+	removedruns              map[int64]struct{}
+	clearedruns              bool
+	outbound_messages        map[int64]struct{}
+	removedoutbound_messages map[int64]struct{}
+	clearedoutbound_messages bool
 	done                     bool
 	oldValue                 func(context.Context) (*Automation, error)
 	predicates               []predicate.Automation
@@ -3629,42 +3630,6 @@ func (m *AutomationMutation) ResetDiscardedAt() {
 	delete(m.clearedFields, automation.FieldDiscardedAt)
 }
 
-// SetName sets the "name" field.
-func (m *AutomationMutation) SetName(s string) {
-	m.name = &s
-}
-
-// Name returns the value of the "name" field in the mutation.
-func (m *AutomationMutation) Name() (r string, exists bool) {
-	v := m.name
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldName returns the old "name" field's value of the Automation entity.
-// If the Automation object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationMutation) OldName(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldName is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldName requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldName: %w", err)
-	}
-	return oldValue.Name, nil
-}
-
-// ResetName resets all changes to the "name" field.
-func (m *AutomationMutation) ResetName() {
-	m.name = nil
-}
-
 // SetStatus sets the "status" field.
 func (m *AutomationMutation) SetStatus(a automation.Status) {
 	m.status = &a
@@ -3699,6 +3664,55 @@ func (m *AutomationMutation) OldStatus(ctx context.Context) (v automation.Status
 // ResetStatus resets all changes to the "status" field.
 func (m *AutomationMutation) ResetStatus() {
 	m.status = nil
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (m *AutomationMutation) SetActivatedAt(t time.Time) {
+	m.activated_at = &t
+}
+
+// ActivatedAt returns the value of the "activated_at" field in the mutation.
+func (m *AutomationMutation) ActivatedAt() (r time.Time, exists bool) {
+	v := m.activated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActivatedAt returns the old "activated_at" field's value of the Automation entity.
+// If the Automation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationMutation) OldActivatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActivatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActivatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActivatedAt: %w", err)
+	}
+	return oldValue.ActivatedAt, nil
+}
+
+// ClearActivatedAt clears the value of the "activated_at" field.
+func (m *AutomationMutation) ClearActivatedAt() {
+	m.activated_at = nil
+	m.clearedFields[automation.FieldActivatedAt] = struct{}{}
+}
+
+// ActivatedAtCleared returns if the "activated_at" field was cleared in this mutation.
+func (m *AutomationMutation) ActivatedAtCleared() bool {
+	_, ok := m.clearedFields[automation.FieldActivatedAt]
+	return ok
+}
+
+// ResetActivatedAt resets all changes to the "activated_at" field.
+func (m *AutomationMutation) ResetActivatedAt() {
+	m.activated_at = nil
+	delete(m.clearedFields, automation.FieldActivatedAt)
 }
 
 // SetLiveVersionID sets the "live_version_id" field.
@@ -3799,6 +3813,42 @@ func (m *AutomationMutation) ResetDraftVersionID() {
 	delete(m.clearedFields, automation.FieldDraftVersionID)
 }
 
+// SetName sets the "name" field.
+func (m *AutomationMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *AutomationMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Automation entity.
+// If the Automation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *AutomationMutation) ResetName() {
+	m.name = nil
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *AutomationMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -3824,60 +3874,6 @@ func (m *AutomationMutation) WorkspaceIDs() (ids []int64) {
 func (m *AutomationMutation) ResetWorkspace() {
 	m.workspace = nil
 	m.clearedworkspace = false
-}
-
-// AddRunIDs adds the "runs" edge to the AutomationRun entity by ids.
-func (m *AutomationMutation) AddRunIDs(ids ...int64) {
-	if m.runs == nil {
-		m.runs = make(map[int64]struct{})
-	}
-	for i := range ids {
-		m.runs[ids[i]] = struct{}{}
-	}
-}
-
-// ClearRuns clears the "runs" edge to the AutomationRun entity.
-func (m *AutomationMutation) ClearRuns() {
-	m.clearedruns = true
-}
-
-// RunsCleared reports if the "runs" edge to the AutomationRun entity was cleared.
-func (m *AutomationMutation) RunsCleared() bool {
-	return m.clearedruns
-}
-
-// RemoveRunIDs removes the "runs" edge to the AutomationRun entity by IDs.
-func (m *AutomationMutation) RemoveRunIDs(ids ...int64) {
-	if m.removedruns == nil {
-		m.removedruns = make(map[int64]struct{})
-	}
-	for i := range ids {
-		delete(m.runs, ids[i])
-		m.removedruns[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedRuns returns the removed IDs of the "runs" edge to the AutomationRun entity.
-func (m *AutomationMutation) RemovedRunsIDs() (ids []int64) {
-	for id := range m.removedruns {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// RunsIDs returns the "runs" edge IDs in the mutation.
-func (m *AutomationMutation) RunsIDs() (ids []int64) {
-	for id := range m.runs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetRuns resets all changes to the "runs" edge.
-func (m *AutomationMutation) ResetRuns() {
-	m.runs = nil
-	m.clearedruns = false
-	m.removedruns = nil
 }
 
 // AddVersionIDs adds the "versions" edge to the AutomationVersion entity by ids.
@@ -3934,60 +3930,6 @@ func (m *AutomationMutation) ResetVersions() {
 	m.removedversions = nil
 }
 
-// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by ids.
-func (m *AutomationMutation) AddOutboundMessageIDs(ids ...int64) {
-	if m.outbound_messages == nil {
-		m.outbound_messages = make(map[int64]struct{})
-	}
-	for i := range ids {
-		m.outbound_messages[ids[i]] = struct{}{}
-	}
-}
-
-// ClearOutboundMessages clears the "outbound_messages" edge to the OutboundMessage entity.
-func (m *AutomationMutation) ClearOutboundMessages() {
-	m.clearedoutbound_messages = true
-}
-
-// OutboundMessagesCleared reports if the "outbound_messages" edge to the OutboundMessage entity was cleared.
-func (m *AutomationMutation) OutboundMessagesCleared() bool {
-	return m.clearedoutbound_messages
-}
-
-// RemoveOutboundMessageIDs removes the "outbound_messages" edge to the OutboundMessage entity by IDs.
-func (m *AutomationMutation) RemoveOutboundMessageIDs(ids ...int64) {
-	if m.removedoutbound_messages == nil {
-		m.removedoutbound_messages = make(map[int64]struct{})
-	}
-	for i := range ids {
-		delete(m.outbound_messages, ids[i])
-		m.removedoutbound_messages[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedOutboundMessages returns the removed IDs of the "outbound_messages" edge to the OutboundMessage entity.
-func (m *AutomationMutation) RemovedOutboundMessagesIDs() (ids []int64) {
-	for id := range m.removedoutbound_messages {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// OutboundMessagesIDs returns the "outbound_messages" edge IDs in the mutation.
-func (m *AutomationMutation) OutboundMessagesIDs() (ids []int64) {
-	for id := range m.outbound_messages {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetOutboundMessages resets all changes to the "outbound_messages" edge.
-func (m *AutomationMutation) ResetOutboundMessages() {
-	m.outbound_messages = nil
-	m.clearedoutbound_messages = false
-	m.removedoutbound_messages = nil
-}
-
 // ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
 func (m *AutomationMutation) ClearLiveVersion() {
 	m.clearedlive_version = true
@@ -4042,6 +3984,114 @@ func (m *AutomationMutation) ResetDraftVersion() {
 	m.cleareddraft_version = false
 }
 
+// AddRunIDs adds the "runs" edge to the AutomationRun entity by ids.
+func (m *AutomationMutation) AddRunIDs(ids ...int64) {
+	if m.runs == nil {
+		m.runs = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.runs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRuns clears the "runs" edge to the AutomationRun entity.
+func (m *AutomationMutation) ClearRuns() {
+	m.clearedruns = true
+}
+
+// RunsCleared reports if the "runs" edge to the AutomationRun entity was cleared.
+func (m *AutomationMutation) RunsCleared() bool {
+	return m.clearedruns
+}
+
+// RemoveRunIDs removes the "runs" edge to the AutomationRun entity by IDs.
+func (m *AutomationMutation) RemoveRunIDs(ids ...int64) {
+	if m.removedruns == nil {
+		m.removedruns = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.runs, ids[i])
+		m.removedruns[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRuns returns the removed IDs of the "runs" edge to the AutomationRun entity.
+func (m *AutomationMutation) RemovedRunsIDs() (ids []int64) {
+	for id := range m.removedruns {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RunsIDs returns the "runs" edge IDs in the mutation.
+func (m *AutomationMutation) RunsIDs() (ids []int64) {
+	for id := range m.runs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRuns resets all changes to the "runs" edge.
+func (m *AutomationMutation) ResetRuns() {
+	m.runs = nil
+	m.clearedruns = false
+	m.removedruns = nil
+}
+
+// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by ids.
+func (m *AutomationMutation) AddOutboundMessageIDs(ids ...int64) {
+	if m.outbound_messages == nil {
+		m.outbound_messages = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.outbound_messages[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOutboundMessages clears the "outbound_messages" edge to the OutboundMessage entity.
+func (m *AutomationMutation) ClearOutboundMessages() {
+	m.clearedoutbound_messages = true
+}
+
+// OutboundMessagesCleared reports if the "outbound_messages" edge to the OutboundMessage entity was cleared.
+func (m *AutomationMutation) OutboundMessagesCleared() bool {
+	return m.clearedoutbound_messages
+}
+
+// RemoveOutboundMessageIDs removes the "outbound_messages" edge to the OutboundMessage entity by IDs.
+func (m *AutomationMutation) RemoveOutboundMessageIDs(ids ...int64) {
+	if m.removedoutbound_messages == nil {
+		m.removedoutbound_messages = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.outbound_messages, ids[i])
+		m.removedoutbound_messages[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOutboundMessages returns the removed IDs of the "outbound_messages" edge to the OutboundMessage entity.
+func (m *AutomationMutation) RemovedOutboundMessagesIDs() (ids []int64) {
+	for id := range m.removedoutbound_messages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OutboundMessagesIDs returns the "outbound_messages" edge IDs in the mutation.
+func (m *AutomationMutation) OutboundMessagesIDs() (ids []int64) {
+	for id := range m.outbound_messages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOutboundMessages resets all changes to the "outbound_messages" edge.
+func (m *AutomationMutation) ResetOutboundMessages() {
+	m.outbound_messages = nil
+	m.clearedoutbound_messages = false
+	m.removedoutbound_messages = nil
+}
+
 // Where appends a list predicates to the AutomationMutation builder.
 func (m *AutomationMutation) Where(ps ...predicate.Automation) {
 	m.predicates = append(m.predicates, ps...)
@@ -4076,7 +4126,7 @@ func (m *AutomationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, automation.FieldCreatedAt)
 	}
@@ -4089,17 +4139,20 @@ func (m *AutomationMutation) Fields() []string {
 	if m.discarded_at != nil {
 		fields = append(fields, automation.FieldDiscardedAt)
 	}
-	if m.name != nil {
-		fields = append(fields, automation.FieldName)
-	}
 	if m.status != nil {
 		fields = append(fields, automation.FieldStatus)
+	}
+	if m.activated_at != nil {
+		fields = append(fields, automation.FieldActivatedAt)
 	}
 	if m.live_version != nil {
 		fields = append(fields, automation.FieldLiveVersionID)
 	}
 	if m.draft_version != nil {
 		fields = append(fields, automation.FieldDraftVersionID)
+	}
+	if m.name != nil {
+		fields = append(fields, automation.FieldName)
 	}
 	return fields
 }
@@ -4117,14 +4170,16 @@ func (m *AutomationMutation) Field(name string) (ent.Value, bool) {
 		return m.WorkspaceID()
 	case automation.FieldDiscardedAt:
 		return m.DiscardedAt()
-	case automation.FieldName:
-		return m.Name()
 	case automation.FieldStatus:
 		return m.Status()
+	case automation.FieldActivatedAt:
+		return m.ActivatedAt()
 	case automation.FieldLiveVersionID:
 		return m.LiveVersionID()
 	case automation.FieldDraftVersionID:
 		return m.DraftVersionID()
+	case automation.FieldName:
+		return m.Name()
 	}
 	return nil, false
 }
@@ -4142,14 +4197,16 @@ func (m *AutomationMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldWorkspaceID(ctx)
 	case automation.FieldDiscardedAt:
 		return m.OldDiscardedAt(ctx)
-	case automation.FieldName:
-		return m.OldName(ctx)
 	case automation.FieldStatus:
 		return m.OldStatus(ctx)
+	case automation.FieldActivatedAt:
+		return m.OldActivatedAt(ctx)
 	case automation.FieldLiveVersionID:
 		return m.OldLiveVersionID(ctx)
 	case automation.FieldDraftVersionID:
 		return m.OldDraftVersionID(ctx)
+	case automation.FieldName:
+		return m.OldName(ctx)
 	}
 	return nil, fmt.Errorf("unknown Automation field %s", name)
 }
@@ -4187,19 +4244,19 @@ func (m *AutomationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDiscardedAt(v)
 		return nil
-	case automation.FieldName:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetName(v)
-		return nil
 	case automation.FieldStatus:
 		v, ok := value.(automation.Status)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case automation.FieldActivatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActivatedAt(v)
 		return nil
 	case automation.FieldLiveVersionID:
 		v, ok := value.(int64)
@@ -4214,6 +4271,13 @@ func (m *AutomationMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDraftVersionID(v)
+		return nil
+	case automation.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Automation field %s", name)
@@ -4251,6 +4315,9 @@ func (m *AutomationMutation) ClearedFields() []string {
 	if m.FieldCleared(automation.FieldDiscardedAt) {
 		fields = append(fields, automation.FieldDiscardedAt)
 	}
+	if m.FieldCleared(automation.FieldActivatedAt) {
+		fields = append(fields, automation.FieldActivatedAt)
+	}
 	if m.FieldCleared(automation.FieldLiveVersionID) {
 		fields = append(fields, automation.FieldLiveVersionID)
 	}
@@ -4273,6 +4340,9 @@ func (m *AutomationMutation) ClearField(name string) error {
 	switch name {
 	case automation.FieldDiscardedAt:
 		m.ClearDiscardedAt()
+		return nil
+	case automation.FieldActivatedAt:
+		m.ClearActivatedAt()
 		return nil
 	case automation.FieldLiveVersionID:
 		m.ClearLiveVersionID()
@@ -4300,17 +4370,20 @@ func (m *AutomationMutation) ResetField(name string) error {
 	case automation.FieldDiscardedAt:
 		m.ResetDiscardedAt()
 		return nil
-	case automation.FieldName:
-		m.ResetName()
-		return nil
 	case automation.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case automation.FieldActivatedAt:
+		m.ResetActivatedAt()
 		return nil
 	case automation.FieldLiveVersionID:
 		m.ResetLiveVersionID()
 		return nil
 	case automation.FieldDraftVersionID:
 		m.ResetDraftVersionID()
+		return nil
+	case automation.FieldName:
+		m.ResetName()
 		return nil
 	}
 	return fmt.Errorf("unknown Automation field %s", name)
@@ -4322,20 +4395,20 @@ func (m *AutomationMutation) AddedEdges() []string {
 	if m.workspace != nil {
 		edges = append(edges, automation.EdgeWorkspace)
 	}
-	if m.runs != nil {
-		edges = append(edges, automation.EdgeRuns)
-	}
 	if m.versions != nil {
 		edges = append(edges, automation.EdgeVersions)
-	}
-	if m.outbound_messages != nil {
-		edges = append(edges, automation.EdgeOutboundMessages)
 	}
 	if m.live_version != nil {
 		edges = append(edges, automation.EdgeLiveVersion)
 	}
 	if m.draft_version != nil {
 		edges = append(edges, automation.EdgeDraftVersion)
+	}
+	if m.runs != nil {
+		edges = append(edges, automation.EdgeRuns)
+	}
+	if m.outbound_messages != nil {
+		edges = append(edges, automation.EdgeOutboundMessages)
 	}
 	return edges
 }
@@ -4348,21 +4421,9 @@ func (m *AutomationMutation) AddedIDs(name string) []ent.Value {
 		if id := m.workspace; id != nil {
 			return []ent.Value{*id}
 		}
-	case automation.EdgeRuns:
-		ids := make([]ent.Value, 0, len(m.runs))
-		for id := range m.runs {
-			ids = append(ids, id)
-		}
-		return ids
 	case automation.EdgeVersions:
 		ids := make([]ent.Value, 0, len(m.versions))
 		for id := range m.versions {
-			ids = append(ids, id)
-		}
-		return ids
-	case automation.EdgeOutboundMessages:
-		ids := make([]ent.Value, 0, len(m.outbound_messages))
-		for id := range m.outbound_messages {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4374,6 +4435,18 @@ func (m *AutomationMutation) AddedIDs(name string) []ent.Value {
 		if id := m.draft_version; id != nil {
 			return []ent.Value{*id}
 		}
+	case automation.EdgeRuns:
+		ids := make([]ent.Value, 0, len(m.runs))
+		for id := range m.runs {
+			ids = append(ids, id)
+		}
+		return ids
+	case automation.EdgeOutboundMessages:
+		ids := make([]ent.Value, 0, len(m.outbound_messages))
+		for id := range m.outbound_messages {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -4381,11 +4454,11 @@ func (m *AutomationMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AutomationMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 6)
-	if m.removedruns != nil {
-		edges = append(edges, automation.EdgeRuns)
-	}
 	if m.removedversions != nil {
 		edges = append(edges, automation.EdgeVersions)
+	}
+	if m.removedruns != nil {
+		edges = append(edges, automation.EdgeRuns)
 	}
 	if m.removedoutbound_messages != nil {
 		edges = append(edges, automation.EdgeOutboundMessages)
@@ -4397,15 +4470,15 @@ func (m *AutomationMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *AutomationMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case automation.EdgeRuns:
-		ids := make([]ent.Value, 0, len(m.removedruns))
-		for id := range m.removedruns {
-			ids = append(ids, id)
-		}
-		return ids
 	case automation.EdgeVersions:
 		ids := make([]ent.Value, 0, len(m.removedversions))
 		for id := range m.removedversions {
+			ids = append(ids, id)
+		}
+		return ids
+	case automation.EdgeRuns:
+		ids := make([]ent.Value, 0, len(m.removedruns))
+		for id := range m.removedruns {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4425,20 +4498,20 @@ func (m *AutomationMutation) ClearedEdges() []string {
 	if m.clearedworkspace {
 		edges = append(edges, automation.EdgeWorkspace)
 	}
-	if m.clearedruns {
-		edges = append(edges, automation.EdgeRuns)
-	}
 	if m.clearedversions {
 		edges = append(edges, automation.EdgeVersions)
-	}
-	if m.clearedoutbound_messages {
-		edges = append(edges, automation.EdgeOutboundMessages)
 	}
 	if m.clearedlive_version {
 		edges = append(edges, automation.EdgeLiveVersion)
 	}
 	if m.cleareddraft_version {
 		edges = append(edges, automation.EdgeDraftVersion)
+	}
+	if m.clearedruns {
+		edges = append(edges, automation.EdgeRuns)
+	}
+	if m.clearedoutbound_messages {
+		edges = append(edges, automation.EdgeOutboundMessages)
 	}
 	return edges
 }
@@ -4449,16 +4522,16 @@ func (m *AutomationMutation) EdgeCleared(name string) bool {
 	switch name {
 	case automation.EdgeWorkspace:
 		return m.clearedworkspace
-	case automation.EdgeRuns:
-		return m.clearedruns
 	case automation.EdgeVersions:
 		return m.clearedversions
-	case automation.EdgeOutboundMessages:
-		return m.clearedoutbound_messages
 	case automation.EdgeLiveVersion:
 		return m.clearedlive_version
 	case automation.EdgeDraftVersion:
 		return m.cleareddraft_version
+	case automation.EdgeRuns:
+		return m.clearedruns
+	case automation.EdgeOutboundMessages:
+		return m.clearedoutbound_messages
 	}
 	return false
 }
@@ -4487,20 +4560,20 @@ func (m *AutomationMutation) ResetEdge(name string) error {
 	case automation.EdgeWorkspace:
 		m.ResetWorkspace()
 		return nil
-	case automation.EdgeRuns:
-		m.ResetRuns()
-		return nil
 	case automation.EdgeVersions:
 		m.ResetVersions()
-		return nil
-	case automation.EdgeOutboundMessages:
-		m.ResetOutboundMessages()
 		return nil
 	case automation.EdgeLiveVersion:
 		m.ResetLiveVersion()
 		return nil
 	case automation.EdgeDraftVersion:
 		m.ResetDraftVersion()
+		return nil
+	case automation.EdgeRuns:
+		m.ResetRuns()
+		return nil
+	case automation.EdgeOutboundMessages:
+		m.ResetOutboundMessages()
 		return nil
 	}
 	return fmt.Errorf("unknown Automation edge %s", name)
@@ -39799,9 +39872,9 @@ type RuleMutation struct {
 	created_at           *time.Time
 	updated_at           *time.Time
 	discarded_at         *time.Time
-	name                 *string
 	status               *rule.Status
 	activated_at         *time.Time
+	name                 *string
 	clearedFields        map[string]struct{}
 	workspace            *int64
 	clearedworkspace     bool
@@ -40081,42 +40154,6 @@ func (m *RuleMutation) ResetDiscardedAt() {
 	delete(m.clearedFields, rule.FieldDiscardedAt)
 }
 
-// SetName sets the "name" field.
-func (m *RuleMutation) SetName(s string) {
-	m.name = &s
-}
-
-// Name returns the value of the "name" field in the mutation.
-func (m *RuleMutation) Name() (r string, exists bool) {
-	v := m.name
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldName returns the old "name" field's value of the Rule entity.
-// If the Rule object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleMutation) OldName(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldName is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldName requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldName: %w", err)
-	}
-	return oldValue.Name, nil
-}
-
-// ResetName resets all changes to the "name" field.
-func (m *RuleMutation) ResetName() {
-	m.name = nil
-}
-
 // SetStatus sets the "status" field.
 func (m *RuleMutation) SetStatus(r rule.Status) {
 	m.status = &r
@@ -40298,6 +40335,42 @@ func (m *RuleMutation) DraftVersionIDCleared() bool {
 func (m *RuleMutation) ResetDraftVersionID() {
 	m.draft_version = nil
 	delete(m.clearedFields, rule.FieldDraftVersionID)
+}
+
+// SetName sets the "name" field.
+func (m *RuleMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *RuleMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Rule entity.
+// If the Rule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *RuleMutation) ResetName() {
+	m.name = nil
 }
 
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
@@ -40536,9 +40609,6 @@ func (m *RuleMutation) Fields() []string {
 	if m.discarded_at != nil {
 		fields = append(fields, rule.FieldDiscardedAt)
 	}
-	if m.name != nil {
-		fields = append(fields, rule.FieldName)
-	}
 	if m.status != nil {
 		fields = append(fields, rule.FieldStatus)
 	}
@@ -40550,6 +40620,9 @@ func (m *RuleMutation) Fields() []string {
 	}
 	if m.draft_version != nil {
 		fields = append(fields, rule.FieldDraftVersionID)
+	}
+	if m.name != nil {
+		fields = append(fields, rule.FieldName)
 	}
 	return fields
 }
@@ -40567,8 +40640,6 @@ func (m *RuleMutation) Field(name string) (ent.Value, bool) {
 		return m.WorkspaceID()
 	case rule.FieldDiscardedAt:
 		return m.DiscardedAt()
-	case rule.FieldName:
-		return m.Name()
 	case rule.FieldStatus:
 		return m.Status()
 	case rule.FieldActivatedAt:
@@ -40577,6 +40648,8 @@ func (m *RuleMutation) Field(name string) (ent.Value, bool) {
 		return m.LiveVersionID()
 	case rule.FieldDraftVersionID:
 		return m.DraftVersionID()
+	case rule.FieldName:
+		return m.Name()
 	}
 	return nil, false
 }
@@ -40594,8 +40667,6 @@ func (m *RuleMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldWorkspaceID(ctx)
 	case rule.FieldDiscardedAt:
 		return m.OldDiscardedAt(ctx)
-	case rule.FieldName:
-		return m.OldName(ctx)
 	case rule.FieldStatus:
 		return m.OldStatus(ctx)
 	case rule.FieldActivatedAt:
@@ -40604,6 +40675,8 @@ func (m *RuleMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldLiveVersionID(ctx)
 	case rule.FieldDraftVersionID:
 		return m.OldDraftVersionID(ctx)
+	case rule.FieldName:
+		return m.OldName(ctx)
 	}
 	return nil, fmt.Errorf("unknown Rule field %s", name)
 }
@@ -40641,13 +40714,6 @@ func (m *RuleMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDiscardedAt(v)
 		return nil
-	case rule.FieldName:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetName(v)
-		return nil
 	case rule.FieldStatus:
 		v, ok := value.(rule.Status)
 		if !ok {
@@ -40675,6 +40741,13 @@ func (m *RuleMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDraftVersionID(v)
+		return nil
+	case rule.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Rule field %s", name)
@@ -40767,9 +40840,6 @@ func (m *RuleMutation) ResetField(name string) error {
 	case rule.FieldDiscardedAt:
 		m.ResetDiscardedAt()
 		return nil
-	case rule.FieldName:
-		m.ResetName()
-		return nil
 	case rule.FieldStatus:
 		m.ResetStatus()
 		return nil
@@ -40781,6 +40851,9 @@ func (m *RuleMutation) ResetField(name string) error {
 		return nil
 	case rule.FieldDraftVersionID:
 		m.ResetDraftVersionID()
+		return nil
+	case rule.FieldName:
+		m.ResetName()
 		return nil
 	}
 	return fmt.Errorf("unknown Rule field %s", name)
@@ -41364,22 +41437,9 @@ func (m *RuleFiringMutation) OldVersionID(ctx context.Context) (v int64, err err
 	return oldValue.VersionID, nil
 }
 
-// ClearVersionID clears the value of the "version_id" field.
-func (m *RuleFiringMutation) ClearVersionID() {
-	m.version = nil
-	m.clearedFields[rulefiring.FieldVersionID] = struct{}{}
-}
-
-// VersionIDCleared returns if the "version_id" field was cleared in this mutation.
-func (m *RuleFiringMutation) VersionIDCleared() bool {
-	_, ok := m.clearedFields[rulefiring.FieldVersionID]
-	return ok
-}
-
 // ResetVersionID resets all changes to the "version_id" field.
 func (m *RuleFiringMutation) ResetVersionID() {
 	m.version = nil
-	delete(m.clearedFields, rulefiring.FieldVersionID)
 }
 
 // SetProperties sets the "properties" field.
@@ -41605,7 +41665,7 @@ func (m *RuleFiringMutation) ClearVersion() {
 
 // VersionCleared reports if the "version" edge to the RuleVersion entity was cleared.
 func (m *RuleFiringMutation) VersionCleared() bool {
-	return m.VersionIDCleared() || m.clearedversion
+	return m.clearedversion
 }
 
 // VersionIDs returns the "version" edge IDs in the mutation.
@@ -41872,9 +41932,6 @@ func (m *RuleFiringMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *RuleFiringMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(rulefiring.FieldVersionID) {
-		fields = append(fields, rulefiring.FieldVersionID)
-	}
 	if m.FieldCleared(rulefiring.FieldProperties) {
 		fields = append(fields, rulefiring.FieldProperties)
 	}
@@ -41895,9 +41952,6 @@ func (m *RuleFiringMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *RuleFiringMutation) ClearField(name string) error {
 	switch name {
-	case rulefiring.FieldVersionID:
-		m.ClearVersionID()
-		return nil
 	case rulefiring.FieldProperties:
 		m.ClearProperties()
 		return nil

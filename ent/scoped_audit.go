@@ -209,10 +209,11 @@ var AutomationAuditSensitive = map[string]bool{}
 func (e *Automation) auditFields() map[string]any {
 	return map[string]any{
 		"discarded_at":     derefAudit(e.DiscardedAt),
-		"name":             e.Name,
 		"status":           e.Status,
+		"activated_at":     derefAudit(e.ActivatedAt),
 		"live_version_id":  derefAudit(e.LiveVersionID),
 		"draft_version_id": derefAudit(e.DraftVersionID),
+		"name":             e.Name,
 	}
 }
 
@@ -771,11 +772,11 @@ var RuleAuditSensitive = map[string]bool{}
 func (e *Rule) auditFields() map[string]any {
 	return map[string]any{
 		"discarded_at":     derefAudit(e.DiscardedAt),
-		"name":             e.Name,
 		"status":           e.Status,
 		"activated_at":     derefAudit(e.ActivatedAt),
 		"live_version_id":  derefAudit(e.LiveVersionID),
 		"draft_version_id": derefAudit(e.DraftVersionID),
+		"name":             e.Name,
 	}
 }
 
