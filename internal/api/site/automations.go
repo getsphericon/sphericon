@@ -3,10 +3,7 @@ package site
 import (
 	"context"
 
-	"github.com/samber/lo"
-
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -19,7 +16,7 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 		return nil, err
 	}
 	return &siteapi.SiteAutomationsListOK{
-		Items:      lo.Map(page.Items, func(a automations.WithRevenue, _ int) siteapi.SiteAutomationResource { return automationWithRevenue(a) }),
+		Items:      mapper.AutomationsWithRevenueToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),
@@ -45,15 +42,8 @@ func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAu
 	if err != nil {
 		return nil, err
 	}
-	res := automationWithRevenue(a)
+	res := mapper.AutomationWithRevenueToResource(a)
 	return &res, nil
-}
-
-// automationWithRevenue maps an Automation with the revenue the automations module read for it.
-func automationWithRevenue(a automations.WithRevenue) siteapi.SiteAutomationResource {
-	res := mapper.AutomationToResource(a.Automation)
-	res.Revenue = siteapi.NewOptSiteMessageRevenue(mapper.MessageRevenueToResource(a.Revenue))
-	return res
 }
 
 func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteUpdateAutomationInput, params siteapi.SiteAutomationsUpdateParams) (siteapi.SiteAutomationsUpdateRes, error) {

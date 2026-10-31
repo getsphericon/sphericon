@@ -98,6 +98,7 @@ import (
 // goverter:extend optInt32
 // goverter:extend optString
 // goverter:extend optMembershipSource
+// goverter:extend optMessageRevenue
 // goverter:extend optTrackingReason
 // goverter:extend timestampOf
 // goverter:extend tagNames
@@ -237,10 +238,18 @@ type Converter interface {
 	// The live version and the draft are the edges the automations module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | automationVersionOrNull
-	// The revenue is summed from Order Movements, which the mapper cannot see: the automations
-	// module reads it with the Automation (automations.WithRevenue) and the handler attaches it.
+	// The revenue is summed from Order Movements, which the mapper cannot see: an Automation the
+	// automations module read with its revenue maps through AutomationWithRevenueToResource.
 	// goverter:ignore Revenue
 	AutomationToResource(source *ent.Automation) siteapi.SiteAutomationResource
+	// An Automation with the revenue the automations module read for it (ADR 0064).
+	// goverter:autoMap Automation
+	// goverter:map Automation.DiscardedAt ArchivedAt
+	// goverter:map Automation.Edges.LiveVersion Live | automationVersionOrNull
+	// goverter:map Automation.Edges.DraftVersion Draft | automationVersionOrNull
+	AutomationWithRevenueToResource(source automations.WithRevenue) siteapi.SiteAutomationResource
+	// goverter:useEmptyOnNil:slice
+	AutomationsWithRevenueToResources(source []automations.WithRevenue) []siteapi.SiteAutomationResource
 	// The stored definition string (the executor's JSON format) is decoded into the typed steps
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
@@ -917,4 +926,9 @@ func optNilContactSource(c Converter, v *contact.Source) siteapi.OptNilContactEx
 // Condition's table, listed so a client offers what the server takes.
 func customFieldRuleOperators(t customfield.Type) []siteapi.SiteConditionOperator {
 	return lo.Map(condition.RuleOperators(t), func(op string, _ int) siteapi.SiteConditionOperator { return siteapi.SiteConditionOperator(op) })
+}
+
+// optMessageRevenue is the revenue of a message, present wherever the module read it.
+func optMessageRevenue(c Converter, r orders.Revenue) siteapi.OptSiteMessageRevenue {
+	return siteapi.NewOptSiteMessageRevenue(c.MessageRevenueToResource(r))
 }
