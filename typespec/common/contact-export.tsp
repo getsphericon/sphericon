@@ -99,8 +99,8 @@ model ContactExportEvent {
   /** Event properties */
   properties?: ContactExportJson | null;
 
-  /** Event occurrence timestamp */
-  occurredAt?: Timestamp | null;
+  /** When the event happened: the time the source gave, or when it was published if it gave none */
+  occurredAt: Timestamp;
 
   /** Whether the event was loaded as history rather than tracked live */
   backfill: boolean;

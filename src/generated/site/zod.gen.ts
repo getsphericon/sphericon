@@ -2199,7 +2199,7 @@ export const zContactExportEvent = z.object({
   phone: z.exactOptional(z.string().nullable()),
   action: z.string(),
   properties: z.exactOptional(zContactExportJson.nullable()),
-  occurredAt: z.exactOptional(zTimestamp.nullable()),
+  occurredAt: zTimestamp,
   backfill: z.boolean(),
   createdAt: zTimestamp
 });
@@ -2612,7 +2612,7 @@ export const zSiteEventResource = z.object({
   email: z.exactOptional(z.string().nullable()),
   action: z.string(),
   properties: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
-  occurredAt: z.exactOptional(zTimestamp.nullable()),
+  occurredAt: zTimestamp,
   createdAt: zTimestamp
 });
 

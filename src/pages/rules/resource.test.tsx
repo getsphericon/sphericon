@@ -217,7 +217,15 @@ test('trying the rule on a recorded event shows whether it would fire and which 
     handleSiteRulesGet({ body: STORED }),
     handleSiteEventsList({
       body: page(
-        [{ id: '55', subjectId: 's', action: 'signed_up', createdAt: '2026-01-02T00:00:00Z' }],
+        [
+          {
+            id: '55',
+            subjectId: 's',
+            action: 'signed_up',
+            occurredAt: '2026-01-02T00:00:00Z',
+            createdAt: '2026-01-02T00:00:00Z',
+          },
+        ],
         1,
       ),
     }),

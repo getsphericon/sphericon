@@ -768,8 +768,8 @@ type ContactExportEvent struct {
 	Action string `json:"action"`
 	// Event properties.
 	Properties OptNilContactExportJson `json:"properties"`
-	// Event occurrence timestamp.
-	OccurredAt OptNilTimestamp `json:"occurredAt"`
+	// When the event happened: the time the source gave, or when it was published if it gave none.
+	OccurredAt Timestamp `json:"occurredAt"`
 	// Whether the event was loaded as history rather than tracked live.
 	Backfill bool `json:"backfill"`
 	// Creation timestamp.
@@ -817,7 +817,7 @@ func (s *ContactExportEvent) GetProperties() OptNilContactExportJson {
 }
 
 // GetOccurredAt returns the value of OccurredAt.
-func (s *ContactExportEvent) GetOccurredAt() OptNilTimestamp {
+func (s *ContactExportEvent) GetOccurredAt() Timestamp {
 	return s.OccurredAt
 }
 
@@ -872,7 +872,7 @@ func (s *ContactExportEvent) SetProperties(val OptNilContactExportJson) {
 }
 
 // SetOccurredAt sets the value of OccurredAt.
-func (s *ContactExportEvent) SetOccurredAt(val OptNilTimestamp) {
+func (s *ContactExportEvent) SetOccurredAt(val Timestamp) {
 	s.OccurredAt = val
 }
 
@@ -15477,8 +15477,8 @@ type SiteEventResource struct {
 	Action string `json:"action"`
 	// Arbitrary event properties.
 	Properties OptNilSiteEventResourceProperties `json:"properties"`
-	// When the event occurred at the source, if provided.
-	OccurredAt OptNilTimestamp `json:"occurredAt"`
+	// When the event happened: the time the source gave, or when it was published if it gave none.
+	OccurredAt Timestamp `json:"occurredAt"`
 	// When the event was recorded.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -15509,7 +15509,7 @@ func (s *SiteEventResource) GetProperties() OptNilSiteEventResourceProperties {
 }
 
 // GetOccurredAt returns the value of OccurredAt.
-func (s *SiteEventResource) GetOccurredAt() OptNilTimestamp {
+func (s *SiteEventResource) GetOccurredAt() Timestamp {
 	return s.OccurredAt
 }
 
@@ -15544,7 +15544,7 @@ func (s *SiteEventResource) SetProperties(val OptNilSiteEventResourceProperties)
 }
 
 // SetOccurredAt sets the value of OccurredAt.
-func (s *SiteEventResource) SetOccurredAt(val OptNilTimestamp) {
+func (s *SiteEventResource) SetOccurredAt(val Timestamp) {
 	s.OccurredAt = val
 }
 

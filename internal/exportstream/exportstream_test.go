@@ -66,7 +66,7 @@ func FuzzParseCursor(f *testing.F) {
 // The row check is what keeps a stream's encoder and the published contract one thing.
 func TestValidateRowRefusesADriftedRow(t *testing.T) {
 	const ok = `{"id":"1","action":"a","properties":{},"contact_id":null,"visitor_id":null,"subject_id":"",` +
-		`"email":null,"phone":null,"occurred_at":null,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`
+		`"email":null,"phone":null,"occurred_at":"2026-01-01T00:00:00Z","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`
 	err := exportstream.ValidateRow(exportstream.EventsSchema, []byte(ok))
 	require.NoErrorf(t, err, "a conforming row is refused: %v", err)
 	drifted := map[string]string{

@@ -85,7 +85,7 @@ func TestARuleEnrollmentBeginsWhenTheEventTheRuleFiredOnOccurred(t *testing.T) {
 	steps := env.JobsOf(t, jobkind.RunStep.Kind)
 	assert.Equal(t, []rules.Result{{Type: rules.ActionEnroll, Status: rules.Succeeded}}, results)
 	assert.Equal(t, automationrun.StatusGoalReached, run.Status)
-	assert.WithinDuration(t, *fired.OccurredAt, run.BeganAt, time.Microsecond)
+	assert.WithinDuration(t, fired.OccurredAt, run.BeganAt, time.Microsecond)
 	assert.Empty(t, steps, "no step runs after the goal")
 	assert.Equal(t, new(fixtures.EventRecoveryRuleTriggerAction), run.EventAction)
 	assert.Equal(t, fired.Properties, run.EventProperties)

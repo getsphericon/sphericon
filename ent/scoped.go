@@ -13840,6 +13840,66 @@ func (x *EventScopedCreate) SetNillableOccurredAt(v *time.Time) *EventScopedCrea
 	return x
 }
 
+// SetMachine sets the "machine" field.
+func (x *EventScopedCreate) SetMachine(v bool) *EventScopedCreate {
+	x.b.SetMachine(v)
+	return x
+}
+
+// SetNillableMachine sets the "machine" field if the given value is not nil.
+func (x *EventScopedCreate) SetNillableMachine(v *bool) *EventScopedCreate {
+	x.b.SetNillableMachine(v)
+	return x
+}
+
+// SetCaptured sets the "captured" field.
+func (x *EventScopedCreate) SetCaptured(v bool) *EventScopedCreate {
+	x.b.SetCaptured(v)
+	return x
+}
+
+// SetNillableCaptured sets the "captured" field if the given value is not nil.
+func (x *EventScopedCreate) SetNillableCaptured(v *bool) *EventScopedCreate {
+	x.b.SetNillableCaptured(v)
+	return x
+}
+
+// SetBroadcastID sets the "broadcast_id" field.
+func (x *EventScopedCreate) SetBroadcastID(v int64) *EventScopedCreate {
+	x.b.SetBroadcastID(v)
+	return x
+}
+
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (x *EventScopedCreate) SetNillableBroadcastID(v *int64) *EventScopedCreate {
+	x.b.SetNillableBroadcastID(v)
+	return x
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (x *EventScopedCreate) SetAutomationID(v int64) *EventScopedCreate {
+	x.b.SetAutomationID(v)
+	return x
+}
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (x *EventScopedCreate) SetNillableAutomationID(v *int64) *EventScopedCreate {
+	x.b.SetNillableAutomationID(v)
+	return x
+}
+
+// SetURL sets the "url" field.
+func (x *EventScopedCreate) SetURL(v string) *EventScopedCreate {
+	x.b.SetURL(v)
+	return x
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (x *EventScopedCreate) SetNillableURL(v *string) *EventScopedCreate {
+	x.b.SetNillableURL(v)
+	return x
+}
+
 // SetBackfill sets the "backfill" field.
 func (x *EventScopedCreate) SetBackfill(v bool) *EventScopedCreate {
 	x.b.SetBackfill(v)
@@ -14073,21 +14133,69 @@ func (u *EventScopedUpsert) ClearProperties() *EventScopedUpsert {
 	return u
 }
 
-// SetOccurredAt sets the "occurred_at" field.
-func (u *EventScopedUpsert) SetOccurredAt(v time.Time) *EventScopedUpsert {
-	u.u.Set(event.FieldOccurredAt, v)
+// SetBroadcastID sets the "broadcast_id" field.
+func (u *EventScopedUpsert) SetBroadcastID(v int64) *EventScopedUpsert {
+	u.u.Set(event.FieldBroadcastID, v)
 	return u
 }
 
-// UpdateOccurredAt sets the "occurred_at" field to the value that was provided on create.
-func (u *EventScopedUpsert) UpdateOccurredAt() *EventScopedUpsert {
-	u.u.SetExcluded(event.FieldOccurredAt)
+// AddBroadcastID adds v to the "broadcast_id" field.
+func (u *EventScopedUpsert) AddBroadcastID(v int64) *EventScopedUpsert {
+	u.u.Add(event.FieldBroadcastID, v)
 	return u
 }
 
-// ClearOccurredAt clears the value of the "occurred_at" field.
-func (u *EventScopedUpsert) ClearOccurredAt() *EventScopedUpsert {
-	u.u.SetNull(event.FieldOccurredAt)
+// UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
+func (u *EventScopedUpsert) UpdateBroadcastID() *EventScopedUpsert {
+	u.u.SetExcluded(event.FieldBroadcastID)
+	return u
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (u *EventScopedUpsert) ClearBroadcastID() *EventScopedUpsert {
+	u.u.SetNull(event.FieldBroadcastID)
+	return u
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (u *EventScopedUpsert) SetAutomationID(v int64) *EventScopedUpsert {
+	u.u.Set(event.FieldAutomationID, v)
+	return u
+}
+
+// AddAutomationID adds v to the "automation_id" field.
+func (u *EventScopedUpsert) AddAutomationID(v int64) *EventScopedUpsert {
+	u.u.Add(event.FieldAutomationID, v)
+	return u
+}
+
+// UpdateAutomationID sets the "automation_id" field to the value that was provided on create.
+func (u *EventScopedUpsert) UpdateAutomationID() *EventScopedUpsert {
+	u.u.SetExcluded(event.FieldAutomationID)
+	return u
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (u *EventScopedUpsert) ClearAutomationID() *EventScopedUpsert {
+	u.u.SetNull(event.FieldAutomationID)
+	return u
+}
+
+// SetURL sets the "url" field.
+func (u *EventScopedUpsert) SetURL(v string) *EventScopedUpsert {
+	u.u.Set(event.FieldURL, v)
+	return u
+}
+
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *EventScopedUpsert) UpdateURL() *EventScopedUpsert {
+	u.u.SetExcluded(event.FieldURL)
+	return u
+}
+
+// ClearURL clears the value of the "url" field.
+func (u *EventScopedUpsert) ClearURL() *EventScopedUpsert {
+	u.u.SetNull(event.FieldURL)
 	return u
 }
 
@@ -14387,21 +14495,69 @@ func (x *EventScopedUpdateOne) ClearProperties() *EventScopedUpdateOne {
 	return x
 }
 
-// SetOccurredAt sets the "occurred_at" field.
-func (x *EventScopedUpdateOne) SetOccurredAt(v time.Time) *EventScopedUpdateOne {
-	x.b.SetOccurredAt(v)
+// SetBroadcastID sets the "broadcast_id" field.
+func (x *EventScopedUpdateOne) SetBroadcastID(v int64) *EventScopedUpdateOne {
+	x.b.SetBroadcastID(v)
 	return x
 }
 
-// SetNillableOccurredAt sets the "occurred_at" field if the given value is not nil.
-func (x *EventScopedUpdateOne) SetNillableOccurredAt(v *time.Time) *EventScopedUpdateOne {
-	x.b.SetNillableOccurredAt(v)
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (x *EventScopedUpdateOne) SetNillableBroadcastID(v *int64) *EventScopedUpdateOne {
+	x.b.SetNillableBroadcastID(v)
 	return x
 }
 
-// ClearOccurredAt clears the value of the "occurred_at" field.
-func (x *EventScopedUpdateOne) ClearOccurredAt() *EventScopedUpdateOne {
-	x.b.ClearOccurredAt()
+// AddBroadcastID adds value to the "broadcast_id" field.
+func (x *EventScopedUpdateOne) AddBroadcastID(v int64) *EventScopedUpdateOne {
+	x.b.AddBroadcastID(v)
+	return x
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (x *EventScopedUpdateOne) ClearBroadcastID() *EventScopedUpdateOne {
+	x.b.ClearBroadcastID()
+	return x
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (x *EventScopedUpdateOne) SetAutomationID(v int64) *EventScopedUpdateOne {
+	x.b.SetAutomationID(v)
+	return x
+}
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (x *EventScopedUpdateOne) SetNillableAutomationID(v *int64) *EventScopedUpdateOne {
+	x.b.SetNillableAutomationID(v)
+	return x
+}
+
+// AddAutomationID adds value to the "automation_id" field.
+func (x *EventScopedUpdateOne) AddAutomationID(v int64) *EventScopedUpdateOne {
+	x.b.AddAutomationID(v)
+	return x
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (x *EventScopedUpdateOne) ClearAutomationID() *EventScopedUpdateOne {
+	x.b.ClearAutomationID()
+	return x
+}
+
+// SetURL sets the "url" field.
+func (x *EventScopedUpdateOne) SetURL(v string) *EventScopedUpdateOne {
+	x.b.SetURL(v)
+	return x
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (x *EventScopedUpdateOne) SetNillableURL(v *string) *EventScopedUpdateOne {
+	x.b.SetNillableURL(v)
+	return x
+}
+
+// ClearURL clears the value of the "url" field.
+func (x *EventScopedUpdateOne) ClearURL() *EventScopedUpdateOne {
+	x.b.ClearURL()
 	return x
 }
 
@@ -14626,21 +14782,69 @@ func (x *EventScopedUpdate) ClearProperties() *EventScopedUpdate {
 	return x
 }
 
-// SetOccurredAt sets the "occurred_at" field.
-func (x *EventScopedUpdate) SetOccurredAt(v time.Time) *EventScopedUpdate {
-	x.b.SetOccurredAt(v)
+// SetBroadcastID sets the "broadcast_id" field.
+func (x *EventScopedUpdate) SetBroadcastID(v int64) *EventScopedUpdate {
+	x.b.SetBroadcastID(v)
 	return x
 }
 
-// SetNillableOccurredAt sets the "occurred_at" field if the given value is not nil.
-func (x *EventScopedUpdate) SetNillableOccurredAt(v *time.Time) *EventScopedUpdate {
-	x.b.SetNillableOccurredAt(v)
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (x *EventScopedUpdate) SetNillableBroadcastID(v *int64) *EventScopedUpdate {
+	x.b.SetNillableBroadcastID(v)
 	return x
 }
 
-// ClearOccurredAt clears the value of the "occurred_at" field.
-func (x *EventScopedUpdate) ClearOccurredAt() *EventScopedUpdate {
-	x.b.ClearOccurredAt()
+// AddBroadcastID adds value to the "broadcast_id" field.
+func (x *EventScopedUpdate) AddBroadcastID(v int64) *EventScopedUpdate {
+	x.b.AddBroadcastID(v)
+	return x
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (x *EventScopedUpdate) ClearBroadcastID() *EventScopedUpdate {
+	x.b.ClearBroadcastID()
+	return x
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (x *EventScopedUpdate) SetAutomationID(v int64) *EventScopedUpdate {
+	x.b.SetAutomationID(v)
+	return x
+}
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (x *EventScopedUpdate) SetNillableAutomationID(v *int64) *EventScopedUpdate {
+	x.b.SetNillableAutomationID(v)
+	return x
+}
+
+// AddAutomationID adds value to the "automation_id" field.
+func (x *EventScopedUpdate) AddAutomationID(v int64) *EventScopedUpdate {
+	x.b.AddAutomationID(v)
+	return x
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (x *EventScopedUpdate) ClearAutomationID() *EventScopedUpdate {
+	x.b.ClearAutomationID()
+	return x
+}
+
+// SetURL sets the "url" field.
+func (x *EventScopedUpdate) SetURL(v string) *EventScopedUpdate {
+	x.b.SetURL(v)
+	return x
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (x *EventScopedUpdate) SetNillableURL(v *string) *EventScopedUpdate {
+	x.b.SetNillableURL(v)
+	return x
+}
+
+// ClearURL clears the value of the "url" field.
+func (x *EventScopedUpdate) ClearURL() *EventScopedUpdate {
+	x.b.ClearURL()
 	return x
 }
 

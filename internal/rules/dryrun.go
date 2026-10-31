@@ -79,7 +79,7 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, ruleID, eventID int6
 	if stored.Backfill {
 		return DryRun{Outcome: Backfill}, nil
 	}
-	if events.IsMachine(stored.Properties) {
+	if stored.Machine {
 		return DryRun{Outcome: Machine}, nil
 	}
 	if stored.ContactID == nil {

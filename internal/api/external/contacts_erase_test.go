@@ -126,7 +126,11 @@ func TestExternalContactsEraseRemovesThePersonsData(t *testing.T) {
 	// Only the non-personal delivery facts the rates are computed from survive.
 	assert.Equal(t, map[string]any{"sendingDomain": "mail.initech.test"}, eventByID(t, env, fixtures.EventErasableSentID).Properties)
 	assert.Equal(t, map[string]any{"sendingDomain": "mail.initech.test", "bounceKind": "hard"}, eventByID(t, env, fixtures.EventErasableBouncedID).Properties)
-	assert.Empty(t, eventByID(t, env, fixtures.EventErasableClickedID).Properties, "the clicked url is gone")
+	clicked := eventByID(t, env, fixtures.EventErasableClickedID)
+	assert.Empty(t, clicked.Properties, "the clicked url is gone")
+	assert.Nil(t, clicked.URL, "and so is its column")
+	assert.Nil(t, clicked.BroadcastID, "the provenance goes with the properties")
+	assert.Nil(t, eventByID(t, env, fixtures.EventErasableOpenedID).BroadcastID)
 	assert.Empty(t, eventByID(t, env, fixtures.EventErasableCreatedID).Properties)
 
 	// The refusal survives by Destination, detached from the Contact.

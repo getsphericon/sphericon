@@ -6,11 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
-	"strconv"
 	"time"
 
-	"entgo.io/ent/dialect/sql"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
@@ -100,43 +99,22 @@ func orderLockKey(workspaceID int64) int64 {
 // (ADR 0053) and a click of neither (a Transactional send) are passed over; equal times go to the
 // click Event stored last.
 func LastClick(ctx context.Context, s *ent.Scoped, contactID int64, since, until time.Time) (*orders.Click, error) {
-	var found []*ent.Event
-	err := s.Event().Query().
-		Where(event.ContactID(contactID), event.ActionEQ(NameEmailClicked)).
-		Modify(func(sel *sql.Selector) {
-			HumanOnly(sel)
-			props := sel.C(event.FieldProperties)
-			// raw sql: a click carries the id of its Broadcast or Automation as a key of the JSON properties.
-			sel.Where(sql.ExprP("(" + props + "->>'broadcastId' IS NOT NULL OR " + props + "->>'automationId' IS NOT NULL)"))
-			moment := Moment(sel)
-			// raw sql: the bounds are on the Moment expression, which ent's predicates cannot take as an operand.
-			sel.Where(sql.P(func(b *sql.Builder) {
-				b.WriteString(moment).WriteString(" >= ").Arg(since).
-					WriteString(" AND ").WriteString(moment).WriteString(" <= ").Arg(until)
-			}))
-			// raw sql: latest first, ties to the Event stored last.
-			sel.OrderExpr(sql.Expr(moment + " DESC, " + sel.C(event.FieldID) + " DESC"))
-			sel.Limit(1)
-		}).
-		Scan(ctx, &found)
-	if err != nil || len(found) == 0 {
+	click, err := s.Event().Query().
+		Where(
+			event.ContactID(contactID), event.ActionEQ(NameEmailClicked), HumanOnly(),
+			event.Or(event.BroadcastIDNotNil(), event.AutomationIDNotNil()),
+			event.OccurredAtGTE(since), event.OccurredAtLTE(until),
+		).
+		// Latest first, ties to the Event stored last.
+		Order(ent.Desc(event.FieldOccurredAt), ent.Desc(event.FieldID)).
+		First(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
 		return nil, err
 	}
-	click := found[0]
-	at := click.CreatedAt
-	if click.OccurredAt != nil {
-		at = *click.OccurredAt
-	}
-	owner := func(key string) int64 {
-		switch v := click.Properties[key].(type) {
-		case float64:
-			return int64(v)
-		case string:
-			if id, err := strconv.ParseInt(v, 10, 64); err == nil {
-				return id
-			}
-		}
-		return 0
-	}
-	return &orders.Click{BroadcastID: owner("broadcastId"), AutomationID: owner("automationId"), At: at}, nil
+	return &orders.Click{
+		BroadcastID: lo.FromPtr(click.BroadcastID), AutomationID: lo.FromPtr(click.AutomationID), At: click.OccurredAt,
+	}, nil
 }

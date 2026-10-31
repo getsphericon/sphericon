@@ -3,9 +3,6 @@ package automations
 import (
 	"context"
 
-	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqljson"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -42,17 +39,13 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 	if _, err := m.Get(ctx, s, id); err != nil {
 		return Report{}, err
 	}
-	ofAutomation := func(sel *sql.Selector) {
-		sel.Where(sqljson.ValueEQ(event.FieldProperties, id, sqljson.Path("automationId")))
-	}
 	opens, err := s.Event().Query().
-		Where(event.ActionEQ(events.NameEmailOpened)).
-		Modify(events.HumanOnly, ofAutomation).
+		Where(event.ActionEQ(events.NameEmailOpened), events.HumanOnly(), event.AutomationID(id)).
 		Count(ctx)
 	if err != nil {
 		return Report{}, err
 	}
-	links, err := linkclicks.ByLink(ctx, s, linkclicks.Between{}, ofAutomation)
+	links, err := linkclicks.ByLink(ctx, s, linkclicks.Between{}, event.AutomationID(id))
 	if err != nil {
 		return Report{}, err
 	}

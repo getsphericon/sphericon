@@ -38,6 +38,16 @@ const (
 	FieldProperties = "properties"
 	// FieldOccurredAt holds the string denoting the occurred_at field in the database.
 	FieldOccurredAt = "occurred_at"
+	// FieldMachine holds the string denoting the machine field in the database.
+	FieldMachine = "machine"
+	// FieldCaptured holds the string denoting the captured field in the database.
+	FieldCaptured = "captured"
+	// FieldBroadcastID holds the string denoting the broadcast_id field in the database.
+	FieldBroadcastID = "broadcast_id"
+	// FieldAutomationID holds the string denoting the automation_id field in the database.
+	FieldAutomationID = "automation_id"
+	// FieldURL holds the string denoting the url field in the database.
+	FieldURL = "url"
 	// FieldBackfill holds the string denoting the backfill field in the database.
 	FieldBackfill = "backfill"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -77,6 +87,11 @@ var Columns = []string{
 	FieldAction,
 	FieldProperties,
 	FieldOccurredAt,
+	FieldMachine,
+	FieldCaptured,
+	FieldBroadcastID,
+	FieldAutomationID,
+	FieldURL,
 	FieldBackfill,
 }
 
@@ -99,6 +114,12 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// ActionValidator is a validator for the "action" field. It is called by the builders before save.
 	ActionValidator func(string) error
+	// DefaultOccurredAt holds the default value on creation for the "occurred_at" field.
+	DefaultOccurredAt func() time.Time
+	// DefaultMachine holds the default value on creation for the "machine" field.
+	DefaultMachine bool
+	// DefaultCaptured holds the default value on creation for the "captured" field.
+	DefaultCaptured bool
 	// DefaultBackfill holds the default value on creation for the "backfill" field.
 	DefaultBackfill bool
 )
@@ -164,6 +185,31 @@ func ByAction(opts ...sql.OrderTermOption) OrderOption {
 // ByOccurredAt orders the results by the occurred_at field.
 func ByOccurredAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOccurredAt, opts...).ToFunc()
+}
+
+// ByMachine orders the results by the machine field.
+func ByMachine(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMachine, opts...).ToFunc()
+}
+
+// ByCaptured orders the results by the captured field.
+func ByCaptured(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCaptured, opts...).ToFunc()
+}
+
+// ByBroadcastID orders the results by the broadcast_id field.
+func ByBroadcastID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBroadcastID, opts...).ToFunc()
+}
+
+// ByAutomationID orders the results by the automation_id field.
+func ByAutomationID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAutomationID, opts...).ToFunc()
+}
+
+// ByURL orders the results by the url field.
+func ByURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldURL, opts...).ToFunc()
 }
 
 // ByBackfill orders the results by the backfill field.

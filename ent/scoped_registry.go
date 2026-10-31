@@ -1034,8 +1034,17 @@ func ScopedEntities() []ScopedEntity {
 				if !reflect.ValueOf(src.Properties).IsZero() {
 					b.SetProperties(src.Properties)
 				}
-				if src.OccurredAt != nil {
-					b.SetOccurredAt(*src.OccurredAt)
+				b.SetOccurredAt(src.OccurredAt)
+				b.SetMachine(src.Machine)
+				b.SetCaptured(src.Captured)
+				if src.BroadcastID != nil {
+					b.SetBroadcastID(*src.BroadcastID)
+				}
+				if src.AutomationID != nil {
+					b.SetAutomationID(*src.AutomationID)
+				}
+				if src.URL != nil {
+					b.SetURL(*src.URL)
 				}
 				b.SetBackfill(src.Backfill)
 				created, err := b.Save(ctx)

@@ -110,6 +110,31 @@ func OccurredAt(v time.Time) predicate.Event {
 	return predicate.Event(sql.FieldEQ(FieldOccurredAt, v))
 }
 
+// Machine applies equality check predicate on the "machine" field. It's identical to MachineEQ.
+func Machine(v bool) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldMachine, v))
+}
+
+// Captured applies equality check predicate on the "captured" field. It's identical to CapturedEQ.
+func Captured(v bool) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldCaptured, v))
+}
+
+// BroadcastID applies equality check predicate on the "broadcast_id" field. It's identical to BroadcastIDEQ.
+func BroadcastID(v int64) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldBroadcastID, v))
+}
+
+// AutomationID applies equality check predicate on the "automation_id" field. It's identical to AutomationIDEQ.
+func AutomationID(v int64) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldAutomationID, v))
+}
+
+// URL applies equality check predicate on the "url" field. It's identical to URLEQ.
+func URL(v string) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldURL, v))
+}
+
 // Backfill applies equality check predicate on the "backfill" field. It's identical to BackfillEQ.
 func Backfill(v bool) predicate.Event {
 	return predicate.Event(sql.FieldEQ(FieldBackfill, v))
@@ -735,14 +760,199 @@ func OccurredAtLTE(v time.Time) predicate.Event {
 	return predicate.Event(sql.FieldLTE(FieldOccurredAt, v))
 }
 
-// OccurredAtIsNil applies the IsNil predicate on the "occurred_at" field.
-func OccurredAtIsNil() predicate.Event {
-	return predicate.Event(sql.FieldIsNull(FieldOccurredAt))
+// MachineEQ applies the EQ predicate on the "machine" field.
+func MachineEQ(v bool) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldMachine, v))
 }
 
-// OccurredAtNotNil applies the NotNil predicate on the "occurred_at" field.
-func OccurredAtNotNil() predicate.Event {
-	return predicate.Event(sql.FieldNotNull(FieldOccurredAt))
+// MachineNEQ applies the NEQ predicate on the "machine" field.
+func MachineNEQ(v bool) predicate.Event {
+	return predicate.Event(sql.FieldNEQ(FieldMachine, v))
+}
+
+// CapturedEQ applies the EQ predicate on the "captured" field.
+func CapturedEQ(v bool) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldCaptured, v))
+}
+
+// CapturedNEQ applies the NEQ predicate on the "captured" field.
+func CapturedNEQ(v bool) predicate.Event {
+	return predicate.Event(sql.FieldNEQ(FieldCaptured, v))
+}
+
+// BroadcastIDEQ applies the EQ predicate on the "broadcast_id" field.
+func BroadcastIDEQ(v int64) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldBroadcastID, v))
+}
+
+// BroadcastIDNEQ applies the NEQ predicate on the "broadcast_id" field.
+func BroadcastIDNEQ(v int64) predicate.Event {
+	return predicate.Event(sql.FieldNEQ(FieldBroadcastID, v))
+}
+
+// BroadcastIDIn applies the In predicate on the "broadcast_id" field.
+func BroadcastIDIn(vs ...int64) predicate.Event {
+	return predicate.Event(sql.FieldIn(FieldBroadcastID, vs...))
+}
+
+// BroadcastIDNotIn applies the NotIn predicate on the "broadcast_id" field.
+func BroadcastIDNotIn(vs ...int64) predicate.Event {
+	return predicate.Event(sql.FieldNotIn(FieldBroadcastID, vs...))
+}
+
+// BroadcastIDGT applies the GT predicate on the "broadcast_id" field.
+func BroadcastIDGT(v int64) predicate.Event {
+	return predicate.Event(sql.FieldGT(FieldBroadcastID, v))
+}
+
+// BroadcastIDGTE applies the GTE predicate on the "broadcast_id" field.
+func BroadcastIDGTE(v int64) predicate.Event {
+	return predicate.Event(sql.FieldGTE(FieldBroadcastID, v))
+}
+
+// BroadcastIDLT applies the LT predicate on the "broadcast_id" field.
+func BroadcastIDLT(v int64) predicate.Event {
+	return predicate.Event(sql.FieldLT(FieldBroadcastID, v))
+}
+
+// BroadcastIDLTE applies the LTE predicate on the "broadcast_id" field.
+func BroadcastIDLTE(v int64) predicate.Event {
+	return predicate.Event(sql.FieldLTE(FieldBroadcastID, v))
+}
+
+// BroadcastIDIsNil applies the IsNil predicate on the "broadcast_id" field.
+func BroadcastIDIsNil() predicate.Event {
+	return predicate.Event(sql.FieldIsNull(FieldBroadcastID))
+}
+
+// BroadcastIDNotNil applies the NotNil predicate on the "broadcast_id" field.
+func BroadcastIDNotNil() predicate.Event {
+	return predicate.Event(sql.FieldNotNull(FieldBroadcastID))
+}
+
+// AutomationIDEQ applies the EQ predicate on the "automation_id" field.
+func AutomationIDEQ(v int64) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldAutomationID, v))
+}
+
+// AutomationIDNEQ applies the NEQ predicate on the "automation_id" field.
+func AutomationIDNEQ(v int64) predicate.Event {
+	return predicate.Event(sql.FieldNEQ(FieldAutomationID, v))
+}
+
+// AutomationIDIn applies the In predicate on the "automation_id" field.
+func AutomationIDIn(vs ...int64) predicate.Event {
+	return predicate.Event(sql.FieldIn(FieldAutomationID, vs...))
+}
+
+// AutomationIDNotIn applies the NotIn predicate on the "automation_id" field.
+func AutomationIDNotIn(vs ...int64) predicate.Event {
+	return predicate.Event(sql.FieldNotIn(FieldAutomationID, vs...))
+}
+
+// AutomationIDGT applies the GT predicate on the "automation_id" field.
+func AutomationIDGT(v int64) predicate.Event {
+	return predicate.Event(sql.FieldGT(FieldAutomationID, v))
+}
+
+// AutomationIDGTE applies the GTE predicate on the "automation_id" field.
+func AutomationIDGTE(v int64) predicate.Event {
+	return predicate.Event(sql.FieldGTE(FieldAutomationID, v))
+}
+
+// AutomationIDLT applies the LT predicate on the "automation_id" field.
+func AutomationIDLT(v int64) predicate.Event {
+	return predicate.Event(sql.FieldLT(FieldAutomationID, v))
+}
+
+// AutomationIDLTE applies the LTE predicate on the "automation_id" field.
+func AutomationIDLTE(v int64) predicate.Event {
+	return predicate.Event(sql.FieldLTE(FieldAutomationID, v))
+}
+
+// AutomationIDIsNil applies the IsNil predicate on the "automation_id" field.
+func AutomationIDIsNil() predicate.Event {
+	return predicate.Event(sql.FieldIsNull(FieldAutomationID))
+}
+
+// AutomationIDNotNil applies the NotNil predicate on the "automation_id" field.
+func AutomationIDNotNil() predicate.Event {
+	return predicate.Event(sql.FieldNotNull(FieldAutomationID))
+}
+
+// URLEQ applies the EQ predicate on the "url" field.
+func URLEQ(v string) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldURL, v))
+}
+
+// URLNEQ applies the NEQ predicate on the "url" field.
+func URLNEQ(v string) predicate.Event {
+	return predicate.Event(sql.FieldNEQ(FieldURL, v))
+}
+
+// URLIn applies the In predicate on the "url" field.
+func URLIn(vs ...string) predicate.Event {
+	return predicate.Event(sql.FieldIn(FieldURL, vs...))
+}
+
+// URLNotIn applies the NotIn predicate on the "url" field.
+func URLNotIn(vs ...string) predicate.Event {
+	return predicate.Event(sql.FieldNotIn(FieldURL, vs...))
+}
+
+// URLGT applies the GT predicate on the "url" field.
+func URLGT(v string) predicate.Event {
+	return predicate.Event(sql.FieldGT(FieldURL, v))
+}
+
+// URLGTE applies the GTE predicate on the "url" field.
+func URLGTE(v string) predicate.Event {
+	return predicate.Event(sql.FieldGTE(FieldURL, v))
+}
+
+// URLLT applies the LT predicate on the "url" field.
+func URLLT(v string) predicate.Event {
+	return predicate.Event(sql.FieldLT(FieldURL, v))
+}
+
+// URLLTE applies the LTE predicate on the "url" field.
+func URLLTE(v string) predicate.Event {
+	return predicate.Event(sql.FieldLTE(FieldURL, v))
+}
+
+// URLContains applies the Contains predicate on the "url" field.
+func URLContains(v string) predicate.Event {
+	return predicate.Event(sql.FieldContains(FieldURL, v))
+}
+
+// URLHasPrefix applies the HasPrefix predicate on the "url" field.
+func URLHasPrefix(v string) predicate.Event {
+	return predicate.Event(sql.FieldHasPrefix(FieldURL, v))
+}
+
+// URLHasSuffix applies the HasSuffix predicate on the "url" field.
+func URLHasSuffix(v string) predicate.Event {
+	return predicate.Event(sql.FieldHasSuffix(FieldURL, v))
+}
+
+// URLIsNil applies the IsNil predicate on the "url" field.
+func URLIsNil() predicate.Event {
+	return predicate.Event(sql.FieldIsNull(FieldURL))
+}
+
+// URLNotNil applies the NotNil predicate on the "url" field.
+func URLNotNil() predicate.Event {
+	return predicate.Event(sql.FieldNotNull(FieldURL))
+}
+
+// URLEqualFold applies the EqualFold predicate on the "url" field.
+func URLEqualFold(v string) predicate.Event {
+	return predicate.Event(sql.FieldEqualFold(FieldURL, v))
+}
+
+// URLContainsFold applies the ContainsFold predicate on the "url" field.
+func URLContainsFold(v string) predicate.Event {
+	return predicate.Event(sql.FieldContainsFold(FieldURL, v))
 }
 
 // BackfillEQ applies the EQ predicate on the "backfill" field.

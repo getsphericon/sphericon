@@ -97,10 +97,7 @@ func EnrollOnRule(ctx context.Context, s *ent.Scoped, automationID, contactID in
 	}
 	o := Origin{OccurredAt: time.Now()}
 	if fired != nil {
-		o.Action, o.Properties = fired.Action, events.BoundedProperties(fired.Properties)
-		if fired.OccurredAt != nil {
-			o.OccurredAt = *fired.OccurredAt
-		}
+		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
 	}
 	return enroll(ctx, s, automationID, contactID, o, admitsAll)
 }
@@ -235,14 +232,14 @@ func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 		return "", time.Time{}, false, err
 	}
 	t, ends := endingBy(v, first.Action)
-	return t, lo.FromPtr(first.OccurredAt), ends, nil
+	return t, first.OccurredAt, ends, nil
 }
 
 // byHuman matches the Events with the action, leaving out an open or a click a machine made (ADR
 // 0053).
 func byHuman(action string) predicate.Event {
 	if events.IsEngagement(action) {
-		return event.And(event.Action(action), events.HumanOnly)
+		return event.And(event.Action(action), events.HumanOnly())
 	}
 	return event.Action(action)
 }

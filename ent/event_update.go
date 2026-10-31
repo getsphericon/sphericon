@@ -197,23 +197,77 @@ func (_u *EventUpdate) ClearProperties() *EventUpdate {
 	return _u
 }
 
-// SetOccurredAt sets the "occurred_at" field.
-func (_u *EventUpdate) SetOccurredAt(v time.Time) *EventUpdate {
-	_u.mutation.SetOccurredAt(v)
+// SetBroadcastID sets the "broadcast_id" field.
+func (_u *EventUpdate) SetBroadcastID(v int64) *EventUpdate {
+	_u.mutation.ResetBroadcastID()
+	_u.mutation.SetBroadcastID(v)
 	return _u
 }
 
-// SetNillableOccurredAt sets the "occurred_at" field if the given value is not nil.
-func (_u *EventUpdate) SetNillableOccurredAt(v *time.Time) *EventUpdate {
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (_u *EventUpdate) SetNillableBroadcastID(v *int64) *EventUpdate {
 	if v != nil {
-		_u.SetOccurredAt(*v)
+		_u.SetBroadcastID(*v)
 	}
 	return _u
 }
 
-// ClearOccurredAt clears the value of the "occurred_at" field.
-func (_u *EventUpdate) ClearOccurredAt() *EventUpdate {
-	_u.mutation.ClearOccurredAt()
+// AddBroadcastID adds value to the "broadcast_id" field.
+func (_u *EventUpdate) AddBroadcastID(v int64) *EventUpdate {
+	_u.mutation.AddBroadcastID(v)
+	return _u
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (_u *EventUpdate) ClearBroadcastID() *EventUpdate {
+	_u.mutation.ClearBroadcastID()
+	return _u
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (_u *EventUpdate) SetAutomationID(v int64) *EventUpdate {
+	_u.mutation.ResetAutomationID()
+	_u.mutation.SetAutomationID(v)
+	return _u
+}
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (_u *EventUpdate) SetNillableAutomationID(v *int64) *EventUpdate {
+	if v != nil {
+		_u.SetAutomationID(*v)
+	}
+	return _u
+}
+
+// AddAutomationID adds value to the "automation_id" field.
+func (_u *EventUpdate) AddAutomationID(v int64) *EventUpdate {
+	_u.mutation.AddAutomationID(v)
+	return _u
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (_u *EventUpdate) ClearAutomationID() *EventUpdate {
+	_u.mutation.ClearAutomationID()
+	return _u
+}
+
+// SetURL sets the "url" field.
+func (_u *EventUpdate) SetURL(v string) *EventUpdate {
+	_u.mutation.SetURL(v)
+	return _u
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (_u *EventUpdate) SetNillableURL(v *string) *EventUpdate {
+	if v != nil {
+		_u.SetURL(*v)
+	}
+	return _u
+}
+
+// ClearURL clears the value of the "url" field.
+func (_u *EventUpdate) ClearURL() *EventUpdate {
+	_u.mutation.ClearURL()
 	return _u
 }
 
@@ -367,11 +421,29 @@ func (_u *EventUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.PropertiesCleared() {
 		_spec.ClearField(event.FieldProperties, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.OccurredAt(); ok {
-		_spec.SetField(event.FieldOccurredAt, field.TypeTime, value)
+	if value, ok := _u.mutation.BroadcastID(); ok {
+		_spec.SetField(event.FieldBroadcastID, field.TypeInt64, value)
 	}
-	if _u.mutation.OccurredAtCleared() {
-		_spec.ClearField(event.FieldOccurredAt, field.TypeTime)
+	if value, ok := _u.mutation.AddedBroadcastID(); ok {
+		_spec.AddField(event.FieldBroadcastID, field.TypeInt64, value)
+	}
+	if _u.mutation.BroadcastIDCleared() {
+		_spec.ClearField(event.FieldBroadcastID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.AutomationID(); ok {
+		_spec.SetField(event.FieldAutomationID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedAutomationID(); ok {
+		_spec.AddField(event.FieldAutomationID, field.TypeInt64, value)
+	}
+	if _u.mutation.AutomationIDCleared() {
+		_spec.ClearField(event.FieldAutomationID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.URL(); ok {
+		_spec.SetField(event.FieldURL, field.TypeString, value)
+	}
+	if _u.mutation.URLCleared() {
+		_spec.ClearField(event.FieldURL, field.TypeString)
 	}
 	if value, ok := _u.mutation.Backfill(); ok {
 		_spec.SetField(event.FieldBackfill, field.TypeBool, value)
@@ -622,23 +694,77 @@ func (_u *EventUpdateOne) ClearProperties() *EventUpdateOne {
 	return _u
 }
 
-// SetOccurredAt sets the "occurred_at" field.
-func (_u *EventUpdateOne) SetOccurredAt(v time.Time) *EventUpdateOne {
-	_u.mutation.SetOccurredAt(v)
+// SetBroadcastID sets the "broadcast_id" field.
+func (_u *EventUpdateOne) SetBroadcastID(v int64) *EventUpdateOne {
+	_u.mutation.ResetBroadcastID()
+	_u.mutation.SetBroadcastID(v)
 	return _u
 }
 
-// SetNillableOccurredAt sets the "occurred_at" field if the given value is not nil.
-func (_u *EventUpdateOne) SetNillableOccurredAt(v *time.Time) *EventUpdateOne {
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (_u *EventUpdateOne) SetNillableBroadcastID(v *int64) *EventUpdateOne {
 	if v != nil {
-		_u.SetOccurredAt(*v)
+		_u.SetBroadcastID(*v)
 	}
 	return _u
 }
 
-// ClearOccurredAt clears the value of the "occurred_at" field.
-func (_u *EventUpdateOne) ClearOccurredAt() *EventUpdateOne {
-	_u.mutation.ClearOccurredAt()
+// AddBroadcastID adds value to the "broadcast_id" field.
+func (_u *EventUpdateOne) AddBroadcastID(v int64) *EventUpdateOne {
+	_u.mutation.AddBroadcastID(v)
+	return _u
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (_u *EventUpdateOne) ClearBroadcastID() *EventUpdateOne {
+	_u.mutation.ClearBroadcastID()
+	return _u
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (_u *EventUpdateOne) SetAutomationID(v int64) *EventUpdateOne {
+	_u.mutation.ResetAutomationID()
+	_u.mutation.SetAutomationID(v)
+	return _u
+}
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (_u *EventUpdateOne) SetNillableAutomationID(v *int64) *EventUpdateOne {
+	if v != nil {
+		_u.SetAutomationID(*v)
+	}
+	return _u
+}
+
+// AddAutomationID adds value to the "automation_id" field.
+func (_u *EventUpdateOne) AddAutomationID(v int64) *EventUpdateOne {
+	_u.mutation.AddAutomationID(v)
+	return _u
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (_u *EventUpdateOne) ClearAutomationID() *EventUpdateOne {
+	_u.mutation.ClearAutomationID()
+	return _u
+}
+
+// SetURL sets the "url" field.
+func (_u *EventUpdateOne) SetURL(v string) *EventUpdateOne {
+	_u.mutation.SetURL(v)
+	return _u
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (_u *EventUpdateOne) SetNillableURL(v *string) *EventUpdateOne {
+	if v != nil {
+		_u.SetURL(*v)
+	}
+	return _u
+}
+
+// ClearURL clears the value of the "url" field.
+func (_u *EventUpdateOne) ClearURL() *EventUpdateOne {
+	_u.mutation.ClearURL()
 	return _u
 }
 
@@ -822,11 +948,29 @@ func (_u *EventUpdateOne) sqlSave(ctx context.Context) (_node *Event, err error)
 	if _u.mutation.PropertiesCleared() {
 		_spec.ClearField(event.FieldProperties, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.OccurredAt(); ok {
-		_spec.SetField(event.FieldOccurredAt, field.TypeTime, value)
+	if value, ok := _u.mutation.BroadcastID(); ok {
+		_spec.SetField(event.FieldBroadcastID, field.TypeInt64, value)
 	}
-	if _u.mutation.OccurredAtCleared() {
-		_spec.ClearField(event.FieldOccurredAt, field.TypeTime)
+	if value, ok := _u.mutation.AddedBroadcastID(); ok {
+		_spec.AddField(event.FieldBroadcastID, field.TypeInt64, value)
+	}
+	if _u.mutation.BroadcastIDCleared() {
+		_spec.ClearField(event.FieldBroadcastID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.AutomationID(); ok {
+		_spec.SetField(event.FieldAutomationID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedAutomationID(); ok {
+		_spec.AddField(event.FieldAutomationID, field.TypeInt64, value)
+	}
+	if _u.mutation.AutomationIDCleared() {
+		_spec.ClearField(event.FieldAutomationID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.URL(); ok {
+		_spec.SetField(event.FieldURL, field.TypeString, value)
+	}
+	if _u.mutation.URLCleared() {
+		_spec.ClearField(event.FieldURL, field.TypeString)
 	}
 	if value, ok := _u.mutation.Backfill(); ok {
 		_spec.SetField(event.FieldBackfill, field.TypeBool, value)

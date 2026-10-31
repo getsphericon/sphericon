@@ -42,23 +42,13 @@ func TestEventsReportCountsOccurrencesAndDistinctContactsPerAction(t *testing.T)
 	assert.Equal(t, 2, view.Contacts)
 }
 
-func TestEventsReportLastOccurrenceIsTheNewestMoment(t *testing.T) {
+func TestEventsReportLastOccurrenceIsTheNewestOccurredAt(t *testing.T) {
 	env := testhelper.Setup(t)
 	rows := eventActions(t, env, fixtures.AcmeID, analytics.Window7Days)
 
 	newest := env.DB.Event.GetX(context.Background(), 5602)
 	view := actionRow(t, rows, "report_view")
-	require.NotNil(t, newest.OccurredAt)
 	assert.True(t, newest.OccurredAt.Equal(view.LastAt), "last %s, newest %s", view.LastAt, newest.OccurredAt)
-}
-
-func TestEventsReportFallsBackToCreationTimeWithoutOccurredAt(t *testing.T) {
-	env := testhelper.Setup(t)
-	rows := eventActions(t, env, fixtures.AcmeID, analytics.Window7Days)
-
-	unstamped := actionRow(t, rows, "report_unstamped")
-	created := env.DB.Event.GetX(context.Background(), 5605).CreatedAt
-	assert.True(t, created.Equal(unstamped.LastAt), "last %s, created %s", unstamped.LastAt, created)
 }
 
 func TestEventsReportFollowsWhenItHappenedNotWhenItWasRecorded(t *testing.T) {

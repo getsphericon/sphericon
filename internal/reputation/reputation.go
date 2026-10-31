@@ -108,15 +108,13 @@ func (m *Module) Rates(ctx context.Context, s *ent.Scoped, w Window) ([]DomainRa
 	return out, nil
 }
 
-// inWindow selects Events by their own occurrence time (falling back to ingest time).
+// inWindow selects Events by when they happened.
 func inWindow(w Window) predicate.Event {
-	return func(s *sql.Selector) {
-		events.MomentBetween(s, w.Since, w.Until)
-	}
+	return event.And(event.OccurredAtGTE(w.Since), event.OccurredAtLT(w.Until))
 }
 
 // notCaptured leaves out the Events of mail kept in a Test inbox: it reached no mailbox.
-func notCaptured() predicate.Event { return events.NotCaptured }
+func notCaptured() predicate.Event { return events.NotCaptured() }
 
 func onDomain(domain string) predicate.Event {
 	return func(s *sql.Selector) {

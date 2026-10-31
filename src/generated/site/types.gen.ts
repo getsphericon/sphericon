@@ -253,9 +253,9 @@ export type ContactExportEvent = {
    */
   properties?: ContactExportJson | null;
   /**
-   * Event occurrence timestamp
+   * When the event happened: the time the source gave, or when it was published if it gave none
    */
-  occurredAt?: Timestamp | null;
+  occurredAt: Timestamp;
   /**
    * Whether the event was loaded as history rather than tracked live
    */
@@ -3474,9 +3474,9 @@ export type SiteEventResource = {
     [key: string]: unknown;
   } | null;
   /**
-   * When the event occurred at the source, if provided
+   * When the event happened: the time the source gave, or when it was published if it gave none
    */
-  occurredAt?: Timestamp | null;
+  occurredAt: Timestamp;
   /**
    * When the event was recorded
    */

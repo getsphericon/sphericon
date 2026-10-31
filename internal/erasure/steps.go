@@ -30,7 +30,8 @@ const idChunk = 10_000
 // anonymousKeep lists the Event properties an anonymized system Event keeps: the
 // non-personal delivery facts the complaint and bounce rates are computed from
 // (ADR 0011). Everything else a system Event carries (urls, provider and message ids,
-// provenance) is dropped.
+// provenance) is dropped, and so are the columns that copy them (url, broadcast_id,
+// automation_id); machine and captured stay, facts about the send and not the person.
 var anonymousKeep = []string{"sendingDomain", "bounceKind"}
 
 // anonymized reports whether an Event action is a reserved system action that
@@ -138,6 +139,7 @@ func eraseEvents(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purging
 		for _, chunk := range lo.Chunk(ids, idChunk) {
 			if _, err := s.Event().Update().Where(event.IDIn(chunk...)).
 				ClearContactID().ClearVisitorID().ClearEmail().ClearPhone().ClearSubjectID().
+				ClearURL().ClearBroadcastID().ClearAutomationID().
 				SetProperties(kept[key]).
 				Save(ctx); err != nil {
 				return err

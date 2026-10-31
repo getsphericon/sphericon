@@ -24,7 +24,7 @@ export function EventRowDetails({
       </Group>
       <Group gap="xs">
         <Text fw={600}>{t(($) => $.activity.occurredAt)}:</Text>
-        <Text>{record.occurredAt ? formatDateTime(record.occurredAt) : '—'}</Text>
+        <Text>{formatDateTime(record.occurredAt)}</Text>
       </Group>
       {detailed ? (
         <Group gap="xs">

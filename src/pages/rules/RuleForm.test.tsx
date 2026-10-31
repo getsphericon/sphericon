@@ -34,6 +34,7 @@ const SIGNED_UP: SiteEventResource = {
   id: '55',
   subjectId: 's',
   action: 'signed_up',
+  occurredAt: '2026-01-02T00:00:00Z',
   createdAt: '2026-01-02T00:00:00Z',
 }
 

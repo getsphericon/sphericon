@@ -13369,7 +13369,7 @@
       },
       "ContactExportEvent": {
         "type": "object",
-        "required": ["id", "subjectId", "action", "backfill", "createdAt"],
+        "required": ["id", "subjectId", "action", "occurredAt", "backfill", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -13418,14 +13418,12 @@
             "description": "Event properties"
           },
           "occurredAt": {
-            "type": "string",
             "allOf": [
               {
                 "$ref": "#/components/schemas/Timestamp"
               }
             ],
-            "nullable": true,
-            "description": "Event occurrence timestamp"
+            "description": "When the event happened: the time the source gave, or when it was published if it gave none"
           },
           "backfill": {
             "type": "boolean",
@@ -17689,7 +17687,7 @@
       },
       "SiteEventResource": {
         "type": "object",
-        "required": ["id", "subjectId", "action", "createdAt"],
+        "required": ["id", "subjectId", "action", "occurredAt", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -17719,14 +17717,12 @@
             "description": "Arbitrary event properties"
           },
           "occurredAt": {
-            "type": "string",
             "allOf": [
               {
                 "$ref": "#/components/schemas/Timestamp"
               }
             ],
-            "nullable": true,
-            "description": "When the event occurred at the source, if provided"
+            "description": "When the event happened: the time the source gave, or when it was published if it gave none"
           },
           "createdAt": {
             "allOf": [

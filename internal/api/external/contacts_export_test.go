@@ -92,8 +92,9 @@ func TestExternalContactsExportByIDReturnsTheFullBundle(t *testing.T) {
 // has no DTO field, which for an Art. 15 export would be silently withheld data. So
 // every column of each exported entity is either a field of its DTO or named here as
 // deliberately left out: the tenant id (every row is the caller's), the contact
-// back-reference (the document is that contact), internal links and keys, the Instance origin of a message (a setting, not the subject's data), and
-// updated_at on rows that are written once.
+// back-reference (the document is that contact), internal links and keys, the Instance origin of a message (a setting, not the subject's data),
+// updated_at on rows that are written once, and an Event's typed copies of keys its exported
+// properties already carry.
 func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 	covered := func(dto reflect.Type, columns []string, left ...string) {
 		t.Helper()
@@ -106,7 +107,8 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 	covered(reflect.TypeFor[externalapi.ContactExportContact](), contact.Columns, "workspace_id")
 	covered(reflect.TypeFor[externalapi.ContactExportTag](), tag.Columns, "workspace_id", "updated_at")
 	covered(reflect.TypeFor[externalapi.ContactExportVisitor](), visitor.Columns, "workspace_id", "contact_id", "updated_at")
-	covered(reflect.TypeFor[externalapi.ContactExportEvent](), event.Columns, "workspace_id", "contact_id", "updated_at")
+	covered(reflect.TypeFor[externalapi.ContactExportEvent](), event.Columns, "workspace_id", "contact_id", "updated_at",
+		event.FieldMachine, event.FieldCaptured, event.FieldBroadcastID, event.FieldAutomationID, event.FieldURL)
 	covered(reflect.TypeFor[externalapi.ContactExportUnsubscribe](), unsubscribe.Columns, "workspace_id", "contact_id", "updated_at")
 	covered(reflect.TypeFor[externalapi.ContactExportSuppression](), suppression.Columns, "workspace_id", "contact_id", "updated_at")
 	covered(reflect.TypeFor[externalapi.ContactExportConfirmation](), confirmation.Columns, "workspace_id", "contact_id", "updated_at")

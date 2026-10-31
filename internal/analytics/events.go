@@ -22,8 +22,8 @@ type EventAction struct {
 
 // Events groups the Events of the window by action, most frequent first. Reserved `email.*`
 // actions and customer-tracked ones are both listed; machine opens and clicks are left out
-// (ADR 0053). An Event is placed at the moment it happened, `occurred_at` and when it has none
-// its creation time (ADR 0044), so backfilled history lands on the day it happened.
+// (ADR 0053). An Event is placed at its `occurred_at` (ADR 0044), so backfilled history lands on
+// the day it happened.
 func (m *Module) Events(ctx context.Context, s *ent.Scoped, w Window) ([]EventAction, error) {
 	days, err := m.days(ctx, s, w)
 	if err != nil {
@@ -36,18 +36,16 @@ func (m *Module) Events(ctx context.Context, s *ent.Scoped, w Window) ([]EventAc
 		LastAt   time.Time `sql:"last_at"`
 	}
 	err = s.Event().Query().
+		Where(events.HumanOnly(), event.OccurredAtGTE(days.Since), event.OccurredAtLT(days.Until)).
 		Modify(func(sel *sql.Selector) {
-			events.HumanOnly(sel)
-			events.MomentBetween(sel, days.Since, days.Until)
 			action := sel.C(event.FieldAction)
 			sel.Select(
 				sql.As(action, "action"),
 				sql.As(sql.Count("*"), "count"),
 				sql.As(sql.Count(sql.Distinct(sel.C(event.FieldContactID))), "contacts"),
-				sql.As("MAX("+events.Moment(sel)+")", "last_at"),
-			).GroupBy(action)
-			// raw sql: order by the aggregate's alias, which ent's order terms cannot name here.
-			sel.OrderExpr(sql.Expr("count DESC, " + action))
+				sql.As(sql.Max(sel.C(event.FieldOccurredAt)), "last_at"),
+			).GroupBy(action).
+				OrderBy(sql.Desc("count"), action)
 		}).
 		Scan(ctx, &rows)
 	if err != nil {
