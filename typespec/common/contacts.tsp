@@ -23,7 +23,7 @@ model CreateContactInput {
   timeZone?: TimeZoneName | null;
 
   /** Typed custom field values keyed by the field's machine key */
-  customFields?: Record<unknown> | null;
+  customFields?: JsonObject | null;
 }
 
 /** Request body for updating a contact */
@@ -47,5 +47,5 @@ model UpdateContactInput {
   timeZone?: TimeZoneName | null;
 
   /** Typed custom field values keyed by the field's machine key */
-  customFields?: Record<unknown> | null;
+  customFields?: JsonObject | null;
 }

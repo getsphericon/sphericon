@@ -488,7 +488,7 @@ type ContactExportContact struct {
 	// IANA time zone identifier.
 	TimeZone OptNilString `json:"timeZone"`
 	// Typed custom field values keyed by the field's machine key.
-	CustomFields OptNilContactExportJson `json:"customFields"`
+	CustomFields OptNilJsonObject `json:"customFields"`
 	// The door the contact came through; absent for a contact that predates the field.
 	Source OptNilContactExportSource `json:"source"`
 	// Creation timestamp.
@@ -533,7 +533,7 @@ func (s *ContactExportContact) GetTimeZone() OptNilString {
 }
 
 // GetCustomFields returns the value of CustomFields.
-func (s *ContactExportContact) GetCustomFields() OptNilContactExportJson {
+func (s *ContactExportContact) GetCustomFields() OptNilJsonObject {
 	return s.CustomFields
 }
 
@@ -588,7 +588,7 @@ func (s *ContactExportContact) SetTimeZone(val OptNilString) {
 }
 
 // SetCustomFields sets the value of CustomFields.
-func (s *ContactExportContact) SetCustomFields(val OptNilContactExportJson) {
+func (s *ContactExportContact) SetCustomFields(val OptNilJsonObject) {
 	s.CustomFields = val
 }
 
@@ -767,7 +767,7 @@ type ContactExportEvent struct {
 	// Event action.
 	Action string `json:"action"`
 	// Event properties.
-	Properties OptNilContactExportJson `json:"properties"`
+	Properties OptNilJsonObject `json:"properties"`
 	// When the event happened: the time the source gave, or when it was published if it gave none.
 	OccurredAt Timestamp `json:"occurredAt"`
 	// Whether the event was loaded as history rather than tracked live.
@@ -812,7 +812,7 @@ func (s *ContactExportEvent) GetAction() string {
 }
 
 // GetProperties returns the value of Properties.
-func (s *ContactExportEvent) GetProperties() OptNilContactExportJson {
+func (s *ContactExportEvent) GetProperties() OptNilJsonObject {
 	return s.Properties
 }
 
@@ -867,7 +867,7 @@ func (s *ContactExportEvent) SetAction(val string) {
 }
 
 // SetProperties sets the value of Properties.
-func (s *ContactExportEvent) SetProperties(val OptNilContactExportJson) {
+func (s *ContactExportEvent) SetProperties(val OptNilJsonObject) {
 	s.Properties = val
 }
 
@@ -884,19 +884,6 @@ func (s *ContactExportEvent) SetBackfill(val bool) {
 // SetCreatedAt sets the value of CreatedAt.
 func (s *ContactExportEvent) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
-}
-
-// An arbitrary JSON object: typed custom field values or event properties.
-// Ref: #/components/schemas/ContactExportJson
-type ContactExportJson map[string]jx.Raw
-
-func (s *ContactExportJson) init() ContactExportJson {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Delivery metadata of one outbound message; the rendered message is not included.
@@ -1447,7 +1434,7 @@ type CreateBroadcastInput struct {
 	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
 	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
 	// a 422 with the reason and nothing is stored.
-	Doc OptCreateBroadcastInputDoc `json:"doc"`
+	Doc OptEditorDocument `json:"doc"`
 	// Target segment; null or omitted means all contacts. An archived segment is refused with 422.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Sending integration; null or omitted means the workspace default. An archived integration is refused
@@ -1481,7 +1468,7 @@ func (s *CreateBroadcastInput) GetBody() OptString {
 }
 
 // GetDoc returns the value of Doc.
-func (s *CreateBroadcastInput) GetDoc() OptCreateBroadcastInputDoc {
+func (s *CreateBroadcastInput) GetDoc() OptEditorDocument {
 	return s.Doc
 }
 
@@ -1521,7 +1508,7 @@ func (s *CreateBroadcastInput) SetBody(val OptString) {
 }
 
 // SetDoc sets the value of Doc.
-func (s *CreateBroadcastInput) SetDoc(val OptCreateBroadcastInputDoc) {
+func (s *CreateBroadcastInput) SetDoc(val OptEditorDocument) {
 	s.Doc = val
 }
 
@@ -1533,20 +1520,6 @@ func (s *CreateBroadcastInput) SetSegmentId(val OptNilEntityId) {
 // SetIntegrationId sets the value of IntegrationId.
 func (s *CreateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
-}
-
-// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
-// returns. The server renders the body from it in the same save; a document that cannot be rendered is
-// a 422 with the reason and nothing is stored.
-type CreateBroadcastInputDoc map[string]jx.Raw
-
-func (s *CreateBroadcastInputDoc) init() CreateBroadcastInputDoc {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox
@@ -1567,7 +1540,7 @@ type CreateIntegrationInput struct {
 	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with.
 	Preset OptNilString `json:"preset"`
 	// The Preset's params, validated against its `paramsSchema`: read the schema first.
-	Params OptCreateIntegrationInputParams `json:"params"`
+	Params OptJsonObject `json:"params"`
 }
 
 // GetName returns the value of Name.
@@ -1606,7 +1579,7 @@ func (s *CreateIntegrationInput) GetPreset() OptNilString {
 }
 
 // GetParams returns the value of Params.
-func (s *CreateIntegrationInput) GetParams() OptCreateIntegrationInputParams {
+func (s *CreateIntegrationInput) GetParams() OptJsonObject {
 	return s.Params
 }
 
@@ -1646,20 +1619,8 @@ func (s *CreateIntegrationInput) SetPreset(val OptNilString) {
 }
 
 // SetParams sets the value of Params.
-func (s *CreateIntegrationInput) SetParams(val OptCreateIntegrationInputParams) {
+func (s *CreateIntegrationInput) SetParams(val OptJsonObject) {
 	s.Params = val
-}
-
-// The Preset's params, validated against its `paramsSchema`: read the schema first.
-type CreateIntegrationInputParams map[string]jx.Raw
-
-func (s *CreateIntegrationInputParams) init() CreateIntegrationInputParams {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Add a Sending domain; mints the DKIM keypair and returns the DNS records to publish.
@@ -1703,7 +1664,7 @@ type CreateTemplateInput struct {
 	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
 	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
 	// a 422 with the reason and nothing is stored.
-	Doc OptCreateTemplateInputDoc `json:"doc"`
+	Doc OptEditorDocument `json:"doc"`
 }
 
 // GetName returns the value of Name.
@@ -1722,7 +1683,7 @@ func (s *CreateTemplateInput) GetBody() OptString {
 }
 
 // GetDoc returns the value of Doc.
-func (s *CreateTemplateInput) GetDoc() OptCreateTemplateInputDoc {
+func (s *CreateTemplateInput) GetDoc() OptEditorDocument {
 	return s.Doc
 }
 
@@ -1742,22 +1703,8 @@ func (s *CreateTemplateInput) SetBody(val OptString) {
 }
 
 // SetDoc sets the value of Doc.
-func (s *CreateTemplateInput) SetDoc(val OptCreateTemplateInputDoc) {
+func (s *CreateTemplateInput) SetDoc(val OptEditorDocument) {
 	s.Doc = val
-}
-
-// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
-// returns. The server renders the body from it in the same save; a document that cannot be rendered is
-// a 422 with the reason and nothing is stored.
-type CreateTemplateInputDoc map[string]jx.Raw
-
-func (s *CreateTemplateInputDoc) init() CreateTemplateInputDoc {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Request body for creating a webhook endpoint.
@@ -1802,6 +1749,20 @@ func (s *CreateWebhookInput) SetEnabled(val OptBool) {
 }
 
 type CurrencyCode string
+
+// The email editor's JSON document, an opaque object the server checks against the schema
+// `email_schema` returns. One named model, as JsonObject.
+// Ref: #/components/schemas/EditorDocument
+type EditorDocument map[string]jx.Raw
+
+func (s *EditorDocument) init() EditorDocument {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 type EmailAddress string
 
@@ -2334,6 +2295,21 @@ func NewInboxConfigInputIntegrationConfigInputSum(v InboxConfigInput) Integratio
 	var s IntegrationConfigInputSum
 	s.SetInboxConfigInput(v)
 	return s
+}
+
+// A JSON object whose members the contract leaves open: custom field values, event properties,
+// integration params, an audit diff. One named model, so every surface's Go code has one type for it
+// rather than one per field.
+// Ref: #/components/schemas/JsonObject
+type JsonObject map[string]jx.Raw
+
+func (s *JsonObject) init() JsonObject {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 type LegalDocumentLabel string
@@ -3056,144 +3032,6 @@ func (o OptBool) Or(d bool) bool {
 	return d
 }
 
-// NewOptCreateBroadcastInputDoc returns new OptCreateBroadcastInputDoc with value set to v.
-func NewOptCreateBroadcastInputDoc(v CreateBroadcastInputDoc) OptCreateBroadcastInputDoc {
-	return OptCreateBroadcastInputDoc{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptCreateBroadcastInputDoc is optional CreateBroadcastInputDoc.
-type OptCreateBroadcastInputDoc struct {
-	Value CreateBroadcastInputDoc
-	Set   bool
-}
-
-// IsSet returns true if OptCreateBroadcastInputDoc was set.
-func (o OptCreateBroadcastInputDoc) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptCreateBroadcastInputDoc) Reset() {
-	var v CreateBroadcastInputDoc
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptCreateBroadcastInputDoc) SetTo(v CreateBroadcastInputDoc) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptCreateBroadcastInputDoc) Get() (v CreateBroadcastInputDoc, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptCreateBroadcastInputDoc) Or(d CreateBroadcastInputDoc) CreateBroadcastInputDoc {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptCreateIntegrationInputParams returns new OptCreateIntegrationInputParams with value set to v.
-func NewOptCreateIntegrationInputParams(v CreateIntegrationInputParams) OptCreateIntegrationInputParams {
-	return OptCreateIntegrationInputParams{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptCreateIntegrationInputParams is optional CreateIntegrationInputParams.
-type OptCreateIntegrationInputParams struct {
-	Value CreateIntegrationInputParams
-	Set   bool
-}
-
-// IsSet returns true if OptCreateIntegrationInputParams was set.
-func (o OptCreateIntegrationInputParams) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptCreateIntegrationInputParams) Reset() {
-	var v CreateIntegrationInputParams
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptCreateIntegrationInputParams) SetTo(v CreateIntegrationInputParams) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptCreateIntegrationInputParams) Get() (v CreateIntegrationInputParams, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptCreateIntegrationInputParams) Or(d CreateIntegrationInputParams) CreateIntegrationInputParams {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptCreateTemplateInputDoc returns new OptCreateTemplateInputDoc with value set to v.
-func NewOptCreateTemplateInputDoc(v CreateTemplateInputDoc) OptCreateTemplateInputDoc {
-	return OptCreateTemplateInputDoc{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptCreateTemplateInputDoc is optional CreateTemplateInputDoc.
-type OptCreateTemplateInputDoc struct {
-	Value CreateTemplateInputDoc
-	Set   bool
-}
-
-// IsSet returns true if OptCreateTemplateInputDoc was set.
-func (o OptCreateTemplateInputDoc) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptCreateTemplateInputDoc) Reset() {
-	var v CreateTemplateInputDoc
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptCreateTemplateInputDoc) SetTo(v CreateTemplateInputDoc) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptCreateTemplateInputDoc) Get() (v CreateTemplateInputDoc, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptCreateTemplateInputDoc) Or(d CreateTemplateInputDoc) CreateTemplateInputDoc {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptCurrencyCode returns new OptCurrencyCode with value set to v.
 func NewOptCurrencyCode(v CurrencyCode) OptCurrencyCode {
 	return OptCurrencyCode{
@@ -3234,6 +3072,52 @@ func (o OptCurrencyCode) Get() (v CurrencyCode, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptCurrencyCode) Or(d CurrencyCode) CurrencyCode {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptEditorDocument returns new OptEditorDocument with value set to v.
+func NewOptEditorDocument(v EditorDocument) OptEditorDocument {
+	return OptEditorDocument{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptEditorDocument is optional EditorDocument.
+type OptEditorDocument struct {
+	Value EditorDocument
+	Set   bool
+}
+
+// IsSet returns true if OptEditorDocument was set.
+func (o OptEditorDocument) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptEditorDocument) Reset() {
+	var v EditorDocument
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptEditorDocument) SetTo(v EditorDocument) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptEditorDocument) Get() (v EditorDocument, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptEditorDocument) Or(d EditorDocument) EditorDocument {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -3516,60 +3400,38 @@ func (o OptIntegrationConfigInput) Or(d IntegrationConfigInput) IntegrationConfi
 	return d
 }
 
-// NewOptNilContactExportJson returns new OptNilContactExportJson with value set to v.
-func NewOptNilContactExportJson(v ContactExportJson) OptNilContactExportJson {
-	return OptNilContactExportJson{
+// NewOptJsonObject returns new OptJsonObject with value set to v.
+func NewOptJsonObject(v JsonObject) OptJsonObject {
+	return OptJsonObject{
 		Value: v,
 		Set:   true,
 	}
 }
 
-// OptNilContactExportJson is optional nullable ContactExportJson.
-type OptNilContactExportJson struct {
-	Value ContactExportJson
+// OptJsonObject is optional JsonObject.
+type OptJsonObject struct {
+	Value JsonObject
 	Set   bool
-	Null  bool
 }
 
-// IsSet returns true if OptNilContactExportJson was set.
-func (o OptNilContactExportJson) IsSet() bool { return o.Set }
+// IsSet returns true if OptJsonObject was set.
+func (o OptJsonObject) IsSet() bool { return o.Set }
 
 // Reset unsets value.
-func (o *OptNilContactExportJson) Reset() {
-	var v ContactExportJson
+func (o *OptJsonObject) Reset() {
+	var v JsonObject
 	o.Value = v
 	o.Set = false
-	o.Null = false
 }
 
 // SetTo sets value to v.
-func (o *OptNilContactExportJson) SetTo(v ContactExportJson) {
+func (o *OptJsonObject) SetTo(v JsonObject) {
 	o.Set = true
-	o.Null = false
 	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilContactExportJson) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilContactExportJson) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v ContactExportJson
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilContactExportJson) IsEmpty() bool {
-	return !o.Set && !o.Null
 }
 
 // Get returns value and boolean that denotes whether value was set.
-func (o OptNilContactExportJson) Get() (v ContactExportJson, ok bool) {
-	if o.Null {
-		return v, false
-	}
+func (o OptJsonObject) Get() (v JsonObject, ok bool) {
 	if !o.Set {
 		return v, false
 	}
@@ -3577,7 +3439,7 @@ func (o OptNilContactExportJson) Get() (v ContactExportJson, ok bool) {
 }
 
 // Or returns value if set, or given parameter if does not.
-func (o OptNilContactExportJson) Or(d ContactExportJson) ContactExportJson {
+func (o OptJsonObject) Or(d JsonObject) JsonObject {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -3646,6 +3508,74 @@ func (o OptNilContactExportSource) Get() (v ContactExportSource, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilContactExportSource) Or(d ContactExportSource) ContactExportSource {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilEditorDocument returns new OptNilEditorDocument with value set to v.
+func NewOptNilEditorDocument(v EditorDocument) OptNilEditorDocument {
+	return OptNilEditorDocument{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilEditorDocument is optional nullable EditorDocument.
+type OptNilEditorDocument struct {
+	Value EditorDocument
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilEditorDocument was set.
+func (o OptNilEditorDocument) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilEditorDocument) Reset() {
+	var v EditorDocument
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilEditorDocument) SetTo(v EditorDocument) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilEditorDocument) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilEditorDocument) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v EditorDocument
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilEditorDocument) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilEditorDocument) Get() (v EditorDocument, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilEditorDocument) Or(d EditorDocument) EditorDocument {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -3856,6 +3786,74 @@ func (o OptNilInt32) Or(d int32) int32 {
 	return d
 }
 
+// NewOptNilJsonObject returns new OptNilJsonObject with value set to v.
+func NewOptNilJsonObject(v JsonObject) OptNilJsonObject {
+	return OptNilJsonObject{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilJsonObject is optional nullable JsonObject.
+type OptNilJsonObject struct {
+	Value JsonObject
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilJsonObject was set.
+func (o OptNilJsonObject) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilJsonObject) Reset() {
+	var v JsonObject
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilJsonObject) SetTo(v JsonObject) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilJsonObject) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilJsonObject) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v JsonObject
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilJsonObject) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilJsonObject) Get() (v JsonObject, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilJsonObject) Or(d JsonObject) JsonObject {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilMaxPerDay returns new OptNilMaxPerDay with value set to v.
 func NewOptNilMaxPerDay(v MaxPerDay) OptNilMaxPerDay {
 	return OptNilMaxPerDay{
@@ -4060,74 +4058,6 @@ func (o OptNilSiteAbuseWarning) Or(d SiteAbuseWarning) SiteAbuseWarning {
 	return d
 }
 
-// NewOptNilSiteAuditEntryResourceDiff returns new OptNilSiteAuditEntryResourceDiff with value set to v.
-func NewOptNilSiteAuditEntryResourceDiff(v SiteAuditEntryResourceDiff) OptNilSiteAuditEntryResourceDiff {
-	return OptNilSiteAuditEntryResourceDiff{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilSiteAuditEntryResourceDiff is optional nullable SiteAuditEntryResourceDiff.
-type OptNilSiteAuditEntryResourceDiff struct {
-	Value SiteAuditEntryResourceDiff
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilSiteAuditEntryResourceDiff was set.
-func (o OptNilSiteAuditEntryResourceDiff) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilSiteAuditEntryResourceDiff) Reset() {
-	var v SiteAuditEntryResourceDiff
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilSiteAuditEntryResourceDiff) SetTo(v SiteAuditEntryResourceDiff) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilSiteAuditEntryResourceDiff) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilSiteAuditEntryResourceDiff) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v SiteAuditEntryResourceDiff
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilSiteAuditEntryResourceDiff) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilSiteAuditEntryResourceDiff) Get() (v SiteAuditEntryResourceDiff, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilSiteAuditEntryResourceDiff) Or(d SiteAuditEntryResourceDiff) SiteAuditEntryResourceDiff {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptNilSiteBroadcastProgress returns new OptNilSiteBroadcastProgress with value set to v.
 func NewOptNilSiteBroadcastProgress(v SiteBroadcastProgress) OptNilSiteBroadcastProgress {
 	return OptNilSiteBroadcastProgress{
@@ -4196,346 +4126,6 @@ func (o OptNilSiteBroadcastProgress) Or(d SiteBroadcastProgress) SiteBroadcastPr
 	return d
 }
 
-// NewOptNilSiteBroadcastResourceDoc returns new OptNilSiteBroadcastResourceDoc with value set to v.
-func NewOptNilSiteBroadcastResourceDoc(v SiteBroadcastResourceDoc) OptNilSiteBroadcastResourceDoc {
-	return OptNilSiteBroadcastResourceDoc{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilSiteBroadcastResourceDoc is optional nullable SiteBroadcastResourceDoc.
-type OptNilSiteBroadcastResourceDoc struct {
-	Value SiteBroadcastResourceDoc
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilSiteBroadcastResourceDoc was set.
-func (o OptNilSiteBroadcastResourceDoc) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilSiteBroadcastResourceDoc) Reset() {
-	var v SiteBroadcastResourceDoc
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilSiteBroadcastResourceDoc) SetTo(v SiteBroadcastResourceDoc) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilSiteBroadcastResourceDoc) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilSiteBroadcastResourceDoc) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v SiteBroadcastResourceDoc
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilSiteBroadcastResourceDoc) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilSiteBroadcastResourceDoc) Get() (v SiteBroadcastResourceDoc, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilSiteBroadcastResourceDoc) Or(d SiteBroadcastResourceDoc) SiteBroadcastResourceDoc {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilSiteContactResourceCustomFields returns new OptNilSiteContactResourceCustomFields with value set to v.
-func NewOptNilSiteContactResourceCustomFields(v SiteContactResourceCustomFields) OptNilSiteContactResourceCustomFields {
-	return OptNilSiteContactResourceCustomFields{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilSiteContactResourceCustomFields is optional nullable SiteContactResourceCustomFields.
-type OptNilSiteContactResourceCustomFields struct {
-	Value SiteContactResourceCustomFields
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilSiteContactResourceCustomFields was set.
-func (o OptNilSiteContactResourceCustomFields) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilSiteContactResourceCustomFields) Reset() {
-	var v SiteContactResourceCustomFields
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilSiteContactResourceCustomFields) SetTo(v SiteContactResourceCustomFields) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilSiteContactResourceCustomFields) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilSiteContactResourceCustomFields) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v SiteContactResourceCustomFields
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilSiteContactResourceCustomFields) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilSiteContactResourceCustomFields) Get() (v SiteContactResourceCustomFields, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilSiteContactResourceCustomFields) Or(d SiteContactResourceCustomFields) SiteContactResourceCustomFields {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilSiteCreateContactInputCustomFields returns new OptNilSiteCreateContactInputCustomFields with value set to v.
-func NewOptNilSiteCreateContactInputCustomFields(v SiteCreateContactInputCustomFields) OptNilSiteCreateContactInputCustomFields {
-	return OptNilSiteCreateContactInputCustomFields{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilSiteCreateContactInputCustomFields is optional nullable SiteCreateContactInputCustomFields.
-type OptNilSiteCreateContactInputCustomFields struct {
-	Value SiteCreateContactInputCustomFields
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilSiteCreateContactInputCustomFields was set.
-func (o OptNilSiteCreateContactInputCustomFields) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilSiteCreateContactInputCustomFields) Reset() {
-	var v SiteCreateContactInputCustomFields
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilSiteCreateContactInputCustomFields) SetTo(v SiteCreateContactInputCustomFields) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilSiteCreateContactInputCustomFields) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilSiteCreateContactInputCustomFields) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v SiteCreateContactInputCustomFields
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilSiteCreateContactInputCustomFields) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilSiteCreateContactInputCustomFields) Get() (v SiteCreateContactInputCustomFields, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilSiteCreateContactInputCustomFields) Or(d SiteCreateContactInputCustomFields) SiteCreateContactInputCustomFields {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilSiteEmailTemplateResourceDoc returns new OptNilSiteEmailTemplateResourceDoc with value set to v.
-func NewOptNilSiteEmailTemplateResourceDoc(v SiteEmailTemplateResourceDoc) OptNilSiteEmailTemplateResourceDoc {
-	return OptNilSiteEmailTemplateResourceDoc{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilSiteEmailTemplateResourceDoc is optional nullable SiteEmailTemplateResourceDoc.
-type OptNilSiteEmailTemplateResourceDoc struct {
-	Value SiteEmailTemplateResourceDoc
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilSiteEmailTemplateResourceDoc was set.
-func (o OptNilSiteEmailTemplateResourceDoc) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilSiteEmailTemplateResourceDoc) Reset() {
-	var v SiteEmailTemplateResourceDoc
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilSiteEmailTemplateResourceDoc) SetTo(v SiteEmailTemplateResourceDoc) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilSiteEmailTemplateResourceDoc) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilSiteEmailTemplateResourceDoc) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v SiteEmailTemplateResourceDoc
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilSiteEmailTemplateResourceDoc) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilSiteEmailTemplateResourceDoc) Get() (v SiteEmailTemplateResourceDoc, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilSiteEmailTemplateResourceDoc) Or(d SiteEmailTemplateResourceDoc) SiteEmailTemplateResourceDoc {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilSiteEventResourceProperties returns new OptNilSiteEventResourceProperties with value set to v.
-func NewOptNilSiteEventResourceProperties(v SiteEventResourceProperties) OptNilSiteEventResourceProperties {
-	return OptNilSiteEventResourceProperties{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilSiteEventResourceProperties is optional nullable SiteEventResourceProperties.
-type OptNilSiteEventResourceProperties struct {
-	Value SiteEventResourceProperties
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilSiteEventResourceProperties was set.
-func (o OptNilSiteEventResourceProperties) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilSiteEventResourceProperties) Reset() {
-	var v SiteEventResourceProperties
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilSiteEventResourceProperties) SetTo(v SiteEventResourceProperties) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilSiteEventResourceProperties) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilSiteEventResourceProperties) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v SiteEventResourceProperties
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilSiteEventResourceProperties) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilSiteEventResourceProperties) Get() (v SiteEventResourceProperties, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilSiteEventResourceProperties) Or(d SiteEventResourceProperties) SiteEventResourceProperties {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptNilSiteSendCap returns new OptNilSiteSendCap with value set to v.
 func NewOptNilSiteSendCap(v SiteSendCap) OptNilSiteSendCap {
 	return OptNilSiteSendCap{
@@ -4598,74 +4188,6 @@ func (o OptNilSiteSendCap) Get() (v SiteSendCap, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilSiteSendCap) Or(d SiteSendCap) SiteSendCap {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilSiteUpdateContactInputCustomFields returns new OptNilSiteUpdateContactInputCustomFields with value set to v.
-func NewOptNilSiteUpdateContactInputCustomFields(v SiteUpdateContactInputCustomFields) OptNilSiteUpdateContactInputCustomFields {
-	return OptNilSiteUpdateContactInputCustomFields{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilSiteUpdateContactInputCustomFields is optional nullable SiteUpdateContactInputCustomFields.
-type OptNilSiteUpdateContactInputCustomFields struct {
-	Value SiteUpdateContactInputCustomFields
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilSiteUpdateContactInputCustomFields was set.
-func (o OptNilSiteUpdateContactInputCustomFields) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilSiteUpdateContactInputCustomFields) Reset() {
-	var v SiteUpdateContactInputCustomFields
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilSiteUpdateContactInputCustomFields) SetTo(v SiteUpdateContactInputCustomFields) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilSiteUpdateContactInputCustomFields) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilSiteUpdateContactInputCustomFields) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v SiteUpdateContactInputCustomFields
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilSiteUpdateContactInputCustomFields) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilSiteUpdateContactInputCustomFields) Get() (v SiteUpdateContactInputCustomFields, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilSiteUpdateContactInputCustomFields) Or(d SiteUpdateContactInputCustomFields) SiteUpdateContactInputCustomFields {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -5284,52 +4806,6 @@ func (o OptSiteAutomationReportsGetPeriod) Get() (v SiteAutomationReportsGetPeri
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteAutomationReportsGetPeriod) Or(d SiteAutomationReportsGetPeriod) SiteAutomationReportsGetPeriod {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteAutomationStepDoc returns new OptSiteAutomationStepDoc with value set to v.
-func NewOptSiteAutomationStepDoc(v SiteAutomationStepDoc) OptSiteAutomationStepDoc {
-	return OptSiteAutomationStepDoc{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteAutomationStepDoc is optional SiteAutomationStepDoc.
-type OptSiteAutomationStepDoc struct {
-	Value SiteAutomationStepDoc
-	Set   bool
-}
-
-// IsSet returns true if OptSiteAutomationStepDoc was set.
-func (o OptSiteAutomationStepDoc) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteAutomationStepDoc) Reset() {
-	var v SiteAutomationStepDoc
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteAutomationStepDoc) SetTo(v SiteAutomationStepDoc) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteAutomationStepDoc) Get() (v SiteAutomationStepDoc, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteAutomationStepDoc) Or(d SiteAutomationStepDoc) SiteAutomationStepDoc {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -6388,144 +5864,6 @@ func (o OptTimestamp) Get() (v Timestamp, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptTimestamp) Or(d Timestamp) Timestamp {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptUpdateBroadcastInputDoc returns new OptUpdateBroadcastInputDoc with value set to v.
-func NewOptUpdateBroadcastInputDoc(v UpdateBroadcastInputDoc) OptUpdateBroadcastInputDoc {
-	return OptUpdateBroadcastInputDoc{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptUpdateBroadcastInputDoc is optional UpdateBroadcastInputDoc.
-type OptUpdateBroadcastInputDoc struct {
-	Value UpdateBroadcastInputDoc
-	Set   bool
-}
-
-// IsSet returns true if OptUpdateBroadcastInputDoc was set.
-func (o OptUpdateBroadcastInputDoc) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptUpdateBroadcastInputDoc) Reset() {
-	var v UpdateBroadcastInputDoc
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptUpdateBroadcastInputDoc) SetTo(v UpdateBroadcastInputDoc) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptUpdateBroadcastInputDoc) Get() (v UpdateBroadcastInputDoc, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptUpdateBroadcastInputDoc) Or(d UpdateBroadcastInputDoc) UpdateBroadcastInputDoc {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptUpdateIntegrationInputParams returns new OptUpdateIntegrationInputParams with value set to v.
-func NewOptUpdateIntegrationInputParams(v UpdateIntegrationInputParams) OptUpdateIntegrationInputParams {
-	return OptUpdateIntegrationInputParams{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptUpdateIntegrationInputParams is optional UpdateIntegrationInputParams.
-type OptUpdateIntegrationInputParams struct {
-	Value UpdateIntegrationInputParams
-	Set   bool
-}
-
-// IsSet returns true if OptUpdateIntegrationInputParams was set.
-func (o OptUpdateIntegrationInputParams) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptUpdateIntegrationInputParams) Reset() {
-	var v UpdateIntegrationInputParams
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptUpdateIntegrationInputParams) SetTo(v UpdateIntegrationInputParams) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptUpdateIntegrationInputParams) Get() (v UpdateIntegrationInputParams, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptUpdateIntegrationInputParams) Or(d UpdateIntegrationInputParams) UpdateIntegrationInputParams {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptUpdateTemplateInputDoc returns new OptUpdateTemplateInputDoc with value set to v.
-func NewOptUpdateTemplateInputDoc(v UpdateTemplateInputDoc) OptUpdateTemplateInputDoc {
-	return OptUpdateTemplateInputDoc{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptUpdateTemplateInputDoc is optional UpdateTemplateInputDoc.
-type OptUpdateTemplateInputDoc struct {
-	Value UpdateTemplateInputDoc
-	Set   bool
-}
-
-// IsSet returns true if OptUpdateTemplateInputDoc was set.
-func (o OptUpdateTemplateInputDoc) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptUpdateTemplateInputDoc) Reset() {
-	var v UpdateTemplateInputDoc
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptUpdateTemplateInputDoc) SetTo(v UpdateTemplateInputDoc) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptUpdateTemplateInputDoc) Get() (v UpdateTemplateInputDoc, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptUpdateTemplateInputDoc) Or(d UpdateTemplateInputDoc) UpdateTemplateInputDoc {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -9059,7 +8397,7 @@ type SiteAuditEntryResource struct {
 	// What it was done to.
 	Target SiteAuditTarget `json:"target"`
 	// Before/after of the changed fields; secrets appear as changed only.
-	Diff OptNilSiteAuditEntryResourceDiff `json:"diff"`
+	Diff OptNilJsonObject `json:"diff"`
 	// Request id of the change.
 	RequestId OptNilString `json:"requestId"`
 	// Client address of the change.
@@ -9094,7 +8432,7 @@ func (s *SiteAuditEntryResource) GetTarget() SiteAuditTarget {
 }
 
 // GetDiff returns the value of Diff.
-func (s *SiteAuditEntryResource) GetDiff() OptNilSiteAuditEntryResourceDiff {
+func (s *SiteAuditEntryResource) GetDiff() OptNilJsonObject {
 	return s.Diff
 }
 
@@ -9139,7 +8477,7 @@ func (s *SiteAuditEntryResource) SetTarget(val SiteAuditTarget) {
 }
 
 // SetDiff sets the value of Diff.
-func (s *SiteAuditEntryResource) SetDiff(val OptNilSiteAuditEntryResourceDiff) {
+func (s *SiteAuditEntryResource) SetDiff(val OptNilJsonObject) {
 	s.Diff = val
 }
 
@@ -9156,18 +8494,6 @@ func (s *SiteAuditEntryResource) SetIP(val OptNilString) {
 // SetUserAgent sets the value of UserAgent.
 func (s *SiteAuditEntryResource) SetUserAgent(val OptNilString) {
 	s.UserAgent = val
-}
-
-// Before/after of the changed fields; secrets appear as changed only.
-type SiteAuditEntryResourceDiff map[string]jx.Raw
-
-func (s *SiteAuditEntryResourceDiff) init() SiteAuditEntryResourceDiff {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 type SiteAuditExportBadRequest ProblemDetails
@@ -10292,7 +9618,7 @@ type SiteAutomationStep struct {
 	// server. Write it instead of `body` (both is a 422): the server renders the body from it in the same
 	// save, and a document that cannot be rendered refuses the whole save, naming the step. Writing only a
 	// body clears the step's document.
-	Doc OptSiteAutomationStepDoc `json:"doc"`
+	Doc OptEditorDocument `json:"doc"`
 	// Version of the editor that rendered the document (email steps, read only).
 	EditorVersion OptString `json:"editorVersion"`
 	// Delay before the next step, in seconds (wait steps).
@@ -10331,7 +9657,7 @@ func (s *SiteAutomationStep) GetBody() OptString {
 }
 
 // GetDoc returns the value of Doc.
-func (s *SiteAutomationStep) GetDoc() OptSiteAutomationStepDoc {
+func (s *SiteAutomationStep) GetDoc() OptEditorDocument {
 	return s.Doc
 }
 
@@ -10396,7 +9722,7 @@ func (s *SiteAutomationStep) SetBody(val OptString) {
 }
 
 // SetDoc sets the value of Doc.
-func (s *SiteAutomationStep) SetDoc(val OptSiteAutomationStepDoc) {
+func (s *SiteAutomationStep) SetDoc(val OptEditorDocument) {
 	s.Doc = val
 }
 
@@ -10443,21 +9769,6 @@ func (s *SiteAutomationStep) SetClearSecret(val OptBool) {
 // SetHasSecret sets the value of HasSecret.
 func (s *SiteAutomationStep) SetHasSecret(val OptBool) {
 	s.HasSecret = val
-}
-
-// The editor's JSON document an email step's body was built from, an opaque object checked by the
-// server. Write it instead of `body` (both is a 422): the server renders the body from it in the same
-// save, and a document that cannot be rendered refuses the whole save, naming the step. Writing only a
-// body clears the step's document.
-type SiteAutomationStepDoc map[string]jx.Raw
-
-func (s *SiteAutomationStepDoc) init() SiteAutomationStepDoc {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Kind of automation step.
@@ -11122,7 +10433,7 @@ type SiteBroadcastResource struct {
 	// HTML body with Liquid merge tags.
 	Body string `json:"body"`
 	// The editor's JSON document the body was built from; null when the body was written as HTML.
-	Doc OptNilSiteBroadcastResourceDoc `json:"doc"`
+	Doc OptNilEditorDocument `json:"doc"`
 	// Version of the editor that rendered the document; null with it.
 	EditorVersion OptNilString `json:"editorVersion"`
 	// Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks
@@ -11187,7 +10498,7 @@ func (s *SiteBroadcastResource) GetBody() string {
 }
 
 // GetDoc returns the value of Doc.
-func (s *SiteBroadcastResource) GetDoc() OptNilSiteBroadcastResourceDoc {
+func (s *SiteBroadcastResource) GetDoc() OptNilEditorDocument {
 	return s.Doc
 }
 
@@ -11287,7 +10598,7 @@ func (s *SiteBroadcastResource) SetBody(val string) {
 }
 
 // SetDoc sets the value of Doc.
-func (s *SiteBroadcastResource) SetDoc(val OptNilSiteBroadcastResourceDoc) {
+func (s *SiteBroadcastResource) SetDoc(val OptNilEditorDocument) {
 	s.Doc = val
 }
 
@@ -11363,18 +10674,6 @@ func (*SiteBroadcastResource) siteBroadcastsScheduleRes()  {}
 func (*SiteBroadcastResource) siteBroadcastsSendRes()      {}
 func (*SiteBroadcastResource) siteBroadcastsUnarchiveRes() {}
 func (*SiteBroadcastResource) siteBroadcastsUpdateRes()    {}
-
-// The editor's JSON document the body was built from; null when the body was written as HTML.
-type SiteBroadcastResourceDoc map[string]jx.Raw
-
-func (s *SiteBroadcastResourceDoc) init() SiteBroadcastResourceDoc {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
 
 // Denormalized delivery counters for a broadcast.
 // Ref: #/components/schemas/SiteBroadcastStats
@@ -13592,7 +12891,7 @@ type SiteContactResource struct {
 	// IANA time zone identifier.
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
 	// Typed custom field values keyed by the field's machine key.
-	CustomFields OptNilSiteContactResourceCustomFields `json:"customFields"`
+	CustomFields OptNilJsonObject `json:"customFields"`
 	// The labels the contact carries, ordered by name.
 	Tags []string `json:"tags"`
 	// Creation timestamp.
@@ -13637,7 +12936,7 @@ func (s *SiteContactResource) GetTimeZone() OptNilTimeZoneName {
 }
 
 // GetCustomFields returns the value of CustomFields.
-func (s *SiteContactResource) GetCustomFields() OptNilSiteContactResourceCustomFields {
+func (s *SiteContactResource) GetCustomFields() OptNilJsonObject {
 	return s.CustomFields
 }
 
@@ -13692,7 +12991,7 @@ func (s *SiteContactResource) SetTimeZone(val OptNilTimeZoneName) {
 }
 
 // SetCustomFields sets the value of CustomFields.
-func (s *SiteContactResource) SetCustomFields(val OptNilSiteContactResourceCustomFields) {
+func (s *SiteContactResource) SetCustomFields(val OptNilJsonObject) {
 	s.CustomFields = val
 }
 
@@ -13714,18 +13013,6 @@ func (s *SiteContactResource) SetUpdatedAt(val Timestamp) {
 func (*SiteContactResource) siteContactsCreateRes() {}
 func (*SiteContactResource) siteContactsGetRes()    {}
 func (*SiteContactResource) siteContactsUpdateRes() {}
-
-// Typed custom field values keyed by the field's machine key.
-type SiteContactResourceCustomFields map[string]jx.Raw
-
-func (s *SiteContactResourceCustomFields) init() SiteContactResourceCustomFields {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
 
 type SiteContactsCreateBadRequest ProblemDetails
 
@@ -14051,7 +13338,7 @@ type SiteCreateContactInput struct {
 	// IANA time zone identifier.
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
 	// Typed custom field values keyed by the field's machine key.
-	CustomFields OptNilSiteCreateContactInputCustomFields `json:"customFields"`
+	CustomFields OptNilJsonObject `json:"customFields"`
 	// Tags to give the contact, created on first use.
 	Tags []string `json:"tags"`
 }
@@ -14087,7 +13374,7 @@ func (s *SiteCreateContactInput) GetTimeZone() OptNilTimeZoneName {
 }
 
 // GetCustomFields returns the value of CustomFields.
-func (s *SiteCreateContactInput) GetCustomFields() OptNilSiteCreateContactInputCustomFields {
+func (s *SiteCreateContactInput) GetCustomFields() OptNilJsonObject {
 	return s.CustomFields
 }
 
@@ -14127,25 +13414,13 @@ func (s *SiteCreateContactInput) SetTimeZone(val OptNilTimeZoneName) {
 }
 
 // SetCustomFields sets the value of CustomFields.
-func (s *SiteCreateContactInput) SetCustomFields(val OptNilSiteCreateContactInputCustomFields) {
+func (s *SiteCreateContactInput) SetCustomFields(val OptNilJsonObject) {
 	s.CustomFields = val
 }
 
 // SetTags sets the value of Tags.
 func (s *SiteCreateContactInput) SetTags(val []string) {
 	s.Tags = val
-}
-
-// Typed custom field values keyed by the field's machine key.
-type SiteCreateContactInputCustomFields map[string]jx.Raw
-
-func (s *SiteCreateContactInputCustomFields) init() SiteCreateContactInputCustomFields {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Invite an email address to the workspace.
@@ -15274,7 +14549,7 @@ type SiteEmailTemplateResource struct {
 	// HTML body with Liquid merge tags.
 	Body string `json:"body"`
 	// The editor's JSON document the body was built from; null when the body was written as HTML.
-	Doc OptNilSiteEmailTemplateResourceDoc `json:"doc"`
+	Doc OptNilEditorDocument `json:"doc"`
 	// Version of the editor that rendered the document; null with it.
 	EditorVersion OptNilString `json:"editorVersion"`
 	// Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks
@@ -15307,7 +14582,7 @@ func (s *SiteEmailTemplateResource) GetBody() string {
 }
 
 // GetDoc returns the value of Doc.
-func (s *SiteEmailTemplateResource) GetDoc() OptNilSiteEmailTemplateResourceDoc {
+func (s *SiteEmailTemplateResource) GetDoc() OptNilEditorDocument {
 	return s.Doc
 }
 
@@ -15352,7 +14627,7 @@ func (s *SiteEmailTemplateResource) SetBody(val string) {
 }
 
 // SetDoc sets the value of Doc.
-func (s *SiteEmailTemplateResource) SetDoc(val OptNilSiteEmailTemplateResourceDoc) {
+func (s *SiteEmailTemplateResource) SetDoc(val OptNilEditorDocument) {
 	s.Doc = val
 }
 
@@ -15379,18 +14654,6 @@ func (s *SiteEmailTemplateResource) SetUpdatedAt(val Timestamp) {
 func (*SiteEmailTemplateResource) siteTemplatesCreateRes() {}
 func (*SiteEmailTemplateResource) siteTemplatesGetRes()    {}
 func (*SiteEmailTemplateResource) siteTemplatesUpdateRes() {}
-
-// The editor's JSON document the body was built from; null when the body was written as HTML.
-type SiteEmailTemplateResourceDoc map[string]jx.Raw
-
-func (s *SiteEmailTemplateResourceDoc) init() SiteEmailTemplateResourceDoc {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
 
 // What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
 // Ref: #/components/schemas/SiteEnrollmentFailure
@@ -15789,7 +15052,7 @@ type SiteEventResource struct {
 	// Event action / name.
 	Action string `json:"action"`
 	// Arbitrary event properties.
-	Properties OptNilSiteEventResourceProperties `json:"properties"`
+	Properties OptNilJsonObject `json:"properties"`
 	// When the event happened: the time the source gave, or when it was published if it gave none.
 	OccurredAt Timestamp `json:"occurredAt"`
 	// When the event was recorded.
@@ -15817,7 +15080,7 @@ func (s *SiteEventResource) GetAction() string {
 }
 
 // GetProperties returns the value of Properties.
-func (s *SiteEventResource) GetProperties() OptNilSiteEventResourceProperties {
+func (s *SiteEventResource) GetProperties() OptNilJsonObject {
 	return s.Properties
 }
 
@@ -15852,7 +15115,7 @@ func (s *SiteEventResource) SetAction(val string) {
 }
 
 // SetProperties sets the value of Properties.
-func (s *SiteEventResource) SetProperties(val OptNilSiteEventResourceProperties) {
+func (s *SiteEventResource) SetProperties(val OptNilJsonObject) {
 	s.Properties = val
 }
 
@@ -15864,18 +15127,6 @@ func (s *SiteEventResource) SetOccurredAt(val Timestamp) {
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteEventResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
-}
-
-// Arbitrary event properties.
-type SiteEventResourceProperties map[string]jx.Raw
-
-func (s *SiteEventResourceProperties) init() SiteEventResourceProperties {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 type SiteEventsActionsBadRequest ProblemDetails
@@ -16346,7 +15597,7 @@ type SiteIntegrationResource struct {
 	Preset NilString `json:"preset"`
 	// The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as
 	// `********`, never its value.
-	Params SiteIntegrationResourceParams `json:"params"`
+	Params JsonObject `json:"params"`
 	// Names of the secret params that are rotating: a retiring value is still accepted beside the current
 	// one.
 	SecretsRetiring []string `json:"secretsRetiring"`
@@ -16418,7 +15669,7 @@ func (s *SiteIntegrationResource) GetPreset() NilString {
 }
 
 // GetParams returns the value of Params.
-func (s *SiteIntegrationResource) GetParams() SiteIntegrationResourceParams {
+func (s *SiteIntegrationResource) GetParams() JsonObject {
 	return s.Params
 }
 
@@ -16503,7 +15754,7 @@ func (s *SiteIntegrationResource) SetPreset(val NilString) {
 }
 
 // SetParams sets the value of Params.
-func (s *SiteIntegrationResource) SetParams(val SiteIntegrationResourceParams) {
+func (s *SiteIntegrationResource) SetParams(val JsonObject) {
 	s.Params = val
 }
 
@@ -16538,19 +15789,6 @@ func (*SiteIntegrationResource) siteIntegrationsGetRes()           {}
 func (*SiteIntegrationResource) siteIntegrationsRegenerateKeyRes() {}
 func (*SiteIntegrationResource) siteIntegrationsUnarchiveRes()     {}
 func (*SiteIntegrationResource) siteIntegrationsUpdateRes()        {}
-
-// The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as
-// `********`, never its value.
-type SiteIntegrationResourceParams map[string]jx.Raw
-
-func (s *SiteIntegrationResourceParams) init() SiteIntegrationResourceParams {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
 
 type SiteIntegrationsArchiveBadRequest ProblemDetails
 
@@ -19667,7 +18905,7 @@ type SitePresetResource struct {
 	// What the Preset is for.
 	Description string `json:"description"`
 	// JSON Schema (draft 2020-12) of the params; a string marked `writeOnly` is a secret.
-	ParamsSchema SitePresetResourceParamsSchema `json:"paramsSchema"`
+	ParamsSchema JsonObject `json:"paramsSchema"`
 }
 
 // GetName returns the value of Name.
@@ -19681,7 +18919,7 @@ func (s *SitePresetResource) GetDescription() string {
 }
 
 // GetParamsSchema returns the value of ParamsSchema.
-func (s *SitePresetResource) GetParamsSchema() SitePresetResourceParamsSchema {
+func (s *SitePresetResource) GetParamsSchema() JsonObject {
 	return s.ParamsSchema
 }
 
@@ -19696,20 +18934,8 @@ func (s *SitePresetResource) SetDescription(val string) {
 }
 
 // SetParamsSchema sets the value of ParamsSchema.
-func (s *SitePresetResource) SetParamsSchema(val SitePresetResourceParamsSchema) {
+func (s *SitePresetResource) SetParamsSchema(val JsonObject) {
 	s.ParamsSchema = val
-}
-
-// JSON Schema (draft 2020-12) of the params; a string marked `writeOnly` is a secret.
-type SitePresetResourceParamsSchema map[string]jx.Raw
-
-func (s *SitePresetResourceParamsSchema) init() SitePresetResourceParamsSchema {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Request body for previewing a condition's segment.
@@ -24612,7 +23838,7 @@ type SiteUpdateContactInput struct {
 	// IANA time zone identifier.
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
 	// Typed custom field values keyed by the field's machine key.
-	CustomFields OptNilSiteUpdateContactInputCustomFields `json:"customFields"`
+	CustomFields OptNilJsonObject `json:"customFields"`
 	// The contact's complete tag set when given: tags not listed are removed from it, an absent key keeps
 	// them.
 	Tags []string `json:"tags"`
@@ -24649,7 +23875,7 @@ func (s *SiteUpdateContactInput) GetTimeZone() OptNilTimeZoneName {
 }
 
 // GetCustomFields returns the value of CustomFields.
-func (s *SiteUpdateContactInput) GetCustomFields() OptNilSiteUpdateContactInputCustomFields {
+func (s *SiteUpdateContactInput) GetCustomFields() OptNilJsonObject {
 	return s.CustomFields
 }
 
@@ -24689,25 +23915,13 @@ func (s *SiteUpdateContactInput) SetTimeZone(val OptNilTimeZoneName) {
 }
 
 // SetCustomFields sets the value of CustomFields.
-func (s *SiteUpdateContactInput) SetCustomFields(val OptNilSiteUpdateContactInputCustomFields) {
+func (s *SiteUpdateContactInput) SetCustomFields(val OptNilJsonObject) {
 	s.CustomFields = val
 }
 
 // SetTags sets the value of Tags.
 func (s *SiteUpdateContactInput) SetTags(val []string) {
 	s.Tags = val
-}
-
-// Typed custom field values keyed by the field's machine key.
-type SiteUpdateContactInputCustomFields map[string]jx.Raw
-
-func (s *SiteUpdateContactInputCustomFields) init() SiteUpdateContactInputCustomFields {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Update the authenticated user's profile. To change the password, provide both currentPassword and
@@ -26409,7 +25623,7 @@ type UpdateBroadcastInput struct {
 	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
 	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
 	// a 422 with the reason and nothing is stored.
-	Doc OptUpdateBroadcastInputDoc `json:"doc"`
+	Doc OptEditorDocument `json:"doc"`
 	// Target segment; null means all contacts. An archived segment is refused with 422.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Sending integration; null means the workspace default. An archived integration is refused with 422.
@@ -26442,7 +25656,7 @@ func (s *UpdateBroadcastInput) GetBody() OptString {
 }
 
 // GetDoc returns the value of Doc.
-func (s *UpdateBroadcastInput) GetDoc() OptUpdateBroadcastInputDoc {
+func (s *UpdateBroadcastInput) GetDoc() OptEditorDocument {
 	return s.Doc
 }
 
@@ -26482,7 +25696,7 @@ func (s *UpdateBroadcastInput) SetBody(val OptString) {
 }
 
 // SetDoc sets the value of Doc.
-func (s *UpdateBroadcastInput) SetDoc(val OptUpdateBroadcastInputDoc) {
+func (s *UpdateBroadcastInput) SetDoc(val OptEditorDocument) {
 	s.Doc = val
 }
 
@@ -26494,20 +25708,6 @@ func (s *UpdateBroadcastInput) SetSegmentId(val OptNilEntityId) {
 // SetIntegrationId sets the value of IntegrationId.
 func (s *UpdateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
-}
-
-// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
-// returns. The server renders the body from it in the same save; a document that cannot be rendered is
-// a 422 with the reason and nothing is stored.
-type UpdateBroadcastInputDoc map[string]jx.Raw
-
-func (s *UpdateBroadcastInputDoc) init() UpdateBroadcastInputDoc {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep
@@ -26529,7 +25729,7 @@ type UpdateIntegrationInput struct {
 	Preset OptNilString `json:"preset"`
 	// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
 	// rotates it (the old one stays valid until retired).
-	Params OptUpdateIntegrationInputParams `json:"params"`
+	Params OptJsonObject `json:"params"`
 	// Stop accepting the retiring value of every rotating secret.
 	RetireSecrets OptBool `json:"retireSecrets"`
 }
@@ -26570,7 +25770,7 @@ func (s *UpdateIntegrationInput) GetPreset() OptNilString {
 }
 
 // GetParams returns the value of Params.
-func (s *UpdateIntegrationInput) GetParams() OptUpdateIntegrationInputParams {
+func (s *UpdateIntegrationInput) GetParams() OptJsonObject {
 	return s.Params
 }
 
@@ -26615,26 +25815,13 @@ func (s *UpdateIntegrationInput) SetPreset(val OptNilString) {
 }
 
 // SetParams sets the value of Params.
-func (s *UpdateIntegrationInput) SetParams(val OptUpdateIntegrationInputParams) {
+func (s *UpdateIntegrationInput) SetParams(val OptJsonObject) {
 	s.Params = val
 }
 
 // SetRetireSecrets sets the value of RetireSecrets.
 func (s *UpdateIntegrationInput) SetRetireSecrets(val OptBool) {
 	s.RetireSecrets = val
-}
-
-// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
-// rotates it (the old one stays valid until retired).
-type UpdateIntegrationInputParams map[string]jx.Raw
-
-func (s *UpdateIntegrationInputParams) init() UpdateIntegrationInputParams {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Request body for updating a template.
@@ -26649,7 +25836,7 @@ type UpdateTemplateInput struct {
 	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
 	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
 	// a 422 with the reason and nothing is stored.
-	Doc OptUpdateTemplateInputDoc `json:"doc"`
+	Doc OptEditorDocument `json:"doc"`
 }
 
 // GetName returns the value of Name.
@@ -26668,7 +25855,7 @@ func (s *UpdateTemplateInput) GetBody() OptString {
 }
 
 // GetDoc returns the value of Doc.
-func (s *UpdateTemplateInput) GetDoc() OptUpdateTemplateInputDoc {
+func (s *UpdateTemplateInput) GetDoc() OptEditorDocument {
 	return s.Doc
 }
 
@@ -26688,22 +25875,8 @@ func (s *UpdateTemplateInput) SetBody(val OptString) {
 }
 
 // SetDoc sets the value of Doc.
-func (s *UpdateTemplateInput) SetDoc(val OptUpdateTemplateInputDoc) {
+func (s *UpdateTemplateInput) SetDoc(val OptEditorDocument) {
 	s.Doc = val
-}
-
-// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
-// returns. The server renders the body from it in the same save; a document that cannot be rendered is
-// a 422 with the reason and nothing is stored.
-type UpdateTemplateInputDoc map[string]jx.Raw
-
-func (s *UpdateTemplateInputDoc) init() UpdateTemplateInputDoc {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Request body for updating a webhook endpoint.

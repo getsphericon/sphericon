@@ -50,7 +50,7 @@ func TestExportContactsDeliversAContactAgainOnACustomFieldEdit(t *testing.T) {
 	before := readExportContacts(t, c, "", 0)
 
 	_, err := c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{
-		CustomFields: externalapi.NewOptNilUpdateContactInputCustomFields(externalapi.UpdateContactInputCustomFields{"plan": jx.Raw(`"team"`)}),
+		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{"plan": jx.Raw(`"team"`)}),
 	}, externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactLiamID)})
 	require.NoError(t, err)
 

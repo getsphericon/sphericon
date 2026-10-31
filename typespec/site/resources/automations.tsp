@@ -71,7 +71,7 @@ model SiteAutomationStep {
    * server. Write it instead of `body` (both is a 422): the server renders the body from it in the
    * same save, and a document that cannot be rendered refuses the whole save, naming the step.
    * Writing only a body clears the step's document. */
-  doc?: Record<unknown>;
+  doc?: EditorDocument;
 
   /** Version of the editor that rendered the document (email steps, read only) */
   editorVersion?: string;

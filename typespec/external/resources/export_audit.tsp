@@ -33,7 +33,7 @@ model ExportAuditRow {
   target_name: string | null;
 
   /** Before/after of the changed fields as one JSON column; secrets appear as changed only */
-  diff: ContactExportJson;
+  diff: JsonObject;
 
   /** Request id of the change */
   request_id: string | null;

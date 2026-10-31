@@ -43,7 +43,7 @@ model ExportEventRow {
   action: string;
 
   /** Event properties as one JSON column */
-  properties: ContactExportJson;
+  properties: JsonObject;
 
   /** The Contact the Event is about; absent for an anonymous Event */
   contact_id: EntityId | null;

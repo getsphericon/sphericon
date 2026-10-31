@@ -133,7 +133,7 @@ func TestExternalEventsCreate(t *testing.T) {
 				Action:     "signup",
 				Email:      externalapi.NewOptNilEmailAddress("dave@example.com"),
 				OccurredAt: externalapi.NewOptNilTimestamp(externalapi.Timestamp(occurred)),
-				Properties: externalapi.NewOptNilEventInputProperties(externalapi.EventInputProperties{
+				Properties: externalapi.NewOptNilJsonObject(externalapi.JsonObject{
 					"plan":   jx.Raw(`"pro"`),
 					"amount": jx.Raw(`42`),
 				}),

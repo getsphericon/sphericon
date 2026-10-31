@@ -159,7 +159,7 @@ func TestThePreviewIsTheValidReportAndWorksWithSendingOff(t *testing.T) {
 	res, err := c.StaffInstancePreviewTelemetryReport(t.Context())
 
 	require.NoError(t, err)
-	preview, ok := res.(*staffapi.StaffInstancePreviewTelemetryReportOK)
+	preview, ok := res.(*staffapi.JsonObject)
 	require.Truef(t, ok, "expected the report, got %T", res)
 	body, err := json.Marshal(preview)
 	require.NoError(t, err)

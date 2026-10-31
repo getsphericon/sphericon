@@ -87,7 +87,7 @@ func (h *Handlers) StaffInstancePreviewTelemetryReport(ctx context.Context) (sta
 	if err != nil {
 		return nil, err
 	}
-	var fields staffapi.StaffInstancePreviewTelemetryReportOK
+	var fields staffapi.JsonObject
 	if err := json.Unmarshal(body, &fields); err != nil {
 		return nil, err
 	}

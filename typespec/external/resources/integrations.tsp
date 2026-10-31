@@ -88,7 +88,7 @@ model IntegrationResource {
   preset: string | null;
 
   /** The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as `********`, never its value */
-  params: Record<unknown>;
+  params: JsonObject;
 
   /** Names of the secret params that are rotating: a retiring value is still accepted beside the current one */
   secretsRetiring: string[];
@@ -242,7 +242,7 @@ model PresetResource {
   description: string;
 
   /** JSON Schema (draft 2020-12) of the `params` an Integration of this Preset takes. A string marked `writeOnly` is a secret: it is never returned by a read. */
-  paramsSchema: Record<unknown>;
+  paramsSchema: JsonObject;
 }
 
 @route("/presets")

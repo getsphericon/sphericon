@@ -21,7 +21,7 @@ model CreateBroadcastInput {
 
   /** The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
    * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored. */
-  doc?: Record<unknown>;
+  doc?: EditorDocument;
 
   /** Target segment; null or omitted means all contacts. An archived segment is refused with 422. */
   segmentId?: EntityId | null;
@@ -49,7 +49,7 @@ model UpdateBroadcastInput {
 
   /** The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
    * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored. */
-  doc?: Record<unknown>;
+  doc?: EditorDocument;
 
   /** Target segment; null means all contacts. An archived segment is refused with 422. */
   segmentId?: EntityId | null;

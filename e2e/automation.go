@@ -77,7 +77,7 @@ func (w *Workspace) PublishAuthoredAutomation(a AuthoredAutomation) {
 		Steps: []externalapi.AutomationStep{{
 			Type:    externalapi.AutomationStepTypeEmail,
 			Subject: externalapi.NewOptString(a.Subject),
-			Doc:     externalapi.NewOptAutomationStepDoc(docObject[externalapi.AutomationStepDoc](w.t, doc)),
+			Doc:     externalapi.NewOptEditorDocument(docObject[externalapi.EditorDocument](w.t, doc)),
 		}},
 	})
 	created := ok[externalapi.AutomationResource](w.t, "create authored automation", res, err)

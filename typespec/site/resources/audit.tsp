@@ -53,7 +53,7 @@ model SiteAuditEntryResource {
   target: SiteAuditTarget;
 
   /** Before/after of the changed fields; secrets appear as changed only */
-  diff?: Record<unknown> | null;
+  diff?: JsonObject | null;
 
   /** Request id of the change */
   requestId?: string | null;

@@ -36,8 +36,8 @@ func TestExternalEmailsSend(t *testing.T) {
 	res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
 		TemplateId:  templateID(tmpl),
 		Destination: "Customer@Example.com",
-		Variables: externalapi.NewOptSendTransactionalEmailInputVariables(
-			externalapi.SendTransactionalEmailInputVariables{
+		Variables: externalapi.NewOptJsonObject(
+			externalapi.JsonObject{
 				"name": jx.Raw(`"Ada"`),
 				"code": jx.Raw(`123456`),
 			}),

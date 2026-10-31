@@ -1,8 +1,5 @@
 namespace Sphericon;
 
-/** An arbitrary JSON object: typed custom field values or event properties */
-model ContactExportJson is Record<unknown>;
-
 /** How the contact first came to exist */
 enum ContactExportSource {
   manual,
@@ -34,7 +31,7 @@ model ContactExportContact {
   timeZone?: string | null;
 
   /** Typed custom field values keyed by the field's machine key */
-  customFields?: ContactExportJson | null;
+  customFields?: JsonObject | null;
 
   /** The door the contact came through; absent for a contact that predates the field */
   source?: ContactExportSource | null;
@@ -97,7 +94,7 @@ model ContactExportEvent {
   action: string;
 
   /** Event properties */
-  properties?: ContactExportJson | null;
+  properties?: JsonObject | null;
 
   /** When the event happened: the time the source gave, or when it was published if it gave none */
   occurredAt: Timestamp;

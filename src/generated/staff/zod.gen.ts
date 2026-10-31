@@ -3,6 +3,12 @@
 
 import * as z from 'zod';
 
+/**
+ * The email editor's JSON document, an opaque object the server checks against the schema
+ * `email_schema` returns. One named model, as JsonObject.
+ */
+export const zEditorDocument = z.record(z.string(), z.unknown());
+
 export const zEmailAddress = z.email().max(320);
 
 /**
@@ -13,6 +19,13 @@ export const zEmailAddress = z.email().max(320);
  * reaches, so every id the schema admits fits an int64.
  */
 export const zEntityId = z.string().regex(/^[0-9]+$/);
+
+/**
+ * A JSON object whose members the contract leaves open: custom field values, event properties,
+ * integration params, an audit diff. One named model, so every surface's Go code has one type for
+ * it rather than one per field.
+ */
+export const zJsonObject = z.record(z.string(), z.unknown());
 
 /**
  * The label a Staff member gives a published Legal document version, unique per item
@@ -263,7 +276,7 @@ export const zStaffInstanceAuditEntryResource = z.object({
   occurredAt: zTimestamp,
   actor: zStaffResource,
   action: z.string(),
-  diff: z.record(z.string(), z.unknown())
+  diff: zJsonObject
 });
 
 /**
@@ -446,7 +459,7 @@ export const zStaffInstanceSetTelemetryResponse = zStaffInstanceState;
 /**
  * The request has succeeded.
  */
-export const zStaffInstancePreviewTelemetryReportResponse = z.record(z.string(), z.unknown());
+export const zStaffInstancePreviewTelemetryReportResponse = zJsonObject;
 
 /**
  * The request has succeeded.

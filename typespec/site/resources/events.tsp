@@ -24,7 +24,7 @@ model SiteEventResource {
   action: string;
 
   /** Arbitrary event properties */
-  properties?: Record<unknown> | null;
+  properties?: JsonObject | null;
 
   /** When the event happened: the time the source gave, or when it was published if it gave none */
   occurredAt: Timestamp;

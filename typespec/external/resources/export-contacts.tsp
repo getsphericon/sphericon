@@ -27,7 +27,7 @@ model ExportContactRow {
   time_zone: string | null;
 
   /** Custom field values keyed by the field's machine key, as one JSON column */
-  custom_fields: ContactExportJson;
+  custom_fields: JsonObject;
 
   /** Names of the Tags the Contact has, ordered by name */
   tags: string[];

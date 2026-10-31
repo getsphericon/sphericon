@@ -227,7 +227,7 @@ func TestExternalIntegrationsSESNamesItsSNSTopicInTheParams(t *testing.T) {
 			Config: externalapi.IntegrationConfigInput{OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{
 				Kind: externalapi.SesConfigInputKindSes, Region: "eu-west-1", AccessKeyId: "AKIAXXXX", SecretAccessKey: "s", From: "a@acme.test",
 			})},
-			Params: externalapi.NewOptCreateIntegrationInputParams(externalapi.CreateIntegrationInputParams{"topic_arn": jx.Raw(strconv.Quote(topic))}),
+			Params: externalapi.NewOptJsonObject(externalapi.JsonObject{"topic_arn": jx.Raw(strconv.Quote(topic))}),
 		}
 	}
 
@@ -237,7 +237,7 @@ func TestExternalIntegrationsSESNamesItsSNSTopicInTheParams(t *testing.T) {
 
 	// An SES Integration without a topic could never receive a bounce: it is refused at save.
 	noTopic := ses("unused")
-	noTopic.Params = externalapi.OptCreateIntegrationInputParams{}
+	noTopic.Params = externalapi.OptJsonObject{}
 	missing, err := c.IntegrationsCreate(ctx, noTopic)
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.IntegrationsCreateUnprocessableEntity{}, missing)

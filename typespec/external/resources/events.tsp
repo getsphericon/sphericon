@@ -21,7 +21,7 @@ model EventInput {
 
   /** Event properties */
   @untrusted
-  properties?: Record<unknown> | null;
+  properties?: JsonObject | null;
 
   /** Event occurrence timestamp */
   occurredAt?: Timestamp | null;

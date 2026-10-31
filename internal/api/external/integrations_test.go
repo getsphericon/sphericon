@@ -110,7 +110,7 @@ func TestExternalIntegrationsSesCompatibleRequiresTheProviderLimit(t *testing.T)
 	env := testhelper.Setup(t)
 	res, err := env.ExternalScoped(t, "integrations:write").IntegrationsCreate(context.Background(), &externalapi.CreateIntegrationInput{
 		Name: "Postbox",
-		Params: externalapi.NewOptCreateIntegrationInputParams(externalapi.CreateIntegrationInputParams{
+		Params: externalapi.NewOptJsonObject(externalapi.JsonObject{
 			"topic_arn": []byte(`"arn:aws:sns:eu-west-1:123456789012:acme-ses-events"`),
 		}),
 		MaxPerSecond: externalapi.NewOptNilMaxPerSecond(1),

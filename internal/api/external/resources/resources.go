@@ -79,8 +79,8 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 		default:
 			step.Subject = externalapi.NewOptString(s.Subject)
 			step.Body = externalapi.NewOptString(s.Body)
-			if doc := convert.DocObject[externalapi.AutomationStepDoc](s.Doc); doc != nil {
-				step.Doc = externalapi.NewOptAutomationStepDoc(doc)
+			if doc := convert.DocObject[externalapi.EditorDocument](s.Doc); doc != nil {
+				step.Doc = externalapi.NewOptEditorDocument(doc)
 				step.EditorVersion = externalapi.NewOptString(s.EditorVersion)
 			}
 		}
@@ -106,14 +106,12 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 // goverter:extend optNilTimeZone
 // goverter:extend optNilTimestamp
 // goverter:extend optNilEntityID
-// goverter:extend contactCustomFields
 // goverter:extend optNilInt32
-// goverter:extend exportJSON
+// goverter:extend jsonObject
 // goverter:extend segmentCondition
 // goverter:extend ruleActions
 // goverter:extend ruleResults
-// goverter:extend templateDoc
-// goverter:extend broadcastDoc
+// goverter:extend editorDocument
 // goverter:extend nilInt32
 // goverter:extend nilString
 // goverter:extend count
@@ -517,9 +515,16 @@ func optNilInt32(v *int) externalapi.OptNilInt32 {
 	return convert.Opt[externalapi.OptNilInt32](convert.Int32Ptr(v))
 }
 
-// exportJSON renders a stored JSON object (custom fields, event properties).
-func exportJSON(m map[string]any) externalapi.OptNilContactExportJson {
-	return convert.OptObject[externalapi.OptNilContactExportJson](convert.RawObject[externalapi.ContactExportJson](m))
+// jsonObject renders a stored JSON object (custom fields, event properties): absent when it has
+// no keys.
+func jsonObject(m map[string]any) externalapi.OptNilJsonObject {
+	return convert.OptObject[externalapi.OptNilJsonObject](convert.RawObject[externalapi.JsonObject](m))
+}
+
+// editorDocument is a stored editor document (a Template's, a Broadcast's) as the opaque object of
+// the contract; a message written as HTML has none.
+func editorDocument(doc json.RawMessage) externalapi.OptNilEditorDocument {
+	return convert.OptObject[externalapi.OptNilEditorDocument](convert.DocObject[externalapi.EditorDocument](doc))
 }
 
 func timestamp(t time.Time) externalapi.Timestamp {
@@ -546,10 +551,6 @@ func optNilTimestamp(v *time.Time) externalapi.OptNilTimestamp {
 	return convert.Opt[externalapi.OptNilTimestamp]((*externalapi.Timestamp)(v))
 }
 
-func contactCustomFields(m map[string]any) externalapi.OptNilContactResourceCustomFields {
-	return convert.OptObject[externalapi.OptNilContactResourceCustomFields](convert.RawObject[externalapi.ContactResourceCustomFields](m))
-}
-
 // segmentCondition decodes the stored rule group into the typed DTO. A segment with no
 // definition (or one that no longer decodes) reads as having none.
 func segmentCondition(def *string) externalapi.OptConditionGroup {
@@ -561,18 +562,6 @@ func segmentCondition(def *string) externalapi.OptConditionGroup {
 		return externalapi.OptConditionGroup{}
 	}
 	return externalapi.NewOptConditionGroup(group)
-}
-
-// templateDoc is a Template's stored editor document as the opaque object of the contract; a
-// Template written as HTML has none.
-func templateDoc(doc json.RawMessage) externalapi.OptNilTemplateResourceDoc {
-	return convert.OptObject[externalapi.OptNilTemplateResourceDoc](convert.DocObject[externalapi.TemplateResourceDoc](doc))
-}
-
-// broadcastDoc is a Broadcast's stored editor document as the opaque object of the contract; a
-// Broadcast written as HTML has none.
-func broadcastDoc(doc json.RawMessage) externalapi.OptNilBroadcastResourceDoc {
-	return convert.OptObject[externalapi.OptNilBroadcastResourceDoc](convert.DocObject[externalapi.BroadcastResourceDoc](doc))
 }
 
 func optTimestamp(v *time.Time) externalapi.OptTimestamp {
@@ -619,8 +608,8 @@ func brandKitUpdatedAt(k brandkit.Kit) externalapi.OptNilTimestamp {
 	return externalapi.NewOptNilTimestamp(externalapi.Timestamp(k.UpdatedAt))
 }
 
-func auditDiff(d map[string]jx.Raw) externalapi.OptNilAuditEntryResourceDiff {
-	return convert.OptObject[externalapi.OptNilAuditEntryResourceDiff](externalapi.AuditEntryResourceDiff(d))
+func auditDiff(d map[string]jx.Raw) externalapi.OptNilJsonObject {
+	return convert.OptObject[externalapi.OptNilJsonObject](externalapi.JsonObject(d))
 }
 
 // webhookFailure is the endpoint's failure state; it is absent while the endpoint is healthy.
@@ -726,8 +715,8 @@ func optNilContactSource(c Converter, v *contact.Source) externalapi.OptNilConta
 }
 
 // schemaExample is the agent schema's example document as the contract's opaque object.
-func schemaExample(doc json.RawMessage) externalapi.EmailSchemaResultExample {
-	return convert.DocObject[externalapi.EmailSchemaResultExample](doc)
+func schemaExample(doc json.RawMessage) externalapi.EditorDocument {
+	return convert.DocObject[externalapi.EditorDocument](doc)
 }
 
 // customFieldRuleOperators is the operators a rule leaf may test on a Custom field of the type: the

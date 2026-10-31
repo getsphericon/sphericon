@@ -436,7 +436,7 @@ func encodeStaffInstanceListAuditEntriesResponse(response StaffInstanceListAudit
 
 func encodeStaffInstancePreviewTelemetryReportResponse(response StaffInstancePreviewTelemetryReportRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *StaffInstancePreviewTelemetryReportOK:
+	case *JsonObject:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 

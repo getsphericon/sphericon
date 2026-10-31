@@ -86,7 +86,7 @@ model StaffInstanceAuditEntryResource {
 
   /** The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there
    * was no value, `to` where it was cleared */
-  diff: Record<unknown>;
+  diff: JsonObject;
 }
 
 /** A page of the Instance audit log, newest first */
@@ -132,7 +132,7 @@ namespace StaffInstance {
    */
   @get
   @route("/telemetry/preview")
-  op previewTelemetryReport(): Record<unknown> | UnauthorizedProblem;
+  op previewTelemetryReport(): JsonObject | UnauthorizedProblem;
 
   /** Set the default Send cap (ADR 0067) as the signed-in Staff member: every Workspace created
    * from now on starts with it; existing Workspaces keep theirs. Recorded in the Instance audit

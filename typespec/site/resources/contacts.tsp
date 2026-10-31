@@ -33,7 +33,7 @@ model SiteContactResource {
   timeZone?: TimeZoneName | null;
 
   /** Typed custom field values keyed by the field's machine key */
-  customFields?: Record<unknown> | null;
+  customFields?: JsonObject | null;
 
   /** The labels the contact carries, ordered by name */
   tags: string[];

@@ -15,9 +15,7 @@ export type CollectEventInput = {
    * event happens (a UUID), and reuse it on every retry. An event without one is not deduplicated.
    */
   clientEventId?: string | null;
-  properties?: {
-    [key: string]: unknown;
-  } | null;
+  properties?: JsonObject | null;
   occurredAt?: Timestamp | null;
 };
 
@@ -30,9 +28,7 @@ export type CollectIdentifyInput = {
   email?: EmailAddress | null;
   phone?: string | null;
   subjectId?: string | null;
-  traits?: {
-    [key: string]: unknown;
-  } | null;
+  traits?: JsonObject | null;
 };
 
 export type CollectOkResponse = {
@@ -44,6 +40,14 @@ export type CollectOkResponse = {
  */
 export type ConflictProblem = {
   body: ProblemDetails;
+};
+
+/**
+ * The email editor's JSON document, an opaque object the server checks against the schema
+ * `email_schema` returns. One named model, as JsonObject.
+ */
+export type EditorDocument = {
+  [key: string]: unknown;
 };
 
 export type EmailAddress = string;
@@ -136,6 +140,15 @@ export type InUseProblemDetails = {
    * The live rows that use the one a removal was refused for, never empty
    */
   usedBy: Array<UsedBy>;
+};
+
+/**
+ * A JSON object whose members the contract leaves open: custom field values, event properties,
+ * integration params, an audit diff. One named model, so every surface's Go code has one type for
+ * it rather than one per field.
+ */
+export type JsonObject = {
+  [key: string]: unknown;
 };
 
 /**

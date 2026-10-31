@@ -15,7 +15,7 @@ model CreateTemplateInput {
 
   /** The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
    * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored. */
-  doc?: Record<unknown>;
+  doc?: EditorDocument;
 }
 
 /** Request body for updating a template */
@@ -31,5 +31,5 @@ model UpdateTemplateInput {
 
   /** The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
    * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored. */
-  doc?: Record<unknown>;
+  doc?: EditorDocument;
 }

@@ -119,7 +119,7 @@ func (h *Handlers) SitePresetsList(_ context.Context) ([]siteapi.SitePresetResou
 		p, _ := reg.Get(name)
 		out = append(out, siteapi.SitePresetResource{
 			Name: p.Name(), Description: p.Description(),
-			ParamsSchema: siteapi.SitePresetResourceParamsSchema(integrations.RawOf(p.ParamsSchema())),
+			ParamsSchema: siteapi.JsonObject(integrations.RawOf(p.ParamsSchema())),
 		})
 	}
 	return out, nil
@@ -169,7 +169,7 @@ func (h *Handlers) integrationToResource(row *ent.Integration, limit providerlim
 	if err != nil {
 		return res, err
 	}
-	res.Params = siteapi.SiteIntegrationResourceParams(integrations.RawOf(view.Values))
+	res.Params = siteapi.JsonObject(integrations.RawOf(view.Values))
 	res.SecretsRetiring = view.SecretsRetiring
 
 	cfg, err := h.integrations.Redact(row)

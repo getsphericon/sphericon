@@ -57,11 +57,6 @@ export const zApplyTagInput = z.object({
 export const zAttributionWindowDays = z.int().gte(1).lte(90);
 
 /**
- * An arbitrary JSON object: typed custom field values or event properties
- */
-export const zContactExportJson = z.record(z.string(), z.unknown());
-
-/**
  * How the contact first came to exist
  */
 export const zContactExportSource = z.enum([
@@ -79,16 +74,6 @@ export const zCreateSendingDomainInput = z.object({
 });
 
 /**
- * Request body for creating a template
- */
-export const zCreateTemplateInput = z.object({
-  name: z.string(),
-  subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(z.record(z.string(), z.unknown()))
-});
-
-/**
  * Request body for creating a webhook endpoint
  */
 export const zCreateWebhookInput = z.object({
@@ -102,6 +87,22 @@ export const zCreateWebhookInput = z.object({
  * by the server, which refuses an unknown one with a reason.
  */
 export const zCurrencyCode = z.string().regex(/^[A-Z]{3}$/);
+
+/**
+ * The email editor's JSON document, an opaque object the server checks against the schema
+ * `email_schema` returns. One named model, as JsonObject.
+ */
+export const zEditorDocument = z.record(z.string(), z.unknown());
+
+/**
+ * Request body for creating a template
+ */
+export const zCreateTemplateInput = z.object({
+  name: z.string(),
+  subject: z.exactOptional(z.string()),
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(zEditorDocument)
+});
 
 export const zEmailAddress = z.email().max(320);
 
@@ -123,7 +124,7 @@ export const zCreateBroadcastInput = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   fromEmail: z.exactOptional(zEmailAddress.nullable()),
   body: z.exactOptional(z.string()),
-  doc: z.exactOptional(z.record(z.string(), z.unknown())),
+  doc: z.exactOptional(zEditorDocument),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -164,6 +165,13 @@ export const zGrantableScope = z.enum([
 export const zInboxConfigInput = z.object({
   kind: z.enum(['inbox'])
 });
+
+/**
+ * A JSON object whose members the contract leaves open: custom field values, event properties,
+ * integration params, an audit diff. One named model, so every surface's Go code has one type for
+ * it rather than one per field.
+ */
+export const zJsonObject = z.record(z.string(), z.unknown());
 
 /**
  * The label a Staff member gives a published Legal document version, unique per item
@@ -655,7 +663,7 @@ export const zSiteAutomationStep = z.object({
   type: zSiteAutomationStepType,
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
-  doc: z.exactOptional(z.record(z.string(), z.unknown())),
+  doc: z.exactOptional(zEditorDocument),
   editorVersion: z.exactOptional(z.string()),
   seconds: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   tag: z.exactOptional(z.string()),
@@ -1408,7 +1416,7 @@ export const zSitePendingSignup = z.object({
 export const zSitePresetResource = z.object({
   name: z.string(),
   description: z.string(),
-  paramsSchema: z.record(z.string(), z.unknown())
+  paramsSchema: zJsonObject
 });
 
 /**
@@ -2079,7 +2087,7 @@ export const zCreateIntegrationInput = z.object({
   maxPerDay: z.exactOptional(zMaxPerDay.nullable()),
   config: zIntegrationConfigInput,
   preset: z.exactOptional(z.string().nullable()),
-  params: z.exactOptional(z.record(z.string(), z.unknown()))
+  params: z.exactOptional(zJsonObject)
 });
 
 /**
@@ -2108,7 +2116,7 @@ export const zCreateContactInput = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
-  customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable())
+  customFields: z.exactOptional(zJsonObject.nullable())
 });
 
 /**
@@ -2123,7 +2131,7 @@ export const zSiteCreateContactInput = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
-  customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  customFields: z.exactOptional(zJsonObject.nullable()),
   tags: z.exactOptional(z.array(z.string()))
 });
 
@@ -2139,7 +2147,7 @@ export const zSiteUpdateContactInput = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
-  customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  customFields: z.exactOptional(zJsonObject.nullable()),
   tags: z.exactOptional(z.array(z.string()))
 });
 
@@ -2197,7 +2205,7 @@ export const zContactExportContact = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(z.string().nullable()),
-  customFields: z.exactOptional(zContactExportJson.nullable()),
+  customFields: z.exactOptional(zJsonObject.nullable()),
   source: z.exactOptional(zContactExportSource.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -2214,7 +2222,7 @@ export const zContactExportEvent = z.object({
   email: z.exactOptional(z.string().nullable()),
   phone: z.exactOptional(z.string().nullable()),
   action: z.string(),
-  properties: z.exactOptional(zContactExportJson.nullable()),
+  properties: z.exactOptional(zJsonObject.nullable()),
   occurredAt: zTimestamp,
   backfill: z.boolean(),
   createdAt: zTimestamp
@@ -2363,7 +2371,7 @@ export const zSiteAuditEntryResource = z.object({
   actor: zSiteAuditActor,
   action: z.string(),
   target: zSiteAuditTarget,
-  diff: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  diff: z.exactOptional(zJsonObject.nullable()),
   requestId: z.exactOptional(z.string().nullable()),
   ip: z.exactOptional(z.string().nullable()),
   userAgent: z.exactOptional(z.string().nullable())
@@ -2435,7 +2443,7 @@ export const zSiteBroadcastResource = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   fromEmail: z.exactOptional(zEmailAddress.nullable()),
   body: z.string(),
-  doc: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  doc: z.exactOptional(zEditorDocument.nullable()),
   editorVersion: z.exactOptional(z.string().nullable()),
   warnings: z.exactOptional(z.array(zLintFinding)),
   segmentId: z.exactOptional(zEntityId.nullable()),
@@ -2545,7 +2553,7 @@ export const zSiteContactResource = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
-  customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  customFields: z.exactOptional(zJsonObject.nullable()),
   tags: z.array(z.string()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -2599,7 +2607,7 @@ export const zSiteEmailTemplateResource = z.object({
   name: z.string(),
   subject: z.string(),
   body: z.string(),
-  doc: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  doc: z.exactOptional(zEditorDocument.nullable()),
   editorVersion: z.exactOptional(z.string().nullable()),
   warnings: z.exactOptional(z.array(zLintFinding)),
   createdAt: zTimestamp,
@@ -2629,7 +2637,7 @@ export const zSiteEventResource = z.object({
   subjectId: z.string(),
   email: z.exactOptional(z.string().nullable()),
   action: z.string(),
-  properties: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  properties: z.exactOptional(zJsonObject.nullable()),
   occurredAt: zTimestamp,
   createdAt: zTimestamp
 });
@@ -2649,7 +2657,7 @@ export const zSiteIntegrationResource = z.object({
   providerLimit: zSiteProviderLimitStatus,
   config: zSiteIntegrationConfig,
   preset: z.string().nullable(),
-  params: z.record(z.string(), z.unknown()),
+  params: zJsonObject,
   secretsRetiring: z.array(z.string()),
   hookUrl: z.string(),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
@@ -2965,7 +2973,7 @@ export const zUpdateBroadcastInput = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   fromEmail: z.exactOptional(zEmailAddress.nullable()),
   body: z.exactOptional(z.string()),
-  doc: z.exactOptional(z.record(z.string(), z.unknown())),
+  doc: z.exactOptional(zEditorDocument),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -2980,7 +2988,7 @@ export const zUpdateContactInput = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
-  customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable())
+  customFields: z.exactOptional(zJsonObject.nullable())
 });
 
 /**
@@ -2994,7 +3002,7 @@ export const zUpdateIntegrationInput = z.object({
   maxPerDay: z.exactOptional(zMaxPerDay.nullable()),
   config: z.exactOptional(zIntegrationConfigInput),
   preset: z.exactOptional(z.string().nullable()),
-  params: z.exactOptional(z.record(z.string(), z.unknown())),
+  params: z.exactOptional(zJsonObject),
   retireSecrets: z.exactOptional(z.boolean())
 });
 
@@ -3005,7 +3013,7 @@ export const zUpdateTemplateInput = z.object({
   name: z.exactOptional(z.string()),
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
-  doc: z.exactOptional(z.record(z.string(), z.unknown()))
+  doc: z.exactOptional(zEditorDocument)
 });
 
 /**

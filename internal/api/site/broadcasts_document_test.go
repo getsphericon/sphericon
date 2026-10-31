@@ -24,7 +24,7 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:    "Authored",
 		Subject: siteapi.NewOptString("Hi {{ first_name }}"),
-		Doc:     siteapi.NewOptCreateBroadcastInputDoc(paragraphDoc("Hello {{ first_name }}")),
+		Doc:     siteapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteBroadcastResource)
@@ -41,7 +41,7 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 
 	// Saving another document rebuilds the body.
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		Doc: siteapi.NewOptUpdateBroadcastInputDoc(paragraphDoc("Second")),
+		Doc: siteapi.NewOptEditorDocument(paragraphDoc("Second")),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteBroadcastResource)
@@ -81,7 +81,7 @@ func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 		"content": jx.Raw(`[{"type":"heading","attrs":{"level":9},"content":[{"type":"text","text":"x"}]}]`),
 	}
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name: "Bad", Doc: siteapi.NewOptCreateBroadcastInputDoc(badLevel),
+		Name: "Bad", Doc: siteapi.NewOptEditorDocument(badLevel),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	refused, ok := created.(*siteapi.SiteBroadcastsCreateUnprocessableEntity)
@@ -91,7 +91,7 @@ func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Name: siteapi.NewOptString("Renamed"),
-		Doc:  siteapi.NewOptUpdateBroadcastInputDoc(map[string]jx.Raw{"type": jx.Raw(`"nope"`)}),
+		Doc:  siteapi.NewOptEditorDocument(map[string]jx.Raw{"type": jx.Raw(`"nope"`)}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, updated)
@@ -107,14 +107,14 @@ func TestSiteBroadcastsRefuseABodyAndADocumentTogether(t *testing.T) {
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name: "Both", Body: siteapi.NewOptString("<p>x</p>"),
-		Doc: siteapi.NewOptCreateBroadcastInputDoc(paragraphDoc("x")),
+		Doc: siteapi.NewOptEditorDocument(paragraphDoc("x")),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, created)
 
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Body: siteapi.NewOptString("<p>x</p>"),
-		Doc:  siteapi.NewOptUpdateBroadcastInputDoc(paragraphDoc("x")),
+		Doc:  siteapi.NewOptEditorDocument(paragraphDoc("x")),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, updated)

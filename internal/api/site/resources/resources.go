@@ -77,12 +77,9 @@ import (
 // goverter:extend attributionWindowDays
 // goverter:extend workspaceTimezone
 // goverter:extend optNilTimestamp
-// goverter:extend contactCustomFields
 // goverter:extend optNilInt32
-// goverter:extend exportJSON
-// goverter:extend eventProperties
-// goverter:extend templateDoc
-// goverter:extend broadcastDoc
+// goverter:extend jsonObject
+// goverter:extend editorDocument
 // goverter:extend automationSteps
 // goverter:extend segmentCondition
 // goverter:extend ruleActions
@@ -636,9 +633,16 @@ func optNilInt32(v *int) siteapi.OptNilInt32 {
 	return convert.Opt[siteapi.OptNilInt32](convert.Int32Ptr(v))
 }
 
-// exportJSON renders a stored JSON object (custom fields, event properties).
-func exportJSON(m map[string]any) siteapi.OptNilContactExportJson {
-	return convert.OptObject[siteapi.OptNilContactExportJson](convert.RawObject[siteapi.ContactExportJson](m))
+// jsonObject renders a stored JSON object (custom fields, event properties): absent when it has
+// no keys.
+func jsonObject(m map[string]any) siteapi.OptNilJsonObject {
+	return convert.OptObject[siteapi.OptNilJsonObject](convert.RawObject[siteapi.JsonObject](m))
+}
+
+// editorDocument is a stored editor document (a Template's, a Broadcast's) as the opaque object of
+// the contract; a message written as HTML has none.
+func editorDocument(doc json.RawMessage) siteapi.OptNilEditorDocument {
+	return convert.OptObject[siteapi.OptNilEditorDocument](convert.DocObject[siteapi.EditorDocument](doc))
 }
 
 // emailVerified derives the verified flag from the nullable timestamp.
@@ -723,26 +727,6 @@ func optNilTimestamp(v *time.Time) siteapi.OptNilTimestamp {
 	return convert.Opt[siteapi.OptNilTimestamp]((*siteapi.Timestamp)(v))
 }
 
-func contactCustomFields(m map[string]any) siteapi.OptNilSiteContactResourceCustomFields {
-	return convert.OptObject[siteapi.OptNilSiteContactResourceCustomFields](convert.RawObject[siteapi.SiteContactResourceCustomFields](m))
-}
-
-// templateDoc is a Template's stored editor document as the opaque object of the contract; a
-// Template written as HTML has none.
-func templateDoc(doc json.RawMessage) siteapi.OptNilSiteEmailTemplateResourceDoc {
-	return convert.OptObject[siteapi.OptNilSiteEmailTemplateResourceDoc](convert.DocObject[siteapi.SiteEmailTemplateResourceDoc](doc))
-}
-
-// broadcastDoc is a Broadcast's stored editor document as the opaque object of the contract; a
-// Broadcast written as HTML has none.
-func broadcastDoc(doc json.RawMessage) siteapi.OptNilSiteBroadcastResourceDoc {
-	return convert.OptObject[siteapi.OptNilSiteBroadcastResourceDoc](convert.DocObject[siteapi.SiteBroadcastResourceDoc](doc))
-}
-
-func eventProperties(m map[string]any) siteapi.OptNilSiteEventResourceProperties {
-	return convert.OptObject[siteapi.OptNilSiteEventResourceProperties](convert.RawObject[siteapi.SiteEventResourceProperties](m))
-}
-
 // automationVersionOrNull is a version of the Automation, or null when it has none.
 func automationVersionOrNull(c Converter, v *ent.AutomationVersion) siteapi.NilSiteAutomationVersion {
 	if v == nil {
@@ -778,8 +762,8 @@ func automationSteps(v *ent.AutomationVersion) []siteapi.SiteAutomationStep {
 		default:
 			step.Subject = siteapi.NewOptString(s.Subject)
 			step.Body = siteapi.NewOptString(s.Body)
-			if doc := convert.DocObject[siteapi.SiteAutomationStepDoc](s.Doc); doc != nil {
-				step.Doc = siteapi.NewOptSiteAutomationStepDoc(doc)
+			if doc := convert.DocObject[siteapi.EditorDocument](s.Doc); doc != nil {
+				step.Doc = siteapi.NewOptEditorDocument(doc)
 				step.EditorVersion = siteapi.NewOptString(s.EditorVersion)
 			}
 		}
@@ -892,8 +876,8 @@ func brandKitUpdatedAt(k brandkit.Kit) siteapi.OptNilTimestamp {
 	return siteapi.NewOptNilTimestamp(siteapi.Timestamp(k.UpdatedAt))
 }
 
-func auditDiff(d map[string]jx.Raw) siteapi.OptNilSiteAuditEntryResourceDiff {
-	return convert.OptObject[siteapi.OptNilSiteAuditEntryResourceDiff](siteapi.SiteAuditEntryResourceDiff(d))
+func auditDiff(d map[string]jx.Raw) siteapi.OptNilJsonObject {
+	return convert.OptObject[siteapi.OptNilJsonObject](siteapi.JsonObject(d))
 }
 
 // webhookFailure is the endpoint's failure state; it is absent while the endpoint is healthy.

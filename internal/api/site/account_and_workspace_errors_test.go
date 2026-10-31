@@ -20,7 +20,7 @@ func TestSiteContactsCustomFieldsRoundTrip(t *testing.T) {
 
 	created, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{
 		Email:        siteapi.NewOptNilEmailAddress("cf@example.com"),
-		CustomFields: siteapi.NewOptNilSiteCreateContactInputCustomFields(siteapi.SiteCreateContactInputCustomFields{"plan": []byte(`"gold"`)}),
+		CustomFields: siteapi.NewOptNilJsonObject(siteapi.JsonObject{"plan": []byte(`"gold"`)}),
 	}, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteContactResource)
@@ -28,7 +28,7 @@ func TestSiteContactsCustomFieldsRoundTrip(t *testing.T) {
 	assert.JSONEq(t, `"gold"`, string(res.CustomFields.Value["plan"]))
 
 	updated, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{
-		CustomFields: siteapi.NewOptNilSiteUpdateContactInputCustomFields(siteapi.SiteUpdateContactInputCustomFields{"plan": []byte(`"platinum"`)}),
+		CustomFields: siteapi.NewOptNilJsonObject(siteapi.JsonObject{"plan": []byte(`"platinum"`)}),
 	}, siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteContactResource)

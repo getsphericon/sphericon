@@ -1243,7 +1243,7 @@ func decodeStaffInstancePreviewTelemetryReportResponse(resp *http.Response) (res
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response StaffInstancePreviewTelemetryReportOK
+			var response JsonObject
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err

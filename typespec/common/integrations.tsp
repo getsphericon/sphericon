@@ -62,7 +62,7 @@ model CreateIntegrationInput {
   preset?: string | null;
 
   /** The Preset's params, validated against its `paramsSchema`: read the schema first */
-  params?: Record<unknown>;
+  params?: JsonObject;
 }
 
 /** Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret. */
@@ -83,7 +83,7 @@ model UpdateIntegrationInput {
   preset?: string | null;
 
   /** The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired) */
-  params?: Record<unknown>;
+  params?: JsonObject;
 
   /** Stop accepting the retiring value of every rotating secret */
   retireSecrets?: boolean;

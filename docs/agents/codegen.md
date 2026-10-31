@@ -61,6 +61,12 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   (`internal/goverterenum`) fails on any enum-to-enum cast left in a converter package, generated
   or hand-written; a pointer goes through `convert.OptVia` and the enum method.
 
+- **An opaque JSON object is a shared model, never an inline `Record<unknown>`.** A field whose
+  members the contract leaves open is `JsonObject` (custom fields, properties, params, a diff) or
+  `EditorDocument` (the email editor's document), both in `common/scalars.tsp`. ogen then emits one
+  Go type per surface (`JsonObject`, `OptNilJsonObject`, …), so one converter extend per type
+  serves every field; an inline record would get a type, and an extend, of its own per field.
+
 - **Contract decorators** (ADR 0069): every `x-*` extension a Go reader depends on is written by
   a typed decorator, never by a raw `@extension`, which `tsp compile` refuses for these keys.
 
