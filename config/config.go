@@ -83,9 +83,11 @@ type DBPool struct {
 	MaxOpenConns    int
 	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
-	// RiverMaxConns bounds river's own queries (fetch, completion, leader election). River polls
-	// and holds no LISTEN connection; job workers use the database/sql pool, so it need not
-	// match river's MaxWorkers sum.
+	// RiverMaxConns bounds river's own queries (fetch, completion, leader election); job
+	// workers use the database/sql pool, so it need not match river's MaxWorkers sum. The
+	// LISTEN connection river is told of new jobs on is one more, outside this bound
+	// (db.OpenRiverListener). LISTEN needs a session of its own: behind PgBouncer, DATABASE_URL
+	// must reach Postgres directly or a pool in session mode, never transaction mode.
 	RiverMaxConns int32
 }
 

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/getsphericon/sphericon/config"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -39,6 +41,19 @@ func OpenRiverDB(url string, p config.DBPool) (*sql.DB, error) {
 	riverDB.SetMaxIdleConns(int(p.RiverMaxConns))
 	riverDB.SetConnMaxLifetime(p.ConnMaxLifetime)
 	return riverDB, nil
+}
+
+// OpenRiverListener opens the pool river LISTENs on for job notifications. River takes its one
+// connection for good (it is never returned), so the pool is capped at one per client. LISTEN
+// needs a session of its own: behind PgBouncer the URL must reach Postgres directly or a pool in
+// session mode, never transaction mode.
+func OpenRiverListener(ctx context.Context, url string) (*pgxpool.Pool, error) {
+	cfg, err := pgxpool.ParseConfig(url)
+	if err != nil {
+		return nil, err
+	}
+	cfg.MaxConns = 1
+	return pgxpool.NewWithConfig(ctx, cfg)
 }
 
 // RegisterPoolMetrics exports both pools' statistics as OTel observable gauges
