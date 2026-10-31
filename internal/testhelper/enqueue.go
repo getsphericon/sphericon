@@ -11,6 +11,7 @@ import (
 	"github.com/riverqueue/river/rivertest"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/mailjobs"
@@ -37,7 +38,7 @@ func Work[T river.JobArgs](ctx context.Context, tb testing.TB, worker river.Work
 	if err != nil {
 		return err
 	}
-	defer func() { _ = pool.Close() }()
+	defer cleanup.Close(pool, "the pool of a test job")
 	tx, err := pool.BeginTx(ctx, nil)
 	if err != nil {
 		return err
