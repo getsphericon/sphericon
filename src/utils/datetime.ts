@@ -1,20 +1,44 @@
+import dayjs from 'dayjs'
+import localizedFormat from 'dayjs/plugin/localizedFormat.js'
+import relativeTime from 'dayjs/plugin/relativeTime.js'
+import timezone from 'dayjs/plugin/timezone.js'
+import utc from 'dayjs/plugin/utc.js'
+
 import { resolveLocale } from '../i18n.ts'
 
-// Dates follow the instance locale (SPHERICON_APP_LOCALE), not the browser's. Native toLocaleString() defaults to navigator.language, so we pass
-// the resolved app locale explicitly. Kept dependency-free (no dayjs/date-fns):
-// the app has no date-picker components, only display formatting.
+// Every date the app shows goes through here. Dates follow the instance locale
+// (SPHERICON_APP_LOCALE), not the browser's: dayjs is set to the resolved app locale once.
 //
 // timeZone is the IANA zone to show the instant in; undefined is the browser's. A signed-in page
 // formats through useDateFormat, which passes the User time zone (ADR 0068).
+dayjs.extend(localizedFormat)
+dayjs.extend(relativeTime)
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.locale(resolveLocale())
 
 type DateInput = string | number | Date
 
+function inZone(value: DateInput, timeZone: string | undefined) {
+  return timeZone === undefined ? dayjs(value) : dayjs(value).tz(timeZone)
+}
+
 export function formatDateTime(value: DateInput, timeZone?: string): string {
-  return new Date(value).toLocaleString(resolveLocale(), { timeZone })
+  return inZone(value, timeZone).format('L LTS')
 }
 
 export function formatDate(value: DateInput, timeZone?: string): string {
-  return new Date(value).toLocaleDateString(resolveLocale(), { timeZone })
+  return inZone(value, timeZone).format('L')
+}
+
+// A date spelled out ("October 30, 2026"), for a sentence rather than a table cell.
+export function formatLongDate(value: DateInput): string {
+  return dayjs(value).format('LL')
+}
+
+// How long ago (or how far ahead) the moment is, as "5 minutes ago".
+export function formatRelative(value: DateInput): string {
+  return dayjs(value).fromNow()
 }
 
 // The browser's own zone: what the app shows times in while the User has chosen none.

@@ -45,6 +45,7 @@
     "@workflowbuilder/sdk": "^3.0.0",
     "@xyflow/react": "^12.12.0",
     "content-disposition-header": "^0.6.0",
+    "dayjs": "^1.11.23",
     "file-saver": "^2.0.5",
     "i18next": "^26.5.11",
     "mantine-datatable": "^9.4.0",

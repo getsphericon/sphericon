@@ -13,6 +13,7 @@ import {
 import { StaffInstanceTelemetryLock } from '../generated/staff/types.gen.ts'
 import type { StaffInstanceState } from '../generated/staff/types.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
+import { formatLongDate } from '../utils/datetime.ts'
 import { TelemetryReportActions } from './TelemetryReportActions.tsx'
 
 // The switch of the anonymous Telemetry report (ADR 0032). When the deployment decides (the saas
@@ -56,12 +57,8 @@ function TelemetrySection({ state }: { state: StaffInstanceState }) {
 // What the Instance tells its Staff member about itself: a newer release the Release check found,
 // and a License key that expired (ADR 0035), shown here only, never to a Workspace.
 function InstanceAlerts({ state }: { state: StaffInstanceState }) {
-  const { t, i18n } = useTranslation()
-  const expiredOn = state.licenseExpiredAt
-    ? new Intl.DateTimeFormat(i18n.language, { dateStyle: 'long' }).format(
-        new Date(state.licenseExpiredAt),
-      )
-    : null
+  const { t } = useTranslation()
+  const expiredOn = state.licenseExpiredAt ? formatLongDate(state.licenseExpiredAt) : null
 
   return (
     <>

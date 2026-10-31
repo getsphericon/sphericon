@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { EventRowDetails } from '../../components/EventRowDetails.tsx'
+import { RelativeTime } from '../../components/RelativeTime.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -121,7 +122,6 @@ function ContactActions({ workspaceId, contactId }: { workspaceId: string; conta
 }
 
 function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contactId: string }) {
-  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
   const [showMachine, setShowMachine] = useState(false)
@@ -179,7 +179,7 @@ function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contac
           {
             accessor: 'createdAt',
             title: t(($) => $.activity.time),
-            render: (record) => formatDateTime(record.createdAt),
+            render: (record) => <RelativeTime value={record.createdAt} />,
           },
           { accessor: 'action', title: t(($) => $.activity.action) },
         ]}
