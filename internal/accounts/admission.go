@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -15,10 +16,10 @@ const GracePeriod = 7 * 24 * time.Hour
 var (
 	// ErrAcceptancePending refuses a request on the own credential of a User with a required
 	// acceptance pending (ADR 0062). Every surface answers it 403 acceptance_pending.
-	ErrAcceptancePending = validation.AcceptancePending("accounts: a required acceptance is pending", "errors.acceptance_pending")
+	ErrAcceptancePending = validation.AcceptancePending("accounts: a required acceptance is pending", i18n.ErrorsAcceptancePending)
 	// ErrSecondFactorRequired refuses a request in a Workspace whose Two-factor requirement
 	// withholds it from the User (ADR 0020). Every surface answers it 403 second_factor_required.
-	ErrSecondFactorRequired = validation.SecondFactorRequired("accounts: the second factor is required", "errors.second_factor_required")
+	ErrSecondFactorRequired = validation.SecondFactorRequired("accounts: the second factor is required", i18n.ErrorsSecondFactorRequired)
 )
 
 // Admission is a request made on a User's own credential, as Admit decides it: a site session, or

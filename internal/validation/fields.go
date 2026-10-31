@@ -41,7 +41,7 @@ func (e *FieldsError) Detail() string {
 			names = append(names, i18n.T(fieldLabels[field], nil))
 		}
 	}
-	return i18n.T("errors.check_fields", map[string]any{"Fields": joinWords(names)})
+	return i18n.T(i18n.ErrorsCheckFields, map[string]any{"Fields": joinWords(names)})
 }
 
 // Refused is the FieldsError of one field with one message.
@@ -68,18 +68,18 @@ func Form(form any) error {
 }
 
 // requiredMessages words an empty required field, by its json name.
-var requiredMessages = map[string]string{
-	FieldName:     "errors.name_required",
-	FieldEmail:    "errors.email_required",
-	FieldPassword: "errors.password_required",
-	FieldNewEmail: "errors.new_email_required",
+var requiredMessages = map[string]i18n.ID{
+	FieldName:     i18n.ErrorsNameRequired,
+	FieldEmail:    i18n.ErrorsEmailRequired,
+	FieldPassword: i18n.ErrorsPasswordRequired,
+	FieldNewEmail: i18n.ErrorsNewEmailRequired,
 }
 
 // ruleMessages words a failed rule of this package, whatever the field.
-var ruleMessages = map[string]string{
-	"account_email":      "errors.email_invalid",
-	"password_length":    "errors.password_length",
-	"password_not_blank": "errors.password_blank",
+var ruleMessages = map[string]i18n.ID{
+	"account_email":      i18n.ErrorsEmailInvalid,
+	"password_length":    i18n.ErrorsPasswordLength,
+	"password_not_blank": i18n.ErrorsPasswordBlank,
 }
 
 // passwordLength fills the bounds into errors.password_length; the other messages ignore it.
@@ -116,15 +116,15 @@ var fieldOrder = []string{
 }
 
 // fieldLabels words a field for a person, by its json name.
-var fieldLabels = map[string]string{
-	FieldName:         "fields.name",
-	FieldEmail:        "fields.email",
-	FieldNewEmail:     "fields.new_email",
-	FieldPassword:     "fields.password",
-	FieldNewPassword:  "fields.new_password",
-	FieldSignupItems:  "fields.signup_items",
-	FieldMaxPerSecond: "fields.max_per_second",
-	FieldMaxPerDay:    "fields.max_per_day",
+var fieldLabels = map[string]i18n.ID{
+	FieldName:         i18n.FieldsName,
+	FieldEmail:        i18n.FieldsEmail,
+	FieldNewEmail:     i18n.FieldsNewEmail,
+	FieldPassword:     i18n.FieldsPassword,
+	FieldNewPassword:  i18n.FieldsNewPassword,
+	FieldSignupItems:  i18n.FieldsSignupItems,
+	FieldMaxPerSecond: i18n.FieldsMaxPerSecond,
+	FieldMaxPerDay:    i18n.FieldsMaxPerDay,
 }
 
 // Nested is the name a refusal of the entry key of the request field parent is reported under

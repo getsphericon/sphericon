@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -19,11 +20,11 @@ import (
 // refused as Require refuses it (403).
 var (
 	// ErrDemoteLastOwner refuses giving the last owner another Role, on the role field.
-	ErrDemoteLastOwner = validation.RefuseField("role", "accounts: cannot demote the last owner", "errors.keep_one_owner")
+	ErrDemoteLastOwner = validation.RefuseField("role", "accounts: cannot demote the last owner", i18n.ErrorsKeepOneOwner)
 	// ErrRemoveLastOwner refuses removing the last owner's Membership, on the member it names.
-	ErrRemoveLastOwner = validation.RefuseField("member", "accounts: cannot remove the last owner", "errors.keep_one_owner")
+	ErrRemoveLastOwner = validation.RefuseField("member", "accounts: cannot remove the last owner", i18n.ErrorsKeepOneOwner)
 	// ErrMemberNotFound means no Membership of that id is in the Workspace.
-	ErrMemberNotFound = validation.NotFound("accounts: member not found", "errors.member_not_found")
+	ErrMemberNotFound = validation.NotFound("accounts: member not found", i18n.ErrorsMemberNotFound)
 )
 
 // memberTarget is the Membership targetID's refusal when it is not in the Workspace.
@@ -86,7 +87,7 @@ func (a *Accounts) RemoveMembership(ctx context.Context, s *ent.Scoped, actor ev
 
 // ErrOnlyOwnerLeaves refuses the only Owner leaving the Workspace (Leaving, ADR 0050): they make
 // another member an Owner or delete the Workspace first.
-var ErrOnlyOwnerLeaves = validation.RefuseField("workspace", "accounts: the only owner cannot leave", "errors.leave_only_owner")
+var ErrOnlyOwnerLeaves = validation.RefuseField("workspace", "accounts: the only owner cannot leave", i18n.ErrorsLeaveOnlyOwner)
 
 // Leave removes User userID's own Membership in the Workspace s (Leaving, ADR 0050) in a
 // transaction of its own. See LeaveIn for the rules; the only Owner is refused with

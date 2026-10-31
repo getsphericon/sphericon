@@ -72,16 +72,23 @@ func Configure(locale string) {
 	mu.Unlock()
 }
 
-// T localizes a message by id, interpolating data (Go text/template syntax,
-// e.g. {{.Name}}) when provided. On a lookup miss it returns the id itself so
-// the gap is visible rather than silently blank.
-func T(id string, data map[string]any) string {
+// ID names a message of the catalog. Only the generated ids (ids_gen.go, from locales/en.json)
+// make one, so a call can only name a message the catalog has; a message chosen at runtime is
+// picked from a map of ids, never built from a key.
+type ID struct{ key string }
+
+// Key is the id's key in the catalog (EmailPasswordResetSubject).
+func (id ID) Key() string { return id.key }
+
+// T localizes a message, interpolating data (Go text/template syntax, e.g. {{.Name}}) when
+// provided. A message the active locale lacks comes through in English.
+func T(id ID, data map[string]any) string {
 	mu.RLock()
 	loc := active
 	mu.RUnlock()
-	msg, err := loc.Localize(&goi18n.LocalizeConfig{MessageID: id, TemplateData: data})
+	msg, err := loc.Localize(&goi18n.LocalizeConfig{MessageID: id.key, TemplateData: data})
 	if err != nil {
-		return id
+		return id.key
 	}
 	return msg
 }

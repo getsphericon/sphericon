@@ -83,10 +83,10 @@ func TestTheConsoleShowsSystemAndCLISuspensionsWithoutAnActorId(t *testing.T) {
 func TestTheOwnerNoticeNamesSystemOrSphericonStaffAsTheActor(t *testing.T) {
 	for name, tc := range map[string]struct {
 		by  suspension.Actor
-		key string
+		key i18n.ID
 	}{
-		"system": {suspension.System, "email.workspace_suspended.actor_system"},
-		"cli":    {suspension.CLI, "email.workspace_suspended.actor_staff"},
+		"system": {suspension.System, i18n.EmailWorkspaceSuspendedActorSystem},
+		"cli":    {suspension.CLI, i18n.EmailWorkspaceSuspendedActorStaff},
 	} {
 		t.Run(name, func(t *testing.T) {
 			h := newHarness(t)

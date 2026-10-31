@@ -23,6 +23,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -261,7 +262,7 @@ func (p *Providers) find(name string) *provider {
 func (p *Providers) Has(name string) bool { return p.find(name) != nil }
 
 // ErrProviderUnknown is a Sign-in provider the Instance does not offer.
-var ErrProviderUnknown = validation.NotFound("signin: the provider is not enabled", "errors.signin_provider_unknown")
+var ErrProviderUnknown = validation.NotFound("signin: the provider is not enabled", i18n.ErrorsSigninProviderUnknown)
 
 // Start draws a flow for the provider and returns the URL to send the browser to. The flow
 // (state, PKCE verifier, nonce) is the caller's to keep until the callback; returnTo is

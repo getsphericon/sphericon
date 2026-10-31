@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -23,10 +24,10 @@ var (
 	ErrPasskeyUnknown = errors.New("secondfactor: passkey credential unknown")
 	// ErrNoPasskeys: a Passkey check of a User who holds no Passkey, so there is nothing to
 	// check with.
-	ErrNoPasskeys = validation.NotFound("secondfactor: the user holds no passkey", "errors.passkeys_unavailable")
+	ErrNoPasskeys = validation.NotFound("secondfactor: the user holds no passkey", i18n.ErrorsPasskeysUnavailable)
 	// ErrCheckFailed is every refusal of a Passkey check, indistinguishably: a response that
 	// names no credential or another User's, or a ceremony that cannot finish (CeremonyFailed).
-	ErrCheckFailed = validation.Denied("secondfactor: passkey check failed", "errors.passkey_check_failed")
+	ErrCheckFailed = validation.Denied("secondfactor: passkey check failed", i18n.ErrorsPasskeyCheckFailed)
 )
 
 // BeginLogin starts a usernameless Passkey login: the request options for the browser (JSON)

@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -20,11 +21,11 @@ import (
 
 var (
 	// ErrDestinationEmpty: the destination is blank after normalization.
-	ErrDestinationEmpty = validation.RefuseField("destination", "consent: destination must not be empty", "errors.destination_empty")
+	ErrDestinationEmpty = validation.RefuseField("destination", "consent: destination must not be empty", i18n.ErrorsDestinationEmpty)
 	// ErrInvalidSource: the sending source is not broadcasts, everything or automation:<id>.
-	ErrInvalidSource = validation.RefuseField("sendingSource", "consent: sendingSource must be broadcasts, everything or automation:<id>", "errors.sending_source_invalid")
+	ErrInvalidSource = validation.RefuseField("sendingSource", "consent: sendingSource must be broadcasts, everything or automation:<id>", i18n.ErrorsSendingSourceInvalid)
 	// ErrUnknownAutomation: the automation:<id> source names no Automation of this Workspace.
-	ErrUnknownAutomation = validation.RefuseField("sendingSource", "consent: unknown automation in sendingSource", "errors.sending_source_automation_unknown")
+	ErrUnknownAutomation = validation.RefuseField("sendingSource", "consent: unknown automation in sendingSource", i18n.ErrorsSendingSourceAutomationUnknown)
 )
 
 // Unsubscribe records an opt-out of destination from a sending source, with the

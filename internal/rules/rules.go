@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/drafts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/httpcall"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -69,16 +70,16 @@ var (
 	// ErrInvalid: the Rule does not fit the rules of a Rule (no Trigger event, an unknown
 	// Action, a tag Action without a tag, a Condition that does not parse or does not fit
 	// the Contact schema). The wrapped message is safe to show to the author.
-	ErrInvalid = validation.Refuse("rules: invalid rule", "errors.rule_invalid")
+	ErrInvalid = validation.Refuse("rules: invalid rule", i18n.ErrorsRuleInvalid)
 	// ErrNotFound: no such Rule in this Workspace.
-	ErrNotFound = validation.NotFound("rules: rule not found", "errors.rule_not_found")
+	ErrNotFound = validation.NotFound("rules: rule not found", i18n.ErrorsRuleNotFound)
 	// ErrEventNotFound: no such Event in this Workspace (a dry run reads a stored Event).
-	ErrEventNotFound = validation.NotFound("rules: event not found", "errors.event_not_found")
+	ErrEventNotFound = validation.NotFound("rules: event not found", i18n.ErrorsEventNotFound)
 	// ErrNothingToPublish: the Rule has neither a draft nor a live version.
-	ErrNothingToPublish = validation.Refuse("rules: nothing to publish", "errors.rule_nothing_to_publish")
+	ErrNothingToPublish = validation.Refuse("rules: nothing to publish", i18n.ErrorsRuleNothingToPublish)
 	// ErrNothingToRevert: the Rule has no draft above a live version. A Rule never published has
 	// only its draft, which is its whole definition, so it has nothing to revert either.
-	ErrNothingToRevert = validation.Refuse("rules: nothing to revert", "errors.rule_nothing_to_revert")
+	ErrNothingToRevert = validation.Refuse("rules: nothing to revert", i18n.ErrorsRuleNothingToRevert)
 )
 
 // Action is one Action of a Rule as stored: its type and the parameters of that type.

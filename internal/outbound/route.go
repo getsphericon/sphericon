@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -16,7 +17,7 @@ import (
 // route cannot send: the Integration it names is disabled or archived, or the Workspace has no
 // default to send through. Drafts and edits may still name such an Integration; only the moment a
 // send is armed is refused, and a route that stops sending after it holds the send instead.
-var ErrRouteHeld = validation.Conflict("outbound: the send route cannot send", "errors.send_route_held")
+var ErrRouteHeld = validation.Conflict("outbound: the send route cannot send", i18n.ErrorsSendRouteHeld)
 
 // Route is the Send route of an Integration (GLOSSARY): the one answer to which Integration a send
 // goes through, with what sender, at what pace, and whether it can send at all. Every send asks it

@@ -11,12 +11,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrPersonalTokenNotFound refuses a Personal token that is not in the Workspace, is already
 // revoked or is another User's while the caller may not see it.
-var ErrPersonalTokenNotFound = validation.NotFound("apitokens: personal token not found", "errors.personal_token_not_found")
+var ErrPersonalTokenNotFound = validation.NotFound("apitokens: personal token not found", i18n.ErrorsPersonalTokenNotFound)
 
 // PersonalInput is what a User chooses when minting a Personal token. Its scopes are the
 // contract's PersonalScope, the scopes a User may give a credential of their own (ADR 0061): a

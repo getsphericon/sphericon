@@ -26,6 +26,7 @@ openapi/site (`x-grant-permissions` on each grantable scope enum, from `@grantab
 openapi/site (`Permission` enum) ──cmd/scopegen──▶ internal/accounts/permissions_gen.go (`Permission` and its `Perm…` constants)
 openapi/external (`ApiTokenScope` enum) ──cmd/scopegen──▶ internal/apitokens/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary); the files are `scopegen.Tables`
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
+internal/i18n/locales/en.json  ──cmd/i18ngen──▶ internal/i18n/ids_gen.go (one i18n.ID per message: a call can only name a message the catalog has)
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
 ```
 
@@ -85,4 +86,4 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 Generated files carry a header (`Code generated … DO NOT EDIT`, or `// @ts-nocheck` on the
 frontend) and are flagged `linguist-generated` in `.gitattributes` (GitHub collapses them in
 diffs). Generated code lives in dedicated dirs — `internal/` is otherwise hand-written, its
-only generated files being the three `converter_gen.go`, the two `inputs_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `ee/staff/service_scopes_gen.go`, `internal/api/site/access_gen.go`, `internal/api/auth/external_{scopes,permissions}_gen.go`, `internal/accounts/{permissions,grant_permissions}_gen.go`, `internal/apitokens/scopes_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.
+only generated files being the three `converter_gen.go`, the two `inputs_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `ee/staff/service_scopes_gen.go`, `internal/api/site/access_gen.go`, `internal/api/auth/external_{scopes,permissions}_gen.go`, `internal/accounts/{permissions,grant_permissions}_gen.go`, `internal/apitokens/scopes_gen.go`, `internal/fixtures/catalog_gen.go`, `internal/i18n/ids_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.

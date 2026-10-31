@@ -38,14 +38,14 @@ const RecordLabel = "_sphericon-join."
 
 var (
 	// ErrAlreadyExists means the Workspace already has this domain.
-	ErrAlreadyExists = validation.Conflict("joindomains: this domain is already added", "errors.join_domain_exists")
+	ErrAlreadyExists = validation.Conflict("joindomains: this domain is already added", i18n.ErrorsJoinDomainExists)
 	// ErrRecordNotFound means the TXT record is not published (or carries another value).
-	ErrRecordNotFound = validation.Refuse("joindomains: the TXT record was not found", "errors.join_domain_record_missing")
+	ErrRecordNotFound = validation.Refuse("joindomains: the TXT record was not found", i18n.ErrorsJoinDomainRecordMissing)
 	// ErrHeldElsewhere means another Workspace has the domain verified and still publishes
 	// its record.
-	ErrHeldElsewhere = validation.Conflict("joindomains: another workspace has verified this domain", "errors.join_domain_held")
+	ErrHeldElsewhere = validation.Conflict("joindomains: another workspace has verified this domain", i18n.ErrorsJoinDomainHeld)
 	// ErrNotFound means no Join domain of that id is in the Workspace.
-	ErrNotFound = validation.NotFound("joindomains: join domain not found", "errors.join_domain_not_found")
+	ErrNotFound = validation.NotFound("joindomains: join domain not found", i18n.ErrorsJoinDomainNotFound)
 )
 
 // notFound is ErrNotFound for ent's not-found error of the domain's row, err otherwise.
@@ -98,7 +98,7 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped) ([]*ent.JoinDomain, er
 func (m *Module) Add(ctx context.Context, s *ent.Scoped, raw string) (*ent.JoinDomain, error) {
 	domain, ok := sending.NormalizeDomain(raw)
 	if !ok {
-		return nil, &validation.Error{Field: "domain", Message: i18n.T("errors.join_domain_invalid", nil)}
+		return nil, &validation.Error{Field: "domain", Message: i18n.T(i18n.ErrorsJoinDomainInvalid, nil)}
 	}
 	token := "sphericon-join=" + rand.Text()
 
@@ -250,7 +250,7 @@ func (m *Module) Recheck(ctx context.Context, id int64) (flipped bool, err error
 // failure is logged, never returned.
 func (m *Module) notifyLost(ctx context.Context, row *ent.JoinDomain) {
 	data := map[string]any{"Domain": row.Domain, "Record": RecordOf(row).Host}
-	m.notify.TellBestEffort(ctx, row.WorkspaceID, "email.join_domain_unverified", data, "join_domain_id", row.ID)
+	m.notify.TellBestEffort(ctx, row.WorkspaceID, ownernotice.Notice{Subject: i18n.EmailJoinDomainUnverifiedSubject, Body: i18n.EmailJoinDomainUnverifiedBody}, data, "join_domain_id", row.ID)
 }
 
 // Holder returns the Join domain row that has the domain verified, across every

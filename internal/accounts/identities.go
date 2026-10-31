@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/useridentity"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -237,9 +238,9 @@ var (
 	// ErrIdentityInUse is a provider account that is already linked to another User.
 	ErrIdentityInUse = errors.New("accounts: the provider account is linked to another user")
 	// ErrIdentityNotFound is an identity that is not the User's.
-	ErrIdentityNotFound = validation.NotFound("accounts: no such linked identity", "errors.linked_identity_not_found")
+	ErrIdentityNotFound = validation.NotFound("accounts: no such linked identity", i18n.ErrorsLinkedIdentityNotFound)
 	// ErrLastSignIn is an unlink that would leave the User with no way to sign in.
-	ErrLastSignIn = validation.Conflict("accounts: the identity is the user's last way to sign in", "errors.linked_identity_last_sign_in")
+	ErrLastSignIn = validation.Conflict("accounts: the identity is the user's last way to sign in", i18n.ErrorsLinkedIdentityLastSignIn)
 )
 
 // Identities lists the User's Linked identities, oldest first.

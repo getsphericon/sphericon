@@ -9,6 +9,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -31,7 +32,7 @@ type access struct {
 }
 
 // errUndeclared refuses an operation the generated table has no entry for: refused to everyone.
-var errUndeclared = validation.Forbidden("site: the operation declares no access", "errors.permission.unknown")
+var errUndeclared = validation.Forbidden("site: the operation declares no access", i18n.ErrorsPermissionUnknown)
 
 // Access is the ogen middleware of /site (ADR 0061), and the site's construction point of the
 // scoped client (ADR 0017). For an operation of a Workspace it loads the caller's Membership of

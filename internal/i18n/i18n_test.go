@@ -30,24 +30,23 @@ func TestConfigureAndTranslate(t *testing.T) {
 	t.Cleanup(func() { i18n.Configure("en") })
 
 	i18n.Configure("en")
-	got := i18n.T("errors.name_required", nil)
+	got := i18n.T(i18n.ErrorsNameRequired, nil)
 	assert.Equalf(t, "name is required", got, "en errors.name_required = %q", got)
 
 	// Unknown locale falls back to English.
 	i18n.Configure("de")
-	got = i18n.T("errors.name_required", nil)
+	got = i18n.T(i18n.ErrorsNameRequired, nil)
 	assert.Equalf(t, "name is required", got, "unknown-locale fallback = %q", got)
 }
 
 func TestTemplateData(t *testing.T) {
 	t.Cleanup(func() { i18n.Configure("en") })
 	i18n.Configure("en")
-	got := i18n.T("email.welcome.body", map[string]any{"Greeting": "Ada"})
+	got := i18n.T(i18n.EmailWelcomeBody, map[string]any{"Greeting": "Ada"})
 	want := "Hi Ada,\n\nWelcome to Sphericon! Your account is ready.\n"
 	assert.Equalf(t, want, got, "welcome body = %q, want %q", got, want)
 }
 
-func TestUnknownMessageReturnsID(t *testing.T) {
-	got := i18n.T("errors.does_not_exist", nil)
-	assert.Equalf(t, "errors.does_not_exist", got, "missing id = %q, want the id itself", got)
+func TestAnIDNamesItsKey(t *testing.T) {
+	assert.Equal(t, "email.welcome.body", i18n.EmailWelcomeBody.Key())
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -31,7 +32,7 @@ const (
 var reportPeriods = []ReportPeriod{ReportPeriod7Days, ReportPeriod14Days, ReportPeriod30Days, ReportPeriod90Days}
 
 // ErrUnknownPeriod is a period that is not one of the report's.
-var ErrUnknownPeriod = validation.RefuseField("period", "automations: unknown report period", "errors.automation_unknown_report_period")
+var ErrUnknownPeriod = validation.RefuseField("period", "automations: unknown report period", i18n.ErrorsAutomationUnknownReportPeriod)
 
 // PeriodOf is the ReportPeriod a period of the contract names, written as its number of days and
 // "d" (`7d`): the one mapping both surfaces use.

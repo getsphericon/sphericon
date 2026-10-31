@@ -31,13 +31,13 @@ import (
 
 var (
 	// ErrScopeEscalation: a token asked to mint a scope it does not hold itself.
-	ErrScopeEscalation = validation.Denied("apitokens: cannot grant a scope the minting token lacks", "errors.token_scope_escalation")
+	ErrScopeEscalation = validation.Denied("apitokens: cannot grant a scope the minting token lacks", i18n.ErrorsTokenScopeEscalation)
 	// ErrNotFound: no such token in this Workspace (unknown or foreign); for Revoke and
 	// Rename, also one already revoked.
-	ErrNotFound = validation.NotFound("apitokens: token not found", "errors.token_not_found")
+	ErrNotFound = validation.NotFound("apitokens: token not found", i18n.ErrorsTokenNotFound)
 	// ErrBootstrapTokenInvalid: the instance has no bootstrap token, or the request presented
 	// another one.
-	ErrBootstrapTokenInvalid = validation.Unauthorized("apitokens: invalid bootstrap token", "errors.bootstrap_token_invalid")
+	ErrBootstrapTokenInvalid = validation.Unauthorized("apitokens: invalid bootstrap token", i18n.ErrorsBootstrapTokenInvalid)
 )
 
 // CheckBootstrap admits a request for the first token by the instance's bootstrap token: the one
@@ -52,12 +52,12 @@ func CheckBootstrap(configured, presented string) error {
 
 // nameEmpty refuses a token name that is blank after trimming.
 func nameEmpty() *validation.Error {
-	return &validation.Error{Field: "name", Message: i18n.T("errors.name_empty", nil)}
+	return &validation.Error{Field: "name", Message: i18n.T(i18n.ErrorsNameEmpty, nil)}
 }
 
 // unknownScope refuses a scope that is not in the vocabulary (Scopes).
 func unknownScope(scope string) *validation.Error {
-	return &validation.Error{Field: "scopes", Message: i18n.T("errors.token_scope_unknown", map[string]any{"Scope": scope})}
+	return &validation.Error{Field: "scopes", Message: i18n.T(i18n.ErrorsTokenScopeUnknown, map[string]any{"Scope": scope})}
 }
 
 // Input is what a caller chooses when minting.

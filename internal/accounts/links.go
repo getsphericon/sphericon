@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -31,31 +32,31 @@ const VerificationLinkTTL = 24 * time.Hour
 // lookup fails on storage is not one of them: that is the storage's error.
 var (
 	// ErrResetLinkInvalid is a password reset link that is forged, expired or spent.
-	ErrResetLinkInvalid = validation.LinkInvalid("accounts: reset link invalid or expired", "errors.reset_link_invalid")
+	ErrResetLinkInvalid = validation.LinkInvalid("accounts: reset link invalid or expired", i18n.ErrorsResetLinkInvalid)
 	// ErrVerifyLinkInvalid is an email verification link that is forged, expired, or whose
 	// password changed since.
-	ErrVerifyLinkInvalid = validation.LinkInvalid("accounts: verification link invalid or expired", "errors.verify_link_invalid")
+	ErrVerifyLinkInvalid = validation.LinkInvalid("accounts: verification link invalid or expired", i18n.ErrorsVerifyLinkInvalid)
 	// ErrVerifyLinkUsed is an email verification link of a User that is gone or already
 	// Verified.
-	ErrVerifyLinkUsed = validation.LinkInvalid("accounts: verification link already used", "errors.verify_link_bad")
+	ErrVerifyLinkUsed = validation.LinkInvalid("accounts: verification link already used", i18n.ErrorsVerifyLinkBad)
 	// ErrVerifyLinkStale is an email verification link sent to an address the User no longer
 	// has: an old link never verifies a changed address.
-	ErrVerifyLinkStale = validation.LinkInvalid("accounts: verification link of an earlier address", "errors.verify_link_stale")
+	ErrVerifyLinkStale = validation.LinkInvalid("accounts: verification link of an earlier address", i18n.ErrorsVerifyLinkStale)
 	// ErrConfirmLinkInvalid is an email change link that is forged, expired or spent, or whose
 	// new address was Taken meanwhile: to the confirmer a Taken address reads as an invalid link
 	// (ADR 0031). It is also a User deletion link that is expired, used or another User's.
-	ErrConfirmLinkInvalid = validation.LinkInvalid("accounts: confirmation link invalid or expired", "errors.confirm_link_invalid")
+	ErrConfirmLinkInvalid = validation.LinkInvalid("accounts: confirmation link invalid or expired", i18n.ErrorsConfirmLinkInvalid)
 	// ErrConfirmLinkBad is an email change link that names no new address.
-	ErrConfirmLinkBad = validation.LinkInvalid("accounts: confirmation link names no address", "errors.confirm_link_bad")
+	ErrConfirmLinkBad = validation.LinkInvalid("accounts: confirmation link names no address", i18n.ErrorsConfirmLinkBad)
 	// ErrNotMeLinkInvalid is a "this was not me" link that is forged or expired, or whose
 	// Linked identity is already gone.
-	ErrNotMeLinkInvalid = validation.LinkInvalid("accounts: not-me link invalid or used", "errors.not_me_link_invalid")
+	ErrNotMeLinkInvalid = validation.LinkInvalid("accounts: not-me link invalid or used", i18n.ErrorsNotMeLinkInvalid)
 )
 
 // ErrVerifyPasswordNeeded is a verification link opened outside the Sign-up browser without a
 // password: that browser must set one, which replaces the one stored at Sign-up, and nothing
 // changes until it does (the link stays valid, so a mail scanner consumes nothing).
-var ErrVerifyPasswordNeeded = validation.Incomplete("accounts: a password is needed outside the sign-up browser", "errors.verify_password_needed")
+var ErrVerifyPasswordNeeded = validation.Incomplete("accounts: a password is needed outside the sign-up browser", i18n.ErrorsVerifyPasswordNeeded)
 
 // The claims a link carries beyond its User.
 const (

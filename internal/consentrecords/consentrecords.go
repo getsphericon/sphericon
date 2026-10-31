@@ -17,6 +17,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/legaldocumentversion"
@@ -26,7 +28,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/validation"
-	"github.com/samber/lo"
 )
 
 // Field is the json name of the form field that carries the answers: a refusal of the answers as a
@@ -77,7 +78,7 @@ func Decide(inEffect []signupitems.Document, answers []Answer) ([]Entry, error) 
 		d, known := byKey[a.Key]
 		_, twice := given[a.Key]
 		if !known || twice || d.Label != a.Version {
-			return nil, validation.Refused(Field, i18n.T("errors.signup_items_stale", nil))
+			return nil, validation.Refused(Field, i18n.T(i18n.ErrorsSignupItemsStale, nil))
 		}
 		given[a.Key] = a
 	}
@@ -90,7 +91,7 @@ func Decide(inEffect []signupitems.Document, answers []Answer) ([]Entry, error) 
 		case d.Kind == signupitem.KindNotice:
 			entries = append(entries, Entry{VersionID: d.VersionID, Decision: consentrecord.DecisionShown})
 		case d.Kind == signupitem.KindRequiredAcceptance && !a.Accepted:
-			fields[ItemField(d.Key)] = []string{i18n.T("errors.signup_item_required", map[string]any{"Title": d.Title})}
+			fields[ItemField(d.Key)] = []string{i18n.T(i18n.ErrorsSignupItemRequired, map[string]any{"Title": d.Title})}
 		case answered:
 			entries = append(entries, Entry{VersionID: d.VersionID, Decision: decision(a.Accepted)})
 		}

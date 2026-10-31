@@ -17,7 +17,7 @@ import (
 
 // ErrNotSaved means the Workspace has no saved Brand kit, so there is nothing to make starter
 // Templates from.
-var ErrNotSaved = validation.Refuse("brandkit: the Brand kit is not saved yet", "errors.brandkit_not_saved")
+var ErrNotSaved = validation.Refuse("brandkit: the Brand kit is not saved yet", i18n.ErrorsBrandkitNotSaved)
 
 // Module reads and saves the Brand kit and makes the starter Templates from it. It holds no
 // Workspace: every call receives the Workspace-scoped client (ADR 0017).
@@ -261,7 +261,7 @@ func validate(in Input) (Input, error) {
 		{"buttonTextColor", &in.ButtonTextColor},
 	} {
 		if !hexColor.MatchString(*c.value) {
-			return in, &validation.Error{Field: c.field, Message: i18n.T("errors.brandkit_color", map[string]any{"Field": c.field})}
+			return in, &validation.Error{Field: c.field, Message: i18n.T(i18n.ErrorsBrandkitColor, map[string]any{"Field": c.field})}
 		}
 		*c.value = strings.ToLower(*c.value)
 	}
@@ -270,14 +270,14 @@ func validate(in Input) (Input, error) {
 		value string
 	}{{"headingFont", in.HeadingFont}, {"bodyFont", in.BodyFont}} {
 		if !fontFamily.MatchString(f.value) {
-			return in, &validation.Error{Field: f.field, Message: i18n.T("errors.brandkit_font", map[string]any{"Field": f.field})}
+			return in, &validation.Error{Field: f.field, Message: i18n.T(i18n.ErrorsBrandkitFont, map[string]any{"Field": f.field})}
 		}
 	}
 	if !validLogo(in.LogoURL) {
-		return in, &validation.Error{Field: "logoUrl", Message: i18n.T("errors.brandkit_logo", nil)}
+		return in, &validation.Error{Field: "logoUrl", Message: i18n.T(i18n.ErrorsBrandkitLogo, nil)}
 	}
 	if !validFooter(in.FooterText) {
-		return in, &validation.Error{Field: "footerText", Message: i18n.T("errors.brandkit_footer", nil)}
+		return in, &validation.Error{Field: "footerText", Message: i18n.T(i18n.ErrorsBrandkitFooter, nil)}
 	}
 	return in, nil
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/segments"
@@ -28,11 +29,11 @@ import (
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrContactNotFound: no such Contact in this Workspace.
-	ErrContactNotFound = validation.NotFound("tags: contact not found", "errors.contact_not_found")
+	ErrContactNotFound = validation.NotFound("tags: contact not found", i18n.ErrorsContactNotFound)
 	// ErrInvalidName: the Tag name is blank.
-	ErrInvalidName = validation.Refuse("tags: name is required", "errors.name_required")
+	ErrInvalidName = validation.Refuse("tags: name is required", i18n.ErrorsNameRequired)
 	// ErrNotFound: no such Tag in this Workspace.
-	ErrNotFound = validation.NotFound("tags: tag not found", "errors.tag_not_found")
+	ErrNotFound = validation.NotFound("tags: tag not found", i18n.ErrorsTagNotFound)
 )
 
 // Module is the tags module. It holds no state: every call receives the

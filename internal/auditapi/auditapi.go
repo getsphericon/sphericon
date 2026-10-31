@@ -13,11 +13,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrBadCursor is returned for a cursor that is not a positive entry id.
-var ErrBadCursor = validation.UnknownReference("auditapi: invalid cursor", "errors.audit_cursor_invalid")
+var ErrBadCursor = validation.UnknownReference("auditapi: invalid cursor", i18n.ErrorsAuditCursorInvalid)
 
 // Page parses the optional cursor (empty starts from the newest entry).
 func Page(cursor string) (int64, error) {

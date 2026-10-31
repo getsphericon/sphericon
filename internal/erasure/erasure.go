@@ -24,19 +24,20 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // The refusals of an Erasure, one per meaning.
 var (
 	// ErrContactNotFound means the Contact id names no Contact in the Workspace.
-	ErrContactNotFound = validation.NotFound("erasure: contact not found", "errors.contact_not_found")
+	ErrContactNotFound = validation.NotFound("erasure: contact not found", i18n.ErrorsContactNotFound)
 	// ErrNothingFound means an address or a visitor id resolves to nothing in the Workspace:
 	// neither a Contact nor anything that refers to it.
-	ErrNothingFound = validation.NotFound("erasure: nothing found for the identifier", "errors.erasure_nothing_found")
+	ErrNothingFound = validation.NotFound("erasure: nothing found for the identifier", i18n.ErrorsErasureNothingFound)
 	// ErrIdentifier means a request named neither or both of an address and a visitor id, or an
 	// empty visitor id.
-	ErrIdentifier = validation.Refuse("erasure: exactly one of email or visitorId is required", "errors.erasure_identifier")
+	ErrIdentifier = validation.Refuse("erasure: exactly one of email or visitorId is required", i18n.ErrorsErasureIdentifier)
 )
 
 // Identifier names the data subject to erase. Build one with ByContactID, ByEmail or

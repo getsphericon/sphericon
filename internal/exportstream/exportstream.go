@@ -20,16 +20,17 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrBadCursor means a cursor token is not one this package issued: a malformed or foreign
 // value is refused (an unknown reference) instead of silently restarting a consumer from zero.
-var ErrBadCursor = validation.UnknownReference("exportstream: invalid cursor", "errors.export_cursor_invalid")
+var ErrBadCursor = validation.UnknownReference("exportstream: invalid cursor", i18n.ErrorsExportCursorInvalid)
 
 // ErrNotOffered means the Instance does not offer the Export streams: without the `export`
 // license the feature is absent, like /staff, and a stream is not found (ADR 0045).
-var ErrNotOffered = validation.NotFound("exportstream: the export streams are not offered", "errors.not_found")
+var ErrNotOffered = validation.NotFound("exportstream: the export streams are not offered", i18n.ErrorsNotFound)
 
 // Cursor is a position in a stream: every row at or after (At, ID) in (updated_at, id)
 // order. The zero Cursor is the beginning of the stream. It is inclusive, and the cursor a

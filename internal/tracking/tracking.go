@@ -19,6 +19,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/net/html"
 
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -177,7 +178,7 @@ func (t *Tracker) unsubToken(target UnsubTarget) (string, error) {
 // ErrLinkInvalid is a link token that is malformed, signed with another key or missing a claim
 // its link needs: a mailed link that does not stand. A confirmation link past its TTL is one too,
 // and IsExpired tells it apart.
-var ErrLinkInvalid = validation.LinkInvalid("tracking: invalid link token", "errors.tracking_link_invalid")
+var ErrLinkInvalid = validation.LinkInvalid("tracking: invalid link token", i18n.ErrorsTrackingLinkInvalid)
 
 // DecodeUnsub validates a scoped-unsubscribe token and returns its target; a token that does
 // not stand is ErrLinkInvalid.

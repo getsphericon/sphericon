@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -22,14 +23,14 @@ import (
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrNotFound: no such Template in this Workspace.
-	ErrNotFound = validation.NotFound("templates: template not found", "errors.template_not_found")
+	ErrNotFound = validation.NotFound("templates: template not found", i18n.ErrorsTemplateNotFound)
 	// ErrBlankName: the Template name is blank.
-	ErrBlankName = validation.Refuse("templates: name must not be empty", "errors.name_empty")
+	ErrBlankName = validation.Refuse("templates: name must not be empty", i18n.ErrorsNameEmpty)
 	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the
 	// document (the server builds the body from it) or the body (which clears the document).
-	ErrBodyAndDoc = validation.Refuse("templates: write a body or a doc, not both", "errors.body_and_doc")
+	ErrBodyAndDoc = validation.Refuse("templates: write a body or a doc, not both", i18n.ErrorsBodyAndDoc)
 	// ErrLintBodyOrDoc: a lint sends both a body and a document, or neither. It reads exactly one.
-	ErrLintBodyOrDoc = validation.Refuse("templates: lint a body or a doc", "errors.lint_body_or_doc")
+	ErrLintBodyOrDoc = validation.Refuse("templates: lint a body or a doc", i18n.ErrorsLintBodyOrDoc)
 )
 
 // Module holds no Workspace state: every call receives the Workspace-scoped client (ADR 0017).

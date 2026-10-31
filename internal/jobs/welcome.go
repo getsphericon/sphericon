@@ -43,12 +43,12 @@ func SendWelcome(ctx context.Context, sender messaging.EmailSender, email, name 
 	}
 	greeting := name
 	if greeting == "" {
-		greeting = i18n.T("email.welcome.greeting_fallback", nil)
+		greeting = i18n.T(i18n.EmailWelcomeGreetingFallback, nil)
 	}
-	body := i18n.T("email.welcome.body", map[string]any{"Greeting": greeting})
+	body := i18n.T(i18n.EmailWelcomeBody, map[string]any{"Greeting": greeting})
 	_, err := sender.Send(ctx, messaging.EmailMessage{
 		To:      email,
-		Subject: i18n.T("email.welcome.subject", nil),
+		Subject: i18n.T(i18n.EmailWelcomeSubject, nil),
 		Text:    body,
 	})
 	return err

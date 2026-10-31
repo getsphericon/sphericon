@@ -19,6 +19,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/qmuntal/stateless"
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -35,8 +38,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/validation"
-	"github.com/qmuntal/stateless"
-	"github.com/samber/lo"
 )
 
 // DefaultSelector is the DKIM selector used when the caller supplies none.
@@ -45,12 +46,12 @@ const DefaultSelector = "sphericon"
 // The refusals of the module, one per meaning.
 var (
 	// ErrAlreadyExists means the Workspace already has this domain (Create).
-	ErrAlreadyExists = validation.Conflict("sendingdomains: this domain is already added", "errors.sending_domain_exists")
+	ErrAlreadyExists = validation.Conflict("sendingdomains: this domain is already added", i18n.ErrorsSendingDomainExists)
 	// ErrAddedAgain means the Workspace added the domain again while this one was archived
 	// (Unarchive).
-	ErrAddedAgain = validation.Conflict("sendingdomains: this domain was added again", "errors.sending_domain_added_again")
+	ErrAddedAgain = validation.Conflict("sendingdomains: this domain was added again", i18n.ErrorsSendingDomainAddedAgain)
 	// ErrNotFound means no Sending domain of that id is in the Workspace.
-	ErrNotFound = validation.NotFound("sendingdomains: sending domain not found", "errors.sending_domain_not_found")
+	ErrNotFound = validation.NotFound("sendingdomains: sending domain not found", i18n.ErrorsSendingDomainNotFound)
 )
 
 // notFound is ErrNotFound for ent's not-found error of the domain's row, err otherwise.
@@ -131,7 +132,7 @@ type UpdateInput struct {
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.SendingDomain, error) {
 	domain, ok := sending.NormalizeDomain(in.Domain)
 	if !ok {
-		return nil, &validation.Error{Field: "domain", Message: i18n.T("errors.sending_domain_invalid", nil)}
+		return nil, &validation.Error{Field: "domain", Message: i18n.T(i18n.ErrorsSendingDomainInvalid, nil)}
 	}
 	selector := DefaultSelector
 	if strings.TrimSpace(in.Selector) != "" {
@@ -409,7 +410,7 @@ func (m *Module) Records(d *ent.SendingDomain) DNSRecords {
 func validSelector(raw string) (string, error) {
 	sel := strings.ToLower(strings.TrimSpace(raw))
 	if !selectorPattern.MatchString(sel) {
-		return "", &validation.Error{Field: "dkimSelector", Message: i18n.T("errors.dkim_selector_invalid", nil)}
+		return "", &validation.Error{Field: "dkimSelector", Message: i18n.T(i18n.ErrorsDkimSelectorInvalid, nil)}
 	}
 	return sel, nil
 }

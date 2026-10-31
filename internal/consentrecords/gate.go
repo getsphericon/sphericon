@@ -7,6 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -20,7 +21,7 @@ import (
 // ErrAcceptanceStale refuses an acceptance that does not name every pending acceptance at its
 // current version, under the field `items` that names them: a version was published after the
 // screen showed the texts.
-var ErrAcceptanceStale = validation.RefuseField("items", "consentrecords: stale acceptance", "errors.acceptance_stale")
+var ErrAcceptanceStale = validation.RefuseField("items", "consentrecords: stale acceptance", i18n.ErrorsAcceptanceStale)
 
 // ReAcceptance is a User's acceptance of one pending required acceptance at the version the
 // acceptance screen showed: the item's key and the label of that version.

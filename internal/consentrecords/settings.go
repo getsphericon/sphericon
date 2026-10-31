@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -15,11 +16,11 @@ import (
 // The refusals of a change in account settings.
 var (
 	// ErrNotInEffect: the item is unknown, archived or has no published version.
-	ErrNotInEffect = validation.NotFound("consentrecords: item not in effect", "errors.optional_consent_not_found")
+	ErrNotInEffect = validation.NotFound("consentrecords: item not in effect", i18n.ErrorsOptionalConsentNotFound)
 	// ErrNotOptional: a required acceptance or a notice is not the User's to change.
-	ErrNotOptional = validation.Refuse("consentrecords: not an optional consent", "errors.optional_consent_not_optional")
+	ErrNotOptional = validation.Refuse("consentrecords: not an optional consent", i18n.ErrorsOptionalConsentNotOptional)
 	// ErrStaleVersion: the page showed a version that is no longer the current one.
-	ErrStaleVersion = validation.RefuseField("version", "consentrecords: stale version", "errors.optional_consent_stale")
+	ErrStaleVersion = validation.RefuseField("version", "consentrecords: stale version", i18n.ErrorsOptionalConsentStale)
 )
 
 // OptionalConsent is an optional consent in effect with the User's current answer to it.

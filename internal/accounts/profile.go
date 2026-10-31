@@ -29,7 +29,7 @@ type Prove func(ctx context.Context, u *ent.User, password string) error
 
 // ErrIdentityProofRequired is a step that asks for the password, of a User who has none and
 // whose session holds no fresh proof instead (ADR 0048): a Passkey check or a provider login.
-var ErrIdentityProofRequired = validation.Denied("accounts: a fresh identity proof is required", "errors.identity_proof_required")
+var ErrIdentityProofRequired = validation.Denied("accounts: a fresh identity proof is required", i18n.ErrorsIdentityProofRequired)
 
 // ProveIdentity is the proof the steps that ask for the password need (ADR 0020, ADR 0048). A
 // User with a password proves it through prove, the way a login does (ADR 0025): while the
@@ -50,7 +50,7 @@ func ProveIdentity(ctx context.Context, u *ent.User, password string, freshProof
 }
 
 // ErrNewEmailSame refuses an email change to the address the User already has.
-var ErrNewEmailSame = validation.RefuseField("newEmail", "accounts: the new email is the current one", "errors.new_email_must_differ")
+var ErrNewEmailSame = validation.RefuseField("newEmail", "accounts: the new email is the current one", i18n.ErrorsNewEmailMustDiffer)
 
 // newEmailForm is the address an email change asks for, checked against the address rule.
 type newEmailForm struct {
@@ -96,7 +96,7 @@ func (a *Accounts) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChan
 	if c.Name != nil {
 		trimmed := strings.TrimSpace(*c.Name)
 		if trimmed == "" {
-			return ProfileChanged{}, validation.Refused("name", i18n.T("errors.name_empty", nil))
+			return ProfileChanged{}, validation.Refused("name", i18n.T(i18n.ErrorsNameEmpty, nil))
 		}
 		w.Name = &trimmed
 	}
@@ -110,7 +110,7 @@ func (a *Accounts) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChan
 			return ProfileChanged{}, err
 		}
 		if c.CurrentPassword == "" {
-			return ProfileChanged{}, validation.Refused("currentPassword", i18n.T("errors.current_password_required", nil))
+			return ProfileChanged{}, validation.Refused("currentPassword", i18n.T(i18n.ErrorsCurrentPasswordRequired, nil))
 		}
 		if err := prove(ctx, u, c.CurrentPassword); err != nil {
 			return ProfileChanged{}, err

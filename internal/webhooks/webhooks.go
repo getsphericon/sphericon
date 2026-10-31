@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
@@ -36,12 +37,12 @@ import (
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrInvalidURL: the URL is not an absolute http(s) URL (a 422 on `url`).
-	ErrInvalidURL = validation.RefuseField("url", "webhooks: url must be an absolute http or https URL", "errors.webhook_url_invalid")
+	ErrInvalidURL = validation.RefuseField("url", "webhooks: url must be an absolute http or https URL", i18n.ErrorsWebhookUrlInvalid)
 	// ErrAuditNeedsLicense: audit.entry was selected without an Enterprise license
 	// (a 422 on `eventTypes`).
-	ErrAuditNeedsLicense = validation.RefuseField("eventTypes", "webhooks: audit.entry needs an Enterprise license", "errors.webhook_audit_needs_license")
+	ErrAuditNeedsLicense = validation.RefuseField("eventTypes", "webhooks: audit.entry needs an Enterprise license", i18n.ErrorsWebhookAuditNeedsLicense)
 	// ErrNotFound: no such endpoint in this Workspace.
-	ErrNotFound = validation.NotFound("webhooks: webhook not found", "errors.webhook_not_found")
+	ErrNotFound = validation.NotFound("webhooks: webhook not found", i18n.ErrorsWebhookNotFound)
 )
 
 // Licensing reports whether the Enterprise license is active. A nil Licensing
@@ -98,7 +99,7 @@ type TestResult struct {
 }
 
 // ErrInvalidEventType means the event type to send a sample of is blank or too long.
-var ErrInvalidEventType = validation.RefuseField("eventType", "webhooks: the event type must be 1 to 100 characters", "errors.webhook_event_type_invalid")
+var ErrInvalidEventType = validation.RefuseField("eventType", "webhooks: the event type must be 1 to 100 characters", i18n.ErrorsWebhookEventTypeInvalid)
 
 // RegenerateSecret replaces the signing secret at once: the old one stops verifying
 // with the next delivery. The row update is audited by the scoped client

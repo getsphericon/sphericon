@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
@@ -131,6 +132,9 @@ func (d *Detector) freeze(ctx context.Context, ws *ent.Workspace, b Breach) (boo
 	return true, nil
 }
 
+// metricNames words a breached rate in the warning to the owners.
+var metricNames = map[Metric]i18n.ID{Complaint: i18n.MetricComplaint, Bounce: i18n.MetricBounce}
+
 // warn mails the owners once per episode: the marker is set only after the mail went, so
 // a failed send is retried, and is cleared when the Workspace leaves the tier.
 func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b Breach, now time.Time) (bool, error) {
@@ -138,11 +142,11 @@ func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b Breach, now ti
 		return false, nil
 	}
 	data := map[string]any{
-		"Workspace": ws.Name, "Domain": b.Domain, "Metric": i18n.T("metric."+string(b.Metric), nil),
+		"Workspace": ws.Name, "Domain": b.Domain, "Metric": i18n.T(metricNames[b.Metric], nil),
 		"Rate": Percent(b.Rate()), "Count": b.Numerator, "Total": b.Denominator,
 		"Limit": Percent(float64(b.LimitBP) / 10000), "Support": d.support,
 	}
-	if err := accounts.OwnerNotifier(d.client, d.sender).Tell(ctx, ws.ID, "email.abuse_warning", data); err != nil {
+	if err := accounts.OwnerNotifier(d.client, d.sender).Tell(ctx, ws.ID, ownernotice.Notice{Subject: i18n.EmailAbuseWarningSubject, Body: i18n.EmailAbuseWarningBody}, data); err != nil {
 		return false, fmt.Errorf("warn workspace %d: %w", ws.ID, err)
 	}
 	if err := d.client.Workspace.UpdateOneID(ws.ID).SetAbuseWarningNotifiedAt(now).Exec(ctx); err != nil {

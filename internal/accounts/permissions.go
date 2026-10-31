@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -26,8 +27,8 @@ var (
 	ownerOnly     = []membership.Role{membership.RoleOwner}
 )
 
-// row is the grant of p to roles, refused with the i18n message key.
-func row(p Permission, key string, roles []membership.Role) grant {
+// row is the grant of p to roles, refused with the message key.
+func row(p Permission, key i18n.ID, roles []membership.Role) grant {
 	return grant{permission: p, roles: roles, refusal: validation.Forbidden("accounts: the role lacks the permission "+string(p), key)}
 }
 
@@ -36,27 +37,27 @@ func row(p Permission, key string, roles []membership.Role) grant {
 // Membership's Permissions from its Workspace. An owner differs from an admin by ownership and
 // the irreversible; a member holds none of them.
 var grants = []grant{
-	row(PermMembersManage, "errors.permission.members_manage", ownerAndAdmin),
-	row(PermAuditRead, "errors.permission.audit_read", ownerAndAdmin),
-	row(PermAuditConfigure, "errors.permission.audit_configure", ownerAndAdmin),
-	row(PermTokensManage, "errors.permission.tokens_manage", ownerAndAdmin),
-	row(PermIntegrationsManage, "errors.permission.integrations_manage", ownerAndAdmin),
-	row(PermWebhooksManage, "errors.permission.webhooks_manage", ownerAndAdmin),
-	row(PermSendingDomainsManage, "errors.permission.sending_domains_manage", ownerAndAdmin),
-	row(PermContactsErase, "errors.permission.contacts_erase", ownerAndAdmin),
-	row(PermContactsExport, "errors.permission.contacts_export", ownerAndAdmin),
-	row(PermSuppressionsManage, "errors.permission.suppressions_manage", ownerAndAdmin),
-	row(PermSecondFactorManage, "errors.permission.second_factor_manage", ownerAndAdmin),
-	row(PermWorkspaceUpdate, "errors.permission.workspace_update", ownerAndAdmin),
-	row(PermWorkspaceTimezone, "errors.permission.workspace_timezone", ownerAndAdmin),
-	row(PermRevenueConfigure, "errors.permission.revenue_configure", ownerAndAdmin),
-	row(PermBrandKitManage, "errors.permission.brand_kit_manage", ownerAndAdmin),
-	row(PermJoinDomainsManage, "errors.permission.join_domains_manage", ownerAndAdmin),
-	row(PermHoldsResolve, "errors.permission.holds_resolve", ownerAndAdmin),
-	row(PermAccountLinkOpen, "errors.permission.account_link_open", ownerOnly),
-	row(PermWorkspaceDelete, "errors.permission.workspace_delete", ownerOnly),
-	row(PermOwnersManage, "errors.permission.owners_manage", ownerOnly),
-	row(PermReleaseRead, "errors.permission.release_read", ownerOnly),
+	row(PermMembersManage, i18n.ErrorsPermissionMembersManage, ownerAndAdmin),
+	row(PermAuditRead, i18n.ErrorsPermissionAuditRead, ownerAndAdmin),
+	row(PermAuditConfigure, i18n.ErrorsPermissionAuditConfigure, ownerAndAdmin),
+	row(PermTokensManage, i18n.ErrorsPermissionTokensManage, ownerAndAdmin),
+	row(PermIntegrationsManage, i18n.ErrorsPermissionIntegrationsManage, ownerAndAdmin),
+	row(PermWebhooksManage, i18n.ErrorsPermissionWebhooksManage, ownerAndAdmin),
+	row(PermSendingDomainsManage, i18n.ErrorsPermissionSendingDomainsManage, ownerAndAdmin),
+	row(PermContactsErase, i18n.ErrorsPermissionContactsErase, ownerAndAdmin),
+	row(PermContactsExport, i18n.ErrorsPermissionContactsExport, ownerAndAdmin),
+	row(PermSuppressionsManage, i18n.ErrorsPermissionSuppressionsManage, ownerAndAdmin),
+	row(PermSecondFactorManage, i18n.ErrorsPermissionSecondFactorManage, ownerAndAdmin),
+	row(PermWorkspaceUpdate, i18n.ErrorsPermissionWorkspaceUpdate, ownerAndAdmin),
+	row(PermWorkspaceTimezone, i18n.ErrorsPermissionWorkspaceTimezone, ownerAndAdmin),
+	row(PermRevenueConfigure, i18n.ErrorsPermissionRevenueConfigure, ownerAndAdmin),
+	row(PermBrandKitManage, i18n.ErrorsPermissionBrandKitManage, ownerAndAdmin),
+	row(PermJoinDomainsManage, i18n.ErrorsPermissionJoinDomainsManage, ownerAndAdmin),
+	row(PermHoldsResolve, i18n.ErrorsPermissionHoldsResolve, ownerAndAdmin),
+	row(PermAccountLinkOpen, i18n.ErrorsPermissionAccountLinkOpen, ownerOnly),
+	row(PermWorkspaceDelete, i18n.ErrorsPermissionWorkspaceDelete, ownerOnly),
+	row(PermOwnersManage, i18n.ErrorsPermissionOwnersManage, ownerOnly),
+	row(PermReleaseRead, i18n.ErrorsPermissionReleaseRead, ownerOnly),
 }
 
 // Allows reports whether role holds the Permission p. A Permission outside the table is held
@@ -122,7 +123,7 @@ func MayGrant(role membership.Role, scopes []string) error {
 }
 
 // errPermissionUnknown refuses a Permission outside the table, which no Role holds.
-var errPermissionUnknown = validation.Forbidden("accounts: the permission is unknown", "errors.permission.unknown")
+var errPermissionUnknown = validation.Forbidden("accounts: the permission is unknown", i18n.ErrorsPermissionUnknown)
 
 // grantOf is the row of the Permission p, false when the table has none.
 func grantOf(p Permission) (grant, bool) {

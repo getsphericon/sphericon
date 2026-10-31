@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -21,15 +22,15 @@ import (
 // *DeletionRefusedError, whose answer names the Workspaces the User solely owns.
 var (
 	// ErrDeletionEmailMismatch: the email typed to confirm is not the User's own.
-	ErrDeletionEmailMismatch = validation.RefuseField("email", "accounts: the typed email is not the user's", "errors.delete_user_email_mismatch")
+	ErrDeletionEmailMismatch = validation.RefuseField("email", "accounts: the typed email is not the user's", i18n.ErrorsDeleteUserEmailMismatch)
 	// ErrDeletionUsePassword: a deletion link asked for a User who has a password, which
 	// confirms the deletion instead.
-	ErrDeletionUsePassword = validation.Refuse("accounts: the user confirms the deletion with the password", "errors.delete_user_use_password")
+	ErrDeletionUsePassword = validation.Refuse("accounts: the user confirms the deletion with the password", i18n.ErrorsDeleteUserUsePassword)
 	// ErrProofStale: the proof no longer fits the User: the User's password was set or removed
 	// between the proof and the transaction that locked the row.
-	ErrProofStale = validation.Refuse("accounts: the deletion proof no longer fits the user", "errors.delete_user_proof_stale")
+	ErrProofStale = validation.Refuse("accounts: the deletion proof no longer fits the user", i18n.ErrorsDeleteUserProofStale)
 	// ErrSoleOwner: the User is the only Owner of a live Workspace, the rule of any Owner change.
-	ErrSoleOwner = validation.Refuse("accounts: the user is the only owner of live workspaces", "errors.delete_user_only_owner")
+	ErrSoleOwner = validation.Refuse("accounts: the user is the only owner of live workspaces", i18n.ErrorsDeleteUserOnlyOwner)
 )
 
 // DeletionRefusedError is a User deletion refused by Reason, one of the rules above: nothing is

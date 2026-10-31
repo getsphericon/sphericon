@@ -25,15 +25,15 @@ import (
 // ErrNotDue is the refusal of a submit by a User who does not owe the survey: it was answered
 // already, or the User was never asked (the Instance has it off, or the User joined by an
 // Invitation).
-var ErrNotDue = validation.Conflict("signupsurvey: the user does not owe the survey", "errors.signup_survey_not_due")
+var ErrNotDue = validation.Conflict("signupsurvey: the user does not owe the survey", i18n.ErrorsSignupSurveyNotDue)
 
 // otherText is the refusal of an `other` text sent with a choice that is not `other` (blank
 // false), or of an `other` choice whose text is blank, on field, the contract field that carried
 // the text (`roleOther`).
 func otherText(field string, blank bool) *validation.Error {
-	key := "errors.signup_survey_other_text"
+	key := i18n.ErrorsSignupSurveyOtherText
 	if blank {
-		key = "errors.signup_survey_other_blank"
+		key = i18n.ErrorsSignupSurveyOtherBlank
 	}
 	return &validation.Error{Field: field, Message: i18n.T(key, nil)}
 }

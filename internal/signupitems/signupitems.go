@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -36,28 +37,28 @@ var latestFirst = []legaldocumentversion.OrderOption{
 
 var (
 	// ErrNotFound: no Sign-up item has this id.
-	ErrNotFound = validation.NotFound("signupitems: not found", "errors.signup_item_not_found")
+	ErrNotFound = validation.NotFound("signupitems: not found", i18n.ErrorsSignupItemNotFound)
 	// ErrKeyTaken: another item has the key.
-	ErrKeyTaken = validation.RefuseField("key", "signupitems: key taken", "errors.signup_item_key_taken")
+	ErrKeyTaken = validation.RefuseField("key", "signupitems: key taken", i18n.ErrorsSignupItemKeyTaken)
 	// ErrTitleBlank: the title is blank once trimmed.
-	ErrTitleBlank = validation.RefuseField("title", "signupitems: title blank", "errors.signup_item_title_blank")
+	ErrTitleBlank = validation.RefuseField("title", "signupitems: title blank", i18n.ErrorsSignupItemTitleBlank)
 	// ErrMailingsKind: only an optional consent can stand for consent to the operator's mailings.
-	ErrMailingsKind = validation.RefuseField("mailingsConsent", "signupitems: mailings consent on another kind", "errors.signup_item_mailings_kind")
+	ErrMailingsKind = validation.RefuseField("mailingsConsent", "signupitems: mailings consent on another kind", i18n.ErrorsSignupItemMailingsKind)
 	// ErrMailingsTaken: another item stands for consent to the operator's mailings.
-	ErrMailingsTaken = validation.RefuseField("mailingsConsent", "signupitems: mailings consent taken", "errors.signup_item_mailings_taken")
+	ErrMailingsTaken = validation.RefuseField("mailingsConsent", "signupitems: mailings consent taken", i18n.ErrorsSignupItemMailingsTaken)
 	// ErrNoDraft: the item has no draft to publish.
-	ErrNoDraft = validation.Refuse("signupitems: no draft", "errors.legal_document_no_draft")
+	ErrNoDraft = validation.Refuse("signupitems: no draft", i18n.ErrorsLegalDocumentNoDraft)
 	// ErrLabelTaken: the item already has a version with the label.
-	ErrLabelTaken = validation.RefuseField("label", "signupitems: label taken", "errors.legal_document_label_taken")
+	ErrLabelTaken = validation.RefuseField("label", "signupitems: label taken", i18n.ErrorsLegalDocumentLabelTaken)
 	// ErrDocumentNotFound: no item in effect has this key, or it has no published version.
-	ErrDocumentNotFound = validation.NotFound("signupitems: no legal document", "errors.legal_document_not_found")
+	ErrDocumentNotFound = validation.NotFound("signupitems: no legal document", i18n.ErrorsLegalDocumentNotFound)
 	// ErrMailingsArchived: an archived item cannot stand for consent to the operator's mailings.
-	ErrMailingsArchived = validation.RefuseField("mailingsConsent", "signupitems: mailings consent on an archived item", "errors.signup_item_mailings_archived")
+	ErrMailingsArchived = validation.RefuseField("mailingsConsent", "signupitems: mailings consent on an archived item", i18n.ErrorsSignupItemMailingsArchived)
 	// ErrArchiveMailings: the item that stands for consent to the operator's mailings is unmarked
 	// before it is archived, so the mark can move to another item.
-	ErrArchiveMailings = validation.RefuseField("mailingsConsent", "signupitems: archiving the mailings consent", "errors.signup_item_archive_mailings")
+	ErrArchiveMailings = validation.RefuseField("mailingsConsent", "signupitems: archiving the mailings consent", i18n.ErrorsSignupItemArchiveMailings)
 	// ErrOrder: a new order that is not the id of every item exactly once.
-	ErrOrder = validation.RefuseField("ids", "signupitems: order not every item once", "errors.signup_item_order")
+	ErrOrder = validation.RefuseField("ids", "signupitems: order not every item once", i18n.ErrorsSignupItemOrder)
 )
 
 // Item is a Sign-up item as the console shows it: the item, its draft and its current version.

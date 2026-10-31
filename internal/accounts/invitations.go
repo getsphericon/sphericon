@@ -20,20 +20,20 @@ const inviteTokenBytes = 36
 
 var (
 	// ErrEmailEmpty means the invited email is blank.
-	ErrEmailEmpty = validation.RefuseField("email", "accounts: invitation email is empty", "errors.email_empty")
+	ErrEmailEmpty = validation.RefuseField("email", "accounts: invitation email is empty", i18n.ErrorsEmailEmpty)
 	// ErrInvitationNotFound means no pending Invitation of that id is in the Workspace.
-	ErrInvitationNotFound = validation.NotFound("accounts: invitation not found", "errors.invitation_not_found")
+	ErrInvitationNotFound = validation.NotFound("accounts: invitation not found", i18n.ErrorsInvitationNotFound)
 	// ErrInvitationLinkNotFound means an Invitation link's token names no pending, unexpired
 	// Invitation.
-	ErrInvitationLinkNotFound = validation.NotFound("accounts: invitation not found or expired", "errors.invitation_link_not_found")
+	ErrInvitationLinkNotFound = validation.NotFound("accounts: invitation not found or expired", i18n.ErrorsInvitationLinkNotFound)
 	// ErrAlreadyMember means the invited address already has a Membership in the Workspace.
-	ErrAlreadyMember = validation.Conflict("accounts: invited email is already a member", "errors.already_member")
+	ErrAlreadyMember = validation.Conflict("accounts: invited email is already a member", i18n.ErrorsAlreadyMember)
 	// ErrSignInRequired means the invited address belongs to a Verified User and no
 	// session was presented: only that User's own session may accept.
-	ErrSignInRequired = validation.Unauthorized("accounts: sign in to accept this invitation", "errors.invitation_sign_in_required")
+	ErrSignInRequired = validation.Unauthorized("accounts: sign in to accept this invitation", i18n.ErrorsInvitationSignInRequired)
 	// ErrWrongAccount means the presented session is another User's than the
 	// Verified User the invitation is for.
-	ErrWrongAccount = validation.Denied("accounts: this invitation is for another account", "errors.invitation_other_account")
+	ErrWrongAccount = validation.Denied("accounts: this invitation is for another account", i18n.ErrorsInvitationOtherAccount)
 	// ErrAlreadyVerified means the User's email was already verified: a link that
 	// completes an Unverified User lost the race to another one.
 	ErrAlreadyVerified = errors.New("accounts: the email is already verified")
@@ -43,8 +43,8 @@ var (
 // without a name and a password: the invitee sets up the account, so both are required.
 func credentialsRequired() *validation.FieldsError {
 	return &validation.FieldsError{Fields: map[string][]string{
-		validation.FieldName:     {i18n.T("errors.name_required", nil)},
-		validation.FieldPassword: {i18n.T("errors.password_required", nil)},
+		validation.FieldName:     {i18n.T(i18n.ErrorsNameRequired, nil)},
+		validation.FieldPassword: {i18n.T(i18n.ErrorsPasswordRequired, nil)},
 	}}
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
@@ -65,17 +66,17 @@ func NotifySecondFactorRequired(ctx context.Context, client *ent.Client, sender 
 		if !ok {
 			continue
 		}
-		if err := sendSecondFactorMail(ctx, sender, appURL, "email.second_factor_required", m, deadline); err != nil {
+		if err := sendSecondFactorMail(ctx, sender, appURL, ownernotice.Notice{Subject: i18n.EmailSecondFactorRequiredSubject, Body: i18n.EmailSecondFactorRequiredBody}, m, deadline); err != nil {
 			errs = append(errs, err)
 		}
 	}
 	return errors.Join(errs...)
 }
 
-// sendSecondFactorMail renders the email of the given message id prefix (subject and
-// body) for the Membership's User and sends it. The deadline is shown in the User time zone
+// sendSecondFactorMail renders the mail (its subject and body messages)
+// for the Membership's User and sends it. The deadline is shown in the User time zone
 // (ADR 0068); the locale is the instance's.
-func sendSecondFactorMail(ctx context.Context, sender messaging.EmailSender, appURL, prefix string, m *ent.Membership, deadline time.Time) error {
+func sendSecondFactorMail(ctx context.Context, sender messaging.EmailSender, appURL string, mail ownernotice.Notice, m *ent.Membership, deadline time.Time) error {
 	u := m.Edges.User
 	data := map[string]any{
 		"Workspace": m.Edges.Workspace.Name,
@@ -84,8 +85,8 @@ func sendSecondFactorMail(ctx context.Context, sender messaging.EmailSender, app
 	}
 	if _, err := sender.Send(ctx, messaging.EmailMessage{
 		To:      u.Email,
-		Subject: i18n.T(prefix+".subject", data),
-		Text:    i18n.T(prefix+".body", data),
+		Subject: i18n.T(mail.Subject, data),
+		Text:    i18n.T(mail.Body, data),
 	}); err != nil {
 		return fmt.Errorf("mail %s: %w", u.Email, err)
 	}
@@ -125,7 +126,7 @@ func RemindSecondFactorDeadlines(ctx context.Context, client *ent.Client, sender
 		return errors.New("remind second factor: no system email sender configured")
 	}
 	return secondfactor.RemindDeadlines(ctx, client, now, func(ctx context.Context, m *ent.Membership, deadline time.Time) error {
-		return sendSecondFactorMail(ctx, sender, appURL, "email.second_factor_reminder", m, deadline)
+		return sendSecondFactorMail(ctx, sender, appURL, ownernotice.Notice{Subject: i18n.EmailSecondFactorReminderSubject, Body: i18n.EmailSecondFactorReminderBody}, m, deadline)
 	})
 }
 

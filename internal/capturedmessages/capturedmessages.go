@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/schema"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/suppression"
@@ -140,7 +141,7 @@ func Purge(ctx context.Context, client *ent.Client, retention time.Duration, bat
 }
 
 // ErrNotFound reports a Captured message that does not exist in the Workspace.
-var ErrNotFound = validation.NotFound("capturedmessages: captured message not found", "errors.captured_message_not_found")
+var ErrNotFound = validation.NotFound("capturedmessages: captured message not found", i18n.ErrorsCapturedMessageNotFound)
 
 // Get returns one Captured message of the Workspace, or ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.CapturedMessage, error) {

@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/ownernotice"
@@ -103,7 +104,7 @@ func (m *Module) VerifyDKIM(ctx context.Context, id int64) (verified bool, err e
 
 func (m *Module) notifyUnverified(ctx context.Context, dom *ent.SendingDomain) {
 	data := map[string]any{"Domain": dom.Domain, "Record": dom.DkimSelector + "._domainkey." + dom.Domain}
-	m.notify.TellBestEffort(ctx, dom.WorkspaceID, "email.sending_domain_unverified", data, "sending_domain_id", dom.ID)
+	m.notify.TellBestEffort(ctx, dom.WorkspaceID, ownernotice.Notice{Subject: i18n.EmailSendingDomainUnverifiedSubject, Body: i18n.EmailSendingDomainUnverifiedBody}, data, "sending_domain_id", dom.ID)
 }
 
 // VerifyTracking re-checks a Sending domain's Tracking domain (the CNAME, then the HTTPS
@@ -148,7 +149,7 @@ func (m *Module) notifyRegressed(ctx context.Context, dom *ent.SendingDomain, ne
 		"Host": sendingdomains.TrackingHost(dom.Domain), "Domain": dom.Domain,
 		"From": dom.TrackingState, "To": next, "Target": m.tracking.Target,
 	}
-	m.notify.TellBestEffort(ctx, dom.WorkspaceID, "email.tracking_domain_regressed", data, "sending_domain_id", dom.ID)
+	m.notify.TellBestEffort(ctx, dom.WorkspaceID, ownernotice.Notice{Subject: i18n.EmailTrackingDomainRegressedSubject, Body: i18n.EmailTrackingDomainRegressedBody}, data, "sending_domain_id", dom.ID)
 }
 
 // Due returns up to limit ids of the Sending domains whose DKIM is to be re-checked,
