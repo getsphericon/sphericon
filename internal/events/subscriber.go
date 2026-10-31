@@ -86,10 +86,11 @@ func NewRouter(db *sql.DB, opts ...RouterOption) (*message.Router, error) {
 		return nil, err
 	}
 	// The first is the outermost: the dead-lettering of an event the retries gave up on, over the
-	// per-handler OTel spans + metrics (global providers; no-op when disabled), which so count an
-	// event that failed past its retries as one error, over the retries, over the recovery of a
-	// panic into an error.
-	router.AddMiddleware(dead, otelMiddleware(), cfg.retry.Middleware, middleware.Recoverer)
+	// per-handler OTel spans + metrics (global providers; no-op when disabled; linked to the
+	// publisher's span), which so count an event that failed past its retries as one error, over
+	// the handler's context for the event's chain (correlation.go), over the retries, over the
+	// recovery of a panic into an error.
+	router.AddMiddleware(dead, otelMiddleware(), correlationMiddleware, cfg.retry.Middleware, middleware.Recoverer)
 	return router, nil
 }
 

@@ -39,6 +39,12 @@ func Message(env Envelope) *message.Message {
 	if env.CausedBy != "" {
 		msg.Metadata.Set(MetaCausedBy, env.CausedBy)
 	}
+	if env.CorrelationID != "" {
+		msg.Metadata.Set(MetaCorrelationID, env.CorrelationID)
+	}
+	if env.CausationID != "" {
+		msg.Metadata.Set(MetaCausationID, env.CausationID)
+	}
 	return msg
 }
 
@@ -86,5 +92,8 @@ func EnvelopeFrom(id string, payload []byte, metadata map[string]string) (Envelo
 		Data:        payload,
 		DedupKey:    metadata[MetaDedupKey],
 		CausedBy:    metadata[MetaCausedBy],
+		// the chain's ids (correlation.go)
+		CorrelationID: metadata[MetaCorrelationID],
+		CausationID:   metadata[MetaCausationID],
 	}, nil
 }

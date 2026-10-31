@@ -32,7 +32,35 @@ func New(cfg *config.Config) *slog.Logger {
 	} else {
 		handler = slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: level})
 	}
-	return slog.New(jobLogs{handler})
+	return slog.New(Correlated(jobLogs{handler}))
+}
+
+// Correlated wraps h so that every record logged with a context that carries a correlation id
+// (the chain of domain events the work belongs to, WithCorrelationID) is tagged with it.
+func Correlated(h slog.Handler) slog.Handler { return correlated{h} }
+
+type correlated struct{ slog.Handler }
+
+func (h correlated) Handle(ctx context.Context, r slog.Record) error {
+	if id, ok := ctx.Value(correlationKey{}).(string); ok && id != "" {
+		r = r.Clone()
+		r.AddAttrs(slog.String("correlation_id", id))
+	}
+	return h.Handler.Handle(ctx, r)
+}
+
+func (h correlated) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return correlated{h.Handler.WithAttrs(attrs)}
+}
+
+func (h correlated) WithGroup(name string) slog.Handler { return correlated{h.Handler.WithGroup(name)} }
+
+type correlationKey struct{}
+
+// WithCorrelationID returns a context whose logs are tagged with the correlation id of the chain
+// of domain events the work in it belongs to.
+func WithCorrelationID(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, correlationKey{}, id)
 }
 
 // JobLogs is the river middleware that keeps the lines a job logs on the job itself (riverlog),

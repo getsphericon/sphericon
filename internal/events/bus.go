@@ -164,7 +164,7 @@ type txPublisher struct {
 	client *ent.Client
 }
 
-func (p *txPublisher) Publish(_ context.Context, ev DomainEvent) error {
+func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 	data, err := json.Marshal(ev)
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
@@ -190,5 +190,8 @@ func (p *txPublisher) Publish(_ context.Context, ev DomainEvent) error {
 		Data:        data,
 		DedupKey:    dedupKey,
 	}
-	return p.wm.Publish(TopicDomainEvents, Message(env))
+	stamp(ctx, &env)
+	msg := Message(env)
+	injectTrace(ctx, msg)
+	return p.wm.Publish(TopicDomainEvents, msg)
 }

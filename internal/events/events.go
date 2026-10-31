@@ -119,6 +119,11 @@ type Envelope struct {
 	// that carries it, so Rules never chain (ADR 0054). No Action publishes an event today, so
 	// nothing stamps it yet; the consumer honours it already.
 	CausedBy string `json:"causedBy,omitempty"`
+	// CorrelationID is shared by every event of one chain: what a request, or the handling of
+	// an event, published (correlation.go). CausationID is the id of the event whose handling
+	// published this one, empty at the start of a chain.
+	CorrelationID string `json:"correlationId,omitempty"`
+	CausationID   string `json:"causationId,omitempty"`
 }
 
 // SourceID is the id the Event's row is stored under (events.source_id): the DedupKey when the
