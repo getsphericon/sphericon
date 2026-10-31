@@ -20,6 +20,8 @@ func (h *ServiceHandlers) ServiceUserFeedList(ctx context.Context, params servic
 	}
 	for i, e := range page.Entries {
 		if e.Tombstone != nil {
+			// A feed entry is a User or a tombstone, each with its own method: no list method fits.
+			// ast-grep-ignore: no-hand-mapped-list
 			out.Items[i] = serviceMapper.TombstoneToResource(e.Tombstone)
 			continue
 		}

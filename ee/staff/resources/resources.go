@@ -50,6 +50,8 @@ type StaffConverter interface {
 	// goverter:map AbuseWarningNotifiedAt Warned | isSet
 	// goverter:map . Suspension | workspaceSuspension
 	WorkspaceToResource(source *ent.Workspace) staffeeapi.StaffWorkspaceResource
+	// goverter:useEmptyOnNil:slice
+	WorkspacesToResources(source []*ent.Workspace) []staffeeapi.StaffWorkspaceResource
 
 	// The detail page is the metadata of WorkspaceToResource plus figures read through other
 	// modules (the active holds, the abuse state, the deliverability counts): the handler
@@ -86,6 +88,8 @@ type StaffConverter interface {
 	// goverter:map . Actor
 	// goverter:map . Target
 	AuditEntryToResource(source auditapi.View) staffeeapi.StaffAuditEntryResource
+	// goverter:useEmptyOnNil:slice
+	AuditEntriesToResources(source []auditapi.View) []staffeeapi.StaffAuditEntryResource
 	// An entry's actor and target are columns of the entry, nested in the contract.
 	// goverter:map ActorKind Kind
 	// goverter:map ActorID ID
@@ -135,6 +139,8 @@ type StaffConverter interface {
 // goverter:extend serviceOptNilTimestampAt
 type ServiceConverter interface {
 	HoldToResource(source *ent.Hold) serviceapi.HoldResource
+	// goverter:useEmptyOnNil:slice
+	HoldsToResources(source []*ent.Hold) []serviceapi.HoldResource
 
 	// The owners are the feed entry's, which the mapper cannot see: the handler attaches them.
 	// goverter:map PublicID ID

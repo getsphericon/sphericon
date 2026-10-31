@@ -46,6 +46,14 @@ func (c *StaffConverterImpl) AuditActorToResource(source auditapi.View) staffee.
 	staffeeapiStaffAuditActor.Name = nilableString(source.ActorName)
 	return staffeeapiStaffAuditActor
 }
+func (c *StaffConverterImpl) AuditEntriesToResources(source []auditapi.View) []staffee.StaffAuditEntryResource {
+	var staffeeapiStaffAuditEntryResourceList []staffee.StaffAuditEntryResource
+	staffeeapiStaffAuditEntryResourceList = make([]staffee.StaffAuditEntryResource, len(source))
+	for i := 0; i < len(source); i++ {
+		staffeeapiStaffAuditEntryResourceList[i] = c.AuditEntryToResource(source[i])
+	}
+	return staffeeapiStaffAuditEntryResourceList
+}
 func (c *StaffConverterImpl) AuditEntryToResource(source auditapi.View) staffee.StaffAuditEntryResource {
 	var staffeeapiStaffAuditEntryResource staffee.StaffAuditEntryResource
 	staffeeapiStaffAuditEntryResource.ID = staffee.EntityId(source.ID)
@@ -258,4 +266,12 @@ func (c *StaffConverterImpl) WorkspaceToResource(source *ent.Workspace) staffee.
 		staffeeapiStaffWorkspaceResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
 	}
 	return staffeeapiStaffWorkspaceResource
+}
+func (c *StaffConverterImpl) WorkspacesToResources(source []*ent.Workspace) []staffee.StaffWorkspaceResource {
+	var staffeeapiStaffWorkspaceResourceList []staffee.StaffWorkspaceResource
+	staffeeapiStaffWorkspaceResourceList = make([]staffee.StaffWorkspaceResource, len(source))
+	for i := 0; i < len(source); i++ {
+		staffeeapiStaffWorkspaceResourceList[i] = c.WorkspaceToResource(source[i])
+	}
+	return staffeeapiStaffWorkspaceResourceList
 }

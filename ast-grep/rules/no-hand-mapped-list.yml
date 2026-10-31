@@ -10,11 +10,15 @@ note: >-
   Broadcast's stats) maps it in the handler with the extra, which this rule does not match.
 rule:
   any:
-    - pattern: $LIST[$I] = mapper.$METHOD($$$ARGS)
-    - pattern: $LIST = append($LIST, mapper.$METHOD($$$ARGS))
+    - pattern: $LIST[$I] = $MAPPER.$METHOD($$$ARGS)
+    - pattern: $LIST = append($LIST, $MAPPER.$METHOD($$$ARGS))
   inside:
     kind: for_statement
     stopBy: end
+constraints:
+  # The surfaces' converters: mapper (site, api), staffMapper and serviceMapper (ee/staff).
+  MAPPER:
+    regex: ^(mapper|staffMapper|serviceMapper)$
 files:
   - internal/api/**/*.go
   - ee/staff/**/*.go

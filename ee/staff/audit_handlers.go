@@ -31,10 +31,7 @@ func (h *Handlers) StaffWorkspaceAuditList(ctx context.Context, params staffeeap
 	if err != nil {
 		return nil, err
 	}
-	out := &staffeeapi.StaffAuditEntryList{Items: make([]staffeeapi.StaffAuditEntryResource, len(rows))}
-	for i, e := range rows {
-		out.Items[i] = staffMapper.AuditEntryToResource(auditapi.StaffViewOf(e))
-	}
+	out := &staffeeapi.StaffAuditEntryList{Items: staffMapper.AuditEntriesToResources(auditapi.StaffViewsOf(rows))}
 	if next > 0 {
 		out.NextCursor = staffeeapi.NewOptNilString(auditapi.NextCursor(next))
 	}

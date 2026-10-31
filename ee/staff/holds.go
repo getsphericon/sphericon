@@ -118,11 +118,7 @@ func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceap
 	if err != nil {
 		return nil, err
 	}
-	items := make([]serviceapi.HoldResource, len(rows))
-	for i, r := range rows {
-		items[i] = serviceMapper.HoldToResource(r)
-	}
-	return &serviceapi.HoldList{Items: items}, nil
+	return &serviceapi.HoldList{Items: serviceMapper.HoldsToResources(rows)}, nil
 }
 
 // ServiceHoldsSet sets or renews a hold.

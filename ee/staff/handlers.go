@@ -65,12 +65,8 @@ func (h *Handlers) StaffWorkspacesList(ctx context.Context, params staffeeapi.St
 	if err != nil {
 		return nil, err
 	}
-	items := make([]staffeeapi.StaffWorkspaceResource, 0, len(page.Items))
-	for _, w := range page.Items {
-		items = append(items, staffMapper.WorkspaceToResource(w))
-	}
 	return &staffeeapi.StaffWorkspacesListOK{
-		Items:      items,
+		Items:      staffMapper.WorkspacesToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),

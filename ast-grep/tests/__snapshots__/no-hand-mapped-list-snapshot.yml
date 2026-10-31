@@ -1,5 +1,18 @@
 id: no-hand-mapped-list
 snapshots:
+  "func list(rows []*ent.Hold) []serviceapi.HoldResource {\n\titems := make([]serviceapi.HoldResource, len(rows))\n\tfor i, r := range rows {\n\t\titems[i] = serviceMapper.HoldToResource(r)\n\t}\n\treturn items\n}\n":
+    labels:
+      - source: items[i] = serviceMapper.HoldToResource(r)
+        style: primary
+        start: 137
+        end: 179
+      - source: |-
+          for i, r := range rows {
+          		items[i] = serviceMapper.HoldToResource(r)
+          	}
+        style: secondary
+        start: 110
+        end: 182
   "func list(tokens []*ent.ApiToken) []siteapi.SiteApiTokenResource {\n\titems := make([]siteapi.SiteApiTokenResource, len(tokens))\n\tfor i, t := range tokens {\n\t\titems[i] = mapper.TokenToResource(t)\n\t}\n\treturn items\n}\n":
     labels:
       - source: items[i] = mapper.TokenToResource(t)

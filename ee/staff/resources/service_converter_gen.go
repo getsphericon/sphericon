@@ -26,6 +26,14 @@ func (c *ServiceConverterImpl) HoldToResource(source *ent.Hold) service.HoldReso
 	}
 	return serviceapiHoldResource
 }
+func (c *ServiceConverterImpl) HoldsToResources(source []*ent.Hold) []service.HoldResource {
+	var serviceapiHoldResourceList []service.HoldResource
+	serviceapiHoldResourceList = make([]service.HoldResource, len(source))
+	for i := 0; i < len(source); i++ {
+		serviceapiHoldResourceList[i] = c.HoldToResource(source[i])
+	}
+	return serviceapiHoldResourceList
+}
 func (c *ServiceConverterImpl) OwnerToResource(source *ent.User) service.ServiceWorkspaceOwner {
 	var serviceapiServiceWorkspaceOwner service.ServiceWorkspaceOwner
 	if source != nil {

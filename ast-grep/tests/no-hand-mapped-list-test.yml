@@ -34,3 +34,11 @@ invalid:
     	}
     	return items
     }
+  - |
+    func list(rows []*ent.Hold) []serviceapi.HoldResource {
+    	items := make([]serviceapi.HoldResource, len(rows))
+    	for i, r := range rows {
+    		items[i] = serviceMapper.HoldToResource(r)
+    	}
+    	return items
+    }

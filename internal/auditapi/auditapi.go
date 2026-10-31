@@ -64,6 +64,15 @@ func ViewsOf(entries []*ent.AuditEntry) []View {
 	return views
 }
 
+// StaffViewsOf builds the platform console's view of each stored entry, in order.
+func StaffViewsOf(entries []*ent.AuditEntry) []View {
+	views := make([]View, len(entries))
+	for i, e := range entries {
+		views[i] = StaffViewOf(e)
+	}
+	return views
+}
+
 // StaffViewOf builds the platform console's view: like ViewOf, except that a Service credential
 // is named (the customer sees it as "Sphericon staff").
 func StaffViewOf(e *ent.AuditEntry) View {
