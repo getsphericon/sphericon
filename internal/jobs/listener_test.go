@@ -14,6 +14,7 @@ import (
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -53,7 +54,7 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 
 	elsewhere, err := jobs.NewInserter(pool)
 	require.NoError(t, err)
-	_, err = elsewhere.Insert(ctx, jobs.SendWelcomeArgs{Email: "listened@example.com", Name: "Listened"}, nil)
+	_, err = elsewhere.Insert(ctx, mailjobs.Welcome("listened@example.com", "Listened"), nil)
 	require.NoError(t, err)
 
 	require.Eventually(t, func() bool { return sentTo(mail, "listened@example.com") }, 2*time.Second, 20*time.Millisecond,
