@@ -158,7 +158,7 @@ func (m *Module) sealInbound(row *ent.Integration, in inboundChange) (inbound, e
 	}
 	stored, plain := mergeParams(p, prev, in.params)
 	if err := p.ValidateParams(plain); err != nil {
-		return inbound{}, &validation.Error{Field: "params", Message: i18n.T(i18n.ErrorsPresetParamsInvalid, map[string]any{"Detail": err.Error()})}
+		return inbound{}, paramsRefusal(err)
 	}
 	if in.retireSecrets {
 		for _, s := range p.SecretParams() {
@@ -273,4 +273,21 @@ func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (*e
 		return nil, missing(err)
 	}
 	return row, nil
+}
+
+// paramsRefusal refuses params the Preset's schema does not accept, each failure on the field of
+// its param (params.<name>) so a form shows it there; a failure of the params as a whole is on
+// params.
+func paramsRefusal(err error) error {
+	fields := map[string][]string{}
+	for name, messages := range preset.ParamErrors(err) {
+		field, id := "params", i18n.ErrorsPresetParamsInvalid
+		if name != "" {
+			field, id = "params."+name, i18n.ErrorsPresetParamInvalid
+		}
+		for _, m := range messages {
+			fields[field] = append(fields[field], i18n.T(id, map[string]any{"Detail": m}))
+		}
+	}
+	return &validation.FieldsError{Fields: fields}
 }

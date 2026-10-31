@@ -1,18 +1,9 @@
-import {
-  Alert,
-  Button,
-  Code,
-  CopyButton,
-  Group,
-  JsonInput,
-  Modal,
-  Select,
-  Spoiler,
-  Stack,
-  Text,
-} from '@mantine/core'
+import { Alert, Button, Code, CopyButton, Group, Modal, Select, Stack, Text } from '@mantine/core'
 import { modals } from '@mantine/modals'
+import { Form } from '@rjsf/mantine'
+import { customizeValidator } from '@rjsf/validator-ajv8'
 import { useQuery } from '@tanstack/react-query'
+import { Ajv2020 } from 'ajv/dist/2020.js'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -22,8 +13,25 @@ import {
   siteIntegrationsUpdateMutation,
   sitePresetsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteIntegrationResource, SitePresetResource } from '../../generated/site/types.gen.ts'
+import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import {
+  formSchema,
+  formUi,
+  formValues,
+  paramsToSave,
+  savedSecrets,
+  serverErrors,
+} from './presetParams.ts'
+import type { PresetParams } from './presetParams.ts'
+
+// A Preset's params are full JSON Schema 2020-12 (a custom Preset may use any of it), so the form
+// validates by an Ajv of that draft, set up as rjsf sets up its own. The server stays the
+// authority: its refusal lands on the fields too.
+const validator = customizeValidator<PresetParams>({
+  extenderFn: () =>
+    new Ajv2020({ allErrors: true, multipleOfPrecision: 8, strict: false, verbose: true }),
+})
 
 interface InboundModalProps {
   workspaceId: string
@@ -32,8 +40,8 @@ interface InboundModalProps {
 }
 
 // The inbound side of an Integration (ADR 0037): its hook URL, the Preset its provider
-// callbacks are read with and that Preset's params. The params are still a JSON editor: ADR 0066
-// asks for a form generated from the schema.
+// callbacks are read with and that Preset's params, in a form generated from the Preset's schema
+// (ADR 0066).
 export function InboundModal({ workspaceId, integration, onClose }: InboundModalProps) {
   const { t } = useTranslation()
   return (
@@ -50,30 +58,6 @@ export function InboundModal({ workspaceId, integration, onClose }: InboundModal
   )
 }
 
-// A skeleton of the params: every property of the schema, empty. A secret stays empty:
-// an empty secret means unchanged.
-function skeleton(preset: SitePresetResource | undefined): string {
-  const properties = preset?.paramsSchema.properties
-  const keys = typeof properties === 'object' && properties !== null ? Object.keys(properties) : []
-  return JSON.stringify(Object.fromEntries(keys.map((key) => [key, ''])), null, 2)
-}
-
-function parseParams(text: string): Record<string, unknown> | null {
-  try {
-    const parsed: unknown = JSON.parse(text)
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return null
-    }
-    const values: Record<string, unknown> = {}
-    for (const [key, value] of Object.entries(parsed)) {
-      values[key] = value
-    }
-    return values
-  } catch {
-    return null
-  }
-}
-
 function InboundForm({
   workspaceId,
   integration,
@@ -86,9 +70,12 @@ function InboundForm({
   const presets = presetsQuery.data ?? []
 
   const [preset, setPreset] = useState<string | null>(integration.preset)
-  const [params, setParams] = useState(JSON.stringify(integration.params, null, 2))
+  // The stored params belong to the stored Preset: a change of Preset starts from none.
+  const [values, setValues] = useState<PresetParams>(integration.params)
   const selected = presets.find((p) => p.name === preset)
-  const invalid = preset !== null && parseParams(params) === null
+  const own = preset === integration.preset
+  // Only the stored Preset's secrets have a stored value to keep; no secret carries over.
+  const saved = selected && own ? savedSecrets(selected, integration.params) : new Set<string>()
 
   const invalidate = [siteIntegrationsListQueryKey({ path: { workspaceId } })]
   const saveMutation = useResourceMutation({
@@ -112,20 +99,15 @@ function InboundForm({
 
   const onPresetChange = (value: string | null) => {
     setPreset(value)
-    setParams(
-      value === integration.preset
-        ? JSON.stringify(integration.params, null, 2)
-        : skeleton(presets.find((p) => p.name === value)),
-    )
+    setValues(value === integration.preset ? integration.params : {})
+    saveMutation.reset()
   }
 
-  const onSave = () => {
-    const values = preset === null ? null : parseParams(params)
+  const save = (params?: PresetParams) =>
     saveMutation.mutate({
       path: { workspaceId, id: integration.id },
-      body: values ? { preset, params: values } : { preset },
+      body: params ? { preset, params } : { preset },
     })
-  }
 
   const onRegenerate = () => {
     modals.openConfirmModal({
@@ -181,29 +163,28 @@ function InboundForm({
         onChange={onPresetChange}
       />
 
-      {preset === null ? null : (
-        <>
-          <JsonInput
-            label={t(($) => $.settings.integrations.inbound.params)}
-            description={t(($) => $.settings.integrations.inbound.paramsHint)}
-            validationError={t(($) => $.settings.integrations.inbound.paramsInvalid)}
-            formatOnBlur
-            autosize
-            minRows={4}
-            value={params}
-            onChange={setParams}
-          />
-          {selected ? (
-            <Spoiler
-              maxHeight={0}
-              showLabel={t(($) => $.settings.integrations.inbound.showSchema)}
-              hideLabel={t(($) => $.settings.integrations.inbound.hideSchema)}
-            >
-              <Code block>{JSON.stringify(selected.paramsSchema, null, 2)}</Code>
-            </Spoiler>
-          ) : null}
-        </>
-      )}
+      {selected ? (
+        <Form
+          key={selected.name}
+          schema={formSchema(selected, saved)}
+          uiSchema={formUi(selected, saved, {
+            keep: t(($) => $.settings.integrations.inbound.secretKeep),
+            rotates: t(($) => $.settings.integrations.inbound.secretRotates),
+          })}
+          formData={formValues(selected, values)}
+          validator={validator}
+          showErrorList={false}
+          extraErrors={serverErrors(saveMutation.error)}
+          onChange={({ formData }) => setValues(formData ?? {})}
+          onSubmit={({ formData }) => save(paramsToSave(selected, formData ?? {}))}
+        >
+          <Group justify="flex-end" mt="md">
+            <Button type="submit" loading={saveMutation.isPending}>
+              {t(($) => $.settings.integrations.inbound.save)}
+            </Button>
+          </Group>
+        </Form>
+      ) : null}
 
       {integration.secretsRetiring.length > 0 ? (
         <Alert
@@ -234,11 +215,13 @@ function InboundForm({
         </Alert>
       ) : null}
 
-      <Group justify="flex-end">
-        <Button disabled={invalid} loading={saveMutation.isPending} onClick={onSave}>
-          {t(($) => $.settings.integrations.inbound.save)}
-        </Button>
-      </Group>
+      {preset === null ? (
+        <Group justify="flex-end">
+          <Button loading={saveMutation.isPending} onClick={() => save()}>
+            {t(($) => $.settings.integrations.inbound.save)}
+          </Button>
+        </Group>
+      ) : null}
     </Stack>
   )
 }
