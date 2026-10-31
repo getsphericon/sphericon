@@ -11,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/stepping"
@@ -54,7 +55,7 @@ func TestAnEditWithoutThePublishScopeChangesNothingThatSends(t *testing.T) {
 	ctx := t.Context()
 	editGreeting(t, env.ExternalScoped(t, "automations:read", "automations:write"))
 
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, "job_hijacked", 0, time.Now()))
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}, 0))
 	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID), "the draft's Trigger enrolls nobody")
 	runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
 	run, err := env.DB.AutomationRun.Get(ctx, runID)
@@ -82,7 +83,7 @@ func TestAfterPublishTheNextEnrollmentFollowsTheNewVersion(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.AutomationResource{}, res)
 
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactBobID, "job_hijacked", 0, time.Now()))
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactBobID, automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}, 0))
 	next := enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactBobID)
 	require.Len(t, next, 1, "the published Trigger enrolls")
 

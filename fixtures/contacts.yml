@@ -288,6 +288,14 @@
   workspace_id: 1
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
+# The triggering Event's properties in Automation steps (#752): its stored payment_failed and
+# http_demo Events carry properties an Enrollment copies (events.yml). Enrolled in nothing.
+- id: 133 # fixture: ContactPaymentFailed
+  email: payment.failed@codebasics.dev
+  first_name: Dana
+  workspace_id: 1
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
 
 # Globex (workspace 2): the foreign contact the isolation tests reference and replant.
 - id: 900 # fixture: ContactGlobex

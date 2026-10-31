@@ -205,19 +205,19 @@ func TestEnrollOnTriggerEnrollsOnlyWhileActiveOnThatTrigger(t *testing.T) {
 	_, err = m.Publish(ctx, s, fixtures.AutomationHoldDemoID)
 	require.NoError(t, err)
 
-	_, enrolled, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, "hold_demo", time.Now())
+	_, enrolled, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, automations.Origin{Action: "hold_demo", OccurredAt: time.Now()})
 	require.NoError(t, err)
 	assert.False(t, enrolled, "the Trigger it was picked by is no longer live")
 
 	_, err = m.Deactivate(ctx, s, fixtures.AutomationHoldDemoID)
 	require.NoError(t, err)
-	_, enrolled, err = automations.EnrollOnTrigger(ctx, s, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, "hold_demo_moved", time.Now())
+	_, enrolled, err = automations.EnrollOnTrigger(ctx, s, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, automations.Origin{Action: "hold_demo_moved", OccurredAt: time.Now()})
 	require.NoError(t, err)
 	assert.False(t, enrolled, "an inactive Automation enrolls nobody")
 
 	_, err = m.Publish(ctx, s, fixtures.AutomationHoldDemoID)
 	require.NoError(t, err)
-	_, enrolled, err = automations.EnrollOnTrigger(ctx, s, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, "hold_demo_moved", time.Now())
+	_, enrolled, err = automations.EnrollOnTrigger(ctx, s, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, automations.Origin{Action: "hold_demo_moved", OccurredAt: time.Now()})
 	require.NoError(t, err)
 	assert.True(t, enrolled, "active on that Trigger, it enrolls the Contact the refusals left alone")
 }

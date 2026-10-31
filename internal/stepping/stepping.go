@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/riverqueue/river"
@@ -67,27 +68,33 @@ func (RunHTTPStepArgs) InsertOpts() river.InsertOpts {
 // (ADR 0065), one transaction per Automation (EnrollOnTrigger). An Event from an Automation's own
 // email (sourceAutomationID, 0 for any other Event) never enrolls the Contact into that Automation,
 // so an open-triggered Automation cannot feed itself (ADR 0053); it still ends an Enrollment, so a
-// click in the Automation's own email can be its goal. occurredAt is when the Event occurred; a
-// zero one (the job of a release before #751 carried none) is taken as now.
-func OnEvent(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64, action string, sourceAutomationID int64, occurredAt time.Time) error {
-	if occurredAt.IsZero() {
-		occurredAt = time.Now()
+// click in the Automation's own email can be its goal. ev.OccurredAt is when the Event occurred; a
+// zero one (the job of a release before #751 carried none) is taken as now. Every Enrollment it
+// makes copies the stored Event's action and properties, read once (automations.OriginOf, #752).
+func OnEvent(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64, ev automations.Event, sourceAutomationID int64) error {
+	if ev.OccurredAt.IsZero() {
+		ev.OccurredAt = time.Now()
 	}
 	err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		return automations.EndOnEvent(ctx, ts, contactID, action, occurredAt)
+		return automations.EndOnEvent(ctx, ts, contactID, ev.Action, ev.OccurredAt)
 	})
 	if err != nil {
 		return err
 	}
-	triggered, err := automations.TriggeredBy(ctx, s, action)
+	triggered, err := automations.TriggeredBy(ctx, s, ev.Action)
+	if err != nil {
+		return err
+	}
+	triggered = slices.DeleteFunc(triggered, func(id int64) bool { return id == sourceAutomationID })
+	if len(triggered) == 0 {
+		return nil
+	}
+	origin, err := automations.OriginOf(ctx, s, ev)
 	if err != nil {
 		return err
 	}
 	for _, automationID := range triggered {
-		if automationID == sourceAutomationID {
-			continue
-		}
-		if _, err := EnrollOnTrigger(ctx, bus, s, automationID, contactID, action, occurredAt); err != nil {
+		if _, err := EnrollOnTrigger(ctx, bus, s, automationID, contactID, origin); err != nil {
 			return err
 		}
 	}
@@ -106,12 +113,12 @@ func EnrollOnRule(ctx context.Context, bus *events.Bus, s *ent.Scoped, automatio
 	})
 }
 
-// EnrollOnTrigger is EnrollOnRule for an Event with the action that occurred at occurredAt: it
-// enrolls nobody unless, when the Enrollment is made, the Automation is still active and started
-// by that action in its live version (automations.EnrollOnTrigger).
-func EnrollOnTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64, action string, occurredAt time.Time) (made bool, err error) {
+// EnrollOnTrigger is EnrollOnRule for the Event of the Origin (automations.OriginOf): it enrolls
+// nobody unless, when the Enrollment is made, the Automation is still active and started by that
+// Event's action in its live version (automations.EnrollOnTrigger).
+func EnrollOnTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64, o automations.Origin) (made bool, err error) {
 	return start(ctx, bus, s, func(ts *ent.Scoped) (int64, bool, error) {
-		return automations.EnrollOnTrigger(ctx, ts, automationID, contactID, action, occurredAt)
+		return automations.EnrollOnTrigger(ctx, ts, automationID, contactID, o)
 	})
 }
 

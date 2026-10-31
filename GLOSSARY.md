@@ -428,8 +428,11 @@ _Avoid_: Stop condition, exit criteria, conversion
 **Enrollment**:
 One Contact's membership-and-progress in one Automation — enrolled at most once ever
 (re-enrollment is deliberately out of scope). It begins when its triggering Event occurred (when a
-Rule enrolls, the Event the Rule fired on). Stands on one **Automation version** (the one live when
-it was made) and holds the current step in it, and a terminal state:
+Rule enrolls, the Event the Rule fired on). It keeps a copy of that Event's action and properties,
+taken when it begins and never changed, which every email and HTTP step renders as `event` (the
+shape a Rule's HTTP action binds); an Enrollment no Event began has an empty `event`. Stands on one
+**Automation version** (the one live when it was made) and holds the current step in it, and a
+terminal state:
 `completed`, `failed`, **`exited`** (left early) or **`goal_reached`** (its goal event was recorded).
 An unsubscribe from the Automation has two
 effects from one action — it records the durable opt-out (scope `automation:<id>`) _and_ moves

@@ -31,6 +31,10 @@ const (
 	FieldStatus = "status"
 	// FieldBeganAt holds the string denoting the began_at field in the database.
 	FieldBeganAt = "began_at"
+	// FieldEventAction holds the string denoting the event_action field in the database.
+	FieldEventAction = "event_action"
+	// FieldEventProperties holds the string denoting the event_properties field in the database.
+	FieldEventProperties = "event_properties"
 	// FieldCurrentStep holds the string denoting the current_step field in the database.
 	FieldCurrentStep = "current_step"
 	// FieldResumeAt holds the string denoting the resume_at field in the database.
@@ -92,6 +96,8 @@ var Columns = []string{
 	FieldVersionID,
 	FieldStatus,
 	FieldBeganAt,
+	FieldEventAction,
+	FieldEventProperties,
 	FieldCurrentStep,
 	FieldResumeAt,
 	FieldFailureKind,
@@ -225,6 +231,11 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByBeganAt orders the results by the began_at field.
 func ByBeganAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBeganAt, opts...).ToFunc()
+}
+
+// ByEventAction orders the results by the event_action field.
+func ByEventAction(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEventAction, opts...).ToFunc()
 }
 
 // ByCurrentStep orders the results by the current_step field.

@@ -49,12 +49,13 @@ type DryRunResult struct {
 	Detail    string
 }
 
-// RenderBody renders an HTTP step's Liquid body for a Contact (nil: no bindings)
-// and checks the result is valid JSON within the size limit. The Contact's strings
-// are JSON-escaped in the bindings themselves, so a value holding quotes cannot
-// change the structure.
-func RenderBody(body string, c *ent.Contact) (string, error) {
-	return httpcall.RenderBody(body, outbound.Bindings(c, nil))
+// RenderBody renders an HTTP step's Liquid body for a Contact (nil: no Contact bindings) and an
+// Enrollment run (nil: an empty `event`), and checks the result is valid JSON within the size
+// limit. It binds the Contact's fields and `event`, the copy of the Event the Enrollment began on
+// (#752), as a Rule's http Action binds the Event it fired on. Their strings are JSON-escaped in
+// the bindings themselves, so a value holding quotes cannot change the structure.
+func RenderBody(body string, c *ent.Contact, run *ent.AutomationRun) (string, error) {
+	return httpcall.RenderBody(body, outbound.Bindings(c, outbound.EnrollmentVariables(run)))
 }
 
 func bodyDetail(err error) string {
@@ -62,7 +63,7 @@ func bodyDetail(err error) string {
 }
 
 // DryRun renders a body for a Contact of the Workspace and validates it without
-// calling anything.
+// calling anything. No Enrollment stands behind it, so its `event` is empty.
 func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, contactID int64, body string) (DryRunResult, error) {
 	c, err := s.Contact().Get(ctx, contactID)
 	if ent.IsNotFound(err) {
@@ -71,7 +72,7 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, contactID int64, bod
 	if err != nil {
 		return DryRunResult{}, err
 	}
-	out, err := RenderBody(body, c)
+	out, err := RenderBody(body, c, nil)
 	if err != nil {
 		return DryRunResult{ErrorKind: ErrorKindInvalidBody, Detail: bodyDetail(err)}, nil
 	}

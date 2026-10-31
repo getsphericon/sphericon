@@ -76,8 +76,16 @@ func TestExternalContactsEraseNeedsTheEraseScope(t *testing.T) {
 func TestExternalContactsEraseRemovesThePersonsData(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
+	// An Enrollment's copy of the Event it began on (#752) is of the Contact's runs alone.
+	copies := env.DB.AutomationRun.Query().Where(automationrun.WorkspaceID(fixtures.InitechID), automationrun.EventPropertiesNotNil())
+	copiedBefore, err := copies.Clone().Exist(ctx)
+	require.NoError(t, err)
+	require.True(t, copiedBefore, "the erasable run holds a copy of its triggering Event")
 
 	eraseErasable(t, env)
+	copiedAfter, err := copies.Clone().Exist(ctx)
+	require.NoError(t, err)
+	assert.False(t, copiedAfter, "no copy of the triggering Event's properties is left")
 
 	// Removed outright: the Contact, its Visitors, Tag links, Confirmation, runs.
 	n, err := env.DB.Visitor.Query().Where(visitor.ID(300)).Count(ctx)

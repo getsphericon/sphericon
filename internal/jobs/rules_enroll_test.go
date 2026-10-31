@@ -67,7 +67,8 @@ func TestRuleActionSkipsAContactAlreadyEnrolled(t *testing.T) {
 
 // A Rule's Enrollment begins when the Event the Rule fired on occurred (#751), not when the
 // Actions job runs: the Contact paid after that Event, so the Enrollment is made already at its
-// goal, the Action succeeded and no step is queued.
+// goal, the Action succeeded and no step is queued. It keeps that Event's action and properties
+// (#752), as the Rule's own http Action binds them.
 func TestARuleEnrollmentBeginsWhenTheEventTheRuleFiredOnOccurred(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -86,4 +87,6 @@ func TestARuleEnrollmentBeginsWhenTheEventTheRuleFiredOnOccurred(t *testing.T) {
 	assert.Equal(t, automationrun.StatusGoalReached, run.Status)
 	assert.WithinDuration(t, *fired.OccurredAt, run.BeganAt, time.Microsecond)
 	assert.Empty(t, steps, "no step runs after the goal")
+	assert.Equal(t, new(fixtures.EventRecoveryRuleTriggerAction), run.EventAction)
+	assert.Equal(t, fired.Properties, run.EventProperties)
 }

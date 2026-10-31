@@ -358,6 +358,12 @@ func (_u *AutomationRunUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(automationrun.FieldStatus, field.TypeEnum, value)
 	}
+	if _u.mutation.EventActionCleared() {
+		_spec.ClearField(automationrun.FieldEventAction, field.TypeString)
+	}
+	if _u.mutation.EventPropertiesCleared() {
+		_spec.ClearField(automationrun.FieldEventProperties, field.TypeJSON)
+	}
 	if value, ok := _u.mutation.CurrentStep(); ok {
 		_spec.SetField(automationrun.FieldCurrentStep, field.TypeInt, value)
 	}
@@ -883,6 +889,12 @@ func (_u *AutomationRunUpdateOne) sqlSave(ctx context.Context) (_node *Automatio
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(automationrun.FieldStatus, field.TypeEnum, value)
+	}
+	if _u.mutation.EventActionCleared() {
+		_spec.ClearField(automationrun.FieldEventAction, field.TypeString)
+	}
+	if _u.mutation.EventPropertiesCleared() {
+		_spec.ClearField(automationrun.FieldEventProperties, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.CurrentStep(); ok {
 		_spec.SetField(automationrun.FieldCurrentStep, field.TypeInt, value)

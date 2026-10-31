@@ -242,7 +242,7 @@ func TestEvaluateSeesAnOversizedEventsPropertiesAsAbsent(t *testing.T) {
 	fired, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
 		ContactID: fixtures.ContactAliceID, Action: "rule_url", SourceID: "evt-oversized",
 		RecordedAt: time.Now(),
-		Properties: map[string]any{"url": "https://x.test/pricing", "pad": strings.Repeat("x", events.RulePropertiesBound)},
+		Properties: map[string]any{"url": "https://x.test/pricing", "pad": strings.Repeat("x", events.PropertiesBound)},
 	})
 
 	require.NoError(t, err)

@@ -54,6 +54,20 @@ func (AutomationRun) Fields() []ent.Field {
 			Default(time.Now).
 			Immutable().
 			Annotations(entsql.Default("CURRENT_TIMESTAMP")),
+		// The triggering Event the steps bind as `event` (#752): its action and its properties,
+		// copied at Enroll from the Event that began the Enrollment (the Event a Rule fired on,
+		// when a Rule's Action enrolled) and never changed. A snapshot, not a reference to the
+		// Event: Retention (ADR 0019) may remove the Event during a long wait, and the copy stays.
+		// The properties are bounded as a Rule sees them (events.BoundedProperties): none when the
+		// Event weighed more. Both are empty for an Enrollment no Event began. Personal data: they
+		// go with the row on Erasure (ADR 0021).
+		field.String("event_action").
+			Optional().
+			Nillable().
+			Immutable(),
+		field.JSON("event_properties", map[string]any{}).
+			Optional().
+			Immutable(),
 		field.Int("current_step").
 			Default(0).
 			NonNegative(),

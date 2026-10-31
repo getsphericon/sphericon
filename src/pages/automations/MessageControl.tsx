@@ -32,9 +32,11 @@ export function MessageControl(props: ControlProps) {
       </Button>
       <Modal opened={opened} onClose={() => setOpened(false)} title={label} size="xl">
         <Stack>
+          {/* An Automation's message also binds the Event its Enrollment began on (#752). */}
           <MessageEditor
             doc={doc}
             body={body}
+            eventTags
             onChange={(edit) => {
               if ('doc' in edit) {
                 props.handleChange('doc', z.encode(docCodec, edit.doc))

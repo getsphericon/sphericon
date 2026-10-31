@@ -101,13 +101,13 @@ func TestRulesConsumerSkipsHistoryAndAuditEntries(t *testing.T) {
 	assert.Empty(t, env.JobsOf(t, jobkind.RuleEvaluate.Kind))
 }
 
-// An Event heavier than RulePropertiesBound is queued without its properties.
+// An Event heavier than PropertiesBound is queued without its properties.
 func TestRulesConsumerQueuesAnOversizedEventWithoutItsProperties(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	require.NoError(t, events.RulesConsumer(env.DB, queueingJobs(t, env))(msgFor(t, &events.CollectedEvent{
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, SubjectID: "alice", Action: "rule_click",
-		Properties: map[string]any{"pad": strings.Repeat("x", events.RulePropertiesBound)},
+		Properties: map[string]any{"pad": strings.Repeat("x", events.PropertiesBound)},
 	})))
 
 	queued := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
@@ -115,9 +115,9 @@ func TestRulesConsumerQueuesAnOversizedEventWithoutItsProperties(t *testing.T) {
 	assert.NotContains(t, queued[0], "properties")
 }
 
-func TestRulePropertiesKeepsWhatFitsTheBoundAndDropsWhatDoesNot(t *testing.T) {
+func TestBoundedPropertiesKeepsWhatFitsTheBoundAndDropsWhatDoesNot(t *testing.T) {
 	small := map[string]any{"url": "https://x.test"}
-	large := map[string]any{"pad": strings.Repeat("x", events.RulePropertiesBound)}
+	large := map[string]any{"pad": strings.Repeat("x", events.PropertiesBound)}
 
 	for name, tc := range map[string]struct{ in, want map[string]any }{
 		"none":      {in: nil, want: nil},
@@ -125,7 +125,7 @@ func TestRulePropertiesKeepsWhatFitsTheBoundAndDropsWhatDoesNot(t *testing.T) {
 		"too large": {in: large, want: nil},
 	} {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.want, events.RuleProperties(tc.in))
+			assert.Equal(t, tc.want, events.BoundedProperties(tc.in))
 		})
 	}
 }

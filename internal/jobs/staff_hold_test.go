@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
@@ -68,7 +69,7 @@ func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	clock := &holdClock{t: time.Now()}
 	fs := &fakeSender{}
 
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0, time.Now()))
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
 	runIDs := enrollmentsOf(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactHoldDemoID)
 	require.Len(t, runIDs, 1)
 	setHold(t, env, clock.t.Add(time.Hour))

@@ -71,7 +71,7 @@ func TestAnEventThatOccurredBeforeTheEnrollmentBeganEndsNothing(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
 	triggered := time.Now().Add(-time.Hour)
-	runID, _, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID, c.ID, "payment_failed", triggered)
+	runID, _, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID, c.ID, automations.Origin{Action: "payment_failed", OccurredAt: triggered})
 	require.NoError(t, err)
 
 	require.NoError(t, automations.EndOnEvent(ctx, s, c.ID, recoveryGoal, triggered.Add(-time.Second)))
@@ -91,7 +91,7 @@ func TestAnEventAfterTheTriggerEndsAnEnrollmentMadeAfterIt(t *testing.T) {
 	c := enrollable(t, s, 0)
 	triggered := time.Now().Add(-2 * time.Minute)
 	paid := triggered.Add(time.Minute)
-	runID, enrolled, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID, c.ID, "payment_failed", triggered)
+	runID, enrolled, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID, c.ID, automations.Origin{Action: "payment_failed", OccurredAt: triggered})
 	require.NoError(t, err)
 	require.True(t, enrolled)
 	run, err := env.DB.AutomationRun.Get(ctx, runID)
@@ -129,11 +129,11 @@ func TestAnEnrollmentIsMadeEndedByAnExitOrGoalEventRecordedSinceTheTrigger(t *te
 			s := env.DB.Scoped(fixtures.AcmeID)
 
 			runID, enrolled, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID,
-				fixtures.ContactPaidBeforeEnrolledID, "payment_failed", time.Now().Add(-tc.triggered))
+				fixtures.ContactPaidBeforeEnrolledID, automations.Origin{Action: "payment_failed", OccurredAt: time.Now().Add(-tc.triggered)})
 			require.NoError(t, err)
 			status := statusOf(t, env, runID)
 			againID, _, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID,
-				fixtures.ContactPaidBeforeEnrolledID, "payment_failed", time.Now())
+				fixtures.ContactPaidBeforeEnrolledID, automations.Origin{Action: "payment_failed", OccurredAt: time.Now()})
 			require.NoError(t, err)
 
 			assert.Equal(t, tc.wantEnrolled, enrolled, "a step is to run")

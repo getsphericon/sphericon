@@ -33,50 +33,99 @@ import (
 // Enrollment looked for it, would be missed by both: the Enrollment would walk its steps after the
 // payment it was waiting for.
 
-// Enroll starts an Enrollment of the Contact in the Automation, beginning now, and returns its run
-// id. runID is 0, and nothing is made, when the Contact has been enrolled before (the common
-// trigger-replay path) or another request won the race. enrolled says that a step is to run: it is
-// false too for an Enrollment made already ended (enroll). The Contact's lock is held to the end
-// of the transaction s is bound to.
+// Event is an Event the Automations react to, as its trigger job hands it on (#751, #752): its
+// action, the id its row is stored under (events.Envelope.SourceID; empty in a job of a release
+// before #752) and when it occurred.
+type Event struct {
+	Action     string
+	SourceID   string
+	OccurredAt time.Time
+}
+
+// Origin is what an Enrollment keeps of the Event it began on: when it occurred (began_at), and its
+// action and properties, which every step binds as `event` (#752). An Origin with only OccurredAt
+// is an Enrollment no Event began: its `event` is empty.
+type Origin struct {
+	Action     string
+	OccurredAt time.Time
+	Properties map[string]any
+}
+
+// OriginOf is the Origin of an Event: its action and occurred_at, and the properties of the row
+// stored with its source id, bounded as a Rule sees them (events.BoundedProperties). The row is
+// stored before the trigger job is queued (#751); a job without a source id, or an Event no longer
+// stored (Retention or an Erasure removed it), gives no properties.
+func OriginOf(ctx context.Context, s *ent.Scoped, ev Event) (Origin, error) {
+	o := Origin{Action: ev.Action, OccurredAt: ev.OccurredAt}
+	stored, err := storedEvent(ctx, s, ev.SourceID)
+	if err != nil || stored == nil {
+		return o, err
+	}
+	o.Properties = events.BoundedProperties(stored.Properties)
+	return o, nil
+}
+
+// storedEvent is the Event stored with sourceID, nil when there is none.
+func storedEvent(ctx context.Context, s *ent.Scoped, sourceID string) (*ent.Event, error) {
+	if sourceID == "" {
+		return nil, nil
+	}
+	stored, err := s.Event().Query().Where(event.SourceID(sourceID)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	return stored, err
+}
+
+// Enroll starts an Enrollment of the Contact in the Automation that no Event began: it begins now
+// and its `event` is empty. It returns its run id. runID is 0, and nothing is made, when the
+// Contact has been enrolled before (the common trigger-replay path) or another request won the
+// race. enrolled says that a step is to run: it is false too for an Enrollment made already ended
+// (enroll). The Contact's lock is held to the end of the transaction s is bound to.
 func Enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (runID int64, enrolled bool, err error) {
-	return enroll(ctx, s, automationID, contactID, time.Now(), admitsAll)
+	return enroll(ctx, s, automationID, contactID, Origin{OccurredAt: time.Now()}, admitsAll)
 }
 
 // EnrollOnRule enrolls the Contact as Enroll does, for a Rule that fired on the Event stored with
-// sourceID (the Firing's source_id): the Enrollment began when that Event occurred, or now when no
-// such Event is stored any more (Retention or an Erasure removed it).
+// sourceID (the Firing's source_id): the Enrollment began when that Event occurred and keeps its
+// action and properties, as the Rule's own http Action binds them (#752). When no such Event is
+// stored any more (Retention or an Erasure removed it), it begins now and its `event` is empty.
 func EnrollOnRule(ctx context.Context, s *ent.Scoped, automationID, contactID int64, sourceID string) (runID int64, enrolled bool, err error) {
-	fired, err := s.Event().Query().Where(event.SourceID(sourceID)).Only(ctx)
-	if err != nil && !ent.IsNotFound(err) {
+	fired, err := storedEvent(ctx, s, sourceID)
+	if err != nil {
 		return 0, false, err
 	}
-	began := time.Now()
-	if fired != nil && fired.OccurredAt != nil {
-		began = *fired.OccurredAt
+	o := Origin{OccurredAt: time.Now()}
+	if fired != nil {
+		o.Action, o.Properties = fired.Action, events.BoundedProperties(fired.Properties)
+		if fired.OccurredAt != nil {
+			o.OccurredAt = *fired.OccurredAt
+		}
 	}
-	return enroll(ctx, s, automationID, contactID, began, admitsAll)
+	return enroll(ctx, s, automationID, contactID, o, admitsAll)
 }
 
-// EnrollOnTrigger enrolls the Contact as Enroll does, for an Event with the action that occurred at
-// occurredAt: the Enrollment began then (#751). The trigger consumer picks the Automations before
-// it enrolls, so a Publish that moved the Trigger, a Deactivate or an Archive may have landed
-// since: under the lock it enrolls nobody (runID 0) unless the Automation is still kept, active and
-// started by the action in its live version.
-func EnrollOnTrigger(ctx context.Context, s *ent.Scoped, automationID, contactID int64, action string, occurredAt time.Time) (runID int64, enrolled bool, err error) {
-	return enroll(ctx, s, automationID, contactID, occurredAt, func(a *ent.Automation) bool {
+// EnrollOnTrigger enrolls the Contact as Enroll does, for the Event of the Origin (OriginOf): the
+// Enrollment began when it occurred (#751) and keeps its action and properties (#752). The trigger
+// consumer picks the Automations before it enrolls, so a Publish that moved the Trigger, a
+// Deactivate or an Archive may have landed since: under the lock it enrolls nobody (runID 0) unless
+// the Automation is still kept, active and started by the action in its live version.
+func EnrollOnTrigger(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o Origin) (runID int64, enrolled bool, err error) {
+	return enroll(ctx, s, automationID, contactID, o, func(a *ent.Automation) bool {
 		live := a.Edges.LiveVersion
-		return a.DiscardedAt == nil && a.Status == automation.StatusActive && live != nil && live.TriggerEvent == action
+		return a.DiscardedAt == nil && a.Status == automation.StatusActive && live != nil && live.TriggerEvent == o.Action
 	})
 }
 
 func admitsAll(*ent.Automation) bool { return true }
 
-// enroll makes the Enrollment that began at began when admits, called under the share lock with
-// the Automation and its live version, accepts it. An exit or goal Event of the live version
-// recorded for the Contact since began may have been handled before the Enrollment existed, with
-// nothing to end then: the Enrollment is made already ended by the first of them (exited or
-// goal_reached, so it counts and the Contact stays enrolled once ever), and no step is to run.
-func enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64, began time.Time, admits func(*ent.Automation) bool) (runID int64, enrolled bool, err error) {
+// enroll makes the Enrollment that began on the Event of o when admits, called under the share lock
+// with the Automation and its live version, accepts it, and copies o's action and properties onto it
+// (#752). An exit or goal Event of the live version recorded for the Contact since o occurred may
+// have been handled before the Enrollment existed, with nothing to end then: the Enrollment is made
+// already ended by the first of them (exited or goal_reached, so it counts and the Contact stays
+// enrolled once ever), and no step is to run.
+func enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o Origin, admits func(*ent.Automation) bool) (runID int64, enrolled bool, err error) {
 	locked, err := lockContact(ctx, s, contactID)
 	if err != nil {
 		return 0, false, err
@@ -114,16 +163,22 @@ func enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64, b
 	if !admits(a) {
 		return 0, false, nil
 	}
-	ending, ended, err := endedSince(ctx, s, a.Edges.LiveVersion, contactID, began)
+	ending, ended, err := endedSince(ctx, s, a.Edges.LiveVersion, contactID, o.OccurredAt)
 	if err != nil {
 		return 0, false, err
 	}
-	run, err := s.AutomationRun().Create().
+	create := s.AutomationRun().Create().
 		SetAutomationID(automationID).
 		SetVersionID(*a.LiveVersionID).
 		SetContactID(contactID).
-		SetBeganAt(began).
-		Save(ctx)
+		SetBeganAt(o.OccurredAt)
+	if o.Action != "" {
+		create.SetEventAction(o.Action)
+	}
+	if len(o.Properties) > 0 {
+		create.SetEventProperties(o.Properties)
+	}
+	run, err := create.Save(ctx)
 	if ent.IsConstraintError(err) {
 		return 0, false, nil // lost an enrollment race
 	}

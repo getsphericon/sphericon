@@ -4589,6 +4589,8 @@ type AutomationRunMutation struct {
 	updated_at        *time.Time
 	status            *automationrun.Status
 	began_at          *time.Time
+	event_action      *string
+	event_properties  *map[string]interface{}
 	current_step      *int
 	addcurrent_step   *int
 	resume_at         *time.Time
@@ -5000,6 +5002,104 @@ func (m *AutomationRunMutation) OldBeganAt(ctx context.Context) (v time.Time, er
 // ResetBeganAt resets all changes to the "began_at" field.
 func (m *AutomationRunMutation) ResetBeganAt() {
 	m.began_at = nil
+}
+
+// SetEventAction sets the "event_action" field.
+func (m *AutomationRunMutation) SetEventAction(s string) {
+	m.event_action = &s
+}
+
+// EventAction returns the value of the "event_action" field in the mutation.
+func (m *AutomationRunMutation) EventAction() (r string, exists bool) {
+	v := m.event_action
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEventAction returns the old "event_action" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldEventAction(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEventAction is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEventAction requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEventAction: %w", err)
+	}
+	return oldValue.EventAction, nil
+}
+
+// ClearEventAction clears the value of the "event_action" field.
+func (m *AutomationRunMutation) ClearEventAction() {
+	m.event_action = nil
+	m.clearedFields[automationrun.FieldEventAction] = struct{}{}
+}
+
+// EventActionCleared returns if the "event_action" field was cleared in this mutation.
+func (m *AutomationRunMutation) EventActionCleared() bool {
+	_, ok := m.clearedFields[automationrun.FieldEventAction]
+	return ok
+}
+
+// ResetEventAction resets all changes to the "event_action" field.
+func (m *AutomationRunMutation) ResetEventAction() {
+	m.event_action = nil
+	delete(m.clearedFields, automationrun.FieldEventAction)
+}
+
+// SetEventProperties sets the "event_properties" field.
+func (m *AutomationRunMutation) SetEventProperties(value map[string]interface{}) {
+	m.event_properties = &value
+}
+
+// EventProperties returns the value of the "event_properties" field in the mutation.
+func (m *AutomationRunMutation) EventProperties() (r map[string]interface{}, exists bool) {
+	v := m.event_properties
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEventProperties returns the old "event_properties" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldEventProperties(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEventProperties is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEventProperties requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEventProperties: %w", err)
+	}
+	return oldValue.EventProperties, nil
+}
+
+// ClearEventProperties clears the value of the "event_properties" field.
+func (m *AutomationRunMutation) ClearEventProperties() {
+	m.event_properties = nil
+	m.clearedFields[automationrun.FieldEventProperties] = struct{}{}
+}
+
+// EventPropertiesCleared returns if the "event_properties" field was cleared in this mutation.
+func (m *AutomationRunMutation) EventPropertiesCleared() bool {
+	_, ok := m.clearedFields[automationrun.FieldEventProperties]
+	return ok
+}
+
+// ResetEventProperties resets all changes to the "event_properties" field.
+func (m *AutomationRunMutation) ResetEventProperties() {
+	m.event_properties = nil
+	delete(m.clearedFields, automationrun.FieldEventProperties)
 }
 
 // SetCurrentStep sets the "current_step" field.
@@ -5417,7 +5517,7 @@ func (m *AutomationRunMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationRunMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, automationrun.FieldCreatedAt)
 	}
@@ -5441,6 +5541,12 @@ func (m *AutomationRunMutation) Fields() []string {
 	}
 	if m.began_at != nil {
 		fields = append(fields, automationrun.FieldBeganAt)
+	}
+	if m.event_action != nil {
+		fields = append(fields, automationrun.FieldEventAction)
+	}
+	if m.event_properties != nil {
+		fields = append(fields, automationrun.FieldEventProperties)
 	}
 	if m.current_step != nil {
 		fields = append(fields, automationrun.FieldCurrentStep)
@@ -5481,6 +5587,10 @@ func (m *AutomationRunMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case automationrun.FieldBeganAt:
 		return m.BeganAt()
+	case automationrun.FieldEventAction:
+		return m.EventAction()
+	case automationrun.FieldEventProperties:
+		return m.EventProperties()
 	case automationrun.FieldCurrentStep:
 		return m.CurrentStep()
 	case automationrun.FieldResumeAt:
@@ -5516,6 +5626,10 @@ func (m *AutomationRunMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldStatus(ctx)
 	case automationrun.FieldBeganAt:
 		return m.OldBeganAt(ctx)
+	case automationrun.FieldEventAction:
+		return m.OldEventAction(ctx)
+	case automationrun.FieldEventProperties:
+		return m.OldEventProperties(ctx)
 	case automationrun.FieldCurrentStep:
 		return m.OldCurrentStep(ctx)
 	case automationrun.FieldResumeAt:
@@ -5590,6 +5704,20 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBeganAt(v)
+		return nil
+	case automationrun.FieldEventAction:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEventAction(v)
+		return nil
+	case automationrun.FieldEventProperties:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEventProperties(v)
 		return nil
 	case automationrun.FieldCurrentStep:
 		v, ok := value.(int)
@@ -5683,6 +5811,12 @@ func (m *AutomationRunMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *AutomationRunMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(automationrun.FieldEventAction) {
+		fields = append(fields, automationrun.FieldEventAction)
+	}
+	if m.FieldCleared(automationrun.FieldEventProperties) {
+		fields = append(fields, automationrun.FieldEventProperties)
+	}
 	if m.FieldCleared(automationrun.FieldResumeAt) {
 		fields = append(fields, automationrun.FieldResumeAt)
 	}
@@ -5709,6 +5843,12 @@ func (m *AutomationRunMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *AutomationRunMutation) ClearField(name string) error {
 	switch name {
+	case automationrun.FieldEventAction:
+		m.ClearEventAction()
+		return nil
+	case automationrun.FieldEventProperties:
+		m.ClearEventProperties()
+		return nil
 	case automationrun.FieldResumeAt:
 		m.ClearResumeAt()
 		return nil
@@ -5752,6 +5892,12 @@ func (m *AutomationRunMutation) ResetField(name string) error {
 		return nil
 	case automationrun.FieldBeganAt:
 		m.ResetBeganAt()
+		return nil
+	case automationrun.FieldEventAction:
+		m.ResetEventAction()
+		return nil
+	case automationrun.FieldEventProperties:
+		m.ResetEventProperties()
 		return nil
 	case automationrun.FieldCurrentStep:
 		m.ResetCurrentStep()

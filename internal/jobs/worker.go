@@ -344,6 +344,7 @@ func (c *Client) OnEvent(ctx context.Context, ev events.AutomationEvent) error {
 		Action:             ev.Action,
 		SourceAutomationID: ev.SourceAutomationID,
 		OccurredAt:         ev.Envelope.OccurredAt,
+		SourceID:           ev.Envelope.SourceID(),
 	}, nil)
 	return err
 }

@@ -195,7 +195,7 @@ func (RuleFiring) Fields() []ent.Field {
 		field.Int64("version_id"),
 		// The Event's properties as JSON, for the Actions to template (an http Action's body sees
 		// them as `event.properties`). Personal data: it goes with the Contact on Erasure. Empty
-		// when the Event had none or more than events.RulePropertiesBound, which the Rule's Condition
+		// when the Event had none or more than events.PropertiesBound, which the Rule's Condition
 		// then saw as none too.
 		field.String("properties").
 			Optional().

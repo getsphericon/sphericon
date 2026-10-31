@@ -7,6 +7,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/stepping"
@@ -23,6 +24,11 @@ type EvaluateTriggerArgs struct {
 	// OccurredAt is when the Event happened: it ends only the Enrollments that began by then, and
 	// an Enrollment it makes begins then. Zero in a job of a release before #751 (stepping.OnEvent).
 	OccurredAt time.Time `json:"occurred_at"`
+	// SourceID is the id the Event's row is stored under (events.Envelope.SourceID): an Enrollment
+	// the job makes copies that row's properties (#752). The properties themselves stay on the row,
+	// which Erasure removes, and never ride in the job. Empty in a job of a release before #752: no
+	// properties.
+	SourceID string `json:"source_id,omitempty"`
 }
 
 func (EvaluateTriggerArgs) Kind() string { return jobkind.EvaluateTrigger.Kind }
@@ -54,7 +60,8 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 		return nil // stale or forged job args; never enroll across Workspaces
 	}
 	args := job.Args
-	return stepping.OnEvent(ctx, w.bus, w.ent.Scoped(c.WorkspaceID), c.ID, args.Action, args.SourceAutomationID, args.OccurredAt)
+	ev := automations.Event{Action: args.Action, SourceID: args.SourceID, OccurredAt: args.OccurredAt}
+	return stepping.OnEvent(ctx, w.bus, w.ent.Scoped(c.WorkspaceID), c.ID, ev, args.SourceAutomationID)
 }
 
 // --- run stepping: the adapter of the Enrollment stepping module (internal/stepping) ---

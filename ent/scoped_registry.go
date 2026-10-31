@@ -324,6 +324,12 @@ func ScopedEntities() []ScopedEntity {
 				b.SetVersionID(remap("AutomationVersion", src.VersionID))
 				b.SetStatus(src.Status)
 				b.SetBeganAt(src.BeganAt)
+				if src.EventAction != nil {
+					b.SetEventAction(*src.EventAction)
+				}
+				if !reflect.ValueOf(src.EventProperties).IsZero() {
+					b.SetEventProperties(src.EventProperties)
+				}
 				b.SetCurrentStep(src.CurrentStep)
 				if src.ResumeAt != nil {
 					b.SetResumeAt(*src.ResumeAt)

@@ -120,6 +120,16 @@ type Envelope struct {
 	CausedBy string `json:"causedBy,omitempty"`
 }
 
+// SourceID is the id the Event's row is stored under (events.source_id): the DedupKey when the
+// event carries a natural upstream id, else the envelope ULID. A Firing is unique on it, and a
+// trigger job carries it so an Enrollment can copy the stored Event's properties (#752).
+func (e Envelope) SourceID() string {
+	if e.DedupKey != "" {
+		return e.DedupKey
+	}
+	return e.ID
+}
+
 // Projection is the durable Event-row an event maps to. Each event type computes
 // its own via Project(), so the projection logic lives with the type rather than
 // being flattened by producers.

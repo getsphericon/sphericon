@@ -11,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -110,7 +111,7 @@ func TestEvaluateTriggerEnrollsOnlyMatchingActiveAutomations(t *testing.T) {
 	ctx := context.Background()
 
 	// The greeting's trigger is shared by an active and an inactive automation; Bob is in neither.
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactBobID, triggerOf(t, env, fixtures.AutomationJobsGreetingID), 0, time.Now()))
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactBobID, automations.Event{Action: triggerOf(t, env, fixtures.AutomationJobsGreetingID), OccurredAt: time.Now()}, 0))
 
 	assert.Len(t, enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactBobID), 1)
 	assert.False(t, env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingInactiveID)).ExistX(ctx), "the inactive one enrolled nobody")

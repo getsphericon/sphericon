@@ -250,7 +250,8 @@
     updated_at: '2026-01-01 00:00:00',
   }
 
-# Initech (workspace 3): ContactErasable is mid-sequence.
+# Initech (workspace 3): ContactErasable is mid-sequence, with the copy of the Event it began on
+# (#752), which the Erasure removes with the run.
 - {
     id: 3000, # fixture: AutomationRunErasable
     automation_id: 300,
@@ -258,6 +259,8 @@
     contact_id: 300,
     workspace_id: 3,
     status: active,
+    event_action: invoice_overdue,
+    event_properties: '{"amount":"€120","invoice":"INV-7"}',
     current_step: 0,
     resume_at: '{{daysAhead 1}}',
     created_at: '2026-01-02 00:00:00',

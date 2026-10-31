@@ -85,7 +85,7 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, ruleID, eventID int6
 	if stored.ContactID == nil {
 		return DryRun{Outcome: NoContact}, nil
 	}
-	ev := Event{ContactID: *stored.ContactID, Action: stored.Action, Properties: events.RuleProperties(stored.Properties)}
+	ev := Event{ContactID: *stored.ContactID, Action: stored.Action, Properties: events.BoundedProperties(stored.Properties)}
 
 	// The draft is what the author is editing, so it is what a dry run tries; with none, the live
 	// version (ADR 0065).

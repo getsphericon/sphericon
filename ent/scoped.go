@@ -3610,6 +3610,24 @@ func (x *AutomationRunScopedCreate) SetNillableBeganAt(v *time.Time) *Automation
 	return x
 }
 
+// SetEventAction sets the "event_action" field.
+func (x *AutomationRunScopedCreate) SetEventAction(v string) *AutomationRunScopedCreate {
+	x.b.SetEventAction(v)
+	return x
+}
+
+// SetNillableEventAction sets the "event_action" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableEventAction(v *string) *AutomationRunScopedCreate {
+	x.b.SetNillableEventAction(v)
+	return x
+}
+
+// SetEventProperties sets the "event_properties" field.
+func (x *AutomationRunScopedCreate) SetEventProperties(v map[string]interface{}) *AutomationRunScopedCreate {
+	x.b.SetEventProperties(v)
+	return x
+}
+
 // SetCurrentStep sets the "current_step" field.
 func (x *AutomationRunScopedCreate) SetCurrentStep(v int) *AutomationRunScopedCreate {
 	x.b.SetCurrentStep(v)

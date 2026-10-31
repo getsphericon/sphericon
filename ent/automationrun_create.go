@@ -106,6 +106,26 @@ func (_c *AutomationRunCreate) SetNillableBeganAt(v *time.Time) *AutomationRunCr
 	return _c
 }
 
+// SetEventAction sets the "event_action" field.
+func (_c *AutomationRunCreate) SetEventAction(v string) *AutomationRunCreate {
+	_c.mutation.SetEventAction(v)
+	return _c
+}
+
+// SetNillableEventAction sets the "event_action" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableEventAction(v *string) *AutomationRunCreate {
+	if v != nil {
+		_c.SetEventAction(*v)
+	}
+	return _c
+}
+
+// SetEventProperties sets the "event_properties" field.
+func (_c *AutomationRunCreate) SetEventProperties(v map[string]interface{}) *AutomationRunCreate {
+	_c.mutation.SetEventProperties(v)
+	return _c
+}
+
 // SetCurrentStep sets the "current_step" field.
 func (_c *AutomationRunCreate) SetCurrentStep(v int) *AutomationRunCreate {
 	_c.mutation.SetCurrentStep(v)
@@ -363,6 +383,14 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.BeganAt(); ok {
 		_spec.SetField(automationrun.FieldBeganAt, field.TypeTime, value)
 		_node.BeganAt = value
+	}
+	if value, ok := _c.mutation.EventAction(); ok {
+		_spec.SetField(automationrun.FieldEventAction, field.TypeString, value)
+		_node.EventAction = &value
+	}
+	if value, ok := _c.mutation.EventProperties(); ok {
+		_spec.SetField(automationrun.FieldEventProperties, field.TypeJSON, value)
+		_node.EventProperties = value
 	}
 	if value, ok := _c.mutation.CurrentStep(); ok {
 		_spec.SetField(automationrun.FieldCurrentStep, field.TypeInt, value)
@@ -694,6 +722,12 @@ func (u *AutomationRunUpsertOne) UpdateNewValues() *AutomationRunUpsertOne {
 		}
 		if _, exists := u.create.mutation.BeganAt(); exists {
 			s.SetIgnore(automationrun.FieldBeganAt)
+		}
+		if _, exists := u.create.mutation.EventAction(); exists {
+			s.SetIgnore(automationrun.FieldEventAction)
+		}
+		if _, exists := u.create.mutation.EventProperties(); exists {
+			s.SetIgnore(automationrun.FieldEventProperties)
 		}
 	}))
 	return u
@@ -1109,6 +1143,12 @@ func (u *AutomationRunUpsertBulk) UpdateNewValues() *AutomationRunUpsertBulk {
 			}
 			if _, exists := b.mutation.BeganAt(); exists {
 				s.SetIgnore(automationrun.FieldBeganAt)
+			}
+			if _, exists := b.mutation.EventAction(); exists {
+				s.SetIgnore(automationrun.FieldEventAction)
+			}
+			if _, exists := b.mutation.EventProperties(); exists {
+				s.SetIgnore(automationrun.FieldEventProperties)
 			}
 		}
 	}))
