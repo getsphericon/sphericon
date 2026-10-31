@@ -46,7 +46,10 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", client.Stop(context.Background())) })
-	require.Eventually(t, func() bool { return listening(ctx, t, pool) }, 10*time.Second, 20*time.Millisecond, "the client LISTENs")
+	require.Eventually(t, func() bool {
+		n, err := testhelper.Listeners(ctx, pool)
+		return err == nil && n > 0
+	}, 10*time.Second, 20*time.Millisecond, "the client LISTENs")
 
 	elsewhere, err := jobs.NewInserter(pool)
 	require.NoError(t, err)
@@ -55,15 +58,6 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 
 	require.Eventually(t, func() bool { return sentTo(mail, "listened@example.com") }, 2*time.Second, 20*time.Millisecond,
 		"worked well before the listener's fallback poll")
-}
-
-// listening reports whether a session of db's database waits on a LISTEN.
-func listening(ctx context.Context, t *testing.T, db *sql.DB) bool {
-	t.Helper()
-	var n int
-	require.NoError(t, db.QueryRowContext(ctx,
-		`SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND query ILIKE 'listen%'`).Scan(&n))
-	return n > 0
 }
 
 // sentTo reports whether the sender sent a message to the address.

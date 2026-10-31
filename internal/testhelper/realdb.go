@@ -49,6 +49,16 @@ func LockWaiters(ctx context.Context, db *sql.DB) (int, error) {
 	return n, err
 }
 
+// Listeners counts the connections to db's database whose last statement was a LISTEN: a client
+// that waits for notifications. Like LockWaiters it returns an error rather than failing the test.
+func Listeners(ctx context.Context, db *sql.DB) (int, error) {
+	// raw sql: pg_stat_activity is a server view; ent has no entity for it.
+	row := db.QueryRowContext(ctx, "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND query ILIKE 'listen%'")
+	var n int
+	err := row.Scan(&n)
+	return n, err
+}
+
 // EmptyDBURL is the URL of a test's own database with no schema at all, for code that
 // migrates a fresh instance (RealDB starts at the fixture state).
 func EmptyDBURL(t *testing.T) string {
