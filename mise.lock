@@ -863,50 +863,50 @@ url = "https://github.com/caddyserver/caddy/releases/download/v2.11.7/caddy_2.11
 url_api = "https://api.github.com/repos/caddyserver/caddy/releases/assets/607244987"
 
 [[tools.cloudflared]]
-version = "2026.10.5"
+version = "2026.10.6"
 backend = "aqua:cloudflare/cloudflared"
 specifiers = ["latest"]
 
 [tools.cloudflared."platforms.linux-arm64"]
-checksum = "sha256:72e0d05a67e09da87cf495e409a28c3cc5994dd23fc66a982eebea6a55923b7d"
+checksum = "sha256:0ae0e179475b2c77651a718d2b376e0151f4fca5954702a84f02843a4d5fcac0"
 checksum_source = "mise-versions"
-url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-linux-arm64"
-url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681691739"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.6/cloudflared-linux-arm64"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/688473003"
 
 [tools.cloudflared."platforms.linux-arm64-musl"]
-checksum = "sha256:72e0d05a67e09da87cf495e409a28c3cc5994dd23fc66a982eebea6a55923b7d"
+checksum = "sha256:0ae0e179475b2c77651a718d2b376e0151f4fca5954702a84f02843a4d5fcac0"
 checksum_source = "mise-versions"
-url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-linux-arm64"
-url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681691739"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.6/cloudflared-linux-arm64"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/688473003"
 
 [tools.cloudflared."platforms.linux-x64"]
-checksum = "sha256:e1bc0cf084fd9e590554fe769a86b1db46701c3f847a43d902f7b974a4e16298"
+checksum = "sha256:1d356dac769d0dbf62ebe588c4034824bbff98d5790c2f844cc99e0e2f57462d"
 checksum_source = "mise-versions"
-url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-linux-amd64"
-url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681690401"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.6/cloudflared-linux-amd64"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/688471811"
 
 [tools.cloudflared."platforms.linux-x64-musl"]
-checksum = "sha256:e1bc0cf084fd9e590554fe769a86b1db46701c3f847a43d902f7b974a4e16298"
+checksum = "sha256:1d356dac769d0dbf62ebe588c4034824bbff98d5790c2f844cc99e0e2f57462d"
 checksum_source = "mise-versions"
-url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-linux-amd64"
-url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681690401"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.6/cloudflared-linux-amd64"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/688471811"
 
 [tools.cloudflared."platforms.macos-arm64"]
-checksum = "sha256:184c7d4f5f977348243a6d7ca8f6cf6073b9b2746cfe8c1fe15aa59e9a522bf0"
-url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-darwin-arm64.tgz"
-url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681689374"
+checksum = "sha256:ea1e5105d35bbe16cee5b2f7b4742059ada341fbd35938ed827c24b85efa51c8"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.6/cloudflared-darwin-arm64.tgz"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/688470940"
 
 [tools.cloudflared."platforms.macos-x64"]
-checksum = "sha256:6699392fed92367808c248c2d90bed66e49bbf66e1b4ee3e4141230f3f7391b3"
+checksum = "sha256:6c04a13835ca5ff29a0c6f58d17d1f3956aad1b7df1631f5b5efbc06269deded"
 checksum_source = "mise-versions"
-url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-darwin-amd64.tgz"
-url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681689768"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.6/cloudflared-darwin-amd64.tgz"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/688471253"
 
 [tools.cloudflared."platforms.windows-x64"]
-checksum = "sha256:db4e4c413612a0916f3e1679d3caaf376f94911952d163028fb726fb2e0516a9"
+checksum = "sha256:d521b3bf68982165f0d06d76732f22d9a105ef057ff3ae4c0986f3a23190950f"
 checksum_source = "mise-versions"
-url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-windows-amd64.exe"
-url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681692942"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.6/cloudflared-windows-amd64.exe"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/688473926"
 
 [[tools.coredns]]
 version = "1.15.0"
@@ -956,50 +956,50 @@ url = "https://github.com/coredns/coredns/releases/download/v1.15.0/coredns_1.15
 url_api = "https://api.github.com/repos/coredns/coredns/releases/assets/661218355"
 
 [[tools."github:daveshanley/vacuum"]]
-version = "0.35.4"
+version = "0.36.0"
 backend = "github:daveshanley/vacuum"
 specifiers = ["latest"]
 
 [tools."github:daveshanley/vacuum"."platforms.linux-arm64"]
-checksum = "sha256:73e32bec2a3348ad6ec49ef2547b378f936e4f93d9bb625c06600fa47fac7c3f"
+checksum = "sha256:3adfab7d3d00298c579f8b18954dd80cbed6dafa0f44b1ad65d107faaab6f43d"
 checksum_source = "mise-versions"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.4/vacuum_0.35.4_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/675379563"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.0/vacuum_0.36.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/688806962"
 
 [tools."github:daveshanley/vacuum"."platforms.linux-arm64-musl"]
-checksum = "sha256:73e32bec2a3348ad6ec49ef2547b378f936e4f93d9bb625c06600fa47fac7c3f"
+checksum = "sha256:3adfab7d3d00298c579f8b18954dd80cbed6dafa0f44b1ad65d107faaab6f43d"
 checksum_source = "mise-versions"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.4/vacuum_0.35.4_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/675379563"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.0/vacuum_0.36.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/688806962"
 
 [tools."github:daveshanley/vacuum"."platforms.linux-x64"]
-checksum = "sha256:d553155a6de95cfe5506294736cb87a6c24c033817ff0c20ff1f3b76189a0874"
+checksum = "sha256:58324dfc3322bc431f394ef7822586d17b269169ab3297cb29be6847d5519a1e"
 checksum_source = "mise-versions"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.4/vacuum_0.35.4_linux_x86_64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/675379523"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.0/vacuum_0.36.0_linux_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/688806961"
 
 [tools."github:daveshanley/vacuum"."platforms.linux-x64-musl"]
-checksum = "sha256:d553155a6de95cfe5506294736cb87a6c24c033817ff0c20ff1f3b76189a0874"
+checksum = "sha256:58324dfc3322bc431f394ef7822586d17b269169ab3297cb29be6847d5519a1e"
 checksum_source = "mise-versions"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.4/vacuum_0.35.4_linux_x86_64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/675379523"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.0/vacuum_0.36.0_linux_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/688806961"
 
 [tools."github:daveshanley/vacuum"."platforms.macos-arm64"]
-checksum = "sha256:d09c040c72bb87343cf33084e277a233368b80cf3013766be856abc5911591d4"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.4/vacuum_0.35.4_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/675379522"
+checksum = "sha256:9146a8146abb7d977c4d6fd07fb58b319cf8ae76576077f8bcd738e5fb4e61a4"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.0/vacuum_0.36.0_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/688806862"
 
 [tools."github:daveshanley/vacuum"."platforms.macos-x64"]
-checksum = "sha256:f0e98894fadeb18c694b62c63c22476bb61b2a03ac7ec0f2a18e190c66745827"
+checksum = "sha256:9607d243bfa7047746f0845365ef9d093fb556a585254ed22bb06333d6945171"
 checksum_source = "mise-versions"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.4/vacuum_0.35.4_darwin_x86_64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/675379570"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.0/vacuum_0.36.0_darwin_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/688806866"
 
 [tools."github:daveshanley/vacuum"."platforms.windows-x64"]
-checksum = "sha256:4be52163e33b544863660d6d9ce97bb22ebf44c0339870d305f1da687637c8f9"
+checksum = "sha256:c6bb4ed58dbace70560b4bd142d67fef9c2057843e4bf9ea11b40d63b8cb0fcc"
 checksum_source = "mise-versions"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.4/vacuum_0.35.4_windows_x86_64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/675379525"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.0/vacuum_0.36.0_windows_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/688806971"
 
 [[tools."github:google/osv-scanner"]]
 version = "2.7.0"
@@ -1230,44 +1230,50 @@ url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalen
 url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660414988"
 
 [[tools."github:sbdchd/squawk"]]
-version = "2.70.0"
+version = "2.71.0"
 backend = "github:sbdchd/squawk"
 specifiers = ["latest"]
 
 [tools."github:sbdchd/squawk"."platforms.linux-arm64"]
-checksum = "sha256:fdb1ceff1d45252ccce44be8888d45a45206ba901804713124b0aa6eacc92e0e"
-url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-linux-arm64"
-url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644033476"
+checksum = "sha256:cc6b563f205e9d93472232ca21113c736d6e1f45a7ce700170b7e17bcecc9b7f"
+checksum_source = "mise-versions"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.71.0/squawk-linux-arm64"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/688743733"
 
 [tools."github:sbdchd/squawk"."platforms.linux-arm64-musl"]
-checksum = "sha256:b367318e0b56dabe0dc7b485f36660a7c71e9dd112269c2eab9ae2d4b3361387"
-url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-linux-musl-arm64"
-url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644032894"
+checksum = "sha256:3b350a7ad426cd4f000b9b43211b19d8a724392ad715ad454156653aadf77347"
+checksum_source = "mise-versions"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.71.0/squawk-linux-musl-arm64"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/688744548"
 
 [tools."github:sbdchd/squawk"."platforms.linux-x64"]
-checksum = "sha256:836ba2ab0c0ec30ae02c9f2cec065b341ff853765ceaa3965c22109c2f53eb1c"
-url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-linux-x64"
-url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644023854"
+checksum = "sha256:ab978cb412e5e5eb2f06aaa4c5035a1567f6eba53274d7d1e068f73169b88bbd"
+checksum_source = "mise-versions"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.71.0/squawk-linux-x64"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/688733917"
 
 [tools."github:sbdchd/squawk"."platforms.linux-x64-musl"]
-checksum = "sha256:b6d57c2e37fb9cedd3c07285d2a8e8865e7204f3c329e8bee52c7cfc91465011"
-url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-linux-musl-x64"
-url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644028129"
+checksum = "sha256:cf542e159fb3a94e5fd31d8b5282a31334df8205c6d7993afe286e9133fdff3e"
+checksum_source = "mise-versions"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.71.0/squawk-linux-musl-x64"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/688744731"
 
 [tools."github:sbdchd/squawk"."platforms.macos-arm64"]
-checksum = "sha256:6d96c07032109202a43802e212b2c592d48a11b208d661b2c8814a7eca4a984a"
-url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-darwin-arm64"
-url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644031759"
+checksum = "sha256:6132cb9779c688303e43746e10268f280b35a3fbcc70b851472021cc882ef5a2"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.71.0/squawk-darwin-arm64"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/688735765"
 
 [tools."github:sbdchd/squawk"."platforms.macos-x64"]
-checksum = "sha256:0369f5cc2beb7e224952d5d30068a92f9e23d65af99d7e7565c9a4fda916c379"
-url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-darwin-x64"
-url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644027874"
+checksum = "sha256:e0770d7641dd4bea5a0f11b3efb18829702e52a230724c6b3f725393369c467c"
+checksum_source = "mise-versions"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.71.0/squawk-darwin-x64"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/688732398"
 
 [tools."github:sbdchd/squawk"."platforms.windows-x64"]
-checksum = "sha256:a076936531b5fa26b95cdcebe33ecaa3fa8e764dc000a607a06fc6da5d2098bd"
-url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-windows-x64.exe"
-url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644034501"
+checksum = "sha256:3299e2f9e41ab5d6274cad64a061488a370a0310a02d17e0dcf3845ad779beec"
+checksum_source = "mise-versions"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.71.0/squawk-windows-x64.exe"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/688738836"
 
 [[tools.gitleaks]]
 version = "8.30.1"
@@ -1428,91 +1434,91 @@ checksum = "sha256:5735a2bd59071b814546c6d0a76f29a8fd3ebe06e3a4791dd2784804ae895
 url = "https://get.helm.sh/helm-v4.3.1-windows-amd64.tar.gz"
 
 [[tools.hk]]
-version = "2.9.0"
+version = "2.10.0"
 backend = "packslip:github.com/jdx/hk"
 specifiers = ["latest"]
 
 [tools.hk."platforms.linux-arm64"]
-checksum = "sha256:1ed0259505fab94bc4f90b42f36e38b61b316c20f2f6f7589d0b090cc42068d3"
-url = "https://github.com/jdx/hk/releases/download/v2.9.0/hk-aarch64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:98772b6290cad5ba5fe77a203fd717c82f47bde2a9aa5b295bea22139ba4f602"
+url = "https://github.com/jdx/hk/releases/download/v2.10.0/hk-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.linux-arm64-musl"]
-checksum = "sha256:9f16526f08f9ed2835a3c50e6e5aa2baf32284e7325a799b5c9b250e3ede12f0"
-url = "https://github.com/jdx/hk/releases/download/v2.9.0/hk-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:bc4dd452d409ae4ed3fc58697dfbe5797c5130c0d03cb2694a2ddee3cbed89b7"
+url = "https://github.com/jdx/hk/releases/download/v2.10.0/hk-aarch64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.linux-x64"]
-checksum = "sha256:db1021a8920b71c161e26bef246c5b00a3ea6aa480b6cb837ee098ffeb8c41a1"
-url = "https://github.com/jdx/hk/releases/download/v2.9.0/hk-x86_64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:3a1d580ba031d684307a88ce07f1751d792325f2fdace7d24dfc59b816766ad5"
+url = "https://github.com/jdx/hk/releases/download/v2.10.0/hk-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.linux-x64-musl"]
-checksum = "sha256:91136908087b35d1dba1caee108b577774223429546d8b28a9de57280fcc7d36"
-url = "https://github.com/jdx/hk/releases/download/v2.9.0/hk-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:bb537bcfe3d949323f4c8fefdd6011d2cff32fd2a22d6ed09ec02eb78f183e02"
+url = "https://github.com/jdx/hk/releases/download/v2.10.0/hk-x86_64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.macos-arm64"]
-checksum = "sha256:c7c4d85fd44e88d54b2bf8f9fc38165e278983f54210c095a3e3e8c593e4b720"
-url = "https://github.com/jdx/hk/releases/download/v2.9.0/hk-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:ab54862e724bd4a1ef9180ef535cfeef7f7ff98ace911bd5ea36bb41fa4ebc94"
+url = "https://github.com/jdx/hk/releases/download/v2.10.0/hk-aarch64-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.windows-x64"]
-checksum = "sha256:f0b6f181eecd9c784901122a3d4be15bb13156a839b36021a173b366756804dd"
-url = "https://github.com/jdx/hk/releases/download/v2.9.0/hk-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:0dc2485dcf4542d7be2f37890072e6bc5de664f41295449cae761e78336031d4"
+url = "https://github.com/jdx/hk/releases/download/v2.10.0/hk-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [[tools.jactionlint]]
-version = "2.3.0"
+version = "2.4.0"
 backend = "github:jdx/jactionlint"
 specifiers = ["latest"]
 
 [tools.jactionlint."platforms.linux-arm64"]
-checksum = "sha256:deea7744e5769e1e5cc8c9898a838f80a941ec68476d9f2814a61474d5652dac"
-url = "https://github.com/jdx/jactionlint/releases/download/v2.3.0/jactionlint_2.3.0_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/662210370"
+checksum = "sha256:42413391c248f99ff4550d6c866ee717d5ea4ca2b966d9d54ad1503af955e22f"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/688130101"
 provenance = "github-attestations"
 
 [tools.jactionlint."platforms.linux-arm64-musl"]
-checksum = "sha256:deea7744e5769e1e5cc8c9898a838f80a941ec68476d9f2814a61474d5652dac"
-url = "https://github.com/jdx/jactionlint/releases/download/v2.3.0/jactionlint_2.3.0_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/662210370"
+checksum = "sha256:42413391c248f99ff4550d6c866ee717d5ea4ca2b966d9d54ad1503af955e22f"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/688130101"
 provenance = "github-attestations"
 
 [tools.jactionlint."platforms.linux-x64"]
-checksum = "sha256:907e6f6a59e181879f7e6936e19ee2eca1cbc51de134fb85460cfa8d65a71f28"
-url = "https://github.com/jdx/jactionlint/releases/download/v2.3.0/jactionlint_2.3.0_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/662210498"
+checksum = "sha256:26ddba81db28fffc51163175c070ee1a9d1150260de4b5232f01d9b749f32d8e"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/688130108"
 provenance = "github-attestations"
 
 [tools.jactionlint."platforms.linux-x64-musl"]
-checksum = "sha256:907e6f6a59e181879f7e6936e19ee2eca1cbc51de134fb85460cfa8d65a71f28"
-url = "https://github.com/jdx/jactionlint/releases/download/v2.3.0/jactionlint_2.3.0_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/662210498"
+checksum = "sha256:26ddba81db28fffc51163175c070ee1a9d1150260de4b5232f01d9b749f32d8e"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/688130108"
 provenance = "github-attestations"
 
 [tools.jactionlint."platforms.macos-arm64"]
-checksum = "sha256:f96afa36578b21290203ae8df4fa7ac3bf5aba08ed288df28cb0530af7ca6e55"
-url = "https://github.com/jdx/jactionlint/releases/download/v2.3.0/jactionlint_2.3.0_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/662210452"
+checksum = "sha256:349a13dbffdd25376898a256d195806afda08ba97ccc6378cbf2dd11a77ef8e7"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/688130202"
 provenance = "github-attestations"
 
 [tools.jactionlint."platforms.macos-x64"]
-checksum = "sha256:a61006b669ec0ab1266c73e3561eecf839537eb6e8b3b6be766a55ba17fcbe42"
-url = "https://github.com/jdx/jactionlint/releases/download/v2.3.0/jactionlint_2.3.0_darwin_amd64.tar.gz"
-url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/662210428"
+checksum = "sha256:4c21fce834f8267b65a65b32a527aaa2ec1c321c8f066d44b42d7f038835aa90"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/688130179"
 provenance = "github-attestations"
 
 [tools.jactionlint."platforms.windows-x64"]
-checksum = "sha256:9864d1045bd37fddb2df33bf4d6b45de205c0ce133c52a225928b7ede7d7f3eb"
-url = "https://github.com/jdx/jactionlint/releases/download/v2.3.0/jactionlint_2.3.0_windows_amd64.zip"
-url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/662210534"
+checksum = "sha256:4e0c7b428a4faa35bb3b86af6fa65a0ac9797edcd4c64e4f7e16ca886437e172"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_windows_amd64.zip"
+url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/688130261"
 provenance = "github-attestations"
 
 [[tools.jq]]
@@ -1769,31 +1775,31 @@ url_api = "https://api.github.com/repos/suzuki-shunsuke/pinact/releases/assets/6
 provenance = "github-attestations"
 
 [[tools.pitchfork]]
-version = "2.32.3"
+version = "2.32.4"
 backend = "packslip:github.com/jdx/pitchfork"
 specifiers = ["latest"]
 
 [tools.pitchfork."platforms.linux-arm64"]
-checksum = "sha256:ea168cd86c2bbfd027eb5b0f477697647c722fd2d58a7712d04bd1720521d337"
-url = "https://github.com/jdx/pitchfork/releases/download/v2.32.3/pitchfork-aarch64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:9c39cdb1bfb06d78494696809fbc1518de583d487c73b8e6fc300084e1f5b10d"
+url = "https://github.com/jdx/pitchfork/releases/download/v2.32.4/pitchfork-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/pitchfork/.github/workflows/release.yml"
 repository_ids = { repository = "899500793" }
 
 [tools.pitchfork."platforms.linux-x64"]
-checksum = "sha256:1b3ece33f550040fdf7c24e22f861b91938b7bd71c11732f097931d4fae3ddd2"
-url = "https://github.com/jdx/pitchfork/releases/download/v2.32.3/pitchfork-x86_64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:bc5fa8716baa0538c9b581b9dd64f14be078e64090abee925c501fb925700527"
+url = "https://github.com/jdx/pitchfork/releases/download/v2.32.4/pitchfork-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/pitchfork/.github/workflows/release.yml"
 repository_ids = { repository = "899500793" }
 
 [tools.pitchfork."platforms.macos-arm64"]
-checksum = "sha256:b6028866447330abc03a168ccd046726a8fa9d3373a3df7c26da2c41ae82e52c"
-url = "https://github.com/jdx/pitchfork/releases/download/v2.32.3/pitchfork-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:faacc5c44e25eadc8ea4e4f1e98ee15392434dd810ab310341a7064f554a5dcc"
+url = "https://github.com/jdx/pitchfork/releases/download/v2.32.4/pitchfork-aarch64-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/pitchfork/.github/workflows/release.yml"
 repository_ids = { repository = "899500793" }
 
 [tools.pitchfork."platforms.windows-x64"]
-checksum = "sha256:f19167dad988f6cea17143d01feb50b2a4a2450da0fd40294fbac35f53cbe39b"
-url = "https://github.com/jdx/pitchfork/releases/download/v2.32.3/pitchfork-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:ef2a3857a63bdd6771da47572a6aa207baf0d9bc769e562129f2ac1c985d7670"
+url = "https://github.com/jdx/pitchfork/releases/download/v2.32.4/pitchfork-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/pitchfork/.github/workflows/release.yml"
 repository_ids = { repository = "899500793" }
 
