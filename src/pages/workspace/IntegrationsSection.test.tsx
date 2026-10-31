@@ -601,7 +601,7 @@ test('switches to the archived providers and restores one', async () => {
       ),
     ),
     handleSiteIntegrationsUnarchive(({ params }) => {
-      restored.push(String(params.id))
+      restored.push(params.id)
       return HttpResponse.json({ ...archivedSmtp, archivedAt: null })
     }),
   )
