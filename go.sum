@@ -351,6 +351,8 @@ github.com/realclientip/realclientip-go v1.0.0 h1:+yPxeC0mEaJzq1BfCt2h4BxlyrvIIB
 github.com/realclientip/realclientip-go v1.0.0/go.mod h1:CXnUdVwFRcXFJIRb/dTYqbT7ud48+Pi2pFm80bxDmcI=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
+github.com/riverqueue/apiframe v0.0.0-20251229202423-2b52ce1c482e h1:OwOgxT3MRpOj5Mp6DhFdZP43FOQOf2hhywAuT5XZCR4=
+github.com/riverqueue/apiframe v0.0.0-20251229202423-2b52ce1c482e/go.mod h1:O7UmsAMjpMYuToN4au5GNXdmN1gli+5FTldgXqAfaD0=
 github.com/riverqueue/river v0.50.0 h1:YKQp8NHpq2IDIE7UIyQIhTxJKwc4XAHyUwr8O38+5lY=
 github.com/riverqueue/river v0.50.0/go.mod h1:uxM5wtMfaY/ZBRCV7UWb/NNc5OHhuvYWmZcTINCVmlE=
 github.com/riverqueue/river/riverdriver v0.50.0 h1:k+hLDDWkHBNXlfUITppQE3EGuutUbCdQgAs+Yox3mmA=
@@ -359,6 +361,8 @@ github.com/riverqueue/river/riverdriver/riverdatabasesql v0.50.0 h1:EFmOvQYxMT+Q
 github.com/riverqueue/river/riverdriver/riverdatabasesql v0.50.0/go.mod h1:pB4YcM/tbev3SoP16nYvjTXBNRCZUXfECin6zBKQ+8Q=
 github.com/riverqueue/river/riverdriver/riverpgxv5 v0.50.0 h1:tIRHx7Jm7wCYd9+NNkEyqvTLUwEKyel07HSzgmUqBSY=
 github.com/riverqueue/river/riverdriver/riverpgxv5 v0.50.0/go.mod h1:9kKoKiJCDRbJFF5At+sOnW5DBwcKRvJHAq3e93zwwqo=
+github.com/riverqueue/river/riverdriver/riversqlite v0.49.0 h1:DfATYWIuQ4bKjhhqj/XYn3ZGpluXqG0VAZfk+voL558=
+github.com/riverqueue/river/riverdriver/riversqlite v0.49.0/go.mod h1:sOSH7dNsGt2UWLFUk7Cy9qNRNkRTswFrTwYf+TJkpeg=
 github.com/riverqueue/river/rivershared v0.50.0 h1:Ovha8hA/0xBD7cZamSZseZhaVchsFbWIiNkVhjpjvU4=
 github.com/riverqueue/river/rivershared v0.50.0/go.mod h1:l1IgURRxiA+U2Scl7Qm2/ceZsRZFyUtD59Dk8HdGNPk=
 github.com/riverqueue/river/rivertype v0.50.0 h1:6JbYoCrXn0F9OnqM3nUUQ0OzPu37LOp9bIJkVqUsf5k=
@@ -646,3 +650,5 @@ modernc.org/sqlite v1.60.1 h1:/blz53O951KWFOso4QQvEs/Fq6cDBKLtMVrYNSeJVKw=
 modernc.org/sqlite v1.60.1/go.mod h1:1dIoEagfDE72QytD5scH1lxARtaUgKgHC/NuApA27r0=
 pgregory.net/rapid v1.3.0 h1:vBvO0VSqti75J1jjYqpgPNBLKMd1+gxa9fYo7vk/Exc=
 pgregory.net/rapid v1.3.0/go.mod h1:dPlE4OBBxgXPqkP79flB6sJL1dx5azpI7HQ9MY9Z7uk=
+riverqueue.com/riverui v0.22.0 h1:g7L5TPWlnZvN1VCb5XMG9yZ/CfO4MkaI70PXq8msao0=
+riverqueue.com/riverui v0.22.0/go.mod h1:kk8BAx4yyYCMRVe3NBxvpggjPhWDQGkHMSjtRCgSLoI=

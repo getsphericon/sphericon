@@ -583,6 +583,7 @@ export default interface Resources {
       "nav": {
         "home": "Home",
         "instance": "Instance",
+        "jobs": "Job queue",
         "signupItems": "Sign-up items",
         "workspaces": "Workspaces"
       },

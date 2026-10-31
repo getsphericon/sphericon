@@ -1,10 +1,11 @@
-import { Avatar, Group, Menu, Stack, Text, UnstyledButton } from '@mantine/core'
+import { Avatar, Group, Menu, NavLink, Stack, Text, UnstyledButton } from '@mantine/core'
 import {
   IconBuildings,
   IconChevronDown,
   IconHome,
   IconListCheck,
   IconLogout,
+  IconStack2,
   IconServer,
 } from '@tabler/icons-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -49,6 +50,12 @@ function ConsoleNavbar() {
         to={consoleInstanceRoute.to}
         label={t(($) => $.console.nav.instance)}
         leftSection={<IconServer size={18} />}
+      />
+      {/* The job queue's UI is River UI's own pages, served by the server under /staff/jobs. */}
+      <NavLink
+        href="/staff/jobs/"
+        label={t(($) => $.console.nav.jobs)}
+        leftSection={<IconStack2 size={18} />}
       />
       {enterprise && (
         <NavLinkLink

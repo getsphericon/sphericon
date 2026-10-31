@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/joindomains"
+	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -172,7 +173,9 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 		ErrorHandler: &errorHandler{logger: logger},
 		// OTel spans + metrics per job insert/work, via the global providers set
 		// by telemetry.Setup (a no-op when telemetry is disabled, e.g. tests).
-		Middleware: []rivertype.Middleware{otelriver.NewMiddleware(nil)},
+		// logging.JobLogs keeps the lines each job logged on the job, shown on its page in the job
+		// queue UI.
+		Middleware: []rivertype.Middleware{otelriver.NewMiddleware(nil), logging.JobLogs()},
 		// Re-validate every Sending domain's DKIM DNS periodically so a record
 		// that disappears flips the domain back to unverified (ADR 0010).
 		PeriodicJobs: append([]*river.PeriodicJob{

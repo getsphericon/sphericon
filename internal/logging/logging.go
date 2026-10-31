@@ -10,12 +10,14 @@ package logging
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"os"
 	"strings"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/lmittmann/tint"
+	"github.com/riverqueue/river/riverlog"
 )
 
 // New builds a logger from config: a coloured, human-readable handler for
@@ -29,8 +31,36 @@ func New(cfg *config.Config) *slog.Logger {
 	} else {
 		handler = slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: level})
 	}
-	return slog.New(handler)
+	return slog.New(jobLogs{handler})
 }
+
+// JobLogs is the river middleware that keeps the lines a job logs on the job itself (riverlog),
+// where the Staff console's job queue UI shows them on the job's page. Together with the
+// handler New builds, every line logged with the job's context is kept, not only those logged
+// through riverlog.Logger.
+func JobLogs() *riverlog.Middleware {
+	return riverlog.NewMiddleware(func(w io.Writer) slog.Handler {
+		return slog.NewTextHandler(w, &slog.HandlerOptions{Level: slog.LevelInfo})
+	}, nil)
+}
+
+// jobLogs copies a record logged with a running job's context (one JobLogs put a logger in) to
+// that job's log, then hands it on. The copy carries the record's own attributes, not those a
+// logger added with With.
+type jobLogs struct{ slog.Handler }
+
+func (h jobLogs) Handle(ctx context.Context, r slog.Record) error {
+	if job, ok := riverlog.LoggerSafely(ctx); ok && job.Handler().Enabled(ctx, r.Level) {
+		_ = job.Handler().Handle(ctx, r.Clone())
+	}
+	return h.Handler.Handle(ctx, r)
+}
+
+func (h jobLogs) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return jobLogs{h.Handler.WithAttrs(attrs)}
+}
+
+func (h jobLogs) WithGroup(name string) slog.Handler { return jobLogs{h.Handler.WithGroup(name)} }
 
 // Setup installs the configured logger as the process-wide slog default, so
 // river, watermill, and every slog.Default() call site emit through it.
