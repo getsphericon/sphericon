@@ -505,7 +505,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	acc := accounts.New(client, bus, Passwords(), consentRecords)
 	externalDeps := apiexternal.Deps{
 		Clock: st.now, Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
-		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, Transactional: transactional.New(templatesModule, sender),
+		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, Transactional: transactional.New(templatesModule, sender), BrandKit: brandKitModule,
 		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule, Reputation: reputation.New(), Integrations: integrationsModule, CapturedMessages: capturedModule, SendingDomains: sendingDomainsModule,
 		BootstrapToken: baseCfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
 	}
