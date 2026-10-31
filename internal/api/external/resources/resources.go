@@ -54,7 +54,7 @@ func automationVersionOrNull(c Converter, v *ent.AutomationVersion) externalapi.
 
 // automationSteps decodes the steps of an Automation version into the typed steps DTO.
 // Malformed steps yield no steps rather than an error.
-func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
+func automationSteps(c Converter, v *ent.AutomationVersion) []externalapi.AutomationStep {
 	stored, err := automations.Decode(v.Steps)
 	if err != nil {
 		return nil
@@ -62,7 +62,7 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 	steps := make([]externalapi.AutomationStep, 0, len(stored))
 	for i := range stored {
 		s := &stored[i]
-		step := externalapi.AutomationStep{Type: externalapi.AutomationStepType(s.Type)}
+		step := externalapi.AutomationStep{Type: c.AutomationStepTypeToResource(s.Type)}
 		switch s.Type {
 		case automations.StepWait:
 			step.Seconds = externalapi.NewOptInt32(narrow.Int32(s.Seconds))
@@ -397,6 +397,8 @@ type Converter interface {
 	// counterpart is mapped with enum:map.
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) externalapi.AutomationStatus
+	// goverter:enum:transform value
+	AutomationStepTypeToResource(source automations.StepType) externalapi.AutomationStepType
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) externalapi.BroadcastStatus
 	// goverter:enum:transform value

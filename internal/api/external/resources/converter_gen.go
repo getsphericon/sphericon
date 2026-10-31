@@ -167,6 +167,24 @@ func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) ext
 	}
 	return externalapiAutomationStatus
 }
+func (c *ConverterImpl) AutomationStepTypeToResource(source automations.StepType) external.AutomationStepType {
+	var externalapiAutomationStepType external.AutomationStepType
+	switch source {
+	case automations.StepApplyTag:
+		externalapiAutomationStepType = external.AutomationStepTypeApplyTag
+	case automations.StepEmail:
+		externalapiAutomationStepType = external.AutomationStepTypeEmail
+	case automations.StepHTTP:
+		externalapiAutomationStepType = external.AutomationStepTypeHTTP
+	case automations.StepRemoveTag:
+		externalapiAutomationStepType = external.AutomationStepTypeRemoveTag
+	case automations.StepWait:
+		externalapiAutomationStepType = external.AutomationStepTypeWait
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiAutomationStepType
+}
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.AutomationResource {
 	var externalapiAutomationResource external.AutomationResource
 	if source != nil {
@@ -194,7 +212,7 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 		}
 		externalapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
 		externalapiAutomationVersion.IntegrationId = optNilEntityID((*source).IntegrationID)
-		externalapiAutomationVersion.Steps = automationSteps(source)
+		externalapiAutomationVersion.Steps = automationSteps(c, source)
 	}
 	return externalapiAutomationVersion
 }

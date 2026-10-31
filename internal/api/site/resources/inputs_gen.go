@@ -8,6 +8,7 @@ import (
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	site "github.com/getsphericon/sphericon/gen/site"
 	accounts "github.com/getsphericon/sphericon/internal/accounts"
+	analytics "github.com/getsphericon/sphericon/internal/analytics"
 	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
@@ -26,6 +27,34 @@ import (
 
 type InputsImpl struct{}
 
+func (c *InputsImpl) AnalyticsRevenueWindow(source site.SiteAnalyticsRevenueRange) analytics.Window {
+	var analyticsWindow analytics.Window
+	switch source {
+	case site.SiteAnalyticsRevenueRange30d:
+		analyticsWindow = analytics.Window30Days
+	case site.SiteAnalyticsRevenueRange7d:
+		analyticsWindow = analytics.Window7Days
+	case site.SiteAnalyticsRevenueRange90d:
+		analyticsWindow = analytics.Window90Days
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return analyticsWindow
+}
+func (c *InputsImpl) AnalyticsWindow(source site.SiteAnalyticsRange) analytics.Window {
+	var analyticsWindow analytics.Window
+	switch source {
+	case site.SiteAnalyticsRange30d:
+		analyticsWindow = analytics.Window30Days
+	case site.SiteAnalyticsRange7d:
+		analyticsWindow = analytics.Window7Days
+	case site.SiteAnalyticsRange90d:
+		analyticsWindow = analytics.Window90Days
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return analyticsWindow
+}
 func (c *InputsImpl) AutomationCreate(source *site.SiteCreateAutomationInput) automations.CreateInput {
 	var automationsCreateInput automations.CreateInput
 	if source != nil {
@@ -45,7 +74,7 @@ func (c *InputsImpl) AutomationCreate(source *site.SiteCreateAutomationInput) au
 }
 func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automations.Step {
 	var automationsStep automations.Step
-	automationsStep.Type = string(source.Type)
+	automationsStep.Type = c.AutomationStepType(source.Type)
 	automationsStep.Subject = stringIn(source.Subject)
 	automationsStep.Body = stringIn(source.Body)
 	automationsStep.Doc = documentIn(source.Doc)
@@ -63,6 +92,24 @@ func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automations.
 	automationsStep.Secret = stringIn(source.Secret)
 	automationsStep.ClearSecret = boolIn(source.ClearSecret)
 	return automationsStep
+}
+func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) automations.StepType {
+	var automationsStepType automations.StepType
+	switch source {
+	case site.SiteAutomationStepTypeApplyTag:
+		automationsStepType = automations.StepApplyTag
+	case site.SiteAutomationStepTypeEmail:
+		automationsStepType = automations.StepEmail
+	case site.SiteAutomationStepTypeHTTP:
+		automationsStepType = automations.StepHTTP
+	case site.SiteAutomationStepTypeRemoveTag:
+		automationsStepType = automations.StepRemoveTag
+	case site.SiteAutomationStepTypeWait:
+		automationsStepType = automations.StepWait
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return automationsStepType
 }
 func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStep) []automations.Step {
 	var automationsStepList []automations.Step

@@ -55,7 +55,7 @@ func (c *InputsImpl) AutomationCreate(source *external.CreateAutomationInput) au
 }
 func (c *InputsImpl) AutomationStep(source external.AutomationStep) automations.Step {
 	var automationsStep automations.Step
-	automationsStep.Type = string(source.Type)
+	automationsStep.Type = c.AutomationStepType(source.Type)
 	automationsStep.Subject = stringIn(source.Subject)
 	automationsStep.Body = stringIn(source.Body)
 	automationsStep.Doc = documentIn(source.Doc)
@@ -73,6 +73,24 @@ func (c *InputsImpl) AutomationStep(source external.AutomationStep) automations.
 	automationsStep.Secret = stringIn(source.Secret)
 	automationsStep.ClearSecret = boolIn(source.ClearSecret)
 	return automationsStep
+}
+func (c *InputsImpl) AutomationStepType(source external.AutomationStepType) automations.StepType {
+	var automationsStepType automations.StepType
+	switch source {
+	case external.AutomationStepTypeApplyTag:
+		automationsStepType = automations.StepApplyTag
+	case external.AutomationStepTypeEmail:
+		automationsStepType = automations.StepEmail
+	case external.AutomationStepTypeHTTP:
+		automationsStepType = automations.StepHTTP
+	case external.AutomationStepTypeRemoveTag:
+		automationsStepType = automations.StepRemoveTag
+	case external.AutomationStepTypeWait:
+		automationsStepType = automations.StepWait
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return automationsStepType
 }
 func (c *InputsImpl) AutomationSteps(source []external.AutomationStep) []automations.Step {
 	var automationsStepList []automations.Step

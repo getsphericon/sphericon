@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
@@ -127,6 +128,17 @@ type Inputs interface {
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
+	// The contract names a window "7d", the module counts its days: each member is mapped.
+	// goverter:enum:map SiteAnalyticsRange7d Window7Days
+	// goverter:enum:map SiteAnalyticsRange30d Window30Days
+	// goverter:enum:map SiteAnalyticsRange90d Window90Days
+	AnalyticsWindow(source siteapi.SiteAnalyticsRange) analytics.Window
+	// goverter:enum:map SiteAnalyticsRevenueRange7d Window7Days
+	// goverter:enum:map SiteAnalyticsRevenueRange30d Window30Days
+	// goverter:enum:map SiteAnalyticsRevenueRange90d Window90Days
+	AnalyticsRevenueWindow(source siteapi.SiteAnalyticsRevenueRange) analytics.Window
+	// goverter:enum:transform value
+	AutomationStepType(source siteapi.SiteAutomationStepType) automations.StepType
 	// goverter:enum:transform value
 	InvitableRole(source siteapi.SiteInvitableRole) invitation.Role
 	// goverter:enum:transform value
