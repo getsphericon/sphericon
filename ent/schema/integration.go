@@ -89,9 +89,14 @@ func (Integration) Fields() []ent.Field {
 		field.Int("provider_max_per_day").
 			Optional().
 			Nillable(),
-		// What the provider last said it is doing about the account (ADR 0067, SES
-		// EnforcementStatus); nil is nothing. `shutdown` holds every send through the
-		// Integration until a read finds the account sending again; `probation` is a warning.
+		// The account's standing (ADR 0067) is, like provider_max_*, a reading of the provider
+		// that each successful read overwrites whole, not a state the platform moves: nobody
+		// asks when it changed, and provider_quota_checked_at says when it was read. A save of
+		// new credentials clears it, as it may name another account.
+		//
+		// What the provider last said it is doing about the account (SES EnforcementStatus);
+		// nil is nothing. `shutdown` holds every send through the Integration until a read
+		// finds the account sending again; `probation` is a warning.
 		field.Enum("provider_enforcement").
 			Values("probation", "shutdown").
 			Optional().

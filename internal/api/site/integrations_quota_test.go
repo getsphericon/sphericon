@@ -118,10 +118,21 @@ func TestSiteIntegrationsReportTheProviderAccountStanding(t *testing.T) {
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 
-	status := reread(t, c, created.(*siteapi.SiteIntegrationResource).ID)
+	id := created.(*siteapi.SiteIntegrationResource).ID
+	status := reread(t, c, id)
 	assert.Equal(t, []siteapi.SiteProviderLimitWarning{
 		siteapi.SiteProviderLimitWarningProviderStopped, siteapi.SiteProviderLimitWarningProviderSandbox,
 	}, status.Warnings)
+
+	// New credentials may name another account: what the old ones read goes with them, so a
+	// read that then fails holds nothing.
+	env.SES.SetQuotaErr(errors.New("AccessDenied: ses:GetAccount"))
+	_, err = c.SiteIntegrationsUpdate(context.Background(), &siteapi.SiteUpdateIntegrationInput{
+		Config: siteapi.NewOptNilSiteIntegrationConfigInput(sesInput("eu-west-1", "AKIA5678", "other")),
+	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningProviderQuotaUnavailable},
+		reread(t, c, id).Warnings)
 }
 
 // SMTP has no provider quota, so saving it asks nothing and never warns about one.

@@ -560,7 +560,7 @@ func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName st
 	if integ == nil && integrationID != nil {
 		return gateResult{hold: HoldNoIntegration}, nil
 	}
-	if integ != nil && providerlimit.EffectiveOf(integ).Enforcement == messaging.EnforcementShutdown {
+	if integ != nil && providerlimit.Stopped(integ) {
 		return gateResult{hold: HoldProviderStopped}, nil
 	}
 	sender, err := m.senders.EmailSender(ctx, s, integ)

@@ -56,6 +56,12 @@ func EffectiveOf(integ *ent.Integration) Effective {
 	}
 }
 
+// Stopped reports whether the provider last said it has stopped the Integration's account,
+// which holds every send through it (ADR 0067).
+func Stopped(integ *ent.Integration) bool {
+	return enforcementOf(integ) == messaging.EnforcementShutdown
+}
+
 // enforcementOf is the stored enforcement as the messaging value it was stored from.
 func enforcementOf(integ *ent.Integration) messaging.Enforcement {
 	if integ.ProviderEnforcement == nil {

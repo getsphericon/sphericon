@@ -71,6 +71,14 @@ func TestEffectiveOfReportsTheAccountStanding(t *testing.T) {
 	assert.True(t, eff.Sandbox)
 }
 
+func TestStoppedIsTheShutdownAlone(t *testing.T) {
+	stopped, probation := integration.ProviderEnforcementShutdown, integration.ProviderEnforcementProbation
+	assert.True(t, providerlimit.Stopped(&ent.Integration{ProviderEnforcement: &stopped}))
+	assert.False(t, providerlimit.Stopped(&ent.Integration{ProviderEnforcement: &probation}), "probation still sends")
+	assert.False(t, providerlimit.Stopped(&ent.Integration{ProviderSandbox: true}), "so does the sandbox")
+	assert.False(t, providerlimit.Stopped(&ent.Integration{}))
+}
+
 func TestUsageCountsSentMessagesPerIntegrationOverTheLastDay(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()

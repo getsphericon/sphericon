@@ -347,7 +347,9 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	}
 	patch.ApplySet(in.Enabled, upd.SetEnabled)
 	if sealed != nil {
-		upd.SetConfigEncrypted(*sealed)
+		// The account's standing was read with the old credentials, which may name another
+		// account: it goes until the read the save schedules, so a failed one holds nothing.
+		upd.SetConfigEncrypted(*sealed).ClearProviderEnforcement().SetProviderSandbox(false)
 	}
 	if inb.apply {
 		if inb.preset == nil {

@@ -214,7 +214,7 @@ func TestRefreshQuotaFailureKeepsTheLastKnownStanding(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ses := &testhelper.FakeSES{}
 	cipher, catalog := envCipher(t), ses.Catalog()
-	ses.SetQuota(messaging.Quota{Enforcement: messaging.EnforcementShutdown})
+	ses.SetQuota(messaging.Quota{Enforcement: messaging.EnforcementShutdown, Sandbox: true})
 	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
 
 	ses.SetQuotaErr(errors.New("timeout"))
@@ -223,4 +223,5 @@ func TestRefreshQuotaFailureKeepsTheLastKnownStanding(t *testing.T) {
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	require.NotNil(t, row.ProviderEnforcement, "a failed read says nothing about the account, so the last answer stands")
 	assert.Equal(t, integration.ProviderEnforcementShutdown, *row.ProviderEnforcement)
+	assert.True(t, row.ProviderSandbox)
 }

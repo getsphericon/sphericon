@@ -399,7 +399,7 @@ export default interface Resources {
         "description": "Sending is paused. Nothing is lost: the remaining recipients are sent automatically once the hold lifts.",
         "reasons": {
           "no_integration": "No email provider is configured for this workspace. Add a default integration to resume.",
-          "provider_stopped": "Your email provider has stopped sending from your account. Resolve it with the provider: sending resumes within the hour after it reinstates the account.",
+          "provider_stopped": "Your email provider has stopped sending from your account. Resolve it with the provider: sending resumes on its own once the provider reinstates the account.",
           "unverified_domain": "The sender domain is not verified. Publish its DKIM record and verify the domain to resume.",
           "workspace_suspended": "Sending is suspended for this workspace. Contact your Sphericon administrator."
         },
@@ -1488,7 +1488,7 @@ export default interface Resources {
           "sourceManual": "Manual",
           "sourceProvider": "Provider",
           "stoppedTitle": "{{name}}: the provider has stopped this account",
-          "stoppedWarning": "The provider has paused sending from this account (SES enforcement status SHUTDOWN), so mail through it is on hold and nothing is lost. Resolve the issue with the provider: sending resumes within the hour after it reinstates the account.",
+          "stoppedWarning": "The provider has paused sending from this account (SES enforcement status SHUTDOWN), so mail through it is on hold and nothing is lost. Resolve the issue with the provider: sending resumes on its own once it reinstates the account, as the account is checked hourly.",
           "title": "Provider limit",
           "unlimited": "Unlimited",
           "unlimitedTitle": "{{name}} has no Provider limit",
