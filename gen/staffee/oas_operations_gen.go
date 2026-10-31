@@ -6,6 +6,9 @@ package staffeeapi
 type OperationName = string
 
 const (
+	StaffSendCapDefaultsClearOperation   OperationName = "StaffSendCapDefaultsClear"
+	StaffSendCapDefaultsGetOperation     OperationName = "StaffSendCapDefaultsGet"
+	StaffSendCapDefaultsSetOperation     OperationName = "StaffSendCapDefaultsSet"
 	StaffSignupSurveyCountsOperation     OperationName = "StaffSignupSurveyCounts"
 	StaffSignupSurveyGetOperation        OperationName = "StaffSignupSurveyGet"
 	StaffWorkspaceAuditListOperation     OperationName = "StaffWorkspaceAuditList"

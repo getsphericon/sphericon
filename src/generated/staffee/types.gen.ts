@@ -488,6 +488,31 @@ export type StaffSendCapChange = {
 };
 
 /**
+ * The Instance's default Send cap (ADR 0067): the Send cap every Workspace created from now on
+ * starts with. Changing it leaves existing Workspaces' Send caps as they are.
+ */
+export type StaffSendCapDefault = {
+  /**
+   * Whether this Instance has Send caps; without, there is no default to set
+   */
+  sendCaps: boolean;
+  /**
+   * The default in messages per rolling 24 hours; null while none is set, when new Workspaces
+   * get no Send cap
+   */
+  sendCap: number | null;
+};
+
+/**
+ * The outcome of a change to the default Send cap: the default as it now stands, and whether
+ * anything changed
+ */
+export type StaffSendCapDefaultChange = {
+  changed: boolean;
+  default: StaffSendCapDefault;
+};
+
+/**
  * A Workspace's Send cap (ADR 0067) as a Staff member sets it
  */
 export type StaffSendCapInput = {
@@ -930,6 +955,93 @@ export type StaffWorkspaceSearchReview = StaffWorkspaceReview;
  * the id exactly
  */
 export type StaffWorkspaceSearchSearch = string;
+
+export type StaffSendCapDefaultsClearData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/send-cap-default';
+};
+
+export type StaffSendCapDefaultsClearErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type StaffSendCapDefaultsClearError = StaffSendCapDefaultsClearErrors[keyof StaffSendCapDefaultsClearErrors];
+
+export type StaffSendCapDefaultsClearResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffSendCapDefaultChange;
+};
+
+export type StaffSendCapDefaultsClearResponse = StaffSendCapDefaultsClearResponses[keyof StaffSendCapDefaultsClearResponses];
+
+export type StaffSendCapDefaultsGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/send-cap-default';
+};
+
+export type StaffSendCapDefaultsGetErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+};
+
+export type StaffSendCapDefaultsGetError = StaffSendCapDefaultsGetErrors[keyof StaffSendCapDefaultsGetErrors];
+
+export type StaffSendCapDefaultsGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffSendCapDefault;
+};
+
+export type StaffSendCapDefaultsGetResponse = StaffSendCapDefaultsGetResponses[keyof StaffSendCapDefaultsGetResponses];
+
+export type StaffSendCapDefaultsSetData = {
+  body: StaffSendCapInput;
+  path?: never;
+  query?: never;
+  url: '/send-cap-default';
+};
+
+export type StaffSendCapDefaultsSetErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type StaffSendCapDefaultsSetError = StaffSendCapDefaultsSetErrors[keyof StaffSendCapDefaultsSetErrors];
+
+export type StaffSendCapDefaultsSetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffSendCapDefaultChange;
+};
+
+export type StaffSendCapDefaultsSetResponse = StaffSendCapDefaultsSetResponses[keyof StaffSendCapDefaultsSetResponses];
 
 export type StaffSignupSurveyCountsData = {
   body?: never;

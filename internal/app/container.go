@@ -579,7 +579,12 @@ var accountsPackage = do.Package(
 	}),
 	// Accounts is the raw-client home of Users, Workspaces and Memberships (ADR 0017).
 	do.Lazy(func(i do.Injector) (*accounts.Accounts, error) {
-		return accounts.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i)), nil
+		var opts []accounts.Option
+		// Only a saas Instance has Send caps (ADR 0067): a new Workspace starts with its default.
+		if do.MustInvoke[*config.Config](i).Mode.SaaS() {
+			opts = append(opts, accounts.WithDefaultSendCap())
+		}
+		return accounts.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i), opts...), nil
 	}),
 	// The Workspace deletion cycle (ADR 0043), over the raw client.
 	do.Lazy(func(i do.Injector) (*workspacedeletion.Module, error) {

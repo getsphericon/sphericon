@@ -4,8 +4,58 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen.ts';
-import { type Options, staffSignupSurveyCounts, staffSignupSurveyGet, staffWorkspaceAuditList, staffWorkspacesClearSendCap, staffWorkspacesExempt, staffWorkspacesGet, staffWorkspacesList, staffWorkspacesSetSendCap, staffWorkspacesSuspend, staffWorkspacesUnexempt, staffWorkspacesUnsuspend } from '../sdk.gen.ts';
-import type { StaffSignupSurveyCountsData, StaffSignupSurveyCountsError, StaffSignupSurveyCountsResponse, StaffSignupSurveyGetData, StaffSignupSurveyGetError, StaffSignupSurveyGetResponse, StaffWorkspaceAuditListData, StaffWorkspaceAuditListError, StaffWorkspaceAuditListResponse, StaffWorkspacesClearSendCapData, StaffWorkspacesClearSendCapError, StaffWorkspacesClearSendCapResponse, StaffWorkspacesExemptData, StaffWorkspacesExemptError, StaffWorkspacesExemptResponse, StaffWorkspacesGetData, StaffWorkspacesGetError, StaffWorkspacesGetResponse, StaffWorkspacesListData, StaffWorkspacesListError, StaffWorkspacesListResponse, StaffWorkspacesSetSendCapData, StaffWorkspacesSetSendCapError, StaffWorkspacesSetSendCapResponse, StaffWorkspacesSuspendData, StaffWorkspacesSuspendError, StaffWorkspacesSuspendResponse, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptError, StaffWorkspacesUnexemptResponse, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendError, StaffWorkspacesUnsuspendResponse } from '../types.gen.ts';
+import { type Options, staffSendCapDefaultsClear, staffSendCapDefaultsGet, staffSendCapDefaultsSet, staffSignupSurveyCounts, staffSignupSurveyGet, staffWorkspaceAuditList, staffWorkspacesClearSendCap, staffWorkspacesExempt, staffWorkspacesGet, staffWorkspacesList, staffWorkspacesSetSendCap, staffWorkspacesSuspend, staffWorkspacesUnexempt, staffWorkspacesUnsuspend } from '../sdk.gen.ts';
+import type { StaffSendCapDefaultsClearData, StaffSendCapDefaultsClearError, StaffSendCapDefaultsClearResponse, StaffSendCapDefaultsGetData, StaffSendCapDefaultsGetError, StaffSendCapDefaultsGetResponse, StaffSendCapDefaultsSetData, StaffSendCapDefaultsSetError, StaffSendCapDefaultsSetResponse, StaffSignupSurveyCountsData, StaffSignupSurveyCountsError, StaffSignupSurveyCountsResponse, StaffSignupSurveyGetData, StaffSignupSurveyGetError, StaffSignupSurveyGetResponse, StaffWorkspaceAuditListData, StaffWorkspaceAuditListError, StaffWorkspaceAuditListResponse, StaffWorkspacesClearSendCapData, StaffWorkspacesClearSendCapError, StaffWorkspacesClearSendCapResponse, StaffWorkspacesExemptData, StaffWorkspacesExemptError, StaffWorkspacesExemptResponse, StaffWorkspacesGetData, StaffWorkspacesGetError, StaffWorkspacesGetResponse, StaffWorkspacesListData, StaffWorkspacesListError, StaffWorkspacesListResponse, StaffWorkspacesSetSendCapData, StaffWorkspacesSetSendCapError, StaffWorkspacesSetSendCapResponse, StaffWorkspacesSuspendData, StaffWorkspacesSuspendError, StaffWorkspacesSuspendResponse, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptError, StaffWorkspacesUnexemptResponse, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendError, StaffWorkspacesUnsuspendResponse } from '../types.gen.ts';
+
+export type MutationKey<TOptions extends Partial<Options>> = [
+  Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
+    _id: string;
+    tags?: ReadonlyArray<string>;
+  }
+];
+
+const createMutationKey = <TOptions extends Partial<Options>>(id: string, options?: TOptions, tags?: ReadonlyArray<string>): [
+  MutationKey<TOptions>[0]
+] => {
+  const params: MutationKey<TOptions>[0] = { _id: id, baseUrl: options?.baseUrl || (options?.client ?? client).getConfig().baseUrl };
+  if (tags) {
+    params.tags = tags;
+  }
+  if (options?.body) {
+    params.body = options.body;
+  }
+  if (options?.headers) {
+    params.headers = options.headers;
+  }
+  if (options?.path) {
+    params.path = options.path;
+  }
+  if (options?.query) {
+    params.query = options.query;
+  }
+  return [params];
+};
+
+export const staffSendCapDefaultsClearMutationKey = (options?: Partial<Options<StaffSendCapDefaultsClearData>>) => createMutationKey('staffSendCapDefaultsClear', options, ['StaffMember Send cap default']);
+
+/**
+ * Remove the default Send cap: Workspaces created from now on get none. 404 on an Instance
+ * without Send caps. Idempotent.
+ */
+export const staffSendCapDefaultsClearMutation = (options?: Partial<Options<StaffSendCapDefaultsClearData>>): UseMutationOptions<StaffSendCapDefaultsClearResponse, StaffSendCapDefaultsClearError, Options<StaffSendCapDefaultsClearData>> => {
+  const mutationOptions: UseMutationOptions<StaffSendCapDefaultsClearResponse, StaffSendCapDefaultsClearError, Options<StaffSendCapDefaultsClearData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await staffSendCapDefaultsClear({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    },
+    mutationKey: staffSendCapDefaultsClearMutationKey(options)
+  };
+  return mutationOptions;
+};
 
 export type QueryKey<TOptions extends Options> = [
   Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -38,6 +88,46 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
     params.query = options.query;
   }
   return [params];
+};
+
+export const staffSendCapDefaultsGetQueryKey = (options?: Options<StaffSendCapDefaultsGetData>) => createQueryKey('staffSendCapDefaultsGet', options, false, ['StaffMember Send cap default']);
+
+/**
+ * The Instance's default Send cap, and whether the Instance has Send caps at all
+ */
+export const staffSendCapDefaultsGetOptions = (options?: Options<StaffSendCapDefaultsGetData>) => queryOptions<StaffSendCapDefaultsGetResponse, StaffSendCapDefaultsGetError, StaffSendCapDefaultsGetResponse, ReturnType<typeof staffSendCapDefaultsGetQueryKey>>({
+  queryFn: async ({ queryKey, signal }) => {
+    const { data } = await staffSendCapDefaultsGet({
+      ...options,
+      ...queryKey[0],
+      signal,
+      throwOnError: true
+    });
+    return data;
+  },
+  queryKey: staffSendCapDefaultsGetQueryKey(options)
+});
+
+export const staffSendCapDefaultsSetMutationKey = (options?: Partial<Options<StaffSendCapDefaultsSetData>>) => createMutationKey('staffSendCapDefaultsSet', options, ['StaffMember Send cap default']);
+
+/**
+ * Set the default Send cap: every Workspace created from now on starts with it; existing
+ * Workspaces keep theirs. Only an Instance with Send caps has this operation (404 elsewhere).
+ * Idempotent.
+ */
+export const staffSendCapDefaultsSetMutation = (options?: Partial<Options<StaffSendCapDefaultsSetData>>): UseMutationOptions<StaffSendCapDefaultsSetResponse, StaffSendCapDefaultsSetError, Options<StaffSendCapDefaultsSetData>> => {
+  const mutationOptions: UseMutationOptions<StaffSendCapDefaultsSetResponse, StaffSendCapDefaultsSetError, Options<StaffSendCapDefaultsSetData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await staffSendCapDefaultsSet({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    },
+    mutationKey: staffSendCapDefaultsSetMutationKey(options)
+  };
+  return mutationOptions;
 };
 
 export const staffSignupSurveyCountsQueryKey = (options?: Options<StaffSignupSurveyCountsData>) => createQueryKey('staffSignupSurveyCounts', options, false, ['StaffMember Sign-up survey']);
@@ -217,35 +307,6 @@ export const staffWorkspaceAuditListInfiniteOptions = (options: Options<StaffWor
     queryKey: staffWorkspaceAuditListInfiniteQueryKey(options)
   });
   return opts as Omit<typeof opts, 'initialData'>;
-};
-
-export type MutationKey<TOptions extends Partial<Options>> = [
-  Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
-    _id: string;
-    tags?: ReadonlyArray<string>;
-  }
-];
-
-const createMutationKey = <TOptions extends Partial<Options>>(id: string, options?: TOptions, tags?: ReadonlyArray<string>): [
-  MutationKey<TOptions>[0]
-] => {
-  const params: MutationKey<TOptions>[0] = { _id: id, baseUrl: options?.baseUrl || (options?.client ?? client).getConfig().baseUrl };
-  if (tags) {
-    params.tags = tags;
-  }
-  if (options?.body) {
-    params.body = options.body;
-  }
-  if (options?.headers) {
-    params.headers = options.headers;
-  }
-  if (options?.path) {
-    params.path = options.path;
-  }
-  if (options?.query) {
-    params.query = options.query;
-  }
-  return [params];
 };
 
 export const staffWorkspacesExemptMutationKey = (options?: Partial<Options<StaffWorkspacesExemptData>>) => createMutationKey('staffWorkspacesExempt', options, ['StaffMember Workspaces']);

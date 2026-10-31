@@ -1,7 +1,12 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 
-import { handleStaffWorkspacesList } from '../generated/staffee/msw.gen.ts'
+import {
+  handleStaffSendCapDefaultsClear,
+  handleStaffSendCapDefaultsGet,
+  handleStaffSendCapDefaultsSet,
+  handleStaffWorkspacesList,
+} from '../generated/staffee/msw.gen.ts'
 import type { StaffWorkspaceResource } from '../generated/staffee/types.gen.ts'
 import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/_enterprise/workspaces.$workspaceId.tsx'
 import { Route as consoleWorkspacesRoute } from '../routes/console/_authed/_enterprise/workspaces.index.tsx'
@@ -23,6 +28,11 @@ function workspace(over: Partial<StaffWorkspaceResource> = {}): StaffWorkspaceRe
     ...over,
   }
 }
+
+// An Instance without Send caps unless a test says otherwise.
+beforeEach(() => {
+  worker.use(handleStaffSendCapDefaultsGet({ body: { sendCaps: false, sendCap: null } }))
+})
 
 const page = (items: StaffWorkspaceResource[]) => ({
   items,
@@ -120,4 +130,55 @@ test('a failed load shows the error', async () => {
   const { screen } = await renderWithRouter(<ConsoleWorkspacesPage />, HOME)
 
   await expect.element(screen.getByText('boom')).toBeInTheDocument()
+})
+
+test('an Instance without Send caps shows no default Send cap', async () => {
+  worker.use(handleStaffWorkspacesList({ body: page([workspace()]) }))
+  const { screen } = await renderWithRouter(<ConsoleWorkspacesPage />, HOME)
+
+  await expect.element(screen.getByText('Acme')).toBeInTheDocument()
+  await expect.element(screen.getByText('Default Send cap')).not.toBeInTheDocument()
+})
+
+test('warns while no default Send cap is set, and sets one', async () => {
+  const set: unknown[] = []
+  worker.use(
+    handleStaffWorkspacesList({ body: page([]) }),
+    handleStaffSendCapDefaultsGet({ body: { sendCaps: true, sendCap: null } }),
+    handleStaffSendCapDefaultsSet(async ({ request }) => {
+      set.push(await request.json())
+      return HttpResponse.json({ changed: true, default: { sendCaps: true, sendCap: 2000 } })
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacesPage />, HOME)
+
+  await expect
+    .element(screen.getByText('No default Send cap: new Workspaces have no Send cap.'))
+    .toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Set default' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('textbox', { name: /Messages per 24 hours/ }).fill('2000')
+  await dialog.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => set).toEqual([{ sendCap: 2000 }])
+})
+
+test('a default Send cap shows, and removing it asks first', async () => {
+  let cleared = 0
+  worker.use(
+    handleStaffWorkspacesList({ body: page([]) }),
+    handleStaffSendCapDefaultsGet({ body: { sendCaps: true, sendCap: 2000 } }),
+    handleStaffSendCapDefaultsClear(() => {
+      cleared++
+      return HttpResponse.json({ changed: true, default: { sendCaps: true, sendCap: null } })
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacesPage />, HOME)
+
+  await expect.element(screen.getByText('2,000 messages per 24 hours')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Remove default' }).click()
+  expect(cleared).toBe(0)
+  await screen.getByRole('dialog').getByRole('button', { name: 'Remove default' }).click()
+
+  await expect.poll(() => cleared).toBe(1)
 })

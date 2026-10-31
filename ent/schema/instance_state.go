@@ -57,5 +57,12 @@ func (InstanceState) Fields() []ent.Field {
 		field.Time("latest_release_checked_at").
 			Optional().
 			Nillable(),
+		// DefaultSendCap is the Send cap every Workspace created afterwards starts with (ADR
+		// 0067), in messages per rolling 24 hours; nil: new Workspaces get none. Only an Instance
+		// with Send caps (the saas Mode) uses it, and changing it leaves existing Workspaces alone.
+		field.Int("default_send_cap").
+			Optional().
+			Nillable().
+			Range(1, 100_000_000),
 	}
 }

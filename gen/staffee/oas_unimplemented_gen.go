@@ -13,6 +13,35 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
+// StaffSendCapDefaultsClear implements StaffSendCapDefaults_clear operation.
+//
+// Remove the default Send cap: Workspaces created from now on get none. 404 on an Instance without
+// Send caps. Idempotent.
+//
+// DELETE /send-cap-default
+func (UnimplementedHandler) StaffSendCapDefaultsClear(ctx context.Context) (r StaffSendCapDefaultsClearRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// StaffSendCapDefaultsGet implements StaffSendCapDefaults_get operation.
+//
+// The Instance's default Send cap, and whether the Instance has Send caps at all.
+//
+// GET /send-cap-default
+func (UnimplementedHandler) StaffSendCapDefaultsGet(ctx context.Context) (r StaffSendCapDefaultsGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// StaffSendCapDefaultsSet implements StaffSendCapDefaults_set operation.
+//
+// Set the default Send cap: every Workspace created from now on starts with it; existing Workspaces
+// keep theirs. Only an Instance with Send caps has this operation (404 elsewhere). Idempotent.
+//
+// PUT /send-cap-default
+func (UnimplementedHandler) StaffSendCapDefaultsSet(ctx context.Context, req *StaffSendCapInput) (r StaffSendCapDefaultsSetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // StaffSignupSurveyCounts implements StaffSignupSurvey_counts operation.
 //
 // The Sign-up survey answers, counted per question. Read only.

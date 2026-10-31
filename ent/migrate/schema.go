@@ -1009,6 +1009,7 @@ var (
 		{Name: "last_report_sent_at", Type: field.TypeTime, Nullable: true},
 		{Name: "latest_release", Type: field.TypeString, Nullable: true},
 		{Name: "latest_release_checked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "default_send_cap", Type: field.TypeInt, Nullable: true},
 	}
 	// InstanceStateTable holds the schema information for the "instance_state" table.
 	InstanceStateTable = &schema.Table{

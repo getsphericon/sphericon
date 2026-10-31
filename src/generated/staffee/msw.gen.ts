@@ -3,12 +3,93 @@
 
 import { http, type HttpHandler, HttpResponse, type HttpResponseResolver, type RequestHandlerOptions as RequestHandlerOptions2 } from 'msw';
 
-import type { ClientOptions, StaffSignupSurveyCountsResponses, StaffSignupSurveyGetResponses, StaffWorkspaceAuditListResponses, StaffWorkspacesClearSendCapResponses, StaffWorkspacesExemptResponses, StaffWorkspacesGetResponses, StaffWorkspacesListResponses, StaffWorkspacesSetSendCapData, StaffWorkspacesSetSendCapResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
+import type { ClientOptions, StaffSendCapDefaultsClearResponses, StaffSendCapDefaultsGetResponses, StaffSendCapDefaultsSetData, StaffSendCapDefaultsSetResponses, StaffSignupSurveyCountsResponses, StaffSignupSurveyGetResponses, StaffWorkspaceAuditListResponses, StaffWorkspacesClearSendCapResponses, StaffWorkspacesExemptResponses, StaffWorkspacesGetResponses, StaffWorkspacesListResponses, StaffWorkspacesSetSendCapData, StaffWorkspacesSetSendCapResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
 
 export type RequestHandlerOptions = RequestHandlerOptions2 & {
   baseUrl?: ClientOptions['baseUrl'];
   responseFallback?: 'error' | 'passthrough';
 };
+
+export type HandleStaffSendCapDefaultsClearResponse = {
+  body: StaffSendCapDefaultsClearResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `DELETE /send-cap-default` operation.
+ */
+export function handleStaffSendCapDefaultsClear(response?: HandleStaffSendCapDefaultsClearResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.delete<never, never>(`${options?.baseUrl ?? '*'}/send-cap-default`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleStaffSendCapDefaultsGetResponse = {
+  body: StaffSendCapDefaultsGetResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `GET /send-cap-default` operation.
+ */
+export function handleStaffSendCapDefaultsGet(response?: HandleStaffSendCapDefaultsGetResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.get<never, never>(`${options?.baseUrl ?? '*'}/send-cap-default`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleStaffSendCapDefaultsSetResponse = {
+  body: StaffSendCapDefaultsSetResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `PUT /send-cap-default` operation.
+ */
+export function handleStaffSendCapDefaultsSet(response?: HandleStaffSendCapDefaultsSetResponse | HttpResponseResolver<never, StaffSendCapDefaultsSetData['body']>, options?: RequestHandlerOptions): HttpHandler {
+  return http.put<never, StaffSendCapDefaultsSetData['body']>(`${options?.baseUrl ?? '*'}/send-cap-default`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
 
 export type HandleStaffSignupSurveyCountsResponse = {
   body: StaffSignupSurveyCountsResponses[200];
@@ -345,6 +426,18 @@ export function handleStaffWorkspacesUnsuspend(response?: HandleStaffWorkspacesU
 
 export type MswHandlerFactories = {
   /**
+   * Handler for the `DELETE /send-cap-default` operation.
+   */
+  staffSendCapDefaultsClear: typeof handleStaffSendCapDefaultsClear;
+  /**
+   * Handler for the `GET /send-cap-default` operation.
+   */
+  staffSendCapDefaultsGet: typeof handleStaffSendCapDefaultsGet;
+  /**
+   * Handler for the `PUT /send-cap-default` operation.
+   */
+  staffSendCapDefaultsSet: typeof handleStaffSendCapDefaultsSet;
+  /**
    * Handler for the `GET /signup-survey` operation.
    */
   staffSignupSurveyCounts: typeof handleStaffSignupSurveyCounts;
@@ -405,6 +498,9 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     return (response, options) => handler(response, { ...config, ...options });
   }
   const pick: CreateMswHandlersResult['pick'] = {
+    staffSendCapDefaultsClear: wrap(handleStaffSendCapDefaultsClear),
+    staffSendCapDefaultsGet: wrap(handleStaffSendCapDefaultsGet),
+    staffSendCapDefaultsSet: wrap(handleStaffSendCapDefaultsSet),
     staffSignupSurveyCounts: wrap(handleStaffSignupSurveyCounts),
     staffSignupSurveyGet: wrap(handleStaffSignupSurveyGet),
     staffWorkspacesList: wrap(handleStaffWorkspacesList),
@@ -436,6 +532,9 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
       invoke(pick.staffWorkspacesUnexempt, overrides.staffWorkspacesUnexempt),
       invoke(pick.staffWorkspacesUnsuspend, overrides.staffWorkspacesUnsuspend),
       invoke(pick.staffWorkspacesGet, overrides.staffWorkspacesGet),
+      invoke(pick.staffSendCapDefaultsClear, overrides.staffSendCapDefaultsClear),
+      invoke(pick.staffSendCapDefaultsGet, overrides.staffSendCapDefaultsGet),
+      invoke(pick.staffSendCapDefaultsSet, overrides.staffSendCapDefaultsSet),
       invoke(pick.staffSignupSurveyCounts, overrides.staffSignupSurveyCounts),
       invoke(pick.staffWorkspacesList, overrides.staffWorkspacesList)
     ];

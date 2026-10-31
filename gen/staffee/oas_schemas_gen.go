@@ -81,6 +81,51 @@ func (o NilFloat64) Or(d float64) float64 {
 	return d
 }
 
+// NewNilInt32 returns new NilInt32 with value set to v.
+func NewNilInt32(v int32) NilInt32 {
+	return NilInt32{
+		Value: v,
+	}
+}
+
+// NilInt32 is nullable int32.
+type NilInt32 struct {
+	Value int32
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilInt32) SetTo(v int32) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilInt32) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilInt32) SetToNull() {
+	o.Null = true
+	var v int32
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilInt32) Get() (v int32, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilInt32) Or(d int32) int32 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptInt32 returns new OptInt32 with value set to v.
 func NewOptInt32(v int32) OptInt32 {
 	return OptInt32{
@@ -1146,6 +1191,7 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
+func (*ProblemDetails) staffSendCapDefaultsGetRes() {}
 func (*ProblemDetails) staffSignupSurveyCountsRes() {}
 func (*ProblemDetails) staffWorkspacesListRes()     {}
 
@@ -1919,6 +1965,90 @@ func (s *StaffSendCapChange) SetWorkspace(val StaffWorkspaceResource) {
 
 func (*StaffSendCapChange) staffWorkspacesClearSendCapRes() {}
 func (*StaffSendCapChange) staffWorkspacesSetSendCapRes()   {}
+
+// The Instance's default Send cap (ADR 0067): the Send cap every Workspace created from now on starts
+// with. Changing it leaves existing Workspaces' Send caps as they are.
+// Ref: #/components/schemas/StaffSendCapDefault
+type StaffSendCapDefault struct {
+	// Whether this Instance has Send caps; without, there is no default to set.
+	SendCaps bool `json:"sendCaps"`
+	// The default in messages per rolling 24 hours; null while none is set, when new Workspaces get no
+	// Send cap.
+	SendCap NilInt32 `json:"sendCap"`
+}
+
+// GetSendCaps returns the value of SendCaps.
+func (s *StaffSendCapDefault) GetSendCaps() bool {
+	return s.SendCaps
+}
+
+// GetSendCap returns the value of SendCap.
+func (s *StaffSendCapDefault) GetSendCap() NilInt32 {
+	return s.SendCap
+}
+
+// SetSendCaps sets the value of SendCaps.
+func (s *StaffSendCapDefault) SetSendCaps(val bool) {
+	s.SendCaps = val
+}
+
+// SetSendCap sets the value of SendCap.
+func (s *StaffSendCapDefault) SetSendCap(val NilInt32) {
+	s.SendCap = val
+}
+
+func (*StaffSendCapDefault) staffSendCapDefaultsGetRes() {}
+
+// The outcome of a change to the default Send cap: the default as it now stands, and whether anything
+// changed.
+// Ref: #/components/schemas/StaffSendCapDefaultChange
+type StaffSendCapDefaultChange struct {
+	Changed bool                `json:"changed"`
+	Default StaffSendCapDefault `json:"default"`
+}
+
+// GetChanged returns the value of Changed.
+func (s *StaffSendCapDefaultChange) GetChanged() bool {
+	return s.Changed
+}
+
+// GetDefault returns the value of Default.
+func (s *StaffSendCapDefaultChange) GetDefault() StaffSendCapDefault {
+	return s.Default
+}
+
+// SetChanged sets the value of Changed.
+func (s *StaffSendCapDefaultChange) SetChanged(val bool) {
+	s.Changed = val
+}
+
+// SetDefault sets the value of Default.
+func (s *StaffSendCapDefaultChange) SetDefault(val StaffSendCapDefault) {
+	s.Default = val
+}
+
+func (*StaffSendCapDefaultChange) staffSendCapDefaultsClearRes() {}
+func (*StaffSendCapDefaultChange) staffSendCapDefaultsSetRes()   {}
+
+type StaffSendCapDefaultsClearNotFound ProblemDetails
+
+func (*StaffSendCapDefaultsClearNotFound) staffSendCapDefaultsClearRes() {}
+
+type StaffSendCapDefaultsClearUnauthorized ProblemDetails
+
+func (*StaffSendCapDefaultsClearUnauthorized) staffSendCapDefaultsClearRes() {}
+
+type StaffSendCapDefaultsSetNotFound ProblemDetails
+
+func (*StaffSendCapDefaultsSetNotFound) staffSendCapDefaultsSetRes() {}
+
+type StaffSendCapDefaultsSetUnauthorized ProblemDetails
+
+func (*StaffSendCapDefaultsSetUnauthorized) staffSendCapDefaultsSetRes() {}
+
+type StaffSendCapDefaultsSetUnprocessableEntity ProblemDetails
+
+func (*StaffSendCapDefaultsSetUnprocessableEntity) staffSendCapDefaultsSetRes() {}
 
 // A Workspace's Send cap (ADR 0067) as a Staff member sets it.
 // Ref: #/components/schemas/StaffSendCapInput

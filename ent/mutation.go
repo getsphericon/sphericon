@@ -21713,6 +21713,8 @@ type InstanceStateMutation struct {
 	last_report_sent_at       *time.Time
 	latest_release            *string
 	latest_release_checked_at *time.Time
+	default_send_cap          *int
+	adddefault_send_cap       *int
 	clearedFields             map[string]struct{}
 	done                      bool
 	oldValue                  func(context.Context) (*InstanceState, error)
@@ -22163,6 +22165,76 @@ func (m *InstanceStateMutation) ResetLatestReleaseCheckedAt() {
 	delete(m.clearedFields, instancestate.FieldLatestReleaseCheckedAt)
 }
 
+// SetDefaultSendCap sets the "default_send_cap" field.
+func (m *InstanceStateMutation) SetDefaultSendCap(i int) {
+	m.default_send_cap = &i
+	m.adddefault_send_cap = nil
+}
+
+// DefaultSendCap returns the value of the "default_send_cap" field in the mutation.
+func (m *InstanceStateMutation) DefaultSendCap() (r int, exists bool) {
+	v := m.default_send_cap
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefaultSendCap returns the old "default_send_cap" field's value of the InstanceState entity.
+// If the InstanceState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InstanceStateMutation) OldDefaultSendCap(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefaultSendCap is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefaultSendCap requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefaultSendCap: %w", err)
+	}
+	return oldValue.DefaultSendCap, nil
+}
+
+// AddDefaultSendCap adds i to the "default_send_cap" field.
+func (m *InstanceStateMutation) AddDefaultSendCap(i int) {
+	if m.adddefault_send_cap != nil {
+		*m.adddefault_send_cap += i
+	} else {
+		m.adddefault_send_cap = &i
+	}
+}
+
+// AddedDefaultSendCap returns the value that was added to the "default_send_cap" field in this mutation.
+func (m *InstanceStateMutation) AddedDefaultSendCap() (r int, exists bool) {
+	v := m.adddefault_send_cap
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearDefaultSendCap clears the value of the "default_send_cap" field.
+func (m *InstanceStateMutation) ClearDefaultSendCap() {
+	m.default_send_cap = nil
+	m.adddefault_send_cap = nil
+	m.clearedFields[instancestate.FieldDefaultSendCap] = struct{}{}
+}
+
+// DefaultSendCapCleared returns if the "default_send_cap" field was cleared in this mutation.
+func (m *InstanceStateMutation) DefaultSendCapCleared() bool {
+	_, ok := m.clearedFields[instancestate.FieldDefaultSendCap]
+	return ok
+}
+
+// ResetDefaultSendCap resets all changes to the "default_send_cap" field.
+func (m *InstanceStateMutation) ResetDefaultSendCap() {
+	m.default_send_cap = nil
+	m.adddefault_send_cap = nil
+	delete(m.clearedFields, instancestate.FieldDefaultSendCap)
+}
+
 // Where appends a list predicates to the InstanceStateMutation builder.
 func (m *InstanceStateMutation) Where(ps ...predicate.InstanceState) {
 	m.predicates = append(m.predicates, ps...)
@@ -22197,7 +22269,7 @@ func (m *InstanceStateMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InstanceStateMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, instancestate.FieldCreatedAt)
 	}
@@ -22221,6 +22293,9 @@ func (m *InstanceStateMutation) Fields() []string {
 	}
 	if m.latest_release_checked_at != nil {
 		fields = append(fields, instancestate.FieldLatestReleaseCheckedAt)
+	}
+	if m.default_send_cap != nil {
+		fields = append(fields, instancestate.FieldDefaultSendCap)
 	}
 	return fields
 }
@@ -22246,6 +22321,8 @@ func (m *InstanceStateMutation) Field(name string) (ent.Value, bool) {
 		return m.LatestRelease()
 	case instancestate.FieldLatestReleaseCheckedAt:
 		return m.LatestReleaseCheckedAt()
+	case instancestate.FieldDefaultSendCap:
+		return m.DefaultSendCap()
 	}
 	return nil, false
 }
@@ -22271,6 +22348,8 @@ func (m *InstanceStateMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldLatestRelease(ctx)
 	case instancestate.FieldLatestReleaseCheckedAt:
 		return m.OldLatestReleaseCheckedAt(ctx)
+	case instancestate.FieldDefaultSendCap:
+		return m.OldDefaultSendCap(ctx)
 	}
 	return nil, fmt.Errorf("unknown InstanceState field %s", name)
 }
@@ -22336,6 +22415,13 @@ func (m *InstanceStateMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLatestReleaseCheckedAt(v)
 		return nil
+	case instancestate.FieldDefaultSendCap:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefaultSendCap(v)
+		return nil
 	}
 	return fmt.Errorf("unknown InstanceState field %s", name)
 }
@@ -22343,13 +22429,21 @@ func (m *InstanceStateMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *InstanceStateMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.adddefault_send_cap != nil {
+		fields = append(fields, instancestate.FieldDefaultSendCap)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *InstanceStateMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case instancestate.FieldDefaultSendCap:
+		return m.AddedDefaultSendCap()
+	}
 	return nil, false
 }
 
@@ -22358,6 +22452,13 @@ func (m *InstanceStateMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *InstanceStateMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case instancestate.FieldDefaultSendCap:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDefaultSendCap(v)
+		return nil
 	}
 	return fmt.Errorf("unknown InstanceState numeric field %s", name)
 }
@@ -22377,6 +22478,9 @@ func (m *InstanceStateMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(instancestate.FieldLatestReleaseCheckedAt) {
 		fields = append(fields, instancestate.FieldLatestReleaseCheckedAt)
+	}
+	if m.FieldCleared(instancestate.FieldDefaultSendCap) {
+		fields = append(fields, instancestate.FieldDefaultSendCap)
 	}
 	return fields
 }
@@ -22403,6 +22507,9 @@ func (m *InstanceStateMutation) ClearField(name string) error {
 		return nil
 	case instancestate.FieldLatestReleaseCheckedAt:
 		m.ClearLatestReleaseCheckedAt()
+		return nil
+	case instancestate.FieldDefaultSendCap:
+		m.ClearDefaultSendCap()
 		return nil
 	}
 	return fmt.Errorf("unknown InstanceState nullable field %s", name)
@@ -22435,6 +22542,9 @@ func (m *InstanceStateMutation) ResetField(name string) error {
 		return nil
 	case instancestate.FieldLatestReleaseCheckedAt:
 		m.ResetLatestReleaseCheckedAt()
+		return nil
+	case instancestate.FieldDefaultSendCap:
+		m.ResetDefaultSendCap()
 		return nil
 	}
 	return fmt.Errorf("unknown InstanceState field %s", name)

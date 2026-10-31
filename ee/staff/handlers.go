@@ -248,3 +248,52 @@ func (h *Handlers) setExempt(ctx context.Context, wsID staffeeapi.WorkspaceId, e
 	}
 	return w, changed, false, err
 }
+
+// StaffSendCapDefaultsGet is the Instance's default Send cap (ADR 0067); on an Instance without
+// Send caps it says so, with none.
+func (h *Handlers) StaffSendCapDefaultsGet(ctx context.Context) (staffeeapi.StaffSendCapDefaultsGetRes, error) {
+	sendCap, err := h.module.DefaultSendCap(ctx)
+	if errors.Is(err, ErrNoSendCaps) {
+		return &staffeeapi.StaffSendCapDefault{SendCap: staffeeapi.NilInt32{Null: true}}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return new(sendCapDefault(sendCap)), nil
+}
+
+// StaffSendCapDefaultsSet sets the Instance's default Send cap as the signed-in Staff member.
+func (h *Handlers) StaffSendCapDefaultsSet(ctx context.Context, req *staffeeapi.StaffSendCapInput) (staffeeapi.StaffSendCapDefaultsSetRes, error) {
+	sendCap := int(req.SendCap)
+	now, changed, err := h.module.SetDefaultSendCap(ctx, staffmembers.Current(ctx), &sendCap)
+	if errors.Is(err, ErrNoSendCaps) {
+		p := staffeeapi.StaffSendCapDefaultsSetNotFound(notFoundProblem())
+		return &p, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &staffeeapi.StaffSendCapDefaultChange{Changed: changed, Default: sendCapDefault(now)}, nil
+}
+
+// StaffSendCapDefaultsClear removes the Instance's default Send cap as the signed-in Staff member.
+func (h *Handlers) StaffSendCapDefaultsClear(ctx context.Context) (staffeeapi.StaffSendCapDefaultsClearRes, error) {
+	now, changed, err := h.module.SetDefaultSendCap(ctx, staffmembers.Current(ctx), nil)
+	if errors.Is(err, ErrNoSendCaps) {
+		p := staffeeapi.StaffSendCapDefaultsClearNotFound(notFoundProblem())
+		return &p, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &staffeeapi.StaffSendCapDefaultChange{Changed: changed, Default: sendCapDefault(now)}, nil
+}
+
+// sendCapDefault is the default Send cap of an Instance that has Send caps.
+func sendCapDefault(sendCap *int) staffeeapi.StaffSendCapDefault {
+	out := staffeeapi.StaffSendCapDefault{SendCaps: true, SendCap: staffeeapi.NilInt32{Null: true}}
+	if sendCap != nil {
+		out.SendCap = staffeeapi.NewNilInt32(narrow.Int32(*sendCap))
+	}
+	return out
+}

@@ -134,6 +134,20 @@ func (_c *InstanceStateCreate) SetNillableLatestReleaseCheckedAt(v *time.Time) *
 	return _c
 }
 
+// SetDefaultSendCap sets the "default_send_cap" field.
+func (_c *InstanceStateCreate) SetDefaultSendCap(v int) *InstanceStateCreate {
+	_c.mutation.SetDefaultSendCap(v)
+	return _c
+}
+
+// SetNillableDefaultSendCap sets the "default_send_cap" field if the given value is not nil.
+func (_c *InstanceStateCreate) SetNillableDefaultSendCap(v *int) *InstanceStateCreate {
+	if v != nil {
+		_c.SetDefaultSendCap(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *InstanceStateCreate) SetID(v int64) *InstanceStateCreate {
 	_c.mutation.SetID(v)
@@ -207,6 +221,11 @@ func (_c *InstanceStateCreate) check() error {
 	if _, ok := _c.mutation.TelemetryEnabled(); !ok {
 		return &ValidationError{Name: "telemetry_enabled", err: errors.New(`ent: missing required field "InstanceState.telemetry_enabled"`)}
 	}
+	if v, ok := _c.mutation.DefaultSendCap(); ok {
+		if err := instancestate.DefaultSendCapValidator(v); err != nil {
+			return &ValidationError{Name: "default_send_cap", err: fmt.Errorf(`ent: validator failed for field "InstanceState.default_send_cap": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -271,6 +290,10 @@ func (_c *InstanceStateCreate) createSpec() (*InstanceState, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.LatestReleaseCheckedAt(); ok {
 		_spec.SetField(instancestate.FieldLatestReleaseCheckedAt, field.TypeTime, value)
 		_node.LatestReleaseCheckedAt = &value
+	}
+	if value, ok := _c.mutation.DefaultSendCap(); ok {
+		_spec.SetField(instancestate.FieldDefaultSendCap, field.TypeInt, value)
+		_node.DefaultSendCap = &value
 	}
 	return _node, _spec
 }
@@ -417,6 +440,30 @@ func (u *InstanceStateUpsert) UpdateLatestReleaseCheckedAt() *InstanceStateUpser
 // ClearLatestReleaseCheckedAt clears the value of the "latest_release_checked_at" field.
 func (u *InstanceStateUpsert) ClearLatestReleaseCheckedAt() *InstanceStateUpsert {
 	u.SetNull(instancestate.FieldLatestReleaseCheckedAt)
+	return u
+}
+
+// SetDefaultSendCap sets the "default_send_cap" field.
+func (u *InstanceStateUpsert) SetDefaultSendCap(v int) *InstanceStateUpsert {
+	u.Set(instancestate.FieldDefaultSendCap, v)
+	return u
+}
+
+// UpdateDefaultSendCap sets the "default_send_cap" field to the value that was provided on create.
+func (u *InstanceStateUpsert) UpdateDefaultSendCap() *InstanceStateUpsert {
+	u.SetExcluded(instancestate.FieldDefaultSendCap)
+	return u
+}
+
+// AddDefaultSendCap adds v to the "default_send_cap" field.
+func (u *InstanceStateUpsert) AddDefaultSendCap(v int) *InstanceStateUpsert {
+	u.Add(instancestate.FieldDefaultSendCap, v)
+	return u
+}
+
+// ClearDefaultSendCap clears the value of the "default_send_cap" field.
+func (u *InstanceStateUpsert) ClearDefaultSendCap() *InstanceStateUpsert {
+	u.SetNull(instancestate.FieldDefaultSendCap)
 	return u
 }
 
@@ -583,6 +630,34 @@ func (u *InstanceStateUpsertOne) UpdateLatestReleaseCheckedAt() *InstanceStateUp
 func (u *InstanceStateUpsertOne) ClearLatestReleaseCheckedAt() *InstanceStateUpsertOne {
 	return u.Update(func(s *InstanceStateUpsert) {
 		s.ClearLatestReleaseCheckedAt()
+	})
+}
+
+// SetDefaultSendCap sets the "default_send_cap" field.
+func (u *InstanceStateUpsertOne) SetDefaultSendCap(v int) *InstanceStateUpsertOne {
+	return u.Update(func(s *InstanceStateUpsert) {
+		s.SetDefaultSendCap(v)
+	})
+}
+
+// AddDefaultSendCap adds v to the "default_send_cap" field.
+func (u *InstanceStateUpsertOne) AddDefaultSendCap(v int) *InstanceStateUpsertOne {
+	return u.Update(func(s *InstanceStateUpsert) {
+		s.AddDefaultSendCap(v)
+	})
+}
+
+// UpdateDefaultSendCap sets the "default_send_cap" field to the value that was provided on create.
+func (u *InstanceStateUpsertOne) UpdateDefaultSendCap() *InstanceStateUpsertOne {
+	return u.Update(func(s *InstanceStateUpsert) {
+		s.UpdateDefaultSendCap()
+	})
+}
+
+// ClearDefaultSendCap clears the value of the "default_send_cap" field.
+func (u *InstanceStateUpsertOne) ClearDefaultSendCap() *InstanceStateUpsertOne {
+	return u.Update(func(s *InstanceStateUpsert) {
+		s.ClearDefaultSendCap()
 	})
 }
 
@@ -915,6 +990,34 @@ func (u *InstanceStateUpsertBulk) UpdateLatestReleaseCheckedAt() *InstanceStateU
 func (u *InstanceStateUpsertBulk) ClearLatestReleaseCheckedAt() *InstanceStateUpsertBulk {
 	return u.Update(func(s *InstanceStateUpsert) {
 		s.ClearLatestReleaseCheckedAt()
+	})
+}
+
+// SetDefaultSendCap sets the "default_send_cap" field.
+func (u *InstanceStateUpsertBulk) SetDefaultSendCap(v int) *InstanceStateUpsertBulk {
+	return u.Update(func(s *InstanceStateUpsert) {
+		s.SetDefaultSendCap(v)
+	})
+}
+
+// AddDefaultSendCap adds v to the "default_send_cap" field.
+func (u *InstanceStateUpsertBulk) AddDefaultSendCap(v int) *InstanceStateUpsertBulk {
+	return u.Update(func(s *InstanceStateUpsert) {
+		s.AddDefaultSendCap(v)
+	})
+}
+
+// UpdateDefaultSendCap sets the "default_send_cap" field to the value that was provided on create.
+func (u *InstanceStateUpsertBulk) UpdateDefaultSendCap() *InstanceStateUpsertBulk {
+	return u.Update(func(s *InstanceStateUpsert) {
+		s.UpdateDefaultSendCap()
+	})
+}
+
+// ClearDefaultSendCap clears the value of the "default_send_cap" field.
+func (u *InstanceStateUpsertBulk) ClearDefaultSendCap() *InstanceStateUpsertBulk {
+	return u.Update(func(s *InstanceStateUpsert) {
+		s.ClearDefaultSendCap()
 	})
 }
 

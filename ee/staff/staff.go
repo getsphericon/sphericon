@@ -16,7 +16,9 @@
 package staff
 
 import (
+	"cmp"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/getsphericon/sphericon/ee/abuse"
@@ -46,6 +48,9 @@ type Config struct {
 	// SendCaps is true on an Instance that has Send caps (the saas Mode, ADR 0067): only there
 	// does a Staff member set one, and only there does the console show one.
 	SendCaps bool
+	// Log receives the record of an Instance-level change, such as the default Send cap; nil is
+	// slog's default logger.
+	Log *slog.Logger
 }
 
 // Module is the domain of the console's Enterprise sections and of the service endpoints.
@@ -60,6 +65,7 @@ type Module struct {
 	survey  *signupsurvey.Reader
 	// sendCaps: the Instance has Send caps (Config.SendCaps).
 	sendCaps bool
+	log      *slog.Logger
 }
 
 // NewModule builds the module over the raw client.
@@ -74,7 +80,7 @@ func NewModule(client *ent.Client, lic *licensekey.License, auditLog *audit.Log,
 	}
 	return &Module{
 		ent: client, lic: lic, audit: auditLog, now: now, watch: abuse.NewWatch(lic, cfg.Abuse), support: cfg.SupportEmail, holdMax: holdMax, survey: signupsurvey.NewReader(client),
-		sendCaps: cfg.SendCaps,
+		sendCaps: cfg.SendCaps, log: cmp.Or(cfg.Log, slog.Default()),
 	}
 }
 

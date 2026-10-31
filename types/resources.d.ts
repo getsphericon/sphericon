@@ -587,6 +587,17 @@ export default interface Resources {
         "signupItems": "Sign-up items",
         "workspaces": "Workspaces"
       },
+      "sendCapDefault": {
+        "change": "Change default",
+        "clear": "Remove default",
+        "clearDescription": "Workspaces created from now on will have no Send cap. Existing Workspaces keep theirs.",
+        "clearTitle": "Remove the default Send cap?",
+        "description": "Every Workspace created from now on starts with this Send cap. Changing it leaves existing Workspaces as they are.",
+        "error": "Could not change the default Send cap",
+        "set": "Set default",
+        "title": "Default Send cap",
+        "unset": "No default Send cap: new Workspaces have no Send cap."
+      },
       "signupItem": {
         "archive": "Archive",
         "archiveDescription": "It leaves the sign-up form and its public page at once, and cannot be restored. Its published versions stay listed.",

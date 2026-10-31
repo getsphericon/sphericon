@@ -11,10 +11,13 @@ import (
 )
 
 var (
-	rn9AllowedHeaders = map[string]string{
+	rn1AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn13AllowedHeaders = map[string]string{
+	rn11AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn15AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 )
@@ -70,54 +73,59 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 			switch elem[0] {
-			case 's': // Prefix: "signup-survey"
+			case 's': // Prefix: "s"
 
-				if l := len("signup-survey"); len(elem) >= l && elem[0:l] == "signup-survey" {
+				if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
 					elem = elem[l:]
 				} else {
 					break
 				}
 
 				if len(elem) == 0 {
-					switch r.Method {
-					case "GET":
-						s.handleStaffSignupSurveyCountsRequest([0]string{}, elemIsEscaped, w, r)
-					default:
-						s.notAllowed(w, r, notAllowedParams{
-							allowedMethods: "GET",
-							allowedHeaders: nil,
-							acceptPost:     "",
-							acceptPatch:    "",
-						})
-					}
-
-					return
+					break
 				}
 				switch elem[0] {
-				case '/': // Prefix: "/users/"
+				case 'e': // Prefix: "end-cap-default"
 
-					if l := len("/users/"); len(elem) >= l && elem[0:l] == "/users/" {
+					if l := len("end-cap-default"); len(elem) >= l && elem[0:l] == "end-cap-default" {
 						elem = elem[l:]
 					} else {
 						break
 					}
 
-					// Param: "userId"
-					// Leaf parameter, slashes are prohibited
-					idx := strings.IndexByte(elem, '/')
-					if idx >= 0 {
-						break
-					}
-					args[0] = elem
-					elem = ""
-
 					if len(elem) == 0 {
 						// Leaf node.
 						switch r.Method {
+						case "DELETE":
+							s.handleStaffSendCapDefaultsClearRequest([0]string{}, elemIsEscaped, w, r)
 						case "GET":
-							s.handleStaffSignupSurveyGetRequest([1]string{
-								args[0],
-							}, elemIsEscaped, w, r)
+							s.handleStaffSendCapDefaultsGetRequest([0]string{}, elemIsEscaped, w, r)
+						case "PUT":
+							s.handleStaffSendCapDefaultsSetRequest([0]string{}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "DELETE,GET,PUT",
+								allowedHeaders: rn1AllowedHeaders,
+								acceptPost:     "",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+
+				case 'i': // Prefix: "ignup-survey"
+
+					if l := len("ignup-survey"); len(elem) >= l && elem[0:l] == "ignup-survey" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						switch r.Method {
+						case "GET":
+							s.handleStaffSignupSurveyCountsRequest([0]string{}, elemIsEscaped, w, r)
 						default:
 							s.notAllowed(w, r, notAllowedParams{
 								allowedMethods: "GET",
@@ -128,6 +136,44 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						}
 
 						return
+					}
+					switch elem[0] {
+					case '/': // Prefix: "/users/"
+
+						if l := len("/users/"); len(elem) >= l && elem[0:l] == "/users/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						// Param: "userId"
+						// Leaf parameter, slashes are prohibited
+						idx := strings.IndexByte(elem, '/')
+						if idx >= 0 {
+							break
+						}
+						args[0] = elem
+						elem = ""
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleStaffSignupSurveyGetRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: nil,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
 					}
 
 				}
@@ -291,7 +337,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									default:
 										s.notAllowed(w, r, notAllowedParams{
 											allowedMethods: "DELETE,PUT",
-											allowedHeaders: rn9AllowedHeaders,
+											allowedHeaders: rn11AllowedHeaders,
 											acceptPost:     "",
 											acceptPatch:    "",
 										})
@@ -318,7 +364,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									default:
 										s.notAllowed(w, r, notAllowedParams{
 											allowedMethods: "POST",
-											allowedHeaders: rn13AllowedHeaders,
+											allowedHeaders: rn15AllowedHeaders,
 											acceptPost:     "application/json",
 											acceptPatch:    "",
 										})
@@ -503,62 +549,119 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 				break
 			}
 			switch elem[0] {
-			case 's': // Prefix: "signup-survey"
+			case 's': // Prefix: "s"
 
-				if l := len("signup-survey"); len(elem) >= l && elem[0:l] == "signup-survey" {
+				if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
 					elem = elem[l:]
 				} else {
 					break
 				}
 
 				if len(elem) == 0 {
-					switch method {
-					case "GET":
-						r.name = StaffSignupSurveyCountsOperation
-						r.summary = ""
-						r.operationID = "StaffSignupSurvey_counts"
-						r.operationGroup = ""
-						r.pathPattern = "/signup-survey"
-						r.args = args
-						r.count = 0
-						return r, true
-					default:
-						return
-					}
+					break
 				}
 				switch elem[0] {
-				case '/': // Prefix: "/users/"
+				case 'e': // Prefix: "end-cap-default"
 
-					if l := len("/users/"); len(elem) >= l && elem[0:l] == "/users/" {
+					if l := len("end-cap-default"); len(elem) >= l && elem[0:l] == "end-cap-default" {
 						elem = elem[l:]
 					} else {
 						break
 					}
 
-					// Param: "userId"
-					// Leaf parameter, slashes are prohibited
-					idx := strings.IndexByte(elem, '/')
-					if idx >= 0 {
-						break
-					}
-					args[0] = elem
-					elem = ""
-
 					if len(elem) == 0 {
 						// Leaf node.
 						switch method {
-						case "GET":
-							r.name = StaffSignupSurveyGetOperation
+						case "DELETE":
+							r.name = StaffSendCapDefaultsClearOperation
 							r.summary = ""
-							r.operationID = "StaffSignupSurvey_get"
+							r.operationID = "StaffSendCapDefaults_clear"
 							r.operationGroup = ""
-							r.pathPattern = "/signup-survey/users/{userId}"
+							r.pathPattern = "/send-cap-default"
 							r.args = args
-							r.count = 1
+							r.count = 0
+							return r, true
+						case "GET":
+							r.name = StaffSendCapDefaultsGetOperation
+							r.summary = ""
+							r.operationID = "StaffSendCapDefaults_get"
+							r.operationGroup = ""
+							r.pathPattern = "/send-cap-default"
+							r.args = args
+							r.count = 0
+							return r, true
+						case "PUT":
+							r.name = StaffSendCapDefaultsSetOperation
+							r.summary = ""
+							r.operationID = "StaffSendCapDefaults_set"
+							r.operationGroup = ""
+							r.pathPattern = "/send-cap-default"
+							r.args = args
+							r.count = 0
 							return r, true
 						default:
 							return
 						}
+					}
+
+				case 'i': // Prefix: "ignup-survey"
+
+					if l := len("ignup-survey"); len(elem) >= l && elem[0:l] == "ignup-survey" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						switch method {
+						case "GET":
+							r.name = StaffSignupSurveyCountsOperation
+							r.summary = ""
+							r.operationID = "StaffSignupSurvey_counts"
+							r.operationGroup = ""
+							r.pathPattern = "/signup-survey"
+							r.args = args
+							r.count = 0
+							return r, true
+						default:
+							return
+						}
+					}
+					switch elem[0] {
+					case '/': // Prefix: "/users/"
+
+						if l := len("/users/"); len(elem) >= l && elem[0:l] == "/users/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						// Param: "userId"
+						// Leaf parameter, slashes are prohibited
+						idx := strings.IndexByte(elem, '/')
+						if idx >= 0 {
+							break
+						}
+						args[0] = elem
+						elem = ""
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = StaffSignupSurveyGetOperation
+								r.summary = ""
+								r.operationID = "StaffSignupSurvey_get"
+								r.operationGroup = ""
+								r.pathPattern = "/signup-survey/users/{userId}"
+								r.args = args
+								r.count = 1
+								return r, true
+							default:
+								return
+							}
+						}
+
 					}
 
 				}

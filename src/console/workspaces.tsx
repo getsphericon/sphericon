@@ -13,6 +13,7 @@ import type { StaffWorkspaceReview } from '../generated/staffee/types.gen.ts'
 import { zStaffWorkspaceReview } from '../generated/staffee/zod.gen.ts'
 import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/_enterprise/workspaces.$workspaceId.tsx'
 import { formatDateTime } from '../utils/datetime.ts'
+import { DefaultSendCapCard } from './DefaultSendCapCard.tsx'
 
 const PAGE_SIZE = 25
 const REVIEWS = zStaffWorkspaceReview.options
@@ -43,6 +44,7 @@ export function ConsoleWorkspacesPage() {
   return (
     <Stack>
       <Title order={2}>{t(($) => $.console.workspaces.title)}</Title>
+      <DefaultSendCapCard />
       <Group>
         <TextInput
           aria-label={t(($) => $.console.workspaces.searchLabel)}

@@ -164,6 +164,24 @@ export const zStaffDeliverability = z.object({
 });
 
 /**
+ * The Instance's default Send cap (ADR 0067): the Send cap every Workspace created from now on
+ * starts with. Changing it leaves existing Workspaces' Send caps as they are.
+ */
+export const zStaffSendCapDefault = z.object({
+  sendCaps: z.boolean(),
+  sendCap: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable()
+});
+
+/**
+ * The outcome of a change to the default Send cap: the default as it now stands, and whether
+ * anything changed
+ */
+export const zStaffSendCapDefaultChange = z.object({
+  changed: z.boolean(),
+  default: zStaffSendCapDefault
+});
+
+/**
  * A Workspace's Send cap (ADR 0067) as a Staff member sets it
  */
 export const zStaffSendCapInput = z.object({
@@ -531,6 +549,23 @@ export const zStaffWorkspaceSearchReview = zStaffWorkspaceReview;
  * the id exactly
  */
 export const zStaffWorkspaceSearchSearch = z.string();
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffSendCapDefaultsClearResponse = zStaffSendCapDefaultChange;
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffSendCapDefaultsGetResponse = zStaffSendCapDefault;
+
+export const zStaffSendCapDefaultsSetBody = zStaffSendCapInput;
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffSendCapDefaultsSetResponse = zStaffSendCapDefaultChange;
 
 /**
  * The request has succeeded.

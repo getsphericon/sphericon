@@ -5,8 +5,8 @@ import * as z from 'zod';
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { StaffSignupSurveyCountsData, StaffSignupSurveyCountsErrors, StaffSignupSurveyCountsResponses, StaffSignupSurveyGetData, StaffSignupSurveyGetErrors, StaffSignupSurveyGetResponses, StaffWorkspaceAuditListData, StaffWorkspaceAuditListErrors, StaffWorkspaceAuditListResponses, StaffWorkspacesClearSendCapData, StaffWorkspacesClearSendCapErrors, StaffWorkspacesClearSendCapResponses, StaffWorkspacesExemptData, StaffWorkspacesExemptErrors, StaffWorkspacesExemptResponses, StaffWorkspacesGetData, StaffWorkspacesGetErrors, StaffWorkspacesGetResponses, StaffWorkspacesListData, StaffWorkspacesListErrors, StaffWorkspacesListResponses, StaffWorkspacesSetSendCapData, StaffWorkspacesSetSendCapErrors, StaffWorkspacesSetSendCapResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendErrors, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptErrors, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendErrors, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
-import { zStaffSignupSurveyGetPath, zStaffWorkspaceAuditListPath, zStaffWorkspaceAuditListQuery, zStaffWorkspacesClearSendCapPath, zStaffWorkspacesExemptPath, zStaffWorkspacesGetPath, zStaffWorkspacesListQuery, zStaffWorkspacesSetSendCapBody, zStaffWorkspacesSetSendCapPath, zStaffWorkspacesSuspendBody, zStaffWorkspacesSuspendPath, zStaffWorkspacesUnexemptPath, zStaffWorkspacesUnsuspendPath } from './zod.gen.ts';
+import type { StaffSendCapDefaultsClearData, StaffSendCapDefaultsClearErrors, StaffSendCapDefaultsClearResponses, StaffSendCapDefaultsGetData, StaffSendCapDefaultsGetErrors, StaffSendCapDefaultsGetResponses, StaffSendCapDefaultsSetData, StaffSendCapDefaultsSetErrors, StaffSendCapDefaultsSetResponses, StaffSignupSurveyCountsData, StaffSignupSurveyCountsErrors, StaffSignupSurveyCountsResponses, StaffSignupSurveyGetData, StaffSignupSurveyGetErrors, StaffSignupSurveyGetResponses, StaffWorkspaceAuditListData, StaffWorkspaceAuditListErrors, StaffWorkspaceAuditListResponses, StaffWorkspacesClearSendCapData, StaffWorkspacesClearSendCapErrors, StaffWorkspacesClearSendCapResponses, StaffWorkspacesExemptData, StaffWorkspacesExemptErrors, StaffWorkspacesExemptResponses, StaffWorkspacesGetData, StaffWorkspacesGetErrors, StaffWorkspacesGetResponses, StaffWorkspacesListData, StaffWorkspacesListErrors, StaffWorkspacesListResponses, StaffWorkspacesSetSendCapData, StaffWorkspacesSetSendCapErrors, StaffWorkspacesSetSendCapResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendErrors, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptErrors, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendErrors, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
+import { zStaffSendCapDefaultsSetBody, zStaffSignupSurveyGetPath, zStaffWorkspaceAuditListPath, zStaffWorkspaceAuditListQuery, zStaffWorkspacesClearSendCapPath, zStaffWorkspacesExemptPath, zStaffWorkspacesGetPath, zStaffWorkspacesListQuery, zStaffWorkspacesSetSendCapBody, zStaffWorkspacesSetSendCapPath, zStaffWorkspacesSuspendBody, zStaffWorkspacesSuspendPath, zStaffWorkspacesUnexemptPath, zStaffWorkspacesUnsuspendPath } from './zod.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -21,6 +21,67 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
    */
   meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Remove the default Send cap: Workspaces created from now on get none. 404 on an Instance
+ * without Send caps. Idempotent.
+ */
+export const staffSendCapDefaultsClear = <ThrowOnError extends boolean = false>(options?: Options<StaffSendCapDefaultsClearData, ThrowOnError>): RequestResult<StaffSendCapDefaultsClearResponses, StaffSendCapDefaultsClearErrors, ThrowOnError> => (options?.client ?? client).delete<StaffSendCapDefaultsClearResponses, StaffSendCapDefaultsClearErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: z.never().optional(),
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/send-cap-default',
+  ...options
+});
+
+/**
+ * The Instance's default Send cap, and whether the Instance has Send caps at all
+ */
+export const staffSendCapDefaultsGet = <ThrowOnError extends boolean = false>(options?: Options<StaffSendCapDefaultsGetData, ThrowOnError>): RequestResult<StaffSendCapDefaultsGetResponses, StaffSendCapDefaultsGetErrors, ThrowOnError> => (options?.client ?? client).get<StaffSendCapDefaultsGetResponses, StaffSendCapDefaultsGetErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: z.never().optional(),
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/send-cap-default',
+  ...options
+});
+
+/**
+ * Set the default Send cap: every Workspace created from now on starts with it; existing
+ * Workspaces keep theirs. Only an Instance with Send caps has this operation (404 elsewhere).
+ * Idempotent.
+ */
+export const staffSendCapDefaultsSet = <ThrowOnError extends boolean = false>(options: Options<StaffSendCapDefaultsSetData, ThrowOnError>): RequestResult<StaffSendCapDefaultsSetResponses, StaffSendCapDefaultsSetErrors, ThrowOnError> => (options.client ?? client).put<StaffSendCapDefaultsSetResponses, StaffSendCapDefaultsSetErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: zStaffSendCapDefaultsSetBody,
+    path: z.never().optional(),
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/send-cap-default',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
 
 /**
  * The Sign-up survey answers, counted per question. Read only.

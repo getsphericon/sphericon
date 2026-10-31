@@ -8,6 +8,26 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
+	// StaffSendCapDefaultsClear implements StaffSendCapDefaults_clear operation.
+	//
+	// Remove the default Send cap: Workspaces created from now on get none. 404 on an Instance without
+	// Send caps. Idempotent.
+	//
+	// DELETE /send-cap-default
+	StaffSendCapDefaultsClear(ctx context.Context) (StaffSendCapDefaultsClearRes, error)
+	// StaffSendCapDefaultsGet implements StaffSendCapDefaults_get operation.
+	//
+	// The Instance's default Send cap, and whether the Instance has Send caps at all.
+	//
+	// GET /send-cap-default
+	StaffSendCapDefaultsGet(ctx context.Context) (StaffSendCapDefaultsGetRes, error)
+	// StaffSendCapDefaultsSet implements StaffSendCapDefaults_set operation.
+	//
+	// Set the default Send cap: every Workspace created from now on starts with it; existing Workspaces
+	// keep theirs. Only an Instance with Send caps has this operation (404 elsewhere). Idempotent.
+	//
+	// PUT /send-cap-default
+	StaffSendCapDefaultsSet(ctx context.Context, req *StaffSendCapInput) (StaffSendCapDefaultsSetRes, error)
 	// StaffSignupSurveyCounts implements StaffSignupSurvey_counts operation.
 	//
 	// The Sign-up survey answers, counted per question. Read only.

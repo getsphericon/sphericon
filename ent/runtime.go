@@ -559,6 +559,10 @@ func init() {
 	instancestateDescTelemetryEnabled := instancestateFields[2].Descriptor()
 	// instancestate.DefaultTelemetryEnabled holds the default value on creation for the telemetry_enabled field.
 	instancestate.DefaultTelemetryEnabled = instancestateDescTelemetryEnabled.Default.(bool)
+	// instancestateDescDefaultSendCap is the schema descriptor for default_send_cap field.
+	instancestateDescDefaultSendCap := instancestateFields[7].Descriptor()
+	// instancestate.DefaultSendCapValidator is a validator for the "default_send_cap" field. It is called by the builders before save.
+	instancestate.DefaultSendCapValidator = instancestateDescDefaultSendCap.Validators[0].(func(int) error)
 	integrationMixin := schema.Integration{}.Mixin()
 	integrationMixinFields0 := integrationMixin[0].Fields()
 	_ = integrationMixinFields0

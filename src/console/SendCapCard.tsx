@@ -8,11 +8,10 @@ import {
   staffWorkspacesClearSendCapMutation,
   staffWorkspacesSetSendCapMutation,
 } from '../generated/staffee/@tanstack/react-query.gen.ts'
-import type { StaffSendCapChange } from '../generated/staffee/types.gen.ts'
 import { zStaffSendCapInput } from '../generated/staffee/zod.gen.ts'
-import { useNotify } from '../hooks/useNotify.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { useSchemaForm } from '../resources/schemaForm.ts'
+import { useSendCapNotice } from './useSendCapNotice.ts'
 
 // A NumberInput holds '' while empty, so the field reads that as missing before the contract's
 // own bounds judge the number.
@@ -22,53 +21,29 @@ const sendCapSchema = z.object({
     .pipe(zStaffSendCapInput.shape.sendCap),
 })
 
-function useSendCapNotice() {
-  const { t } = useTranslation()
-  const notify = useNotify()
-  return (change: StaffSendCapChange) => {
-    notify(
-      change.changed
-        ? {
-            color: 'teal',
-            title: t(($) => $.notifications.successTitle),
-            message: t(($) => $.console.workspace.sendCap.done),
-          }
-        : {
-            color: 'blue',
-            title: t(($) => $.console.workspace.unchangedTitle),
-            message: t(($) => $.console.workspace.sendCap.unchanged),
-          },
-    )
-  }
-}
-
-function SendCapForm({
-  workspaceId,
+// The number form of a Send cap, a Workspace's or the Instance default, validated by the contract.
+export function SendCapForm({
   sendCap,
+  description,
+  pending,
+  onSave,
   onClose,
 }: {
-  workspaceId: string
   sendCap: number | null | undefined
+  description: string
+  pending: boolean
+  onSave: (body: { sendCap: number }) => void
   onClose: () => void
 }) {
   const { t } = useTranslation()
   const form = useSchemaForm(sendCapSchema, { sendCap: sendCap ?? '' })
-  const notice = useSendCapNotice()
-  const mutation = useResourceMutation({
-    mutation: staffWorkspacesSetSendCapMutation(),
-    errorTitle: t(($) => $.console.workspace.sendCap.error),
-    onDone: (change) => {
-      notice(change)
-      onClose()
-    },
-  })
 
   return (
-    <form onSubmit={form.onSubmit((body) => mutation.mutate({ path: { workspaceId }, body }))}>
+    <form onSubmit={form.onSubmit(onSave)}>
       <Stack>
         <NumberInput
           label={t(($) => $.console.workspace.sendCap.label)}
-          description={t(($) => $.console.workspace.sendCap.description)}
+          description={description}
           allowDecimal={false}
           allowNegative={false}
           thousandSeparator=" "
@@ -80,7 +55,7 @@ function SendCapForm({
           <Button variant="default" onClick={onClose}>
             {t(($) => $.console.workspace.suspend.cancel)}
           </Button>
-          <Button type="submit" loading={mutation.isPending}>
+          <Button type="submit" loading={pending}>
             {t(($) => $.console.workspace.sendCap.save)}
           </Button>
         </Group>
@@ -104,6 +79,14 @@ export function SendCapCard({
   const number = new Intl.NumberFormat(i18n.language)
   const [opened, { open, close }] = useDisclosure(false)
   const notice = useSendCapNotice()
+  const set = useResourceMutation({
+    mutation: staffWorkspacesSetSendCapMutation(),
+    errorTitle: t(($) => $.console.workspace.sendCap.error),
+    onDone: (change) => {
+      notice(change)
+      close()
+    },
+  })
   const clear = useResourceMutation({
     mutation: staffWorkspacesClearSendCapMutation(),
     errorTitle: t(($) => $.console.workspace.sendCap.error),
@@ -163,7 +146,13 @@ export function SendCapCard({
         )}
       </Group>
       <Modal opened={opened} onClose={close} title={t(($) => $.console.workspace.sendCap.title)}>
-        <SendCapForm workspaceId={workspaceId} sendCap={sendCap} onClose={close} />
+        <SendCapForm
+          sendCap={sendCap}
+          description={t(($) => $.console.workspace.sendCap.description)}
+          pending={set.isPending}
+          onSave={(body) => set.mutate({ path: { workspaceId }, body })}
+          onClose={close}
+        />
       </Modal>
     </Card>
   )

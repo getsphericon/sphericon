@@ -10,10 +10,139 @@
       "name": "StaffMember Workspaces"
     },
     {
+      "name": "StaffMember Send cap default"
+    },
+    {
       "name": "StaffMember Sign-up survey"
     }
   ],
   "paths": {
+    "/send-cap-default": {
+      "get": {
+        "operationId": "StaffSendCapDefaults_get",
+        "description": "The Instance's default Send cap, and whether the Instance has Send caps at all",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSendCapDefault"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Send cap default"]
+      },
+      "put": {
+        "operationId": "StaffSendCapDefaults_set",
+        "description": "Set the default Send cap: every Workspace created from now on starts with it; existing\nWorkspaces keep theirs. Only an Instance with Send caps has this operation (404 elsewhere).\nIdempotent.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSendCapDefaultChange"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Send cap default"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffSendCapInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "StaffSendCapDefaults_clear",
+        "description": "Remove the default Send cap: Workspaces created from now on get none. 404 on an Instance\nwithout Send caps. Idempotent.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSendCapDefaultChange"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Send cap default"]
+      }
+    },
     "/signup-survey": {
       "get": {
         "operationId": "StaffSignupSurvey_counts",
@@ -1306,6 +1435,36 @@
           }
         },
         "description": "The outcome of a Send cap change: the Workspace as it now stands, and whether anything\nchanged"
+      },
+      "StaffSendCapDefault": {
+        "type": "object",
+        "required": ["sendCaps", "sendCap"],
+        "properties": {
+          "sendCaps": {
+            "type": "boolean",
+            "description": "Whether this Instance has Send caps; without, there is no default to set"
+          },
+          "sendCap": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The default in messages per rolling 24 hours; null while none is set, when new Workspaces\nget no Send cap"
+          }
+        },
+        "description": "The Instance's default Send cap (ADR 0067): the Send cap every Workspace created from now on\nstarts with. Changing it leaves existing Workspaces' Send caps as they are."
+      },
+      "StaffSendCapDefaultChange": {
+        "type": "object",
+        "required": ["changed", "default"],
+        "properties": {
+          "changed": {
+            "type": "boolean"
+          },
+          "default": {
+            "$ref": "#/components/schemas/StaffSendCapDefault"
+          }
+        },
+        "description": "The outcome of a change to the default Send cap: the default as it now stands, and whether\nanything changed"
       },
       "StaffSendCapInput": {
         "type": "object",
