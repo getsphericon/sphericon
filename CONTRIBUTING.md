@@ -30,8 +30,11 @@ Project Owner.
   release notes are generated from them, and the `pr-title` check fails a title that does not parse.
 - Run `mise run check` and `mise run test` before you push.
 - Generated files are never edited by hand; run `mise run generate` instead.
-- A change that is more than a typo or a doc line starts from an issue a maintainer has accepted
-  (label `ready-for-agent` or `ready-for-human`); name it in the pull request.
+- A feature or a larger change starts from an issue a maintainer has accepted (label
+  `ready-for-agent` or `ready-for-human`); name it in the pull request.
+- A bug fix needs no issue when its description says what was broken, how to reproduce it and how
+  the fix was checked (a test that fails before the fix and passes after it). A typo or a doc line
+  needs none either.
 - Fill in the pull request template. The `pr-body` check fails until exactly one option of its
   "AI assistance" section is checked, and until each `contract-copy:` marker your change adds has a
   `Contract-Copy: <file>: <reason>` line in the body.

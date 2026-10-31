@@ -1,6 +1,7 @@
 ## Issue
 
-Closes #<n>, an issue a maintainer accepted. A typo or a doc line needs none.
+Closes #<n>, an issue a maintainer accepted. A bug fix whose Summary says what was broken and how
+to reproduce it needs none, nor does a typo or a doc line.
 
 ## Summary
 
