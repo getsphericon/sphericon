@@ -62,8 +62,9 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 
 // sentTo reports whether the sender sent a message to the address.
 func sentTo(mail *testhelper.CapturingSender, to string) bool {
-	for _, m := range mail.Messages() {
-		if m.To == to {
+	msgs := mail.Messages()
+	for i := range msgs {
+		if msgs[i].To == to {
 			return true
 		}
 	}
