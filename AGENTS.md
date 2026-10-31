@@ -8,8 +8,10 @@ If you work from a fork and are not a maintainer of this repository, this block 
 maintainer rules further down (worktrees, `mise run land`, merging, closing tickets).
 
 - Fork the repository, work on a branch of your fork and open a pull request against `main`. A
-  change that is more than a typo or a doc line starts from an issue a maintainer has accepted
-  (label `ready-for-agent` or `ready-for-human`); name that issue in the pull request.
+  feature or a larger change starts from an issue a maintainer has accepted (label
+  `ready-for-agent` or `ready-for-human`); name that issue in the pull request. A bug fix needs no
+  issue when its description says what was broken, how to reproduce it and how the fix was checked
+  (a test that fails before the fix and passes after it). A typo or a doc line needs none either.
 - A human opens the pull request, after reading the whole diff, and answers for every line of it:
   an agent does not open it on its own. The description says what changed and why, in the human's
   own words. The "AI assistance" section of the pull request template says how an AI tool was
