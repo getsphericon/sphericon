@@ -1030,6 +1030,8 @@ var (
 		{Name: "max_per_day", Type: field.TypeInt, Nullable: true},
 		{Name: "provider_max_per_second", Type: field.TypeInt, Nullable: true},
 		{Name: "provider_max_per_day", Type: field.TypeInt, Nullable: true},
+		{Name: "provider_enforcement", Type: field.TypeEnum, Nullable: true, Enums: []string{"probation", "shutdown"}},
+		{Name: "provider_sandbox", Type: field.TypeBool, Default: false},
 		{Name: "provider_quota_checked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "provider_quota_failed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -1042,7 +1044,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "integrations_workspaces_integrations",
-				Columns:    []*schema.Column{IntegrationsColumns[19]},
+				Columns:    []*schema.Column{IntegrationsColumns[21]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1051,7 +1053,7 @@ var (
 			{
 				Name:    "integration_workspace_id_channel",
 				Unique:  true,
-				Columns: []*schema.Column{IntegrationsColumns[19], IntegrationsColumns[5]},
+				Columns: []*schema.Column{IntegrationsColumns[21], IntegrationsColumns[5]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "is_default AND discarded_at IS NULL",
 				},
@@ -1059,12 +1061,12 @@ var (
 			{
 				Name:    "integration_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{IntegrationsColumns[19]},
+				Columns: []*schema.Column{IntegrationsColumns[21]},
 			},
 			{
 				Name:    "integrations_one_inbox_per_workspace",
 				Unique:  true,
-				Columns: []*schema.Column{IntegrationsColumns[19], IntegrationsColumns[6]},
+				Columns: []*schema.Column{IntegrationsColumns[21], IntegrationsColumns[6]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "provider = 'inbox' AND discarded_at IS NULL",
 				},
@@ -2873,8 +2875,9 @@ func init() {
 		Table: "integrations",
 	}
 	IntegrationsTable.Annotation.Checks = map[string]string{
-		"integrations_channel_check":  "channel IN ('email', 'sms')",
-		"integrations_provider_check": "provider IN ('smtp', 'ses', 'inbox')",
+		"integrations_channel_check":              "channel IN ('email', 'sms')",
+		"integrations_provider_check":             "provider IN ('smtp', 'ses', 'inbox')",
+		"integrations_provider_enforcement_check": "provider_enforcement IN ('probation', 'shutdown')",
 	}
 	InvitationsTable.ForeignKeys[0].RefTable = UsersTable
 	InvitationsTable.ForeignKeys[1].RefTable = WorkspacesTable

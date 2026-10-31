@@ -2280,8 +2280,9 @@ func (*BrandKitResource) brandKitGetRes() {}
 type BroadcastReport struct {
 	// Lifecycle status.
 	Status BroadcastStatus `json:"status"`
-	// Why sending is currently held, when it is: `workspace_suspended`, `unverified_domain` or
-	// `no_integration`. A hold is reversible, not a failure.
+	// Why sending is currently held, when it is: `workspace_suspended`, `unverified_domain`,
+	// `no_integration` or `provider_stopped` (the provider has stopped the account). A hold is reversible,
+	// not a failure.
 	HoldReason OptNilString `json:"holdReason"`
 	// Recipients the broadcast targets.
 	RecipientsTotal int32 `json:"recipientsTotal"`
@@ -13779,6 +13780,9 @@ type ProviderLimitWarning string
 const (
 	ProviderLimitWarningUnlimited                ProviderLimitWarning = "unlimited"
 	ProviderLimitWarningProviderQuotaUnavailable ProviderLimitWarning = "providerQuotaUnavailable"
+	ProviderLimitWarningProviderStopped          ProviderLimitWarning = "providerStopped"
+	ProviderLimitWarningProviderProbation        ProviderLimitWarning = "providerProbation"
+	ProviderLimitWarningProviderSandbox          ProviderLimitWarning = "providerSandbox"
 )
 
 // AllValues returns all ProviderLimitWarning values.
@@ -13786,6 +13790,9 @@ func (ProviderLimitWarning) AllValues() []ProviderLimitWarning {
 	return []ProviderLimitWarning{
 		ProviderLimitWarningUnlimited,
 		ProviderLimitWarningProviderQuotaUnavailable,
+		ProviderLimitWarningProviderStopped,
+		ProviderLimitWarningProviderProbation,
+		ProviderLimitWarningProviderSandbox,
 	}
 }
 
@@ -13795,6 +13802,12 @@ func (s ProviderLimitWarning) MarshalText() ([]byte, error) {
 	case ProviderLimitWarningUnlimited:
 		return []byte(s), nil
 	case ProviderLimitWarningProviderQuotaUnavailable:
+		return []byte(s), nil
+	case ProviderLimitWarningProviderStopped:
+		return []byte(s), nil
+	case ProviderLimitWarningProviderProbation:
+		return []byte(s), nil
+	case ProviderLimitWarningProviderSandbox:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -13809,6 +13822,15 @@ func (s *ProviderLimitWarning) UnmarshalText(data []byte) error {
 		return nil
 	case ProviderLimitWarningProviderQuotaUnavailable:
 		*s = ProviderLimitWarningProviderQuotaUnavailable
+		return nil
+	case ProviderLimitWarningProviderStopped:
+		*s = ProviderLimitWarningProviderStopped
+		return nil
+	case ProviderLimitWarningProviderProbation:
+		*s = ProviderLimitWarningProviderProbation
+		return nil
+	case ProviderLimitWarningProviderSandbox:
+		*s = ProviderLimitWarningProviderSandbox
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

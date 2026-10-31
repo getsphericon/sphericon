@@ -14429,7 +14429,7 @@
           "holdReason": {
             "type": "string",
             "nullable": true,
-            "description": "Why sending is currently held, when it is: `workspace_suspended`,\n`unverified_domain` or `no_integration`. A hold is reversible, not a failure."
+            "description": "Why sending is currently held, when it is: `workspace_suspended`,\n`unverified_domain`, `no_integration` or `provider_stopped` (the provider has\nstopped the account). A hold is reversible, not a failure."
           },
           "recipientsTotal": {
             "type": "integer",
@@ -18125,7 +18125,13 @@
       },
       "ProviderLimitWarning": {
         "type": "string",
-        "enum": ["unlimited", "providerQuotaUnavailable"],
+        "enum": [
+          "unlimited",
+          "providerQuotaUnavailable",
+          "providerStopped",
+          "providerProbation",
+          "providerSandbox"
+        ],
         "description": "A reason to look at an Integration's Provider limit"
       },
       "RateTriple": {

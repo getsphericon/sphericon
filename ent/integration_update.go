@@ -318,6 +318,40 @@ func (_u *IntegrationUpdate) ClearProviderMaxPerDay() *IntegrationUpdate {
 	return _u
 }
 
+// SetProviderEnforcement sets the "provider_enforcement" field.
+func (_u *IntegrationUpdate) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationUpdate {
+	_u.mutation.SetProviderEnforcement(v)
+	return _u
+}
+
+// SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
+func (_u *IntegrationUpdate) SetNillableProviderEnforcement(v *integration.ProviderEnforcement) *IntegrationUpdate {
+	if v != nil {
+		_u.SetProviderEnforcement(*v)
+	}
+	return _u
+}
+
+// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
+func (_u *IntegrationUpdate) ClearProviderEnforcement() *IntegrationUpdate {
+	_u.mutation.ClearProviderEnforcement()
+	return _u
+}
+
+// SetProviderSandbox sets the "provider_sandbox" field.
+func (_u *IntegrationUpdate) SetProviderSandbox(v bool) *IntegrationUpdate {
+	_u.mutation.SetProviderSandbox(v)
+	return _u
+}
+
+// SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
+func (_u *IntegrationUpdate) SetNillableProviderSandbox(v *bool) *IntegrationUpdate {
+	if v != nil {
+		_u.SetProviderSandbox(*v)
+	}
+	return _u
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (_u *IntegrationUpdate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationUpdate {
 	_u.mutation.SetProviderQuotaCheckedAt(v)
@@ -508,6 +542,11 @@ func (_u *IntegrationUpdate) check() error {
 			return &ValidationError{Name: "max_per_day", err: fmt.Errorf(`ent: validator failed for field "Integration.max_per_day": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ProviderEnforcement(); ok {
+		if err := integration.ProviderEnforcementValidator(v); err != nil {
+			return &ValidationError{Name: "provider_enforcement", err: fmt.Errorf(`ent: validator failed for field "Integration.provider_enforcement": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Integration.workspace"`)
 	}
@@ -609,6 +648,15 @@ func (_u *IntegrationUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if _u.mutation.ProviderMaxPerDayCleared() {
 		_spec.ClearField(integration.FieldProviderMaxPerDay, field.TypeInt)
+	}
+	if value, ok := _u.mutation.ProviderEnforcement(); ok {
+		_spec.SetField(integration.FieldProviderEnforcement, field.TypeEnum, value)
+	}
+	if _u.mutation.ProviderEnforcementCleared() {
+		_spec.ClearField(integration.FieldProviderEnforcement, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.ProviderSandbox(); ok {
+		_spec.SetField(integration.FieldProviderSandbox, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ProviderQuotaCheckedAt(); ok {
 		_spec.SetField(integration.FieldProviderQuotaCheckedAt, field.TypeTime, value)
@@ -1033,6 +1081,40 @@ func (_u *IntegrationUpdateOne) ClearProviderMaxPerDay() *IntegrationUpdateOne {
 	return _u
 }
 
+// SetProviderEnforcement sets the "provider_enforcement" field.
+func (_u *IntegrationUpdateOne) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationUpdateOne {
+	_u.mutation.SetProviderEnforcement(v)
+	return _u
+}
+
+// SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
+func (_u *IntegrationUpdateOne) SetNillableProviderEnforcement(v *integration.ProviderEnforcement) *IntegrationUpdateOne {
+	if v != nil {
+		_u.SetProviderEnforcement(*v)
+	}
+	return _u
+}
+
+// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
+func (_u *IntegrationUpdateOne) ClearProviderEnforcement() *IntegrationUpdateOne {
+	_u.mutation.ClearProviderEnforcement()
+	return _u
+}
+
+// SetProviderSandbox sets the "provider_sandbox" field.
+func (_u *IntegrationUpdateOne) SetProviderSandbox(v bool) *IntegrationUpdateOne {
+	_u.mutation.SetProviderSandbox(v)
+	return _u
+}
+
+// SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
+func (_u *IntegrationUpdateOne) SetNillableProviderSandbox(v *bool) *IntegrationUpdateOne {
+	if v != nil {
+		_u.SetProviderSandbox(*v)
+	}
+	return _u
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (_u *IntegrationUpdateOne) SetProviderQuotaCheckedAt(v time.Time) *IntegrationUpdateOne {
 	_u.mutation.SetProviderQuotaCheckedAt(v)
@@ -1236,6 +1318,11 @@ func (_u *IntegrationUpdateOne) check() error {
 			return &ValidationError{Name: "max_per_day", err: fmt.Errorf(`ent: validator failed for field "Integration.max_per_day": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ProviderEnforcement(); ok {
+		if err := integration.ProviderEnforcementValidator(v); err != nil {
+			return &ValidationError{Name: "provider_enforcement", err: fmt.Errorf(`ent: validator failed for field "Integration.provider_enforcement": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Integration.workspace"`)
 	}
@@ -1354,6 +1441,15 @@ func (_u *IntegrationUpdateOne) sqlSave(ctx context.Context) (_node *Integration
 	}
 	if _u.mutation.ProviderMaxPerDayCleared() {
 		_spec.ClearField(integration.FieldProviderMaxPerDay, field.TypeInt)
+	}
+	if value, ok := _u.mutation.ProviderEnforcement(); ok {
+		_spec.SetField(integration.FieldProviderEnforcement, field.TypeEnum, value)
+	}
+	if _u.mutation.ProviderEnforcementCleared() {
+		_spec.ClearField(integration.FieldProviderEnforcement, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.ProviderSandbox(); ok {
+		_spec.SetField(integration.FieldProviderSandbox, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ProviderQuotaCheckedAt(); ok {
 		_spec.SetField(integration.FieldProviderQuotaCheckedAt, field.TypeTime, value)

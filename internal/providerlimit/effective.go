@@ -6,6 +6,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/messaging"
 )
 
 // Source says where an effective ceiling comes from.
@@ -36,6 +37,11 @@ type Effective struct {
 	// Integration's provider_quota_failed_at is set), so
 	// the ceilings above rest on the manual value alone (or on none).
 	ProviderQuotaUnavailable bool
+
+	// Enforcement and Sandbox are the account's standing as the provider last reported it
+	// (ADR 0067): a stopped account holds every send, the rest are warnings.
+	Enforcement messaging.Enforcement
+	Sandbox     bool
 }
 
 // EffectiveOf computes the ceilings an Integration is held to. It is the one place
@@ -45,7 +51,23 @@ func EffectiveOf(integ *ent.Integration) Effective {
 		PerSecond:                lowest(integ.MaxPerSecond, integ.ProviderMaxPerSecond),
 		PerDay:                   lowest(integ.MaxPerDay, integ.ProviderMaxPerDay),
 		ProviderQuotaUnavailable: integ.ProviderQuotaFailedAt != nil,
+		Enforcement:              enforcementOf(integ),
+		Sandbox:                  integ.ProviderSandbox,
 	}
+}
+
+// Stopped reports whether the provider last said it has stopped the Integration's account,
+// which holds every send through it (ADR 0067).
+func Stopped(integ *ent.Integration) bool {
+	return enforcementOf(integ) == messaging.EnforcementShutdown
+}
+
+// enforcementOf is the stored enforcement as the messaging value it was stored from.
+func enforcementOf(integ *ent.Integration) messaging.Enforcement {
+	if integ.ProviderEnforcement == nil {
+		return messaging.EnforcementNone
+	}
+	return messaging.Enforcement(*integ.ProviderEnforcement)
 }
 
 // lowest is the minimum rule: the lower of the two ceilings, the manual one on a tie.
@@ -77,6 +99,12 @@ const (
 	WarningUnlimited Warning = "unlimited"
 	// WarningProviderQuotaUnavailable: the provider's quota could not be read.
 	WarningProviderQuotaUnavailable Warning = "providerQuotaUnavailable"
+	// WarningProviderStopped: the provider has stopped the account, so sends are held.
+	WarningProviderStopped Warning = "providerStopped"
+	// WarningProviderProbation: the provider has put the account under review.
+	WarningProviderProbation Warning = "providerProbation"
+	// WarningProviderSandbox: the provider delivers only to the account's verified addresses.
+	WarningProviderSandbox Warning = "providerSandbox"
 )
 
 // Warnings lists what is worth flagging about the ceilings, in a stable order; never nil.
@@ -87,6 +115,16 @@ func (e Effective) Warnings() []Warning {
 	}
 	if e.ProviderQuotaUnavailable {
 		out = append(out, WarningProviderQuotaUnavailable)
+	}
+	switch e.Enforcement {
+	case messaging.EnforcementShutdown:
+		out = append(out, WarningProviderStopped)
+	case messaging.EnforcementProbation:
+		out = append(out, WarningProviderProbation)
+	case messaging.EnforcementNone:
+	}
+	if e.Sandbox {
+		out = append(out, WarningProviderSandbox)
 	}
 	return out
 }

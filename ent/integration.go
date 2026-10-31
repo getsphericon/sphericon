@@ -53,6 +53,10 @@ type Integration struct {
 	ProviderMaxPerSecond *int `json:"provider_max_per_second,omitempty"`
 	// ProviderMaxPerDay holds the value of the "provider_max_per_day" field.
 	ProviderMaxPerDay *int `json:"provider_max_per_day,omitempty"`
+	// ProviderEnforcement holds the value of the "provider_enforcement" field.
+	ProviderEnforcement *integration.ProviderEnforcement `json:"provider_enforcement,omitempty"`
+	// ProviderSandbox holds the value of the "provider_sandbox" field.
+	ProviderSandbox bool `json:"provider_sandbox,omitempty"`
 	// ProviderQuotaCheckedAt holds the value of the "provider_quota_checked_at" field.
 	ProviderQuotaCheckedAt *time.Time `json:"provider_quota_checked_at,omitempty"`
 	// ProviderQuotaFailedAt holds the value of the "provider_quota_failed_at" field.
@@ -112,11 +116,11 @@ func (*Integration) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case integration.FieldEnabled, integration.FieldIsDefault:
+		case integration.FieldEnabled, integration.FieldIsDefault, integration.FieldProviderSandbox:
 			values[i] = new(sql.NullBool)
 		case integration.FieldID, integration.FieldWorkspaceID, integration.FieldMaxPerSecond, integration.FieldMaxPerDay, integration.FieldProviderMaxPerSecond, integration.FieldProviderMaxPerDay:
 			values[i] = new(sql.NullInt64)
-		case integration.FieldName, integration.FieldChannel, integration.FieldProvider, integration.FieldConfigEncrypted, integration.FieldPreset, integration.FieldParamsEncrypted, integration.FieldIngestKey:
+		case integration.FieldName, integration.FieldChannel, integration.FieldProvider, integration.FieldConfigEncrypted, integration.FieldPreset, integration.FieldParamsEncrypted, integration.FieldIngestKey, integration.FieldProviderEnforcement:
 			values[i] = new(sql.NullString)
 		case integration.FieldCreatedAt, integration.FieldUpdatedAt, integration.FieldDiscardedAt, integration.FieldProviderQuotaCheckedAt, integration.FieldProviderQuotaFailedAt:
 			values[i] = new(sql.NullTime)
@@ -249,6 +253,19 @@ func (_m *Integration) assignValues(columns []string, values []any) error {
 				_m.ProviderMaxPerDay = new(int)
 				*_m.ProviderMaxPerDay = int(value.Int64)
 			}
+		case integration.FieldProviderEnforcement:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field provider_enforcement", values[i])
+			} else if value.Valid {
+				_m.ProviderEnforcement = new(integration.ProviderEnforcement)
+				*_m.ProviderEnforcement = integration.ProviderEnforcement(value.String)
+			}
+		case integration.FieldProviderSandbox:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field provider_sandbox", values[i])
+			} else if value.Valid {
+				_m.ProviderSandbox = value.Bool
+			}
 		case integration.FieldProviderQuotaCheckedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field provider_quota_checked_at", values[i])
@@ -374,6 +391,14 @@ func (_m *Integration) String() string {
 		builder.WriteString("provider_max_per_day=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	if v := _m.ProviderEnforcement; v != nil {
+		builder.WriteString("provider_enforcement=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("provider_sandbox=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ProviderSandbox))
 	builder.WriteString(", ")
 	if v := _m.ProviderQuotaCheckedAt; v != nil {
 		builder.WriteString("provider_quota_checked_at=")

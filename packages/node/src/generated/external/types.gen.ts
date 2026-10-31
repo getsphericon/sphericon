@@ -611,7 +611,8 @@ export type BroadcastReport = {
   status: BroadcastStatus;
   /**
    * Why sending is currently held, when it is: `workspace_suspended`,
-   * `unverified_domain` or `no_integration`. A hold is reversible, not a failure.
+   * `unverified_domain`, `no_integration` or `provider_stopped` (the provider has
+   * stopped the account). A hold is reversible, not a failure.
    */
   holdReason?: string | null;
   /**
@@ -3177,7 +3178,13 @@ export type ProviderLimitValue = {
 /**
  * A reason to look at an Integration's Provider limit
  */
-export const ProviderLimitWarning = { UNLIMITED: 'unlimited', PROVIDER_QUOTA_UNAVAILABLE: 'providerQuotaUnavailable' } as const;
+export const ProviderLimitWarning = {
+  UNLIMITED: 'unlimited',
+  PROVIDER_QUOTA_UNAVAILABLE: 'providerQuotaUnavailable',
+  PROVIDER_STOPPED: 'providerStopped',
+  PROVIDER_PROBATION: 'providerProbation',
+  PROVIDER_SANDBOX: 'providerSandbox'
+} as const;
 
 /**
  * A reason to look at an Integration's Provider limit

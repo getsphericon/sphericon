@@ -105,6 +105,36 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningProviderQuotaUnavailable}, status.Warnings)
 }
 
+// The read also brings the account's standing (ADR 0067): a stopped account, probation and
+// the sandbox are reported as warnings on the Integration.
+func TestSiteIntegrationsReportTheProviderAccountStanding(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	env.SES.SetQuota(messaging.Quota{PerSecond: new(1), Enforcement: messaging.EnforcementShutdown, Sandbox: true})
+
+	created, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
+		Params: sesTopicParams,
+		Name:   "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
+	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+
+	id := created.(*siteapi.SiteIntegrationResource).ID
+	status := reread(t, c, id)
+	assert.Equal(t, []siteapi.SiteProviderLimitWarning{
+		siteapi.SiteProviderLimitWarningProviderStopped, siteapi.SiteProviderLimitWarningProviderSandbox,
+	}, status.Warnings)
+
+	// New credentials may name another account: what the old ones read goes with them, so a
+	// read that then fails holds nothing.
+	env.SES.SetQuotaErr(errors.New("AccessDenied: ses:GetAccount"))
+	_, err = c.SiteIntegrationsUpdate(context.Background(), &siteapi.UpdateIntegrationInput{
+		Config: siteapi.NewOptIntegrationConfigInput(sesInput("eu-west-1", "AKIA5678", "other")),
+	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningProviderQuotaUnavailable},
+		reread(t, c, id).Warnings)
+}
+
 // SMTP has no provider quota, so saving it asks nothing and never warns about one.
 func TestSiteIntegrationsSMTPSaveDoesNotLookUpAQuota(t *testing.T) {
 	env := testhelper.Setup(t)

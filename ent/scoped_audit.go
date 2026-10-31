@@ -657,6 +657,8 @@ func (e *Integration) auditFields() map[string]any {
 		"max_per_day":               derefAudit(e.MaxPerDay),
 		"provider_max_per_second":   derefAudit(e.ProviderMaxPerSecond),
 		"provider_max_per_day":      derefAudit(e.ProviderMaxPerDay),
+		"provider_enforcement":      derefAudit(e.ProviderEnforcement),
+		"provider_sandbox":          e.ProviderSandbox,
 		"provider_quota_checked_at": derefAudit(e.ProviderQuotaCheckedAt),
 		"provider_quota_failed_at":  derefAudit(e.ProviderQuotaFailedAt),
 	}

@@ -1200,6 +1200,10 @@ func ScopedEntities() []ScopedEntity {
 				if src.ProviderMaxPerDay != nil {
 					b.SetProviderMaxPerDay(*src.ProviderMaxPerDay)
 				}
+				if src.ProviderEnforcement != nil {
+					b.SetProviderEnforcement(*src.ProviderEnforcement)
+				}
+				b.SetProviderSandbox(src.ProviderSandbox)
 				if src.ProviderQuotaCheckedAt != nil {
 					b.SetProviderQuotaCheckedAt(*src.ProviderQuotaCheckedAt)
 				}

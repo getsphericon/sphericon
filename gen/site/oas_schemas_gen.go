@@ -10870,9 +10870,9 @@ type SiteBroadcastResource struct {
 	IntegrationId OptNilEntityId `json:"integrationId"`
 	// Lifecycle status.
 	Status SiteBroadcastStatus `json:"status"`
-	// Why sending is currently held, when it is: `workspace_suspended`, `unverified_domain` or
-	// `no_integration`. A hold is reversible and not a failure: the broadcast keeps its status and the
-	// remaining recipients send once it lifts.
+	// Why sending is currently held, when it is: `workspace_suspended`, `unverified_domain`,
+	// `no_integration` or `provider_stopped` (the provider has stopped the account). A hold is reversible
+	// and not a failure: the broadcast keeps its status and the remaining recipients send once it lifts.
 	HoldReason OptNilString `json:"holdReason"`
 	// When the broadcast is scheduled to send.
 	ScheduledAt OptNilTimestamp `json:"scheduledAt"`
@@ -19399,6 +19399,9 @@ type SiteProviderLimitWarning string
 const (
 	SiteProviderLimitWarningUnlimited                SiteProviderLimitWarning = "unlimited"
 	SiteProviderLimitWarningProviderQuotaUnavailable SiteProviderLimitWarning = "providerQuotaUnavailable"
+	SiteProviderLimitWarningProviderStopped          SiteProviderLimitWarning = "providerStopped"
+	SiteProviderLimitWarningProviderProbation        SiteProviderLimitWarning = "providerProbation"
+	SiteProviderLimitWarningProviderSandbox          SiteProviderLimitWarning = "providerSandbox"
 )
 
 // AllValues returns all SiteProviderLimitWarning values.
@@ -19406,6 +19409,9 @@ func (SiteProviderLimitWarning) AllValues() []SiteProviderLimitWarning {
 	return []SiteProviderLimitWarning{
 		SiteProviderLimitWarningUnlimited,
 		SiteProviderLimitWarningProviderQuotaUnavailable,
+		SiteProviderLimitWarningProviderStopped,
+		SiteProviderLimitWarningProviderProbation,
+		SiteProviderLimitWarningProviderSandbox,
 	}
 }
 
@@ -19415,6 +19421,12 @@ func (s SiteProviderLimitWarning) MarshalText() ([]byte, error) {
 	case SiteProviderLimitWarningUnlimited:
 		return []byte(s), nil
 	case SiteProviderLimitWarningProviderQuotaUnavailable:
+		return []byte(s), nil
+	case SiteProviderLimitWarningProviderStopped:
+		return []byte(s), nil
+	case SiteProviderLimitWarningProviderProbation:
+		return []byte(s), nil
+	case SiteProviderLimitWarningProviderSandbox:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -19429,6 +19441,15 @@ func (s *SiteProviderLimitWarning) UnmarshalText(data []byte) error {
 		return nil
 	case SiteProviderLimitWarningProviderQuotaUnavailable:
 		*s = SiteProviderLimitWarningProviderQuotaUnavailable
+		return nil
+	case SiteProviderLimitWarningProviderStopped:
+		*s = SiteProviderLimitWarningProviderStopped
+		return nil
+	case SiteProviderLimitWarningProviderProbation:
+		*s = SiteProviderLimitWarningProviderProbation
+		return nil
+	case SiteProviderLimitWarningProviderSandbox:
+		*s = SiteProviderLimitWarningProviderSandbox
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

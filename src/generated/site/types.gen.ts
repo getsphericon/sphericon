@@ -2203,7 +2203,8 @@ export type SiteBroadcastResource = {
   status: SiteBroadcastStatus;
   /**
    * Why sending is currently held, when it is: `workspace_suspended`,
-   * `unverified_domain` or `no_integration`. A hold is reversible and not a failure:
+   * `unverified_domain`, `no_integration` or `provider_stopped` (the provider has
+   * stopped the account). A hold is reversible and not a failure:
    * the broadcast keeps its status and the remaining recipients send once it lifts.
    */
   holdReason?: string | null;
@@ -4495,7 +4496,13 @@ export type SiteProviderLimitValue = {
 /**
  * A reason to look at an Integration's Provider limit
  */
-export const SiteProviderLimitWarning = { UNLIMITED: 'unlimited', PROVIDER_QUOTA_UNAVAILABLE: 'providerQuotaUnavailable' } as const;
+export const SiteProviderLimitWarning = {
+  UNLIMITED: 'unlimited',
+  PROVIDER_QUOTA_UNAVAILABLE: 'providerQuotaUnavailable',
+  PROVIDER_STOPPED: 'providerStopped',
+  PROVIDER_PROBATION: 'providerProbation',
+  PROVIDER_SANDBOX: 'providerSandbox'
+} as const;
 
 /**
  * A reason to look at an Integration's Provider limit

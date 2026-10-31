@@ -156,10 +156,13 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 	return messaging.Receipt{MessageID: aws.ToString(out.MessageId)}, nil
 }
 
-// SendQuota reads the account's send quota (GetAccount): MaxSendRate messages per
-// second and Max24HourSend per rolling 24 hours. The API reports whole numbers as
-// floats; a rate below one rounds up to one message per second, and a non-positive
-// value (SES reports -1 for an unbounded account) is no ceiling.
+// SendQuota reads the account's send quota and standing (GetAccount): MaxSendRate messages
+// per second and Max24HourSend per rolling 24 hours, EnforcementStatus and production access.
+// The API reports whole numbers as floats; a rate below one rounds up to one message per
+// second, and a non-positive value (SES reports -1 for an unbounded account) is no ceiling.
+//
+// The sandbox is AWS's own: an SES-compatible service (an Endpoint of its own) is never in it,
+// as an answer that leaves ProductionAccessEnabled out reads as false.
 func (s *sender) SendQuota(ctx context.Context) (messaging.Quota, error) {
 	client, err := s.client(ctx)
 	if err != nil {
@@ -169,13 +172,28 @@ func (s *sender) SendQuota(ctx context.Context) (messaging.Quota, error) {
 	if err != nil {
 		return messaging.Quota{}, fmt.Errorf("ses: get send quota: %w", err)
 	}
-	if out.SendQuota == nil {
-		return messaging.Quota{}, nil
+	quota := messaging.Quota{
+		Enforcement: enforcement(aws.ToString(out.EnforcementStatus)),
+		Sandbox:     s.cfg.Endpoint == "" && !out.ProductionAccessEnabled,
 	}
-	return messaging.Quota{
-		PerSecond: quotaValue(out.SendQuota.MaxSendRate),
-		PerDay:    quotaValue(out.SendQuota.Max24HourSend),
-	}, nil
+	if out.SendQuota != nil {
+		quota.PerSecond = quotaValue(out.SendQuota.MaxSendRate)
+		quota.PerDay = quotaValue(out.SendQuota.Max24HourSend)
+	}
+	return quota, nil
+}
+
+// enforcement maps SES's EnforcementStatus; HEALTHY, a missing status and one SES may add
+// later are no enforcement, so an unknown answer never stops sending.
+func enforcement(status string) messaging.Enforcement {
+	switch status {
+	case "PROBATION":
+		return messaging.EnforcementProbation
+	case "SHUTDOWN":
+		return messaging.EnforcementShutdown
+	default:
+		return messaging.EnforcementNone
+	}
 }
 
 func quotaValue(v float64) *int {

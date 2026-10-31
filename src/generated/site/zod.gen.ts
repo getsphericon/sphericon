@@ -1429,7 +1429,13 @@ export const zSiteProviderLimitValue = z.object({
 /**
  * A reason to look at an Integration's Provider limit
  */
-export const zSiteProviderLimitWarning = z.enum(['unlimited', 'providerQuotaUnavailable']);
+export const zSiteProviderLimitWarning = z.enum([
+  'unlimited',
+  'providerQuotaUnavailable',
+  'providerStopped',
+  'providerProbation',
+  'providerSandbox'
+]);
 
 /**
  * The Provider limit as enforced, with the last 24 hours of usage
