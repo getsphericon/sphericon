@@ -8,11 +8,13 @@ export const theme = createTheme({
   components: {
     // An empty list or report shows an icon in a neutral circle above its title, so it reads as a
     // placeholder and not as a stray line of text. A caller passes its own `icon` when one fits.
+    // The icon is decoration: a screen reader reads the title alone.
     EmptyState: EmptyState.extend({
       defaultProps: {
         icon: <IconInbox />,
         withIndicatorBackground: true,
         py: 'xl',
+        attributes: { indicator: { 'aria-hidden': true } },
       },
     }),
   },
