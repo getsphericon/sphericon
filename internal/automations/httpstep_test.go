@@ -81,8 +81,6 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	longURL := httpStep("https://hooks.example.com/" + strings.Repeat("a", 2048))
 	bigBody := httpStep("https://hooks.example.com/x")
 	bigBody.Body = `{"a":"` + strings.Repeat("a", 64<<10) + `"}`
-	manyHeaders := httpStep("https://hooks.example.com/x")
-	manyHeaders.Headers = headers(6)
 	notHTTP := httpStep("ftp://hooks.example.com/x")
 	noURL := httpStep("")
 	tooMany := make([]automations.Step, 11)
@@ -94,7 +92,6 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 		"invalid json":      {invalidJSON},
 		"url over 2 KiB":    {longURL},
 		"body over 64 KiB":  {bigBody},
-		"six headers":       {manyHeaders},
 		"not an http url":   {notHTTP},
 		"a new step no url": {noURL},
 		"eleven steps":      tooMany,

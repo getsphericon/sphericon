@@ -37,6 +37,7 @@ model SiteRuleAction {
   url?: string;
 
   /** Up to 5 request headers (http actions). On read, only the names are returned. */
+  @maxItems(5)
   headers?: SiteAutomationHttpHeader[];
 
   /** Liquid JSON request body (http actions): Contact bindings plus `event.action` and `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON */

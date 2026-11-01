@@ -662,6 +662,25 @@ func (s *AutomationStep) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if s.Headers == nil {
+			return nil // optional
+		}
+		if err := (validate.Array{
+			MinLength:    0,
+			MinLengthSet: false,
+			MaxLength:    5,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.Headers)); err != nil {
+			return errors.Wrap(err, "array")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "headers",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -5705,6 +5724,25 @@ func (s *RuleAction) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Headers == nil {
+			return nil // optional
+		}
+		if err := (validate.Array{
+			MinLength:    0,
+			MinLengthSet: false,
+			MaxLength:    5,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.Headers)); err != nil {
+			return errors.Wrap(err, "array")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "headers",
 			Error: err,
 		})
 	}

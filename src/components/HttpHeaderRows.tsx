@@ -3,10 +3,12 @@ import { IconTrash } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
 import type { SiteAutomationHttpHeader } from '../generated/site/types.gen.ts'
+import { zSiteRuleAction } from '../generated/site/zod.gen.ts'
+import { maxItemsOf } from '../utils/bounds.ts'
 
-// The most request headers an outgoing HTTP request carries: a Rule's http Action and an
-// Automation's HTTP step alike (the server refuses more).
-const MAX_HTTP_HEADERS = 5
+// The most request headers an outgoing HTTP request carries, as the contract declares it: a
+// Rule's http Action and an Automation's HTTP step alike.
+const HTTP_HEADERS_LIMIT = maxItemsOf(zSiteRuleAction.shape.headers.unwrap())
 
 interface HttpHeaderRowsProps {
   // The headers as edited: the server returns only the name of a stored header, so a value left
@@ -49,7 +51,7 @@ export function HttpHeaderRows({ headers, saved, onChange }: HttpHeaderRowsProps
           </ActionIcon>
         </Group>
       ))}
-      {headers.length < MAX_HTTP_HEADERS ? (
+      {headers.length < HTTP_HEADERS_LIMIT ? (
         <Group>
           <Button
             variant="light"

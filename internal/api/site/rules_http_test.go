@@ -2,7 +2,12 @@ package site_test
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"strings"
 	"testing"
+
+	ht "github.com/ogen-go/ogen/http"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -49,4 +54,26 @@ func TestSiteRuleHTTPActionIsMaskedOnReadAndKeptOnEdit(t *testing.T) {
 	require.Truef(t, ok, "got %T", updated)
 	assert.True(t, upd.Draft.Value.Actions[0].HasSecret.Or(false))
 	assert.Equal(t, action.ID, upd.Draft.Value.Actions[0].ID)
+}
+
+// The contract holds an http Action to five request headers, so a sixth is refused before the
+// Rule is read.
+func TestSiteRuleHTTPActionRefusesASixthHeader(t *testing.T) {
+	env := testhelper.Setup(t)
+	headers := make([]string, 6)
+	for i := range headers {
+		headers[i] = fmt.Sprintf(`{"name":"X-H%d","value":"v"}`, i)
+	}
+	body := `{"name":"Call","triggerEvents":["signup"],"actions":[{"type":"http","url":"https://hooks.example.com/x",` +
+		`"body":"{}","headers":[` + strings.Join(headers, ",") + `]}]}`
+	raw := env.SiteActorVia(t, fixtures.OwnerJohnEmail, func(inner ht.Client) ht.Client {
+		return rawBody{inner: inner, body: body}
+	})
+
+	out, err := raw.SiteRulesCreate(context.Background(), &siteapi.SiteCreateRuleInput{},
+		siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	bad, ok := out.(*siteapi.SiteRulesCreateBadRequest)
+	require.Truef(t, ok, "got %T", out)
+	assert.Equal(t, siteapi.NewOptInt32(http.StatusBadRequest), bad.Status)
 }

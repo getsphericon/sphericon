@@ -89,6 +89,7 @@ model SiteAutomationStep {
   url?: string;
 
   /** Up to 5 request headers (HTTP steps). On read, only the names are returned. */
+  @maxItems(5)
   headers?: SiteAutomationHttpHeader[];
 
   /** Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret. */

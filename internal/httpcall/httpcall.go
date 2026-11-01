@@ -21,7 +21,6 @@ import (
 const (
 	MaxURLBytes  = 2 << 10
 	MaxBodyBytes = 64 << 10
-	MaxHeaders   = 5
 )
 
 // ErrInvalidBody means the body did not render to valid JSON within the size limit.
@@ -173,9 +172,6 @@ func Seal(c *secrets.Cipher, in, prev Spec, what string) (Spec, error) {
 	}
 	if _, err := RenderBody(in.Body, nil); err != nil {
 		return out, invalid("body: %s", BodyDetail(err))
-	}
-	if len(in.Headers) > MaxHeaders {
-		return out, invalid("has at most %d headers", MaxHeaders)
 	}
 	kept := map[string]string{}
 	for _, h := range prev.Headers {

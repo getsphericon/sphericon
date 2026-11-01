@@ -16748,6 +16748,7 @@
             "items": {
               "$ref": "#/components/schemas/SiteAutomationHttpHeader"
             },
+            "maxItems": 5,
             "description": "Up to 5 request headers (HTTP steps). On read, only the names are returned."
           },
           "secret": {
@@ -20332,6 +20333,7 @@
             "items": {
               "$ref": "#/components/schemas/SiteAutomationHttpHeader"
             },
+            "maxItems": 5,
             "description": "Up to 5 request headers (http actions). On read, only the names are returned."
           },
           "body": {
