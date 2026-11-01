@@ -1,46 +1,65 @@
 import {
+  Anchor,
   Box,
   EmptyState,
   ActionIcon,
   Badge,
   Button,
+  CloseButton,
   Code,
   Group,
+  Modal,
   NumberInput,
   Select,
   SimpleGrid,
   Stack,
   Table,
   Text,
-  TextInput,
-  Title,
 } from '@mantine/core'
-import { useForm } from '@mantine/form'
+import { DatePickerInput } from '@mantine/dates'
+import type { DatesRangeValue } from '@mantine/dates'
 import { useDisclosure } from '@mantine/hooks'
 import { IconChevronDown, IconChevronRight, IconDownload } from '@tabler/icons-react'
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { Fragment, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteAuditExportOptions,
+  siteAuditFacetsOptions,
   siteAuditGetRetentionOptions,
   siteAuditListOptions,
   siteAuditSetRetentionMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteAuditEntryResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteAuditActor,
+  SiteAuditActorKind,
+  SiteAuditEntryResource,
+} from '../../generated/site/types.gen.ts'
 import { zRetentionDays, zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as auditLogRoute } from '../../routes/workspaces/$workspaceId/settings/audit-log.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
-import { auditQuery } from '../../utils/auditFilter.ts'
-import type { AuditFilter } from '../../utils/auditFilter.ts'
+import {
+  actorValue,
+  auditQuery,
+  filterActorValue,
+  filterChips,
+  withActor,
+  withPeriod,
+  withValue,
+} from '../../utils/auditFilter.ts'
+import type { AuditChipField, AuditFilter } from '../../utils/auditFilter.ts'
 import { boundsOf } from '../../utils/bounds.ts'
+import { dayOf, daysBefore } from '../../utils/datetime.ts'
 
 const PAGE_SIZE = 25
 const RETENTION_DAYS = boundsOf(zRetentionDays)
@@ -52,16 +71,41 @@ function isHidden(error: unknown) {
   return hasErrorStatus(error, HIDDEN_STATUSES)
 }
 
-function ActorLabel({ entry }: { entry: SiteAuditEntryResource }) {
+// useActorLabel names an actor: the system as such, an API token by its name or its id,
+// anyone else by the name snapshot of the entry.
+function useActorLabel() {
   const { t } = useTranslation()
-  const { kind, name, id } = entry.actor
-  if (kind === 'system') {
-    return t(($) => $.settings.auditLog.actorSystem)
+  return ({ kind, name, id }: SiteAuditActor) => {
+    if (kind === 'system') {
+      return t(($) => $.settings.auditLog.actorSystem)
+    }
+    if (kind === 'api_token') {
+      return name ?? t(($) => $.settings.auditLog.actorToken, { id: id ?? '' })
+    }
+    return name ?? id ?? ''
   }
-  if (kind === 'api_token') {
-    return name ?? t(($) => $.settings.auditLog.actorToken, { id: id ?? '' })
-  }
-  return name ?? id ?? ''
+}
+
+interface FilterProps {
+  filter: AuditFilter
+  onFilterChange: (filter: AuditFilter) => void
+}
+
+// FilterValue is a value of an entry that narrows the log to the entries sharing it.
+function FilterValue({
+  next,
+  onFilterChange,
+  children,
+}: {
+  next: AuditFilter
+  onFilterChange: (filter: AuditFilter) => void
+  children: ReactNode
+}) {
+  return (
+    <Anchor component="button" type="button" size="sm" onClick={() => onFilterChange(next)}>
+      {children}
+    </Anchor>
+  )
 }
 
 function TargetLabel({ entry }: { entry: SiteAuditEntryResource }) {
@@ -121,27 +165,87 @@ function DiffView({ diff }: { diff: Record<string, unknown> }) {
   )
 }
 
-// EntryRows is one entry; when it carries a diff, a chevron expands it beneath the row so
-// the list stays scannable.
-function EntryRows({ entry }: { entry: SiteAuditEntryResource }) {
+// EntryDetails is what an expanded entry shows beneath it: the changed fields, and the request
+// and client address it came from, each a value that narrows the log to its entries.
+function EntryDetails({
+  entry,
+  diff,
+  filter,
+  onFilterChange,
+}: FilterProps & { entry: SiteAuditEntryResource; diff: Record<string, unknown> | null }) {
+  const { t } = useTranslation()
+  return (
+    <Stack gap="xs">
+      {diff ? <DiffView diff={diff} /> : null}
+      <Group gap="lg">
+        {entry.requestId ? (
+          <Group gap={4}>
+            <Text span c="dimmed" size="sm">
+              {t(($) => $.settings.auditLog.requestId)}
+            </Text>
+            <FilterValue
+              next={withValue(filter, 'requestId', entry.requestId)}
+              onFilterChange={onFilterChange}
+            >
+              {entry.requestId}
+            </FilterValue>
+          </Group>
+        ) : null}
+        {entry.ip ? (
+          <Group gap={4}>
+            <Text span c="dimmed" size="sm">
+              {t(($) => $.settings.auditLog.ip)}
+            </Text>
+            <FilterValue next={withValue(filter, 'ip', entry.ip)} onFilterChange={onFilterChange}>
+              {entry.ip}
+            </FilterValue>
+          </Group>
+        ) : null}
+      </Group>
+    </Stack>
+  )
+}
+
+// The filter that narrows the log to an entry's target: its type, and its id when it has one.
+function targetFilter(filter: AuditFilter, { type, id }: SiteAuditEntryResource['target']) {
+  return withValue(withValue(filter, 'targetType', type), 'targetId', id)
+}
+
+// EntryRows is one entry; when it has details (a diff, a request, a client address), a chevron
+// expands them beneath the row so the list stays scannable. Its actor and target narrow the
+// log to their entries.
+function EntryRows({
+  entry,
+  filter,
+  onFilterChange,
+}: FilterProps & { entry: SiteAuditEntryResource }) {
   const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
+  const actorLabel = useActorLabel()
   const [open, { toggle }] = useDisclosure(false)
   const diff = entry.diff && Object.keys(entry.diff).length > 0 ? entry.diff : null
+  const expandable = Boolean(diff ?? entry.requestId ?? entry.ip)
 
   return (
     <Fragment>
       <Table.Tr>
         <Table.Td>{formatDateTime(entry.occurredAt)}</Table.Td>
         <Table.Td>
-          <ActorLabel entry={entry} />
+          <FilterValue
+            next={withActor(filter, actorValue(entry.actor))}
+            onFilterChange={onFilterChange}
+          >
+            {actorLabel(entry.actor)}
+          </FilterValue>
         </Table.Td>
         <Table.Td>{entry.action}</Table.Td>
         <Table.Td>
-          <TargetLabel entry={entry} />
+          <FilterValue next={targetFilter(filter, entry.target)} onFilterChange={onFilterChange}>
+            <TargetLabel entry={entry} />
+          </FilterValue>
         </Table.Td>
         <Table.Td>
-          {diff ? (
+          {expandable ? (
             <ActionIcon
               variant="subtle"
               color="gray"
@@ -156,10 +260,15 @@ function EntryRows({ entry }: { entry: SiteAuditEntryResource }) {
           ) : null}
         </Table.Td>
       </Table.Tr>
-      {diff && open ? (
+      {expandable && open ? (
         <Table.Tr>
           <Table.Td colSpan={5}>
-            <DiffView diff={diff} />
+            <EntryDetails
+              entry={entry}
+              diff={diff}
+              filter={filter}
+              onFilterChange={onFilterChange}
+            />
           </Table.Td>
         </Table.Tr>
       ) : null}
@@ -167,9 +276,8 @@ function EntryRows({ entry }: { entry: SiteAuditEntryResource }) {
   )
 }
 
-interface AuditPageProps {
+interface AuditPageProps extends FilterProps {
   workspaceId: string
-  filter: AuditFilter
   cursor?: string
   first: boolean
 }
@@ -191,7 +299,7 @@ function AuditPage(props: AuditPageProps) {
 
 // AuditPageRows renders one page of the log and, while more exist, a button that mounts the
 // next page beneath it, so the list grows without holding every page in one state.
-function AuditPageRows({ workspaceId, filter, cursor, first }: AuditPageProps) {
+function AuditPageRows({ workspaceId, filter, onFilterChange, cursor, first }: AuditPageProps) {
   const { t } = useTranslation()
   const [showNext, setShowNext] = useState(false)
   const { items, nextCursor } = useSuspenseQuery(
@@ -231,7 +339,12 @@ function AuditPageRows({ workspaceId, filter, cursor, first }: AuditPageProps) {
           ) : null}
           <Table.Tbody>
             {items.map((entry) => (
-              <EntryRows key={entry.id} entry={entry} />
+              <EntryRows
+                key={entry.id}
+                entry={entry}
+                filter={filter}
+                onFilterChange={onFilterChange}
+              />
             ))}
           </Table.Tbody>
         </Table>
@@ -242,7 +355,13 @@ function AuditPageRows({ workspaceId, filter, cursor, first }: AuditPageProps) {
         </Button>
       ) : null}
       {next && showNext ? (
-        <AuditPage workspaceId={workspaceId} filter={filter} cursor={next} first={false} />
+        <AuditPage
+          workspaceId={workspaceId}
+          filter={filter}
+          onFilterChange={onFilterChange}
+          cursor={next}
+          first={false}
+        />
       ) : null}
     </>
   )
@@ -283,6 +402,7 @@ function ExportButton({ workspaceId, filter }: { workspaceId: string; filter: Au
     <Button
       variant="default"
       size="xs"
+      ml="auto"
       leftSection={<IconDownload size={14} />}
       loading={exportCsv.isPending}
       onClick={() => exportCsv.mutate()}
@@ -294,168 +414,55 @@ function ExportButton({ workspaceId, filter }: { workspaceId: string; filter: Au
 
 // RetentionForm sets how many days the log is kept; an empty value keeps it forever. The
 // change is recorded as an Audit entry by the API.
-function RetentionForm({ workspaceId, days }: { workspaceId: string; days: number | null }) {
+function RetentionForm({
+  workspaceId,
+  days,
+  onClose,
+}: {
+  workspaceId: string
+  days: number | null
+  onClose: () => void
+}) {
   const { t } = useTranslation()
-  const [value, setValue] = useState<string | number>(days ?? '')
+  // A blank NumberInput holds '': no window, the log is kept forever.
+  const schema = z.object({
+    retentionDays: z
+      .union([zRetentionDays, z.literal('')])
+      .transform((value) => (value === '' ? null : value)),
+  })
+  const form = useSchemaForm(schema, { retentionDays: days ?? '' })
   const mutation = useResourceMutation({
     mutation: siteAuditSetRetentionMutation(),
     successMessage: t(($) => $.settings.auditLog.retentionSaved),
     errorTitle: t(($) => $.settings.auditLog.retentionError),
+    onDone: onClose,
   })
-
-  return (
-    <Group align="flex-end" gap="sm">
-      <NumberInput
-        label={t(($) => $.settings.auditLog.retentionLabel)}
-        description={t(($) => $.settings.auditLog.retentionDescription)}
-        placeholder={t(($) => $.settings.auditLog.retentionPlaceholder)}
-        min={RETENTION_DAYS.min}
-        max={RETENTION_DAYS.max}
-        allowDecimal={false}
-        value={value}
-        onChange={setValue}
-      />
-      <Button
-        size="xs"
-        loading={mutation.isPending}
-        onClick={() =>
-          mutation.mutate({
-            path: { workspaceId },
-            body: { retentionDays: typeof value === 'number' ? value : null },
-          })
-        }
-      >
-        {t(($) => $.settings.auditLog.retentionSave)}
-      </Button>
-    </Group>
-  )
-}
-
-// RetentionControl is the Enterprise advanced-retention window for the log. It is mounted
-// only with audit:configure and renders nothing without the license.
-function RetentionControl({ workspaceId }: { workspaceId: string }) {
-  const query = useQuery(siteAuditGetRetentionOptions({ path: { workspaceId } }))
-  if (!query.isSuccess) {
-    return null
-  }
-  return (
-    <RetentionForm
-      key={String(query.data.retentionDays)}
-      workspaceId={workspaceId}
-      days={query.data.retentionDays}
-    />
-  )
-}
-
-const TEXT_FIELDS = ['actorId', 'action', 'targetType', 'targetId', 'ip', 'requestId'] as const
-
-// FilterForm edits the filter and hands it up on apply, so the route's search stays the
-// single owner of it. It remounts when the filter changes from outside, e.g. by following
-// a Change history link.
-function FilterForm({
-  filter,
-  onChange,
-}: {
-  filter: AuditFilter
-  onChange: (filter: AuditFilter) => void
-}) {
-  const { t } = useTranslation()
-  const form = useForm<{
-    from: string
-    to: string
-    actorKind: string | null
-    actorId: string
-    action: string
-    targetType: string
-    targetId: string
-    ip: string
-    requestId: string
-  }>({
-    initialValues: {
-      from: filter.from ?? '',
-      to: filter.to ?? '',
-      actorKind: filter.actorKind ?? null,
-      actorId: filter.actorId ?? '',
-      action: filter.action ?? '',
-      targetType: filter.targetType ?? '',
-      targetId: filter.targetId ?? '',
-      ip: filter.ip ?? '',
-      requestId: filter.requestId ?? '',
-    },
-  })
-
-  const labels = {
-    actorId: t(($) => $.settings.auditLog.actorId),
-    action: t(($) => $.settings.auditLog.action),
-    targetType: t(($) => $.settings.auditLog.targetType),
-    targetId: t(($) => $.settings.auditLog.targetId),
-    ip: t(($) => $.settings.auditLog.ip),
-    requestId: t(($) => $.settings.auditLog.requestId),
-  }
 
   return (
     <form
-      onSubmit={form.onSubmit((values) => {
-        const next: AuditFilter = {}
-        for (const field of TEXT_FIELDS) {
-          const value = values[field].trim()
-          if (value) {
-            next[field] = value
-          }
-        }
-        if (values.from) {
-          next.from = values.from
-        }
-        if (values.to) {
-          next.to = values.to
-        }
-        const kind = auditFilterKind(values.actorKind)
-        if (kind) {
-          next.actorKind = kind
-        }
-        onChange(next)
-      })}
+      onSubmit={form.onSubmit(({ retentionDays }) =>
+        mutation.mutate({ path: { workspaceId }, body: { retentionDays } }),
+      )}
     >
-      <Stack gap="sm">
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
-          <TextInput
-            type="date"
-            label={t(($) => $.settings.auditLog.from)}
-            {...form.getInputProps('from')}
-          />
-          <TextInput
-            type="date"
-            label={t(($) => $.settings.auditLog.to)}
-            {...form.getInputProps('to')}
-          />
-          <Select
-            clearable
-            label={t(($) => $.settings.auditLog.actorKind)}
-            data={[
-              { value: 'user', label: t(($) => $.settings.auditLog.kindUser) },
-              { value: 'api_token', label: t(($) => $.settings.auditLog.kindApiToken) },
-              { value: 'staff', label: t(($) => $.settings.auditLog.kindStaff) },
-              { value: 'system', label: t(($) => $.settings.auditLog.kindSystem) },
-            ]}
-            {...form.getInputProps('actorKind')}
-          />
-          <TextInput label={labels.actorId} {...form.getInputProps('actorId')} />
-          <TextInput
-            label={labels.action}
-            placeholder={t(($) => $.settings.auditLog.actionPlaceholder)}
-            {...form.getInputProps('action')}
-          />
-          <TextInput label={labels.targetType} {...form.getInputProps('targetType')} />
-          <TextInput label={labels.targetId} {...form.getInputProps('targetId')} />
-          <TextInput label={labels.ip} {...form.getInputProps('ip')} />
-          <TextInput label={labels.requestId} {...form.getInputProps('requestId')} />
-        </SimpleGrid>
-        <Group gap="xs">
-          <Button type="submit" size="xs">
-            {t(($) => $.settings.auditLog.apply)}
+      <Stack>
+        <NumberInput
+          data-autofocus
+          label={t(($) => $.settings.auditLog.retentionLabel)}
+          description={t(($) => $.settings.auditLog.retentionDescription)}
+          placeholder={t(($) => $.settings.auditLog.retentionPlaceholder)}
+          min={RETENTION_DAYS.min}
+          max={RETENTION_DAYS.max}
+          allowDecimal={false}
+          allowNegative={false}
+          clampBehavior="none"
+          {...form.getInputProps('retentionDays')}
+        />
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>
+            {t(($) => $.actions.cancel)}
           </Button>
-          <Button type="button" size="xs" variant="default" onClick={() => onChange({})}>
-            {t(($) => $.settings.auditLog.reset)}
+          <Button type="submit" loading={mutation.isPending}>
+            {t(($) => $.actions.save)}
           </Button>
         </Group>
       </Stack>
@@ -463,8 +470,186 @@ function FilterForm({
   )
 }
 
-function auditFilterKind(value: string | null) {
-  return zSiteAuditActorKind.options.find((kind) => kind === value)
+// RetentionControl is the Enterprise advanced-retention window for the log: the window as it
+// stands, and a form in a modal to change it. It is mounted only with audit:configure and
+// renders nothing without the license.
+function RetentionControl({ workspaceId }: { workspaceId: string }) {
+  const { t } = useTranslation()
+  const [opened, { open, close }] = useDisclosure(false)
+  const query = useQuery(siteAuditGetRetentionOptions({ path: { workspaceId } }))
+  if (!query.isSuccess) {
+    return null
+  }
+  const days = query.data.retentionDays
+
+  return (
+    <Group gap="xs">
+      <Text size="sm" c="dimmed">
+        {days === null
+          ? t(($) => $.settings.auditLog.retentionForever)
+          : t(($) => $.settings.auditLog.retentionKept, { count: days })}
+      </Text>
+      <Button variant="subtle" size="compact-sm" onClick={open}>
+        {t(($) => $.settings.auditLog.retentionChange)}
+      </Button>
+      <Modal opened={opened} onClose={close} title={t(($) => $.settings.auditLog.retentionTitle)}>
+        <RetentionForm workspaceId={workspaceId} days={days} onClose={close} />
+      </Modal>
+    </Group>
+  )
+}
+
+// PeriodInput picks the days the log is narrowed to. A range picked by half stays here until
+// its second day is picked; it remounts when the filter's period changes.
+function PeriodInput({ filter, onFilterChange }: FilterProps) {
+  const { t } = useTranslation()
+  const [range, setRange] = useState<DatesRangeValue<string>>([
+    filter.from ?? null,
+    filter.to ?? null,
+  ])
+  const [today] = useState(() => dayOf(Date.now()))
+
+  return (
+    <DatePickerInput
+      type="range"
+      clearable
+      valueFormat="L"
+      label={t(($) => $.settings.auditLog.period)}
+      placeholder={t(($) => $.settings.auditLog.anyTime)}
+      presets={[
+        { value: [today, today], label: t(($) => $.settings.auditLog.today) },
+        { value: [daysBefore(today, 6), today], label: t(($) => $.settings.auditLog.last7Days) },
+        { value: [daysBefore(today, 29), today], label: t(($) => $.settings.auditLog.last30Days) },
+      ]}
+      value={range}
+      onChange={(next) => {
+        setRange(next)
+        const period = withPeriod(filter, next)
+        if (period) {
+          onFilterChange(period)
+        }
+      }}
+    />
+  )
+}
+
+// withCurrent offers the values of the log, and the filter's own value even when the log no
+// longer holds it, so a select never hides a filter that is applied.
+function withCurrent(values: string[], current: string | undefined) {
+  return current && !values.includes(current) ? [current, ...values] : values
+}
+
+// FilterChips shows the single-value filters no select offers (set by a link or by clicking a
+// value in an entry), each removable, and clears the whole filter.
+function FilterChips({ filter, onFilterChange }: FilterProps) {
+  const { t } = useTranslation()
+  const chips = filterChips(filter)
+  if (Object.keys(auditQuery(filter)).length === 0) {
+    return null
+  }
+  const labels: Record<AuditChipField, (value: string) => string> = {
+    actorId: (value) => t(($) => $.settings.auditLog.chipActor, { value }),
+    targetId: (value) => t(($) => $.settings.auditLog.chipTarget, { value }),
+    ip: (value) => t(($) => $.settings.auditLog.chipIp, { value }),
+    requestId: (value) => t(($) => $.settings.auditLog.chipRequest, { value }),
+  }
+
+  return (
+    <Group gap="xs">
+      {chips.map(({ field, value }) => {
+        const label = labels[field](value)
+        return (
+          <Badge
+            key={field}
+            variant="light"
+            color="gray"
+            tt="none"
+            rightSection={
+              <CloseButton
+                size="xs"
+                aria-label={t(($) => $.settings.auditLog.removeFilter, { filter: label })}
+                onClick={() => onFilterChange(withValue(filter, field, null))}
+              />
+            }
+          >
+            {label}
+          </Badge>
+        )
+      })}
+      <Button size="compact-sm" variant="subtle" onClick={() => onFilterChange({})}>
+        {t(($) => $.settings.auditLog.reset)}
+      </Button>
+    </Group>
+  )
+}
+
+// FilterBar narrows the log by period, actor, action and target type, choosing among the
+// values that occur in the log; every change applies at once through the route's search, the
+// single owner of the filter. The export sits beside the chips: it exports what they narrow.
+function FilterBar({ workspaceId, filter, onFilterChange }: FilterProps & { workspaceId: string }) {
+  const { t } = useTranslation()
+  const actorLabel = useActorLabel()
+  const facets = useSuspenseQuery(siteAuditFacetsOptions({ path: { workspaceId } })).data
+  const kindLabels: Record<SiteAuditActorKind, string> = {
+    user: t(($) => $.settings.auditLog.kindUser),
+    api_token: t(($) => $.settings.auditLog.kindApiToken),
+    staff: t(($) => $.settings.auditLog.kindStaff),
+    system: t(($) => $.settings.auditLog.kindSystem),
+  }
+  const current = filterActorValue(filter)
+  const actors =
+    current && filter.actorKind && !facets.actors.some((actor) => actorValue(actor) === current)
+      ? [...facets.actors, { kind: filter.actorKind, id: filter.actorId ?? null }]
+      : facets.actors
+  const actorGroups = zSiteAuditActorKind.options.flatMap((kind) => {
+    const items = actors
+      .filter((actor) => actor.kind === kind)
+      .map((actor) => ({ value: actorValue(actor), label: actorLabel(actor) || kindLabels[kind] }))
+    return items.length > 0 ? [{ group: kindLabels[kind], items }] : []
+  })
+
+  return (
+    <Stack gap="xs">
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
+        <PeriodInput
+          key={`${filter.from ?? ''}~${filter.to ?? ''}`}
+          filter={filter}
+          onFilterChange={onFilterChange}
+        />
+        <Select
+          searchable
+          clearable
+          label={t(($) => $.settings.auditLog.actor)}
+          placeholder={t(($) => $.settings.auditLog.anyActor)}
+          data={actorGroups}
+          value={current}
+          onChange={(value) => onFilterChange(withActor(filter, value))}
+        />
+        <Select
+          searchable
+          clearable
+          label={t(($) => $.settings.auditLog.action)}
+          placeholder={t(($) => $.settings.auditLog.anyAction)}
+          data={withCurrent(facets.actions, filter.action)}
+          value={filter.action ?? null}
+          onChange={(value) => onFilterChange(withValue(filter, 'action', value))}
+        />
+        <Select
+          searchable
+          clearable
+          label={t(($) => $.settings.auditLog.targetType)}
+          placeholder={t(($) => $.settings.auditLog.anyTarget)}
+          data={withCurrent(facets.targetTypes, filter.targetType)}
+          value={filter.targetType ?? null}
+          onChange={(value) => onFilterChange(withValue(filter, 'targetType', value))}
+        />
+      </SimpleGrid>
+      <Group gap="xs">
+        <FilterChips filter={filter} onFilterChange={onFilterChange} />
+        <ExportButton workspaceId={workspaceId} filter={filter} />
+      </Group>
+    </Stack>
+  )
 }
 
 // ChangeHistoryLink opens the Audit log pre-filtered to one object (an Integration or a
@@ -526,13 +711,21 @@ export function AuditLogSection({
   return (
     <Box>
       <Stack>
-        <Group justify="space-between">
-          <Title order={4}>{t(($) => $.settings.auditLog.title)}</Title>
-          <ExportButton workspaceId={workspaceId} filter={filter} />
-        </Group>
         {canConfigureRetention ? <RetentionControl workspaceId={workspaceId} /> : null}
-        <FilterForm key={filterKey} filter={filter} onChange={onFilterChange} />
-        <AuditPage key={filterKey} workspaceId={workspaceId} filter={filter} first />
+        <QueryBoundary
+          fallback={<BlockSkeleton />}
+          errorTitle={t(($) => $.settings.auditLog.loadError)}
+          renderError={(error) => (isHidden(error) ? null : undefined)}
+        >
+          <FilterBar workspaceId={workspaceId} filter={filter} onFilterChange={onFilterChange} />
+        </QueryBoundary>
+        <AuditPage
+          key={filterKey}
+          workspaceId={workspaceId}
+          filter={filter}
+          onFilterChange={onFilterChange}
+          first
+        />
       </Stack>
     </Box>
   )

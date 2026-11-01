@@ -7,13 +7,18 @@
 package audit
 
 import (
+	"cmp"
 	"context"
 	"fmt"
+	"slices"
+
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
@@ -138,6 +143,70 @@ func (l *Log) Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, 
 	}
 	rows = rows[:limit]
 	return rows, rows[limit-1].ID, nil
+}
+
+// Facets returns the values that occur in the scoped Workspace's Audit log, sorted, for its
+// filter. Each actor carries the name of its newest entry. A staff identity is never exposed
+// (ADR 0022): staff entries collapse into one id-less staff actor. The caller has already
+// checked Licensed and the reader's role.
+func (l *Log) Facets(ctx context.Context, s *ent.Scoped) (auditapi.Facets, error) {
+	var rows []struct {
+		Kind   string  `json:"actor_kind"`
+		ID     *string `json:"actor_id"`
+		Name   *string `json:"actor_name"`
+		Newest int64   `json:"newest"`
+	}
+	err := s.AuditEntry().Query().
+		Where(auditentry.ActorKindNotIn(events.ActorStaff, events.ActorService)).
+		GroupBy(auditentry.FieldActorKind, auditentry.FieldActorID, auditentry.FieldActorName).
+		Aggregate(ent.As(ent.Max(auditentry.FieldID), "newest")).
+		Scan(ctx, &rows)
+	if err != nil {
+		return auditapi.Facets{}, fmt.Errorf("audit facets actors: %w", err)
+	}
+	staff, err := s.AuditEntry().Query().
+		Where(auditentry.ActorKindIn(events.ActorStaff, events.ActorService)).
+		Exist(ctx)
+	if err != nil {
+		return auditapi.Facets{}, fmt.Errorf("audit facets staff: %w", err)
+	}
+	actions, err := s.AuditEntry().Query().Unique(true).Select(auditentry.FieldAction).Strings(ctx)
+	if err != nil {
+		return auditapi.Facets{}, fmt.Errorf("audit facets actions: %w", err)
+	}
+	targetTypes, err := s.AuditEntry().Query().Unique(true).Select(auditentry.FieldTargetType).Strings(ctx)
+	if err != nil {
+		return auditapi.Facets{}, fmt.Errorf("audit facets target types: %w", err)
+	}
+
+	// One row per name an actor has had: keep the name of its newest entry.
+	type key struct{ kind, id string }
+	newest := map[key]int64{}
+	byKey := map[key]auditapi.Actor{}
+	for _, r := range rows {
+		k := key{r.Kind, lo.FromPtr(r.ID)}
+		if r.Newest > newest[k] {
+			newest[k] = r.Newest
+			byKey[k] = auditapi.Actor{Kind: r.Kind, ID: r.ID, Name: r.Name}
+		}
+	}
+	actors := make([]auditapi.Actor, 0, len(byKey)+1)
+	for _, a := range byKey {
+		actors = append(actors, a)
+	}
+	if staff {
+		actors = append(actors, auditapi.StaffActor())
+	}
+	slices.SortFunc(actors, func(a, b auditapi.Actor) int {
+		return cmp.Or(
+			cmp.Compare(a.Kind, b.Kind),
+			cmp.Compare(lo.FromPtr(a.Name), lo.FromPtr(b.Name)),
+			cmp.Compare(lo.FromPtr(a.ID), lo.FromPtr(b.ID)),
+		)
+	})
+	slices.Sort(actions)
+	slices.Sort(targetTypes)
+	return auditapi.Facets{Actors: actors, Actions: actions, TargetTypes: targetTypes}, nil
 }
 
 // predicates turns the filter into query predicates; an unset field adds none.

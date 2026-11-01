@@ -42,6 +42,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteAnalyticsRevenueOperation:                      []string{},
 	SiteAnalyticsSubscribedPeopleOperation:             []string{},
 	SiteAuditExportOperation:                           []string{},
+	SiteAuditFacetsOperation:                           []string{},
 	SiteAuditGetRetentionOperation:                     []string{},
 	SiteAuditListOperation:                             []string{},
 	SiteAuditSetRetentionOperation:                     []string{},

@@ -42,6 +42,11 @@ export function nextDay(day: string): string {
   return dayjs.utc(day).add(1, 'day').format('YYYY-MM-DD')
 }
 
+// The calendar day count days before day.
+export function daysBefore(day: string, count: number): string {
+  return dayjs.utc(day).subtract(count, 'day').format('YYYY-MM-DD')
+}
+
 // The calendar day ("2026-03-01") the instant falls on in the zone.
 export function dayOf(value: DateInput, timeZone?: string): string {
   return inZone(value, timeZone).format('YYYY-MM-DD')

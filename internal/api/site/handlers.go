@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
+	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
@@ -128,6 +129,8 @@ type AuditLog interface {
 	// Export records the export as an Audit entry of the scope's actor, then returns the
 	// function that writes the entries matching the filter, newest first, as CSV.
 	Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (func(w io.Writer) error, error)
+	// Facets returns the actors, actions and target types that occur in the log, sorted.
+	Facets(ctx context.Context, s *ent.Scoped) (auditapi.Facets, error)
 	// RetentionLicensed reports whether the retention window may be set (ADR 0014).
 	RetentionLicensed() bool
 }

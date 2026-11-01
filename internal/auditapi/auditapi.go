@@ -115,3 +115,25 @@ func unchanged(v any) bool {
 	to, hasTo := change[events.DiffTo]
 	return hasFrom && hasTo && reflect.DeepEqual(from, to)
 }
+
+// Actor is an actor of the Audit log as a customer sees it: a Staff member appears only as
+// events.StaffLabel, with no id.
+type Actor struct {
+	Kind string
+	ID   *string
+	Name *string
+}
+
+// Facets are the values that occur in a Workspace's Audit log, offered as the choices of its
+// filter: every actor, with its latest name snapshot, every action and every target type.
+type Facets struct {
+	Actors      []Actor
+	Actions     []string
+	TargetTypes []string
+}
+
+// StaffActor is the one id-less actor that stands for every platform staff identity.
+func StaffActor() Actor {
+	label := events.StaffLabel
+	return Actor{Kind: events.ActorStaff, Name: &label}
+}

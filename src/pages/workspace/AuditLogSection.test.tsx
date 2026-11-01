@@ -1,8 +1,10 @@
 import { HttpResponse } from 'msw'
 import { beforeEach, expect, test, vi } from 'vitest'
+import { userEvent } from 'vitest/browser'
 
 import {
   handleSiteAuditExport,
+  handleSiteAuditFacets,
   handleSiteAuditGetRetention,
   handleSiteAuditList,
   handleSiteAuditSetRetention,
@@ -30,7 +32,19 @@ function entry(over: Partial<SiteAuditEntryResource> = {}): SiteAuditEntryResour
 
 // With audit:configure the section reads the retention window; tests that care override it.
 beforeEach(() => {
-  worker.use(handleSiteAuditGetRetention({ body: { retentionDays: 90 } }))
+  worker.use(
+    handleSiteAuditGetRetention({ body: { retentionDays: 90 } }),
+    handleSiteAuditFacets({
+      body: {
+        actors: [
+          { kind: 'api_token', id: '77' },
+          { kind: 'user', id: '2', name: 'Jane' },
+        ],
+        actions: ['integration.update', 'membership.update'],
+        targetTypes: ['integration', 'membership'],
+      },
+    }),
+  )
 })
 
 test('lists who changed what, with the change', async () => {
@@ -43,9 +57,9 @@ test('lists who changed what, with the change', async () => {
     />,
   )
 
-  await expect.element(screen.getByText('Audit log')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Export CSV' })).toBeInTheDocument()
   await expect.element(screen.getByText('John', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByText('membership.update')).toBeInTheDocument()
+  await expect.element(screen.getByRole('cell', { name: 'membership.update' })).toBeInTheDocument()
   await expect.element(screen.getByText('membership Mary')).toBeInTheDocument()
 })
 
@@ -60,7 +74,7 @@ test('expands an entry to its before/after diff', async () => {
   )
 
   await expect.element(screen.getByText('admin', { exact: true })).not.toBeInTheDocument()
-  await screen.getByRole('button', { name: 'Show changes' }).click()
+  await screen.getByRole('button', { name: 'Show details' }).click()
   await expect.element(screen.getByText('role', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('member', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('admin', { exact: true })).toBeInTheDocument()
@@ -76,7 +90,7 @@ test('shows a sensitive field as changed only', async () => {
     />,
   )
 
-  await screen.getByRole('button', { name: 'Show changes' }).click()
+  await screen.getByRole('button', { name: 'Show details' }).click()
   await expect.element(screen.getByText('secret', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('changed', { exact: true })).toBeInTheDocument()
 })
@@ -109,52 +123,86 @@ test('sends the applied filter to the list and to the export', async () => {
     )
     .toBe(true)
   expect(queries.some((q) => q.includes('ip=10.0.0.1'))).toBe(true)
-  await expect.element(screen.getByLabelText('Target type')).toHaveValue('integration')
+  await expect
+    .element(screen.getByRole('combobox', { name: 'Target type' }))
+    .toHaveValue('integration')
 
   await screen.getByRole('button', { name: 'Export CSV' }).click()
   await expect.poll(() => exported).toContain('targetType=integration')
   expect(exported).toContain('targetId=5')
 })
 
-test('applying the form hands the new filter up, and reset clears it', async () => {
+test('choosing an actor or an action among those of the log applies it at once', async () => {
   worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
   const onFilterChange = vi.fn<(filter: AuditFilter) => void>()
   const { screen } = await renderWithRouter(
     <AuditLogSection
       workspaceId={WORKSPACE_ID}
+      filter={{ ip: '10.0.0.1' }}
       onFilterChange={onFilterChange}
       canConfigureRetention
     />,
   )
 
-  await screen.getByLabelText('Request id').fill(' req-1 ')
-  await screen.getByLabelText('Target type').fill('webhook_endpoint')
-  await screen.getByRole('button', { name: 'Apply filters' }).click()
-  expect(onFilterChange).toHaveBeenCalledWith({
-    requestId: 'req-1',
-    targetType: 'webhook_endpoint',
+  await screen.getByRole('combobox', { name: 'Actor' }).click()
+  await screen.getByRole('option', { name: 'Jane' }).click()
+  expect(onFilterChange).toHaveBeenLastCalledWith({
+    ip: '10.0.0.1',
+    actorKind: 'user',
+    actorId: '2',
   })
+
+  await screen.getByRole('combobox', { name: 'Action' }).click()
+  await screen.getByRole('option', { name: 'integration.update' }).click()
+  expect(onFilterChange).toHaveBeenLastCalledWith({ ip: '10.0.0.1', action: 'integration.update' })
+})
+
+test('a chip removes its filter, and reset clears every filter', async () => {
+  worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
+  const onFilterChange = vi.fn<(filter: AuditFilter) => void>()
+  const { screen } = await renderWithRouter(
+    <AuditLogSection
+      workspaceId={WORKSPACE_ID}
+      filter={{ targetType: 'integration', targetId: '5' }}
+      onFilterChange={onFilterChange}
+      canConfigureRetention
+    />,
+  )
+
+  await screen.getByRole('button', { name: 'Remove the filter Target #5' }).click()
+  expect(onFilterChange).toHaveBeenLastCalledWith({ targetType: 'integration' })
 
   await screen.getByRole('button', { name: 'Reset filters' }).click()
   expect(onFilterChange).toHaveBeenLastCalledWith({})
 })
 
-test('the period and the kind of actor of the filter are applied again as they stand', async () => {
-  worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
+test('a value of an entry narrows the log to the entries sharing it', async () => {
+  worker.use(
+    handleSiteAuditList({ body: { items: [entry({ requestId: 'req-1', ip: '10.0.0.1' })] } }),
+  )
   const onFilterChange = vi.fn<(filter: AuditFilter) => void>()
-  const period: AuditFilter = { from: '2026-01-01', to: '2026-01-31', actorKind: 'api_token' }
   const { screen } = await renderWithRouter(
     <AuditLogSection
       workspaceId={WORKSPACE_ID}
-      filter={period}
+      filter={{ action: 'membership.update' }}
       onFilterChange={onFilterChange}
       canConfigureRetention
     />,
   )
 
-  await screen.getByRole('button', { name: 'Apply filters' }).click()
+  await screen.getByRole('button', { name: 'membership Mary' }).click()
+  expect(onFilterChange).toHaveBeenLastCalledWith({
+    action: 'membership.update',
+    targetType: 'membership',
+    targetId: '3',
+  })
 
-  expect(onFilterChange).toHaveBeenCalledWith(period)
+  await screen.getByRole('button', { name: 'Show details' }).click()
+  await screen.getByRole('button', { name: 'req-1' }).click()
+  expect(onFilterChange).toHaveBeenLastCalledWith({
+    action: 'membership.update',
+    requestId: 'req-1',
+  })
 })
 
 test('says so when the filter matches nothing', async () => {
@@ -243,7 +291,7 @@ test('loading more appends the next page below the first', async () => {
   await screen.getByRole('button', { name: 'Load more' }).click()
 
   await expect.element(screen.getByText('membership.remove')).toBeInTheDocument()
-  await expect.element(screen.getByText('membership.update')).toBeInTheDocument()
+  await expect.element(screen.getByRole('cell', { name: 'membership.update' })).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Load more' })).not.toBeInTheDocument()
   expect(cursors).toContain('2')
 })
@@ -258,7 +306,7 @@ test.each([402, 403])('renders nothing when the API answers %i', async (status) 
     />,
   )
 
-  await expect.element(screen.getByText('Audit log')).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Export CSV' })).not.toBeInTheDocument()
 })
 
 test('exports the log as CSV through the generated client', async () => {
@@ -302,10 +350,15 @@ test('shows the retention window and saves a new one', async () => {
     />,
   )
 
-  const input = screen.getByLabelText('Keep the log for (days)')
+  await expect
+    .element(screen.getByText('Entries older than 90 days are removed automatically.'))
+    .toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Change retention' }).click()
+  const dialog = screen.getByRole('dialog')
+  const input = dialog.getByLabelText('Keep the log for (days)')
   await expect.element(input).toHaveValue('90')
   await input.fill('30')
-  await screen.getByRole('button', { name: 'Save retention' }).click()
+  await userEvent.keyboard('{Enter}')
   await expect.poll(() => saved).toEqual({ retentionDays: 30 })
 })
 
@@ -327,8 +380,10 @@ test('an empty retention window keeps the log forever', async () => {
     />,
   )
 
-  await screen.getByLabelText('Keep the log for (days)').fill('')
-  await screen.getByRole('button', { name: 'Save retention' }).click()
+  await screen.getByRole('button', { name: 'Change retention' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText('Keep the log for (days)').fill('')
+  await userEvent.keyboard('{Enter}')
   await expect.poll(() => saved).toEqual({ retentionDays: null })
 })
 
@@ -346,8 +401,11 @@ test('a failed retention save is reported', async () => {
     />,
   )
 
-  await screen.getByLabelText('Keep the log for (days)').fill('5')
-  await screen.getByRole('button', { name: 'Save retention' }).click()
+  await expect.element(screen.getByText('Entries are kept forever.')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Change retention' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText('Keep the log for (days)').fill('5')
+  await userEvent.keyboard('{Enter}')
   await expect.element(screen.getByText('Could not save the retention')).toBeInTheDocument()
 })
 
@@ -368,9 +426,11 @@ test('the retention control is not offered without its license', async () => {
     />,
   )
 
-  await expect.element(screen.getByText('Audit log')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Export CSV' })).toBeInTheDocument()
   await expect.poll(() => retentionAnswered).toBeGreaterThan(0)
-  await expect.element(screen.getByLabelText('Keep the log for (days)')).not.toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('button', { name: 'Change retention' }))
+    .not.toBeInTheDocument()
 })
 
 test('a hold change is attributed to Sphericon staff', async () => {

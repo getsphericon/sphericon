@@ -49,6 +49,23 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 	return out, nil
 }
 
+// SiteAuditFacets lists the actors, actions and target types that occur in the Workspace's
+// Audit log, the choices of its filter. Same access as the list: owner and admin only, 402
+// without an Enterprise license.
+func (h *Handlers) SiteAuditFacets(ctx context.Context, _ siteapi.SiteAuditFacetsParams) (siteapi.SiteAuditFacetsRes, error) {
+	s := workspaceScope(ctx)
+	if h.audit == nil || !h.audit.Licensed() {
+		v := siteapi.SiteAuditFacetsPaymentRequired(problem(http.StatusPaymentRequired, "the audit log needs an Enterprise license"))
+		return &v, nil
+	}
+	facets, err := h.audit.Facets(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	out := mapper.AuditFacetsToResource(facets)
+	return &out, nil
+}
+
 // SiteAuditExport downloads the whole Audit log as CSV, newest first. Same access as
 // the list: owner and admin only, 402 without an Enterprise license. It takes the
 // same filter as SiteAuditList, so an export matches what the page shows.

@@ -88,6 +88,16 @@ func (UnimplementedHandler) SiteAuditExport(ctx context.Context, params SiteAudi
 	return r, ht.ErrNotImplemented
 }
 
+// SiteAuditFacets implements SiteAudit_facets operation.
+//
+// The actors, actions and target types that occur in the Audit log, for its filter (Enterprise; owner
+// and admin only).
+//
+// GET /workspaces/{workspaceId}/audit-entries/facets
+func (UnimplementedHandler) SiteAuditFacets(ctx context.Context, params SiteAuditFacetsParams) (r SiteAuditFacetsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAuditGetRetention implements SiteAudit_getRetention operation.
 //
 // Read the Audit log retention window (Enterprise; owner and admin only).

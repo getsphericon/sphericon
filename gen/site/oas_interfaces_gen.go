@@ -33,6 +33,10 @@ type SiteAuditExportRes interface {
 	siteAuditExportRes()
 }
 
+type SiteAuditFacetsRes interface {
+	siteAuditFacetsRes()
+}
+
 type SiteAuditGetRetentionRes interface {
 	siteAuditGetRetentionRes()
 }

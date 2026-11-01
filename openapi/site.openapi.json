@@ -4675,6 +4675,76 @@
         "x-required-permissions": ["audit:read"]
       }
     },
+    "/workspaces/{workspaceId}/audit-entries/facets": {
+      "get": {
+        "operationId": "SiteAudit_facets",
+        "description": "The actors, actions and target types that occur in the Audit log, for its filter (Enterprise; owner and admin only)",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAuditFacets"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "RFC 7807 payment required response: the feature needs an Enterprise license",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Audit"],
+        "x-required-permissions": ["audit:read"]
+      }
+    },
     "/workspaces/{workspaceId}/audit-entries/retention": {
       "get": {
         "operationId": "SiteAudit_getRetention",
@@ -16206,6 +16276,34 @@
           }
         },
         "description": "One immutable Audit entry (Enterprise)"
+      },
+      "SiteAuditFacets": {
+        "type": "object",
+        "required": ["actors", "actions", "targetTypes"],
+        "properties": {
+          "actors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAuditActor"
+            },
+            "description": "Every actor with an entry in the log, by kind, then name, then id; one id-less staff member stands for the platform staff, and each actor carries its latest name snapshot"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Every action with an entry in the log, sorted"
+          },
+          "targetTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Every target type with an entry in the log, sorted"
+          }
+        },
+        "description": "The values that occur in a Workspace's Audit log, offered as the choices of its filter"
       },
       "SiteAuditRetention": {
         "type": "object",

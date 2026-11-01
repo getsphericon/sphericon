@@ -14,6 +14,7 @@ const (
 	SiteAnalyticsRevenueOperation                      OperationName = "SiteAnalyticsRevenue"
 	SiteAnalyticsSubscribedPeopleOperation             OperationName = "SiteAnalyticsSubscribedPeople"
 	SiteAuditExportOperation                           OperationName = "SiteAuditExport"
+	SiteAuditFacetsOperation                           OperationName = "SiteAuditFacets"
 	SiteAuditGetRetentionOperation                     OperationName = "SiteAuditGetRetention"
 	SiteAuditListOperation                             OperationName = "SiteAuditList"
 	SiteAuditSetRetentionOperation                     OperationName = "SiteAuditSetRetention"

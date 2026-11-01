@@ -8554,6 +8554,66 @@ type SiteAuditExportPaymentRequired ProblemDetails
 
 func (*SiteAuditExportPaymentRequired) siteAuditExportRes() {}
 
+// The values that occur in a Workspace's Audit log, offered as the choices of its filter.
+// Ref: #/components/schemas/SiteAuditFacets
+type SiteAuditFacets struct {
+	// Every actor with an entry in the log, by kind, then name, then id; one id-less staff member stands
+	// for the platform staff, and each actor carries its latest name snapshot.
+	Actors []SiteAuditActor `json:"actors"`
+	// Every action with an entry in the log, sorted.
+	Actions []string `json:"actions"`
+	// Every target type with an entry in the log, sorted.
+	TargetTypes []string `json:"targetTypes"`
+}
+
+// GetActors returns the value of Actors.
+func (s *SiteAuditFacets) GetActors() []SiteAuditActor {
+	return s.Actors
+}
+
+// GetActions returns the value of Actions.
+func (s *SiteAuditFacets) GetActions() []string {
+	return s.Actions
+}
+
+// GetTargetTypes returns the value of TargetTypes.
+func (s *SiteAuditFacets) GetTargetTypes() []string {
+	return s.TargetTypes
+}
+
+// SetActors sets the value of Actors.
+func (s *SiteAuditFacets) SetActors(val []SiteAuditActor) {
+	s.Actors = val
+}
+
+// SetActions sets the value of Actions.
+func (s *SiteAuditFacets) SetActions(val []string) {
+	s.Actions = val
+}
+
+// SetTargetTypes sets the value of TargetTypes.
+func (s *SiteAuditFacets) SetTargetTypes(val []string) {
+	s.TargetTypes = val
+}
+
+func (*SiteAuditFacets) siteAuditFacetsRes() {}
+
+type SiteAuditFacetsBadRequest ProblemDetails
+
+func (*SiteAuditFacetsBadRequest) siteAuditFacetsRes() {}
+
+type SiteAuditFacetsForbidden ProblemDetails
+
+func (*SiteAuditFacetsForbidden) siteAuditFacetsRes() {}
+
+type SiteAuditFacetsNotFound ProblemDetails
+
+func (*SiteAuditFacetsNotFound) siteAuditFacetsRes() {}
+
+type SiteAuditFacetsPaymentRequired ProblemDetails
+
+func (*SiteAuditFacetsPaymentRequired) siteAuditFacetsRes() {}
+
 type SiteAuditGetRetentionBadRequest ProblemDetails
 
 func (*SiteAuditGetRetentionBadRequest) siteAuditGetRetentionRes() {}

@@ -1,6 +1,15 @@
 import { expect, test } from 'vitest'
 
-import { auditFilterSchema, auditQuery } from './auditFilter.ts'
+import {
+  actorValue,
+  auditFilterSchema,
+  auditQuery,
+  filterActorValue,
+  filterChips,
+  withActor,
+  withPeriod,
+  withValue,
+} from './auditFilter.ts'
 
 test('maps an empty filter to an empty query', () => {
   expect(auditQuery({})).toEqual({})
@@ -30,5 +39,61 @@ test('parses a route search, coercing ids and dropping invalid values', () => {
     targetId: '5',
     actorKind: undefined,
     ip: '1.2.3.4',
+  })
+})
+
+test('an actor value carries its id only when it has one', () => {
+  expect(actorValue({ kind: 'user', id: '2' })).toBe('user:2')
+  expect(actorValue({ kind: 'system', id: null })).toBe('system')
+  expect(filterActorValue({ actorKind: 'api_token', actorId: '77' })).toBe('api_token:77')
+  expect(filterActorValue({ actorId: '77' })).toBeNull()
+})
+
+test('a "By" value narrows to its actor and replaces the one before', () => {
+  const before = { action: 'tag.create', actorKind: 'user' as const, actorId: '2' }
+  expect(withActor(before, 'api_token:77')).toEqual({
+    action: 'tag.create',
+    actorKind: 'api_token',
+    actorId: '77',
+  })
+  expect(withActor(before, 'system')).toEqual({ action: 'tag.create', actorKind: 'system' })
+})
+
+test('a cleared or unreadable "By" value narrows to no actor', () => {
+  const before = { actorKind: 'user' as const, actorId: '2' }
+  expect(withActor(before, null)).toEqual({})
+  expect(withActor(before, 'robot:1')).toEqual({})
+})
+
+test('a period is applied only once both of its days are picked', () => {
+  const before = { action: 'tag.create', from: '2026-01-01', to: '2026-01-31' }
+  expect(withPeriod(before, ['2026-03-01', '2026-03-31'])).toEqual({
+    action: 'tag.create',
+    from: '2026-03-01',
+    to: '2026-03-31',
+  })
+  expect(withPeriod(before, ['2026-03-01', null])).toBeUndefined()
+  expect(withPeriod(before, [null, null])).toEqual({ action: 'tag.create' })
+})
+
+test('chips show the single-value filters no select shows', () => {
+  expect(
+    filterChips({ targetType: 'integration', targetId: '5', ip: '10.0.0.1', requestId: 'req-a' }),
+  ).toEqual([
+    { field: 'targetId', value: '5' },
+    { field: 'ip', value: '10.0.0.1' },
+    { field: 'requestId', value: 'req-a' },
+  ])
+  expect(filterChips({ actorKind: 'user', actorId: '2' })).toEqual([])
+  expect(filterChips({ actorId: '2' })).toEqual([{ field: 'actorId', value: '2' }])
+})
+
+test('a value narrows by its field, and an empty one stops narrowing by it', () => {
+  expect(withValue({ ip: '10.0.0.1' }, 'requestId', 'req-a')).toEqual({
+    ip: '10.0.0.1',
+    requestId: 'req-a',
+  })
+  expect(withValue({ ip: '10.0.0.1', requestId: 'req-a' }, 'ip', null)).toEqual({
+    requestId: 'req-a',
   })
 })

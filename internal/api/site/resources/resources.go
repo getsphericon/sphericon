@@ -457,6 +457,9 @@ type Converter interface {
 	// goverter:map TargetID ID
 	// goverter:map TargetName Name
 	AuditTargetToResource(source auditapi.View) siteapi.SiteAuditTarget
+	// goverter:useEmptyOnNil:slice
+	AuditFacetsToResource(source auditapi.Facets) siteapi.SiteAuditFacets
+	AuditFacetActorToResource(source auditapi.Actor) siteapi.SiteAuditActor
 
 	// The signing secret is decrypted by the webhooks module, which the mapper cannot see:
 	// the handler attaches it. The failure state is derived from the failure columns, and an

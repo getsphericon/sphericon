@@ -59,6 +59,13 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/audit-entries/export
 	SiteAuditExport(ctx context.Context, params SiteAuditExportParams) (SiteAuditExportRes, error)
+	// SiteAuditFacets implements SiteAudit_facets operation.
+	//
+	// The actors, actions and target types that occur in the Audit log, for its filter (Enterprise; owner
+	// and admin only).
+	//
+	// GET /workspaces/{workspaceId}/audit-entries/facets
+	SiteAuditFacets(ctx context.Context, params SiteAuditFacetsParams) (SiteAuditFacetsRes, error)
 	// SiteAuditGetRetention implements SiteAudit_getRetention operation.
 	//
 	// Read the Audit log retention window (Enterprise; owner and admin only).

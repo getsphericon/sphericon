@@ -73,6 +73,18 @@ model SiteAuditEntryList {
   nextCursor?: string | null;
 }
 
+/** The values that occur in a Workspace's Audit log, offered as the choices of its filter */
+model SiteAuditFacets {
+  /** Every actor with an entry in the log, by kind, then name, then id; one id-less staff member stands for the platform staff, and each actor carries its latest name snapshot */
+  actors: SiteAuditActor[];
+
+  /** Every action with an entry in the log, sorted */
+  actions: string[];
+
+  /** Every target type with an entry in the log, sorted */
+  targetTypes: string[];
+}
+
 /** Filters shared by the Audit log list and its CSV export; every one is optional and they combine with AND */
 model SiteAuditFilter {
   /** Only entries at or after this time */
@@ -134,6 +146,17 @@ namespace SiteAudit {
     limit?: int32 = 25,
   ):
     | SiteAuditEntryList
+    | BadRequestProblem
+    | PaymentRequiredProblem
+    | ForbiddenProblem
+    | NotFoundProblem;
+
+  /** The actors, actions and target types that occur in the Audit log, for its filter (Enterprise; owner and admin only) */
+  @get
+  @route("/facets")
+  @requiresPermissions(#[Permission.auditRead])
+  op facets(@path workspaceId: WorkspaceId):
+    | SiteAuditFacets
     | BadRequestProblem
     | PaymentRequiredProblem
     | ForbiddenProblem

@@ -206,6 +206,11 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   every pull request, sharded over three runners, with the coverage floor (`test:frontend:shard`,
   then `test:frontend:merge`). `mise run test:frontend` runs both locally, and
   `mise run test:frontend:logic` only the logic tests, in seconds.
+- **A setting shows its value; its form opens on demand.** A value people set once and rarely
+  change (a retention window, a cap, a default) shows on the page as text with a Change action that
+  opens its form in a `Modal` (`src/console/SendCapCard.tsx`, the Audit log retention), never as an
+  input and a save button that stay open. What stays open on a page is what the page is used for:
+  a filter, a search, an editor.
 - **Theming & responsiveness.** Light and dark color schemes are supported via
   `MantineProvider` (`defaultColorScheme="auto"`) + `ColorSchemeScript` in `index.html`;
   the UI must be responsive using Mantine primitives (responsive props,

@@ -578,6 +578,15 @@ export const zSiteAuditActor = z.object({
 });
 
 /**
+ * The values that occur in a Workspace's Audit log, offered as the choices of its filter
+ */
+export const zSiteAuditFacets = z.object({
+  actors: z.array(zSiteAuditActor),
+  actions: z.array(z.string()),
+  targetTypes: z.array(z.string())
+});
+
+/**
  * How long the Audit log is kept; the Enterprise advanced-retention control
  */
 export const zSiteAuditRetention = z.object({
@@ -4164,6 +4173,15 @@ export const zSiteAuditExportQuery = z.object({
  * The request has succeeded.
  */
 export const zSiteAuditExportResponse = z.string();
+
+export const zSiteAuditFacetsPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAuditFacetsResponse = zSiteAuditFacets;
 
 export const zSiteAuditGetRetentionPath = z.object({
   workspaceId: zWorkspaceId

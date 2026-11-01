@@ -193,6 +193,29 @@ func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) site.SiteAudi
 	siteapiSiteAuditEntryResource.UserAgent = optNilString(source.UserAgent)
 	return siteapiSiteAuditEntryResource
 }
+func (c *ConverterImpl) AuditFacetActorToResource(source auditapi.Actor) site.SiteAuditActor {
+	var siteapiSiteAuditActor site.SiteAuditActor
+	siteapiSiteAuditActor.Kind = site.SiteAuditActorKind(source.Kind)
+	siteapiSiteAuditActor.ID = optNilString(source.ID)
+	siteapiSiteAuditActor.Name = optNilString(source.Name)
+	return siteapiSiteAuditActor
+}
+func (c *ConverterImpl) AuditFacetsToResource(source auditapi.Facets) site.SiteAuditFacets {
+	var siteapiSiteAuditFacets site.SiteAuditFacets
+	siteapiSiteAuditFacets.Actors = make([]site.SiteAuditActor, len(source.Actors))
+	for i := 0; i < len(source.Actors); i++ {
+		siteapiSiteAuditFacets.Actors[i] = c.AuditFacetActorToResource(source.Actors[i])
+	}
+	siteapiSiteAuditFacets.Actions = make([]string, len(source.Actions))
+	for j := 0; j < len(source.Actions); j++ {
+		siteapiSiteAuditFacets.Actions[j] = source.Actions[j]
+	}
+	siteapiSiteAuditFacets.TargetTypes = make([]string, len(source.TargetTypes))
+	for k := 0; k < len(source.TargetTypes); k++ {
+		siteapiSiteAuditFacets.TargetTypes[k] = source.TargetTypes[k]
+	}
+	return siteapiSiteAuditFacets
+}
 func (c *ConverterImpl) AuditTargetToResource(source auditapi.View) site.SiteAuditTarget {
 	var siteapiSiteAuditTarget site.SiteAuditTarget
 	siteapiSiteAuditTarget.Type = source.TargetType

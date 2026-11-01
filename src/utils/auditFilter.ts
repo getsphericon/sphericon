@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { SiteAuditActorKind } from '../generated/site/types.gen.ts'
 import { zSiteAuditActorKind } from '../generated/site/zod.gen.ts'
 
 // The Audit log filter lives in the settings route's search, so a Change history link
@@ -49,4 +50,72 @@ export function auditQuery(filter: AuditFilter) {
     ...(filter.ip ? { ip: filter.ip } : {}),
     ...(filter.requestId ? { requestId: filter.requestId } : {}),
   }
+}
+
+// An actor as the "By" filter offers it: a kind, and an id unless the kind has none.
+interface AuditActorRef {
+  kind: SiteAuditActorKind
+  id?: string | null | undefined
+}
+
+// actorValue is the "By" select's value of an actor: its kind, then its id when it has one.
+export function actorValue(actor: AuditActorRef) {
+  return actor.id ? `${actor.kind}:${actor.id}` : actor.kind
+}
+
+// filterActorValue is the "By" select's value for the actor the filter narrows to.
+export function filterActorValue(filter: AuditFilter) {
+  return filter.actorKind ? actorValue({ kind: filter.actorKind, id: filter.actorId }) : null
+}
+
+// withActor narrows the filter to the actor of a "By" select value, or, for none or a value
+// it cannot read, to every actor.
+export function withActor(filter: AuditFilter, value: string | null): AuditFilter {
+  const { actorKind: _kind, actorId: _id, ...rest } = filter
+  const separator = value?.indexOf(':') ?? -1
+  const kind = zSiteAuditActorKind.safeParse(separator < 0 ? value : value?.slice(0, separator))
+  if (!kind.success) {
+    return rest
+  }
+  const id = separator < 0 ? undefined : value?.slice(separator + 1)
+  return { ...rest, actorKind: kind.data, ...(id ? { actorId: id } : {}) }
+}
+
+// withPeriod narrows the filter to the days of a picked range. A range picked by half (its
+// first day only) is not a period yet: it answers undefined and the filter stays as it is.
+export function withPeriod(
+  filter: AuditFilter,
+  [from, to]: [string | null, string | null],
+): AuditFilter | undefined {
+  const { from: _from, to: _to, ...rest } = filter
+  if (from && to) {
+    return { ...rest, from, to }
+  }
+  return from || to ? undefined : rest
+}
+
+// The filters that narrow to one value no select offers: set by following a link or by
+// clicking a value in an entry, and shown as chips that remove them.
+const CHIP_FIELDS = ['actorId', 'targetId', 'ip', 'requestId'] as const
+
+export type AuditChipField = (typeof CHIP_FIELDS)[number]
+
+// filterChips lists the filter's chip fields that are set. An actor id the "By" select
+// already shows (its kind is set too) is no chip.
+export function filterChips(filter: AuditFilter) {
+  return CHIP_FIELDS.flatMap((field) => {
+    const value = filter[field]
+    const shownBySelect = field === 'actorId' && filter.actorKind
+    return value && !shownBySelect ? [{ field, value }] : []
+  })
+}
+
+// withValue narrows the filter by one field, or, for an empty value, stops narrowing by it.
+export function withValue(
+  filter: AuditFilter,
+  field: 'action' | 'targetType' | AuditChipField,
+  value: string | null | undefined,
+): AuditFilter {
+  const { [field]: _old, ...rest } = filter
+  return value ? { ...rest, [field]: value } : rest
 }

@@ -1663,6 +1663,24 @@ export type SiteAuditEntryResource = {
 };
 
 /**
+ * The values that occur in a Workspace's Audit log, offered as the choices of its filter
+ */
+export type SiteAuditFacets = {
+  /**
+   * Every actor with an entry in the log, by kind, then name, then id; one id-less staff member stands for the platform staff, and each actor carries its latest name snapshot
+   */
+  actors: Array<SiteAuditActor>;
+  /**
+   * Every action with an entry in the log, sorted
+   */
+  actions: Array<string>;
+  /**
+   * Every target type with an entry in the log, sorted
+   */
+  targetTypes: Array<string>;
+};
+
+/**
  * How long the Audit log is kept; the Enterprise advanced-retention control
  */
 export type SiteAuditRetention = {
@@ -8935,6 +8953,45 @@ export type SiteAuditExportResponses = {
 };
 
 export type SiteAuditExportResponse = SiteAuditExportResponses[keyof SiteAuditExportResponses];
+
+export type SiteAuditFacetsData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/audit-entries/facets';
+};
+
+export type SiteAuditFacetsErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 payment required response: the feature needs an Enterprise license
+   */
+  402: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAuditFacetsError = SiteAuditFacetsErrors[keyof SiteAuditFacetsErrors];
+
+export type SiteAuditFacetsResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAuditFacets;
+};
+
+export type SiteAuditFacetsResponse = SiteAuditFacetsResponses[keyof SiteAuditFacetsResponses];
 
 export type SiteAuditGetRetentionData = {
   body?: never;
