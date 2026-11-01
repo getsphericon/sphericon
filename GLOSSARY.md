@@ -525,7 +525,8 @@ _Avoid_: Webhook step, action
 
 **Template** (email template):
 A workspace-scoped, named, reusable piece of email content — a **starting point copied at
-author time**. A Broadcast or Automation step takes a _copy_ of the template's content with no
+author time**. Email only: on the other Channels a message is written where it is sent, and
+WhatsApp's library is its WhatsApp templates. A Broadcast or Automation step takes a _copy_ of the template's content with no
 reference back, so editing or deleting a Template never changes any already-authored or sent
 message. A content library, not a live layout that propagates.
 
@@ -538,13 +539,24 @@ content is immutable history), transactional references (the template is live).
 _Avoid_: Layout, theme, master, partial
 
 **Message content** (a value, not an entity):
-The reusable shape every email carries — a subject plus a body of email-ready HTML with merge
-tags. A body written in the editor is built from the editor's document, which is kept with it; a
-body that arrived as HTML (from the API) has no document and opens as source. A Template is the saved,
+What one message on one Channel says, its shape fixed by the Channel and never shared between
+Channels: on email a subject plus a body of email-ready HTML; on SMS a text; on Telegram a
+formatted text with an optional image and link buttons; on web and mobile push a title, a text, a
+link and an optional image; on WhatsApp a WhatsApp template reference. Every Channel uses the same
+Liquid merge tags, and images are linked by URL. On email, A body written in the editor is built from the editor's document, which is kept with it; a
+body that arrived as HTML (from the API) has no document and opens as source. On email a Template is the saved,
 named instance of it; a Broadcast and each email Automation send step each hold their own
 copy; a Transactional send renders a _referenced_ Template's content with per-call variables.
 The same value across surfaces — copied for marketing, referenced for transactional.
 _Avoid_: Email body, content block
+
+**WhatsApp template**:
+A message approved by Meta for the customer's WhatsApp account, created and reviewed there, not in
+sphericon, and the only thing a business may send first on WhatsApp. A WhatsApp message in
+sphericon references one by name and language and fills its numbered variables with merge tags;
+its text stays Meta's, so the copy-at-author-time rule does not apply, and Meta may pause or
+disable it after it is referenced.
+_Avoid_: Template (unqualified, that is email's), HSM, message template
 
 **Text part** (derived, never authored):
 The `text/plain` alternative a sent email carries beside its HTML, derived from the _final_
