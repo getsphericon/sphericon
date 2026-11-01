@@ -26,7 +26,32 @@ model SiteAnalyticsContacts {
 }
 
 /**
- * Email engagement for the messages sent in the selected range (the send
+ * The messages sent in the range through every surface, read from the Outbound messages
+ * themselves (ADR 0053): what went out and what the provider said became of it. A Workspace that
+ * only runs Automations or Transactional sends has its sends here, not in `email`.
+ */
+model SiteAnalyticsSending {
+  /** Messages of Broadcasts sent in the range */
+  broadcast: int32;
+
+  /** Messages of Automations sent in the range */
+  automation: int32;
+
+  /** Transactional messages sent in the range */
+  transactional: int32;
+
+  /** Of all the messages sent in the range, those the provider reported delivered */
+  delivered: int32;
+
+  /** Of all the messages sent in the range, those the provider reported bounced */
+  bounced: int32;
+
+  /** Of all the messages sent in the range, those a recipient marked as spam */
+  complained: int32;
+}
+
+/**
+ * Email engagement for the Broadcast messages sent in the selected range (the send
  * cohort), from delivery logs. Opens/clicks are counted among that cohort, so
  * the counts reconcile and the rates stay in [0,1].
  */
@@ -66,11 +91,11 @@ model SiteAnalyticsAutomations {
 }
 
 /**
- * One UTC send-day of the cohort, zero-filled across the range. Opened/clicked
+ * One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked
  * count the messages sent that day that were later opened/clicked.
  */
 model SiteAnalyticsPoint {
-  /** Day bucket, YYYY-MM-DD (UTC) */
+  /** The Report day, `YYYY-MM-DD` in the Workspace time zone */
   date: string;
 
   /** Messages sent that day */
@@ -106,6 +131,7 @@ model SiteAbuseWarning {
 /** Workspace analytics overview powering the dashboard */
 model SiteAnalyticsOverview {
   contacts: SiteAnalyticsContacts;
+  sending: SiteAnalyticsSending;
   email: SiteAnalyticsEmail;
   automations: SiteAnalyticsAutomations;
 

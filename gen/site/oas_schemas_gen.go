@@ -7748,8 +7748,9 @@ func (s *SiteAnalyticsContacts) SetNewInRange(val int32) {
 	s.NewInRange = val
 }
 
-// Email engagement for the messages sent in the selected range (the send cohort), from delivery logs.
-// Opens/clicks are counted among that cohort, so the counts reconcile and the rates stay in [0,1].
+// Email engagement for the Broadcast messages sent in the selected range (the send cohort), from
+// delivery logs. Opens/clicks are counted among that cohort, so the counts reconcile and the rates
+// stay in [0,1].
 // Ref: #/components/schemas/SiteAnalyticsEmail
 type SiteAnalyticsEmail struct {
 	// Messages sent within the range.
@@ -8093,6 +8094,7 @@ func (s *SiteAnalyticsOpensCell) SetOpens(val int32) {
 // Ref: #/components/schemas/SiteAnalyticsOverview
 type SiteAnalyticsOverview struct {
 	Contacts    SiteAnalyticsContacts    `json:"contacts"`
+	Sending     SiteAnalyticsSending     `json:"sending"`
 	Email       SiteAnalyticsEmail       `json:"email"`
 	Automations SiteAnalyticsAutomations `json:"automations"`
 	// Daily engagement series, oldest first, one point per day in the range.
@@ -8105,6 +8107,11 @@ type SiteAnalyticsOverview struct {
 // GetContacts returns the value of Contacts.
 func (s *SiteAnalyticsOverview) GetContacts() SiteAnalyticsContacts {
 	return s.Contacts
+}
+
+// GetSending returns the value of Sending.
+func (s *SiteAnalyticsOverview) GetSending() SiteAnalyticsSending {
+	return s.Sending
 }
 
 // GetEmail returns the value of Email.
@@ -8130,6 +8137,11 @@ func (s *SiteAnalyticsOverview) GetAbuseWarning() OptNilSiteAbuseWarning {
 // SetContacts sets the value of Contacts.
 func (s *SiteAnalyticsOverview) SetContacts(val SiteAnalyticsContacts) {
 	s.Contacts = val
+}
+
+// SetSending sets the value of Sending.
+func (s *SiteAnalyticsOverview) SetSending(val SiteAnalyticsSending) {
+	s.Sending = val
 }
 
 // SetEmail sets the value of Email.
@@ -8205,11 +8217,11 @@ func (s *SiteAnalyticsOwnerKind) UnmarshalText(data []byte) error {
 	}
 }
 
-// One UTC send-day of the cohort, zero-filled across the range. Opened/clicked count the messages sent
-// that day that were later opened/clicked.
+// One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked count the
+// messages sent that day that were later opened/clicked.
 // Ref: #/components/schemas/SiteAnalyticsPoint
 type SiteAnalyticsPoint struct {
-	// Day bucket, YYYY-MM-DD (UTC).
+	// The Report day, `YYYY-MM-DD` in the Workspace time zone.
 	Date string `json:"date"`
 	// Messages sent that day.
 	Sent int32 `json:"sent"`
@@ -8473,6 +8485,85 @@ func (s *SiteAnalyticsRevenueRange) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// The messages sent in the range through every surface, read from the Outbound messages themselves
+// (ADR 0053): what went out and what the provider said became of it. A Workspace that only runs
+// Automations or Transactional sends has its sends here, not in `email`.
+// Ref: #/components/schemas/SiteAnalyticsSending
+type SiteAnalyticsSending struct {
+	// Messages of Broadcasts sent in the range.
+	Broadcast int32 `json:"broadcast"`
+	// Messages of Automations sent in the range.
+	Automation int32 `json:"automation"`
+	// Transactional messages sent in the range.
+	Transactional int32 `json:"transactional"`
+	// Of all the messages sent in the range, those the provider reported delivered.
+	Delivered int32 `json:"delivered"`
+	// Of all the messages sent in the range, those the provider reported bounced.
+	Bounced int32 `json:"bounced"`
+	// Of all the messages sent in the range, those a recipient marked as spam.
+	Complained int32 `json:"complained"`
+}
+
+// GetBroadcast returns the value of Broadcast.
+func (s *SiteAnalyticsSending) GetBroadcast() int32 {
+	return s.Broadcast
+}
+
+// GetAutomation returns the value of Automation.
+func (s *SiteAnalyticsSending) GetAutomation() int32 {
+	return s.Automation
+}
+
+// GetTransactional returns the value of Transactional.
+func (s *SiteAnalyticsSending) GetTransactional() int32 {
+	return s.Transactional
+}
+
+// GetDelivered returns the value of Delivered.
+func (s *SiteAnalyticsSending) GetDelivered() int32 {
+	return s.Delivered
+}
+
+// GetBounced returns the value of Bounced.
+func (s *SiteAnalyticsSending) GetBounced() int32 {
+	return s.Bounced
+}
+
+// GetComplained returns the value of Complained.
+func (s *SiteAnalyticsSending) GetComplained() int32 {
+	return s.Complained
+}
+
+// SetBroadcast sets the value of Broadcast.
+func (s *SiteAnalyticsSending) SetBroadcast(val int32) {
+	s.Broadcast = val
+}
+
+// SetAutomation sets the value of Automation.
+func (s *SiteAnalyticsSending) SetAutomation(val int32) {
+	s.Automation = val
+}
+
+// SetTransactional sets the value of Transactional.
+func (s *SiteAnalyticsSending) SetTransactional(val int32) {
+	s.Transactional = val
+}
+
+// SetDelivered sets the value of Delivered.
+func (s *SiteAnalyticsSending) SetDelivered(val int32) {
+	s.Delivered = val
+}
+
+// SetBounced sets the value of Bounced.
+func (s *SiteAnalyticsSending) SetBounced(val int32) {
+	s.Bounced = val
+}
+
+// SetComplained sets the value of Complained.
+func (s *SiteAnalyticsSending) SetComplained(val int32) {
+	s.Complained = val
 }
 
 // The Subscribed people report: the daily flow plus the current number, which is read from current

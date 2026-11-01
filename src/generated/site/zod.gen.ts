@@ -479,7 +479,7 @@ export const zSiteAnalyticsContacts = z.object({
 });
 
 /**
- * Email engagement for the messages sent in the selected range (the send
+ * Email engagement for the Broadcast messages sent in the selected range (the send
  * cohort), from delivery logs. Opens/clicks are counted among that cohort, so
  * the counts reconcile and the rates stay in [0,1].
  */
@@ -542,7 +542,7 @@ export const zSiteAnalyticsClicksByLink = z.object({
 });
 
 /**
- * One UTC send-day of the cohort, zero-filled across the range. Opened/clicked
+ * One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked
  * count the messages sent that day that were later opened/clicked.
  */
 export const zSiteAnalyticsPoint = z.object({
@@ -553,17 +553,6 @@ export const zSiteAnalyticsPoint = z.object({
 });
 
 /**
- * Workspace analytics overview powering the dashboard
- */
-export const zSiteAnalyticsOverview = z.object({
-  contacts: zSiteAnalyticsContacts,
-  email: zSiteAnalyticsEmail,
-  automations: zSiteAnalyticsAutomations,
-  timeseries: z.array(zSiteAnalyticsPoint),
-  abuseWarning: z.exactOptional(zSiteAbuseWarning.nullable())
-});
-
-/**
  * Selectable window for the analytics overview
  */
 export const zSiteAnalyticsRange = z.enum([
@@ -571,6 +560,32 @@ export const zSiteAnalyticsRange = z.enum([
   '30d',
   '90d'
 ]);
+
+/**
+ * The messages sent in the range through every surface, read from the Outbound messages
+ * themselves (ADR 0053): what went out and what the provider said became of it. A Workspace that
+ * only runs Automations or Transactional sends has its sends here, not in `email`.
+ */
+export const zSiteAnalyticsSending = z.object({
+  broadcast: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  automation: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  transactional: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  delivered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  bounced: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  complained: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * Workspace analytics overview powering the dashboard
+ */
+export const zSiteAnalyticsOverview = z.object({
+  contacts: zSiteAnalyticsContacts,
+  sending: zSiteAnalyticsSending,
+  email: zSiteAnalyticsEmail,
+  automations: zSiteAnalyticsAutomations,
+  timeseries: z.array(zSiteAnalyticsPoint),
+  abuseWarning: z.exactOptional(zSiteAbuseWarning.nullable())
+});
 
 /**
  * One Report day of the Subscribed people report, zero-filled across the range

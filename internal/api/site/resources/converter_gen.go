@@ -133,6 +133,7 @@ func (c *ConverterImpl) AnalyticsOverviewToResource(source *analytics.Overview) 
 	if source != nil {
 		var siteapiSiteAnalyticsOverview site.SiteAnalyticsOverview
 		siteapiSiteAnalyticsOverview.Contacts = c.AnalyticsContactsToResource((*source).Contacts)
+		siteapiSiteAnalyticsOverview.Sending = c.analyticsSendingToSiteapiSiteAnalyticsSending((*source).Sending)
 		siteapiSiteAnalyticsOverview.Email = c.AnalyticsEmailToResource((*source).Email)
 		siteapiSiteAnalyticsOverview.Automations = c.analyticsAutomationsToSiteapiSiteAnalyticsAutomations((*source).Automations)
 		siteapiSiteAnalyticsOverview.Timeseries = make([]site.SiteAnalyticsPoint, len((*source).Series))
@@ -2262,6 +2263,16 @@ func (c *ConverterImpl) analyticsPointToSiteapiSiteAnalyticsPoint(source analyti
 	siteapiSiteAnalyticsPoint.Opened = count(source.Opened)
 	siteapiSiteAnalyticsPoint.Clicked = count(source.Clicked)
 	return siteapiSiteAnalyticsPoint
+}
+func (c *ConverterImpl) analyticsSendingToSiteapiSiteAnalyticsSending(source analytics.Sending) site.SiteAnalyticsSending {
+	var siteapiSiteAnalyticsSending site.SiteAnalyticsSending
+	siteapiSiteAnalyticsSending.Broadcast = count(source.Broadcast)
+	siteapiSiteAnalyticsSending.Automation = count(source.Automation)
+	siteapiSiteAnalyticsSending.Transactional = count(source.Transactional)
+	siteapiSiteAnalyticsSending.Delivered = count(source.Delivered)
+	siteapiSiteAnalyticsSending.Bounced = count(source.Bounced)
+	siteapiSiteAnalyticsSending.Complained = count(source.Complained)
+	return siteapiSiteAnalyticsSending
 }
 func (c *ConverterImpl) analyticsSubscribedPointToSiteapiSiteAnalyticsSubscribedPoint(source analytics.SubscribedPoint) site.SiteAnalyticsSubscribedPoint {
 	var siteapiSiteAnalyticsSubscribedPoint site.SiteAnalyticsSubscribedPoint

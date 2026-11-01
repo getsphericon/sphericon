@@ -16154,7 +16154,7 @@
             "description": "Clicked ÷ opened (0–1)"
           }
         },
-        "description": "Email engagement for the messages sent in the selected range (the send\ncohort), from delivery logs. Opens/clicks are counted among that cohort, so\nthe counts reconcile and the rates stay in [0,1]."
+        "description": "Email engagement for the Broadcast messages sent in the selected range (the send\ncohort), from delivery logs. Opens/clicks are counted among that cohort, so\nthe counts reconcile and the rates stay in [0,1]."
       },
       "SiteAnalyticsEventAction": {
         "type": "object",
@@ -16296,10 +16296,13 @@
       },
       "SiteAnalyticsOverview": {
         "type": "object",
-        "required": ["contacts", "email", "automations", "timeseries"],
+        "required": ["contacts", "sending", "email", "automations", "timeseries"],
         "properties": {
           "contacts": {
             "$ref": "#/components/schemas/SiteAnalyticsContacts"
+          },
+          "sending": {
+            "$ref": "#/components/schemas/SiteAnalyticsSending"
           },
           "email": {
             "$ref": "#/components/schemas/SiteAnalyticsEmail"
@@ -16338,7 +16341,7 @@
         "properties": {
           "date": {
             "type": "string",
-            "description": "Day bucket, YYYY-MM-DD (UTC)"
+            "description": "The Report day, `YYYY-MM-DD` in the Workspace time zone"
           },
           "sent": {
             "type": "integer",
@@ -16356,7 +16359,7 @@
             "description": "Messages sent that day that were clicked"
           }
         },
-        "description": "One UTC send-day of the cohort, zero-filled across the range. Opened/clicked\ncount the messages sent that day that were later opened/clicked."
+        "description": "One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked\ncount the messages sent that day that were later opened/clicked."
       },
       "SiteAnalyticsRange": {
         "type": "string",
@@ -16432,6 +16435,50 @@
           }
         },
         "description": "The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the\nsum of Order Movements over the range, in the Reporting currency. Until the first Order\nCompleted sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and\nevery figure is zero."
+      },
+      "SiteAnalyticsSending": {
+        "type": "object",
+        "required": [
+          "broadcast",
+          "automation",
+          "transactional",
+          "delivered",
+          "bounced",
+          "complained"
+        ],
+        "properties": {
+          "broadcast": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages of Broadcasts sent in the range"
+          },
+          "automation": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages of Automations sent in the range"
+          },
+          "transactional": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Transactional messages sent in the range"
+          },
+          "delivered": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Of all the messages sent in the range, those the provider reported delivered"
+          },
+          "bounced": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Of all the messages sent in the range, those the provider reported bounced"
+          },
+          "complained": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Of all the messages sent in the range, those a recipient marked as spam"
+          }
+        },
+        "description": "The messages sent in the range through every surface, read from the Outbound messages\nthemselves (ADR 0053): what went out and what the provider said became of it. A Workspace that\nonly runs Automations or Transactional sends has its sends here, not in `email`."
       },
       "SiteAnalyticsSubscribedPeople": {
         "type": "object",

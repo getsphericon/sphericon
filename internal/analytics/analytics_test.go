@@ -63,6 +63,19 @@ func TestEngagementIsCountedOverTheSendCohortOfTheWindow(t *testing.T) {
 	}
 }
 
+// Fixtures (outbound_messages.yml), Acme over the last 7 days: 14 Broadcast messages (11 three days
+// ago, of which 3 delivered, 1 of them bounced and 1 complained, and 3 in the last 30 hours), 1
+// Automation message 20 hours ago and 6 Transactional ones one to four days ago. The send of 8 days
+// ago and the older ones are outside it, as are the messages never sent (pending, skipped, failed).
+func TestSendingCountsEveryMessageSentInTheWindowBySurface(t *testing.T) {
+	ov := overview(t, fixtures.AcmeID, analytics.Window7Days)
+
+	assert.Equal(t, analytics.Sending{
+		Broadcast: 14, Automation: 1, Transactional: 6,
+		Delivered: 3, Bounced: 1, Complained: 1,
+	}, ov.Sending)
+}
+
 func TestTimeSeriesIsOneZeroFilledUTCDayPerDayEndingToday(t *testing.T) {
 	ov := overview(t, fixtures.AcmeID, analytics.Window7Days)
 	require.Len(t, ov.Series, 7)

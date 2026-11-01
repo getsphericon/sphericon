@@ -15,6 +15,14 @@ const mount = { ...base, initialPath: `${base.initialPath}?range=30d` }
 
 const overview = {
   contacts: { total: 42, active: 40, unsubscribed: 2, newInRange: 5 },
+  sending: {
+    broadcast: 100,
+    automation: 0,
+    transactional: 0,
+    delivered: 98,
+    bounced: 1,
+    complained: 0,
+  },
   email: {
     sentCount: 100,
     openedCount: 60,

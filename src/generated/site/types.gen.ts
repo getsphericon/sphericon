@@ -1341,7 +1341,7 @@ export type SiteAnalyticsContacts = {
 };
 
 /**
- * Email engagement for the messages sent in the selected range (the send
+ * Email engagement for the Broadcast messages sent in the selected range (the send
  * cohort), from delivery logs. Opens/clicks are counted among that cohort, so
  * the counts reconcile and the rates stay in [0,1].
  */
@@ -1479,6 +1479,7 @@ export type SiteAnalyticsOpensCell = {
  */
 export type SiteAnalyticsOverview = {
   contacts: SiteAnalyticsContacts;
+  sending: SiteAnalyticsSending;
   email: SiteAnalyticsEmail;
   automations: SiteAnalyticsAutomations;
   /**
@@ -1503,12 +1504,12 @@ export const SiteAnalyticsOwnerKind = { BROADCAST: 'broadcast', AUTOMATION: 'aut
 export type SiteAnalyticsOwnerKind = typeof SiteAnalyticsOwnerKind[keyof typeof SiteAnalyticsOwnerKind];
 
 /**
- * One UTC send-day of the cohort, zero-filled across the range. Opened/clicked
+ * One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked
  * count the messages sent that day that were later opened/clicked.
  */
 export type SiteAnalyticsPoint = {
   /**
-   * Day bucket, YYYY-MM-DD (UTC)
+   * The Report day, `YYYY-MM-DD` in the Workspace time zone
    */
   date: string;
   /**
@@ -1582,6 +1583,38 @@ export type SiteAnalyticsRevenue = {
    * One point per Report day in the range, oldest first, zero-filled
    */
   series: Array<SiteRevenuePoint>;
+};
+
+/**
+ * The messages sent in the range through every surface, read from the Outbound messages
+ * themselves (ADR 0053): what went out and what the provider said became of it. A Workspace that
+ * only runs Automations or Transactional sends has its sends here, not in `email`.
+ */
+export type SiteAnalyticsSending = {
+  /**
+   * Messages of Broadcasts sent in the range
+   */
+  broadcast: number;
+  /**
+   * Messages of Automations sent in the range
+   */
+  automation: number;
+  /**
+   * Transactional messages sent in the range
+   */
+  transactional: number;
+  /**
+   * Of all the messages sent in the range, those the provider reported delivered
+   */
+  delivered: number;
+  /**
+   * Of all the messages sent in the range, those the provider reported bounced
+   */
+  bounced: number;
+  /**
+   * Of all the messages sent in the range, those a recipient marked as spam
+   */
+  complained: number;
 };
 
 /**
