@@ -1,5 +1,6 @@
 import { BarChart } from '@mantine/charts'
 import { EmptyState, SimpleGrid, Stack, Text } from '@mantine/core'
+import { IconChartBar } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
@@ -36,7 +37,7 @@ function NewPeopleReport() {
         <StatCard label={t(($) => $.analytics.newPeople.total)} value={report.total} />
       </SimpleGrid>
       {report.total === 0 ? (
-        <EmptyState title={t(($) => $.analytics.newPeople.empty)} />
+        <EmptyState icon={<IconChartBar />} title={t(($) => $.analytics.newPeople.empty)} />
       ) : (
         <BarChart
           h={300}
