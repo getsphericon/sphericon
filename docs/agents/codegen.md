@@ -45,9 +45,14 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   `no-hand-mapped-list`). A paged list response is a page method of the `Converter` from the
   module's page (`ContactsListPage(source pagination.Page[*ent.Contact]) *…ContactsListOK`, also
   `useEmptyOnNil:slice`), named after the response, so the handler returns it and writes no
-  envelope (ast-grep rule `no-hand-paged-response`). Items the handler maps itself (an extra per
-  item) go through `pagination.Map`/`MapErr` first and the method, taking a page of resources, is
-  marked `goverter:skipCopySameType`; an unpaginated list is `pagination.Whole(items)`. `annotate:unmapped` writes a
+  envelope (ast-grep rule `no-hand-paged-response`). A feed read after a cursor is the same: the
+  module builds a `pagination.CursorPage` with `pagination.Cursor(rows, limit, cursor, cursorOf)`
+  from the limit+1 rows it read, and the page method (`UserFeedPage(source
+  pagination.CursorPage[…]) *…UserFeedPage`) maps its items, `NextCursor` and `HasMore`; the rule
+  also refuses a literal with a `NextCursor:` or `HasMore:` key. Items the handler maps itself (an
+  extra per item) go through `pagination.Map`/`MapErr`/`MapCursor` first and the method, taking a
+  page of resources, is marked `goverter:skipCopySameType`; an unpaginated list is
+  `pagination.Whole(items)`. `annotate:unmapped` writes a
   `// Field: ignore` line into the generated code for each field the converter leaves to the
   handler. The extends' bodies are the generic helpers of `internal/convert` (`Opt`, `Nil`, `OptVia`, …),
   which hold the absent-or-null rule once for every surface.

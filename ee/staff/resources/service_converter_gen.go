@@ -28,6 +28,26 @@ func (c *ServiceConverterImpl) HoldToResource(source *ent.Hold) service.HoldReso
 	}
 	return serviceapiHoldResource
 }
+func (c *ServiceConverterImpl) HoldsToResources(source []*ent.Hold) []service.HoldResource {
+	var serviceapiHoldResourceList []service.HoldResource
+	serviceapiHoldResourceList = make([]service.HoldResource, len(source))
+	for i := 0; i < len(source); i++ {
+		serviceapiHoldResourceList[i] = c.HoldToResource(source[i])
+	}
+	return serviceapiHoldResourceList
+}
+func (c *ServiceConverterImpl) IdentityToResource(source *ent.ServiceCredential) service.ServiceIdentityResource {
+	var serviceapiServiceIdentityResource service.ServiceIdentityResource
+	if source != nil {
+		serviceapiServiceIdentityResource.Name = (*source).Name
+		serviceapiServiceIdentityResource.Scopes = make([]service.ServiceScope, len((*source).Scopes))
+		for i := 0; i < len((*source).Scopes); i++ {
+			serviceapiServiceIdentityResource.Scopes[i] = service.ServiceScope((*source).Scopes[i])
+		}
+		serviceapiServiceIdentityResource.ExpiresAt = serviceOptNilTimestamp((*source).ExpiresAt)
+	}
+	return serviceapiServiceIdentityResource
+}
 func (c *ServiceConverterImpl) OwnerToResource(source *ent.User) service.ServiceWorkspaceOwner {
 	var serviceapiServiceWorkspaceOwner service.ServiceWorkspaceOwner
 	if source != nil {
@@ -58,6 +78,23 @@ func (c *ServiceConverterImpl) TombstoneToResource(source *ent.UserTombstone) se
 		// serviceapiServiceUserResource.MailingsConsentChangedAt: ignore
 	}
 	return serviceapiServiceUserResource
+}
+func (c *ServiceConverterImpl) TrackingHostChangeToResource(source *ent.TrackingHostChange) service.ServiceTrackingHostChange {
+	var serviceapiServiceTrackingHostChange service.ServiceTrackingHostChange
+	if source != nil {
+		serviceapiServiceTrackingHostChange.Host = trackingHost((*source).Domain)
+		// serviceapiServiceTrackingHostChange.WorkspaceId: ignore
+		serviceapiServiceTrackingHostChange.State = c.TrackingHostStateToResource((*source).State)
+		serviceapiServiceTrackingHostChange.ChangedAt = serviceTimestamp((*source).CreatedAt)
+	}
+	return serviceapiServiceTrackingHostChange
+}
+func (c *ServiceConverterImpl) TrackingHostFeedPage(source pagination.CursorPage[service.ServiceTrackingHostChange]) *service.ServiceTrackingHostFeedPage {
+	var serviceapiServiceTrackingHostFeedPage service.ServiceTrackingHostFeedPage
+	serviceapiServiceTrackingHostFeedPage.Items = source.Items
+	serviceapiServiceTrackingHostFeedPage.NextCursor = source.NextCursor
+	serviceapiServiceTrackingHostFeedPage.HasMore = source.HasMore
+	return &serviceapiServiceTrackingHostFeedPage
 }
 func (c *ServiceConverterImpl) TrackingHostStateToResource(source trackinghostchange.State) service.ServiceTrackingHostState {
 	var serviceapiServiceTrackingHostState service.ServiceTrackingHostState
@@ -116,6 +153,13 @@ func (c *ServiceConverterImpl) UsageToResource(source usage.WorkspaceUsage) serv
 	}
 	return serviceapiWorkspaceUsageResource
 }
+func (c *ServiceConverterImpl) UserFeedPage(source pagination.CursorPage[service.ServiceUserResource]) *service.ServiceUserFeedPage {
+	var serviceapiServiceUserFeedPage service.ServiceUserFeedPage
+	serviceapiServiceUserFeedPage.Items = source.Items
+	serviceapiServiceUserFeedPage.NextCursor = source.NextCursor
+	serviceapiServiceUserFeedPage.HasMore = source.HasMore
+	return &serviceapiServiceUserFeedPage
+}
 func (c *ServiceConverterImpl) UserToResource(source *ent.User) service.ServiceUserResource {
 	var serviceapiServiceUserResource service.ServiceUserResource
 	if source != nil {
@@ -129,6 +173,13 @@ func (c *ServiceConverterImpl) UserToResource(source *ent.User) service.ServiceU
 		// serviceapiServiceUserResource.MailingsConsentChangedAt: ignore
 	}
 	return serviceapiServiceUserResource
+}
+func (c *ServiceConverterImpl) WorkspaceFeedPage(source pagination.CursorPage[service.ServiceWorkspaceResource]) *service.ServiceWorkspaceFeedPage {
+	var serviceapiServiceWorkspaceFeedPage service.ServiceWorkspaceFeedPage
+	serviceapiServiceWorkspaceFeedPage.Items = source.Items
+	serviceapiServiceWorkspaceFeedPage.NextCursor = source.NextCursor
+	serviceapiServiceWorkspaceFeedPage.HasMore = source.HasMore
+	return &serviceapiServiceWorkspaceFeedPage
 }
 func (c *ServiceConverterImpl) WorkspaceToResource(source *ent.Workspace) service.ServiceWorkspaceResource {
 	var serviceapiServiceWorkspaceResource service.ServiceWorkspaceResource

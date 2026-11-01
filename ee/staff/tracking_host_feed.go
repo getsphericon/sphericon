@@ -7,16 +7,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
+	"github.com/getsphericon/sphericon/internal/pagination"
 )
-
-// TrackingHostChanges is a page of the Tracking domain change log.
-type TrackingHostChanges struct {
-	Entries []*ent.TrackingHostChange
-	// NextCursor is the cursor after the last entry, or the requested one on an empty page.
-	NextCursor string
-	// HasMore reports whether entries follow the page.
-	HasMore bool
-}
 
 // TrackingHostFeed is the changes of Tracking domain hosts logged after cursor, in log
 // order, at most limit of them (ADR 0038). An entry says a host became dns_verified or
@@ -26,13 +18,13 @@ type TrackingHostChanges struct {
 // beginning; the module keeps no position, and delivery is at-least-once like the
 // Workspace feed. It reads the log through the raw client: the entries name a Workspace
 // but carry no Workspace data.
-func (m *Module) TrackingHostFeed(ctx context.Context, cursor string, limit int) (TrackingHostChanges, error) {
+func (m *Module) TrackingHostFeed(ctx context.Context, cursor string, limit int) (pagination.CursorPage[*ent.TrackingHostChange], error) {
 	if err := m.licensed(); err != nil {
-		return TrackingHostChanges{}, err
+		return pagination.CursorPage[*ent.TrackingHostChange]{}, err
 	}
 	after, err := parseChangeCursor(cursor)
 	if err != nil {
-		return TrackingHostChanges{}, err
+		return pagination.CursorPage[*ent.TrackingHostChange]{}, err
 	}
 	rows, err := m.ent.TrackingHostChange.Query().
 		Where(trackinghostchange.IDGT(after)).
@@ -40,18 +32,13 @@ func (m *Module) TrackingHostFeed(ctx context.Context, cursor string, limit int)
 		Limit(limit + 1).
 		All(ctx)
 	if err != nil {
-		return TrackingHostChanges{}, err
+		return pagination.CursorPage[*ent.TrackingHostChange]{}, err
 	}
-	page := TrackingHostChanges{NextCursor: cursor, HasMore: len(rows) > limit}
-	page.Entries = rows[:min(len(rows), limit)]
-	if n := len(page.Entries); n > 0 {
-		page.NextCursor = changeCursor(page.Entries[n-1].ID)
-	}
-	return page, nil
+	return pagination.Cursor(rows, limit, cursor, changeCursor), nil
 }
 
-func changeCursor(id int64) string {
-	return base64.RawURLEncoding.EncodeToString([]byte(strconv.FormatInt(id, 10)))
+func changeCursor(c *ent.TrackingHostChange) string {
+	return base64.RawURLEncoding.EncodeToString([]byte(strconv.FormatInt(c.ID, 10)))
 }
 
 // parseChangeCursor reads a cursor back; the empty one is the beginning.

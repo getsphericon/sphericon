@@ -7,14 +7,18 @@ note: >-
   generates its loop from the single-item method, and `useEmptyOnNil:slice` answers `[]`, never
   null, for no rows. A loop that fills a slice with the single-item method is a hand-written copy
   of that generated code. A list that attaches something per item the converter cannot (a
-  Broadcast's stats) maps it in the handler with the extra, which this rule does not match.
+  Broadcast's stats) maps it in the handler with the extra, which this rule does not match. The
+  mapper is any Converter instance (`mapper`, `staffMapper`, `serviceMapper`).
 rule:
   any:
-    - pattern: $LIST[$I] = mapper.$METHOD($$$ARGS)
-    - pattern: $LIST = append($LIST, mapper.$METHOD($$$ARGS))
+    - pattern: $LIST[$I] = $MAPPER.$METHOD($$$ARGS)
+    - pattern: $LIST = append($LIST, $MAPPER.$METHOD($$$ARGS))
   inside:
     kind: for_statement
     stopBy: end
+constraints:
+  MAPPER:
+    regex: '^(mapper|[a-z]+Mapper)$'
 files:
   - internal/api/**/*.go
   - ee/staff/**/*.go

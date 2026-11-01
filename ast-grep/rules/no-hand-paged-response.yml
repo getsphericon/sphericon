@@ -1,21 +1,23 @@
 id: no-hand-paged-response
 language: Go
 severity: error
-message: 'codegen: a handler builds a paged response by hand; fix: declare a page method of the goverter Converter (`XsListPage(source pagination.Page[…]) *…ListOK`, marked `// goverter:useEmptyOnNil:slice`) and return it'
+message: 'codegen: a paged response is built by hand; fix: declare a page method of the goverter Converter (`XsListPage(source pagination.Page[…]) *…ListOK`, or `XFeedPage(source pagination.CursorPage[…]) *…FeedPage` for a feed, marked `// goverter:useEmptyOnNil:slice`) and return it'
 note: >-
   A paged list response is a page method of the surface's Converter (docs/agents/codegen.md):
-  goverter maps the module's pagination.Page whole, the items through the list method and the
-  counts through `count`, and fails generation when the response gains a field. Items the handler
-  maps itself (an extra per item) go through pagination.Map or pagination.MapErr first, an
-  unpaginated list through pagination.Whole; the page method of a page of resources is marked
-  `// goverter:skipCopySameType`.
+  goverter maps the module's pagination.Page (offset pages) or pagination.CursorPage (a feed read
+  after a cursor) whole, the items through the list method and the counts through `count`, and
+  fails generation when the response gains a field. Items the handler maps itself (an extra per
+  item) go through pagination.Map, MapErr or MapCursor first, an unpaginated list through
+  pagination.Whole; the page method of a page of resources is marked
+  `// goverter:skipCopySameType`. A module builds its feed page with pagination.Cursor, never a
+  literal of its own.
 rule:
   kind: composite_literal
   has:
     field: body
     has:
       kind: keyed_element
-      regex: '^TotalPages\s*:'
+      regex: '^(TotalPages|NextCursor|HasMore)\s*:'
 files:
   - internal/api/**/*.go
   - ee/staff/**/*.go

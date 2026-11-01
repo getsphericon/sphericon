@@ -117,13 +117,6 @@ var _ serviceapi.Handler = (*ServiceHandlers)(nil)
 // ServiceIdentityGet is the calling credential's own name, scopes and expiry: the
 // first endpoint on the internal listener, which proves the path end to end.
 func (*ServiceHandlers) ServiceIdentityGet(ctx context.Context) (serviceapi.ServiceIdentityGetRes, error) {
-	c := CurrentService(ctx)
-	res := &serviceapi.ServiceIdentityResource{Name: c.Name, Scopes: make([]serviceapi.ServiceScope, len(c.Scopes))}
-	for i, s := range c.Scopes {
-		res.Scopes[i] = serviceapi.ServiceScope(s)
-	}
-	if c.ExpiresAt != nil {
-		res.ExpiresAt = serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(*c.ExpiresAt))
-	}
-	return res, nil
+	res := serviceMapper.IdentityToResource(CurrentService(ctx))
+	return &res, nil
 }

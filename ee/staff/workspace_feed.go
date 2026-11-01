@@ -12,6 +12,7 @@ import (
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -25,15 +26,6 @@ type FeedEntry struct {
 	Owners []*ent.User
 }
 
-// FeedPage is one page of the Workspace feed.
-type FeedPage struct {
-	Entries []FeedEntry
-	// NextCursor is the cursor after the last entry, or the requested one on an empty page.
-	NextCursor string
-	// HasMore reports whether entries follow the page.
-	HasMore bool
-}
-
 // WorkspaceFeed is the Workspaces created or changed after cursor, in the order of
 // their change position (then id), at most limit of them, each with all of its owners.
 // An empty cursor starts from the beginning. The module keeps no position: reading is
@@ -41,13 +33,13 @@ type FeedPage struct {
 // at-least-once. A Workspace changed again after it was read is listed again, with the
 // owners it has by then. Like the Workspace list, it reads tenant metadata through the
 // raw client (never a Workspace's content).
-func (m *Module) WorkspaceFeed(ctx context.Context, cursor string, limit int) (FeedPage, error) {
+func (m *Module) WorkspaceFeed(ctx context.Context, cursor string, limit int) (pagination.CursorPage[FeedEntry], error) {
 	if err := m.licensed(); err != nil {
-		return FeedPage{}, err
+		return pagination.CursorPage[FeedEntry]{}, err
 	}
 	position, id, err := parseFeedCursor(cursor)
 	if err != nil {
-		return FeedPage{}, err
+		return pagination.CursorPage[FeedEntry]{}, err
 	}
 	rows, err := m.ent.Workspace.Query().
 		Where(entworkspace.Or(
@@ -58,37 +50,25 @@ func (m *Module) WorkspaceFeed(ctx context.Context, cursor string, limit int) (F
 		Limit(limit + 1).
 		All(ctx)
 	if err != nil {
-		return FeedPage{}, err
+		return pagination.CursorPage[FeedEntry]{}, err
 	}
-	page := FeedPage{NextCursor: cursor, HasMore: len(rows) > limit}
-	rows = rows[:min(len(rows), limit)]
+	page := pagination.Cursor(rows, limit, cursor, func(w *ent.Workspace) string { return feedCursor(w.FeedPosition, w.ID) })
 
-	ids := make([]int64, len(rows))
-	for i, w := range rows {
+	ids := make([]int64, len(page.Items))
+	for i, w := range page.Items {
 		ids[i] = w.ID
 	}
 	owners, err := accounts.OwnersOf(ctx, m.ent, ids...)
 	if err != nil {
-		return FeedPage{}, err
+		return pagination.CursorPage[FeedEntry]{}, err
 	}
-	byWorkspace := make(map[int64][]*ent.User, len(rows))
+	byWorkspace := make(map[int64][]*ent.User, len(page.Items))
 	for _, o := range owners {
 		byWorkspace[o.WorkspaceID] = append(byWorkspace[o.WorkspaceID], o.Edges.User)
 	}
-	for _, w := range rows {
-		page.Entries = append(page.Entries, FeedEntry{Workspace: w, Owners: slices.Clip(byWorkspace[w.ID])})
-	}
-	if last, ok := lastOf(rows); ok {
-		page.NextCursor = feedCursor(last.FeedPosition, last.ID)
-	}
-	return page, nil
-}
-
-func lastOf(rows []*ent.Workspace) (*ent.Workspace, bool) {
-	if len(rows) == 0 {
-		return nil, false
-	}
-	return rows[len(rows)-1], true
+	return pagination.MapCursor(page, func(w *ent.Workspace) FeedEntry {
+		return FeedEntry{Workspace: w, Owners: slices.Clip(byWorkspace[w.ID])}
+	}), nil
 }
 
 func feedCursor(position, id int64) string {

@@ -22,6 +22,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/signupsurvey"
 )
 
 // PeriodLayout is how a Usage period is written on the wire: the calendar month, YYYY-MM.
@@ -105,11 +107,25 @@ type StaffConverter interface {
 	// goverter:map TargetID ID
 	// goverter:map TargetName Name
 	AuditTargetToResource(source auditapi.View) staffeeapi.StaffAuditTarget
+	// goverter:useEmptyOnNil:slice
+	AuditEntriesToResources(source []auditapi.View) []staffeeapi.StaffAuditEntryResource
 
 	// One User's Sign-up survey answers. The enums share the contract's values.
 	// goverter:map UserID UserId
 	// goverter:map CreatedAt AnsweredAt
 	SignupSurveyResponseToResource(source *ent.SignupSurveyResponse) staffeeapi.StaffSignupSurveyResponseResource
+	// The answers counted per question: each question's tally is its choices and its `other`
+	// texts, two lists in the contract. A choice is the stored value, which the contract shares.
+	// goverter:useEmptyOnNil:slice
+	// goverter:map Role.Choices Role
+	// goverter:map Role.Others RoleOtherTexts
+	// goverter:map CompanySize.Choices CompanySize
+	// goverter:map CompanySize.Others CompanySizeOtherTexts
+	// goverter:map MainGoal.Choices MainGoal
+	// goverter:map MainGoal.Others MainGoalOtherTexts
+	// goverter:map HeardFrom.Choices HeardFrom
+	// goverter:map HeardFrom.Others HeardFromOtherTexts
+	SignupSurveyCountsToResource(source signupsurvey.Counts) staffeeapi.StaffSignupSurveyCounts
 
 	// Pages: a list response is the module's pagination.Page mapped whole.
 	// goverter:useEmptyOnNil:slice
@@ -153,7 +169,13 @@ type StaffConverter interface {
 // goverter:extend serviceOptNilTimestampAt
 // goverter:extend count
 type ServiceConverter interface {
+	// The calling credential as it sees itself.
+	// goverter:useEmptyOnNil:slice
+	IdentityToResource(source *ent.ServiceCredential) serviceapi.ServiceIdentityResource
+
 	HoldToResource(source *ent.Hold) serviceapi.HoldResource
+	// goverter:useEmptyOnNil:slice
+	HoldsToResources(source []*ent.Hold) []serviceapi.HoldResource
 
 	// The owners are the feed entry's, which the mapper cannot see: the handler attaches them.
 	// goverter:map PublicID ID
@@ -181,6 +203,13 @@ type ServiceConverter interface {
 	// goverter:ignore MailingsConsentChangedAt
 	TombstoneToResource(source *ent.UserTombstone) serviceapi.ServiceUserResource
 
+	// The change names the Workspace by its internal id; its public id is read by the handler
+	// for the whole page at once, so the handler attaches it.
+	// goverter:map Domain Host | trackingHost
+	// goverter:map CreatedAt ChangedAt
+	// goverter:ignore WorkspaceId
+	TrackingHostChangeToResource(source *ent.TrackingHostChange) serviceapi.ServiceTrackingHostChange
+
 	UsageFigureToResource(source usage.Figure) serviceapi.UsageFigure
 	// The public id is the Workspace's, which the usage row does not carry: the handler
 	// attaches it.
@@ -193,6 +222,18 @@ type ServiceConverter interface {
 	// goverter:useEmptyOnNil:slice
 	// goverter:skipCopySameType
 	UsageListPage(source pagination.Page[serviceapi.WorkspaceUsageResource]) *serviceapi.ServiceUsageListOK
+	// A feed is the module's pagination.CursorPage mapped whole. Each feed item carries an extra
+	// the mapper cannot see (the owners, the mailings consent, the Workspace's public id), so the
+	// handler maps the items (pagination.MapCursor) and the page arrives as resources.
+	// goverter:useEmptyOnNil:slice
+	// goverter:skipCopySameType
+	WorkspaceFeedPage(source pagination.CursorPage[serviceapi.ServiceWorkspaceResource]) *serviceapi.ServiceWorkspaceFeedPage
+	// goverter:useEmptyOnNil:slice
+	// goverter:skipCopySameType
+	UserFeedPage(source pagination.CursorPage[serviceapi.ServiceUserResource]) *serviceapi.ServiceUserFeedPage
+	// goverter:useEmptyOnNil:slice
+	// goverter:skipCopySameType
+	TrackingHostFeedPage(source pagination.CursorPage[serviceapi.ServiceTrackingHostChange]) *serviceapi.ServiceTrackingHostFeedPage
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
@@ -241,6 +282,8 @@ func isSet(t *time.Time) bool { return t != nil }
 func breachRate(b abuse.Breach) float64 { return b.Rate() }
 
 func periodString(t time.Time) string { return t.Format(PeriodLayout) }
+
+func trackingHost(domain string) string { return sendingdomains.TrackingHost(domain) }
 
 // workspaceSuspension is the Workspace's suspension and who set it; absent unless it is suspended.
 func workspaceSuspension(c StaffConverter, w *ent.Workspace) staffeeapi.OptNilStaffSuspension {

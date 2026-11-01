@@ -1,5 +1,18 @@
 id: no-hand-mapped-list
 snapshots:
+  "func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceapi.ServiceHoldsListParams) (serviceapi.ServiceHoldsListRes, error) {\n\titems := make([]serviceapi.HoldResource, len(rows))\n\tfor i, r := range rows {\n\t\titems[i] = serviceMapper.HoldToResource(r)\n\t}\n\treturn &serviceapi.HoldList{Items: items}, nil\n}\n":
+    labels:
+      - source: items[i] = serviceMapper.HoldToResource(r)
+        style: primary
+        start: 229
+        end: 271
+      - source: |-
+          for i, r := range rows {
+          		items[i] = serviceMapper.HoldToResource(r)
+          	}
+        style: secondary
+        start: 202
+        end: 274
   "func list(tokens []*ent.ApiToken) []siteapi.SiteApiTokenResource {\n\titems := make([]siteapi.SiteApiTokenResource, len(tokens))\n\tfor i, t := range tokens {\n\t\titems[i] = mapper.TokenToResource(t)\n\t}\n\treturn items\n}\n":
     labels:
       - source: items[i] = mapper.TokenToResource(t)

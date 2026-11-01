@@ -35,3 +35,36 @@ snapshots:
         style: secondary
         start: 519
         end: 560
+  "func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params serviceapi.ServiceWorkspaceFeedListParams) (serviceapi.ServiceWorkspaceFeedListRes, error) {\n\tpage, err := h.module.WorkspaceFeed(ctx, params.Cursor.Or(\"\"), int(params.Limit.Value))\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tout := &serviceapi.ServiceWorkspaceFeedPage{\n\t\tItems:      make([]serviceapi.ServiceWorkspaceResource, len(page.Items)),\n\t\tNextCursor: page.NextCursor,\n\t\tHasMore:    page.HasMore,\n\t}\n\tfor i, e := range page.Items {\n\t\tout.Items[i] = serviceMapper.WorkspaceToResource(e.Workspace)\n\t}\n\treturn out, nil\n}\n":
+    labels:
+      - source: |-
+          serviceapi.ServiceWorkspaceFeedPage{
+          		Items:      make([]serviceapi.ServiceWorkspaceResource, len(page.Items)),
+          		NextCursor: page.NextCursor,
+          		HasMore:    page.HasMore,
+          	}
+        style: primary
+        start: 308
+        end: 482
+      - source: 'NextCursor: page.NextCursor'
+        style: secondary
+        start: 423
+        end: 450
+      - source: 'NextCursor: page.NextCursor'
+        style: secondary
+        start: 423
+        end: 450
+  "func (m *Module) UserFeed(ctx context.Context, cursor string, limit int) (UserFeedPage, error) {\n\tpage := UserFeedPage{HasMore: len(entries) > limit}\n\treturn page, nil\n}\n":
+    labels:
+      - source: 'UserFeedPage{HasMore: len(entries) > limit}'
+        style: primary
+        start: 106
+        end: 149
+      - source: 'HasMore: len(entries) > limit'
+        style: secondary
+        start: 119
+        end: 148
+      - source: 'HasMore: len(entries) > limit'
+        style: secondary
+        start: 119
+        end: 148
