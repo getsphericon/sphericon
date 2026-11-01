@@ -492,7 +492,11 @@ test('a change shows an empty side as empty and a number as written', async () =
     handleSiteAuditList({ body: { items: [entry({ diff: { note: { from: '', to: 42 } } })] } }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
+    <AuditLogSection
+      workspaceId={WORKSPACE_ID}
+      onFilterChange={vi.fn<() => void>()}
+      canConfigureRetention={false}
+    />,
   )
 
   await screen.getByRole('button', { name: 'Show details' }).click()
