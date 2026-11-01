@@ -54,10 +54,11 @@ Constraints from the repo that every candidate is measured against:
   services with keys; Beefree's output is an HTML partial with no open/close script and per-device settings.
 - **Vendors converge on one content model** (section 4): a message is a short sequence of screens (steps, views,
   pages) moved through by button actions (next, submit, close, redirect), with a success screen at the end (not at
-  Braze) and a teaser that belongs to the same message (before, after close, or both). Inside a screen: rows, columns,
-  blocks. Mobile is **one design with linked per-device overrides** (style overrides, per-block visibility), not a
-  second design. Brand values are palettes copied at authoring time; no vendor updates existing forms when the brand
-  changes. **Only Klaviyo publishes the document**: a read/write Forms API,
+  Braze; no teaser at Braze either) and a teaser that belongs to the same message (before, after close, or both). Inside
+  a screen: rows, columns, blocks. Mobile is **one design with linked per-device overrides** (style overrides,
+  per-block visibility), not a second design (Braze: device preview only). Brand values are palettes picked at
+  authoring time; Klaviyo says explicitly that changing its Brand library does not update existing forms, and the
+  others document no propagation. **Only Klaviyo publishes the document**: a read/write Forms API,
   `versions[] → steps[] → columns[] → rows[] → blocks[] → action`, draft-only edits that replace the whole definition,
   publish as a job.
 - **Agent schema**: Puck's `Data` and SurveyJS's JSON are closed, declarative trees that a JSON Schema can describe
