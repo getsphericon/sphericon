@@ -631,7 +631,11 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 }
 
 // failingQueue is a job queue that cannot take the job.
-type failingQueue struct{ err error }
+type failingQueue struct {
+	events.JobQueue // only InsertTx is called
+
+	err error
+}
 
 func (q failingQueue) InsertTx(context.Context, *sql.Tx, river.JobArgs, *river.InsertOpts) (*rivertype.JobInsertResult, error) {
 	return nil, q.err

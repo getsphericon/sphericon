@@ -55,7 +55,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
-	"github.com/getsphericon/sphericon/ent/riverjob"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
@@ -183,7 +182,6 @@ func checkColumn(t, c string) error {
 			privaterelayrange.Table:    privaterelayrange.ValidColumn,
 			providerlimiter.Table:      providerlimiter.ValidColumn,
 			recoverycode.Table:         recoverycode.ValidColumn,
-			riverjob.Table:             riverjob.ValidColumn,
 			rule.Table:                 rule.ValidColumn,
 			rulefiring.Table:           rulefiring.ValidColumn,
 			ruleversion.Table:          ruleversion.ValidColumn,

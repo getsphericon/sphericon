@@ -44,6 +44,17 @@ func (env *TestEnv) EnqueueJob(t *testing.T, args river.JobArgs) {
 	require.NoError(t, err)
 }
 
+// EnqueueJobs puts one available job of each args into the queue, in one insert.
+func (env *TestEnv) EnqueueJobs(t *testing.T, args ...river.JobArgs) {
+	t.Helper()
+	params := make([]river.InsertManyParams, len(args))
+	for i, a := range args {
+		params[i] = river.InsertManyParams{Args: a}
+	}
+	_, err := env.riverClient(t).InsertMany(t.Context(), params)
+	require.NoError(t, err)
+}
+
 // EnqueueRunningJob puts one job of args into the queue already in the running state, as
 // a worker holds it. river's insert API only creates waiting jobs, so this goes through
 // the driver's full insert, which takes a state.

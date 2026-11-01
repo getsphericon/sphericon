@@ -58,7 +58,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
-	"github.com/getsphericon/sphericon/ent/riverjob"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
@@ -178,8 +177,6 @@ type Client struct {
 	ProviderLimiter *ProviderLimiterClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
 	RecoveryCode *RecoveryCodeClient
-	// RiverJob is the client for interacting with the RiverJob builders.
-	RiverJob *RiverJobClient
 	// Rule is the client for interacting with the Rule builders.
 	Rule *RuleClient
 	// RuleFiring is the client for interacting with the RuleFiring builders.
@@ -282,7 +279,6 @@ func (c *Client) init() {
 	c.PrivateRelayRange = NewPrivateRelayRangeClient(c.config)
 	c.ProviderLimiter = NewProviderLimiterClient(c.config)
 	c.RecoveryCode = NewRecoveryCodeClient(c.config)
-	c.RiverJob = NewRiverJobClient(c.config)
 	c.Rule = NewRuleClient(c.config)
 	c.RuleFiring = NewRuleFiringClient(c.config)
 	c.RuleVersion = NewRuleVersionClient(c.config)
@@ -442,7 +438,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PrivateRelayRange:    NewPrivateRelayRangeClient(cfg),
 		ProviderLimiter:      NewProviderLimiterClient(cfg),
 		RecoveryCode:         NewRecoveryCodeClient(cfg),
-		RiverJob:             NewRiverJobClient(cfg),
 		Rule:                 NewRuleClient(cfg),
 		RuleFiring:           NewRuleFiringClient(cfg),
 		RuleVersion:          NewRuleVersionClient(cfg),
@@ -529,7 +524,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PrivateRelayRange:    NewPrivateRelayRangeClient(cfg),
 		ProviderLimiter:      NewProviderLimiterClient(cfg),
 		RecoveryCode:         NewRecoveryCodeClient(cfg),
-		RiverJob:             NewRiverJobClient(cfg),
 		Rule:                 NewRuleClient(cfg),
 		RuleFiring:           NewRuleFiringClient(cfg),
 		RuleVersion:          NewRuleVersionClient(cfg),
@@ -592,12 +586,12 @@ func (c *Client) Use(hooks ...Hook) {
 		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
 		c.OutboundMessage, c.OutboxDeadLetter, c.OutboxMessage, c.OutboxOffset,
 		c.Passkey, c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange,
-		c.ProviderLimiter, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
-		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment,
-		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.Suppression, c.Tag, c.TrackingDomain,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
+		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendCapLimiter,
+		c.SendingDomain, c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse,
+		c.StaffMember, c.Suppression, c.Tag, c.TrackingDomain, c.TrackingHostChange,
+		c.Unsubscribe, c.Usage, c.User, c.UserIdentity, c.UserTombstone, c.Visitor,
+		c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -616,12 +610,12 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
 		c.OutboundMessage, c.OutboxDeadLetter, c.OutboxMessage, c.OutboxOffset,
 		c.Passkey, c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange,
-		c.ProviderLimiter, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
-		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment,
-		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.Suppression, c.Tag, c.TrackingDomain,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
+		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendCapLimiter,
+		c.SendingDomain, c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse,
+		c.StaffMember, c.Suppression, c.Tag, c.TrackingDomain, c.TrackingHostChange,
+		c.Unsubscribe, c.Usage, c.User, c.UserIdentity, c.UserTombstone, c.Visitor,
+		c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -716,8 +710,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ProviderLimiter.mutate(ctx, m)
 	case *RecoveryCodeMutation:
 		return c.RecoveryCode.mutate(ctx, m)
-	case *RiverJobMutation:
-		return c.RiverJob.mutate(ctx, m)
 	case *RuleMutation:
 		return c.Rule.mutate(ctx, m)
 	case *RuleFiringMutation:
@@ -7913,139 +7905,6 @@ func (c *RecoveryCodeClient) mutate(ctx context.Context, m *RecoveryCodeMutation
 	}
 }
 
-// RiverJobClient is a client for the RiverJob schema.
-type RiverJobClient struct {
-	config
-}
-
-// NewRiverJobClient returns a client for the RiverJob from the given config.
-func NewRiverJobClient(c config) *RiverJobClient {
-	return &RiverJobClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `riverjob.Hooks(f(g(h())))`.
-func (c *RiverJobClient) Use(hooks ...Hook) {
-	c.hooks.RiverJob = append(c.hooks.RiverJob, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `riverjob.Intercept(f(g(h())))`.
-func (c *RiverJobClient) Intercept(interceptors ...Interceptor) {
-	c.inters.RiverJob = append(c.inters.RiverJob, interceptors...)
-}
-
-// Create returns a builder for creating a RiverJob entity.
-func (c *RiverJobClient) Create() *RiverJobCreate {
-	mutation := newRiverJobMutation(c.config, OpCreate)
-	return &RiverJobCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of RiverJob entities.
-func (c *RiverJobClient) CreateBulk(builders ...*RiverJobCreate) *RiverJobCreateBulk {
-	return &RiverJobCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *RiverJobClient) MapCreateBulk(slice any, setFunc func(*RiverJobCreate, int)) *RiverJobCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &RiverJobCreateBulk{err: fmt.Errorf("calling to RiverJobClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*RiverJobCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &RiverJobCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for RiverJob.
-func (c *RiverJobClient) Update() *RiverJobUpdate {
-	mutation := newRiverJobMutation(c.config, OpUpdate)
-	return &RiverJobUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *RiverJobClient) UpdateOne(_m *RiverJob) *RiverJobUpdateOne {
-	mutation := newRiverJobMutation(c.config, OpUpdateOne, withRiverJob(_m))
-	return &RiverJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *RiverJobClient) UpdateOneID(id int64) *RiverJobUpdateOne {
-	mutation := newRiverJobMutation(c.config, OpUpdateOne, withRiverJobID(id))
-	return &RiverJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for RiverJob.
-func (c *RiverJobClient) Delete() *RiverJobDelete {
-	mutation := newRiverJobMutation(c.config, OpDelete)
-	return &RiverJobDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *RiverJobClient) DeleteOne(_m *RiverJob) *RiverJobDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *RiverJobClient) DeleteOneID(id int64) *RiverJobDeleteOne {
-	builder := c.Delete().Where(riverjob.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &RiverJobDeleteOne{builder}
-}
-
-// Query returns a query builder for RiverJob.
-func (c *RiverJobClient) Query() *RiverJobQuery {
-	return &RiverJobQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeRiverJob},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a RiverJob entity by its id.
-func (c *RiverJobClient) Get(ctx context.Context, id int64) (*RiverJob, error) {
-	return c.Query().Where(riverjob.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *RiverJobClient) GetX(ctx context.Context, id int64) *RiverJob {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *RiverJobClient) Hooks() []Hook {
-	return c.hooks.RiverJob
-}
-
-// Interceptors returns the client interceptors.
-func (c *RiverJobClient) Interceptors() []Interceptor {
-	return c.inters.RiverJob
-}
-
-func (c *RiverJobClient) mutate(ctx context.Context, m *RiverJobMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&RiverJobCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&RiverJobUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&RiverJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&RiverJobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown RiverJob mutation op: %q", m.Op())
-	}
-}
-
 // RuleClient is a client for the Rule schema.
 type RuleClient struct {
 	config
@@ -12529,11 +12388,11 @@ type (
 		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
 		OutboundMessage, OutboxDeadLetter, OutboxMessage, OutboxOffset, Passkey,
 		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
-		RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion, RuleVersionTrigger,
-		SchemaState, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
-		SignupItem, SignupSurveyResponse, StaffMember, Suppression, Tag,
-		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
-		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
+		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
+		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
+		SignupSurveyResponse, StaffMember, Suppression, Tag, TrackingDomain,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
@@ -12544,11 +12403,11 @@ type (
 		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
 		OutboundMessage, OutboxDeadLetter, OutboxMessage, OutboxOffset, Passkey,
 		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
-		RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion, RuleVersionTrigger,
-		SchemaState, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
-		SignupItem, SignupSurveyResponse, StaffMember, Suppression, Tag,
-		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
-		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
+		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
+		SignupSurveyResponse, StaffMember, Suppression, Tag, TrackingDomain,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 
