@@ -1308,7 +1308,7 @@ export default interface Resources {
       "passkeys": {
         "addButton": "Add a passkey",
         "addErrorTitle": "Could not add the passkey",
-        "added": "Passkey added. Your other sessions were signed out.",
+        "added": "Passkey added",
         "cancel": "Cancel",
         "continue": "Continue",
         "empty": "You have no passkeys yet. A passkey lets you sign in with your device, without typing an email or a password.",

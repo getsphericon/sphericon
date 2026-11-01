@@ -113,7 +113,7 @@ func TestIdentitiesAProviderWithAnotherEmailCanBeLinked(t *testing.T) {
 	assert.Equal(t, fixtures.MemberMaryEmail, signedInUser.Email)
 }
 
-func TestIdentitiesLinkingEndsTheOtherSessions(t *testing.T) {
+func TestIdentitiesLinkingKeepsTheOtherSessions(t *testing.T) {
 	env, fake := signinEnv(t)
 	acting := signedIn(t, env, fake, mary)
 	other := signedIn(t, env, fake, mary)
@@ -121,7 +121,7 @@ func TestIdentitiesLinkingEndsTheOtherSessions(t *testing.T) {
 	link(t, fake, acting, maryAtWork)
 
 	assert.Equal(t, http.StatusOK, meStatus(t, acting))
-	assert.Equal(t, http.StatusUnauthorized, meStatus(t, other))
+	assert.Equal(t, http.StatusOK, meStatus(t, other), "a new way to sign in ends no session")
 }
 
 func TestIdentitiesLinkingASubjectOfAnotherUserIsRefused(t *testing.T) {

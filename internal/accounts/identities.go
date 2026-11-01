@@ -252,8 +252,8 @@ func (a *Accounts) Identities(ctx context.Context, userID int64) ([]*ent.UserIde
 }
 
 // LinkIdentity attaches a provider account to the User, whatever email the provider
-// reports (the subject is the key, ADR 0048), and bumps the session epoch: the caller
-// reissues the acting session from the returned User. A subject that already belongs to
+// reports (the subject is the key, ADR 0048). The session epoch stays: a new way to sign in
+// takes nothing from the sessions already open. A subject that already belongs to
 // another User is ErrIdentityInUse; one that already belongs to this User changes nothing
 // (added is false).
 func (a *Accounts) LinkIdentity(ctx context.Context, userID int64, provider, subject string) (*ent.User, bool, error) {
@@ -279,11 +279,7 @@ func (a *Accounts) LinkIdentity(ctx context.Context, userID int64, provider, sub
 		if err := tx.UserIdentity.Create().SetUserID(userID).SetProvider(provider).SetSubject(subject).Exec(ctx); err != nil {
 			return err
 		}
-		saved, err = tx.User.UpdateOneID(userID).AddSessionEpoch(1).Save(ctx)
-		if err != nil {
-			return err
-		}
-		added = true
+		saved, added = u, true
 		return RecordUserAction(ctx, tx, pub, saved, events.ActionUserIdentityLink, map[string]any{"provider": provider})
 	})
 	if db.IsUniqueViolation(err) {

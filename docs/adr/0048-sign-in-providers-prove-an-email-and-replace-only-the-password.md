@@ -96,8 +96,9 @@ Avoid list for this concept.
   flow with the User's id in the signed flow cookie; the shared callback then adds the subject to
   that User (whatever email the provider reports) only when the browser still holds a current
   session of that User, and refuses a subject that belongs to another User (`identity_in_use`).
-  Unlinking is refused (409) when the User would have no password and no other identity. Both
-  bump `session_epoch` and reissue the acting session.
+  Unlinking is refused (409) when the User would have no password and no other identity. Unlinking
+  bumps `session_epoch`; linking does not, since a new way to sign in takes nothing from the sessions
+  already open (as adding a Passkey, ADR 0052). Both reissue the acting session.
   The reissued session keeps the time of its provider login when the link added a new subject: a
   stolen session could otherwise add its own provider account and pass the fresh-login proof
   below. Only a link flow whose subject was already one of the User's identities is a fresh

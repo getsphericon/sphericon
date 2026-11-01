@@ -1316,7 +1316,7 @@
     },
     "passkeys": {
       "addButton": "Add a passkey",
-      "added": "Passkey added. Your other sessions were signed out.",
+      "added": "Passkey added",
       "addErrorTitle": "Could not add the passkey",
       "cancel": "Cancel",
       "continue": "Continue",

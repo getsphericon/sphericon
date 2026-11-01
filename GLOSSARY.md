@@ -895,6 +895,11 @@ or Recovery code), during which even correct credentials are refused. It is neve
 lock, and unknown emails are throttled and answered identically.
 _Avoid_: Lockout, ban, account lock (a hard lock would let an attacker deny a victim access)
 
+**Sign out everywhere**:
+A User ending every session they hold at once, the one in use included, so each device logs in again.
+Nothing else of the account changes: no credential, Passkey or Membership goes.
+_Avoid_: Revoke sessions, log out all devices, end sessions
+
 **Membership**:
 The join that grants a User access to a Workspace with a Role — Workspaces are reached through
 Memberships, not owned by one User. Laid in now (rather than single-owner) because a multi-user

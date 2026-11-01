@@ -76,9 +76,10 @@ func (h *Handlers) SiteIdentitiesUnlink(ctx context.Context, params siteapi.Site
 }
 
 // linkProvider finishes a link flow: the callback of the browser that is signed in as the
-// User the flow names adds the provider's subject to that User, ends the other sessions and
-// reissues this one (a new identity keeps the session's provider login time), and lands on the page the flow began from. Anything else is a refusal
-// that lands on the settings page with the Reason.
+// User the flow names adds the provider's subject to that User, reissues this session (a new
+// identity keeps the session's provider login time; every other session goes on), and lands on
+// the page the flow began from. Anything else is a refusal that lands on the settings page with
+// the Reason.
 func (h *Handlers) linkProvider(ctx context.Context, flow signin.Flow, session string, profile signin.Profile) (*siteapi.SiteAuthSigninCallbackFound, error) {
 	holds, err := h.holdsSession(ctx, session, flow.LinkUserID)
 	if err != nil {
