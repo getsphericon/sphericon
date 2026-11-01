@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	entsql "entgo.io/ent/dialect/sql"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/samber/lo"
@@ -31,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -189,7 +189,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	in = in.normalized()
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		// Read under the update's lock, so the Custom fields compared are the ones it replaces.
-		before, err := lockedContact(ctx, ts, id)
+		before, err := contactlock.Lock(ctx, ts, id)
 		if err != nil {
 			return err
 		}
@@ -423,7 +423,7 @@ func createCore(q *ent.ContactScopedCreate, c Core) {
 // The Contact is read again under the lock the update takes anyway, so two Identifies of one
 // Contact merge, and record, one after the other.
 func enrich(ctx context.Context, s *ent.Scoped, pub events.Publisher, id int64, in UpsertInput, typed map[string]any, ch changes) (*ent.Contact, error) {
-	existing, err := lockedContact(ctx, s, id)
+	existing, err := contactlock.Lock(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -440,14 +440,6 @@ func enrich(ctx context.Context, s *ent.Scoped, pub events.Publisher, id int64, 
 		return c, err
 	}
 	return c, publishFieldChanges(ctx, pub, s.WorkspaceID(), c, existing.CustomFields)
-}
-
-// lockedContact reads the Contact under FOR NO KEY UPDATE, the lock its update takes anyway, to
-// the end of the transaction s is bound to: it leaves an Event stored for the Contact free.
-func lockedContact(ctx context.Context, s *ent.Scoped, id int64) (*ent.Contact, error) {
-	q := s.Contact().Query().Where(contact.ID(id))
-	q.Modify(func(sel *entsql.Selector) { sel.For(entsql.LockNoKeyUpdate) })
-	return q.Only(ctx)
 }
 
 // Resolve finds an existing Contact by any present alias key (subject_id → email →

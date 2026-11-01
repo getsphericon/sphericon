@@ -86,7 +86,7 @@ func machine(s *ent.Scoped, runID int64, endedAt time.Time, extra func(*ent.Auto
 	return m
 }
 
-// ending is the System event each end of an Enrollment records (#897). A `failed` Enrollment
+// endingEvents is the System event each end of an Enrollment records (#897). A `failed` Enrollment
 // records none: it is an operational failure, not something the Contact did.
 var endingEvents = map[trigger]string{
 	triggerComplete:  events.NameAutomationCompleted,

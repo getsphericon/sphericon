@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -28,31 +27,25 @@ func TestIdentifyRecordsCustomFieldChanges(t *testing.T) {
 		require.NoError(t, err)
 		require.IsType(t, &collectapi.CollectOkResponse{}, res)
 	}
-	changes := func() []map[string]any {
-		messages := env.Outbox(t, events.NameContactFieldChanged)
-		out := make([]map[string]any, 0, len(messages))
-		for i := range messages {
-			out = append(out, map[string]any{"key": messages[i].Data["key"], "value": messages[i].Data["value"]})
-		}
-		return out
-	}
 
 	identify(`"pro"`)
-	assert.Equal(t, []map[string]any{{"key": "plan", "value": "pro"}}, changes(), "a value where there was none")
-
+	afterSet := env.FieldChanges(t)
 	identify(`"pro"`)
-	assert.Len(t, changes(), 1, "the same value again records nothing")
-
+	afterRepeat := env.FieldChanges(t)
 	identify(`"team"`)
 	identify(`null`)
+	afterClear := env.FieldChanges(t)
+	identify(`null`)
+	afterClearAgain := env.FieldChanges(t)
+
+	assert.Equal(t, []map[string]any{{"key": "plan", "value": "pro"}}, afterSet, "a value where there was none")
+	assert.Equal(t, afterSet, afterRepeat, "the same value again records nothing")
 	assert.Equal(t, []map[string]any{
 		{"key": "plan", "value": "pro"},
 		{"key": "plan", "value": "team"},
 		{"key": "plan", "value": nil},
-	}, changes(), "a new value, then a clear with no value")
-
-	identify(`null`)
-	assert.Len(t, changes(), 3, "clearing a cleared field records nothing")
+	}, afterClear, "a new value, then a clear with no value")
+	assert.Equal(t, afterClear, afterClearAgain, "clearing a cleared field records nothing")
 }
 
 // A customer's Event never claims an Enrollment's action.

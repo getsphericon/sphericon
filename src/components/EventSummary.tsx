@@ -8,15 +8,17 @@ import {
   siteTagsListOptions,
 } from '../generated/site/@tanstack/react-query.gen.ts'
 import type { JsonObject, SiteEventResource } from '../generated/site/types.gen.ts'
+import { zSiteTagsListQuery } from '../generated/site/zod.gen.ts'
 import { useEventActionLabel } from '../hooks/useEventActionLabel.ts'
 import { Route as automationRoute } from '../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as tagsRoute } from '../routes/workspaces/$workspaceId/tags/index.tsx'
+import { boundsOf } from '../utils/bounds.ts'
 import { EventActionName } from './EventActionName.tsx'
 import { AnchorLink } from './RouterLink.tsx'
 
-// TAG_LOOKUP is how many of the Workspace's Tags a row looks its Tag up among, the most a page
-// holds: a Tag beyond them, like a deleted one, is named without a link.
-const TAG_LOOKUP = 100
+// TAG_LOOKUP is how many of the Workspace's Tags a row looks its Tag up among, the most a page of
+// the contract holds: a Tag beyond them, like a deleted one, is named without a link.
+const TAG_LOOKUP = boundsOf(zSiteTagsListQuery.shape.pageSize.unwrap().unwrap()).max
 
 interface Row {
   workspaceId: string

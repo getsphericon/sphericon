@@ -107,6 +107,18 @@ func (env *TestEnv) Outbox(t *testing.T, names ...string) []OutboxMessage {
 	return out
 }
 
+// FieldChanges is the key and value of each contact.field_changed on this test's outbox, oldest
+// first; a cleared field's value is nil.
+func (env *TestEnv) FieldChanges(t *testing.T) []map[string]any {
+	t.Helper()
+	messages := env.Outbox(t, events.NameContactFieldChanged)
+	out := make([]map[string]any, 0, len(messages))
+	for i := range messages {
+		out = append(out, map[string]any{"key": messages[i].Data["key"], "value": messages[i].Data["value"]})
+	}
+	return out
+}
+
 // OutboxCount counts the outbox messages named name whose payload has every
 // key/value of match (values compare by their printed form: 42 matches "42").
 func (env *TestEnv) OutboxCount(t *testing.T, name string, match map[string]any) int {

@@ -6,16 +6,15 @@ import (
 	"slices"
 	"time"
 
-	"entgo.io/ent/dialect/sql"
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
-	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 )
@@ -200,17 +199,15 @@ func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 	return run.ID, false, nil
 }
 
-// lockContact locks the Contact's row to the end of the transaction s is bound to: the one point
-// that orders the making of the Contact's Enrollments against the exit and goal Events that end
-// them. The lock is FOR NO KEY UPDATE, not FOR UPDATE: a row that references the Contact (an Event
-// stored for it, the Outbound message of a step's send) takes the key-share lock, which this one
-// leaves free, so neither an Events consumer nor a send in flight under the fence ever waits for
-// it. false when the Contact is not in the Workspace.
+// lockContact locks the Contact's row to the end of the transaction s is bound to (contactlock):
+// the one point that orders the making of the Contact's Enrollments against the exit and goal
+// Events that end them. false when the Contact is not in the Workspace.
 func lockContact(ctx context.Context, s *ent.Scoped, contactID int64) (bool, error) {
-	q := s.Contact().Query().Where(contact.ID(contactID))
-	q.Modify(func(sel *sql.Selector) { sel.For(sql.LockNoKeyUpdate) })
-	ids, err := q.IDs(ctx)
-	return len(ids) > 0, err
+	_, err := contactlock.Lock(ctx, s, contactID)
+	if ent.IsNotFound(err) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // endedSince is the end the first exit or goal Event of the version recorded for the Contact at

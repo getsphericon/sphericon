@@ -37,16 +37,21 @@ func TestContactChangeEventsExpireByAge(t *testing.T) {
 		require.NoError(t, env.Publisher().Publish(ctx, ev))
 		actions = append(actions, ev.EventName())
 	}
-	for _, envelope := range env.OutboxEnvelopes(t, actions...) {
+	envelopes := env.OutboxEnvelopes(t, actions...)
+	for _, envelope := range envelopes {
 		require.NoError(t, events.Persist(ctx, env.DB, envelope))
 	}
-	stored := func() int {
-		return env.DB.Event.Query().Where(event.ActionIn(actions...)).CountX(ctx)
+	stored := func() []string {
+		names, err := env.DB.Event.Query().Where(event.ActionIn(actions...)).Select(event.FieldAction).Strings(ctx)
+		require.NoError(t, err)
+		return names
 	}
-	require.Equal(t, len(changes), stored())
+	before := stored()
 
 	_, err := events.PruneEvents(ctx, env.DB, time.Nanosecond, 100)
 	require.NoError(t, err)
+	after := stored()
 
-	assert.Zero(t, stored())
+	assert.ElementsMatch(t, actions, before, "each is stored first")
+	assert.Empty(t, after)
 }

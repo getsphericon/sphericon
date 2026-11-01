@@ -22,28 +22,31 @@ func TestTagChangesRecordSystemEvents(t *testing.T) {
 	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
 	ctx := context.Background()
 	bob := entityIDString(fixtures.ContactBobID)
-	tagged := func() int {
-		return env.OutboxCount(t, "contact.tagged", map[string]any{"contactId": fixtures.ContactBobID, "tag": "vip"})
+	vip := map[string]any{"contactId": fixtures.ContactBobID, "tag": "vip"}
+	apply := func() {
+		t.Helper()
+		_, err := c.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "vip"}, externalapi.TagsApplyParams{ContactId: bob})
+		require.NoError(t, err)
 	}
-	untagged := func() int {
-		return env.OutboxCount(t, "contact.untagged", map[string]any{"contactId": fixtures.ContactBobID, "tag": "vip"})
+	remove := func() {
+		t.Helper()
+		_, err := c.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: bob, Name: "vip"})
+		require.NoError(t, err)
 	}
 
-	_, err := c.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "vip"}, externalapi.TagsApplyParams{ContactId: bob})
-	require.NoError(t, err)
-	assert.Equal(t, 1, tagged(), "applying a Tag the Contact lacks records contact.tagged")
+	apply()
+	taggedOnce := env.OutboxCount(t, events.NameContactTagged, vip)
+	apply()
+	taggedAgain := env.OutboxCount(t, events.NameContactTagged, vip)
+	remove()
+	untaggedOnce := env.OutboxCount(t, events.NameContactUntagged, vip)
+	remove()
+	untaggedAgain := env.OutboxCount(t, events.NameContactUntagged, vip)
 
-	_, err = c.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "vip"}, externalapi.TagsApplyParams{ContactId: bob})
-	require.NoError(t, err)
-	assert.Equal(t, 1, tagged(), "applying it again records nothing")
-
-	_, err = c.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: bob, Name: "vip"})
-	require.NoError(t, err)
-	assert.Equal(t, 1, untagged(), "removing it records contact.untagged")
-
-	_, err = c.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: bob, Name: "vip"})
-	require.NoError(t, err)
-	assert.Equal(t, 1, untagged(), "removing a Tag the Contact lacks records nothing")
+	assert.Equal(t, 1, taggedOnce, "applying a Tag the Contact lacks records contact.tagged")
+	assert.Equal(t, 1, taggedAgain, "applying it again records nothing")
+	assert.Equal(t, 1, untaggedOnce, "removing it records contact.untagged")
+	assert.Equal(t, 1, untaggedAgain, "removing a Tag the Contact lacks records nothing")
 }
 
 // A Contact's update replaces its Custom fields: a field it drops is cleared, one it changes is
@@ -61,25 +64,18 @@ func TestContactUpdateRecordsFieldChanges(t *testing.T) {
 		require.NoError(t, err)
 		require.IsType(t, &externalapi.ContactResource{}, res)
 	}
-	fieldChanges := func() []map[string]any {
-		messages := env.Outbox(t, events.NameContactFieldChanged)
-		out := make([]map[string]any, 0, len(messages))
-		for i := range messages {
-			out = append(out, map[string]any{"key": messages[i].Data["key"], "value": messages[i].Data["value"]})
-		}
-		return out
-	}
 
 	update(externalapi.JsonObject{"plan": jx.Raw(`"pro"`), "seats": jx.Raw(`4`)})
 	update(externalapi.JsonObject{"plan": jx.Raw(`"pro"`), "seats": jx.Raw(`4.0`)})
 	update(externalapi.JsonObject{"seats": jx.Raw(`5`)})
+	changes := env.FieldChanges(t)
 
 	assert.ElementsMatch(t, []map[string]any{
 		{"key": "plan", "value": "pro"},
 		{"key": "seats", "value": json.Number("4")},
 		{"key": "plan", "value": nil},
 		{"key": "seats", "value": json.Number("5")},
-	}, fieldChanges())
+	}, changes)
 }
 
 // An import brings earlier state: it records no Custom field change (#897), only the Contacts it
@@ -100,7 +96,9 @@ func TestBatchImportRecordsNoFieldChanges(t *testing.T) {
 	}})
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.UpsertContactsResult{}, res)
+	changes := env.FieldChanges(t)
+	created := env.OutboxEnvelopes(t, events.NameContactCreated)
 
-	assert.Empty(t, env.OutboxEnvelopes(t, events.NameContactFieldChanged))
-	assert.Len(t, env.OutboxEnvelopes(t, events.NameContactCreated), 1, "the import still records the Contact it creates")
+	assert.Empty(t, changes)
+	assert.Len(t, created, 1, "the import still records the Contact it creates")
 }

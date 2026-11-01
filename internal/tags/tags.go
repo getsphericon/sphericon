@@ -11,7 +11,6 @@ import (
 	"errors"
 	"strings"
 
-	entsql "entgo.io/ent/dialect/sql"
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -19,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
@@ -177,15 +177,12 @@ func SetIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID i
 	return nil
 }
 
-// lockContact locks the Contact's row to the end of the transaction s is bound to, so two changes
-// of its Tags are ordered and each reads the set the other committed: an apply racing another
-// apply of the same Tag records it once. ErrContactNotFound when the Contact is not in the
-// Workspace. FOR NO KEY UPDATE, as the Automations' own lock of the Contact: the Contact's update
-// that follows takes it anyway.
+// lockContact locks the Contact's row to the end of the transaction s is bound to (contactlock), so
+// two changes of its Tags are ordered and each reads the set the other committed: an apply racing
+// another apply of the same Tag records it once. ErrContactNotFound when the Contact is not in the
+// Workspace.
 func lockContact(ctx context.Context, s *ent.Scoped, contactID int64) (*ent.Contact, error) {
-	q := s.Contact().Query().Where(contact.ID(contactID))
-	q.Modify(func(sel *entsql.Selector) { sel.For(entsql.LockNoKeyUpdate) })
-	c, err := q.Only(ctx)
+	c, err := contactlock.Lock(ctx, s, contactID)
 	if ent.IsNotFound(err) {
 		return nil, ErrContactNotFound
 	}

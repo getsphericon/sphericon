@@ -43,10 +43,10 @@ func TestAnEnrollmentRecordsItsBeginningAndItsCompletion(t *testing.T) {
 	began := enrollmentEvents(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
 
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
+	ended := enrollmentEvents(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
 
 	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1}, began)
-	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1, events.NameAutomationCompleted: 1},
-		enrollmentEvents(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID))
+	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1, events.NameAutomationCompleted: 1}, ended)
 }
 
 // The Payment recovery fixture's live version: trigger payment_failed, exit event account_closed,
@@ -64,11 +64,11 @@ func TestAnEnrollmentRecordsReachingItsGoalAndLeaving(t *testing.T) {
 	on(fixtures.ContactAliceID, "payment_succeeded")
 	on(fixtures.ContactBobID, "payment_failed")
 	on(fixtures.ContactBobID, "account_closed")
+	alice := enrollmentEvents(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactAliceID)
+	bob := enrollmentEvents(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactBobID)
 
-	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1, events.NameAutomationGoalReached: 1},
-		enrollmentEvents(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactAliceID))
-	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1, events.NameAutomationExited: 1},
-		enrollmentEvents(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactBobID))
+	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1, events.NameAutomationGoalReached: 1}, alice)
+	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1, events.NameAutomationExited: 1}, bob)
 }
 
 // A failed Enrollment is an operational failure, not something the Contact did: it records no
@@ -79,7 +79,7 @@ func TestAFailedEnrollmentRecordsNoEnd(t *testing.T) {
 	h.rcv.respond(http.StatusNotFound, "gone", "")
 
 	require.Error(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
+	recorded := enrollmentEvents(t, h.TestEnv, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 
-	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1},
-		enrollmentEvents(t, h.TestEnv, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID))
+	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1}, recorded)
 }

@@ -1,38 +1,52 @@
 package jobs_test
 
 import (
-	"context"
+	"encoding/json"
 	"testing"
-	"time"
 
+	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
-	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// The consumers' seams, recording what they hand on instead of queueing it.
-type handedEnrollments struct{ got []events.AutomationEvent }
-
-func (h *handedEnrollments) OnEvent(_ context.Context, ev events.AutomationEvent) error {
-	h.got = append(h.got, ev)
-	return nil
+// queueingClient is the jobs client the consumers hand an Event to, queueing into this test's
+// transaction, so what they queue is read back with JobsOf.
+func queueingClient(t *testing.T, env *testhelper.TestEnv) *jobs.Client {
+	t.Helper()
+	cfg, err := config.Load("test")
+	require.NoError(t, err)
+	client, err := jobs.NewClient(riverdatabasesql.New(env.SQLDB), env.DB, newMod(env, nil), env.Cipher, env.Bus, env.SystemMail,
+		nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, nil, jobs.Retention{})
+	require.NoError(t, err)
+	return client
 }
 
-type handedRuleEvents struct{ got []events.RuleEvent }
-
-func (h *handedRuleEvents) OnRuleEvent(_ context.Context, ev events.RuleEvent) error {
-	h.got = append(h.got, ev)
-	return nil
+// queuedArgs are the args of the jobs of kind left on the queue, decoded as T.
+func queuedArgs[T any](t *testing.T, env *testhelper.TestEnv, kind string) []T {
+	t.Helper()
+	queued := env.JobsOf(t, kind)
+	out := make([]T, 0, len(queued))
+	for _, raw := range queued {
+		encoded, err := json.Marshal(raw)
+		require.NoError(t, err)
+		var args T
+		require.NoError(t, json.Unmarshal(encoded, &args))
+		out = append(out, args)
+	}
+	return out
 }
 
 // onlyEnvelope is the one envelope of the name on the test's outbox.
@@ -43,8 +57,9 @@ func onlyEnvelope(t *testing.T, env *testhelper.TestEnv, name string) events.Env
 	return envelopes[0]
 }
 
-// An Automation whose Trigger is contact.tagged enrolls a Contact a Tag is applied to (#897).
-// Fixture: the Jobs greeting Automation, its live version's Trigger turned to contact.tagged.
+// An Automation whose Trigger is contact.tagged enrolls a Contact a Tag is applied to (#897), and
+// its steps see which Tag it was. Fixture: the Jobs greeting Automation, its live version's
+// Trigger turned to contact.tagged.
 func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
@@ -54,21 +69,18 @@ func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 
 	_, err := tags.New(env.Bus).Apply(ctx, acme, fixtures.ContactLiamID, "onboarding-ready")
 	require.NoError(t, err)
-	enroller := &handedEnrollments{}
-	require.NoError(t, events.AutomationsConsumer(enroller)(events.Message(onlyEnvelope(t, env, events.NameContactTagged))))
-	require.Len(t, enroller.got, 1)
-	handed := enroller.got[0]
-	// The Enroller stores the Event before its trigger job runs, as jobs.Client does.
-	require.NoError(t, events.Persist(ctx, env.DB, handed.Envelope))
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, handed.ContactID, automations.Event{
-		Action: handed.Action, SourceID: handed.Envelope.SourceID(), OccurredAt: handed.Envelope.OccurredAt,
-	}, handed.SourceAutomationID))
+	tagged := onlyEnvelope(t, env, events.NameContactTagged)
+	require.NoError(t, events.AutomationsConsumer(queueingClient(t, env))(events.Message(tagged)))
+	triggers := queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind())
+	require.Len(t, triggers, 1)
+	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
 
-	run := env.DB.AutomationRun.Query().
+	run, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactLiamID)).
-		OnlyX(ctx)
+		Only(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, events.NameContactTagged, *run.EventAction)
-	assert.Equal(t, map[string]any{"tag": "onboarding-ready"}, run.EventProperties, "the steps see which Tag it was")
+	assert.Equal(t, map[string]any{"tag": "onboarding-ready"}, run.EventProperties)
 }
 
 // A Rule triggered by automation.completed fires when an Enrollment completes, and what its Action
@@ -78,6 +90,7 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
+	client := queueingClient(t, env)
 	env.DB.RuleVersionTrigger.Update().
 		Where(ruleversiontrigger.VersionID(fixtures.RuleTagClickedLiveVersionID)).
 		SetAction(events.NameAutomationCompleted).
@@ -85,22 +98,25 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
 
-	evaluator := &handedRuleEvents{}
-	require.NoError(t, events.RulesConsumer(env.DB, evaluator)(events.Message(onlyEnvelope(t, env, events.NameAutomationCompleted))))
-	require.Len(t, evaluator.got, 1)
-	handed := evaluator.got[0]
+	completed := onlyEnvelope(t, env, events.NameAutomationCompleted)
+	require.NoError(t, events.RulesConsumer(env.DB, client)(events.Message(completed)))
+	evaluations := queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind)
+	require.Len(t, evaluations, 1)
 	m := rules.New(env.Cipher, env.Bus)
 	fired, err := m.Evaluate(ctx, acme, rules.Event{
-		ContactID: handed.ContactID, Action: handed.Action, SourceID: handed.SourceID, RecordedAt: time.Now(), Properties: handed.Properties,
+		ContactID: evaluations[0].ContactID, Action: evaluations[0].Action, SourceID: evaluations[0].SourceID,
+		RecordedAt: evaluations[0].RecordedAt, Properties: evaluations[0].Properties,
 	})
 	require.NoError(t, err)
 	require.Len(t, fired, 1)
-	assert.EqualValues(t, fixtures.RuleTagClickedID, fired[0].RuleID)
 	require.NoError(t, m.RunActions(ctx, acme, fired[0].ID, ruleRunners(env)))
-
 	tagged := onlyEnvelope(t, env, events.NameContactTagged)
-	require.NoError(t, events.RulesConsumer(env.DB, evaluator)(events.Message(tagged)))
-	assert.Contains(t, tagsOf(t, env, fixtures.ContactAliceID), "rule-clicked")
+	require.NoError(t, events.RulesConsumer(env.DB, client)(events.Message(tagged)))
+	evaluationsAfter := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
+	aliceTags := tagsOf(t, env, fixtures.ContactAliceID)
+
+	assert.EqualValues(t, fixtures.RuleTagClickedID, fired[0].RuleID)
+	assert.Contains(t, aliceTags, "rule-clicked")
 	assert.NotEmpty(t, tagged.CausedBy, "the Action's Tag carries its Rule")
-	assert.Len(t, evaluator.got, 1, "the Action's own contact.tagged is handed to no Rule")
+	assert.Len(t, evaluationsAfter, 1, "the Action's own contact.tagged queues no evaluation")
 }
