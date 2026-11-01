@@ -30,12 +30,13 @@ export function RecentActivityPage() {
   const { workspaceId } = workspaceRoute.useParams()
   const [live, setLive] = useState(true)
   const labelOf = useEventActionLabel()
-  // The filter and the page are the URL's; another filter starts on its first page.
+  // The filter and the page are the URL's; another filter starts on its first page, and the
+  // analytics window rides along.
   const { action = '', page = 1 } = recentActivityRoute.useSearch()
   const navigate = recentActivityRoute.useNavigate()
   const applyAction = (next: string | null) =>
     void navigate({
-      search: { action: next ?? undefined },
+      search: (prev) => ({ ...prev, action: next ?? undefined, page: undefined }),
       replace: true,
       viewTransition: false,
     })
