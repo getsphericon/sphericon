@@ -94,6 +94,9 @@ const broadcast = (b: Pick<SiteBroadcastResource, 'status'> & Partial<SiteBroadc
   ...b,
 })
 
+// about is an item's object, for an item that stands for one failure.
+const about = (id: string, name: string) => ({ subject: { id, name }, count: 1 })
+
 const mount = { ...base, initialPath: `${base.initialPath}?range=30d` }
 
 beforeEach(() => {
@@ -152,6 +155,57 @@ test('each item says what is wrong and links to where it is fixed', async () => 
     .element(screen.getByRole('link', { name: 'Open the automation' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/automations/100')
   await expect.element(screen.getByText(/sent its daily sending limit/)).toBeInTheDocument()
+})
+
+test('every kind of item is a sentence, with a link where there is somewhere to go', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          { kind: 'integrationProviderStopped', severity: 'blocked', ...about('1', 'Amazon SES') },
+          { kind: 'broadcastHeld', severity: 'blocked', ...about('2', 'Unexplained') },
+          {
+            kind: 'deliverabilityWarning',
+            severity: 'degraded',
+            count: 1,
+            abuse: { domain: 'mail.acme.test', metric: 'complaint', rate: 0.0015 },
+          },
+          { kind: 'providerLimitSpent', severity: 'degraded', ...about('3', 'Postmark') },
+          { kind: 'integrationProviderProbation', severity: 'degraded', ...about('4', 'Probed') },
+          { kind: 'integrationProviderSandbox', severity: 'degraded', ...about('5', 'Sandboxed') },
+          { kind: 'broadcastFailed', severity: 'notice', ...about('6', 'Autumn sale') },
+          { kind: 'webhookDisabled', severity: 'notice', ...about('7', 'https://hooks.test/x') },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByText(/stopped the account behind Amazon SES/))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText(/Unexplained is on hold/)).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/complaint rate on mail.acme.test is 0.15%/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Review suppressions' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/suppressions')
+  await expect.element(screen.getByText(/Postmark has sent its daily limit/)).toBeInTheDocument()
+  await expect.element(screen.getByText(/behind Probed under review/)).toBeInTheDocument()
+  await expect.element(screen.getByText(/Sandboxed is in the provider/)).toBeInTheDocument()
+  await expect.element(screen.getByText('Autumn sale failed to send.')).toBeInTheDocument()
+  await expect
+    .element(
+      screen.getByText(
+        'The webhook https://hooks.test/x disabled itself after failing deliveries.',
+      ),
+    )
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open webhooks' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings/webhooks')
 })
 
 test('a held broadcast says what lifts the hold', async () => {
@@ -224,6 +278,7 @@ test('what is going out comes soonest first and what went out last with its open
           query.get('order') === 'sentLatest'
             ? [broadcast({ status: 'sent', sentAt: '2026-10-27T08:09:00Z' })]
             : [
+                broadcast({ id: '3', name: 'Flash sale', status: 'sending' }),
                 broadcast({
                   id: '2',
                   name: 'Autumn sale',
@@ -231,7 +286,7 @@ test('what is going out comes soonest first and what went out last with its open
                   scheduledAt: '2026-11-03T09:00:00Z',
                 }),
               ],
-        totalItems: 1,
+        totalItems: 2,
       })
     }),
   )
@@ -240,6 +295,7 @@ test('what is going out comes soonest first and what went out last with its open
 
   await expect.element(screen.getByText('Autumn sale')).toBeInTheDocument()
   await expect.element(screen.getByText(/^Scheduled for/)).toBeInTheDocument()
+  await expect.element(screen.getByText('Sending: 100 of 100')).toBeInTheDocument()
   await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
   await expect.element(screen.getByText(/38% opened/)).toBeInTheDocument()
   expect(asked.toSorted()).toEqual(['sending+scheduled by scheduledSoonest', 'sent by sentLatest'])
