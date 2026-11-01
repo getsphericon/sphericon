@@ -23,6 +23,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AuthLayout } from '../../components/AuthLayout.tsx'
+import { OneTimeCodeInput } from '../../components/OneTimeCodeInput.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
 import {
@@ -194,10 +195,9 @@ export function LoginPage() {
           )}
         >
           <Stack>
-            <TextInput
+            <OneTimeCodeInput
               label={t(($) => $.login.codeLabel)}
-              autoComplete="one-time-code"
-              required
+              recovery
               data-autofocus
               {...codeForm.getInputProps('code')}
             />

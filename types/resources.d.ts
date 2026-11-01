@@ -1101,6 +1101,12 @@ export default interface Resources {
       "title": "Connect {{client}} to Sphericon",
       "workspaceLabel": "Workspace"
     },
+    "oneTimeCode": {
+      "digit": "Digit {{n}}",
+      "recoveryLabel": "Recovery code",
+      "useAppCode": "Use a code from the app",
+      "useRecoveryCode": "Use a recovery code"
+    },
     "overview": {
       "createAutomationDescription": "Send follow-up emails when a contact does something.",
       "createBroadcastDescription": "Send a one-time email to a segment of your contacts.",
@@ -1286,7 +1292,6 @@ export default interface Resources {
       "copyCodes": "Copy codes",
       "copyKey": "Copy key",
       "disableButton": "Turn off two-factor authentication",
-      "disableCodeLabel": "Code from the app or a recovery code",
       "disableErrorTitle": "Could not turn off two-factor authentication",
       "disableTitle": "Turn off",
       "disabledMessage": "Two-factor authentication is off",

@@ -109,7 +109,7 @@ test('enrolls an authenticator app and shows the recovery codes once', async () 
     .toBeInTheDocument()
   await expect.element(screen.getByText(enrollment.secret)).toBeInTheDocument()
 
-  await screen.getByLabelText(/^Code from the app/).fill(' 123456 ')
+  await screen.getByLabelText(/^Code from the app/).fill('123456')
   await screen.getByRole('button', { name: 'Turn on' }).click()
 
   await expect.element(screen.getByText('Save your recovery codes')).toBeInTheDocument()
@@ -169,7 +169,7 @@ test('disables the second factor with the password and a code', async () => {
 
   await screen.getByRole('button', { name: 'Turn off two-factor authentication' }).click()
   await screen.getByLabelText(/^Current password/).fill('pw-123456')
-  await screen.getByLabelText(/^Code from the app or a recovery code/).fill('654321')
+  await screen.getByLabelText(/^Code from the app/).fill('654321')
   await screen
     .getByRole('dialog')
     .getByRole('button', { name: 'Turn off two-factor authentication' })

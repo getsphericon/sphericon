@@ -157,6 +157,28 @@ test('asks for the second step only when the login answers with a challenge', as
   expect(secondStepBodies).toEqual([{ challenge: 'signed-challenge', code: '123456' }])
 })
 
+test('the second step takes a recovery code instead of the app code', async () => {
+  const secondStepBodies: unknown[] = []
+  worker.use(
+    handleSiteAuthLogin({ body: { outcome: 'challenge', challenge: 'signed-challenge' } }),
+    handleSiteAuthSecondFactor(async ({ request }) => {
+      secondStepBodies.push(await request.json())
+      return HttpResponse.json({ outcome: 'session' })
+    }),
+  )
+  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+
+  await screen.getByLabelText(/^Email/).fill('sam@example.com')
+  await screen.getByLabelText(/^Password/).fill('secret')
+  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await screen.getByRole('button', { name: 'Use a recovery code' }).click()
+  await screen.getByLabelText(/^Recovery code/).fill('abcde-fghij')
+  await screen.getByRole('button', { name: 'Verify' }).click()
+
+  await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: '/' }])
+  expect(secondStepBodies).toEqual([{ challenge: 'signed-challenge', code: 'abcde-fghij' }])
+})
+
 test('a session outcome skips the second step', async () => {
   worker.use(handleSiteAuthLogin({ body: { outcome: 'session' } }))
   const { screen, navigate } = await renderWithRouter(<LoginPage />)

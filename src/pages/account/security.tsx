@@ -10,7 +10,6 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  TextInput,
   Title,
 } from '@mantine/core'
 import type { PasswordInputProps } from '@mantine/core'
@@ -21,6 +20,7 @@ import { useTranslation } from 'react-i18next'
 
 import { IdentityProof } from '../../components/IdentityProof.tsx'
 import { LinkedIdentities } from '../../components/LinkedIdentities.tsx'
+import { OneTimeCodeInput } from '../../components/OneTimeCodeInput.tsx'
 import { Passkeys } from '../../components/Passkeys.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
@@ -124,13 +124,7 @@ function Enrollment({
             )}
           </CopyButton>
         </Group>
-        <TextInput
-          label={t(($) => $.security.codeLabel)}
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          required
-          {...form.getInputProps('code')}
-        />
+        <OneTimeCodeInput label={t(($) => $.security.codeLabel)} {...form.getInputProps('code')} />
         <Group justify="flex-end">
           <Button type="submit" loading={confirm.isPending}>
             {t(($) => $.security.confirmButton)}
@@ -300,10 +294,9 @@ function Disable({ passwordless, onClose }: { passwordless: boolean; onClose: ()
           data-autofocus
           {...form.getInputProps('currentPassword')}
         />
-        <TextInput
-          label={t(($) => $.security.disableCodeLabel)}
-          autoComplete="one-time-code"
-          required
+        <OneTimeCodeInput
+          label={t(($) => $.security.codeLabel)}
+          recovery
           {...form.getInputProps('code')}
         />
         <Group justify="flex-end">

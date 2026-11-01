@@ -17,6 +17,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../components/CenteredLayout.tsx'
+import { OneTimeCodeInput } from '../components/OneTimeCodeInput.tsx'
 import {
   staffAuthLoginMutation,
   staffAuthSecondFactorMutation,
@@ -117,11 +118,8 @@ export function ConsoleLoginPage() {
           )}
         >
           <Stack>
-            <TextInput
+            <OneTimeCodeInput
               label={t(($) => $.console.login.codeLabel)}
-              autoComplete="one-time-code"
-              inputMode="numeric"
-              required
               data-autofocus
               {...codeForm.getInputProps('code')}
             />
