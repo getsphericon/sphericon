@@ -59,11 +59,11 @@ require (
 	github.com/prometheus/common v0.73.1
 	github.com/qmuntal/stateless v1.8.0
 	github.com/realclientip/realclientip-go v1.0.0
-	github.com/riverqueue/river v0.50.0
-	github.com/riverqueue/river/riverdriver v0.50.0
-	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.50.0
-	github.com/riverqueue/river/rivershared v0.50.0
-	github.com/riverqueue/river/rivertype v0.50.0
+	github.com/riverqueue/river v0.51.0
+	github.com/riverqueue/river/riverdriver v0.51.0
+	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.51.0
+	github.com/riverqueue/river/rivershared v0.51.0
+	github.com/riverqueue/river/rivertype v0.51.0
 	github.com/riverqueue/rivercontrib/otelriver v0.12.0
 	github.com/rs/cors v1.11.1
 	github.com/samber/do/v2 v2.1.0
@@ -183,7 +183,7 @@ require (
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.23.0 // indirect
 	github.com/riverqueue/apiframe v0.0.0-20251229202423-2b52ce1c482e // indirect
-	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.50.0 // indirect
+	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.51.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rs/zerolog v1.35.1 // indirect
 	github.com/samber/go-type-to-string v1.8.0 // indirect
