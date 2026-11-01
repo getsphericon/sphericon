@@ -12362,6 +12362,14 @@ func (s *Server) handleSiteContactsListRequest(args [1]string, argsEscaped bool,
 					Name: "email",
 					In:   "query",
 				}: params.Email,
+				{
+					Name: "tag",
+					In:   "query",
+				}: params.Tag,
+				{
+					Name: "country",
+					In:   "query",
+				}: params.Country,
 			},
 			Raw: r,
 		}

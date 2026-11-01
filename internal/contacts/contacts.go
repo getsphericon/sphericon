@@ -574,6 +574,10 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Contact
 type Filter struct {
 	// EmailContains keeps the Contacts whose address contains it, ignoring case.
 	EmailContains string
+	// Tag keeps the Contacts that carry the Tag of this exact name.
+	Tag string
+	// Country keeps the Contacts in this ISO 3166-1 alpha-2 country.
+	Country string
 }
 
 // List returns one page of the Workspace's Contacts, ascending by id, narrowed by f.
@@ -582,6 +586,12 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f
 		q := s.Contact().Query().WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) })
 		if f.EmailContains != "" {
 			q = q.Where(contact.EmailContainsFold(f.EmailContains))
+		}
+		if f.Tag != "" {
+			q = q.Where(contact.HasTagsWith(tag.Name(f.Tag)))
+		}
+		if f.Country != "" {
+			q = q.Where(contact.Country(f.Country))
 		}
 		return q
 	}

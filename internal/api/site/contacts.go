@@ -14,7 +14,11 @@ import (
 func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteContactsListParams) (siteapi.SiteContactsListRes, error) {
 	scoped := workspaceScope(ctx)
 
-	page, err := h.contacts.List(ctx, scoped, pagination.ParamsOf(params.Page, params.PageSize), contacts.Filter{EmailContains: params.Email.Or("")})
+	page, err := h.contacts.List(ctx, scoped, pagination.ParamsOf(params.Page, params.PageSize), contacts.Filter{
+		EmailContains: params.Email.Or(""),
+		Tag:           params.Tag.Or(""),
+		Country:       string(params.Country.Or("")),
+	})
 	if err != nil {
 		return nil, err
 	}

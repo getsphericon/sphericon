@@ -837,6 +837,7 @@ export default interface Resources {
     },
     "contacts": {
       "addContact": "Add contact",
+      "countryFilter": "Country",
       "detailsTitle": "Details",
       "emptyState": "Create your first contact.",
       "erase": "Erase",
@@ -845,9 +846,11 @@ export default interface Resources {
       "eraseForbidden": "Only workspace owners and admins can erase a contact",
       "eventsTitle": "Events",
       "export": "Export data",
+      "noMatches": "No contacts match",
       "noRecords": "No contacts yet",
       "searchPlaceholder": "Search by email",
       "showMachineEvents": "Show machine events",
+      "tagFilter": "Tag",
       "tagsTitle": "Tags",
       "updatedAt": "Updated at"
     },
@@ -2105,7 +2108,8 @@ export default interface Resources {
       "createdAtLabel": "Created",
       "emptyState": "Tags appear here once a contact is tagged.",
       "nameLabel": "Name",
-      "noRecords": "No tags yet"
+      "noRecords": "No tags yet",
+      "viewContacts": "View contacts"
     },
     "templates": {
       "addTemplate": "New template",

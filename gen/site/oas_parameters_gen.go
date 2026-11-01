@@ -8866,6 +8866,10 @@ type SiteContactsListParams struct {
 	PageSize OptInt32 `json:",omitempty,omitzero"`
 	// Keeps the contacts whose email address contains this text, ignoring case.
 	Email OptString `json:",omitempty,omitzero"`
+	// Keeps the contacts that carry the Tag of this exact name.
+	Tag OptString `json:",omitempty,omitzero"`
+	// Keeps the contacts in this country.
+	Country OptCountryCode `json:",omitempty,omitzero"`
 }
 
 func unpackSiteContactsListParams(packed middleware.Parameters) (params SiteContactsListParams) {
@@ -8901,6 +8905,24 @@ func unpackSiteContactsListParams(packed middleware.Parameters) (params SiteCont
 		}
 		if v, ok := packed[key]; ok {
 			params.Email = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "tag",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Tag = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "country",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Country = v.(OptCountryCode)
 		}
 	}
 	return params
@@ -9147,6 +9169,110 @@ func decodeSiteContactsListParams(args [1]string, argsEscaped bool, r *http.Requ
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "email",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: tag.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "tag",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotTagVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotTagVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Tag.SetTo(paramsDotTagVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "tag",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: country.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "country",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotCountryVal CountryCode
+				if err := func() error {
+					var paramsDotCountryValVal string
+					if err := func() error {
+						val, err := d.DecodeValue()
+						if err != nil {
+							return err
+						}
+
+						c, err := conv.ToString(val)
+						if err != nil {
+							return err
+						}
+
+						paramsDotCountryValVal = c
+						return nil
+					}(); err != nil {
+						return err
+					}
+					paramsDotCountryVal = CountryCode(paramsDotCountryValVal)
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Country.SetTo(paramsDotCountryVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.Country.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "country",
 			In:   "query",
 			Err:  err,
 		}

@@ -6952,9 +6952,19 @@ export type SiteContactResourceKeyWorkspaceId = WorkspaceId;
 export type SiteContactResourceParentKey = WorkspaceId;
 
 /**
+ * Keeps the contacts in this country
+ */
+export type SiteContactsListFilterCountry = CountryCode;
+
+/**
  * Keeps the contacts whose email address contains this text, ignoring case
  */
-export type SiteContactsListFilter = string;
+export type SiteContactsListFilterEmail = string;
+
+/**
+ * Keeps the contacts that carry the Tag of this exact name
+ */
+export type SiteContactsListFilterTag = string;
 
 /**
  * The Workspace id: its short opaque public address and the route key for nested
@@ -10990,6 +11000,14 @@ export type SiteContactsListData = {
      * Keeps the contacts whose email address contains this text, ignoring case
      */
     email?: string;
+    /**
+     * Keeps the contacts that carry the Tag of this exact name
+     */
+    tag?: string;
+    /**
+     * Keeps the contacts in this country
+     */
+    country?: CountryCode;
   };
   url: '/workspaces/{workspaceId}/contacts';
 };

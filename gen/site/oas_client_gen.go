@@ -11370,6 +11370,43 @@ func (c *Client) sendSiteContactsList(ctx context.Context, params SiteContactsLi
 			return res, errors.Wrap(err, "encode query")
 		}
 	}
+	{
+		// Encode "tag" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "tag",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Tag.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "country" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "country",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Country.Get(); ok {
+				if unwrapped := string(val); true {
+					return e.EncodeValue(conv.StringToString(unwrapped))
+				}
+				return nil
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
 	u.RawQuery = q.Values().Encode()
 
 	stage = "EncodeRequest"

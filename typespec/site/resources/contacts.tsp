@@ -124,6 +124,12 @@ model SiteContactHoldings {
 model SiteContactsListFilter {
   /** Keeps the contacts whose email address contains this text, ignoring case */
   @query email?: string;
+
+  /** Keeps the contacts that carry the Tag of this exact name */
+  @query tag?: string;
+
+  /** Keeps the contacts in this country */
+  @query country?: CountryCode;
 }
 
 @tag("Site Contacts")

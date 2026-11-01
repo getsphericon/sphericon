@@ -3164,6 +3164,52 @@ func (o OptBool) Or(d bool) bool {
 	return d
 }
 
+// NewOptCountryCode returns new OptCountryCode with value set to v.
+func NewOptCountryCode(v CountryCode) OptCountryCode {
+	return OptCountryCode{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptCountryCode is optional CountryCode.
+type OptCountryCode struct {
+	Value CountryCode
+	Set   bool
+}
+
+// IsSet returns true if OptCountryCode was set.
+func (o OptCountryCode) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptCountryCode) Reset() {
+	var v CountryCode
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptCountryCode) SetTo(v CountryCode) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptCountryCode) Get() (v CountryCode, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptCountryCode) Or(d CountryCode) CountryCode {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptCurrencyCode returns new OptCurrencyCode with value set to v.
 func NewOptCurrencyCode(v CurrencyCode) OptCurrencyCode {
 	return OptCurrencyCode{

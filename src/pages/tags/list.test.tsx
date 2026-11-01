@@ -72,3 +72,18 @@ test('deleting a tag asks for confirmation, deletes it and refreshes the list', 
   await expect.poll(() => listFetches).toBe(2)
   await expect.element(screen.getByText('vip')).not.toBeInTheDocument()
 })
+
+test('a tag opens the contacts that carry it', async () => {
+  worker.use(handleSiteTagsList({ body: page([VIP, TRIAL], 2) }))
+
+  const { screen, navigate } = await renderWithRouter(<TagsListPage />, LIST_ROUTE)
+  await screen.getByText('vip').click()
+
+  expect(navigate).toHaveBeenCalledWith(
+    expect.objectContaining({
+      to: '/workspaces/$workspaceId/contacts',
+      params: { workspaceId: 'TestWs01' },
+      search: { tag: 'vip' },
+    }),
+  )
+})

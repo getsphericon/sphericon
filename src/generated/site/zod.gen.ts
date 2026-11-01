@@ -3632,9 +3632,19 @@ export const zSiteContactResourceKeyWorkspaceId = zWorkspaceId;
 export const zSiteContactResourceParentKey = zWorkspaceId;
 
 /**
+ * Keeps the contacts in this country
+ */
+export const zSiteContactsListFilterCountry = zCountryCode;
+
+/**
  * Keeps the contacts whose email address contains this text, ignoring case
  */
-export const zSiteContactsListFilter = z.string();
+export const zSiteContactsListFilterEmail = z.string();
+
+/**
+ * Keeps the contacts that carry the Tag of this exact name
+ */
+export const zSiteContactsListFilterTag = z.string();
 
 /**
  * The Workspace id: its short opaque public address and the route key for nested
@@ -4805,7 +4815,9 @@ export const zSiteContactsListPath = z.object({
 export const zSiteContactsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  email: z.exactOptional(z.string())
+  email: z.exactOptional(z.string()),
+  tag: z.exactOptional(z.string()),
+  country: z.exactOptional(zCountryCode)
 });
 
 /**

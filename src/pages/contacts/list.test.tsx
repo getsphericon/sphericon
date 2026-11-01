@@ -12,6 +12,14 @@ import { ContactsListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(contactsRoute, { workspaceId: 'TestWs01' })
 
+// Every search the page navigated to, each worked out from the search it was on: a filter updates
+// its own key of the search and leaves the others.
+type Navigate = Awaited<ReturnType<typeof renderWithRouter>>['navigate']
+const searches = (navigate: Navigate, from: Record<string, unknown>) =>
+  navigate.mock.calls.map(([options]) =>
+    typeof options?.search === 'function' ? options.search(from) : options?.search,
+  )
+
 const ALICE = {
   id: '1',
   email: 'alice@example.com',
@@ -136,9 +144,10 @@ test('typing in the search field puts the email in the URL search', async () => 
   await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
   await screen.getByRole('textbox', { name: 'Search by email' }).fill('bob')
 
+  await expect.poll(() => navigate).toHaveBeenCalledWith(expect.objectContaining({ replace: true }))
   await expect
-    .poll(() => navigate)
-    .toHaveBeenCalledWith(expect.objectContaining({ search: { email: 'bob' }, replace: true }))
+    .poll(() => searches(navigate, { tag: 'vip', page: 3 }))
+    .toContainEqual({ email: 'bob', tag: 'vip', page: undefined })
 })
 
 test('a search typed while the list is still loading reaches the URL search', async () => {
@@ -153,9 +162,7 @@ test('a search typed while the list is still loading reaches the URL search', as
   const { screen, navigate } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
   await screen.getByRole('textbox', { name: 'Search by email' }).fill('bob')
 
-  await expect
-    .poll(() => navigate)
-    .toHaveBeenCalledWith(expect.objectContaining({ search: { email: 'bob' }, replace: true }))
+  await expect.poll(() => searches(navigate, {})).toContainEqual({ email: 'bob', page: undefined })
   answer(undefined)
   await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
 })
@@ -171,8 +178,8 @@ test('clearing the search field takes the email out of the URL search', async ()
   await screen.getByRole('textbox', { name: 'Search by email' }).fill('   ')
 
   await expect
-    .poll(() => navigate)
-    .toHaveBeenCalledWith(expect.objectContaining({ search: { email: undefined }, replace: true }))
+    .poll(() => searches(navigate, { email: 'bob' }))
+    .toContainEqual({ email: undefined, page: undefined })
 })
 
 test('the search field follows the URL search when back or forward changes it', async () => {
@@ -229,4 +236,61 @@ test('the email in the URL search filters the request and fills the field', asyn
   await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
   await expect.element(screen.getByRole('textbox', { name: 'Search by email' })).toHaveValue('bob')
   expect(requested).toEqual(['bob'])
+})
+
+test('the tag and the country in the URL search filter the request and fill the filters', async () => {
+  const requested: { tag: string | null; country: string | null }[] = []
+  worker.use(
+    handleSiteContactsList(({ request }) => {
+      const params = new URL(request.url).searchParams
+      requested.push({ tag: params.get('tag'), country: params.get('country') })
+      return HttpResponse.json(page([ALICE], 1))
+    }),
+    // The Tag of the link is past the Tags the filter fetched: it still shows.
+    handleSiteTagsList({
+      body: page([{ id: '1', name: 'beta', createdAt: TIMESTAMPS.createdAt }], 1),
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<ContactsListPage />, {
+    ...LIST_ROUTE,
+    initialPath: `${LIST_ROUTE.initialPath}?tag=vip&country=GB`,
+  })
+
+  await expect.element(screen.getByText('alice@example.com')).toBeInTheDocument()
+  expect(requested).toEqual([{ tag: 'vip', country: 'GB' }])
+  await expect.element(screen.getByRole('combobox', { name: 'Tag' })).toHaveValue('vip')
+  await expect
+    .element(screen.getByRole('combobox', { name: 'Country' }))
+    .toHaveValue('United Kingdom')
+})
+
+test('picking a tag puts it in the URL search and keeps the email search', async () => {
+  worker.use(
+    handleSiteContactsList({ body: page([ALICE], 1) }),
+    handleSiteTagsList({
+      body: page([{ id: '1', name: 'vip', createdAt: TIMESTAMPS.createdAt }], 1),
+    }),
+  )
+
+  const { screen, navigate } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+  await expect.element(screen.getByText('alice@example.com')).toBeInTheDocument()
+  await screen.getByRole('combobox', { name: 'Tag' }).click()
+  await screen.getByRole('option', { name: 'vip' }).click()
+
+  await expect
+    .poll(() => searches(navigate, { email: 'ali', page: 2 }))
+    .toContainEqual({ email: 'ali', tag: 'vip', page: undefined })
+})
+
+test('a filter that matches nothing does not invite to create the first contact', async () => {
+  worker.use(handleSiteContactsList({ body: page([], 0) }))
+
+  const { screen } = await renderWithRouter(<ContactsListPage />, {
+    ...LIST_ROUTE,
+    initialPath: `${LIST_ROUTE.initialPath}?tag=vip`,
+  })
+
+  await expect.element(screen.getByText('No contacts match')).toBeInTheDocument()
+  await expect.element(screen.getByText('Create your first contact.')).not.toBeInTheDocument()
 })

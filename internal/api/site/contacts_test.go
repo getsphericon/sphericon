@@ -104,6 +104,52 @@ func TestSiteContactsListFiltersByEmail(t *testing.T) {
 	assert.Empty(t, emails("pat@globex.test"), "another Workspace's contact is never returned")
 }
 
+func TestSiteContactsListFiltersByTagAndCountry(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+
+	create := func(email, country string, tags ...string) {
+		in := &siteapi.SiteCreateContactInput{
+			Email: siteapi.NewOptNilEmailAddress(siteapi.EmailAddress(email)),
+			Tags:  tags,
+		}
+		if country != "" {
+			in.Country = siteapi.NewOptNilCountryCode(siteapi.CountryCode(country))
+		}
+		_, err := c.SiteContactsCreate(ctx, in, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+		require.NoError(t, err)
+	}
+	create("vip-gb@filter.test", "GB", "filter-vip")
+	create("vip-de@filter.test", "DE", "filter-vip", "filter-beta")
+	create("plain-gb@filter.test", "GB")
+
+	emails := func(params siteapi.SiteContactsListParams) []string {
+		params.WorkspaceId = fixtures.AcmePublicID
+		params.Email = siteapi.NewOptString("@filter.test")
+		res, err := c.SiteContactsList(ctx, params)
+		require.NoError(t, err)
+		listed, ok := res.(*siteapi.SiteContactsListOK)
+		require.Truef(t, ok, "got %T", res)
+		out := make([]string, 0, len(listed.Items))
+		for _, item := range listed.Items {
+			out = append(out, string(item.Email.Or("")))
+		}
+		return out
+	}
+
+	assert.ElementsMatch(t, []string{"vip-gb@filter.test", "vip-de@filter.test"},
+		emails(siteapi.SiteContactsListParams{Tag: siteapi.NewOptString("filter-vip")}))
+	assert.Empty(t, emails(siteapi.SiteContactsListParams{Tag: siteapi.NewOptString("filter")}),
+		"a tag matches by its whole name")
+	assert.ElementsMatch(t, []string{"vip-gb@filter.test", "plain-gb@filter.test"},
+		emails(siteapi.SiteContactsListParams{Country: siteapi.NewOptCountryCode("GB")}))
+	assert.Equal(t, []string{"vip-gb@filter.test"}, emails(siteapi.SiteContactsListParams{
+		Tag:     siteapi.NewOptString("filter-vip"),
+		Country: siteapi.NewOptCountryCode("GB"),
+	}), "the filters narrow together")
+}
+
 // Tags ride on the contact: create gives them, an update with `tags` replaces the set, an
 // absent key keeps it, and every read shows them ordered by name.
 func TestSiteContactsCarryTheirTags(t *testing.T) {
