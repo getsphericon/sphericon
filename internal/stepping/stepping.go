@@ -75,8 +75,8 @@ func OnEvent(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int6
 	if ev.OccurredAt.IsZero() {
 		ev.OccurredAt = time.Now()
 	}
-	err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		return automations.EndOnEvent(ctx, ts, contactID, ev.Action, ev.OccurredAt)
+	err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		return automations.EndOnEvent(ctx, ts, pub, contactID, ev.Action, ev.OccurredAt)
 	})
 	if err != nil {
 		return err
@@ -108,8 +108,8 @@ func OnEvent(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int6
 // another writer won the race. An Enrollment an exit or goal Event recorded since that Event
 // ended at once is made, with no step queued (automations.EnrollOnRule).
 func EnrollOnRule(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64, sourceID string) (made bool, err error) {
-	return start(ctx, bus, s, func(ts *ent.Scoped) (int64, bool, error) {
-		return automations.EnrollOnRule(ctx, ts, automationID, contactID, sourceID)
+	return start(ctx, bus, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
+		return automations.EnrollOnRule(ctx, ts, pub, automationID, contactID, sourceID)
 	})
 }
 
@@ -117,16 +117,16 @@ func EnrollOnRule(ctx context.Context, bus *events.Bus, s *ent.Scoped, automatio
 // nobody unless, when the Enrollment is made, the Automation is still active and started by that
 // Event's action in its live version (automations.EnrollOnTrigger).
 func EnrollOnTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64, o automations.Origin) (made bool, err error) {
-	return start(ctx, bus, s, func(ts *ent.Scoped) (int64, bool, error) {
-		return automations.EnrollOnTrigger(ctx, ts, automationID, contactID, o)
+	return start(ctx, bus, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
+		return automations.EnrollOnTrigger(ctx, ts, pub, automationID, contactID, o)
 	})
 }
 
 // start makes the Enrollment enroll makes and, when a step is to run, queues the job of its first
 // step, in one transaction: the transaction the Contact's lock is held in until both commit.
-func start(ctx context.Context, bus *events.Bus, s *ent.Scoped, enroll func(ts *ent.Scoped) (int64, bool, error)) (made bool, err error) {
-	err = bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
-		runID, active, err := enroll(ts)
+func start(ctx context.Context, bus *events.Bus, s *ent.Scoped, enroll func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error)) (made bool, err error) {
+	err = bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
+		runID, active, err := enroll(ts, pub)
 		if err != nil || runID == 0 {
 			return err
 		}
@@ -221,13 +221,13 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 		// move is made first, so a step that lost a race tags nothing, and the change commits
 		// with it. The change is the `system` actor's (ADR 0022): a Tag the step creates is
 		// audited.
-		return m.advance(ctx, s, run.ID, step, move{with: func(ts *ent.Scoped) error {
+		return m.advance(ctx, s, run.ID, step, move{with: func(ts *ent.Scoped, pub events.Publisher) error {
 			sys := m.out.AsSystem(ts)
 			if st.Type == automations.StepApplyTag {
-				_, err := tags.New().Apply(ctx, sys, run.ContactID, st.Tag)
+				_, err := tags.ApplyIn(ctx, sys, pub, run.ContactID, st.Tag)
 				return err
 			}
-			return tags.New().Remove(ctx, sys, run.ContactID, st.Tag)
+			return tags.RemoveIn(ctx, sys, pub, run.ContactID, st.Tag)
 		}})
 
 	case automations.StepHTTP:
@@ -294,7 +294,9 @@ func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 		// An ineligible destination (suppressed, or unsubscribed from this Automation or from
 		// everything) exits the Enrollment: a run never silently keeps walking steps while
 		// skipping every email.
-		return quiet(automations.ExitRun(ctx, s, run.ID, m.now()))
+		return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+			return automations.ExitRun(ctx, ts, pub, run.ID, m.now())
+		}))
 	default: // outbound.Failed
 		return m.fail(ctx, s, run.ID, fmt.Errorf("email step %d: %s", step, res.Reason))
 	}
@@ -304,19 +306,19 @@ func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 // schedules the next job for then; with makes writes of its own in the same transaction.
 type move struct {
 	resumeAt *time.Time
-	with     func(*ent.Scoped) error
+	with     func(*ent.Scoped, events.Publisher) error
 }
 
 // advance moves the Enrollment from step to the next one and queues that step's job, in one
 // transaction with mv's own writes. A move that finds the Enrollment gone or elsewhere writes
 // nothing and returns nil.
 func (m *Module) advance(ctx context.Context, s *ent.Scoped, runID int64, from int, mv move) error {
-	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
+	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
 		if err := automations.Advance(ctx, ts, runID, from, from+1, mv.resumeAt); err != nil {
 			return err
 		}
 		if mv.with != nil {
-			if err := mv.with(ts); err != nil {
+			if err := mv.with(ts, pub); err != nil {
 				return err
 			}
 		}
@@ -331,7 +333,7 @@ func (m *Module) requeue(ctx context.Context, s *ent.Scoped, runID int64, step i
 }
 
 func (m *Module) enqueue(ctx context.Context, s *ent.Scoped, args river.JobArgs, at *time.Time) error {
-	return m.bus.WithinScopedEnqueueTx(ctx, s, func(_ *ent.Scoped, q events.Enqueuer) error {
+	return m.bus.WithinScopedEnqueueTx(ctx, s, func(_ *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
 		return q.Enqueue(ctx, args, scheduled(at))
 	})
 }
@@ -345,7 +347,9 @@ func scheduled(at *time.Time) *river.InsertOpts {
 
 // complete ends the Enrollment `completed`; one that is no longer active stays as it is.
 func (m *Module) complete(ctx context.Context, s *ent.Scoped, runID int64) error {
-	return quiet(automations.Complete(ctx, s, runID, m.now()))
+	return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		return automations.Complete(ctx, ts, pub, runID, m.now())
+	}))
 }
 
 // fail ends the Enrollment `failed` and returns cause for the job, or nothing when the run

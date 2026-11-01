@@ -38,18 +38,18 @@ func TestEnrollIsOnceEverPerContactAndAutomation(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
 
-	runID, enrolled, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
+	runID, enrolled, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
 	run, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 
-	_, again, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
+	_, again, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
 	assert.False(t, again, "a replayed trigger enrolls nothing")
 
-	_, other, err := automations.Enroll(ctx, s, fixtures.AutomationHoldDemoID, c.ID)
+	_, other, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationHoldDemoID, c.ID)
 	require.NoError(t, err)
 	assert.True(t, other, "another Automation is a separate Enrollment")
 }
@@ -60,10 +60,10 @@ func TestExitEndsOnlyAnActiveEnrollmentAndEnrollmentStaysOnceEver(t *testing.T) 
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
 
-	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
+	runID, _, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
 
-	exited, err := automations.Exit(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID, time.Now())
+	exited, err := automations.Exit(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, c.ID, time.Now())
 	require.NoError(t, err)
 	assert.True(t, exited)
 	run, err := s.AutomationRun().Get(ctx, runID)
@@ -71,11 +71,11 @@ func TestExitEndsOnlyAnActiveEnrollmentAndEnrollmentStaysOnceEver(t *testing.T) 
 	assert.Equal(t, automationrun.StatusExited, run.Status)
 	assert.Nil(t, run.ResumeAt)
 
-	again, err := automations.Exit(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID, time.Now())
+	again, err := automations.Exit(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, c.ID, time.Now())
 	require.NoError(t, err)
 	assert.False(t, again, "nothing active is left to exit")
 
-	_, reenrolled, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
+	_, reenrolled, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
 	assert.False(t, reenrolled, "an exited Contact is not enrolled again")
 }
@@ -85,10 +85,10 @@ func TestExitRunEndsOneEnrollment(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
-	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
+	runID, _, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
 
-	require.NoError(t, automations.ExitRun(ctx, s, runID, time.Now()))
+	require.NoError(t, automations.ExitRun(ctx, s, env.Publisher(), runID, time.Now()))
 	run, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusExited, run.Status)
@@ -99,13 +99,13 @@ func TestAnExitedEnrollmentIsNeitherCompletedNorFailed(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
-	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
+	runID, _, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
-	require.NoError(t, automations.ExitRun(ctx, s, runID, time.Now()))
+	require.NoError(t, automations.ExitRun(ctx, s, env.Publisher(), runID, time.Now()))
 
-	require.ErrorIs(t, automations.Complete(ctx, s, runID, time.Now()), lifecycle.ErrInvalidTransition)
+	require.ErrorIs(t, automations.Complete(ctx, s, env.Publisher(), runID, time.Now()), lifecycle.ErrInvalidTransition)
 	require.ErrorIs(t, automations.Fail(ctx, s, runID, time.Now(), automations.Failure{}), lifecycle.ErrInvalidTransition)
-	require.ErrorIs(t, automations.ExitRun(ctx, s, runID, time.Now()), lifecycle.ErrInvalidTransition)
+	require.ErrorIs(t, automations.ExitRun(ctx, s, env.Publisher(), runID, time.Now()), lifecycle.ErrInvalidTransition)
 	run, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusExited, run.Status)
@@ -115,15 +115,15 @@ func TestFailKeepsTheReasonAndCompleteEndsTheRun(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	failing, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 0).ID)
+	failing, _, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 0).ID)
 	require.NoError(t, err)
-	done, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 1).ID)
+	done, _, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 1).ID)
 	require.NoError(t, err)
 
 	require.NoError(t, automations.Fail(ctx, s, failing, time.Now(), automations.Failure{
 		Kind: automationrun.FailureKindHTTPStatus, Status: 500, Excerpt: "boom",
 	}))
-	require.NoError(t, automations.Complete(ctx, s, done, time.Now()))
+	require.NoError(t, automations.Complete(ctx, s, env.Publisher(), done, time.Now()))
 
 	run, err := s.AutomationRun().Get(ctx, failing)
 	require.NoError(t, err)
@@ -143,9 +143,9 @@ func TestEnrollRefusesAContactOrAutomationOfAnotherWorkspace(t *testing.T) {
 	globex := env.DB.Scoped(fixtures.GlobexID)
 	c := enrollable(t, acme, 0)
 
-	_, _, err := automations.Enroll(ctx, globex, fixtures.AutomationGlobexID, c.ID)
+	_, _, err := automations.Enroll(ctx, globex, env.Publisher(), fixtures.AutomationGlobexID, c.ID)
 	require.ErrorIs(t, err, ent.ErrNotInWorkspace, "Globex cannot enroll an Acme Contact")
-	_, _, err = automations.Enroll(ctx, acme, fixtures.AutomationGlobexID, c.ID)
+	_, _, err = automations.Enroll(ctx, acme, env.Publisher(), fixtures.AutomationGlobexID, c.ID)
 	assert.ErrorIs(t, err, ent.ErrNotInWorkspace, "Acme cannot enroll into a Globex Automation")
 }
 
@@ -153,11 +153,11 @@ func TestAdvanceMovesOnlyAnActiveEnrollmentStandingOnTheExpectedStep(t *testing.
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	live, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 0).ID)
+	live, _, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 0).ID)
 	require.NoError(t, err)
-	gone, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 1).ID)
+	gone, _, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 1).ID)
 	require.NoError(t, err)
-	require.NoError(t, automations.ExitRun(ctx, s, gone, time.Now()))
+	require.NoError(t, automations.ExitRun(ctx, s, env.Publisher(), gone, time.Now()))
 	resume := time.Now().Add(time.Hour)
 
 	require.ErrorIs(t, automations.Advance(ctx, s, live, 5, 6, &resume), lifecycle.ErrInvalidTransition, "an Enrollment elsewhere than the expected step stays put")
@@ -179,14 +179,14 @@ func TestIsActiveReadsTheLifecycle(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 0).ID)
+	runID, _, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 0).ID)
 	require.NoError(t, err)
 
 	ok, err := automations.IsActive(ctx, s, runID)
 	require.NoError(t, err)
 	assert.True(t, ok)
 
-	require.NoError(t, automations.ExitRun(ctx, s, runID, time.Now()))
+	require.NoError(t, automations.ExitRun(ctx, s, env.Publisher(), runID, time.Now()))
 	ok, err = automations.IsActive(ctx, s, runID)
 	require.NoError(t, err)
 	assert.False(t, ok)
@@ -205,19 +205,19 @@ func TestEnrollOnTriggerEnrollsOnlyWhileActiveOnThatTrigger(t *testing.T) {
 	_, err = m.Publish(ctx, s, fixtures.AutomationHoldDemoID)
 	require.NoError(t, err)
 
-	_, enrolled, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, automations.Origin{Action: "hold_demo", OccurredAt: time.Now()})
+	_, enrolled, err := automations.EnrollOnTrigger(ctx, s, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, automations.Origin{Action: "hold_demo", OccurredAt: time.Now()})
 	require.NoError(t, err)
 	assert.False(t, enrolled, "the Trigger it was picked by is no longer live")
 
 	_, err = m.Deactivate(ctx, s, fixtures.AutomationHoldDemoID)
 	require.NoError(t, err)
-	_, enrolled, err = automations.EnrollOnTrigger(ctx, s, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, automations.Origin{Action: "hold_demo_moved", OccurredAt: time.Now()})
+	_, enrolled, err = automations.EnrollOnTrigger(ctx, s, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, automations.Origin{Action: "hold_demo_moved", OccurredAt: time.Now()})
 	require.NoError(t, err)
 	assert.False(t, enrolled, "an inactive Automation enrolls nobody")
 
 	_, err = m.Publish(ctx, s, fixtures.AutomationHoldDemoID)
 	require.NoError(t, err)
-	_, enrolled, err = automations.EnrollOnTrigger(ctx, s, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, automations.Origin{Action: "hold_demo_moved", OccurredAt: time.Now()})
+	_, enrolled, err = automations.EnrollOnTrigger(ctx, s, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, automations.Origin{Action: "hold_demo_moved", OccurredAt: time.Now()})
 	require.NoError(t, err)
 	assert.True(t, enrolled, "active on that Trigger, it enrolls the Contact the refusals left alone")
 }

@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/samber/lo"
@@ -167,10 +168,13 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		if err := publishCreated(ctx, pub, ts.WorkspaceID(), c); err != nil {
 			return err
 		}
+		if err := publishFieldChanges(ctx, pub, ts.WorkspaceID(), c, nil); err != nil {
+			return err
+		}
 		if len(in.Tags) == 0 {
 			return nil
 		}
-		return tags.New().Set(ctx, ts, c.ID, in.Tags)
+		return tags.SetIn(ctx, ts, pub, c.ID, in.Tags)
 	})
 	if err != nil {
 		return nil, domainError(err)
@@ -179,10 +183,16 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 }
 
 // Update applies a patch to a Contact, its Tags included, in one transaction and returns it with
-// its Tags. ErrNotFound when the Contact is not in the Workspace.
+// its Tags; each Custom field and Tag it changes is recorded as its System event. ErrNotFound when
+// the Contact is not in the Workspace.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Contact, error) {
 	in = in.normalized()
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		// Read under the update's lock, so the Custom fields compared are the ones it replaces.
+		before, err := lockedContact(ctx, ts, id)
+		if err != nil {
+			return err
+		}
 		q := ts.Contact().UpdateOneID(id)
 		patch.Apply(in.SubjectID, q.SetSubjectID, q.ClearSubjectID)
 		patch.Apply(in.Email, q.SetEmail, q.ClearEmail)
@@ -198,14 +208,18 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if in.CustomFields.IsClear() {
 			q.ClearCustomFields()
 		}
-		if err := q.Exec(ctx); err != nil {
+		after, err := q.Save(ctx)
+		if err != nil {
+			return err
+		}
+		if err := publishFieldChanges(ctx, pub, ts.WorkspaceID(), after, before.CustomFields); err != nil {
 			return err
 		}
 		names, ok := in.Tags.Get()
 		if !ok {
 			return nil
 		}
-		return tags.New().Set(ctx, ts, id, names)
+		return tags.SetIn(ctx, ts, pub, id, names)
 	})
 	if err != nil {
 		return nil, domainError(err)
@@ -219,10 +233,23 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // Custom fields merge, and its Contact source stays what it was: src only names the door
 // of a Contact this call creates. ErrIdentityRequired when no alias key is given.
 func (m *Module) Upsert(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput) (Result, error) {
+	return m.upsert(ctx, s, src, in, recordChanges)
+}
+
+// changes says whether an upsert records the changes of the Custom fields it writes: every
+// upsert does but an import's.
+type changes bool
+
+const (
+	recordChanges changes = true
+	importChanges changes = false
+)
+
+func (m *Module) upsert(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput, ch changes) (Result, error) {
 	var res Result
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		var err error
-		res, err = UpsertIn(ctx, ts, pub, src, in)
+		res, err = upsertIn(ctx, ts, pub, src, in, ch)
 		return err
 	})
 	if err != nil {
@@ -244,7 +271,8 @@ type BatchOutcome struct {
 //
 // A batch is an import (ADR 0022): its rows are written through an unaudited scope and
 // the whole batch is recorded as ONE contact.import entry (counts only), not one entry
-// per row. The rows commit one by one (a failing row must not poison the others), so
+// per row. It brings earlier state rather than something happening now, so it records no
+// contact.field_changed (#897). The rows commit one by one (a failing row must not poison the others), so
 // the entry cannot share their transaction: if recording it fails the failure is
 // logged and the committed outcomes are still returned, never a 500 for an import
 // that happened.
@@ -253,7 +281,7 @@ func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Sou
 	out := make([]BatchOutcome, len(items))
 	var sum ImportSummary
 	for i := range items {
-		out[i].Result, out[i].Err = m.Upsert(ctx, rows, src, items[i])
+		out[i].Result, out[i].Err = m.upsert(ctx, rows, src, items[i], importChanges)
 		switch {
 		case out[i].Err != nil:
 			sum.Failed++
@@ -303,8 +331,13 @@ func fillMissing(have, given *string, set func(*string) *ent.ContactScopedUpdate
 
 // UpsertIn is Upsert inside a transaction the caller already owns (tx and pub come
 // from events.Bus.WithinScopedTx), for flows that bind more rows to the Contact atomically
-// — the tracker's Identify. It publishes contact.created when it creates.
+// — the tracker's Identify. It publishes contact.created when it creates, and
+// contact.field_changed for each Custom field whose value it changes.
 func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src contact.Source, in UpsertInput) (Result, error) {
+	return upsertIn(ctx, s, pub, src, in, recordChanges)
+}
+
+func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src contact.Source, in UpsertInput, ch changes) (Result, error) {
 	in = in.normalized()
 	if lo.FromPtr(in.SubjectID) == "" && in.Email == nil && in.Phone == nil {
 		return Result{}, ErrIdentityRequired
@@ -319,15 +352,7 @@ func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 		return Result{}, err
 	}
 	if existing != nil {
-		q := s.Contact().UpdateOneID(existing.ID)
-		fillMissing(existing.SubjectID, in.SubjectID, q.SetNillableSubjectID)
-		fillMissing(existing.Email, in.Email, q.SetNillableEmail)
-		fillMissing(existing.Phone, in.Phone, q.SetNillablePhone)
-		applyCore(q, in.withGuesses(existing.TimeZone, existing.Locale))
-		if len(typed) > 0 {
-			q.SetCustomFields(lo.Assign(existing.CustomFields, typed))
-		}
-		c, err := q.Save(ctx)
+		c, err := enrich(ctx, s, pub, existing.ID, in, typed, ch)
 		return Result{Contact: c}, err
 	}
 
@@ -346,6 +371,11 @@ func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 	}
 	if err := publishCreated(ctx, pub, s.WorkspaceID(), c); err != nil {
 		return Result{}, err
+	}
+	if ch == recordChanges {
+		if err := publishFieldChanges(ctx, pub, s.WorkspaceID(), c, nil); err != nil {
+			return Result{}, err
+		}
 	}
 	return Result{Contact: c, Created: true}, nil
 }
@@ -386,6 +416,38 @@ func createCore(q *ent.ContactScopedCreate, c Core) {
 	patch.ApplySet(c.City, q.SetCity)
 	patch.ApplySet(c.Avatar, q.SetAvatar)
 	patch.ApplySet(c.Birthday, q.SetBirthday)
+}
+
+// enrich fills the Contact's missing alias keys, writes the core attributes in gives and merges
+// the typed Custom fields into its own, recording each field it changes unless ch is an import's.
+// The Contact is read again under the lock the update takes anyway, so two Identifies of one
+// Contact merge, and record, one after the other.
+func enrich(ctx context.Context, s *ent.Scoped, pub events.Publisher, id int64, in UpsertInput, typed map[string]any, ch changes) (*ent.Contact, error) {
+	existing, err := lockedContact(ctx, s, id)
+	if err != nil {
+		return nil, err
+	}
+	q := s.Contact().UpdateOneID(existing.ID)
+	fillMissing(existing.SubjectID, in.SubjectID, q.SetNillableSubjectID)
+	fillMissing(existing.Email, in.Email, q.SetNillableEmail)
+	fillMissing(existing.Phone, in.Phone, q.SetNillablePhone)
+	applyCore(q, in.withGuesses(existing.TimeZone, existing.Locale))
+	if len(typed) > 0 {
+		q.SetCustomFields(lo.Assign(existing.CustomFields, typed))
+	}
+	c, err := q.Save(ctx)
+	if err != nil || ch != recordChanges {
+		return c, err
+	}
+	return c, publishFieldChanges(ctx, pub, s.WorkspaceID(), c, existing.CustomFields)
+}
+
+// lockedContact reads the Contact under FOR NO KEY UPDATE, the lock its update takes anyway, to
+// the end of the transaction s is bound to: it leaves an Event stored for the Contact free.
+func lockedContact(ctx context.Context, s *ent.Scoped, id int64) (*ent.Contact, error) {
+	q := s.Contact().Query().Where(contact.ID(id))
+	q.Modify(func(sel *entsql.Selector) { sel.For(entsql.LockNoKeyUpdate) })
+	return q.Only(ctx)
 }
 
 // Resolve finds an existing Contact by any present alias key (subject_id → email →

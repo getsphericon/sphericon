@@ -15,7 +15,7 @@ import (
 // outside them never is.
 func TestReservedActionIgnoresCaseAndPadding(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
-		prefix := rapid.SampledFrom([]string{"email.", "marketing.", "contact."}).Draw(t, "prefix")
+		prefix := rapid.SampledFrom([]string{"email.", "marketing.", "contact.", "automation."}).Draw(t, "prefix")
 		rest := rapid.StringMatching(`[a-z_]{1,12}`).Draw(t, "rest")
 		pad := rapid.StringMatching(`[ \t]{0,3}`).Draw(t, "pad")
 		cased := rapid.SampledFrom([]func(string) string{strings.ToLower, strings.ToUpper}).Draw(t, "case")
@@ -26,7 +26,7 @@ func TestReservedActionIgnoresCaseAndPadding(t *testing.T) {
 
 func TestCustomerActionsAreNotReserved(t *testing.T) {
 	outsideSystemNamespaces := func(action string) bool {
-		return lo.NoneBy([]string{"email.", "marketing.", "contact."}, func(prefix string) bool {
+		return lo.NoneBy([]string{"email.", "marketing.", "contact.", "automation."}, func(prefix string) bool {
 			return strings.HasPrefix(action, prefix)
 		})
 	}

@@ -27,9 +27,16 @@ export const TRIGGER_NODE_ICON: WBIcon = 'Lightning'
 
 export const TRIGGER_EVENTS = [
   'contact.created',
+  'contact.tagged',
+  'contact.untagged',
+  'contact.field_changed',
   'email.opened',
   'email.clicked',
   'email.unsubscribed',
+  'automation.enrolled',
+  'automation.completed',
+  'automation.goal_reached',
+  'automation.exited',
 ] as const
 export const DEFAULT_TRIGGER_EVENT = TRIGGER_EVENTS[0]
 

@@ -151,7 +151,7 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	bs := newBlockingSender()
 	t.Cleanup(bs.release) // a failed assertion must not leave the send blocked
 	stepper := e.stepper(t, bs)
-	runID, enrolled, err := automations.Enroll(ctx, e.scoped, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID)
+	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
 
@@ -163,8 +163,9 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	require.True(t, e.runRowIsLocked(t, runID), "an in-flight send holds the Enrollment")
 
 	exited := make(chan exitResult, 1)
+	pub := testhelper.PublisherOn(e.bus(t))
 	go func() {
-		ended, err := automations.Exit(ctx, e.scoped, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID, time.Now())
+		ended, err := automations.Exit(ctx, e.scoped, pub, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID, time.Now())
 		exited <- exitResult{err: err, afterTheSend: settled(bs.done), ended: ended}
 	}()
 	bs.release()
@@ -216,7 +217,7 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	// The edit is a draft until it is published (ADR 0065); the Enrollment begins on the live one.
 	_, err = mod.Publish(ctx, e.scoped, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
-	runID, enrolled, err := automations.Enroll(ctx, e.scoped, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
+	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
 	w := jobs.NewRunHTTPStepWorker(e.client, e.fence, cipher, stepping.New(bus, nil, e.fence), webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now)
@@ -232,7 +233,10 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	require.True(t, e.runRowIsLocked(t, runID), "an in-flight call holds the Enrollment")
 
 	exited := make(chan error, 1)
-	go func() { exited <- automations.ExitRun(ctx, e.scoped, runID, time.Now()) }()
+	pub := testhelper.PublisherOn(e.bus(t))
+	go func() {
+		exited <- automations.ExitRun(ctx, e.scoped, pub, runID, time.Now())
+	}()
 	release()
 
 	require.NoError(t, <-workDone)

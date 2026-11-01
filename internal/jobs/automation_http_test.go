@@ -120,7 +120,7 @@ func newHTTPStepHarness(t *testing.T, body string, signed bool) *httpStepHarness
 // the Enrollment on a job of its own.
 func (h *httpStepHarness) enroll(t *testing.T, contactID int64) (runID int64) {
 	t.Helper()
-	runID, enrolled, err := automations.Enroll(context.Background(), h.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, contactID)
+	runID, enrolled, err := automations.Enroll(context.Background(), h.DB.Scoped(fixtures.AcmeID), h.Publisher(), fixtures.AutomationNotifySlackID, contactID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
 	h.reachHTTPStep(t, runID)
@@ -135,7 +135,7 @@ func (h *httpStepHarness) enrollOn(t *testing.T, contactID int64, ev automations
 	acme := h.DB.Scoped(fixtures.AcmeID)
 	origin, err := automations.OriginOf(ctx, acme, ev)
 	require.NoError(t, err)
-	runID, enrolled, err := automations.EnrollOnTrigger(ctx, acme, fixtures.AutomationNotifySlackID, contactID, origin)
+	runID, enrolled, err := automations.EnrollOnTrigger(ctx, acme, h.Publisher(), fixtures.AutomationNotifySlackID, contactID, origin)
 	require.NoError(t, err)
 	require.True(t, enrolled)
 	h.reachHTTPStep(t, runID)
@@ -336,7 +336,7 @@ func TestHTTPStepOfAnErasedContactSendsNothing(t *testing.T) {
 
 func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
 	h := newHTTPStepHarness(t, `{"ok":true}`, true)
-	runID, _, err := automations.Enroll(context.Background(), h.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
+	runID, _, err := automations.Enroll(context.Background(), h.DB.Scoped(fixtures.AcmeID), h.Publisher(), fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 
 	// The RunStep job parks the Enrollment on the HTTP job, queued apart from the Webhook
@@ -358,7 +358,7 @@ func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
 func TestHTTPStepOnAnExitedRunCallsNothingAndQueuesNothing(t *testing.T) {
 	h := newHTTPStepHarness(t, `{"ok":true}`, true)
 	runID := h.enroll(t, fixtures.ContactAliceID)
-	require.NoError(t, automations.ExitRun(context.Background(), h.DB.Scoped(fixtures.AcmeID), runID, time.Now()))
+	require.NoError(t, automations.ExitRun(context.Background(), h.DB.Scoped(fixtures.AcmeID), h.Publisher(), runID, time.Now()))
 
 	require.NoError(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
 

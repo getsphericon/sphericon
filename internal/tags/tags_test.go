@@ -6,6 +6,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -23,7 +24,7 @@ func names(ts []*ent.Tag) []string {
 func TestListReturnsTheWorkspaceCatalogue(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
-	m := tags.New()
+	m := tags.New(env.Bus)
 
 	got, err := m.List(context.Background(), acme)
 	require.NoError(t, err)
@@ -37,7 +38,7 @@ func TestListReturnsTheWorkspaceCatalogue(t *testing.T) {
 func TestForContactListsOnlyItsTags(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
-	m := tags.New()
+	m := tags.New(env.Bus)
 	ctx := context.Background()
 
 	got, err := m.ForContact(ctx, acme, fixtures.ContactAliceID)
@@ -57,7 +58,7 @@ func TestForContactListsOnlyItsTags(t *testing.T) {
 func TestApplyAutoCreatesOnFirstUseAndIsIdempotent(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	m := tags.New()
+	m := tags.New(env.Bus)
 	ctx := context.Background()
 
 	before, err := env.DB.Tag.Query().Count(ctx)
@@ -88,7 +89,7 @@ func TestApplyAutoCreatesOnFirstUseAndIsIdempotent(t *testing.T) {
 func TestApplyRejectsBlankNameAndUnknownContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
-	m := tags.New()
+	m := tags.New(env.Bus)
 	ctx := context.Background()
 
 	_, err := m.Apply(ctx, acme, fixtures.ContactAliceID, "   ")
@@ -107,7 +108,7 @@ func TestApplyRejectsBlankNameAndUnknownContact(t *testing.T) {
 func TestRemoveDetachesAndKeepsTheTag(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
-	m := tags.New()
+	m := tags.New(env.Bus)
 	ctx := context.Background()
 
 	require.NoError(t, m.Remove(ctx, acme, fixtures.ContactAliceID, fixtures.TagVipName))
@@ -134,27 +135,32 @@ func TestRemoveDetachesAndKeepsTheTag(t *testing.T) {
 func TestSetMakesTheNamedTagsTheContactsCompleteSet(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	m := tags.New()
+	m := tags.New(env.Bus)
 	ctx := context.Background()
+	set := func(contactID int64, names []string) error {
+		return env.Bus.WithinScopedTx(ctx, acme, func(ts *ent.Scoped, pub events.Publisher) error {
+			return tags.SetIn(ctx, ts, pub, contactID, names)
+		})
+	}
 
 	// Alice has vip and newsletter: keep vip, drop newsletter, create a new tag; blank and repeated names change nothing.
-	require.NoError(t, m.Set(ctx, acme, fixtures.ContactAliceID, []string{fixtures.TagVipName, " fresh ", "fresh", " "}))
+	require.NoError(t, set(fixtures.ContactAliceID, []string{fixtures.TagVipName, " fresh ", "fresh", " "}))
 	got, err := m.ForContact(ctx, acme, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"fresh", fixtures.TagVipName}, names(got))
 
-	require.NoError(t, m.Set(ctx, acme, fixtures.ContactAliceID, []string{}))
+	require.NoError(t, set(fixtures.ContactAliceID, []string{}))
 	got, err = m.ForContact(ctx, acme, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	assert.Empty(t, got)
 
-	require.ErrorIs(t, m.Set(ctx, acme, 999999, []string{"x"}), tags.ErrContactNotFound)
+	require.ErrorIs(t, set(999999, []string{"x"}), tags.ErrContactNotFound)
 }
 
 func TestForeignContactIsRefusedOnEveryOperation(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
-	m := tags.New()
+	m := tags.New(env.Bus)
 	ctx := context.Background()
 
 	_, err := m.Apply(ctx, acme, fixtures.ContactGlobexID, "vip")

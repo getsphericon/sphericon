@@ -5,12 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -36,10 +38,10 @@ func TestTheGoalEventEndsTheEnrollmentAsGoalReached(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
-	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationPaymentRecoveryID, c.ID)
+	runID, _, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID, c.ID)
 	require.NoError(t, err)
 
-	require.NoError(t, automations.EndOnEvent(ctx, s, c.ID, recoveryGoal, time.Now()))
+	require.NoError(t, automations.EndOnEvent(ctx, s, env.Publisher(), c.ID, recoveryGoal, time.Now()))
 
 	status := statusOf(t, env, runID)
 	assert.Equal(t, automationrun.StatusGoalReached, status)
@@ -53,12 +55,12 @@ func TestAnExitEventEndsTheEnrollmentAsExited(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
-	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationPaymentRecoveryID, c.ID)
+	runID, _, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID, c.ID)
 	require.NoError(t, err)
 
-	require.NoError(t, automations.EndOnEvent(ctx, s, c.ID, recoveryExit, time.Now()))
+	require.NoError(t, automations.EndOnEvent(ctx, s, env.Publisher(), c.ID, recoveryExit, time.Now()))
 	exited := statusOf(t, env, runID)
-	require.NoError(t, automations.EndOnEvent(ctx, s, c.ID, recoveryGoal, time.Now()))
+	require.NoError(t, automations.EndOnEvent(ctx, s, env.Publisher(), c.ID, recoveryGoal, time.Now()))
 	afterTheGoal := statusOf(t, env, runID)
 
 	assert.Equal(t, automationrun.StatusExited, exited)
@@ -73,11 +75,11 @@ func TestAnEventThatOccurredBeforeTheEnrollmentBeganEndsNothing(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
 	triggered := time.Now().Add(-time.Hour)
-	runID, _, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID, c.ID, automations.Origin{Action: "payment_failed", OccurredAt: triggered})
+	runID, _, err := automations.EnrollOnTrigger(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID, c.ID, automations.Origin{Action: "payment_failed", OccurredAt: triggered})
 	require.NoError(t, err)
 
-	require.NoError(t, automations.EndOnEvent(ctx, s, c.ID, recoveryGoal, triggered.Add(-time.Second)))
-	require.NoError(t, automations.EndOnEvent(ctx, s, c.ID, recoveryExit, triggered.Add(-time.Second)))
+	require.NoError(t, automations.EndOnEvent(ctx, s, env.Publisher(), c.ID, recoveryGoal, triggered.Add(-time.Second)))
+	require.NoError(t, automations.EndOnEvent(ctx, s, env.Publisher(), c.ID, recoveryExit, triggered.Add(-time.Second)))
 
 	status := statusOf(t, env, runID)
 	assert.Equal(t, automationrun.StatusActive, status)
@@ -93,7 +95,7 @@ func TestAnEventAfterTheTriggerEndsAnEnrollmentMadeAfterIt(t *testing.T) {
 	c := enrollable(t, s, 0)
 	triggered := time.Now().Add(-2 * time.Minute)
 	paid := triggered.Add(time.Minute)
-	runID, enrolled, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID, c.ID, automations.Origin{Action: "payment_failed", OccurredAt: triggered})
+	runID, enrolled, err := automations.EnrollOnTrigger(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID, c.ID, automations.Origin{Action: "payment_failed", OccurredAt: triggered})
 	require.NoError(t, err)
 	require.True(t, enrolled)
 	run, err := env.DB.AutomationRun.Get(ctx, runID)
@@ -101,7 +103,7 @@ func TestAnEventAfterTheTriggerEndsAnEnrollmentMadeAfterIt(t *testing.T) {
 	paidBeforeWritten := paid.Before(run.CreatedAt)
 	require.True(t, paidBeforeWritten, "the payment occurred before the run was written")
 
-	require.NoError(t, automations.EndOnEvent(ctx, s, c.ID, recoveryGoal, paid))
+	require.NoError(t, automations.EndOnEvent(ctx, s, env.Publisher(), c.ID, recoveryGoal, paid))
 
 	status := statusOf(t, env, runID)
 	assert.Equal(t, automationrun.StatusGoalReached, status)
@@ -116,10 +118,10 @@ func TestAnEnrollmentEndsWhenItsEndingEventOccurred(t *testing.T) {
 	c := enrollable(t, s, 0)
 	triggered := time.Now().Add(-2 * time.Hour)
 	paid := triggered.Add(time.Hour)
-	runID, _, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID, c.ID, automations.Origin{Action: "payment_failed", OccurredAt: triggered})
+	runID, _, err := automations.EnrollOnTrigger(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID, c.ID, automations.Origin{Action: "payment_failed", OccurredAt: triggered})
 	require.NoError(t, err)
 
-	require.NoError(t, automations.EndOnEvent(ctx, s, c.ID, recoveryGoal, paid))
+	require.NoError(t, automations.EndOnEvent(ctx, s, env.Publisher(), c.ID, recoveryGoal, paid))
 
 	run, err := env.DB.AutomationRun.Get(ctx, runID)
 	require.NoError(t, err)
@@ -138,7 +140,7 @@ func TestAnEnrollmentMadeEndedEndsWhenThatEventOccurred(t *testing.T) {
 		Only(ctx)
 	require.NoError(t, err)
 
-	runID, _, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID,
+	runID, _, err := automations.EnrollOnTrigger(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID,
 		fixtures.ContactPaidBeforeEnrolledID, automations.Origin{Action: "payment_failed", OccurredAt: time.Now().Add(-6 * 24 * time.Hour)})
 	require.NoError(t, err)
 
@@ -155,7 +157,7 @@ func TestAStepEndsAnEnrollmentAtTheCallersClock(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	at := time.Date(2026, 3, 12, 9, 30, 0, 0, time.UTC)
 
-	require.NoError(t, automations.Complete(ctx, s, fixtures.AutomationRunTagOnEngagementAliceID, at))
+	require.NoError(t, automations.Complete(ctx, s, env.Publisher(), fixtures.AutomationRunTagOnEngagementAliceID, at))
 
 	run, err := env.DB.AutomationRun.Get(ctx, fixtures.AutomationRunTagOnEngagementAliceID)
 	require.NoError(t, err)
@@ -175,10 +177,14 @@ func TestAnEnrollmentIsMadeEndedByAnExitOrGoalEventRecordedSinceTheTrigger(t *te
 		triggered    time.Duration
 		wantStatus   automationrun.Status
 		wantEnrolled bool
+		wantEvents   []string // the System events the Enrollment records (#897)
 	}{
-		{"the first since the trigger is an exit", 6 * day, automationrun.StatusExited, false},
-		{"the first since the trigger is the goal", 4 * day, automationrun.StatusGoalReached, false},
-		{"only a machine click and loaded history since", 2 * day, automationrun.StatusActive, true},
+		{"the first since the trigger is an exit", 6 * day, automationrun.StatusExited, false,
+			[]string{events.NameAutomationEnrolled, events.NameAutomationExited}},
+		{"the first since the trigger is the goal", 4 * day, automationrun.StatusGoalReached, false,
+			[]string{events.NameAutomationEnrolled, events.NameAutomationGoalReached}},
+		{"only a machine click and loaded history since", 2 * day, automationrun.StatusActive, true,
+			[]string{events.NameAutomationEnrolled}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -186,17 +192,21 @@ func TestAnEnrollmentIsMadeEndedByAnExitOrGoalEventRecordedSinceTheTrigger(t *te
 			ctx := context.Background()
 			s := env.DB.Scoped(fixtures.AcmeID)
 
-			runID, enrolled, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID,
+			runID, enrolled, err := automations.EnrollOnTrigger(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID,
 				fixtures.ContactPaidBeforeEnrolledID, automations.Origin{Action: "payment_failed", OccurredAt: time.Now().Add(-tc.triggered)})
 			require.NoError(t, err)
 			status := statusOf(t, env, runID)
-			againID, _, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID,
+			againID, _, err := automations.EnrollOnTrigger(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID,
 				fixtures.ContactPaidBeforeEnrolledID, automations.Origin{Action: "payment_failed", OccurredAt: time.Now()})
 			require.NoError(t, err)
 
 			assert.Equal(t, tc.wantEnrolled, enrolled, "a step is to run")
 			assert.Equal(t, tc.wantStatus, status)
 			assert.Zero(t, againID, "enrolled once ever: no second Enrollment is made")
+			recorded := lo.Map(env.OutboxEnvelopes(t,
+				events.NameAutomationEnrolled, events.NameAutomationExited, events.NameAutomationGoalReached),
+				func(e events.Envelope, _ int) string { return e.Name })
+			assert.Equal(t, tc.wantEvents, recorded, "entered, and left at once when made ended")
 		})
 	}
 }
@@ -207,11 +217,11 @@ func TestAnUnlistedEventOrAnotherContactsEventEndsNothing(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c, other := enrollable(t, s, 0), enrollable(t, s, 1)
-	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationPaymentRecoveryID, c.ID)
+	runID, _, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID, c.ID)
 	require.NoError(t, err)
 
-	require.NoError(t, automations.EndOnEvent(ctx, s, c.ID, "payment_failed", time.Now()))
-	require.NoError(t, automations.EndOnEvent(ctx, s, other.ID, recoveryGoal, time.Now()))
+	require.NoError(t, automations.EndOnEvent(ctx, s, env.Publisher(), c.ID, "payment_failed", time.Now()))
+	require.NoError(t, automations.EndOnEvent(ctx, s, env.Publisher(), other.ID, recoveryGoal, time.Now()))
 
 	status := statusOf(t, env, runID)
 	assert.Equal(t, automationrun.StatusActive, status)
@@ -225,7 +235,7 @@ func TestAnEnrollmentEndsByTheEventsOfTheVersionItStandsOn(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
-	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationPaymentRecoveryID, c.ID)
+	runID, _, err := automations.Enroll(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID, c.ID)
 	require.NoError(t, err)
 
 	_, err = m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{
@@ -237,9 +247,9 @@ func TestAnEnrollmentEndsByTheEventsOfTheVersionItStandsOn(t *testing.T) {
 	_, err = m.Deactivate(ctx, s, fixtures.AutomationPaymentRecoveryID)
 	require.NoError(t, err)
 
-	require.NoError(t, automations.EndOnEvent(ctx, s, c.ID, "card_removed", time.Now()))
+	require.NoError(t, automations.EndOnEvent(ctx, s, env.Publisher(), c.ID, "card_removed", time.Now()))
 	afterTheNewExit := statusOf(t, env, runID)
-	require.NoError(t, automations.EndOnEvent(ctx, s, c.ID, recoveryGoal, time.Now()))
+	require.NoError(t, automations.EndOnEvent(ctx, s, env.Publisher(), c.ID, recoveryGoal, time.Now()))
 	afterItsGoal := statusOf(t, env, runID)
 
 	assert.Equal(t, automationrun.StatusActive, afterTheNewExit, "the newer version's exit is not this Enrollment's")
@@ -254,7 +264,7 @@ func TestARuleEnrollmentWithoutItsStoredEventBeginsNow(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	earliest := time.Now().Add(-time.Microsecond) // began_at is kept to the microsecond
 
-	runID, enrolled, err := automations.EnrollOnRule(ctx, s, fixtures.AutomationPaymentRecoveryID,
+	runID, enrolled, err := automations.EnrollOnRule(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID,
 		fixtures.ContactPaidBeforeEnrolledID, "evt-not-stored")
 	require.NoError(t, err)
 	latest := time.Now()

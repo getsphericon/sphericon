@@ -191,6 +191,7 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 		RecordedAt:  time.Now().UTC(),
 		Data:        data,
 		DedupKey:    dedupKey,
+		CausedBy:    causeOf(ctx),
 	}
 	stamp(ctx, &env)
 	msg := Message(env)

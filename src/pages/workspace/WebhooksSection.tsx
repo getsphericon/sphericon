@@ -53,9 +53,16 @@ import { ChangeHistoryLink } from './AuditLogSection.tsx'
 const EVENT_OPTIONS = [
   'contact.created',
   'contact.erased',
+  'contact.tagged',
+  'contact.untagged',
+  'contact.field_changed',
   'email.opened',
   'email.clicked',
   'email.unsubscribed',
+  'automation.enrolled',
+  'automation.completed',
+  'automation.goal_reached',
+  'automation.exited',
   'audit.entry',
 ]
 

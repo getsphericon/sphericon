@@ -15,7 +15,7 @@ import (
 
 func enrolled(t *testing.T, env *testhelper.TestEnv) int64 {
 	t.Helper()
-	runID, ok, err := automations.Enroll(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
+	runID, ok, err := automations.Enroll(context.Background(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, ok)
 	return runID
@@ -39,7 +39,7 @@ func TestFenceRunsNothingOnAnExitedEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	runID := enrolled(t, env)
-	require.NoError(t, automations.ExitRun(context.Background(), s, runID, time.Now()))
+	require.NoError(t, automations.ExitRun(context.Background(), s, env.Publisher(), runID, time.Now()))
 	ran := false
 
 	err := automations.FenceOn(env.DB)(context.Background(), s, runID, func(context.Context) error {

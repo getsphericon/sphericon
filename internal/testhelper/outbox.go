@@ -31,6 +31,20 @@ func (env *TestEnv) OutboxEnvelopes(t *testing.T, names ...string) []events.Enve
 	return envelopes
 }
 
+// Publisher is a Publisher onto this test's outbox, for a test that calls a function taking the
+// Publisher of a transaction it owns (automations.Enroll) without opening one: each event is
+// published in a bus transaction of its own, which rides the test's.
+func (env *TestEnv) Publisher() events.Publisher { return PublisherOn(env.Bus) }
+
+// PublisherOn is Publisher for a test that holds a bus of its own (one over a real database).
+func PublisherOn(bus *events.Bus) events.Publisher { return busPublisher{bus: bus} }
+
+type busPublisher struct{ bus *events.Bus }
+
+func (p busPublisher) Publish(ctx context.Context, ev events.DomainEvent) error {
+	return p.bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error { return pub.Publish(ctx, ev) })
+}
+
 // DeliverToEE hands every envelope on this test's outbox to the Enterprise
 // subscribers, as the router would (no router runs under txdb). Each call redelivers
 // the whole outbox, so calling it twice exercises at-least-once redelivery.
