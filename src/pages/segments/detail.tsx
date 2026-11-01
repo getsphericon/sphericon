@@ -1,4 +1,4 @@
-import { Group, Stack, Title } from '@mantine/core'
+import { Avatar, Group, Stack, Text, Title } from '@mantine/core'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -69,7 +69,23 @@ function SegmentDetail() {
         loadErrorTitle={t(($) => $.alerts.loadErrorTitle)}
         noRecordsText={t(($) => $.segments.noMatchingContacts)}
         columns={[
-          { accessor: 'email', title: t(($) => $.table.email) },
+          {
+            accessor: 'email',
+            title: t(($) => $.table.email),
+            render: (record) => (
+              <Group gap="sm" wrap="nowrap">
+                <Avatar
+                  size="sm"
+                  color="initials"
+                  name={
+                    [record.firstName, record.lastName].filter(Boolean).join(' ') ||
+                    (record.email ?? '')
+                  }
+                />
+                <Text size="sm">{record.email}</Text>
+              </Group>
+            ),
+          },
           { accessor: 'firstName', title: t(($) => $.table.firstName) },
           { accessor: 'lastName', title: t(($) => $.table.lastName) },
         ]}

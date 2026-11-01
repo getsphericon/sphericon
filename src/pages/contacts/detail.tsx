@@ -1,4 +1,5 @@
 import {
+  Avatar,
   EmptyState,
   Button,
   Card,
@@ -224,15 +225,19 @@ export function ContactDetailPage() {
   }
 
   const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ')
+  const identifier = contact.email ?? contact.subjectId ?? contact.phone ?? ''
   const customFields = Object.entries(contact.customFields ?? {})
 
   return (
     <Stack>
       <Group justify="space-between" align="flex-start" wrap="wrap">
-        <Stack gap={4}>
-          <Title order={4}>{contact.email ?? contact.subjectId ?? contact.phone ?? '—'}</Title>
-          {fullName ? <Text c="dimmed">{fullName}</Text> : null}
-        </Stack>
+        <Group gap="md" wrap="nowrap">
+          <Avatar size="lg" color="initials" name={fullName || identifier} />
+          <Stack gap={4}>
+            <Title order={4}>{identifier || '—'}</Title>
+            {fullName ? <Text c="dimmed">{fullName}</Text> : null}
+          </Stack>
+        </Group>
         <ContactActions workspaceId={workspaceId} contactId={contactId} />
       </Group>
 

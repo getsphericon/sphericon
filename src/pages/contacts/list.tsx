@@ -1,4 +1,4 @@
-import { Button, Group, Stack, TextInput, Title } from '@mantine/core'
+import { Avatar, Button, Group, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { IconSearch } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
@@ -78,7 +78,23 @@ export function ContactsListPage() {
           })
         }
         columns={[
-          { accessor: 'email', title: t(($) => $.table.email) },
+          {
+            accessor: 'email',
+            title: t(($) => $.table.email),
+            render: (record) => (
+              <Group gap="sm" wrap="nowrap">
+                <Avatar
+                  size="sm"
+                  color="initials"
+                  name={
+                    [record.firstName, record.lastName].filter(Boolean).join(' ') ||
+                    (record.email ?? '')
+                  }
+                />
+                <Text size="sm">{record.email}</Text>
+              </Group>
+            ),
+          },
           { accessor: 'firstName', title: t(($) => $.table.firstName) },
           { accessor: 'lastName', title: t(($) => $.table.lastName) },
           { accessor: 'timeZone', title: t(($) => $.table.timeZone) },

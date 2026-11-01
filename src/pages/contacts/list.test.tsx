@@ -32,6 +32,15 @@ test('lists the workspace contacts', async () => {
   await expect.element(screen.getByText('Smith')).toBeInTheDocument()
 })
 
+test('shows each contact with an avatar of their initials', async () => {
+  worker.use(handleSiteContactsList({ body: page([ALICE, BOB], 2) }))
+
+  const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByText('AS', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('BO', { exact: true })).toBeInTheDocument()
+})
+
 test('shows the empty state when there are no contacts', async () => {
   worker.use(handleSiteContactsList({ body: page([], 0) }))
 
