@@ -100,9 +100,10 @@ func (w *RunRuleActionsWorker) Work(ctx context.Context, job *river.Job[rules.Ac
 // RuleActionRunners are the Runners of the Actions a Rule can have. Each reuses the module that
 // already does the thing for an Automation step; internal/rules imports none of them.
 func RuleActionRunners(mod *outbound.Module, bus *events.Bus) rules.ActionRunners {
+	tagging := tags.New(bus)
 	return rules.ActionRunners{
-		rules.ActionApplyTag:  tagAction{mod: mod, tags: tags.New(bus), apply: true},
-		rules.ActionRemoveTag: tagAction{mod: mod, tags: tags.New(bus)},
+		rules.ActionApplyTag:  tagAction{mod: mod, tags: tagging, apply: true},
+		rules.ActionRemoveTag: tagAction{mod: mod, tags: tagging},
 		rules.ActionEnroll:    enrollAction{bus: bus},
 		rules.ActionHTTP:      httpAction{},
 	}

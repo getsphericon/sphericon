@@ -9,7 +9,6 @@ import {
 } from '../generated/site/@tanstack/react-query.gen.ts'
 import type { JsonObject, SiteEventResource } from '../generated/site/types.gen.ts'
 import { zSiteTagsListQuery } from '../generated/site/zod.gen.ts'
-import { useEventActionLabel } from '../hooks/useEventActionLabel.ts'
 import { Route as automationRoute } from '../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as tagsRoute } from '../routes/workspaces/$workspaceId/tags/index.tsx'
 import { boundsOf } from '../utils/bounds.ts'
@@ -30,17 +29,23 @@ interface Row {
 // while that still exists; a page view names the page. Any other Event shows its action by its
 // words (EventActionName).
 export function EventSummary({ workspaceId, event }: Row) {
+  const { t } = useTranslation()
+  const row = { workspaceId, event }
   switch (event.action) {
     case 'contact.tagged':
+      return <TagChange {...row} verb={t(($) => $.eventRows.tagged)} />
     case 'contact.untagged':
-      return <TagChange workspaceId={workspaceId} event={event} />
+      return <TagChange {...row} verb={t(($) => $.eventRows.untagged)} />
     case 'contact.field_changed':
-      return <FieldChange workspaceId={workspaceId} event={event} />
+      return <FieldChange {...row} />
     case 'automation.enrolled':
+      return <EnrollmentChange {...row} verb={t(($) => $.eventRows.entered)} />
     case 'automation.completed':
+      return <EnrollmentChange {...row} verb={t(($) => $.eventRows.completed)} />
     case 'automation.goal_reached':
+      return <EnrollmentChange {...row} verb={t(($) => $.eventRows.reachedGoalOf)} />
     case 'automation.exited':
-      return <EnrollmentChange workspaceId={workspaceId} event={event} />
+      return <EnrollmentChange {...row} verb={t(($) => $.eventRows.left)} />
     case 'page.view':
       return <PageView event={event} />
     default:
@@ -68,19 +73,16 @@ function Verb({ action, children }: { action: string; children: string }) {
   )
 }
 
-function TagChange({ workspaceId, event }: Row) {
+function TagChange({ workspaceId, event, verb }: Row & { verb: string }) {
   const { t } = useTranslation()
   const name = text(event.properties, 'tag')
-  const tagsQuery = useQuery(
-    siteTagsListOptions({ path: { workspaceId }, query: { pageSize: TAG_LOOKUP } }),
-  )
+  const tagsQuery = useQuery({
+    ...siteTagsListOptions({ path: { workspaceId }, query: { pageSize: TAG_LOOKUP } }),
+    enabled: name !== undefined,
+  })
   if (name === undefined) {
     return <EventActionName action={event.action} />
   }
-  const verb =
-    event.action === 'contact.tagged'
-      ? t(($) => $.eventRows.tagged)
-      : t(($) => $.eventRows.untagged)
   const quoted = t(($) => $.eventRows.quoted, { name })
   const exists = tagsQuery.data?.items.some((tag) => tag.name === name) ?? false
   return (
@@ -100,7 +102,10 @@ function TagChange({ workspaceId, event }: Row) {
 function FieldChange({ workspaceId, event }: Row) {
   const { t } = useTranslation()
   const key = text(event.properties, 'key')
-  const fieldsQuery = useQuery(siteCustomFieldsListOptions({ path: { workspaceId } }))
+  const fieldsQuery = useQuery({
+    ...siteCustomFieldsListOptions({ path: { workspaceId } }),
+    enabled: key !== undefined,
+  })
   if (key === undefined) {
     return <EventActionName action={event.action} />
   }
@@ -115,9 +120,8 @@ function FieldChange({ workspaceId, event }: Row) {
   )
 }
 
-function EnrollmentChange({ workspaceId, event }: Row) {
+function EnrollmentChange({ workspaceId, event, verb }: Row & { verb: string }) {
   const { t } = useTranslation()
-  const labelOf = useEventActionLabel()
   const id = text(event.properties, 'automationId')
   const automationQuery = useQuery({
     ...siteAutomationsGetOptions({ path: { workspaceId, id: id ?? '' } }),
@@ -129,15 +133,9 @@ function EnrollmentChange({ workspaceId, event }: Row) {
     // An Automation purged since, or not loaded yet, is named by the action's words alone.
     return <EventActionName action={event.action} />
   }
-  const verb = {
-    'automation.enrolled': t(($) => $.eventRows.entered),
-    'automation.completed': t(($) => $.eventRows.completed),
-    'automation.goal_reached': t(($) => $.eventRows.reachedGoalOf),
-    'automation.exited': t(($) => $.eventRows.left),
-  }[event.action]
   return (
     <Text span inherit>
-      <Verb action={event.action}>{verb ?? labelOf(event.action)}</Verb>{' '}
+      <Verb action={event.action}>{verb}</Verb>{' '}
       <AnchorLink to={automationRoute.to} params={{ workspaceId, automationId: automation.id }}>
         {t(($) => $.eventRows.quoted, { name: automation.name })}
       </AnchorLink>
