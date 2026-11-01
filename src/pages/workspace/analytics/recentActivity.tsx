@@ -1,9 +1,10 @@
-import { EmptyState, Alert, Badge, Group, Stack, Select, Switch, Title } from '@mantine/core'
+import { EmptyState, Badge, Group, Stack, Select, Switch, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ApiErrorAlert } from '../../../components/ApiErrorAlert.tsx'
 import { EventActionName, EventActionOption } from '../../../components/EventActionName.tsx'
 import { DetailedEventRowDetails } from '../../../components/EventRowDetails.tsx'
 import { RelativeTime } from '../../../components/RelativeTime.tsx'
@@ -90,9 +91,7 @@ export function RecentActivityPage() {
       </Group>
 
       {eventsQuery.isError ? (
-        <Alert color="red" title={t(($) => $.activity.loadErrorTitle)}>
-          {t(($) => $.activity.loadErrorTitle)}
-        </Alert>
+        <ApiErrorAlert error={eventsQuery.error} title={t(($) => $.activity.loadErrorTitle)} />
       ) : null}
 
       {eventsQuery.isLoading ? <TableSkeleton /> : null}

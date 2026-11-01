@@ -96,11 +96,7 @@ function HttpDryRun({ body }: { body: string }) {
         </Button>
       </Group>
       {dryRun.isError ? (
-        <ApiErrorAlert
-          error={dryRun.error}
-          title={t(($) => $.automations.httpDryRunError)}
-          fallback={t(($) => $.automations.httpDryRunError)}
-        />
+        <ApiErrorAlert error={dryRun.error} title={t(($) => $.automations.httpDryRunError)} />
       ) : null}
       {result?.errorKind ? (
         <Alert color="red" title={t(($) => $.automations.httpDryRunInvalid)}>

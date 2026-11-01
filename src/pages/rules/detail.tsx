@@ -96,13 +96,7 @@ export function RuleDetailPage() {
     return <PageSkeleton />
   }
   if (ruleQuery.isError || !ruleQuery.data) {
-    return (
-      <ApiErrorAlert
-        error={ruleQuery.error}
-        title={t(($) => $.alerts.ruleLoadErrorTitle)}
-        fallback={t(($) => $.alerts.ruleLoadErrorTitle)}
-      />
-    )
+    return <ApiErrorAlert error={ruleQuery.error} title={t(($) => $.alerts.ruleLoadErrorTitle)} />
   }
   const rule = ruleQuery.data
   const path = { workspaceId, id: ruleId }

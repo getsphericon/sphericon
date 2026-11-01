@@ -56,11 +56,7 @@ export function RuleDryRun({ workspaceId, ruleId }: { workspaceId: string; ruleI
         </Button>
       </Group>
       {dryRun.isError ? (
-        <ApiErrorAlert
-          error={dryRun.error}
-          title={t(($) => $.alerts.ruleDryRunErrorTitle)}
-          fallback={t(($) => $.alerts.ruleDryRunErrorTitle)}
-        />
+        <ApiErrorAlert error={dryRun.error} title={t(($) => $.alerts.ruleDryRunErrorTitle)} />
       ) : null}
       {dryRun.data ? (
         <Alert

@@ -79,9 +79,15 @@ export function getRateLimitWait(error: unknown) {
     : ({ unit: 'seconds', count: seconds } as const)
 }
 
-export function getApiErrorMessage(error: unknown, fallback: string) {
+// What the problem body itself says went wrong, or undefined for an error that carries no
+// message, such as a network failure.
+export function getProblemMessage(error: unknown) {
   const problem = asProblem(error)
-  return problem?.detail ?? problem?.form ?? problem?.title ?? fallback
+  return problem?.detail ?? problem?.form ?? problem?.title
+}
+
+export function getApiErrorMessage(error: unknown, fallback: string) {
+  return getProblemMessage(error) ?? fallback
 }
 
 // The status line of a problem body ("502 Bad Gateway"), or undefined for an error that is not

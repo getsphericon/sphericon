@@ -25,7 +25,7 @@ function FailedLoad({ title, renderError }: FailedLoadProps) {
   }
   return (
     <Stack gap="xs" align="flex-start">
-      <ApiErrorAlert error={error} title={title} fallback={title} />
+      <ApiErrorAlert error={error} title={title} />
       <Button variant="default" size="xs" onClick={resetBoundary}>
         {t(($) => $.actions.retry)}
       </Button>

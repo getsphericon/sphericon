@@ -181,7 +181,6 @@ export function AutomationReport({
           <ApiErrorAlert
             error={reportQuery.error}
             title={t(($) => $.automations.results.loadError)}
-            fallback={t(($) => $.automations.results.loadError)}
           />
         )}
         {report && !reportQuery.isPlaceholderData && <ResultsFigures results={report.results} />}
