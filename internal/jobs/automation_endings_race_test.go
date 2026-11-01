@@ -26,7 +26,7 @@ import (
 // is done, until it is released: for an Enrollment, once it is written and has looked for the exit
 // and goal Events, and before it commits.
 type holdingQueue struct {
-	events.JobInserter
+	events.JobQueue
 
 	reached chan struct{}
 	gate    chan struct{}
@@ -45,7 +45,7 @@ func newHoldingQueue() *holdingQueue {
 func (q *holdingQueue) InsertTx(ctx context.Context, tx *sql.Tx, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error) {
 	q.arrive()
 	<-q.gate
-	return q.JobInserter.InsertTx(ctx, tx, args, opts)
+	return q.JobQueue.InsertTx(ctx, tx, args, opts)
 }
 
 // stored writes the Event's row, as the Automations consumer does before it queues the Event's job.
@@ -68,8 +68,8 @@ func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 	ctx := context.Background()
 	hold := newHoldingQueue()
 	t.Cleanup(hold.release) // a failed assertion must not leave the enrollment blocked
-	enrolling := e.busQueueingThrough(t, func(q events.JobInserter) events.JobInserter {
-		hold.JobInserter = q
+	enrolling := e.busQueueingThrough(t, func(q events.JobQueue) events.JobQueue {
+		hold.JobQueue = q
 		return hold
 	})
 	probe, err := sql.Open("pgx", e.url)

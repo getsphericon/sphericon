@@ -44,7 +44,7 @@ type Bus struct {
 	db     *sql.DB
 	logger watermill.LoggerAdapter
 	hooks  []ent.Hook
-	jobs   JobInserter
+	jobs   JobQueue
 }
 
 // New builds a Bus over the application's database pool.
@@ -101,7 +101,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 		return fmt.Errorf("outbox publisher: %w", err)
 	}
 
-	if err := fn(txClient, &txPublisher{wm: wm, tx: sqlTx, client: txClient}); err != nil {
+	if err := fn(txClient, &txPublisher{wm: wm, tx: sqlTx, client: txClient, jobs: b.jobs}); err != nil {
 		_ = sqlTx.Rollback()
 		return err
 	}
@@ -162,6 +162,8 @@ type txPublisher struct {
 	tx *sql.Tx
 	// client is the ent client bound to tx, so a purge of the outbox rolls back with it.
 	client *ent.Client
+	// jobs is the bus's job queue (nil when it was given none); a purge of the queue runs on tx.
+	jobs JobQueue
 }
 
 func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {

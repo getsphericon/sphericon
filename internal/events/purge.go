@@ -7,10 +7,10 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqljson"
+	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/riverjob"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 )
@@ -21,20 +21,20 @@ import (
 // rolls back) with the state change that asks for it. Erasure is its only caller
 // (ADR 0021); it is a separate interface so ordinary producers cannot reach it.
 //
-// The job deletes go through the RiverJob skipped entity (river's table; ent only
-// generates its client): river's Tx API has no args predicate, so ent matches the args.
+// The job deletes go through river's own delete (JobDeleteManyTx) on the same transaction;
+// a Where predicate matches the args.
 type QueuePurger interface {
 	// PurgeOutbox deletes the Workspace's outbox envelopes and dead letters that name the Contact,
 	// by id or by one of its destinations (matched case-insensitively).
 	PurgeOutbox(ctx context.Context, workspaceID, contactID int64, destinations []string) error
-	// PurgeJobs deletes the river jobs of kind that are not running and whose
-	// args integer field key is one of ids. A running job is left to finish: its
+	// PurgeJobs deletes the river jobs of kind whose args integer field key is one of ids.
+	// A running job, or one a fetch holds locked to start it, is left to finish: its
 	// worker re-checks that what it refers to still exists.
 	PurgeJobs(ctx context.Context, key jobkind.Key, ids []int64) error
 	// PurgeWebhookJobs deletes the queued deliveries to the Workspace's own webhook
 	// endpoints whose body names the Contact (contactId) or one of its
 	// destinations (data.email, case-insensitively). The body is the event payload
-	// the endpoint would receive. A running delivery is left to finish.
+	// the endpoint would receive. A running (or locked) delivery is left to finish.
 	PurgeWebhookJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error
 }
 
@@ -92,29 +92,19 @@ func addressIn(column string, lowered []string, path sqljson.Option) *sql.Predic
 	})
 }
 
-// argInts selects river jobs whose args integer field key is one of ids.
-func argInts(key string, ids []int64) predicate.RiverJob {
-	return predicate.RiverJob(func(s *sql.Selector) {
-		vals := make([]any, len(ids))
-		for i, id := range ids {
-			vals[i] = id
-		}
-		s.Where(sqljson.ValueIn(s.C(riverjob.FieldArgs), vals, sqljson.Path(key), sqljson.Cast("bigint")))
-	})
-}
-
-// riverStateRunning is river's river_job_state 'running'. A running job is left to
-// finish: its worker re-checks that what it refers to still exists.
-const riverStateRunning = "running"
+// purgeBatch is how many jobs one delete of a purge removes. river deletes at most a batch per
+// call (10000 at most), so a purge deletes again until a batch comes back short.
+const purgeBatch = 1000
 
 func (p *txPublisher) PurgeJobs(ctx context.Context, key jobkind.Key, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	_, err := p.client.RiverJob.Delete().
-		Where(riverjob.Kind(key.Kind), riverjob.StateNEQ(riverStateRunning), argInts(key.Arg, ids)).
-		Exec(ctx)
-	return err
+	return p.deleteJobs(ctx, river.NewJobDeleteManyParams().Kinds(key.Kind).
+		// raw sql: an integer field of the args matched against a list; river's delete filters
+		// stop at a job's own columns.
+		Where("(args->>@purge_arg::text)::bigint = any(@purge_ids::bigint[])",
+			river.NamedArgs{"purge_arg": key.Arg, "purge_ids": ids}))
 }
 
 func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error {
@@ -129,27 +119,39 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 	if contactID != 0 {
 		id = strconv.FormatInt(contactID, 10)
 	}
-	lowered := lowerAll(destinations)
-	// DeliverWebhookArgs.Body is []byte, so river stores it as a base64 JSON string; it
-	// is the JSON event payload, naming the Contact at contactId / data.contactId and
-	// the address at data.email. No ent predicate decodes base64 into a JSON document, so
-	// the body match is written by hand; the rest of the selection is ent's.
-	namesSubject := predicate.RiverJob(func(s *sql.Selector) {
-		// raw sql: decodes a base64 JSON string into a document and matches inside it; ent has no
-		// decode or convert_from.
-		s.Where(sql.P(func(b *sql.Builder) {
-			b.WriteString("EXISTS (SELECT 1 FROM (SELECT convert_from(decode(").
-				Join(sqljson.ValuePath(s.C(riverjob.FieldArgs), sqljson.Path(jobkind.DeliverWebhookBodyArg), sqljson.Unquote(true))).
-				WriteString(", 'base64'), 'UTF8')::jsonb AS body) b WHERE b.body->>'contactId' = ").Arg(id).
-				WriteString(" OR b.body->'data'->>'contactId' = ").Arg(id).
-				WriteString(" OR lower(b.body->'data'->>'email') = ANY(").Arg(lowered).WriteString("))")
-		}))
-	})
-	_, err = p.client.RiverJob.Delete().Where(
-		riverjob.Kind(jobkind.DeliverWebhook.Kind), riverjob.StateNEQ(riverStateRunning),
-		argInts(jobkind.DeliverWebhook.Arg, endpointIDs), namesSubject,
-	).Exec(ctx)
-	return err
+	// DeliverWebhookArgs.Body is []byte, so river stores it as a base64 JSON string; it is the
+	// JSON event payload, naming the Contact at contactId / data.contactId and the address at
+	// data.email.
+	return p.deleteJobs(ctx, river.NewJobDeleteManyParams().Kinds(jobkind.DeliverWebhook.Kind).
+		// raw sql: an integer field of the args matched against a list; river's delete filters
+		// stop at a job's own columns.
+		Where("(args->>@purge_endpoint_arg::text)::bigint = any(@purge_endpoints::bigint[])",
+			river.NamedArgs{"purge_endpoint_arg": jobkind.DeliverWebhook.Arg, "purge_endpoints": endpointIDs}).
+		// raw sql: decodes a base64 JSON string of the args into a document and matches inside it.
+		Where("EXISTS (SELECT 1 FROM (SELECT convert_from(decode(args->>@purge_body_arg::text, 'base64'), 'UTF8')::jsonb AS body) b"+
+			" WHERE b.body->>'contactId' = @purge_contact::text OR b.body->'data'->>'contactId' = @purge_contact::text"+
+			" OR lower(b.body->'data'->>'email') = any(@purge_addresses::text[]))",
+			river.NamedArgs{"purge_body_arg": jobkind.DeliverWebhookBodyArg, "purge_contact": id, "purge_addresses": lowerAll(destinations)}))
+}
+
+// deleteJobs deletes the jobs params selects through river, on the purge's transaction, a batch
+// at a time until a batch comes back short. river never deletes a running job, nor one that is
+// locked (a fetch about to start it): either is left to finish, and its worker re-checks that
+// what it refers to still exists.
+func (p *txPublisher) deleteJobs(ctx context.Context, params *river.JobDeleteManyParams) error {
+	if p.jobs == nil {
+		return ErrNoJobQueue
+	}
+	params = params.First(purgeBatch)
+	for {
+		res, err := p.jobs.JobDeleteManyTx(ctx, p.tx, params)
+		if err != nil {
+			return err
+		}
+		if len(res.Jobs) < purgeBatch {
+			return nil
+		}
+	}
 }
 
 func lowerAll(in []string) []string {

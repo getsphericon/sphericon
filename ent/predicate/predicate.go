@@ -135,9 +135,6 @@ type ProviderLimiter func(*sql.Selector)
 // RecoveryCode is the predicate function for recoverycode builders.
 type RecoveryCode func(*sql.Selector)
 
-// RiverJob is the predicate function for riverjob builders.
-type RiverJob func(*sql.Selector)
-
 // Rule is the predicate function for rule builders.
 type Rule func(*sql.Selector)
 

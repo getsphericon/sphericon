@@ -14,6 +14,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -24,6 +25,8 @@ var sendKind = broadcasts.SendArgs{}.Kind()
 // failingQueue is a job queue that cannot take the job: it fails the insert, and first runs
 // onInsert (a request that dies together with its queue cancels its context there).
 type failingQueue struct {
+	events.JobQueue // only InsertTx is called
+
 	err      error
 	onInsert func()
 }
