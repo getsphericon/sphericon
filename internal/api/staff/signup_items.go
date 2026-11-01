@@ -3,9 +3,7 @@ package staff
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ent/signupitem"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
-	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
@@ -20,12 +18,7 @@ func (h *Handlers) StaffSignupItemsList(ctx context.Context) (staffapi.StaffSign
 
 // StaffSignupItemsCreate adds a Sign-up item.
 func (h *Handlers) StaffSignupItemsCreate(ctx context.Context, req *staffapi.StaffSignupItemInput) (staffapi.StaffSignupItemsCreateRes, error) {
-	it, err := h.items.Add(ctx, signupitems.Input{
-		Key:             string(req.Key),
-		Title:           string(req.Title),
-		Kind:            signupitem.Kind(req.Kind),
-		MailingsConsent: req.MailingsConsent.Or(false),
-	})
+	it, err := h.items.Add(ctx, inputs.SignupItemCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +36,7 @@ func (h *Handlers) StaffSignupItemsGet(ctx context.Context, params staffapi.Staf
 
 // StaffSignupItemsUpdate changes a Sign-up item.
 func (h *Handlers) StaffSignupItemsUpdate(ctx context.Context, req *staffapi.StaffSignupItemUpdate, params staffapi.StaffSignupItemsUpdateParams) (staffapi.StaffSignupItemsUpdateRes, error) {
-	it, err := h.items.Update(ctx, int64(params.ID), signupitems.Update{
-		Title:           optTitle(req.Title),
-		MailingsConsent: optBool(req.MailingsConsent),
-	})
+	it, err := h.items.Update(ctx, int64(params.ID), inputs.SignupItemUpdate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -55,11 +45,7 @@ func (h *Handlers) StaffSignupItemsUpdate(ctx context.Context, req *staffapi.Sta
 
 // StaffSignupItemsReorder puts the Sign-up items in a new order.
 func (h *Handlers) StaffSignupItemsReorder(ctx context.Context, req *staffapi.StaffSignupItemOrder) (staffapi.StaffSignupItemsReorderRes, error) {
-	ids := make([]int64, len(req.Ids))
-	for i, id := range req.Ids {
-		ids[i] = int64(id)
-	}
-	items, err := h.items.Reorder(ctx, ids)
+	items, err := h.items.Reorder(ctx, inputs.SignupItemOrder(req.Ids))
 	if err != nil {
 		return nil, err
 	}
@@ -101,20 +87,4 @@ func (h *Handlers) StaffSignupItemsPublish(ctx context.Context, req *staffapi.St
 		return nil, err
 	}
 	return new(mapper.SignupItemToResource(it)), nil
-}
-
-// optBool is an optional field of the request as the module takes it: nil when absent.
-func optBool(v staffapi.OptBool) *bool {
-	if !v.Set {
-		return nil
-	}
-	return &v.Value
-}
-
-// optTitle is an optional title of the request as the module takes it: nil when absent.
-func optTitle(v staffapi.OptSignupItemTitle) *string {
-	if !v.Set {
-		return nil
-	}
-	return new(string(v.Value))
 }

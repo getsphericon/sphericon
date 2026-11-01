@@ -8,8 +8,9 @@
 // attaches the fields the converter ignores.
 //
 // Input: a request becomes a module's input only through the generated goverter Inputs of its
-// surface (resources/inputs.go). A struct literal of a module input type in a /site or /api handler
-// package is a hand-written mapping. A field the request does not carry (the actor) is a
+// surface (resources/inputs.go). A struct literal of a module input type in a handler package (/site,
+// /api, /staff, and the methods of the handler types of ee/staff, which holds its domain module too)
+// is a hand-written mapping. A field the request does not carry (the actor) is a
 // `goverter:ignore` with its reason, and the handler assigns it after the call; an assignment is not
 // a literal and is not reported.
 //
@@ -22,12 +23,14 @@ import (
 	"go/token"
 	"go/types"
 	"regexp"
+	"slices"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/mixed"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 )
 
@@ -52,8 +55,8 @@ func run(pass *analysis.Pass) (any, error) {
 		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
 	}
 	via := viaConverter(pass, insp)
-	if isHandlerPackage(pass.Pkg.Path()) {
-		reportInputLiterals(pass, insp)
+	if recvs, isMixed := mixed.Receivers(pass.Pkg.Path()); isMixed || isHandlerPackage(pass.Pkg.Path()) {
+		reportInputLiterals(pass, insp, recvs)
 	}
 	insp.Preorder([]ast.Node{(*ast.FuncDecl)(nil)}, func(n ast.Node) {
 		fn, isNode := n.(*ast.FuncDecl)
@@ -84,10 +87,12 @@ func run(pass *analysis.Pass) (any, error) {
 	return nil, nil
 }
 
-// handlerPackages are the packages of the /site and /api handlers, which hand a module what the
-// request says. Their subpackages are not handlers: resources holds the goverter Inputs and its
-// extend helpers, the one place a module input is built by hand (a oneOf is beyond goverter).
-var handlerPackages = []string{"/internal/api/site", "/internal/api/external"}
+// handlerPackages are the packages of the /site, /api and core /staff handlers, which hand a module
+// what the request says. Their subpackages are not handlers: resources holds the goverter Inputs and
+// its extend helpers, the one place a module input is built by hand (a oneOf is beyond goverter). The
+// handlers of the Enterprise Staff and service APIs share ee/staff with their domain module: that
+// package is mixed (tools/analyzers/mixed), and only its handler types' methods are checked.
+var handlerPackages = []string{"/internal/api/site", "/internal/api/external", "/internal/api/staff"}
 
 func isHandlerPackage(path string) bool {
 	for _, p := range handlerPackages {
@@ -98,21 +103,26 @@ func isHandlerPackage(path string) bool {
 	return false
 }
 
-// reportInputLiterals reports each struct literal of a module input type in a handler package.
-func reportInputLiterals(pass *analysis.Pass, insp *inspector.Inspector) {
-	insp.Preorder([]ast.Node{(*ast.CompositeLit)(nil)}, func(n ast.Node) {
+// reportInputLiterals reports each struct literal of a module input type in a handler package; in a
+// mixed package (recvs not nil), only those inside a method of one of the handler types recvs.
+func reportInputLiterals(pass *analysis.Pass, insp *inspector.Inspector, recvs []string) {
+	insp.WithStack([]ast.Node{(*ast.CompositeLit)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		lit, isLit := n.(*ast.CompositeLit)
-		if !isLit || skippedFile(pass, lit.Pos()) {
-			return
+		if !isLit || !push || skippedFile(pass, lit.Pos()) {
+			return true
+		}
+		if recvs != nil && !slices.Contains(recvs, mixed.EnclosingReceiver(stack)) {
+			return true
 		}
 		named, ok := types.Unalias(pass.TypesInfo.TypeOf(lit)).(*types.Named)
 		if !ok || !isModuleInput(pass.Pkg, named) {
-			return
+			return true
 		}
 		name := named.Obj().Pkg().Name() + "." + named.Obj().Name()
 		pass.Reportf(lit.Pos(), "%s", rule.Message(1,
 			name+" is built by hand from the request",
 			"add a method to the surface's goverter Inputs (resources/inputs.go), call it, and assign after it only the fields it ignores"))
+		return true
 	})
 }
 
