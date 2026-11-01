@@ -207,7 +207,7 @@ test('an HTTP step keeps its id and header names but never carries a secret into
   expect(nodes[1]?.data.properties).toEqual({
     stepId: '01J',
     url: '',
-    headers: 'Authorization:\nX-Key:',
+    headers: '[{"name":"Authorization"},{"name":"X-Key"}]',
     body: '{"a":1}',
     secret: '',
   })
@@ -233,7 +233,11 @@ test('an HTTP node with a new URL, header value and secret sends them', () => {
     node('a', 'http', {
       stepId: '',
       url: ' https://hooks.example.com/x ',
-      headers: 'Authorization: Bearer a:b\n\n X-Key :k',
+      headers: JSON.stringify([
+        { name: 'Authorization', value: 'Bearer a:b' },
+        { name: '', value: '' },
+        { name: ' X-Key ', value: 'k' },
+      ]),
       body: '{}',
       secret: 'whsec_x',
     }),
@@ -253,21 +257,43 @@ test('an HTTP node with a new URL, header value and secret sends them', () => {
   ])
 })
 
-test('a bare HTTP step opens blank and a header line without a colon keeps its stored value', () => {
+test('a bare HTTP step opens blank and a header with no value keeps its stored one', () => {
   const { nodes } = stepsToGraph(on('contact.created'), [{ type: 'http', hasSecret: false }], {})
 
   expect(nodes[1]?.data.properties).toEqual({
     stepId: '',
     url: '',
-    headers: '',
+    headers: '[]',
     body: '',
     secret: '',
   })
   expect(
     graphToSteps(
-      chain(node('a', 'http', { stepId: '', url: '', headers: 'X-Key', body: '', secret: '' })),
+      chain(
+        node('a', 'http', {
+          stepId: '',
+          url: '',
+          headers: '[{"name":"X-Key","value":""}]',
+          body: '',
+          secret: '',
+        }),
+      ),
     ).steps,
   ).toEqual([{ type: 'http', body: '', headers: [{ name: 'X-Key' }] }])
+})
+
+test('an HTTP node whose headers text is not a header list sends none', () => {
+  expect(
+    graphToSteps(
+      chain(
+        node('a', 'http', { stepId: '', url: '', headers: 'X-Key: 1', body: '', secret: '' }),
+        node('b', 'http', { stepId: '', url: '', headers: '{"name":"X"}', body: '', secret: '' }),
+      ),
+    ).steps,
+  ).toEqual([
+    { type: 'http', body: '', headers: [] },
+    { type: 'http', body: '', headers: [] },
+  ])
 })
 
 test('graphToSteps stops on a cycle instead of looping', () => {

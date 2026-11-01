@@ -1,11 +1,8 @@
-import { ActionIcon, Button, Group, PasswordInput, Stack, Textarea, TextInput } from '@mantine/core'
-import { IconTrash } from '@tabler/icons-react'
+import { PasswordInput, Stack, Textarea, TextInput } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
+import { HttpHeaderRows } from '../../components/HttpHeaderRows.tsx'
 import type { SiteRuleAction } from '../../generated/site/types.gen.ts'
-
-// The most request headers an http Action carries (the server refuses more).
-const MAX_HEADERS = 5
 
 interface HttpActionFieldsProps {
   action: SiteRuleAction
@@ -17,12 +14,6 @@ interface HttpActionFieldsProps {
 export function HttpActionFields({ action, onChange }: HttpActionFieldsProps) {
   const { t } = useTranslation()
   const saved = Boolean(action.id)
-  const headers = action.headers ?? []
-  const changeHeader = (index: number, change: { name?: string; value?: string }) =>
-    onChange({
-      headers: headers.map((header, at) => (at === index ? { ...header, ...change } : header)),
-    })
-
   return (
     <Stack gap="xs">
       <TextInput
@@ -31,40 +22,11 @@ export function HttpActionFields({ action, onChange }: HttpActionFieldsProps) {
         value={action.url ?? ''}
         onChange={(event) => onChange({ url: event.currentTarget.value })}
       />
-      {headers.map((header, index) => (
-        <Group key={index} align="flex-end" wrap="nowrap">
-          <TextInput
-            label={t(($) => $.rules.http.headerNameLabel)}
-            value={header.name}
-            onChange={(event) => changeHeader(index, { name: event.currentTarget.value })}
-          />
-          <PasswordInput
-            label={t(($) => $.rules.http.headerValueLabel)}
-            description={saved && !header.value ? t(($) => $.rules.http.keepHint) : undefined}
-            value={header.value ?? ''}
-            onChange={(event) => changeHeader(index, { value: event.currentTarget.value })}
-          />
-          <ActionIcon
-            variant="subtle"
-            color="red"
-            aria-label={t(($) => $.rules.http.removeHeader)}
-            onClick={() => onChange({ headers: headers.filter((_, at) => at !== index) })}
-          >
-            <IconTrash size={16} />
-          </ActionIcon>
-        </Group>
-      ))}
-      {headers.length < MAX_HEADERS ? (
-        <Group>
-          <Button
-            variant="light"
-            size="compact-sm"
-            onClick={() => onChange({ headers: [...headers, { name: '' }] })}
-          >
-            {t(($) => $.rules.http.addHeader)}
-          </Button>
-        </Group>
-      ) : null}
+      <HttpHeaderRows
+        headers={action.headers ?? []}
+        saved={saved}
+        onChange={(headers) => onChange({ headers })}
+      />
       <PasswordInput
         label={t(($) => $.rules.http.secretLabel)}
         description={
