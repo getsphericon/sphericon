@@ -70,8 +70,7 @@ function IdentityList() {
     <Group key={identity.id} justify="space-between">
       <Text>{identity.displayName}</Text>
       <Button
-        color="red"
-        variant="light"
+        variant="default"
         loading={unlink.isPending && unlink.variables.path.id === identity.id}
         onClick={() => unlink.mutate({ path: { id: identity.id } })}
       >
