@@ -377,10 +377,18 @@ function saveCsv(csv: string, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-// ExportButton exports the log narrowed by the filter currently applied, so the file
-// matches what the page shows.
-function ExportButton({ workspaceId, filter }: { workspaceId: string; filter: AuditFilter }) {
+// AuditExportButton exports the log narrowed by the filter currently applied, so the file
+// matches what the page shows. It renders nothing where the log is not offered (a plain member,
+// or no Enterprise license), so the page can place it beside its title.
+export function AuditExportButton({
+  workspaceId,
+  filter,
+}: {
+  workspaceId: string
+  filter: AuditFilter
+}) {
   const { t } = useTranslation()
+  const probe = useQuery(siteAuditListOptions({ path: { workspaceId }, query: { limit: 1 } }))
   const notify = useNotify()
   const queryClient = useQueryClient()
   const exportCsv = useMutation({
@@ -397,13 +405,14 @@ function ExportButton({ workspaceId, filter }: { workspaceId: string; filter: Au
         message: t(($) => $.settings.auditLog.exportError),
       }),
   })
+  if (!probe.isSuccess) {
+    return null
+  }
 
   return (
     <Button
       variant="default"
-      size="xs"
-      ml="auto"
-      leftSection={<IconDownload size={14} />}
+      leftSection={<IconDownload size={16} />}
       loading={exportCsv.isPending}
       onClick={() => exportCsv.mutate()}
     >
@@ -585,7 +594,7 @@ function FilterChips({ filter, onFilterChange }: FilterProps) {
 
 // FilterBar narrows the log by period, actor, action and target type, choosing among the
 // values that occur in the log; every change applies at once through the route's search, the
-// single owner of the filter. The export sits beside the chips: it exports what they narrow.
+// single owner of the filter.
 function FilterBar({ workspaceId, filter, onFilterChange }: FilterProps & { workspaceId: string }) {
   const { t } = useTranslation()
   const actorLabel = useActorLabel()
@@ -644,10 +653,7 @@ function FilterBar({ workspaceId, filter, onFilterChange }: FilterProps & { work
           onChange={(value) => onFilterChange(withValue(filter, 'targetType', value))}
         />
       </SimpleGrid>
-      <Group gap="xs">
-        <FilterChips filter={filter} onFilterChange={onFilterChange} />
-        <ExportButton workspaceId={workspaceId} filter={filter} />
-      </Group>
+      <FilterChips filter={filter} onFilterChange={onFilterChange} />
     </Stack>
   )
 }

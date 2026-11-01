@@ -14,7 +14,7 @@ import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import type { AuditFilter } from '../../utils/auditFilter.ts'
-import { AuditLogSection, ChangeHistoryLink } from './AuditLogSection.tsx'
+import { AuditExportButton, AuditLogSection, ChangeHistoryLink } from './AuditLogSection.tsx'
 
 const WORKSPACE_ID = 'TestWs01'
 
@@ -57,7 +57,7 @@ test('lists who changed what, with the change', async () => {
     />,
   )
 
-  await expect.element(screen.getByRole('button', { name: 'Export CSV' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('combobox', { name: 'Action' })).toBeInTheDocument()
   await expect.element(screen.getByText('John', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByRole('cell', { name: 'membership.update' })).toBeInTheDocument()
   await expect.element(screen.getByText('membership Mary')).toBeInTheDocument()
@@ -108,13 +108,17 @@ test('sends the applied filter to the list and to the export', async () => {
       return new HttpResponse('id\n', { headers: { 'content-type': 'text/csv' } })
     }),
   )
+  const filter = { targetType: 'integration', targetId: '5', ip: '10.0.0.1' }
   const { screen } = await renderWithRouter(
-    <AuditLogSection
-      workspaceId={WORKSPACE_ID}
-      filter={{ targetType: 'integration', targetId: '5', ip: '10.0.0.1' }}
-      onFilterChange={vi.fn<() => void>()}
-      canConfigureRetention
-    />,
+    <>
+      <AuditExportButton workspaceId={WORKSPACE_ID} filter={filter} />
+      <AuditLogSection
+        workspaceId={WORKSPACE_ID}
+        filter={filter}
+        onFilterChange={vi.fn<() => void>()}
+        canConfigureRetention
+      />
+    </>,
   )
 
   await expect
@@ -299,13 +303,17 @@ test('loading more appends the next page below the first', async () => {
 test.each([402, 403])('renders nothing when the API answers %i', async (status) => {
   worker.use(handleSiteAuditList(() => problem(status, { detail: 'refused' })))
   const { screen } = await renderWithRouter(
-    <AuditLogSection
-      workspaceId={WORKSPACE_ID}
-      onFilterChange={vi.fn<() => void>()}
-      canConfigureRetention
-    />,
+    <>
+      <AuditExportButton workspaceId={WORKSPACE_ID} filter={{}} />
+      <AuditLogSection
+        workspaceId={WORKSPACE_ID}
+        onFilterChange={vi.fn<() => void>()}
+        canConfigureRetention
+      />
+    </>,
   )
 
+  await expect.element(screen.getByRole('combobox', { name: 'Action' })).not.toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Export CSV' })).not.toBeInTheDocument()
 })
 
@@ -321,11 +329,7 @@ test('exports the log as CSV through the generated client', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection
-      workspaceId={WORKSPACE_ID}
-      onFilterChange={vi.fn<() => void>()}
-      canConfigureRetention
-    />,
+    <AuditExportButton workspaceId={WORKSPACE_ID} filter={{}} />,
   )
 
   await screen.getByRole('button', { name: 'Export CSV' }).click()
@@ -426,7 +430,7 @@ test('the retention control is not offered without its license', async () => {
     />,
   )
 
-  await expect.element(screen.getByRole('button', { name: 'Export CSV' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('combobox', { name: 'Action' })).toBeInTheDocument()
   await expect.poll(() => retentionAnswered).toBeGreaterThan(0)
   await expect
     .element(screen.getByRole('button', { name: 'Change retention' }))

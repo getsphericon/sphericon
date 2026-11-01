@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Route as auditLogRoute } from '../../../routes/workspaces/$workspaceId/settings/audit-log.tsx'
 import type { AuditFilter } from '../../../utils/auditFilter.ts'
 import { can } from '../../../utils/permissions.ts'
-import { AuditLogSection } from '../AuditLogSection.tsx'
+import { AuditExportButton, AuditLogSection } from '../AuditLogSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
 // The log is read with audit:read, so anyone without it sees the title and no section; its
@@ -19,7 +19,15 @@ export function AuditLogPage() {
     void navigate({ to: auditLogRoute.to, params: { workspaceId }, search: filter })
 
   return (
-    <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.auditLog)}>
+    <SettingsFrame
+      workspaceId={workspaceId}
+      title={t(($) => $.settings.nav.auditLog)}
+      renderActions={(workspace) =>
+        can(workspace, 'audit:read') ? (
+          <AuditExportButton workspaceId={workspace.id} filter={auditFilter} />
+        ) : null
+      }
+    >
       {(workspace) =>
         can(workspace, 'audit:read') ? (
           <AuditLogSection
