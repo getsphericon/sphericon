@@ -130,7 +130,7 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 	if res.Outcome == outbound.Held {
 		// Best effort: the hold is enforced by the send path and the caller retries on the
 		// HeldError either way, so a failed write only leaves the reason unrecorded.
-		if herr := recordHold(ctx, s, b.ID, res.Reason); herr != nil {
+		if herr := setHold(ctx, s, b.ID, broadcast.HoldReason(res.Reason)); herr != nil {
 			slog.WarnContext(ctx, "broadcast hold reason not recorded", "error", herr, "broadcast_id", b.ID)
 		}
 		return &HeldError{Reason: res.Reason}
@@ -183,18 +183,9 @@ func (d *Delivery) GiveUp(ctx context.Context, s *ent.Scoped, recipientID int64,
 	return Finalize(ctx, s, rec.BroadcastID)
 }
 
-// recordHold records why a Broadcast is held, from the reason Outbound send held it for: a
-// Workspace-level one (holds.Reason*) or one of its source's own (outbound.Hold*). A reason the
-// Broadcast's hold reason does not declare is an error, not a write the database refuses.
-func recordHold(ctx context.Context, s *ent.Scoped, broadcastID int64, reason string) error {
-	r := broadcast.HoldReason(reason)
-	if err := broadcast.HoldReasonValidator(r); err != nil {
-		return fmt.Errorf("record hold of broadcast %d: %w", broadcastID, err)
-	}
-	return setHold(ctx, s, broadcastID, r)
-}
-
-// setHold records why a Broadcast is held. With clearHold it is the only writer of the hold
+// setHold records why a Broadcast is held: the reason Outbound send held it for, a
+// Workspace-level one (holds.Reason*) or one of its source's own (outbound.Hold*). The update
+// refuses a reason the column does not declare. With clearHold it is the only writer of the hold
 // reason.
 func setHold(ctx context.Context, s *ent.Scoped, broadcastID int64, reason broadcast.HoldReason) error {
 	return s.Broadcast().UpdateOneID(broadcastID).SetHoldReason(reason).Exec(ctx)
