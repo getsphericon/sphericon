@@ -206,7 +206,8 @@ function SignInSection() {
 }
 
 // SessionsSection ends every session of the user, this browser's included, so
-// it asks first and lands on the login screen.
+// it asks first and lands on the login screen. Nothing is lost, the user signs in
+// again: the button and the confirmation stay neutral, red is kept for deletion.
 function SessionsSection() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -231,7 +232,6 @@ function SessionsSection() {
         cancel: t(($) => $.actions.cancel),
         confirm: t(($) => $.profile.signOutEverywhereButton),
       },
-      confirmProps: { color: 'red' },
       onConfirm: () => signOut.mutate({}),
     })
   }
@@ -243,7 +243,7 @@ function SessionsSection() {
         {t(($) => $.profile.signOutEverywhereDescription)}
       </Text>
       <Group justify="flex-end">
-        <Button color="red" variant="light" loading={signOut.isPending} onClick={confirm}>
+        <Button variant="default" loading={signOut.isPending} onClick={confirm}>
           {t(($) => $.profile.signOutEverywhereButton)}
         </Button>
       </Group>
