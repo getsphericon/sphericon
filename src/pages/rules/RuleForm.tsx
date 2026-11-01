@@ -16,12 +16,14 @@ import * as z from 'zod'
 
 import { conditionCodec, draftText, emptyGroup } from '../../components/conditions/condition.ts'
 import { ConditionBuilder } from '../../components/conditions/ConditionBuilder.tsx'
+import { EventActionOption } from '../../components/EventActionName.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteAutomationsListOptions,
   siteEventsActionsOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteCreateRuleInput, SiteRuleAction } from '../../generated/site/types.gen.ts'
+import { useEventActionFilter } from '../../hooks/useEventActionLabel.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as rulesRoute } from '../../routes/workspaces/$workspaceId/rules/index.tsx'
@@ -42,6 +44,7 @@ export type RulePayload = Pick<SiteCreateRuleInput, 'name' | 'triggerEvents'> &
 
 export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePayload>) {
   const { t } = useTranslation()
+  const actionFilter = useEventActionFilter()
   const { workspaceId } = workspaceRoute.useParams()
 
   // The form holds each structured field as JSON text; a blank or unreadable text is empty.
@@ -88,6 +91,8 @@ export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePa
           placeholder={t(($) => $.rules.triggerEventsPlaceholder)}
           withAsterisk
           data={knownEvents.data?.actions ?? []}
+          renderOption={({ option }) => <EventActionOption action={option.value} />}
+          filter={actionFilter}
           value={triggerEvents}
           onChange={(next) =>
             form.setFieldValue(

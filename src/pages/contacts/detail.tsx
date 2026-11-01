@@ -16,6 +16,7 @@ import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { EventActionName } from '../../components/EventActionName.tsx'
 import { EventRowDetails } from '../../components/EventRowDetails.tsx'
 import { RelativeTime } from '../../components/RelativeTime.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
@@ -182,7 +183,11 @@ function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contac
             title: t(($) => $.activity.time),
             render: (record) => <RelativeTime value={record.createdAt} />,
           },
-          { accessor: 'action', title: t(($) => $.activity.action) },
+          {
+            accessor: 'action',
+            title: t(($) => $.activity.action),
+            render: (record) => <EventActionName action={record.action} />,
+          },
         ]}
         rowExpansion={{ content: EventRowDetails }}
         totalRecords={eventsTotal}

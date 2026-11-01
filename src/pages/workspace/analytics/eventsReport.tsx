@@ -3,6 +3,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
+import { EventActionName } from '../../../components/EventActionName.tsx'
 import { RelativeTime } from '../../../components/RelativeTime.tsx'
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import { siteAnalyticsEventsOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
@@ -49,7 +50,7 @@ function EventsReport() {
               params={{ workspaceId }}
               search={{ range, action: record.action }}
             >
-              {record.action}
+              <EventActionName action={record.action} />
             </AnchorLink>
           ),
         },

@@ -4,6 +4,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { ArchiveViewControl } from '../../components/ArchiveViewControl.tsx'
+import { EventActionName } from '../../components/EventActionName.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
@@ -106,7 +107,10 @@ export function AutomationsListPage() {
             accessor: 'triggerEvent',
             title: t(($) => $.automations.triggerColumn),
             // What enrolls Contacts: the live version's Trigger, or the draft's before publishing.
-            render: (record) => (record.live ?? record.draft)?.triggerEvent,
+            render: (record) => {
+              const trigger = (record.live ?? record.draft)?.triggerEvent
+              return trigger === undefined ? null : <EventActionName action={trigger} />
+            },
           },
           {
             accessor: 'status',

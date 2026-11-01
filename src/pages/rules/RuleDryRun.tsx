@@ -10,12 +10,14 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { SiteRuleDryRunOutcome } from '../../generated/site/types.gen.ts'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 
 // Tries the saved Rule on one stored Event: whether it would fire and which Actions would run.
 // A dry run writes and runs nothing, so it is safe to repeat.
 export function RuleDryRun({ workspaceId, ruleId }: { workspaceId: string; ruleId: string }) {
   const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
+  const labelOf = useEventActionLabel()
   const [eventId, setEventId] = useState<string | null>(null)
   const events = useQuery(
     siteEventsListOptions({ path: { workspaceId }, query: { page: 1, pageSize: 50 } }),
@@ -35,7 +37,7 @@ export function RuleDryRun({ workspaceId, ruleId }: { workspaceId: string; ruleI
           searchable
           data={(events.data?.items ?? []).map((event) => ({
             value: event.id,
-            label: `${event.action} · ${formatDateTime(event.createdAt)}`,
+            label: `${labelOf(event.action)} · ${formatDateTime(event.createdAt)}`,
           }))}
           value={eventId}
           onChange={setEventId}

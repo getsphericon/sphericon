@@ -5,6 +5,7 @@ import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
 import { DraftControls } from '../../components/DraftControls.tsx'
+import { EventActionBadge } from '../../components/EventActionName.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
@@ -62,9 +63,7 @@ function AutomationVersionSummary({
         <Text size="sm" c="dimmed">
           {t(($) => $.automations.triggerColumn)}
         </Text>
-        <Badge variant="outline" color="gray">
-          {version.triggerEvent}
-        </Badge>
+        <EventActionBadge action={version.triggerEvent} color="gray" />
       </Group>
       <Group gap="xs">
         <Text size="sm" c="dimmed">
@@ -74,9 +73,7 @@ function AutomationVersionSummary({
           <Text size="sm">{t(($) => $.automations.noEndEvent)}</Text>
         ) : (
           version.exitEvents.map((event) => (
-            <Badge key={event} variant="outline" color="gray">
-              {event}
-            </Badge>
+            <EventActionBadge key={event} action={event} color="gray" />
           ))
         )}
       </Group>
@@ -87,9 +84,7 @@ function AutomationVersionSummary({
         {version.goalEvent === null ? (
           <Text size="sm">{t(($) => $.automations.noEndEvent)}</Text>
         ) : (
-          <Badge variant="outline" color="teal">
-            {version.goalEvent}
-          </Badge>
+          <EventActionBadge action={version.goalEvent} color="teal" />
         )}
       </Group>
       <Group gap="xs">

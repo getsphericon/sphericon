@@ -1,7 +1,7 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { handleSiteEventsList } from '../../../generated/site/msw.gen.ts'
+import { handleSiteEventsActions, handleSiteEventsList } from '../../../generated/site/msw.gen.ts'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
@@ -30,6 +30,7 @@ interface Query {
 
 function serveEvents(queries: Query[], totalItems = 1) {
   worker.use(
+    handleSiteEventsActions({ body: { actions: ['email.opened', 'purchase'] } }),
     handleSiteEventsList(({ request }) => {
       const params = new URL(request.url).searchParams
       queries.push({ page: params.get('page'), action: params.get('action') })
@@ -51,18 +52,19 @@ test('an event without an email shows its subject id', async () => {
   await expect.element(screen.getByText('anon:1')).toBeInTheDocument()
 })
 
-test('typing an action puts it in the URL once typing pauses, on the first page', async () => {
+test('picking a System event by its name puts its action in the URL, on the first page', async () => {
   serveEvents([], 60)
   const { screen, navigate } = await renderWithRouter(<RecentActivityPage />, {
     ...mount,
     initialPath: `${mount.initialPath}?page=2`,
   })
 
-  await screen.getByPlaceholder('Filter by action').fill('purchase')
+  await screen.getByPlaceholder('Filter by action').click()
+  await screen.getByRole('option', { name: /Opened an email/ }).click()
 
   await expect
     .poll(() => navigate.mock.calls.at(-1)?.[0])
-    .toMatchObject({ search: { action: 'purchase' }, replace: true })
+    .toMatchObject({ search: { action: 'email.opened' }, replace: true })
 })
 
 test('the page in the URL is the page of the feed requested', async () => {
@@ -88,8 +90,23 @@ test('the action search param is the starting filter', async () => {
   await expect.poll(() => queries.at(-1)).toEqual({ page: '1', action: 'purchase' })
 })
 
+test('an action in the URL the Workspace has not recorded stays the filter', async () => {
+  const queries: Query[] = []
+  serveEvents(queries)
+  const { screen } = await renderWithRouter(<RecentActivityPage />, {
+    ...mount,
+    initialPath: `${mount.initialPath}?action=signup`,
+  })
+
+  await expect.element(screen.getByPlaceholder('Filter by action')).toHaveValue('signup')
+  await expect.poll(() => queries.at(-1)).toEqual({ page: '1', action: 'signup' })
+})
+
 test('shows an error alert when the feed fails to load', async () => {
-  worker.use(handleSiteEventsList(() => problem(500)))
+  worker.use(
+    handleSiteEventsActions({ body: { actions: [] } }),
+    handleSiteEventsList(() => problem(500)),
+  )
   const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
 
   await expect.element(screen.getByText('Failed to load activity').first()).toBeInTheDocument()

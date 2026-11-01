@@ -77,10 +77,18 @@ at a time). Attached to a Contact by **stable identity resolved at ingest** — 
 and carries denormalized identity snapshot fields for debugging. The link is a nullable
 foreign key that is set to null when the Contact is deleted: an Event outlives the mutable
 Contact, it never blocks or follows its deletion. The raw material behind behavioral segmentation. sphericon's own delivery and engagement facts (`email.sent`, `email.delivered`, `email.delayed`, `email.dropped`, `email.bounced`,
-`email.complained`, `email.opened`, `email.clicked`, `email.unsubscribed`) are Events too — reserved,
-system-generated actions — so engagement is segmentable through the very same machinery as
+`email.complained`, `email.opened`, `email.clicked`, `email.unsubscribed`) are Events too — **System
+events** — so engagement is segmentable through the very same machinery as
 customer-tracked actions, with no parallel event stream.
 _Avoid_: Activity, log entry, signal
+
+**System event**:
+An Event that sphericon itself records — delivery, engagement, consent and the Contact lifecycle —
+never a customer: its action is reserved, and a customer's Event may not carry it. People see a
+System event by its name, worded as what the Contact did ("Opened an email"); the API, webhooks and
+conditions know it by its action (`email.opened`). A customer's own Event is shown by its action,
+as it was tracked.
+_Avoid_: Predefined event, built-in event, reserved event
 
 **Import**:
 Bringing records from a Workspace's earlier system into the Workspace, repeatably: sending the

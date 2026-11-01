@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { ArchiveViewControl } from '../../components/ArchiveViewControl.tsx'
+import { EventActionNames } from '../../components/EventActionName.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
@@ -97,7 +98,9 @@ export function RulesListPage() {
             // What the Rule reacts to: its live version, else the draft of one never published.
             accessor: 'live',
             title: t(($) => $.rules.triggerColumn),
-            render: (record) => (record.live ?? record.draft)?.triggerEvents.join(', '),
+            render: (record) => (
+              <EventActionNames actions={(record.live ?? record.draft)?.triggerEvents ?? []} />
+            ),
           },
           {
             accessor: 'status',
