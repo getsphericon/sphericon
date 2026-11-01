@@ -394,7 +394,9 @@ export default interface Resources {
         "reasons": {
           "no_integration": "No email provider is configured for this workspace. Add a default integration to resume.",
           "provider_stopped": "Your email provider has stopped sending from your account. Resolve it with the provider: sending resumes on its own once the provider reinstates the account.",
+          "staff_hold": "Outbound email is on hold for this workspace. The notice at the top of the page says how to resolve it.",
           "unverified_domain": "The sender domain is not verified. Publish its DKIM record and verify the domain to resume.",
+          "workspace_pending_deletion": "This workspace is deleted and waits to be erased, so nothing is sent. Restore the workspace to resume.",
           "workspace_suspended": "Sending is suspended for this workspace. Contact your Sphericon administrator."
         },
         "title": "Sending is on hold"

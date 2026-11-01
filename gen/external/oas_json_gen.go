@@ -6318,6 +6318,54 @@ func (s *BrandKitResource) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes BroadcastHoldReason as json.
+func (s BroadcastHoldReason) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes BroadcastHoldReason from json.
+func (s *BroadcastHoldReason) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode BroadcastHoldReason to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch BroadcastHoldReason(v) {
+	case BroadcastHoldReasonWorkspaceSuspended:
+		*s = BroadcastHoldReasonWorkspaceSuspended
+	case BroadcastHoldReasonWorkspacePendingDeletion:
+		*s = BroadcastHoldReasonWorkspacePendingDeletion
+	case BroadcastHoldReasonStaffHold:
+		*s = BroadcastHoldReasonStaffHold
+	case BroadcastHoldReasonNoIntegration:
+		*s = BroadcastHoldReasonNoIntegration
+	case BroadcastHoldReasonUnverifiedDomain:
+		*s = BroadcastHoldReasonUnverifiedDomain
+	case BroadcastHoldReasonProviderStopped:
+		*s = BroadcastHoldReasonProviderStopped
+	default:
+		*s = BroadcastHoldReason(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s BroadcastHoldReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *BroadcastHoldReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *BroadcastReport) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -6723,6 +6771,12 @@ func (s *BroadcastResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.FailedAt.Set {
+			e.FieldStart("failedAt")
+			s.FailedAt.Encode(e)
+		}
+	}
+	{
 		if s.ArchivedAt.Set {
 			e.FieldStart("archivedAt")
 			s.ArchivedAt.Encode(e)
@@ -6738,7 +6792,7 @@ func (s *BroadcastResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfBroadcastResource = [15]string{
+var jsonFieldsNameOfBroadcastResource = [16]string{
 	0:  "id",
 	1:  "name",
 	2:  "subject",
@@ -6751,9 +6805,10 @@ var jsonFieldsNameOfBroadcastResource = [15]string{
 	9:  "status",
 	10: "scheduledAt",
 	11: "sentAt",
-	12: "archivedAt",
-	13: "createdAt",
-	14: "updatedAt",
+	12: "failedAt",
+	13: "archivedAt",
+	14: "createdAt",
+	15: "updatedAt",
 }
 
 // Decode decodes BroadcastResource from json.
@@ -6891,6 +6946,16 @@ func (s *BroadcastResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"sentAt\"")
 			}
+		case "failedAt":
+			if err := func() error {
+				s.FailedAt.Reset()
+				if err := s.FailedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"failedAt\"")
+			}
 		case "archivedAt":
 			if err := func() error {
 				s.ArchivedAt.Reset()
@@ -6902,7 +6967,7 @@ func (s *BroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"archivedAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -6912,7 +6977,7 @@ func (s *BroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 6
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -6932,7 +6997,7 @@ func (s *BroadcastResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00100111,
-		0b01100010,
+		0b11000010,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -28656,6 +28721,55 @@ func (s OptJsonObject) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptJsonObject) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes BroadcastHoldReason as json.
+func (o OptNilBroadcastHoldReason) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes BroadcastHoldReason from json.
+func (o *OptNilBroadcastHoldReason) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilBroadcastHoldReason to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v BroadcastHoldReason
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilBroadcastHoldReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilBroadcastHoldReason) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

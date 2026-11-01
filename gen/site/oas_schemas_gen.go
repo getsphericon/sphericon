@@ -342,6 +342,78 @@ func (s *ApplyTagInput) SetName(val string) {
 
 type AttributionWindowDays int32
 
+// Why a broadcast's sending is held. A hold is reversible and not a failure: the broadcast keeps its
+// status and the remaining recipients send once it lifts.
+// Ref: #/components/schemas/BroadcastHoldReason
+type BroadcastHoldReason string
+
+const (
+	BroadcastHoldReasonWorkspaceSuspended       BroadcastHoldReason = "workspace_suspended"
+	BroadcastHoldReasonWorkspacePendingDeletion BroadcastHoldReason = "workspace_pending_deletion"
+	BroadcastHoldReasonStaffHold                BroadcastHoldReason = "staff_hold"
+	BroadcastHoldReasonNoIntegration            BroadcastHoldReason = "no_integration"
+	BroadcastHoldReasonUnverifiedDomain         BroadcastHoldReason = "unverified_domain"
+	BroadcastHoldReasonProviderStopped          BroadcastHoldReason = "provider_stopped"
+)
+
+// AllValues returns all BroadcastHoldReason values.
+func (BroadcastHoldReason) AllValues() []BroadcastHoldReason {
+	return []BroadcastHoldReason{
+		BroadcastHoldReasonWorkspaceSuspended,
+		BroadcastHoldReasonWorkspacePendingDeletion,
+		BroadcastHoldReasonStaffHold,
+		BroadcastHoldReasonNoIntegration,
+		BroadcastHoldReasonUnverifiedDomain,
+		BroadcastHoldReasonProviderStopped,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BroadcastHoldReason) MarshalText() ([]byte, error) {
+	switch s {
+	case BroadcastHoldReasonWorkspaceSuspended:
+		return []byte(s), nil
+	case BroadcastHoldReasonWorkspacePendingDeletion:
+		return []byte(s), nil
+	case BroadcastHoldReasonStaffHold:
+		return []byte(s), nil
+	case BroadcastHoldReasonNoIntegration:
+		return []byte(s), nil
+	case BroadcastHoldReasonUnverifiedDomain:
+		return []byte(s), nil
+	case BroadcastHoldReasonProviderStopped:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BroadcastHoldReason) UnmarshalText(data []byte) error {
+	switch BroadcastHoldReason(data) {
+	case BroadcastHoldReasonWorkspaceSuspended:
+		*s = BroadcastHoldReasonWorkspaceSuspended
+		return nil
+	case BroadcastHoldReasonWorkspacePendingDeletion:
+		*s = BroadcastHoldReasonWorkspacePendingDeletion
+		return nil
+	case BroadcastHoldReasonStaffHold:
+		*s = BroadcastHoldReasonStaffHold
+		return nil
+	case BroadcastHoldReasonNoIntegration:
+		*s = BroadcastHoldReasonNoIntegration
+		return nil
+	case BroadcastHoldReasonUnverifiedDomain:
+		*s = BroadcastHoldReasonUnverifiedDomain
+		return nil
+	case BroadcastHoldReasonProviderStopped:
+		*s = BroadcastHoldReasonProviderStopped
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The contact's engagement with one broadcast (how its send ended is in `outboundMessages`).
 // Ref: #/components/schemas/ContactExportBroadcastRecipient
 type ContactExportBroadcastRecipient struct {
@@ -3618,6 +3690,74 @@ func (o OptJsonObject) Get() (v JsonObject, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptJsonObject) Or(d JsonObject) JsonObject {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilBroadcastHoldReason returns new OptNilBroadcastHoldReason with value set to v.
+func NewOptNilBroadcastHoldReason(v BroadcastHoldReason) OptNilBroadcastHoldReason {
+	return OptNilBroadcastHoldReason{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilBroadcastHoldReason is optional nullable BroadcastHoldReason.
+type OptNilBroadcastHoldReason struct {
+	Value BroadcastHoldReason
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilBroadcastHoldReason was set.
+func (o OptNilBroadcastHoldReason) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilBroadcastHoldReason) Reset() {
+	var v BroadcastHoldReason
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilBroadcastHoldReason) SetTo(v BroadcastHoldReason) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilBroadcastHoldReason) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilBroadcastHoldReason) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v BroadcastHoldReason
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilBroadcastHoldReason) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilBroadcastHoldReason) Get() (v BroadcastHoldReason, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilBroadcastHoldReason) Or(d BroadcastHoldReason) BroadcastHoldReason {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -8928,8 +9068,9 @@ type SiteAttentionItem struct {
 	Count int32 `json:"count"`
 	// When the problem began, when that is known.
 	Since OptNilTimestamp `json:"since"`
-	// Why a held Broadcast is held: `no_integration`, `unverified_domain` or `provider_stopped`.
-	HoldReason OptNilString `json:"holdReason"`
+	// Why a held Broadcast is held, set on a `broadcastHeld` item only. Only a reason of the Broadcast's
+	// own source makes an item: a Workspace-level hold is the layout's banner.
+	HoldReason OptNilBroadcastHoldReason `json:"holdReason"`
 	// The rate behind a deliverability warning.
 	Abuse OptNilSiteAbuseWarning `json:"abuse"`
 }
@@ -8960,7 +9101,7 @@ func (s *SiteAttentionItem) GetSince() OptNilTimestamp {
 }
 
 // GetHoldReason returns the value of HoldReason.
-func (s *SiteAttentionItem) GetHoldReason() OptNilString {
+func (s *SiteAttentionItem) GetHoldReason() OptNilBroadcastHoldReason {
 	return s.HoldReason
 }
 
@@ -8995,7 +9136,7 @@ func (s *SiteAttentionItem) SetSince(val OptNilTimestamp) {
 }
 
 // SetHoldReason sets the value of HoldReason.
-func (s *SiteAttentionItem) SetHoldReason(val OptNilString) {
+func (s *SiteAttentionItem) SetHoldReason(val OptNilBroadcastHoldReason) {
 	s.HoldReason = val
 }
 
@@ -11461,14 +11602,14 @@ type SiteBroadcastResource struct {
 	IntegrationId OptNilEntityId `json:"integrationId"`
 	// Lifecycle status.
 	Status SiteBroadcastStatus `json:"status"`
-	// Why sending is currently held, when it is: `workspace_suspended`, `unverified_domain`,
-	// `no_integration` or `provider_stopped` (the provider has stopped the account). A hold is reversible
-	// and not a failure: the broadcast keeps its status and the remaining recipients send once it lifts.
-	HoldReason OptNilString `json:"holdReason"`
+	// Why sending is currently held, when it is.
+	HoldReason OptNilBroadcastHoldReason `json:"holdReason"`
 	// When the broadcast is scheduled to send.
 	ScheduledAt OptNilTimestamp `json:"scheduledAt"`
 	// When the broadcast finished sending.
 	SentAt OptNilTimestamp `json:"sentAt"`
+	// When the broadcast failed.
+	FailedAt OptNilTimestamp `json:"failedAt"`
 	// Delivery counters.
 	Stats SiteBroadcastStats `json:"stats"`
 	// Progress and ETA while the broadcast is sending; null otherwise. Returned by get and send only,
@@ -11543,7 +11684,7 @@ func (s *SiteBroadcastResource) GetStatus() SiteBroadcastStatus {
 }
 
 // GetHoldReason returns the value of HoldReason.
-func (s *SiteBroadcastResource) GetHoldReason() OptNilString {
+func (s *SiteBroadcastResource) GetHoldReason() OptNilBroadcastHoldReason {
 	return s.HoldReason
 }
 
@@ -11555,6 +11696,11 @@ func (s *SiteBroadcastResource) GetScheduledAt() OptNilTimestamp {
 // GetSentAt returns the value of SentAt.
 func (s *SiteBroadcastResource) GetSentAt() OptNilTimestamp {
 	return s.SentAt
+}
+
+// GetFailedAt returns the value of FailedAt.
+func (s *SiteBroadcastResource) GetFailedAt() OptNilTimestamp {
+	return s.FailedAt
 }
 
 // GetStats returns the value of Stats.
@@ -11643,7 +11789,7 @@ func (s *SiteBroadcastResource) SetStatus(val SiteBroadcastStatus) {
 }
 
 // SetHoldReason sets the value of HoldReason.
-func (s *SiteBroadcastResource) SetHoldReason(val OptNilString) {
+func (s *SiteBroadcastResource) SetHoldReason(val OptNilBroadcastHoldReason) {
 	s.HoldReason = val
 }
 
@@ -11655,6 +11801,11 @@ func (s *SiteBroadcastResource) SetScheduledAt(val OptNilTimestamp) {
 // SetSentAt sets the value of SentAt.
 func (s *SiteBroadcastResource) SetSentAt(val OptNilTimestamp) {
 	s.SentAt = val
+}
+
+// SetFailedAt sets the value of FailedAt.
+func (s *SiteBroadcastResource) SetFailedAt(val OptNilTimestamp) {
+	s.FailedAt = val
 }
 
 // SetStats sets the value of Stats.
@@ -22826,20 +22977,13 @@ func (*SiteSetupChecklistGetNotFound) siteSetupChecklistGetRes() {}
 // Ref: #/components/schemas/SiteSetupProgress
 type SiteSetupProgress struct {
 	Steps SiteSetupSteps `json:"steps"`
-	// Every step was found done once; a step that regresses later does not undo it.
-	Complete bool `json:"complete"`
-	// When every step was first found done; null until then.
+	// When every step was first found done; null until then. A step that regresses later does not undo it.
 	CompletedAt OptNilTimestamp `json:"completedAt"`
 }
 
 // GetSteps returns the value of Steps.
 func (s *SiteSetupProgress) GetSteps() SiteSetupSteps {
 	return s.Steps
-}
-
-// GetComplete returns the value of Complete.
-func (s *SiteSetupProgress) GetComplete() bool {
-	return s.Complete
 }
 
 // GetCompletedAt returns the value of CompletedAt.
@@ -22850,11 +22994,6 @@ func (s *SiteSetupProgress) GetCompletedAt() OptNilTimestamp {
 // SetSteps sets the value of Steps.
 func (s *SiteSetupProgress) SetSteps(val SiteSetupSteps) {
 	s.Steps = val
-}
-
-// SetComplete sets the value of Complete.
-func (s *SiteSetupProgress) SetComplete(val bool) {
-	s.Complete = val
 }
 
 // SetCompletedAt sets the value of CompletedAt.

@@ -69,7 +69,7 @@ func TestSiteSetupChecklistStates(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			got := setupChecklist(t, tc.owner, tc.workspaceID)
 			assert.Equal(t, tc.want, got.Steps)
-			assert.Equal(t, tc.complete, got.Complete)
+			assert.Equal(t, tc.complete, got.CompletedAt.Set, "complete is having a moment")
 		})
 	}
 }
@@ -94,13 +94,11 @@ func TestAChecklistFoundCompleteStaysCompleteWhenAStepRegresses(t *testing.T) {
 
 	assert.True(t, first.CompletedAt.Set, "the read that finds every step done stamps it")
 	assert.Equal(t, pending, after.Steps.SendingDomain, "the steps are still read now")
-	assert.True(t, after.Complete)
 	assert.Equal(t, first.CompletedAt.Value, after.CompletedAt.Value, "the first moment is kept")
 }
 
 func TestAChecklistNeverCompleteHasNoMoment(t *testing.T) {
 	got := setupChecklist(t, fixtures.OwnerSallyEmail, fixtures.HooliPublicID)
 
-	assert.False(t, got.Complete)
 	assert.False(t, got.CompletedAt.Set)
 }

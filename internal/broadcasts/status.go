@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/qmuntal/stateless"
 	"github.com/samber/lo"
@@ -144,9 +145,11 @@ func canBegin(ctx context.Context, s *ent.Scoped, id int64, t trigger) error {
 	return nil
 }
 
-// fail moves a sending Broadcast to failed.
+// fail moves a sending Broadcast to failed, stamping when it failed.
 func fail(ctx context.Context, s *ent.Scoped, id int64) error {
-	return fire(ctx, s, id, triggerFail, nil)
+	return fire(ctx, s, id, triggerFail, func(u *ent.BroadcastScopedUpdate) {
+		u.SetFailedAt(time.Now())
+	})
 }
 
 // notSendable maps a refused claim to the API's 409 sentinel, keeping the lifecycle error in the chain.

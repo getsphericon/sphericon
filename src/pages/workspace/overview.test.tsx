@@ -28,7 +28,7 @@ const finished = {
     contact: 'done',
     sentEmail: 'done',
   },
-  complete: true,
+  completedAt: '2026-10-01T10:00:00Z',
 } as const
 
 const revenue: SiteAnalyticsRevenue = {
@@ -248,7 +248,6 @@ test('an unfinished checklist is shown with its steps', async () => {
           contact: 'todo',
           sentEmail: 'todo',
         },
-        complete: false,
       },
     }),
   )
@@ -357,7 +356,6 @@ test('the contact step offers every way to add one and no single page', async ()
           contact: 'todo',
           sentEmail: 'todo',
         },
-        complete: false,
       },
     }),
   )
@@ -386,7 +384,6 @@ test('a done contact step offers no action', async () => {
           contact: 'done',
           sentEmail: 'todo',
         },
-        complete: false,
       },
     }),
   )
@@ -500,7 +497,6 @@ test('revenue is shown beside an unfinished checklist too', async () => {
           contact: 'todo',
           sentEmail: 'todo',
         },
-        complete: false,
       },
     }),
   )

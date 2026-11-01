@@ -241,14 +241,28 @@ func (_c *BroadcastCreate) SetNillableSentAt(v *time.Time) *BroadcastCreate {
 	return _c
 }
 
+// SetFailedAt sets the "failed_at" field.
+func (_c *BroadcastCreate) SetFailedAt(v time.Time) *BroadcastCreate {
+	_c.mutation.SetFailedAt(v)
+	return _c
+}
+
+// SetNillableFailedAt sets the "failed_at" field if the given value is not nil.
+func (_c *BroadcastCreate) SetNillableFailedAt(v *time.Time) *BroadcastCreate {
+	if v != nil {
+		_c.SetFailedAt(*v)
+	}
+	return _c
+}
+
 // SetHoldReason sets the "hold_reason" field.
-func (_c *BroadcastCreate) SetHoldReason(v string) *BroadcastCreate {
+func (_c *BroadcastCreate) SetHoldReason(v broadcast.HoldReason) *BroadcastCreate {
 	_c.mutation.SetHoldReason(v)
 	return _c
 }
 
 // SetNillableHoldReason sets the "hold_reason" field if the given value is not nil.
-func (_c *BroadcastCreate) SetNillableHoldReason(v *string) *BroadcastCreate {
+func (_c *BroadcastCreate) SetNillableHoldReason(v *broadcast.HoldReason) *BroadcastCreate {
 	if v != nil {
 		_c.SetHoldReason(*v)
 	}
@@ -395,6 +409,11 @@ func (_c *BroadcastCreate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Broadcast.status": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.HoldReason(); ok {
+		if err := broadcast.HoldReasonValidator(v); err != nil {
+			return &ValidationError{Name: "hold_reason", err: fmt.Errorf(`ent: validator failed for field "Broadcast.hold_reason": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Broadcast.workspace"`)}
 	}
@@ -487,8 +506,12 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 		_spec.SetField(broadcast.FieldSentAt, field.TypeTime, value)
 		_node.SentAt = &value
 	}
+	if value, ok := _c.mutation.FailedAt(); ok {
+		_spec.SetField(broadcast.FieldFailedAt, field.TypeTime, value)
+		_node.FailedAt = &value
+	}
 	if value, ok := _c.mutation.HoldReason(); ok {
-		_spec.SetField(broadcast.FieldHoldReason, field.TypeString, value)
+		_spec.SetField(broadcast.FieldHoldReason, field.TypeEnum, value)
 		_node.HoldReason = &value
 	}
 	if value, ok := _c.mutation.LastScheduledAt(); ok {
@@ -866,8 +889,26 @@ func (u *BroadcastUpsert) ClearSentAt() *BroadcastUpsert {
 	return u
 }
 
+// SetFailedAt sets the "failed_at" field.
+func (u *BroadcastUpsert) SetFailedAt(v time.Time) *BroadcastUpsert {
+	u.Set(broadcast.FieldFailedAt, v)
+	return u
+}
+
+// UpdateFailedAt sets the "failed_at" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateFailedAt() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldFailedAt)
+	return u
+}
+
+// ClearFailedAt clears the value of the "failed_at" field.
+func (u *BroadcastUpsert) ClearFailedAt() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldFailedAt)
+	return u
+}
+
 // SetHoldReason sets the "hold_reason" field.
-func (u *BroadcastUpsert) SetHoldReason(v string) *BroadcastUpsert {
+func (u *BroadcastUpsert) SetHoldReason(v broadcast.HoldReason) *BroadcastUpsert {
 	u.Set(broadcast.FieldHoldReason, v)
 	return u
 }
@@ -1247,8 +1288,29 @@ func (u *BroadcastUpsertOne) ClearSentAt() *BroadcastUpsertOne {
 	})
 }
 
+// SetFailedAt sets the "failed_at" field.
+func (u *BroadcastUpsertOne) SetFailedAt(v time.Time) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetFailedAt(v)
+	})
+}
+
+// UpdateFailedAt sets the "failed_at" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateFailedAt() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateFailedAt()
+	})
+}
+
+// ClearFailedAt clears the value of the "failed_at" field.
+func (u *BroadcastUpsertOne) ClearFailedAt() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearFailedAt()
+	})
+}
+
 // SetHoldReason sets the "hold_reason" field.
-func (u *BroadcastUpsertOne) SetHoldReason(v string) *BroadcastUpsertOne {
+func (u *BroadcastUpsertOne) SetHoldReason(v broadcast.HoldReason) *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.SetHoldReason(v)
 	})
@@ -1800,8 +1862,29 @@ func (u *BroadcastUpsertBulk) ClearSentAt() *BroadcastUpsertBulk {
 	})
 }
 
+// SetFailedAt sets the "failed_at" field.
+func (u *BroadcastUpsertBulk) SetFailedAt(v time.Time) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetFailedAt(v)
+	})
+}
+
+// UpdateFailedAt sets the "failed_at" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateFailedAt() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateFailedAt()
+	})
+}
+
+// ClearFailedAt clears the value of the "failed_at" field.
+func (u *BroadcastUpsertBulk) ClearFailedAt() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearFailedAt()
+	})
+}
+
 // SetHoldReason sets the "hold_reason" field.
-func (u *BroadcastUpsertBulk) SetHoldReason(v string) *BroadcastUpsertBulk {
+func (u *BroadcastUpsertBulk) SetHoldReason(v broadcast.HoldReason) *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.SetHoldReason(v)
 	})

@@ -141,7 +141,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 		return nil, fmt.Errorf("preflight broadcast %d: %w", b.ID, err)
 	}
 	if hold != "" {
-		if err := setHold(ctx, s, b.ID, hold); err != nil {
+		if err := setHold(ctx, s, b.ID, broadcast.HoldReason(hold)); err != nil {
 			return nil, err
 		}
 		return nil, &HeldError{Reason: hold}
@@ -152,7 +152,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	if err := begin(ctx, s, b.ID, t); err != nil {
 		return nil, err
 	}
-	if err := setHold(ctx, s, b.ID, ""); err != nil {
+	if err := clearHold(ctx, s, b.ID); err != nil {
 		return nil, err
 	}
 
@@ -268,7 +268,7 @@ func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, n int, now
 		return nil, err
 	}
 	if route.Held() {
-		if err := setHold(ctx, s, b.ID, route.Hold); err != nil {
+		if err := setHold(ctx, s, b.ID, broadcast.HoldReason(route.Hold)); err != nil {
 			return nil, err
 		}
 		return nil, &HeldError{Reason: route.Hold}

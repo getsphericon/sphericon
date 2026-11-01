@@ -342,6 +342,7 @@ func (e *Broadcast) auditFields() map[string]any {
 		"status":            e.Status,
 		"scheduled_at":      derefAudit(e.ScheduledAt),
 		"sent_at":           derefAudit(e.SentAt),
+		"failed_at":         derefAudit(e.FailedAt),
 		"hold_reason":       derefAudit(e.HoldReason),
 		"last_scheduled_at": derefAudit(e.LastScheduledAt),
 	}

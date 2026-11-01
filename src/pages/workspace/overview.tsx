@@ -19,7 +19,7 @@ const RANGES = zSiteAnalyticsRange.options
 // UnfinishedChecklist is the Setup checklist until it is finished, and nothing after.
 function UnfinishedChecklist({ workspaceId }: { workspaceId: string }) {
   const checklist = useSuspenseQuery(siteSetupChecklistGetOptions({ path: { workspaceId } })).data
-  return checklist.complete ? null : (
+  return checklist.completedAt ? null : (
     <SetupChecklist workspaceId={workspaceId} checklist={checklist} />
   )
 }

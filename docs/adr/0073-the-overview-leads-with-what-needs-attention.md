@@ -37,6 +37,10 @@ account without a shop.
 - **One period for the page**, the `range` search parameter, 30 Report days by default, above the
   blocks it applies to (Sending, Audience, Revenue). Needs attention, the checklist and Sends are
   live.
+- **A failure's age is its own moment, and a hold reason is a contract enum** (#940). A Broadcast
+  stamps `failed_at` in the move to failed and the item reads it, so a later edit of the row does
+  not bring an old failure back. `holdReason` is the `BroadcastHoldReason` enum on every resource
+  that carries it, and the Broadcast's column checks the same values.
 - **Sending counts every surface.** The overview's `sending` reads the Outbound messages of the
   period (Broadcast, Automation, Transactional) and their delivery stamps. The open and click rates
   stay the Broadcast cohort's, labelled as such: only a Broadcast recipient carries its own open and
@@ -50,5 +54,3 @@ account without a shop.
 - A DMARC lookup, which a "not bulk-ready" item would need.
 - An item for an active Automation that cannot send, and one for a scheduled Broadcast larger than
   what is left of the Send cap.
-- A `failed_at` on the Broadcast: a failure's age is read from `updated_at` today.
-- The hold reason as an enum of the contract; it is a string on the Broadcast and the item.

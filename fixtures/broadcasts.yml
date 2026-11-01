@@ -40,6 +40,7 @@
   from_email: hello@codebasics.dev
   body: '<p>Lorem ipsum learning content.</p>'
   status: failed
+  failed_at: '{{daysAgo 7}}'
   segment_id: 104
   workspace_id: 1
   created_at: '{{daysAgo 7}}'
@@ -415,6 +416,7 @@
   from_email: 'hello@mail.brightpath.localhost'
   body: '<h1>Spring launch</h1><p>Three new courses are live.</p><p><a href="https://brightpath.localhost/">Browse courses</a></p>'
   status: 'failed'
+  failed_at: '{{hoursAgo 299}}'
   integration_id: 20001
   workspace_id: 20
   created_at: '{{hoursAgo 300}}'

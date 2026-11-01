@@ -9,11 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/holds"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -70,20 +69,20 @@ func TestWhatStopsMailComesBeforeWhatFailedAndEveryMemberSeesIt(t *testing.T) {
 func TestAHeldBroadcastSaysWhyButAWorkspaceLevelHoldIsLeftToTheLayout(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	hold := func(id int64, reason string) {
+	hold := func(id int64, reason broadcast.HoldReason) {
 		t.Helper()
 		require.NoError(t, acme.Broadcast().UpdateOneID(id).SetHoldReason(reason).Exec(t.Context()))
 	}
-	hold(fixtures.BroadcastScheduledID, outbound.HoldUnverifiedDomain)
-	hold(fixtures.BroadcastSendingID, holds.ReasonSuspended)
-	hold(fixtures.BroadcastFailedID, outbound.HoldNoIntegration)
+	hold(fixtures.BroadcastScheduledID, broadcast.HoldReasonUnverifiedDomain)
+	hold(fixtures.BroadcastSendingID, broadcast.HoldReasonWorkspaceSuspended)
+	hold(fixtures.BroadcastFailedID, broadcast.HoldReasonNoIntegration)
 
 	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
 
 	held, ok := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastScheduledID)
 	require.True(t, ok)
 	assert.Equal(t, siteapi.SiteAttentionSeverityBlocked, held.Severity)
-	assert.Equal(t, outbound.HoldUnverifiedDomain, held.HoldReason.Value)
+	assert.Equal(t, siteapi.BroadcastHoldReasonUnverifiedDomain, held.HoldReason.Value)
 	_, suspended := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastSendingID)
 	assert.False(t, suspended, "a suspension is the layout's banner")
 	_, failed := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastFailedID)
@@ -161,17 +160,32 @@ func TestTheRunsOfAnAutomationThatFailedThisWeekAreOneItemWithTheirCount(t *test
 	assert.Equal(t, siteapi.SiteAttentionSeverityNotice, failed.Severity)
 }
 
-// Fixtures: Acme's failed Broadcast failed long ago.
-func TestABroadcastThatFailedThisWeekIsAnItem(t *testing.T) {
+func TestABroadcastThatFailedThisWeekIsAnItemSinceItFailed(t *testing.T) {
 	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
 	member := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	old := attentionOf(t, member, fixtures.AcmePublicID)
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Broadcast().UpdateOneID(fixtures.BroadcastFailedID).SetUpdatedAt(time.Now()).Exec(t.Context()))
+	failedAt := time.Now().AddDate(0, 0, -2).Truncate(time.Second)
+	require.NoError(t, acme.Broadcast().UpdateOneID(fixtures.BroadcastFailedID).SetFailedAt(failedAt).Exec(t.Context()))
 
-	recent := attentionOf(t, member, fixtures.AcmePublicID)
+	items := attentionOf(t, member, fixtures.AcmePublicID)
 
-	_, before := itemAbout(old, siteapi.SiteAttentionKindBroadcastFailed, fixtures.BroadcastFailedID)
-	_, after := itemAbout(recent, siteapi.SiteAttentionKindBroadcastFailed, fixtures.BroadcastFailedID)
-	assert.False(t, before)
-	assert.True(t, after)
+	failed, ok := itemAbout(items, siteapi.SiteAttentionKindBroadcastFailed, fixtures.BroadcastFailedID)
+	require.True(t, ok)
+	assert.Equal(t, siteapi.SiteAttentionSeverityNotice, failed.Severity)
+	require.True(t, failed.Since.Set)
+	assert.True(t, failedAt.Equal(time.Time(failed.Since.Value)), "since is when it failed, got %v", failed.Since.Value)
+}
+
+func TestABroadcastThatFailedLongAgoIsNoItemAfterAnEdit(t *testing.T) {
+	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	member := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	require.NoError(t, acme.Broadcast().UpdateOneID(fixtures.BroadcastFailedID).
+		SetFailedAt(time.Now().AddDate(0, 0, -8)).Exec(t.Context()))
+	require.NoError(t, acme.Broadcast().UpdateOneID(fixtures.BroadcastFailedID).SetName("Renamed today").Exec(t.Context()))
+
+	items := attentionOf(t, member, fixtures.AcmePublicID)
+
+	_, failed := itemAbout(items, siteapi.SiteAttentionKindBroadcastFailed, fixtures.BroadcastFailedID)
+	assert.False(t, failed, "a rename does not bring back a failure of eight days ago")
 }

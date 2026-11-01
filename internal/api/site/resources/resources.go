@@ -75,6 +75,7 @@ import (
 // goverter:extend timestamp
 // goverter:extend optNilString
 // goverter:extend optNilContactSource
+// goverter:extend optNilBroadcastHoldReason
 // goverter:extend omitEmpty
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilEntityID
@@ -604,6 +605,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	ContactExportSourceToResource(source contact.Source) siteapi.ContactExportSource
 	// goverter:enum:transform value
+	BroadcastHoldReasonToResource(source broadcast.HoldReason) siteapi.BroadcastHoldReason
+	// goverter:enum:transform value
 	CustomFieldTypeToResource(source customfield.Type) siteapi.SiteCustomFieldType
 	// What a test send of a Webhook endpoint failed with: a delivery's own error, not the one the
 	// endpoint keeps (WebhookErrorKindToResource).
@@ -1075,6 +1078,10 @@ func ruleResults(c Converter, stored string) []siteapi.SiteRuleActionResult {
 
 func optNilContactSource(c Converter, v *contact.Source) siteapi.OptNilContactExportSource {
 	return convert.OptVia[siteapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
+}
+
+func optNilBroadcastHoldReason(c Converter, v *broadcast.HoldReason) siteapi.OptNilBroadcastHoldReason {
+	return convert.OptVia[siteapi.OptNilBroadcastHoldReason](v, c.BroadcastHoldReasonToResource)
 }
 
 // customFieldRuleOperators is the operators a rule leaf may test on a Custom field of the type: the

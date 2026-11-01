@@ -49,6 +49,8 @@ const (
 	FieldScheduledAt = "scheduled_at"
 	// FieldSentAt holds the string denoting the sent_at field in the database.
 	FieldSentAt = "sent_at"
+	// FieldFailedAt holds the string denoting the failed_at field in the database.
+	FieldFailedAt = "failed_at"
 	// FieldHoldReason holds the string denoting the hold_reason field in the database.
 	FieldHoldReason = "hold_reason"
 	// FieldLastScheduledAt holds the string denoting the last_scheduled_at field in the database.
@@ -113,6 +115,7 @@ var Columns = []string{
 	FieldStatus,
 	FieldScheduledAt,
 	FieldSentAt,
+	FieldFailedAt,
 	FieldHoldReason,
 	FieldLastScheduledAt,
 }
@@ -168,6 +171,33 @@ func StatusValidator(s Status) error {
 		return nil
 	default:
 		return fmt.Errorf("broadcast: invalid enum value for status field: %q", s)
+	}
+}
+
+// HoldReason defines the type for the "hold_reason" enum field.
+type HoldReason string
+
+// HoldReason values.
+const (
+	HoldReasonWorkspaceSuspended       HoldReason = "workspace_suspended"
+	HoldReasonWorkspacePendingDeletion HoldReason = "workspace_pending_deletion"
+	HoldReasonStaffHold                HoldReason = "staff_hold"
+	HoldReasonNoIntegration            HoldReason = "no_integration"
+	HoldReasonUnverifiedDomain         HoldReason = "unverified_domain"
+	HoldReasonProviderStopped          HoldReason = "provider_stopped"
+)
+
+func (hr HoldReason) String() string {
+	return string(hr)
+}
+
+// HoldReasonValidator is a validator for the "hold_reason" field enum values. It is called by the builders before save.
+func HoldReasonValidator(hr HoldReason) error {
+	switch hr {
+	case HoldReasonWorkspaceSuspended, HoldReasonWorkspacePendingDeletion, HoldReasonStaffHold, HoldReasonNoIntegration, HoldReasonUnverifiedDomain, HoldReasonProviderStopped:
+		return nil
+	default:
+		return fmt.Errorf("broadcast: invalid enum value for hold_reason field: %q", hr)
 	}
 }
 
@@ -257,6 +287,11 @@ func ByScheduledAt(opts ...sql.OrderTermOption) OrderOption {
 // BySentAt orders the results by the sent_at field.
 func BySentAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSentAt, opts...).ToFunc()
+}
+
+// ByFailedAt orders the results by the failed_at field.
+func ByFailedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFailedAt, opts...).ToFunc()
 }
 
 // ByHoldReason orders the results by the hold_reason field.

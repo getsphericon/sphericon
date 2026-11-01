@@ -14965,6 +14965,18 @@
         },
         "description": "The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. Write a\nmessage in these values. A Workspace that has not saved one has the defaults and `saved` false."
       },
+      "BroadcastHoldReason": {
+        "type": "string",
+        "enum": [
+          "workspace_suspended",
+          "workspace_pending_deletion",
+          "staff_hold",
+          "no_integration",
+          "unverified_domain",
+          "provider_stopped"
+        ],
+        "description": "Why a broadcast's sending is held. A hold is reversible and not a failure: the broadcast keeps\nits status and the remaining recipients send once it lifts."
+      },
       "BroadcastReport": {
         "type": "object",
         "required": [
@@ -14993,9 +15005,13 @@
             "description": "Lifecycle status"
           },
           "holdReason": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BroadcastHoldReason"
+              }
+            ],
             "nullable": true,
-            "description": "Why sending is currently held, when it is: `workspace_suspended`,\n`unverified_domain`, `no_integration` or `provider_stopped` (the provider has\nstopped the account). A hold is reversible, not a failure."
+            "description": "Why sending is currently held, when it is"
           },
           "recipientsTotal": {
             "type": "integer",
@@ -15156,6 +15172,16 @@
             ],
             "nullable": true,
             "description": "When the broadcast finished sending"
+          },
+          "failedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the broadcast failed"
           },
           "archivedAt": {
             "type": "string",

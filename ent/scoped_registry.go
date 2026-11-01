@@ -551,6 +551,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.SentAt != nil {
 					b.SetSentAt(*src.SentAt)
 				}
+				if src.FailedAt != nil {
+					b.SetFailedAt(*src.FailedAt)
+				}
 				if src.HoldReason != nil {
 					b.SetHoldReason(*src.HoldReason)
 				}

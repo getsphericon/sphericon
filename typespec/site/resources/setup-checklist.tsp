@@ -35,10 +35,7 @@ model SiteSetupSteps {
 model SiteSetupProgress {
   steps: SiteSetupSteps;
 
-  /** Every step was found done once; a step that regresses later does not undo it */
-  complete: boolean;
-
-  /** When every step was first found done; null until then */
+  /** When every step was first found done; null until then. A step that regresses later does not undo it */
   completedAt?: Timestamp | null;
 }
 

@@ -82,6 +82,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optNilString
 // goverter:extend optNilSendCap
 // goverter:extend optNilContactSource
+// goverter:extend optNilBroadcastHoldReason
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
 // goverter:extend optNilCountry
@@ -407,6 +408,8 @@ type Converter interface {
 	CapturedMessageSurfaceToResource(source capturedmessage.Surface) externalapi.CapturedMessageSurface
 	// goverter:enum:transform value
 	ContactExportSourceToResource(source contact.Source) externalapi.ContactExportSource
+	// goverter:enum:transform value
+	BroadcastHoldReasonToResource(source broadcast.HoldReason) externalapi.BroadcastHoldReason
 	// goverter:enum:transform value
 	CustomFieldTypeToResource(source customfield.Type) externalapi.CustomFieldType
 	// What a test send of a Webhook endpoint failed with: a delivery's own error, not the one the
@@ -738,6 +741,10 @@ func ruleResults(c Converter, stored string) []externalapi.RuleActionResult {
 
 func optNilContactSource(c Converter, v *contact.Source) externalapi.OptNilContactExportSource {
 	return convert.OptVia[externalapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
+}
+
+func optNilBroadcastHoldReason(c Converter, v *broadcast.HoldReason) externalapi.OptNilBroadcastHoldReason {
+	return convert.OptVia[externalapi.OptNilBroadcastHoldReason](v, c.BroadcastHoldReasonToResource)
 }
 
 // schemaExample is the agent schema's example document as the contract's opaque object.

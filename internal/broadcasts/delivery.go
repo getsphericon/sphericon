@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
@@ -120,7 +121,7 @@ func (d *Delivery) settle(ctx context.Context, s *ent.Scoped, rec *ent.Broadcast
 	if res.Outcome != outbound.Sent {
 		return nil
 	}
-	return setHold(ctx, s, rec.BroadcastID, "")
+	return clearHold(ctx, s, rec.BroadcastID)
 }
 
 // retryLater is the recipient's turn when Outbound send wants a retry (a Hold or a
@@ -129,7 +130,7 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 	if res.Outcome == outbound.Held {
 		// Best effort: the hold is enforced by the send path and the caller retries on the
 		// HeldError either way, so a failed write only leaves the reason unrecorded.
-		if herr := setHold(ctx, s, b.ID, res.Reason); herr != nil {
+		if herr := setHold(ctx, s, b.ID, broadcast.HoldReason(res.Reason)); herr != nil {
 			slog.WarnContext(ctx, "broadcast hold reason not recorded", "error", herr, "broadcast_id", b.ID)
 		}
 		return &HeldError{Reason: res.Reason}
@@ -182,16 +183,17 @@ func (d *Delivery) GiveUp(ctx context.Context, s *ent.Scoped, recipientID int64,
 	return Finalize(ctx, s, rec.BroadcastID)
 }
 
-// setHold records (or, with reason "", clears) why a Broadcast is held. It is the only
-// writer of the hold reason.
-func setHold(ctx context.Context, s *ent.Scoped, broadcastID int64, reason string) error {
-	upd := s.Broadcast().UpdateOneID(broadcastID)
-	if reason == "" {
-		upd.ClearHoldReason()
-	} else {
-		upd.SetHoldReason(reason)
-	}
-	return upd.Exec(ctx)
+// setHold records why a Broadcast is held: the reason Outbound send held it for, a
+// Workspace-level one (holds.Reason*) or one of its source's own (outbound.Hold*). The update
+// refuses a reason the column does not declare. With clearHold it is the only writer of the hold
+// reason.
+func setHold(ctx context.Context, s *ent.Scoped, broadcastID int64, reason broadcast.HoldReason) error {
+	return s.Broadcast().UpdateOneID(broadcastID).SetHoldReason(reason).Exec(ctx)
+}
+
+// clearHold records that a Broadcast is no longer held.
+func clearHold(ctx context.Context, s *ent.Scoped, broadcastID int64) error {
+	return s.Broadcast().UpdateOneID(broadcastID).ClearHoldReason().Exec(ctx)
 }
 
 // IsRetryLater reports whether err asks the adapter to try again rather than record a

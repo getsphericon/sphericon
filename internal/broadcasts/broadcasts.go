@@ -463,7 +463,7 @@ type Report struct {
 	Stats
 
 	Status     broadcast.Status
-	HoldReason *string
+	HoldReason *broadcast.HoldReason
 }
 
 // Report reads the Broadcast's delivery figures (see Stats).

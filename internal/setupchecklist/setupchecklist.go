@@ -36,9 +36,6 @@ type Checklist struct {
 	CompletedAt *time.Time
 }
 
-// Complete reports whether the checklist was ever found complete.
-func (c Checklist) Complete() bool { return c.CompletedAt != nil }
-
 // allDone reports whether every step is done now.
 func (s Steps) allDone() bool {
 	return s.Integration == Done && s.SendingDomain == Done && s.Contact == Done && s.SentEmail == Done
