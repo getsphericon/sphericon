@@ -63,7 +63,7 @@ const (
 )
 
 // MaxHTTPActionsPerRule keeps one Rule from queueing an unbounded number of outbound calls.
-const MaxHTTPActionsPerRule = 5
+const MaxHTTPActionsPerRule = 5 // contract-copy: counts a Rule's http Actions among its Actions, which the contract cannot bound by type
 
 // Domain errors returned by Module. Callers match with errors.Is.
 var (

@@ -1,3 +1,5 @@
+import * as z from 'zod'
+
 // zod gives a number without a declared bound an infinite one (a null only in its types).
 function finite(bound: number | null): bound is number {
   return Number.isFinite(bound)
@@ -15,4 +17,15 @@ export function boundsOf(schema: { minValue: number | null; maxValue: number | n
     throw new Error('the contract declares no range for this number')
   }
   return { min, max }
+}
+
+// The most items a list of the contract holds (TypeSpec @maxItems -> zod), for a form that adds
+// rows up to it. zod keeps the bound only inside the schema, so it is read from the schema's JSON
+// Schema; a list without one fails at once, as a range does.
+export function maxItemsOf(schema: z.ZodArray): number {
+  const { maxItems } = z.toJSONSchema(schema, { unrepresentable: 'any' })
+  if (maxItems === undefined) {
+    throw new Error('the contract declares no most items for this list')
+  }
+  return maxItems
 }

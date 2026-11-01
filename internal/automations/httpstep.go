@@ -19,7 +19,6 @@ import (
 const (
 	MaxHTTPURLBytes           = httpcall.MaxURLBytes
 	MaxHTTPBodyBytes          = httpcall.MaxBodyBytes
-	MaxHTTPHeaders            = httpcall.MaxHeaders
 	MaxHTTPStepsPerAutomation = 10
 )
 

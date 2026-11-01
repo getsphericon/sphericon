@@ -678,7 +678,7 @@ export const zSiteAutomationStep = z.object({
   tag: z.exactOptional(z.string()),
   id: z.exactOptional(z.string()),
   url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader)),
+  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader).max(5)),
   secret: z.exactOptional(z.string()),
   clearSecret: z.exactOptional(z.boolean()),
   hasSecret: z.exactOptional(z.boolean())
@@ -1563,7 +1563,7 @@ export const zSiteRuleAction = z.object({
   automationId: z.exactOptional(zEntityId),
   id: z.exactOptional(z.string()),
   url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader)),
+  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader).max(5)),
   body: z.exactOptional(z.string()),
   secret: z.exactOptional(z.string()),
   clearSecret: z.exactOptional(z.boolean()),
