@@ -426,6 +426,659 @@ func (s *ApplyTagInput) SetName(val string) {
 	s.Name = val
 }
 
+// What an Audit entry says was done, as `<entity>.<verb>`: an action the server records on its own, or
+// the create, update or delete of an audited object.
+// Ref: #/components/schemas/AuditAction
+type AuditAction string
+
+const (
+	AuditActionMembershipUpdate            AuditAction = "membership.update"
+	AuditActionMembershipDelete            AuditAction = "membership.delete"
+	AuditActionMembershipDomainJoin        AuditAction = "membership.domain_join"
+	AuditActionInvitationCreate            AuditAction = "invitation.create"
+	AuditActionInvitationAccept            AuditAction = "invitation.accept"
+	AuditActionInvitationRevoke            AuditAction = "invitation.revoke"
+	AuditActionUserLogin                   AuditAction = "user.login"
+	AuditActionUserIdentityLink            AuditAction = "user.identity_link"
+	AuditActionUserIdentityUnlink          AuditAction = "user.identity_unlink"
+	AuditActionUserEmailVerify             AuditAction = "user.email_verify"
+	AuditActionUserPasswordChange          AuditAction = "user.password_change"
+	AuditActionUserSignOutEverywhere       AuditAction = "user.sign_out_everywhere"
+	AuditActionUserSecondFactorEnroll      AuditAction = "user.second_factor_enroll"
+	AuditActionUserSecondFactorDisable     AuditAction = "user.second_factor_disable"
+	AuditActionUserSecondFactorReset       AuditAction = "user.second_factor_reset"
+	AuditActionUserRecoveryCodesRegenerate AuditAction = "user.recovery_codes_regenerate"
+	AuditActionUserRecoveryCodeUse         AuditAction = "user.recovery_code_use"
+	AuditActionWorkspaceCreate             AuditAction = "workspace.create"
+	AuditActionWorkspaceUpdate             AuditAction = "workspace.update"
+	AuditActionWorkspaceDelete             AuditAction = "workspace.delete"
+	AuditActionWorkspaceRestore            AuditAction = "workspace.restore"
+	AuditActionWorkspaceSuspend            AuditAction = "workspace.suspend"
+	AuditActionWorkspaceUnsuspend          AuditAction = "workspace.unsuspend"
+	AuditActionWorkspaceAbuseExempt        AuditAction = "workspace.abuse_exempt"
+	AuditActionWorkspaceAbuseUnexempt      AuditAction = "workspace.abuse_unexempt"
+	AuditActionWorkspaceSendCapChange      AuditAction = "workspace.send_cap_change"
+	AuditActionContactImport               AuditAction = "contact.import"
+	AuditActionAuditLogExport              AuditAction = "audit_log.export"
+	AuditActionWebhookEndpointTest         AuditAction = "webhook_endpoint.test"
+	AuditActionAPITokenCreate              AuditAction = "api_token.create"
+	AuditActionAPITokenUpdate              AuditAction = "api_token.update"
+	AuditActionAPITokenDelete              AuditAction = "api_token.delete"
+	AuditActionAutomationCreate            AuditAction = "automation.create"
+	AuditActionAutomationUpdate            AuditAction = "automation.update"
+	AuditActionAutomationDelete            AuditAction = "automation.delete"
+	AuditActionAutomationDiscard           AuditAction = "automation.discard"
+	AuditActionAutomationRestore           AuditAction = "automation.restore"
+	AuditActionBrandKitCreate              AuditAction = "brand_kit.create"
+	AuditActionBrandKitUpdate              AuditAction = "brand_kit.update"
+	AuditActionBrandKitDelete              AuditAction = "brand_kit.delete"
+	AuditActionBroadcastCreate             AuditAction = "broadcast.create"
+	AuditActionBroadcastUpdate             AuditAction = "broadcast.update"
+	AuditActionBroadcastDelete             AuditAction = "broadcast.delete"
+	AuditActionBroadcastDiscard            AuditAction = "broadcast.discard"
+	AuditActionBroadcastRestore            AuditAction = "broadcast.restore"
+	AuditActionContactCreate               AuditAction = "contact.create"
+	AuditActionContactUpdate               AuditAction = "contact.update"
+	AuditActionContactDelete               AuditAction = "contact.delete"
+	AuditActionCustomFieldCreate           AuditAction = "custom_field.create"
+	AuditActionCustomFieldUpdate           AuditAction = "custom_field.update"
+	AuditActionCustomFieldDelete           AuditAction = "custom_field.delete"
+	AuditActionTemplateCreate              AuditAction = "template.create"
+	AuditActionTemplateUpdate              AuditAction = "template.update"
+	AuditActionTemplateDelete              AuditAction = "template.delete"
+	AuditActionHoldCreate                  AuditAction = "hold.create"
+	AuditActionHoldUpdate                  AuditAction = "hold.update"
+	AuditActionHoldDelete                  AuditAction = "hold.delete"
+	AuditActionIntegrationCreate           AuditAction = "integration.create"
+	AuditActionIntegrationUpdate           AuditAction = "integration.update"
+	AuditActionIntegrationDelete           AuditAction = "integration.delete"
+	AuditActionIntegrationDiscard          AuditAction = "integration.discard"
+	AuditActionIntegrationRestore          AuditAction = "integration.restore"
+	AuditActionJoinDomainCreate            AuditAction = "join_domain.create"
+	AuditActionJoinDomainUpdate            AuditAction = "join_domain.update"
+	AuditActionJoinDomainDelete            AuditAction = "join_domain.delete"
+	AuditActionRuleCreate                  AuditAction = "rule.create"
+	AuditActionRuleUpdate                  AuditAction = "rule.update"
+	AuditActionRuleDelete                  AuditAction = "rule.delete"
+	AuditActionRuleDiscard                 AuditAction = "rule.discard"
+	AuditActionRuleRestore                 AuditAction = "rule.restore"
+	AuditActionSegmentCreate               AuditAction = "segment.create"
+	AuditActionSegmentUpdate               AuditAction = "segment.update"
+	AuditActionSegmentDelete               AuditAction = "segment.delete"
+	AuditActionSegmentDiscard              AuditAction = "segment.discard"
+	AuditActionSegmentRestore              AuditAction = "segment.restore"
+	AuditActionSendingDomainCreate         AuditAction = "sending_domain.create"
+	AuditActionSendingDomainUpdate         AuditAction = "sending_domain.update"
+	AuditActionSendingDomainDelete         AuditAction = "sending_domain.delete"
+	AuditActionSendingDomainDiscard        AuditAction = "sending_domain.discard"
+	AuditActionSendingDomainRestore        AuditAction = "sending_domain.restore"
+	AuditActionTagCreate                   AuditAction = "tag.create"
+	AuditActionTagUpdate                   AuditAction = "tag.update"
+	AuditActionTagDelete                   AuditAction = "tag.delete"
+	AuditActionTrackingDomainCreate        AuditAction = "tracking_domain.create"
+	AuditActionTrackingDomainUpdate        AuditAction = "tracking_domain.update"
+	AuditActionTrackingDomainDelete        AuditAction = "tracking_domain.delete"
+	AuditActionWebhookEndpointCreate       AuditAction = "webhook_endpoint.create"
+	AuditActionWebhookEndpointUpdate       AuditAction = "webhook_endpoint.update"
+	AuditActionWebhookEndpointDelete       AuditAction = "webhook_endpoint.delete"
+)
+
+// AllValues returns all AuditAction values.
+func (AuditAction) AllValues() []AuditAction {
+	return []AuditAction{
+		AuditActionMembershipUpdate,
+		AuditActionMembershipDelete,
+		AuditActionMembershipDomainJoin,
+		AuditActionInvitationCreate,
+		AuditActionInvitationAccept,
+		AuditActionInvitationRevoke,
+		AuditActionUserLogin,
+		AuditActionUserIdentityLink,
+		AuditActionUserIdentityUnlink,
+		AuditActionUserEmailVerify,
+		AuditActionUserPasswordChange,
+		AuditActionUserSignOutEverywhere,
+		AuditActionUserSecondFactorEnroll,
+		AuditActionUserSecondFactorDisable,
+		AuditActionUserSecondFactorReset,
+		AuditActionUserRecoveryCodesRegenerate,
+		AuditActionUserRecoveryCodeUse,
+		AuditActionWorkspaceCreate,
+		AuditActionWorkspaceUpdate,
+		AuditActionWorkspaceDelete,
+		AuditActionWorkspaceRestore,
+		AuditActionWorkspaceSuspend,
+		AuditActionWorkspaceUnsuspend,
+		AuditActionWorkspaceAbuseExempt,
+		AuditActionWorkspaceAbuseUnexempt,
+		AuditActionWorkspaceSendCapChange,
+		AuditActionContactImport,
+		AuditActionAuditLogExport,
+		AuditActionWebhookEndpointTest,
+		AuditActionAPITokenCreate,
+		AuditActionAPITokenUpdate,
+		AuditActionAPITokenDelete,
+		AuditActionAutomationCreate,
+		AuditActionAutomationUpdate,
+		AuditActionAutomationDelete,
+		AuditActionAutomationDiscard,
+		AuditActionAutomationRestore,
+		AuditActionBrandKitCreate,
+		AuditActionBrandKitUpdate,
+		AuditActionBrandKitDelete,
+		AuditActionBroadcastCreate,
+		AuditActionBroadcastUpdate,
+		AuditActionBroadcastDelete,
+		AuditActionBroadcastDiscard,
+		AuditActionBroadcastRestore,
+		AuditActionContactCreate,
+		AuditActionContactUpdate,
+		AuditActionContactDelete,
+		AuditActionCustomFieldCreate,
+		AuditActionCustomFieldUpdate,
+		AuditActionCustomFieldDelete,
+		AuditActionTemplateCreate,
+		AuditActionTemplateUpdate,
+		AuditActionTemplateDelete,
+		AuditActionHoldCreate,
+		AuditActionHoldUpdate,
+		AuditActionHoldDelete,
+		AuditActionIntegrationCreate,
+		AuditActionIntegrationUpdate,
+		AuditActionIntegrationDelete,
+		AuditActionIntegrationDiscard,
+		AuditActionIntegrationRestore,
+		AuditActionJoinDomainCreate,
+		AuditActionJoinDomainUpdate,
+		AuditActionJoinDomainDelete,
+		AuditActionRuleCreate,
+		AuditActionRuleUpdate,
+		AuditActionRuleDelete,
+		AuditActionRuleDiscard,
+		AuditActionRuleRestore,
+		AuditActionSegmentCreate,
+		AuditActionSegmentUpdate,
+		AuditActionSegmentDelete,
+		AuditActionSegmentDiscard,
+		AuditActionSegmentRestore,
+		AuditActionSendingDomainCreate,
+		AuditActionSendingDomainUpdate,
+		AuditActionSendingDomainDelete,
+		AuditActionSendingDomainDiscard,
+		AuditActionSendingDomainRestore,
+		AuditActionTagCreate,
+		AuditActionTagUpdate,
+		AuditActionTagDelete,
+		AuditActionTrackingDomainCreate,
+		AuditActionTrackingDomainUpdate,
+		AuditActionTrackingDomainDelete,
+		AuditActionWebhookEndpointCreate,
+		AuditActionWebhookEndpointUpdate,
+		AuditActionWebhookEndpointDelete,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AuditAction) MarshalText() ([]byte, error) {
+	switch s {
+	case AuditActionMembershipUpdate:
+		return []byte(s), nil
+	case AuditActionMembershipDelete:
+		return []byte(s), nil
+	case AuditActionMembershipDomainJoin:
+		return []byte(s), nil
+	case AuditActionInvitationCreate:
+		return []byte(s), nil
+	case AuditActionInvitationAccept:
+		return []byte(s), nil
+	case AuditActionInvitationRevoke:
+		return []byte(s), nil
+	case AuditActionUserLogin:
+		return []byte(s), nil
+	case AuditActionUserIdentityLink:
+		return []byte(s), nil
+	case AuditActionUserIdentityUnlink:
+		return []byte(s), nil
+	case AuditActionUserEmailVerify:
+		return []byte(s), nil
+	case AuditActionUserPasswordChange:
+		return []byte(s), nil
+	case AuditActionUserSignOutEverywhere:
+		return []byte(s), nil
+	case AuditActionUserSecondFactorEnroll:
+		return []byte(s), nil
+	case AuditActionUserSecondFactorDisable:
+		return []byte(s), nil
+	case AuditActionUserSecondFactorReset:
+		return []byte(s), nil
+	case AuditActionUserRecoveryCodesRegenerate:
+		return []byte(s), nil
+	case AuditActionUserRecoveryCodeUse:
+		return []byte(s), nil
+	case AuditActionWorkspaceCreate:
+		return []byte(s), nil
+	case AuditActionWorkspaceUpdate:
+		return []byte(s), nil
+	case AuditActionWorkspaceDelete:
+		return []byte(s), nil
+	case AuditActionWorkspaceRestore:
+		return []byte(s), nil
+	case AuditActionWorkspaceSuspend:
+		return []byte(s), nil
+	case AuditActionWorkspaceUnsuspend:
+		return []byte(s), nil
+	case AuditActionWorkspaceAbuseExempt:
+		return []byte(s), nil
+	case AuditActionWorkspaceAbuseUnexempt:
+		return []byte(s), nil
+	case AuditActionWorkspaceSendCapChange:
+		return []byte(s), nil
+	case AuditActionContactImport:
+		return []byte(s), nil
+	case AuditActionAuditLogExport:
+		return []byte(s), nil
+	case AuditActionWebhookEndpointTest:
+		return []byte(s), nil
+	case AuditActionAPITokenCreate:
+		return []byte(s), nil
+	case AuditActionAPITokenUpdate:
+		return []byte(s), nil
+	case AuditActionAPITokenDelete:
+		return []byte(s), nil
+	case AuditActionAutomationCreate:
+		return []byte(s), nil
+	case AuditActionAutomationUpdate:
+		return []byte(s), nil
+	case AuditActionAutomationDelete:
+		return []byte(s), nil
+	case AuditActionAutomationDiscard:
+		return []byte(s), nil
+	case AuditActionAutomationRestore:
+		return []byte(s), nil
+	case AuditActionBrandKitCreate:
+		return []byte(s), nil
+	case AuditActionBrandKitUpdate:
+		return []byte(s), nil
+	case AuditActionBrandKitDelete:
+		return []byte(s), nil
+	case AuditActionBroadcastCreate:
+		return []byte(s), nil
+	case AuditActionBroadcastUpdate:
+		return []byte(s), nil
+	case AuditActionBroadcastDelete:
+		return []byte(s), nil
+	case AuditActionBroadcastDiscard:
+		return []byte(s), nil
+	case AuditActionBroadcastRestore:
+		return []byte(s), nil
+	case AuditActionContactCreate:
+		return []byte(s), nil
+	case AuditActionContactUpdate:
+		return []byte(s), nil
+	case AuditActionContactDelete:
+		return []byte(s), nil
+	case AuditActionCustomFieldCreate:
+		return []byte(s), nil
+	case AuditActionCustomFieldUpdate:
+		return []byte(s), nil
+	case AuditActionCustomFieldDelete:
+		return []byte(s), nil
+	case AuditActionTemplateCreate:
+		return []byte(s), nil
+	case AuditActionTemplateUpdate:
+		return []byte(s), nil
+	case AuditActionTemplateDelete:
+		return []byte(s), nil
+	case AuditActionHoldCreate:
+		return []byte(s), nil
+	case AuditActionHoldUpdate:
+		return []byte(s), nil
+	case AuditActionHoldDelete:
+		return []byte(s), nil
+	case AuditActionIntegrationCreate:
+		return []byte(s), nil
+	case AuditActionIntegrationUpdate:
+		return []byte(s), nil
+	case AuditActionIntegrationDelete:
+		return []byte(s), nil
+	case AuditActionIntegrationDiscard:
+		return []byte(s), nil
+	case AuditActionIntegrationRestore:
+		return []byte(s), nil
+	case AuditActionJoinDomainCreate:
+		return []byte(s), nil
+	case AuditActionJoinDomainUpdate:
+		return []byte(s), nil
+	case AuditActionJoinDomainDelete:
+		return []byte(s), nil
+	case AuditActionRuleCreate:
+		return []byte(s), nil
+	case AuditActionRuleUpdate:
+		return []byte(s), nil
+	case AuditActionRuleDelete:
+		return []byte(s), nil
+	case AuditActionRuleDiscard:
+		return []byte(s), nil
+	case AuditActionRuleRestore:
+		return []byte(s), nil
+	case AuditActionSegmentCreate:
+		return []byte(s), nil
+	case AuditActionSegmentUpdate:
+		return []byte(s), nil
+	case AuditActionSegmentDelete:
+		return []byte(s), nil
+	case AuditActionSegmentDiscard:
+		return []byte(s), nil
+	case AuditActionSegmentRestore:
+		return []byte(s), nil
+	case AuditActionSendingDomainCreate:
+		return []byte(s), nil
+	case AuditActionSendingDomainUpdate:
+		return []byte(s), nil
+	case AuditActionSendingDomainDelete:
+		return []byte(s), nil
+	case AuditActionSendingDomainDiscard:
+		return []byte(s), nil
+	case AuditActionSendingDomainRestore:
+		return []byte(s), nil
+	case AuditActionTagCreate:
+		return []byte(s), nil
+	case AuditActionTagUpdate:
+		return []byte(s), nil
+	case AuditActionTagDelete:
+		return []byte(s), nil
+	case AuditActionTrackingDomainCreate:
+		return []byte(s), nil
+	case AuditActionTrackingDomainUpdate:
+		return []byte(s), nil
+	case AuditActionTrackingDomainDelete:
+		return []byte(s), nil
+	case AuditActionWebhookEndpointCreate:
+		return []byte(s), nil
+	case AuditActionWebhookEndpointUpdate:
+		return []byte(s), nil
+	case AuditActionWebhookEndpointDelete:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AuditAction) UnmarshalText(data []byte) error {
+	switch AuditAction(data) {
+	case AuditActionMembershipUpdate:
+		*s = AuditActionMembershipUpdate
+		return nil
+	case AuditActionMembershipDelete:
+		*s = AuditActionMembershipDelete
+		return nil
+	case AuditActionMembershipDomainJoin:
+		*s = AuditActionMembershipDomainJoin
+		return nil
+	case AuditActionInvitationCreate:
+		*s = AuditActionInvitationCreate
+		return nil
+	case AuditActionInvitationAccept:
+		*s = AuditActionInvitationAccept
+		return nil
+	case AuditActionInvitationRevoke:
+		*s = AuditActionInvitationRevoke
+		return nil
+	case AuditActionUserLogin:
+		*s = AuditActionUserLogin
+		return nil
+	case AuditActionUserIdentityLink:
+		*s = AuditActionUserIdentityLink
+		return nil
+	case AuditActionUserIdentityUnlink:
+		*s = AuditActionUserIdentityUnlink
+		return nil
+	case AuditActionUserEmailVerify:
+		*s = AuditActionUserEmailVerify
+		return nil
+	case AuditActionUserPasswordChange:
+		*s = AuditActionUserPasswordChange
+		return nil
+	case AuditActionUserSignOutEverywhere:
+		*s = AuditActionUserSignOutEverywhere
+		return nil
+	case AuditActionUserSecondFactorEnroll:
+		*s = AuditActionUserSecondFactorEnroll
+		return nil
+	case AuditActionUserSecondFactorDisable:
+		*s = AuditActionUserSecondFactorDisable
+		return nil
+	case AuditActionUserSecondFactorReset:
+		*s = AuditActionUserSecondFactorReset
+		return nil
+	case AuditActionUserRecoveryCodesRegenerate:
+		*s = AuditActionUserRecoveryCodesRegenerate
+		return nil
+	case AuditActionUserRecoveryCodeUse:
+		*s = AuditActionUserRecoveryCodeUse
+		return nil
+	case AuditActionWorkspaceCreate:
+		*s = AuditActionWorkspaceCreate
+		return nil
+	case AuditActionWorkspaceUpdate:
+		*s = AuditActionWorkspaceUpdate
+		return nil
+	case AuditActionWorkspaceDelete:
+		*s = AuditActionWorkspaceDelete
+		return nil
+	case AuditActionWorkspaceRestore:
+		*s = AuditActionWorkspaceRestore
+		return nil
+	case AuditActionWorkspaceSuspend:
+		*s = AuditActionWorkspaceSuspend
+		return nil
+	case AuditActionWorkspaceUnsuspend:
+		*s = AuditActionWorkspaceUnsuspend
+		return nil
+	case AuditActionWorkspaceAbuseExempt:
+		*s = AuditActionWorkspaceAbuseExempt
+		return nil
+	case AuditActionWorkspaceAbuseUnexempt:
+		*s = AuditActionWorkspaceAbuseUnexempt
+		return nil
+	case AuditActionWorkspaceSendCapChange:
+		*s = AuditActionWorkspaceSendCapChange
+		return nil
+	case AuditActionContactImport:
+		*s = AuditActionContactImport
+		return nil
+	case AuditActionAuditLogExport:
+		*s = AuditActionAuditLogExport
+		return nil
+	case AuditActionWebhookEndpointTest:
+		*s = AuditActionWebhookEndpointTest
+		return nil
+	case AuditActionAPITokenCreate:
+		*s = AuditActionAPITokenCreate
+		return nil
+	case AuditActionAPITokenUpdate:
+		*s = AuditActionAPITokenUpdate
+		return nil
+	case AuditActionAPITokenDelete:
+		*s = AuditActionAPITokenDelete
+		return nil
+	case AuditActionAutomationCreate:
+		*s = AuditActionAutomationCreate
+		return nil
+	case AuditActionAutomationUpdate:
+		*s = AuditActionAutomationUpdate
+		return nil
+	case AuditActionAutomationDelete:
+		*s = AuditActionAutomationDelete
+		return nil
+	case AuditActionAutomationDiscard:
+		*s = AuditActionAutomationDiscard
+		return nil
+	case AuditActionAutomationRestore:
+		*s = AuditActionAutomationRestore
+		return nil
+	case AuditActionBrandKitCreate:
+		*s = AuditActionBrandKitCreate
+		return nil
+	case AuditActionBrandKitUpdate:
+		*s = AuditActionBrandKitUpdate
+		return nil
+	case AuditActionBrandKitDelete:
+		*s = AuditActionBrandKitDelete
+		return nil
+	case AuditActionBroadcastCreate:
+		*s = AuditActionBroadcastCreate
+		return nil
+	case AuditActionBroadcastUpdate:
+		*s = AuditActionBroadcastUpdate
+		return nil
+	case AuditActionBroadcastDelete:
+		*s = AuditActionBroadcastDelete
+		return nil
+	case AuditActionBroadcastDiscard:
+		*s = AuditActionBroadcastDiscard
+		return nil
+	case AuditActionBroadcastRestore:
+		*s = AuditActionBroadcastRestore
+		return nil
+	case AuditActionContactCreate:
+		*s = AuditActionContactCreate
+		return nil
+	case AuditActionContactUpdate:
+		*s = AuditActionContactUpdate
+		return nil
+	case AuditActionContactDelete:
+		*s = AuditActionContactDelete
+		return nil
+	case AuditActionCustomFieldCreate:
+		*s = AuditActionCustomFieldCreate
+		return nil
+	case AuditActionCustomFieldUpdate:
+		*s = AuditActionCustomFieldUpdate
+		return nil
+	case AuditActionCustomFieldDelete:
+		*s = AuditActionCustomFieldDelete
+		return nil
+	case AuditActionTemplateCreate:
+		*s = AuditActionTemplateCreate
+		return nil
+	case AuditActionTemplateUpdate:
+		*s = AuditActionTemplateUpdate
+		return nil
+	case AuditActionTemplateDelete:
+		*s = AuditActionTemplateDelete
+		return nil
+	case AuditActionHoldCreate:
+		*s = AuditActionHoldCreate
+		return nil
+	case AuditActionHoldUpdate:
+		*s = AuditActionHoldUpdate
+		return nil
+	case AuditActionHoldDelete:
+		*s = AuditActionHoldDelete
+		return nil
+	case AuditActionIntegrationCreate:
+		*s = AuditActionIntegrationCreate
+		return nil
+	case AuditActionIntegrationUpdate:
+		*s = AuditActionIntegrationUpdate
+		return nil
+	case AuditActionIntegrationDelete:
+		*s = AuditActionIntegrationDelete
+		return nil
+	case AuditActionIntegrationDiscard:
+		*s = AuditActionIntegrationDiscard
+		return nil
+	case AuditActionIntegrationRestore:
+		*s = AuditActionIntegrationRestore
+		return nil
+	case AuditActionJoinDomainCreate:
+		*s = AuditActionJoinDomainCreate
+		return nil
+	case AuditActionJoinDomainUpdate:
+		*s = AuditActionJoinDomainUpdate
+		return nil
+	case AuditActionJoinDomainDelete:
+		*s = AuditActionJoinDomainDelete
+		return nil
+	case AuditActionRuleCreate:
+		*s = AuditActionRuleCreate
+		return nil
+	case AuditActionRuleUpdate:
+		*s = AuditActionRuleUpdate
+		return nil
+	case AuditActionRuleDelete:
+		*s = AuditActionRuleDelete
+		return nil
+	case AuditActionRuleDiscard:
+		*s = AuditActionRuleDiscard
+		return nil
+	case AuditActionRuleRestore:
+		*s = AuditActionRuleRestore
+		return nil
+	case AuditActionSegmentCreate:
+		*s = AuditActionSegmentCreate
+		return nil
+	case AuditActionSegmentUpdate:
+		*s = AuditActionSegmentUpdate
+		return nil
+	case AuditActionSegmentDelete:
+		*s = AuditActionSegmentDelete
+		return nil
+	case AuditActionSegmentDiscard:
+		*s = AuditActionSegmentDiscard
+		return nil
+	case AuditActionSegmentRestore:
+		*s = AuditActionSegmentRestore
+		return nil
+	case AuditActionSendingDomainCreate:
+		*s = AuditActionSendingDomainCreate
+		return nil
+	case AuditActionSendingDomainUpdate:
+		*s = AuditActionSendingDomainUpdate
+		return nil
+	case AuditActionSendingDomainDelete:
+		*s = AuditActionSendingDomainDelete
+		return nil
+	case AuditActionSendingDomainDiscard:
+		*s = AuditActionSendingDomainDiscard
+		return nil
+	case AuditActionSendingDomainRestore:
+		*s = AuditActionSendingDomainRestore
+		return nil
+	case AuditActionTagCreate:
+		*s = AuditActionTagCreate
+		return nil
+	case AuditActionTagUpdate:
+		*s = AuditActionTagUpdate
+		return nil
+	case AuditActionTagDelete:
+		*s = AuditActionTagDelete
+		return nil
+	case AuditActionTrackingDomainCreate:
+		*s = AuditActionTrackingDomainCreate
+		return nil
+	case AuditActionTrackingDomainUpdate:
+		*s = AuditActionTrackingDomainUpdate
+		return nil
+	case AuditActionTrackingDomainDelete:
+		*s = AuditActionTrackingDomainDelete
+		return nil
+	case AuditActionWebhookEndpointCreate:
+		*s = AuditActionWebhookEndpointCreate
+		return nil
+	case AuditActionWebhookEndpointUpdate:
+		*s = AuditActionWebhookEndpointUpdate
+		return nil
+	case AuditActionWebhookEndpointDelete:
+		*s = AuditActionWebhookEndpointDelete
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The actor of an Audit entry.
 // Ref: #/components/schemas/AuditActor
 type AuditActor struct {
@@ -579,8 +1232,8 @@ type AuditEntryResource struct {
 	OccurredAt Timestamp `json:"occurredAt"`
 	// Who did it.
 	Actor AuditActor `json:"actor"`
-	// What was done, as `<entity>.<verb>`.
-	Action string `json:"action"`
+	// What was done.
+	Action AuditAction `json:"action"`
 	// What it was done to.
 	Target AuditTarget `json:"target"`
 	// Before/after of the changed fields; secrets appear as changed only.
@@ -609,7 +1262,7 @@ func (s *AuditEntryResource) GetActor() AuditActor {
 }
 
 // GetAction returns the value of Action.
-func (s *AuditEntryResource) GetAction() string {
+func (s *AuditEntryResource) GetAction() AuditAction {
 	return s.Action
 }
 
@@ -654,7 +1307,7 @@ func (s *AuditEntryResource) SetActor(val AuditActor) {
 }
 
 // SetAction sets the value of Action.
-func (s *AuditEntryResource) SetAction(val string) {
+func (s *AuditEntryResource) SetAction(val AuditAction) {
 	s.Action = val
 }
 
@@ -10515,6 +11168,52 @@ func (o NilString) Get() (v string, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptAuditAction returns new OptAuditAction with value set to v.
+func NewOptAuditAction(v AuditAction) OptAuditAction {
+	return OptAuditAction{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptAuditAction is optional AuditAction.
+type OptAuditAction struct {
+	Value AuditAction
+	Set   bool
+}
+
+// IsSet returns true if OptAuditAction was set.
+func (o OptAuditAction) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptAuditAction) Reset() {
+	var v AuditAction
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptAuditAction) SetTo(v AuditAction) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptAuditAction) Get() (v AuditAction, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptAuditAction) Or(d AuditAction) AuditAction {
 	if v, ok := o.Get(); ok {
 		return v
 	}

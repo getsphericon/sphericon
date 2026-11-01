@@ -39,7 +39,7 @@ func (c *ConverterImpl) InstanceAuditEntryToResource(source *ent.InstanceAuditEn
 		staffapiStaffInstanceAuditEntryResource.ID = staff.EntityId((*source).ID)
 		staffapiStaffInstanceAuditEntryResource.OccurredAt = timestamp((*source).CreatedAt)
 		staffapiStaffInstanceAuditEntryResource.Actor = c.StaffMemberToResource((*source).Edges.StaffMember)
-		staffapiStaffInstanceAuditEntryResource.Action = (*source).Action
+		staffapiStaffInstanceAuditEntryResource.Action = staff.InstanceAuditAction((*source).Action)
 		staffapiStaffInstanceAuditEntryResource.Diff = instanceAuditDiff((*source).Diff)
 	}
 	return staffapiStaffInstanceAuditEntryResource

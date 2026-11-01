@@ -20,8 +20,10 @@ import (
 type ScopedEntity struct {
 	// Name is the entity's schema name.
 	Name string
-	// Audited: the entity opted into the Audit log (schema.Audited).
-	Audited bool
+	// AuditActions are the actions its Audit entries record (`<entity>.<verb>`, the entity being
+	// schema.Audited.Action): create, update and delete, and discard and restore for an entity that
+	// is archived rather than deleted. None when the entity is not audited.
+	AuditActions []string
 	// IDs lists the ids of the Workspace's rows, read through the raw client.
 	IDs func(ctx context.Context, c *Client, ws int64) ([]int64, error)
 	// Get reads the row through the scoped client.
@@ -60,7 +62,7 @@ func ScopedEntities() []ScopedEntity {
 		{{- $N := $n.Name }}{{ $P := $n.Package }}{{ $Del := "Delete" }}{{ if discardable $n }}{{ $Del = "Purge" }}{{ end }}
 		{
 			Name: "{{ $N }}",
-			Audited: {{ if auditOf $n }}true{{ else }}false{{ end }},
+			AuditActions: []string{ {{- with auditOf $n }}"{{ .Action }}.create", "{{ .Action }}.update", "{{ .Action }}.delete"{{ if discardable $n }}, "{{ .Action }}.discard", "{{ .Action }}.restore"{{ end }}{{ end -}} },
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(ws)).Order(Asc({{ $P }}.FieldID)).IDs(ctx)
 			},

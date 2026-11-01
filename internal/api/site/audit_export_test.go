@@ -79,7 +79,7 @@ func TestAuditExportNeutralisesSpreadsheetFormulas(t *testing.T) {
 	ctx := context.Background()
 
 	rows := auditCSV(t, mustExport(ctx, t, env.SiteActor(t, fixtures.OwnerJaneEmail), siteapi.SiteAuditExportParams{
-		WorkspaceId: fixtures.GlobexPublicID, Action: siteapi.NewOptString(fixtures.GlobexAuditFormulaEntryAction)}))
+		WorkspaceId: fixtures.GlobexPublicID, Action: siteapi.NewOptAuditAction(siteapi.AuditActionTagCreate)}))
 	require.Len(t, rows, 2)
 	for _, cell := range rows[1] {
 		assert.False(t, strings.ContainsAny(cell[:min(1, len(cell))], "=+-@\t\r"), "cell %q starts a formula", cell)
@@ -113,7 +113,7 @@ func TestAuditExportIsItselfAudited(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	auditCSV(t, mustExport(ctx, t, owner, siteapi.SiteAuditExportParams{WorkspaceId: fixtures.AcmePublicID, Action: siteapi.NewOptString("membership.update")}))
+	auditCSV(t, mustExport(ctx, t, owner, siteapi.SiteAuditExportParams{WorkspaceId: fixtures.AcmePublicID, Action: siteapi.NewOptAuditAction(siteapi.AuditActionMembershipUpdate)}))
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionAuditLogExport)
 	require.Len(t, got, 1)

@@ -116,6 +116,16 @@ export type InUseProblemDetails = {
 };
 
 /**
+ * What an entry of the Instance audit log says was changed, as `instance.<what>_change`
+ */
+export const InstanceAuditAction = { INSTANCE_DEFAULT_SEND_CAP_CHANGE: 'instance.default_send_cap_change' } as const;
+
+/**
+ * What an entry of the Instance audit log says was changed, as `instance.<what>_change`
+ */
+export type InstanceAuditAction = typeof InstanceAuditAction[keyof typeof InstanceAuditAction];
+
+/**
  * A JSON object whose members the contract leaves open: custom field values, event properties,
  * integration params, an audit diff. One named model, so every surface's Go code has one type for
  * it rather than one per field.
@@ -357,9 +367,9 @@ export type StaffInstanceAuditEntryResource = {
    */
   actor: StaffResource;
   /**
-   * What was changed, as `instance.<what>_change`
+   * What was changed
    */
-  action: string;
+  action: InstanceAuditAction;
   /**
    * The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there
    * was no value, `to` where it was cleared

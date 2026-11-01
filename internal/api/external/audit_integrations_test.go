@@ -121,7 +121,7 @@ func TestExternalSendingDomainWritesAreAuditedUnderTheToken(t *testing.T) {
 	page, ok := list.(*siteapi.SiteAuditEntryList)
 	require.Truef(t, ok, "got %T", list)
 	domainEntries := lo.Filter(page.Items, func(item siteapi.SiteAuditEntryResource, _ int) bool {
-		return strings.HasPrefix(item.Action, "sending_domain.")
+		return strings.HasPrefix(string(item.Action), "sending_domain.")
 	})
 	for _, item := range domainEntries {
 		assert.Equal(t, siteapi.SiteAuditActorKindAPIToken, item.Actor.Kind)

@@ -38,6 +38,42 @@ type EmailAddress string
 
 type EntityId int64
 
+// What an entry of the Instance audit log says was changed, as `instance.<what>_change`.
+// Ref: #/components/schemas/InstanceAuditAction
+type InstanceAuditAction string
+
+const (
+	InstanceAuditActionInstanceDefaultSendCapChange InstanceAuditAction = "instance.default_send_cap_change"
+)
+
+// AllValues returns all InstanceAuditAction values.
+func (InstanceAuditAction) AllValues() []InstanceAuditAction {
+	return []InstanceAuditAction{
+		InstanceAuditActionInstanceDefaultSendCapChange,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s InstanceAuditAction) MarshalText() ([]byte, error) {
+	switch s {
+	case InstanceAuditActionInstanceDefaultSendCapChange:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *InstanceAuditAction) UnmarshalText(data []byte) error {
+	switch InstanceAuditAction(data) {
+	case InstanceAuditActionInstanceDefaultSendCapChange:
+		*s = InstanceAuditActionInstanceDefaultSendCapChange
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A JSON object whose members the contract leaves open: custom field values, event properties,
 // integration params, an audit diff. One named model, so every surface's Go code has one type for it
 // rather than one per field.
@@ -1412,8 +1448,8 @@ type StaffInstanceAuditEntryResource struct {
 	OccurredAt Timestamp `json:"occurredAt"`
 	// The Staff member who made it.
 	Actor StaffResource `json:"actor"`
-	// What was changed, as `instance.<what>_change`.
-	Action string `json:"action"`
+	// What was changed.
+	Action InstanceAuditAction `json:"action"`
 	// The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there was no
 	// value, `to` where it was cleared.
 	Diff JsonObject `json:"diff"`
@@ -1435,7 +1471,7 @@ func (s *StaffInstanceAuditEntryResource) GetActor() StaffResource {
 }
 
 // GetAction returns the value of Action.
-func (s *StaffInstanceAuditEntryResource) GetAction() string {
+func (s *StaffInstanceAuditEntryResource) GetAction() InstanceAuditAction {
 	return s.Action
 }
 
@@ -1460,7 +1496,7 @@ func (s *StaffInstanceAuditEntryResource) SetActor(val StaffResource) {
 }
 
 // SetAction sets the value of Action.
-func (s *StaffInstanceAuditEntryResource) SetAction(val string) {
+func (s *StaffInstanceAuditEntryResource) SetAction(val InstanceAuditAction) {
 	s.Action = val
 }
 

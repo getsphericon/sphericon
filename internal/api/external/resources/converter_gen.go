@@ -88,7 +88,7 @@ func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) external.Audi
 	externalapiAuditEntryResource.ID = external.EntityId(source.ID)
 	externalapiAuditEntryResource.OccurredAt = timestamp(source.OccurredAt)
 	externalapiAuditEntryResource.Actor = c.AuditActorToResource(source)
-	externalapiAuditEntryResource.Action = source.Action
+	externalapiAuditEntryResource.Action = external.AuditAction(source.Action)
 	externalapiAuditEntryResource.Target = c.AuditTargetToResource(source)
 	externalapiAuditEntryResource.Diff = auditDiff(source.Diff)
 	externalapiAuditEntryResource.RequestId = optNilString(source.RequestID)

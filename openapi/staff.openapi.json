@@ -1294,6 +1294,11 @@
         },
         "description": "The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it"
       },
+      "InstanceAuditAction": {
+        "type": "string",
+        "enum": ["instance.default_send_cap_change"],
+        "description": "What an entry of the Instance audit log says was changed, as `instance.<what>_change`"
+      },
       "JsonObject": {
         "type": "object",
         "additionalProperties": {},
@@ -1579,8 +1584,12 @@
             "description": "The Staff member who made it"
           },
           "action": {
-            "type": "string",
-            "description": "What was changed, as `instance.<what>_change`"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InstanceAuditAction"
+              }
+            ],
+            "description": "What was changed"
           },
           "diff": {
             "allOf": [

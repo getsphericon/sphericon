@@ -46,8 +46,8 @@ model AuditEntryResource {
   /** Who did it */
   actor: AuditActor;
 
-  /** What was done, as `<entity>.<verb>` */
-  action: string;
+  /** What was done */
+  action: AuditAction;
 
   /** What it was done to */
   target: AuditTarget;
@@ -87,8 +87,8 @@ model AuditFilter {
   /** Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind */
   @query actorId?: string;
 
-  /** Only entries with exactly this action, e.g. membership.update */
-  @query action?: string;
+  /** Only entries with exactly this action */
+  @query action?: AuditAction;
 
   /** Only entries about this target type, e.g. integration */
   @query targetType?: string;

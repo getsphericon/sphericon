@@ -49,7 +49,7 @@ func TestAuditRoleChangeIsRecordedAndListed(t *testing.T) {
 	page := auditPage(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
 	require.Len(t, page.Items, 2, "the new entry and the fixture entry")
 	e := page.Items[0]
-	assert.Equal(t, "membership.update", e.Action)
+	assert.Equal(t, siteapi.AuditActionMembershipUpdate, e.Action)
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, e.Actor.Kind)
 	assert.Equal(t, strconv.Itoa(fixtures.OwnerJohnID), e.Actor.ID.Value)
 	assert.Equal(t, "John", e.Actor.Name.Value)

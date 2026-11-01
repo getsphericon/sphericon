@@ -31,6 +31,11 @@ export const zEntityId = z.string().regex(/^[0-9]+$/);
 export const zImageUrl = z.string().max(2048).regex(/^https:\/\/\S+$/);
 
 /**
+ * What an entry of the Instance audit log says was changed, as `instance.<what>_change`
+ */
+export const zInstanceAuditAction = z.enum(['instance.default_send_cap_change']);
+
+/**
  * A JSON object whose members the contract leaves open: custom field values, event properties,
  * integration params, an audit diff. One named model, so every surface's Go code has one type for
  * it rather than one per field.
@@ -290,7 +295,7 @@ export const zStaffInstanceAuditEntryResource = z.object({
   id: zEntityId,
   occurredAt: zTimestamp,
   actor: zStaffResource,
-  action: z.string(),
+  action: zInstanceAuditAction,
   diff: zJsonObject
 });
 

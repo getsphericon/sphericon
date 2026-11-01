@@ -62,7 +62,7 @@ func (c *StaffConverterImpl) AuditEntryToResource(source auditapi.View) staffee.
 	staffeeapiStaffAuditEntryResource.ID = staffee.EntityId(source.ID)
 	staffeeapiStaffAuditEntryResource.OccurredAt = staffTimestamp(source.OccurredAt)
 	staffeeapiStaffAuditEntryResource.Actor = c.AuditActorToResource(source)
-	staffeeapiStaffAuditEntryResource.Action = source.Action
+	staffeeapiStaffAuditEntryResource.Action = staffee.AuditAction(source.Action)
 	staffeeapiStaffAuditEntryResource.Target = c.AuditTargetToResource(source)
 	staffeeapiStaffAuditEntryResource.Diff = staffAuditDiff(source.Diff)
 	staffeeapiStaffAuditEntryResource.RequestId = nilableString(source.RequestID)

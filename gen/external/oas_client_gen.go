@@ -970,7 +970,7 @@ func (c *Client) sendAuditEntriesList(ctx context.Context, params AuditEntriesLi
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
 			if val, ok := params.Action.Get(); ok {
-				return e.EncodeValue(conv.StringToString(val))
+				return e.EncodeValue(conv.StringToString(string(val)))
 			}
 			return nil
 		}); err != nil {

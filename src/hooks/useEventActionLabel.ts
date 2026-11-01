@@ -43,5 +43,5 @@ export function useEventActionLabel() {
 // by its code.
 export function useEventActionFilter(): OptionsFilter {
   const labelOf = useEventActionLabel()
-  return useMemo(() => actionFilter(labelOf), [labelOf])
+  return useMemo(() => actionFilter(({ value }) => labelOf(value)), [labelOf])
 }

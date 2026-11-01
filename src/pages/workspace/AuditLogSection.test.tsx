@@ -391,7 +391,7 @@ test('loading more appends the next page below the first', async () => {
       cursors.push(cursor)
       return HttpResponse.json(
         cursor
-          ? { items: [entry({ id: '3', action: 'membership.remove' })] }
+          ? { items: [entry({ id: '3', action: 'membership.delete' })] }
           : { items: [entry()], nextCursor: '2' },
       )
     }),
@@ -406,7 +406,7 @@ test('loading more appends the next page below the first', async () => {
 
   await screen.getByRole('button', { name: 'Load more' }).click()
 
-  await expect.element(screen.getByText('membership.remove')).toBeInTheDocument()
+  await expect.element(screen.getByText('Removed a member')).toBeInTheDocument()
   await expect
     .element(screen.getByRole('cell', { name: "Changed a member's role" }))
     .toBeInTheDocument()

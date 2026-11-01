@@ -39,8 +39,9 @@ func TestAuditFacetsOfferWhatOccursInTheLog(t *testing.T) {
 	facets, ok := res.(*siteapi.SiteAuditFacets)
 	require.Truef(t, ok, "facets answered %T", res)
 
-	assert.Equal(t, []string{
-		"integration.delete", "integration.update", "membership.update", "tag.create", "webhook_endpoint.create",
+	assert.Equal(t, []siteapi.AuditAction{
+		siteapi.AuditActionIntegrationDelete, siteapi.AuditActionIntegrationUpdate, siteapi.AuditActionMembershipUpdate,
+		siteapi.AuditActionTagCreate, siteapi.AuditActionWebhookEndpointCreate,
 	}, facets.Actions)
 	assert.Equal(t, []string{"integration", "membership", "tag", "webhook_endpoint"}, facets.TargetTypes)
 	assert.Equal(t, []facetActor{

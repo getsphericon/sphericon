@@ -69,6 +69,12 @@ model StaffDefaultSendCapChange {
   defaultSendCap: StaffDefaultSendCap;
 }
 
+/** What an entry of the Instance audit log says was changed, as `instance.<what>_change` */
+enum InstanceAuditAction {
+  /** Changed the default Send cap of new workspaces */
+  defaultSendCapChange: "instance.default_send_cap_change",
+}
+
 /** One entry of the Instance audit log (ADR 0070): a Staff member changed a setting of the
  * Instance itself */
 model StaffInstanceAuditEntryResource {
@@ -81,8 +87,8 @@ model StaffInstanceAuditEntryResource {
   /** The Staff member who made it */
   actor: StaffResource;
 
-  /** What was changed, as `instance.<what>_change` */
-  action: string;
+  /** What was changed */
+  action: InstanceAuditAction;
 
   /** The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there
    * was no value, `to` where it was cleared */

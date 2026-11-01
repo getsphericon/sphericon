@@ -1,17 +1,20 @@
-import type { OptionsFilter } from '@mantine/core'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { actionFilter } from '../utils/actionFilter.ts'
+import type { AuditAction } from '../generated/site/types.gen.ts'
+import type { InstanceAuditAction } from '../generated/staff/types.gen.ts'
 
-// useAuditActionLabel names the action of an Audit entry, in a Workspace's Audit log or in the
-// Instance audit log, by its words: what the actor did. The code stays what is stored, filtered on,
-// sent and exported; an action that has no words yet is shown as its code.
+// An action of a Workspace's Audit log or of the Instance audit log, as the contract declares it.
+export type AnyAuditAction = AuditAction | InstanceAuditAction
+
+// useAuditActionLabel names the action of an Audit entry by its words: what the actor did. The code
+// stays what is stored, filtered on, sent and exported. Every action the contract declares has its
+// words, which the compiler checks.
 export function useAuditActionLabel() {
   const { t } = useTranslation()
 
   return useMemo(() => {
-    const words: Record<string, string> = {
+    const words: Record<AnyAuditAction, string> = {
       'membership.update': t(($) => $.auditActions.membershipUpdate),
       'membership.delete': t(($) => $.auditActions.membershipDelete),
       'membership.domain_join': t(($) => $.auditActions.membershipDomainJoin),
@@ -49,12 +52,16 @@ export function useAuditActionLabel() {
       'automation.create': t(($) => $.auditActions.automationCreate),
       'automation.update': t(($) => $.auditActions.automationUpdate),
       'automation.delete': t(($) => $.auditActions.automationDelete),
+      'automation.discard': t(($) => $.auditActions.automationDiscard),
+      'automation.restore': t(($) => $.auditActions.automationRestore),
       'brand_kit.create': t(($) => $.auditActions.brandKitCreate),
       'brand_kit.update': t(($) => $.auditActions.brandKitUpdate),
       'brand_kit.delete': t(($) => $.auditActions.brandKitDelete),
       'broadcast.create': t(($) => $.auditActions.broadcastCreate),
       'broadcast.update': t(($) => $.auditActions.broadcastUpdate),
       'broadcast.delete': t(($) => $.auditActions.broadcastDelete),
+      'broadcast.discard': t(($) => $.auditActions.broadcastDiscard),
+      'broadcast.restore': t(($) => $.auditActions.broadcastRestore),
       'contact.create': t(($) => $.auditActions.contactCreate),
       'contact.update': t(($) => $.auditActions.contactUpdate),
       'contact.delete': t(($) => $.auditActions.contactDelete),
@@ -70,18 +77,26 @@ export function useAuditActionLabel() {
       'integration.create': t(($) => $.auditActions.integrationCreate),
       'integration.update': t(($) => $.auditActions.integrationUpdate),
       'integration.delete': t(($) => $.auditActions.integrationDelete),
+      'integration.discard': t(($) => $.auditActions.integrationDiscard),
+      'integration.restore': t(($) => $.auditActions.integrationRestore),
       'join_domain.create': t(($) => $.auditActions.joinDomainCreate),
       'join_domain.update': t(($) => $.auditActions.joinDomainUpdate),
       'join_domain.delete': t(($) => $.auditActions.joinDomainDelete),
       'rule.create': t(($) => $.auditActions.ruleCreate),
       'rule.update': t(($) => $.auditActions.ruleUpdate),
       'rule.delete': t(($) => $.auditActions.ruleDelete),
+      'rule.discard': t(($) => $.auditActions.ruleDiscard),
+      'rule.restore': t(($) => $.auditActions.ruleRestore),
       'segment.create': t(($) => $.auditActions.segmentCreate),
       'segment.update': t(($) => $.auditActions.segmentUpdate),
       'segment.delete': t(($) => $.auditActions.segmentDelete),
+      'segment.discard': t(($) => $.auditActions.segmentDiscard),
+      'segment.restore': t(($) => $.auditActions.segmentRestore),
       'sending_domain.create': t(($) => $.auditActions.sendingDomainCreate),
       'sending_domain.update': t(($) => $.auditActions.sendingDomainUpdate),
       'sending_domain.delete': t(($) => $.auditActions.sendingDomainDelete),
+      'sending_domain.discard': t(($) => $.auditActions.sendingDomainDiscard),
+      'sending_domain.restore': t(($) => $.auditActions.sendingDomainRestore),
       'tag.create': t(($) => $.auditActions.tagCreate),
       'tag.update': t(($) => $.auditActions.tagUpdate),
       'tag.delete': t(($) => $.auditActions.tagDelete),
@@ -92,13 +107,6 @@ export function useAuditActionLabel() {
       'webhook_endpoint.update': t(($) => $.auditActions.webhookEndpointUpdate),
       'webhook_endpoint.delete': t(($) => $.auditActions.webhookEndpointDelete),
     }
-    return (action: string): string => words[action] ?? action
+    return (action: AnyAuditAction): string => words[action]
   }, [t])
-}
-
-// useAuditActionFilter is the search of a picker of audit actions: an option matches by its words
-// or by its code.
-export function useAuditActionFilter(): OptionsFilter {
-  const labelOf = useAuditActionLabel()
-  return useMemo(() => actionFilter(labelOf), [labelOf])
 }

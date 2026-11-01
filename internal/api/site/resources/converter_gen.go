@@ -248,7 +248,7 @@ func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) site.SiteAudi
 	siteapiSiteAuditEntryResource.ID = site.EntityId(source.ID)
 	siteapiSiteAuditEntryResource.OccurredAt = timestamp(source.OccurredAt)
 	siteapiSiteAuditEntryResource.Actor = c.AuditActorToResource(source)
-	siteapiSiteAuditEntryResource.Action = source.Action
+	siteapiSiteAuditEntryResource.Action = site.AuditAction(source.Action)
 	siteapiSiteAuditEntryResource.Target = c.AuditTargetToResource(source)
 	siteapiSiteAuditEntryResource.Diff = auditDiff(source.Diff)
 	siteapiSiteAuditEntryResource.RequestId = optNilString(source.RequestID)
@@ -269,9 +269,9 @@ func (c *ConverterImpl) AuditFacetsToResource(source auditapi.Facets) site.SiteA
 	for i := 0; i < len(source.Actors); i++ {
 		siteapiSiteAuditFacets.Actors[i] = c.AuditFacetActorToResource(source.Actors[i])
 	}
-	siteapiSiteAuditFacets.Actions = make([]string, len(source.Actions))
+	siteapiSiteAuditFacets.Actions = make([]site.AuditAction, len(source.Actions))
 	for j := 0; j < len(source.Actions); j++ {
-		siteapiSiteAuditFacets.Actions[j] = source.Actions[j]
+		siteapiSiteAuditFacets.Actions[j] = site.AuditAction(source.Actions[j])
 	}
 	siteapiSiteAuditFacets.TargetTypes = make([]string, len(source.TargetTypes))
 	for k := 0; k < len(source.TargetTypes); k++ {

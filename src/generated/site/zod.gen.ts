@@ -59,6 +59,102 @@ export const zApplyTagInput = z.object({
 export const zAttributionWindowDays = z.int().gte(1).lte(90);
 
 /**
+ * What an Audit entry says was done, as `<entity>.<verb>`: an action the server records on its
+ * own, or the create, update or delete of an audited object
+ */
+export const zAuditAction = z.enum([
+  'membership.update',
+  'membership.delete',
+  'membership.domain_join',
+  'invitation.create',
+  'invitation.accept',
+  'invitation.revoke',
+  'user.login',
+  'user.identity_link',
+  'user.identity_unlink',
+  'user.email_verify',
+  'user.password_change',
+  'user.sign_out_everywhere',
+  'user.second_factor_enroll',
+  'user.second_factor_disable',
+  'user.second_factor_reset',
+  'user.recovery_codes_regenerate',
+  'user.recovery_code_use',
+  'workspace.create',
+  'workspace.update',
+  'workspace.delete',
+  'workspace.restore',
+  'workspace.suspend',
+  'workspace.unsuspend',
+  'workspace.abuse_exempt',
+  'workspace.abuse_unexempt',
+  'workspace.send_cap_change',
+  'contact.import',
+  'audit_log.export',
+  'webhook_endpoint.test',
+  'api_token.create',
+  'api_token.update',
+  'api_token.delete',
+  'automation.create',
+  'automation.update',
+  'automation.delete',
+  'automation.discard',
+  'automation.restore',
+  'brand_kit.create',
+  'brand_kit.update',
+  'brand_kit.delete',
+  'broadcast.create',
+  'broadcast.update',
+  'broadcast.delete',
+  'broadcast.discard',
+  'broadcast.restore',
+  'contact.create',
+  'contact.update',
+  'contact.delete',
+  'custom_field.create',
+  'custom_field.update',
+  'custom_field.delete',
+  'template.create',
+  'template.update',
+  'template.delete',
+  'hold.create',
+  'hold.update',
+  'hold.delete',
+  'integration.create',
+  'integration.update',
+  'integration.delete',
+  'integration.discard',
+  'integration.restore',
+  'join_domain.create',
+  'join_domain.update',
+  'join_domain.delete',
+  'rule.create',
+  'rule.update',
+  'rule.delete',
+  'rule.discard',
+  'rule.restore',
+  'segment.create',
+  'segment.update',
+  'segment.delete',
+  'segment.discard',
+  'segment.restore',
+  'sending_domain.create',
+  'sending_domain.update',
+  'sending_domain.delete',
+  'sending_domain.discard',
+  'sending_domain.restore',
+  'tag.create',
+  'tag.update',
+  'tag.delete',
+  'tracking_domain.create',
+  'tracking_domain.update',
+  'tracking_domain.delete',
+  'webhook_endpoint.create',
+  'webhook_endpoint.update',
+  'webhook_endpoint.delete'
+]);
+
+/**
  * Why a broadcast's sending is held. A hold is reversible and not a failure: the broadcast keeps
  * its status and the remaining recipients send once it lifts.
  */
@@ -676,7 +772,7 @@ export const zSiteAuditActor = z.object({
  */
 export const zSiteAuditFacets = z.object({
   actors: z.array(zSiteAuditActor),
-  actions: z.array(z.string()),
+  actions: z.array(zAuditAction),
   targetTypes: z.array(z.string())
 });
 
@@ -2544,7 +2640,7 @@ export const zSiteAuditEntryResource = z.object({
   id: zEntityId,
   occurredAt: zTimestamp,
   actor: zSiteAuditActor,
-  action: z.string(),
+  action: zAuditAction,
   target: zSiteAuditTarget,
   diff: z.exactOptional(zJsonObject.nullable()),
   requestId: z.exactOptional(z.string().nullable()),
@@ -3495,9 +3591,9 @@ export const zSiteApiTokenResourceKeyWorkspaceId = zWorkspaceId;
 export const zSiteApiTokenResourceParentKey = zWorkspaceId;
 
 /**
- * Only entries with exactly this action, e.g. membership.update
+ * Only entries with exactly this action
  */
-export const zSiteAuditFilterAction = z.string();
+export const zSiteAuditFilterAction = zAuditAction;
 
 /**
  * Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind
@@ -4358,7 +4454,7 @@ export const zSiteAuditListQuery = z.object({
   to: z.exactOptional(zTimestamp),
   actorKind: z.exactOptional(zSiteAuditActorKind),
   actorId: z.exactOptional(z.string()),
-  action: z.exactOptional(z.string()),
+  action: z.exactOptional(zAuditAction),
   targetType: z.exactOptional(z.string()),
   targetId: z.exactOptional(z.string()),
   ip: z.exactOptional(z.string()),
@@ -4381,7 +4477,7 @@ export const zSiteAuditExportQuery = z.object({
   to: z.exactOptional(zTimestamp),
   actorKind: z.exactOptional(zSiteAuditActorKind),
   actorId: z.exactOptional(z.string()),
-  action: z.exactOptional(z.string()),
+  action: z.exactOptional(zAuditAction),
   targetType: z.exactOptional(z.string()),
   targetId: z.exactOptional(z.string()),
   ip: z.exactOptional(z.string()),

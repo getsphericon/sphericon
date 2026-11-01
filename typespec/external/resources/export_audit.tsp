@@ -20,8 +20,8 @@ model ExportAuditRow {
   /** Display name of the actor when the entry was written */
   actor_name: string | null;
 
-  /** What was done, as `<entity>.<verb>` */
-  action: string;
+  /** What was done */
+  action: AuditAction;
 
   /** What it was done to */
   target_type: string;

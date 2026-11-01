@@ -6,6 +6,7 @@ import {
   auditQuery,
   filterActorValue,
   filterChips,
+  withAction,
   withActor,
   withPeriod,
   withValue,
@@ -29,7 +30,7 @@ test('passes every other field through', () => {
   const filter = {
     actorKind: 'user' as const,
     actorId: '1',
-    action: 'tag.create',
+    action: 'tag.create' as const,
     targetType: 'tag',
     targetId: '2',
     ip: '10.0.0.1',
@@ -39,11 +40,26 @@ test('passes every other field through', () => {
 })
 
 test('parses a route search, coercing ids and dropping invalid values', () => {
-  expect(auditFilterSchema.parse({ targetId: 5, actorKind: 'robot', ip: '1.2.3.4' })).toEqual({
+  expect(
+    auditFilterSchema.parse({
+      targetId: 5,
+      actorKind: 'robot',
+      action: 'membership.transfer',
+      ip: '1.2.3.4',
+    }),
+  ).toEqual({
     targetId: '5',
     actorKind: undefined,
+    action: undefined,
     ip: '1.2.3.4',
   })
+})
+
+test('an action value narrows to its action; a cleared or unknown one narrows to none', () => {
+  const before = { action: 'tag.create' as const, ip: '10.0.0.1' }
+  expect(withAction(before, 'tag.delete')).toEqual({ action: 'tag.delete', ip: '10.0.0.1' })
+  expect(withAction(before, null)).toEqual({ ip: '10.0.0.1' })
+  expect(withAction(before, 'tag.rename')).toEqual({ ip: '10.0.0.1' })
 })
 
 test('an actor value carries its id only when it has one', () => {
@@ -54,7 +70,7 @@ test('an actor value carries its id only when it has one', () => {
 })
 
 test('a "By" value narrows to its actor and replaces the one before', () => {
-  const before = { action: 'tag.create', actorKind: 'user' as const, actorId: '2' }
+  const before = { action: 'tag.create' as const, actorKind: 'user' as const, actorId: '2' }
   expect(withActor(before, 'api_token:77')).toEqual({
     action: 'tag.create',
     actorKind: 'api_token',
@@ -70,7 +86,7 @@ test('a cleared or unreadable "By" value narrows to no actor', () => {
 })
 
 test('a period is applied only once both of its days are picked', () => {
-  const before = { action: 'tag.create', from: '2026-01-01', to: '2026-01-31' }
+  const before = { action: 'tag.create' as const, from: '2026-01-01', to: '2026-01-31' }
   expect(withPeriod(before, ['2026-03-01', '2026-03-31'])).toEqual({
     action: 'tag.create',
     from: '2026-03-01',

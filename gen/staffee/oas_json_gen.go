@@ -13,6 +13,220 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
+// Encode encodes AuditAction as json.
+func (s AuditAction) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes AuditAction from json.
+func (s *AuditAction) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AuditAction to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch AuditAction(v) {
+	case AuditActionMembershipUpdate:
+		*s = AuditActionMembershipUpdate
+	case AuditActionMembershipDelete:
+		*s = AuditActionMembershipDelete
+	case AuditActionMembershipDomainJoin:
+		*s = AuditActionMembershipDomainJoin
+	case AuditActionInvitationCreate:
+		*s = AuditActionInvitationCreate
+	case AuditActionInvitationAccept:
+		*s = AuditActionInvitationAccept
+	case AuditActionInvitationRevoke:
+		*s = AuditActionInvitationRevoke
+	case AuditActionUserLogin:
+		*s = AuditActionUserLogin
+	case AuditActionUserIdentityLink:
+		*s = AuditActionUserIdentityLink
+	case AuditActionUserIdentityUnlink:
+		*s = AuditActionUserIdentityUnlink
+	case AuditActionUserEmailVerify:
+		*s = AuditActionUserEmailVerify
+	case AuditActionUserPasswordChange:
+		*s = AuditActionUserPasswordChange
+	case AuditActionUserSignOutEverywhere:
+		*s = AuditActionUserSignOutEverywhere
+	case AuditActionUserSecondFactorEnroll:
+		*s = AuditActionUserSecondFactorEnroll
+	case AuditActionUserSecondFactorDisable:
+		*s = AuditActionUserSecondFactorDisable
+	case AuditActionUserSecondFactorReset:
+		*s = AuditActionUserSecondFactorReset
+	case AuditActionUserRecoveryCodesRegenerate:
+		*s = AuditActionUserRecoveryCodesRegenerate
+	case AuditActionUserRecoveryCodeUse:
+		*s = AuditActionUserRecoveryCodeUse
+	case AuditActionWorkspaceCreate:
+		*s = AuditActionWorkspaceCreate
+	case AuditActionWorkspaceUpdate:
+		*s = AuditActionWorkspaceUpdate
+	case AuditActionWorkspaceDelete:
+		*s = AuditActionWorkspaceDelete
+	case AuditActionWorkspaceRestore:
+		*s = AuditActionWorkspaceRestore
+	case AuditActionWorkspaceSuspend:
+		*s = AuditActionWorkspaceSuspend
+	case AuditActionWorkspaceUnsuspend:
+		*s = AuditActionWorkspaceUnsuspend
+	case AuditActionWorkspaceAbuseExempt:
+		*s = AuditActionWorkspaceAbuseExempt
+	case AuditActionWorkspaceAbuseUnexempt:
+		*s = AuditActionWorkspaceAbuseUnexempt
+	case AuditActionWorkspaceSendCapChange:
+		*s = AuditActionWorkspaceSendCapChange
+	case AuditActionContactImport:
+		*s = AuditActionContactImport
+	case AuditActionAuditLogExport:
+		*s = AuditActionAuditLogExport
+	case AuditActionWebhookEndpointTest:
+		*s = AuditActionWebhookEndpointTest
+	case AuditActionAPITokenCreate:
+		*s = AuditActionAPITokenCreate
+	case AuditActionAPITokenUpdate:
+		*s = AuditActionAPITokenUpdate
+	case AuditActionAPITokenDelete:
+		*s = AuditActionAPITokenDelete
+	case AuditActionAutomationCreate:
+		*s = AuditActionAutomationCreate
+	case AuditActionAutomationUpdate:
+		*s = AuditActionAutomationUpdate
+	case AuditActionAutomationDelete:
+		*s = AuditActionAutomationDelete
+	case AuditActionAutomationDiscard:
+		*s = AuditActionAutomationDiscard
+	case AuditActionAutomationRestore:
+		*s = AuditActionAutomationRestore
+	case AuditActionBrandKitCreate:
+		*s = AuditActionBrandKitCreate
+	case AuditActionBrandKitUpdate:
+		*s = AuditActionBrandKitUpdate
+	case AuditActionBrandKitDelete:
+		*s = AuditActionBrandKitDelete
+	case AuditActionBroadcastCreate:
+		*s = AuditActionBroadcastCreate
+	case AuditActionBroadcastUpdate:
+		*s = AuditActionBroadcastUpdate
+	case AuditActionBroadcastDelete:
+		*s = AuditActionBroadcastDelete
+	case AuditActionBroadcastDiscard:
+		*s = AuditActionBroadcastDiscard
+	case AuditActionBroadcastRestore:
+		*s = AuditActionBroadcastRestore
+	case AuditActionContactCreate:
+		*s = AuditActionContactCreate
+	case AuditActionContactUpdate:
+		*s = AuditActionContactUpdate
+	case AuditActionContactDelete:
+		*s = AuditActionContactDelete
+	case AuditActionCustomFieldCreate:
+		*s = AuditActionCustomFieldCreate
+	case AuditActionCustomFieldUpdate:
+		*s = AuditActionCustomFieldUpdate
+	case AuditActionCustomFieldDelete:
+		*s = AuditActionCustomFieldDelete
+	case AuditActionTemplateCreate:
+		*s = AuditActionTemplateCreate
+	case AuditActionTemplateUpdate:
+		*s = AuditActionTemplateUpdate
+	case AuditActionTemplateDelete:
+		*s = AuditActionTemplateDelete
+	case AuditActionHoldCreate:
+		*s = AuditActionHoldCreate
+	case AuditActionHoldUpdate:
+		*s = AuditActionHoldUpdate
+	case AuditActionHoldDelete:
+		*s = AuditActionHoldDelete
+	case AuditActionIntegrationCreate:
+		*s = AuditActionIntegrationCreate
+	case AuditActionIntegrationUpdate:
+		*s = AuditActionIntegrationUpdate
+	case AuditActionIntegrationDelete:
+		*s = AuditActionIntegrationDelete
+	case AuditActionIntegrationDiscard:
+		*s = AuditActionIntegrationDiscard
+	case AuditActionIntegrationRestore:
+		*s = AuditActionIntegrationRestore
+	case AuditActionJoinDomainCreate:
+		*s = AuditActionJoinDomainCreate
+	case AuditActionJoinDomainUpdate:
+		*s = AuditActionJoinDomainUpdate
+	case AuditActionJoinDomainDelete:
+		*s = AuditActionJoinDomainDelete
+	case AuditActionRuleCreate:
+		*s = AuditActionRuleCreate
+	case AuditActionRuleUpdate:
+		*s = AuditActionRuleUpdate
+	case AuditActionRuleDelete:
+		*s = AuditActionRuleDelete
+	case AuditActionRuleDiscard:
+		*s = AuditActionRuleDiscard
+	case AuditActionRuleRestore:
+		*s = AuditActionRuleRestore
+	case AuditActionSegmentCreate:
+		*s = AuditActionSegmentCreate
+	case AuditActionSegmentUpdate:
+		*s = AuditActionSegmentUpdate
+	case AuditActionSegmentDelete:
+		*s = AuditActionSegmentDelete
+	case AuditActionSegmentDiscard:
+		*s = AuditActionSegmentDiscard
+	case AuditActionSegmentRestore:
+		*s = AuditActionSegmentRestore
+	case AuditActionSendingDomainCreate:
+		*s = AuditActionSendingDomainCreate
+	case AuditActionSendingDomainUpdate:
+		*s = AuditActionSendingDomainUpdate
+	case AuditActionSendingDomainDelete:
+		*s = AuditActionSendingDomainDelete
+	case AuditActionSendingDomainDiscard:
+		*s = AuditActionSendingDomainDiscard
+	case AuditActionSendingDomainRestore:
+		*s = AuditActionSendingDomainRestore
+	case AuditActionTagCreate:
+		*s = AuditActionTagCreate
+	case AuditActionTagUpdate:
+		*s = AuditActionTagUpdate
+	case AuditActionTagDelete:
+		*s = AuditActionTagDelete
+	case AuditActionTrackingDomainCreate:
+		*s = AuditActionTrackingDomainCreate
+	case AuditActionTrackingDomainUpdate:
+		*s = AuditActionTrackingDomainUpdate
+	case AuditActionTrackingDomainDelete:
+		*s = AuditActionTrackingDomainDelete
+	case AuditActionWebhookEndpointCreate:
+		*s = AuditActionWebhookEndpointCreate
+	case AuditActionWebhookEndpointUpdate:
+		*s = AuditActionWebhookEndpointUpdate
+	case AuditActionWebhookEndpointDelete:
+		*s = AuditActionWebhookEndpointDelete
+	default:
+		*s = AuditAction(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s AuditAction) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AuditAction) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes EntityId as json.
 func (s EntityId) Encode(e *jx.Encoder) {
 	unwrapped := int64(s)
@@ -1994,7 +2208,7 @@ func (s *StaffAuditEntryResource) encodeFields(e *jx.Encoder) {
 	}
 	{
 		e.FieldStart("action")
-		e.Str(s.Action)
+		s.Action.Encode(e)
 	}
 	{
 		e.FieldStart("target")
@@ -2080,9 +2294,7 @@ func (s *StaffAuditEntryResource) Decode(d *jx.Decoder) error {
 		case "action":
 			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
-				v, err := d.Str()
-				s.Action = string(v)
-				if err != nil {
+				if err := s.Action.Decode(d); err != nil {
 					return err
 				}
 				return nil
