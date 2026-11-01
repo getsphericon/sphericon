@@ -1,5 +1,6 @@
 import { AreaChart, DonutChart } from '@mantine/charts'
 import { Alert, EmptyState, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { IconChartBar } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
@@ -74,7 +75,7 @@ function EmailMetricsReport() {
             />
           </SimpleGrid>
           {overview.email.sentCount === 0 ? (
-            <EmptyState title={t(($) => $.analytics.email.empty)} />
+            <EmptyState icon={<IconChartBar />} title={t(($) => $.analytics.email.empty)} />
           ) : (
             <AreaChart
               h={260}
@@ -134,7 +135,7 @@ function EmailMetricsReport() {
                 ]}
               />
             ) : (
-              <EmptyState title={t(($) => $.analytics.contacts.empty)} />
+              <EmptyState icon={<IconChartBar />} title={t(($) => $.analytics.contacts.empty)} />
             )}
           </Stack>
 

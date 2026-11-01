@@ -1,5 +1,6 @@
 import { MatrixChart } from '@mantine/charts'
 import { EmptyState, ScrollArea, Stack, Text } from '@mantine/core'
+import { IconChartBar } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
@@ -41,7 +42,7 @@ function OpensByHourReport() {
   ).data
 
   if (report.total === 0) {
-    return <EmptyState title={t(($) => $.analytics.opensByHour.empty)} />
+    return <EmptyState icon={<IconChartBar />} title={t(($) => $.analytics.opensByHour.empty)} />
   }
 
   const days = WEEKDAYS.map((key) => t(($) => $.analytics.opensByHour.weekdays[key]))

@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { render } from 'vitest-browser-react'
 
 import { NotificationsProvider } from '../components/NotificationsProvider.tsx'
-import { theme } from '../theme.ts'
+import { theme } from '../theme.tsx'
 import { trackQueryClient } from './queryClients.ts'
 
 // Mirrors the provider stack from src/main.tsx so components render the same way

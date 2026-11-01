@@ -10,7 +10,7 @@ import { NotificationsProvider } from './components/NotificationsProvider.tsx'
 import { editorCssVariablesResolver } from './editorCssVariables.ts'
 import { i18n } from './i18n.ts'
 import type { AppRouter } from './router.ts'
-import { theme } from './theme.ts'
+import { theme } from './theme.tsx'
 
 const Devtools = import.meta.env.DEV
   ? lazy(async () => import('./Devtools.tsx').then((module) => ({ default: module.Devtools })))
