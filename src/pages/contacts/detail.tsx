@@ -2,12 +2,12 @@ import {
   Avatar,
   EmptyState,
   Button,
-  Card,
   Badge,
   Group,
   SimpleGrid,
   Stack,
   Switch,
+  Table,
   Text,
   Title,
 } from '@mantine/core'
@@ -46,17 +46,31 @@ import { can } from '../../utils/permissions.ts'
 
 const EVENTS_PAGE_SIZE = 10
 
-function Field({ label, value, icon }: { label: string; value: string; icon?: ReactNode }) {
+interface Attribute {
+  label: string
+  value: string
+  icon?: ReactNode
+}
+
+// A label beside its value, one row per attribute; an attribute the Contact has none of shows a
+// dash.
+function AttributeTable({ rows }: { rows: Attribute[] }) {
   return (
-    <Card withBorder padding="md">
-      <Text size="xs" c="dimmed" tt="uppercase">
-        {label}
-      </Text>
-      <Group gap="xs" wrap="nowrap">
-        {icon}
-        <Text fw={500}>{value || '—'}</Text>
-      </Group>
-    </Card>
+    <Table variant="vertical" layout="fixed" withTableBorder>
+      <Table.Tbody>
+        {rows.map(({ label, value, icon }) => (
+          <Table.Tr key={label}>
+            <Table.Th w={160}>{label}</Table.Th>
+            <Table.Td>
+              <Group gap="xs" wrap="nowrap">
+                {icon}
+                <Text size="sm">{value || '—'}</Text>
+              </Group>
+            </Table.Td>
+          </Table.Tr>
+        ))}
+      </Table.Tbody>
+    </Table>
   )
 }
 
@@ -207,31 +221,40 @@ function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contac
   )
 }
 
-// The core attributes of the Contact, each in a card; an attribute it has none of shows a dash.
+// The core attributes of the Contact in two tables side by side: who the Contact is, then where
+// and when.
 function ContactDetails({ contact }: { contact: SiteContactResource }) {
   const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
-      <Field label={t(($) => $.table.email)} value={contact.email ?? ''} />
-      <Field label={t(($) => $.table.subjectId)} value={contact.subjectId ?? ''} />
-      <Field label={t(($) => $.table.phone)} value={contact.phone ?? ''} />
-      <Field label={t(($) => $.table.firstName)} value={contact.firstName ?? ''} />
-      <Field label={t(($) => $.table.lastName)} value={contact.lastName ?? ''} />
-      <Field label={t(($) => $.table.timeZone)} value={contact.timeZone ?? ''} />
-      <Field
-        label={t(($) => $.table.country)}
-        value={contact.country ? countryName(contact.country) : ''}
-        icon={contact.country ? <CountryFlag code={contact.country} /> : null}
+    <SimpleGrid cols={{ base: 1, md: 2 }}>
+      <AttributeTable
+        rows={[
+          { label: t(($) => $.table.email), value: contact.email ?? '' },
+          { label: t(($) => $.table.subjectId), value: contact.subjectId ?? '' },
+          { label: t(($) => $.table.phone), value: contact.phone ?? '' },
+          { label: t(($) => $.table.firstName), value: contact.firstName ?? '' },
+          { label: t(($) => $.table.lastName), value: contact.lastName ?? '' },
+          {
+            label: t(($) => $.table.birthday),
+            value: contact.birthday ? formatLongDate(contact.birthday) : '',
+          },
+        ]}
       />
-      <Field label={t(($) => $.table.city)} value={contact.city ?? ''} />
-      <Field label={t(($) => $.table.locale)} value={contact.locale ?? ''} />
-      <Field
-        label={t(($) => $.table.birthday)}
-        value={contact.birthday ? formatLongDate(contact.birthday) : ''}
+      <AttributeTable
+        rows={[
+          {
+            label: t(($) => $.table.country),
+            value: contact.country ? countryName(contact.country) : '',
+            icon: contact.country ? <CountryFlag code={contact.country} /> : null,
+          },
+          { label: t(($) => $.table.city), value: contact.city ?? '' },
+          { label: t(($) => $.table.timeZone), value: contact.timeZone ?? '' },
+          { label: t(($) => $.table.locale), value: contact.locale ?? '' },
+          { label: t(($) => $.activity.createdAt), value: formatDateTime(contact.createdAt) },
+          { label: t(($) => $.contacts.updatedAt), value: formatDateTime(contact.updatedAt) },
+        ]}
       />
-      <Field label={t(($) => $.activity.createdAt)} value={formatDateTime(contact.createdAt)} />
-      <Field label={t(($) => $.contacts.updatedAt)} value={formatDateTime(contact.updatedAt)} />
     </SimpleGrid>
   )
 }
@@ -294,11 +317,12 @@ export function ContactDetailPage() {
       {customFields.length > 0 ? (
         <>
           <Title order={5}>{t(($) => $.contacts.customFields)}</Title>
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
-            {customFields.map(([key, value]) => (
-              <Field key={key} label={key} value={formatCustomValue(value)} />
-            ))}
-          </SimpleGrid>
+          <AttributeTable
+            rows={customFields.map(([key, value]) => ({
+              label: key,
+              value: formatCustomValue(value),
+            }))}
+          />
         </>
       ) : null}
 
