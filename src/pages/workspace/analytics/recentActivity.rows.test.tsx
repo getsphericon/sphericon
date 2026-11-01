@@ -79,15 +79,27 @@ test('a Custom field change names the field by its name, and a clear says so', a
   await expect.element(screen.getByText('Cleared Plan')).toBeVisible()
 })
 
+test('a Custom field no longer defined is named by its key, its value as JSON', async () => {
+  serve(event('1', 'contact.field_changed', { key: 'seats', value: 4 }))
+  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+
+  await expect.element(screen.getByText('Set seats to "4"')).toBeVisible()
+})
+
 test('an Enrollment names its Automation, and one that is gone by the words of its action', async () => {
   serve(
     event('1', 'automation.goal_reached', { automationId: 7 }),
     event('2', 'automation.exited', { automationId: 8 }),
+    event('3', 'automation.enrolled', { automationId: 7 }),
+    event('4', 'automation.completed', { automationId: 7 }),
   )
   const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
 
-  await expect.element(screen.getByText('Reached the goal of')).toBeVisible()
-  await expect.element(screen.getByRole('link', { name: '"Onboarding"' })).toBeVisible()
+  const linked = (row: RegExp) =>
+    screen.getByRole('row', { name: row }).getByRole('link', { name: '"Onboarding"' })
+  await expect.element(linked(/Entered "Onboarding"/)).toBeVisible()
+  await expect.element(linked(/Completed "Onboarding"/)).toBeVisible()
+  await expect.element(linked(/Reached the goal of "Onboarding"/)).toBeVisible()
   await expect.element(screen.getByText('Left an automation')).toBeVisible()
 })
 
@@ -100,4 +112,19 @@ test('a page view names the page by its title, the path when it has none', async
 
   await expect.element(screen.getByText('Visited "Pricing"')).toBeVisible()
   await expect.element(screen.getByText('Visited "/docs"')).toBeVisible()
+})
+
+test('an Event without what its row names shows the words of its action', async () => {
+  serve(
+    event('1', 'contact.tagged', {}),
+    event('2', 'contact.field_changed', { key: '' }),
+    event('3', 'automation.enrolled', {}),
+    event('4', 'page.view', { title: null }),
+  )
+  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+
+  await expect.element(screen.getByText('Was tagged')).toBeVisible()
+  await expect.element(screen.getByText('Had a custom field changed')).toBeVisible()
+  await expect.element(screen.getByText('Entered an automation')).toBeVisible()
+  await expect.element(screen.getByText('Visited a page')).toBeVisible()
 })
