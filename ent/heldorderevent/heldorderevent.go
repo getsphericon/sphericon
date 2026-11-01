@@ -27,8 +27,6 @@ const (
 	FieldKind = "kind"
 	// FieldProperties holds the string denoting the properties field in the database.
 	FieldProperties = "properties"
-	// FieldContactID holds the string denoting the contact_id field in the database.
-	FieldContactID = "contact_id"
 	// FieldEventID holds the string denoting the event_id field in the database.
 	FieldEventID = "event_id"
 	// FieldOccurredAt holds the string denoting the occurred_at field in the database.
@@ -55,7 +53,6 @@ var Columns = []string{
 	FieldOrderID,
 	FieldKind,
 	FieldProperties,
-	FieldContactID,
 	FieldEventID,
 	FieldOccurredAt,
 }
@@ -88,7 +85,6 @@ type Kind string
 
 // Kind values.
 const (
-	KindCompleted Kind = "completed"
 	KindUpdated   Kind = "updated"
 	KindRefunded  Kind = "refunded"
 	KindCancelled Kind = "cancelled"
@@ -101,7 +97,7 @@ func (k Kind) String() string {
 // KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
 func KindValidator(k Kind) error {
 	switch k {
-	case KindCompleted, KindUpdated, KindRefunded, KindCancelled:
+	case KindUpdated, KindRefunded, KindCancelled:
 		return nil
 	default:
 		return fmt.Errorf("heldorderevent: invalid enum value for kind field: %q", k)
@@ -139,11 +135,6 @@ func ByOrderID(opts ...sql.OrderTermOption) OrderOption {
 // ByKind orders the results by the kind field.
 func ByKind(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKind, opts...).ToFunc()
-}
-
-// ByContactID orders the results by the contact_id field.
-func ByContactID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldContactID, opts...).ToFunc()
 }
 
 // ByEventID orders the results by the event_id field.

@@ -139,3 +139,24 @@ func TestEveryChangeOfTheRevenueSettingsIsAuditedAndARepeatIsNot(t *testing.T) {
 	require.Len(t, recorded, 1)
 	assert.Equal(t, fixtures.AdminAliceName, recorded[0].Actor.Name.Value)
 }
+
+func TestTheFirstOrderCompletedChoosesTheReportingCurrencyAsTheSystemOnce(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := newShop(t, env)
+
+	s.completed("A-1", "10.00", "EUR")
+	env.DeliverOrders(t)
+	s.completed("A-2", "10.00", "USD")
+	env.DeliverOrders(t)
+	env.DeliverOrders(t) // at-least-once delivery: the whole outbox again
+
+	assert.Equal(t, siteapi.CurrencyCode("EUR"), revenueSettings(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).ReportingCurrency.Value)
+	published := env.OutboxEvents(t, events.NameAuditEntry)
+	require.Len(t, published, 1)
+	entry := published[0].(*events.AuditEntry)
+	assert.Equal(t, events.ActionWorkspaceUpdate, entry.Action)
+	assert.Equal(t, events.ActorSystem, entry.Actor.Kind)
+	diff, err := json.Marshal(entry.Diff)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"reporting_currency":{"to":"EUR"}}`, string(diff))
+}

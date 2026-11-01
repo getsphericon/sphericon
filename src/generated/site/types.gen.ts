@@ -1463,13 +1463,13 @@ export type SiteAnalyticsRange = typeof SiteAnalyticsRange[keyof typeof SiteAnal
 
 /**
  * The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
- * sum of Order Movements over the range, in the Reporting currency. Until an Owner or Admin
- * chooses that currency `reportingCurrency` is null and every figure is zero; the Orders
- * received meanwhile are counted once it is chosen.
+ * sum of Order Movements over the range, in the Reporting currency. Until the first Order
+ * Completed sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and
+ * every figure is zero.
  */
 export type SiteAnalyticsRevenue = {
   /**
-   * The Reporting currency, null until chosen
+   * The Reporting currency, null until the first Order or an Owner or Admin sets it
    */
   reportingCurrency: CurrencyCode | null;
   /**
@@ -3906,12 +3906,12 @@ export type SiteMembershipSource = typeof SiteMembershipSource[keyof typeof Site
 /**
  * The Orders credited to one Broadcast or Automation and the net revenue of their Movements
  * (ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund
- * lowers `amount` on its own day. Until the currency is chosen `reportingCurrency` is null and
+ * lowers `amount` on its own day. Until the currency is set `reportingCurrency` is null and
  * there is no figure to show. Orders in another currency are counted in neither field.
  */
 export type SiteMessageRevenue = {
   /**
-   * The Reporting currency, null until chosen
+   * The Reporting currency, null until set
    */
   reportingCurrency: CurrencyCode | null;
   /**
@@ -4589,8 +4589,8 @@ export type SiteRevenuePoint = {
  */
 export type SiteRevenueSettingsResource = {
   /**
-   * The Reporting currency; null until an Owner or Admin chooses one, and revenue is not shown
-   * before then
+   * The Reporting currency; the currency of the first Order Completed unless an Owner or Admin
+   * chooses one, and null with no figure shown before either
    */
   reportingCurrency: CurrencyCode | null;
   /**

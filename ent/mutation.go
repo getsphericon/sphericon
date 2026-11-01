@@ -19992,8 +19992,6 @@ type HeldOrderEventMutation struct {
 	order_id         *string
 	kind             *heldorderevent.Kind
 	properties       *map[string]interface{}
-	contact_id       *int64
-	addcontact_id    *int64
 	event_id         *string
 	occurred_at      *time.Time
 	clearedFields    map[string]struct{}
@@ -20324,76 +20322,6 @@ func (m *HeldOrderEventMutation) ResetProperties() {
 	m.properties = nil
 }
 
-// SetContactID sets the "contact_id" field.
-func (m *HeldOrderEventMutation) SetContactID(i int64) {
-	m.contact_id = &i
-	m.addcontact_id = nil
-}
-
-// ContactID returns the value of the "contact_id" field in the mutation.
-func (m *HeldOrderEventMutation) ContactID() (r int64, exists bool) {
-	v := m.contact_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldContactID returns the old "contact_id" field's value of the HeldOrderEvent entity.
-// If the HeldOrderEvent object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HeldOrderEventMutation) OldContactID(ctx context.Context) (v *int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldContactID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldContactID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldContactID: %w", err)
-	}
-	return oldValue.ContactID, nil
-}
-
-// AddContactID adds i to the "contact_id" field.
-func (m *HeldOrderEventMutation) AddContactID(i int64) {
-	if m.addcontact_id != nil {
-		*m.addcontact_id += i
-	} else {
-		m.addcontact_id = &i
-	}
-}
-
-// AddedContactID returns the value that was added to the "contact_id" field in this mutation.
-func (m *HeldOrderEventMutation) AddedContactID() (r int64, exists bool) {
-	v := m.addcontact_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearContactID clears the value of the "contact_id" field.
-func (m *HeldOrderEventMutation) ClearContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
-	m.clearedFields[heldorderevent.FieldContactID] = struct{}{}
-}
-
-// ContactIDCleared returns if the "contact_id" field was cleared in this mutation.
-func (m *HeldOrderEventMutation) ContactIDCleared() bool {
-	_, ok := m.clearedFields[heldorderevent.FieldContactID]
-	return ok
-}
-
-// ResetContactID resets all changes to the "contact_id" field.
-func (m *HeldOrderEventMutation) ResetContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
-	delete(m.clearedFields, heldorderevent.FieldContactID)
-}
-
 // SetEventID sets the "event_id" field.
 func (m *HeldOrderEventMutation) SetEventID(s string) {
 	m.event_id = &s
@@ -20527,7 +20455,7 @@ func (m *HeldOrderEventMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *HeldOrderEventMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, heldorderevent.FieldCreatedAt)
 	}
@@ -20545,9 +20473,6 @@ func (m *HeldOrderEventMutation) Fields() []string {
 	}
 	if m.properties != nil {
 		fields = append(fields, heldorderevent.FieldProperties)
-	}
-	if m.contact_id != nil {
-		fields = append(fields, heldorderevent.FieldContactID)
 	}
 	if m.event_id != nil {
 		fields = append(fields, heldorderevent.FieldEventID)
@@ -20575,8 +20500,6 @@ func (m *HeldOrderEventMutation) Field(name string) (ent.Value, bool) {
 		return m.Kind()
 	case heldorderevent.FieldProperties:
 		return m.Properties()
-	case heldorderevent.FieldContactID:
-		return m.ContactID()
 	case heldorderevent.FieldEventID:
 		return m.EventID()
 	case heldorderevent.FieldOccurredAt:
@@ -20602,8 +20525,6 @@ func (m *HeldOrderEventMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldKind(ctx)
 	case heldorderevent.FieldProperties:
 		return m.OldProperties(ctx)
-	case heldorderevent.FieldContactID:
-		return m.OldContactID(ctx)
 	case heldorderevent.FieldEventID:
 		return m.OldEventID(ctx)
 	case heldorderevent.FieldOccurredAt:
@@ -20659,13 +20580,6 @@ func (m *HeldOrderEventMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProperties(v)
 		return nil
-	case heldorderevent.FieldContactID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetContactID(v)
-		return nil
 	case heldorderevent.FieldEventID:
 		v, ok := value.(string)
 		if !ok {
@@ -20688,9 +20602,6 @@ func (m *HeldOrderEventMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *HeldOrderEventMutation) AddedFields() []string {
 	var fields []string
-	if m.addcontact_id != nil {
-		fields = append(fields, heldorderevent.FieldContactID)
-	}
 	return fields
 }
 
@@ -20699,8 +20610,6 @@ func (m *HeldOrderEventMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *HeldOrderEventMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case heldorderevent.FieldContactID:
-		return m.AddedContactID()
 	}
 	return nil, false
 }
@@ -20710,13 +20619,6 @@ func (m *HeldOrderEventMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *HeldOrderEventMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case heldorderevent.FieldContactID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddContactID(v)
-		return nil
 	}
 	return fmt.Errorf("unknown HeldOrderEvent numeric field %s", name)
 }
@@ -20724,11 +20626,7 @@ func (m *HeldOrderEventMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *HeldOrderEventMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(heldorderevent.FieldContactID) {
-		fields = append(fields, heldorderevent.FieldContactID)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -20741,11 +20639,6 @@ func (m *HeldOrderEventMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *HeldOrderEventMutation) ClearField(name string) error {
-	switch name {
-	case heldorderevent.FieldContactID:
-		m.ClearContactID()
-		return nil
-	}
 	return fmt.Errorf("unknown HeldOrderEvent nullable field %s", name)
 }
 
@@ -20770,9 +20663,6 @@ func (m *HeldOrderEventMutation) ResetField(name string) error {
 		return nil
 	case heldorderevent.FieldProperties:
 		m.ResetProperties()
-		return nil
-	case heldorderevent.FieldContactID:
-		m.ResetContactID()
 		return nil
 	case heldorderevent.FieldEventID:
 		m.ResetEventID()

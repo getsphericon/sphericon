@@ -1388,8 +1388,8 @@ type Invoker interface {
 	SiteWorkspacesDelete(ctx context.Context, request *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (SiteWorkspacesDeleteRes, error)
 	// SiteWorkspacesGetRevenueSettings invokes SiteWorkspaces_getRevenueSettings operation.
 	//
-	// Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the
-	// Attribution window. Open to every member.
+	// Read the Workspace's revenue settings: the Reporting currency (null until set) and the Attribution
+	// window. Open to every member.
 	//
 	// GET /workspaces/{workspaceId}/revenue-settings
 	SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (SiteWorkspacesGetRevenueSettingsRes, error)
@@ -29204,8 +29204,8 @@ func (c *Client) sendSiteWorkspacesDelete(ctx context.Context, request *SiteDele
 
 // SiteWorkspacesGetRevenueSettings invokes SiteWorkspaces_getRevenueSettings operation.
 //
-// Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the
-// Attribution window. Open to every member.
+// Read the Workspace's revenue settings: the Reporting currency (null until set) and the Attribution
+// window. Open to every member.
 //
 // GET /workspaces/{workspaceId}/revenue-settings
 func (c *Client) SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (SiteWorkspacesGetRevenueSettingsRes, error) {

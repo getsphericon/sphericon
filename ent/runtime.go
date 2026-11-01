@@ -503,7 +503,7 @@ func init() {
 	// heldorderevent.OrderIDValidator is a validator for the "order_id" field. It is called by the builders before save.
 	heldorderevent.OrderIDValidator = heldordereventDescOrderID.Validators[0].(func(string) error)
 	// heldordereventDescEventID is the schema descriptor for event_id field.
-	heldordereventDescEventID := heldordereventFields[5].Descriptor()
+	heldordereventDescEventID := heldordereventFields[4].Descriptor()
 	// heldorderevent.EventIDValidator is a validator for the "event_id" field. It is called by the builders before save.
 	heldorderevent.EventIDValidator = heldordereventDescEventID.Validators[0].(func(string) error)
 	holdMixin := schema.Hold{}.Mixin()

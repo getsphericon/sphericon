@@ -166,8 +166,11 @@ type TestEnv struct {
 	// Outbound module.
 	Holds *holds.Holds
 
-	orders  *orders.Module // the orders subscriber's module, driven by DeliverOrders
-	edition *ee.Edition    // the EE parts, built like the composition root builds them
+	// Orders is the orders subscriber's module, which DeliverOrders drives, for a test that hands
+	// it an order Event itself.
+	Orders *orders.Module
+
+	edition *ee.Edition // the EE parts, built like the composition root builds them
 
 	sender    *outbound.Module // the Outbound module the queued Broadcast sends run through
 	jwtSecret string           // for tokens a test needs in a state the Tracker never mints
@@ -484,7 +487,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Integrations:    do.MustInvoke[*integrations.Module](injector),
 		ConsentRecords:  do.MustInvoke[*consentrecords.Module](injector),
 		Holds:           do.MustInvoke[*holds.Holds](injector),
-		orders:          do.MustInvoke[*orders.Module](injector),
+		Orders:          do.MustInvoke[*orders.Module](injector),
 		edition:         edition,
 		sender:          do.MustInvoke[*outbound.Module](injector),
 		jwtSecret:       cfg.JWTSecret,

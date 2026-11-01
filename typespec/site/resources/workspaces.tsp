@@ -187,8 +187,8 @@ scalar AttributionWindowDays extends int32;
 /** The Workspace's revenue settings (ADR 0064): the Reporting currency every revenue figure is
  * in, and the Attribution window an Order may follow a click by. Every member reads them. */
 model SiteRevenueSettingsResource {
-  /** The Reporting currency; null until an Owner or Admin chooses one, and revenue is not shown
-   * before then */
+  /** The Reporting currency; the currency of the first Order Completed unless an Owner or Admin
+   * chooses one, and null with no figure shown before either */
   reportingCurrency: CurrencyCode | null;
 
   /** The Attribution window in whole days: 5 until set. A change affects only Orders that
@@ -354,7 +354,7 @@ namespace SiteWorkspaces {
     | ForbiddenProblem
     | NotFoundProblem;
 
-  /** Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the
+  /** Read the Workspace's revenue settings: the Reporting currency (null until set) and the
    * Attribution window. Open to every member. */
   @get
   @route("/{workspaceId}/revenue-settings")

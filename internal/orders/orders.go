@@ -8,8 +8,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
@@ -21,90 +19,76 @@ import (
 // Module builds Orders and their Movements from stored order Events and credits each Order to
 // the message last clicked (ADR 0064). Its functions take the Workspace-scoped client; the one
 // place that scopes it is the event subscriber (docs/architecture.md).
-type Module struct{}
+type Module struct {
+	currency CurrencyAdopter
+}
 
-// New is the Orders module.
-func New() *Module { return &Module{} }
+// CurrencyAdopter makes a currency the Workspace's Reporting currency when it has none yet and
+// records that in the Audit log (the Workspace's own writes live in the accounts package).
+type CurrencyAdopter interface {
+	AdoptReportingCurrency(ctx context.Context, s *ent.Scoped, code string) error
+}
+
+// New is the Orders module; currency is offered the currency of every Order Completed it reads.
+func New(currency CurrencyAdopter) *Module { return &Module{currency: currency} }
 
 var _ events.OrderRecorder = (*Module)(nil)
 
 // IsOrderAction reports whether action names one of the four order Events.
 func (m *Module) IsOrderAction(action string) bool { return IsOrderAction(action) }
 
+// Prepare runs before the transaction of Record, on its own: the first Order Completed a
+// Workspace reads makes its currency the Reporting currency while none is set. A repeat finds one
+// set and changes nothing; an Event Record will not read changes nothing either.
+func (m *Module) Prepare(ctx context.Context, s *ent.Scoped, in events.OrderEvent) error {
+	if in.Action != ActionCompleted {
+		return nil
+	}
+	parsed, err := Parse(in.Action, in.Properties, nil)
+	if IsRefusal(err) {
+		return nil // Record logs it
+	}
+	if err != nil {
+		return err
+	}
+	w, err := s.Workspace(ctx)
+	if err != nil {
+		return fmt.Errorf("read the Workspace: %w", err)
+	}
+	if w.ReportingCurrency != nil {
+		return nil // set already: no transaction for every Order
+	}
+	if err := m.currency.AdoptReportingCurrency(ctx, s, parsed.Currency); err != nil {
+		return fmt.Errorf("adopt the currency of order %q: %w", parsed.OrderID, err)
+	}
+	return nil
+}
+
 // Record applies one order Event to the Workspace behind s, which runs inside a transaction
 // that serialises the order Events of the Workspace (the events package takes the lock). An
 // Order Completed creates the Order and its first Movement (a repeat of the same order_id changes
 // nothing), credits it (see credit) and then applies the Events that were held for it. An
 // Updated, Refunded or Cancelled adds its Movement to an Order that exists and is held until its
-// Completed otherwise.
-//
-// An Event that names no currency is in the Reporting currency, or, when it changes an Order that
-// exists, in the Order's own. An Order Completed that names none while the Workspace has not
-// chosen a Reporting currency is held, and Resolve reads it once one is chosen.
+// Completed otherwise; one that names no currency is in the Order's own.
 func (m *Module) Record(ctx context.Context, s *ent.Scoped, in events.OrderEvent) error {
-	w, err := s.Workspace(ctx)
-	if err != nil {
-		return fmt.Errorf("read the Workspace: %w", err)
+	if in.Action != ActionCompleted {
+		return m.adjust(ctx, s, in)
 	}
-	parsed, err := Parse(in.Action, in.Properties, w.ReportingCurrency)
+	parsed, err := Parse(in.Action, in.Properties, nil)
 	if IsRefusal(err) {
-		// Ingest refuses these, so this is an Event that was valid then and is not now (the
-		// Reporting currency changed meanwhile and the amount has more places than the new one
-		// has). Retrying it would fail the same way.
-		slog.WarnContext(ctx, "order event not read", "reason", err.Error(), "workspace_id", w.ID)
+		// Ingest refuses these, so this Event was stored before the rule it breaks; retrying it
+		// would fail the same way.
+		slog.WarnContext(ctx, "order event not read", "reason", err.Error(), "event_id", in.EventID)
 		return nil
 	}
 	if err != nil {
 		return err
 	}
-	switch {
-	case in.Action != ActionCompleted:
-		return m.adjust(ctx, s, in)
-	case parsed.Deferred:
-		return m.hold(ctx, s, in)
-	default:
-		return m.complete(ctx, s, in, parsed, w.AttributionWindowDays)
-	}
-}
-
-// Resolve reads the Order Completed Events that were held for want of a Reporting currency, in
-// the order of their time, once the Workspace has chosen one; with none chosen it does nothing.
-// An Event whose amount has more places than that currency allows can never be read and is
-// dropped with a log line.
-func (m *Module) Resolve(ctx context.Context, s *ent.Scoped) error {
 	w, err := s.Workspace(ctx)
 	if err != nil {
 		return fmt.Errorf("read the Workspace: %w", err)
 	}
-	if w.ReportingCurrency == nil {
-		return nil
-	}
-	held, err := s.HeldOrderEvent().Query().Where(heldorderevent.KindEQ(heldorderevent.KindCompleted)).
-		Order(ent.Asc(heldorderevent.FieldOccurredAt), ent.Asc(heldorderevent.FieldID)).All(ctx)
-	if err != nil {
-		return fmt.Errorf("read the held Orders Completed: %w", err)
-	}
-	for _, h := range held {
-		if err := s.HeldOrderEvent().DeleteOneID(h.ID).Exec(ctx); err != nil {
-			return fmt.Errorf("drop a held Order Completed: %w", err)
-		}
-		in := events.OrderEvent{
-			Action: ActionCompleted, Properties: h.Properties, ContactID: lo.FromPtr(h.ContactID),
-			OccurredAt: h.OccurredAt, EventID: h.EventID,
-		}
-		parsed, err := Parse(in.Action, in.Properties, w.ReportingCurrency)
-		if IsRefusal(err) {
-			slog.WarnContext(ctx, "held order event not read", "reason", err.Error(), "workspace_id", w.ID)
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		if err := m.complete(ctx, s, in, parsed, w.AttributionWindowDays); err != nil {
-			return err
-		}
-	}
-	return nil
+	return m.complete(ctx, s, in, parsed, w.AttributionWindowDays)
 }
 
 func (m *Module) complete(ctx context.Context, s *ent.Scoped, in events.OrderEvent, parsed Parsed, windowDays int) error {
@@ -146,7 +130,7 @@ func (m *Module) complete(ctx context.Context, s *ent.Scoped, in events.OrderEve
 // (the one stored first on equal times), and drops them. One that names no currency is in the
 // Order's; one that can no longer be read is dropped with a log line.
 func (m *Module) applyHeld(ctx context.Context, s *ent.Scoped, orderRef int64, parsed Parsed) error {
-	held, err := s.HeldOrderEvent().Query().Where(heldorderevent.OrderID(parsed.OrderID), heldorderevent.KindNEQ(heldorderevent.KindCompleted)).
+	held, err := s.HeldOrderEvent().Query().Where(heldorderevent.OrderID(parsed.OrderID)).
 		Order(ent.Asc(heldorderevent.FieldOccurredAt), ent.Asc(heldorderevent.FieldID)).All(ctx)
 	if err != nil {
 		return fmt.Errorf("read the Events held for order %q: %w", parsed.OrderID, err)
@@ -188,24 +172,17 @@ func (m *Module) adjust(ctx context.Context, s *ent.Scoped, in events.OrderEvent
 	return m.apply(ctx, s, found.ID, found.Currency, newChange(in.Action, parsed, in.EventID, in.OccurredAt))
 }
 
-// hold keeps the Event as sent, to be read when its Order Completed arrives (or, for an Order
-// Completed, when a Reporting currency is chosen).
+// hold keeps an Updated, Refunded or Cancelled as sent, to be read when its Order Completed
+// arrives.
 func (m *Module) hold(ctx context.Context, s *ent.Scoped, in events.OrderEvent) error {
 	orderID, _ := in.Properties[propOrderID].(string)
-	kind := heldorderevent.Kind(movementKindOf(in.Action))
-	if in.Action == ActionCompleted {
-		kind = heldorderevent.KindCompleted
-	}
-	create := s.HeldOrderEvent().Create().
+	err := s.HeldOrderEvent().Create().
 		SetOrderID(orderID).
-		SetKind(kind).
+		SetKind(heldorderevent.Kind(movementKindOf(in.Action))).
 		SetProperties(Read(in.Properties)).
 		SetEventID(in.EventID).
-		SetOccurredAt(in.OccurredAt)
-	if in.Action == ActionCompleted && in.ContactID != 0 {
-		create.SetContactID(in.ContactID)
-	}
-	err := create.OnConflictColumns(heldorderevent.FieldWorkspaceID, heldorderevent.FieldEventID).DoNothing().Exec(ctx)
+		SetOccurredAt(in.OccurredAt).
+		OnConflictColumns(heldorderevent.FieldWorkspaceID, heldorderevent.FieldEventID).DoNothing().Exec(ctx)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("hold an Event of order %q: %w", orderID, err)
 	}

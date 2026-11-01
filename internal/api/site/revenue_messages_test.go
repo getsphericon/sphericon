@@ -137,22 +137,20 @@ func TestAnAutomationShowsItsOrdersAndNetRevenueOnItsReportItsListAndItsRead(t *
 	assert.Equal(t, report, got)
 }
 
-func TestWithTheCurrencyUnsetThereIsNoFigureAndOnceChosenEveryOrderReceivedCounts(t *testing.T) {
+func TestBeforeTheFirstOrderThereIsNoFigureAndItsOrderCountsAtOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 	s := newShop(t, env)
 	clicked(t, env, events.EmailEngagement{BroadcastID: fixtures.BroadcastSentUntrackedID}, noonDaysAgo(4))
+	unset := broadcastRevenue(t, c, int64(fixtures.BroadcastSentUntrackedID))
+
 	s.at(noonDaysAgo(3), "Order Completed", orderProps("B-1", "20.00"))
 	env.DeliverOrders(t)
 
-	unset := broadcastRevenue(t, c, int64(fixtures.BroadcastSentUntrackedID))
+	set := broadcastRevenue(t, c, int64(fixtures.BroadcastSentUntrackedID))
 	assert.True(t, unset.ReportingCurrency.Null)
 	assert.Zero(t, unset.Orders)
-	assert.Zero(t, unset.Amount)
-
-	chooseCurrency(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "USD")
-
-	set := broadcastRevenue(t, c, int64(fixtures.BroadcastSentUntrackedID))
+	assert.Equal(t, siteapi.NewNilCurrencyCode("USD"), set.ReportingCurrency)
 	assert.EqualValues(t, 1, set.Orders)
 	assert.EqualValues(t, 2000, set.Amount)
 }

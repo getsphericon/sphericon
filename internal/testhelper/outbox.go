@@ -52,7 +52,7 @@ func (env *TestEnv) DeliverOrders(t *testing.T) {
 	t.Helper()
 	envelopes := env.OutboxEnvelopes(t)
 	for i := range envelopes {
-		require.NoError(t, events.RecordOrder(t.Context(), env.DB, env.orders, envelopes[i]))
+		require.NoError(t, events.RecordOrder(t.Context(), env.DB, env.Orders, envelopes[i]))
 	}
 }
 

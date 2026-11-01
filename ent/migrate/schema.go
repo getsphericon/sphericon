@@ -931,9 +931,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "order_id", Type: field.TypeString},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"completed", "updated", "refunded", "cancelled"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"updated", "refunded", "cancelled"}},
 		{Name: "properties", Type: field.TypeJSON},
-		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "event_id", Type: field.TypeString},
 		{Name: "occurred_at", Type: field.TypeTime},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -946,7 +945,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "held_order_events_workspaces_held_order_events",
-				Columns:    []*schema.Column{HeldOrderEventsColumns[9]},
+				Columns:    []*schema.Column{HeldOrderEventsColumns[8]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -955,12 +954,12 @@ var (
 			{
 				Name:    "heldorderevent_workspace_id_event_id",
 				Unique:  true,
-				Columns: []*schema.Column{HeldOrderEventsColumns[9], HeldOrderEventsColumns[7]},
+				Columns: []*schema.Column{HeldOrderEventsColumns[8], HeldOrderEventsColumns[6]},
 			},
 			{
 				Name:    "heldorderevent_workspace_id_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{HeldOrderEventsColumns[9], HeldOrderEventsColumns[3]},
+				Columns: []*schema.Column{HeldOrderEventsColumns[8], HeldOrderEventsColumns[3]},
 			},
 		},
 	}
@@ -2930,7 +2929,7 @@ func init() {
 		Table: "held_order_events",
 	}
 	HeldOrderEventsTable.Annotation.Checks = map[string]string{
-		"held_order_events_kind_check": "kind IN ('completed', 'updated', 'refunded', 'cancelled')",
+		"held_order_events_kind_check": "kind IN ('updated', 'refunded', 'cancelled')",
 	}
 	HoldsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	HoldsTable.Annotation = &entsql.Annotation{

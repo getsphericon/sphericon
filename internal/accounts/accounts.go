@@ -375,6 +375,31 @@ func (a *Accounts) SetRevenueSettings(ctx context.Context, s *ent.Scoped, actor 
 	return updated, err
 }
 
+// AdoptReportingCurrency makes code the Reporting currency of the scoped Workspace when it has
+// none yet (ADR 0064): the currency of the first Order Completed the Workspace sends. It changes
+// nothing once one is set, by an Owner or Admin or by an earlier Order. The change is a
+// `workspace.update` Audit entry by the system, in a transaction of its own (the orders
+// subscriber calls it before it opens the Event's), and the conditional write makes the first of
+// two Orders read at once win. code is a currency the order Event check has accepted.
+func (a *Accounts) AdoptReportingCurrency(ctx context.Context, s *ent.Scoped, code string) error {
+	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		n, err := tx.Workspace.Update().
+			Where(workspace.ID(s.WorkspaceID()), workspace.ReportingCurrencyIsNil()).
+			SetReportingCurrency(code).
+			Save(ctx)
+		if err != nil || n == 0 {
+			return err
+		}
+		ws, err := tx.Workspace.Get(ctx, s.WorkspaceID())
+		if err != nil {
+			return err
+		}
+		diff := map[string]any{workspace.FieldReportingCurrency: events.Became(code)}
+		return events.RecordAudit(ctx, pub,
+			events.WorkspaceAudit(ws, events.Actor{Kind: events.ActorSystem}, events.ActionWorkspaceUpdate, diff))
+	})
+}
+
 // SetSecondFactorRequirement switches the scoped Workspace's Two-factor requirement
 // (ADR 0020) on, starting at now, or off. Switching it on while it is on keeps the
 // original start, so no member's grace restarts. A change is recorded as a

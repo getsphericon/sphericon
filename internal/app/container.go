@@ -414,8 +414,8 @@ var editionPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*holds.Holds, error) {
 		return do.MustInvoke[*ee.Edition](i).Holds(), nil
 	}),
-	do.Lazy(func(do.Injector) (*orders.Module, error) {
-		return orders.New(), nil
+	do.Lazy(func(i do.Injector) (*orders.Module, error) {
+		return orders.New(do.MustInvoke[*accounts.Accounts](i)), nil
 	}),
 	// The producer side of the domain-event system: a transactional outbox over the main pool.
 	do.Lazy(func(i do.Injector) (*events.Bus, error) {

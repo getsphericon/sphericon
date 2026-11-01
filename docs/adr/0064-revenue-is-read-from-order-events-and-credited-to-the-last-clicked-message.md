@@ -49,7 +49,7 @@ Sphericon's. The research behind this is in `docs/research/revenue-and-attributi
   ([[0044-history-arrives-as-a-backfill-and-a-live-event-never-claims-to-be-old]]): its order Events
   build Orders and trigger nothing. A Backfill credits an Order only while the click is still kept: the
   Events' retention is 400 days by default and counts from when an Event is stored (ADR 0019).
-- **One reporting currency per Workspace**, set by the Owner or an Admin, who also set the window; both
+- **One reporting currency per Workspace** (amended below: the first Order sets it), set by the Owner or an Admin, who also set the window; both
   changes enter the audit log. Revenue is not shown until the currency is chosen, and an Order without a
   `currency` counts in it. An Order Completed that names no currency while none is chosen is kept as
   sent and read when the Owner or an Admin chooses one, so a shop that never sends a `currency` loses
@@ -95,3 +95,22 @@ Sphericon's. The research behind this is in `docs/research/revenue-and-attributi
   values. A rate table can come later without changing the stored orders.
 - **Storing revenue on the Broadcast or Automation**: cheap to read, but a total to be rewritten by
   every later refund or update, where the movements add up the same on any day.
+
+## Amendment: an Order Completed names its currency, and the first one sets the Reporting currency
+
+The bullet "One reporting currency per Workspace" above asked the Owner or an Admin to choose the
+currency before any revenue showed, and held an Order Completed without a `currency` until they did.
+No other email tool asks this: each takes the currency from the shop it is connected to. Sphericon
+has no shop connection, only the Events, so the Events now carry it.
+
+- **An Order Completed must name its `currency`.** The spec marks no property as required, but it
+  lists `currency` on all four order Events, and the shops and pipelines that send them fill it. One
+  without it is refused at ingest with a reason, like an amount with too many places. An Updated,
+  Refunded or Cancelled may leave it out and is in the currency of its Order; at ingest it is checked
+  against that currency when the Order exists, and only as a number when it does not yet.
+- **The first Order Completed a Workspace reads sets the Reporting currency** when none is set, a
+  Backfilled one included. The change is a `workspace.update` Audit entry by the system. The Owner or
+  an Admin can still choose the currency, before the first Order or after it, and a later Order never
+  replaces it. Revenue shows as soon as there is an Order.
+- **Nothing waits for a currency any more.** No Order Completed is held; only a change that arrives
+  before its Order Completed is, so a held Event has no kind `completed` and no Contact.

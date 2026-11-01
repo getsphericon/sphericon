@@ -2960,7 +2960,7 @@ export const sitePersonalTokensDelete = <ThrowOnError extends boolean = false>(o
 });
 
 /**
- * Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the
+ * Read the Workspace's revenue settings: the Reporting currency (null until set) and the
  * Attribution window. Open to every member.
  */
 export const siteWorkspacesGetRevenueSettings = <ThrowOnError extends boolean = false>(options: Options<SiteWorkspacesGetRevenueSettingsData, ThrowOnError>): RequestResult<SiteWorkspacesGetRevenueSettingsResponses, SiteWorkspacesGetRevenueSettingsErrors, ThrowOnError> => (options.client ?? client).get<SiteWorkspacesGetRevenueSettingsResponses, SiteWorkspacesGetRevenueSettingsErrors, ThrowOnError>({

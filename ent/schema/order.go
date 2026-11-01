@@ -41,9 +41,8 @@ func (Order) Fields() []ent.Field {
 		field.Int64("contact_id").
 			Optional().
 			Nillable(),
-		// ISO 4217 code, in capitals. Always set: an Event without a `currency` takes the
-		// Reporting currency of the moment it is read (once one is chosen: until then the Event
-		// is held, see HeldOrderEvent), and keeps it if that is changed later.
+		// ISO 4217 code, in capitals: the `currency` of the Order Completed, which must name one.
+		// A later Event that names none is in this currency.
 		field.String("currency").
 			NotEmpty().
 			Immutable(),
@@ -185,9 +184,9 @@ func (OrderMovement) Indexes() []ent.Index {
 // properties Sphericon reads, never the rest. An Order Updated, Refunded or Cancelled that arrived
 // before the Order Completed of its order_id waits here and is applied, in the time order of the
 // Events, when the Order is created, and is then deleted; one that never gets its Completed counts
-// nothing. An Order Completed waits here too, only while the Workspace has no Reporting currency
-// and the Event named no currency: its amount cannot be read without one, so it is read when the
-// currency is chosen. It is kept as sent, not as an amount, for that reason.
+// nothing. It is kept as sent, not as an amount: one that names no currency is read in its
+// Order's, which is not known yet. An Order Completed is never held: it names its currency and is
+// read at once.
 type HeldOrderEvent struct {
 	ent.Schema
 }
@@ -212,22 +211,11 @@ func (HeldOrderEvent) Fields() []ent.Field {
 			NotEmpty().
 			Immutable(),
 		field.Enum("kind").
-			Values("completed", "updated", "refunded", "cancelled").
+			Values("updated", "refunded", "cancelled").
 			Immutable(),
 		// The `order_id`, `total`, `currency` and `refund_id` the Event sent, as sent.
 		field.JSON("properties", map[string]any{}).
 			Immutable(),
-		// The Contact the Event resolved to, for a held Order Completed; a plain number, not a
-		// reference: the Contact may be erased before the Event is read, and the Order is then
-		// kept unlinked.
-		field.Int64("contact_id").
-			Immutable().
-			Optional().
-			Nillable().
-			Annotations(ScopedRef{
-				Unchecked: true,
-				Reason:    "the Contact may be erased before the held Event is read; reading it checks the Contact still exists",
-			}),
 		// The id of the Event, as on a Movement.
 		field.String("event_id").
 			NotEmpty().

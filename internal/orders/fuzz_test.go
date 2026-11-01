@@ -13,8 +13,8 @@ import (
 
 var (
 	fuzzActions = []string{orders.ActionCompleted, orders.ActionUpdated, orders.ActionRefunded, orders.ActionCancelled}
-	// The default currency is a Workspace's Reporting currency or an Order's own: none, or a valid
-	// code with two, zero or three decimal places.
+	// The default currency is the Order's own, for a change to it: none, or a valid code with two,
+	// zero or three decimal places. An Order Completed has none and must name its currency.
 	fuzzFallbacks = []*string{nil, new("EUR"), new("JPY"), new("KWD")}
 )
 
@@ -50,6 +50,7 @@ func FuzzParseReadsAnOrderOrRefusesIt(f *testing.F) {
 		assert.Truef(t, err == nil || orders.IsRefusal(err), "%s %s: an error that is no refusal: %v", act, data, err)
 		assert.Truef(t, err != nil || p.OrderID != "", "%s %s: an Order without an id", act, data)
 		assert.Truef(t, err != nil || p.Deferred == (p.Currency == ""), "%s %s: deferred %v in currency %q", act, data, p.Deferred, p.Currency)
+		assert.Truef(t, err != nil || !p.Deferred || act != orders.ActionCompleted, "%s %s: an Order Completed in no currency", act, data)
 		assert.Truef(t, err != nil || p.HasTotal || act == orders.ActionCancelled, "%s %s: no total", act, data)
 		assert.Truef(t, err != nil || !p.Deferred || p.Total == 0, "%s %s: a deferred total read as %d", act, data, p.Total)
 		assert.Truef(t, err != nil || p.RefundID == "" || act == orders.ActionRefunded, "%s %s: a refund id on another action", act, data)

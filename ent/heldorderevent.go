@@ -31,8 +31,6 @@ type HeldOrderEvent struct {
 	Kind heldorderevent.Kind `json:"kind,omitempty"`
 	// Properties holds the value of the "properties" field.
 	Properties map[string]interface{} `json:"properties,omitempty"`
-	// ContactID holds the value of the "contact_id" field.
-	ContactID *int64 `json:"contact_id,omitempty"`
 	// EventID holds the value of the "event_id" field.
 	EventID string `json:"event_id,omitempty"`
 	// OccurredAt holds the value of the "occurred_at" field.
@@ -70,7 +68,7 @@ func (*HeldOrderEvent) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case heldorderevent.FieldProperties:
 			values[i] = new([]byte)
-		case heldorderevent.FieldID, heldorderevent.FieldWorkspaceID, heldorderevent.FieldContactID:
+		case heldorderevent.FieldID, heldorderevent.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
 		case heldorderevent.FieldOrderID, heldorderevent.FieldKind, heldorderevent.FieldEventID:
 			values[i] = new(sql.NullString)
@@ -134,13 +132,6 @@ func (_m *HeldOrderEvent) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.Properties); err != nil {
 					return fmt.Errorf("unmarshal field properties: %w", err)
 				}
-			}
-		case heldorderevent.FieldContactID:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field contact_id", values[i])
-			} else if value.Valid {
-				_m.ContactID = new(int64)
-				*_m.ContactID = value.Int64
 			}
 		case heldorderevent.FieldEventID:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -212,11 +203,6 @@ func (_m *HeldOrderEvent) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("properties=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Properties))
-	builder.WriteString(", ")
-	if v := _m.ContactID; v != nil {
-		builder.WriteString("contact_id=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
 	builder.WriteString(", ")
 	builder.WriteString("event_id=")
 	builder.WriteString(_m.EventID)

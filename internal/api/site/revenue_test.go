@@ -117,23 +117,22 @@ func TestARepeatOfTheSameOrderIdChangesNothing(t *testing.T) {
 	assert.EqualValues(t, 1, got.Orders)
 }
 
-func TestRevenueIsUnsetUntilTheCurrencyIsChosenThenCountsEveryOrderAlreadyReceived(t *testing.T) {
+func TestRevenueIsUnsetUntilTheFirstOrderThenCountsInItsCurrency(t *testing.T) {
 	env := testhelper.Setup(t)
-	s := newShop(t, env)
-	s.completed("A-1", "10.00", "EUR")
-	s.completed("A-2", "5.00", "EUR")
-	env.DeliverOrders(t)
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
-
 	before := revenue(t, member, siteapi.OptSiteAnalyticsRevenueRange{})
-	chooseCurrency(t, env.SiteActor(t, fixtures.AdminAliceEmail), "EUR")
-	after := revenue(t, member, siteapi.OptSiteAnalyticsRevenueRange{})
+	s := newShop(t, env)
 
+	s.completed("A-1", "10.00", "EUR")
+	s.completed("A-2", "500", "JPY")
+	env.DeliverOrders(t)
+
+	after := revenue(t, member, siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.True(t, before.ReportingCurrency.Null)
-	assert.EqualValues(t, 0, before.Total)
-	assert.EqualValues(t, 0, before.Orders)
-	assert.EqualValues(t, 1500, after.Total)
-	assert.EqualValues(t, 2, after.Orders)
+	assert.Equal(t, siteapi.CurrencyCode("EUR"), after.ReportingCurrency.Value, "the currency of the first Order")
+	assert.EqualValues(t, 1000, after.Total)
+	assert.EqualValues(t, 1, after.Orders)
+	assert.EqualValues(t, 1, after.OtherCurrencyOrders)
 }
 
 func TestAnOrderInAnotherCurrencyIsStoredAndCountedInNoSum(t *testing.T) {
@@ -153,20 +152,18 @@ func TestAnOrderInAnotherCurrencyIsStoredAndCountedInNoSum(t *testing.T) {
 	assert.Equal(t, "JPY", kept.Currency)
 }
 
-func TestAnOrderWithoutACurrencyCountsInTheReportingCurrencyAndKeepsItAfterAChange(t *testing.T) {
+func TestAChosenCurrencyIsKeptWhateverTheFirstOrderIsIn(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	chooseCurrency(t, owner, "EUR")
-	newShop(t, env).send(orderInput("alice", "Order Completed", map[string]string{"order_id": `"A-1"`, "total": `10.50`}))
+
+	newShop(t, env).completed("A-1", "10.50", "USD")
 	env.DeliverOrders(t)
 
-	inEUR := revenue(t, owner, siteapi.OptSiteAnalyticsRevenueRange{})
-	chooseCurrency(t, owner, "JPY")
-	inJPY := revenue(t, owner, siteapi.OptSiteAnalyticsRevenueRange{})
-
-	assert.EqualValues(t, 1050, inEUR.Total)
-	assert.EqualValues(t, 0, inJPY.Total, "an Order keeps the currency it was read in: it is now another currency")
-	assert.EqualValues(t, 1, inJPY.OtherCurrencyOrders)
+	got := revenue(t, owner, siteapi.OptSiteAnalyticsRevenueRange{})
+	assert.Equal(t, siteapi.CurrencyCode("EUR"), got.ReportingCurrency.Value)
+	assert.EqualValues(t, 0, got.Total)
+	assert.EqualValues(t, 1, got.OtherCurrencyOrders)
 }
 
 func TestAnOrderOfAnUnknownContactCountsAndCreatesNoContact(t *testing.T) {
@@ -280,28 +277,18 @@ func TestOnlyAMemberOfTheWorkspaceReadsItsRevenue(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteAnalyticsRevenueNotFound{}, res)
 }
 
-func TestOrdersWithoutACurrencyReceivedBeforeTheChoiceAreCountedOnceItIsMade(t *testing.T) {
+func TestAChangeWithoutACurrencyThatArrivesFirstIsReadInTheCurrencyOfItsOrder(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := newShop(t, env)
-	member := env.SiteActor(t, fixtures.MemberMaryEmail)
-	noCurrency := func(action, id, total string, extra ...string) externalapi.EventInput {
-		return orderInput("alice", action, orderProps2(id, total, extra...))
-	}
-	s.send(noCurrency("Order Completed", "A-1", "1500"))
-	s.send(noCurrency("Order Completed", "A-2", "20"))
-	// A change of an Order that waits for the currency waits for its Completed too.
-	s.send(noCurrency("Order Refunded", "A-2", "5"))
+	s.send(orderInput("alice", "Order Refunded", orderProps2("A-1", "5")))
 	env.DeliverOrders(t)
-	before := revenue(t, member, siteapi.OptSiteAnalyticsRevenueRange{})
 
-	chooseCurrency(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "JPY")
+	s.completed("A-1", "20", "JPY")
 	env.DeliverOrders(t)
-	after := revenue(t, member, siteapi.OptSiteAnalyticsRevenueRange{})
 
-	assert.True(t, before.ReportingCurrency.Null)
-	assert.EqualValues(t, 0, before.Total)
-	assert.EqualValues(t, 1500+20-5, after.Total, "the amounts are read in the minor unit of the chosen currency")
-	assert.EqualValues(t, 2, after.Orders)
+	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
+	assert.Equal(t, siteapi.CurrencyCode("JPY"), got.ReportingCurrency.Value)
+	assert.EqualValues(t, 20-5, got.Total, "the refund is read in the yen of its Order")
 }
 
 func TestAnOrderWithoutACurrencyIsReadInTheCurrencyOfTheOrderItChanges(t *testing.T) {
@@ -319,20 +306,6 @@ func TestAnOrderWithoutACurrencyIsReadInTheCurrencyOfTheOrderItChanges(t *testin
 	chooseCurrency(t, owner, "EUR")
 	got := revenue(t, owner, siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.EqualValues(t, 9000, got.Total, "the refund is in the Order's euro, not in the yen of the day")
-}
-
-func TestAnOrderWithoutACurrencyKeepsItsTimeAndContactWhileItWaits(t *testing.T) {
-	env := testhelper.Setup(t)
-	s := newShop(t, env)
-	s.send(orderInput("alice", "Order Completed", orderProps2("A-1", "10.00")))
-	env.DeliverOrders(t)
-
-	chooseCurrency(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "USD")
-	env.DeliverOrders(t)
-
-	kept := env.DB.Scoped(fixtures.AcmeID).Order().Query().Where(order.OrderID("A-1")).OnlyX(t.Context())
-	assert.Equal(t, "USD", kept.Currency)
-	require.NotNil(t, kept.ContactID, "the Contact the Event resolved to is kept")
 }
 
 // orderProps2 is the properties of an order Event that names no currency.

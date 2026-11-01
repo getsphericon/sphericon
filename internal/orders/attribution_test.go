@@ -50,11 +50,13 @@ func completed(id string, contactID int64, at time.Time) events.OrderEvent {
 	}
 }
 
-// record hands the order Event to the module and returns the Order it is about.
+// record hands the order Event to the module, as the orders subscriber does, and returns the
+// Order it is about.
 func record(t *testing.T, env *testhelper.TestEnv, ev events.OrderEvent) *ent.Order {
 	t.Helper()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, orders.New().Record(t.Context(), s, ev))
+	require.NoError(t, env.Orders.Prepare(t.Context(), s, ev))
+	require.NoError(t, env.Orders.Record(t.Context(), s, ev))
 	return orderOf(t, env, ev.Properties["order_id"].(string))
 }
 
@@ -190,26 +192,6 @@ func TestAnOrderOfNoKnownContactIsUnattributed(t *testing.T) {
 	assert.Nil(t, guest.ContactID)
 }
 
-// An Order Completed held for want of a Reporting currency is credited, once one is chosen, by
-// the click before its own time and inside the window then, not by the time it is read.
-func TestAHeldOrderIsCreditedByItsOwnTimeWhenItIsRead(t *testing.T) {
-	env := testhelper.Setup(t)
-	clicked(t, env, events.EmailEngagement{BroadcastID: fixtures.BroadcastSentUntrackedID}, ago(7*day))
-	clicked(t, env, events.EmailEngagement{AutomationID: fixtures.AutomationWelcomeSeriesID}, ago(day))
-	held := completed("H-1", fixtures.ContactAliceID, ago(3*day))
-	delete(held.Properties, "currency")
-	s := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, orders.New().Record(t.Context(), s, held))
-	require.False(t, s.Order().Query().Where(order.OrderID("H-1")).ExistX(t.Context()), "held until a Reporting currency is chosen")
-
-	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetReportingCurrency("USD").Exec(t.Context()))
-	require.NoError(t, orders.New().Resolve(t.Context(), s))
-
-	b, a := creditedTo(orderOf(t, env, "H-1"))
-	assert.EqualValues(t, fixtures.BroadcastSentUntrackedID, b, "four days before the order, inside its 5 days though seven days ago now")
-	assert.Zero(t, a, "the later click came after the order")
-}
-
 // An order Event that arrives before its Order Completed is held and applied once the Order
 // exists: its Movement goes to the Broadcast the Order is credited to.
 func TestAnEarlyRefundMovesTheRevenueOfTheMessageTheOrderIsCreditedTo(t *testing.T) {
@@ -220,12 +202,11 @@ func TestAnEarlyRefundMovesTheRevenueOfTheMessageTheOrderIsCreditedTo(t *testing
 		Properties: map[string]any{"order_id": "C-1", "total": 5.0, "currency": "USD"},
 		ContactID:  fixtures.ContactAliceID, OccurredAt: ago(time.Hour), EventID: "refunded-C-1",
 	}
-	require.NoError(t, orders.New().Record(t.Context(), s, refund))
+	require.NoError(t, env.Orders.Record(t.Context(), s, refund))
 	clicked(t, env, events.EmailEngagement{BroadcastID: fixtures.BroadcastSentUntrackedID}, ago(day))
 
 	placeOrder(t, env, "C-1")
 
-	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetReportingCurrency("USD").Exec(t.Context()))
 	got, err := orders.CreditedToBroadcasts(t.Context(), s, fixtures.BroadcastSentUntrackedID)
 	require.NoError(t, err)
 	assert.Equal(t, orders.Credited{Orders: 1, Amount: 1500}, got.ByID[fixtures.BroadcastSentUntrackedID])

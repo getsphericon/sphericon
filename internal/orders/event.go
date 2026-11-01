@@ -42,11 +42,11 @@ const (
 // Parsed is what an order Event says, with its amount in the minor unit of its currency.
 type Parsed struct {
 	OrderID string
-	// Currency is the currency the Event is in; "" when it named none and there is no default
-	// to read it in (Deferred).
+	// Currency is the currency the Event is in; "" when it named none and there is no Order
+	// to take it from (Deferred).
 	Currency string
-	// Deferred is an Event that names no currency while none is given as the default: its
-	// amount is a valid number in no currency yet, so Total is not set.
+	// Deferred is an Updated, Refunded or Cancelled that names no currency while its Order is not
+	// known: its amount is a valid number in no currency yet, so Total is not set.
 	Deferred bool
 	// Total is the amount of the Event; HasTotal is false for an Order Cancelled that sent none.
 	Total    int64
@@ -72,9 +72,10 @@ func IsRefusal(err error) bool {
 
 // Parse checks an order Event's properties and reads them, and only what Sphericon reads: the
 // order_id, the total, the currency and a refund's refund_id. Every other property is kept in the
-// Event and ignored here. fallback is the currency of an Event that names none (nil for none): the
-// Reporting currency at ingest, the Order's own for a change to an existing Order. With neither
-// the Event is Deferred: its total must be a number, and it is read in a currency later.
+// Event and ignored here. An Order Completed must name its currency. An Updated, Refunded or
+// Cancelled may leave it out and is then in the currency of its Order, fallback (nil while the
+// Order is not known): without one the Event is Deferred, its total must be a number, and it is
+// read in its Order's currency once the Order exists.
 func Parse(action string, props map[string]any, fallback *string) (Parsed, error) {
 	var p Parsed
 	id, ok := props[propOrderID].(string)
@@ -149,6 +150,9 @@ func refundIDOf(props map[string]any) (string, error) {
 func currencyOf(action string, props map[string]any, fallback *string) (string, error) {
 	switch given := props[propCurrency].(type) {
 	case nil:
+		if action == ActionCompleted {
+			return "", refuse("%s: currency is required, an ISO 4217 code such as USD", action)
+		}
 		if fallback == nil {
 			return "", nil
 		}

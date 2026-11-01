@@ -1095,9 +1095,6 @@ func ScopedEntities() []ScopedEntity {
 				b.SetOrderID(src.OrderID)
 				b.SetKind(src.Kind)
 				b.SetProperties(src.Properties)
-				if src.ContactID != nil {
-					b.SetContactID(*src.ContactID)
-				}
 				b.SetEventID(src.EventID)
 				b.SetOccurredAt(src.OccurredAt)
 				created, err := b.Save(ctx)

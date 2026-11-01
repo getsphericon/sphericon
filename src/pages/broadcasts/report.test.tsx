@@ -174,7 +174,7 @@ test('shows the orders and the net revenue credited to the broadcast', async () 
   await expect.element(screen.getByText('$45.50')).toBeInTheDocument()
 })
 
-test('shows no orders or revenue until the reporting currency is chosen', async () => {
+test('shows no orders or revenue until the first order sets the reporting currency', async () => {
   worker.use(
     handleSiteBroadcastsGet(() =>
       HttpResponse.json({

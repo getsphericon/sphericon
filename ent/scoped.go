@@ -15031,18 +15031,6 @@ func (x *HeldOrderEventScopedCreate) SetProperties(v map[string]interface{}) *He
 	return x
 }
 
-// SetContactID sets the "contact_id" field.
-func (x *HeldOrderEventScopedCreate) SetContactID(v int64) *HeldOrderEventScopedCreate {
-	x.b.SetContactID(v)
-	return x
-}
-
-// SetNillableContactID sets the "contact_id" field if the given value is not nil.
-func (x *HeldOrderEventScopedCreate) SetNillableContactID(v *int64) *HeldOrderEventScopedCreate {
-	x.b.SetNillableContactID(v)
-	return x
-}
-
 // SetEventID sets the "event_id" field.
 func (x *HeldOrderEventScopedCreate) SetEventID(v string) *HeldOrderEventScopedCreate {
 	x.b.SetEventID(v)

@@ -227,14 +227,15 @@ test('the period is 30 days until another is picked and the pick is sent to the 
     .toEqual([SiteAnalyticsRange['30D'], SiteAnalyticsRange['7D'], SiteAnalyticsRange['90D']])
 })
 
-test('an unset Reporting currency asks for it, links to the settings and shows no figure', async () => {
+test('before the first order sets the Reporting currency there is no figure and no call to choose it', async () => {
   worker.use(handleSiteAnalyticsRevenue({ body: { ...revenue, total: 999, orders: 3 } }))
 
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
 
+  await expect.element(screen.getByText('No orders yet')).toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Choose the reporting currency' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/settings')
+    .not.toBeInTheDocument()
   await expect.element(screen.getByText('$9.99')).not.toBeInTheDocument()
   await expect.element(screen.getByText('Orders', { exact: true })).not.toBeInTheDocument()
 })

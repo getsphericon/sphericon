@@ -3374,7 +3374,7 @@ export const sitePersonalTokensDeleteMutation = (options?: Partial<Options<SiteP
 export const siteWorkspacesGetRevenueSettingsQueryKey = (options: Options<SiteWorkspacesGetRevenueSettingsData>) => createQueryKey('siteWorkspacesGetRevenueSettings', options, false, ['Site Workspaces']);
 
 /**
- * Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the
+ * Read the Workspace's revenue settings: the Reporting currency (null until set) and the
  * Attribution window. Open to every member.
  */
 export const siteWorkspacesGetRevenueSettingsOptions = (options: Options<SiteWorkspacesGetRevenueSettingsData>) => queryOptions<SiteWorkspacesGetRevenueSettingsResponse, SiteWorkspacesGetRevenueSettingsError, SiteWorkspacesGetRevenueSettingsResponse, ReturnType<typeof siteWorkspacesGetRevenueSettingsQueryKey>>({

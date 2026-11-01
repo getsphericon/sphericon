@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -25,15 +24,6 @@ func orderEvent(action string, props map[string]string) externalapi.EventInput {
 		Action:     action,
 		Properties: externalapi.NewOptNilJsonObject(raw),
 	}
-}
-
-func chooseReportingCurrency(t *testing.T, env *testhelper.TestEnv, code string) {
-	t.Helper()
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesUpdateRevenueSettings(t.Context(),
-		&siteapi.SiteUpdateRevenueSettingsInput{ReportingCurrency: siteapi.NewOptCurrencyCode(siteapi.CurrencyCode(code))},
-		siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteRevenueSettingsResource{}, res)
 }
 
 func TestAnOrderCompletedIsAcceptedUnderItsOwnName(t *testing.T) {
@@ -57,14 +47,14 @@ func TestAnAmountWithMorePlacesThanItsCurrencyOrAnUnknownCurrencyIsRefusedWithAR
 		props  map[string]string
 		reason string
 	}{
-		"too many places":     {map[string]string{"order_id": `"A-1"`, "total": `19.999`, "currency": `"USD"`}, "total has more than 2 decimal places"},
-		"places on a yen":     {map[string]string{"order_id": `"A-1"`, "total": `10.5`, "currency": `"JPY"`}, "total has more than 0 decimal places"},
-		"unknown currency":    {map[string]string{"order_id": `"A-1"`, "total": `5`, "currency": `"QQQ"`}, `currency "QQQ" is not a known ISO 4217 code`},
-		"no order id":         {map[string]string{"total": `5`, "currency": `"USD"`}, "order_id is required"},
-		"no total":            {map[string]string{"order_id": `"A-1"`, "currency": `"USD"`}, "total is required"},
-		"total is text":       {map[string]string{"order_id": `"A-1"`, "total": `"12"`, "currency": `"USD"`}, "total must be a number"},
-		"total is negative":   {map[string]string{"order_id": `"A-1"`, "total": `-5`, "currency": `"USD"`}, "total must not be negative"},
-		"no currency, a text": {map[string]string{"order_id": `"A-1"`, "total": `"5"`}, "total must be a number"},
+		"too many places":   {map[string]string{"order_id": `"A-1"`, "total": `19.999`, "currency": `"USD"`}, "total has more than 2 decimal places"},
+		"places on a yen":   {map[string]string{"order_id": `"A-1"`, "total": `10.5`, "currency": `"JPY"`}, "total has more than 0 decimal places"},
+		"unknown currency":  {map[string]string{"order_id": `"A-1"`, "total": `5`, "currency": `"QQQ"`}, `currency "QQQ" is not a known ISO 4217 code`},
+		"no order id":       {map[string]string{"total": `5`, "currency": `"USD"`}, "order_id is required"},
+		"no total":          {map[string]string{"order_id": `"A-1"`, "currency": `"USD"`}, "total is required"},
+		"total is text":     {map[string]string{"order_id": `"A-1"`, "total": `"12"`, "currency": `"USD"`}, "total must be a number"},
+		"total is negative": {map[string]string{"order_id": `"A-1"`, "total": `-5`, "currency": `"USD"`}, "total must not be negative"},
+		"no currency":       {map[string]string{"order_id": `"A-1"`, "total": `5`}, "currency is required"},
 	} {
 		res, err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{orderEvent("Order Completed", tc.props)}})
 		require.NoError(t, err, name)
@@ -75,19 +65,37 @@ func TestAnAmountWithMorePlacesThanItsCurrencyOrAnUnknownCurrencyIsRefusedWithAR
 	assert.Empty(t, env.OutboxEnvelopes(t, events.NameCollected), "nothing was published")
 }
 
-func TestAnOrderWithoutACurrencyIsCheckedAgainstTheReportingCurrency(t *testing.T) {
+func TestAChangeWithoutACurrencyIsCheckedAgainstTheCurrencyOfItsOrder(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	chooseReportingCurrency(t, env, "JPY")
 	c := env.ExternalScoped(t, "events:write")
-
 	res, err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
-		orderEvent("Order Completed", map[string]string{"order_id": `"A-1"`, "total": `10.5`}),
+		orderEvent("Order Completed", map[string]string{"order_id": `"A-1"`, "total": `1000`, "currency": `"JPY"`}),
+	}})
+	require.NoError(t, err)
+	require.IsType(t, &externalapi.EventsCreateNoContent{}, res)
+	env.DeliverOrders(t)
+
+	res, err = c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
+		orderEvent("Order Refunded", map[string]string{"order_id": `"A-1"`, "total": `10.5`}),
 	}})
 
 	require.NoError(t, err)
 	refused, ok := res.(*externalapi.EventsCreateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", res)
 	assert.Contains(t, refused.Detail.Or(""), "total has more than 0 decimal places")
+}
+
+func TestAChangeWithoutACurrencyBeforeItsOrderIsCheckedAsANumber(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
+	c := env.ExternalScoped(t, "events:write")
+
+	for props, want := range map[string]any{`10.5`: &externalapi.EventsCreateNoContent{}, `"10"`: &externalapi.EventsCreateUnprocessableEntity{}} {
+		res, err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
+			orderEvent("Order Refunded", map[string]string{"order_id": `"not-yet"`, "total": props}),
+		}})
+		require.NoError(t, err)
+		assert.IsType(t, want, res, props)
+	}
 }
 
 func TestTheBatchReportsAnOrderRefusalPerItemAndTakesTheOthers(t *testing.T) {
@@ -119,8 +127,6 @@ func TestAnOrderIsRefusedOnlyForWhatSphericonReads(t *testing.T) {
 			"order_id": `"A-1"`, "total": `5`, "currency": `"USD"`,
 			"revenue": `-1`, "discount": `0.001`, "tax": `0.001`, "shipping": `"free"`,
 		}),
-		// No currency while none is chosen: the order is read once one is (ADR 0064).
-		orderEvent("Order Completed", map[string]string{"order_id": `"A-2"`, "total": `5`}),
 	}})
 
 	require.NoError(t, err)

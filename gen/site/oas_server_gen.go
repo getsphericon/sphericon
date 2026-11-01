@@ -1367,8 +1367,8 @@ type Handler interface {
 	SiteWorkspacesDelete(ctx context.Context, req *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (SiteWorkspacesDeleteRes, error)
 	// SiteWorkspacesGetRevenueSettings implements SiteWorkspaces_getRevenueSettings operation.
 	//
-	// Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the
-	// Attribution window. Open to every member.
+	// Read the Workspace's revenue settings: the Reporting currency (null until set) and the Attribution
+	// window. Open to every member.
 	//
 	// GET /workspaces/{workspaceId}/revenue-settings
 	SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (SiteWorkspacesGetRevenueSettingsRes, error)

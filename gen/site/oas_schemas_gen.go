@@ -7906,12 +7906,11 @@ func (s *SiteAnalyticsRange) UnmarshalText(data []byte) error {
 }
 
 // The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the sum of
-// Order Movements over the range, in the Reporting currency. Until an Owner or Admin chooses that
-// currency `reportingCurrency` is null and every figure is zero; the Orders received meanwhile are
-// counted once it is chosen.
+// Order Movements over the range, in the Reporting currency. Until the first Order Completed sets that
+// currency, or an Owner or Admin chooses it, `reportingCurrency` is null and every figure is zero.
 // Ref: #/components/schemas/SiteAnalyticsRevenue
 type SiteAnalyticsRevenue struct {
-	// The Reporting currency, null until chosen.
+	// The Reporting currency, null until the first Order or an Owner or Admin sets it.
 	ReportingCurrency NilCurrencyCode `json:"reportingCurrency"`
 	// Revenue over the range, in the minor unit of the Reporting currency.
 	Total int64 `json:"total"`
@@ -16923,11 +16922,11 @@ func (*SiteMembershipsUpdateUnprocessableEntity) siteMembershipsUpdateRes() {}
 
 // The Orders credited to one Broadcast or Automation and the net revenue of their Movements (ADR
 // 0064), in the Reporting currency, read from the Movements and never stored: a refund lowers `amount`
-// on its own day. Until the currency is chosen `reportingCurrency` is null and there is no figure to
+// on its own day. Until the currency is set `reportingCurrency` is null and there is no figure to
 // show. Orders in another currency are counted in neither field.
 // Ref: #/components/schemas/SiteMessageRevenue
 type SiteMessageRevenue struct {
-	// The Reporting currency, null until chosen.
+	// The Reporting currency, null until set.
 	ReportingCurrency NilCurrencyCode `json:"reportingCurrency"`
 	// Orders completed that are credited to it, in the Reporting currency.
 	Orders int32 `json:"orders"`
@@ -19403,8 +19402,8 @@ func (s *SiteRevenuePoint) SetOrders(val int32) {
 // the Attribution window an Order may follow a click by. Every member reads them.
 // Ref: #/components/schemas/SiteRevenueSettingsResource
 type SiteRevenueSettingsResource struct {
-	// The Reporting currency; null until an Owner or Admin chooses one, and revenue is not shown before
-	// then.
+	// The Reporting currency; the currency of the first Order Completed unless an Owner or Admin chooses
+	// one, and null with no figure shown before either.
 	ReportingCurrency NilCurrencyCode `json:"reportingCurrency"`
 	// The Attribution window in whole days: 5 until set. A change affects only Orders that arrive
 	// afterwards.

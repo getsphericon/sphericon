@@ -274,11 +274,11 @@ model SiteRevenuePoint {
 }
 
 /** The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
- * sum of Order Movements over the range, in the Reporting currency. Until an Owner or Admin
- * chooses that currency `reportingCurrency` is null and every figure is zero; the Orders
- * received meanwhile are counted once it is chosen. */
+ * sum of Order Movements over the range, in the Reporting currency. Until the first Order
+ * Completed sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and
+ * every figure is zero. */
 model SiteAnalyticsRevenue {
-  /** The Reporting currency, null until chosen */
+  /** The Reporting currency, null until the first Order or an Owner or Admin sets it */
   reportingCurrency: CurrencyCode | null;
 
   /** Revenue over the range, in the minor unit of the Reporting currency */
