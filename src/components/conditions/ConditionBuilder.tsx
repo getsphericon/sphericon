@@ -45,6 +45,7 @@ const contactFields: Field[] = [
   { name: 'first_name', label: 'First name' },
   { name: 'last_name', label: 'Last name' },
   { name: 'time_zone', label: 'Time zone' },
+  { name: 'country', label: 'Country' },
 ]
 
 interface ConditionBuilderProps {

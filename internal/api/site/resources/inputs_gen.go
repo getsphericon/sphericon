@@ -204,6 +204,7 @@ func (c *InputsImpl) ContactAttributes(source site.SiteCreateContactInput) conta
 	contactsAttributes.FirstName = nilStringPtrIn(source.FirstName)
 	contactsAttributes.LastName = nilStringPtrIn(source.LastName)
 	contactsAttributes.TimeZone = nilTimeZonePtrIn(source.TimeZone)
+	contactsAttributes.Country = nilCountryPtrIn(source.Country)
 	contactsAttributes.CustomFields = nilObjectIn(source.CustomFields)
 	return contactsAttributes
 }
@@ -229,6 +230,7 @@ func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts
 		contactsUpdateInput.FirstName = nilStringPatch((*source).FirstName)
 		contactsUpdateInput.LastName = nilStringPatch((*source).LastName)
 		contactsUpdateInput.TimeZone = nilTimeZonePatch((*source).TimeZone)
+		contactsUpdateInput.Country = nilCountryPatch((*source).Country)
 		contactsUpdateInput.CustomFields = nilObjectPatch((*source).CustomFields)
 		contactsUpdateInput.Tags = listPatch((*source).Tags)
 	}

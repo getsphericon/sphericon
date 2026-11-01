@@ -10549,6 +10549,18 @@ func (x *ContactScopedCreate) SetNillableTimeZone(v *string) *ContactScopedCreat
 	return x
 }
 
+// SetCountry sets the "country" field.
+func (x *ContactScopedCreate) SetCountry(v string) *ContactScopedCreate {
+	x.b.SetCountry(v)
+	return x
+}
+
+// SetNillableCountry sets the "country" field if the given value is not nil.
+func (x *ContactScopedCreate) SetNillableCountry(v *string) *ContactScopedCreate {
+	x.b.SetNillableCountry(v)
+	return x
+}
+
 // SetSource sets the "source" field.
 func (x *ContactScopedCreate) SetSource(v contact.Source) *ContactScopedCreate {
 	x.b.SetSource(v)
@@ -10841,6 +10853,24 @@ func (u *ContactScopedUpsert) UpdateTimeZone() *ContactScopedUpsert {
 // ClearTimeZone clears the value of the "time_zone" field.
 func (u *ContactScopedUpsert) ClearTimeZone() *ContactScopedUpsert {
 	u.u.SetNull(contact.FieldTimeZone)
+	return u
+}
+
+// SetCountry sets the "country" field.
+func (u *ContactScopedUpsert) SetCountry(v string) *ContactScopedUpsert {
+	u.u.Set(contact.FieldCountry, v)
+	return u
+}
+
+// UpdateCountry sets the "country" field to the value that was provided on create.
+func (u *ContactScopedUpsert) UpdateCountry() *ContactScopedUpsert {
+	u.u.SetExcluded(contact.FieldCountry)
+	return u
+}
+
+// ClearCountry clears the value of the "country" field.
+func (u *ContactScopedUpsert) ClearCountry() *ContactScopedUpsert {
+	u.u.SetNull(contact.FieldCountry)
 	return u
 }
 
@@ -11151,6 +11181,24 @@ func (x *ContactScopedUpdateOne) SetNillableTimeZone(v *string) *ContactScopedUp
 // ClearTimeZone clears the value of the "time_zone" field.
 func (x *ContactScopedUpdateOne) ClearTimeZone() *ContactScopedUpdateOne {
 	x.b.ClearTimeZone()
+	return x
+}
+
+// SetCountry sets the "country" field.
+func (x *ContactScopedUpdateOne) SetCountry(v string) *ContactScopedUpdateOne {
+	x.b.SetCountry(v)
+	return x
+}
+
+// SetNillableCountry sets the "country" field if the given value is not nil.
+func (x *ContactScopedUpdateOne) SetNillableCountry(v *string) *ContactScopedUpdateOne {
+	x.b.SetNillableCountry(v)
+	return x
+}
+
+// ClearCountry clears the value of the "country" field.
+func (x *ContactScopedUpdateOne) ClearCountry() *ContactScopedUpdateOne {
+	x.b.ClearCountry()
 	return x
 }
 
@@ -11481,6 +11529,24 @@ func (x *ContactScopedUpdate) SetNillableTimeZone(v *string) *ContactScopedUpdat
 // ClearTimeZone clears the value of the "time_zone" field.
 func (x *ContactScopedUpdate) ClearTimeZone() *ContactScopedUpdate {
 	x.b.ClearTimeZone()
+	return x
+}
+
+// SetCountry sets the "country" field.
+func (x *ContactScopedUpdate) SetCountry(v string) *ContactScopedUpdate {
+	x.b.SetCountry(v)
+	return x
+}
+
+// SetNillableCountry sets the "country" field if the given value is not nil.
+func (x *ContactScopedUpdate) SetNillableCountry(v *string) *ContactScopedUpdate {
+	x.b.SetNillableCountry(v)
+	return x
+}
+
+// ClearCountry clears the value of the "country" field.
+func (x *ContactScopedUpdate) ClearCountry() *ContactScopedUpdate {
+	x.b.ClearCountry()
 	return x
 }
 

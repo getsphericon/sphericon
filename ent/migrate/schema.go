@@ -664,6 +664,7 @@ var (
 		{Name: "first_name", Type: field.TypeString, Nullable: true},
 		{Name: "last_name", Type: field.TypeString, Nullable: true},
 		{Name: "time_zone", Type: field.TypeString, Nullable: true},
+		{Name: "country", Type: field.TypeString, Nullable: true},
 		{Name: "source", Type: field.TypeEnum, Nullable: true, Enums: []string{"manual", "api", "tracker"}},
 		{Name: "custom_fields", Type: field.TypeJSON, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -676,7 +677,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "contacts_workspaces_contacts",
-				Columns:    []*schema.Column{ContactsColumns[11]},
+				Columns:    []*schema.Column{ContactsColumns[12]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -685,27 +686,27 @@ var (
 			{
 				Name:    "contacts_email_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[4], ContactsColumns[11]},
+				Columns: []*schema.Column{ContactsColumns[4], ContactsColumns[12]},
 			},
 			{
 				Name:    "contacts_subject_id_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[3], ContactsColumns[11]},
+				Columns: []*schema.Column{ContactsColumns[3], ContactsColumns[12]},
 			},
 			{
 				Name:    "contacts_phone_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[5], ContactsColumns[11]},
+				Columns: []*schema.Column{ContactsColumns[5], ContactsColumns[12]},
 			},
 			{
 				Name:    "contact_workspace_id_updated_at_id",
 				Unique:  false,
-				Columns: []*schema.Column{ContactsColumns[11], ContactsColumns[2], ContactsColumns[0]},
+				Columns: []*schema.Column{ContactsColumns[12], ContactsColumns[2], ContactsColumns[0]},
 			},
 			{
 				Name:    "contacts_workspace_id_identified",
 				Unique:  false,
-				Columns: []*schema.Column{ContactsColumns[11]},
+				Columns: []*schema.Column{ContactsColumns[12]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "email IS NOT NULL AND email <> ''",
 				},

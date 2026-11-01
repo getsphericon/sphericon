@@ -4,12 +4,14 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
+import { CountryFlag } from '../../components/CountryFlag.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { siteTagsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteCreateContactInput } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
+import { countryOptions } from '../../utils/countries.ts'
 import { tagsCodec } from './tags.ts'
 
 const timeZones = Intl.supportedValuesOf('timeZone')
@@ -56,6 +58,16 @@ export function ContactForm({
           value={timeZone || null}
           onChange={(next) => form.setFieldValue('timeZone', next ?? '')}
           error={form.errors.timeZone}
+          searchable
+          clearable
+        />
+        <Select
+          label={t(($) => $.table.country)}
+          data={countryOptions}
+          value={form.values.country || null}
+          onChange={(next) => form.setFieldValue('country', next ?? '')}
+          error={form.errors.country}
+          leftSection={form.values.country ? <CountryFlag code={form.values.country} /> : null}
           searchable
           clearable
         />

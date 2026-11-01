@@ -15,9 +15,6 @@ const config: KnipConfig = {
     'npm-check-updates',
     // Run by `mise run generate:routes` (tsr generate), which knip cannot see.
     '@tanstack/router-cli',
-    // Its SVG files are read through import.meta.glob (src/pages/contacts/detail.tsx), which knip
-    // cannot see.
-    'flag-icons',
   ],
   workspaces: {
     '.': {

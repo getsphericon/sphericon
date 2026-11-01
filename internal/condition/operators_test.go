@@ -30,6 +30,8 @@ func TestPlainColumnOperators(t *testing.T) {
 		"begins with": {rule("email", "beginsWith", "an"), []string{andy, anna}},
 		"null":        {rule("phone", "null", ""), []string{andy}},
 		"not null":    {rule("phone", "notNull", ""), []string{anna, bella}},
+		"country":     {rule("country", "eq", "DE"), []string{anna}},
+		"no country":  {rule("country", "null", ""), []string{andy}},
 	} {
 		assert.Equal(t, tc.want, emailsIn(t, env, fixtures.OscorpID, opsGroup(tc.rule)), name)
 	}

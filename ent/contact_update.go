@@ -174,6 +174,26 @@ func (_u *ContactUpdate) ClearTimeZone() *ContactUpdate {
 	return _u
 }
 
+// SetCountry sets the "country" field.
+func (_u *ContactUpdate) SetCountry(v string) *ContactUpdate {
+	_u.mutation.SetCountry(v)
+	return _u
+}
+
+// SetNillableCountry sets the "country" field if the given value is not nil.
+func (_u *ContactUpdate) SetNillableCountry(v *string) *ContactUpdate {
+	if v != nil {
+		_u.SetCountry(*v)
+	}
+	return _u
+}
+
+// ClearCountry clears the value of the "country" field.
+func (_u *ContactUpdate) ClearCountry() *ContactUpdate {
+	_u.mutation.ClearCountry()
+	return _u
+}
+
 // SetCustomFields sets the "custom_fields" field.
 func (_u *ContactUpdate) SetCustomFields(v map[string]interface{}) *ContactUpdate {
 	_u.mutation.SetCustomFields(v)
@@ -446,6 +466,12 @@ func (_u *ContactUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.TimeZoneCleared() {
 		_spec.ClearField(contact.FieldTimeZone, field.TypeString)
+	}
+	if value, ok := _u.mutation.Country(); ok {
+		_spec.SetField(contact.FieldCountry, field.TypeString, value)
+	}
+	if _u.mutation.CountryCleared() {
+		_spec.ClearField(contact.FieldCountry, field.TypeString)
 	}
 	if _u.mutation.SourceCleared() {
 		_spec.ClearField(contact.FieldSource, field.TypeEnum)
@@ -827,6 +853,26 @@ func (_u *ContactUpdateOne) ClearTimeZone() *ContactUpdateOne {
 	return _u
 }
 
+// SetCountry sets the "country" field.
+func (_u *ContactUpdateOne) SetCountry(v string) *ContactUpdateOne {
+	_u.mutation.SetCountry(v)
+	return _u
+}
+
+// SetNillableCountry sets the "country" field if the given value is not nil.
+func (_u *ContactUpdateOne) SetNillableCountry(v *string) *ContactUpdateOne {
+	if v != nil {
+		_u.SetCountry(*v)
+	}
+	return _u
+}
+
+// ClearCountry clears the value of the "country" field.
+func (_u *ContactUpdateOne) ClearCountry() *ContactUpdateOne {
+	_u.mutation.ClearCountry()
+	return _u
+}
+
 // SetCustomFields sets the "custom_fields" field.
 func (_u *ContactUpdateOne) SetCustomFields(v map[string]interface{}) *ContactUpdateOne {
 	_u.mutation.SetCustomFields(v)
@@ -1129,6 +1175,12 @@ func (_u *ContactUpdateOne) sqlSave(ctx context.Context) (_node *Contact, err er
 	}
 	if _u.mutation.TimeZoneCleared() {
 		_spec.ClearField(contact.FieldTimeZone, field.TypeString)
+	}
+	if value, ok := _u.mutation.Country(); ok {
+		_spec.SetField(contact.FieldCountry, field.TypeString, value)
+	}
+	if _u.mutation.CountryCleared() {
+		_spec.ClearField(contact.FieldCountry, field.TypeString)
 	}
 	if _u.mutation.SourceCleared() {
 		_spec.ClearField(contact.FieldSource, field.TypeEnum)

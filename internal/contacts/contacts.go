@@ -71,6 +71,8 @@ var taken = []struct {
 type Attributes struct {
 	SubjectID, Email, Phone       *string
 	FirstName, LastName, TimeZone *string
+	// Country is an ISO 3166-1 alpha-2 code, upper case (the contract's pattern).
+	Country *string
 	// CustomFields are declared by use (ADR 0006) and stored typed.
 	CustomFields map[string]any
 }
@@ -89,6 +91,7 @@ type CreateInput struct {
 type UpdateInput struct {
 	SubjectID, Email, Phone       patch.Field[string]
 	FirstName, LastName, TimeZone patch.Field[string]
+	Country                       patch.Field[string]
 	CustomFields                  patch.Field[map[string]any]
 	Tags                          patch.Field[[]string]
 }
@@ -126,6 +129,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 			SetNillableFirstName(attrs.FirstName).
 			SetNillableLastName(attrs.LastName).
 			SetNillableTimeZone(attrs.TimeZone).
+			SetNillableCountry(attrs.Country).
 			SetSource(src)
 		if len(typed) > 0 {
 			q = q.SetCustomFields(typed)
@@ -160,6 +164,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		patch.Apply(in.FirstName, q.SetFirstName, q.ClearFirstName)
 		patch.Apply(in.LastName, q.SetLastName, q.ClearLastName)
 		patch.Apply(in.TimeZone, q.SetTimeZone, q.ClearTimeZone)
+		patch.Apply(in.Country, q.SetCountry, q.ClearCountry)
 		if fields, ok := in.CustomFields.Get(); ok {
 			typed, err := EnsureCustomFields(ctx, ts, fields)
 			if err != nil {
@@ -266,6 +271,13 @@ func (m *Module) RecordImport(ctx context.Context, s *ent.Scoped, sum ImportSumm
 	})
 }
 
+// fillMissing sets an attribute the matched Contact lacks: an Upsert fills, never overwrites.
+func fillMissing(have, given *string, set func(*string) *ent.ContactScopedUpdateOne) {
+	if have == nil {
+		set(given)
+	}
+}
+
 // UpsertIn is Upsert inside a transaction the caller already owns (tx and pub come
 // from events.Bus.WithinScopedTx), for flows that bind more rows to the Contact atomically
 // — the tracker's Identify. It publishes contact.created when it creates.
@@ -285,24 +297,13 @@ func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 	}
 	if existing != nil {
 		q := s.Contact().UpdateOneID(existing.ID)
-		if existing.SubjectID == nil {
-			q.SetNillableSubjectID(attrs.SubjectID)
-		}
-		if existing.Email == nil {
-			q.SetNillableEmail(attrs.Email)
-		}
-		if existing.Phone == nil {
-			q.SetNillablePhone(attrs.Phone)
-		}
-		if existing.FirstName == nil {
-			q.SetNillableFirstName(attrs.FirstName)
-		}
-		if existing.LastName == nil {
-			q.SetNillableLastName(attrs.LastName)
-		}
-		if existing.TimeZone == nil {
-			q.SetNillableTimeZone(attrs.TimeZone)
-		}
+		fillMissing(existing.SubjectID, attrs.SubjectID, q.SetNillableSubjectID)
+		fillMissing(existing.Email, attrs.Email, q.SetNillableEmail)
+		fillMissing(existing.Phone, attrs.Phone, q.SetNillablePhone)
+		fillMissing(existing.FirstName, attrs.FirstName, q.SetNillableFirstName)
+		fillMissing(existing.LastName, attrs.LastName, q.SetNillableLastName)
+		fillMissing(existing.TimeZone, attrs.TimeZone, q.SetNillableTimeZone)
+		fillMissing(existing.Country, attrs.Country, q.SetNillableCountry)
 		if len(typed) > 0 {
 			q.SetCustomFields(lo.Assign(existing.CustomFields, typed))
 		}
@@ -317,6 +318,7 @@ func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 		SetNillableFirstName(attrs.FirstName).
 		SetNillableLastName(attrs.LastName).
 		SetNillableTimeZone(attrs.TimeZone).
+		SetNillableCountry(attrs.Country).
 		SetSource(src)
 	if len(typed) > 0 {
 		q.SetCustomFields(typed)

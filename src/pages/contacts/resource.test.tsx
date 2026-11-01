@@ -76,6 +76,28 @@ test('creating a contact sends the filled keys and its tags, refreshes the list 
   await expect.poll(() => onClose.mock.calls.length).toBe(1)
 })
 
+test('picking a country sends its code', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteContactsCreate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({ id: '42', email: 'ada@example.com' }, { status: 201 })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(
+    <ContactCreateModal opened onClose={vi.fn<() => void>()} />,
+    CREATE_ROUTE,
+  )
+
+  await screen.getByLabelText('Email').fill('ada@example.com')
+  await screen.getByRole('combobox', { name: 'Country' }).fill('Germ')
+  await screen.getByRole('option', { name: 'Germany' }).click()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ email: 'ada@example.com', country: 'DE', tags: [] }])
+})
+
 test('a malformed email is rejected before anything is sent', async () => {
   const bodies: unknown[] = []
   worker.use(
@@ -158,6 +180,7 @@ test('editing shows existing values with nulls as blanks; a cleared field is sen
         firstName: null,
         lastName: null,
         timeZone: null,
+        country: null,
         tags: ['vip'],
       },
     ])

@@ -27,7 +27,8 @@
   first_name: Liam
   last_name: Walker
   time_zone: America/New_York
-  custom_fields: '{"plan":"pro","country":"US","signup_source":"youtube","courses_completed":3,"is_trial":false}'
+  country: US
+  custom_fields: '{"plan":"pro","signup_source":"youtube","courses_completed":3,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
@@ -36,7 +37,8 @@
   first_name: Emma
   last_name: Johnson
   time_zone: Europe/London
-  custom_fields: '{"plan":"team","country":"GB","signup_source":"referral","courses_completed":5,"is_trial":false}'
+  country: GB
+  custom_fields: '{"plan":"team","signup_source":"referral","courses_completed":5,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 4}}'
   updated_at: '{{daysAgo 1}}'
@@ -44,7 +46,8 @@
   email: noah.js@codebasics.dev
   first_name: Noah
   last_name: Brown
-  custom_fields: '{"plan":"free","country":"DE","signup_source":"organic","courses_completed":1,"is_trial":true}'
+  country: DE
+  custom_fields: '{"plan":"free","signup_source":"organic","courses_completed":1,"is_trial":true}'
   workspace_id: 1
   created_at: '{{daysAgo 6}}'
   updated_at: '{{daysAgo 6}}'
@@ -52,7 +55,8 @@
   email: ava.devops@codebasics.dev
   first_name: Ava
   last_name: Garcia
-  custom_fields: '{"plan":"pro","country":"BR","signup_source":"ads","courses_completed":2,"is_trial":false}'
+  country: BR
+  custom_fields: '{"plan":"pro","signup_source":"ads","courses_completed":2,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 9}}'
   updated_at: '{{daysAgo 3}}'
@@ -60,7 +64,8 @@
   email: ethan.data@codebasics.dev
   first_name: Ethan
   last_name: Miller
-  custom_fields: '{"plan":"free","country":"IN","signup_source":"github","courses_completed":0,"is_trial":true}'
+  country: IN
+  custom_fields: '{"plan":"free","signup_source":"github","courses_completed":0,"is_trial":true}'
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
@@ -68,7 +73,8 @@
   email: sophia.python@codebasics.dev
   first_name: Sophia
   last_name: Davis
-  custom_fields: '{"plan":"pro","country":"CA","signup_source":"newsletter","courses_completed":4,"is_trial":false}'
+  country: CA
+  custom_fields: '{"plan":"pro","signup_source":"newsletter","courses_completed":4,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 15}}'
   updated_at: '{{daysAgo 5}}'
@@ -76,7 +82,8 @@
   email: mason.sql@codebasics.dev
   first_name: Mason
   last_name: Wilson
-  custom_fields: '{"plan":"free","country":"US","signup_source":"organic","courses_completed":1,"is_trial":false}'
+  country: US
+  custom_fields: '{"plan":"free","signup_source":"organic","courses_completed":1,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 18}}'
   updated_at: '{{daysAgo 18}}'
@@ -84,7 +91,8 @@
   email: isabella.js@codebasics.dev
   first_name: Isabella
   last_name: Moore
-  custom_fields: '{"plan":"team","country":"FR","signup_source":"referral","courses_completed":6,"is_trial":false}'
+  country: FR
+  custom_fields: '{"plan":"team","signup_source":"referral","courses_completed":6,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 21}}'
   updated_at: '{{daysAgo 2}}'
@@ -92,7 +100,8 @@
   email: lucas.devops@codebasics.dev
   first_name: Lucas
   last_name: Taylor
-  custom_fields: '{"plan":"pro","country":"ES","signup_source":"youtube","courses_completed":2,"is_trial":false}'
+  country: ES
+  custom_fields: '{"plan":"pro","signup_source":"youtube","courses_completed":2,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 24}}'
   updated_at: '{{daysAgo 4}}'
@@ -100,7 +109,8 @@
   email: mia.data@codebasics.dev
   first_name: Mia
   last_name: Anderson
-  custom_fields: '{"plan":"free","country":"PL","signup_source":"ads","courses_completed":0,"is_trial":true}'
+  country: PL
+  custom_fields: '{"plan":"free","signup_source":"ads","courses_completed":0,"is_trial":true}'
   workspace_id: 1
   created_at: '{{daysAgo 27}}'
   updated_at: '{{daysAgo 27}}'
@@ -108,7 +118,8 @@
   email: logan.python@codebasics.dev
   first_name: Logan
   last_name: Thomas
-  custom_fields: '{"plan":"pro","country":"NL","signup_source":"organic","courses_completed":3,"is_trial":false}'
+  country: NL
+  custom_fields: '{"plan":"pro","signup_source":"organic","courses_completed":3,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 33}}'
   updated_at: '{{daysAgo 6}}'
@@ -116,7 +127,8 @@
   email: amelia.sql@codebasics.dev
   first_name: Amelia
   last_name: Jackson
-  custom_fields: '{"plan":"free","country":"US","signup_source":"github","courses_completed":1,"is_trial":false}'
+  country: US
+  custom_fields: '{"plan":"free","signup_source":"github","courses_completed":1,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 38}}'
   updated_at: '{{daysAgo 38}}'
@@ -124,7 +136,8 @@
   email: jacob.js@codebasics.dev
   first_name: Jacob
   last_name: White
-  custom_fields: '{"plan":"team","country":"GB","signup_source":"newsletter","courses_completed":5,"is_trial":false}'
+  country: GB
+  custom_fields: '{"plan":"team","signup_source":"newsletter","courses_completed":5,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 42}}'
   updated_at: '{{daysAgo 8}}'
@@ -132,7 +145,8 @@
   email: harper.devops@codebasics.dev
   first_name: Harper
   last_name: Harris
-  custom_fields: '{"plan":"pro","country":"DE","signup_source":"referral","courses_completed":2,"is_trial":false}'
+  country: DE
+  custom_fields: '{"plan":"pro","signup_source":"referral","courses_completed":2,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 46}}'
   updated_at: '{{daysAgo 10}}'
@@ -140,7 +154,8 @@
   email: aiden.data@codebasics.dev
   first_name: Aiden
   last_name: Martin
-  custom_fields: '{"plan":"free","country":"IN","signup_source":"organic","courses_completed":0,"is_trial":true}'
+  country: IN
+  custom_fields: '{"plan":"free","signup_source":"organic","courses_completed":0,"is_trial":true}'
   workspace_id: 1
   created_at: '{{daysAgo 51}}'
   updated_at: '{{daysAgo 51}}'
@@ -148,7 +163,8 @@
   email: evelyn.python@codebasics.dev
   first_name: Evelyn
   last_name: Lee
-  custom_fields: '{"plan":"pro","country":"BR","signup_source":"youtube","courses_completed":4,"is_trial":false}'
+  country: BR
+  custom_fields: '{"plan":"pro","signup_source":"youtube","courses_completed":4,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 56}}'
   updated_at: '{{daysAgo 12}}'
@@ -156,7 +172,8 @@
   email: daniel.sql@codebasics.dev
   first_name: Daniel
   last_name: Perez
-  custom_fields: '{"plan":"free","country":"CA","signup_source":"ads","courses_completed":1,"is_trial":false}'
+  country: CA
+  custom_fields: '{"plan":"free","signup_source":"ads","courses_completed":1,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 61}}'
   updated_at: '{{daysAgo 61}}'
@@ -164,7 +181,8 @@
   email: abigail.js@codebasics.dev
   first_name: Abigail
   last_name: Thompson
-  custom_fields: '{"plan":"team","country":"FR","signup_source":"referral","courses_completed":6,"is_trial":false}'
+  country: FR
+  custom_fields: '{"plan":"team","signup_source":"referral","courses_completed":6,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 67}}'
   updated_at: '{{daysAgo 14}}'
@@ -172,7 +190,8 @@
   email: matthew.devops@codebasics.dev
   first_name: Matthew
   last_name: Young
-  custom_fields: '{"plan":"pro","country":"ES","signup_source":"organic","courses_completed":3,"is_trial":false}'
+  country: ES
+  custom_fields: '{"plan":"pro","signup_source":"organic","courses_completed":3,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 73}}'
   updated_at: '{{daysAgo 16}}'
@@ -180,7 +199,8 @@
   email: ella.data@codebasics.dev
   first_name: Ella
   last_name: King
-  custom_fields: '{"plan":"free","country":"PL","signup_source":"github","courses_completed":0,"is_trial":true}'
+  country: PL
+  custom_fields: '{"plan":"free","signup_source":"github","courses_completed":0,"is_trial":true}'
   workspace_id: 1
   created_at: '{{daysAgo 80}}'
   updated_at: '{{daysAgo 80}}'
@@ -188,7 +208,8 @@
   email: henry.python@codebasics.dev
   first_name: Henry
   last_name: Wright
-  custom_fields: '{"plan":"pro","country":"US","signup_source":"newsletter","courses_completed":2,"is_trial":false}'
+  country: US
+  custom_fields: '{"plan":"pro","signup_source":"newsletter","courses_completed":2,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 88}}'
   updated_at: '{{daysAgo 20}}'
@@ -196,7 +217,8 @@
   email: scarlett.sql@codebasics.dev
   first_name: Scarlett
   last_name: Lopez
-  custom_fields: '{"plan":"free","country":"GB","signup_source":"organic","courses_completed":1,"is_trial":false}'
+  country: GB
+  custom_fields: '{"plan":"free","signup_source":"organic","courses_completed":1,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 95}}'
   updated_at: '{{daysAgo 95}}'
@@ -204,7 +226,8 @@
   email: sebastian.js@codebasics.dev
   first_name: Sebastian
   last_name: Hill
-  custom_fields: '{"plan":"team","country":"DE","signup_source":"referral","courses_completed":5,"is_trial":false}'
+  country: DE
+  custom_fields: '{"plan":"team","signup_source":"referral","courses_completed":5,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 104}}'
   updated_at: '{{daysAgo 24}}'
@@ -212,7 +235,8 @@
   email: grace.devops@codebasics.dev
   first_name: Grace
   last_name: Scott
-  custom_fields: '{"plan":"pro","country":"IN","signup_source":"youtube","courses_completed":3,"is_trial":false}'
+  country: IN
+  custom_fields: '{"plan":"pro","signup_source":"youtube","courses_completed":3,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 112}}'
   updated_at: '{{daysAgo 28}}'
@@ -220,7 +244,8 @@
   email: jack.data@codebasics.dev
   first_name: Jack
   last_name: Green
-  custom_fields: '{"plan":"free","country":"BR","signup_source":"ads","courses_completed":0,"is_trial":true}'
+  country: BR
+  custom_fields: '{"plan":"free","signup_source":"ads","courses_completed":0,"is_trial":true}'
   workspace_id: 1
   created_at: '{{daysAgo 120}}'
   updated_at: '{{daysAgo 120}}'
@@ -228,7 +253,8 @@
   email: chloe.python@codebasics.dev
   first_name: Chloe
   last_name: Adams
-  custom_fields: '{"plan":"pro","country":"CA","signup_source":"organic","courses_completed":4,"is_trial":false}'
+  country: CA
+  custom_fields: '{"plan":"pro","signup_source":"organic","courses_completed":4,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 128}}'
   updated_at: '{{daysAgo 30}}'
@@ -236,7 +262,8 @@
   email: owen.sql@codebasics.dev
   first_name: Owen
   last_name: Baker
-  custom_fields: '{"plan":"free","country":"FR","signup_source":"github","courses_completed":1,"is_trial":false}'
+  country: FR
+  custom_fields: '{"plan":"free","signup_source":"github","courses_completed":1,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 137}}'
   updated_at: '{{daysAgo 137}}'
@@ -244,7 +271,8 @@
   email: zoe.js@codebasics.dev
   first_name: Zoe
   last_name: Nelson
-  custom_fields: '{"plan":"team","country":"ES","signup_source":"newsletter","courses_completed":6,"is_trial":false}'
+  country: ES
+  custom_fields: '{"plan":"team","signup_source":"newsletter","courses_completed":6,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 145}}'
   updated_at: '{{daysAgo 33}}'
@@ -252,7 +280,8 @@
   email: leo.devops@codebasics.dev
   first_name: Leo
   last_name: Carter
-  custom_fields: '{"plan":"pro","country":"PL","signup_source":"referral","courses_completed":2,"is_trial":false}'
+  country: PL
+  custom_fields: '{"plan":"pro","signup_source":"referral","courses_completed":2,"is_trial":false}'
   workspace_id: 1
   created_at: '{{daysAgo 152}}'
   updated_at: '{{daysAgo 36}}'
@@ -260,7 +289,8 @@
   email: nora.data@codebasics.dev
   first_name: Nora
   last_name: Mitchell
-  custom_fields: '{"plan":"free","country":"NL","signup_source":"organic","courses_completed":0,"is_trial":true}'
+  country: NL
+  custom_fields: '{"plan":"free","signup_source":"organic","courses_completed":0,"is_trial":true}'
   workspace_id: 1
   created_at: '{{daysAgo 160}}'
   updated_at: '{{daysAgo 160}}'
@@ -323,7 +353,8 @@
   phone: '+15550100300'
   first_name: Erin
   last_name: Ersatz
-  custom_fields: '{"plan":"gold","country":"DE"}'
+  country: DE
+  custom_fields: '{"plan":"gold"}'
   workspace_id: 3
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -362,7 +393,8 @@
   first_name: 'Sofia'
   last_name: 'Marino'
   time_zone: 'Europe/Rome'
-  custom_fields: '{"plan":"free","country":"IT","signup_source":"youtube","courses_completed":0,"newsletter_consent":false}'
+  country: IT
+  custom_fields: '{"plan":"free","signup_source":"youtube","courses_completed":0,"newsletter_consent":false}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 72}}'
@@ -372,7 +404,8 @@
   first_name: 'Daniel'
   last_name: 'Okafor'
   time_zone: 'Africa/Lagos'
-  custom_fields: '{"plan":"free","country":"NG","signup_source":"webinar","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-23T09:30:00Z"}'
+  country: NG
+  custom_fields: '{"plan":"free","signup_source":"webinar","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-23T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 96}}'
@@ -382,7 +415,8 @@
   first_name: 'Hana'
   last_name: 'Kobayashi'
   time_zone: 'Asia/Tokyo'
-  custom_fields: '{"plan":"free","country":"JP","signup_source":"referral","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-24T09:30:00Z"}'
+  country: JP
+  custom_fields: '{"plan":"free","signup_source":"referral","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-24T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 120}}'
@@ -392,7 +426,8 @@
   first_name: 'Lucas'
   last_name: 'Ferreira'
   time_zone: 'America/Sao_Paulo'
-  custom_fields: '{"plan":"free","country":"BR","signup_source":"organic","courses_completed":0,"newsletter_consent":true}'
+  country: BR
+  custom_fields: '{"plan":"free","signup_source":"organic","courses_completed":0,"newsletter_consent":true}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 144}}'
@@ -402,7 +437,8 @@
   first_name: 'Priya'
   last_name: 'Raman'
   time_zone: 'Asia/Kolkata'
-  custom_fields: '{"plan":"free","country":"IN","signup_source":"ads","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-26T09:30:00Z"}'
+  country: IN
+  custom_fields: '{"plan":"free","signup_source":"ads","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-26T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 168}}'
@@ -412,7 +448,8 @@
   first_name: 'Oliver'
   last_name: 'Bennett'
   time_zone: 'Europe/London'
-  custom_fields: '{"plan":"free","country":"GB","signup_source":"youtube","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-27T09:30:00Z"}'
+  country: GB
+  custom_fields: '{"plan":"free","signup_source":"youtube","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-27T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 192}}'
@@ -422,7 +459,8 @@
   first_name: 'Amara'
   last_name: 'Diallo'
   time_zone: 'Europe/Paris'
-  custom_fields: '{"plan":"free","country":"FR","signup_source":"webinar","courses_completed":0,"newsletter_consent":false}'
+  country: FR
+  custom_fields: '{"plan":"free","signup_source":"webinar","courses_completed":0,"newsletter_consent":false}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 216}}'
@@ -432,7 +470,8 @@
   first_name: 'Mateo'
   last_name: 'Rojas'
   time_zone: 'America/Bogota'
-  custom_fields: '{"plan":"free","country":"CO","signup_source":"referral","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-02T09:30:00Z"}'
+  country: CO
+  custom_fields: '{"plan":"free","signup_source":"referral","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-02T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 240}}'
@@ -442,7 +481,8 @@
   first_name: 'Ingrid'
   last_name: 'Solberg'
   time_zone: 'Europe/Oslo'
-  custom_fields: '{"plan":"free","country":"NO","signup_source":"organic","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-03T09:30:00Z"}'
+  country: NO
+  custom_fields: '{"plan":"free","signup_source":"organic","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-03T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 264}}'
@@ -452,7 +492,8 @@
   first_name: 'Tomasz'
   last_name: 'Wrobel'
   time_zone: 'Europe/Warsaw'
-  custom_fields: '{"plan":"free","country":"PL","signup_source":"ads","courses_completed":0,"newsletter_consent":true}'
+  country: PL
+  custom_fields: '{"plan":"free","signup_source":"ads","courses_completed":0,"newsletter_consent":true}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 288}}'
@@ -462,7 +503,8 @@
   first_name: 'Chloe'
   last_name: 'Nguyen'
   time_zone: 'Australia/Sydney'
-  custom_fields: '{"plan":"free","country":"AU","signup_source":"youtube","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-05T09:30:00Z"}'
+  country: AU
+  custom_fields: '{"plan":"free","signup_source":"youtube","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-05T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 312}}'
@@ -472,7 +514,8 @@
   first_name: 'Ethan'
   last_name: 'Walker'
   time_zone: 'America/New_York'
-  custom_fields: '{"plan":"free","country":"US","signup_source":"webinar","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-06T09:30:00Z"}'
+  country: US
+  custom_fields: '{"plan":"free","signup_source":"webinar","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-06T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 336}}'
@@ -482,7 +525,8 @@
   first_name: 'Layla'
   last_name: 'Haddad'
   time_zone: 'Asia/Dubai'
-  custom_fields: '{"plan":"free","country":"AE","signup_source":"referral","courses_completed":0,"newsletter_consent":false}'
+  country: AE
+  custom_fields: '{"plan":"free","signup_source":"referral","courses_completed":0,"newsletter_consent":false}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 360}}'
@@ -492,7 +536,8 @@
   first_name: 'Noah'
   last_name: 'Fischer'
   time_zone: 'Europe/Berlin'
-  custom_fields: '{"plan":"free","country":"DE","signup_source":"organic","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-08T09:30:00Z"}'
+  country: DE
+  custom_fields: '{"plan":"free","signup_source":"organic","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-08T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 384}}'
@@ -502,7 +547,8 @@
   first_name: 'Mei'
   last_name: 'Lin'
   time_zone: 'Asia/Singapore'
-  custom_fields: '{"plan":"pro","country":"SG","signup_source":"ads","courses_completed":2,"newsletter_consent":false,"last_lesson_at":"2026-10-09T09:30:00Z"}'
+  country: SG
+  custom_fields: '{"plan":"pro","signup_source":"ads","courses_completed":2,"newsletter_consent":false,"last_lesson_at":"2026-10-09T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 1680}}'
@@ -512,7 +558,8 @@
   first_name: 'Santiago'
   last_name: 'Ibarra'
   time_zone: 'America/Mexico_City'
-  custom_fields: '{"plan":"pro","country":"MX","signup_source":"youtube","courses_completed":4,"newsletter_consent":true}'
+  country: MX
+  custom_fields: '{"plan":"pro","signup_source":"youtube","courses_completed":4,"newsletter_consent":true}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 1728}}'
@@ -522,7 +569,8 @@
   first_name: 'Emily'
   last_name: 'Carter'
   time_zone: 'America/Chicago'
-  custom_fields: '{"plan":"pro","country":"US","signup_source":"webinar","courses_completed":6,"newsletter_consent":false,"last_lesson_at":"2026-10-11T09:30:00Z"}'
+  country: US
+  custom_fields: '{"plan":"pro","signup_source":"webinar","courses_completed":6,"newsletter_consent":false,"last_lesson_at":"2026-10-11T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 1776}}'
@@ -532,7 +580,8 @@
   first_name: 'Yusuf'
   last_name: 'Demir'
   time_zone: 'Europe/Istanbul'
-  custom_fields: '{"plan":"pro","country":"TR","signup_source":"referral","courses_completed":6,"newsletter_consent":true,"last_lesson_at":"2026-10-12T09:30:00Z"}'
+  country: TR
+  custom_fields: '{"plan":"pro","signup_source":"referral","courses_completed":6,"newsletter_consent":true,"last_lesson_at":"2026-10-12T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 1824}}'
@@ -542,7 +591,8 @@
   first_name: 'Anya'
   last_name: 'Petrova'
   time_zone: 'Europe/Berlin'
-  custom_fields: '{"plan":"pro","country":"DE","signup_source":"organic","courses_completed":7,"newsletter_consent":false}'
+  country: DE
+  custom_fields: '{"plan":"pro","signup_source":"organic","courses_completed":7,"newsletter_consent":false}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 1872}}'
@@ -552,7 +602,8 @@
   first_name: 'Jack'
   last_name: 'Murphy'
   time_zone: 'Europe/Dublin'
-  custom_fields: '{"plan":"pro","country":"IE","signup_source":"ads","courses_completed":2,"newsletter_consent":true,"last_lesson_at":"2026-10-14T09:30:00Z"}'
+  country: IE
+  custom_fields: '{"plan":"pro","signup_source":"ads","courses_completed":2,"newsletter_consent":true,"last_lesson_at":"2026-10-14T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 1920}}'
@@ -562,7 +613,8 @@
   first_name: 'Valentina'
   last_name: 'Rossi'
   time_zone: 'Europe/Rome'
-  custom_fields: '{"plan":"pro","country":"IT","signup_source":"youtube","courses_completed":3,"newsletter_consent":false,"last_lesson_at":"2026-10-15T09:30:00Z"}'
+  country: IT
+  custom_fields: '{"plan":"pro","signup_source":"youtube","courses_completed":3,"newsletter_consent":false,"last_lesson_at":"2026-10-15T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 1968}}'
@@ -572,7 +624,8 @@
   first_name: 'Kofi'
   last_name: 'Mensah'
   time_zone: 'Africa/Accra'
-  custom_fields: '{"plan":"pro","country":"GH","signup_source":"webinar","courses_completed":6,"newsletter_consent":true}'
+  country: GH
+  custom_fields: '{"plan":"pro","signup_source":"webinar","courses_completed":6,"newsletter_consent":true}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 2016}}'
@@ -582,7 +635,8 @@
   first_name: 'Isabela'
   last_name: 'Costa'
   time_zone: 'America/Sao_Paulo'
-  custom_fields: '{"plan":"pro","country":"BR","signup_source":"referral","courses_completed":6,"newsletter_consent":false,"last_lesson_at":"2026-10-17T09:30:00Z"}'
+  country: BR
+  custom_fields: '{"plan":"pro","signup_source":"referral","courses_completed":6,"newsletter_consent":false,"last_lesson_at":"2026-10-17T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 2064}}'
@@ -592,7 +646,8 @@
   first_name: 'Henrik'
   last_name: 'Larsen'
   time_zone: 'Europe/Copenhagen'
-  custom_fields: '{"plan":"pro","country":"DK","signup_source":"organic","courses_completed":6,"newsletter_consent":true,"last_lesson_at":"2026-10-18T09:30:00Z"}'
+  country: DK
+  custom_fields: '{"plan":"pro","signup_source":"organic","courses_completed":6,"newsletter_consent":true,"last_lesson_at":"2026-10-18T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 2112}}'
@@ -602,7 +657,8 @@
   first_name: 'Zara'
   last_name: 'Khan'
   time_zone: 'Asia/Karachi'
-  custom_fields: '{"plan":"pro","country":"PK","signup_source":"ads","courses_completed":5,"newsletter_consent":false}'
+  country: PK
+  custom_fields: '{"plan":"pro","signup_source":"ads","courses_completed":5,"newsletter_consent":false}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 2160}}'
@@ -612,7 +668,8 @@
   first_name: 'Leo'
   last_name: 'Martin'
   time_zone: 'Europe/Paris'
-  custom_fields: '{"plan":"pro","country":"FR","signup_source":"youtube","courses_completed":6,"newsletter_consent":true,"last_lesson_at":"2026-10-20T09:30:00Z"}'
+  country: FR
+  custom_fields: '{"plan":"pro","signup_source":"youtube","courses_completed":6,"newsletter_consent":true,"last_lesson_at":"2026-10-20T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 2208}}'
@@ -622,7 +679,8 @@
   first_name: 'Nina'
   last_name: 'Kowalski'
   time_zone: 'America/Toronto'
-  custom_fields: '{"plan":"team","country":"CA","signup_source":"webinar","courses_completed":6,"newsletter_consent":false,"last_lesson_at":"2026-10-21T09:30:00Z"}'
+  country: CA
+  custom_fields: '{"plan":"team","signup_source":"webinar","courses_completed":6,"newsletter_consent":false,"last_lesson_at":"2026-10-21T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 2256}}'
@@ -632,7 +690,8 @@
   first_name: 'Omar'
   last_name: 'Salem'
   time_zone: 'Africa/Cairo'
-  custom_fields: '{"plan":"team","country":"EG","signup_source":"referral","courses_completed":7,"newsletter_consent":true}'
+  country: EG
+  custom_fields: '{"plan":"team","signup_source":"referral","courses_completed":7,"newsletter_consent":true}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 2304}}'
@@ -642,7 +701,8 @@
   first_name: 'Grace'
   last_name: 'Taylor'
   time_zone: 'America/Los_Angeles'
-  custom_fields: '{"plan":"team","country":"US","signup_source":"organic","courses_completed":5,"newsletter_consent":false,"last_lesson_at":"2026-10-23T09:30:00Z"}'
+  country: US
+  custom_fields: '{"plan":"team","signup_source":"organic","courses_completed":5,"newsletter_consent":false,"last_lesson_at":"2026-10-23T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 2352}}'
@@ -652,7 +712,8 @@
   first_name: 'Felix'
   last_name: 'Weber'
   time_zone: 'Europe/Zurich'
-  custom_fields: '{"plan":"team","country":"CH","signup_source":"ads","courses_completed":6,"newsletter_consent":true,"last_lesson_at":"2026-10-24T09:30:00Z"}'
+  country: CH
+  custom_fields: '{"plan":"team","signup_source":"ads","courses_completed":6,"newsletter_consent":true,"last_lesson_at":"2026-10-24T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 2400}}'
@@ -662,7 +723,8 @@
   first_name: 'Aiko'
   last_name: 'Sato'
   time_zone: 'Asia/Tokyo'
-  custom_fields: '{"plan":"team","country":"JP","signup_source":"youtube","courses_completed":5,"newsletter_consent":false}'
+  country: JP
+  custom_fields: '{"plan":"team","signup_source":"youtube","courses_completed":5,"newsletter_consent":false}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 2448}}'
@@ -672,7 +734,8 @@
   first_name: 'Diego'
   last_name: 'Vargas'
   time_zone: 'America/Santiago'
-  custom_fields: '{"plan":"free","country":"CL","signup_source":"webinar","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-26T09:30:00Z"}'
+  country: CL
+  custom_fields: '{"plan":"free","signup_source":"webinar","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-26T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 1536}}'
@@ -682,7 +745,8 @@
   first_name: 'Maria'
   last_name: 'Lopez'
   time_zone: 'Europe/Madrid'
-  custom_fields: '{"plan":"free","country":"ES","signup_source":"referral","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-27T09:30:00Z"}'
+  country: ES
+  custom_fields: '{"plan":"free","signup_source":"referral","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-27T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 1584}}'
@@ -692,7 +756,8 @@
   first_name: 'Arjun'
   last_name: 'Mehta'
   time_zone: 'Asia/Kolkata'
-  custom_fields: '{"plan":"free","country":"IN","signup_source":"organic","courses_completed":2,"newsletter_consent":true}'
+  country: IN
+  custom_fields: '{"plan":"free","signup_source":"organic","courses_completed":2,"newsletter_consent":true}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 1632}}'
@@ -702,7 +767,8 @@
   first_name: 'Freya'
   last_name: 'Johansson'
   time_zone: 'Europe/Stockholm'
-  custom_fields: '{"plan":"free","country":"SE","signup_source":"ads","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-02T09:30:00Z"}'
+  country: SE
+  custom_fields: '{"plan":"free","signup_source":"ads","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-02T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 1680}}'
@@ -712,7 +778,8 @@
   first_name: 'Samuel'
   last_name: 'Adeyemi'
   time_zone: 'Africa/Lagos'
-  custom_fields: '{"plan":"free","country":"NG","signup_source":"youtube","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-03T09:30:00Z"}'
+  country: NG
+  custom_fields: '{"plan":"free","signup_source":"youtube","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-03T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 1728}}'
@@ -722,7 +789,8 @@
   first_name: 'Lena'
   last_name: 'Hoffmann'
   time_zone: 'Europe/Vienna'
-  custom_fields: '{"plan":"free","country":"AT","signup_source":"webinar","courses_completed":1,"newsletter_consent":false}'
+  country: AT
+  custom_fields: '{"plan":"free","signup_source":"webinar","courses_completed":1,"newsletter_consent":false}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 1776}}'
@@ -732,7 +800,8 @@
   first_name: 'Ravi'
   last_name: 'Patel'
   time_zone: 'Europe/London'
-  custom_fields: '{"plan":"free","country":"GB","signup_source":"referral","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-05T09:30:00Z"}'
+  country: GB
+  custom_fields: '{"plan":"free","signup_source":"referral","courses_completed":0,"newsletter_consent":true,"last_lesson_at":"2026-10-05T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 1824}}'
@@ -742,7 +811,8 @@
   first_name: 'Camila'
   last_name: 'Torres'
   time_zone: 'America/Argentina/Buenos_Aires'
-  custom_fields: '{"plan":"free","country":"AR","signup_source":"organic","courses_completed":1,"newsletter_consent":false,"last_lesson_at":"2026-10-06T09:30:00Z"}'
+  country: AR
+  custom_fields: '{"plan":"free","signup_source":"organic","courses_completed":1,"newsletter_consent":false,"last_lesson_at":"2026-10-06T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 1872}}'
@@ -752,7 +822,8 @@
   first_name: 'Jonas'
   last_name: 'Becker'
   time_zone: 'Europe/Berlin'
-  custom_fields: '{"plan":"free","country":"DE","signup_source":"ads","courses_completed":0,"newsletter_consent":true}'
+  country: DE
+  custom_fields: '{"plan":"free","signup_source":"ads","courses_completed":0,"newsletter_consent":true}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 1920}}'
@@ -762,7 +833,8 @@
   first_name: 'Elena'
   last_name: 'Popescu'
   time_zone: 'Europe/Bucharest'
-  custom_fields: '{"plan":"free","country":"RO","signup_source":"youtube","courses_completed":2,"newsletter_consent":false,"last_lesson_at":"2026-10-08T09:30:00Z"}'
+  country: RO
+  custom_fields: '{"plan":"free","signup_source":"youtube","courses_completed":2,"newsletter_consent":false,"last_lesson_at":"2026-10-08T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 1968}}'
@@ -772,7 +844,8 @@
   first_name: 'Ahmed'
   last_name: 'Rahman'
   time_zone: 'Asia/Dhaka'
-  custom_fields: '{"plan":"free","country":"BD","signup_source":"webinar","courses_completed":1,"newsletter_consent":true,"last_lesson_at":"2026-10-09T09:30:00Z"}'
+  country: BD
+  custom_fields: '{"plan":"free","signup_source":"webinar","courses_completed":1,"newsletter_consent":true,"last_lesson_at":"2026-10-09T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 2016}}'
@@ -782,7 +855,8 @@
   first_name: 'Sara'
   last_name: 'Lindqvist'
   time_zone: 'Europe/Stockholm'
-  custom_fields: '{"plan":"free","country":"SE","signup_source":"referral","courses_completed":2,"newsletter_consent":false}'
+  country: SE
+  custom_fields: '{"plan":"free","signup_source":"referral","courses_completed":2,"newsletter_consent":false}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 2064}}'
@@ -792,7 +866,8 @@
   first_name: 'Tyler'
   last_name: 'Brooks'
   time_zone: 'America/Denver'
-  custom_fields: '{"plan":"free","country":"US","signup_source":"organic","courses_completed":1,"newsletter_consent":true,"last_lesson_at":"2026-10-11T09:30:00Z"}'
+  country: US
+  custom_fields: '{"plan":"free","signup_source":"organic","courses_completed":1,"newsletter_consent":true,"last_lesson_at":"2026-10-11T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 2112}}'
@@ -802,7 +877,8 @@
   first_name: 'Yara'
   last_name: 'Nasser'
   time_zone: 'Asia/Riyadh'
-  custom_fields: '{"plan":"free","country":"SA","signup_source":"ads","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-12T09:30:00Z"}'
+  country: SA
+  custom_fields: '{"plan":"free","signup_source":"ads","courses_completed":0,"newsletter_consent":false,"last_lesson_at":"2026-10-12T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 2160}}'
@@ -812,7 +888,8 @@
   first_name: 'Pavel'
   last_name: 'Novak'
   time_zone: 'Europe/Prague'
-  custom_fields: '{"plan":"free","country":"CZ","signup_source":"youtube","courses_completed":1,"newsletter_consent":true}'
+  country: CZ
+  custom_fields: '{"plan":"free","signup_source":"youtube","courses_completed":1,"newsletter_consent":true}'
   source: 'manual'
   workspace_id: 20
   created_at: '{{hoursAgo 2208}}'
@@ -822,7 +899,8 @@
   first_name: 'Emma'
   last_name: 'Dubois'
   time_zone: 'Europe/Brussels'
-  custom_fields: '{"plan":"free","country":"BE","signup_source":"webinar","courses_completed":1,"newsletter_consent":false,"last_lesson_at":"2026-10-14T09:30:00Z"}'
+  country: BE
+  custom_fields: '{"plan":"free","signup_source":"webinar","courses_completed":1,"newsletter_consent":false,"last_lesson_at":"2026-10-14T09:30:00Z"}'
   source: 'api'
   workspace_id: 20
   created_at: '{{hoursAgo 2256}}'
@@ -832,7 +910,8 @@
   first_name: 'Kenji'
   last_name: 'Watanabe'
   time_zone: 'Asia/Tokyo'
-  custom_fields: '{"plan":"free","country":"JP","signup_source":"referral","courses_completed":1,"newsletter_consent":true,"last_lesson_at":"2026-10-15T09:30:00Z"}'
+  country: JP
+  custom_fields: '{"plan":"free","signup_source":"referral","courses_completed":1,"newsletter_consent":true,"last_lesson_at":"2026-10-15T09:30:00Z"}'
   source: 'tracker'
   workspace_id: 20
   created_at: '{{hoursAgo 2304}}'
@@ -923,6 +1002,7 @@
   email: anna@oscorp.test
   first_name: Anna
   phone: '+1555'
+  country: DE
   workspace_id: 57
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -936,6 +1016,7 @@
   email: bella@oscorp.test
   first_name: Bella
   phone: '+1666'
+  country: FR
   workspace_id: 57
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

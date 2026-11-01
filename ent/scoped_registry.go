@@ -810,6 +810,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.TimeZone != nil {
 					b.SetTimeZone(*src.TimeZone)
 				}
+				if src.Country != nil {
+					b.SetCountry(*src.Country)
+				}
 				if src.Source != nil {
 					b.SetSource(*src.Source)
 				}

@@ -23,6 +23,7 @@ const contactSchema = resourceFormSchema(
       firstName: true,
       lastName: true,
       timeZone: true,
+      country: true,
     }).shape,
     tags: tagsCodec.default([]),
   }),

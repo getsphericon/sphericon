@@ -37,6 +37,8 @@ type Contact struct {
 	LastName *string `json:"last_name,omitempty"`
 	// TimeZone holds the value of the "time_zone" field.
 	TimeZone *string `json:"time_zone,omitempty"`
+	// Country holds the value of the "country" field.
+	Country *string `json:"country,omitempty"`
 	// Source holds the value of the "source" field.
 	Source *contact.Source `json:"source,omitempty"`
 	// CustomFields holds the value of the "custom_fields" field.
@@ -131,7 +133,7 @@ func (*Contact) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case contact.FieldID, contact.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case contact.FieldSubjectID, contact.FieldEmail, contact.FieldPhone, contact.FieldFirstName, contact.FieldLastName, contact.FieldTimeZone, contact.FieldSource:
+		case contact.FieldSubjectID, contact.FieldEmail, contact.FieldPhone, contact.FieldFirstName, contact.FieldLastName, contact.FieldTimeZone, contact.FieldCountry, contact.FieldSource:
 			values[i] = new(sql.NullString)
 		case contact.FieldCreatedAt, contact.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -215,6 +217,13 @@ func (_m *Contact) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.TimeZone = new(string)
 				*_m.TimeZone = value.String
+			}
+		case contact.FieldCountry:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field country", values[i])
+			} else if value.Valid {
+				_m.Country = new(string)
+				*_m.Country = value.String
 			}
 		case contact.FieldSource:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -333,6 +342,11 @@ func (_m *Contact) String() string {
 	builder.WriteString(", ")
 	if v := _m.TimeZone; v != nil {
 		builder.WriteString("time_zone=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.Country; v != nil {
+		builder.WriteString("country=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")

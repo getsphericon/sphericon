@@ -68,6 +68,11 @@ export const zContactExportSource = z.enum([
 ]);
 
 /**
+ * An ISO 3166-1 alpha-2 country code, upper case (`US`, `DE`)
+ */
+export const zCountryCode = z.string().regex(/^[A-Z]{2}$/);
+
+/**
  * Add a Sending domain; mints the DKIM keypair and returns the DNS records to publish.
  */
 export const zCreateSendingDomainInput = z.object({
@@ -2163,6 +2168,7 @@ export const zCreateContactInput = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
+  country: z.exactOptional(zCountryCode.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable())
 });
 
@@ -2178,6 +2184,7 @@ export const zSiteCreateContactInput = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
+  country: z.exactOptional(zCountryCode.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable()),
   tags: z.exactOptional(z.array(z.string()))
 });
@@ -2194,6 +2201,7 @@ export const zSiteUpdateContactInput = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
+  country: z.exactOptional(zCountryCode.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable()),
   tags: z.exactOptional(z.array(z.string()))
 });
@@ -2252,6 +2260,7 @@ export const zContactExportContact = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(z.string().nullable()),
+  country: z.exactOptional(z.string().nullable()),
   customFields: z.exactOptional(zJsonObject.nullable()),
   source: z.exactOptional(zContactExportSource.nullable()),
   createdAt: zTimestamp,
@@ -2600,6 +2609,7 @@ export const zSiteContactResource = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
+  country: z.exactOptional(zCountryCode.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable()),
   tags: z.array(z.string()),
   createdAt: zTimestamp,
@@ -3038,6 +3048,7 @@ export const zUpdateContactInput = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
+  country: z.exactOptional(zCountryCode.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable())
 });
 

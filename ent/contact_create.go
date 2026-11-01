@@ -145,6 +145,20 @@ func (_c *ContactCreate) SetNillableTimeZone(v *string) *ContactCreate {
 	return _c
 }
 
+// SetCountry sets the "country" field.
+func (_c *ContactCreate) SetCountry(v string) *ContactCreate {
+	_c.mutation.SetCountry(v)
+	return _c
+}
+
+// SetNillableCountry sets the "country" field if the given value is not nil.
+func (_c *ContactCreate) SetNillableCountry(v *string) *ContactCreate {
+	if v != nil {
+		_c.SetCountry(*v)
+	}
+	return _c
+}
+
 // SetSource sets the "source" field.
 func (_c *ContactCreate) SetSource(v contact.Source) *ContactCreate {
 	_c.mutation.SetSource(v)
@@ -364,6 +378,10 @@ func (_c *ContactCreate) createSpec() (*Contact, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.TimeZone(); ok {
 		_spec.SetField(contact.FieldTimeZone, field.TypeString, value)
 		_node.TimeZone = &value
+	}
+	if value, ok := _c.mutation.Country(); ok {
+		_spec.SetField(contact.FieldCountry, field.TypeString, value)
+		_node.Country = &value
 	}
 	if value, ok := _c.mutation.Source(); ok {
 		_spec.SetField(contact.FieldSource, field.TypeEnum, value)
@@ -638,6 +656,24 @@ func (u *ContactUpsert) ClearTimeZone() *ContactUpsert {
 	return u
 }
 
+// SetCountry sets the "country" field.
+func (u *ContactUpsert) SetCountry(v string) *ContactUpsert {
+	u.Set(contact.FieldCountry, v)
+	return u
+}
+
+// UpdateCountry sets the "country" field to the value that was provided on create.
+func (u *ContactUpsert) UpdateCountry() *ContactUpsert {
+	u.SetExcluded(contact.FieldCountry)
+	return u
+}
+
+// ClearCountry clears the value of the "country" field.
+func (u *ContactUpsert) ClearCountry() *ContactUpsert {
+	u.SetNull(contact.FieldCountry)
+	return u
+}
+
 // SetCustomFields sets the "custom_fields" field.
 func (u *ContactUpsert) SetCustomFields(v map[string]interface{}) *ContactUpsert {
 	u.Set(contact.FieldCustomFields, v)
@@ -861,6 +897,27 @@ func (u *ContactUpsertOne) UpdateTimeZone() *ContactUpsertOne {
 func (u *ContactUpsertOne) ClearTimeZone() *ContactUpsertOne {
 	return u.Update(func(s *ContactUpsert) {
 		s.ClearTimeZone()
+	})
+}
+
+// SetCountry sets the "country" field.
+func (u *ContactUpsertOne) SetCountry(v string) *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetCountry(v)
+	})
+}
+
+// UpdateCountry sets the "country" field to the value that was provided on create.
+func (u *ContactUpsertOne) UpdateCountry() *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateCountry()
+	})
+}
+
+// ClearCountry clears the value of the "country" field.
+func (u *ContactUpsertOne) ClearCountry() *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.ClearCountry()
 	})
 }
 
@@ -1256,6 +1313,27 @@ func (u *ContactUpsertBulk) UpdateTimeZone() *ContactUpsertBulk {
 func (u *ContactUpsertBulk) ClearTimeZone() *ContactUpsertBulk {
 	return u.Update(func(s *ContactUpsert) {
 		s.ClearTimeZone()
+	})
+}
+
+// SetCountry sets the "country" field.
+func (u *ContactUpsertBulk) SetCountry(v string) *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetCountry(v)
+	})
+}
+
+// UpdateCountry sets the "country" field to the value that was provided on create.
+func (u *ContactUpsertBulk) UpdateCountry() *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateCountry()
+	})
+}
+
+// ClearCountry clears the value of the "country" field.
+func (u *ContactUpsertBulk) ClearCountry() *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.ClearCountry()
 	})
 }
 

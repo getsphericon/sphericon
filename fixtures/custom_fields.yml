@@ -6,13 +6,6 @@
   workspace_id: 1
   created_at: '{{daysAgo 170}}'
   updated_at: '{{daysAgo 170}}'
-- id: 2
-  key: country
-  name: Country
-  type: string
-  workspace_id: 1
-  created_at: '{{daysAgo 170}}'
-  updated_at: '{{daysAgo 170}}'
 - id: 3
   key: signup_source
   name: Signup source
@@ -48,13 +41,6 @@
 - id: 20001
   key: 'plan'
   name: 'Plan'
-  type: 'string'
-  workspace_id: 20
-  created_at: '{{daysAgo 118}}'
-  updated_at: '{{daysAgo 118}}'
-- id: 20002
-  key: 'country'
-  name: 'Country'
   type: 'string'
   workspace_id: 20
   created_at: '{{daysAgo 118}}'

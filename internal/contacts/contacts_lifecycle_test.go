@@ -53,7 +53,7 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 
 	full, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{
 		SubjectID: new("user-1"), Email: new("clear.me@example.com"), Phone: new("+15559990"),
-		FirstName: new("Clear"), LastName: new("Me"), TimeZone: new("Europe/Berlin"),
+		FirstName: new("Clear"), LastName: new("Me"), TimeZone: new("Europe/Berlin"), Country: new("DE"),
 		CustomFields: map[string]any{"plan": "pro"},
 	})
 	require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 	cleared, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), full.ID, contacts.UpdateInput{
 		SubjectID: patch.Clear[string](), Email: patch.Clear[string](), Phone: patch.Clear[string](),
 		FirstName: patch.Clear[string](), LastName: patch.Clear[string](), TimeZone: patch.Clear[string](),
-		CustomFields: patch.Clear[map[string]any](),
+		Country: patch.Clear[string](), CustomFields: patch.Clear[map[string]any](),
 	})
 	require.NoError(t, err)
 	assert.Nil(t, cleared.SubjectID)
@@ -70,6 +70,7 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 	assert.Nil(t, cleared.FirstName)
 	assert.Nil(t, cleared.LastName)
 	assert.Nil(t, cleared.TimeZone)
+	assert.Nil(t, cleared.Country)
 	assert.Empty(t, cleared.CustomFields)
 
 	stored, err := env.DB.Contact.Get(ctx, full.ID)

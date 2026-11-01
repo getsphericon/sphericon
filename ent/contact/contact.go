@@ -33,6 +33,8 @@ const (
 	FieldLastName = "last_name"
 	// FieldTimeZone holds the string denoting the time_zone field in the database.
 	FieldTimeZone = "time_zone"
+	// FieldCountry holds the string denoting the country field in the database.
+	FieldCountry = "country"
 	// FieldSource holds the string denoting the source field in the database.
 	FieldSource = "source"
 	// FieldCustomFields holds the string denoting the custom_fields field in the database.
@@ -105,6 +107,7 @@ var Columns = []string{
 	FieldFirstName,
 	FieldLastName,
 	FieldTimeZone,
+	FieldCountry,
 	FieldSource,
 	FieldCustomFields,
 }
@@ -209,6 +212,11 @@ func ByLastName(opts ...sql.OrderTermOption) OrderOption {
 // ByTimeZone orders the results by the time_zone field.
 func ByTimeZone(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTimeZone, opts...).ToFunc()
+}
+
+// ByCountry orders the results by the country field.
+func ByCountry(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCountry, opts...).ToFunc()
 }
 
 // BySource orders the results by the source field.

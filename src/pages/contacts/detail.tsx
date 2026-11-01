@@ -5,7 +5,6 @@ import {
   Card,
   Badge,
   Group,
-  Image,
   SimpleGrid,
   Stack,
   Switch,
@@ -19,6 +18,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { CountryFlag } from '../../components/CountryFlag.tsx'
 import { EventActionName } from '../../components/EventActionName.tsx'
 import { EventRowDetails } from '../../components/EventRowDetails.tsx'
 import { RelativeTime } from '../../components/RelativeTime.tsx'
@@ -39,6 +39,7 @@ import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspace
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
 import { contactFullName, contactName } from '../../utils/contactName.ts'
+import { countryName } from '../../utils/countries.ts'
 import { can } from '../../utils/permissions.ts'
 
 const EVENTS_PAGE_SIZE = 10
@@ -55,29 +56,6 @@ function Field({ label, value, icon }: { label: string; value: string; icon?: Re
       </Group>
     </Card>
   )
-}
-
-const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
-
-// Each flag-icons SVG as a URL keyed by its file: the browser fetches only the flags shown.
-const flagUrls = import.meta.glob<string>('/node_modules/flag-icons/flags/4x3/*.svg', {
-  eager: true,
-  query: '?url&no-inline',
-  import: 'default',
-})
-
-// The flag of a `country` Custom field whose value is an ISO 3166-1 alpha-2 code, titled with
-// the country's name; any other field or value has none.
-function CountryFlag({ fieldKey, value }: { fieldKey: string; value: unknown }) {
-  if (fieldKey !== 'country' || typeof value !== 'string') {
-    return null
-  }
-  const src = flagUrls[`/node_modules/flag-icons/flags/4x3/${value.toLowerCase()}.svg`]
-  if (src === undefined) {
-    return null
-  }
-  const name = regionNames.of(value.toUpperCase()) ?? value
-  return <Image src={src} alt={name} title={name} h={14} w="auto" radius={2} />
 }
 
 // Custom field values are typed (string/number/bool/…); render scalars directly and
@@ -277,6 +255,11 @@ export function ContactDetailPage() {
         <Field label={t(($) => $.table.firstName)} value={contact.firstName ?? ''} />
         <Field label={t(($) => $.table.lastName)} value={contact.lastName ?? ''} />
         <Field label={t(($) => $.table.timeZone)} value={contact.timeZone ?? ''} />
+        <Field
+          label={t(($) => $.table.country)}
+          value={contact.country ? countryName(contact.country) : ''}
+          icon={contact.country ? <CountryFlag code={contact.country} /> : null}
+        />
         <Field label={t(($) => $.activity.createdAt)} value={formatDateTime(contact.createdAt)} />
         <Field label={t(($) => $.contacts.updatedAt)} value={formatDateTime(contact.updatedAt)} />
       </SimpleGrid>
@@ -299,12 +282,7 @@ export function ContactDetailPage() {
           <Title order={5}>{t(($) => $.contacts.customFields)}</Title>
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
             {customFields.map(([key, value]) => (
-              <Field
-                key={key}
-                label={key}
-                value={formatCustomValue(value)}
-                icon={<CountryFlag fieldKey={key} value={value} />}
-              />
+              <Field key={key} label={key} value={formatCustomValue(value)} />
             ))}
           </SimpleGrid>
         </>

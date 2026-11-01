@@ -30,6 +30,9 @@ model ContactExportContact {
   /** IANA time zone identifier */
   timeZone?: string | null;
 
+  /** ISO 3166-1 alpha-2 country code */
+  country?: string | null;
+
   /** Typed custom field values keyed by the field's machine key */
   customFields?: JsonObject | null;
 

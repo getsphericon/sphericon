@@ -32,6 +32,9 @@ model SiteContactResource {
   /** IANA time zone identifier */
   timeZone?: TimeZoneName | null;
 
+  /** ISO 3166-1 alpha-2 country code */
+  country?: CountryCode | null;
+
   /** Typed custom field values keyed by the field's machine key */
   customFields?: JsonObject | null;
 

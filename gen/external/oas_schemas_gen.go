@@ -4119,11 +4119,11 @@ func (s *ConditionGroupKind) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/ConditionLeaf
 type ConditionLeaf struct {
 	Kind ConditionLeafKind `json:"kind"`
-	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone),
-	// "tag", "custom:" for a custom field of the workspace, or "trigger:" (a property of the Event that
-	// fired a rule: valid only in a rule, refused in a segment, takes the text operators, and is false
-	// when the Event lacks the key or holds a value that is not text; a number property is compared by a
-	// number leaf).
+	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone,
+	// country), "tag", "custom:" for a custom field of the workspace, or "trigger:" (a property of the
+	// Event that fired a rule: valid only in a rule, refused in a segment, takes the text operators, and
+	// is false when the Event lacks the key or holds a value that is not text; a number property is
+	// compared by a number leaf).
 	Field string `json:"field"`
 	// How the field is tested.
 	Operator ConditionOperator `json:"operator"`
@@ -4895,6 +4895,8 @@ type ContactExportContact struct {
 	LastName OptNilString `json:"lastName"`
 	// IANA time zone identifier.
 	TimeZone OptNilString `json:"timeZone"`
+	// ISO 3166-1 alpha-2 country code.
+	Country OptNilString `json:"country"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
 	// The door the contact came through; absent for a contact that predates the field.
@@ -4938,6 +4940,11 @@ func (s *ContactExportContact) GetLastName() OptNilString {
 // GetTimeZone returns the value of TimeZone.
 func (s *ContactExportContact) GetTimeZone() OptNilString {
 	return s.TimeZone
+}
+
+// GetCountry returns the value of Country.
+func (s *ContactExportContact) GetCountry() OptNilString {
+	return s.Country
 }
 
 // GetCustomFields returns the value of CustomFields.
@@ -4993,6 +5000,11 @@ func (s *ContactExportContact) SetLastName(val OptNilString) {
 // SetTimeZone sets the value of TimeZone.
 func (s *ContactExportContact) SetTimeZone(val OptNilString) {
 	s.TimeZone = val
+}
+
+// SetCountry sets the value of Country.
+func (s *ContactExportContact) SetCountry(val OptNilString) {
+	s.Country = val
 }
 
 // SetCustomFields sets the value of CustomFields.
@@ -5842,6 +5854,8 @@ type ContactResource struct {
 	LastName OptNilString `json:"lastName"`
 	// IANA time zone identifier.
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
+	// ISO 3166-1 alpha-2 country code.
+	Country OptNilCountryCode `json:"country"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
 	// Creation timestamp.
@@ -5883,6 +5897,11 @@ func (s *ContactResource) GetLastName() OptNilString {
 // GetTimeZone returns the value of TimeZone.
 func (s *ContactResource) GetTimeZone() OptNilTimeZoneName {
 	return s.TimeZone
+}
+
+// GetCountry returns the value of Country.
+func (s *ContactResource) GetCountry() OptNilCountryCode {
+	return s.Country
 }
 
 // GetCustomFields returns the value of CustomFields.
@@ -5933,6 +5952,11 @@ func (s *ContactResource) SetLastName(val OptNilString) {
 // SetTimeZone sets the value of TimeZone.
 func (s *ContactResource) SetTimeZone(val OptNilTimeZoneName) {
 	s.TimeZone = val
+}
+
+// SetCountry sets the value of Country.
+func (s *ContactResource) SetCountry(val OptNilCountryCode) {
+	s.Country = val
 }
 
 // SetCustomFields sets the value of CustomFields.
@@ -6224,6 +6248,8 @@ type ContactsUpdateUnprocessableEntity ProblemDetails
 
 func (*ContactsUpdateUnprocessableEntity) contactsUpdateRes() {}
 
+type CountryCode string
+
 // Ref: #/components/schemas/CreateApiTokenInput
 type CreateApiTokenInput struct {
 	Name      string          `json:"name"`
@@ -6486,6 +6512,8 @@ type CreateContactInput struct {
 	LastName OptNilString `json:"lastName"`
 	// IANA time zone identifier.
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
+	// ISO 3166-1 alpha-2 country code.
+	Country OptNilCountryCode `json:"country"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
 }
@@ -6518,6 +6546,11 @@ func (s *CreateContactInput) GetLastName() OptNilString {
 // GetTimeZone returns the value of TimeZone.
 func (s *CreateContactInput) GetTimeZone() OptNilTimeZoneName {
 	return s.TimeZone
+}
+
+// GetCountry returns the value of Country.
+func (s *CreateContactInput) GetCountry() OptNilCountryCode {
+	return s.Country
 }
 
 // GetCustomFields returns the value of CustomFields.
@@ -6553,6 +6586,11 @@ func (s *CreateContactInput) SetLastName(val OptNilString) {
 // SetTimeZone sets the value of TimeZone.
 func (s *CreateContactInput) SetTimeZone(val OptNilTimeZoneName) {
 	s.TimeZone = val
+}
+
+// SetCountry sets the value of Country.
+func (s *CreateContactInput) SetCountry(val OptNilCountryCode) {
+	s.Country = val
 }
 
 // SetCustomFields sets the value of CustomFields.
@@ -11005,6 +11043,74 @@ func (o OptNilContactExportSource) Get() (v ContactExportSource, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilContactExportSource) Or(d ContactExportSource) ContactExportSource {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilCountryCode returns new OptNilCountryCode with value set to v.
+func NewOptNilCountryCode(v CountryCode) OptNilCountryCode {
+	return OptNilCountryCode{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilCountryCode is optional nullable CountryCode.
+type OptNilCountryCode struct {
+	Value CountryCode
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilCountryCode was set.
+func (o OptNilCountryCode) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilCountryCode) Reset() {
+	var v CountryCode
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilCountryCode) SetTo(v CountryCode) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilCountryCode) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilCountryCode) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v CountryCode
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilCountryCode) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilCountryCode) Get() (v CountryCode, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilCountryCode) Or(d CountryCode) CountryCode {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -16974,6 +17080,8 @@ type UpdateContactInput struct {
 	LastName OptNilString `json:"lastName"`
 	// IANA time zone identifier.
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
+	// ISO 3166-1 alpha-2 country code.
+	Country OptNilCountryCode `json:"country"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
 }
@@ -17006,6 +17114,11 @@ func (s *UpdateContactInput) GetLastName() OptNilString {
 // GetTimeZone returns the value of TimeZone.
 func (s *UpdateContactInput) GetTimeZone() OptNilTimeZoneName {
 	return s.TimeZone
+}
+
+// GetCountry returns the value of Country.
+func (s *UpdateContactInput) GetCountry() OptNilCountryCode {
+	return s.Country
 }
 
 // GetCustomFields returns the value of CustomFields.
@@ -17041,6 +17154,11 @@ func (s *UpdateContactInput) SetLastName(val OptNilString) {
 // SetTimeZone sets the value of TimeZone.
 func (s *UpdateContactInput) SetTimeZone(val OptNilTimeZoneName) {
 	s.TimeZone = val
+}
+
+// SetCountry sets the value of Country.
+func (s *UpdateContactInput) SetCountry(val OptNilCountryCode) {
+	s.Country = val
 }
 
 // SetCustomFields sets the value of CustomFields.
@@ -17373,6 +17491,8 @@ type UpsertContactInput struct {
 	LastName OptNilString `json:"lastName"`
 	// IANA time zone identifier — filled only when the contact has none.
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
+	// ISO 3166-1 alpha-2 country code — filled only when the contact has none.
+	Country OptNilCountryCode `json:"country"`
 	// Typed custom field values keyed by the field's machine key, merged into the contact's.
 	CustomFields OptNilJsonObject `json:"customFields"`
 }
@@ -17405,6 +17525,11 @@ func (s *UpsertContactInput) GetLastName() OptNilString {
 // GetTimeZone returns the value of TimeZone.
 func (s *UpsertContactInput) GetTimeZone() OptNilTimeZoneName {
 	return s.TimeZone
+}
+
+// GetCountry returns the value of Country.
+func (s *UpsertContactInput) GetCountry() OptNilCountryCode {
+	return s.Country
 }
 
 // GetCustomFields returns the value of CustomFields.
@@ -17440,6 +17565,11 @@ func (s *UpsertContactInput) SetLastName(val OptNilString) {
 // SetTimeZone sets the value of TimeZone.
 func (s *UpsertContactInput) SetTimeZone(val OptNilTimeZoneName) {
 	s.TimeZone = val
+}
+
+// SetCountry sets the value of Country.
+func (s *UpsertContactInput) SetCountry(val OptNilCountryCode) {
+	s.Country = val
 }
 
 // SetCustomFields sets the value of CustomFields.

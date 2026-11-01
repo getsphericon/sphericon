@@ -14112,6 +14112,7 @@ type ContactMutation struct {
 	first_name       *string
 	last_name        *string
 	time_zone        *string
+	country          *string
 	source           *contact.Source
 	custom_fields    *map[string]interface{}
 	clearedFields    map[string]struct{}
@@ -14640,6 +14641,55 @@ func (m *ContactMutation) ResetTimeZone() {
 	delete(m.clearedFields, contact.FieldTimeZone)
 }
 
+// SetCountry sets the "country" field.
+func (m *ContactMutation) SetCountry(s string) {
+	m.country = &s
+}
+
+// Country returns the value of the "country" field in the mutation.
+func (m *ContactMutation) Country() (r string, exists bool) {
+	v := m.country
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCountry returns the old "country" field's value of the Contact entity.
+// If the Contact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactMutation) OldCountry(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCountry is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCountry requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCountry: %w", err)
+	}
+	return oldValue.Country, nil
+}
+
+// ClearCountry clears the value of the "country" field.
+func (m *ContactMutation) ClearCountry() {
+	m.country = nil
+	m.clearedFields[contact.FieldCountry] = struct{}{}
+}
+
+// CountryCleared returns if the "country" field was cleared in this mutation.
+func (m *ContactMutation) CountryCleared() bool {
+	_, ok := m.clearedFields[contact.FieldCountry]
+	return ok
+}
+
+// ResetCountry resets all changes to the "country" field.
+func (m *ContactMutation) ResetCountry() {
+	m.country = nil
+	delete(m.clearedFields, contact.FieldCountry)
+}
+
 // SetSource sets the "source" field.
 func (m *ContactMutation) SetSource(c contact.Source) {
 	m.source = &c
@@ -15015,7 +15065,7 @@ func (m *ContactMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContactMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, contact.FieldCreatedAt)
 	}
@@ -15042,6 +15092,9 @@ func (m *ContactMutation) Fields() []string {
 	}
 	if m.time_zone != nil {
 		fields = append(fields, contact.FieldTimeZone)
+	}
+	if m.country != nil {
+		fields = append(fields, contact.FieldCountry)
 	}
 	if m.source != nil {
 		fields = append(fields, contact.FieldSource)
@@ -15075,6 +15128,8 @@ func (m *ContactMutation) Field(name string) (ent.Value, bool) {
 		return m.LastName()
 	case contact.FieldTimeZone:
 		return m.TimeZone()
+	case contact.FieldCountry:
+		return m.Country()
 	case contact.FieldSource:
 		return m.Source()
 	case contact.FieldCustomFields:
@@ -15106,6 +15161,8 @@ func (m *ContactMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldLastName(ctx)
 	case contact.FieldTimeZone:
 		return m.OldTimeZone(ctx)
+	case contact.FieldCountry:
+		return m.OldCountry(ctx)
 	case contact.FieldSource:
 		return m.OldSource(ctx)
 	case contact.FieldCustomFields:
@@ -15182,6 +15239,13 @@ func (m *ContactMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTimeZone(v)
 		return nil
+	case contact.FieldCountry:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCountry(v)
+		return nil
 	case contact.FieldSource:
 		v, ok := value.(contact.Source)
 		if !ok {
@@ -15247,6 +15311,9 @@ func (m *ContactMutation) ClearedFields() []string {
 	if m.FieldCleared(contact.FieldTimeZone) {
 		fields = append(fields, contact.FieldTimeZone)
 	}
+	if m.FieldCleared(contact.FieldCountry) {
+		fields = append(fields, contact.FieldCountry)
+	}
 	if m.FieldCleared(contact.FieldSource) {
 		fields = append(fields, contact.FieldSource)
 	}
@@ -15284,6 +15351,9 @@ func (m *ContactMutation) ClearField(name string) error {
 		return nil
 	case contact.FieldTimeZone:
 		m.ClearTimeZone()
+		return nil
+	case contact.FieldCountry:
+		m.ClearCountry()
 		return nil
 	case contact.FieldSource:
 		m.ClearSource()
@@ -15325,6 +15395,9 @@ func (m *ContactMutation) ResetField(name string) error {
 		return nil
 	case contact.FieldTimeZone:
 		m.ResetTimeZone()
+		return nil
+	case contact.FieldCountry:
+		m.ResetCountry()
 		return nil
 	case contact.FieldSource:
 		m.ResetSource()

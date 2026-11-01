@@ -2029,6 +2029,7 @@ export default interface Resources {
     },
     "table": {
       "actions": "Actions",
+      "country": "Country",
       "email": "Email",
       "firstName": "First name",
       "lastName": "Last name",

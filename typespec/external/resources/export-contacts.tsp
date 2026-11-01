@@ -26,6 +26,9 @@ model ExportContactRow {
   /** IANA time zone identifier */
   time_zone: string | null;
 
+  /** ISO 3166-1 alpha-2 country code */
+  country: string | null;
+
   /** Custom field values keyed by the field's machine key, as one JSON column */
   custom_fields: JsonObject;
 

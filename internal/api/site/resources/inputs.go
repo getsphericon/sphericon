@@ -46,6 +46,7 @@ import (
 // goverter:extend nilStringPatch
 // goverter:extend nilEmailPatch
 // goverter:extend nilTimeZonePatch
+// goverter:extend nilCountryPatch
 // goverter:extend nilEntityIDPatch
 // goverter:extend boolPatch
 // goverter:extend maxPerSecondPatch
@@ -56,6 +57,7 @@ import (
 // goverter:extend nilStringPtrIn
 // goverter:extend nilEmailPtrIn
 // goverter:extend nilTimeZonePtrIn
+// goverter:extend nilCountryPtrIn
 // goverter:extend nilEntityIDPtrIn
 // goverter:extend boolIn
 // goverter:extend boolPtrIn
@@ -174,6 +176,9 @@ func nilEmailPatch(o siteapi.OptNilEmailAddress) patch.Field[string] { return co
 func nilTimeZonePatch(o siteapi.OptNilTimeZoneName) patch.Field[string] {
 	return convert.StringPatch(o)
 }
+func nilCountryPatch(o siteapi.OptNilCountryCode) patch.Field[string] {
+	return convert.StringPatch(o)
+}
 func nilEntityIDPatch(o siteapi.OptNilEntityId) patch.Field[int64]    { return convert.Int64Patch(o) }
 func boolPatch(o siteapi.OptBool) patch.Field[bool]                   { return convert.Patch(o) }
 func maxPerSecondPatch(o siteapi.OptNilMaxPerSecond) patch.Field[int] { return convert.IntPatch(o) }
@@ -184,6 +189,7 @@ func stringPtrIn(o siteapi.OptString) *string                         { return c
 func nilStringPtrIn(o siteapi.OptNilString) *string                   { return convert.Ptr(o) }
 func nilEmailPtrIn(o siteapi.OptNilEmailAddress) *string              { return convert.StringPtr(o) }
 func nilTimeZonePtrIn(o siteapi.OptNilTimeZoneName) *string           { return convert.StringPtr(o) }
+func nilCountryPtrIn(o siteapi.OptNilCountryCode) *string             { return convert.StringPtr(o) }
 func nilEntityIDPtrIn(o siteapi.OptNilEntityId) *int64                { return convert.Int64Ptr(o) }
 func boolIn(o siteapi.OptBool) bool                                   { return o.Or(false) }
 func boolPtrIn(o siteapi.OptBool) *bool                               { return convert.Ptr(o) }

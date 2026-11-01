@@ -33,6 +33,9 @@ model ContactResource {
   /** IANA time zone identifier */
   timeZone?: TimeZoneName | null;
 
+  /** ISO 3166-1 alpha-2 country code */
+  country?: CountryCode | null;
+
   /** Typed custom field values keyed by the field's machine key */
   @untrusted
   customFields?: JsonObject | null;
@@ -147,6 +150,9 @@ model UpsertContactInput {
 
   /** IANA time zone identifier — filled only when the contact has none */
   timeZone?: TimeZoneName | null;
+
+  /** ISO 3166-1 alpha-2 country code — filled only when the contact has none */
+  country?: CountryCode | null;
 
   /** Typed custom field values keyed by the field's machine key, merged into the contact's */
   customFields?: JsonObject | null;

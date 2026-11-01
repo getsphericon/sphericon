@@ -644,6 +644,12 @@ func (s *ContactExportContact) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Country.Set {
+			e.FieldStart("country")
+			s.Country.Encode(e)
+		}
+	}
+	{
 		if s.CustomFields.Set {
 			e.FieldStart("customFields")
 			s.CustomFields.Encode(e)
@@ -665,7 +671,7 @@ func (s *ContactExportContact) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfContactExportContact = [11]string{
+var jsonFieldsNameOfContactExportContact = [12]string{
 	0:  "id",
 	1:  "subjectId",
 	2:  "email",
@@ -673,10 +679,11 @@ var jsonFieldsNameOfContactExportContact = [11]string{
 	4:  "firstName",
 	5:  "lastName",
 	6:  "timeZone",
-	7:  "customFields",
-	8:  "source",
-	9:  "createdAt",
-	10: "updatedAt",
+	7:  "country",
+	8:  "customFields",
+	9:  "source",
+	10: "createdAt",
+	11: "updatedAt",
 }
 
 // Decode decodes ContactExportContact from json.
@@ -758,6 +765,16 @@ func (s *ContactExportContact) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"timeZone\"")
 			}
+		case "country":
+			if err := func() error {
+				s.Country.Reset()
+				if err := s.Country.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"country\"")
+			}
 		case "customFields":
 			if err := func() error {
 				s.CustomFields.Reset()
@@ -779,7 +796,7 @@ func (s *ContactExportContact) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"source\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -789,7 +806,7 @@ func (s *ContactExportContact) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -809,7 +826,7 @@ func (s *ContactExportContact) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00000001,
-		0b00000110,
+		0b00001100,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -2484,6 +2501,46 @@ func (s *ContactExportVisitor) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ContactExportVisitor) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes CountryCode as json.
+func (s CountryCode) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
+}
+
+// Decode decodes CountryCode from json.
+func (s *CountryCode) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode CountryCode to nil")
+	}
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = CountryCode(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s CountryCode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *CountryCode) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -5658,6 +5715,55 @@ func (s OptNilContactExportSource) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilContactExportSource) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes CountryCode as json.
+func (o OptNilCountryCode) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes CountryCode from json.
+func (o *OptNilCountryCode) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilCountryCode to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v CountryCode
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilCountryCode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilCountryCode) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -24713,6 +24819,12 @@ func (s *SiteContactResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Country.Set {
+			e.FieldStart("country")
+			s.Country.Encode(e)
+		}
+	}
+	{
 		if s.CustomFields.Set {
 			e.FieldStart("customFields")
 			s.CustomFields.Encode(e)
@@ -24736,7 +24848,7 @@ func (s *SiteContactResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteContactResource = [11]string{
+var jsonFieldsNameOfSiteContactResource = [12]string{
 	0:  "id",
 	1:  "subjectId",
 	2:  "email",
@@ -24744,10 +24856,11 @@ var jsonFieldsNameOfSiteContactResource = [11]string{
 	4:  "firstName",
 	5:  "lastName",
 	6:  "timeZone",
-	7:  "customFields",
-	8:  "tags",
-	9:  "createdAt",
-	10: "updatedAt",
+	7:  "country",
+	8:  "customFields",
+	9:  "tags",
+	10: "createdAt",
+	11: "updatedAt",
 }
 
 // Decode decodes SiteContactResource from json.
@@ -24829,6 +24942,16 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"timeZone\"")
 			}
+		case "country":
+			if err := func() error {
+				s.Country.Reset()
+				if err := s.Country.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"country\"")
+			}
 		case "customFields":
 			if err := func() error {
 				s.CustomFields.Reset()
@@ -24840,7 +24963,7 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"customFields\"")
 			}
 		case "tags":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				s.Tags = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -24860,7 +24983,7 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"tags\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -24870,7 +24993,7 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -24890,7 +25013,7 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00000001,
-		0b00000111,
+		0b00001110,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -26425,6 +26548,12 @@ func (s *SiteCreateContactInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Country.Set {
+			e.FieldStart("country")
+			s.Country.Encode(e)
+		}
+	}
+	{
 		if s.CustomFields.Set {
 			e.FieldStart("customFields")
 			s.CustomFields.Encode(e)
@@ -26442,15 +26571,16 @@ func (s *SiteCreateContactInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteCreateContactInput = [8]string{
+var jsonFieldsNameOfSiteCreateContactInput = [9]string{
 	0: "subjectId",
 	1: "email",
 	2: "phone",
 	3: "firstName",
 	4: "lastName",
 	5: "timeZone",
-	6: "customFields",
-	7: "tags",
+	6: "country",
+	7: "customFields",
+	8: "tags",
 }
 
 // Decode decodes SiteCreateContactInput from json.
@@ -26520,6 +26650,16 @@ func (s *SiteCreateContactInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"timeZone\"")
+			}
+		case "country":
+			if err := func() error {
+				s.Country.Reset()
+				if err := s.Country.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"country\"")
 			}
 		case "customFields":
 			if err := func() error {
@@ -58892,6 +59032,12 @@ func (s *SiteUpdateContactInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Country.Set {
+			e.FieldStart("country")
+			s.Country.Encode(e)
+		}
+	}
+	{
 		if s.CustomFields.Set {
 			e.FieldStart("customFields")
 			s.CustomFields.Encode(e)
@@ -58909,15 +59055,16 @@ func (s *SiteUpdateContactInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteUpdateContactInput = [8]string{
+var jsonFieldsNameOfSiteUpdateContactInput = [9]string{
 	0: "subjectId",
 	1: "email",
 	2: "phone",
 	3: "firstName",
 	4: "lastName",
 	5: "timeZone",
-	6: "customFields",
-	7: "tags",
+	6: "country",
+	7: "customFields",
+	8: "tags",
 }
 
 // Decode decodes SiteUpdateContactInput from json.
@@ -58987,6 +59134,16 @@ func (s *SiteUpdateContactInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"timeZone\"")
+			}
+		case "country":
+			if err := func() error {
+				s.Country.Reset()
+				if err := s.Country.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"country\"")
 			}
 		case "customFields":
 			if err := func() error {

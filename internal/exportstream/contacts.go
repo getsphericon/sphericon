@@ -25,6 +25,7 @@ type ContactRow struct {
 	FirstName    *string        `json:"first_name"`
 	LastName     *string        `json:"last_name"`
 	TimeZone     *string        `json:"time_zone"`
+	Country      *string        `json:"country"`
 	CustomFields map[string]any `json:"custom_fields"`
 	Tags         []string       `json:"tags"`
 	CreatedAt    time.Time      `json:"created_at"`
@@ -45,6 +46,7 @@ func contactRow(c *ent.Contact) ContactRow {
 		FirstName:    c.FirstName,
 		LastName:     c.LastName,
 		TimeZone:     c.TimeZone,
+		Country:      c.Country,
 		CustomFields: lo.Ternary(c.CustomFields == nil, map[string]any{}, c.CustomFields),
 		Tags:         names,
 		CreatedAt:    c.CreatedAt.UTC(),

@@ -141,27 +141,21 @@ test('the machine events switch puts the choice in the URL', async () => {
   )
 })
 
-test('shows the flag next to a country custom field', async () => {
-  worker.use(
-    handleSiteContactsGet({ body: { ...ADA, customFields: { country: 'us', plan: 'gb' } } }),
-    NO_EVENTS,
-  )
+test('shows the country by name with its flag', async () => {
+  worker.use(handleSiteContactsGet({ body: { ...ADA, country: 'US' } }), NO_EVENTS)
 
   const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
 
+  await expect.element(screen.getByText('United States', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByRole('img', { name: 'United States' })).toBeInTheDocument()
-  await expect.element(screen.getByRole('img', { name: 'United Kingdom' })).not.toBeInTheDocument()
 })
 
-test('a country custom field that is no country code has no flag', async () => {
-  worker.use(
-    handleSiteContactsGet({ body: { ...ADA, customFields: { country: 'Atlantis' } } }),
-    NO_EVENTS,
-  )
+test('a contact with no country has no flag', async () => {
+  worker.use(handleSiteContactsGet({ body: { ...ADA, country: null } }), NO_EVENTS)
 
   const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
 
-  await expect.element(screen.getByText('Atlantis')).toBeInTheDocument()
+  await expect.element(screen.getByText('Country')).toBeInTheDocument()
   await expect.element(screen.getByRole('img')).not.toBeInTheDocument()
 })
 

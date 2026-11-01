@@ -1076,8 +1076,8 @@ export type ConditionLeaf = {
   kind: 'rule';
   /**
    * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
-   * time_zone), "tag", "custom:<key>" for a custom field of the workspace, or "trigger:<key>"
-   * (a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the
+   * time_zone, country), "tag", "custom:<key>" for a custom field of the workspace, or
+   * "trigger:<key>" (a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the
    * text operators, and is false when the Event lacks the key or holds a value that is not text; a
    * number property is compared by a number leaf)
    */
@@ -1298,6 +1298,10 @@ export type ContactExportContact = {
    * IANA time zone identifier
    */
   timeZone?: string | null;
+  /**
+   * ISO 3166-1 alpha-2 country code
+   */
+  country?: string | null;
   /**
    * Typed custom field values keyed by the field's machine key
    */
@@ -1639,6 +1643,10 @@ export type ContactResource = {
    */
   timeZone?: TimeZoneName | null;
   /**
+   * ISO 3166-1 alpha-2 country code
+   */
+  country?: CountryCode | null;
+  /**
    * Typed custom field values keyed by the field's machine key
    */
   customFields?: JsonObject | null;
@@ -1651,6 +1659,11 @@ export type ContactResource = {
    */
   updatedAt: Timestamp;
 };
+
+/**
+ * An ISO 3166-1 alpha-2 country code, upper case (`US`, `DE`)
+ */
+export type CountryCode = string;
 
 export type CreateApiTokenInput = {
   name: string;
@@ -1754,6 +1767,10 @@ export type CreateContactInput = {
    * IANA time zone identifier
    */
   timeZone?: TimeZoneName | null;
+  /**
+   * ISO 3166-1 alpha-2 country code
+   */
+  country?: CountryCode | null;
   /**
    * Typed custom field values keyed by the field's machine key
    */
@@ -2372,6 +2389,10 @@ export type ExportContactRow = {
    * IANA time zone identifier
    */
   time_zone: string | null;
+  /**
+   * ISO 3166-1 alpha-2 country code
+   */
+  country: string | null;
   /**
    * Custom field values keyed by the field's machine key, as one JSON column
    */
@@ -4165,6 +4186,10 @@ export type UpdateContactInput = {
    */
   timeZone?: TimeZoneName | null;
   /**
+   * ISO 3166-1 alpha-2 country code
+   */
+  country?: CountryCode | null;
+  /**
    * Typed custom field values keyed by the field's machine key
    */
   customFields?: JsonObject | null;
@@ -4311,6 +4336,10 @@ export type UpsertContactInput = {
    * IANA time zone identifier — filled only when the contact has none
    */
   timeZone?: TimeZoneName | null;
+  /**
+   * ISO 3166-1 alpha-2 country code — filled only when the contact has none
+   */
+  country?: CountryCode | null;
   /**
    * Typed custom field values keyed by the field's machine key, merged into the contact's
    */

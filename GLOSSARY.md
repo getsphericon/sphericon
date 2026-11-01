@@ -43,7 +43,7 @@ _Avoid_: Origin, channel, acquisition source
 
 **Custom field**:
 A workspace-defined, typed, named attribute on the Contact, beyond the core fields
-(email / phone / subject_id / name). The one attribute concept — there is no separate,
+(email / phone / subject_id / name / time zone / country). The one attribute concept — there is no separate,
 schemaless "trait". An unknown key arriving from Identify or an Event payload is
 _auto-created_ as a Custom field with an inferred type (declared-by-use), but it is a
 first-class, typed, renameable definition from the first sight, not an anonymous bag of

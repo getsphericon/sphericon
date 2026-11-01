@@ -15660,7 +15660,7 @@
           },
           "field": {
             "type": "string",
-            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone), \"tag\", \"custom:<key>\" for a custom field of the workspace, or \"trigger:<key>\"\n(a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the\ntext operators, and is false when the Event lacks the key or holds a value that is not text; a\nnumber property is compared by a number leaf)"
+            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone, country), \"tag\", \"custom:<key>\" for a custom field of the workspace, or\n\"trigger:<key>\" (a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the\ntext operators, and is false when the Event lacks the key or holds a value that is not text; a\nnumber property is compared by a number leaf)"
           },
           "operator": {
             "allOf": [
@@ -15924,6 +15924,11 @@
             "type": "string",
             "nullable": true,
             "description": "IANA time zone identifier"
+          },
+          "country": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO 3166-1 alpha-2 country code"
           },
           "customFields": {
             "type": "object",
@@ -16474,6 +16479,16 @@
             "nullable": true,
             "description": "IANA time zone identifier"
           },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "ISO 3166-1 alpha-2 country code"
+          },
           "customFields": {
             "type": "object",
             "allOf": [
@@ -16503,6 +16518,11 @@
           }
         },
         "description": "Contact resource"
+      },
+      "CountryCode": {
+        "type": "string",
+        "pattern": "^[A-Z]{2}$",
+        "description": "An ISO 3166-1 alpha-2 country code, upper case (`US`, `DE`)"
       },
       "CreateApiTokenInput": {
         "type": "object",
@@ -16685,6 +16705,16 @@
             ],
             "nullable": true,
             "description": "IANA time zone identifier"
+          },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "ISO 3166-1 alpha-2 country code"
           },
           "customFields": {
             "type": "object",
@@ -17479,6 +17509,7 @@
           "first_name",
           "last_name",
           "time_zone",
+          "country",
           "custom_fields",
           "tags",
           "created_at",
@@ -17522,6 +17553,11 @@
             "type": "string",
             "nullable": true,
             "description": "IANA time zone identifier"
+          },
+          "country": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO 3166-1 alpha-2 country code"
           },
           "custom_fields": {
             "allOf": [
@@ -20134,6 +20170,16 @@
             "nullable": true,
             "description": "IANA time zone identifier"
           },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "ISO 3166-1 alpha-2 country code"
+          },
           "customFields": {
             "type": "object",
             "allOf": [
@@ -20346,6 +20392,16 @@
             ],
             "nullable": true,
             "description": "IANA time zone identifier — filled only when the contact has none"
+          },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "ISO 3166-1 alpha-2 country code — filled only when the contact has none"
           },
           "customFields": {
             "type": "object",

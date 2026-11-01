@@ -84,6 +84,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optNilContactSource
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
+// goverter:extend optNilCountry
 // goverter:extend optNilTimestamp
 // goverter:extend optNilEntityID
 // goverter:extend optNilInt32
@@ -553,6 +554,10 @@ func optNilEntityID(v *int64) externalapi.OptNilEntityId {
 
 func optNilTimeZone(v *string) externalapi.OptNilTimeZoneName {
 	return convert.Opt[externalapi.OptNilTimeZoneName]((*externalapi.TimeZoneName)(v))
+}
+
+func optNilCountry(v *string) externalapi.OptNilCountryCode {
+	return convert.Opt[externalapi.OptNilCountryCode]((*externalapi.CountryCode)(v))
 }
 
 func optNilTimestamp(v *time.Time) externalapi.OptNilTimestamp {

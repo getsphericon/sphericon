@@ -50,6 +50,10 @@ func (Contact) Fields() []ent.Field {
 		field.String("time_zone").
 			Optional().
 			Nillable(),
+		// The ISO 3166-1 alpha-2 code of the Contact's country, upper case.
+		field.String("country").
+			Optional().
+			Nillable(),
 		// How the Contact first came to exist (GLOSSARY: Contact source). Set once at
 		// creation and never rewritten; null for a Contact that predates the field.
 		field.Enum("source").

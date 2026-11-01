@@ -4,6 +4,11 @@
 import * as z from 'zod';
 
 /**
+ * An ISO 3166-1 alpha-2 country code, upper case (`US`, `DE`)
+ */
+export const zCountryCode = z.string().regex(/^[A-Z]{2}$/);
+
+/**
  * The email editor's JSON document, an opaque object the server checks against the schema
  * `email_schema` returns. One named model, as JsonObject.
  */

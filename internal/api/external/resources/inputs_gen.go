@@ -167,6 +167,7 @@ func (c *InputsImpl) ContactAttributes(source external.CreateContactInput) conta
 	contactsAttributes.FirstName = nilStringPtrIn(source.FirstName)
 	contactsAttributes.LastName = nilStringPtrIn(source.LastName)
 	contactsAttributes.TimeZone = nilTimeZonePtrIn(source.TimeZone)
+	contactsAttributes.Country = nilCountryPtrIn(source.Country)
 	contactsAttributes.CustomFields = nilObjectIn(source.CustomFields)
 	return contactsAttributes
 }
@@ -187,6 +188,7 @@ func (c *InputsImpl) ContactUpdate(source *external.UpdateContactInput) contacts
 		contactsUpdateInput.FirstName = nilStringPatch((*source).FirstName)
 		contactsUpdateInput.LastName = nilStringPatch((*source).LastName)
 		contactsUpdateInput.TimeZone = nilTimeZonePatch((*source).TimeZone)
+		contactsUpdateInput.Country = nilCountryPatch((*source).Country)
 		contactsUpdateInput.CustomFields = nilObjectPatch((*source).CustomFields)
 		// contactsUpdateInput.Tags: ignore
 	}
@@ -200,6 +202,7 @@ func (c *InputsImpl) ContactUpsert(source external.UpsertContactInput) contacts.
 	contactsAttributes.FirstName = nilStringPtrIn(source.FirstName)
 	contactsAttributes.LastName = nilStringPtrIn(source.LastName)
 	contactsAttributes.TimeZone = nilTimeZonePtrIn(source.TimeZone)
+	contactsAttributes.Country = nilCountryPtrIn(source.Country)
 	contactsAttributes.CustomFields = nilObjectIn(source.CustomFields)
 	return contactsAttributes
 }
