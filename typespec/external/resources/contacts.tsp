@@ -36,6 +36,19 @@ model ContactResource {
   /** ISO 3166-1 alpha-2 country code */
   country?: CountryCode | null;
 
+  /** BCP 47 language tag of the language the contact reads in */
+  locale?: LocaleTag | null;
+
+  /** Date of birth */
+  birthday?: plainDate | null;
+
+  /** City */
+  @maxLength(255)
+  city?: string | null;
+
+  /** https URL of the contact's photo */
+  avatar?: ImageUrl | null;
+
   /** Typed custom field values keyed by the field's machine key */
   @untrusted
   customFields?: JsonObject | null;
@@ -131,7 +144,11 @@ interface Contacts
     | NotFoundProblem;
 }
 
-/** One contact to upsert, matched by its alias keys (subject id, email, phone) */
+/**
+ * One contact to upsert, matched by its alias keys (subject id, email, phone). An alias key fills
+ * only a contact that has none; every other attribute given replaces the contact's, and null clears
+ * it.
+ */
 model UpsertContactInput {
   /** The customer's own user id — an alias key */
   subjectId?: string | null;
@@ -142,17 +159,30 @@ model UpsertContactInput {
   /** Phone number — an alias key */
   phone?: string | null;
 
-  /** First name — filled only when the contact has none */
+  /** First name */
   firstName?: string | null;
 
-  /** Last name — filled only when the contact has none */
+  /** Last name */
   lastName?: string | null;
 
-  /** IANA time zone identifier — filled only when the contact has none */
+  /** IANA time zone identifier */
   timeZone?: TimeZoneName | null;
 
-  /** ISO 3166-1 alpha-2 country code — filled only when the contact has none */
+  /** ISO 3166-1 alpha-2 country code */
   country?: CountryCode | null;
+
+  /** BCP 47 language tag */
+  locale?: LocaleTag | null;
+
+  /** Date of birth */
+  birthday?: plainDate | null;
+
+  /** City */
+  @maxLength(255)
+  city?: string | null;
+
+  /** https URL of the contact's photo */
+  avatar?: ImageUrl | null;
 
   /** Typed custom field values keyed by the field's machine key, merged into the contact's */
   customFields?: JsonObject | null;

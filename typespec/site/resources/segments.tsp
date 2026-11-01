@@ -31,10 +31,10 @@ model SiteConditionLeaf {
   kind: "rule";
 
   /** What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
-   * time_zone, country), "tag", "custom:<key>" for a custom field of the workspace, or
-   * "trigger:<key>" (a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the
-   * text operators, and is false when the Event lacks the key or holds a value that is not text; a
-   * number property is compared by a number leaf) */
+   * time_zone, country, locale, city), "tag", "custom:<key>" for a custom field of the workspace,
+   * or "trigger:<key>" (a property of the Event that fired a rule: valid only in a rule, refused in
+   * a segment, takes the text operators, and is false when the Event lacks the key or holds a value
+   * that is not text; a number property is compared by a number leaf) */
   field: string;
 
   /** How the field is tested */
@@ -112,7 +112,7 @@ enum SiteConditionDateOperator {
 model SiteConditionDateLeaf {
   kind: "date";
 
-  /** What it tests: "custom:<key>" for a datetime custom field */
+  /** What it tests: "birthday" or "custom:<key>" for a datetime custom field */
   field: string;
 
   /** Which side of `at` the moment is on */
@@ -128,7 +128,7 @@ model SiteConditionDateLeaf {
 model SiteConditionDateWithinLeaf {
   kind: "dateWithin";
 
-  /** What it tests: "custom:<key>" for a datetime custom field */
+  /** What it tests: "birthday" or "custom:<key>" for a datetime custom field */
   field: string;
 
   /** The window, in days back from now */

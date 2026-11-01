@@ -3682,7 +3682,7 @@ func (s *ConditionCombinator) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/ConditionDateLeaf
 type ConditionDateLeaf struct {
 	Kind ConditionDateLeafKind `json:"kind"`
-	// What it tests: "custom:" for a datetime custom field.
+	// What it tests: "birthday" or "custom:" for a datetime custom field.
 	Field string `json:"field"`
 	// Which side of `at` the moment is on.
 	Operator ConditionDateOperator `json:"operator"`
@@ -3814,7 +3814,7 @@ func (s *ConditionDateOperator) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/ConditionDateWithinLeaf
 type ConditionDateWithinLeaf struct {
 	Kind ConditionDateWithinLeafKind `json:"kind"`
-	// What it tests: "custom:" for a datetime custom field.
+	// What it tests: "birthday" or "custom:" for a datetime custom field.
 	Field string `json:"field"`
 	// The window, in days back from now.
 	WithinDays int32 `json:"withinDays"`
@@ -4120,10 +4120,10 @@ func (s *ConditionGroupKind) UnmarshalText(data []byte) error {
 type ConditionLeaf struct {
 	Kind ConditionLeafKind `json:"kind"`
 	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone,
-	// country), "tag", "custom:" for a custom field of the workspace, or "trigger:" (a property of the
-	// Event that fired a rule: valid only in a rule, refused in a segment, takes the text operators, and
-	// is false when the Event lacks the key or holds a value that is not text; a number property is
-	// compared by a number leaf).
+	// country, locale, city), "tag", "custom:" for a custom field of the workspace, or "trigger:" (a
+	// property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the text
+	// operators, and is false when the Event lacks the key or holds a value that is not text; a number
+	// property is compared by a number leaf).
 	Field string `json:"field"`
 	// How the field is tested.
 	Operator ConditionOperator `json:"operator"`
@@ -4897,6 +4897,14 @@ type ContactExportContact struct {
 	TimeZone OptNilString `json:"timeZone"`
 	// ISO 3166-1 alpha-2 country code.
 	Country OptNilString `json:"country"`
+	// BCP 47 language tag.
+	Locale OptNilString `json:"locale"`
+	// Date of birth.
+	Birthday OptNilDate `json:"birthday"`
+	// City.
+	City OptNilString `json:"city"`
+	// Https URL of the contact's photo.
+	Avatar OptNilString `json:"avatar"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
 	// The door the contact came through; absent for a contact that predates the field.
@@ -4945,6 +4953,26 @@ func (s *ContactExportContact) GetTimeZone() OptNilString {
 // GetCountry returns the value of Country.
 func (s *ContactExportContact) GetCountry() OptNilString {
 	return s.Country
+}
+
+// GetLocale returns the value of Locale.
+func (s *ContactExportContact) GetLocale() OptNilString {
+	return s.Locale
+}
+
+// GetBirthday returns the value of Birthday.
+func (s *ContactExportContact) GetBirthday() OptNilDate {
+	return s.Birthday
+}
+
+// GetCity returns the value of City.
+func (s *ContactExportContact) GetCity() OptNilString {
+	return s.City
+}
+
+// GetAvatar returns the value of Avatar.
+func (s *ContactExportContact) GetAvatar() OptNilString {
+	return s.Avatar
 }
 
 // GetCustomFields returns the value of CustomFields.
@@ -5005,6 +5033,26 @@ func (s *ContactExportContact) SetTimeZone(val OptNilString) {
 // SetCountry sets the value of Country.
 func (s *ContactExportContact) SetCountry(val OptNilString) {
 	s.Country = val
+}
+
+// SetLocale sets the value of Locale.
+func (s *ContactExportContact) SetLocale(val OptNilString) {
+	s.Locale = val
+}
+
+// SetBirthday sets the value of Birthday.
+func (s *ContactExportContact) SetBirthday(val OptNilDate) {
+	s.Birthday = val
+}
+
+// SetCity sets the value of City.
+func (s *ContactExportContact) SetCity(val OptNilString) {
+	s.City = val
+}
+
+// SetAvatar sets the value of Avatar.
+func (s *ContactExportContact) SetAvatar(val OptNilString) {
+	s.Avatar = val
 }
 
 // SetCustomFields sets the value of CustomFields.
@@ -5856,6 +5904,14 @@ type ContactResource struct {
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
 	// ISO 3166-1 alpha-2 country code.
 	Country OptNilCountryCode `json:"country"`
+	// BCP 47 language tag of the language the contact reads in.
+	Locale OptNilLocaleTag `json:"locale"`
+	// Date of birth.
+	Birthday OptNilDate `json:"birthday"`
+	// City.
+	City OptNilString `json:"city"`
+	// Https URL of the contact's photo.
+	Avatar OptNilImageUrl `json:"avatar"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
 	// Creation timestamp.
@@ -5902,6 +5958,26 @@ func (s *ContactResource) GetTimeZone() OptNilTimeZoneName {
 // GetCountry returns the value of Country.
 func (s *ContactResource) GetCountry() OptNilCountryCode {
 	return s.Country
+}
+
+// GetLocale returns the value of Locale.
+func (s *ContactResource) GetLocale() OptNilLocaleTag {
+	return s.Locale
+}
+
+// GetBirthday returns the value of Birthday.
+func (s *ContactResource) GetBirthday() OptNilDate {
+	return s.Birthday
+}
+
+// GetCity returns the value of City.
+func (s *ContactResource) GetCity() OptNilString {
+	return s.City
+}
+
+// GetAvatar returns the value of Avatar.
+func (s *ContactResource) GetAvatar() OptNilImageUrl {
+	return s.Avatar
 }
 
 // GetCustomFields returns the value of CustomFields.
@@ -5957,6 +6033,26 @@ func (s *ContactResource) SetTimeZone(val OptNilTimeZoneName) {
 // SetCountry sets the value of Country.
 func (s *ContactResource) SetCountry(val OptNilCountryCode) {
 	s.Country = val
+}
+
+// SetLocale sets the value of Locale.
+func (s *ContactResource) SetLocale(val OptNilLocaleTag) {
+	s.Locale = val
+}
+
+// SetBirthday sets the value of Birthday.
+func (s *ContactResource) SetBirthday(val OptNilDate) {
+	s.Birthday = val
+}
+
+// SetCity sets the value of City.
+func (s *ContactResource) SetCity(val OptNilString) {
+	s.City = val
+}
+
+// SetAvatar sets the value of Avatar.
+func (s *ContactResource) SetAvatar(val OptNilImageUrl) {
+	s.Avatar = val
 }
 
 // SetCustomFields sets the value of CustomFields.
@@ -6514,6 +6610,14 @@ type CreateContactInput struct {
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
 	// ISO 3166-1 alpha-2 country code.
 	Country OptNilCountryCode `json:"country"`
+	// BCP 47 language tag of the language the contact reads in.
+	Locale OptNilLocaleTag `json:"locale"`
+	// Date of birth.
+	Birthday OptNilDate `json:"birthday"`
+	// City.
+	City OptNilString `json:"city"`
+	// Https URL of the contact's photo.
+	Avatar OptNilImageUrl `json:"avatar"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
 }
@@ -6551,6 +6655,26 @@ func (s *CreateContactInput) GetTimeZone() OptNilTimeZoneName {
 // GetCountry returns the value of Country.
 func (s *CreateContactInput) GetCountry() OptNilCountryCode {
 	return s.Country
+}
+
+// GetLocale returns the value of Locale.
+func (s *CreateContactInput) GetLocale() OptNilLocaleTag {
+	return s.Locale
+}
+
+// GetBirthday returns the value of Birthday.
+func (s *CreateContactInput) GetBirthday() OptNilDate {
+	return s.Birthday
+}
+
+// GetCity returns the value of City.
+func (s *CreateContactInput) GetCity() OptNilString {
+	return s.City
+}
+
+// GetAvatar returns the value of Avatar.
+func (s *CreateContactInput) GetAvatar() OptNilImageUrl {
+	return s.Avatar
 }
 
 // GetCustomFields returns the value of CustomFields.
@@ -6591,6 +6715,26 @@ func (s *CreateContactInput) SetTimeZone(val OptNilTimeZoneName) {
 // SetCountry sets the value of Country.
 func (s *CreateContactInput) SetCountry(val OptNilCountryCode) {
 	s.Country = val
+}
+
+// SetLocale sets the value of Locale.
+func (s *CreateContactInput) SetLocale(val OptNilLocaleTag) {
+	s.Locale = val
+}
+
+// SetBirthday sets the value of Birthday.
+func (s *CreateContactInput) SetBirthday(val OptNilDate) {
+	s.Birthday = val
+}
+
+// SetCity sets the value of City.
+func (s *CreateContactInput) SetCity(val OptNilString) {
+	s.City = val
+}
+
+// SetAvatar sets the value of Avatar.
+func (s *CreateContactInput) SetAvatar(val OptNilImageUrl) {
+	s.Avatar = val
 }
 
 // SetCustomFields sets the value of CustomFields.
@@ -8588,6 +8732,8 @@ type ExportMessagesUnauthorized ProblemDetails
 
 func (*ExportMessagesUnauthorized) exportMessagesRes() {}
 
+type ImageUrl string
+
 // The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it.
 // Ref: #/components/schemas/InUseProblemDetails
 type InUseProblemDetails struct {
@@ -9839,6 +9985,8 @@ func (s *LintFinding) SetElement(val OptString) {
 func (s *LintFinding) SetDetail(val OptString) {
 	s.Detail = val
 }
+
+type LocaleTag string
 
 type MaxPerDay int32
 
@@ -11117,6 +11265,74 @@ func (o OptNilCountryCode) Or(d CountryCode) CountryCode {
 	return d
 }
 
+// NewOptNilDate returns new OptNilDate with value set to v.
+func NewOptNilDate(v time.Time) OptNilDate {
+	return OptNilDate{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilDate is optional nullable time.Time.
+type OptNilDate struct {
+	Value time.Time
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilDate was set.
+func (o OptNilDate) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilDate) Reset() {
+	var v time.Time
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilDate) SetTo(v time.Time) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilDate) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilDate) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v time.Time
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilDate) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilDate) Get() (v time.Time, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilDate) Or(d time.Time) time.Time {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilEditorDocument returns new OptNilEditorDocument with value set to v.
 func NewOptNilEditorDocument(v EditorDocument) OptNilEditorDocument {
 	return OptNilEditorDocument{
@@ -11321,6 +11537,74 @@ func (o OptNilEntityId) Or(d EntityId) EntityId {
 	return d
 }
 
+// NewOptNilImageUrl returns new OptNilImageUrl with value set to v.
+func NewOptNilImageUrl(v ImageUrl) OptNilImageUrl {
+	return OptNilImageUrl{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilImageUrl is optional nullable ImageUrl.
+type OptNilImageUrl struct {
+	Value ImageUrl
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilImageUrl was set.
+func (o OptNilImageUrl) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilImageUrl) Reset() {
+	var v ImageUrl
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilImageUrl) SetTo(v ImageUrl) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilImageUrl) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilImageUrl) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v ImageUrl
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilImageUrl) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilImageUrl) Get() (v ImageUrl, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilImageUrl) Or(d ImageUrl) ImageUrl {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilInt32 returns new OptNilInt32 with value set to v.
 func NewOptNilInt32(v int32) OptNilInt32 {
 	return OptNilInt32{
@@ -11451,6 +11735,74 @@ func (o OptNilJsonObject) Get() (v JsonObject, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilJsonObject) Or(d JsonObject) JsonObject {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilLocaleTag returns new OptNilLocaleTag with value set to v.
+func NewOptNilLocaleTag(v LocaleTag) OptNilLocaleTag {
+	return OptNilLocaleTag{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilLocaleTag is optional nullable LocaleTag.
+type OptNilLocaleTag struct {
+	Value LocaleTag
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilLocaleTag was set.
+func (o OptNilLocaleTag) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilLocaleTag) Reset() {
+	var v LocaleTag
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilLocaleTag) SetTo(v LocaleTag) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilLocaleTag) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilLocaleTag) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v LocaleTag
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilLocaleTag) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilLocaleTag) Get() (v LocaleTag, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilLocaleTag) Or(d LocaleTag) LocaleTag {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -17082,6 +17434,14 @@ type UpdateContactInput struct {
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
 	// ISO 3166-1 alpha-2 country code.
 	Country OptNilCountryCode `json:"country"`
+	// BCP 47 language tag of the language the contact reads in.
+	Locale OptNilLocaleTag `json:"locale"`
+	// Date of birth.
+	Birthday OptNilDate `json:"birthday"`
+	// City.
+	City OptNilString `json:"city"`
+	// Https URL of the contact's photo.
+	Avatar OptNilImageUrl `json:"avatar"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
 }
@@ -17119,6 +17479,26 @@ func (s *UpdateContactInput) GetTimeZone() OptNilTimeZoneName {
 // GetCountry returns the value of Country.
 func (s *UpdateContactInput) GetCountry() OptNilCountryCode {
 	return s.Country
+}
+
+// GetLocale returns the value of Locale.
+func (s *UpdateContactInput) GetLocale() OptNilLocaleTag {
+	return s.Locale
+}
+
+// GetBirthday returns the value of Birthday.
+func (s *UpdateContactInput) GetBirthday() OptNilDate {
+	return s.Birthday
+}
+
+// GetCity returns the value of City.
+func (s *UpdateContactInput) GetCity() OptNilString {
+	return s.City
+}
+
+// GetAvatar returns the value of Avatar.
+func (s *UpdateContactInput) GetAvatar() OptNilImageUrl {
+	return s.Avatar
 }
 
 // GetCustomFields returns the value of CustomFields.
@@ -17159,6 +17539,26 @@ func (s *UpdateContactInput) SetTimeZone(val OptNilTimeZoneName) {
 // SetCountry sets the value of Country.
 func (s *UpdateContactInput) SetCountry(val OptNilCountryCode) {
 	s.Country = val
+}
+
+// SetLocale sets the value of Locale.
+func (s *UpdateContactInput) SetLocale(val OptNilLocaleTag) {
+	s.Locale = val
+}
+
+// SetBirthday sets the value of Birthday.
+func (s *UpdateContactInput) SetBirthday(val OptNilDate) {
+	s.Birthday = val
+}
+
+// SetCity sets the value of City.
+func (s *UpdateContactInput) SetCity(val OptNilString) {
+	s.City = val
+}
+
+// SetAvatar sets the value of Avatar.
+func (s *UpdateContactInput) SetAvatar(val OptNilImageUrl) {
+	s.Avatar = val
 }
 
 // SetCustomFields sets the value of CustomFields.
@@ -17476,7 +17876,8 @@ func (s *UpdateWebhookInput) SetEnabled(val OptBool) {
 	s.Enabled = val
 }
 
-// One contact to upsert, matched by its alias keys (subject id, email, phone).
+// One contact to upsert, matched by its alias keys (subject id, email, phone). An alias key fills only
+// a contact that has none; every other attribute given replaces the contact's, and null clears it.
 // Ref: #/components/schemas/UpsertContactInput
 type UpsertContactInput struct {
 	// The customer's own user id — an alias key.
@@ -17485,14 +17886,22 @@ type UpsertContactInput struct {
 	Email OptNilEmailAddress `json:"email"`
 	// Phone number — an alias key.
 	Phone OptNilString `json:"phone"`
-	// First name — filled only when the contact has none.
+	// First name.
 	FirstName OptNilString `json:"firstName"`
-	// Last name — filled only when the contact has none.
+	// Last name.
 	LastName OptNilString `json:"lastName"`
-	// IANA time zone identifier — filled only when the contact has none.
+	// IANA time zone identifier.
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
-	// ISO 3166-1 alpha-2 country code — filled only when the contact has none.
+	// ISO 3166-1 alpha-2 country code.
 	Country OptNilCountryCode `json:"country"`
+	// BCP 47 language tag.
+	Locale OptNilLocaleTag `json:"locale"`
+	// Date of birth.
+	Birthday OptNilDate `json:"birthday"`
+	// City.
+	City OptNilString `json:"city"`
+	// Https URL of the contact's photo.
+	Avatar OptNilImageUrl `json:"avatar"`
 	// Typed custom field values keyed by the field's machine key, merged into the contact's.
 	CustomFields OptNilJsonObject `json:"customFields"`
 }
@@ -17530,6 +17939,26 @@ func (s *UpsertContactInput) GetTimeZone() OptNilTimeZoneName {
 // GetCountry returns the value of Country.
 func (s *UpsertContactInput) GetCountry() OptNilCountryCode {
 	return s.Country
+}
+
+// GetLocale returns the value of Locale.
+func (s *UpsertContactInput) GetLocale() OptNilLocaleTag {
+	return s.Locale
+}
+
+// GetBirthday returns the value of Birthday.
+func (s *UpsertContactInput) GetBirthday() OptNilDate {
+	return s.Birthday
+}
+
+// GetCity returns the value of City.
+func (s *UpsertContactInput) GetCity() OptNilString {
+	return s.City
+}
+
+// GetAvatar returns the value of Avatar.
+func (s *UpsertContactInput) GetAvatar() OptNilImageUrl {
+	return s.Avatar
 }
 
 // GetCustomFields returns the value of CustomFields.
@@ -17570,6 +17999,26 @@ func (s *UpsertContactInput) SetTimeZone(val OptNilTimeZoneName) {
 // SetCountry sets the value of Country.
 func (s *UpsertContactInput) SetCountry(val OptNilCountryCode) {
 	s.Country = val
+}
+
+// SetLocale sets the value of Locale.
+func (s *UpsertContactInput) SetLocale(val OptNilLocaleTag) {
+	s.Locale = val
+}
+
+// SetBirthday sets the value of Birthday.
+func (s *UpsertContactInput) SetBirthday(val OptNilDate) {
+	s.Birthday = val
+}
+
+// SetCity sets the value of City.
+func (s *UpsertContactInput) SetCity(val OptNilString) {
+	s.City = val
+}
+
+// SetAvatar sets the value of Avatar.
+func (s *UpsertContactInput) SetAvatar(val OptNilImageUrl) {
+	s.Avatar = val
 }
 
 // SetCustomFields sets the value of CustomFields.

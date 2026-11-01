@@ -35,6 +35,14 @@ const (
 	FieldTimeZone = "time_zone"
 	// FieldCountry holds the string denoting the country field in the database.
 	FieldCountry = "country"
+	// FieldLocale holds the string denoting the locale field in the database.
+	FieldLocale = "locale"
+	// FieldBirthday holds the string denoting the birthday field in the database.
+	FieldBirthday = "birthday"
+	// FieldCity holds the string denoting the city field in the database.
+	FieldCity = "city"
+	// FieldAvatar holds the string denoting the avatar field in the database.
+	FieldAvatar = "avatar"
 	// FieldSource holds the string denoting the source field in the database.
 	FieldSource = "source"
 	// FieldCustomFields holds the string denoting the custom_fields field in the database.
@@ -108,6 +116,10 @@ var Columns = []string{
 	FieldLastName,
 	FieldTimeZone,
 	FieldCountry,
+	FieldLocale,
+	FieldBirthday,
+	FieldCity,
+	FieldAvatar,
 	FieldSource,
 	FieldCustomFields,
 }
@@ -217,6 +229,26 @@ func ByTimeZone(opts ...sql.OrderTermOption) OrderOption {
 // ByCountry orders the results by the country field.
 func ByCountry(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCountry, opts...).ToFunc()
+}
+
+// ByLocale orders the results by the locale field.
+func ByLocale(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLocale, opts...).ToFunc()
+}
+
+// ByBirthday orders the results by the birthday field.
+func ByBirthday(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBirthday, opts...).ToFunc()
+}
+
+// ByCity orders the results by the city field.
+func ByCity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCity, opts...).ToFunc()
+}
+
+// ByAvatar orders the results by the avatar field.
+func ByAvatar(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAvatar, opts...).ToFunc()
 }
 
 // BySource orders the results by the source field.

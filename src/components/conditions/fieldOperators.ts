@@ -44,8 +44,9 @@ const numberOperators: Operator[] = [
   { name: SiteConditionNumberOperator.LTE, label: 'less than or equal to' },
 ]
 
-// The date leaves test a datetime custom field against a day, or a window in days back from now.
-const dateOperators: Operator[] = [
+// The date leaves test a datetime custom field or the birthday against a day, or a window in days
+// back from now.
+export const dateOperators: Operator[] = [
   { name: SiteConditionDateOperator.BEFORE, label: 'before' },
   { name: SiteConditionDateOperator.AFTER, label: 'after' },
   { name: dateWithinOperator, label: 'within the last (days)' },

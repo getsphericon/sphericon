@@ -119,6 +119,7 @@ var (
 	ErrorsCurrencyUnknown                       = ID{key: "errors.currency_unknown"}
 	ErrorsCurrentPasswordIncorrect              = ID{key: "errors.current_password_incorrect"}
 	ErrorsCurrentPasswordRequired               = ID{key: "errors.current_password_required"}
+	ErrorsCustomFieldKeyReserved                = ID{key: "errors.custom_field_key_reserved"}
 	ErrorsDeleteUserEmailMismatch               = ID{key: "errors.delete_user_email_mismatch"}
 	ErrorsDeleteUserOnlyOwner                   = ID{key: "errors.delete_user_only_owner"}
 	ErrorsDeleteUserProofStale                  = ID{key: "errors.delete_user_proof_stale"}

@@ -44,6 +44,11 @@ export type GoneProblem = {
 };
 
 /**
+ * The https URL of an image
+ */
+export type ImageUrl = string;
+
+/**
  * RFC 7807 conflict response for a removal refused because live work still uses the row
  * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
  * Integration, Sending domain or Automation answers it.
@@ -128,6 +133,11 @@ export type LegalDocumentLabel = string;
  * A Legal document's text, in Markdown
  */
 export type LegalDocumentMarkdown = string;
+
+/**
+ * A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)
+ */
+export type LocaleTag = string;
 
 /**
  * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap

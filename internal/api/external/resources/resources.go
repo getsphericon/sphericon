@@ -85,6 +85,9 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
 // goverter:extend optNilCountry
+// goverter:extend optNilLocale
+// goverter:extend optNilImageURL
+// goverter:extend optNilDate
 // goverter:extend optNilTimestamp
 // goverter:extend optNilEntityID
 // goverter:extend optNilInt32
@@ -559,6 +562,16 @@ func optNilTimeZone(v *string) externalapi.OptNilTimeZoneName {
 func optNilCountry(v *string) externalapi.OptNilCountryCode {
 	return convert.Opt[externalapi.OptNilCountryCode]((*externalapi.CountryCode)(v))
 }
+
+func optNilLocale(v *string) externalapi.OptNilLocaleTag {
+	return convert.Opt[externalapi.OptNilLocaleTag]((*externalapi.LocaleTag)(v))
+}
+
+func optNilImageURL(v *string) externalapi.OptNilImageUrl {
+	return convert.Opt[externalapi.OptNilImageUrl]((*externalapi.ImageUrl)(v))
+}
+
+func optNilDate(v *time.Time) externalapi.OptNilDate { return convert.Opt[externalapi.OptNilDate](v) }
 
 func optNilTimestamp(v *time.Time) externalapi.OptNilTimestamp {
 	return convert.Opt[externalapi.OptNilTimestamp]((*externalapi.Timestamp)(v))

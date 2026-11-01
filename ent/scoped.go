@@ -10561,6 +10561,54 @@ func (x *ContactScopedCreate) SetNillableCountry(v *string) *ContactScopedCreate
 	return x
 }
 
+// SetLocale sets the "locale" field.
+func (x *ContactScopedCreate) SetLocale(v string) *ContactScopedCreate {
+	x.b.SetLocale(v)
+	return x
+}
+
+// SetNillableLocale sets the "locale" field if the given value is not nil.
+func (x *ContactScopedCreate) SetNillableLocale(v *string) *ContactScopedCreate {
+	x.b.SetNillableLocale(v)
+	return x
+}
+
+// SetBirthday sets the "birthday" field.
+func (x *ContactScopedCreate) SetBirthday(v time.Time) *ContactScopedCreate {
+	x.b.SetBirthday(v)
+	return x
+}
+
+// SetNillableBirthday sets the "birthday" field if the given value is not nil.
+func (x *ContactScopedCreate) SetNillableBirthday(v *time.Time) *ContactScopedCreate {
+	x.b.SetNillableBirthday(v)
+	return x
+}
+
+// SetCity sets the "city" field.
+func (x *ContactScopedCreate) SetCity(v string) *ContactScopedCreate {
+	x.b.SetCity(v)
+	return x
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (x *ContactScopedCreate) SetNillableCity(v *string) *ContactScopedCreate {
+	x.b.SetNillableCity(v)
+	return x
+}
+
+// SetAvatar sets the "avatar" field.
+func (x *ContactScopedCreate) SetAvatar(v string) *ContactScopedCreate {
+	x.b.SetAvatar(v)
+	return x
+}
+
+// SetNillableAvatar sets the "avatar" field if the given value is not nil.
+func (x *ContactScopedCreate) SetNillableAvatar(v *string) *ContactScopedCreate {
+	x.b.SetNillableAvatar(v)
+	return x
+}
+
 // SetSource sets the "source" field.
 func (x *ContactScopedCreate) SetSource(v contact.Source) *ContactScopedCreate {
 	x.b.SetSource(v)
@@ -10871,6 +10919,78 @@ func (u *ContactScopedUpsert) UpdateCountry() *ContactScopedUpsert {
 // ClearCountry clears the value of the "country" field.
 func (u *ContactScopedUpsert) ClearCountry() *ContactScopedUpsert {
 	u.u.SetNull(contact.FieldCountry)
+	return u
+}
+
+// SetLocale sets the "locale" field.
+func (u *ContactScopedUpsert) SetLocale(v string) *ContactScopedUpsert {
+	u.u.Set(contact.FieldLocale, v)
+	return u
+}
+
+// UpdateLocale sets the "locale" field to the value that was provided on create.
+func (u *ContactScopedUpsert) UpdateLocale() *ContactScopedUpsert {
+	u.u.SetExcluded(contact.FieldLocale)
+	return u
+}
+
+// ClearLocale clears the value of the "locale" field.
+func (u *ContactScopedUpsert) ClearLocale() *ContactScopedUpsert {
+	u.u.SetNull(contact.FieldLocale)
+	return u
+}
+
+// SetBirthday sets the "birthday" field.
+func (u *ContactScopedUpsert) SetBirthday(v time.Time) *ContactScopedUpsert {
+	u.u.Set(contact.FieldBirthday, v)
+	return u
+}
+
+// UpdateBirthday sets the "birthday" field to the value that was provided on create.
+func (u *ContactScopedUpsert) UpdateBirthday() *ContactScopedUpsert {
+	u.u.SetExcluded(contact.FieldBirthday)
+	return u
+}
+
+// ClearBirthday clears the value of the "birthday" field.
+func (u *ContactScopedUpsert) ClearBirthday() *ContactScopedUpsert {
+	u.u.SetNull(contact.FieldBirthday)
+	return u
+}
+
+// SetCity sets the "city" field.
+func (u *ContactScopedUpsert) SetCity(v string) *ContactScopedUpsert {
+	u.u.Set(contact.FieldCity, v)
+	return u
+}
+
+// UpdateCity sets the "city" field to the value that was provided on create.
+func (u *ContactScopedUpsert) UpdateCity() *ContactScopedUpsert {
+	u.u.SetExcluded(contact.FieldCity)
+	return u
+}
+
+// ClearCity clears the value of the "city" field.
+func (u *ContactScopedUpsert) ClearCity() *ContactScopedUpsert {
+	u.u.SetNull(contact.FieldCity)
+	return u
+}
+
+// SetAvatar sets the "avatar" field.
+func (u *ContactScopedUpsert) SetAvatar(v string) *ContactScopedUpsert {
+	u.u.Set(contact.FieldAvatar, v)
+	return u
+}
+
+// UpdateAvatar sets the "avatar" field to the value that was provided on create.
+func (u *ContactScopedUpsert) UpdateAvatar() *ContactScopedUpsert {
+	u.u.SetExcluded(contact.FieldAvatar)
+	return u
+}
+
+// ClearAvatar clears the value of the "avatar" field.
+func (u *ContactScopedUpsert) ClearAvatar() *ContactScopedUpsert {
+	u.u.SetNull(contact.FieldAvatar)
 	return u
 }
 
@@ -11199,6 +11319,78 @@ func (x *ContactScopedUpdateOne) SetNillableCountry(v *string) *ContactScopedUpd
 // ClearCountry clears the value of the "country" field.
 func (x *ContactScopedUpdateOne) ClearCountry() *ContactScopedUpdateOne {
 	x.b.ClearCountry()
+	return x
+}
+
+// SetLocale sets the "locale" field.
+func (x *ContactScopedUpdateOne) SetLocale(v string) *ContactScopedUpdateOne {
+	x.b.SetLocale(v)
+	return x
+}
+
+// SetNillableLocale sets the "locale" field if the given value is not nil.
+func (x *ContactScopedUpdateOne) SetNillableLocale(v *string) *ContactScopedUpdateOne {
+	x.b.SetNillableLocale(v)
+	return x
+}
+
+// ClearLocale clears the value of the "locale" field.
+func (x *ContactScopedUpdateOne) ClearLocale() *ContactScopedUpdateOne {
+	x.b.ClearLocale()
+	return x
+}
+
+// SetBirthday sets the "birthday" field.
+func (x *ContactScopedUpdateOne) SetBirthday(v time.Time) *ContactScopedUpdateOne {
+	x.b.SetBirthday(v)
+	return x
+}
+
+// SetNillableBirthday sets the "birthday" field if the given value is not nil.
+func (x *ContactScopedUpdateOne) SetNillableBirthday(v *time.Time) *ContactScopedUpdateOne {
+	x.b.SetNillableBirthday(v)
+	return x
+}
+
+// ClearBirthday clears the value of the "birthday" field.
+func (x *ContactScopedUpdateOne) ClearBirthday() *ContactScopedUpdateOne {
+	x.b.ClearBirthday()
+	return x
+}
+
+// SetCity sets the "city" field.
+func (x *ContactScopedUpdateOne) SetCity(v string) *ContactScopedUpdateOne {
+	x.b.SetCity(v)
+	return x
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (x *ContactScopedUpdateOne) SetNillableCity(v *string) *ContactScopedUpdateOne {
+	x.b.SetNillableCity(v)
+	return x
+}
+
+// ClearCity clears the value of the "city" field.
+func (x *ContactScopedUpdateOne) ClearCity() *ContactScopedUpdateOne {
+	x.b.ClearCity()
+	return x
+}
+
+// SetAvatar sets the "avatar" field.
+func (x *ContactScopedUpdateOne) SetAvatar(v string) *ContactScopedUpdateOne {
+	x.b.SetAvatar(v)
+	return x
+}
+
+// SetNillableAvatar sets the "avatar" field if the given value is not nil.
+func (x *ContactScopedUpdateOne) SetNillableAvatar(v *string) *ContactScopedUpdateOne {
+	x.b.SetNillableAvatar(v)
+	return x
+}
+
+// ClearAvatar clears the value of the "avatar" field.
+func (x *ContactScopedUpdateOne) ClearAvatar() *ContactScopedUpdateOne {
+	x.b.ClearAvatar()
 	return x
 }
 
@@ -11547,6 +11739,78 @@ func (x *ContactScopedUpdate) SetNillableCountry(v *string) *ContactScopedUpdate
 // ClearCountry clears the value of the "country" field.
 func (x *ContactScopedUpdate) ClearCountry() *ContactScopedUpdate {
 	x.b.ClearCountry()
+	return x
+}
+
+// SetLocale sets the "locale" field.
+func (x *ContactScopedUpdate) SetLocale(v string) *ContactScopedUpdate {
+	x.b.SetLocale(v)
+	return x
+}
+
+// SetNillableLocale sets the "locale" field if the given value is not nil.
+func (x *ContactScopedUpdate) SetNillableLocale(v *string) *ContactScopedUpdate {
+	x.b.SetNillableLocale(v)
+	return x
+}
+
+// ClearLocale clears the value of the "locale" field.
+func (x *ContactScopedUpdate) ClearLocale() *ContactScopedUpdate {
+	x.b.ClearLocale()
+	return x
+}
+
+// SetBirthday sets the "birthday" field.
+func (x *ContactScopedUpdate) SetBirthday(v time.Time) *ContactScopedUpdate {
+	x.b.SetBirthday(v)
+	return x
+}
+
+// SetNillableBirthday sets the "birthday" field if the given value is not nil.
+func (x *ContactScopedUpdate) SetNillableBirthday(v *time.Time) *ContactScopedUpdate {
+	x.b.SetNillableBirthday(v)
+	return x
+}
+
+// ClearBirthday clears the value of the "birthday" field.
+func (x *ContactScopedUpdate) ClearBirthday() *ContactScopedUpdate {
+	x.b.ClearBirthday()
+	return x
+}
+
+// SetCity sets the "city" field.
+func (x *ContactScopedUpdate) SetCity(v string) *ContactScopedUpdate {
+	x.b.SetCity(v)
+	return x
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (x *ContactScopedUpdate) SetNillableCity(v *string) *ContactScopedUpdate {
+	x.b.SetNillableCity(v)
+	return x
+}
+
+// ClearCity clears the value of the "city" field.
+func (x *ContactScopedUpdate) ClearCity() *ContactScopedUpdate {
+	x.b.ClearCity()
+	return x
+}
+
+// SetAvatar sets the "avatar" field.
+func (x *ContactScopedUpdate) SetAvatar(v string) *ContactScopedUpdate {
+	x.b.SetAvatar(v)
+	return x
+}
+
+// SetNillableAvatar sets the "avatar" field if the given value is not nil.
+func (x *ContactScopedUpdate) SetNillableAvatar(v *string) *ContactScopedUpdate {
+	x.b.SetNillableAvatar(v)
+	return x
+}
+
+// ClearAvatar clears the value of the "avatar" field.
+func (x *ContactScopedUpdate) ClearAvatar() *ContactScopedUpdate {
+	x.b.ClearAvatar()
 	return x
 }
 

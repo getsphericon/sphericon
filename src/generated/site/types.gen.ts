@@ -161,6 +161,22 @@ export type ContactExportContact = {
    */
   country?: string | null;
   /**
+   * BCP 47 language tag
+   */
+  locale?: string | null;
+  /**
+   * Date of birth
+   */
+  birthday?: string | null;
+  /**
+   * City
+   */
+  city?: string | null;
+  /**
+   * https URL of the contact's photo
+   */
+  avatar?: string | null;
+  /**
    * Typed custom field values keyed by the field's machine key
    */
   customFields?: JsonObject | null;
@@ -545,6 +561,22 @@ export type CreateContactInput = {
    */
   country?: CountryCode | null;
   /**
+   * BCP 47 language tag of the language the contact reads in
+   */
+  locale?: LocaleTag | null;
+  /**
+   * Date of birth
+   */
+  birthday?: string | null;
+  /**
+   * City
+   */
+  city?: string | null;
+  /**
+   * https URL of the contact's photo
+   */
+  avatar?: ImageUrl | null;
+  /**
    * Typed custom field values keyed by the field's machine key
    */
   customFields?: JsonObject | null;
@@ -695,6 +727,11 @@ export const GrantableScope = {
 export type GrantableScope = typeof GrantableScope[keyof typeof GrantableScope];
 
 /**
+ * The https URL of an image
+ */
+export type ImageUrl = string;
+
+/**
  * The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it
  */
 export type InUseProblemDetails = {
@@ -828,6 +865,11 @@ export type LintFinding = {
    */
   detail?: string;
 };
+
+/**
+ * A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)
+ */
+export type LocaleTag = string;
 
 /**
  * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap
@@ -2615,7 +2657,7 @@ export type SiteConditionCombinator = typeof SiteConditionCombinator[keyof typeo
 export type SiteConditionDateLeaf = {
   kind: 'date';
   /**
-   * What it tests: "custom:<key>" for a datetime custom field
+   * What it tests: "birthday" or "custom:<key>" for a datetime custom field
    */
   field: string;
   /**
@@ -2648,7 +2690,7 @@ export type SiteConditionDateOperator = typeof SiteConditionDateOperator[keyof t
 export type SiteConditionDateWithinLeaf = {
   kind: 'dateWithin';
   /**
-   * What it tests: "custom:<key>" for a datetime custom field
+   * What it tests: "birthday" or "custom:<key>" for a datetime custom field
    */
   field: string;
   /**
@@ -2720,10 +2762,10 @@ export type SiteConditionLeaf = {
   kind: 'rule';
   /**
    * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
-   * time_zone, country), "tag", "custom:<key>" for a custom field of the workspace, or
-   * "trigger:<key>" (a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the
-   * text operators, and is false when the Event lacks the key or holds a value that is not text; a
-   * number property is compared by a number leaf)
+   * time_zone, country, locale, city), "tag", "custom:<key>" for a custom field of the workspace,
+   * or "trigger:<key>" (a property of the Event that fired a rule: valid only in a rule, refused in
+   * a segment, takes the text operators, and is false when the Event lacks the key or holds a value
+   * that is not text; a number property is compared by a number leaf)
    */
   field: string;
   /**
@@ -2929,6 +2971,22 @@ export type SiteContactResource = {
    */
   country?: CountryCode | null;
   /**
+   * BCP 47 language tag of the language the contact reads in
+   */
+  locale?: LocaleTag | null;
+  /**
+   * Date of birth
+   */
+  birthday?: string | null;
+  /**
+   * City
+   */
+  city?: string | null;
+  /**
+   * https URL of the contact's photo
+   */
+  avatar?: ImageUrl | null;
+  /**
    * Typed custom field values keyed by the field's machine key
    */
   customFields?: JsonObject | null;
@@ -3004,6 +3062,22 @@ export type SiteCreateContactInput = {
    * ISO 3166-1 alpha-2 country code
    */
   country?: CountryCode | null;
+  /**
+   * BCP 47 language tag of the language the contact reads in
+   */
+  locale?: LocaleTag | null;
+  /**
+   * Date of birth
+   */
+  birthday?: string | null;
+  /**
+   * City
+   */
+  city?: string | null;
+  /**
+   * https URL of the contact's photo
+   */
+  avatar?: ImageUrl | null;
   /**
    * Typed custom field values keyed by the field's machine key
    */
@@ -5811,6 +5885,22 @@ export type SiteUpdateContactInput = {
    */
   country?: CountryCode | null;
   /**
+   * BCP 47 language tag of the language the contact reads in
+   */
+  locale?: LocaleTag | null;
+  /**
+   * Date of birth
+   */
+  birthday?: string | null;
+  /**
+   * City
+   */
+  city?: string | null;
+  /**
+   * https URL of the contact's photo
+   */
+  avatar?: ImageUrl | null;
+  /**
    * Typed custom field values keyed by the field's machine key
    */
   customFields?: JsonObject | null;
@@ -6382,6 +6472,22 @@ export type UpdateContactInput = {
    * ISO 3166-1 alpha-2 country code
    */
   country?: CountryCode | null;
+  /**
+   * BCP 47 language tag of the language the contact reads in
+   */
+  locale?: LocaleTag | null;
+  /**
+   * Date of birth
+   */
+  birthday?: string | null;
+  /**
+   * City
+   */
+  city?: string | null;
+  /**
+   * https URL of the contact's photo
+   */
+  avatar?: ImageUrl | null;
   /**
    * Typed custom field values keyed by the field's machine key
    */

@@ -19,6 +19,7 @@ import { eventFieldPrefix, eventPresets, toCondition, toDraft, toQuery } from '.
 import type { ConditionDraft } from './condition.ts'
 import { EventCountEditor } from './EventCountEditor.tsx'
 import {
+  dateOperators,
   inputTypeOf,
   inputTypeOfField,
   operatorsOf,
@@ -46,6 +47,10 @@ const contactFields: Field[] = [
   { name: 'last_name', label: 'Last name' },
   { name: 'time_zone', label: 'Time zone' },
   { name: 'country', label: 'Country' },
+  { name: 'locale', label: 'Locale' },
+  { name: 'city', label: 'City' },
+  // The birthday is a date: it takes the date leaves alone.
+  { name: 'birthday', label: 'Birthday', operators: dateOperators },
 ]
 
 interface ConditionBuilderProps {

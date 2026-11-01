@@ -105,10 +105,10 @@ func TestUpsertResolvesExistingContactByAliasKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{
+	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{
 		Email:        new("Alice@example.com"),
 		Phone:        new("+15550002"),
-		FirstName:    new("Ignored"),
+		FirstName:    patch.Set("Alicia"),
 		CustomFields: map[string]any{"plan": "team"},
 	})
 	require.NoError(t, err)
@@ -116,11 +116,11 @@ func TestUpsertResolvesExistingContactByAliasKey(t *testing.T) {
 	assert.Equal(t, int64(fixtures.ContactAliceID), res.Contact.ID)
 	assert.Equal(t, "+15550002", lo.FromPtr(res.Contact.Phone), "a missing alias key is filled in")
 	assert.Equal(t, "team", res.Contact.CustomFields["plan"])
-	assert.Equal(t, "Alice", lo.FromPtr(res.Contact.FirstName), "identity is additive: existing values are not overwritten")
+	assert.Equal(t, "Alicia", lo.FromPtr(res.Contact.FirstName), "an asserted attribute overwrites the stored one")
 	assert.Zero(t, createdEvents(t, env, fixtures.ContactAliceID))
 
 	// The newly added phone now resolves the same contact.
-	again, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{Phone: new("+15550002")})
+	again, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{Phone: new("+15550002")})
 	require.NoError(t, err)
 	assert.Equal(t, int64(fixtures.ContactAliceID), again.Contact.ID)
 }
@@ -129,12 +129,12 @@ func TestUpsertCreatesAndPublishesOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{SubjectID: new("user-77"), Email: new("u77@example.com")})
+	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{SubjectID: new("user-77"), Email: new("u77@example.com")})
 	require.NoError(t, err)
 	assert.True(t, res.Created)
 	assert.Equal(t, 1, createdEvents(t, env, res.Contact.ID))
 
-	again, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{SubjectID: new("user-77")})
+	again, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{SubjectID: new("user-77")})
 	require.NoError(t, err)
 	assert.False(t, again.Created)
 	assert.Equal(t, res.Contact.ID, again.Contact.ID)
@@ -145,7 +145,7 @@ func TestUpsertRequiresAnAliasKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	_, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{FirstName: new("Nobody"), Email: new("  ")})
+	_, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{FirstName: patch.Set("Nobody"), Email: new("  ")})
 	assert.ErrorIs(t, err, contacts.ErrIdentityRequired)
 }
 
@@ -153,7 +153,7 @@ func TestUpsertDoesNotResolveAnotherWorkspacesContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.GlobexID), contact.SourceManual, contacts.Attributes{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
+	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.GlobexID), contact.SourceManual, contacts.UpsertInput{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)
 	assert.True(t, res.Created, "Alice's email is free in Globex, so a new contact is made")
 	assert.NotEqual(t, int64(fixtures.ContactAliceID), res.Contact.ID)

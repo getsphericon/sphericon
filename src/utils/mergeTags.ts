@@ -1,5 +1,12 @@
 // The merge tags every send binds (outbound.Bindings): the Contact's core fields.
-export const CONTACT_TAGS = ['first_name', 'last_name', 'email'] as const
+export const CONTACT_TAGS = [
+  'first_name',
+  'last_name',
+  'email',
+  'city',
+  'country',
+  'locale',
+] as const
 
 // The action of the Event an Automation's Enrollment began on (#752). An Automation's messages bind
 // that Event as `event`, the shape a Rule's HTTP action binds: `event.action` and `event.properties`.

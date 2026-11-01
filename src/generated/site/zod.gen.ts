@@ -168,6 +168,11 @@ export const zGrantableScope = z.enum([
 ]);
 
 /**
+ * The https URL of an image
+ */
+export const zImageUrl = z.string().max(2048).regex(/^https:\/\/\S+$/);
+
+/**
  * The Test inbox takes no credentials: a Workspace has at most one
  */
 export const zInboxConfigInput = z.object({
@@ -213,6 +218,11 @@ export const zLintFinding = z.object({
   element: z.exactOptional(z.string()),
   detail: z.exactOptional(z.string())
 });
+
+/**
+ * A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)
+ */
+export const zLocaleTag = z.string().max(35).regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/);
 
 /**
  * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap
@@ -2169,6 +2179,10 @@ export const zCreateContactInput = z.object({
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
   country: z.exactOptional(zCountryCode.nullable()),
+  locale: z.exactOptional(zLocaleTag.nullable()),
+  birthday: z.exactOptional(z.iso.date().nullable()),
+  city: z.exactOptional(z.string().max(255).nullable()),
+  avatar: z.exactOptional(zImageUrl.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable())
 });
 
@@ -2185,6 +2199,10 @@ export const zSiteCreateContactInput = z.object({
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
   country: z.exactOptional(zCountryCode.nullable()),
+  locale: z.exactOptional(zLocaleTag.nullable()),
+  birthday: z.exactOptional(z.iso.date().nullable()),
+  city: z.exactOptional(z.string().max(255).nullable()),
+  avatar: z.exactOptional(zImageUrl.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable()),
   tags: z.exactOptional(z.array(z.string()))
 });
@@ -2202,6 +2220,10 @@ export const zSiteUpdateContactInput = z.object({
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
   country: z.exactOptional(zCountryCode.nullable()),
+  locale: z.exactOptional(zLocaleTag.nullable()),
+  birthday: z.exactOptional(z.iso.date().nullable()),
+  city: z.exactOptional(z.string().max(255).nullable()),
+  avatar: z.exactOptional(zImageUrl.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable()),
   tags: z.exactOptional(z.array(z.string()))
 });
@@ -2261,6 +2283,10 @@ export const zContactExportContact = z.object({
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(z.string().nullable()),
   country: z.exactOptional(z.string().nullable()),
+  locale: z.exactOptional(z.string().nullable()),
+  birthday: z.exactOptional(z.iso.date().nullable()),
+  city: z.exactOptional(z.string().nullable()),
+  avatar: z.exactOptional(z.string().nullable()),
   customFields: z.exactOptional(zJsonObject.nullable()),
   source: z.exactOptional(zContactExportSource.nullable()),
   createdAt: zTimestamp,
@@ -2610,6 +2636,10 @@ export const zSiteContactResource = z.object({
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
   country: z.exactOptional(zCountryCode.nullable()),
+  locale: z.exactOptional(zLocaleTag.nullable()),
+  birthday: z.exactOptional(z.iso.date().nullable()),
+  city: z.exactOptional(z.string().max(255).nullable()),
+  avatar: z.exactOptional(zImageUrl.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable()),
   tags: z.array(z.string()),
   createdAt: zTimestamp,
@@ -3049,6 +3079,10 @@ export const zUpdateContactInput = z.object({
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
   country: z.exactOptional(zCountryCode.nullable()),
+  locale: z.exactOptional(zLocaleTag.nullable()),
+  birthday: z.exactOptional(z.iso.date().nullable()),
+  city: z.exactOptional(z.string().max(255).nullable()),
+  avatar: z.exactOptional(zImageUrl.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable())
 });
 

@@ -118,10 +118,10 @@ func TestUpsertBatchRunsEachItemIndependentlyAndInOrder(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	out := m.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, []contacts.Attributes{
+	out := m.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, []contacts.UpsertInput{
 		{Email: new("batch.new@example.com"), CustomFields: map[string]any{"source": "import"}},
-		{Email: lo.ToPtr(fixtures.ContactAliceEmail), FirstName: new("Ignored")},
-		{FirstName: new("No identity")},
+		{Email: lo.ToPtr(fixtures.ContactAliceEmail), FirstName: patch.Set("Alicia")},
+		{FirstName: patch.Set("No identity")},
 	})
 	require.Len(t, out, 3)
 
@@ -133,7 +133,7 @@ func TestUpsertBatchRunsEachItemIndependentlyAndInOrder(t *testing.T) {
 	require.NoError(t, out[1].Err)
 	assert.False(t, out[1].Result.Created)
 	assert.EqualValues(t, fixtures.ContactAliceID, out[1].Result.Contact.ID)
-	assert.Equal(t, "Alice", lo.FromPtr(out[1].Result.Contact.FirstName), "an existing attribute is never overwritten")
+	assert.Equal(t, "Alicia", lo.FromPtr(out[1].Result.Contact.FirstName), "an asserted attribute overwrites")
 
 	require.ErrorIs(t, out[2].Err, contacts.ErrIdentityRequired, "a failing item does not stop the batch")
 }
@@ -146,7 +146,7 @@ func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+15557770")})
 	require.NoError(t, err)
 
-	res, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{
+	res, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{
 		Phone: new("+15557770"), Email: new("Filled.In@Example.com"), SubjectID: new("sub-9"),
 		CustomFields: map[string]any{"tier": "gold"},
 	})
@@ -157,7 +157,7 @@ func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	assert.Equal(t, "sub-9", lo.FromPtr(res.Contact.SubjectID))
 	assert.Equal(t, "gold", res.Contact.CustomFields["tier"])
 
-	again, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{Phone: new("+15557770"), CustomFields: map[string]any{"visits": float64(1)}})
+	again, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{Phone: new("+15557770"), CustomFields: map[string]any{"visits": float64(1)}})
 	require.NoError(t, err)
 	assert.Equal(t, map[string]any{"tier": "gold", "visits": float64(1)}, again.Contact.CustomFields, "custom fields merge")
 }
@@ -166,7 +166,7 @@ func TestUpsertIsScopedToTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.GlobexID), contact.SourceManual, contacts.Attributes{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
+	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.GlobexID), contact.SourceManual, contacts.UpsertInput{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)
 	assert.True(t, res.Created, "Acme's Alice is not Globex's contact")
 	assert.NotEqual(t, int64(fixtures.ContactAliceID), res.Contact.ID)

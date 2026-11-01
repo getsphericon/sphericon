@@ -159,6 +159,62 @@ func (_c *ContactCreate) SetNillableCountry(v *string) *ContactCreate {
 	return _c
 }
 
+// SetLocale sets the "locale" field.
+func (_c *ContactCreate) SetLocale(v string) *ContactCreate {
+	_c.mutation.SetLocale(v)
+	return _c
+}
+
+// SetNillableLocale sets the "locale" field if the given value is not nil.
+func (_c *ContactCreate) SetNillableLocale(v *string) *ContactCreate {
+	if v != nil {
+		_c.SetLocale(*v)
+	}
+	return _c
+}
+
+// SetBirthday sets the "birthday" field.
+func (_c *ContactCreate) SetBirthday(v time.Time) *ContactCreate {
+	_c.mutation.SetBirthday(v)
+	return _c
+}
+
+// SetNillableBirthday sets the "birthday" field if the given value is not nil.
+func (_c *ContactCreate) SetNillableBirthday(v *time.Time) *ContactCreate {
+	if v != nil {
+		_c.SetBirthday(*v)
+	}
+	return _c
+}
+
+// SetCity sets the "city" field.
+func (_c *ContactCreate) SetCity(v string) *ContactCreate {
+	_c.mutation.SetCity(v)
+	return _c
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (_c *ContactCreate) SetNillableCity(v *string) *ContactCreate {
+	if v != nil {
+		_c.SetCity(*v)
+	}
+	return _c
+}
+
+// SetAvatar sets the "avatar" field.
+func (_c *ContactCreate) SetAvatar(v string) *ContactCreate {
+	_c.mutation.SetAvatar(v)
+	return _c
+}
+
+// SetNillableAvatar sets the "avatar" field if the given value is not nil.
+func (_c *ContactCreate) SetNillableAvatar(v *string) *ContactCreate {
+	if v != nil {
+		_c.SetAvatar(*v)
+	}
+	return _c
+}
+
 // SetSource sets the "source" field.
 func (_c *ContactCreate) SetSource(v contact.Source) *ContactCreate {
 	_c.mutation.SetSource(v)
@@ -382,6 +438,22 @@ func (_c *ContactCreate) createSpec() (*Contact, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Country(); ok {
 		_spec.SetField(contact.FieldCountry, field.TypeString, value)
 		_node.Country = &value
+	}
+	if value, ok := _c.mutation.Locale(); ok {
+		_spec.SetField(contact.FieldLocale, field.TypeString, value)
+		_node.Locale = &value
+	}
+	if value, ok := _c.mutation.Birthday(); ok {
+		_spec.SetField(contact.FieldBirthday, field.TypeTime, value)
+		_node.Birthday = &value
+	}
+	if value, ok := _c.mutation.City(); ok {
+		_spec.SetField(contact.FieldCity, field.TypeString, value)
+		_node.City = &value
+	}
+	if value, ok := _c.mutation.Avatar(); ok {
+		_spec.SetField(contact.FieldAvatar, field.TypeString, value)
+		_node.Avatar = &value
 	}
 	if value, ok := _c.mutation.Source(); ok {
 		_spec.SetField(contact.FieldSource, field.TypeEnum, value)
@@ -674,6 +746,78 @@ func (u *ContactUpsert) ClearCountry() *ContactUpsert {
 	return u
 }
 
+// SetLocale sets the "locale" field.
+func (u *ContactUpsert) SetLocale(v string) *ContactUpsert {
+	u.Set(contact.FieldLocale, v)
+	return u
+}
+
+// UpdateLocale sets the "locale" field to the value that was provided on create.
+func (u *ContactUpsert) UpdateLocale() *ContactUpsert {
+	u.SetExcluded(contact.FieldLocale)
+	return u
+}
+
+// ClearLocale clears the value of the "locale" field.
+func (u *ContactUpsert) ClearLocale() *ContactUpsert {
+	u.SetNull(contact.FieldLocale)
+	return u
+}
+
+// SetBirthday sets the "birthday" field.
+func (u *ContactUpsert) SetBirthday(v time.Time) *ContactUpsert {
+	u.Set(contact.FieldBirthday, v)
+	return u
+}
+
+// UpdateBirthday sets the "birthday" field to the value that was provided on create.
+func (u *ContactUpsert) UpdateBirthday() *ContactUpsert {
+	u.SetExcluded(contact.FieldBirthday)
+	return u
+}
+
+// ClearBirthday clears the value of the "birthday" field.
+func (u *ContactUpsert) ClearBirthday() *ContactUpsert {
+	u.SetNull(contact.FieldBirthday)
+	return u
+}
+
+// SetCity sets the "city" field.
+func (u *ContactUpsert) SetCity(v string) *ContactUpsert {
+	u.Set(contact.FieldCity, v)
+	return u
+}
+
+// UpdateCity sets the "city" field to the value that was provided on create.
+func (u *ContactUpsert) UpdateCity() *ContactUpsert {
+	u.SetExcluded(contact.FieldCity)
+	return u
+}
+
+// ClearCity clears the value of the "city" field.
+func (u *ContactUpsert) ClearCity() *ContactUpsert {
+	u.SetNull(contact.FieldCity)
+	return u
+}
+
+// SetAvatar sets the "avatar" field.
+func (u *ContactUpsert) SetAvatar(v string) *ContactUpsert {
+	u.Set(contact.FieldAvatar, v)
+	return u
+}
+
+// UpdateAvatar sets the "avatar" field to the value that was provided on create.
+func (u *ContactUpsert) UpdateAvatar() *ContactUpsert {
+	u.SetExcluded(contact.FieldAvatar)
+	return u
+}
+
+// ClearAvatar clears the value of the "avatar" field.
+func (u *ContactUpsert) ClearAvatar() *ContactUpsert {
+	u.SetNull(contact.FieldAvatar)
+	return u
+}
+
 // SetCustomFields sets the "custom_fields" field.
 func (u *ContactUpsert) SetCustomFields(v map[string]interface{}) *ContactUpsert {
 	u.Set(contact.FieldCustomFields, v)
@@ -918,6 +1062,90 @@ func (u *ContactUpsertOne) UpdateCountry() *ContactUpsertOne {
 func (u *ContactUpsertOne) ClearCountry() *ContactUpsertOne {
 	return u.Update(func(s *ContactUpsert) {
 		s.ClearCountry()
+	})
+}
+
+// SetLocale sets the "locale" field.
+func (u *ContactUpsertOne) SetLocale(v string) *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetLocale(v)
+	})
+}
+
+// UpdateLocale sets the "locale" field to the value that was provided on create.
+func (u *ContactUpsertOne) UpdateLocale() *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateLocale()
+	})
+}
+
+// ClearLocale clears the value of the "locale" field.
+func (u *ContactUpsertOne) ClearLocale() *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.ClearLocale()
+	})
+}
+
+// SetBirthday sets the "birthday" field.
+func (u *ContactUpsertOne) SetBirthday(v time.Time) *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetBirthday(v)
+	})
+}
+
+// UpdateBirthday sets the "birthday" field to the value that was provided on create.
+func (u *ContactUpsertOne) UpdateBirthday() *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateBirthday()
+	})
+}
+
+// ClearBirthday clears the value of the "birthday" field.
+func (u *ContactUpsertOne) ClearBirthday() *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.ClearBirthday()
+	})
+}
+
+// SetCity sets the "city" field.
+func (u *ContactUpsertOne) SetCity(v string) *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetCity(v)
+	})
+}
+
+// UpdateCity sets the "city" field to the value that was provided on create.
+func (u *ContactUpsertOne) UpdateCity() *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateCity()
+	})
+}
+
+// ClearCity clears the value of the "city" field.
+func (u *ContactUpsertOne) ClearCity() *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.ClearCity()
+	})
+}
+
+// SetAvatar sets the "avatar" field.
+func (u *ContactUpsertOne) SetAvatar(v string) *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetAvatar(v)
+	})
+}
+
+// UpdateAvatar sets the "avatar" field to the value that was provided on create.
+func (u *ContactUpsertOne) UpdateAvatar() *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateAvatar()
+	})
+}
+
+// ClearAvatar clears the value of the "avatar" field.
+func (u *ContactUpsertOne) ClearAvatar() *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.ClearAvatar()
 	})
 }
 
@@ -1334,6 +1562,90 @@ func (u *ContactUpsertBulk) UpdateCountry() *ContactUpsertBulk {
 func (u *ContactUpsertBulk) ClearCountry() *ContactUpsertBulk {
 	return u.Update(func(s *ContactUpsert) {
 		s.ClearCountry()
+	})
+}
+
+// SetLocale sets the "locale" field.
+func (u *ContactUpsertBulk) SetLocale(v string) *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetLocale(v)
+	})
+}
+
+// UpdateLocale sets the "locale" field to the value that was provided on create.
+func (u *ContactUpsertBulk) UpdateLocale() *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateLocale()
+	})
+}
+
+// ClearLocale clears the value of the "locale" field.
+func (u *ContactUpsertBulk) ClearLocale() *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.ClearLocale()
+	})
+}
+
+// SetBirthday sets the "birthday" field.
+func (u *ContactUpsertBulk) SetBirthday(v time.Time) *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetBirthday(v)
+	})
+}
+
+// UpdateBirthday sets the "birthday" field to the value that was provided on create.
+func (u *ContactUpsertBulk) UpdateBirthday() *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateBirthday()
+	})
+}
+
+// ClearBirthday clears the value of the "birthday" field.
+func (u *ContactUpsertBulk) ClearBirthday() *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.ClearBirthday()
+	})
+}
+
+// SetCity sets the "city" field.
+func (u *ContactUpsertBulk) SetCity(v string) *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetCity(v)
+	})
+}
+
+// UpdateCity sets the "city" field to the value that was provided on create.
+func (u *ContactUpsertBulk) UpdateCity() *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateCity()
+	})
+}
+
+// ClearCity clears the value of the "city" field.
+func (u *ContactUpsertBulk) ClearCity() *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.ClearCity()
+	})
+}
+
+// SetAvatar sets the "avatar" field.
+func (u *ContactUpsertBulk) SetAvatar(v string) *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetAvatar(v)
+	})
+}
+
+// UpdateAvatar sets the "avatar" field to the value that was provided on create.
+func (u *ContactUpsertBulk) UpdateAvatar() *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateAvatar()
+	})
+}
+
+// ClearAvatar clears the value of the "avatar" field.
+func (u *ContactUpsertBulk) ClearAvatar() *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.ClearAvatar()
 	})
 }
 

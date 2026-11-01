@@ -8,7 +8,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
+
+// ErrReservedKey means a Custom field was given the key of a core attribute or an alias key.
+var ErrReservedKey = validation.Refuse("contacts: a custom field key names a contact attribute", i18n.ErrorsCustomFieldKeyReserved)
 
 // EnsureCustomFields implements declared-by-use Custom fields (ADR 0006): for each
 // key in the incoming attribute map it auto-creates a typed CustomField definition
@@ -19,7 +24,8 @@ import (
 // Type is inferred from the value's JSON shape on first sight. A later value of a
 // conflicting type does NOT retype or reject (declared-by-use must not break ingest);
 // the stored value keeps its own JSON type and the definition's type is left as-is —
-// widening/coercion policy is a later refinement.
+// widening/coercion policy is a later refinement. A key that names a core attribute or an alias
+// key is refused (ADR 0072).
 func EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (map[string]any, error) {
 	if len(kv) == 0 {
 		return nil, nil
@@ -28,6 +34,9 @@ func EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (
 	for key, val := range kv {
 		if key == "" {
 			continue
+		}
+		if reservedKeys[key] {
+			return nil, ErrReservedKey
 		}
 		// DO NOTHING, not Ignore: an insert is the audited create of the definition under
 		// a User or API token (ADR 0022); a conflict writes nothing and reports sql.ErrNoRows.

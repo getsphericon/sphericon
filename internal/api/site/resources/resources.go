@@ -79,6 +79,9 @@ import (
 // goverter:extend optNilEntityID
 // goverter:extend optNilTimeZone
 // goverter:extend optNilCountry
+// goverter:extend optNilLocale
+// goverter:extend optNilImageURL
+// goverter:extend optNilDate
 // goverter:extend nilCurrencyCode
 // goverter:extend nilTimeZone
 // goverter:extend attributionWindowDays
@@ -808,6 +811,16 @@ func optNilTimeZone(v *string) siteapi.OptNilTimeZoneName {
 func optNilCountry(v *string) siteapi.OptNilCountryCode {
 	return convert.Opt[siteapi.OptNilCountryCode]((*siteapi.CountryCode)(v))
 }
+
+func optNilLocale(v *string) siteapi.OptNilLocaleTag {
+	return convert.Opt[siteapi.OptNilLocaleTag]((*siteapi.LocaleTag)(v))
+}
+
+func optNilImageURL(v *string) siteapi.OptNilImageUrl {
+	return convert.Opt[siteapi.OptNilImageUrl]((*siteapi.ImageUrl)(v))
+}
+
+func optNilDate(v *time.Time) siteapi.OptNilDate { return convert.Opt[siteapi.OptNilDate](v) }
 
 func optNilTimestamp(v *time.Time) siteapi.OptNilTimestamp {
 	return convert.Opt[siteapi.OptNilTimestamp]((*siteapi.Timestamp)(v))

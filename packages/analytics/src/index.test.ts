@@ -25,6 +25,7 @@ interface SentBody {
   phone?: string | null
   subjectId?: string | null
   traits?: unknown
+  context?: unknown
   events: { visitorId: string; action: string; properties: unknown; clientEventId?: string }[]
 }
 
@@ -124,6 +125,19 @@ test('identify posts the visitor id with nulls for missing fields', async () => 
     traits: null,
   })
   expect(body.visitorId).toEqual(expect.any(String))
+})
+
+test("identify sends the browser's time zone and language", async () => {
+  const { initTracking, identify } = await loadTracker()
+  initTracking(CONFIG)
+
+  await identify({ email: 'a@example.com' })
+
+  const body = await sentBody('/collect/identify')
+  expect(body.context).toEqual({
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    locale: navigator.language,
+  })
 })
 
 test('identify swallows network failures', async () => {

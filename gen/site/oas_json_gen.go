@@ -650,6 +650,30 @@ func (s *ContactExportContact) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Locale.Set {
+			e.FieldStart("locale")
+			s.Locale.Encode(e)
+		}
+	}
+	{
+		if s.Birthday.Set {
+			e.FieldStart("birthday")
+			s.Birthday.Encode(e, json.EncodeDate)
+		}
+	}
+	{
+		if s.City.Set {
+			e.FieldStart("city")
+			s.City.Encode(e)
+		}
+	}
+	{
+		if s.Avatar.Set {
+			e.FieldStart("avatar")
+			s.Avatar.Encode(e)
+		}
+	}
+	{
 		if s.CustomFields.Set {
 			e.FieldStart("customFields")
 			s.CustomFields.Encode(e)
@@ -671,7 +695,7 @@ func (s *ContactExportContact) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfContactExportContact = [12]string{
+var jsonFieldsNameOfContactExportContact = [16]string{
 	0:  "id",
 	1:  "subjectId",
 	2:  "email",
@@ -680,10 +704,14 @@ var jsonFieldsNameOfContactExportContact = [12]string{
 	5:  "lastName",
 	6:  "timeZone",
 	7:  "country",
-	8:  "customFields",
-	9:  "source",
-	10: "createdAt",
-	11: "updatedAt",
+	8:  "locale",
+	9:  "birthday",
+	10: "city",
+	11: "avatar",
+	12: "customFields",
+	13: "source",
+	14: "createdAt",
+	15: "updatedAt",
 }
 
 // Decode decodes ContactExportContact from json.
@@ -775,6 +803,46 @@ func (s *ContactExportContact) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"country\"")
 			}
+		case "locale":
+			if err := func() error {
+				s.Locale.Reset()
+				if err := s.Locale.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"locale\"")
+			}
+		case "birthday":
+			if err := func() error {
+				s.Birthday.Reset()
+				if err := s.Birthday.Decode(d, json.DecodeDate); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"birthday\"")
+			}
+		case "city":
+			if err := func() error {
+				s.City.Reset()
+				if err := s.City.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"city\"")
+			}
+		case "avatar":
+			if err := func() error {
+				s.Avatar.Reset()
+				if err := s.Avatar.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"avatar\"")
+			}
 		case "customFields":
 			if err := func() error {
 				s.CustomFields.Reset()
@@ -796,7 +864,7 @@ func (s *ContactExportContact) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"source\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -806,7 +874,7 @@ func (s *ContactExportContact) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -826,7 +894,7 @@ func (s *ContactExportContact) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00000001,
-		0b00001100,
+		0b11000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -3636,6 +3704,46 @@ func (s *GrantableScope) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes ImageUrl as json.
+func (s ImageUrl) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
+}
+
+// Decode decodes ImageUrl from json.
+func (s *ImageUrl) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ImageUrl to nil")
+	}
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = ImageUrl(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ImageUrl) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ImageUrl) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *InUseProblemDetails) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -4729,6 +4837,46 @@ func (s *LintFinding) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes LocaleTag as json.
+func (s LocaleTag) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
+}
+
+// Decode decodes LocaleTag from json.
+func (s *LocaleTag) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LocaleTag to nil")
+	}
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = LocaleTag(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s LocaleTag) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LocaleTag) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes MaxPerDay as json.
 func (s MaxPerDay) Encode(e *jx.Encoder) {
 	unwrapped := int32(s)
@@ -5768,6 +5916,57 @@ func (s *OptNilCountryCode) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes time.Time as json.
+func (o OptNilDate) Encode(e *jx.Encoder, format func(*jx.Encoder, time.Time)) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	format(e, o.Value)
+}
+
+// Decode decodes time.Time from json.
+func (o *OptNilDate) Decode(d *jx.Decoder, format func(*jx.Decoder) (time.Time, error)) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilDate to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v time.Time
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	v, err := format(d)
+	if err != nil {
+		return err
+	}
+	o.Value = v
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilDate) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e, json.EncodeDate)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilDate) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d, json.DecodeDate)
+}
+
 // Encode encodes EditorDocument as json.
 func (o OptNilEditorDocument) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -5916,6 +6115,55 @@ func (s *OptNilEntityId) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes ImageUrl as json.
+func (o OptNilImageUrl) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes ImageUrl from json.
+func (o *OptNilImageUrl) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilImageUrl to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v ImageUrl
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilImageUrl) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilImageUrl) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes int32 as json.
 func (o OptNilInt32) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -6013,6 +6261,55 @@ func (s OptNilJsonObject) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilJsonObject) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes LocaleTag as json.
+func (o OptNilLocaleTag) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes LocaleTag from json.
+func (o *OptNilLocaleTag) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilLocaleTag to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v LocaleTag
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilLocaleTag) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilLocaleTag) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -24825,6 +25122,30 @@ func (s *SiteContactResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Locale.Set {
+			e.FieldStart("locale")
+			s.Locale.Encode(e)
+		}
+	}
+	{
+		if s.Birthday.Set {
+			e.FieldStart("birthday")
+			s.Birthday.Encode(e, json.EncodeDate)
+		}
+	}
+	{
+		if s.City.Set {
+			e.FieldStart("city")
+			s.City.Encode(e)
+		}
+	}
+	{
+		if s.Avatar.Set {
+			e.FieldStart("avatar")
+			s.Avatar.Encode(e)
+		}
+	}
+	{
 		if s.CustomFields.Set {
 			e.FieldStart("customFields")
 			s.CustomFields.Encode(e)
@@ -24848,7 +25169,7 @@ func (s *SiteContactResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteContactResource = [12]string{
+var jsonFieldsNameOfSiteContactResource = [16]string{
 	0:  "id",
 	1:  "subjectId",
 	2:  "email",
@@ -24857,10 +25178,14 @@ var jsonFieldsNameOfSiteContactResource = [12]string{
 	5:  "lastName",
 	6:  "timeZone",
 	7:  "country",
-	8:  "customFields",
-	9:  "tags",
-	10: "createdAt",
-	11: "updatedAt",
+	8:  "locale",
+	9:  "birthday",
+	10: "city",
+	11: "avatar",
+	12: "customFields",
+	13: "tags",
+	14: "createdAt",
+	15: "updatedAt",
 }
 
 // Decode decodes SiteContactResource from json.
@@ -24952,6 +25277,46 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"country\"")
 			}
+		case "locale":
+			if err := func() error {
+				s.Locale.Reset()
+				if err := s.Locale.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"locale\"")
+			}
+		case "birthday":
+			if err := func() error {
+				s.Birthday.Reset()
+				if err := s.Birthday.Decode(d, json.DecodeDate); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"birthday\"")
+			}
+		case "city":
+			if err := func() error {
+				s.City.Reset()
+				if err := s.City.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"city\"")
+			}
+		case "avatar":
+			if err := func() error {
+				s.Avatar.Reset()
+				if err := s.Avatar.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"avatar\"")
+			}
 		case "customFields":
 			if err := func() error {
 				s.CustomFields.Reset()
@@ -24963,7 +25328,7 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"customFields\"")
 			}
 		case "tags":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				s.Tags = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -24983,7 +25348,7 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"tags\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -24993,7 +25358,7 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -25013,7 +25378,7 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00000001,
-		0b00001110,
+		0b11100000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -26554,6 +26919,30 @@ func (s *SiteCreateContactInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Locale.Set {
+			e.FieldStart("locale")
+			s.Locale.Encode(e)
+		}
+	}
+	{
+		if s.Birthday.Set {
+			e.FieldStart("birthday")
+			s.Birthday.Encode(e, json.EncodeDate)
+		}
+	}
+	{
+		if s.City.Set {
+			e.FieldStart("city")
+			s.City.Encode(e)
+		}
+	}
+	{
+		if s.Avatar.Set {
+			e.FieldStart("avatar")
+			s.Avatar.Encode(e)
+		}
+	}
+	{
 		if s.CustomFields.Set {
 			e.FieldStart("customFields")
 			s.CustomFields.Encode(e)
@@ -26571,16 +26960,20 @@ func (s *SiteCreateContactInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteCreateContactInput = [9]string{
-	0: "subjectId",
-	1: "email",
-	2: "phone",
-	3: "firstName",
-	4: "lastName",
-	5: "timeZone",
-	6: "country",
-	7: "customFields",
-	8: "tags",
+var jsonFieldsNameOfSiteCreateContactInput = [13]string{
+	0:  "subjectId",
+	1:  "email",
+	2:  "phone",
+	3:  "firstName",
+	4:  "lastName",
+	5:  "timeZone",
+	6:  "country",
+	7:  "locale",
+	8:  "birthday",
+	9:  "city",
+	10: "avatar",
+	11: "customFields",
+	12: "tags",
 }
 
 // Decode decodes SiteCreateContactInput from json.
@@ -26660,6 +27053,46 @@ func (s *SiteCreateContactInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"country\"")
+			}
+		case "locale":
+			if err := func() error {
+				s.Locale.Reset()
+				if err := s.Locale.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"locale\"")
+			}
+		case "birthday":
+			if err := func() error {
+				s.Birthday.Reset()
+				if err := s.Birthday.Decode(d, json.DecodeDate); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"birthday\"")
+			}
+		case "city":
+			if err := func() error {
+				s.City.Reset()
+				if err := s.City.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"city\"")
+			}
+		case "avatar":
+			if err := func() error {
+				s.Avatar.Reset()
+				if err := s.Avatar.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"avatar\"")
 			}
 		case "customFields":
 			if err := func() error {
@@ -59038,6 +59471,30 @@ func (s *SiteUpdateContactInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Locale.Set {
+			e.FieldStart("locale")
+			s.Locale.Encode(e)
+		}
+	}
+	{
+		if s.Birthday.Set {
+			e.FieldStart("birthday")
+			s.Birthday.Encode(e, json.EncodeDate)
+		}
+	}
+	{
+		if s.City.Set {
+			e.FieldStart("city")
+			s.City.Encode(e)
+		}
+	}
+	{
+		if s.Avatar.Set {
+			e.FieldStart("avatar")
+			s.Avatar.Encode(e)
+		}
+	}
+	{
 		if s.CustomFields.Set {
 			e.FieldStart("customFields")
 			s.CustomFields.Encode(e)
@@ -59055,16 +59512,20 @@ func (s *SiteUpdateContactInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteUpdateContactInput = [9]string{
-	0: "subjectId",
-	1: "email",
-	2: "phone",
-	3: "firstName",
-	4: "lastName",
-	5: "timeZone",
-	6: "country",
-	7: "customFields",
-	8: "tags",
+var jsonFieldsNameOfSiteUpdateContactInput = [13]string{
+	0:  "subjectId",
+	1:  "email",
+	2:  "phone",
+	3:  "firstName",
+	4:  "lastName",
+	5:  "timeZone",
+	6:  "country",
+	7:  "locale",
+	8:  "birthday",
+	9:  "city",
+	10: "avatar",
+	11: "customFields",
+	12: "tags",
 }
 
 // Decode decodes SiteUpdateContactInput from json.
@@ -59144,6 +59605,46 @@ func (s *SiteUpdateContactInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"country\"")
+			}
+		case "locale":
+			if err := func() error {
+				s.Locale.Reset()
+				if err := s.Locale.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"locale\"")
+			}
+		case "birthday":
+			if err := func() error {
+				s.Birthday.Reset()
+				if err := s.Birthday.Decode(d, json.DecodeDate); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"birthday\"")
+			}
+		case "city":
+			if err := func() error {
+				s.City.Reset()
+				if err := s.City.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"city\"")
+			}
+		case "avatar":
+			if err := func() error {
+				s.Avatar.Reset()
+				if err := s.Avatar.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"avatar\"")
 			}
 		case "customFields":
 			if err := func() error {

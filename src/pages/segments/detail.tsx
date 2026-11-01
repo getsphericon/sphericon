@@ -75,7 +75,13 @@ function SegmentDetail() {
             title: t(($) => $.table.email),
             render: (record) => (
               <Group gap="sm" wrap="nowrap">
-                <Avatar size="sm" color="initials" name={contactName(record)} />
+                <Avatar
+                  size="sm"
+                  color="initials"
+                  name={contactName(record)}
+                  src={record.avatar ?? null}
+                  alt={contactName(record)}
+                />
                 <Text size="sm">{record.email}</Text>
               </Group>
             ),

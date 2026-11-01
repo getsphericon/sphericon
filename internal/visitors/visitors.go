@@ -24,6 +24,8 @@ type IdentifyInput struct {
 	Phone     *string
 	SubjectID *string
 	Traits    map[string]any
+	// The browser's time zone and language, guesses that only fill the Contact's (ADR 0072).
+	TimeZone, Locale *string
 }
 
 type CollectEventInput struct {
@@ -37,10 +39,11 @@ type CollectEventInput struct {
 }
 
 // Identify binds a Visitor to a Contact and asserts that Contact's alias keys
-// (subject_id / email / phone). It upserts the Contact by any present alias key,
-// auto-creates typed Custom fields from the traits, binds the device, and stitches
-// the device's earlier anonymous Events onto the Contact so pre-identify behavior
-// becomes visible to segmentation. A newly created Contact emits contact.created.
+// (subject_id / email / phone) and the core attributes its traits name (ADR 0072). It
+// upserts the Contact by any present alias key, auto-creates typed Custom fields from the
+// other traits, binds the device, and stitches the device's earlier anonymous Events onto
+// the Contact so pre-identify behavior becomes visible to segmentation. A newly created
+// Contact emits contact.created.
 func Identify(ctx context.Context, bus *events.Bus, s *ent.Scoped, input IdentifyInput) error {
 	visitorID := strings.TrimSpace(input.VisitorID)
 	if visitorID == "" {
@@ -48,11 +51,15 @@ func Identify(ctx context.Context, bus *events.Bus, s *ent.Scoped, input Identif
 	}
 
 	return bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		res, err := contacts.UpsertIn(ctx, ts, pub, contact.SourceTracker, contacts.Attributes{
-			SubjectID:    input.SubjectID,
-			Email:        input.Email,
-			Phone:        input.Phone,
-			CustomFields: input.Traits,
+		core, fields := contacts.FromTraits(input.Traits)
+		res, err := contacts.UpsertIn(ctx, ts, pub, contact.SourceTracker, contacts.UpsertInput{
+			SubjectID:       input.SubjectID,
+			Email:           input.Email,
+			Phone:           input.Phone,
+			Core:            core,
+			GuessedTimeZone: input.TimeZone,
+			GuessedLocale:   input.Locale,
+			CustomFields:    fields,
 		})
 		if errors.Is(err, contacts.ErrIdentityRequired) {
 			return errors.New("identify requires subjectId, email, or phone")

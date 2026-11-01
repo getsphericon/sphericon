@@ -168,6 +168,10 @@ func (c *InputsImpl) ContactAttributes(source external.CreateContactInput) conta
 	contactsAttributes.LastName = nilStringPtrIn(source.LastName)
 	contactsAttributes.TimeZone = nilTimeZonePtrIn(source.TimeZone)
 	contactsAttributes.Country = nilCountryPtrIn(source.Country)
+	contactsAttributes.Locale = nilLocalePtrIn(source.Locale)
+	contactsAttributes.City = nilStringPtrIn(source.City)
+	contactsAttributes.Avatar = nilImageURLPtrIn(source.Avatar)
+	contactsAttributes.Birthday = nilDatePtrIn(source.Birthday)
 	contactsAttributes.CustomFields = nilObjectIn(source.CustomFields)
 	return contactsAttributes
 }
@@ -185,36 +189,32 @@ func (c *InputsImpl) ContactUpdate(source *external.UpdateContactInput) contacts
 		contactsUpdateInput.SubjectID = nilStringPatch((*source).SubjectId)
 		contactsUpdateInput.Email = nilEmailPatch((*source).Email)
 		contactsUpdateInput.Phone = nilStringPatch((*source).Phone)
-		contactsUpdateInput.FirstName = nilStringPatch((*source).FirstName)
-		contactsUpdateInput.LastName = nilStringPatch((*source).LastName)
-		contactsUpdateInput.TimeZone = nilTimeZonePatch((*source).TimeZone)
-		contactsUpdateInput.Country = nilCountryPatch((*source).Country)
+		contactsUpdateInput.Core = c.externalapiUpdateContactInputToContactsCore((*source))
 		contactsUpdateInput.CustomFields = nilObjectPatch((*source).CustomFields)
 		// contactsUpdateInput.Tags: ignore
 	}
 	return contactsUpdateInput
 }
-func (c *InputsImpl) ContactUpsert(source external.UpsertContactInput) contacts.Attributes {
-	var contactsAttributes contacts.Attributes
-	contactsAttributes.SubjectID = nilStringPtrIn(source.SubjectId)
-	contactsAttributes.Email = nilEmailPtrIn(source.Email)
-	contactsAttributes.Phone = nilStringPtrIn(source.Phone)
-	contactsAttributes.FirstName = nilStringPtrIn(source.FirstName)
-	contactsAttributes.LastName = nilStringPtrIn(source.LastName)
-	contactsAttributes.TimeZone = nilTimeZonePtrIn(source.TimeZone)
-	contactsAttributes.Country = nilCountryPtrIn(source.Country)
-	contactsAttributes.CustomFields = nilObjectIn(source.CustomFields)
-	return contactsAttributes
+func (c *InputsImpl) ContactUpsert(source external.UpsertContactInput) contacts.UpsertInput {
+	var contactsUpsertInput contacts.UpsertInput
+	contactsUpsertInput.SubjectID = nilStringPtrIn(source.SubjectId)
+	contactsUpsertInput.Email = nilEmailPtrIn(source.Email)
+	contactsUpsertInput.Phone = nilStringPtrIn(source.Phone)
+	contactsUpsertInput.Core = c.externalapiUpsertContactInputToContactsCore(source)
+	// contactsUpsertInput.GuessedTimeZone: ignore
+	// contactsUpsertInput.GuessedLocale: ignore
+	contactsUpsertInput.CustomFields = nilObjectIn(source.CustomFields)
+	return contactsUpsertInput
 }
-func (c *InputsImpl) ContactUpserts(source []external.UpsertContactInput) []contacts.Attributes {
-	var contactsAttributesList []contacts.Attributes
+func (c *InputsImpl) ContactUpserts(source []external.UpsertContactInput) []contacts.UpsertInput {
+	var contactsUpsertInputList []contacts.UpsertInput
 	if source != nil {
-		contactsAttributesList = make([]contacts.Attributes, len(source))
+		contactsUpsertInputList = make([]contacts.UpsertInput, len(source))
 		for i := 0; i < len(source); i++ {
-			contactsAttributesList[i] = c.ContactUpsert(source[i])
+			contactsUpsertInputList[i] = c.ContactUpsert(source[i])
 		}
 	}
-	return contactsAttributesList
+	return contactsUpsertInputList
 }
 func (c *InputsImpl) Event(source external.EventInput, context bool) (eventlog.Input, error) {
 	var eventlogInput eventlog.Input
@@ -448,4 +448,28 @@ func (c *InputsImpl) externalapiRuleActionToRulesAction(source external.RuleActi
 	rulesAction.Secret = stringIn(source.Secret)
 	rulesAction.ClearSecret = boolIn(source.ClearSecret)
 	return rulesAction
+}
+func (c *InputsImpl) externalapiUpdateContactInputToContactsCore(source external.UpdateContactInput) contacts.Core {
+	var contactsCore contacts.Core
+	contactsCore.FirstName = nilStringPatch(source.FirstName)
+	contactsCore.LastName = nilStringPatch(source.LastName)
+	contactsCore.TimeZone = nilTimeZonePatch(source.TimeZone)
+	contactsCore.Country = nilCountryPatch(source.Country)
+	contactsCore.Locale = nilLocalePatch(source.Locale)
+	contactsCore.City = nilStringPatch(source.City)
+	contactsCore.Avatar = nilImageURLPatch(source.Avatar)
+	contactsCore.Birthday = nilDatePatch(source.Birthday)
+	return contactsCore
+}
+func (c *InputsImpl) externalapiUpsertContactInputToContactsCore(source external.UpsertContactInput) contacts.Core {
+	var contactsCore contacts.Core
+	contactsCore.FirstName = nilStringPatch(source.FirstName)
+	contactsCore.LastName = nilStringPatch(source.LastName)
+	contactsCore.TimeZone = nilTimeZonePatch(source.TimeZone)
+	contactsCore.Country = nilCountryPatch(source.Country)
+	contactsCore.Locale = nilLocalePatch(source.Locale)
+	contactsCore.City = nilStringPatch(source.City)
+	contactsCore.Avatar = nilImageURLPatch(source.Avatar)
+	contactsCore.Birthday = nilDatePatch(source.Birthday)
+	return contactsCore
 }

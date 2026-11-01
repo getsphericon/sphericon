@@ -26,6 +26,11 @@ export const zEmailAddress = z.email().max(320);
 export const zEntityId = z.string().regex(/^[0-9]+$/);
 
 /**
+ * The https URL of an image
+ */
+export const zImageUrl = z.string().max(2048).regex(/^https:\/\/\S+$/);
+
+/**
  * A JSON object whose members the contract leaves open: custom field values, event properties,
  * integration params, an audit diff. One named model, so every surface's Go code has one type for
  * it rather than one per field.
@@ -41,6 +46,11 @@ export const zLegalDocumentLabel = z.string().min(1).max(64);
  * A Legal document's text, in Markdown
  */
 export const zLegalDocumentMarkdown = z.string().max(100000);
+
+/**
+ * A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)
+ */
+export const zLocaleTag = z.string().max(35).regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/);
 
 /**
  * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap

@@ -47,6 +47,9 @@ import (
 // goverter:extend nilEmailPatch
 // goverter:extend nilTimeZonePatch
 // goverter:extend nilCountryPatch
+// goverter:extend nilLocalePatch
+// goverter:extend nilImageURLPatch
+// goverter:extend nilDatePatch
 // goverter:extend nilEntityIDPatch
 // goverter:extend boolPatch
 // goverter:extend maxPerSecondPatch
@@ -58,6 +61,9 @@ import (
 // goverter:extend nilEmailPtrIn
 // goverter:extend nilTimeZonePtrIn
 // goverter:extend nilCountryPtrIn
+// goverter:extend nilLocalePtrIn
+// goverter:extend nilImageURLPtrIn
+// goverter:extend nilDatePtrIn
 // goverter:extend nilEntityIDPtrIn
 // goverter:extend boolIn
 // goverter:extend boolPtrIn
@@ -96,6 +102,7 @@ type Inputs interface {
 	// goverter:map . Attributes
 	ContactCreate(source *siteapi.SiteCreateContactInput) contacts.CreateInput
 	ContactAttributes(source siteapi.SiteCreateContactInput) contacts.Attributes
+	// goverter:map . Core
 	ContactUpdate(source *siteapi.SiteUpdateContactInput) contacts.UpdateInput
 
 	IntegrationCreate(source *siteapi.CreateIntegrationInput) (integrations.CreateInput, error)
@@ -179,6 +186,13 @@ func nilTimeZonePatch(o siteapi.OptNilTimeZoneName) patch.Field[string] {
 func nilCountryPatch(o siteapi.OptNilCountryCode) patch.Field[string] {
 	return convert.StringPatch(o)
 }
+func nilLocalePatch(o siteapi.OptNilLocaleTag) patch.Field[string] {
+	return convert.StringPatch(o)
+}
+func nilImageURLPatch(o siteapi.OptNilImageUrl) patch.Field[string] {
+	return convert.StringPatch(o)
+}
+func nilDatePatch(o siteapi.OptNilDate) patch.Field[time.Time]        { return convert.Patch(o) }
 func nilEntityIDPatch(o siteapi.OptNilEntityId) patch.Field[int64]    { return convert.Int64Patch(o) }
 func boolPatch(o siteapi.OptBool) patch.Field[bool]                   { return convert.Patch(o) }
 func maxPerSecondPatch(o siteapi.OptNilMaxPerSecond) patch.Field[int] { return convert.IntPatch(o) }
@@ -190,6 +204,9 @@ func nilStringPtrIn(o siteapi.OptNilString) *string                   { return c
 func nilEmailPtrIn(o siteapi.OptNilEmailAddress) *string              { return convert.StringPtr(o) }
 func nilTimeZonePtrIn(o siteapi.OptNilTimeZoneName) *string           { return convert.StringPtr(o) }
 func nilCountryPtrIn(o siteapi.OptNilCountryCode) *string             { return convert.StringPtr(o) }
+func nilLocalePtrIn(o siteapi.OptNilLocaleTag) *string                { return convert.StringPtr(o) }
+func nilImageURLPtrIn(o siteapi.OptNilImageUrl) *string               { return convert.StringPtr(o) }
+func nilDatePtrIn(o siteapi.OptNilDate) *time.Time                    { return convert.Ptr(o) }
 func nilEntityIDPtrIn(o siteapi.OptNilEntityId) *int64                { return convert.Int64Ptr(o) }
 func boolIn(o siteapi.OptBool) bool                                   { return o.Or(false) }
 func boolPtrIn(o siteapi.OptBool) *bool                               { return convert.Ptr(o) }

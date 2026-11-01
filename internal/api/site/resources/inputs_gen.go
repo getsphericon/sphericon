@@ -205,6 +205,10 @@ func (c *InputsImpl) ContactAttributes(source site.SiteCreateContactInput) conta
 	contactsAttributes.LastName = nilStringPtrIn(source.LastName)
 	contactsAttributes.TimeZone = nilTimeZonePtrIn(source.TimeZone)
 	contactsAttributes.Country = nilCountryPtrIn(source.Country)
+	contactsAttributes.Locale = nilLocalePtrIn(source.Locale)
+	contactsAttributes.City = nilStringPtrIn(source.City)
+	contactsAttributes.Avatar = nilImageURLPtrIn(source.Avatar)
+	contactsAttributes.Birthday = nilDatePtrIn(source.Birthday)
 	contactsAttributes.CustomFields = nilObjectIn(source.CustomFields)
 	return contactsAttributes
 }
@@ -227,10 +231,7 @@ func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts
 		contactsUpdateInput.SubjectID = nilStringPatch((*source).SubjectId)
 		contactsUpdateInput.Email = nilEmailPatch((*source).Email)
 		contactsUpdateInput.Phone = nilStringPatch((*source).Phone)
-		contactsUpdateInput.FirstName = nilStringPatch((*source).FirstName)
-		contactsUpdateInput.LastName = nilStringPatch((*source).LastName)
-		contactsUpdateInput.TimeZone = nilTimeZonePatch((*source).TimeZone)
-		contactsUpdateInput.Country = nilCountryPatch((*source).Country)
+		contactsUpdateInput.Core = c.siteapiSiteUpdateContactInputToContactsCore((*source))
 		contactsUpdateInput.CustomFields = nilObjectPatch((*source).CustomFields)
 		contactsUpdateInput.Tags = listPatch((*source).Tags)
 	}
@@ -695,4 +696,16 @@ func (c *InputsImpl) siteapiSiteSignupItemAnswerToConsentrecordsAnswer(source si
 	consentrecordsAnswer.Version = string(source.Version)
 	consentrecordsAnswer.Accepted = boolIn(source.Accepted)
 	return consentrecordsAnswer
+}
+func (c *InputsImpl) siteapiSiteUpdateContactInputToContactsCore(source site.SiteUpdateContactInput) contacts.Core {
+	var contactsCore contacts.Core
+	contactsCore.FirstName = nilStringPatch(source.FirstName)
+	contactsCore.LastName = nilStringPatch(source.LastName)
+	contactsCore.TimeZone = nilTimeZonePatch(source.TimeZone)
+	contactsCore.Country = nilCountryPatch(source.Country)
+	contactsCore.Locale = nilLocalePatch(source.Locale)
+	contactsCore.City = nilStringPatch(source.City)
+	contactsCore.Avatar = nilImageURLPatch(source.Avatar)
+	contactsCore.Birthday = nilDatePatch(source.Birthday)
+	return contactsCore
 }

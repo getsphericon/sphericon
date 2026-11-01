@@ -26,6 +26,10 @@
   email: liam.python@codebasics.dev
   first_name: Liam
   last_name: Walker
+  locale: en-US
+  city: New York
+  birthday: '1994-03-14'
+  avatar: https://i.pravatar.cc/150?img=12
   time_zone: America/New_York
   country: US
   custom_fields: '{"plan":"pro","signup_source":"youtube","courses_completed":3,"is_trial":false}'
@@ -36,6 +40,9 @@
   email: emma.sql@codebasics.dev
   first_name: Emma
   last_name: Johnson
+  locale: en-GB
+  city: London
+  birthday: '1998-07-02'
   time_zone: Europe/London
   country: GB
   custom_fields: '{"plan":"team","signup_source":"referral","courses_completed":5,"is_trial":false}'
@@ -46,6 +53,8 @@
   email: noah.js@codebasics.dev
   first_name: Noah
   last_name: Brown
+  locale: de
+  city: Munich
   country: DE
   custom_fields: '{"plan":"free","signup_source":"organic","courses_completed":1,"is_trial":true}'
   workspace_id: 1
@@ -1003,6 +1012,9 @@
   first_name: Anna
   phone: '+1555'
   country: DE
+  locale: de-DE
+  city: Berlin
+  birthday: '1990-05-01'
   workspace_id: 57
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -1017,6 +1029,9 @@
   first_name: Bella
   phone: '+1666'
   country: FR
+  locale: fr
+  city: Paris
+  birthday: '1985-11-20'
   workspace_id: 57
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

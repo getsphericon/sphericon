@@ -194,6 +194,86 @@ func (_u *ContactUpdate) ClearCountry() *ContactUpdate {
 	return _u
 }
 
+// SetLocale sets the "locale" field.
+func (_u *ContactUpdate) SetLocale(v string) *ContactUpdate {
+	_u.mutation.SetLocale(v)
+	return _u
+}
+
+// SetNillableLocale sets the "locale" field if the given value is not nil.
+func (_u *ContactUpdate) SetNillableLocale(v *string) *ContactUpdate {
+	if v != nil {
+		_u.SetLocale(*v)
+	}
+	return _u
+}
+
+// ClearLocale clears the value of the "locale" field.
+func (_u *ContactUpdate) ClearLocale() *ContactUpdate {
+	_u.mutation.ClearLocale()
+	return _u
+}
+
+// SetBirthday sets the "birthday" field.
+func (_u *ContactUpdate) SetBirthday(v time.Time) *ContactUpdate {
+	_u.mutation.SetBirthday(v)
+	return _u
+}
+
+// SetNillableBirthday sets the "birthday" field if the given value is not nil.
+func (_u *ContactUpdate) SetNillableBirthday(v *time.Time) *ContactUpdate {
+	if v != nil {
+		_u.SetBirthday(*v)
+	}
+	return _u
+}
+
+// ClearBirthday clears the value of the "birthday" field.
+func (_u *ContactUpdate) ClearBirthday() *ContactUpdate {
+	_u.mutation.ClearBirthday()
+	return _u
+}
+
+// SetCity sets the "city" field.
+func (_u *ContactUpdate) SetCity(v string) *ContactUpdate {
+	_u.mutation.SetCity(v)
+	return _u
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (_u *ContactUpdate) SetNillableCity(v *string) *ContactUpdate {
+	if v != nil {
+		_u.SetCity(*v)
+	}
+	return _u
+}
+
+// ClearCity clears the value of the "city" field.
+func (_u *ContactUpdate) ClearCity() *ContactUpdate {
+	_u.mutation.ClearCity()
+	return _u
+}
+
+// SetAvatar sets the "avatar" field.
+func (_u *ContactUpdate) SetAvatar(v string) *ContactUpdate {
+	_u.mutation.SetAvatar(v)
+	return _u
+}
+
+// SetNillableAvatar sets the "avatar" field if the given value is not nil.
+func (_u *ContactUpdate) SetNillableAvatar(v *string) *ContactUpdate {
+	if v != nil {
+		_u.SetAvatar(*v)
+	}
+	return _u
+}
+
+// ClearAvatar clears the value of the "avatar" field.
+func (_u *ContactUpdate) ClearAvatar() *ContactUpdate {
+	_u.mutation.ClearAvatar()
+	return _u
+}
+
 // SetCustomFields sets the "custom_fields" field.
 func (_u *ContactUpdate) SetCustomFields(v map[string]interface{}) *ContactUpdate {
 	_u.mutation.SetCustomFields(v)
@@ -472,6 +552,30 @@ func (_u *ContactUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.CountryCleared() {
 		_spec.ClearField(contact.FieldCountry, field.TypeString)
+	}
+	if value, ok := _u.mutation.Locale(); ok {
+		_spec.SetField(contact.FieldLocale, field.TypeString, value)
+	}
+	if _u.mutation.LocaleCleared() {
+		_spec.ClearField(contact.FieldLocale, field.TypeString)
+	}
+	if value, ok := _u.mutation.Birthday(); ok {
+		_spec.SetField(contact.FieldBirthday, field.TypeTime, value)
+	}
+	if _u.mutation.BirthdayCleared() {
+		_spec.ClearField(contact.FieldBirthday, field.TypeTime)
+	}
+	if value, ok := _u.mutation.City(); ok {
+		_spec.SetField(contact.FieldCity, field.TypeString, value)
+	}
+	if _u.mutation.CityCleared() {
+		_spec.ClearField(contact.FieldCity, field.TypeString)
+	}
+	if value, ok := _u.mutation.Avatar(); ok {
+		_spec.SetField(contact.FieldAvatar, field.TypeString, value)
+	}
+	if _u.mutation.AvatarCleared() {
+		_spec.ClearField(contact.FieldAvatar, field.TypeString)
 	}
 	if _u.mutation.SourceCleared() {
 		_spec.ClearField(contact.FieldSource, field.TypeEnum)
@@ -873,6 +977,86 @@ func (_u *ContactUpdateOne) ClearCountry() *ContactUpdateOne {
 	return _u
 }
 
+// SetLocale sets the "locale" field.
+func (_u *ContactUpdateOne) SetLocale(v string) *ContactUpdateOne {
+	_u.mutation.SetLocale(v)
+	return _u
+}
+
+// SetNillableLocale sets the "locale" field if the given value is not nil.
+func (_u *ContactUpdateOne) SetNillableLocale(v *string) *ContactUpdateOne {
+	if v != nil {
+		_u.SetLocale(*v)
+	}
+	return _u
+}
+
+// ClearLocale clears the value of the "locale" field.
+func (_u *ContactUpdateOne) ClearLocale() *ContactUpdateOne {
+	_u.mutation.ClearLocale()
+	return _u
+}
+
+// SetBirthday sets the "birthday" field.
+func (_u *ContactUpdateOne) SetBirthday(v time.Time) *ContactUpdateOne {
+	_u.mutation.SetBirthday(v)
+	return _u
+}
+
+// SetNillableBirthday sets the "birthday" field if the given value is not nil.
+func (_u *ContactUpdateOne) SetNillableBirthday(v *time.Time) *ContactUpdateOne {
+	if v != nil {
+		_u.SetBirthday(*v)
+	}
+	return _u
+}
+
+// ClearBirthday clears the value of the "birthday" field.
+func (_u *ContactUpdateOne) ClearBirthday() *ContactUpdateOne {
+	_u.mutation.ClearBirthday()
+	return _u
+}
+
+// SetCity sets the "city" field.
+func (_u *ContactUpdateOne) SetCity(v string) *ContactUpdateOne {
+	_u.mutation.SetCity(v)
+	return _u
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (_u *ContactUpdateOne) SetNillableCity(v *string) *ContactUpdateOne {
+	if v != nil {
+		_u.SetCity(*v)
+	}
+	return _u
+}
+
+// ClearCity clears the value of the "city" field.
+func (_u *ContactUpdateOne) ClearCity() *ContactUpdateOne {
+	_u.mutation.ClearCity()
+	return _u
+}
+
+// SetAvatar sets the "avatar" field.
+func (_u *ContactUpdateOne) SetAvatar(v string) *ContactUpdateOne {
+	_u.mutation.SetAvatar(v)
+	return _u
+}
+
+// SetNillableAvatar sets the "avatar" field if the given value is not nil.
+func (_u *ContactUpdateOne) SetNillableAvatar(v *string) *ContactUpdateOne {
+	if v != nil {
+		_u.SetAvatar(*v)
+	}
+	return _u
+}
+
+// ClearAvatar clears the value of the "avatar" field.
+func (_u *ContactUpdateOne) ClearAvatar() *ContactUpdateOne {
+	_u.mutation.ClearAvatar()
+	return _u
+}
+
 // SetCustomFields sets the "custom_fields" field.
 func (_u *ContactUpdateOne) SetCustomFields(v map[string]interface{}) *ContactUpdateOne {
 	_u.mutation.SetCustomFields(v)
@@ -1181,6 +1365,30 @@ func (_u *ContactUpdateOne) sqlSave(ctx context.Context) (_node *Contact, err er
 	}
 	if _u.mutation.CountryCleared() {
 		_spec.ClearField(contact.FieldCountry, field.TypeString)
+	}
+	if value, ok := _u.mutation.Locale(); ok {
+		_spec.SetField(contact.FieldLocale, field.TypeString, value)
+	}
+	if _u.mutation.LocaleCleared() {
+		_spec.ClearField(contact.FieldLocale, field.TypeString)
+	}
+	if value, ok := _u.mutation.Birthday(); ok {
+		_spec.SetField(contact.FieldBirthday, field.TypeTime, value)
+	}
+	if _u.mutation.BirthdayCleared() {
+		_spec.ClearField(contact.FieldBirthday, field.TypeTime)
+	}
+	if value, ok := _u.mutation.City(); ok {
+		_spec.SetField(contact.FieldCity, field.TypeString, value)
+	}
+	if _u.mutation.CityCleared() {
+		_spec.ClearField(contact.FieldCity, field.TypeString)
+	}
+	if value, ok := _u.mutation.Avatar(); ok {
+		_spec.SetField(contact.FieldAvatar, field.TypeString, value)
+	}
+	if _u.mutation.AvatarCleared() {
+		_spec.ClearField(contact.FieldAvatar, field.TypeString)
 	}
 	if _u.mutation.SourceCleared() {
 		_spec.ClearField(contact.FieldSource, field.TypeEnum)

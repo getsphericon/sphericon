@@ -128,6 +128,18 @@ var textFields = map[string]textField{
 	"last_name":  {contact.LastNameEQ, contact.LastNameNEQ, contact.LastNameContainsFold, contact.LastNameHasPrefix, contact.LastNameIsNil(), contact.LastNameNotNil()},
 	"time_zone":  {contact.TimeZoneEQ, contact.TimeZoneNEQ, contact.TimeZoneContainsFold, contact.TimeZoneHasPrefix, contact.TimeZoneIsNil(), contact.TimeZoneNotNil()},
 	"country":    {contact.CountryEQ, contact.CountryNEQ, contact.CountryContainsFold, contact.CountryHasPrefix, contact.CountryIsNil(), contact.CountryNotNil()},
+	"locale":     {contact.LocaleEQ, contact.LocaleNEQ, contact.LocaleContainsFold, contact.LocaleHasPrefix, contact.LocaleIsNil(), contact.LocaleNotNil()},
+	"city":       {contact.CityEQ, contact.CityNEQ, contact.CityContainsFold, contact.CityHasPrefix, contact.CityIsNil(), contact.CityNotNil()},
+}
+
+// birthdayField is the one core attribute a date leaf tests: the Contact's date of birth, a
+// column, so a leaf of it is a column predicate rather than a jsonpath of the Custom fields.
+const birthdayField = "birthday"
+
+// birthdaySides is the predicate of each side of a date leaf on the birthday.
+var birthdaySides = map[operator]func(time.Time) predicate.Contact{
+	opBefore: contact.BirthdayLT,
+	opAfter:  contact.BirthdayGTE,
 }
 
 // Parse decodes a stored condition into a Group. A blank condition is a valid
@@ -347,11 +359,15 @@ func (c *compiler) number(ctx context.Context, l NumberLeaf) (predicate.Contact,
 	}
 }
 
-// date tests which side of the leaf's moment a datetime Custom field's moment is on.
+// date tests which side of the leaf's moment a datetime Custom field's moment, or the birthday,
+// is on.
 func (c *compiler) date(ctx context.Context, l DateLeaf) (predicate.Contact, error) {
 	filter, ok := sides[operator(l.Operator)]
 	if !ok {
 		return nil, fmt.Errorf("unsupported operator %q for date leaf", l.Operator)
+	}
+	if l.Field == birthdayField {
+		return birthdaySides[operator(l.Operator)](l.At.UTC()), nil
 	}
 	key, err := c.datetimeField(ctx, l.Field)
 	if err != nil {
@@ -367,13 +383,16 @@ func (c *compiler) dateWithin(ctx context.Context, l DateWithinLeaf) (predicate.
 	if l.WithinDays < 1 {
 		return nil, fmt.Errorf("date leaf withinDays must be 1 or more, got %d", l.WithinDays)
 	}
-	key, err := c.datetimeField(ctx, l.Field)
-	if err != nil {
-		return nil, err
-	}
 	since := c.now.AddDate(0, 0, -l.WithinDays)
 	if since.Year() < 1 {
 		since = time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)
+	}
+	if l.Field == birthdayField {
+		return contact.And(contact.BirthdayGTE(since.UTC()), contact.BirthdayLTE(c.now.UTC())), nil
+	}
+	key, err := c.datetimeField(ctx, l.Field)
+	if err != nil {
+		return nil, err
 	}
 	return jsonPath(key, asMoment, window, map[string]any{
 		"since": since.UTC().Format(momentLayout), "now": c.now.UTC().Format(momentLayout),

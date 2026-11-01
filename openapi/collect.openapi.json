@@ -332,6 +332,24 @@
           }
         }
       },
+      "CollectIdentifyContext": {
+        "type": "object",
+        "properties": {
+          "timeZone": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 64,
+            "description": "The browser's IANA time zone"
+          },
+          "locale": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 35,
+            "description": "The browser's language, a BCP 47 tag"
+          }
+        },
+        "description": "The browser's own settings, sent by the tracker with an identify"
+      },
       "CollectIdentifyInput": {
         "type": "object",
         "required": ["visitorId"],
@@ -367,7 +385,18 @@
                 "$ref": "#/components/schemas/JsonObject"
               }
             ],
-            "nullable": true
+            "nullable": true,
+            "description": "Attributes of the contact; a trait named after a core attribute (`firstName`, `timeZone`,\n`country`, `locale`, `birthday`, `city`, `avatar`) writes it, null clears it, and an invalid\nvalue of one is dropped"
+          },
+          "context": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CollectIdentifyContext"
+              }
+            ],
+            "nullable": true,
+            "description": "What the browser tells of the visitor: it fills only a time zone or locale the contact has\nnone of"
           }
         }
       },
@@ -431,6 +460,12 @@
           }
         },
         "description": "RFC 7807 gone response: the resource existed but is no longer available (an expired link)"
+      },
+      "ImageUrl": {
+        "type": "string",
+        "maxLength": 2048,
+        "pattern": "^https://\\S+$",
+        "description": "The https URL of an image"
       },
       "InUseProblem": {
         "type": "object",
@@ -523,6 +558,12 @@
         "type": "object",
         "additionalProperties": {},
         "description": "A JSON object whose members the contract leaves open: custom field values, event properties,\nintegration params, an audit diff. One named model, so every surface's Go code has one type for\nit rather than one per field."
+      },
+      "LocaleTag": {
+        "type": "string",
+        "maxLength": 35,
+        "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
+        "description": "A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)"
       },
       "NotFoundProblem": {
         "type": "object",

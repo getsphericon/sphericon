@@ -30,6 +30,7 @@ import {
   siteEventsListOptions,
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteContactResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useContactExport } from '../../hooks/useContactExport.ts'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
@@ -40,6 +41,7 @@ import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/con
 import { withPage } from '../../searchSchemas.ts'
 import { contactFullName, contactName } from '../../utils/contactName.ts'
 import { countryName } from '../../utils/countries.ts'
+import { formatLongDate } from '../../utils/datetime.ts'
 import { can } from '../../utils/permissions.ts'
 
 const EVENTS_PAGE_SIZE = 10
@@ -205,8 +207,36 @@ function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contac
   )
 }
 
-export function ContactDetailPage() {
+// The core attributes of the Contact, each in a card; an attribute it has none of shows a dash.
+function ContactDetails({ contact }: { contact: SiteContactResource }) {
   const { formatDateTime } = useDateFormat()
+  const { t } = useTranslation()
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+      <Field label={t(($) => $.table.email)} value={contact.email ?? ''} />
+      <Field label={t(($) => $.table.subjectId)} value={contact.subjectId ?? ''} />
+      <Field label={t(($) => $.table.phone)} value={contact.phone ?? ''} />
+      <Field label={t(($) => $.table.firstName)} value={contact.firstName ?? ''} />
+      <Field label={t(($) => $.table.lastName)} value={contact.lastName ?? ''} />
+      <Field label={t(($) => $.table.timeZone)} value={contact.timeZone ?? ''} />
+      <Field
+        label={t(($) => $.table.country)}
+        value={contact.country ? countryName(contact.country) : ''}
+        icon={contact.country ? <CountryFlag code={contact.country} /> : null}
+      />
+      <Field label={t(($) => $.table.city)} value={contact.city ?? ''} />
+      <Field label={t(($) => $.table.locale)} value={contact.locale ?? ''} />
+      <Field
+        label={t(($) => $.table.birthday)}
+        value={contact.birthday ? formatLongDate(contact.birthday) : ''}
+      />
+      <Field label={t(($) => $.activity.createdAt)} value={formatDateTime(contact.createdAt)} />
+      <Field label={t(($) => $.contacts.updatedAt)} value={formatDateTime(contact.updatedAt)} />
+    </SimpleGrid>
+  )
+}
+
+export function ContactDetailPage() {
   const { t } = useTranslation()
   const { workspaceId, contactId } = contactsDetailRoute.useParams()
   const contactQuery = useQuery(siteContactsGetOptions({ path: { workspaceId, id: contactId } }))
@@ -230,7 +260,13 @@ export function ContactDetailPage() {
     <Stack>
       <Group justify="space-between" align="flex-start" wrap="wrap">
         <Group gap="md" wrap="nowrap">
-          <Avatar size="lg" color="initials" name={contactName(contact)} />
+          <Avatar
+            size="lg"
+            color="initials"
+            name={contactName(contact)}
+            src={contact.avatar ?? null}
+            alt={contactName(contact)}
+          />
           <Stack gap={4}>
             <Title order={4}>{contact.email ?? contact.subjectId ?? contact.phone ?? '—'}</Title>
             {fullName ? <Text c="dimmed">{fullName}</Text> : null}
@@ -240,21 +276,7 @@ export function ContactDetailPage() {
       </Group>
 
       <Title order={5}>{t(($) => $.contacts.detailsTitle)}</Title>
-      <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
-        <Field label={t(($) => $.table.email)} value={contact.email ?? ''} />
-        <Field label={t(($) => $.table.subjectId)} value={contact.subjectId ?? ''} />
-        <Field label={t(($) => $.table.phone)} value={contact.phone ?? ''} />
-        <Field label={t(($) => $.table.firstName)} value={contact.firstName ?? ''} />
-        <Field label={t(($) => $.table.lastName)} value={contact.lastName ?? ''} />
-        <Field label={t(($) => $.table.timeZone)} value={contact.timeZone ?? ''} />
-        <Field
-          label={t(($) => $.table.country)}
-          value={contact.country ? countryName(contact.country) : ''}
-          icon={contact.country ? <CountryFlag code={contact.country} /> : null}
-        />
-        <Field label={t(($) => $.activity.createdAt)} value={formatDateTime(contact.createdAt)} />
-        <Field label={t(($) => $.contacts.updatedAt)} value={formatDateTime(contact.updatedAt)} />
-      </SimpleGrid>
+      <ContactDetails contact={contact} />
 
       {contact.tags.length > 0 ? (
         <>

@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -21,9 +22,9 @@ func TestACreatedContactKeepsTheDoorItCameThrough(t *testing.T) {
 
 	byHand, err := m.Create(context.Background(), acme, contact.SourceManual, contacts.CreateInput{Email: new("door-hand@example.com")})
 	require.NoError(t, err)
-	viaAPI, err := m.Upsert(context.Background(), acme, contact.SourceAPI, contacts.Attributes{Email: new("door-api@example.com")})
+	viaAPI, err := m.Upsert(context.Background(), acme, contact.SourceAPI, contacts.UpsertInput{Email: new("door-api@example.com")})
 	require.NoError(t, err)
-	batch := m.UpsertBatch(context.Background(), acme, contact.SourceAPI, []contacts.Attributes{{Email: new("door-batch@example.com")}})
+	batch := m.UpsertBatch(context.Background(), acme, contact.SourceAPI, []contacts.UpsertInput{{Email: new("door-batch@example.com")}})
 	require.NoError(t, batch[0].Err)
 
 	assert.Equal(t, contact.SourceManual, lo.FromPtr(byHand.Source))
@@ -38,7 +39,7 @@ func TestALaterUpsertLeavesTheSourceUnchanged(t *testing.T) {
 
 	created, err := m.Create(context.Background(), acme, contact.SourceManual, contacts.CreateInput{Email: new("same-person@example.com")})
 	require.NoError(t, err)
-	again, err := m.Upsert(context.Background(), acme, contact.SourceTracker, contacts.Attributes{Email: new("same-person@example.com"), FirstName: new("Sam")})
+	again, err := m.Upsert(context.Background(), acme, contact.SourceTracker, contacts.UpsertInput{Email: new("same-person@example.com"), FirstName: patch.Set("Sam")})
 	require.NoError(t, err)
 
 	assert.False(t, again.Created)

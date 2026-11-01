@@ -162,6 +162,35 @@ func (s *CollectEventsInput) SetEvents(val []CollectEventInput) {
 	s.Events = val
 }
 
+// The browser's own settings, sent by the tracker with an identify.
+// Ref: #/components/schemas/CollectIdentifyContext
+type CollectIdentifyContext struct {
+	// The browser's IANA time zone.
+	TimeZone OptNilString `json:"timeZone"`
+	// The browser's language, a BCP 47 tag.
+	Locale OptNilString `json:"locale"`
+}
+
+// GetTimeZone returns the value of TimeZone.
+func (s *CollectIdentifyContext) GetTimeZone() OptNilString {
+	return s.TimeZone
+}
+
+// GetLocale returns the value of Locale.
+func (s *CollectIdentifyContext) GetLocale() OptNilString {
+	return s.Locale
+}
+
+// SetTimeZone sets the value of TimeZone.
+func (s *CollectIdentifyContext) SetTimeZone(val OptNilString) {
+	s.TimeZone = val
+}
+
+// SetLocale sets the value of Locale.
+func (s *CollectIdentifyContext) SetLocale(val OptNilString) {
+	s.Locale = val
+}
+
 type CollectIdentifyCreateBadRequest ProblemDetails
 
 func (*CollectIdentifyCreateBadRequest) collectIdentifyCreateRes() {}
@@ -184,7 +213,12 @@ type CollectIdentifyInput struct {
 	Email     OptNilEmailAddress `json:"email"`
 	Phone     OptNilString       `json:"phone"`
 	SubjectId OptNilString       `json:"subjectId"`
-	Traits    OptNilJsonObject   `json:"traits"`
+	// Attributes of the contact; a trait named after a core attribute (`firstName`, `timeZone`, `country`,
+	// `locale`, `birthday`, `city`, `avatar`) writes it, null clears it, and an invalid value of one is
+	// dropped.
+	Traits OptNilJsonObject `json:"traits"`
+	// What the browser tells of the visitor: it fills only a time zone or locale the contact has none of.
+	Context OptNilCollectIdentifyContext `json:"context"`
 }
 
 // GetVisitorId returns the value of VisitorId.
@@ -212,6 +246,11 @@ func (s *CollectIdentifyInput) GetTraits() OptNilJsonObject {
 	return s.Traits
 }
 
+// GetContext returns the value of Context.
+func (s *CollectIdentifyInput) GetContext() OptNilCollectIdentifyContext {
+	return s.Context
+}
+
 // SetVisitorId sets the value of VisitorId.
 func (s *CollectIdentifyInput) SetVisitorId(val string) {
 	s.VisitorId = val
@@ -235,6 +274,11 @@ func (s *CollectIdentifyInput) SetSubjectId(val OptNilString) {
 // SetTraits sets the value of Traits.
 func (s *CollectIdentifyInput) SetTraits(val OptNilJsonObject) {
 	s.Traits = val
+}
+
+// SetContext sets the value of Context.
+func (s *CollectIdentifyInput) SetContext(val OptNilCollectIdentifyContext) {
+	s.Context = val
 }
 
 // Ref: #/components/schemas/CollectOkResponse
@@ -324,6 +368,74 @@ func (o OptInt32) Get() (v int32, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptInt32) Or(d int32) int32 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilCollectIdentifyContext returns new OptNilCollectIdentifyContext with value set to v.
+func NewOptNilCollectIdentifyContext(v CollectIdentifyContext) OptNilCollectIdentifyContext {
+	return OptNilCollectIdentifyContext{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilCollectIdentifyContext is optional nullable CollectIdentifyContext.
+type OptNilCollectIdentifyContext struct {
+	Value CollectIdentifyContext
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilCollectIdentifyContext was set.
+func (o OptNilCollectIdentifyContext) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilCollectIdentifyContext) Reset() {
+	var v CollectIdentifyContext
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilCollectIdentifyContext) SetTo(v CollectIdentifyContext) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilCollectIdentifyContext) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilCollectIdentifyContext) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v CollectIdentifyContext
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilCollectIdentifyContext) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilCollectIdentifyContext) Get() (v CollectIdentifyContext, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilCollectIdentifyContext) Or(d CollectIdentifyContext) CollectIdentifyContext {
 	if v, ok := o.Get(); ok {
 		return v
 	}

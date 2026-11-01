@@ -39,6 +39,14 @@ type Contact struct {
 	TimeZone *string `json:"time_zone,omitempty"`
 	// Country holds the value of the "country" field.
 	Country *string `json:"country,omitempty"`
+	// Locale holds the value of the "locale" field.
+	Locale *string `json:"locale,omitempty"`
+	// Birthday holds the value of the "birthday" field.
+	Birthday *time.Time `json:"birthday,omitempty"`
+	// City holds the value of the "city" field.
+	City *string `json:"city,omitempty"`
+	// Avatar holds the value of the "avatar" field.
+	Avatar *string `json:"avatar,omitempty"`
 	// Source holds the value of the "source" field.
 	Source *contact.Source `json:"source,omitempty"`
 	// CustomFields holds the value of the "custom_fields" field.
@@ -133,9 +141,9 @@ func (*Contact) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case contact.FieldID, contact.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case contact.FieldSubjectID, contact.FieldEmail, contact.FieldPhone, contact.FieldFirstName, contact.FieldLastName, contact.FieldTimeZone, contact.FieldCountry, contact.FieldSource:
+		case contact.FieldSubjectID, contact.FieldEmail, contact.FieldPhone, contact.FieldFirstName, contact.FieldLastName, contact.FieldTimeZone, contact.FieldCountry, contact.FieldLocale, contact.FieldCity, contact.FieldAvatar, contact.FieldSource:
 			values[i] = new(sql.NullString)
-		case contact.FieldCreatedAt, contact.FieldUpdatedAt:
+		case contact.FieldCreatedAt, contact.FieldUpdatedAt, contact.FieldBirthday:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -224,6 +232,34 @@ func (_m *Contact) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Country = new(string)
 				*_m.Country = value.String
+			}
+		case contact.FieldLocale:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field locale", values[i])
+			} else if value.Valid {
+				_m.Locale = new(string)
+				*_m.Locale = value.String
+			}
+		case contact.FieldBirthday:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field birthday", values[i])
+			} else if value.Valid {
+				_m.Birthday = new(time.Time)
+				*_m.Birthday = value.Time
+			}
+		case contact.FieldCity:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field city", values[i])
+			} else if value.Valid {
+				_m.City = new(string)
+				*_m.City = value.String
+			}
+		case contact.FieldAvatar:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field avatar", values[i])
+			} else if value.Valid {
+				_m.Avatar = new(string)
+				*_m.Avatar = value.String
 			}
 		case contact.FieldSource:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -347,6 +383,26 @@ func (_m *Contact) String() string {
 	builder.WriteString(", ")
 	if v := _m.Country; v != nil {
 		builder.WriteString("country=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.Locale; v != nil {
+		builder.WriteString("locale=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.Birthday; v != nil {
+		builder.WriteString("birthday=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.City; v != nil {
+		builder.WriteString("city=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.Avatar; v != nil {
+		builder.WriteString("avatar=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")

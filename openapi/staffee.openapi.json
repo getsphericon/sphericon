@@ -819,6 +819,12 @@
         },
         "description": "RFC 7807 gone response: the resource existed but is no longer available (an expired link)"
       },
+      "ImageUrl": {
+        "type": "string",
+        "maxLength": 2048,
+        "pattern": "^https://\\S+$",
+        "description": "The https URL of an image"
+      },
       "InUseProblem": {
         "type": "object",
         "required": ["body"],
@@ -910,6 +916,12 @@
         "type": "object",
         "additionalProperties": {},
         "description": "A JSON object whose members the contract leaves open: custom field values, event properties,\nintegration params, an audit diff. One named model, so every surface's Go code has one type for\nit rather than one per field."
+      },
+      "LocaleTag": {
+        "type": "string",
+        "maxLength": 35,
+        "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
+        "description": "A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)"
       },
       "MaxPerDay": {
         "type": "integer",

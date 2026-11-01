@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
@@ -52,6 +53,22 @@ func (Contact) Fields() []ent.Field {
 			Nillable(),
 		// The ISO 3166-1 alpha-2 code of the Contact's country, upper case.
 		field.String("country").
+			Optional().
+			Nillable(),
+		// The Contact locale: a canonical BCP 47 tag (`de`, `pt-BR`).
+		field.String("locale").
+			Optional().
+			Nillable(),
+		// The date of birth, a calendar date with no time or zone.
+		field.Time("birthday").
+			SchemaType(map[string]string{dialect.Postgres: "date"}).
+			Optional().
+			Nillable(),
+		field.String("city").
+			Optional().
+			Nillable(),
+		// The https URL of the Contact's photo.
+		field.String("avatar").
 			Optional().
 			Nillable(),
 		// How the Contact first came to exist (GLOSSARY: Contact source). Set once at

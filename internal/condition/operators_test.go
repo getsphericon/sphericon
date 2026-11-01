@@ -32,6 +32,8 @@ func TestPlainColumnOperators(t *testing.T) {
 		"not null":    {rule("phone", "notNull", ""), []string{anna, bella}},
 		"country":     {rule("country", "eq", "DE"), []string{anna}},
 		"no country":  {rule("country", "null", ""), []string{andy}},
+		"city":        {rule("city", "eq", "Berlin"), []string{anna}},
+		"locale":      {rule("locale", "beginsWith", "fr"), []string{bella}},
 	} {
 		assert.Equal(t, tc.want, emailsIn(t, env, fixtures.OscorpID, opsGroup(tc.rule)), name)
 	}

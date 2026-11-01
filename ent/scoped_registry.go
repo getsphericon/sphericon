@@ -813,6 +813,18 @@ func ScopedEntities() []ScopedEntity {
 				if src.Country != nil {
 					b.SetCountry(*src.Country)
 				}
+				if src.Locale != nil {
+					b.SetLocale(*src.Locale)
+				}
+				if src.Birthday != nil {
+					b.SetBirthday(*src.Birthday)
+				}
+				if src.City != nil {
+					b.SetCity(*src.City)
+				}
+				if src.Avatar != nil {
+					b.SetAvatar(*src.Avatar)
+				}
 				if src.Source != nil {
 					b.SetSource(*src.Source)
 				}

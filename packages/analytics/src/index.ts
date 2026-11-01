@@ -26,8 +26,8 @@ export interface TrackerConfig {
 }
 
 // Public payload shapes are derived from the generated collect contract;
-// visitorId is supplied internally, so consumers never pass it.
-type IdentifyInput = Omit<CollectIdentifyInput, 'visitorId'>
+// visitorId and the browser's context are supplied internally, so consumers never pass them.
+type IdentifyInput = Omit<CollectIdentifyInput, 'visitorId' | 'context'>
 type EventProperties = CollectEventInput['properties']
 
 type QueueCommand =
@@ -241,8 +241,17 @@ export async function identify(payload: IdentifyInput): Promise<void> {
       phone: payload.phone ?? null,
       subjectId: payload.subjectId ?? null,
       traits: payload.traits ?? null,
+      context: browserContext(),
     },
   }).catch(() => undefined)
+}
+
+// The browser's time zone and language: guesses the server uses only for a Contact that has none.
+function browserContext(): NonNullable<CollectIdentifyInput['context']> {
+  return {
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+    locale: navigator.language || null,
+  }
 }
 
 export function track(action: string, properties?: EventProperties): void {

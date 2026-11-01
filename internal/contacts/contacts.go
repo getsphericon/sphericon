@@ -20,6 +20,7 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -66,15 +67,24 @@ var taken = []struct {
 	err   error
 }{{FieldSubjectID, ErrSubjectIDTaken}, {FieldPhone, ErrPhoneTaken}, {FieldEmail, ErrEmailTaken}}
 
-// Attributes are the writable attributes of a new or upserted Contact. A nil pointer (or nil
-// CustomFields) means "not given": the Contact has none.
+// Attributes are the writable attributes of a new Contact. A nil pointer (or nil CustomFields)
+// means "not given": the Contact has none.
 type Attributes struct {
 	SubjectID, Email, Phone       *string
 	FirstName, LastName, TimeZone *string
-	// Country is an ISO 3166-1 alpha-2 code, upper case (the contract's pattern).
-	Country *string
+	// Country is an ISO 3166-1 alpha-2 code and Locale a BCP 47 tag, both stored canonical.
+	Country, Locale, City, Avatar *string
+	Birthday                      *time.Time
 	// CustomFields are declared by use (ADR 0006) and stored typed.
 	CustomFields map[string]any
+}
+
+// Core is a patch of a Contact's core attributes (ADR 0072): a field that keeps leaves the stored
+// value, a clear drops it, a set replaces it.
+type Core struct {
+	FirstName, LastName, TimeZone patch.Field[string]
+	Country, Locale, City, Avatar patch.Field[string]
+	Birthday                      patch.Field[time.Time]
 }
 
 // CreateInput is a new Contact: its Attributes and the Tags it is given, created on first use.
@@ -89,11 +99,23 @@ type CreateInput struct {
 // is valid; an alias key set blank keeps the stored one. A set CustomFields replaces the stored
 // set, and set Tags become the Contact's complete tag set.
 type UpdateInput struct {
-	SubjectID, Email, Phone       patch.Field[string]
-	FirstName, LastName, TimeZone patch.Field[string]
-	Country                       patch.Field[string]
-	CustomFields                  patch.Field[map[string]any]
-	Tags                          patch.Field[[]string]
+	Core
+
+	SubjectID, Email, Phone patch.Field[string]
+	CustomFields            patch.Field[map[string]any]
+	Tags                    patch.Field[[]string]
+}
+
+// UpsertInput is a Contact asserted by the external API's upsert or the tracker's Identify (ADR
+// 0072). Its alias keys resolve the Contact and fill only those it has none of (ADR 0002), its Core
+// overwrites, and its CustomFields merge into the stored set. The guesses are the browser's time
+// zone and language: they set an attribute only while the Contact has none and the Core leaves it.
+type UpsertInput struct {
+	Core
+
+	SubjectID, Email, Phone        *string
+	GuessedTimeZone, GuessedLocale *string
+	CustomFields                   map[string]any
 }
 
 // Result is the outcome of an Upsert.
@@ -130,6 +152,10 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 			SetNillableLastName(attrs.LastName).
 			SetNillableTimeZone(attrs.TimeZone).
 			SetNillableCountry(attrs.Country).
+			SetNillableLocale(attrs.Locale).
+			SetNillableBirthday(attrs.Birthday).
+			SetNillableCity(attrs.City).
+			SetNillableAvatar(attrs.Avatar).
 			SetSource(src)
 		if len(typed) > 0 {
 			q = q.SetCustomFields(typed)
@@ -161,10 +187,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		patch.Apply(in.SubjectID, q.SetSubjectID, q.ClearSubjectID)
 		patch.Apply(in.Email, q.SetEmail, q.ClearEmail)
 		patch.Apply(in.Phone, q.SetPhone, q.ClearPhone)
-		patch.Apply(in.FirstName, q.SetFirstName, q.ClearFirstName)
-		patch.Apply(in.LastName, q.SetLastName, q.ClearLastName)
-		patch.Apply(in.TimeZone, q.SetTimeZone, q.ClearTimeZone)
-		patch.Apply(in.Country, q.SetCountry, q.ClearCountry)
+		applyCore(q, in.Core)
 		if fields, ok := in.CustomFields.Get(); ok {
 			typed, err := EnsureCustomFields(ctx, ts, fields)
 			if err != nil {
@@ -191,15 +214,15 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 }
 
 // Upsert resolves the Contact by any present alias key (subject_id, email, phone)
-// or creates one. An existing Contact is only enriched: missing attributes are
-// filled and Custom fields merged, never overwritten (identity is additive), and its
-// Contact source stays what it was: src only names the door of a Contact this call
-// creates. ErrIdentityRequired when no alias key is given.
-func (m *Module) Upsert(ctx context.Context, s *ent.Scoped, src contact.Source, attrs Attributes) (Result, error) {
+// or creates one. On an existing Contact a missing alias key is filled (identity is
+// additive), the core attributes given overwrite and null clears them (ADR 0072), the
+// Custom fields merge, and its Contact source stays what it was: src only names the door
+// of a Contact this call creates. ErrIdentityRequired when no alias key is given.
+func (m *Module) Upsert(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput) (Result, error) {
 	var res Result
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		var err error
-		res, err = UpsertIn(ctx, ts, pub, src, attrs)
+		res, err = UpsertIn(ctx, ts, pub, src, in)
 		return err
 	})
 	if err != nil {
@@ -225,12 +248,12 @@ type BatchOutcome struct {
 // the entry cannot share their transaction: if recording it fails the failure is
 // logged and the committed outcomes are still returned, never a 500 for an import
 // that happened.
-func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Source, items []Attributes) []BatchOutcome {
+func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Source, items []UpsertInput) []BatchOutcome {
 	rows := events.Unaudited(s)
 	out := make([]BatchOutcome, len(items))
 	var sum ImportSummary
-	for i, attrs := range items {
-		out[i].Result, out[i].Err = m.Upsert(ctx, rows, src, attrs)
+	for i := range items {
+		out[i].Result, out[i].Err = m.Upsert(ctx, rows, src, items[i])
 		switch {
 		case out[i].Err != nil:
 			sum.Failed++
@@ -281,29 +304,26 @@ func fillMissing(have, given *string, set func(*string) *ent.ContactScopedUpdate
 // UpsertIn is Upsert inside a transaction the caller already owns (tx and pub come
 // from events.Bus.WithinScopedTx), for flows that bind more rows to the Contact atomically
 // — the tracker's Identify. It publishes contact.created when it creates.
-func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src contact.Source, attrs Attributes) (Result, error) {
-	attrs = attrs.normalized()
-	if lo.FromPtr(attrs.SubjectID) == "" && attrs.Email == nil && attrs.Phone == nil {
+func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src contact.Source, in UpsertInput) (Result, error) {
+	in = in.normalized()
+	if lo.FromPtr(in.SubjectID) == "" && in.Email == nil && in.Phone == nil {
 		return Result{}, ErrIdentityRequired
 	}
-	typed, err := EnsureCustomFields(ctx, s, attrs.CustomFields)
+	typed, err := EnsureCustomFields(ctx, s, in.CustomFields)
 	if err != nil {
 		return Result{}, err
 	}
 
-	existing, err := Resolve(ctx, s, attrs.SubjectID, attrs.Email, attrs.Phone)
+	existing, err := Resolve(ctx, s, in.SubjectID, in.Email, in.Phone)
 	if err != nil {
 		return Result{}, err
 	}
 	if existing != nil {
 		q := s.Contact().UpdateOneID(existing.ID)
-		fillMissing(existing.SubjectID, attrs.SubjectID, q.SetNillableSubjectID)
-		fillMissing(existing.Email, attrs.Email, q.SetNillableEmail)
-		fillMissing(existing.Phone, attrs.Phone, q.SetNillablePhone)
-		fillMissing(existing.FirstName, attrs.FirstName, q.SetNillableFirstName)
-		fillMissing(existing.LastName, attrs.LastName, q.SetNillableLastName)
-		fillMissing(existing.TimeZone, attrs.TimeZone, q.SetNillableTimeZone)
-		fillMissing(existing.Country, attrs.Country, q.SetNillableCountry)
+		fillMissing(existing.SubjectID, in.SubjectID, q.SetNillableSubjectID)
+		fillMissing(existing.Email, in.Email, q.SetNillableEmail)
+		fillMissing(existing.Phone, in.Phone, q.SetNillablePhone)
+		applyCore(q, in.withGuesses(existing.TimeZone, existing.Locale))
 		if len(typed) > 0 {
 			q.SetCustomFields(lo.Assign(existing.CustomFields, typed))
 		}
@@ -312,14 +332,11 @@ func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 	}
 
 	q := s.Contact().Create().
-		SetNillableSubjectID(attrs.SubjectID).
-		SetNillableEmail(attrs.Email).
-		SetNillablePhone(attrs.Phone).
-		SetNillableFirstName(attrs.FirstName).
-		SetNillableLastName(attrs.LastName).
-		SetNillableTimeZone(attrs.TimeZone).
-		SetNillableCountry(attrs.Country).
+		SetNillableSubjectID(in.SubjectID).
+		SetNillableEmail(in.Email).
+		SetNillablePhone(in.Phone).
 		SetSource(src)
+	createCore(q, in.withGuesses(nil, nil))
 	if len(typed) > 0 {
 		q.SetCustomFields(typed)
 	}
@@ -331,6 +348,44 @@ func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 		return Result{}, err
 	}
 	return Result{Contact: c, Created: true}, nil
+}
+
+// withGuesses is the Core with the browser's guesses taking a time zone or locale the Core leaves
+// and the Contact (its stored values given) has none of.
+func (in UpsertInput) withGuesses(timeZone, locale *string) Core {
+	c := in.Core
+	if c.TimeZone.IsKeep() && timeZone == nil && in.GuessedTimeZone != nil {
+		c.TimeZone = patch.Set(*in.GuessedTimeZone)
+	}
+	if c.Locale.IsKeep() && locale == nil && in.GuessedLocale != nil {
+		c.Locale = patch.Set(*in.GuessedLocale)
+	}
+	return c
+}
+
+// applyCore writes a Core patch onto an update of a Contact.
+func applyCore(q *ent.ContactScopedUpdateOne, c Core) {
+	patch.Apply(c.FirstName, q.SetFirstName, q.ClearFirstName)
+	patch.Apply(c.LastName, q.SetLastName, q.ClearLastName)
+	patch.Apply(c.TimeZone, q.SetTimeZone, q.ClearTimeZone)
+	patch.Apply(c.Country, q.SetCountry, q.ClearCountry)
+	patch.Apply(c.Locale, q.SetLocale, q.ClearLocale)
+	patch.Apply(c.City, q.SetCity, q.ClearCity)
+	patch.Apply(c.Avatar, q.SetAvatar, q.ClearAvatar)
+	patch.Apply(c.Birthday, q.SetBirthday, q.ClearBirthday)
+}
+
+// createCore sets the attributes a Core patch sets on a new Contact; a clear of one it never had
+// is nothing.
+func createCore(q *ent.ContactScopedCreate, c Core) {
+	patch.ApplySet(c.FirstName, q.SetFirstName)
+	patch.ApplySet(c.LastName, q.SetLastName)
+	patch.ApplySet(c.TimeZone, q.SetTimeZone)
+	patch.ApplySet(c.Country, q.SetCountry)
+	patch.ApplySet(c.Locale, q.SetLocale)
+	patch.ApplySet(c.City, q.SetCity)
+	patch.ApplySet(c.Avatar, q.SetAvatar)
+	patch.ApplySet(c.Birthday, q.SetBirthday)
 }
 
 // Resolve finds an existing Contact by any present alias key (subject_id → email →
@@ -383,6 +438,16 @@ func (in UpdateInput) normalized() UpdateInput {
 	in.SubjectID = trimmedPatch(in.SubjectID)
 	in.Phone = trimmedPatch(in.Phone)
 	in.Email = patch.Map(trimmedPatch(in.Email), strings.ToLower)
+	in.Core = in.Core.normalized()
+	return in
+}
+
+func (in UpsertInput) normalized() UpsertInput {
+	keys := Attributes{SubjectID: in.SubjectID, Email: in.Email, Phone: in.Phone}.normalized()
+	in.SubjectID, in.Email, in.Phone = keys.SubjectID, keys.Email, keys.Phone
+	in.Core = in.Core.normalized()
+	in.GuessedTimeZone = guess(in.GuessedTimeZone, timeZoneName)
+	in.GuessedLocale = guess(in.GuessedLocale, localeTag)
 	return in
 }
 
@@ -403,6 +468,12 @@ func (a Attributes) normalized() Attributes {
 	a.Phone = trimmed(a.Phone)
 	if a.Email = trimmed(a.Email); a.Email != nil {
 		a.Email = new(strings.ToLower(*a.Email))
+	}
+	if a.Country != nil {
+		a.Country = new(strings.ToUpper(*a.Country))
+	}
+	if a.Locale != nil {
+		a.Locale = new(canonicalLocale(*a.Locale))
 	}
 	return a
 }

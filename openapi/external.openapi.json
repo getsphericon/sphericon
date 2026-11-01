@@ -15533,7 +15533,7 @@
           },
           "field": {
             "type": "string",
-            "description": "What it tests: \"custom:<key>\" for a datetime custom field"
+            "description": "What it tests: \"birthday\" or \"custom:<key>\" for a datetime custom field"
           },
           "operator": {
             "allOf": [
@@ -15569,7 +15569,7 @@
           },
           "field": {
             "type": "string",
-            "description": "What it tests: \"custom:<key>\" for a datetime custom field"
+            "description": "What it tests: \"birthday\" or \"custom:<key>\" for a datetime custom field"
           },
           "withinDays": {
             "type": "integer",
@@ -15660,7 +15660,7 @@
           },
           "field": {
             "type": "string",
-            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone, country), \"tag\", \"custom:<key>\" for a custom field of the workspace, or\n\"trigger:<key>\" (a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the\ntext operators, and is false when the Event lacks the key or holds a value that is not text; a\nnumber property is compared by a number leaf)"
+            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone, country, locale, city), \"tag\", \"custom:<key>\" for a custom field of the workspace,\nor \"trigger:<key>\" (a property of the Event that fired a rule: valid only in a rule, refused in\na segment, takes the text operators, and is false when the Event lacks the key or holds a value\nthat is not text; a number property is compared by a number leaf)"
           },
           "operator": {
             "allOf": [
@@ -15929,6 +15929,27 @@
             "type": "string",
             "nullable": true,
             "description": "ISO 3166-1 alpha-2 country code"
+          },
+          "locale": {
+            "type": "string",
+            "nullable": true,
+            "description": "BCP 47 language tag"
+          },
+          "birthday": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Date of birth"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "description": "City"
+          },
+          "avatar": {
+            "type": "string",
+            "nullable": true,
+            "description": "https URL of the contact's photo"
           },
           "customFields": {
             "type": "object",
@@ -16489,6 +16510,38 @@
             "nullable": true,
             "description": "ISO 3166-1 alpha-2 country code"
           },
+          "locale": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocaleTag"
+              }
+            ],
+            "nullable": true,
+            "description": "BCP 47 language tag of the language the contact reads in"
+          },
+          "birthday": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Date of birth"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "City"
+          },
+          "avatar": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageUrl"
+              }
+            ],
+            "nullable": true,
+            "description": "https URL of the contact's photo"
+          },
           "customFields": {
             "type": "object",
             "allOf": [
@@ -16715,6 +16768,38 @@
             ],
             "nullable": true,
             "description": "ISO 3166-1 alpha-2 country code"
+          },
+          "locale": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocaleTag"
+              }
+            ],
+            "nullable": true,
+            "description": "BCP 47 language tag of the language the contact reads in"
+          },
+          "birthday": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Date of birth"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "City"
+          },
+          "avatar": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageUrl"
+              }
+            ],
+            "nullable": true,
+            "description": "https URL of the contact's photo"
           },
           "customFields": {
             "type": "object",
@@ -17510,6 +17595,10 @@
           "last_name",
           "time_zone",
           "country",
+          "locale",
+          "birthday",
+          "city",
+          "avatar",
           "custom_fields",
           "tags",
           "created_at",
@@ -17558,6 +17647,27 @@
             "type": "string",
             "nullable": true,
             "description": "ISO 3166-1 alpha-2 country code"
+          },
+          "locale": {
+            "type": "string",
+            "nullable": true,
+            "description": "BCP 47 language tag"
+          },
+          "birthday": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Date of birth"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "description": "City"
+          },
+          "avatar": {
+            "type": "string",
+            "nullable": true,
+            "description": "https URL of the contact's photo"
           },
           "custom_fields": {
             "allOf": [
@@ -18092,6 +18202,12 @@
           }
         ]
       },
+      "ImageUrl": {
+        "type": "string",
+        "maxLength": 2048,
+        "pattern": "^https://\\S+$",
+        "description": "The https URL of an image"
+      },
       "InUseProblemDetails": {
         "type": "object",
         "required": ["usedBy"],
@@ -18490,6 +18606,12 @@
           }
         },
         "description": "One finding of the lint over a message's rendered HTML. `message` is fixed text of the\nserver; `element` and `detail` quote the message or the Brand kit and are untrusted data."
+      },
+      "LocaleTag": {
+        "type": "string",
+        "maxLength": 35,
+        "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
+        "description": "A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)"
       },
       "MaxPerDay": {
         "type": "integer",
@@ -20180,6 +20302,38 @@
             "nullable": true,
             "description": "ISO 3166-1 alpha-2 country code"
           },
+          "locale": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocaleTag"
+              }
+            ],
+            "nullable": true,
+            "description": "BCP 47 language tag of the language the contact reads in"
+          },
+          "birthday": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Date of birth"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "City"
+          },
+          "avatar": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageUrl"
+              }
+            ],
+            "nullable": true,
+            "description": "https URL of the contact's photo"
+          },
           "customFields": {
             "type": "object",
             "allOf": [
@@ -20376,12 +20530,12 @@
           "firstName": {
             "type": "string",
             "nullable": true,
-            "description": "First name — filled only when the contact has none"
+            "description": "First name"
           },
           "lastName": {
             "type": "string",
             "nullable": true,
-            "description": "Last name — filled only when the contact has none"
+            "description": "Last name"
           },
           "timeZone": {
             "type": "string",
@@ -20391,7 +20545,7 @@
               }
             ],
             "nullable": true,
-            "description": "IANA time zone identifier — filled only when the contact has none"
+            "description": "IANA time zone identifier"
           },
           "country": {
             "type": "string",
@@ -20401,7 +20555,39 @@
               }
             ],
             "nullable": true,
-            "description": "ISO 3166-1 alpha-2 country code — filled only when the contact has none"
+            "description": "ISO 3166-1 alpha-2 country code"
+          },
+          "locale": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocaleTag"
+              }
+            ],
+            "nullable": true,
+            "description": "BCP 47 language tag"
+          },
+          "birthday": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Date of birth"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "City"
+          },
+          "avatar": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageUrl"
+              }
+            ],
+            "nullable": true,
+            "description": "https URL of the contact's photo"
           },
           "customFields": {
             "type": "object",
@@ -20414,7 +20600,7 @@
             "description": "Typed custom field values keyed by the field's machine key, merged into the contact's"
           }
         },
-        "description": "One contact to upsert, matched by its alias keys (subject id, email, phone)"
+        "description": "One contact to upsert, matched by its alias keys (subject id, email, phone). An alias key fills\nonly a contact that has none; every other attribute given replaces the contact's, and null clears\nit."
       },
       "UpsertContactsInput": {
         "type": "object",

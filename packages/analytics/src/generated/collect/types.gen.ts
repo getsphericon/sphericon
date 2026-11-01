@@ -23,12 +23,36 @@ export type CollectEventsInput = {
   events: Array<CollectEventInput>;
 };
 
+/**
+ * The browser's own settings, sent by the tracker with an identify
+ */
+export type CollectIdentifyContext = {
+  /**
+   * The browser's IANA time zone
+   */
+  timeZone?: string | null;
+  /**
+   * The browser's language, a BCP 47 tag
+   */
+  locale?: string | null;
+};
+
 export type CollectIdentifyInput = {
   visitorId: string;
   email?: EmailAddress | null;
   phone?: string | null;
   subjectId?: string | null;
+  /**
+   * Attributes of the contact; a trait named after a core attribute (`firstName`, `timeZone`,
+   * `country`, `locale`, `birthday`, `city`, `avatar`) writes it, null clears it, and an invalid
+   * value of one is dropped
+   */
   traits?: JsonObject | null;
+  /**
+   * What the browser tells of the visitor: it fills only a time zone or locale the contact has
+   * none of
+   */
+  context?: CollectIdentifyContext | null;
 };
 
 export type CollectOkResponse = {
@@ -79,6 +103,11 @@ export type ForbiddenProblem = {
 export type GoneProblem = {
   body: ProblemDetails;
 };
+
+/**
+ * The https URL of an image
+ */
+export type ImageUrl = string;
 
 /**
  * RFC 7807 conflict response for a removal refused because live work still uses the row
@@ -155,6 +184,11 @@ export type InUseProblemDetails = {
 export type JsonObject = {
   [key: string]: unknown;
 };
+
+/**
+ * A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)
+ */
+export type LocaleTag = string;
 
 /**
  * RFC 7807 not found response

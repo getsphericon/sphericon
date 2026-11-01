@@ -10,6 +10,7 @@ import (
 
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/visitors"
 	"github.com/go-faster/jx"
@@ -107,6 +108,10 @@ func (h *Handlers) CollectIdentifyCreate(ctx context.Context, req *collectapi.Co
 	}
 	if traits, ok := req.Traits.Get(); ok {
 		input.Traits = rawMap(traits)
+	}
+	if browser, ok := req.Context.Get(); ok {
+		input.TimeZone = convert.Ptr(browser.TimeZone)
+		input.Locale = convert.Ptr(browser.Locale)
 	}
 
 	if err := visitors.Identify(ctx, h.bus, auth.CollectScoped(ctx), input); err != nil {

@@ -1,4 +1,5 @@
 import { Button, Group, Select, Stack, TagsInput, TextInput } from '@mantine/core'
+import { DateInput } from '@mantine/dates'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -71,6 +72,21 @@ export function ContactForm({
           searchable
           clearable
         />
+        <TextInput label={t(($) => $.table.city)} {...form.getInputProps('city')} />
+        <TextInput
+          label={t(($) => $.table.locale)}
+          description={t(($) => $.table.localeHint)}
+          {...form.getInputProps('locale')}
+        />
+        <DateInput
+          label={t(($) => $.table.birthday)}
+          value={form.values.birthday || null}
+          onChange={(next) => form.setFieldValue('birthday', next ?? '')}
+          error={form.errors.birthday}
+          valueFormat="LL"
+          clearable
+        />
+        <TextInput label={t(($) => $.table.avatar)} {...form.getInputProps('avatar')} />
         <TagsInput
           label={t(($) => $.table.tags)}
           data={knownTags}

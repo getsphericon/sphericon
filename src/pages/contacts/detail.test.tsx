@@ -141,6 +141,33 @@ test('the machine events switch puts the choice in the URL', async () => {
   )
 })
 
+// A one-pixel GIF: an image that loads without the network, so the photo never falls back.
+const PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+
+test('shows the city, the locale, the birthday and the photo', async () => {
+  worker.use(
+    handleSiteContactsGet({
+      body: {
+        ...ADA,
+        city: 'London',
+        locale: 'en-GB',
+        birthday: '1815-12-10',
+        avatar: PIXEL,
+      },
+    }),
+    NO_EVENTS,
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+
+  await expect.element(screen.getByText('London', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('en-GB', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('December 10, 1815')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('img', { name: 'Ada Lovelace' }))
+    .toHaveAttribute('src', PIXEL)
+})
+
 test('shows the country by name with its flag', async () => {
   worker.use(handleSiteContactsGet({ body: { ...ADA, country: 'US' } }), NO_EVENTS)
 

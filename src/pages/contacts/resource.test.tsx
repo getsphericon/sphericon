@@ -98,6 +98,39 @@ test('picking a country sends its code', async () => {
   await expect.poll(() => bodies).toEqual([{ email: 'ada@example.com', country: 'DE', tags: [] }])
 })
 
+test('the city, the locale and the photo are sent as typed', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteContactsCreate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({ id: '42', email: 'ada@example.com' }, { status: 201 })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(
+    <ContactCreateModal opened onClose={vi.fn<() => void>()} />,
+    CREATE_ROUTE,
+  )
+
+  await screen.getByLabelText('Email').fill('ada@example.com')
+  await screen.getByLabelText('City').fill('London')
+  await screen.getByLabelText('Locale').fill('en-GB')
+  await screen.getByLabelText('Photo URL').fill('https://example.com/ada.png')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        email: 'ada@example.com',
+        city: 'London',
+        locale: 'en-GB',
+        avatar: 'https://example.com/ada.png',
+        tags: [],
+      },
+    ])
+})
+
 test('a malformed email is rejected before anything is sent', async () => {
   const bodies: unknown[] = []
   worker.use(
@@ -181,6 +214,10 @@ test('editing shows existing values with nulls as blanks; a cleared field is sen
         lastName: null,
         timeZone: null,
         country: null,
+        locale: null,
+        birthday: null,
+        city: null,
+        avatar: null,
         tags: ['vip'],
       },
     ])

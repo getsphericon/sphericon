@@ -13,6 +13,16 @@ scalar TimeZoneName extends string;
 @pattern("^[A-Z]{2}$")
 scalar CountryCode extends string;
 
+/** A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`) */
+@pattern("^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$")
+@maxLength(35)
+scalar LocaleTag extends string;
+
+/** The https URL of an image */
+@pattern("^https://\\S+$")
+@maxLength(2048)
+scalar ImageUrl extends string;
+
 /**
  * A primary key, written as a decimal string so JavaScript never rounds it. The format
  * makes the Go servers parse it into an int64: a malformed id is refused as a 400 before

@@ -40,6 +40,9 @@ import (
 // goverter:extend nilEmailPatch
 // goverter:extend nilTimeZonePatch
 // goverter:extend nilCountryPatch
+// goverter:extend nilLocalePatch
+// goverter:extend nilImageURLPatch
+// goverter:extend nilDatePatch
 // goverter:extend nilEntityIDPatch
 // goverter:extend boolPatch
 // goverter:extend maxPerSecondPatch
@@ -51,6 +54,9 @@ import (
 // goverter:extend nilEmailPtrIn
 // goverter:extend nilTimeZonePtrIn
 // goverter:extend nilCountryPtrIn
+// goverter:extend nilLocalePtrIn
+// goverter:extend nilImageURLPtrIn
+// goverter:extend nilDatePtrIn
 // goverter:extend nilEntityIDPtrIn
 // goverter:extend boolIn
 // goverter:extend boolPtrIn
@@ -94,9 +100,13 @@ type Inputs interface {
 	ContactCreate(source *externalapi.CreateContactInput) contacts.CreateInput
 	ContactAttributes(source externalapi.CreateContactInput) contacts.Attributes
 	// goverter:ignore Tags
+	// goverter:map . Core
 	ContactUpdate(source *externalapi.UpdateContactInput) contacts.UpdateInput
-	ContactUpsert(source externalapi.UpsertContactInput) contacts.Attributes
-	ContactUpserts(source []externalapi.UpsertContactInput) []contacts.Attributes
+	// The API asserts a Contact; only the tracker sends the browser's guesses.
+	// goverter:map . Core
+	// goverter:ignore GuessedTimeZone GuessedLocale
+	ContactUpsert(source externalapi.UpsertContactInput) contacts.UpsertInput
+	ContactUpserts(source []externalapi.UpsertContactInput) []contacts.UpsertInput
 
 	IntegrationCreate(source *externalapi.CreateIntegrationInput) (integrations.CreateInput, error)
 	IntegrationUpdate(source *externalapi.UpdateIntegrationInput) (integrations.UpdateInput, error)
@@ -157,6 +167,13 @@ func nilTimeZonePatch(o externalapi.OptNilTimeZoneName) patch.Field[string] {
 func nilCountryPatch(o externalapi.OptNilCountryCode) patch.Field[string] {
 	return convert.StringPatch(o)
 }
+func nilLocalePatch(o externalapi.OptNilLocaleTag) patch.Field[string] {
+	return convert.StringPatch(o)
+}
+func nilImageURLPatch(o externalapi.OptNilImageUrl) patch.Field[string] {
+	return convert.StringPatch(o)
+}
+func nilDatePatch(o externalapi.OptNilDate) patch.Field[time.Time]        { return convert.Patch(o) }
 func nilEntityIDPatch(o externalapi.OptNilEntityId) patch.Field[int64]    { return convert.Int64Patch(o) }
 func boolPatch(o externalapi.OptBool) patch.Field[bool]                   { return convert.Patch(o) }
 func maxPerSecondPatch(o externalapi.OptNilMaxPerSecond) patch.Field[int] { return convert.IntPatch(o) }
@@ -168,6 +185,9 @@ func nilStringPtrIn(o externalapi.OptNilString) *string                   { retu
 func nilEmailPtrIn(o externalapi.OptNilEmailAddress) *string              { return convert.StringPtr(o) }
 func nilTimeZonePtrIn(o externalapi.OptNilTimeZoneName) *string           { return convert.StringPtr(o) }
 func nilCountryPtrIn(o externalapi.OptNilCountryCode) *string             { return convert.StringPtr(o) }
+func nilLocalePtrIn(o externalapi.OptNilLocaleTag) *string                { return convert.StringPtr(o) }
+func nilImageURLPtrIn(o externalapi.OptNilImageUrl) *string               { return convert.StringPtr(o) }
+func nilDatePtrIn(o externalapi.OptNilDate) *time.Time                    { return convert.Ptr(o) }
 func nilEntityIDPtrIn(o externalapi.OptNilEntityId) *int64                { return convert.Int64Ptr(o) }
 func boolIn(o externalapi.OptBool) bool                                   { return o.Or(false) }
 func boolPtrIn(o externalapi.OptBool) *bool                               { return convert.Ptr(o) }

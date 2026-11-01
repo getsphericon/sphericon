@@ -26,10 +26,22 @@ type ContactRow struct {
 	LastName     *string        `json:"last_name"`
 	TimeZone     *string        `json:"time_zone"`
 	Country      *string        `json:"country"`
+	Locale       *string        `json:"locale"`
+	Birthday     *string        `json:"birthday"`
+	City         *string        `json:"city"`
+	Avatar       *string        `json:"avatar"`
 	CustomFields map[string]any `json:"custom_fields"`
 	Tags         []string       `json:"tags"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
+}
+
+// dateOnly is a calendar date as the contract writes it (`2006-01-02`), nil for none.
+func dateOnly(t *time.Time) *string {
+	if t == nil {
+		return nil
+	}
+	return new(t.Format(time.DateOnly))
 }
 
 // Position is the row's (updated_at, id).
@@ -47,6 +59,10 @@ func contactRow(c *ent.Contact) ContactRow {
 		LastName:     c.LastName,
 		TimeZone:     c.TimeZone,
 		Country:      c.Country,
+		Locale:       c.Locale,
+		Birthday:     dateOnly(c.Birthday),
+		City:         c.City,
+		Avatar:       c.Avatar,
 		CustomFields: lo.Ternary(c.CustomFields == nil, map[string]any{}, c.CustomFields),
 		Tags:         names,
 		CreatedAt:    c.CreatedAt.UTC(),

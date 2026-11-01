@@ -14113,6 +14113,10 @@ type ContactMutation struct {
 	last_name        *string
 	time_zone        *string
 	country          *string
+	locale           *string
+	birthday         *time.Time
+	city             *string
+	avatar           *string
 	source           *contact.Source
 	custom_fields    *map[string]interface{}
 	clearedFields    map[string]struct{}
@@ -14690,6 +14694,202 @@ func (m *ContactMutation) ResetCountry() {
 	delete(m.clearedFields, contact.FieldCountry)
 }
 
+// SetLocale sets the "locale" field.
+func (m *ContactMutation) SetLocale(s string) {
+	m.locale = &s
+}
+
+// Locale returns the value of the "locale" field in the mutation.
+func (m *ContactMutation) Locale() (r string, exists bool) {
+	v := m.locale
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLocale returns the old "locale" field's value of the Contact entity.
+// If the Contact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactMutation) OldLocale(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLocale is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLocale requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLocale: %w", err)
+	}
+	return oldValue.Locale, nil
+}
+
+// ClearLocale clears the value of the "locale" field.
+func (m *ContactMutation) ClearLocale() {
+	m.locale = nil
+	m.clearedFields[contact.FieldLocale] = struct{}{}
+}
+
+// LocaleCleared returns if the "locale" field was cleared in this mutation.
+func (m *ContactMutation) LocaleCleared() bool {
+	_, ok := m.clearedFields[contact.FieldLocale]
+	return ok
+}
+
+// ResetLocale resets all changes to the "locale" field.
+func (m *ContactMutation) ResetLocale() {
+	m.locale = nil
+	delete(m.clearedFields, contact.FieldLocale)
+}
+
+// SetBirthday sets the "birthday" field.
+func (m *ContactMutation) SetBirthday(t time.Time) {
+	m.birthday = &t
+}
+
+// Birthday returns the value of the "birthday" field in the mutation.
+func (m *ContactMutation) Birthday() (r time.Time, exists bool) {
+	v := m.birthday
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBirthday returns the old "birthday" field's value of the Contact entity.
+// If the Contact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactMutation) OldBirthday(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBirthday is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBirthday requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBirthday: %w", err)
+	}
+	return oldValue.Birthday, nil
+}
+
+// ClearBirthday clears the value of the "birthday" field.
+func (m *ContactMutation) ClearBirthday() {
+	m.birthday = nil
+	m.clearedFields[contact.FieldBirthday] = struct{}{}
+}
+
+// BirthdayCleared returns if the "birthday" field was cleared in this mutation.
+func (m *ContactMutation) BirthdayCleared() bool {
+	_, ok := m.clearedFields[contact.FieldBirthday]
+	return ok
+}
+
+// ResetBirthday resets all changes to the "birthday" field.
+func (m *ContactMutation) ResetBirthday() {
+	m.birthday = nil
+	delete(m.clearedFields, contact.FieldBirthday)
+}
+
+// SetCity sets the "city" field.
+func (m *ContactMutation) SetCity(s string) {
+	m.city = &s
+}
+
+// City returns the value of the "city" field in the mutation.
+func (m *ContactMutation) City() (r string, exists bool) {
+	v := m.city
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCity returns the old "city" field's value of the Contact entity.
+// If the Contact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactMutation) OldCity(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCity: %w", err)
+	}
+	return oldValue.City, nil
+}
+
+// ClearCity clears the value of the "city" field.
+func (m *ContactMutation) ClearCity() {
+	m.city = nil
+	m.clearedFields[contact.FieldCity] = struct{}{}
+}
+
+// CityCleared returns if the "city" field was cleared in this mutation.
+func (m *ContactMutation) CityCleared() bool {
+	_, ok := m.clearedFields[contact.FieldCity]
+	return ok
+}
+
+// ResetCity resets all changes to the "city" field.
+func (m *ContactMutation) ResetCity() {
+	m.city = nil
+	delete(m.clearedFields, contact.FieldCity)
+}
+
+// SetAvatar sets the "avatar" field.
+func (m *ContactMutation) SetAvatar(s string) {
+	m.avatar = &s
+}
+
+// Avatar returns the value of the "avatar" field in the mutation.
+func (m *ContactMutation) Avatar() (r string, exists bool) {
+	v := m.avatar
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAvatar returns the old "avatar" field's value of the Contact entity.
+// If the Contact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactMutation) OldAvatar(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAvatar is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAvatar requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAvatar: %w", err)
+	}
+	return oldValue.Avatar, nil
+}
+
+// ClearAvatar clears the value of the "avatar" field.
+func (m *ContactMutation) ClearAvatar() {
+	m.avatar = nil
+	m.clearedFields[contact.FieldAvatar] = struct{}{}
+}
+
+// AvatarCleared returns if the "avatar" field was cleared in this mutation.
+func (m *ContactMutation) AvatarCleared() bool {
+	_, ok := m.clearedFields[contact.FieldAvatar]
+	return ok
+}
+
+// ResetAvatar resets all changes to the "avatar" field.
+func (m *ContactMutation) ResetAvatar() {
+	m.avatar = nil
+	delete(m.clearedFields, contact.FieldAvatar)
+}
+
 // SetSource sets the "source" field.
 func (m *ContactMutation) SetSource(c contact.Source) {
 	m.source = &c
@@ -15065,7 +15265,7 @@ func (m *ContactMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContactMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 16)
 	if m.created_at != nil {
 		fields = append(fields, contact.FieldCreatedAt)
 	}
@@ -15095,6 +15295,18 @@ func (m *ContactMutation) Fields() []string {
 	}
 	if m.country != nil {
 		fields = append(fields, contact.FieldCountry)
+	}
+	if m.locale != nil {
+		fields = append(fields, contact.FieldLocale)
+	}
+	if m.birthday != nil {
+		fields = append(fields, contact.FieldBirthday)
+	}
+	if m.city != nil {
+		fields = append(fields, contact.FieldCity)
+	}
+	if m.avatar != nil {
+		fields = append(fields, contact.FieldAvatar)
 	}
 	if m.source != nil {
 		fields = append(fields, contact.FieldSource)
@@ -15130,6 +15342,14 @@ func (m *ContactMutation) Field(name string) (ent.Value, bool) {
 		return m.TimeZone()
 	case contact.FieldCountry:
 		return m.Country()
+	case contact.FieldLocale:
+		return m.Locale()
+	case contact.FieldBirthday:
+		return m.Birthday()
+	case contact.FieldCity:
+		return m.City()
+	case contact.FieldAvatar:
+		return m.Avatar()
 	case contact.FieldSource:
 		return m.Source()
 	case contact.FieldCustomFields:
@@ -15163,6 +15383,14 @@ func (m *ContactMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldTimeZone(ctx)
 	case contact.FieldCountry:
 		return m.OldCountry(ctx)
+	case contact.FieldLocale:
+		return m.OldLocale(ctx)
+	case contact.FieldBirthday:
+		return m.OldBirthday(ctx)
+	case contact.FieldCity:
+		return m.OldCity(ctx)
+	case contact.FieldAvatar:
+		return m.OldAvatar(ctx)
 	case contact.FieldSource:
 		return m.OldSource(ctx)
 	case contact.FieldCustomFields:
@@ -15246,6 +15474,34 @@ func (m *ContactMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCountry(v)
 		return nil
+	case contact.FieldLocale:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLocale(v)
+		return nil
+	case contact.FieldBirthday:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBirthday(v)
+		return nil
+	case contact.FieldCity:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCity(v)
+		return nil
+	case contact.FieldAvatar:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAvatar(v)
+		return nil
 	case contact.FieldSource:
 		v, ok := value.(contact.Source)
 		if !ok {
@@ -15314,6 +15570,18 @@ func (m *ContactMutation) ClearedFields() []string {
 	if m.FieldCleared(contact.FieldCountry) {
 		fields = append(fields, contact.FieldCountry)
 	}
+	if m.FieldCleared(contact.FieldLocale) {
+		fields = append(fields, contact.FieldLocale)
+	}
+	if m.FieldCleared(contact.FieldBirthday) {
+		fields = append(fields, contact.FieldBirthday)
+	}
+	if m.FieldCleared(contact.FieldCity) {
+		fields = append(fields, contact.FieldCity)
+	}
+	if m.FieldCleared(contact.FieldAvatar) {
+		fields = append(fields, contact.FieldAvatar)
+	}
 	if m.FieldCleared(contact.FieldSource) {
 		fields = append(fields, contact.FieldSource)
 	}
@@ -15354,6 +15622,18 @@ func (m *ContactMutation) ClearField(name string) error {
 		return nil
 	case contact.FieldCountry:
 		m.ClearCountry()
+		return nil
+	case contact.FieldLocale:
+		m.ClearLocale()
+		return nil
+	case contact.FieldBirthday:
+		m.ClearBirthday()
+		return nil
+	case contact.FieldCity:
+		m.ClearCity()
+		return nil
+	case contact.FieldAvatar:
+		m.ClearAvatar()
 		return nil
 	case contact.FieldSource:
 		m.ClearSource()
@@ -15398,6 +15678,18 @@ func (m *ContactMutation) ResetField(name string) error {
 		return nil
 	case contact.FieldCountry:
 		m.ResetCountry()
+		return nil
+	case contact.FieldLocale:
+		m.ResetLocale()
+		return nil
+	case contact.FieldBirthday:
+		m.ResetBirthday()
+		return nil
+	case contact.FieldCity:
+		m.ResetCity()
+		return nil
+	case contact.FieldAvatar:
+		m.ResetAvatar()
 		return nil
 	case contact.FieldSource:
 		m.ResetSource()

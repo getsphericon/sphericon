@@ -257,6 +257,7 @@
   "errors.acceptance_pending": "a document you must accept has a new version: accept it to go on",
   "errors.acceptance_stale": "a document has a newer version: reload the page and accept it again",
   "errors.contact_identity_required": "subject_id, email or phone is required",
+  "errors.custom_field_key_reserved": "a custom field cannot take the name of a contact attribute",
   "errors.erasure_nothing_found": "nothing found for this email address or visitor id",
   "errors.erasure_identifier": "pass exactly one of email or visitorId",
   "errors.privacy_email_invalid": "not a valid email address",

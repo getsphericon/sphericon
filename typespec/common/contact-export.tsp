@@ -33,6 +33,18 @@ model ContactExportContact {
   /** ISO 3166-1 alpha-2 country code */
   country?: string | null;
 
+  /** BCP 47 language tag */
+  locale?: string | null;
+
+  /** Date of birth */
+  birthday?: plainDate | null;
+
+  /** City */
+  city?: string | null;
+
+  /** https URL of the contact's photo */
+  avatar?: string | null;
+
   /** Typed custom field values keyed by the field's machine key */
   customFields?: JsonObject | null;
 

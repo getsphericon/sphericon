@@ -27,6 +27,8 @@ import (
 	"time"
 
 	"github.com/samber/lo"
+	"golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -740,24 +742,37 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 
 // Bindings builds the Liquid merge-tag context: the Contact's custom fields first,
 // then its core fields (so a custom field can never shadow email/first_name/
-// last_name), then the Request's own variables, which win.
+// last_name/city/country/locale), then the Request's own variables, which win. The country is
+// its English name, which reads in a sentence where a code would not.
 func Bindings(c *ent.Contact, vars map[string]any) map[string]any {
 	b := map[string]any{}
 	if c != nil {
 		maps.Copy(b, c.CustomFields)
-		b["email"], b["first_name"], b["last_name"] = "", "", ""
-		if c.Email != nil {
-			b["email"] = *c.Email
-		}
-		if c.FirstName != nil {
-			b["first_name"] = *c.FirstName
-		}
-		if c.LastName != nil {
-			b["last_name"] = *c.LastName
-		}
+		b["email"] = lo.FromPtr(c.Email)
+		b["first_name"] = lo.FromPtr(c.FirstName)
+		b["last_name"] = lo.FromPtr(c.LastName)
+		b["city"] = lo.FromPtr(c.City)
+		b["country"] = countryName(lo.FromPtr(c.Country))
+		b["locale"] = lo.FromPtr(c.Locale)
 	}
 	maps.Copy(b, vars)
 	return b
+}
+
+// countryName is the English name of an ISO 3166-1 alpha-2 code ("Germany" for DE), the code
+// itself when it names no region, and empty for none.
+func countryName(code string) string {
+	if code == "" {
+		return ""
+	}
+	region, err := language.ParseRegion(code)
+	if err != nil {
+		return code
+	}
+	if name := display.English.Regions().Name(region); name != "" {
+		return name
+	}
+	return code
 }
 
 // EventVariables are the merge tags of the Event a message or a call is about, under `event`: its
@@ -892,10 +907,13 @@ var (
 // capacity returns.
 func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, to string, asker *Asker) (Result, error) {
 	res, err := m.SendTest(ctx, s, TestRequest{
-		To:        to,
-		Subject:   TestSubjectPrefix + b.Subject,
-		Body:      b.Body,
-		Variables: map[string]any{"first_name": "Alex", "last_name": "Sample", "email": to},
+		To:      to,
+		Subject: TestSubjectPrefix + b.Subject,
+		Body:    b.Body,
+		Variables: map[string]any{
+			"first_name": "Alex", "last_name": "Sample", "email": to,
+			"city": "Berlin", "country": "Germany", "locale": "de",
+		},
 		FromEmail: lo.FromPtr(b.FromEmail),
 		FromName:  lo.FromPtr(b.FromName),
 		// The Integration a real send of the Broadcast would go through.

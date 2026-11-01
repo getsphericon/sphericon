@@ -203,6 +203,17 @@ func TestCompileRefusesANumberLeafThatDoesNotFit(t *testing.T) {
 	}
 }
 
+// Anna was born on 1990-05-01, Bella on 1985-11-20, and Andy has no birthday.
+func TestDateLeafTestsTheBirthday(t *testing.T) {
+	env := testhelper.Setup(t)
+	match := func(leaf any) []string { return emailsIn(t, env, fixtures.OscorpID, opsGroup(leaf)) }
+	cut := time.Date(1988, time.January, 1, 0, 0, 0, 0, time.UTC)
+
+	assert.Equal(t, []string{fixtures.OscorpBellaEmail}, match(dateAt("birthday", siteapi.SiteConditionDateOperatorBefore, cut)))
+	assert.Equal(t, []string{fixtures.OscorpAnnaEmail}, match(dateAt("birthday", siteapi.SiteConditionDateOperatorAfter, cut)))
+	assert.Empty(t, match(dateWithin("birthday", 7)), "no birthday falls in the last week")
+}
+
 func TestCompileRefusesADateLeafThatDoesNotFit(t *testing.T) {
 	env := testhelper.Setup(t)
 	now := time.Now()
