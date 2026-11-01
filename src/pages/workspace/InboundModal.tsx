@@ -3,6 +3,7 @@ import { modals } from '@mantine/modals'
 import { Form } from '@rjsf/mantine'
 import { customizeValidator } from '@rjsf/validator-ajv8'
 import { useQuery } from '@tanstack/react-query'
+import ajvFormats from 'ajv-formats'
 import { Ajv2020 } from 'ajv/dist/2020.js'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -26,11 +27,14 @@ import {
 import type { PresetParams } from './presetParams.ts'
 
 // A Preset's params are full JSON Schema 2020-12 (a custom Preset may use any of it), so the form
-// validates by an Ajv of that draft, set up as rjsf sets up its own. The server stays the
-// authority: its refusal lands on the fields too.
+// validates by an Ajv of that draft, set up as rjsf sets up its own, `format`s included
+// (ajv-formats, called by `.default`: under nodenext its default import is the CommonJS module).
+// The server stays the authority: its refusal lands on the fields too.
 const validator = customizeValidator<PresetParams>({
   extenderFn: () =>
-    new Ajv2020({ allErrors: true, multipleOfPrecision: 8, strict: false, verbose: true }),
+    ajvFormats.default(
+      new Ajv2020({ allErrors: true, multipleOfPrecision: 8, strict: false, verbose: true }),
+    ),
 })
 
 interface InboundModalProps {

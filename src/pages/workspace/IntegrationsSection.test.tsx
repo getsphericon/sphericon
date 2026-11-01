@@ -574,6 +574,7 @@ const custom = {
     properties: {
       retries: { type: 'integer', title: 'Retries', minimum: 0 },
       strict: { type: 'boolean', title: 'Strict mode' },
+      relay: { type: 'string', title: 'Relay address', format: 'ipv4' },
     },
   },
 }
@@ -651,6 +652,21 @@ test('a value the schema refuses is shown on its field and nothing is sent', asy
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.element(screen.getByText(/must match pattern/).first()).toBeInTheDocument()
+  expect(bodies).toEqual([])
+})
+
+test('a value off its format is shown on its field and nothing is sent', async () => {
+  const bodies: unknown[] = []
+  worker.use(list([smtp]), handleSitePresetsList({ body: PRESETS }), updates(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+  await openInbound(screen)
+
+  await choosePreset(screen, 'acme-relay')
+  await screen.getByLabelText(/^Retries/).fill('1')
+  await screen.getByLabelText(/^Relay address/).fill('not an address')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText(/must match format "ipv4"/).first()).toBeInTheDocument()
   expect(bodies).toEqual([])
 })
 
