@@ -137,8 +137,8 @@ TOTP Second factor, as does `sam@globex.test` / `password`: all three share the 
 Brightpath's Mailpit Integration sends to `127.0.0.1:1025`, the primary checkout's SMTP port. A
 linked worktree's Mailpit SMTP port is offset (`SPHERICON_SMTP_PORT`) and a fixture cannot follow
 it, because fixtures also load in tests: change the Integration's port in its settings there.
-Brightpath's Sending domains keep the default `pending` Tracking state in the fixtures, so no
-Tracking domain serves and links in dev mail use the app URL.
+Brightpath's Tracking domain is `dns_verified` in the fixtures, not `serving`, so links in dev mail
+use the app URL.
 
 ### MCP client
 
@@ -248,7 +248,8 @@ in, in more than one state:
 | Suppressions    | a bounce, a complaint and a manual one                                                                                                                                                                    |
 | Test inbox      | six captured messages (broadcast, automation, transactional and a test send), all inside the retention window                                                                                             |
 | Integrations    | the dev Mailpit (default), Amazon SES and Postmark SMTP, and the Test inbox                                                                                                                               |
-| Sending domains | `mail.`, `news.`, `send.brightpath.localhost` verified (mail's Tracking domain is `dns_verified`) and `launch.brightpath.localhost` pending                                                               |
+| Sending domains | `mail.`, `news.`, `send.brightpath.localhost` verified and `launch.brightpath.localhost` pending                                                                                                          |
+| Tracking domain | `t.brightpath.localhost`, current and `dns_verified`                                                                                                                                                      |
 | Join domains    | `brightpath.example` verified, `learn.brightpath.example` pending                                                                                                                                         |
 | Webhooks        | one healthy, one failing, one disabled by the owner and one the platform disabled after repeated failures                                                                                                 |
 | Team            | owner, admin and member, a pending invitation and an expired one                                                                                                                                          |
@@ -312,11 +313,11 @@ every other name is NXDOMAIN. Nothing reaches the internet.
 
 **Brightpath's domains need nothing from you.** `dev/dns/db.brightpath.localhost` publishes the
 DKIM record of `mail.`, `news.` and `send.brightpath.localhost` (the key the fixtures give them) and
-the Tracking domain CNAME of `mail.`; `dev/dns/db.brightpath.example` publishes the Join domain
+the CNAME of the Workspace's Tracking domain `t.brightpath.localhost`; `dev/dns/db.brightpath.example` publishes the Join domain
 proof of `brightpath.example`. These domains are verified and stay so under the background re-check.
 `launch.brightpath.localhost` is `pending` and has no record on purpose: publish it as below and press
 **Verify** to see the flow, and a Tracking domain moves from `pending` to `dns_verified` the same way
-(its `track.<domain>` CNAME points at `edge.sphericon.localhost`, `SPHERICON_TRACKING_CNAME_TARGET`).
+on the Tracking settings page (its CNAME points at `edge.sphericon.localhost`, `SPHERICON_TRACKING_CNAME_TARGET`).
 `serving` needs the edge to answer an HTTPS probe, which a development stack cannot offer, so no
 fixture sits in it.
 

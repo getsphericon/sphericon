@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
@@ -248,6 +249,7 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).Tag, tag.IDIn),
 	stepOf((*ent.Scoped).CustomField, customfield.IDIn),
 	// The tracking host change log hook records each released host here.
+	stepOf((*ent.Scoped).TrackingDomain, trackingdomain.IDIn),
 	purgeStepOf((*ent.Scoped).SendingDomain, sendingdomain.IDIn),
 	purgeStepOf((*ent.Scoped).Integration, integration.IDIn),
 	stepOf((*ent.Scoped).JoinDomain, joindomain.IDIn),

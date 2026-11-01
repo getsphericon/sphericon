@@ -82,7 +82,7 @@ func (c *ServiceConverterImpl) TombstoneToResource(source *ent.UserTombstone) se
 func (c *ServiceConverterImpl) TrackingHostChangeToResource(source *ent.TrackingHostChange) service.ServiceTrackingHostChange {
 	var serviceapiServiceTrackingHostChange service.ServiceTrackingHostChange
 	if source != nil {
-		serviceapiServiceTrackingHostChange.Host = trackingHost((*source).Domain)
+		serviceapiServiceTrackingHostChange.Host = (*source).Host
 		// serviceapiServiceTrackingHostChange.WorkspaceId: ignore
 		serviceapiServiceTrackingHostChange.State = c.TrackingHostStateToResource((*source).State)
 		serviceapiServiceTrackingHostChange.ChangedAt = serviceTimestamp((*source).CreatedAt)

@@ -147,12 +147,14 @@ const (
 	ApiTokenScopeWebhooksTest          ApiTokenScope = "webhooks:test"
 	ApiTokenScopeCustomFieldsRead      ApiTokenScope = "custom_fields:read"
 	ApiTokenScopeSendingDomainsRead    ApiTokenScope = "sending_domains:read"
+	ApiTokenScopeTrackingDomainsRead   ApiTokenScope = "tracking_domains:read"
 	ApiTokenScopeIntegrationsRead      ApiTokenScope = "integrations:read"
 	ApiTokenScopeEmailsSend            ApiTokenScope = "emails:send"
 	ApiTokenScopeBroadcastsSend        ApiTokenScope = "broadcasts:send"
 	ApiTokenScopeAutomationsPublish    ApiTokenScope = "automations:publish"
 	ApiTokenScopeMcpSend               ApiTokenScope = "mcp:send"
 	ApiTokenScopeSendingDomainsWrite   ApiTokenScope = "sending_domains:write"
+	ApiTokenScopeTrackingDomainsWrite  ApiTokenScope = "tracking_domains:write"
 	ApiTokenScopeIntegrationsWrite     ApiTokenScope = "integrations:write"
 	ApiTokenScopeContactsErase         ApiTokenScope = "contacts:erase"
 	ApiTokenScopeCapturedMessagesRead  ApiTokenScope = "captured_messages:read"
@@ -187,12 +189,14 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeWebhooksTest,
 		ApiTokenScopeCustomFieldsRead,
 		ApiTokenScopeSendingDomainsRead,
+		ApiTokenScopeTrackingDomainsRead,
 		ApiTokenScopeIntegrationsRead,
 		ApiTokenScopeEmailsSend,
 		ApiTokenScopeBroadcastsSend,
 		ApiTokenScopeAutomationsPublish,
 		ApiTokenScopeMcpSend,
 		ApiTokenScopeSendingDomainsWrite,
+		ApiTokenScopeTrackingDomainsWrite,
 		ApiTokenScopeIntegrationsWrite,
 		ApiTokenScopeContactsErase,
 		ApiTokenScopeCapturedMessagesRead,
@@ -249,6 +253,8 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ApiTokenScopeSendingDomainsRead:
 		return []byte(s), nil
+	case ApiTokenScopeTrackingDomainsRead:
+		return []byte(s), nil
 	case ApiTokenScopeIntegrationsRead:
 		return []byte(s), nil
 	case ApiTokenScopeEmailsSend:
@@ -260,6 +266,8 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeMcpSend:
 		return []byte(s), nil
 	case ApiTokenScopeSendingDomainsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeTrackingDomainsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeIntegrationsWrite:
 		return []byte(s), nil
@@ -348,6 +356,9 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	case ApiTokenScopeSendingDomainsRead:
 		*s = ApiTokenScopeSendingDomainsRead
 		return nil
+	case ApiTokenScopeTrackingDomainsRead:
+		*s = ApiTokenScopeTrackingDomainsRead
+		return nil
 	case ApiTokenScopeIntegrationsRead:
 		*s = ApiTokenScopeIntegrationsRead
 		return nil
@@ -365,6 +376,9 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeSendingDomainsWrite:
 		*s = ApiTokenScopeSendingDomainsWrite
+		return nil
+	case ApiTokenScopeTrackingDomainsWrite:
+		*s = ApiTokenScopeTrackingDomainsWrite
 		return nil
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
@@ -3542,6 +3556,82 @@ func (*CapturedMessagesListUnauthorized) capturedMessagesListRes() {}
 type CapturedMessagesListUnprocessableEntity ProblemDetails
 
 func (*CapturedMessagesListUnprocessableEntity) capturedMessagesListRes() {}
+
+// The CNAME record to publish: `host` must point at `target`.
+// Ref: #/components/schemas/CnameRecord
+type CnameRecord struct {
+	// The record type (always CNAME).
+	Type CnameRecordType `json:"type"`
+	// The host to create the record at.
+	Host string `json:"host"`
+	// The edge host the CNAME must point at.
+	Target string `json:"target"`
+}
+
+// GetType returns the value of Type.
+func (s *CnameRecord) GetType() CnameRecordType {
+	return s.Type
+}
+
+// GetHost returns the value of Host.
+func (s *CnameRecord) GetHost() string {
+	return s.Host
+}
+
+// GetTarget returns the value of Target.
+func (s *CnameRecord) GetTarget() string {
+	return s.Target
+}
+
+// SetType sets the value of Type.
+func (s *CnameRecord) SetType(val CnameRecordType) {
+	s.Type = val
+}
+
+// SetHost sets the value of Host.
+func (s *CnameRecord) SetHost(val string) {
+	s.Host = val
+}
+
+// SetTarget sets the value of Target.
+func (s *CnameRecord) SetTarget(val string) {
+	s.Target = val
+}
+
+// The record type (always CNAME).
+type CnameRecordType string
+
+const (
+	CnameRecordTypeCNAME CnameRecordType = "CNAME"
+)
+
+// AllValues returns all CnameRecordType values.
+func (CnameRecordType) AllValues() []CnameRecordType {
+	return []CnameRecordType{
+		CnameRecordTypeCNAME,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CnameRecordType) MarshalText() ([]byte, error) {
+	switch s {
+	case CnameRecordTypeCNAME:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CnameRecordType) UnmarshalText(data []byte) error {
+	switch CnameRecordType(data) {
+	case CnameRecordTypeCNAME:
+		*s = CnameRecordTypeCNAME
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // How a condition group combines its entries.
 // Ref: #/components/schemas/ConditionCombinator
@@ -11991,52 +12081,6 @@ func (o OptTrackingReason) Or(d TrackingReason) TrackingReason {
 	return d
 }
 
-// NewOptTrackingRecord returns new OptTrackingRecord with value set to v.
-func NewOptTrackingRecord(v TrackingRecord) OptTrackingRecord {
-	return OptTrackingRecord{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptTrackingRecord is optional TrackingRecord.
-type OptTrackingRecord struct {
-	Value TrackingRecord
-	Set   bool
-}
-
-// IsSet returns true if OptTrackingRecord was set.
-func (o OptTrackingRecord) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptTrackingRecord) Reset() {
-	var v TrackingRecord
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptTrackingRecord) SetTo(v TrackingRecord) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptTrackingRecord) Get() (v TrackingRecord, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptTrackingRecord) Or(d TrackingRecord) TrackingRecord {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptWebhookDisabledReason returns new OptWebhookDisabledReason with value set to v.
 func NewOptWebhookDisabledReason(v WebhookDisabledReason) OptWebhookDisabledReason {
 	return OptWebhookDisabledReason{
@@ -12777,6 +12821,10 @@ func (*ProblemDetailsHeaders) templatesDeleteRes()           {}
 func (*ProblemDetailsHeaders) templatesGetRes()              {}
 func (*ProblemDetailsHeaders) templatesListRes()             {}
 func (*ProblemDetailsHeaders) templatesUpdateRes()           {}
+func (*ProblemDetailsHeaders) trackingDomainsListRes()       {}
+func (*ProblemDetailsHeaders) trackingDomainsRemoveRes()     {}
+func (*ProblemDetailsHeaders) trackingDomainsSetRes()        {}
+func (*ProblemDetailsHeaders) trackingDomainsVerifyRes()     {}
 func (*ProblemDetailsHeaders) unsubscribesCreateRes()        {}
 func (*ProblemDetailsHeaders) webhooksCreateRes()            {}
 func (*ProblemDetailsHeaders) webhooksDeleteRes()            {}
@@ -14743,8 +14791,6 @@ type SendingDomainResource struct {
 	SpfRecord DnsRecord `json:"spfRecord"`
 	// The suggested DMARC TXT record (advisory bulk-readiness signal).
 	DmarcRecord DnsRecord `json:"dmarcRecord"`
-	// The Tracking domain CNAME; absent when the instance has no tracking target configured.
-	TrackingRecord OptTrackingRecord `json:"trackingRecord"`
 	// When the DKIM DNS was most recently checked (null = never).
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
 	// When the domain most recently became verified (null = never); kept after a loss.
@@ -14752,8 +14798,7 @@ type SendingDomainResource struct {
 	// When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or
 	// verified again since).
 	VerificationLostAt OptNilTimestamp `json:"verificationLostAt"`
-	// When the domain was archived; null while it is kept. An archived domain serves no Tracking domain
-	// host.
+	// When the domain was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
@@ -14794,11 +14839,6 @@ func (s *SendingDomainResource) GetSpfRecord() DnsRecord {
 // GetDmarcRecord returns the value of DmarcRecord.
 func (s *SendingDomainResource) GetDmarcRecord() DnsRecord {
 	return s.DmarcRecord
-}
-
-// GetTrackingRecord returns the value of TrackingRecord.
-func (s *SendingDomainResource) GetTrackingRecord() OptTrackingRecord {
-	return s.TrackingRecord
 }
 
 // GetLastCheckedAt returns the value of LastCheckedAt.
@@ -14864,11 +14904,6 @@ func (s *SendingDomainResource) SetSpfRecord(val DnsRecord) {
 // SetDmarcRecord sets the value of DmarcRecord.
 func (s *SendingDomainResource) SetDmarcRecord(val DnsRecord) {
 	s.DmarcRecord = val
-}
-
-// SetTrackingRecord sets the value of TrackingRecord.
-func (s *SendingDomainResource) SetTrackingRecord(val OptTrackingRecord) {
-	s.TrackingRecord = val
 }
 
 // SetLastCheckedAt sets the value of LastCheckedAt.
@@ -15341,6 +15376,24 @@ func (s *SetBroadcastSegmentInput) GetSegmentId() NilEntityId {
 // SetSegmentId sets the value of SegmentId.
 func (s *SetBroadcastSegmentInput) SetSegmentId(val NilEntityId) {
 	s.SegmentId = val
+}
+
+// Set the Workspace's Tracking domain.
+// Ref: #/components/schemas/SetTrackingDomainInput
+type SetTrackingDomainInput struct {
+	// A host below a domain of your own, e.g. "t.example.com": never the apex (a CNAME cannot sit there)
+	// nor one of the Instance's own hosts. Stored lower case, IDN as punycode.
+	Host string `json:"host"`
+}
+
+// GetHost returns the value of Host.
+func (s *SetTrackingDomainInput) GetHost() string {
+	return s.Host
+}
+
+// SetHost sets the value of Host.
+func (s *SetTrackingDomainInput) SetHost(val string) {
+	s.Host = val
 }
 
 // SMTP config without the password.
@@ -16261,6 +16314,268 @@ type TimeZoneName string
 
 type Timestamp time.Time
 
+// A Tracking domain of the Workspace (ADR 0071): a host of its own on which the links of its mail and
+// the first-party tracker are served.
+// Ref: #/components/schemas/TrackingDomainResource
+type TrackingDomainResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The host, lower case with IDN as punycode, e.g. "t.example.com".
+	Host string `json:"host"`
+	// What the host does for the Workspace.
+	Role TrackingDomainRole `json:"role"`
+	// Where the host's verification stands.
+	State TrackingState `json:"state"`
+	// Why the host is not advancing; absent when nothing holds it back.
+	Reason OptTrackingReason `json:"reason"`
+	// The CNAME to publish.
+	Record CnameRecord `json:"record"`
+	// When the host first served (null = never): only a host that served is retired rather than deleted.
+	ServedAt OptNilTimestamp `json:"servedAt"`
+	// When the host was most recently checked (null = never).
+	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
+	// When the state most recently changed (null = never).
+	StateChangedAt OptNilTimestamp `json:"stateChangedAt"`
+	// Creation timestamp.
+	CreatedAt Timestamp `json:"createdAt"`
+	// Last update timestamp.
+	UpdatedAt Timestamp `json:"updatedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *TrackingDomainResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetHost returns the value of Host.
+func (s *TrackingDomainResource) GetHost() string {
+	return s.Host
+}
+
+// GetRole returns the value of Role.
+func (s *TrackingDomainResource) GetRole() TrackingDomainRole {
+	return s.Role
+}
+
+// GetState returns the value of State.
+func (s *TrackingDomainResource) GetState() TrackingState {
+	return s.State
+}
+
+// GetReason returns the value of Reason.
+func (s *TrackingDomainResource) GetReason() OptTrackingReason {
+	return s.Reason
+}
+
+// GetRecord returns the value of Record.
+func (s *TrackingDomainResource) GetRecord() CnameRecord {
+	return s.Record
+}
+
+// GetServedAt returns the value of ServedAt.
+func (s *TrackingDomainResource) GetServedAt() OptNilTimestamp {
+	return s.ServedAt
+}
+
+// GetLastCheckedAt returns the value of LastCheckedAt.
+func (s *TrackingDomainResource) GetLastCheckedAt() OptNilTimestamp {
+	return s.LastCheckedAt
+}
+
+// GetStateChangedAt returns the value of StateChangedAt.
+func (s *TrackingDomainResource) GetStateChangedAt() OptNilTimestamp {
+	return s.StateChangedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *TrackingDomainResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *TrackingDomainResource) GetUpdatedAt() Timestamp {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *TrackingDomainResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetHost sets the value of Host.
+func (s *TrackingDomainResource) SetHost(val string) {
+	s.Host = val
+}
+
+// SetRole sets the value of Role.
+func (s *TrackingDomainResource) SetRole(val TrackingDomainRole) {
+	s.Role = val
+}
+
+// SetState sets the value of State.
+func (s *TrackingDomainResource) SetState(val TrackingState) {
+	s.State = val
+}
+
+// SetReason sets the value of Reason.
+func (s *TrackingDomainResource) SetReason(val OptTrackingReason) {
+	s.Reason = val
+}
+
+// SetRecord sets the value of Record.
+func (s *TrackingDomainResource) SetRecord(val CnameRecord) {
+	s.Record = val
+}
+
+// SetServedAt sets the value of ServedAt.
+func (s *TrackingDomainResource) SetServedAt(val OptNilTimestamp) {
+	s.ServedAt = val
+}
+
+// SetLastCheckedAt sets the value of LastCheckedAt.
+func (s *TrackingDomainResource) SetLastCheckedAt(val OptNilTimestamp) {
+	s.LastCheckedAt = val
+}
+
+// SetStateChangedAt sets the value of StateChangedAt.
+func (s *TrackingDomainResource) SetStateChangedAt(val OptNilTimestamp) {
+	s.StateChangedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *TrackingDomainResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *TrackingDomainResource) SetUpdatedAt(val Timestamp) {
+	s.UpdatedAt = val
+}
+
+func (*TrackingDomainResource) trackingDomainsSetRes()    {}
+func (*TrackingDomainResource) trackingDomainsVerifyRes() {}
+
+// What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the
+// snippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only
+// the links already sent and the snippet already installed on it, until its CNAME leaves the edge.
+// Ref: #/components/schemas/TrackingDomainRole
+type TrackingDomainRole string
+
+const (
+	TrackingDomainRoleCurrent     TrackingDomainRole = "current"
+	TrackingDomainRoleReplacement TrackingDomainRole = "replacement"
+	TrackingDomainRoleRetired     TrackingDomainRole = "retired"
+)
+
+// AllValues returns all TrackingDomainRole values.
+func (TrackingDomainRole) AllValues() []TrackingDomainRole {
+	return []TrackingDomainRole{
+		TrackingDomainRoleCurrent,
+		TrackingDomainRoleReplacement,
+		TrackingDomainRoleRetired,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TrackingDomainRole) MarshalText() ([]byte, error) {
+	switch s {
+	case TrackingDomainRoleCurrent:
+		return []byte(s), nil
+	case TrackingDomainRoleReplacement:
+		return []byte(s), nil
+	case TrackingDomainRoleRetired:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TrackingDomainRole) UnmarshalText(data []byte) error {
+	switch TrackingDomainRole(data) {
+	case TrackingDomainRoleCurrent:
+		*s = TrackingDomainRoleCurrent
+		return nil
+	case TrackingDomainRoleReplacement:
+		*s = TrackingDomainRoleReplacement
+		return nil
+	case TrackingDomainRoleRetired:
+		*s = TrackingDomainRoleRetired
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type TrackingDomainsListForbidden ProblemDetails
+
+func (*TrackingDomainsListForbidden) trackingDomainsListRes() {}
+
+type TrackingDomainsListOKApplicationJSON []TrackingDomainResource
+
+func (*TrackingDomainsListOKApplicationJSON) trackingDomainsListRes() {}
+
+type TrackingDomainsListUnauthorized ProblemDetails
+
+func (*TrackingDomainsListUnauthorized) trackingDomainsListRes() {}
+
+type TrackingDomainsRemoveBadRequest ProblemDetails
+
+func (*TrackingDomainsRemoveBadRequest) trackingDomainsRemoveRes() {}
+
+type TrackingDomainsRemoveForbidden ProblemDetails
+
+func (*TrackingDomainsRemoveForbidden) trackingDomainsRemoveRes() {}
+
+// TrackingDomainsRemoveNoContent is response for TrackingDomainsRemove operation.
+type TrackingDomainsRemoveNoContent struct{}
+
+func (*TrackingDomainsRemoveNoContent) trackingDomainsRemoveRes() {}
+
+type TrackingDomainsRemoveNotFound ProblemDetails
+
+func (*TrackingDomainsRemoveNotFound) trackingDomainsRemoveRes() {}
+
+type TrackingDomainsRemoveUnauthorized ProblemDetails
+
+func (*TrackingDomainsRemoveUnauthorized) trackingDomainsRemoveRes() {}
+
+type TrackingDomainsSetBadRequest ProblemDetails
+
+func (*TrackingDomainsSetBadRequest) trackingDomainsSetRes() {}
+
+type TrackingDomainsSetForbidden ProblemDetails
+
+func (*TrackingDomainsSetForbidden) trackingDomainsSetRes() {}
+
+type TrackingDomainsSetNotFound ProblemDetails
+
+func (*TrackingDomainsSetNotFound) trackingDomainsSetRes() {}
+
+type TrackingDomainsSetUnauthorized ProblemDetails
+
+func (*TrackingDomainsSetUnauthorized) trackingDomainsSetRes() {}
+
+type TrackingDomainsSetUnprocessableEntity ProblemDetails
+
+func (*TrackingDomainsSetUnprocessableEntity) trackingDomainsSetRes() {}
+
+type TrackingDomainsVerifyBadRequest ProblemDetails
+
+func (*TrackingDomainsVerifyBadRequest) trackingDomainsVerifyRes() {}
+
+type TrackingDomainsVerifyForbidden ProblemDetails
+
+func (*TrackingDomainsVerifyForbidden) trackingDomainsVerifyRes() {}
+
+type TrackingDomainsVerifyNotFound ProblemDetails
+
+func (*TrackingDomainsVerifyNotFound) trackingDomainsVerifyRes() {}
+
+type TrackingDomainsVerifyUnauthorized ProblemDetails
+
+func (*TrackingDomainsVerifyUnauthorized) trackingDomainsVerifyRes() {}
+
 // Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another
 // Workspace already has this host verified (ADR 0038).
 // Ref: #/components/schemas/TrackingReason
@@ -16298,134 +16613,8 @@ func (s *TrackingReason) UnmarshalText(data []byte) error {
 	}
 }
 
-// The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only;
-// absent when the instance has no tracking target configured.
-// Ref: #/components/schemas/TrackingRecord
-type TrackingRecord struct {
-	// The record type (always CNAME).
-	Type TrackingRecordType `json:"type"`
-	// The host to create the record at: "track." followed by the domain.
-	Host string `json:"host"`
-	// The edge host the CNAME must point at.
-	Target string `json:"target"`
-	// Where the Tracking domain stands.
-	State TrackingState `json:"state"`
-	// Why the domain is not advancing; absent when nothing holds it back.
-	Reason OptTrackingReason `json:"reason"`
-	// When the Tracking domain was most recently checked (null = never).
-	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
-	// When the state most recently changed (null = never).
-	StateChangedAt OptNilTimestamp `json:"stateChangedAt"`
-}
-
-// GetType returns the value of Type.
-func (s *TrackingRecord) GetType() TrackingRecordType {
-	return s.Type
-}
-
-// GetHost returns the value of Host.
-func (s *TrackingRecord) GetHost() string {
-	return s.Host
-}
-
-// GetTarget returns the value of Target.
-func (s *TrackingRecord) GetTarget() string {
-	return s.Target
-}
-
-// GetState returns the value of State.
-func (s *TrackingRecord) GetState() TrackingState {
-	return s.State
-}
-
-// GetReason returns the value of Reason.
-func (s *TrackingRecord) GetReason() OptTrackingReason {
-	return s.Reason
-}
-
-// GetLastCheckedAt returns the value of LastCheckedAt.
-func (s *TrackingRecord) GetLastCheckedAt() OptNilTimestamp {
-	return s.LastCheckedAt
-}
-
-// GetStateChangedAt returns the value of StateChangedAt.
-func (s *TrackingRecord) GetStateChangedAt() OptNilTimestamp {
-	return s.StateChangedAt
-}
-
-// SetType sets the value of Type.
-func (s *TrackingRecord) SetType(val TrackingRecordType) {
-	s.Type = val
-}
-
-// SetHost sets the value of Host.
-func (s *TrackingRecord) SetHost(val string) {
-	s.Host = val
-}
-
-// SetTarget sets the value of Target.
-func (s *TrackingRecord) SetTarget(val string) {
-	s.Target = val
-}
-
-// SetState sets the value of State.
-func (s *TrackingRecord) SetState(val TrackingState) {
-	s.State = val
-}
-
-// SetReason sets the value of Reason.
-func (s *TrackingRecord) SetReason(val OptTrackingReason) {
-	s.Reason = val
-}
-
-// SetLastCheckedAt sets the value of LastCheckedAt.
-func (s *TrackingRecord) SetLastCheckedAt(val OptNilTimestamp) {
-	s.LastCheckedAt = val
-}
-
-// SetStateChangedAt sets the value of StateChangedAt.
-func (s *TrackingRecord) SetStateChangedAt(val OptNilTimestamp) {
-	s.StateChangedAt = val
-}
-
-// The record type (always CNAME).
-type TrackingRecordType string
-
-const (
-	TrackingRecordTypeCNAME TrackingRecordType = "CNAME"
-)
-
-// AllValues returns all TrackingRecordType values.
-func (TrackingRecordType) AllValues() []TrackingRecordType {
-	return []TrackingRecordType{
-		TrackingRecordTypeCNAME,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s TrackingRecordType) MarshalText() ([]byte, error) {
-	switch s {
-	case TrackingRecordTypeCNAME:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *TrackingRecordType) UnmarshalText(data []byte) error {
-	switch TrackingRecordType(data) {
-	case TrackingRecordTypeCNAME:
-		*s = TrackingRecordTypeCNAME
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host,
-// `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail
-// uses the host only while `serving`.
+// `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers.
 // Ref: #/components/schemas/TrackingState
 type TrackingState string
 

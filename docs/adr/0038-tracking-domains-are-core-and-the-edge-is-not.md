@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded in part by ADR 0071 (a Tracking domain is the Workspace's own, not a Sending domain's, and a replaced host is retired)
 ---
 
 # Tracking domains are a core feature; the edge that terminates their TLS is not

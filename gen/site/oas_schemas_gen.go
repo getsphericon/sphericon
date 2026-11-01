@@ -61,12 +61,14 @@ const (
 	ApiTokenScopeWebhooksTest          ApiTokenScope = "webhooks:test"
 	ApiTokenScopeCustomFieldsRead      ApiTokenScope = "custom_fields:read"
 	ApiTokenScopeSendingDomainsRead    ApiTokenScope = "sending_domains:read"
+	ApiTokenScopeTrackingDomainsRead   ApiTokenScope = "tracking_domains:read"
 	ApiTokenScopeIntegrationsRead      ApiTokenScope = "integrations:read"
 	ApiTokenScopeEmailsSend            ApiTokenScope = "emails:send"
 	ApiTokenScopeBroadcastsSend        ApiTokenScope = "broadcasts:send"
 	ApiTokenScopeAutomationsPublish    ApiTokenScope = "automations:publish"
 	ApiTokenScopeMcpSend               ApiTokenScope = "mcp:send"
 	ApiTokenScopeSendingDomainsWrite   ApiTokenScope = "sending_domains:write"
+	ApiTokenScopeTrackingDomainsWrite  ApiTokenScope = "tracking_domains:write"
 	ApiTokenScopeIntegrationsWrite     ApiTokenScope = "integrations:write"
 	ApiTokenScopeContactsErase         ApiTokenScope = "contacts:erase"
 	ApiTokenScopeCapturedMessagesRead  ApiTokenScope = "captured_messages:read"
@@ -101,12 +103,14 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeWebhooksTest,
 		ApiTokenScopeCustomFieldsRead,
 		ApiTokenScopeSendingDomainsRead,
+		ApiTokenScopeTrackingDomainsRead,
 		ApiTokenScopeIntegrationsRead,
 		ApiTokenScopeEmailsSend,
 		ApiTokenScopeBroadcastsSend,
 		ApiTokenScopeAutomationsPublish,
 		ApiTokenScopeMcpSend,
 		ApiTokenScopeSendingDomainsWrite,
+		ApiTokenScopeTrackingDomainsWrite,
 		ApiTokenScopeIntegrationsWrite,
 		ApiTokenScopeContactsErase,
 		ApiTokenScopeCapturedMessagesRead,
@@ -163,6 +167,8 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ApiTokenScopeSendingDomainsRead:
 		return []byte(s), nil
+	case ApiTokenScopeTrackingDomainsRead:
+		return []byte(s), nil
 	case ApiTokenScopeIntegrationsRead:
 		return []byte(s), nil
 	case ApiTokenScopeEmailsSend:
@@ -174,6 +180,8 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeMcpSend:
 		return []byte(s), nil
 	case ApiTokenScopeSendingDomainsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeTrackingDomainsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeIntegrationsWrite:
 		return []byte(s), nil
@@ -262,6 +270,9 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	case ApiTokenScopeSendingDomainsRead:
 		*s = ApiTokenScopeSendingDomainsRead
 		return nil
+	case ApiTokenScopeTrackingDomainsRead:
+		*s = ApiTokenScopeTrackingDomainsRead
+		return nil
 	case ApiTokenScopeIntegrationsRead:
 		*s = ApiTokenScopeIntegrationsRead
 		return nil
@@ -279,6 +290,9 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeSendingDomainsWrite:
 		*s = ApiTokenScopeSendingDomainsWrite
+		return nil
+	case ApiTokenScopeTrackingDomainsWrite:
+		*s = ApiTokenScopeTrackingDomainsWrite
 		return nil
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
@@ -1775,28 +1789,29 @@ type EntityId int64
 type GrantableScope string
 
 const (
-	GrantableScopeContactsRead       GrantableScope = "contacts:read"
-	GrantableScopeContactsWrite      GrantableScope = "contacts:write"
-	GrantableScopeContactsExport     GrantableScope = "contacts:export"
-	GrantableScopeSuppressionsWrite  GrantableScope = "suppressions:write"
-	GrantableScopeEventsRead         GrantableScope = "events:read"
-	GrantableScopeEventsWrite        GrantableScope = "events:write"
-	GrantableScopeSegmentsRead       GrantableScope = "segments:read"
-	GrantableScopeSegmentsWrite      GrantableScope = "segments:write"
-	GrantableScopeBroadcastsRead     GrantableScope = "broadcasts:read"
-	GrantableScopeBroadcastsWrite    GrantableScope = "broadcasts:write"
-	GrantableScopeAutomationsRead    GrantableScope = "automations:read"
-	GrantableScopeAutomationsWrite   GrantableScope = "automations:write"
-	GrantableScopeEnrollmentsRead    GrantableScope = "enrollments:read"
-	GrantableScopeTemplatesRead      GrantableScope = "templates:read"
-	GrantableScopeTemplatesWrite     GrantableScope = "templates:write"
-	GrantableScopeWebhooksRead       GrantableScope = "webhooks:read"
-	GrantableScopeWebhooksWrite      GrantableScope = "webhooks:write"
-	GrantableScopeWebhooksRegenerate GrantableScope = "webhooks:regenerate"
-	GrantableScopeWebhooksTest       GrantableScope = "webhooks:test"
-	GrantableScopeCustomFieldsRead   GrantableScope = "custom_fields:read"
-	GrantableScopeSendingDomainsRead GrantableScope = "sending_domains:read"
-	GrantableScopeIntegrationsRead   GrantableScope = "integrations:read"
+	GrantableScopeContactsRead        GrantableScope = "contacts:read"
+	GrantableScopeContactsWrite       GrantableScope = "contacts:write"
+	GrantableScopeContactsExport      GrantableScope = "contacts:export"
+	GrantableScopeSuppressionsWrite   GrantableScope = "suppressions:write"
+	GrantableScopeEventsRead          GrantableScope = "events:read"
+	GrantableScopeEventsWrite         GrantableScope = "events:write"
+	GrantableScopeSegmentsRead        GrantableScope = "segments:read"
+	GrantableScopeSegmentsWrite       GrantableScope = "segments:write"
+	GrantableScopeBroadcastsRead      GrantableScope = "broadcasts:read"
+	GrantableScopeBroadcastsWrite     GrantableScope = "broadcasts:write"
+	GrantableScopeAutomationsRead     GrantableScope = "automations:read"
+	GrantableScopeAutomationsWrite    GrantableScope = "automations:write"
+	GrantableScopeEnrollmentsRead     GrantableScope = "enrollments:read"
+	GrantableScopeTemplatesRead       GrantableScope = "templates:read"
+	GrantableScopeTemplatesWrite      GrantableScope = "templates:write"
+	GrantableScopeWebhooksRead        GrantableScope = "webhooks:read"
+	GrantableScopeWebhooksWrite       GrantableScope = "webhooks:write"
+	GrantableScopeWebhooksRegenerate  GrantableScope = "webhooks:regenerate"
+	GrantableScopeWebhooksTest        GrantableScope = "webhooks:test"
+	GrantableScopeCustomFieldsRead    GrantableScope = "custom_fields:read"
+	GrantableScopeSendingDomainsRead  GrantableScope = "sending_domains:read"
+	GrantableScopeTrackingDomainsRead GrantableScope = "tracking_domains:read"
+	GrantableScopeIntegrationsRead    GrantableScope = "integrations:read"
 )
 
 // AllValues returns all GrantableScope values.
@@ -1823,6 +1838,7 @@ func (GrantableScope) AllValues() []GrantableScope {
 		GrantableScopeWebhooksTest,
 		GrantableScopeCustomFieldsRead,
 		GrantableScopeSendingDomainsRead,
+		GrantableScopeTrackingDomainsRead,
 		GrantableScopeIntegrationsRead,
 	}
 }
@@ -1871,6 +1887,8 @@ func (s GrantableScope) MarshalText() ([]byte, error) {
 	case GrantableScopeCustomFieldsRead:
 		return []byte(s), nil
 	case GrantableScopeSendingDomainsRead:
+		return []byte(s), nil
+	case GrantableScopeTrackingDomainsRead:
 		return []byte(s), nil
 	case GrantableScopeIntegrationsRead:
 		return []byte(s), nil
@@ -1944,6 +1962,9 @@ func (s *GrantableScope) UnmarshalText(data []byte) error {
 		return nil
 	case GrantableScopeSendingDomainsRead:
 		*s = GrantableScopeSendingDomainsRead
+		return nil
+	case GrantableScopeTrackingDomainsRead:
+		*s = GrantableScopeTrackingDomainsRead
 		return nil
 	case GrantableScopeIntegrationsRead:
 		*s = GrantableScopeIntegrationsRead
@@ -5594,52 +5615,6 @@ func (o OptSiteTrackingReason) Or(d SiteTrackingReason) SiteTrackingReason {
 	return d
 }
 
-// NewOptSiteTrackingRecord returns new OptSiteTrackingRecord with value set to v.
-func NewOptSiteTrackingRecord(v SiteTrackingRecord) OptSiteTrackingRecord {
-	return OptSiteTrackingRecord{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteTrackingRecord is optional SiteTrackingRecord.
-type OptSiteTrackingRecord struct {
-	Value SiteTrackingRecord
-	Set   bool
-}
-
-// IsSet returns true if OptSiteTrackingRecord was set.
-func (o OptSiteTrackingRecord) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteTrackingRecord) Reset() {
-	var v SiteTrackingRecord
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteTrackingRecord) SetTo(v SiteTrackingRecord) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteTrackingRecord) Get() (v SiteTrackingRecord, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteTrackingRecord) Or(d SiteTrackingRecord) SiteTrackingRecord {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptSiteWebhookDisabledReason returns new OptSiteWebhookDisabledReason with value set to v.
 func NewOptSiteWebhookDisabledReason(v SiteWebhookDisabledReason) OptSiteWebhookDisabledReason {
 	return OptSiteWebhookDisabledReason{
@@ -5880,27 +5855,28 @@ type PasskeyName string
 type Permission string
 
 const (
-	PermissionMembersManage        Permission = "members:manage"
-	PermissionAuditRead            Permission = "audit:read"
-	PermissionAuditConfigure       Permission = "audit:configure"
-	PermissionTokensManage         Permission = "tokens:manage"
-	PermissionIntegrationsManage   Permission = "integrations:manage"
-	PermissionWebhooksManage       Permission = "webhooks:manage"
-	PermissionSendingDomainsManage Permission = "sending_domains:manage"
-	PermissionContactsErase        Permission = "contacts:erase"
-	PermissionContactsExport       Permission = "contacts:export"
-	PermissionSuppressionsManage   Permission = "suppressions:manage"
-	PermissionSecondFactorManage   Permission = "second_factor:manage"
-	PermissionWorkspaceUpdate      Permission = "workspace:update"
-	PermissionWorkspaceTimezone    Permission = "workspace:timezone"
-	PermissionRevenueConfigure     Permission = "revenue:configure"
-	PermissionBrandKitManage       Permission = "brand_kit:manage"
-	PermissionJoinDomainsManage    Permission = "join_domains:manage"
-	PermissionHoldsResolve         Permission = "holds:resolve"
-	PermissionAccountLinkOpen      Permission = "account_link:open"
-	PermissionWorkspaceDelete      Permission = "workspace:delete"
-	PermissionOwnersManage         Permission = "owners:manage"
-	PermissionReleaseRead          Permission = "release:read"
+	PermissionMembersManage         Permission = "members:manage"
+	PermissionAuditRead             Permission = "audit:read"
+	PermissionAuditConfigure        Permission = "audit:configure"
+	PermissionTokensManage          Permission = "tokens:manage"
+	PermissionIntegrationsManage    Permission = "integrations:manage"
+	PermissionWebhooksManage        Permission = "webhooks:manage"
+	PermissionSendingDomainsManage  Permission = "sending_domains:manage"
+	PermissionContactsErase         Permission = "contacts:erase"
+	PermissionContactsExport        Permission = "contacts:export"
+	PermissionSuppressionsManage    Permission = "suppressions:manage"
+	PermissionSecondFactorManage    Permission = "second_factor:manage"
+	PermissionWorkspaceUpdate       Permission = "workspace:update"
+	PermissionWorkspaceTimezone     Permission = "workspace:timezone"
+	PermissionRevenueConfigure      Permission = "revenue:configure"
+	PermissionBrandKitManage        Permission = "brand_kit:manage"
+	PermissionJoinDomainsManage     Permission = "join_domains:manage"
+	PermissionTrackingDomainsManage Permission = "tracking_domains:manage"
+	PermissionHoldsResolve          Permission = "holds:resolve"
+	PermissionAccountLinkOpen       Permission = "account_link:open"
+	PermissionWorkspaceDelete       Permission = "workspace:delete"
+	PermissionOwnersManage          Permission = "owners:manage"
+	PermissionReleaseRead           Permission = "release:read"
 )
 
 // AllValues returns all Permission values.
@@ -5922,6 +5898,7 @@ func (Permission) AllValues() []Permission {
 		PermissionRevenueConfigure,
 		PermissionBrandKitManage,
 		PermissionJoinDomainsManage,
+		PermissionTrackingDomainsManage,
 		PermissionHoldsResolve,
 		PermissionAccountLinkOpen,
 		PermissionWorkspaceDelete,
@@ -5964,6 +5941,8 @@ func (s Permission) MarshalText() ([]byte, error) {
 	case PermissionBrandKitManage:
 		return []byte(s), nil
 	case PermissionJoinDomainsManage:
+		return []byte(s), nil
+	case PermissionTrackingDomainsManage:
 		return []byte(s), nil
 	case PermissionHoldsResolve:
 		return []byte(s), nil
@@ -6031,6 +6010,9 @@ func (s *Permission) UnmarshalText(data []byte) error {
 	case PermissionJoinDomainsManage:
 		*s = PermissionJoinDomainsManage
 		return nil
+	case PermissionTrackingDomainsManage:
+		*s = PermissionTrackingDomainsManage
+		return nil
 	case PermissionHoldsResolve:
 		*s = PermissionHoldsResolve
 		return nil
@@ -6060,34 +6042,36 @@ func (s *Permission) UnmarshalText(data []byte) error {
 type PersonalScope string
 
 const (
-	PersonalScopeContactsRead        PersonalScope = "contacts:read"
-	PersonalScopeContactsWrite       PersonalScope = "contacts:write"
-	PersonalScopeContactsExport      PersonalScope = "contacts:export"
-	PersonalScopeSuppressionsWrite   PersonalScope = "suppressions:write"
-	PersonalScopeEventsRead          PersonalScope = "events:read"
-	PersonalScopeEventsWrite         PersonalScope = "events:write"
-	PersonalScopeSegmentsRead        PersonalScope = "segments:read"
-	PersonalScopeSegmentsWrite       PersonalScope = "segments:write"
-	PersonalScopeBroadcastsRead      PersonalScope = "broadcasts:read"
-	PersonalScopeBroadcastsWrite     PersonalScope = "broadcasts:write"
-	PersonalScopeAutomationsRead     PersonalScope = "automations:read"
-	PersonalScopeAutomationsWrite    PersonalScope = "automations:write"
-	PersonalScopeEnrollmentsRead     PersonalScope = "enrollments:read"
-	PersonalScopeTemplatesRead       PersonalScope = "templates:read"
-	PersonalScopeTemplatesWrite      PersonalScope = "templates:write"
-	PersonalScopeWebhooksRead        PersonalScope = "webhooks:read"
-	PersonalScopeWebhooksWrite       PersonalScope = "webhooks:write"
-	PersonalScopeWebhooksRegenerate  PersonalScope = "webhooks:regenerate"
-	PersonalScopeWebhooksTest        PersonalScope = "webhooks:test"
-	PersonalScopeCustomFieldsRead    PersonalScope = "custom_fields:read"
-	PersonalScopeSendingDomainsRead  PersonalScope = "sending_domains:read"
-	PersonalScopeIntegrationsRead    PersonalScope = "integrations:read"
-	PersonalScopeEmailsSend          PersonalScope = "emails:send"
-	PersonalScopeBroadcastsSend      PersonalScope = "broadcasts:send"
-	PersonalScopeAutomationsPublish  PersonalScope = "automations:publish"
-	PersonalScopeMcpSend             PersonalScope = "mcp:send"
-	PersonalScopeSendingDomainsWrite PersonalScope = "sending_domains:write"
-	PersonalScopeIntegrationsWrite   PersonalScope = "integrations:write"
+	PersonalScopeContactsRead         PersonalScope = "contacts:read"
+	PersonalScopeContactsWrite        PersonalScope = "contacts:write"
+	PersonalScopeContactsExport       PersonalScope = "contacts:export"
+	PersonalScopeSuppressionsWrite    PersonalScope = "suppressions:write"
+	PersonalScopeEventsRead           PersonalScope = "events:read"
+	PersonalScopeEventsWrite          PersonalScope = "events:write"
+	PersonalScopeSegmentsRead         PersonalScope = "segments:read"
+	PersonalScopeSegmentsWrite        PersonalScope = "segments:write"
+	PersonalScopeBroadcastsRead       PersonalScope = "broadcasts:read"
+	PersonalScopeBroadcastsWrite      PersonalScope = "broadcasts:write"
+	PersonalScopeAutomationsRead      PersonalScope = "automations:read"
+	PersonalScopeAutomationsWrite     PersonalScope = "automations:write"
+	PersonalScopeEnrollmentsRead      PersonalScope = "enrollments:read"
+	PersonalScopeTemplatesRead        PersonalScope = "templates:read"
+	PersonalScopeTemplatesWrite       PersonalScope = "templates:write"
+	PersonalScopeWebhooksRead         PersonalScope = "webhooks:read"
+	PersonalScopeWebhooksWrite        PersonalScope = "webhooks:write"
+	PersonalScopeWebhooksRegenerate   PersonalScope = "webhooks:regenerate"
+	PersonalScopeWebhooksTest         PersonalScope = "webhooks:test"
+	PersonalScopeCustomFieldsRead     PersonalScope = "custom_fields:read"
+	PersonalScopeSendingDomainsRead   PersonalScope = "sending_domains:read"
+	PersonalScopeTrackingDomainsRead  PersonalScope = "tracking_domains:read"
+	PersonalScopeIntegrationsRead     PersonalScope = "integrations:read"
+	PersonalScopeEmailsSend           PersonalScope = "emails:send"
+	PersonalScopeBroadcastsSend       PersonalScope = "broadcasts:send"
+	PersonalScopeAutomationsPublish   PersonalScope = "automations:publish"
+	PersonalScopeMcpSend              PersonalScope = "mcp:send"
+	PersonalScopeSendingDomainsWrite  PersonalScope = "sending_domains:write"
+	PersonalScopeTrackingDomainsWrite PersonalScope = "tracking_domains:write"
+	PersonalScopeIntegrationsWrite    PersonalScope = "integrations:write"
 )
 
 // AllValues returns all PersonalScope values.
@@ -6114,12 +6098,14 @@ func (PersonalScope) AllValues() []PersonalScope {
 		PersonalScopeWebhooksTest,
 		PersonalScopeCustomFieldsRead,
 		PersonalScopeSendingDomainsRead,
+		PersonalScopeTrackingDomainsRead,
 		PersonalScopeIntegrationsRead,
 		PersonalScopeEmailsSend,
 		PersonalScopeBroadcastsSend,
 		PersonalScopeAutomationsPublish,
 		PersonalScopeMcpSend,
 		PersonalScopeSendingDomainsWrite,
+		PersonalScopeTrackingDomainsWrite,
 		PersonalScopeIntegrationsWrite,
 	}
 }
@@ -6169,6 +6155,8 @@ func (s PersonalScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case PersonalScopeSendingDomainsRead:
 		return []byte(s), nil
+	case PersonalScopeTrackingDomainsRead:
+		return []byte(s), nil
 	case PersonalScopeIntegrationsRead:
 		return []byte(s), nil
 	case PersonalScopeEmailsSend:
@@ -6180,6 +6168,8 @@ func (s PersonalScope) MarshalText() ([]byte, error) {
 	case PersonalScopeMcpSend:
 		return []byte(s), nil
 	case PersonalScopeSendingDomainsWrite:
+		return []byte(s), nil
+	case PersonalScopeTrackingDomainsWrite:
 		return []byte(s), nil
 	case PersonalScopeIntegrationsWrite:
 		return []byte(s), nil
@@ -6254,6 +6244,9 @@ func (s *PersonalScope) UnmarshalText(data []byte) error {
 	case PersonalScopeSendingDomainsRead:
 		*s = PersonalScopeSendingDomainsRead
 		return nil
+	case PersonalScopeTrackingDomainsRead:
+		*s = PersonalScopeTrackingDomainsRead
+		return nil
 	case PersonalScopeIntegrationsRead:
 		*s = PersonalScopeIntegrationsRead
 		return nil
@@ -6271,6 +6264,9 @@ func (s *PersonalScope) UnmarshalText(data []byte) error {
 		return nil
 	case PersonalScopeSendingDomainsWrite:
 		*s = PersonalScopeSendingDomainsWrite
+		return nil
+	case PersonalScopeTrackingDomainsWrite:
+		*s = PersonalScopeTrackingDomainsWrite
 		return nil
 	case PersonalScopeIntegrationsWrite:
 		*s = PersonalScopeIntegrationsWrite
@@ -6861,22 +6857,42 @@ func (s *SesConfigInputKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// Set the Workspace's Tracking domain.
+// Ref: #/components/schemas/SetTrackingDomainInput
+type SetTrackingDomainInput struct {
+	// A host below a domain of your own, e.g. "t.example.com": never the apex (a CNAME cannot sit there)
+	// nor one of the Instance's own hosts. Stored lower case, IDN as punycode.
+	Host string `json:"host"`
+}
+
+// GetHost returns the value of Host.
+func (s *SetTrackingDomainInput) GetHost() string {
+	return s.Host
+}
+
+// SetHost sets the value of Host.
+func (s *SetTrackingDomainInput) SetHost(val string) {
+	s.Host = val
+}
+
 // Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it authenticates,
-// the Integrations and the provider credentials they hold). An OAuth client gets them only when it
-// asked for them and the user ticks a box of their own for them, apart from the send class: they are
-// no send-class scope and bring no mcp:send.
+// the Tracking domain its links are on, the Integrations and the provider credentials they hold). An
+// OAuth client gets them only when it asked for them and the user ticks a box of their own for them,
+// apart from the send class: they are no send-class scope and bring no mcp:send.
 // Ref: #/components/schemas/SetupScope
 type SetupScope string
 
 const (
-	SetupScopeSendingDomainsWrite SetupScope = "sending_domains:write"
-	SetupScopeIntegrationsWrite   SetupScope = "integrations:write"
+	SetupScopeSendingDomainsWrite  SetupScope = "sending_domains:write"
+	SetupScopeTrackingDomainsWrite SetupScope = "tracking_domains:write"
+	SetupScopeIntegrationsWrite    SetupScope = "integrations:write"
 )
 
 // AllValues returns all SetupScope values.
 func (SetupScope) AllValues() []SetupScope {
 	return []SetupScope{
 		SetupScopeSendingDomainsWrite,
+		SetupScopeTrackingDomainsWrite,
 		SetupScopeIntegrationsWrite,
 	}
 }
@@ -6885,6 +6901,8 @@ func (SetupScope) AllValues() []SetupScope {
 func (s SetupScope) MarshalText() ([]byte, error) {
 	switch s {
 	case SetupScopeSendingDomainsWrite:
+		return []byte(s), nil
+	case SetupScopeTrackingDomainsWrite:
 		return []byte(s), nil
 	case SetupScopeIntegrationsWrite:
 		return []byte(s), nil
@@ -6898,6 +6916,9 @@ func (s *SetupScope) UnmarshalText(data []byte) error {
 	switch SetupScope(data) {
 	case SetupScopeSendingDomainsWrite:
 		*s = SetupScopeSendingDomainsWrite
+		return nil
+	case SetupScopeTrackingDomainsWrite:
+		*s = SetupScopeTrackingDomainsWrite
 		return nil
 	case SetupScopeIntegrationsWrite:
 		*s = SetupScopeIntegrationsWrite
@@ -11715,6 +11736,82 @@ func (*SiteCapturedMessagesListOK) siteCapturedMessagesListRes() {}
 type SiteCapturedMessagesListUnprocessableEntity ProblemDetails
 
 func (*SiteCapturedMessagesListUnprocessableEntity) siteCapturedMessagesListRes() {}
+
+// The CNAME record to publish: `host` must point at `target`.
+// Ref: #/components/schemas/SiteCnameRecord
+type SiteCnameRecord struct {
+	// The record type (always CNAME).
+	Type SiteCnameRecordType `json:"type"`
+	// The host to create the record at.
+	Host string `json:"host"`
+	// The edge host the CNAME must point at.
+	Target string `json:"target"`
+}
+
+// GetType returns the value of Type.
+func (s *SiteCnameRecord) GetType() SiteCnameRecordType {
+	return s.Type
+}
+
+// GetHost returns the value of Host.
+func (s *SiteCnameRecord) GetHost() string {
+	return s.Host
+}
+
+// GetTarget returns the value of Target.
+func (s *SiteCnameRecord) GetTarget() string {
+	return s.Target
+}
+
+// SetType sets the value of Type.
+func (s *SiteCnameRecord) SetType(val SiteCnameRecordType) {
+	s.Type = val
+}
+
+// SetHost sets the value of Host.
+func (s *SiteCnameRecord) SetHost(val string) {
+	s.Host = val
+}
+
+// SetTarget sets the value of Target.
+func (s *SiteCnameRecord) SetTarget(val string) {
+	s.Target = val
+}
+
+// The record type (always CNAME).
+type SiteCnameRecordType string
+
+const (
+	SiteCnameRecordTypeCNAME SiteCnameRecordType = "CNAME"
+)
+
+// AllValues returns all SiteCnameRecordType values.
+func (SiteCnameRecordType) AllValues() []SiteCnameRecordType {
+	return []SiteCnameRecordType{
+		SiteCnameRecordTypeCNAME,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteCnameRecordType) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteCnameRecordTypeCNAME:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteCnameRecordType) UnmarshalText(data []byte) error {
+	switch SiteCnameRecordType(data) {
+	case SiteCnameRecordTypeCNAME:
+		*s = SiteCnameRecordTypeCNAME
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // How a condition group combines its entries.
 // Ref: #/components/schemas/SiteConditionCombinator
@@ -21161,8 +21258,6 @@ type SiteSendingDomainResource struct {
 	SpfRecord SiteDnsRecord `json:"spfRecord"`
 	// The suggested DMARC TXT record (advisory bulk-readiness signal).
 	DmarcRecord SiteDnsRecord `json:"dmarcRecord"`
-	// The Tracking domain CNAME; absent when the instance has no tracking target configured.
-	TrackingRecord OptSiteTrackingRecord `json:"trackingRecord"`
 	// When the DKIM DNS was most recently checked (null = never).
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
 	// When the domain most recently became verified (null = never); kept after a loss.
@@ -21170,8 +21265,7 @@ type SiteSendingDomainResource struct {
 	// When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or
 	// verified again since).
 	VerificationLostAt OptNilTimestamp `json:"verificationLostAt"`
-	// When the domain was archived; null while it is kept. An archived domain serves no Tracking domain
-	// host.
+	// When the domain was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
@@ -21212,11 +21306,6 @@ func (s *SiteSendingDomainResource) GetSpfRecord() SiteDnsRecord {
 // GetDmarcRecord returns the value of DmarcRecord.
 func (s *SiteSendingDomainResource) GetDmarcRecord() SiteDnsRecord {
 	return s.DmarcRecord
-}
-
-// GetTrackingRecord returns the value of TrackingRecord.
-func (s *SiteSendingDomainResource) GetTrackingRecord() OptSiteTrackingRecord {
-	return s.TrackingRecord
 }
 
 // GetLastCheckedAt returns the value of LastCheckedAt.
@@ -21282,11 +21371,6 @@ func (s *SiteSendingDomainResource) SetSpfRecord(val SiteDnsRecord) {
 // SetDmarcRecord sets the value of DmarcRecord.
 func (s *SiteSendingDomainResource) SetDmarcRecord(val SiteDnsRecord) {
 	s.DmarcRecord = val
-}
-
-// SetTrackingRecord sets the value of TrackingRecord.
-func (s *SiteSendingDomainResource) SetTrackingRecord(val OptSiteTrackingRecord) {
-	s.TrackingRecord = val
 }
 
 // SetLastCheckedAt sets the value of LastCheckedAt.
@@ -23278,6 +23362,256 @@ type SiteTokensUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteTokensUpdateUnprocessableEntity) siteTokensUpdateRes() {}
 
+// A Tracking domain of the Workspace (ADR 0071): a host of its own on which the links of its mail and
+// the first-party tracker are served.
+// Ref: #/components/schemas/SiteTrackingDomainResource
+type SiteTrackingDomainResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The host, lower case with IDN as punycode, e.g. "t.example.com".
+	Host string `json:"host"`
+	// What the host does for the Workspace.
+	Role SiteTrackingDomainRole `json:"role"`
+	// Where the host's verification stands.
+	State SiteTrackingState `json:"state"`
+	// Why the host is not advancing; absent when nothing holds it back.
+	Reason OptSiteTrackingReason `json:"reason"`
+	// The CNAME to publish.
+	Record SiteCnameRecord `json:"record"`
+	// When the host first served (null = never): only a host that served is retired rather than deleted.
+	ServedAt OptNilTimestamp `json:"servedAt"`
+	// When the host was most recently checked (null = never).
+	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
+	// When the state most recently changed (null = never).
+	StateChangedAt OptNilTimestamp `json:"stateChangedAt"`
+	// Creation timestamp.
+	CreatedAt Timestamp `json:"createdAt"`
+	// Last update timestamp.
+	UpdatedAt Timestamp `json:"updatedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteTrackingDomainResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetHost returns the value of Host.
+func (s *SiteTrackingDomainResource) GetHost() string {
+	return s.Host
+}
+
+// GetRole returns the value of Role.
+func (s *SiteTrackingDomainResource) GetRole() SiteTrackingDomainRole {
+	return s.Role
+}
+
+// GetState returns the value of State.
+func (s *SiteTrackingDomainResource) GetState() SiteTrackingState {
+	return s.State
+}
+
+// GetReason returns the value of Reason.
+func (s *SiteTrackingDomainResource) GetReason() OptSiteTrackingReason {
+	return s.Reason
+}
+
+// GetRecord returns the value of Record.
+func (s *SiteTrackingDomainResource) GetRecord() SiteCnameRecord {
+	return s.Record
+}
+
+// GetServedAt returns the value of ServedAt.
+func (s *SiteTrackingDomainResource) GetServedAt() OptNilTimestamp {
+	return s.ServedAt
+}
+
+// GetLastCheckedAt returns the value of LastCheckedAt.
+func (s *SiteTrackingDomainResource) GetLastCheckedAt() OptNilTimestamp {
+	return s.LastCheckedAt
+}
+
+// GetStateChangedAt returns the value of StateChangedAt.
+func (s *SiteTrackingDomainResource) GetStateChangedAt() OptNilTimestamp {
+	return s.StateChangedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteTrackingDomainResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SiteTrackingDomainResource) GetUpdatedAt() Timestamp {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteTrackingDomainResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetHost sets the value of Host.
+func (s *SiteTrackingDomainResource) SetHost(val string) {
+	s.Host = val
+}
+
+// SetRole sets the value of Role.
+func (s *SiteTrackingDomainResource) SetRole(val SiteTrackingDomainRole) {
+	s.Role = val
+}
+
+// SetState sets the value of State.
+func (s *SiteTrackingDomainResource) SetState(val SiteTrackingState) {
+	s.State = val
+}
+
+// SetReason sets the value of Reason.
+func (s *SiteTrackingDomainResource) SetReason(val OptSiteTrackingReason) {
+	s.Reason = val
+}
+
+// SetRecord sets the value of Record.
+func (s *SiteTrackingDomainResource) SetRecord(val SiteCnameRecord) {
+	s.Record = val
+}
+
+// SetServedAt sets the value of ServedAt.
+func (s *SiteTrackingDomainResource) SetServedAt(val OptNilTimestamp) {
+	s.ServedAt = val
+}
+
+// SetLastCheckedAt sets the value of LastCheckedAt.
+func (s *SiteTrackingDomainResource) SetLastCheckedAt(val OptNilTimestamp) {
+	s.LastCheckedAt = val
+}
+
+// SetStateChangedAt sets the value of StateChangedAt.
+func (s *SiteTrackingDomainResource) SetStateChangedAt(val OptNilTimestamp) {
+	s.StateChangedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteTrackingDomainResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SiteTrackingDomainResource) SetUpdatedAt(val Timestamp) {
+	s.UpdatedAt = val
+}
+
+func (*SiteTrackingDomainResource) siteTrackingDomainsSetRes()    {}
+func (*SiteTrackingDomainResource) siteTrackingDomainsVerifyRes() {}
+
+// What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the
+// snippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only
+// the links already sent and the snippet already installed on it, until its CNAME leaves the edge.
+// Ref: #/components/schemas/SiteTrackingDomainRole
+type SiteTrackingDomainRole string
+
+const (
+	SiteTrackingDomainRoleCurrent     SiteTrackingDomainRole = "current"
+	SiteTrackingDomainRoleReplacement SiteTrackingDomainRole = "replacement"
+	SiteTrackingDomainRoleRetired     SiteTrackingDomainRole = "retired"
+)
+
+// AllValues returns all SiteTrackingDomainRole values.
+func (SiteTrackingDomainRole) AllValues() []SiteTrackingDomainRole {
+	return []SiteTrackingDomainRole{
+		SiteTrackingDomainRoleCurrent,
+		SiteTrackingDomainRoleReplacement,
+		SiteTrackingDomainRoleRetired,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteTrackingDomainRole) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteTrackingDomainRoleCurrent:
+		return []byte(s), nil
+	case SiteTrackingDomainRoleReplacement:
+		return []byte(s), nil
+	case SiteTrackingDomainRoleRetired:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteTrackingDomainRole) UnmarshalText(data []byte) error {
+	switch SiteTrackingDomainRole(data) {
+	case SiteTrackingDomainRoleCurrent:
+		*s = SiteTrackingDomainRoleCurrent
+		return nil
+	case SiteTrackingDomainRoleReplacement:
+		*s = SiteTrackingDomainRoleReplacement
+		return nil
+	case SiteTrackingDomainRoleRetired:
+		*s = SiteTrackingDomainRoleRetired
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SiteTrackingDomainsListBadRequest ProblemDetails
+
+func (*SiteTrackingDomainsListBadRequest) siteTrackingDomainsListRes() {}
+
+type SiteTrackingDomainsListNotFound ProblemDetails
+
+func (*SiteTrackingDomainsListNotFound) siteTrackingDomainsListRes() {}
+
+type SiteTrackingDomainsListOKApplicationJSON []SiteTrackingDomainResource
+
+func (*SiteTrackingDomainsListOKApplicationJSON) siteTrackingDomainsListRes() {}
+
+type SiteTrackingDomainsRemoveBadRequest ProblemDetails
+
+func (*SiteTrackingDomainsRemoveBadRequest) siteTrackingDomainsRemoveRes() {}
+
+type SiteTrackingDomainsRemoveForbidden ProblemDetails
+
+func (*SiteTrackingDomainsRemoveForbidden) siteTrackingDomainsRemoveRes() {}
+
+// SiteTrackingDomainsRemoveNoContent is response for SiteTrackingDomainsRemove operation.
+type SiteTrackingDomainsRemoveNoContent struct{}
+
+func (*SiteTrackingDomainsRemoveNoContent) siteTrackingDomainsRemoveRes() {}
+
+type SiteTrackingDomainsRemoveNotFound ProblemDetails
+
+func (*SiteTrackingDomainsRemoveNotFound) siteTrackingDomainsRemoveRes() {}
+
+type SiteTrackingDomainsSetBadRequest ProblemDetails
+
+func (*SiteTrackingDomainsSetBadRequest) siteTrackingDomainsSetRes() {}
+
+type SiteTrackingDomainsSetForbidden ProblemDetails
+
+func (*SiteTrackingDomainsSetForbidden) siteTrackingDomainsSetRes() {}
+
+type SiteTrackingDomainsSetNotFound ProblemDetails
+
+func (*SiteTrackingDomainsSetNotFound) siteTrackingDomainsSetRes() {}
+
+type SiteTrackingDomainsSetUnprocessableEntity ProblemDetails
+
+func (*SiteTrackingDomainsSetUnprocessableEntity) siteTrackingDomainsSetRes() {}
+
+type SiteTrackingDomainsVerifyBadRequest ProblemDetails
+
+func (*SiteTrackingDomainsVerifyBadRequest) siteTrackingDomainsVerifyRes() {}
+
+type SiteTrackingDomainsVerifyForbidden ProblemDetails
+
+func (*SiteTrackingDomainsVerifyForbidden) siteTrackingDomainsVerifyRes() {}
+
+type SiteTrackingDomainsVerifyNotFound ProblemDetails
+
+func (*SiteTrackingDomainsVerifyNotFound) siteTrackingDomainsVerifyRes() {}
+
 // Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another
 // Workspace already has this host verified (ADR 0038).
 // Ref: #/components/schemas/SiteTrackingReason
@@ -23315,134 +23649,8 @@ func (s *SiteTrackingReason) UnmarshalText(data []byte) error {
 	}
 }
 
-// The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only;
-// absent when the instance has no tracking target configured.
-// Ref: #/components/schemas/SiteTrackingRecord
-type SiteTrackingRecord struct {
-	// The record type (always CNAME).
-	Type SiteTrackingRecordType `json:"type"`
-	// The host to create the record at: "track." followed by the domain.
-	Host string `json:"host"`
-	// The edge host the CNAME must point at.
-	Target string `json:"target"`
-	// Where the Tracking domain stands.
-	State SiteTrackingState `json:"state"`
-	// Why the domain is not advancing; absent when nothing holds it back.
-	Reason OptSiteTrackingReason `json:"reason"`
-	// When the Tracking domain was most recently checked (null = never).
-	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
-	// When the state most recently changed (null = never).
-	StateChangedAt OptNilTimestamp `json:"stateChangedAt"`
-}
-
-// GetType returns the value of Type.
-func (s *SiteTrackingRecord) GetType() SiteTrackingRecordType {
-	return s.Type
-}
-
-// GetHost returns the value of Host.
-func (s *SiteTrackingRecord) GetHost() string {
-	return s.Host
-}
-
-// GetTarget returns the value of Target.
-func (s *SiteTrackingRecord) GetTarget() string {
-	return s.Target
-}
-
-// GetState returns the value of State.
-func (s *SiteTrackingRecord) GetState() SiteTrackingState {
-	return s.State
-}
-
-// GetReason returns the value of Reason.
-func (s *SiteTrackingRecord) GetReason() OptSiteTrackingReason {
-	return s.Reason
-}
-
-// GetLastCheckedAt returns the value of LastCheckedAt.
-func (s *SiteTrackingRecord) GetLastCheckedAt() OptNilTimestamp {
-	return s.LastCheckedAt
-}
-
-// GetStateChangedAt returns the value of StateChangedAt.
-func (s *SiteTrackingRecord) GetStateChangedAt() OptNilTimestamp {
-	return s.StateChangedAt
-}
-
-// SetType sets the value of Type.
-func (s *SiteTrackingRecord) SetType(val SiteTrackingRecordType) {
-	s.Type = val
-}
-
-// SetHost sets the value of Host.
-func (s *SiteTrackingRecord) SetHost(val string) {
-	s.Host = val
-}
-
-// SetTarget sets the value of Target.
-func (s *SiteTrackingRecord) SetTarget(val string) {
-	s.Target = val
-}
-
-// SetState sets the value of State.
-func (s *SiteTrackingRecord) SetState(val SiteTrackingState) {
-	s.State = val
-}
-
-// SetReason sets the value of Reason.
-func (s *SiteTrackingRecord) SetReason(val OptSiteTrackingReason) {
-	s.Reason = val
-}
-
-// SetLastCheckedAt sets the value of LastCheckedAt.
-func (s *SiteTrackingRecord) SetLastCheckedAt(val OptNilTimestamp) {
-	s.LastCheckedAt = val
-}
-
-// SetStateChangedAt sets the value of StateChangedAt.
-func (s *SiteTrackingRecord) SetStateChangedAt(val OptNilTimestamp) {
-	s.StateChangedAt = val
-}
-
-// The record type (always CNAME).
-type SiteTrackingRecordType string
-
-const (
-	SiteTrackingRecordTypeCNAME SiteTrackingRecordType = "CNAME"
-)
-
-// AllValues returns all SiteTrackingRecordType values.
-func (SiteTrackingRecordType) AllValues() []SiteTrackingRecordType {
-	return []SiteTrackingRecordType{
-		SiteTrackingRecordTypeCNAME,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteTrackingRecordType) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteTrackingRecordTypeCNAME:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteTrackingRecordType) UnmarshalText(data []byte) error {
-	switch SiteTrackingRecordType(data) {
-	case SiteTrackingRecordTypeCNAME:
-		*s = SiteTrackingRecordTypeCNAME
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host,
-// `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail
-// uses the host only while `serving`.
+// `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers.
 // Ref: #/components/schemas/SiteTrackingState
 type SiteTrackingState string
 
@@ -25105,6 +25313,9 @@ type SiteWorkspaceResource struct {
 	// The public origin the tracker snippet loads `/t.js` from and posts `/collect` to:
 	// SPHERICON_TRACKER_URL when the tracker has its own host, otherwise the app origin.
 	TrackerUrl string `json:"trackerUrl"`
+	// The edge host a Tracking domain's CNAME points at (ADR 0071); absent when the Instance offers no
+	// Tracking domains (SPHERICON_TRACKING_CNAME_TARGET unset).
+	TrackingTarget OptString `json:"trackingTarget"`
 	// The Staff holds active now, oldest key first; empty while nothing holds sending. Any one freezes
 	// every send surface, like a suspension, but a lapsed hold is never listed.
 	Holds []SiteWorkspaceHold `json:"holds"`
@@ -25184,6 +25395,11 @@ func (s *SiteWorkspaceResource) GetMcpUrl() string {
 // GetTrackerUrl returns the value of TrackerUrl.
 func (s *SiteWorkspaceResource) GetTrackerUrl() string {
 	return s.TrackerUrl
+}
+
+// GetTrackingTarget returns the value of TrackingTarget.
+func (s *SiteWorkspaceResource) GetTrackingTarget() OptString {
+	return s.TrackingTarget
 }
 
 // GetHolds returns the value of Holds.
@@ -25274,6 +25490,11 @@ func (s *SiteWorkspaceResource) SetMcpUrl(val string) {
 // SetTrackerUrl sets the value of TrackerUrl.
 func (s *SiteWorkspaceResource) SetTrackerUrl(val string) {
 	s.TrackerUrl = val
+}
+
+// SetTrackingTarget sets the value of TrackingTarget.
+func (s *SiteWorkspaceResource) SetTrackingTarget(val OptString) {
+	s.TrackingTarget = val
 }
 
 // SetHolds sets the value of Holds.

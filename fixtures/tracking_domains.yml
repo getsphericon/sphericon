@@ -1,0 +1,91 @@
+# Tracking domains (ADR 0071). A Workspace uses one host at a time (current), may have a
+# replacement that takes over once it serves, and keeps retired hosts serving old links.
+#
+# Acme and Globex hold rows that never serve, so their mail keeps the Instance's host. Globex's
+# lowest row is a pending replacement: the generic scoped-client suites Replant it into Acme,
+# which has no replacement, and a pending host blocks no one.
+- id: 1 # fixture: TrackingDomainAcme
+  host: t.acme.com
+  role: current
+  state: pending
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 2 # fixture: TrackingDomainGlobexReplacement
+  host: go.globex.test
+  role: replacement
+  state: pending
+  workspace_id: 2
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 3 # fixture: TrackingDomainGlobex
+  host: t.globex.test
+  role: current
+  state: dns_verified
+  checked_at: '{{daysAgo 1}}'
+  state_changed_at: '{{daysAgo 2}}'
+  workspace_id: 2
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 1}}'
+
+# Umbrella (workspace 4) in every role: it serves t.umbrella.test, is moving to
+# go.umbrella.test, and keeps track.umbrella.test retired for links sent on it. Wayne
+# (workspace 9) has a pending claim on Umbrella's serving host, which a verified owner must
+# never be blocked by (and vice versa).
+- id: 10 # fixture: TrackingDomainServing
+  host: t.umbrella.test
+  role: current
+  state: serving
+  served_at: '{{daysAgo 3}}'
+  checked_at: '{{daysAgo 1}}'
+  state_changed_at: '{{daysAgo 3}}'
+  workspace_id: 4
+  created_at: '{{daysAgo 5}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 11 # fixture: TrackingDomainReplacement
+  host: go.umbrella.test
+  role: replacement
+  state: pending
+  workspace_id: 4
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 12 # fixture: TrackingDomainRetired
+  host: track.umbrella.test
+  role: retired
+  state: serving
+  served_at: '{{daysAgo 60}}'
+  checked_at: '{{daysAgo 1}}'
+  state_changed_at: '{{daysAgo 60}}'
+  workspace_id: 4
+  created_at: '{{daysAgo 61}}'
+  updated_at: '{{daysAgo 5}}'
+- id: 20 # fixture: TrackingDomainClaim
+  host: t.umbrella.test
+  role: current
+  state: pending
+  workspace_id: 9
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# Initech (workspace 3) has a host whose CNAME is found and whose HTTPS does not answer yet.
+- id: 30 # fixture: TrackingDomainDNSVerified
+  host: t.initech.test
+  role: current
+  state: dns_verified
+  checked_at: '{{daysAgo 1}}'
+  state_changed_at: '{{daysAgo 2}}'
+  workspace_id: 3
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+# The dev DNS zone points t.brightpath.localhost at the dev stack's tracking target.
+- id: 20001
+  host: t.brightpath.localhost
+  role: current
+  state: dns_verified
+  checked_at: '{{hoursAgo 1}}'
+  state_changed_at: '{{daysAgo 20}}'
+  workspace_id: 20
+  created_at: '{{daysAgo 21}}'
+  updated_at: '{{hoursAgo 1}}'

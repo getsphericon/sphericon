@@ -45,6 +45,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
@@ -585,6 +586,21 @@ func (_c *WorkspaceCreate) AddJoinDomains(v ...*JoinDomain) *WorkspaceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddJoinDomainIDs(ids...)
+}
+
+// AddTrackingDomainIDs adds the "tracking_domains" edge to the TrackingDomain entity by IDs.
+func (_c *WorkspaceCreate) AddTrackingDomainIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddTrackingDomainIDs(ids...)
+	return _c
+}
+
+// AddTrackingDomains adds the "tracking_domains" edges to the TrackingDomain entity.
+func (_c *WorkspaceCreate) AddTrackingDomains(v ...*TrackingDomain) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddTrackingDomainIDs(ids...)
 }
 
 // AddProviderLimiterIDs adds the "provider_limiters" edge to the ProviderLimiter entity by IDs.
@@ -1437,6 +1453,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(joindomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.TrackingDomainsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackingDomainsTable,
+			Columns: []string{workspace.TrackingDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackingdomain.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

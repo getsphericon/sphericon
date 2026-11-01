@@ -33,7 +33,7 @@ func sendUmbrella(t *testing.T, env *testhelper.TestEnv, req outbound.Request) m
 	req.Subject = "News"
 	req.Body = textPartBody
 	req.Variables = map[string]any{"name": "Grace"}
-	req.FromEmail = "news@" + fixtures.SendingDomainTrackingServingDomain
+	req.FromEmail = "news@" + fixtures.SendingDomainUmbrellaDomain
 	res, err := newModule(env).Send(context.Background(), env.DB.Scoped(fixtures.UmbrellaID), req)
 	require.NoError(t, err)
 	require.Equal(t, outbound.Sent, res.Outcome)

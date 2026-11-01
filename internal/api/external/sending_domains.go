@@ -55,8 +55,8 @@ func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.Up
 	return &res, nil
 }
 
-// SendingDomainsArchive archives a Sending domain (ADR 0049): it leaves the list and serves no
-// Tracking domain host. Live sends from it refuse it with 409.
+// SendingDomainsArchive archives a Sending domain (ADR 0049): it leaves the list. Live sends from
+// it refuse it with 409.
 func (h *Handlers) SendingDomainsArchive(ctx context.Context, params externalapi.SendingDomainsArchiveParams) (externalapi.SendingDomainsArchiveRes, error) {
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
@@ -101,8 +101,5 @@ func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) externalapi.Sendi
 	res.DkimRecord = mapper.DnsRecordToResource(rec.DKIM)
 	res.SpfRecord = mapper.DnsRecordToResource(rec.SPF)
 	res.DmarcRecord = mapper.DnsRecordToResource(rec.DMARC)
-	if rec.Tracking != nil {
-		res.TrackingRecord = externalapi.NewOptTrackingRecord(mapper.TrackingRecordToResource(*rec.Tracking))
-	}
 	return res
 }

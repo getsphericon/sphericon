@@ -413,6 +413,22 @@ type TemplatesUpdateRes interface {
 	templatesUpdateRes()
 }
 
+type TrackingDomainsListRes interface {
+	trackingDomainsListRes()
+}
+
+type TrackingDomainsRemoveRes interface {
+	trackingDomainsRemoveRes()
+}
+
+type TrackingDomainsSetRes interface {
+	trackingDomainsSetRes()
+}
+
+type TrackingDomainsVerifyRes interface {
+	trackingDomainsVerifyRes()
+}
+
 type UnsubscribesCreateRes interface {
 	unsubscribesCreateRes()
 }

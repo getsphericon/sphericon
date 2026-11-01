@@ -153,39 +153,6 @@ test('removes a domain', async () => {
   await expect.element(screen.getByText('Domain removed')).toBeInTheDocument()
 })
 
-test('removing a domain whose Tracking host serves asks first and says the tracker stops', async () => {
-  let removed = false
-  const serving = domain({
-    trackingRecord: {
-      type: 'CNAME',
-      host: 'track.mail.acme.com',
-      target: 'edge.sphericon.test',
-      state: 'serving',
-    },
-  })
-  worker.use(
-    list([serving]),
-    handleSiteSendingDomainsArchive(() => {
-      removed = true
-      return HttpResponse.json({ ...serving, archivedAt: '2026-02-01T00:00:00Z' })
-    }),
-  )
-  const { screen } = await renderWithRouter(
-    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
-  )
-
-  await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Remove' }).click()
-
-  await expect
-    .element(screen.getByText(/track\.mail\.acme\.com stops serving the tracker/))
-    .toBeInTheDocument()
-  expect(removed).toBe(false)
-
-  await screen.getByRole('button', { name: 'Remove', exact: true }).click()
-  await expect.poll(() => removed).toBe(true)
-})
-
 test('a domain that live work sends from is not removed and the work is named', async () => {
   worker.use(
     list([domain()]),
@@ -227,44 +194,6 @@ test('clicking a domain row opens its DNS records in a modal', async () => {
   await expect
     .element(screen.getByRole('textbox', { name: 'DMARC (recommended): Value' }))
     .toHaveValue('v=DMARC1; p=none')
-})
-
-test('lists the tracking CNAME with its state when the instance has a target', async () => {
-  worker.use(
-    list([
-      domain({
-        trackingRecord: {
-          type: 'CNAME',
-          host: 'track.mail.acme.com',
-          target: 'edge.example.com',
-          state: 'dns_verified',
-        },
-      }),
-    ]),
-  )
-  const { screen } = await renderWithRouter(
-    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
-  )
-
-  await screen.getByText('mail.acme.com').click()
-
-  await expect.element(screen.getByText('track.mail.acme.com')).toBeInTheDocument()
-  await expect
-    .element(screen.getByRole('textbox', { name: 'Tracking domain (optional): Value' }))
-    .toHaveValue('edge.example.com')
-  await expect.element(screen.getByText('DNS verified')).toBeInTheDocument()
-})
-
-test('lists no tracking record when the instance has no target', async () => {
-  worker.use(list([domain()]))
-  const { screen } = await renderWithRouter(
-    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
-  )
-
-  await screen.getByText('mail.acme.com').click()
-
-  await expect.element(screen.getByText('_dmarc.mail.acme.com')).toBeInTheDocument()
-  await expect.element(screen.getByText('Tracking domain (optional)')).not.toBeInTheDocument()
 })
 
 test('shows the records of a domain right after it is added', async () => {

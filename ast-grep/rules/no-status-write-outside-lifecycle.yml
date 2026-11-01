@@ -3,7 +3,7 @@ language: Go
 severity: error
 message: A lifecycle column is written only by its transition table, not by a bare update (ADR 0046).
 note: >-
-  An update that sets `status` or `tracking_state` skips the table, so it can make a move the table
+  An update that sets `status` or a Tracking domain's `state` skips the table, so it can make a move the table
   refuses and it loses no race. Fire a trigger on the entity's machine instead (its table lives in
   the owning module, built with `lifecycle.New`); the compare-and-swap `Write` inside
   `lifecycle.Storage{...}` is the one place the column is set. Creating a row in its first state
@@ -18,7 +18,7 @@ rule:
         context: 'func _() { $RECV.SetStatus($$$ARGS) }'
         selector: call_expression
     - pattern:
-        context: 'func _() { $RECV.SetTrackingState($$$ARGS) }'
+        context: 'func _() { $RECV.SetState($$$ARGS) }'
         selector: call_expression
   all:
     - has:

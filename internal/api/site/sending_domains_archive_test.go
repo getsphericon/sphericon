@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -94,9 +93,8 @@ func TestSiteSendingDomainsArchivedNameIsReusableAndUnarchiveConflicts(t *testin
 	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, unarchiveSendingDomain(t, c, id))
 }
 
-// Restoring starts a new DNS check, and the Tracking domain starts over: the certificate and the
-// serving state of the retired host are not restored.
-func TestSiteSendingDomainsUnarchiveStartsOverFromPending(t *testing.T) {
+// Restoring starts a new DNS check.
+func TestSiteSendingDomainsUnarchiveStartsANewCheck(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
@@ -109,7 +107,6 @@ func TestSiteSendingDomainsUnarchiveStartsOverFromPending(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, row.DiscardedAt)
 	assert.NotNil(t, row.LastCheckedAt, "the DNS check ran")
-	assert.Equal(t, sendingdomain.TrackingStatePending, row.TrackingState, "no serving state is restored")
 }
 
 // Archiving a domain that live work sends from is refused with 409 naming that work, and the

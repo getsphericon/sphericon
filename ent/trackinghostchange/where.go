@@ -69,9 +69,9 @@ func WorkspaceID(v int64) predicate.TrackingHostChange {
 	return predicate.TrackingHostChange(sql.FieldEQ(FieldWorkspaceID, v))
 }
 
-// Domain applies equality check predicate on the "domain" field. It's identical to DomainEQ.
-func Domain(v string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldEQ(FieldDomain, v))
+// Host applies equality check predicate on the "host" field. It's identical to HostEQ.
+func Host(v string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldEQ(FieldHost, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -194,69 +194,69 @@ func WorkspaceIDLTE(v int64) predicate.TrackingHostChange {
 	return predicate.TrackingHostChange(sql.FieldLTE(FieldWorkspaceID, v))
 }
 
-// DomainEQ applies the EQ predicate on the "domain" field.
-func DomainEQ(v string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldEQ(FieldDomain, v))
+// HostEQ applies the EQ predicate on the "host" field.
+func HostEQ(v string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldEQ(FieldHost, v))
 }
 
-// DomainNEQ applies the NEQ predicate on the "domain" field.
-func DomainNEQ(v string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldNEQ(FieldDomain, v))
+// HostNEQ applies the NEQ predicate on the "host" field.
+func HostNEQ(v string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldNEQ(FieldHost, v))
 }
 
-// DomainIn applies the In predicate on the "domain" field.
-func DomainIn(vs ...string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldIn(FieldDomain, vs...))
+// HostIn applies the In predicate on the "host" field.
+func HostIn(vs ...string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldIn(FieldHost, vs...))
 }
 
-// DomainNotIn applies the NotIn predicate on the "domain" field.
-func DomainNotIn(vs ...string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldNotIn(FieldDomain, vs...))
+// HostNotIn applies the NotIn predicate on the "host" field.
+func HostNotIn(vs ...string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldNotIn(FieldHost, vs...))
 }
 
-// DomainGT applies the GT predicate on the "domain" field.
-func DomainGT(v string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldGT(FieldDomain, v))
+// HostGT applies the GT predicate on the "host" field.
+func HostGT(v string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldGT(FieldHost, v))
 }
 
-// DomainGTE applies the GTE predicate on the "domain" field.
-func DomainGTE(v string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldGTE(FieldDomain, v))
+// HostGTE applies the GTE predicate on the "host" field.
+func HostGTE(v string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldGTE(FieldHost, v))
 }
 
-// DomainLT applies the LT predicate on the "domain" field.
-func DomainLT(v string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldLT(FieldDomain, v))
+// HostLT applies the LT predicate on the "host" field.
+func HostLT(v string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldLT(FieldHost, v))
 }
 
-// DomainLTE applies the LTE predicate on the "domain" field.
-func DomainLTE(v string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldLTE(FieldDomain, v))
+// HostLTE applies the LTE predicate on the "host" field.
+func HostLTE(v string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldLTE(FieldHost, v))
 }
 
-// DomainContains applies the Contains predicate on the "domain" field.
-func DomainContains(v string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldContains(FieldDomain, v))
+// HostContains applies the Contains predicate on the "host" field.
+func HostContains(v string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldContains(FieldHost, v))
 }
 
-// DomainHasPrefix applies the HasPrefix predicate on the "domain" field.
-func DomainHasPrefix(v string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldHasPrefix(FieldDomain, v))
+// HostHasPrefix applies the HasPrefix predicate on the "host" field.
+func HostHasPrefix(v string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldHasPrefix(FieldHost, v))
 }
 
-// DomainHasSuffix applies the HasSuffix predicate on the "domain" field.
-func DomainHasSuffix(v string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldHasSuffix(FieldDomain, v))
+// HostHasSuffix applies the HasSuffix predicate on the "host" field.
+func HostHasSuffix(v string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldHasSuffix(FieldHost, v))
 }
 
-// DomainEqualFold applies the EqualFold predicate on the "domain" field.
-func DomainEqualFold(v string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldEqualFold(FieldDomain, v))
+// HostEqualFold applies the EqualFold predicate on the "host" field.
+func HostEqualFold(v string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldEqualFold(FieldHost, v))
 }
 
-// DomainContainsFold applies the ContainsFold predicate on the "domain" field.
-func DomainContainsFold(v string) predicate.TrackingHostChange {
-	return predicate.TrackingHostChange(sql.FieldContainsFold(FieldDomain, v))
+// HostContainsFold applies the ContainsFold predicate on the "host" field.
+func HostContainsFold(v string) predicate.TrackingHostChange {
+	return predicate.TrackingHostChange(sql.FieldContainsFold(FieldHost, v))
 }
 
 // StateEQ applies the EQ predicate on the "state" field.

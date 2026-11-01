@@ -65,6 +65,9 @@ enum Permission {
   /** Join domains and the Domain join switch */
   joinDomainsManage: "join_domains:manage",
 
+  /** Setting, verifying and removing Tracking domains */
+  trackingDomainsManage: "tracking_domains:manage",
+
   /** Following a Hold's action link to resolve it (a member is told to ask an owner or admin) */
   holdsResolve: "holds:resolve",
 

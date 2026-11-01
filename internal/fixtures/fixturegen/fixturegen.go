@@ -41,6 +41,7 @@ var catalogColumns = []struct {
 	{"ingest_key", "IngestKey", false},
 	{"name", "Name", false},
 	{"domain", "Domain", false},
+	{"host", "Host", false},
 	{"url", "URL", false},
 	{"action", "Action", false},
 	{"key", "Key", false},

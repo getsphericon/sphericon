@@ -1,9 +1,8 @@
 // Package trackinghostlog writes the change log behind the service read of Tracking
-// domain hosts (ADR 0038). A Sending domain is a verified host while its tracking_state
-// is dns_verified or serving and it is not archived (Serving, the one definition the host
-// gate shares); each change of that (a host entering a state, or leaving both because its
-// record stopped resolving, or its Sending domain was archived, deleted or renamed; an
-// unarchive is an addition once the host is verified again) is one row of
+// domain hosts (ADR 0038, ADR 0071). A Tracking domain is a verified host while its state is
+// dns_verified or serving, whatever its role: a retired host is still served (Serving and Serves, the one
+// definition the host gate shares). Each change of that (a host entering a state, or leaving
+// both because its record stopped resolving or its row was deleted) is one row of
 // tracking_host_changes, so a removal is never silence.
 //
 // Two ent hooks keep it so no write path can forget it, the same pair as
@@ -11,8 +10,9 @@
 // change and its log row commit together, in the order the positions were taken. Guard
 // runs on the plain client (db.NewEntClient) and refuses a change to a host outside a
 // transaction, where the log row would be a separate statement that a crash loses.
-// The hook reads Sending domains of any Workspace to find the hosts a change touches,
-// which is why this package is on the closed list of raw-client packages in docs/architecture.md.
+// The hook reads the Tracking domains a change touches by id, across Workspaces for a bulk
+// write, which is why this package is on the closed list of raw-client packages in
+// docs/architecture.md.
 package trackinghostlog
 
 import (
@@ -25,7 +25,7 @@ import (
 
 	entclient "github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/internal/postgres"
 )
@@ -52,21 +52,20 @@ func Guard(next ent.Mutator) ent.Mutator {
 }
 
 // changesHosts reports whether m can change what the log reports, before looking at
-// any row: Hook narrows it to the rows whose host actually changes.
+// any row: Hook narrows it to the rows whose host actually changes. The host and the
+// Workspace of a row are immutable, so only its state and its existence matter.
 func changesHosts(m ent.Mutation) bool {
-	mu, ok := m.(*entclient.SendingDomainMutation)
+	mu, ok := m.(*entclient.TrackingDomainMutation)
 	if !ok {
 		return false
 	}
 	switch {
 	case mu.Op().Is(ent.OpCreate):
-		state, set := mu.TrackingState()
+		state, set := mu.State()
 		return set && active(state)
 	case mu.Op().Is(ent.OpUpdate | ent.OpUpdateOne):
-		_, state := mu.TrackingState()
-		_, domain := mu.Domain()
-		_, archived := mu.DiscardedAt()
-		return state || domain || archived || mu.DiscardedAtCleared()
+		_, state := mu.State()
+		return state
 	}
 	return mu.Op().Is(ent.OpDelete | ent.OpDeleteOne)
 }
@@ -75,7 +74,7 @@ func changesHosts(m ent.Mutation) bool {
 // is a no-op for every mutation that cannot change what the log reports.
 func Hook(next ent.Mutator) ent.Mutator {
 	return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-		mu, ok := m.(*entclient.SendingDomainMutation)
+		mu, ok := m.(*entclient.TrackingDomainMutation)
 		if !ok || !changesHosts(m) {
 			return next.Mutate(ctx, m)
 		}
@@ -86,16 +85,16 @@ func Hook(next ent.Mutator) ent.Mutator {
 				return v, err
 			}
 			workspaceID, _ := mu.WorkspaceID()
-			domain, _ := mu.Domain()
-			state, _ := mu.TrackingState()
-			return v, record(ctx, c, change{workspaceID: workspaceID, domain: domain, state: trackinghostchange.State(state)})
+			host, _ := mu.Host()
+			state, _ := mu.State()
+			return v, record(ctx, c, change{workspaceID: workspaceID, host: host, state: trackinghostchange.State(state)})
 		}
 
 		ids, err := mu.IDs(ctx)
 		if err != nil {
 			return nil, err
 		}
-		before, err := c.SendingDomain.Query().Where(sendingdomain.IDIn(ids...)).All(ctx)
+		before, err := c.TrackingDomain.Query().Where(trackingdomain.IDIn(ids...)).All(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -103,9 +102,9 @@ func Hook(next ent.Mutator) ent.Mutator {
 		if err != nil {
 			return v, err
 		}
-		after := map[int64]*entclient.SendingDomain{}
+		after := map[int64]*entclient.TrackingDomain{}
 		if !mu.Op().Is(ent.OpDelete | ent.OpDeleteOne) {
-			rows, err := c.SendingDomain.Query().Where(sendingdomain.IDIn(ids...)).All(ctx)
+			rows, err := c.TrackingDomain.Query().Where(trackingdomain.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -123,64 +122,57 @@ func Hook(next ent.Mutator) ent.Mutator {
 
 type change struct {
 	workspaceID int64
-	domain      string
+	host        string
 	state       trackinghostchange.State
 }
 
-// servingStates are the tracking states in which a Sending domain's host is verified.
-var servingStates = []sendingdomain.TrackingState{
-	sendingdomain.TrackingStateDNSVerified,
-	sendingdomain.TrackingStateServing,
+// servingStates are the states in which a Tracking domain's host is verified.
+var servingStates = []trackingdomain.State{
+	trackingdomain.StateDNSVerified,
+	trackingdomain.StateServing,
 }
 
-func active(s sendingdomain.TrackingState) bool {
+func active(s trackingdomain.State) bool {
 	return slices.Contains(servingStates, s)
 }
 
-// Serving selects the Sending domains that serve their Tracking host: a verified tracking
-// state and not archived (ADR 0049). It is the query form of serves; the host gate and the
-// recheck job use it, so there is one definition.
-func Serving() predicate.SendingDomain {
-	return sendingdomain.And(sendingdomain.DiscardedAtIsNil(), sendingdomain.TrackingStateIn(servingStates...))
+// Serving selects the Tracking domains whose host is served: a verified state, in any role.
+// It is the query form of Serves; the host gate and the recheck job use it, so there is one
+// definition.
+func Serving() predicate.TrackingDomain {
+	return trackingdomain.StateIn(servingStates...)
 }
 
-// serves reports whether the row is a verified host: the row form of Serving.
-func serves(d *entclient.SendingDomain) bool {
-	return d != nil && d.DiscardedAt == nil && active(d.TrackingState)
+// Serves reports whether the row is a verified host: the row form of Serving.
+func Serves(d *entclient.TrackingDomain) bool {
+	return d != nil && active(d.State)
 }
 
 // diff is the log entries one row's change produces; now is nil when the row is gone.
-func diff(old, now *entclient.SendingDomain) []change {
-	moved := now == nil || now.Domain != old.Domain || now.WorkspaceID != old.WorkspaceID
+func diff(old, now *entclient.TrackingDomain) []change {
 	var out []change
-	if serves(old) && (moved || !serves(now)) {
-		out = append(out, change{workspaceID: old.WorkspaceID, domain: old.Domain, state: trackinghostchange.StateRemoved})
+	if Serves(old) && !Serves(now) {
+		out = append(out, change{workspaceID: old.WorkspaceID, host: old.Host, state: trackinghostchange.StateRemoved})
 	}
-	if serves(now) && (!serves(old) || moved || now.TrackingState != old.TrackingState) {
-		out = append(out, change{workspaceID: now.WorkspaceID, domain: now.Domain, state: trackinghostchange.State(now.TrackingState)})
+	if Serves(now) && (!Serves(old) || now.State != old.State) {
+		out = append(out, change{workspaceID: now.WorkspaceID, host: now.Host, state: trackinghostchange.State(now.State)})
 	}
 	return out
 }
 
 // record appends the entries, taking the lock first, held to the end of the
-// surrounding transaction. A host created pending is not a change.
+// surrounding transaction.
 func record(ctx context.Context, c *entclient.Client, changes ...change) error {
-	var logged []change
-	for _, ch := range changes {
-		if ch.state == trackinghostchange.StateDNSVerified || ch.state == trackinghostchange.StateServing || ch.state == trackinghostchange.StateRemoved {
-			logged = append(logged, ch)
-		}
-	}
-	if len(logged) == 0 {
+	if len(changes) == 0 {
 		return nil
 	}
 	if err := postgres.LockTx(ctx, c, lockKey); err != nil {
 		return fmt.Errorf("tracking host log lock: %w", err)
 	}
-	for _, ch := range logged {
+	for _, ch := range changes {
 		if err := c.TrackingHostChange.Create().
 			SetWorkspaceID(ch.workspaceID).
-			SetDomain(ch.domain).
+			SetHost(ch.host).
 			SetState(ch.state).
 			Exec(ctx); err != nil {
 			return fmt.Errorf("tracking host log: %w", err)

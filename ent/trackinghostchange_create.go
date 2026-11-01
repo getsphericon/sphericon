@@ -56,9 +56,9 @@ func (_c *TrackingHostChangeCreate) SetWorkspaceID(v int64) *TrackingHostChangeC
 	return _c
 }
 
-// SetDomain sets the "domain" field.
-func (_c *TrackingHostChangeCreate) SetDomain(v string) *TrackingHostChangeCreate {
-	_c.mutation.SetDomain(v)
+// SetHost sets the "host" field.
+func (_c *TrackingHostChangeCreate) SetHost(v string) *TrackingHostChangeCreate {
+	_c.mutation.SetHost(v)
 	return _c
 }
 
@@ -130,12 +130,12 @@ func (_c *TrackingHostChangeCreate) check() error {
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "TrackingHostChange.workspace_id"`)}
 	}
-	if _, ok := _c.mutation.Domain(); !ok {
-		return &ValidationError{Name: "domain", err: errors.New(`ent: missing required field "TrackingHostChange.domain"`)}
+	if _, ok := _c.mutation.Host(); !ok {
+		return &ValidationError{Name: "host", err: errors.New(`ent: missing required field "TrackingHostChange.host"`)}
 	}
-	if v, ok := _c.mutation.Domain(); ok {
-		if err := trackinghostchange.DomainValidator(v); err != nil {
-			return &ValidationError{Name: "domain", err: fmt.Errorf(`ent: validator failed for field "TrackingHostChange.domain": %w`, err)}
+	if v, ok := _c.mutation.Host(); ok {
+		if err := trackinghostchange.HostValidator(v); err != nil {
+			return &ValidationError{Name: "host", err: fmt.Errorf(`ent: validator failed for field "TrackingHostChange.host": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.State(); !ok {
@@ -191,9 +191,9 @@ func (_c *TrackingHostChangeCreate) createSpec() (*TrackingHostChange, *sqlgraph
 		_spec.SetField(trackinghostchange.FieldWorkspaceID, field.TypeInt64, value)
 		_node.WorkspaceID = value
 	}
-	if value, ok := _c.mutation.Domain(); ok {
-		_spec.SetField(trackinghostchange.FieldDomain, field.TypeString, value)
-		_node.Domain = value
+	if value, ok := _c.mutation.Host(); ok {
+		_spec.SetField(trackinghostchange.FieldHost, field.TypeString, value)
+		_node.Host = value
 	}
 	if value, ok := _c.mutation.State(); ok {
 		_spec.SetField(trackinghostchange.FieldState, field.TypeEnum, value)
@@ -286,8 +286,8 @@ func (u *TrackingHostChangeUpsertOne) UpdateNewValues() *TrackingHostChangeUpser
 		if _, exists := u.create.mutation.WorkspaceID(); exists {
 			s.SetIgnore(trackinghostchange.FieldWorkspaceID)
 		}
-		if _, exists := u.create.mutation.Domain(); exists {
-			s.SetIgnore(trackinghostchange.FieldDomain)
+		if _, exists := u.create.mutation.Host(); exists {
+			s.SetIgnore(trackinghostchange.FieldHost)
 		}
 		if _, exists := u.create.mutation.State(); exists {
 			s.SetIgnore(trackinghostchange.FieldState)
@@ -525,8 +525,8 @@ func (u *TrackingHostChangeUpsertBulk) UpdateNewValues() *TrackingHostChangeUpse
 			if _, exists := b.mutation.WorkspaceID(); exists {
 				s.SetIgnore(trackinghostchange.FieldWorkspaceID)
 			}
-			if _, exists := b.mutation.Domain(); exists {
-				s.SetIgnore(trackinghostchange.FieldDomain)
+			if _, exists := b.mutation.Host(); exists {
+				s.SetIgnore(trackinghostchange.FieldHost)
 			}
 			if _, exists := b.mutation.State(); exists {
 				s.SetIgnore(trackinghostchange.FieldState)

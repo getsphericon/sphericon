@@ -18,9 +18,9 @@ import (
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	rule "github.com/getsphericon/sphericon/ent/rule"
 	schema "github.com/getsphericon/sphericon/ent/schema"
-	sendingdomain "github.com/getsphericon/sphericon/ent/sendingdomain"
 	signupitem "github.com/getsphericon/sphericon/ent/signupitem"
 	suppression "github.com/getsphericon/sphericon/ent/suppression"
+	trackingdomain "github.com/getsphericon/sphericon/ent/trackingdomain"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	site "github.com/getsphericon/sphericon/gen/site"
 	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
@@ -42,6 +42,7 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	setupchecklist "github.com/getsphericon/sphericon/internal/setupchecklist"
 	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
+	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
 	webhook "github.com/getsphericon/sphericon/internal/webhook"
 	"time"
 )
@@ -664,6 +665,13 @@ func (c *ConverterImpl) CapturedMessagesToSummaries(source []*ent.CapturedMessag
 		siteapiSiteCapturedMessageSummaryList[i] = c.CapturedMessageToSummary(source[i])
 	}
 	return siteapiSiteCapturedMessageSummaryList
+}
+func (c *ConverterImpl) CnameRecordToResource(source trackingdomains.Record) site.SiteCnameRecord {
+	var siteapiSiteCnameRecord site.SiteCnameRecord
+	siteapiSiteCnameRecord.Type = cnameRecordType(source)
+	siteapiSiteCnameRecord.Host = source.Host
+	siteapiSiteCnameRecord.Target = source.Target
+	return siteapiSiteCnameRecord
 }
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) site.ContactExportConfirmation {
 	var siteapiContactExportConfirmation site.ContactExportConfirmation
@@ -1383,6 +1391,8 @@ func (c *ConverterImpl) PermissionToResource(source accounts.Permission) site.Pe
 		siteapiPermission = site.PermissionSuppressionsManage
 	case accounts.PermTokensManage:
 		siteapiPermission = site.PermissionTokensManage
+	case accounts.PermTrackingDomainsManage:
+		siteapiPermission = site.PermissionTrackingDomainsManage
 	case accounts.PermWebhooksManage:
 		siteapiPermission = site.PermissionWebhooksManage
 	case accounts.PermWorkspaceDelete:
@@ -1733,7 +1743,6 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.
 		// siteapiSiteSendingDomainResource.DkimRecord: ignore
 		// siteapiSiteSendingDomainResource.SpfRecord: ignore
 		// siteapiSiteSendingDomainResource.DmarcRecord: ignore
-		// siteapiSiteSendingDomainResource.TrackingRecord: ignore
 		siteapiSiteSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
 		siteapiSiteSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
 		siteapiSiteSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
@@ -1972,36 +1981,56 @@ func (c *ConverterImpl) TokensToResources(source []*ent.ApiToken) site.SiteToken
 	}
 	return siteapiSiteTokensListOKApplicationJSON
 }
-func (c *ConverterImpl) TrackingReasonToResource(source sendingdomain.TrackingReason) site.SiteTrackingReason {
+func (c *ConverterImpl) TrackingDomainRoleToResource(source trackingdomain.Role) site.SiteTrackingDomainRole {
+	var siteapiSiteTrackingDomainRole site.SiteTrackingDomainRole
+	switch source {
+	case trackingdomain.RoleCurrent:
+		siteapiSiteTrackingDomainRole = site.SiteTrackingDomainRoleCurrent
+	case trackingdomain.RoleReplacement:
+		siteapiSiteTrackingDomainRole = site.SiteTrackingDomainRoleReplacement
+	case trackingdomain.RoleRetired:
+		siteapiSiteTrackingDomainRole = site.SiteTrackingDomainRoleRetired
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteTrackingDomainRole
+}
+func (c *ConverterImpl) TrackingDomainToResource(source *ent.TrackingDomain) site.SiteTrackingDomainResource {
+	var siteapiSiteTrackingDomainResource site.SiteTrackingDomainResource
+	if source != nil {
+		siteapiSiteTrackingDomainResource.ID = site.EntityId((*source).ID)
+		siteapiSiteTrackingDomainResource.Host = (*source).Host
+		siteapiSiteTrackingDomainResource.Role = c.TrackingDomainRoleToResource((*source).Role)
+		siteapiSiteTrackingDomainResource.State = c.TrackingStateToResource((*source).State)
+		siteapiSiteTrackingDomainResource.Reason = optTrackingReason(c, (*source).Reason)
+		// siteapiSiteTrackingDomainResource.Record: ignore
+		siteapiSiteTrackingDomainResource.ServedAt = optNilTimestamp((*source).ServedAt)
+		siteapiSiteTrackingDomainResource.LastCheckedAt = optNilTimestamp((*source).CheckedAt)
+		siteapiSiteTrackingDomainResource.StateChangedAt = optNilTimestamp((*source).StateChangedAt)
+		siteapiSiteTrackingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiSiteTrackingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return siteapiSiteTrackingDomainResource
+}
+func (c *ConverterImpl) TrackingReasonToResource(source trackingdomain.Reason) site.SiteTrackingReason {
 	var siteapiSiteTrackingReason site.SiteTrackingReason
 	switch source {
-	case sendingdomain.TrackingReasonHostTaken:
+	case trackingdomain.ReasonHostTaken:
 		siteapiSiteTrackingReason = site.SiteTrackingReasonHostTaken
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteTrackingReason
 }
-func (c *ConverterImpl) TrackingRecordToResource(source sendingdomains.TrackingRecord) site.SiteTrackingRecord {
-	var siteapiSiteTrackingRecord site.SiteTrackingRecord
-	siteapiSiteTrackingRecord.Type = trackingRecordType(source)
-	siteapiSiteTrackingRecord.Host = source.Host
-	siteapiSiteTrackingRecord.Target = source.Target
-	siteapiSiteTrackingRecord.State = c.TrackingStateToResource(source.State)
-	siteapiSiteTrackingRecord.Reason = optTrackingReason(c, source.Reason)
-	siteapiSiteTrackingRecord.LastCheckedAt = optNilTimestamp(source.CheckedAt)
-	siteapiSiteTrackingRecord.StateChangedAt = optNilTimestamp(source.StateChangedAt)
-	return siteapiSiteTrackingRecord
-}
-func (c *ConverterImpl) TrackingStateToResource(source sendingdomain.TrackingState) site.SiteTrackingState {
+func (c *ConverterImpl) TrackingStateToResource(source trackingdomain.State) site.SiteTrackingState {
 	var siteapiSiteTrackingState site.SiteTrackingState
 	switch source {
-	case sendingdomain.DefaultTrackingState:
+	case trackingdomain.DefaultState:
 		siteapiSiteTrackingState = site.SiteTrackingStatePending
-	case sendingdomain.TrackingStateDNSVerified:
+	case trackingdomain.StateDNSVerified:
 		siteapiSiteTrackingState = site.SiteTrackingStateDNSVerified
-	// Skipped TrackingStatePending(pending) -> SiteTrackingStatePending(pending) because it duplicates DefaultTrackingState(pending) -> SiteTrackingStatePending(pending)
-	case sendingdomain.TrackingStateServing:
+	// Skipped StatePending(pending) -> SiteTrackingStatePending(pending) because it duplicates DefaultState(pending) -> SiteTrackingStatePending(pending)
+	case trackingdomain.StateServing:
 		siteapiSiteTrackingState = site.SiteTrackingStateServing
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -2152,6 +2181,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		// siteapiSiteWorkspaceResource.SupportEmail: ignore
 		// siteapiSiteWorkspaceResource.McpUrl: ignore
 		// siteapiSiteWorkspaceResource.TrackerUrl: ignore
+		// siteapiSiteWorkspaceResource.TrackingTarget: ignore
 		// siteapiSiteWorkspaceResource.Holds: ignore
 		siteapiSiteWorkspaceResource.SecondFactorRequiredAt = optNilTimestamp((*source).SecondFactorRequiredAt)
 		// siteapiSiteWorkspaceResource.SecondFactorGraceEndsAt: ignore

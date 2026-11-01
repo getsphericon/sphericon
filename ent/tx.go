@@ -130,6 +130,8 @@ type Tx struct {
 	Suppression *SuppressionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
+	// TrackingDomain is the client for interacting with the TrackingDomain builders.
+	TrackingDomain *TrackingDomainClient
 	// TrackingHostChange is the client for interacting with the TrackingHostChange builders.
 	TrackingHostChange *TrackingHostChangeClient
 	// Unsubscribe is the client for interacting with the Unsubscribe builders.
@@ -337,6 +339,7 @@ func (tx *Tx) init() {
 	tx.StaffMember = NewStaffMemberClient(tx.config)
 	tx.Suppression = NewSuppressionClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
+	tx.TrackingDomain = NewTrackingDomainClient(tx.config)
 	tx.TrackingHostChange = NewTrackingHostChangeClient(tx.config)
 	tx.Unsubscribe = NewUnsubscribeClient(tx.config)
 	tx.Usage = NewUsageClient(tx.config)

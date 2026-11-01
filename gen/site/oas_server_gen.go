@@ -1068,9 +1068,8 @@ type Handler interface {
 	SiteSegmentsUpdate(ctx context.Context, req *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (SiteSegmentsUpdateRes, error)
 	// SiteSendingDomainsArchive implements SiteSendingDomains_archive operation.
 	//
-	// Archive a sending domain: it leaves the list, serves no Tracking domain host and can be restored.
-	// Refused with 409 while a scheduled or sending broadcast or an active automation sends from it.
-	// Owners and admins only.
+	// Archive a sending domain: it leaves the list and can be restored. Refused with 409 while a scheduled
+	// or sending broadcast or an active automation sends from it. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/archive
 	SiteSendingDomainsArchive(ctx context.Context, params SiteSendingDomainsArchiveParams) (SiteSendingDomainsArchiveRes, error)
@@ -1094,9 +1093,8 @@ type Handler interface {
 	SiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (SiteSendingDomainsListRes, error)
 	// SiteSendingDomainsUnarchive implements SiteSendingDomains_unarchive operation.
 	//
-	// Restore an archived sending domain. It starts a new DNS check and serves its Tracking domain host
-	// again only once that passes. Refused with 409 when the same domain was added again meanwhile. Owners
-	// and admins only.
+	// Restore an archived sending domain. It starts a new DNS check. Refused with 409 when the same domain
+	// was added again meanwhile. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/unarchive
 	SiteSendingDomainsUnarchive(ctx context.Context, params SiteSendingDomainsUnarchiveParams) (SiteSendingDomainsUnarchiveRes, error)
@@ -1227,6 +1225,39 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/tokens/{id}
 	SiteTokensUpdate(ctx context.Context, req *SiteUpdateTokenInput, params SiteTokensUpdateParams) (SiteTokensUpdateRes, error)
+	// SiteTrackingDomainsList implements SiteTrackingDomains_list operation.
+	//
+	// List the Workspace's Tracking domains: the current one, the replacement, then the retired ones.
+	// Empty while the Instance offers none.
+	//
+	// GET /workspaces/{workspaceId}/tracking-domains
+	SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (SiteTrackingDomainsListRes, error)
+	// SiteTrackingDomainsRemove implements SiteTrackingDomains_remove operation.
+	//
+	// Remove a Tracking domain by its role (owner and admin only). The current one stops being used: it is
+	// retired when it served (links already sent on it keep working while its CNAME points at the edge),
+	// deleted otherwise, and a replacement becomes current. A replacement is cancelled. A retired one is
+	// forgotten: links sent on it stop working.
+	//
+	// DELETE /workspaces/{workspaceId}/tracking-domains/{id}
+	SiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) (SiteTrackingDomainsRemoveRes, error)
+	// SiteTrackingDomainsSet implements SiteTrackingDomains_set operation.
+	//
+	// Set the Workspace's Tracking domain (owner and admin only). With none it becomes the current one.
+	// While the current one serves it becomes the replacement (discarding a pending one) and takes over
+	// once it serves. When the current one does not serve, the new one replaces it at once. A host the
+	// Workspace already uses is returned as it is; a retired one is brought back. An invalid host or one
+	// of the Instance's own is 422; 404 when the Instance offers no Tracking domains.
+	//
+	// POST /workspaces/{workspaceId}/tracking-domains
+	SiteTrackingDomainsSet(ctx context.Context, req *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (SiteTrackingDomainsSetRes, error)
+	// SiteTrackingDomainsVerify implements SiteTrackingDomains_verify operation.
+	//
+	// Check the host now (owner and admin only) and answer once the check is done: the Tracking domain as
+	// it left it. A replacement that reaches `serving` becomes current.
+	//
+	// POST /workspaces/{workspaceId}/tracking-domains/{id}/verify
+	SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (SiteTrackingDomainsVerifyRes, error)
 	// SiteTransactionalEmailsList implements SiteTransactionalEmails_list operation.
 	//
 	// List transactional sends, most recent first.

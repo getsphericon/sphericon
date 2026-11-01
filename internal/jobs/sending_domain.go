@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/joindomains"
+	"github.com/getsphericon/sphericon/internal/trackingdomains"
 )
 
 // recheckBatchSize bounds how many domains one periodic tick re-checks, so a
@@ -71,10 +72,10 @@ func (w *RecheckSendingDomainsWorker) Work(ctx context.Context, _ *river.Job[Rec
 	return nil
 }
 
-// --- periodic re-check of Tracking domains (independent of the DKIM re-check) ---
+// --- Tracking domains (ADR 0071): one check per verified host, retired ones included ---
 
 type VerifyTrackingDomainArgs struct {
-	SendingDomainID int64 `json:"sending_domain_id"`
+	TrackingDomainID int64 `json:"tracking_domain_id"`
 }
 
 func (VerifyTrackingDomainArgs) Kind() string { return "tracking_domain_verify" }
@@ -82,16 +83,16 @@ func (VerifyTrackingDomainArgs) Kind() string { return "tracking_domain_verify" 
 type VerifyTrackingDomainWorker struct {
 	river.WorkerDefaults[VerifyTrackingDomainArgs]
 
-	mod *domainverify.Module
+	mod *trackingdomains.Module
 }
 
-// NewVerifyTrackingDomainWorker builds the worker that verifies one Sending domain's tracking host.
-func NewVerifyTrackingDomainWorker(mod *domainverify.Module) *VerifyTrackingDomainWorker {
+// NewVerifyTrackingDomainWorker builds the worker that checks one Tracking domain.
+func NewVerifyTrackingDomainWorker(mod *trackingdomains.Module) *VerifyTrackingDomainWorker {
 	return &VerifyTrackingDomainWorker{mod: mod}
 }
 
 func (w *VerifyTrackingDomainWorker) Work(ctx context.Context, job *river.Job[VerifyTrackingDomainArgs]) error {
-	return w.mod.VerifyTracking(ctx, job.Args.SendingDomainID)
+	return w.mod.Recheck(ctx, job.Args.TrackingDomainID)
 }
 
 type RecheckTrackingDomainsArgs struct{}
@@ -101,23 +102,23 @@ func (RecheckTrackingDomainsArgs) Kind() string { return "tracking_domain_rechec
 type RecheckTrackingDomainsWorker struct {
 	river.WorkerDefaults[RecheckTrackingDomainsArgs]
 
-	mod *domainverify.Module
+	mod *trackingdomains.Module
 }
 
-// NewRecheckTrackingDomainsWorker builds the worker that queues a check of every tracking host due one.
-func NewRecheckTrackingDomainsWorker(mod *domainverify.Module) *RecheckTrackingDomainsWorker {
+// NewRecheckTrackingDomainsWorker builds the worker that queues a check of every verified tracking host.
+func NewRecheckTrackingDomainsWorker(mod *trackingdomains.Module) *RecheckTrackingDomainsWorker {
 	return &RecheckTrackingDomainsWorker{mod: mod}
 }
 
-// Work fans the tick out into one VerifyTrackingDomain job per due Sending domain.
+// Work fans the tick out into one VerifyTrackingDomain job per verified host.
 func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, _ *river.Job[RecheckTrackingDomainsArgs]) error {
-	ids, err := w.mod.TrackingDue(ctx)
+	ids, err := w.mod.Due(ctx)
 	if err != nil {
 		return err
 	}
 	rc := river.ClientFromContext[*stdsql.Tx](ctx)
 	for _, id := range ids {
-		if _, err := rc.Insert(ctx, VerifyTrackingDomainArgs{SendingDomainID: id}, nil); err != nil {
+		if _, err := rc.Insert(ctx, VerifyTrackingDomainArgs{TrackingDomainID: id}, nil); err != nil {
 			return err
 		}
 	}

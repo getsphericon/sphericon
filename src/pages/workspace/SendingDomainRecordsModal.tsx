@@ -10,14 +10,9 @@ import {
   Text,
   Textarea,
 } from '@mantine/core'
-import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type {
-  SiteSendingDomainResource,
-  SiteTrackingReason,
-  SiteTrackingState,
-} from '../../generated/site/types.gen.ts'
+import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
 import { useVerifySendingDomain } from '../../hooks/useVerifySendingDomain.ts'
 
 // ReadOnlyValue is a value to copy, in a read-only box that wraps its lines (a DKIM key has no
@@ -61,12 +56,10 @@ function DnsRecord({
   label,
   record,
   hint,
-  status,
 }: {
   label: string
   record: { type: string; host: string; value: string }
   hint?: string
-  status?: ReactNode
 }) {
   const { t } = useTranslation()
   return (
@@ -80,7 +73,6 @@ function DnsRecord({
             {hint}
           </Text>
         ) : null}
-        {status}
       </div>
       <Group gap="xs" wrap="wrap">
         <Text c="dimmed" size="xs">
@@ -97,44 +89,6 @@ function DnsRecord({
         ariaLabel={`${label}: ${t(($) => $.settings.sendingDomains.recordValue)}`}
       />
     </Stack>
-  )
-}
-
-const trackingStateColor: Record<SiteTrackingState, string> = {
-  pending: 'gray',
-  dns_verified: 'yellow',
-  serving: 'teal',
-}
-
-// TrackingStatus shows where the Tracking domain stands and, when something holds it
-// back, why (ADR 0038).
-function TrackingStatus({
-  state,
-  reason,
-}: {
-  state: SiteTrackingState
-  reason?: SiteTrackingReason | undefined
-}) {
-  const { t } = useTranslation()
-  const labels: Record<SiteTrackingState, string> = {
-    pending: t(($) => $.settings.sendingDomains.trackingState.pending),
-    dns_verified: t(($) => $.settings.sendingDomains.trackingState.dnsVerified),
-    serving: t(($) => $.settings.sendingDomains.trackingState.serving),
-  }
-  const reasons: Record<SiteTrackingReason, string> = {
-    host_taken: t(($) => $.settings.sendingDomains.trackingReason.hostTaken),
-  }
-  return (
-    <>
-      <Badge mt={4} color={trackingStateColor[state]} variant="light">
-        {labels[state]}
-      </Badge>
-      {reason ? (
-        <Text c="red" size="xs" mt={4}>
-          {reasons[reason]}
-        </Text>
-      ) : null}
-    </>
   )
 }
 
@@ -158,23 +112,6 @@ function SendingDomainRecords({ record }: { record: SiteSendingDomainResource })
         hint={t(($) => $.settings.sendingDomains.dmarcHint)}
         record={record.dmarcRecord}
       />
-      {record.trackingRecord ? (
-        <DnsRecord
-          label={t(($) => $.settings.sendingDomains.tracking)}
-          hint={t(($) => $.settings.sendingDomains.trackingHint)}
-          record={{
-            type: record.trackingRecord.type,
-            host: record.trackingRecord.host,
-            value: record.trackingRecord.target,
-          }}
-          status={
-            <TrackingStatus
-              state={record.trackingRecord.state}
-              reason={record.trackingRecord.reason}
-            />
-          }
-        />
-      ) : null}
     </Stack>
   )
 }
@@ -183,20 +120,7 @@ function SendingDomainRecords({ record }: { record: SiteSendingDomainResource })
 // the records to publish and the order of the steps. The record values are repeated so an agent
 // without an API token that may write Sending domains can still publish them.
 function agentPrompt(record: SiteSendingDomainResource): string {
-  const records = [
-    record.dkimRecord,
-    record.spfRecord,
-    record.dmarcRecord,
-    ...(record.trackingRecord
-      ? [
-          {
-            type: record.trackingRecord.type,
-            host: record.trackingRecord.host,
-            value: record.trackingRecord.target,
-          },
-        ]
-      : []),
-  ]
+  const records = [record.dkimRecord, record.spfRecord, record.dmarcRecord]
   const lines = records.map((r) => `- ${r.type} ${r.host} -> ${r.value}`)
   return [
     `Set up the Sending domain ${record.domain} (id ${record.id}) in sphericon.`,
@@ -204,7 +128,7 @@ function agentPrompt(record: SiteSendingDomainResource): string {
     'Publish these DNS records at the DNS provider of the domain (create the ones that are missing, leave the others alone):',
     ...lines,
     '',
-    'The DKIM record is required; SPF, DMARC and the tracking CNAME are recommended.',
+    'The DKIM record is required; SPF and DMARC are recommended.',
     `Then call sending_domains_verify for id ${record.id}, wait a minute, and read the domain again with sending_domains_list: it is done when "verified" is true. DNS can take a while to propagate: if it is not, say what is still missing.`,
   ].join('\n')
 }

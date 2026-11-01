@@ -32,7 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/stepping"
-	"github.com/getsphericon/sphericon/internal/trackingdomain"
+	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
@@ -87,7 +87,7 @@ type Retention struct {
 // job queue's pool; built with riverdatabasesql.NewWithPgxListener it carries the LISTEN
 // connection that tells the client of a new job, a cancellation or a paused queue at once, and
 // built with riverdatabasesql.New (tests on one transaction) the client only polls.
-func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, bus *events.Bus, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, catalog *messaging.Catalog, appURL string, outboundAllow webhook.Allowlist, ranges *machine.Detector, retention Retention, ext ...Extension) (*Client, error) {
+func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, bus *events.Bus, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomains.Module, catalog *messaging.Catalog, appURL string, outboundAllow webhook.Allowlist, ranges *machine.Detector, retention Retention, ext ...Extension) (*Client, error) {
 	workers := river.NewWorkers()
 	river.AddWorker(workers, NewSendBroadcastWorker(entClient, mod))
 	river.AddWorker(workers, NewSendRecipientWorker(entClient, mod))
@@ -108,15 +108,17 @@ func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outb
 	notifyOwners := accounts.OwnerNotifier(entClient, systemSender)
 	// Sending-domain DKIM verification (ADR 0010). LookupTXT re-checks published
 	// DNS; verified is a live property re-validated by the periodic job below.
-	domains := domainverify.New(entClient, lookup, tracking, notifyOwners)
+	domains := domainverify.New(entClient, lookup, notifyOwners)
 	river.AddWorker(workers, NewVerifySendingDomainWorker(domains))
 	river.AddWorker(workers, NewRecheckSendingDomainsWorker(domains))
 	// Join domains stay verified only while their TXT record is published.
 	joinDomains := joindomains.New(entClient, bus, lookup, time.Now, notifyOwners)
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(joinDomains))
 	river.AddWorker(workers, NewRecheckJoinDomainsWorker(joinDomains))
-	river.AddWorker(workers, NewVerifyTrackingDomainWorker(domains))
-	river.AddWorker(workers, NewRecheckTrackingDomainsWorker(domains))
+	// Tracking domains (ADR 0071): the verified hosts are re-checked so one that stops answering is
+	// demoted and a retired one whose CNAME left goes.
+	river.AddWorker(workers, NewVerifyTrackingDomainWorker(tracking))
+	river.AddWorker(workers, NewRecheckTrackingDomainsWorker(tracking))
 	// SES send quota discovery (ADR 0023): refreshed hourly because quotas grow as an
 	// account matures, and on Integration save by the API handlers.
 	river.AddWorker(workers, NewRefreshSendQuotasWorker(entClient))
@@ -211,7 +213,7 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				},
 				&river.PeriodicJobOpts{RunOnStart: true},
 			),
-			// Tracking domains are re-checked on their own cadence (ADR 0038).
+			// Tracking domains are re-checked on their own cadence (ADR 0038, ADR 0071).
 			river.NewPeriodicJob(
 				river.PeriodicInterval(15*time.Minute),
 				func() (river.JobArgs, *river.InsertOpts) {

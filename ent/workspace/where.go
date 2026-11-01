@@ -1714,6 +1714,29 @@ func HasJoinDomainsWith(preds ...predicate.JoinDomain) predicate.Workspace {
 	})
 }
 
+// HasTrackingDomains applies the HasEdge predicate on the "tracking_domains" edge.
+func HasTrackingDomains() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, TrackingDomainsTable, TrackingDomainsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTrackingDomainsWith applies the HasEdge predicate on the "tracking_domains" edge with a given conditions (other predicates).
+func HasTrackingDomainsWith(preds ...predicate.TrackingDomain) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newTrackingDomainsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasProviderLimiters applies the HasEdge predicate on the "provider_limiters" edge.
 func HasProviderLimiters() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

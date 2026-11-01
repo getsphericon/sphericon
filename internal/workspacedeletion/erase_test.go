@@ -135,8 +135,8 @@ func TestEraseDueReleasesTheTrackingHostsAndAdvancesTheFeed(t *testing.T) {
 	removed := env.DB.TrackingHostChange.Query().
 		Where(trackinghostchange.WorkspaceID(fixtures.UmbrellaID), trackinghostchange.StateEQ(trackinghostchange.StateRemoved)).
 		AllX(t.Context())
-	hosts := lo.Map(removed, func(c *ent.TrackingHostChange, _ int) string { return c.Domain })
-	assert.ElementsMatch(t, []string{"dns.umbrella.test", "serving.umbrella.test"}, hosts)
+	hosts := lo.Map(removed, func(c *ent.TrackingHostChange, _ int) string { return c.Host })
+	assert.ElementsMatch(t, []string{fixtures.TrackingDomainServingHost, fixtures.TrackingDomainRetiredHost}, hosts)
 
 	entries, _ := feedTail(t, env, cursor)
 	require.Len(t, entries, 1)

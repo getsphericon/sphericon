@@ -66,6 +66,7 @@ var permissionMatrix = []guarded{
 	{siteapi.PermissionRevenueConfigure, http.MethodPut, acmePath("/revenue-settings"), `{"reportingCurrency":"XXQ"}`, rejected, rejected, refused},
 	{siteapi.PermissionBrandKitManage, http.MethodPost, acmePath("/brand-kit/starter-templates"), "", created, created, refused},
 	{siteapi.PermissionJoinDomainsManage, http.MethodGet, acmePath("/join-domains"), "", ok, ok, refused},
+	{siteapi.PermissionTrackingDomainsManage, http.MethodPost, acmePath("/tracking-domains"), `{"host":"acme.com"}`, rejected, rejected, refused},
 	{siteapi.PermissionAccountLinkOpen, http.MethodPost, acmePath("/account-link"), "", ok, refused, refused},
 	{siteapi.PermissionWorkspaceDelete, http.MethodPost, acmePath("/delete"), `{"name":"not the name"}`, rejected, refused, refused},
 	// owners:manage is asked by the operation for an owner's Membership (John, Acme's owner, stays

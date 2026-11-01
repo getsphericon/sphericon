@@ -1276,7 +1276,7 @@ func (s *ServiceScope) UnmarshalText(data []byte) error {
 // One change of a Tracking domain host.
 // Ref: #/components/schemas/ServiceTrackingHostChange
 type ServiceTrackingHostChange struct {
-	// The host, `track.<Sending domain>`.
+	// The Tracking domain's host.
 	Host string `json:"host"`
 	// The Workspace that held the host at this change.
 	WorkspaceId WorkspaceId `json:"workspaceId"`

@@ -28,8 +28,6 @@ import {
   siteSendingDomainsListOptions,
   siteSendingDomainsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
-import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { useVerifySendingDomain } from '../../hooks/useVerifySendingDomain.ts'
 import { SendingDomainRecordsModal } from './SendingDomainRecordsModal.tsx'
@@ -63,7 +61,7 @@ function SendingDomainsTable({
   verifying: boolean
   onVerify: (id: string) => void
   removing: boolean
-  onRemove: (record: SiteSendingDomainResource) => void
+  onRemove: (id: string) => void
   restoring: boolean
   onRestore: (id: string) => void
 }) {
@@ -79,7 +77,7 @@ function SendingDomainsTable({
         minHeight={records.length === 0 ? 200 : 0}
         withTableBorder
         highlightOnHover={!archived}
-        // An archived domain sends nothing and serves no Tracking host: it has no records to set.
+        // An archived domain sends nothing: it has no records to set.
         onRowClick={({ record }) => {
           if (!archived) {
             onShowRecords(record.id)
@@ -139,7 +137,7 @@ function SendingDomainsTable({
                     <Menu.Item disabled={verifying} onClick={() => onVerify(record.id)}>
                       {t(($) => $.settings.sendingDomains.verify)}
                     </Menu.Item>
-                    <Menu.Item color="red" disabled={removing} onClick={() => onRemove(record)}>
+                    <Menu.Item color="red" disabled={removing} onClick={() => onRemove(record.id)}>
                       {t(($) => $.actions.remove)}
                     </Menu.Item>
                   </RowActionsMenu>
@@ -167,7 +165,6 @@ export function SendingDomainsSection({
   canEdit: boolean
 }) {
   const { t } = useTranslation()
-  const confirmRemove = useConfirmation()
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
   const [recordsId, setRecordsId] = useState<string | null>(null)
   const [archived, setArchived] = useState(false)
@@ -199,25 +196,6 @@ export function SendingDomainsSection({
     errorTitle: t(($) => $.settings.sendingDomains.restoreError),
   })
 
-  // A removed domain stops serving its Tracking host, so a tracker snippet installed on it stops
-  // collecting (ADR 0059): a host that already answers is removed only after saying so.
-  const onRemove = (record: SiteSendingDomainResource) => {
-    const remove = () => removeMutation.mutate({ path: { workspaceId, id: record.id } })
-    const tracking = record.trackingRecord
-    if (!tracking || tracking.state === 'pending') {
-      remove()
-      return
-    }
-    confirmRemove({
-      title: t(($) => $.settings.sendingDomains.removeServingTitle),
-      description: t(($) => $.settings.sendingDomains.removeServingDescription, {
-        host: tracking.host,
-      }),
-      confirmLabel: t(($) => $.actions.remove),
-      onConfirm: remove,
-    })
-  }
-
   return (
     <Box>
       <Group justify="space-between" mb="sm">
@@ -247,7 +225,7 @@ export function SendingDomainsSection({
           verifying={verifyMutation.isPending}
           onVerify={(id) => verifyMutation.mutate({ path: { workspaceId, id } })}
           removing={removeMutation.isPending}
-          onRemove={onRemove}
+          onRemove={(id) => removeMutation.mutate({ path: { workspaceId, id } })}
           restoring={restoreMutation.isPending}
           onRestore={(id) => restoreMutation.mutate({ path: { workspaceId, id } })}
         />

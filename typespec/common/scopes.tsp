@@ -64,6 +64,7 @@ enum GrantableScope {
 
   customFieldsRead: "custom_fields:read",
   sendingDomainsRead: "sending_domains:read",
+  trackingDomainsRead: "tracking_domains:read",
   integrationsRead: "integrations:read",
 }
 
@@ -79,13 +80,17 @@ enum SendScope {
 }
 
 /** Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
- * authenticates, the Integrations and the provider credentials they hold). An OAuth client
+ * authenticates, the Tracking domain its links are on, the Integrations and the provider
+ * credentials they hold). An OAuth client
  * gets them only when it asked for them and the user ticks a box of their own for them,
  * apart from the send class: they are no send-class scope and bring no mcp:send. */
 @grantable
 enum SetupScope {
   @grantedWith(Permission.sendingDomainsManage)
   sendingDomainsWrite: "sending_domains:write",
+
+  @grantedWith(Permission.trackingDomainsManage)
+  trackingDomainsWrite: "tracking_domains:write",
 
   @grantedWith(Permission.integrationsManage)
   integrationsWrite: "integrations:write",

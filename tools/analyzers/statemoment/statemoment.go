@@ -4,7 +4,7 @@
 // state it leaves. A write of such a field through an ent update builder must carry a `Where` on that
 // builder (in the same chain, or called on the same variable in the same function). Creating a row in
 // its first state is not a move, and a column whose write is the owner's own act (clearing a webhook's
-// `disabled_at` on re-enable) is not listed. A state that is a machine (`status`, `tracking_state`) is
+// `disabled_at` on re-enable) is not listed. A state that is a machine (`status`, a Tracking domain's `state`) is
 // guarded by the ast-grep rule `no-status-write-outside-lifecycle`.
 package statemoment
 

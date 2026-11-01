@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
@@ -49,6 +50,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
@@ -557,13 +559,13 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
-	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, nil, accounts.OwnerNotifier(env.DB, env.SystemMail)))
+	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, accounts.OwnerNotifier(env.DB, env.SystemMail)))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert never fails the verification.
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, nil, accounts.OwnerNotifier(env.DB, env.SystemMail))).
+	require.NoError(t, jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, accounts.OwnerNotifier(env.DB, env.SystemMail))).
 		Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 
 	// Unknown domain id is an error.
@@ -575,7 +577,7 @@ func TestRecheckSendingDomainsWorkerFansOut(t *testing.T) {
 	total, err := e.DB.SendingDomain.Query().Where(sendingdomain.DiscardedAtIsNil()).Count(context.Background())
 	require.NoError(t, err)
 
-	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(domainverify.New(e.DB, nil, nil, nil)).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
+	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(domainverify.New(e.DB, nil, nil)).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
 
 	kinds := e.queued(t)
 	assert.Len(t, kinds, total)
@@ -805,15 +807,18 @@ func TestSendBroadcastWorkerFinishesAStaleJob(t *testing.T) {
 	assert.Empty(t, e.queued(t))
 }
 
-func TestRecheckTrackingDomainsWorkerFansOutOneJobPerServingOrDNSVerifiedHost(t *testing.T) {
+// Every verified host is due, retired ones included: a retired host goes once its CNAME does.
+func TestRecheckTrackingDomainsWorkerFansOutOneJobPerVerifiedHost(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := e.workCtx()
-	due, err := e.DB.SendingDomain.Query().
-		Where(sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing), sendingdomain.IDNEQ(fixtures.SendingDomainArchivedID)).
+	due, err := e.DB.TrackingDomain.Query().
+		Where(trackingdomain.StateIn(trackingdomain.StateDNSVerified, trackingdomain.StateServing)).
 		Count(ctx)
 	require.NoError(t, err)
+	require.Positive(t, due)
 
-	require.NoError(t, jobs.NewRecheckTrackingDomainsWorker(domainverify.New(e.DB, nil, nil, nil)).Work(ctx, job(jobs.RecheckTrackingDomainsArgs{})))
+	mod := trackingdomains.New(e.DB, e.Bus, nil, trackingdomains.Config{})
+	require.NoError(t, jobs.NewRecheckTrackingDomainsWorker(mod).Work(ctx, job(jobs.RecheckTrackingDomainsArgs{})))
 
 	kinds := e.queued(t)
 	assert.Len(t, kinds, due)

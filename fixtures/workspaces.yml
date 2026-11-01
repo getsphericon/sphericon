@@ -77,7 +77,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Ninth tenant (Wayne) - holds a pending claim on a Tracking domain that Umbrella already
-# serves (ADR 0038): a name two Workspaces claim, one of them verified.
+# serves (ADR 0038, ADR 0071): a host two Workspaces claim, one of them verified.
 - id: 9 # fixture: Wayne
   name: Wayne
   public_id: WayneWs9

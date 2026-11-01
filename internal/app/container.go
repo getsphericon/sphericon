@@ -8,7 +8,9 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -77,7 +79,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/getsphericon/sphericon/internal/trackingdomain"
+	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -487,22 +489,27 @@ var jobsPackage = do.Package(
 		}
 		return &queueDepthGauge{gauge{unregister}}, nil
 	}),
-	// Tracking domain CNAMEs are checked against the configured edge host; nil while
-	// SPHERICON_TRACKING_CNAME_TARGET is unset (ADR 0038).
-	do.Lazy(func(i do.Injector) (*trackingdomain.Verifier, error) {
+	// The Workspaces' Tracking domains (ADR 0071): their CNAMEs are checked against the configured
+	// edge host, and the feature is off while SPHERICON_TRACKING_CNAME_TARGET is unset (ADR 0038).
+	do.Lazy(func(i do.Injector) (*trackingdomains.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		if cfg.TrackingCNAMETarget == "" {
-			return nil, nil
+		client := do.MustInvoke[*ent.Client](i)
+		var checker *trackingdomains.Checker
+		if cfg.TrackingCNAMETarget != "" {
+			checker = &trackingdomains.Checker{
+				Lookup: dnsResolver(cfg.DNSAddr).LookupCNAME,
+				Target: cfg.TrackingCNAMETarget,
+				// The SSRF-guarded client: a customer's DNS names the host the probe dials.
+				HTTP:   webhook.NewClient(trackingProbeTimeout),
+				Secret: cfg.JWTSecret,
+			}
 		}
-		return &trackingdomain.Verifier{
-			Lookup: dnsResolver(cfg.DNSAddr).LookupCNAME,
-			Target: cfg.TrackingCNAMETarget,
-			Now:    do.MustInvoke[Clock](i),
-			// The SSRF-guarded client: a customer's DNS names the host the probe dials.
-			HTTP:   webhook.NewClient(trackingProbeTimeout),
-			Secret: cfg.JWTSecret,
-			Events: do.MustInvoke[*events.Bus](i),
-		}, nil
+		notify := accounts.OwnerNotifier(client, do.MustInvoke[SystemSender](i).EmailSender)
+		return trackingdomains.New(client, do.MustInvoke[*events.Bus](i), notify, trackingdomains.Config{
+			Checker:  checker,
+			OwnHosts: []string{urlHost(cfg.AppURL), urlHost(cfg.TrackerURL)},
+			Now:      do.MustInvoke[Clock](i),
+		}), nil
 	}),
 	// The Instance's report of itself (ADR 0032), sent by a periodic job.
 	do.Lazy(func(i do.Injector) (*instance.Sender, error) {
@@ -516,7 +523,7 @@ var jobsPackage = do.Package(
 		inst := do.MustInvoke[*instance.Module](i)
 		pool := do.MustInvoke[*riverPool](i)
 		jc, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool.DB, pool.listener), do.MustInvoke[*ent.Client](i), do.MustInvoke[*outbound.Module](i), do.MustInvoke[*secrets.Cipher](i), bus, sys.EmailSender,
-			do.MustInvoke[sending.TXTLookup](i), do.MustInvoke[*trackingdomain.Verifier](i), do.MustInvoke[*messaging.Catalog](i), cfg.AppURL, cfg.OutboundAllow, do.MustInvoke[*machine.Detector](i),
+			do.MustInvoke[sending.TXTLookup](i), do.MustInvoke[*trackingdomains.Module](i), do.MustInvoke[*messaging.Catalog](i), cfg.AppURL, cfg.OutboundAllow, do.MustInvoke[*machine.Detector](i),
 			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
 			edition.Jobs(bus, sys.EmailSender), edition.ExportJobs(cfg.EventsRetention), inst.Jobs(), do.MustInvoke[*instance.Sender](i).Jobs())
 		if err != nil {
@@ -570,7 +577,7 @@ var deliveryPackage = do.Package(
 			opts = append(opts, outbound.WithSystemSender(do.MustInvoke[SystemSender](i).EmailSender))
 		}
 		if cfg.TrackingCNAMETarget != "" {
-			opts = append(opts, outbound.WithTrackingDomains())
+			opts = append(opts, outbound.WithTrackingDomains(do.MustInvoke[*trackingdomains.Module](i)))
 		}
 		return outbound.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*holds.Holds](i), do.MustInvoke[outbound.Senders](i), do.MustInvoke[*tracking.Tracker](i), opts...), nil
 	}),
@@ -640,7 +647,7 @@ var audiencePackage = do.Package(
 			do.MustInvoke[*preset.Registry](i), cfg.AppURL, do.MustInvoke[IntegrationOptions](i)...), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomains.Module, error) {
-		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Enqueuer](i), do.MustInvoke[*config.Config](i).TrackingCNAMETarget), nil
+		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Enqueuer](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*joindomains.Module, error) {
 		client := do.MustInvoke[*ent.Client](i)
@@ -831,6 +838,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Integrations:     do.MustInvoke[*integrations.Module](i),
 		CapturedMessages: do.MustInvoke[*capturedmessages.Module](i),
 		SendingDomains:   do.MustInvoke[*sendingdomains.Module](i),
+		TrackingDomains:  do.MustInvoke[*trackingdomains.Module](i),
 		BootstrapToken:   do.MustInvoke[*config.Config](i).BootstrapToken,
 		Audit:            edition.Audit,
 		Export:           edition.Export,
@@ -879,6 +887,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Broadcasts:               do.MustInvoke[*broadcasts.Module](i),
 		Mail:                     enqueue,
 		SendingDomains:           do.MustInvoke[*sendingdomains.Module](i),
+		TrackingDomains:          do.MustInvoke[*trackingdomains.Module](i),
 		JoinDomains:              do.MustInvoke[*joindomains.Module](i),
 		Integrations:             do.MustInvoke[*integrations.Module](i),
 		CapturedMessages:         do.MustInvoke[*capturedmessages.Module](i),
@@ -910,4 +919,14 @@ func dnsResolver(addr string) *net.Resolver {
 			return (&net.Dialer{}).DialContext(ctx, network, addr)
 		},
 	}
+}
+
+// urlHost is the lower-case hostname of an origin such as https://app.example.com:8443, "" for
+// an empty or malformed one.
+func urlHost(origin string) string {
+	u, err := url.Parse(origin)
+	if err != nil {
+		return ""
+	}
+	return strings.ToLower(u.Hostname())
 }

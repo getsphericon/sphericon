@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded in part by ADR 0071 (the Tracking domain is the Workspace's own, so a Workspace without mail has one)
 ---
 
 # A Tracking domain also serves the first-party tracker

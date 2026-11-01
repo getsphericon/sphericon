@@ -1540,7 +1540,7 @@
         "properties": {
           "host": {
             "type": "string",
-            "description": "The host, `track.<Sending domain>`"
+            "description": "The Tracking domain's host"
           },
           "workspaceId": {
             "allOf": [

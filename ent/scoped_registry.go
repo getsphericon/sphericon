@@ -40,6 +40,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
@@ -2054,16 +2055,6 @@ func ScopedEntities() []ScopedEntity {
 				if src.VerificationLostAt != nil {
 					b.SetVerificationLostAt(*src.VerificationLostAt)
 				}
-				b.SetTrackingState(src.TrackingState)
-				if src.TrackingCheckedAt != nil {
-					b.SetTrackingCheckedAt(*src.TrackingCheckedAt)
-				}
-				if src.TrackingReason != nil {
-					b.SetTrackingReason(*src.TrackingReason)
-				}
-				if src.TrackingStateChangedAt != nil {
-					b.SetTrackingStateChangedAt(*src.TrackingStateChangedAt)
-				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -2169,6 +2160,58 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 			},
+		},
+		{
+			Name:    "TrackingDomain",
+			Audited: true,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.TrackingDomain.Query().Where(trackingdomain.WorkspaceID(ws)).Order(Asc(trackingdomain.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.TrackingDomain().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.TrackingDomain().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.TrackingDomain().Update().Where(trackingdomain.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.TrackingDomain().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.TrackingDomain().Delete().Where(trackingdomain.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.TrackingDomain.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.TrackingDomain().Create()
+				b.SetHost(src.Host)
+				b.SetRole(src.Role)
+				b.SetState(src.State)
+				if src.ServedAt != nil {
+					b.SetServedAt(*src.ServedAt)
+				}
+				if src.CheckedAt != nil {
+					b.SetCheckedAt(*src.CheckedAt)
+				}
+				if src.Reason != nil {
+					b.SetReason(*src.Reason)
+				}
+				if src.StateChangedAt != nil {
+					b.SetStateChangedAt(*src.StateChangedAt)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
 		},
 		{
 			Name:    "Unsubscribe",

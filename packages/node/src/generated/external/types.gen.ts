@@ -45,12 +45,14 @@ export const ApiTokenScope = {
   WEBHOOKS_TEST: 'webhooks:test',
   CUSTOM_FIELDS_READ: 'custom_fields:read',
   SENDING_DOMAINS_READ: 'sending_domains:read',
+  TRACKING_DOMAINS_READ: 'tracking_domains:read',
   INTEGRATIONS_READ: 'integrations:read',
   EMAILS_SEND: 'emails:send',
   BROADCASTS_SEND: 'broadcasts:send',
   AUTOMATIONS_PUBLISH: 'automations:publish',
   MCP_SEND: 'mcp:send',
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
+  TRACKING_DOMAINS_WRITE: 'tracking_domains:write',
   INTEGRATIONS_WRITE: 'integrations:write',
   CONTACTS_ERASE: 'contacts:erase',
   CAPTURED_MESSAGES_READ: 'captured_messages:read',
@@ -931,6 +933,24 @@ export const CapturedMessageSurface = {
  * The surface that asked for the send a Captured message belongs to
  */
 export type CapturedMessageSurface = typeof CapturedMessageSurface[keyof typeof CapturedMessageSurface];
+
+/**
+ * The CNAME record to publish: `host` must point at `target`
+ */
+export type CnameRecord = {
+  /**
+   * The record type (always CNAME)
+   */
+  type: 'CNAME';
+  /**
+   * The host to create the record at
+   */
+  host: string;
+  /**
+   * The edge host the CNAME must point at
+   */
+  target: string;
+};
 
 /**
  * How a condition group combines its entries
@@ -2605,6 +2625,7 @@ export const GrantableScope = {
   WEBHOOKS_TEST: 'webhooks:test',
   CUSTOM_FIELDS_READ: 'custom_fields:read',
   SENDING_DOMAINS_READ: 'sending_domains:read',
+  TRACKING_DOMAINS_READ: 'tracking_domains:read',
   INTEGRATIONS_READ: 'integrations:read'
 } as const;
 
@@ -2955,6 +2976,7 @@ export const Permission = {
   REVENUE_CONFIGURE: 'revenue:configure',
   BRAND_KIT_MANAGE: 'brand_kit:manage',
   JOIN_DOMAINS_MANAGE: 'join_domains:manage',
+  TRACKING_DOMAINS_MANAGE: 'tracking_domains:manage',
   HOLDS_RESOLVE: 'holds:resolve',
   ACCOUNT_LINK_OPEN: 'account_link:open',
   WORKSPACE_DELETE: 'workspace:delete',
@@ -3667,10 +3689,6 @@ export type SendingDomainResource = {
    */
   dmarcRecord: DnsRecord;
   /**
-   * The Tracking domain CNAME; absent when the instance has no tracking target configured
-   */
-  trackingRecord?: TrackingRecord;
-  /**
    * When the DKIM DNS was most recently checked (null = never)
    */
   lastCheckedAt?: Timestamp | null;
@@ -3683,7 +3701,7 @@ export type SendingDomainResource = {
    */
   verificationLostAt?: Timestamp | null;
   /**
-   * When the domain was archived; null while it is kept. An archived domain serves no Tracking domain host.
+   * When the domain was archived; null while it is kept.
    */
   archivedAt?: Timestamp | null;
   /**
@@ -3741,16 +3759,33 @@ export type SetBroadcastSegmentInput = {
 };
 
 /**
- * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
- * authenticates, the Integrations and the provider credentials they hold). An OAuth client
- * gets them only when it asked for them and the user ticks a box of their own for them,
- * apart from the send class: they are no send-class scope and bring no mcp:send.
+ * Set the Workspace's Tracking domain
  */
-export const SetupScope = { SENDING_DOMAINS_WRITE: 'sending_domains:write', INTEGRATIONS_WRITE: 'integrations:write' } as const;
+export type SetTrackingDomainInput = {
+  /**
+   * A host below a domain of your own, e.g. "t.example.com": never the apex (a CNAME cannot sit
+   * there) nor one of the Instance's own hosts. Stored lower case, IDN as punycode.
+   */
+  host: string;
+};
 
 /**
  * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
- * authenticates, the Integrations and the provider credentials they hold). An OAuth client
+ * authenticates, the Tracking domain its links are on, the Integrations and the provider
+ * credentials they hold). An OAuth client
+ * gets them only when it asked for them and the user ticks a box of their own for them,
+ * apart from the send class: they are no send-class scope and bring no mcp:send.
+ */
+export const SetupScope = {
+  SENDING_DOMAINS_WRITE: 'sending_domains:write',
+  TRACKING_DOMAINS_WRITE: 'tracking_domains:write',
+  INTEGRATIONS_WRITE: 'integrations:write'
+} as const;
+
+/**
+ * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
+ * authenticates, the Tracking domain its links are on, the Integrations and the provider
+ * credentials they hold). An OAuth client
  * gets them only when it asked for them and the user ticks a box of their own for them,
  * apart from the send class: they are no send-class scope and bring no mcp:send.
  */
@@ -3916,6 +3951,74 @@ export const TokenOnlyScope = {
 export type TokenOnlyScope = typeof TokenOnlyScope[keyof typeof TokenOnlyScope];
 
 /**
+ * A Tracking domain of the Workspace (ADR 0071): a host of its own on which the links of its mail and the first-party tracker are served
+ */
+export type TrackingDomainResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The host, lower case with IDN as punycode, e.g. "t.example.com"
+   */
+  host: string;
+  /**
+   * What the host does for the Workspace
+   */
+  role: TrackingDomainRole;
+  /**
+   * Where the host's verification stands
+   */
+  state: TrackingState;
+  /**
+   * Why the host is not advancing; absent when nothing holds it back
+   */
+  reason?: TrackingReason;
+  /**
+   * The CNAME to publish
+   */
+  record: CnameRecord;
+  /**
+   * When the host first served (null = never): only a host that served is retired rather than deleted
+   */
+  servedAt?: Timestamp | null;
+  /**
+   * When the host was most recently checked (null = never)
+   */
+  lastCheckedAt?: Timestamp | null;
+  /**
+   * When the state most recently changed (null = never)
+   */
+  stateChangedAt?: Timestamp | null;
+  /**
+   * Creation timestamp
+   */
+  createdAt: Timestamp;
+  /**
+   * Last update timestamp
+   */
+  updatedAt: Timestamp;
+};
+
+/**
+ * What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the
+ * snippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only
+ * the links already sent and the snippet already installed on it, until its CNAME leaves the edge
+ */
+export const TrackingDomainRole = {
+  CURRENT: 'current',
+  REPLACEMENT: 'replacement',
+  RETIRED: 'retired'
+} as const;
+
+/**
+ * What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the
+ * snippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only
+ * the links already sent and the snippet already installed on it, until its CNAME leaves the edge
+ */
+export type TrackingDomainRole = typeof TrackingDomainRole[keyof typeof TrackingDomainRole];
+
+/**
  * Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
  */
 export const TrackingReason = { HOST_TAKEN: 'host_taken' } as const;
@@ -3926,41 +4029,7 @@ export const TrackingReason = { HOST_TAKEN: 'host_taken' } as const;
 export type TrackingReason = typeof TrackingReason[keyof typeof TrackingReason];
 
 /**
- * The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only; absent when the instance has no tracking target configured.
- */
-export type TrackingRecord = {
-  /**
-   * The record type (always CNAME)
-   */
-  type: 'CNAME';
-  /**
-   * The host to create the record at: "track." followed by the domain
-   */
-  host: string;
-  /**
-   * The edge host the CNAME must point at
-   */
-  target: string;
-  /**
-   * Where the Tracking domain stands
-   */
-  state: TrackingState;
-  /**
-   * Why the domain is not advancing; absent when nothing holds it back
-   */
-  reason?: TrackingReason;
-  /**
-   * When the Tracking domain was most recently checked (null = never)
-   */
-  lastCheckedAt?: Timestamp | null;
-  /**
-   * When the state most recently changed (null = never)
-   */
-  stateChangedAt?: Timestamp | null;
-};
-
-/**
- * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving`
+ * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers
  */
 export const TrackingState = {
   PENDING: 'pending',
@@ -3969,7 +4038,7 @@ export const TrackingState = {
 } as const;
 
 /**
- * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving`
+ * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers
  */
 export type TrackingState = typeof TrackingState[keyof typeof TrackingState];
 
@@ -9893,6 +9962,170 @@ export type TemplatesUpdateResponses = {
 };
 
 export type TemplatesUpdateResponse = TemplatesUpdateResponses[keyof TemplatesUpdateResponses];
+
+export type TrackingDomainsListData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/tracking-domains';
+};
+
+export type TrackingDomainsListErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type TrackingDomainsListError = TrackingDomainsListErrors[keyof TrackingDomainsListErrors];
+
+export type TrackingDomainsListResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Array<TrackingDomainResource>;
+};
+
+export type TrackingDomainsListResponse = TrackingDomainsListResponses[keyof TrackingDomainsListResponses];
+
+export type TrackingDomainsSetData = {
+  body: SetTrackingDomainInput;
+  path?: never;
+  query?: never;
+  url: '/tracking-domains';
+};
+
+export type TrackingDomainsSetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type TrackingDomainsSetError = TrackingDomainsSetErrors[keyof TrackingDomainsSetErrors];
+
+export type TrackingDomainsSetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: TrackingDomainResource;
+};
+
+export type TrackingDomainsSetResponse = TrackingDomainsSetResponses[keyof TrackingDomainsSetResponses];
+
+export type TrackingDomainsRemoveData = {
+  body?: never;
+  path: {
+    id: EntityId;
+  };
+  query?: never;
+  url: '/tracking-domains/{id}';
+};
+
+export type TrackingDomainsRemoveErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type TrackingDomainsRemoveError = TrackingDomainsRemoveErrors[keyof TrackingDomainsRemoveErrors];
+
+export type TrackingDomainsRemoveResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type TrackingDomainsRemoveResponse = TrackingDomainsRemoveResponses[keyof TrackingDomainsRemoveResponses];
+
+export type TrackingDomainsVerifyData = {
+  body?: never;
+  path: {
+    id: EntityId;
+  };
+  query?: never;
+  url: '/tracking-domains/{id}/verify';
+};
+
+export type TrackingDomainsVerifyErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type TrackingDomainsVerifyError = TrackingDomainsVerifyErrors[keyof TrackingDomainsVerifyErrors];
+
+export type TrackingDomainsVerifyResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: TrackingDomainResource;
+};
+
+export type TrackingDomainsVerifyResponse = TrackingDomainsVerifyResponses[keyof TrackingDomainsVerifyResponses];
 
 export type UnsubscribesCreateData = {
   body: CreateUnsubscribeInput;

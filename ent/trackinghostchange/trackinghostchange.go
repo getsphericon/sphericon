@@ -20,8 +20,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldWorkspaceID holds the string denoting the workspace_id field in the database.
 	FieldWorkspaceID = "workspace_id"
-	// FieldDomain holds the string denoting the domain field in the database.
-	FieldDomain = "domain"
+	// FieldHost holds the string denoting the host field in the database.
+	FieldHost = "host"
 	// FieldState holds the string denoting the state field in the database.
 	FieldState = "state"
 	// Table holds the table name of the trackinghostchange in the database.
@@ -34,7 +34,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldWorkspaceID,
-	FieldDomain,
+	FieldHost,
 	FieldState,
 }
 
@@ -55,8 +55,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
-	// DomainValidator is a validator for the "domain" field. It is called by the builders before save.
-	DomainValidator func(string) error
+	// HostValidator is a validator for the "host" field. It is called by the builders before save.
+	HostValidator func(string) error
 )
 
 // State defines the type for the "state" enum field.
@@ -106,9 +106,9 @@ func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWorkspaceID, opts...).ToFunc()
 }
 
-// ByDomain orders the results by the domain field.
-func ByDomain(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDomain, opts...).ToFunc()
+// ByHost orders the results by the host field.
+func ByHost(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHost, opts...).ToFunc()
 }
 
 // ByState orders the results by the state field.

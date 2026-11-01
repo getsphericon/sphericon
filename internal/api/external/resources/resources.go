@@ -18,8 +18,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/rule"
-	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/auditapi"
@@ -40,6 +40,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/go-faster/jx"
@@ -290,16 +291,19 @@ type Converter interface {
 	// goverter:ignore DkimRecord
 	// goverter:ignore SpfRecord
 	// goverter:ignore DmarcRecord
-	// goverter:ignore TrackingRecord
 	// The contract names the discarded state "archived" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
 	// goverter:map . Verified | sendingDomainVerified
 	SendingDomainToResource(source *ent.SendingDomain) externalapi.SendingDomainResource
 	// goverter:map . Type | dnsRecordType
 	DnsRecordToResource(source sendingdomains.Record) externalapi.DnsRecord
-	// goverter:map . Type | trackingRecordType
+
+	// The CNAME target is the module's, which the mapper cannot see: the handler attaches it.
+	// goverter:ignore Record
 	// goverter:map CheckedAt LastCheckedAt
-	TrackingRecordToResource(source sendingdomains.TrackingRecord) externalapi.TrackingRecord
+	TrackingDomainToResource(source *ent.TrackingDomain) externalapi.TrackingDomainResource
+	// goverter:map . Type | cnameRecordType
+	CnameRecordToResource(source trackingdomains.Record) externalapi.CnameRecord
 
 	// A Workspace that has not saved a Brand kit has no row to convert, so the mapper
 	// takes the module's Kit.
@@ -430,11 +434,13 @@ type Converter interface {
 	// goverter:enum:transform value
 	SuppressionReasonToResource(source suppression.Reason) externalapi.SuppressionReason
 	// goverter:enum:transform value
-	TrackingReasonToResource(source sendingdomain.TrackingReason) externalapi.TrackingReason
+	TrackingReasonToResource(source trackingdomain.Reason) externalapi.TrackingReason
 	// goverter:enum:transform value
 	TransactionalSendStatusToResource(source transactional.Status) externalapi.TransactionalSendStatus
 	// goverter:enum:transform value
-	TrackingStateToResource(source sendingdomain.TrackingState) externalapi.TrackingState
+	TrackingStateToResource(source trackingdomain.State) externalapi.TrackingState
+	// goverter:enum:transform value
+	TrackingDomainRoleToResource(source trackingdomain.Role) externalapi.TrackingDomainRole
 	// goverter:enum:transform value
 	WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) externalapi.WebhookDisabledReason
 	// goverter:enum:transform value
@@ -578,7 +584,7 @@ func optString(v *string) externalapi.OptString {
 	return convert.Opt[externalapi.OptString](v)
 }
 
-func optTrackingReason(c Converter, v *sendingdomain.TrackingReason) externalapi.OptTrackingReason {
+func optTrackingReason(c Converter, v *trackingdomain.Reason) externalapi.OptTrackingReason {
 	return convert.OptVia[externalapi.OptTrackingReason](v, c.TrackingReasonToResource)
 }
 
@@ -598,8 +604,8 @@ func dnsRecordType(sendingdomains.Record) externalapi.DnsRecordType {
 	return externalapi.DnsRecordTypeTXT
 }
 
-func trackingRecordType(sendingdomains.TrackingRecord) externalapi.TrackingRecordType {
-	return externalapi.TrackingRecordTypeCNAME
+func cnameRecordType(trackingdomains.Record) externalapi.CnameRecordType {
+	return externalapi.CnameRecordTypeCNAME
 }
 
 // brandKitUpdatedAt is set only once the Brand kit has been saved.

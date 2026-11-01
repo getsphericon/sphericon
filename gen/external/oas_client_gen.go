@@ -586,9 +586,8 @@ type Invoker interface {
 	SendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (SendingDomainRatesListRes, error)
 	// SendingDomainsArchive invokes SendingDomains_archive operation.
 	//
-	// Archive a Sending domain: it leaves the list, serves no Tracking domain host and can be restored.
-	// Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends
-	// from it.
+	// Archive a Sending domain: it leaves the list and can be restored. Refused with 409 (`usedBy`) while
+	// a scheduled or sending Broadcast or an active Automation sends from it.
 	//
 	// POST /sending-domains/{id}/archive
 	SendingDomainsArchive(ctx context.Context, params SendingDomainsArchiveParams) (SendingDomainsArchiveRes, error)
@@ -612,8 +611,8 @@ type Invoker interface {
 	SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (SendingDomainsListRes, error)
 	// SendingDomainsUnarchive invokes SendingDomains_unarchive operation.
 	//
-	// Restore an archived Sending domain. It starts a new DNS check and serves its Tracking domain host
-	// again only once that passes. Refused with 409 when the same domain was added again meanwhile.
+	// Restore an archived Sending domain. It starts a new DNS check. Refused with 409 when the same domain
+	// was added again meanwhile.
 	//
 	// POST /sending-domains/{id}/unarchive
 	SendingDomainsUnarchive(ctx context.Context, params SendingDomainsUnarchiveParams) (SendingDomainsUnarchiveRes, error)
@@ -699,6 +698,39 @@ type Invoker interface {
 	//
 	// PUT /templates/{id}
 	TemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params TemplatesUpdateParams) (TemplatesUpdateRes, error)
+	// TrackingDomainsList invokes TrackingDomains_list operation.
+	//
+	// List the Workspace's Tracking domains: the current one, the replacement, then the retired ones.
+	// Empty while the Instance offers none.
+	//
+	// GET /tracking-domains
+	TrackingDomainsList(ctx context.Context) (TrackingDomainsListRes, error)
+	// TrackingDomainsRemove invokes TrackingDomains_remove operation.
+	//
+	// Remove a Tracking domain by its role. The current one stops being used: it is retired when it served
+	// (links already sent on it keep working while its CNAME points at the edge), deleted otherwise, and a
+	// replacement becomes current. A replacement is cancelled. A retired one is forgotten: links sent on
+	// it stop working.
+	//
+	// DELETE /tracking-domains/{id}
+	TrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) (TrackingDomainsRemoveRes, error)
+	// TrackingDomainsSet invokes TrackingDomains_set operation.
+	//
+	// Set the Workspace's Tracking domain. With none it becomes the current one. While the current one
+	// serves it becomes the replacement (discarding a pending one) and takes over once it serves. When the
+	// current one does not serve, the new one replaces it at once. A host the Workspace already uses is
+	// returned as it is; a retired one is brought back. An invalid host or one of the Instance's own is
+	// 422; 404 when the Instance offers no Tracking domains.
+	//
+	// POST /tracking-domains
+	TrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput) (TrackingDomainsSetRes, error)
+	// TrackingDomainsVerify invokes TrackingDomains_verify operation.
+	//
+	// Check the host now and answer once the check is done: the Tracking domain as it left it. A
+	// replacement that reaches `serving` becomes current. Verification is never set by the caller.
+	//
+	// POST /tracking-domains/{id}/verify
+	TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (TrackingDomainsVerifyRes, error)
 	// UnsubscribesCreate invokes Unsubscribes_create operation.
 	//
 	// Record that a destination unsubscribed from a sending source (default `broadcasts`). Idempotent.
@@ -12536,9 +12568,8 @@ func (c *Client) sendSendingDomainRatesList(ctx context.Context, params SendingD
 
 // SendingDomainsArchive invokes SendingDomains_archive operation.
 //
-// Archive a Sending domain: it leaves the list, serves no Tracking domain host and can be restored.
-// Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends
-// from it.
+// Archive a Sending domain: it leaves the list and can be restored. Refused with 409 (`usedBy`) while
+// a scheduled or sending Broadcast or an active Automation sends from it.
 //
 // POST /sending-domains/{id}/archive
 func (c *Client) SendingDomainsArchive(ctx context.Context, params SendingDomainsArchiveParams) (SendingDomainsArchiveRes, error) {
@@ -13091,8 +13122,8 @@ func (c *Client) sendSendingDomainsList(ctx context.Context, params SendingDomai
 
 // SendingDomainsUnarchive invokes SendingDomains_unarchive operation.
 //
-// Restore an archived Sending domain. It starts a new DNS check and serves its Tracking domain host
-// again only once that passes. Refused with 409 when the same domain was added again meanwhile.
+// Restore an archived Sending domain. It starts a new DNS check. Refused with 409 when the same domain
+// was added again meanwhile.
 //
 // POST /sending-domains/{id}/unarchive
 func (c *Client) SendingDomainsUnarchive(ctx context.Context, params SendingDomainsUnarchiveParams) (SendingDomainsUnarchiveRes, error) {
@@ -15031,6 +15062,513 @@ func (c *Client) sendTemplatesUpdate(ctx context.Context, request *UpdateTemplat
 
 	stage = "DecodeResponse"
 	result, err := decodeTemplatesUpdateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// TrackingDomainsList invokes TrackingDomains_list operation.
+//
+// List the Workspace's Tracking domains: the current one, the replacement, then the retired ones.
+// Empty while the Instance offers none.
+//
+// GET /tracking-domains
+func (c *Client) TrackingDomainsList(ctx context.Context) (TrackingDomainsListRes, error) {
+	res, err := c.sendTrackingDomainsList(ctx)
+	return res, err
+}
+
+func (c *Client) sendTrackingDomainsList(ctx context.Context) (res TrackingDomainsListRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("TrackingDomains_list"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/tracking-domains"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, TrackingDomainsListOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/tracking-domains"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, TrackingDomainsListOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeTrackingDomainsListResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// TrackingDomainsRemove invokes TrackingDomains_remove operation.
+//
+// Remove a Tracking domain by its role. The current one stops being used: it is retired when it served
+// (links already sent on it keep working while its CNAME points at the edge), deleted otherwise, and a
+// replacement becomes current. A replacement is cancelled. A retired one is forgotten: links sent on
+// it stop working.
+//
+// DELETE /tracking-domains/{id}
+func (c *Client) TrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) (TrackingDomainsRemoveRes, error) {
+	res, err := c.sendTrackingDomainsRemove(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendTrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) (res TrackingDomainsRemoveRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("TrackingDomains_remove"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/tracking-domains/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, TrackingDomainsRemoveOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/tracking-domains/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, TrackingDomainsRemoveOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeTrackingDomainsRemoveResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// TrackingDomainsSet invokes TrackingDomains_set operation.
+//
+// Set the Workspace's Tracking domain. With none it becomes the current one. While the current one
+// serves it becomes the replacement (discarding a pending one) and takes over once it serves. When the
+// current one does not serve, the new one replaces it at once. A host the Workspace already uses is
+// returned as it is; a retired one is brought back. An invalid host or one of the Instance's own is
+// 422; 404 when the Instance offers no Tracking domains.
+//
+// POST /tracking-domains
+func (c *Client) TrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput) (TrackingDomainsSetRes, error) {
+	res, err := c.sendTrackingDomainsSet(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput) (res TrackingDomainsSetRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("TrackingDomains_set"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/tracking-domains"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, TrackingDomainsSetOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/tracking-domains"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeTrackingDomainsSetRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, TrackingDomainsSetOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeTrackingDomainsSetResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// TrackingDomainsVerify invokes TrackingDomains_verify operation.
+//
+// Check the host now and answer once the check is done: the Tracking domain as it left it. A
+// replacement that reaches `serving` becomes current. Verification is never set by the caller.
+//
+// POST /tracking-domains/{id}/verify
+func (c *Client) TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (TrackingDomainsVerifyRes, error) {
+	res, err := c.sendTrackingDomainsVerify(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendTrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (res TrackingDomainsVerifyRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("TrackingDomains_verify"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/tracking-domains/{id}/verify"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, TrackingDomainsVerifyOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/tracking-domains/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/verify"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, TrackingDomainsVerifyOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeTrackingDomainsVerifyResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

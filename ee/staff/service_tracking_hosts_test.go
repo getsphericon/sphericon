@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -58,32 +58,33 @@ func domainsReader(t *testing.T, h *harness) *serviceapi.Client {
 	return h.env.ServiceClient(t, h.env.IssueServiceCredential(t, "service-edge", serviceapi.ServiceScopeDomainsRead))
 }
 
-// setTracking moves a fixture Sending domain of Umbrella to state through ent, the way the
-// recheck job does. The fixture rows themselves are loaded without the log's hook.
-func setTracking(t *testing.T, h *harness, id int64, state sendingdomain.TrackingState) {
+// setTracking moves a fixture Tracking domain to state through ent, the way the recheck job does.
+// The fixture rows themselves are loaded without the log's hook.
+func setTracking(t *testing.T, h *harness, ws, id int64, state trackingdomain.State) {
 	t.Helper()
-	require.NoError(t, h.env.FeedDB.Scoped(fixtures.UmbrellaID).SendingDomain().UpdateOneID(id).
-		SetTrackingState(state).Exec(t.Context()))
+	// test writes: the hook fires on this write
+	require.NoError(t, h.env.FeedDB.Scoped(ws).TrackingDomain().UpdateOneID(id).
+		SetState(state).Exec(t.Context()))
 }
 
 func TestAHostEnteringTheVerifiedStatesIsListedWithItsWorkspace(t *testing.T) {
 	h := newHarness(t)
 
-	setTracking(t, h, fixtures.SendingDomainTrackingPendingID, sendingdomain.TrackingStateDNSVerified)
+	setTracking(t, h, fixtures.AcmeID, fixtures.TrackingDomainAcmeID, trackingdomain.StateDNSVerified)
 
 	entries, _ := hostChangesFrom(t, domainsReader(t, h), "")
 	require.Len(t, entries, 1, "a pending claim of another Workspace is not listed")
-	assert.Equal(t, "track."+fixtures.SendingDomainTrackingPendingDomain, entries[0].Host)
+	assert.Equal(t, fixtures.TrackingDomainAcmeHost, entries[0].Host)
 	assert.Equal(t, serviceapi.ServiceTrackingHostStateDNSVerified, entries[0].State)
-	assert.EqualValues(t, fixtures.UmbrellaPublicID, entries[0].WorkspaceId)
+	assert.EqualValues(t, fixtures.AcmePublicID, entries[0].WorkspaceId)
 }
 
 func TestReplayingAHostFeedCursorReturnsTheSameEntries(t *testing.T) {
 	h := newHarness(t)
 	c := domainsReader(t, h)
-	setTracking(t, h, fixtures.SendingDomainTrackingPendingID, sendingdomain.TrackingStateDNSVerified)
-	setTracking(t, h, fixtures.SendingDomainTrackingPendingID, sendingdomain.TrackingStateServing)
-	setTracking(t, h, fixtures.SendingDomainTrackingDNSVerifiedID, sendingdomain.TrackingStatePending)
+	setTracking(t, h, fixtures.AcmeID, fixtures.TrackingDomainAcmeID, trackingdomain.StateDNSVerified)
+	setTracking(t, h, fixtures.AcmeID, fixtures.TrackingDomainAcmeID, trackingdomain.StateServing)
+	setTracking(t, h, fixtures.InitechID, fixtures.TrackingDomainDNSVerifiedID, trackingdomain.StatePending)
 
 	first := hostChanges(t, c, "", 1)
 	require.Len(t, first.Items, 1)
@@ -101,21 +102,17 @@ func TestAHostThatLeavesTheVerifiedStatesIsReportedRemoved(t *testing.T) {
 	h := newHarness(t)
 	c := domainsReader(t, h)
 	_, saved := hostChangesFrom(t, c, "")
-	umbrella := h.env.FeedDB.Scoped(fixtures.UmbrellaID)
-	dnsHost := "track." + fixtures.SendingDomainTrackingDNSVerifiedDomain
-	servingHost := "track." + fixtures.SendingDomainTrackingServingDomain
 
-	require.NoError(t, umbrella.SendingDomain().UpdateOneID(fixtures.SendingDomainTrackingDNSVerifiedID).
-		SetTrackingState(sendingdomain.TrackingStatePending).Exec(t.Context()))
-	require.NoError(t, umbrella.SendingDomain().PurgeOneID(fixtures.SendingDomainTrackingServingID).Exec(t.Context()))
-	require.NoError(t, umbrella.SendingDomain().UpdateOneID(fixtures.SendingDomainTrackingPendingID).
-		SetTrackingState(sendingdomain.TrackingStateServing).Exec(t.Context()))
+	setTracking(t, h, fixtures.InitechID, fixtures.TrackingDomainDNSVerifiedID, trackingdomain.StatePending)
+	require.NoError(t, h.env.FeedDB.Scoped(fixtures.UmbrellaID).TrackingDomain().
+		DeleteOneID(fixtures.TrackingDomainRetiredID).Exec(t.Context()))
+	setTracking(t, h, fixtures.AcmeID, fixtures.TrackingDomainAcmeID, trackingdomain.StateServing)
 
 	got, saved := hostChangesFrom(t, c, saved)
 	assert.Equal(t, map[string]serviceapi.ServiceTrackingHostState{
-		dnsHost:     serviceapi.ServiceTrackingHostStateRemoved,
-		servingHost: serviceapi.ServiceTrackingHostStateRemoved,
-		"track." + fixtures.SendingDomainTrackingPendingDomain: serviceapi.ServiceTrackingHostStateServing,
+		fixtures.TrackingDomainDNSVerifiedHost: serviceapi.ServiceTrackingHostStateRemoved,
+		fixtures.TrackingDomainRetiredHost:     serviceapi.ServiceTrackingHostStateRemoved,
+		fixtures.TrackingDomainAcmeHost:        serviceapi.ServiceTrackingHostStateServing,
 	}, hostStates(got))
 
 	again, _ := hostChangesFrom(t, c, saved)
@@ -127,30 +124,26 @@ func TestAHostMovingFromDNSVerifiedToServingIsOneEntry(t *testing.T) {
 	c := domainsReader(t, h)
 	_, saved := hostChangesFrom(t, c, "")
 
-	require.NoError(t, h.env.FeedDB.Scoped(fixtures.UmbrellaID).SendingDomain().
-		UpdateOneID(fixtures.SendingDomainTrackingDNSVerifiedID).
-		SetTrackingState(sendingdomain.TrackingStateServing).Exec(t.Context()))
+	setTracking(t, h, fixtures.InitechID, fixtures.TrackingDomainDNSVerifiedID, trackingdomain.StateServing)
 
 	got, _ := hostChangesFrom(t, c, saved)
 	require.Len(t, got, 1)
-	assert.Equal(t, "track."+fixtures.SendingDomainTrackingDNSVerifiedDomain, got[0].Host)
+	assert.Equal(t, fixtures.TrackingDomainDNSVerifiedHost, got[0].Host)
 	assert.Equal(t, serviceapi.ServiceTrackingHostStateServing, got[0].State)
 }
 
-func TestARenamedSendingDomainRemovesTheOldHost(t *testing.T) {
+// A retired host is still served: retiring it is no change for the edge.
+func TestRetiringAHostIsNotReported(t *testing.T) {
 	h := newHarness(t)
 	c := domainsReader(t, h)
 	_, saved := hostChangesFrom(t, c, "")
 
-	require.NoError(t, h.env.FeedDB.Scoped(fixtures.UmbrellaID).SendingDomain().
-		UpdateOneID(fixtures.SendingDomainTrackingServingID).
-		SetDomain("renamed.umbrella.test").Exec(t.Context()))
+	// test writes: the hook fires on this write
+	require.NoError(t, h.env.FeedDB.Scoped(fixtures.UmbrellaID).TrackingDomain().
+		UpdateOneID(fixtures.TrackingDomainServingID).SetRole(trackingdomain.RoleRetired).Exec(t.Context()))
 
 	got, _ := hostChangesFrom(t, c, saved)
-	assert.Equal(t, map[string]serviceapi.ServiceTrackingHostState{
-		"track." + fixtures.SendingDomainTrackingServingDomain: serviceapi.ServiceTrackingHostStateRemoved,
-		"track.renamed.umbrella.test":                          serviceapi.ServiceTrackingHostStateServing,
-	}, hostStates(got))
+	assert.Empty(t, got)
 }
 
 func TestAnInvalidHostFeedCursorIsABadRequest(t *testing.T) {
@@ -186,20 +179,4 @@ func TestWithoutALicenseTheHostFeedIsNotServed(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+primary)
 	env.Server.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusNotFound, rec.Code)
-}
-
-func TestArchivingAHostIsReportedRemovedAndRestoringItAdded(t *testing.T) {
-	h := newHarness(t)
-	c := domainsReader(t, h)
-	_, saved := hostChangesFrom(t, c, "")
-	umbrella := h.env.FeedDB.Scoped(fixtures.UmbrellaID)
-	servingHost := "track." + fixtures.SendingDomainTrackingServingDomain
-
-	require.NoError(t, umbrella.SendingDomain().Discard(t.Context(), fixtures.SendingDomainTrackingServingID))
-	got, saved := hostChangesFrom(t, c, saved)
-	assert.Equal(t, map[string]serviceapi.ServiceTrackingHostState{servingHost: serviceapi.ServiceTrackingHostStateRemoved}, hostStates(got))
-
-	require.NoError(t, umbrella.SendingDomain().Undiscard(t.Context(), fixtures.SendingDomainTrackingServingID))
-	got, _ = hostChangesFrom(t, c, saved)
-	assert.Equal(t, map[string]serviceapi.ServiceTrackingHostState{servingHost: serviceapi.ServiceTrackingHostStateServing}, hostStates(got))
 }

@@ -34,6 +34,9 @@
       "name": "Integrations"
     },
     {
+      "name": "Tracking domains"
+    },
+    {
       "name": "Consent"
     },
     {
@@ -11093,7 +11096,7 @@
     "/sending-domains/{id}/archive": {
       "post": {
         "operationId": "SendingDomains_archive",
-        "description": "Archive a Sending domain: it leaves the list, serves no Tracking domain host and can be restored. Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends from it.",
+        "description": "Archive a Sending domain: it leaves the list and can be restored. Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends from it.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SendingDomainResourceKey"
@@ -11212,7 +11215,7 @@
     "/sending-domains/{id}/unarchive": {
       "post": {
         "operationId": "SendingDomains_unarchive",
-        "description": "Restore an archived Sending domain. It starts a new DNS check and serves its Tracking domain host again only once that passes. Refused with 409 when the same domain was added again meanwhile.",
+        "description": "Restore an archived Sending domain. It starts a new DNS check. Refused with 409 when the same domain was added again meanwhile.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SendingDomainResourceKey"
@@ -12412,6 +12415,441 @@
         },
         "tags": ["Templates"],
         "x-required-scopes": ["templates:write"]
+      }
+    },
+    "/tracking-domains": {
+      "get": {
+        "operationId": "TrackingDomains_list",
+        "description": "List the Workspace's Tracking domains: the current one, the replacement, then the retired ones. Empty while the Instance offers none.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TrackingDomainResource"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Tracking domains"],
+        "x-required-scopes": ["tracking_domains:read"]
+      },
+      "post": {
+        "operationId": "TrackingDomains_set",
+        "description": "Set the Workspace's Tracking domain. With none it becomes the current one. While the current one serves it becomes the replacement (discarding a pending one) and takes over once it serves. When the current one does not serve, the new one replaces it at once. A host the Workspace already uses is returned as it is; a retired one is brought back. An invalid host or one of the Instance's own is 422; 404 when the Instance offers no Tracking domains.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackingDomainResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Tracking domains"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTrackingDomainInput"
+              }
+            }
+          }
+        },
+        "x-required-scopes": ["tracking_domains:write"]
+      }
+    },
+    "/tracking-domains/{id}": {
+      "delete": {
+        "operationId": "TrackingDomains_remove",
+        "description": "Remove a Tracking domain by its role. The current one stops being used: it is retired when it served (links already sent on it keep working while its CNAME points at the edge), deleted otherwise, and a replacement becomes current. A replacement is cancelled. A retired one is forgotten: links sent on it stop working.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Tracking domains"],
+        "x-required-scopes": ["tracking_domains:write"],
+        "x-mcp": {
+          "hidden": true
+        }
+      }
+    },
+    "/tracking-domains/{id}/verify": {
+      "post": {
+        "operationId": "TrackingDomains_verify",
+        "description": "Check the host now and answer once the check is done: the Tracking domain as it left it. A replacement that reaches `serving` becomes current. Verification is never set by the caller.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackingDomainResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Tracking domains"],
+        "x-required-scopes": ["tracking_domains:write"]
       }
     },
     "/unsubscribes": {
@@ -13822,12 +14260,14 @@
           "webhooks:test",
           "custom_fields:read",
           "sending_domains:read",
+          "tracking_domains:read",
           "integrations:read",
           "emails:send",
           "broadcasts:send",
           "automations:publish",
           "mcp:send",
           "sending_domains:write",
+          "tracking_domains:write",
           "integrations:write",
           "contacts:erase",
           "captured_messages:read",
@@ -15057,6 +15497,26 @@
         "type": "string",
         "enum": ["broadcast", "automation", "transactional", "test"],
         "description": "The surface that asked for the send a Captured message belongs to"
+      },
+      "CnameRecord": {
+        "type": "object",
+        "required": ["type", "host", "target"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["CNAME"],
+            "description": "The record type (always CNAME)"
+          },
+          "host": {
+            "type": "string",
+            "description": "The host to create the record at"
+          },
+          "target": {
+            "type": "string",
+            "description": "The edge host the CNAME must point at"
+          }
+        },
+        "description": "The CNAME record to publish: `host` must point at `target`"
       },
       "ConditionCombinator": {
         "type": "string",
@@ -17514,6 +17974,7 @@
           "webhooks:test",
           "custom_fields:read",
           "sending_domains:read",
+          "tracking_domains:read",
           "integrations:read"
         ],
         "description": "Scopes an OAuth client may be granted without any extra opt-in: the external\nAPI's read/write vocabulary. Token management scopes are deliberately absent,\nso a connector can never mint further credentials.",
@@ -17586,6 +18047,9 @@
           },
           {
             "scope": "sending_domains:read"
+          },
+          {
+            "scope": "tracking_domains:read"
           },
           {
             "scope": "integrations:read"
@@ -18051,6 +18515,7 @@
           "revenue:configure",
           "brand_kit:manage",
           "join_domains:manage",
+          "tracking_domains:manage",
           "holds:resolve",
           "account_link:open",
           "workspace:delete",
@@ -18974,14 +19439,6 @@
             ],
             "description": "The suggested DMARC TXT record (advisory bulk-readiness signal)"
           },
-          "trackingRecord": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TrackingRecord"
-              }
-            ],
-            "description": "The Tracking domain CNAME; absent when the instance has no tracking target configured"
-          },
           "lastCheckedAt": {
             "type": "string",
             "allOf": [
@@ -19020,7 +19477,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the domain was archived; null while it is kept. An archived domain serves no Tracking domain host."
+            "description": "When the domain was archived; null while it is kept."
           },
           "createdAt": {
             "allOf": [
@@ -19121,14 +19578,29 @@
         },
         "description": "Request body for setting a broadcast's Segment"
       },
+      "SetTrackingDomainInput": {
+        "type": "object",
+        "required": ["host"],
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "A host below a domain of your own, e.g. \"t.example.com\": never the apex (a CNAME cannot sit\nthere) nor one of the Instance's own hosts. Stored lower case, IDN as punycode."
+          }
+        },
+        "description": "Set the Workspace's Tracking domain"
+      },
       "SetupScope": {
         "type": "string",
-        "enum": ["sending_domains:write", "integrations:write"],
-        "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Integrations and the provider credentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send.",
+        "enum": ["sending_domains:write", "tracking_domains:write", "integrations:write"],
+        "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Tracking domain its links are on, the Integrations and the provider\ncredentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send.",
         "x-grant-permissions": [
           {
             "scope": "sending_domains:write",
             "permission": "sending_domains:manage"
+          },
+          {
+            "scope": "tracking_domains:write",
+            "permission": "tracking_domains:manage"
           },
           {
             "scope": "integrations:write",
@@ -19370,27 +19842,29 @@
         ],
         "description": "Scopes only an API token can hold, never an OAuth grant"
       },
-      "TrackingReason": {
-        "type": "string",
-        "enum": ["host_taken"],
-        "description": "Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)"
-      },
-      "TrackingRecord": {
+      "TrackingDomainResource": {
         "type": "object",
-        "required": ["type", "host", "target", "state"],
+        "required": ["id", "host", "role", "state", "record", "createdAt", "updatedAt"],
         "properties": {
-          "type": {
-            "type": "string",
-            "enum": ["CNAME"],
-            "description": "The record type (always CNAME)"
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
           },
           "host": {
             "type": "string",
-            "description": "The host to create the record at: \"track.\" followed by the domain"
+            "description": "The host, lower case with IDN as punycode, e.g. \"t.example.com\""
           },
-          "target": {
-            "type": "string",
-            "description": "The edge host the CNAME must point at"
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackingDomainRole"
+              }
+            ],
+            "description": "What the host does for the Workspace"
           },
           "state": {
             "allOf": [
@@ -19398,7 +19872,7 @@
                 "$ref": "#/components/schemas/TrackingState"
               }
             ],
-            "description": "Where the Tracking domain stands"
+            "description": "Where the host's verification stands"
           },
           "reason": {
             "allOf": [
@@ -19406,7 +19880,25 @@
                 "$ref": "#/components/schemas/TrackingReason"
               }
             ],
-            "description": "Why the domain is not advancing; absent when nothing holds it back"
+            "description": "Why the host is not advancing; absent when nothing holds it back"
+          },
+          "record": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CnameRecord"
+              }
+            ],
+            "description": "The CNAME to publish"
+          },
+          "servedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the host first served (null = never): only a host that served is retired rather than deleted"
           },
           "lastCheckedAt": {
             "type": "string",
@@ -19416,7 +19908,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the Tracking domain was most recently checked (null = never)"
+            "description": "When the host was most recently checked (null = never)"
           },
           "stateChangedAt": {
             "type": "string",
@@ -19427,14 +19919,40 @@
             ],
             "nullable": true,
             "description": "When the state most recently changed (null = never)"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last update timestamp"
           }
         },
-        "description": "The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only; absent when the instance has no tracking target configured."
+        "description": "A Tracking domain of the Workspace (ADR 0071): a host of its own on which the links of its mail and the first-party tracker are served"
+      },
+      "TrackingDomainRole": {
+        "type": "string",
+        "enum": ["current", "replacement", "retired"],
+        "description": "What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the\nsnippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only\nthe links already sent and the snippet already installed on it, until its CNAME leaves the edge"
+      },
+      "TrackingReason": {
+        "type": "string",
+        "enum": ["host_taken"],
+        "description": "Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)"
       },
       "TrackingState": {
         "type": "string",
         "enum": ["pending", "dns_verified", "serving"],
-        "description": "State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving`"
+        "description": "State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers"
       },
       "TransactionalSendStatus": {
         "type": "string",

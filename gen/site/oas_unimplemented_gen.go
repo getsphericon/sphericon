@@ -1514,9 +1514,8 @@ func (UnimplementedHandler) SiteSegmentsUpdate(ctx context.Context, req *SiteUpd
 
 // SiteSendingDomainsArchive implements SiteSendingDomains_archive operation.
 //
-// Archive a sending domain: it leaves the list, serves no Tracking domain host and can be restored.
-// Refused with 409 while a scheduled or sending broadcast or an active automation sends from it.
-// Owners and admins only.
+// Archive a sending domain: it leaves the list and can be restored. Refused with 409 while a scheduled
+// or sending broadcast or an active automation sends from it. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/archive
 func (UnimplementedHandler) SiteSendingDomainsArchive(ctx context.Context, params SiteSendingDomainsArchiveParams) (r SiteSendingDomainsArchiveRes, _ error) {
@@ -1552,9 +1551,8 @@ func (UnimplementedHandler) SiteSendingDomainsList(ctx context.Context, params S
 
 // SiteSendingDomainsUnarchive implements SiteSendingDomains_unarchive operation.
 //
-// Restore an archived sending domain. It starts a new DNS check and serves its Tracking domain host
-// again only once that passes. Refused with 409 when the same domain was added again meanwhile. Owners
-// and admins only.
+// Restore an archived sending domain. It starts a new DNS check. Refused with 409 when the same domain
+// was added again meanwhile. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/unarchive
 func (UnimplementedHandler) SiteSendingDomainsUnarchive(ctx context.Context, params SiteSendingDomainsUnarchiveParams) (r SiteSendingDomainsUnarchiveRes, _ error) {
@@ -1745,6 +1743,51 @@ func (UnimplementedHandler) SiteTokensList(ctx context.Context, params SiteToken
 //
 // PUT /workspaces/{workspaceId}/tokens/{id}
 func (UnimplementedHandler) SiteTokensUpdate(ctx context.Context, req *SiteUpdateTokenInput, params SiteTokensUpdateParams) (r SiteTokensUpdateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteTrackingDomainsList implements SiteTrackingDomains_list operation.
+//
+// List the Workspace's Tracking domains: the current one, the replacement, then the retired ones.
+// Empty while the Instance offers none.
+//
+// GET /workspaces/{workspaceId}/tracking-domains
+func (UnimplementedHandler) SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (r SiteTrackingDomainsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteTrackingDomainsRemove implements SiteTrackingDomains_remove operation.
+//
+// Remove a Tracking domain by its role (owner and admin only). The current one stops being used: it is
+// retired when it served (links already sent on it keep working while its CNAME points at the edge),
+// deleted otherwise, and a replacement becomes current. A replacement is cancelled. A retired one is
+// forgotten: links sent on it stop working.
+//
+// DELETE /workspaces/{workspaceId}/tracking-domains/{id}
+func (UnimplementedHandler) SiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) (r SiteTrackingDomainsRemoveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteTrackingDomainsSet implements SiteTrackingDomains_set operation.
+//
+// Set the Workspace's Tracking domain (owner and admin only). With none it becomes the current one.
+// While the current one serves it becomes the replacement (discarding a pending one) and takes over
+// once it serves. When the current one does not serve, the new one replaces it at once. A host the
+// Workspace already uses is returned as it is; a retired one is brought back. An invalid host or one
+// of the Instance's own is 422; 404 when the Instance offers no Tracking domains.
+//
+// POST /workspaces/{workspaceId}/tracking-domains
+func (UnimplementedHandler) SiteTrackingDomainsSet(ctx context.Context, req *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (r SiteTrackingDomainsSetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteTrackingDomainsVerify implements SiteTrackingDomains_verify operation.
+//
+// Check the host now (owner and admin only) and answer once the check is done: the Tracking domain as
+// it left it. A replacement that reaches `serving` becomes current.
+//
+// POST /workspaces/{workspaceId}/tracking-domains/{id}/verify
+func (UnimplementedHandler) SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (r SiteTrackingDomainsVerifyRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
