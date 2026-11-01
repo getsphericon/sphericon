@@ -186,80 +186,6 @@ func (_u *SendingDomainUpdate) ClearVerificationLostAt() *SendingDomainUpdate {
 	return _u
 }
 
-// SetTrackingState sets the "tracking_state" field.
-func (_u *SendingDomainUpdate) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainUpdate {
-	_u.mutation.SetTrackingState(v)
-	return _u
-}
-
-// SetNillableTrackingState sets the "tracking_state" field if the given value is not nil.
-func (_u *SendingDomainUpdate) SetNillableTrackingState(v *sendingdomain.TrackingState) *SendingDomainUpdate {
-	if v != nil {
-		_u.SetTrackingState(*v)
-	}
-	return _u
-}
-
-// SetTrackingCheckedAt sets the "tracking_checked_at" field.
-func (_u *SendingDomainUpdate) SetTrackingCheckedAt(v time.Time) *SendingDomainUpdate {
-	_u.mutation.SetTrackingCheckedAt(v)
-	return _u
-}
-
-// SetNillableTrackingCheckedAt sets the "tracking_checked_at" field if the given value is not nil.
-func (_u *SendingDomainUpdate) SetNillableTrackingCheckedAt(v *time.Time) *SendingDomainUpdate {
-	if v != nil {
-		_u.SetTrackingCheckedAt(*v)
-	}
-	return _u
-}
-
-// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
-func (_u *SendingDomainUpdate) ClearTrackingCheckedAt() *SendingDomainUpdate {
-	_u.mutation.ClearTrackingCheckedAt()
-	return _u
-}
-
-// SetTrackingReason sets the "tracking_reason" field.
-func (_u *SendingDomainUpdate) SetTrackingReason(v sendingdomain.TrackingReason) *SendingDomainUpdate {
-	_u.mutation.SetTrackingReason(v)
-	return _u
-}
-
-// SetNillableTrackingReason sets the "tracking_reason" field if the given value is not nil.
-func (_u *SendingDomainUpdate) SetNillableTrackingReason(v *sendingdomain.TrackingReason) *SendingDomainUpdate {
-	if v != nil {
-		_u.SetTrackingReason(*v)
-	}
-	return _u
-}
-
-// ClearTrackingReason clears the value of the "tracking_reason" field.
-func (_u *SendingDomainUpdate) ClearTrackingReason() *SendingDomainUpdate {
-	_u.mutation.ClearTrackingReason()
-	return _u
-}
-
-// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
-func (_u *SendingDomainUpdate) SetTrackingStateChangedAt(v time.Time) *SendingDomainUpdate {
-	_u.mutation.SetTrackingStateChangedAt(v)
-	return _u
-}
-
-// SetNillableTrackingStateChangedAt sets the "tracking_state_changed_at" field if the given value is not nil.
-func (_u *SendingDomainUpdate) SetNillableTrackingStateChangedAt(v *time.Time) *SendingDomainUpdate {
-	if v != nil {
-		_u.SetTrackingStateChangedAt(*v)
-	}
-	return _u
-}
-
-// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
-func (_u *SendingDomainUpdate) ClearTrackingStateChangedAt() *SendingDomainUpdate {
-	_u.mutation.ClearTrackingStateChangedAt()
-	return _u
-}
-
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *SendingDomainUpdate) SetWorkspace(v *Workspace) *SendingDomainUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -329,16 +255,6 @@ func (_u *SendingDomainUpdate) check() error {
 			return &ValidationError{Name: "dkim_public_key", err: fmt.Errorf(`ent: validator failed for field "SendingDomain.dkim_public_key": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.TrackingState(); ok {
-		if err := sendingdomain.TrackingStateValidator(v); err != nil {
-			return &ValidationError{Name: "tracking_state", err: fmt.Errorf(`ent: validator failed for field "SendingDomain.tracking_state": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.TrackingReason(); ok {
-		if err := sendingdomain.TrackingReasonValidator(v); err != nil {
-			return &ValidationError{Name: "tracking_reason", err: fmt.Errorf(`ent: validator failed for field "SendingDomain.tracking_reason": %w`, err)}
-		}
-	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "SendingDomain.workspace"`)
 	}
@@ -401,27 +317,6 @@ func (_u *SendingDomainUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.VerificationLostAtCleared() {
 		_spec.ClearField(sendingdomain.FieldVerificationLostAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.TrackingState(); ok {
-		_spec.SetField(sendingdomain.FieldTrackingState, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.TrackingCheckedAt(); ok {
-		_spec.SetField(sendingdomain.FieldTrackingCheckedAt, field.TypeTime, value)
-	}
-	if _u.mutation.TrackingCheckedAtCleared() {
-		_spec.ClearField(sendingdomain.FieldTrackingCheckedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.TrackingReason(); ok {
-		_spec.SetField(sendingdomain.FieldTrackingReason, field.TypeEnum, value)
-	}
-	if _u.mutation.TrackingReasonCleared() {
-		_spec.ClearField(sendingdomain.FieldTrackingReason, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.TrackingStateChangedAt(); ok {
-		_spec.SetField(sendingdomain.FieldTrackingStateChangedAt, field.TypeTime, value)
-	}
-	if _u.mutation.TrackingStateChangedAtCleared() {
-		_spec.ClearField(sendingdomain.FieldTrackingStateChangedAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -630,80 +525,6 @@ func (_u *SendingDomainUpdateOne) ClearVerificationLostAt() *SendingDomainUpdate
 	return _u
 }
 
-// SetTrackingState sets the "tracking_state" field.
-func (_u *SendingDomainUpdateOne) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainUpdateOne {
-	_u.mutation.SetTrackingState(v)
-	return _u
-}
-
-// SetNillableTrackingState sets the "tracking_state" field if the given value is not nil.
-func (_u *SendingDomainUpdateOne) SetNillableTrackingState(v *sendingdomain.TrackingState) *SendingDomainUpdateOne {
-	if v != nil {
-		_u.SetTrackingState(*v)
-	}
-	return _u
-}
-
-// SetTrackingCheckedAt sets the "tracking_checked_at" field.
-func (_u *SendingDomainUpdateOne) SetTrackingCheckedAt(v time.Time) *SendingDomainUpdateOne {
-	_u.mutation.SetTrackingCheckedAt(v)
-	return _u
-}
-
-// SetNillableTrackingCheckedAt sets the "tracking_checked_at" field if the given value is not nil.
-func (_u *SendingDomainUpdateOne) SetNillableTrackingCheckedAt(v *time.Time) *SendingDomainUpdateOne {
-	if v != nil {
-		_u.SetTrackingCheckedAt(*v)
-	}
-	return _u
-}
-
-// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
-func (_u *SendingDomainUpdateOne) ClearTrackingCheckedAt() *SendingDomainUpdateOne {
-	_u.mutation.ClearTrackingCheckedAt()
-	return _u
-}
-
-// SetTrackingReason sets the "tracking_reason" field.
-func (_u *SendingDomainUpdateOne) SetTrackingReason(v sendingdomain.TrackingReason) *SendingDomainUpdateOne {
-	_u.mutation.SetTrackingReason(v)
-	return _u
-}
-
-// SetNillableTrackingReason sets the "tracking_reason" field if the given value is not nil.
-func (_u *SendingDomainUpdateOne) SetNillableTrackingReason(v *sendingdomain.TrackingReason) *SendingDomainUpdateOne {
-	if v != nil {
-		_u.SetTrackingReason(*v)
-	}
-	return _u
-}
-
-// ClearTrackingReason clears the value of the "tracking_reason" field.
-func (_u *SendingDomainUpdateOne) ClearTrackingReason() *SendingDomainUpdateOne {
-	_u.mutation.ClearTrackingReason()
-	return _u
-}
-
-// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
-func (_u *SendingDomainUpdateOne) SetTrackingStateChangedAt(v time.Time) *SendingDomainUpdateOne {
-	_u.mutation.SetTrackingStateChangedAt(v)
-	return _u
-}
-
-// SetNillableTrackingStateChangedAt sets the "tracking_state_changed_at" field if the given value is not nil.
-func (_u *SendingDomainUpdateOne) SetNillableTrackingStateChangedAt(v *time.Time) *SendingDomainUpdateOne {
-	if v != nil {
-		_u.SetTrackingStateChangedAt(*v)
-	}
-	return _u
-}
-
-// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
-func (_u *SendingDomainUpdateOne) ClearTrackingStateChangedAt() *SendingDomainUpdateOne {
-	_u.mutation.ClearTrackingStateChangedAt()
-	return _u
-}
-
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *SendingDomainUpdateOne) SetWorkspace(v *Workspace) *SendingDomainUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -786,16 +607,6 @@ func (_u *SendingDomainUpdateOne) check() error {
 			return &ValidationError{Name: "dkim_public_key", err: fmt.Errorf(`ent: validator failed for field "SendingDomain.dkim_public_key": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.TrackingState(); ok {
-		if err := sendingdomain.TrackingStateValidator(v); err != nil {
-			return &ValidationError{Name: "tracking_state", err: fmt.Errorf(`ent: validator failed for field "SendingDomain.tracking_state": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.TrackingReason(); ok {
-		if err := sendingdomain.TrackingReasonValidator(v); err != nil {
-			return &ValidationError{Name: "tracking_reason", err: fmt.Errorf(`ent: validator failed for field "SendingDomain.tracking_reason": %w`, err)}
-		}
-	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "SendingDomain.workspace"`)
 	}
@@ -875,27 +686,6 @@ func (_u *SendingDomainUpdateOne) sqlSave(ctx context.Context) (_node *SendingDo
 	}
 	if _u.mutation.VerificationLostAtCleared() {
 		_spec.ClearField(sendingdomain.FieldVerificationLostAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.TrackingState(); ok {
-		_spec.SetField(sendingdomain.FieldTrackingState, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.TrackingCheckedAt(); ok {
-		_spec.SetField(sendingdomain.FieldTrackingCheckedAt, field.TypeTime, value)
-	}
-	if _u.mutation.TrackingCheckedAtCleared() {
-		_spec.ClearField(sendingdomain.FieldTrackingCheckedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.TrackingReason(); ok {
-		_spec.SetField(sendingdomain.FieldTrackingReason, field.TypeEnum, value)
-	}
-	if _u.mutation.TrackingReasonCleared() {
-		_spec.ClearField(sendingdomain.FieldTrackingReason, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.TrackingStateChangedAt(); ok {
-		_spec.SetField(sendingdomain.FieldTrackingStateChangedAt, field.TypeTime, value)
-	}
-	if _u.mutation.TrackingStateChangedAtCleared() {
-		_spec.ClearField(sendingdomain.FieldTrackingStateChangedAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -265,9 +265,9 @@ type Config struct {
 	// `staff` license.
 	InternalAddr string
 
-	// TrackingCNAMETarget is the edge host a Sending domain's Tracking domain CNAME
-	// (track.<domain>) must point at (SPHERICON_TRACKING_CNAME_TARGET, ADR 0038). Empty (the
-	// default) turns the feature off: no tracking record is shown and none is checked.
+	// TrackingCNAMETarget is the edge host a Workspace's Tracking domain CNAME must point at
+	// (SPHERICON_TRACKING_CNAME_TARGET, ADR 0038, ADR 0071). Empty (the default) turns the
+	// feature off: no Tracking domain can be set and none is checked.
 	TrackingCNAMETarget string
 
 	// TrackingHostHeader names the request header the edge sets to the customer's
@@ -514,9 +514,9 @@ type environment struct {
 	// stops the start. Empty loads only the built-in Presets.
 	PresetsDir string `env:"SPHERICON_PRESETS_DIR"`
 
-	// The edge host a Sending domain's Tracking domain CNAME (`track.<domain>`) must point at, such
-	// as `edge.example.com` (ADR 0038). Empty turns Tracking domains off: no record is shown or
-	// checked.
+	// The edge host a Workspace's Tracking domain (e.g. `t.example.com`) is a CNAME to, such as
+	// `edge.example.com` (ADR 0038, ADR 0071). Empty turns Tracking domains off: the section is
+	// hidden on Settings, Tracking and no host is set or checked.
 	TrackingCNAMETarget string `env:"SPHERICON_TRACKING_CNAME_TARGET"`
 	// The request header the edge sets to the customer's host, such as `X-Forwarded-Host` (ADR
 	// 0038), believed only from a peer inside `SPHERICON_TRACKING_EDGE_CIDRS`. Empty uses the

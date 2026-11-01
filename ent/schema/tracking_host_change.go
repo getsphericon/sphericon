@@ -8,9 +8,9 @@ import (
 )
 
 // TrackingHostChange is one entry of the change log behind the service read of Tracking
-// domain hosts (ADR 0038): a host entering dns_verified or serving, or leaving them
-// (back to pending, its Sending domain deleted or renamed).
-// The id is the position in the log. An ent hook on SendingDomain
+// domain hosts (ADR 0038, ADR 0071): a host entering dns_verified or serving, or leaving them
+// (back to pending, or its Tracking domain gone).
+// The id is the position in the log. An ent hook on TrackingDomain
 // (internal/trackinghostlog) writes it in the transaction of the change, so no write
 // path can forget it, and takes an advisory lock held to the end of the transaction so
 // positions commit in the order they are taken: a reader that passed a position cannot
@@ -39,8 +39,8 @@ func (TrackingHostChange) Fields() []ent.Field {
 				Unchecked: true,
 				Reason:    "tombstone of the Workspace that held the host: the entry outlives the Workspace row, because the removal of a host is what the platform service reads the log for",
 			}),
-		// The Sending domain; the host is track.<domain>.
-		field.String("domain").
+		// The Tracking domain's host.
+		field.String("host").
 			NotEmpty().
 			Immutable(),
 		// The state the host entered, or removed when it left dns_verified and serving.
@@ -57,6 +57,6 @@ func (TrackingHostChange) Mixin() []ent.Mixin {
 
 func (TrackingHostChange) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("domain"),
+		index.Fields("host"),
 	}
 }

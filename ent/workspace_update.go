@@ -46,6 +46,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
@@ -692,6 +693,21 @@ func (_u *WorkspaceUpdate) AddJoinDomains(v ...*JoinDomain) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddJoinDomainIDs(ids...)
+}
+
+// AddTrackingDomainIDs adds the "tracking_domains" edge to the TrackingDomain entity by IDs.
+func (_u *WorkspaceUpdate) AddTrackingDomainIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddTrackingDomainIDs(ids...)
+	return _u
+}
+
+// AddTrackingDomains adds the "tracking_domains" edges to the TrackingDomain entity.
+func (_u *WorkspaceUpdate) AddTrackingDomains(v ...*TrackingDomain) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTrackingDomainIDs(ids...)
 }
 
 // AddProviderLimiterIDs adds the "provider_limiters" edge to the ProviderLimiter entity by IDs.
@@ -1345,6 +1361,27 @@ func (_u *WorkspaceUpdate) RemoveJoinDomains(v ...*JoinDomain) *WorkspaceUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveJoinDomainIDs(ids...)
+}
+
+// ClearTrackingDomains clears all "tracking_domains" edges to the TrackingDomain entity.
+func (_u *WorkspaceUpdate) ClearTrackingDomains() *WorkspaceUpdate {
+	_u.mutation.ClearTrackingDomains()
+	return _u
+}
+
+// RemoveTrackingDomainIDs removes the "tracking_domains" edge to TrackingDomain entities by IDs.
+func (_u *WorkspaceUpdate) RemoveTrackingDomainIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveTrackingDomainIDs(ids...)
+	return _u
+}
+
+// RemoveTrackingDomains removes "tracking_domains" edges to TrackingDomain entities.
+func (_u *WorkspaceUpdate) RemoveTrackingDomains(v ...*TrackingDomain) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTrackingDomainIDs(ids...)
 }
 
 // ClearProviderLimiters clears all "provider_limiters" edges to the ProviderLimiter entity.
@@ -2670,6 +2707,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(joindomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TrackingDomainsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackingDomainsTable,
+			Columns: []string{workspace.TrackingDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackingdomain.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTrackingDomainsIDs(); len(nodes) > 0 && !_u.mutation.TrackingDomainsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackingDomainsTable,
+			Columns: []string{workspace.TrackingDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackingdomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TrackingDomainsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackingDomainsTable,
+			Columns: []string{workspace.TrackingDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackingdomain.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -4451,6 +4533,21 @@ func (_u *WorkspaceUpdateOne) AddJoinDomains(v ...*JoinDomain) *WorkspaceUpdateO
 	return _u.AddJoinDomainIDs(ids...)
 }
 
+// AddTrackingDomainIDs adds the "tracking_domains" edge to the TrackingDomain entity by IDs.
+func (_u *WorkspaceUpdateOne) AddTrackingDomainIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddTrackingDomainIDs(ids...)
+	return _u
+}
+
+// AddTrackingDomains adds the "tracking_domains" edges to the TrackingDomain entity.
+func (_u *WorkspaceUpdateOne) AddTrackingDomains(v ...*TrackingDomain) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTrackingDomainIDs(ids...)
+}
+
 // AddProviderLimiterIDs adds the "provider_limiters" edge to the ProviderLimiter entity by IDs.
 func (_u *WorkspaceUpdateOne) AddProviderLimiterIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddProviderLimiterIDs(ids...)
@@ -5102,6 +5199,27 @@ func (_u *WorkspaceUpdateOne) RemoveJoinDomains(v ...*JoinDomain) *WorkspaceUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveJoinDomainIDs(ids...)
+}
+
+// ClearTrackingDomains clears all "tracking_domains" edges to the TrackingDomain entity.
+func (_u *WorkspaceUpdateOne) ClearTrackingDomains() *WorkspaceUpdateOne {
+	_u.mutation.ClearTrackingDomains()
+	return _u
+}
+
+// RemoveTrackingDomainIDs removes the "tracking_domains" edge to TrackingDomain entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveTrackingDomainIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveTrackingDomainIDs(ids...)
+	return _u
+}
+
+// RemoveTrackingDomains removes "tracking_domains" edges to TrackingDomain entities.
+func (_u *WorkspaceUpdateOne) RemoveTrackingDomains(v ...*TrackingDomain) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTrackingDomainIDs(ids...)
 }
 
 // ClearProviderLimiters clears all "provider_limiters" edges to the ProviderLimiter entity.
@@ -6457,6 +6575,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(joindomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TrackingDomainsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackingDomainsTable,
+			Columns: []string{workspace.TrackingDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackingdomain.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTrackingDomainsIDs(); len(nodes) > 0 && !_u.mutation.TrackingDomainsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackingDomainsTable,
+			Columns: []string{workspace.TrackingDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackingdomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TrackingDomainsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackingDomainsTable,
+			Columns: []string{workspace.TrackingDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackingdomain.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,17 +29,15 @@ func TestTLSAskAnswersForVerifiedTrackingHostsOnly(t *testing.T) {
 	}{{"licensed", nil}, {"unlicensed", []testhelper.Option{testhelper.WithoutLicense()}}} {
 		t.Run(license.name, func(t *testing.T) {
 			env := testhelper.Setup(t, license.opts...)
-			host := sendingdomains.TrackingHost
-
-			assert.Equal(t, http.StatusOK, ask(t, env.Internal, host(fixtures.SendingDomainTrackingDNSVerifiedDomain)))
-			assert.Equal(t, http.StatusOK, ask(t, env.Internal, host(fixtures.SendingDomainTrackingServingDomain)))
-			assert.Equal(t, http.StatusOK, ask(t, env.Internal, strings.ToUpper(host(fixtures.SendingDomainTrackingServingDomain))+"."))
-			assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, host(fixtures.SendingDomainTrackingPendingDomain)))
-			assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, host("unknown.example")))
-			assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, fixtures.SendingDomainTrackingServingDomain), "the bare domain is not the tracking host")
+			assert.Equal(t, http.StatusOK, ask(t, env.Internal, fixtures.TrackingDomainDNSVerifiedHost))
+			assert.Equal(t, http.StatusOK, ask(t, env.Internal, fixtures.TrackingDomainServingHost))
+			assert.Equal(t, http.StatusOK, ask(t, env.Internal, fixtures.TrackingDomainRetiredHost), "a retired host is still served")
+			assert.Equal(t, http.StatusOK, ask(t, env.Internal, strings.ToUpper(fixtures.TrackingDomainServingHost)+"."))
+			assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, fixtures.TrackingDomainReplacementHost))
+			assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, "t.unknown.example"))
+			assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, "umbrella.test"), "the bare domain is not the tracking host")
 			assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, ""))
-			assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, "track."))
-			assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, "track.evil/"+fixtures.SendingDomainTrackingServingDomain))
+			assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, "evil/"+fixtures.TrackingDomainServingHost))
 		})
 	}
 }
@@ -49,7 +46,7 @@ func TestTLSAskAnswersForVerifiedTrackingHostsOnly(t *testing.T) {
 // exactly like one, even for a host that would be answered 200 on the internal listener.
 func TestTLSAskIsNotOnThePublicMux(t *testing.T) {
 	env := testhelper.Setup(t)
-	host := sendingdomains.TrackingHost(fixtures.SendingDomainTrackingServingDomain)
+	host := fixtures.TrackingDomainServingHost
 
 	serve := func(target string) *httptest.ResponseRecorder {
 		w := httptest.NewRecorder()
@@ -65,7 +62,7 @@ func TestTLSAskIsNotOnThePublicMux(t *testing.T) {
 // certificates for them (ADR 0043); restoring brings them back.
 func TestTLSAskRefusesTheHostsOfADeletedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	host := sendingdomains.TrackingHost(fixtures.SendingDomainTrackingServingDomain)
+	host := fixtures.TrackingDomainServingHost
 	require.Equal(t, http.StatusOK, ask(t, env.Internal, host))
 
 	env.FeedDB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDiscardedAt(time.Now()).ExecX(t.Context())
@@ -75,20 +72,13 @@ func TestTLSAskRefusesTheHostsOfADeletedWorkspace(t *testing.T) {
 	assert.Equal(t, http.StatusOK, ask(t, env.Internal, host))
 }
 
-// An archived Sending domain serves no Tracking host (ADR 0049): the ask refuses the host of a
-// fixture row that was serving when it was archived, and archiving a serving host makes the edge
-// refuse it; restoring the row brings it back.
-func TestTLSAskRefusesTheHostOfAnArchivedSendingDomain(t *testing.T) {
+// A Tracking domain that goes is refused at once, so the edge stops issuing certificates for it.
+func TestTLSAskRefusesAHostThatWent(t *testing.T) {
 	env := testhelper.Setup(t)
-	assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, sendingdomains.TrackingHost(fixtures.SendingDomainArchivedDomain)))
-
-	host := sendingdomains.TrackingHost(fixtures.SendingDomainTrackingServingDomain)
+	host := fixtures.TrackingDomainRetiredHost
 	require.Equal(t, http.StatusOK, ask(t, env.Internal, host))
-	umbrella := env.FeedDB.Scoped(fixtures.UmbrellaID)
 
-	require.NoError(t, umbrella.SendingDomain().Discard(t.Context(), fixtures.SendingDomainTrackingServingID))
+	require.NoError(t, env.FeedDB.Scoped(fixtures.UmbrellaID).TrackingDomain().
+		DeleteOneID(fixtures.TrackingDomainRetiredID).Exec(t.Context()))
 	assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, host))
-
-	require.NoError(t, umbrella.SendingDomain().Undiscard(t.Context(), fixtures.SendingDomainTrackingServingID))
-	assert.Equal(t, http.StatusOK, ask(t, env.Internal, host))
 }

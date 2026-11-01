@@ -73,6 +73,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
@@ -207,6 +208,8 @@ type Client struct {
 	Suppression *SuppressionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
+	// TrackingDomain is the client for interacting with the TrackingDomain builders.
+	TrackingDomain *TrackingDomainClient
 	// TrackingHostChange is the client for interacting with the TrackingHostChange builders.
 	TrackingHostChange *TrackingHostChangeClient
 	// Unsubscribe is the client for interacting with the Unsubscribe builders.
@@ -294,6 +297,7 @@ func (c *Client) init() {
 	c.StaffMember = NewStaffMemberClient(c.config)
 	c.Suppression = NewSuppressionClient(c.config)
 	c.Tag = NewTagClient(c.config)
+	c.TrackingDomain = NewTrackingDomainClient(c.config)
 	c.TrackingHostChange = NewTrackingHostChangeClient(c.config)
 	c.Unsubscribe = NewUnsubscribeClient(c.config)
 	c.Usage = NewUsageClient(c.config)
@@ -453,6 +457,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		StaffMember:          NewStaffMemberClient(cfg),
 		Suppression:          NewSuppressionClient(cfg),
 		Tag:                  NewTagClient(cfg),
+		TrackingDomain:       NewTrackingDomainClient(cfg),
 		TrackingHostChange:   NewTrackingHostChangeClient(cfg),
 		Unsubscribe:          NewUnsubscribeClient(cfg),
 		Usage:                NewUsageClient(cfg),
@@ -539,6 +544,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		StaffMember:          NewStaffMemberClient(cfg),
 		Suppression:          NewSuppressionClient(cfg),
 		Tag:                  NewTagClient(cfg),
+		TrackingDomain:       NewTrackingDomainClient(cfg),
 		TrackingHostChange:   NewTrackingHostChangeClient(cfg),
 		Unsubscribe:          NewUnsubscribeClient(cfg),
 		Usage:                NewUsageClient(cfg),
@@ -589,7 +595,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ProviderLimiter, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
 		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment,
 		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.Suppression, c.Tag,
+		c.SignupSurveyResponse, c.StaffMember, c.Suppression, c.Tag, c.TrackingDomain,
 		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
 		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
@@ -613,7 +619,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ProviderLimiter, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
 		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment,
 		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.Suppression, c.Tag,
+		c.SignupSurveyResponse, c.StaffMember, c.Suppression, c.Tag, c.TrackingDomain,
 		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
 		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
@@ -740,6 +746,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Suppression.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
+	case *TrackingDomainMutation:
+		return c.TrackingDomain.mutate(ctx, m)
 	case *TrackingHostChangeMutation:
 		return c.TrackingHostChange.mutate(ctx, m)
 	case *UnsubscribeMutation:
@@ -10316,6 +10324,155 @@ func (c *TagClient) mutate(ctx context.Context, m *TagMutation) (Value, error) {
 	}
 }
 
+// TrackingDomainClient is a client for the TrackingDomain schema.
+type TrackingDomainClient struct {
+	config
+}
+
+// NewTrackingDomainClient returns a client for the TrackingDomain from the given config.
+func NewTrackingDomainClient(c config) *TrackingDomainClient {
+	return &TrackingDomainClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `trackingdomain.Hooks(f(g(h())))`.
+func (c *TrackingDomainClient) Use(hooks ...Hook) {
+	c.hooks.TrackingDomain = append(c.hooks.TrackingDomain, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `trackingdomain.Intercept(f(g(h())))`.
+func (c *TrackingDomainClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TrackingDomain = append(c.inters.TrackingDomain, interceptors...)
+}
+
+// Create returns a builder for creating a TrackingDomain entity.
+func (c *TrackingDomainClient) Create() *TrackingDomainCreate {
+	mutation := newTrackingDomainMutation(c.config, OpCreate)
+	return &TrackingDomainCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TrackingDomain entities.
+func (c *TrackingDomainClient) CreateBulk(builders ...*TrackingDomainCreate) *TrackingDomainCreateBulk {
+	return &TrackingDomainCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TrackingDomainClient) MapCreateBulk(slice any, setFunc func(*TrackingDomainCreate, int)) *TrackingDomainCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TrackingDomainCreateBulk{err: fmt.Errorf("calling to TrackingDomainClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TrackingDomainCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TrackingDomainCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TrackingDomain.
+func (c *TrackingDomainClient) Update() *TrackingDomainUpdate {
+	mutation := newTrackingDomainMutation(c.config, OpUpdate)
+	return &TrackingDomainUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TrackingDomainClient) UpdateOne(_m *TrackingDomain) *TrackingDomainUpdateOne {
+	mutation := newTrackingDomainMutation(c.config, OpUpdateOne, withTrackingDomain(_m))
+	return &TrackingDomainUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TrackingDomainClient) UpdateOneID(id int64) *TrackingDomainUpdateOne {
+	mutation := newTrackingDomainMutation(c.config, OpUpdateOne, withTrackingDomainID(id))
+	return &TrackingDomainUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TrackingDomain.
+func (c *TrackingDomainClient) Delete() *TrackingDomainDelete {
+	mutation := newTrackingDomainMutation(c.config, OpDelete)
+	return &TrackingDomainDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TrackingDomainClient) DeleteOne(_m *TrackingDomain) *TrackingDomainDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TrackingDomainClient) DeleteOneID(id int64) *TrackingDomainDeleteOne {
+	builder := c.Delete().Where(trackingdomain.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TrackingDomainDeleteOne{builder}
+}
+
+// Query returns a query builder for TrackingDomain.
+func (c *TrackingDomainClient) Query() *TrackingDomainQuery {
+	return &TrackingDomainQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTrackingDomain},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TrackingDomain entity by its id.
+func (c *TrackingDomainClient) Get(ctx context.Context, id int64) (*TrackingDomain, error) {
+	return c.Query().Where(trackingdomain.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TrackingDomainClient) GetX(ctx context.Context, id int64) *TrackingDomain {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a TrackingDomain.
+func (c *TrackingDomainClient) QueryWorkspace(_m *TrackingDomain) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(trackingdomain.Table, trackingdomain.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, trackingdomain.WorkspaceTable, trackingdomain.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TrackingDomainClient) Hooks() []Hook {
+	return c.hooks.TrackingDomain
+}
+
+// Interceptors returns the client interceptors.
+func (c *TrackingDomainClient) Interceptors() []Interceptor {
+	return c.inters.TrackingDomain
+}
+
+func (c *TrackingDomainClient) mutate(ctx context.Context, m *TrackingDomainMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TrackingDomainCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TrackingDomainUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TrackingDomainUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TrackingDomainDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TrackingDomain mutation op: %q", m.Op())
+	}
+}
+
 // TrackingHostChangeClient is a client for the TrackingHostChange schema.
 type TrackingHostChangeClient struct {
 	config
@@ -11920,6 +12077,22 @@ func (c *WorkspaceClient) QueryJoinDomains(_m *Workspace) *JoinDomainQuery {
 	return query
 }
 
+// QueryTrackingDomains queries the tracking_domains edge of a Workspace.
+func (c *WorkspaceClient) QueryTrackingDomains(_m *Workspace) *TrackingDomainQuery {
+	query := (&TrackingDomainClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(trackingdomain.Table, trackingdomain.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.TrackingDomainsTable, workspace.TrackingDomainsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryProviderLimiters queries the provider_limiters edge of a Workspace.
 func (c *WorkspaceClient) QueryProviderLimiters(_m *Workspace) *ProviderLimiterQuery {
 	query := (&ProviderLimiterClient{config: c.config}).Query()
@@ -12359,8 +12532,8 @@ type (
 		RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion, RuleVersionTrigger,
 		SchemaState, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
 		SignupItem, SignupSurveyResponse, StaffMember, Suppression, Tag,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, Workspace []ent.Hook
+		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
@@ -12374,8 +12547,8 @@ type (
 		RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion, RuleVersionTrigger,
 		SchemaState, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
 		SignupItem, SignupSurveyResponse, StaffMember, Suppression, Tag,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

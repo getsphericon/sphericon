@@ -1817,22 +1817,10 @@ const (
 	SendingDomainSoylentIdleDomain = "idle.soylent.test"
 	// SendingDomainSoylentIdleID is from fixtures/sending_domains.
 	SendingDomainSoylentIdleID = 401
-	// SendingDomainTrackingClaimDomain is from fixtures/sending_domains.
-	SendingDomainTrackingClaimDomain = "serving.umbrella.test"
-	// SendingDomainTrackingClaimID is from fixtures/sending_domains.
-	SendingDomainTrackingClaimID = 510
-	// SendingDomainTrackingDNSVerifiedDomain is from fixtures/sending_domains.
-	SendingDomainTrackingDNSVerifiedDomain = "dns.umbrella.test"
-	// SendingDomainTrackingDNSVerifiedID is from fixtures/sending_domains.
-	SendingDomainTrackingDNSVerifiedID = 501
-	// SendingDomainTrackingPendingDomain is from fixtures/sending_domains.
-	SendingDomainTrackingPendingDomain = "pending.umbrella.test"
-	// SendingDomainTrackingPendingID is from fixtures/sending_domains.
-	SendingDomainTrackingPendingID = 500
-	// SendingDomainTrackingServingDomain is from fixtures/sending_domains.
-	SendingDomainTrackingServingDomain = "serving.umbrella.test"
-	// SendingDomainTrackingServingID is from fixtures/sending_domains.
-	SendingDomainTrackingServingID = 502
+	// SendingDomainUmbrellaDomain is from fixtures/sending_domains.
+	SendingDomainUmbrellaDomain = "mail.umbrella.test"
+	// SendingDomainUmbrellaID is from fixtures/sending_domains.
+	SendingDomainUmbrellaID = 502
 	// SendingDomainUnverifiedDomain is from fixtures/sending_domains.
 	SendingDomainUnverifiedDomain = "news.acme.com"
 	// SendingDomainUnverifiedID is from fixtures/sending_domains.
@@ -2121,6 +2109,38 @@ const (
 	TokenGlobexName = "Globex token"
 	// TokenGlobexPrefix is from fixtures/api_tokens.
 	TokenGlobexPrefix = "globextok001"
+	// TrackingDomainAcmeHost is from fixtures/tracking_domains.
+	TrackingDomainAcmeHost = "t.acme.com"
+	// TrackingDomainAcmeID is from fixtures/tracking_domains.
+	TrackingDomainAcmeID = 1
+	// TrackingDomainClaimHost is from fixtures/tracking_domains.
+	TrackingDomainClaimHost = "t.umbrella.test"
+	// TrackingDomainClaimID is from fixtures/tracking_domains.
+	TrackingDomainClaimID = 20
+	// TrackingDomainDNSVerifiedHost is from fixtures/tracking_domains.
+	TrackingDomainDNSVerifiedHost = "t.initech.test"
+	// TrackingDomainDNSVerifiedID is from fixtures/tracking_domains.
+	TrackingDomainDNSVerifiedID = 30
+	// TrackingDomainGlobexHost is from fixtures/tracking_domains.
+	TrackingDomainGlobexHost = "t.globex.test"
+	// TrackingDomainGlobexID is from fixtures/tracking_domains.
+	TrackingDomainGlobexID = 3
+	// TrackingDomainGlobexReplacementHost is from fixtures/tracking_domains.
+	TrackingDomainGlobexReplacementHost = "go.globex.test"
+	// TrackingDomainGlobexReplacementID is from fixtures/tracking_domains.
+	TrackingDomainGlobexReplacementID = 2
+	// TrackingDomainReplacementHost is from fixtures/tracking_domains.
+	TrackingDomainReplacementHost = "go.umbrella.test"
+	// TrackingDomainReplacementID is from fixtures/tracking_domains.
+	TrackingDomainReplacementID = 11
+	// TrackingDomainRetiredHost is from fixtures/tracking_domains.
+	TrackingDomainRetiredHost = "track.umbrella.test"
+	// TrackingDomainRetiredID is from fixtures/tracking_domains.
+	TrackingDomainRetiredID = 12
+	// TrackingDomainServingHost is from fixtures/tracking_domains.
+	TrackingDomainServingHost = "t.umbrella.test"
+	// TrackingDomainServingID is from fixtures/tracking_domains.
+	TrackingDomainServingID = 10
 	// TyrellCollectKey is from fixtures/workspaces.
 	TyrellCollectKey = "omck_test_tyrell_collect_key"
 	// TyrellID is from fixtures/workspaces.

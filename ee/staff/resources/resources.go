@@ -22,7 +22,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/reputation"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
 )
 
@@ -205,7 +204,6 @@ type ServiceConverter interface {
 
 	// The change names the Workspace by its internal id; its public id is read by the handler
 	// for the whole page at once, so the handler attaches it.
-	// goverter:map Domain Host | trackingHost
 	// goverter:map CreatedAt ChangedAt
 	// goverter:ignore WorkspaceId
 	TrackingHostChangeToResource(source *ent.TrackingHostChange) serviceapi.ServiceTrackingHostChange
@@ -282,8 +280,6 @@ func isSet(t *time.Time) bool { return t != nil }
 func breachRate(b abuse.Breach) float64 { return b.Rate() }
 
 func periodString(t time.Time) string { return t.Format(PeriodLayout) }
-
-func trackingHost(domain string) string { return sendingdomains.TrackingHost(domain) }
 
 // workspaceSuspension is the Workspace's suspension and who set it; absent unless it is suspended.
 func workspaceSuspension(c StaffConverter, w *ent.Workspace) staffeeapi.OptNilStaffSuspension {

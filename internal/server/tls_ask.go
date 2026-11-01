@@ -7,9 +7,8 @@ import (
 )
 
 // tlsAskHandler answers the edge's on-demand TLS question (ADR 0038): GET ?domain=<host>
-// is 200 only when the host is the Tracking domain host (track.<domain>) of a Sending
-// domain whose tracking DNS is verified (dns_verified or serving), 404 for anything
-// else (pending, unknown, malformed). It reads the Instance-wide host index, so it holds
+// is 200 only when the host is a Tracking domain whose DNS is verified (dns_verified or
+// serving, retired ones included), 404 for anything else (pending, unknown, malformed). It reads the Instance-wide host index, so it holds
 // the raw client and is mounted only on the internal listener.
 func tlsAskHandler(client *ent.Client) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

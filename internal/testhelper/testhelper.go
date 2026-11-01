@@ -451,7 +451,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 			tb:      t,
 			ent:     client,
 			sender:  systemMail,
-			domains: domainverify.New(client, do.MustInvoke[sending.TXTLookup](i), nil, accounts.OwnerNotifier(client, systemMail)),
+			domains: domainverify.New(client, do.MustInvoke[sending.TXTLookup](i), accounts.OwnerNotifier(client, systemMail)),
 			cipher:  do.MustInvoke[*secrets.Cipher](i),
 			catalog: do.MustInvoke[*messaging.Catalog](i),
 			appURL:  cfg.AppURL,

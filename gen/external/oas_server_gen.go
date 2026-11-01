@@ -565,9 +565,8 @@ type Handler interface {
 	SendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (SendingDomainRatesListRes, error)
 	// SendingDomainsArchive implements SendingDomains_archive operation.
 	//
-	// Archive a Sending domain: it leaves the list, serves no Tracking domain host and can be restored.
-	// Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends
-	// from it.
+	// Archive a Sending domain: it leaves the list and can be restored. Refused with 409 (`usedBy`) while
+	// a scheduled or sending Broadcast or an active Automation sends from it.
 	//
 	// POST /sending-domains/{id}/archive
 	SendingDomainsArchive(ctx context.Context, params SendingDomainsArchiveParams) (SendingDomainsArchiveRes, error)
@@ -591,8 +590,8 @@ type Handler interface {
 	SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (SendingDomainsListRes, error)
 	// SendingDomainsUnarchive implements SendingDomains_unarchive operation.
 	//
-	// Restore an archived Sending domain. It starts a new DNS check and serves its Tracking domain host
-	// again only once that passes. Refused with 409 when the same domain was added again meanwhile.
+	// Restore an archived Sending domain. It starts a new DNS check. Refused with 409 when the same domain
+	// was added again meanwhile.
 	//
 	// POST /sending-domains/{id}/unarchive
 	SendingDomainsUnarchive(ctx context.Context, params SendingDomainsUnarchiveParams) (SendingDomainsUnarchiveRes, error)
@@ -678,6 +677,39 @@ type Handler interface {
 	//
 	// PUT /templates/{id}
 	TemplatesUpdate(ctx context.Context, req *UpdateTemplateInput, params TemplatesUpdateParams) (TemplatesUpdateRes, error)
+	// TrackingDomainsList implements TrackingDomains_list operation.
+	//
+	// List the Workspace's Tracking domains: the current one, the replacement, then the retired ones.
+	// Empty while the Instance offers none.
+	//
+	// GET /tracking-domains
+	TrackingDomainsList(ctx context.Context) (TrackingDomainsListRes, error)
+	// TrackingDomainsRemove implements TrackingDomains_remove operation.
+	//
+	// Remove a Tracking domain by its role. The current one stops being used: it is retired when it served
+	// (links already sent on it keep working while its CNAME points at the edge), deleted otherwise, and a
+	// replacement becomes current. A replacement is cancelled. A retired one is forgotten: links sent on
+	// it stop working.
+	//
+	// DELETE /tracking-domains/{id}
+	TrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) (TrackingDomainsRemoveRes, error)
+	// TrackingDomainsSet implements TrackingDomains_set operation.
+	//
+	// Set the Workspace's Tracking domain. With none it becomes the current one. While the current one
+	// serves it becomes the replacement (discarding a pending one) and takes over once it serves. When the
+	// current one does not serve, the new one replaces it at once. A host the Workspace already uses is
+	// returned as it is; a retired one is brought back. An invalid host or one of the Instance's own is
+	// 422; 404 when the Instance offers no Tracking domains.
+	//
+	// POST /tracking-domains
+	TrackingDomainsSet(ctx context.Context, req *SetTrackingDomainInput) (TrackingDomainsSetRes, error)
+	// TrackingDomainsVerify implements TrackingDomains_verify operation.
+	//
+	// Check the host now and answer once the check is done: the Tracking domain as it left it. A
+	// replacement that reaches `serving` becomes current. Verification is never set by the caller.
+	//
+	// POST /tracking-domains/{id}/verify
+	TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (TrackingDomainsVerifyRes, error)
 	// UnsubscribesCreate implements Unsubscribes_create operation.
 	//
 	// Record that a destination unsubscribed from a sending source (default `broadcasts`). Idempotent.

@@ -23,8 +23,8 @@ type TrackingHostChange struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
-	// Domain holds the value of the "domain" field.
-	Domain string `json:"domain,omitempty"`
+	// Host holds the value of the "host" field.
+	Host string `json:"host,omitempty"`
 	// State holds the value of the "state" field.
 	State        trackinghostchange.State `json:"state,omitempty"`
 	selectValues sql.SelectValues
@@ -37,7 +37,7 @@ func (*TrackingHostChange) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case trackinghostchange.FieldID, trackinghostchange.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case trackinghostchange.FieldDomain, trackinghostchange.FieldState:
+		case trackinghostchange.FieldHost, trackinghostchange.FieldState:
 			values[i] = new(sql.NullString)
 		case trackinghostchange.FieldCreatedAt, trackinghostchange.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -80,11 +80,11 @@ func (_m *TrackingHostChange) assignValues(columns []string, values []any) error
 			} else if value.Valid {
 				_m.WorkspaceID = value.Int64
 			}
-		case trackinghostchange.FieldDomain:
+		case trackinghostchange.FieldHost:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field domain", values[i])
+				return fmt.Errorf("unexpected type %T for field host", values[i])
 			} else if value.Valid {
-				_m.Domain = value.String
+				_m.Host = value.String
 			}
 		case trackinghostchange.FieldState:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -137,8 +137,8 @@ func (_m *TrackingHostChange) String() string {
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
 	builder.WriteString(", ")
-	builder.WriteString("domain=")
-	builder.WriteString(_m.Domain)
+	builder.WriteString("host=")
+	builder.WriteString(_m.Host)
 	builder.WriteString(", ")
 	builder.WriteString("state=")
 	builder.WriteString(fmt.Sprintf("%v", _m.State))

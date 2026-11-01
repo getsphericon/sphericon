@@ -47,6 +47,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
@@ -658,6 +659,22 @@ func (s *Scoped) verifyTag(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Tag: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyTrackingDomain fails with ErrNotInWorkspace unless every id is a TrackingDomain of the Workspace.
+func (s *Scoped) verifyTrackingDomain(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.TrackingDomain.Query().Where(trackingdomain.IDIn(ids...), trackingdomain.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("TrackingDomain: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -29247,54 +29264,6 @@ func (x *SendingDomainScopedCreate) SetNillableVerificationLostAt(v *time.Time) 
 	return x
 }
 
-// SetTrackingState sets the "tracking_state" field.
-func (x *SendingDomainScopedCreate) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainScopedCreate {
-	x.b.SetTrackingState(v)
-	return x
-}
-
-// SetNillableTrackingState sets the "tracking_state" field if the given value is not nil.
-func (x *SendingDomainScopedCreate) SetNillableTrackingState(v *sendingdomain.TrackingState) *SendingDomainScopedCreate {
-	x.b.SetNillableTrackingState(v)
-	return x
-}
-
-// SetTrackingCheckedAt sets the "tracking_checked_at" field.
-func (x *SendingDomainScopedCreate) SetTrackingCheckedAt(v time.Time) *SendingDomainScopedCreate {
-	x.b.SetTrackingCheckedAt(v)
-	return x
-}
-
-// SetNillableTrackingCheckedAt sets the "tracking_checked_at" field if the given value is not nil.
-func (x *SendingDomainScopedCreate) SetNillableTrackingCheckedAt(v *time.Time) *SendingDomainScopedCreate {
-	x.b.SetNillableTrackingCheckedAt(v)
-	return x
-}
-
-// SetTrackingReason sets the "tracking_reason" field.
-func (x *SendingDomainScopedCreate) SetTrackingReason(v sendingdomain.TrackingReason) *SendingDomainScopedCreate {
-	x.b.SetTrackingReason(v)
-	return x
-}
-
-// SetNillableTrackingReason sets the "tracking_reason" field if the given value is not nil.
-func (x *SendingDomainScopedCreate) SetNillableTrackingReason(v *sendingdomain.TrackingReason) *SendingDomainScopedCreate {
-	x.b.SetNillableTrackingReason(v)
-	return x
-}
-
-// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
-func (x *SendingDomainScopedCreate) SetTrackingStateChangedAt(v time.Time) *SendingDomainScopedCreate {
-	x.b.SetTrackingStateChangedAt(v)
-	return x
-}
-
-// SetNillableTrackingStateChangedAt sets the "tracking_state_changed_at" field if the given value is not nil.
-func (x *SendingDomainScopedCreate) SetNillableTrackingStateChangedAt(v *time.Time) *SendingDomainScopedCreate {
-	x.b.SetNillableTrackingStateChangedAt(v)
-	return x
-}
-
 func (x *SendingDomainScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -29521,72 +29490,6 @@ func (u *SendingDomainScopedUpsert) UpdateVerificationLostAt() *SendingDomainSco
 // ClearVerificationLostAt clears the value of the "verification_lost_at" field.
 func (u *SendingDomainScopedUpsert) ClearVerificationLostAt() *SendingDomainScopedUpsert {
 	u.u.SetNull(sendingdomain.FieldVerificationLostAt)
-	return u
-}
-
-// SetTrackingState sets the "tracking_state" field.
-func (u *SendingDomainScopedUpsert) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainScopedUpsert {
-	u.u.Set(sendingdomain.FieldTrackingState, v)
-	return u
-}
-
-// UpdateTrackingState sets the "tracking_state" field to the value that was provided on create.
-func (u *SendingDomainScopedUpsert) UpdateTrackingState() *SendingDomainScopedUpsert {
-	u.u.SetExcluded(sendingdomain.FieldTrackingState)
-	return u
-}
-
-// SetTrackingCheckedAt sets the "tracking_checked_at" field.
-func (u *SendingDomainScopedUpsert) SetTrackingCheckedAt(v time.Time) *SendingDomainScopedUpsert {
-	u.u.Set(sendingdomain.FieldTrackingCheckedAt, v)
-	return u
-}
-
-// UpdateTrackingCheckedAt sets the "tracking_checked_at" field to the value that was provided on create.
-func (u *SendingDomainScopedUpsert) UpdateTrackingCheckedAt() *SendingDomainScopedUpsert {
-	u.u.SetExcluded(sendingdomain.FieldTrackingCheckedAt)
-	return u
-}
-
-// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
-func (u *SendingDomainScopedUpsert) ClearTrackingCheckedAt() *SendingDomainScopedUpsert {
-	u.u.SetNull(sendingdomain.FieldTrackingCheckedAt)
-	return u
-}
-
-// SetTrackingReason sets the "tracking_reason" field.
-func (u *SendingDomainScopedUpsert) SetTrackingReason(v sendingdomain.TrackingReason) *SendingDomainScopedUpsert {
-	u.u.Set(sendingdomain.FieldTrackingReason, v)
-	return u
-}
-
-// UpdateTrackingReason sets the "tracking_reason" field to the value that was provided on create.
-func (u *SendingDomainScopedUpsert) UpdateTrackingReason() *SendingDomainScopedUpsert {
-	u.u.SetExcluded(sendingdomain.FieldTrackingReason)
-	return u
-}
-
-// ClearTrackingReason clears the value of the "tracking_reason" field.
-func (u *SendingDomainScopedUpsert) ClearTrackingReason() *SendingDomainScopedUpsert {
-	u.u.SetNull(sendingdomain.FieldTrackingReason)
-	return u
-}
-
-// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
-func (u *SendingDomainScopedUpsert) SetTrackingStateChangedAt(v time.Time) *SendingDomainScopedUpsert {
-	u.u.Set(sendingdomain.FieldTrackingStateChangedAt, v)
-	return u
-}
-
-// UpdateTrackingStateChangedAt sets the "tracking_state_changed_at" field to the value that was provided on create.
-func (u *SendingDomainScopedUpsert) UpdateTrackingStateChangedAt() *SendingDomainScopedUpsert {
-	u.u.SetExcluded(sendingdomain.FieldTrackingStateChangedAt)
-	return u
-}
-
-// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
-func (u *SendingDomainScopedUpsert) ClearTrackingStateChangedAt() *SendingDomainScopedUpsert {
-	u.u.SetNull(sendingdomain.FieldTrackingStateChangedAt)
 	return u
 }
 
@@ -29894,72 +29797,6 @@ func (x *SendingDomainScopedUpdateOne) ClearVerificationLostAt() *SendingDomainS
 	return x
 }
 
-// SetTrackingState sets the "tracking_state" field.
-func (x *SendingDomainScopedUpdateOne) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainScopedUpdateOne {
-	x.b.SetTrackingState(v)
-	return x
-}
-
-// SetNillableTrackingState sets the "tracking_state" field if the given value is not nil.
-func (x *SendingDomainScopedUpdateOne) SetNillableTrackingState(v *sendingdomain.TrackingState) *SendingDomainScopedUpdateOne {
-	x.b.SetNillableTrackingState(v)
-	return x
-}
-
-// SetTrackingCheckedAt sets the "tracking_checked_at" field.
-func (x *SendingDomainScopedUpdateOne) SetTrackingCheckedAt(v time.Time) *SendingDomainScopedUpdateOne {
-	x.b.SetTrackingCheckedAt(v)
-	return x
-}
-
-// SetNillableTrackingCheckedAt sets the "tracking_checked_at" field if the given value is not nil.
-func (x *SendingDomainScopedUpdateOne) SetNillableTrackingCheckedAt(v *time.Time) *SendingDomainScopedUpdateOne {
-	x.b.SetNillableTrackingCheckedAt(v)
-	return x
-}
-
-// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
-func (x *SendingDomainScopedUpdateOne) ClearTrackingCheckedAt() *SendingDomainScopedUpdateOne {
-	x.b.ClearTrackingCheckedAt()
-	return x
-}
-
-// SetTrackingReason sets the "tracking_reason" field.
-func (x *SendingDomainScopedUpdateOne) SetTrackingReason(v sendingdomain.TrackingReason) *SendingDomainScopedUpdateOne {
-	x.b.SetTrackingReason(v)
-	return x
-}
-
-// SetNillableTrackingReason sets the "tracking_reason" field if the given value is not nil.
-func (x *SendingDomainScopedUpdateOne) SetNillableTrackingReason(v *sendingdomain.TrackingReason) *SendingDomainScopedUpdateOne {
-	x.b.SetNillableTrackingReason(v)
-	return x
-}
-
-// ClearTrackingReason clears the value of the "tracking_reason" field.
-func (x *SendingDomainScopedUpdateOne) ClearTrackingReason() *SendingDomainScopedUpdateOne {
-	x.b.ClearTrackingReason()
-	return x
-}
-
-// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
-func (x *SendingDomainScopedUpdateOne) SetTrackingStateChangedAt(v time.Time) *SendingDomainScopedUpdateOne {
-	x.b.SetTrackingStateChangedAt(v)
-	return x
-}
-
-// SetNillableTrackingStateChangedAt sets the "tracking_state_changed_at" field if the given value is not nil.
-func (x *SendingDomainScopedUpdateOne) SetNillableTrackingStateChangedAt(v *time.Time) *SendingDomainScopedUpdateOne {
-	x.b.SetNillableTrackingStateChangedAt(v)
-	return x
-}
-
-// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
-func (x *SendingDomainScopedUpdateOne) ClearTrackingStateChangedAt() *SendingDomainScopedUpdateOne {
-	x.b.ClearTrackingStateChangedAt()
-	return x
-}
-
 func (x *SendingDomainScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -30155,72 +29992,6 @@ func (x *SendingDomainScopedUpdate) SetNillableVerificationLostAt(v *time.Time) 
 // ClearVerificationLostAt clears the value of the "verification_lost_at" field.
 func (x *SendingDomainScopedUpdate) ClearVerificationLostAt() *SendingDomainScopedUpdate {
 	x.b.ClearVerificationLostAt()
-	return x
-}
-
-// SetTrackingState sets the "tracking_state" field.
-func (x *SendingDomainScopedUpdate) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainScopedUpdate {
-	x.b.SetTrackingState(v)
-	return x
-}
-
-// SetNillableTrackingState sets the "tracking_state" field if the given value is not nil.
-func (x *SendingDomainScopedUpdate) SetNillableTrackingState(v *sendingdomain.TrackingState) *SendingDomainScopedUpdate {
-	x.b.SetNillableTrackingState(v)
-	return x
-}
-
-// SetTrackingCheckedAt sets the "tracking_checked_at" field.
-func (x *SendingDomainScopedUpdate) SetTrackingCheckedAt(v time.Time) *SendingDomainScopedUpdate {
-	x.b.SetTrackingCheckedAt(v)
-	return x
-}
-
-// SetNillableTrackingCheckedAt sets the "tracking_checked_at" field if the given value is not nil.
-func (x *SendingDomainScopedUpdate) SetNillableTrackingCheckedAt(v *time.Time) *SendingDomainScopedUpdate {
-	x.b.SetNillableTrackingCheckedAt(v)
-	return x
-}
-
-// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
-func (x *SendingDomainScopedUpdate) ClearTrackingCheckedAt() *SendingDomainScopedUpdate {
-	x.b.ClearTrackingCheckedAt()
-	return x
-}
-
-// SetTrackingReason sets the "tracking_reason" field.
-func (x *SendingDomainScopedUpdate) SetTrackingReason(v sendingdomain.TrackingReason) *SendingDomainScopedUpdate {
-	x.b.SetTrackingReason(v)
-	return x
-}
-
-// SetNillableTrackingReason sets the "tracking_reason" field if the given value is not nil.
-func (x *SendingDomainScopedUpdate) SetNillableTrackingReason(v *sendingdomain.TrackingReason) *SendingDomainScopedUpdate {
-	x.b.SetNillableTrackingReason(v)
-	return x
-}
-
-// ClearTrackingReason clears the value of the "tracking_reason" field.
-func (x *SendingDomainScopedUpdate) ClearTrackingReason() *SendingDomainScopedUpdate {
-	x.b.ClearTrackingReason()
-	return x
-}
-
-// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
-func (x *SendingDomainScopedUpdate) SetTrackingStateChangedAt(v time.Time) *SendingDomainScopedUpdate {
-	x.b.SetTrackingStateChangedAt(v)
-	return x
-}
-
-// SetNillableTrackingStateChangedAt sets the "tracking_state_changed_at" field if the given value is not nil.
-func (x *SendingDomainScopedUpdate) SetNillableTrackingStateChangedAt(v *time.Time) *SendingDomainScopedUpdate {
-	x.b.SetNillableTrackingStateChangedAt(v)
-	return x
-}
-
-// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
-func (x *SendingDomainScopedUpdate) ClearTrackingStateChangedAt() *SendingDomainScopedUpdate {
-	x.b.ClearTrackingStateChangedAt()
 	return x
 }
 
@@ -31678,6 +31449,925 @@ func (x *TagScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *TagScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// TrackingDomainScoped reaches TrackingDomain entities of one Workspace.
+type TrackingDomainScoped struct{ s *Scoped }
+
+// TrackingDomain returns the TrackingDomain entities of the Workspace.
+func (s *Scoped) TrackingDomain() *TrackingDomainScoped { return &TrackingDomainScoped{s: s} }
+
+// Query returns a TrackingDomain query already confined to the Workspace.
+func (t *TrackingDomainScoped) Query() *TrackingDomainQuery {
+	return t.s.c.TrackingDomain.Query().Where(trackingdomain.WorkspaceID(t.s.ws))
+}
+
+// Get returns the TrackingDomain with the id; a row of another Workspace is not found.
+func (t *TrackingDomainScoped) Get(ctx context.Context, id int64) (*TrackingDomain, error) {
+	return t.Query().Where(trackingdomain.ID(id)).Only(ctx)
+}
+
+// TrackingDomainScopedDeleteOne wraps TrackingDomainDeleteOne.
+type TrackingDomainScopedDeleteOne struct {
+	s *Scoped
+	b *TrackingDomainDeleteOne
+}
+
+// DeleteOneID deletes the TrackingDomain with the id; a row of another Workspace is not found.
+func (t *TrackingDomainScoped) DeleteOneID(id int64) *TrackingDomainScopedDeleteOne {
+	return &TrackingDomainScopedDeleteOne{s: t.s, b: t.s.c.TrackingDomain.DeleteOneID(id).Where(trackingdomain.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *TrackingDomainScopedDeleteOne) Where(ps ...predicate.TrackingDomain) *TrackingDomainScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *TrackingDomainScopedDeleteOne) Exec(ctx context.Context) error {
+	if x.s.auditing() {
+		return x.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.TrackingDomain.Query().Where(x.b._d.mutation.predicates...).Only(ctx)
+			if err != nil {
+				return err
+			}
+			x.b._d.auditRebind(ts.c)
+			if err := x.b.Exec(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeTrackingDomain("delete", before, nil))
+		})
+	}
+	return x.b.Exec(ctx)
+}
+
+// TrackingDomainScopedDelete wraps TrackingDomainDelete.
+type TrackingDomainScopedDelete struct {
+	s *Scoped
+	b *TrackingDomainDelete
+}
+
+// Delete deletes the TrackingDomain entities of the Workspace that match the predicates.
+func (t *TrackingDomainScoped) Delete() *TrackingDomainScopedDelete {
+	return &TrackingDomainScopedDelete{s: t.s, b: t.s.c.TrackingDomain.Delete().Where(trackingdomain.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *TrackingDomainScopedDelete) Where(ps ...predicate.TrackingDomain) *TrackingDomainScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *TrackingDomainScopedDelete) Exec(ctx context.Context) (int, error) {
+	if x.s.auditing() {
+		var n int
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			rows, err := ts.c.TrackingDomain.Query().Where(x.b.mutation.predicates...).All(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if n, err = x.b.Exec(ctx); err != nil {
+				return err
+			}
+			for _, row := range rows {
+				if err := ts.record(ctx, auditChangeTrackingDomain("delete", row, nil)); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return n, err
+	}
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// TrackingDomainScopedCreate wraps TrackingDomainCreate. It has no way to name a Workspace.
+type TrackingDomainScopedCreate struct {
+	s *Scoped
+	b *TrackingDomainCreate
+}
+
+// Create starts a TrackingDomain in the Workspace.
+func (t *TrackingDomainScoped) Create() *TrackingDomainScopedCreate {
+	return &TrackingDomainScopedCreate{s: t.s, b: t.s.c.TrackingDomain.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *TrackingDomainScopedCreate) SetCreatedAt(v time.Time) *TrackingDomainScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *TrackingDomainScopedCreate) SetNillableCreatedAt(v *time.Time) *TrackingDomainScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *TrackingDomainScopedCreate) SetUpdatedAt(v time.Time) *TrackingDomainScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *TrackingDomainScopedCreate) SetNillableUpdatedAt(v *time.Time) *TrackingDomainScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetHost sets the "host" field.
+func (x *TrackingDomainScopedCreate) SetHost(v string) *TrackingDomainScopedCreate {
+	x.b.SetHost(v)
+	return x
+}
+
+// SetRole sets the "role" field.
+func (x *TrackingDomainScopedCreate) SetRole(v trackingdomain.Role) *TrackingDomainScopedCreate {
+	x.b.SetRole(v)
+	return x
+}
+
+// SetState sets the "state" field.
+func (x *TrackingDomainScopedCreate) SetState(v trackingdomain.State) *TrackingDomainScopedCreate {
+	x.b.SetState(v)
+	return x
+}
+
+// SetNillableState sets the "state" field if the given value is not nil.
+func (x *TrackingDomainScopedCreate) SetNillableState(v *trackingdomain.State) *TrackingDomainScopedCreate {
+	x.b.SetNillableState(v)
+	return x
+}
+
+// SetServedAt sets the "served_at" field.
+func (x *TrackingDomainScopedCreate) SetServedAt(v time.Time) *TrackingDomainScopedCreate {
+	x.b.SetServedAt(v)
+	return x
+}
+
+// SetNillableServedAt sets the "served_at" field if the given value is not nil.
+func (x *TrackingDomainScopedCreate) SetNillableServedAt(v *time.Time) *TrackingDomainScopedCreate {
+	x.b.SetNillableServedAt(v)
+	return x
+}
+
+// SetCheckedAt sets the "checked_at" field.
+func (x *TrackingDomainScopedCreate) SetCheckedAt(v time.Time) *TrackingDomainScopedCreate {
+	x.b.SetCheckedAt(v)
+	return x
+}
+
+// SetNillableCheckedAt sets the "checked_at" field if the given value is not nil.
+func (x *TrackingDomainScopedCreate) SetNillableCheckedAt(v *time.Time) *TrackingDomainScopedCreate {
+	x.b.SetNillableCheckedAt(v)
+	return x
+}
+
+// SetReason sets the "reason" field.
+func (x *TrackingDomainScopedCreate) SetReason(v trackingdomain.Reason) *TrackingDomainScopedCreate {
+	x.b.SetReason(v)
+	return x
+}
+
+// SetNillableReason sets the "reason" field if the given value is not nil.
+func (x *TrackingDomainScopedCreate) SetNillableReason(v *trackingdomain.Reason) *TrackingDomainScopedCreate {
+	x.b.SetNillableReason(v)
+	return x
+}
+
+// SetStateChangedAt sets the "state_changed_at" field.
+func (x *TrackingDomainScopedCreate) SetStateChangedAt(v time.Time) *TrackingDomainScopedCreate {
+	x.b.SetStateChangedAt(v)
+	return x
+}
+
+// SetNillableStateChangedAt sets the "state_changed_at" field if the given value is not nil.
+func (x *TrackingDomainScopedCreate) SetNillableStateChangedAt(v *time.Time) *TrackingDomainScopedCreate {
+	x.b.SetNillableStateChangedAt(v)
+	return x
+}
+
+func (x *TrackingDomainScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the TrackingDomain.
+func (x *TrackingDomainScopedCreate) Save(ctx context.Context) (*TrackingDomain, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	if x.s.auditing() {
+		var created *TrackingDomain
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			x.b.auditRebind(ts.c)
+			var err error
+			if created, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeTrackingDomain("create", nil, created))
+		})
+		return created, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *TrackingDomainScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// TrackingDomainScopedCreateBulk creates several TrackingDomain entities of one Workspace at once.
+type TrackingDomainScopedCreateBulk struct {
+	s  *Scoped
+	xs []*TrackingDomainScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *TrackingDomainScoped) CreateBulk(xs ...*TrackingDomainScopedCreate) *TrackingDomainScopedCreateBulk {
+	return &TrackingDomainScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *TrackingDomainScopedCreateBulk) raw(ctx context.Context) (*TrackingDomainCreateBulk, error) {
+	builders := make([]*TrackingDomainCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("TrackingDomain: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.TrackingDomain.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the TrackingDomain entities.
+func (b *TrackingDomainScopedCreateBulk) Save(ctx context.Context) ([]*TrackingDomain, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if b.s.auditing() {
+		var created []*TrackingDomain
+		err := b.s.audited(ctx, func(ts *Scoped) error {
+			raw.auditRebind(ts.c)
+			var err error
+			if created, err = raw.Save(ctx); err != nil {
+				return err
+			}
+			for _, row := range created {
+				if err := ts.record(ctx, auditChangeTrackingDomain("create", nil, row)); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return created, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *TrackingDomainScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// TrackingDomainScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type TrackingDomainScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *TrackingDomainScopedUpsert) SetUpdatedAt(v time.Time) *TrackingDomainScopedUpsert {
+	u.u.Set(trackingdomain.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *TrackingDomainScopedUpsert) UpdateUpdatedAt() *TrackingDomainScopedUpsert {
+	u.u.SetExcluded(trackingdomain.FieldUpdatedAt)
+	return u
+}
+
+// SetRole sets the "role" field.
+func (u *TrackingDomainScopedUpsert) SetRole(v trackingdomain.Role) *TrackingDomainScopedUpsert {
+	u.u.Set(trackingdomain.FieldRole, v)
+	return u
+}
+
+// UpdateRole sets the "role" field to the value that was provided on create.
+func (u *TrackingDomainScopedUpsert) UpdateRole() *TrackingDomainScopedUpsert {
+	u.u.SetExcluded(trackingdomain.FieldRole)
+	return u
+}
+
+// SetState sets the "state" field.
+func (u *TrackingDomainScopedUpsert) SetState(v trackingdomain.State) *TrackingDomainScopedUpsert {
+	u.u.Set(trackingdomain.FieldState, v)
+	return u
+}
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *TrackingDomainScopedUpsert) UpdateState() *TrackingDomainScopedUpsert {
+	u.u.SetExcluded(trackingdomain.FieldState)
+	return u
+}
+
+// SetServedAt sets the "served_at" field.
+func (u *TrackingDomainScopedUpsert) SetServedAt(v time.Time) *TrackingDomainScopedUpsert {
+	u.u.Set(trackingdomain.FieldServedAt, v)
+	return u
+}
+
+// UpdateServedAt sets the "served_at" field to the value that was provided on create.
+func (u *TrackingDomainScopedUpsert) UpdateServedAt() *TrackingDomainScopedUpsert {
+	u.u.SetExcluded(trackingdomain.FieldServedAt)
+	return u
+}
+
+// ClearServedAt clears the value of the "served_at" field.
+func (u *TrackingDomainScopedUpsert) ClearServedAt() *TrackingDomainScopedUpsert {
+	u.u.SetNull(trackingdomain.FieldServedAt)
+	return u
+}
+
+// SetCheckedAt sets the "checked_at" field.
+func (u *TrackingDomainScopedUpsert) SetCheckedAt(v time.Time) *TrackingDomainScopedUpsert {
+	u.u.Set(trackingdomain.FieldCheckedAt, v)
+	return u
+}
+
+// UpdateCheckedAt sets the "checked_at" field to the value that was provided on create.
+func (u *TrackingDomainScopedUpsert) UpdateCheckedAt() *TrackingDomainScopedUpsert {
+	u.u.SetExcluded(trackingdomain.FieldCheckedAt)
+	return u
+}
+
+// ClearCheckedAt clears the value of the "checked_at" field.
+func (u *TrackingDomainScopedUpsert) ClearCheckedAt() *TrackingDomainScopedUpsert {
+	u.u.SetNull(trackingdomain.FieldCheckedAt)
+	return u
+}
+
+// SetReason sets the "reason" field.
+func (u *TrackingDomainScopedUpsert) SetReason(v trackingdomain.Reason) *TrackingDomainScopedUpsert {
+	u.u.Set(trackingdomain.FieldReason, v)
+	return u
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *TrackingDomainScopedUpsert) UpdateReason() *TrackingDomainScopedUpsert {
+	u.u.SetExcluded(trackingdomain.FieldReason)
+	return u
+}
+
+// ClearReason clears the value of the "reason" field.
+func (u *TrackingDomainScopedUpsert) ClearReason() *TrackingDomainScopedUpsert {
+	u.u.SetNull(trackingdomain.FieldReason)
+	return u
+}
+
+// SetStateChangedAt sets the "state_changed_at" field.
+func (u *TrackingDomainScopedUpsert) SetStateChangedAt(v time.Time) *TrackingDomainScopedUpsert {
+	u.u.Set(trackingdomain.FieldStateChangedAt, v)
+	return u
+}
+
+// UpdateStateChangedAt sets the "state_changed_at" field to the value that was provided on create.
+func (u *TrackingDomainScopedUpsert) UpdateStateChangedAt() *TrackingDomainScopedUpsert {
+	u.u.SetExcluded(trackingdomain.FieldStateChangedAt)
+	return u
+}
+
+// ClearStateChangedAt clears the value of the "state_changed_at" field.
+func (u *TrackingDomainScopedUpsert) ClearStateChangedAt() *TrackingDomainScopedUpsert {
+	u.u.SetNull(trackingdomain.FieldStateChangedAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *TrackingDomainScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(trackingdomain.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// TrackingDomainScopedUpsertOne is the "upsert" of one TrackingDomain.
+type TrackingDomainScopedUpsertOne struct {
+	x *TrackingDomainScopedCreate
+	u *TrackingDomainUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *TrackingDomainScopedCreate) OnConflictColumns(columns ...string) *TrackingDomainScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *TrackingDomainScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *TrackingDomainScopedUpsertOne {
+	return &TrackingDomainScopedUpsertOne{x: x, u: x.b.OnConflict((&TrackingDomainScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *TrackingDomainScopedUpsertOne) UpdateNewValues() *TrackingDomainScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *TrackingDomainScopedUpsertOne) Ignore() *TrackingDomainScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *TrackingDomainScopedUpsertOne) DoNothing() *TrackingDomainScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *TrackingDomainScopedUpsertOne) Update(set func(*TrackingDomainScopedUpsert)) *TrackingDomainScopedUpsertOne {
+	u.u.Update(func(s *TrackingDomainUpsert) { set(&TrackingDomainScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *TrackingDomainScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	if u.x.s.auditing() {
+		_, err := u.audited(ctx)
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *TrackingDomainScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	if u.x.s.auditing() {
+		return u.audited(ctx)
+	}
+	return u.u.ID(ctx)
+}
+
+// audited runs a DO NOTHING upsert with its entry: an insert is a create, a conflict
+// (sql.ErrNoRows) writes nothing and records nothing.
+func (u *TrackingDomainScopedUpsertOne) audited(ctx context.Context) (int64, error) {
+	if !u.doNothing {
+		return 0, ErrAuditUpsert
+	}
+	var id int64
+	err := u.x.s.audited(ctx, func(ts *Scoped) error {
+		u.x.b.auditRebind(ts.c)
+		var err error
+		if id, err = u.u.ID(ctx); err != nil {
+			return err
+		}
+		row, err := ts.c.TrackingDomain.Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		return ts.record(ctx, auditChangeTrackingDomain("create", nil, row))
+	})
+	return id, err
+}
+
+// TrackingDomainScopedUpsertBulk is the "upsert" of several TrackingDomain entities.
+type TrackingDomainScopedUpsertBulk struct {
+	b       *TrackingDomainScopedCreateBulk
+	t       *TrackingDomainScoped
+	columns []string
+	opts    []func(*TrackingDomainUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *TrackingDomainScopedCreateBulk) OnConflictColumns(columns ...string) *TrackingDomainScopedUpsertBulk {
+	return &TrackingDomainScopedUpsertBulk{b: b, t: &TrackingDomainScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *TrackingDomainScopedUpsertBulk) UpdateNewValues() *TrackingDomainScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *TrackingDomainUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *TrackingDomainScopedUpsertBulk) Ignore() *TrackingDomainScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *TrackingDomainUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *TrackingDomainScopedUpsertBulk) DoNothing() *TrackingDomainScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *TrackingDomainUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *TrackingDomainScopedUpsertBulk) Update(set func(*TrackingDomainScopedUpsert)) *TrackingDomainScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *TrackingDomainUpsertBulk) {
+		r.Update(func(s *TrackingDomainUpsert) { set(&TrackingDomainScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *TrackingDomainScopedUpsertBulk) Exec(ctx context.Context) error {
+	if u.b.s.auditing() {
+		return ErrAuditUpsert
+	}
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// TrackingDomainScopedUpdateOne wraps TrackingDomainUpdateOne. It has no way to move the row to another Workspace.
+type TrackingDomainScopedUpdateOne struct {
+	s *Scoped
+	b *TrackingDomainUpdateOne
+}
+
+// UpdateOneID updates the TrackingDomain with the id; a row of another Workspace is not found.
+func (t *TrackingDomainScoped) UpdateOneID(id int64) *TrackingDomainScopedUpdateOne {
+	return &TrackingDomainScopedUpdateOne{s: t.s, b: t.s.c.TrackingDomain.UpdateOneID(id).Where(trackingdomain.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *TrackingDomainScopedUpdateOne) Where(ps ...predicate.TrackingDomain) *TrackingDomainScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *TrackingDomainScopedUpdateOne) SetUpdatedAt(v time.Time) *TrackingDomainScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetRole sets the "role" field.
+func (x *TrackingDomainScopedUpdateOne) SetRole(v trackingdomain.Role) *TrackingDomainScopedUpdateOne {
+	x.b.SetRole(v)
+	return x
+}
+
+// SetNillableRole sets the "role" field if the given value is not nil.
+func (x *TrackingDomainScopedUpdateOne) SetNillableRole(v *trackingdomain.Role) *TrackingDomainScopedUpdateOne {
+	x.b.SetNillableRole(v)
+	return x
+}
+
+// SetState sets the "state" field.
+func (x *TrackingDomainScopedUpdateOne) SetState(v trackingdomain.State) *TrackingDomainScopedUpdateOne {
+	x.b.SetState(v)
+	return x
+}
+
+// SetNillableState sets the "state" field if the given value is not nil.
+func (x *TrackingDomainScopedUpdateOne) SetNillableState(v *trackingdomain.State) *TrackingDomainScopedUpdateOne {
+	x.b.SetNillableState(v)
+	return x
+}
+
+// SetServedAt sets the "served_at" field.
+func (x *TrackingDomainScopedUpdateOne) SetServedAt(v time.Time) *TrackingDomainScopedUpdateOne {
+	x.b.SetServedAt(v)
+	return x
+}
+
+// SetNillableServedAt sets the "served_at" field if the given value is not nil.
+func (x *TrackingDomainScopedUpdateOne) SetNillableServedAt(v *time.Time) *TrackingDomainScopedUpdateOne {
+	x.b.SetNillableServedAt(v)
+	return x
+}
+
+// ClearServedAt clears the value of the "served_at" field.
+func (x *TrackingDomainScopedUpdateOne) ClearServedAt() *TrackingDomainScopedUpdateOne {
+	x.b.ClearServedAt()
+	return x
+}
+
+// SetCheckedAt sets the "checked_at" field.
+func (x *TrackingDomainScopedUpdateOne) SetCheckedAt(v time.Time) *TrackingDomainScopedUpdateOne {
+	x.b.SetCheckedAt(v)
+	return x
+}
+
+// SetNillableCheckedAt sets the "checked_at" field if the given value is not nil.
+func (x *TrackingDomainScopedUpdateOne) SetNillableCheckedAt(v *time.Time) *TrackingDomainScopedUpdateOne {
+	x.b.SetNillableCheckedAt(v)
+	return x
+}
+
+// ClearCheckedAt clears the value of the "checked_at" field.
+func (x *TrackingDomainScopedUpdateOne) ClearCheckedAt() *TrackingDomainScopedUpdateOne {
+	x.b.ClearCheckedAt()
+	return x
+}
+
+// SetReason sets the "reason" field.
+func (x *TrackingDomainScopedUpdateOne) SetReason(v trackingdomain.Reason) *TrackingDomainScopedUpdateOne {
+	x.b.SetReason(v)
+	return x
+}
+
+// SetNillableReason sets the "reason" field if the given value is not nil.
+func (x *TrackingDomainScopedUpdateOne) SetNillableReason(v *trackingdomain.Reason) *TrackingDomainScopedUpdateOne {
+	x.b.SetNillableReason(v)
+	return x
+}
+
+// ClearReason clears the value of the "reason" field.
+func (x *TrackingDomainScopedUpdateOne) ClearReason() *TrackingDomainScopedUpdateOne {
+	x.b.ClearReason()
+	return x
+}
+
+// SetStateChangedAt sets the "state_changed_at" field.
+func (x *TrackingDomainScopedUpdateOne) SetStateChangedAt(v time.Time) *TrackingDomainScopedUpdateOne {
+	x.b.SetStateChangedAt(v)
+	return x
+}
+
+// SetNillableStateChangedAt sets the "state_changed_at" field if the given value is not nil.
+func (x *TrackingDomainScopedUpdateOne) SetNillableStateChangedAt(v *time.Time) *TrackingDomainScopedUpdateOne {
+	x.b.SetNillableStateChangedAt(v)
+	return x
+}
+
+// ClearStateChangedAt clears the value of the "state_changed_at" field.
+func (x *TrackingDomainScopedUpdateOne) ClearStateChangedAt() *TrackingDomainScopedUpdateOne {
+	x.b.ClearStateChangedAt()
+	return x
+}
+
+func (x *TrackingDomainScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the TrackingDomain.
+func (x *TrackingDomainScopedUpdateOne) Save(ctx context.Context) (*TrackingDomain, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	if x.s.auditing() {
+		var updated *TrackingDomain
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			id, _ := x.b.Mutation().ID()
+			before, err := ts.c.TrackingDomain.Query().Where(x.b.mutation.predicates...).Where(trackingdomain.ID(id)).Only(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if updated, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeTrackingDomain("update", before, updated))
+		})
+		return updated, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *TrackingDomainScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// TrackingDomainScopedUpdate wraps TrackingDomainUpdate: a conditional bulk update of one Workspace.
+type TrackingDomainScopedUpdate struct {
+	s *Scoped
+	b *TrackingDomainUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the TrackingDomain entities of the Workspace that match the predicates.
+func (t *TrackingDomainScoped) Update() *TrackingDomainScopedUpdate {
+	return &TrackingDomainScopedUpdate{s: t.s, b: t.s.c.TrackingDomain.Update().Where(trackingdomain.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *TrackingDomainScopedUpdate) Where(ps ...predicate.TrackingDomain) *TrackingDomainScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *TrackingDomainScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *TrackingDomainScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(trackingdomain.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *TrackingDomainScopedUpdate) SetUpdatedAt(v time.Time) *TrackingDomainScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetRole sets the "role" field.
+func (x *TrackingDomainScopedUpdate) SetRole(v trackingdomain.Role) *TrackingDomainScopedUpdate {
+	x.b.SetRole(v)
+	return x
+}
+
+// SetNillableRole sets the "role" field if the given value is not nil.
+func (x *TrackingDomainScopedUpdate) SetNillableRole(v *trackingdomain.Role) *TrackingDomainScopedUpdate {
+	x.b.SetNillableRole(v)
+	return x
+}
+
+// SetState sets the "state" field.
+func (x *TrackingDomainScopedUpdate) SetState(v trackingdomain.State) *TrackingDomainScopedUpdate {
+	x.b.SetState(v)
+	return x
+}
+
+// SetNillableState sets the "state" field if the given value is not nil.
+func (x *TrackingDomainScopedUpdate) SetNillableState(v *trackingdomain.State) *TrackingDomainScopedUpdate {
+	x.b.SetNillableState(v)
+	return x
+}
+
+// SetServedAt sets the "served_at" field.
+func (x *TrackingDomainScopedUpdate) SetServedAt(v time.Time) *TrackingDomainScopedUpdate {
+	x.b.SetServedAt(v)
+	return x
+}
+
+// SetNillableServedAt sets the "served_at" field if the given value is not nil.
+func (x *TrackingDomainScopedUpdate) SetNillableServedAt(v *time.Time) *TrackingDomainScopedUpdate {
+	x.b.SetNillableServedAt(v)
+	return x
+}
+
+// ClearServedAt clears the value of the "served_at" field.
+func (x *TrackingDomainScopedUpdate) ClearServedAt() *TrackingDomainScopedUpdate {
+	x.b.ClearServedAt()
+	return x
+}
+
+// SetCheckedAt sets the "checked_at" field.
+func (x *TrackingDomainScopedUpdate) SetCheckedAt(v time.Time) *TrackingDomainScopedUpdate {
+	x.b.SetCheckedAt(v)
+	return x
+}
+
+// SetNillableCheckedAt sets the "checked_at" field if the given value is not nil.
+func (x *TrackingDomainScopedUpdate) SetNillableCheckedAt(v *time.Time) *TrackingDomainScopedUpdate {
+	x.b.SetNillableCheckedAt(v)
+	return x
+}
+
+// ClearCheckedAt clears the value of the "checked_at" field.
+func (x *TrackingDomainScopedUpdate) ClearCheckedAt() *TrackingDomainScopedUpdate {
+	x.b.ClearCheckedAt()
+	return x
+}
+
+// SetReason sets the "reason" field.
+func (x *TrackingDomainScopedUpdate) SetReason(v trackingdomain.Reason) *TrackingDomainScopedUpdate {
+	x.b.SetReason(v)
+	return x
+}
+
+// SetNillableReason sets the "reason" field if the given value is not nil.
+func (x *TrackingDomainScopedUpdate) SetNillableReason(v *trackingdomain.Reason) *TrackingDomainScopedUpdate {
+	x.b.SetNillableReason(v)
+	return x
+}
+
+// ClearReason clears the value of the "reason" field.
+func (x *TrackingDomainScopedUpdate) ClearReason() *TrackingDomainScopedUpdate {
+	x.b.ClearReason()
+	return x
+}
+
+// SetStateChangedAt sets the "state_changed_at" field.
+func (x *TrackingDomainScopedUpdate) SetStateChangedAt(v time.Time) *TrackingDomainScopedUpdate {
+	x.b.SetStateChangedAt(v)
+	return x
+}
+
+// SetNillableStateChangedAt sets the "state_changed_at" field if the given value is not nil.
+func (x *TrackingDomainScopedUpdate) SetNillableStateChangedAt(v *time.Time) *TrackingDomainScopedUpdate {
+	x.b.SetNillableStateChangedAt(v)
+	return x
+}
+
+// ClearStateChangedAt clears the value of the "state_changed_at" field.
+func (x *TrackingDomainScopedUpdate) ClearStateChangedAt() *TrackingDomainScopedUpdate {
+	x.b.ClearStateChangedAt()
+	return x
+}
+
+func (x *TrackingDomainScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *TrackingDomainScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	if x.s.auditing() {
+		var n int
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.TrackingDomain.Query().Where(x.b.mutation.predicates...).All(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if n, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			ids := make([]int64, len(before))
+			for i, row := range before {
+				ids[i] = row.ID
+			}
+			after, err := ts.c.TrackingDomain.Query().Where(trackingdomain.IDIn(ids...)).All(ctx)
+			if err != nil {
+				return err
+			}
+			byID := make(map[int64]*TrackingDomain, len(after))
+			for _, row := range after {
+				byID[row.ID] = row
+			}
+			for _, row := range before {
+				if now, ok := byID[row.ID]; ok {
+					if err := ts.record(ctx, auditChangeTrackingDomain("update", row, now)); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+		return n, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *TrackingDomainScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

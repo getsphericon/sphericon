@@ -16,6 +16,10 @@ namespace Sphericon;
 // Regenerating an Integration's hook key breaks a working URL and needs a person (ADR 0037).
 @@mcp(Integrations.regenerateKey, #{ hidden: true });
 
+// Removing a retired Tracking domain breaks the links in mail already sent on it and needs a
+// person (ADR 0071).
+@@mcp(TrackingDomains.remove, #{ hidden: true });
+
 // Deleting every Captured message in one call needs a person (ADR 0058).
 @@mcp(CapturedMessages.deleteAll, #{ hidden: true });
 

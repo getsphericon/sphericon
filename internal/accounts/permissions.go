@@ -53,6 +53,7 @@ var grants = []grant{
 	row(PermRevenueConfigure, i18n.ErrorsPermissionRevenueConfigure, ownerAndAdmin),
 	row(PermBrandKitManage, i18n.ErrorsPermissionBrandKitManage, ownerAndAdmin),
 	row(PermJoinDomainsManage, i18n.ErrorsPermissionJoinDomainsManage, ownerAndAdmin),
+	row(PermTrackingDomainsManage, i18n.ErrorsPermissionTrackingDomainsManage, ownerAndAdmin),
 	row(PermHoldsResolve, i18n.ErrorsPermissionHoldsResolve, ownerAndAdmin),
 	row(PermAccountLinkOpen, i18n.ErrorsPermissionAccountLinkOpen, ownerOnly),
 	row(PermWorkspaceDelete, i18n.ErrorsPermissionWorkspaceDelete, ownerOnly),

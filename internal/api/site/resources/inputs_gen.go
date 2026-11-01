@@ -640,6 +640,10 @@ func (c *InputsImpl) siteapiPersonalScopeToSiteapiPersonalScope(source site.Pers
 		siteapiPersonalScope = site.PersonalScopeTemplatesRead
 	case site.PersonalScopeTemplatesWrite:
 		siteapiPersonalScope = site.PersonalScopeTemplatesWrite
+	case site.PersonalScopeTrackingDomainsRead:
+		siteapiPersonalScope = site.PersonalScopeTrackingDomainsRead
+	case site.PersonalScopeTrackingDomainsWrite:
+		siteapiPersonalScope = site.PersonalScopeTrackingDomainsWrite
 	case site.PersonalScopeWebhooksRead:
 		siteapiPersonalScope = site.PersonalScopeWebhooksRead
 	case site.PersonalScopeWebhooksRegenerate:

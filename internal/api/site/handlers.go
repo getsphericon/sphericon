@@ -48,6 +48,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
@@ -59,45 +60,46 @@ var mapper = &resources.ConverterImpl{}
 var inputs = &resources.InputsImpl{}
 
 type Handlers struct {
-	accounts       *accounts.Accounts
-	passwords      *credentials.Hasher
-	deletion       *workspacedeletion.Module
-	attempts       *accounts.Attempts
-	bus            *events.Bus
-	webhooks       *webhooks.Module
-	broadcasts     *broadcasts.Module
-	mail           mailjobs.Enqueuer
-	sendingDomains *sendingdomains.Module
-	joinDomains    *joindomains.Module
-	integrations   *integrations.Module
-	captured       *capturedmessages.Module
-	links          *accounts.Links
-	tracker        *tracking.Tracker
-	appURL         string
-	outbound       *outbound.Module
-	segments       *segments.Module
-	eventlog       *eventlog.Module
-	contacts       *contacts.Module
-	erasure        *erasure.Module
-	tags           *tags.Module
-	templates      *templates.Module
-	brandKit       *brandkit.Module
-	automations    *automations.Module
-	rules          *rules.Module
-	oauth          *oauthserver.Service
-	audit          AuditLog
-	abuseWatch     abusewatch.Watch
-	supportEmail   string
-	analytics      *analytics.Module
-	sessions       *auth.Sessions
-	secondFactor   *secondfactor.Module
-	passkeys       *secondfactor.Passkeys
-	now            func() time.Time
-	accountLink    *accountlink.Link
-	migrations     Migrations
-	instance       *instance.Module
-	holds          *holds.Holds
-	origins        Origins
+	accounts        *accounts.Accounts
+	passwords       *credentials.Hasher
+	deletion        *workspacedeletion.Module
+	attempts        *accounts.Attempts
+	bus             *events.Bus
+	webhooks        *webhooks.Module
+	broadcasts      *broadcasts.Module
+	mail            mailjobs.Enqueuer
+	sendingDomains  *sendingdomains.Module
+	trackingDomains *trackingdomains.Module
+	joinDomains     *joindomains.Module
+	integrations    *integrations.Module
+	captured        *capturedmessages.Module
+	links           *accounts.Links
+	tracker         *tracking.Tracker
+	appURL          string
+	outbound        *outbound.Module
+	segments        *segments.Module
+	eventlog        *eventlog.Module
+	contacts        *contacts.Module
+	erasure         *erasure.Module
+	tags            *tags.Module
+	templates       *templates.Module
+	brandKit        *brandkit.Module
+	automations     *automations.Module
+	rules           *rules.Module
+	oauth           *oauthserver.Service
+	audit           AuditLog
+	abuseWatch      abusewatch.Watch
+	supportEmail    string
+	analytics       *analytics.Module
+	sessions        *auth.Sessions
+	secondFactor    *secondfactor.Module
+	passkeys        *secondfactor.Passkeys
+	now             func() time.Time
+	accountLink     *accountlink.Link
+	migrations      Migrations
+	instance        *instance.Module
+	holds           *holds.Holds
+	origins         Origins
 	// requireVerification is the email verification gate (ADR 0030): on in the saas Mode,
 	// not required in selfhosted (ADR 0060).
 	requireVerification bool
@@ -173,10 +175,11 @@ type Deps struct {
 	Broadcasts  *broadcasts.Module
 	// Mail queues the platform mails (welcome, account mails, invites, Second factor notices):
 	// the river client in production, a test adapter that works each job at once in tests.
-	Mail           mailjobs.Enqueuer
-	SendingDomains *sendingdomains.Module
-	JoinDomains    *joindomains.Module
-	Integrations   *integrations.Module
+	Mail            mailjobs.Enqueuer
+	SendingDomains  *sendingdomains.Module
+	TrackingDomains *trackingdomains.Module
+	JoinDomains     *joindomains.Module
+	Integrations    *integrations.Module
 	// CapturedMessages is the store of what the Workspace's Test inbox kept.
 	CapturedMessages *capturedmessages.Module
 	Tokens           *authtoken.Signer
@@ -239,7 +242,7 @@ func NewHandlers(d Deps) *Handlers {
 		accounts: d.Accounts, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, mail: d.Mail,
-		sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, captured: d.CapturedMessages, links: accounts.NewLinks(d.Accounts, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
+		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, captured: d.CapturedMessages, links: accounts.NewLinks(d.Accounts, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,

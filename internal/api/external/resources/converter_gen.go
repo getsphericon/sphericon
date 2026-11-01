@@ -16,8 +16,8 @@ import (
 	integration "github.com/getsphericon/sphericon/ent/integration"
 	rule "github.com/getsphericon/sphericon/ent/rule"
 	schema "github.com/getsphericon/sphericon/ent/schema"
-	sendingdomain "github.com/getsphericon/sphericon/ent/sendingdomain"
 	suppression "github.com/getsphericon/sphericon/ent/suppression"
+	trackingdomain "github.com/getsphericon/sphericon/ent/trackingdomain"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	external "github.com/getsphericon/sphericon/gen/external"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
@@ -33,6 +33,7 @@ import (
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
+	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
 	transactional "github.com/getsphericon/sphericon/internal/transactional"
 	webhook "github.com/getsphericon/sphericon/internal/webhook"
 	jx "github.com/go-faster/jx"
@@ -472,6 +473,13 @@ func (c *ConverterImpl) CapturedMessagesToSummaries(source []*ent.CapturedMessag
 		externalapiCapturedMessageSummaryList[i] = c.CapturedMessageToSummary(source[i])
 	}
 	return externalapiCapturedMessageSummaryList
+}
+func (c *ConverterImpl) CnameRecordToResource(source trackingdomains.Record) external.CnameRecord {
+	var externalapiCnameRecord external.CnameRecord
+	externalapiCnameRecord.Type = cnameRecordType(source)
+	externalapiCnameRecord.Host = source.Host
+	externalapiCnameRecord.Target = source.Target
+	return externalapiCnameRecord
 }
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) external.ContactExportConfirmation {
 	var externalapiContactExportConfirmation external.ContactExportConfirmation
@@ -1145,7 +1153,6 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) exter
 		// externalapiSendingDomainResource.DkimRecord: ignore
 		// externalapiSendingDomainResource.SpfRecord: ignore
 		// externalapiSendingDomainResource.DmarcRecord: ignore
-		// externalapiSendingDomainResource.TrackingRecord: ignore
 		externalapiSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
 		externalapiSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
 		externalapiSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
@@ -1274,36 +1281,56 @@ func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTempl
 	externalapiTemplatesListOK.TotalPages = count(source.TotalPages)
 	return &externalapiTemplatesListOK
 }
-func (c *ConverterImpl) TrackingReasonToResource(source sendingdomain.TrackingReason) external.TrackingReason {
+func (c *ConverterImpl) TrackingDomainRoleToResource(source trackingdomain.Role) external.TrackingDomainRole {
+	var externalapiTrackingDomainRole external.TrackingDomainRole
+	switch source {
+	case trackingdomain.RoleCurrent:
+		externalapiTrackingDomainRole = external.TrackingDomainRoleCurrent
+	case trackingdomain.RoleReplacement:
+		externalapiTrackingDomainRole = external.TrackingDomainRoleReplacement
+	case trackingdomain.RoleRetired:
+		externalapiTrackingDomainRole = external.TrackingDomainRoleRetired
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiTrackingDomainRole
+}
+func (c *ConverterImpl) TrackingDomainToResource(source *ent.TrackingDomain) external.TrackingDomainResource {
+	var externalapiTrackingDomainResource external.TrackingDomainResource
+	if source != nil {
+		externalapiTrackingDomainResource.ID = external.EntityId((*source).ID)
+		externalapiTrackingDomainResource.Host = (*source).Host
+		externalapiTrackingDomainResource.Role = c.TrackingDomainRoleToResource((*source).Role)
+		externalapiTrackingDomainResource.State = c.TrackingStateToResource((*source).State)
+		externalapiTrackingDomainResource.Reason = optTrackingReason(c, (*source).Reason)
+		// externalapiTrackingDomainResource.Record: ignore
+		externalapiTrackingDomainResource.ServedAt = optNilTimestamp((*source).ServedAt)
+		externalapiTrackingDomainResource.LastCheckedAt = optNilTimestamp((*source).CheckedAt)
+		externalapiTrackingDomainResource.StateChangedAt = optNilTimestamp((*source).StateChangedAt)
+		externalapiTrackingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
+		externalapiTrackingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return externalapiTrackingDomainResource
+}
+func (c *ConverterImpl) TrackingReasonToResource(source trackingdomain.Reason) external.TrackingReason {
 	var externalapiTrackingReason external.TrackingReason
 	switch source {
-	case sendingdomain.TrackingReasonHostTaken:
+	case trackingdomain.ReasonHostTaken:
 		externalapiTrackingReason = external.TrackingReasonHostTaken
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return externalapiTrackingReason
 }
-func (c *ConverterImpl) TrackingRecordToResource(source sendingdomains.TrackingRecord) external.TrackingRecord {
-	var externalapiTrackingRecord external.TrackingRecord
-	externalapiTrackingRecord.Type = trackingRecordType(source)
-	externalapiTrackingRecord.Host = source.Host
-	externalapiTrackingRecord.Target = source.Target
-	externalapiTrackingRecord.State = c.TrackingStateToResource(source.State)
-	externalapiTrackingRecord.Reason = optTrackingReason(c, source.Reason)
-	externalapiTrackingRecord.LastCheckedAt = optNilTimestamp(source.CheckedAt)
-	externalapiTrackingRecord.StateChangedAt = optNilTimestamp(source.StateChangedAt)
-	return externalapiTrackingRecord
-}
-func (c *ConverterImpl) TrackingStateToResource(source sendingdomain.TrackingState) external.TrackingState {
+func (c *ConverterImpl) TrackingStateToResource(source trackingdomain.State) external.TrackingState {
 	var externalapiTrackingState external.TrackingState
 	switch source {
-	case sendingdomain.DefaultTrackingState:
+	case trackingdomain.DefaultState:
 		externalapiTrackingState = external.TrackingStatePending
-	case sendingdomain.TrackingStateDNSVerified:
+	case trackingdomain.StateDNSVerified:
 		externalapiTrackingState = external.TrackingStateDNSVerified
-	// Skipped TrackingStatePending(pending) -> TrackingStatePending(pending) because it duplicates DefaultTrackingState(pending) -> TrackingStatePending(pending)
-	case sendingdomain.TrackingStateServing:
+	// Skipped StatePending(pending) -> TrackingStatePending(pending) because it duplicates DefaultState(pending) -> TrackingStatePending(pending)
+	case trackingdomain.StateServing:
 		externalapiTrackingState = external.TrackingStateServing
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))

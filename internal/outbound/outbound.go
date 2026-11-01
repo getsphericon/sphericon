@@ -43,7 +43,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -206,8 +205,9 @@ type Module struct {
 	bus     *events.Bus
 	senders Senders
 	tracker *tracking.Tracker
-	// trackingDomains reports whether the Instance offers Tracking domains at all.
-	trackingDomains bool
+	// trackingHosts names the Workspace's serving Tracking domain; nil while the Instance offers
+	// none.
+	trackingHosts TrackingHosts
 	// sendCaps is whether the Instance has Send caps at all (ADR 0067); without them a
 	// Workspace's stored Send cap is ignored.
 	sendCaps providerlimit.SendCaps
@@ -227,10 +227,18 @@ type Option func(*Module)
 // WithLease overrides DefaultLease (tests use a tiny lease to exercise takeover).
 func WithLease(d time.Duration) Option { return func(m *Module) { m.lease = d } }
 
-// WithTrackingDomains turns on Tracking domains (SPHERICON_TRACKING_CNAME_TARGET is set):
-// a message from a Sending domain whose Tracking domain is serving gets its links on
-// track.<domain>. Off, every link uses the Instance's host (ADR 0038).
-func WithTrackingDomains() Option { return func(m *Module) { m.trackingDomains = true } }
+// TrackingHosts names the host a Workspace's links are built on: its current Tracking domain
+// while it serves, "" otherwise (ADR 0071).
+type TrackingHosts interface {
+	ServingHost(ctx context.Context, s *ent.Scoped) (string, error)
+}
+
+// WithTrackingDomains turns on Tracking domains (SPHERICON_TRACKING_CNAME_TARGET is set): every
+// tracked message of a Workspace whose Tracking domain serves gets its links on that host. Off,
+// every link uses the Instance's host (ADR 0038, ADR 0071).
+func WithTrackingDomains(hosts TrackingHosts) Option {
+	return func(m *Module) { m.trackingHosts = hosts }
+}
 
 // WithSendCaps says whether the Instance has Send caps (ADR 0067): with them every send of a
 // Workspace that has one also spends from its 24-hour bucket. Without (the default), a stored Send
@@ -389,7 +397,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, dec.Reason)
 	}
 
-	built, err := m.compose(ctx, s, g.domain, req, msg.ID, dest, ws)
+	built, err := m.compose(ctx, s, req, msg.ID, dest, ws)
 	if err != nil {
 		if !isContentError(err) {
 			// The storage behind the content failed, not the content: retry rather than record a
@@ -651,7 +659,7 @@ func isContentError(err error) bool {
 // on the unsubscribe footer, the open/click tracking and the one-click header. A
 // contentError is deterministic for this message, so the caller records it as Failed;
 // any other error is not the message's and is returned to be retried.
-func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req Request, messageID int64, dest string, ws *ent.Workspace) (composed, error) {
+func (m *Module) compose(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (composed, error) {
 	email, err := emailrender.RenderEmail(req.Subject, req.Body, Bindings(req.Contact, req.Variables))
 	if err != nil {
 		return composed{}, contentError{err}
@@ -660,7 +668,7 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 	if req.Source == "" && !req.Track {
 		return out, nil // Transactional, untracked: no unsubscribe, no tracking
 	}
-	out, err = m.layerTracking(ctx, s, domain, req, messageID, dest, ws, out)
+	out, err = m.layerTracking(ctx, s, req, messageID, dest, ws, out)
 	if err != nil {
 		return composed{}, err
 	}
@@ -672,11 +680,11 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 // layerTracking adds to a rendered message what its send needs on top: for a tracked
 // Transactional send the pixel and rewritten links; for a marketing send also the unsubscribe
 // footer and the one-click header. Its errors are compose's (see contentError).
-func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, domain string, req Request, messageID int64, dest string, ws *ent.Workspace, out composed) (composed, error) {
+func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace, out composed) (composed, error) {
 	// One choice per message: every link and the List-Unsubscribe URL share one host.
 	tr := m.tracker
-	if m.trackingDomains {
-		host, err := sendingdomains.ServingTrackingHost(ctx, s, domain)
+	if m.trackingHosts != nil {
+		host, err := m.trackingHosts.ServingHost(ctx, s)
 		if err != nil {
 			return composed{}, fmt.Errorf("tracking host: %w", err)
 		}
@@ -959,7 +967,7 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 		return Result{Outcome: Held, Reason: g.hold}, nil
 	}
 	to := suppression.NormalizeDestination(req.To)
-	msg, err := m.composeTest(ctx, s, ws, g.domain, req, to)
+	msg, err := m.composeTest(ctx, s, ws, req, to)
 	if err != nil {
 		return failedContent(err)
 	}
@@ -998,8 +1006,8 @@ func failedContent(err error) (Result, error) {
 }
 
 // composeTest renders a Test send's content for to: no unsubscribe, no tracking.
-func (m *Module) composeTest(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, domain string, req TestRequest, to string) (messaging.EmailMessage, error) {
-	built, err := m.compose(ctx, s, domain, Request{Subject: req.Subject, Body: req.Body, Variables: req.Variables}, 0, to, ws)
+func (m *Module) composeTest(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, req TestRequest, to string) (messaging.EmailMessage, error) {
+	built, err := m.compose(ctx, s, Request{Subject: req.Subject, Body: req.Body, Variables: req.Variables}, 0, to, ws)
 	return built.msg, err
 }
 
@@ -1027,7 +1035,7 @@ func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.
 		return Result{Outcome: Refused, Reason: RefuseNoSystemSender}, nil
 	}
 	// Render before taking a slot: content that cannot render never costs the budget.
-	msg, err := m.composeTest(ctx, s, ws, "", req, to)
+	msg, err := m.composeTest(ctx, s, ws, req, to)
 	if err != nil {
 		return failedContent(err)
 	}

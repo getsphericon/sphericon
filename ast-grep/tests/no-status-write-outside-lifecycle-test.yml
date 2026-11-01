@@ -10,10 +10,10 @@ valid:
     	})
     }
   - |
-    func machine(ts *ent.Scoped, row *ent.SendingDomain) *stateless.StateMachine {
-    	return lifecycle.New(lifecycle.Storage[sendingdomain.TrackingState]{
-    		Write: func(ctx context.Context, from, to sendingdomain.TrackingState) (bool, error) {
-    			n, err := ts.SendingDomain().Update().Where(sendingdomain.ID(row.ID)).SetTrackingState(to).Save(ctx)
+    func machine(ts *ent.Scoped, row *ent.TrackingDomain) *stateless.StateMachine {
+    	return lifecycle.New(lifecycle.Storage[trackingdomain.State]{
+    		Write: func(ctx context.Context, from, to trackingdomain.State) (bool, error) {
+    			n, err := ts.TrackingDomain().Update().Where(trackingdomain.ID(row.ID)).SetState(to).Save(ctx)
     			return n == 1, err
     		},
     	})
@@ -52,7 +52,7 @@ invalid:
     }
   - |
     func bypass(ctx context.Context, s *ent.Scoped, id int64) error {
-    	return s.SendingDomain().UpdateOneID(id).SetTrackingState(sendingdomain.TrackingStateServing).Exec(ctx)
+    	return s.TrackingDomain().UpdateOneID(id).SetState(trackingdomain.StateServing).Exec(ctx)
     }
   - |
     func bypass(ctx context.Context, s *ent.Scoped, id int64) error {

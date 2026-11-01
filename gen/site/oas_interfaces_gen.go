@@ -657,6 +657,22 @@ type SiteTokensUpdateRes interface {
 	siteTokensUpdateRes()
 }
 
+type SiteTrackingDomainsListRes interface {
+	siteTrackingDomainsListRes()
+}
+
+type SiteTrackingDomainsRemoveRes interface {
+	siteTrackingDomainsRemoveRes()
+}
+
+type SiteTrackingDomainsSetRes interface {
+	siteTrackingDomainsSetRes()
+}
+
+type SiteTrackingDomainsVerifyRes interface {
+	siteTrackingDomainsVerifyRes()
+}
+
 type SiteTransactionalEmailsListRes interface {
 	siteTransactionalEmailsListRes()
 }

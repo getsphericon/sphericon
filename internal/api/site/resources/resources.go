@@ -22,9 +22,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/rule"
-	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/abusewatch"
@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/trackingdomains"
 
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
@@ -172,6 +173,7 @@ type Converter interface {
 	// The MCP origin is instance configuration, attached by the handler.
 	// goverter:ignore McpUrl
 	// goverter:ignore TrackerUrl
+	// goverter:ignore TrackingTarget
 	// The Send cap shown is the one the send path enforces (outbound.Module.SendCapStatus), which
 	// the mapper cannot see: the handler attaches it through SendCapStatusToResource.
 	// goverter:ignore SendCap
@@ -438,16 +440,19 @@ type Converter interface {
 	// goverter:ignore DkimRecord
 	// goverter:ignore SpfRecord
 	// goverter:ignore DmarcRecord
-	// goverter:ignore TrackingRecord
 	// The contract names the discarded state "archived" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
 	// goverter:map . Verified | sendingDomainVerified
 	SendingDomainToResource(source *ent.SendingDomain) siteapi.SiteSendingDomainResource
 	// goverter:map . Type | dnsRecordType
 	DnsRecordToResource(source sendingdomains.Record) siteapi.SiteDnsRecord
-	// goverter:map . Type | trackingRecordType
+
+	// The CNAME target is the module's, which the mapper cannot see: the handler attaches it.
+	// goverter:ignore Record
 	// goverter:map CheckedAt LastCheckedAt
-	TrackingRecordToResource(source sendingdomains.TrackingRecord) siteapi.SiteTrackingRecord
+	TrackingDomainToResource(source *ent.TrackingDomain) siteapi.SiteTrackingDomainResource
+	// goverter:map . Type | cnameRecordType
+	CnameRecordToResource(source trackingdomains.Record) siteapi.SiteCnameRecord
 
 	// A Workspace that has not saved a Brand kit has no row to convert, so the mapper
 	// takes the module's Kit.
@@ -629,9 +634,11 @@ type Converter interface {
 	// goverter:enum:transform value
 	SuppressionReasonToResource(source suppression.Reason) siteapi.SiteSuppressionReason
 	// goverter:enum:transform value
-	TrackingReasonToResource(source sendingdomain.TrackingReason) siteapi.SiteTrackingReason
+	TrackingReasonToResource(source trackingdomain.Reason) siteapi.SiteTrackingReason
 	// goverter:enum:transform value
-	TrackingStateToResource(source sendingdomain.TrackingState) siteapi.SiteTrackingState
+	TrackingStateToResource(source trackingdomain.State) siteapi.SiteTrackingState
+	// goverter:enum:transform value
+	TrackingDomainRoleToResource(source trackingdomain.Role) siteapi.SiteTrackingDomainRole
 	// goverter:enum:transform value
 	WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) siteapi.SiteWebhookDisabledReason
 	// goverter:enum:transform value
@@ -858,7 +865,7 @@ func optConsentDecision(c Converter, v *consentrecord.Decision) siteapi.OptSiteO
 	return convert.OptVia[siteapi.OptSiteOptionalConsentDecision](v, c.OptionalConsentDecisionToResource)
 }
 
-func optTrackingReason(c Converter, v *sendingdomain.TrackingReason) siteapi.OptSiteTrackingReason {
+func optTrackingReason(c Converter, v *trackingdomain.Reason) siteapi.OptSiteTrackingReason {
 	return convert.OptVia[siteapi.OptSiteTrackingReason](v, c.TrackingReasonToResource)
 }
 
@@ -915,8 +922,8 @@ func dnsRecordType(sendingdomains.Record) siteapi.SiteDnsRecordType {
 	return siteapi.SiteDnsRecordTypeTXT
 }
 
-func trackingRecordType(sendingdomains.TrackingRecord) siteapi.SiteTrackingRecordType {
-	return siteapi.SiteTrackingRecordTypeCNAME
+func cnameRecordType(trackingdomains.Record) siteapi.SiteCnameRecordType {
+	return siteapi.SiteCnameRecordTypeCNAME
 }
 
 // brandKitUpdatedAt is set only once the Brand kit has been saved.

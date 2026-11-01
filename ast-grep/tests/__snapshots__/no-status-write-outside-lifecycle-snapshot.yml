@@ -31,17 +31,16 @@ snapshots:
         style: secondary
         start: 74
         end: 103
-  "func bypass(ctx context.Context, s *ent.Scoped, id int64) error {\n\treturn s.SendingDomain().UpdateOneID(id).SetTrackingState(sendingdomain.TrackingStateServing).Exec(ctx)\n}\n":
+  "func bypass(ctx context.Context, s *ent.Scoped, id int64) error {\n\treturn s.TrackingDomain().UpdateOneID(id).SetState(trackingdomain.StateServing).Exec(ctx)\n}\n":
     labels:
-      - source: >-
-          s.SendingDomain().UpdateOneID(id).SetTrackingState(sendingdomain.TrackingStateServing)
+      - source: s.TrackingDomain().UpdateOneID(id).SetState(trackingdomain.StateServing)
         style: primary
         start: 74
-        end: 160
-      - source: s.SendingDomain().UpdateOneID(id)
+        end: 146
+      - source: s.TrackingDomain().UpdateOneID(id)
         style: secondary
         start: 74
-        end: 107
+        end: 108
   "func bypass(ctx context.Context, s *ent.Scoped, id int64, to broadcast.Status) error {\n\t_, err := s.Broadcast().Update().Where(broadcast.ID(id)).SetStatus(to).Save(ctx)\n\treturn err\n}\n":
     labels:
       - source: s.Broadcast().Update().Where(broadcast.ID(id)).SetStatus(to)

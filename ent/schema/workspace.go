@@ -184,6 +184,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("integrations", Integration.Type),
 		edge.To("sending_domains", SendingDomain.Type),
 		edge.To("join_domains", JoinDomain.Type),
+		edge.To("tracking_domains", TrackingDomain.Type),
 		edge.To("provider_limiters", ProviderLimiter.Type),
 		edge.To("send_cap_limiters", SendCapLimiter.Type),
 		edge.To("holds", Hold.Type),

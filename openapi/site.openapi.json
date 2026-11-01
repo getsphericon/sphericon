@@ -73,6 +73,9 @@
       "name": "Site Rules"
     },
     {
+      "name": "Site Tracking Domains"
+    },
+    {
       "name": "Site Analytics"
     },
     {
@@ -11546,7 +11549,7 @@
     "/workspaces/{workspaceId}/sending-domains/{id}/archive": {
       "post": {
         "operationId": "SiteSendingDomains_archive",
-        "description": "Archive a sending domain: it leaves the list, serves no Tracking domain host and can be\nrestored. Refused with 409 while a scheduled or sending broadcast or an active automation\nsends from it. Owners and admins only.",
+        "description": "Archive a sending domain: it leaves the list and can be restored. Refused with 409 while a scheduled or sending broadcast or an active automation\nsends from it. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSendingDomainResourceKey.workspaceId"
@@ -11614,7 +11617,7 @@
     "/workspaces/{workspaceId}/sending-domains/{id}/unarchive": {
       "post": {
         "operationId": "SiteSendingDomains_unarchive",
-        "description": "Restore an archived sending domain. It starts a new DNS check and serves its Tracking\ndomain host again only once that passes. Refused with 409 when the same domain was added\nagain meanwhile. Owners and admins only.",
+        "description": "Restore an archived sending domain. It starts a new DNS check. Refused with 409 when the same domain was added\nagain meanwhile. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSendingDomainResourceKey.workspaceId"
@@ -12798,6 +12801,266 @@
         },
         "tags": ["Site Tokens"],
         "x-required-permissions": ["tokens:manage"]
+      }
+    },
+    "/workspaces/{workspaceId}/tracking-domains": {
+      "get": {
+        "operationId": "SiteTrackingDomains_list",
+        "description": "List the Workspace's Tracking domains: the current one, the replacement, then the retired ones. Empty while the Instance offers none.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SiteTrackingDomainResource"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Tracking Domains"],
+        "x-required-permissions": []
+      },
+      "post": {
+        "operationId": "SiteTrackingDomains_set",
+        "description": "Set the Workspace's Tracking domain (owner and admin only). With none it becomes the current one. While the current one serves it becomes the replacement (discarding a pending one) and takes over once it serves. When the current one does not serve, the new one replaces it at once. A host the Workspace already uses is returned as it is; a retired one is brought back. An invalid host or one of the Instance's own is 422; 404 when the Instance offers no Tracking domains.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteTrackingDomainResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Tracking Domains"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTrackingDomainInput"
+              }
+            }
+          }
+        },
+        "x-required-permissions": ["tracking_domains:manage"]
+      }
+    },
+    "/workspaces/{workspaceId}/tracking-domains/{id}": {
+      "delete": {
+        "operationId": "SiteTrackingDomains_remove",
+        "description": "Remove a Tracking domain by its role (owner and admin only). The current one stops being used: it is retired when it served (links already sent on it keep working while its CNAME points at the edge), deleted otherwise, and a replacement becomes current. A replacement is cancelled. A retired one is forgotten: links sent on it stop working.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Tracking Domains"],
+        "x-required-permissions": ["tracking_domains:manage"]
+      }
+    },
+    "/workspaces/{workspaceId}/tracking-domains/{id}/verify": {
+      "post": {
+        "operationId": "SiteTrackingDomains_verify",
+        "description": "Check the host now (owner and admin only) and answer once the check is done: the Tracking domain as it left it. A replacement that reaches `serving` becomes current.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteTrackingDomainResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Tracking Domains"],
+        "x-required-permissions": ["tracking_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/transactional-emails": {
@@ -14066,12 +14329,14 @@
           "webhooks:test",
           "custom_fields:read",
           "sending_domains:read",
+          "tracking_domains:read",
           "integrations:read",
           "emails:send",
           "broadcasts:send",
           "automations:publish",
           "mcp:send",
           "sending_domains:write",
+          "tracking_domains:write",
           "integrations:write",
           "contacts:erase",
           "captured_messages:read",
@@ -15013,6 +15278,7 @@
           "webhooks:test",
           "custom_fields:read",
           "sending_domains:read",
+          "tracking_domains:read",
           "integrations:read"
         ],
         "description": "Scopes an OAuth client may be granted without any extra opt-in: the external\nAPI's read/write vocabulary. Token management scopes are deliberately absent,\nso a connector can never mint further credentials.",
@@ -15085,6 +15351,9 @@
           },
           {
             "scope": "sending_domains:read"
+          },
+          {
+            "scope": "tracking_domains:read"
           },
           {
             "scope": "integrations:read"
@@ -15298,6 +15567,7 @@
           "revenue:configure",
           "brand_kit:manage",
           "join_domains:manage",
+          "tracking_domains:manage",
           "holds:resolve",
           "account_link:open",
           "workspace:delete",
@@ -15330,12 +15600,14 @@
           "webhooks:test",
           "custom_fields:read",
           "sending_domains:read",
+          "tracking_domains:read",
           "integrations:read",
           "emails:send",
           "broadcasts:send",
           "automations:publish",
           "mcp:send",
           "sending_domains:write",
+          "tracking_domains:write",
           "integrations:write"
         ],
         "description": "The scopes a User may give a credential of their own: a Connection by consenting, a Personal\ntoken by minting it (ADR 0061). The authorization server advertises these and no other, and the\nPersonal token form offers them. Each still needs the Permission its enum declares in\n`x-grant-permissions`; the token-only scopes are never a User's to give. Only /site names it,\nso it is declared here and not with the external vocabulary."
@@ -15520,14 +15792,29 @@
         },
         "description": "SES credentials"
       },
+      "SetTrackingDomainInput": {
+        "type": "object",
+        "required": ["host"],
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "A host below a domain of your own, e.g. \"t.example.com\": never the apex (a CNAME cannot sit\nthere) nor one of the Instance's own hosts. Stored lower case, IDN as punycode."
+          }
+        },
+        "description": "Set the Workspace's Tracking domain"
+      },
       "SetupScope": {
         "type": "string",
-        "enum": ["sending_domains:write", "integrations:write"],
-        "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Integrations and the provider credentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send.",
+        "enum": ["sending_domains:write", "tracking_domains:write", "integrations:write"],
+        "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Tracking domain its links are on, the Integrations and the provider\ncredentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send.",
         "x-grant-permissions": [
           {
             "scope": "sending_domains:write",
             "permission": "sending_domains:manage"
+          },
+          {
+            "scope": "tracking_domains:write",
+            "permission": "tracking_domains:manage"
           },
           {
             "scope": "integrations:write",
@@ -17518,6 +17805,26 @@
         "type": "string",
         "enum": ["broadcast", "automation", "transactional", "test"],
         "description": "The surface that asked for the send a Captured message belongs to"
+      },
+      "SiteCnameRecord": {
+        "type": "object",
+        "required": ["type", "host", "target"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["CNAME"],
+            "description": "The record type (always CNAME)"
+          },
+          "host": {
+            "type": "string",
+            "description": "The host to create the record at"
+          },
+          "target": {
+            "type": "string",
+            "description": "The edge host the CNAME must point at"
+          }
+        },
+        "description": "The CNAME record to publish: `host` must point at `target`"
       },
       "SiteConditionCombinator": {
         "type": "string",
@@ -20915,14 +21222,6 @@
             ],
             "description": "The suggested DMARC TXT record (advisory bulk-readiness signal)"
           },
-          "trackingRecord": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteTrackingRecord"
-              }
-            ],
-            "description": "The Tracking domain CNAME; absent when the instance has no tracking target configured"
-          },
           "lastCheckedAt": {
             "type": "string",
             "allOf": [
@@ -20961,7 +21260,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the domain was archived; null while it is kept. An archived domain serves no Tracking domain host."
+            "description": "When the domain was archived; null while it is kept."
           },
           "createdAt": {
             "allOf": [
@@ -21492,27 +21791,29 @@
         },
         "description": "What a test send did: the address the preview went out from"
       },
-      "SiteTrackingReason": {
-        "type": "string",
-        "enum": ["host_taken"],
-        "description": "Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)"
-      },
-      "SiteTrackingRecord": {
+      "SiteTrackingDomainResource": {
         "type": "object",
-        "required": ["type", "host", "target", "state"],
+        "required": ["id", "host", "role", "state", "record", "createdAt", "updatedAt"],
         "properties": {
-          "type": {
-            "type": "string",
-            "enum": ["CNAME"],
-            "description": "The record type (always CNAME)"
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
           },
           "host": {
             "type": "string",
-            "description": "The host to create the record at: \"track.\" followed by the domain"
+            "description": "The host, lower case with IDN as punycode, e.g. \"t.example.com\""
           },
-          "target": {
-            "type": "string",
-            "description": "The edge host the CNAME must point at"
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteTrackingDomainRole"
+              }
+            ],
+            "description": "What the host does for the Workspace"
           },
           "state": {
             "allOf": [
@@ -21520,7 +21821,7 @@
                 "$ref": "#/components/schemas/SiteTrackingState"
               }
             ],
-            "description": "Where the Tracking domain stands"
+            "description": "Where the host's verification stands"
           },
           "reason": {
             "allOf": [
@@ -21528,7 +21829,25 @@
                 "$ref": "#/components/schemas/SiteTrackingReason"
               }
             ],
-            "description": "Why the domain is not advancing; absent when nothing holds it back"
+            "description": "Why the host is not advancing; absent when nothing holds it back"
+          },
+          "record": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteCnameRecord"
+              }
+            ],
+            "description": "The CNAME to publish"
+          },
+          "servedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the host first served (null = never): only a host that served is retired rather than deleted"
           },
           "lastCheckedAt": {
             "type": "string",
@@ -21538,7 +21857,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the Tracking domain was most recently checked (null = never)"
+            "description": "When the host was most recently checked (null = never)"
           },
           "stateChangedAt": {
             "type": "string",
@@ -21549,14 +21868,40 @@
             ],
             "nullable": true,
             "description": "When the state most recently changed (null = never)"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last update timestamp"
           }
         },
-        "description": "The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only; absent when the instance has no tracking target configured."
+        "description": "A Tracking domain of the Workspace (ADR 0071): a host of its own on which the links of its mail and the first-party tracker are served"
+      },
+      "SiteTrackingDomainRole": {
+        "type": "string",
+        "enum": ["current", "replacement", "retired"],
+        "description": "What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the\nsnippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only\nthe links already sent and the snippet already installed on it, until its CNAME leaves the edge"
+      },
+      "SiteTrackingReason": {
+        "type": "string",
+        "enum": ["host_taken"],
+        "description": "Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)"
       },
       "SiteTrackingState": {
         "type": "string",
         "enum": ["pending", "dns_verified", "serving"],
-        "description": "State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving`"
+        "description": "State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers"
       },
       "SiteTransactionalEmailChannel": {
         "type": "string",
@@ -22245,6 +22590,10 @@
           "trackerUrl": {
             "type": "string",
             "description": "The public origin the tracker snippet loads `/t.js` from and posts `/collect` to:\nSPHERICON_TRACKER_URL when the tracker has its own host, otherwise the app origin."
+          },
+          "trackingTarget": {
+            "type": "string",
+            "description": "The edge host a Tracking domain's CNAME points at (ADR 0071); absent when the Instance offers\nno Tracking domains (SPHERICON_TRACKING_CNAME_TARGET unset)."
           },
           "holds": {
             "type": "array",

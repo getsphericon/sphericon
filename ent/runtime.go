@@ -59,6 +59,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
@@ -1373,6 +1374,25 @@ func init() {
 	tagDescName := tagFields[1].Descriptor()
 	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tag.NameValidator = tagDescName.Validators[0].(func(string) error)
+	trackingdomainMixin := schema.TrackingDomain{}.Mixin()
+	trackingdomainMixinFields0 := trackingdomainMixin[0].Fields()
+	_ = trackingdomainMixinFields0
+	trackingdomainFields := schema.TrackingDomain{}.Fields()
+	_ = trackingdomainFields
+	// trackingdomainDescCreatedAt is the schema descriptor for created_at field.
+	trackingdomainDescCreatedAt := trackingdomainMixinFields0[0].Descriptor()
+	// trackingdomain.DefaultCreatedAt holds the default value on creation for the created_at field.
+	trackingdomain.DefaultCreatedAt = trackingdomainDescCreatedAt.Default.(func() time.Time)
+	// trackingdomainDescUpdatedAt is the schema descriptor for updated_at field.
+	trackingdomainDescUpdatedAt := trackingdomainMixinFields0[1].Descriptor()
+	// trackingdomain.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	trackingdomain.DefaultUpdatedAt = trackingdomainDescUpdatedAt.Default.(func() time.Time)
+	// trackingdomain.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	trackingdomain.UpdateDefaultUpdatedAt = trackingdomainDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// trackingdomainDescHost is the schema descriptor for host field.
+	trackingdomainDescHost := trackingdomainFields[1].Descriptor()
+	// trackingdomain.HostValidator is a validator for the "host" field. It is called by the builders before save.
+	trackingdomain.HostValidator = trackingdomainDescHost.Validators[0].(func(string) error)
 	trackinghostchangeMixin := schema.TrackingHostChange{}.Mixin()
 	trackinghostchangeMixinFields0 := trackinghostchangeMixin[0].Fields()
 	_ = trackinghostchangeMixinFields0
@@ -1388,10 +1408,10 @@ func init() {
 	trackinghostchange.DefaultUpdatedAt = trackinghostchangeDescUpdatedAt.Default.(func() time.Time)
 	// trackinghostchange.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	trackinghostchange.UpdateDefaultUpdatedAt = trackinghostchangeDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// trackinghostchangeDescDomain is the schema descriptor for domain field.
-	trackinghostchangeDescDomain := trackinghostchangeFields[2].Descriptor()
-	// trackinghostchange.DomainValidator is a validator for the "domain" field. It is called by the builders before save.
-	trackinghostchange.DomainValidator = trackinghostchangeDescDomain.Validators[0].(func(string) error)
+	// trackinghostchangeDescHost is the schema descriptor for host field.
+	trackinghostchangeDescHost := trackinghostchangeFields[2].Descriptor()
+	// trackinghostchange.HostValidator is a validator for the "host" field. It is called by the builders before save.
+	trackinghostchange.HostValidator = trackinghostchangeDescHost.Validators[0].(func(string) error)
 	unsubscribeMixin := schema.Unsubscribe{}.Mixin()
 	unsubscribeMixinFields0 := unsubscribeMixin[0].Fields()
 	_ = unsubscribeMixinFields0

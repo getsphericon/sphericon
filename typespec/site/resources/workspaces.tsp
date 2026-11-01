@@ -88,6 +88,10 @@ model SiteWorkspaceResource {
    * SPHERICON_TRACKER_URL when the tracker has its own host, otherwise the app origin. */
   trackerUrl: string;
 
+  /** The edge host a Tracking domain's CNAME points at (ADR 0071); absent when the Instance offers
+   * no Tracking domains (SPHERICON_TRACKING_CNAME_TARGET unset). */
+  trackingTarget?: string;
+
   /** The Staff holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed. */

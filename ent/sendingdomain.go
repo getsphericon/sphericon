@@ -40,14 +40,6 @@ type SendingDomain struct {
 	VerifiedAt *time.Time `json:"verified_at,omitempty"`
 	// VerificationLostAt holds the value of the "verification_lost_at" field.
 	VerificationLostAt *time.Time `json:"verification_lost_at,omitempty"`
-	// TrackingState holds the value of the "tracking_state" field.
-	TrackingState sendingdomain.TrackingState `json:"tracking_state,omitempty"`
-	// TrackingCheckedAt holds the value of the "tracking_checked_at" field.
-	TrackingCheckedAt *time.Time `json:"tracking_checked_at,omitempty"`
-	// TrackingReason holds the value of the "tracking_reason" field.
-	TrackingReason *sendingdomain.TrackingReason `json:"tracking_reason,omitempty"`
-	// TrackingStateChangedAt holds the value of the "tracking_state_changed_at" field.
-	TrackingStateChangedAt *time.Time `json:"tracking_state_changed_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SendingDomainQuery when eager-loading is set.
 	Edges        SendingDomainEdges `json:"edges"`
@@ -81,9 +73,9 @@ func (*SendingDomain) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case sendingdomain.FieldID, sendingdomain.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case sendingdomain.FieldDomain, sendingdomain.FieldDkimSelector, sendingdomain.FieldDkimPrivateKeyEncrypted, sendingdomain.FieldDkimPublicKey, sendingdomain.FieldTrackingState, sendingdomain.FieldTrackingReason:
+		case sendingdomain.FieldDomain, sendingdomain.FieldDkimSelector, sendingdomain.FieldDkimPrivateKeyEncrypted, sendingdomain.FieldDkimPublicKey:
 			values[i] = new(sql.NullString)
-		case sendingdomain.FieldCreatedAt, sendingdomain.FieldUpdatedAt, sendingdomain.FieldDiscardedAt, sendingdomain.FieldLastCheckedAt, sendingdomain.FieldVerifiedAt, sendingdomain.FieldVerificationLostAt, sendingdomain.FieldTrackingCheckedAt, sendingdomain.FieldTrackingStateChangedAt:
+		case sendingdomain.FieldCreatedAt, sendingdomain.FieldUpdatedAt, sendingdomain.FieldDiscardedAt, sendingdomain.FieldLastCheckedAt, sendingdomain.FieldVerifiedAt, sendingdomain.FieldVerificationLostAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -176,33 +168,6 @@ func (_m *SendingDomain) assignValues(columns []string, values []any) error {
 				_m.VerificationLostAt = new(time.Time)
 				*_m.VerificationLostAt = value.Time
 			}
-		case sendingdomain.FieldTrackingState:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field tracking_state", values[i])
-			} else if value.Valid {
-				_m.TrackingState = sendingdomain.TrackingState(value.String)
-			}
-		case sendingdomain.FieldTrackingCheckedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field tracking_checked_at", values[i])
-			} else if value.Valid {
-				_m.TrackingCheckedAt = new(time.Time)
-				*_m.TrackingCheckedAt = value.Time
-			}
-		case sendingdomain.FieldTrackingReason:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field tracking_reason", values[i])
-			} else if value.Valid {
-				_m.TrackingReason = new(sendingdomain.TrackingReason)
-				*_m.TrackingReason = sendingdomain.TrackingReason(value.String)
-			}
-		case sendingdomain.FieldTrackingStateChangedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field tracking_state_changed_at", values[i])
-			} else if value.Valid {
-				_m.TrackingStateChangedAt = new(time.Time)
-				*_m.TrackingStateChangedAt = value.Time
-			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -281,24 +246,6 @@ func (_m *SendingDomain) String() string {
 	builder.WriteString(", ")
 	if v := _m.VerificationLostAt; v != nil {
 		builder.WriteString("verification_lost_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
-	builder.WriteString("tracking_state=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TrackingState))
-	builder.WriteString(", ")
-	if v := _m.TrackingCheckedAt; v != nil {
-		builder.WriteString("tracking_checked_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
-	if v := _m.TrackingReason; v != nil {
-		builder.WriteString("tracking_reason=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.TrackingStateChangedAt; v != nil {
-		builder.WriteString("tracking_state_changed_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')

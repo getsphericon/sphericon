@@ -53,6 +53,8 @@ func (s ApiTokenScope) Validate() error {
 		return nil
 	case "sending_domains:read":
 		return nil
+	case "tracking_domains:read":
+		return nil
 	case "integrations:read":
 		return nil
 	case "emails:send":
@@ -64,6 +66,8 @@ func (s ApiTokenScope) Validate() error {
 	case "mcp:send":
 		return nil
 	case "sending_domains:write":
+		return nil
+	case "tracking_domains:write":
 		return nil
 	case "integrations:write":
 		return nil
@@ -454,6 +458,8 @@ func (s GrantableScope) Validate() error {
 		return nil
 	case "sending_domains:read":
 		return nil
+	case "tracking_domains:read":
+		return nil
 	case "integrations:read":
 		return nil
 	default:
@@ -808,6 +814,8 @@ func (s Permission) Validate() error {
 		return nil
 	case "join_domains:manage":
 		return nil
+	case "tracking_domains:manage":
+		return nil
 	case "holds:resolve":
 		return nil
 	case "account_link:open":
@@ -867,6 +875,8 @@ func (s PersonalScope) Validate() error {
 		return nil
 	case "sending_domains:read":
 		return nil
+	case "tracking_domains:read":
+		return nil
 	case "integrations:read":
 		return nil
 	case "emails:send":
@@ -878,6 +888,8 @@ func (s PersonalScope) Validate() error {
 	case "mcp:send":
 		return nil
 	case "sending_domains:write":
+		return nil
+	case "tracking_domains:write":
 		return nil
 	case "integrations:write":
 		return nil
@@ -1075,6 +1087,8 @@ func (s SesConfigInputKind) Validate() error {
 func (s SetupScope) Validate() error {
 	switch s {
 	case "sending_domains:write":
+		return nil
+	case "tracking_domains:write":
 		return nil
 	case "integrations:write":
 		return nil
@@ -3768,6 +3782,38 @@ func (s *SiteCapturedMessagesListUnprocessableEntity) Validate() error {
 		return err
 	}
 	return nil
+}
+
+func (s *SiteCnameRecord) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteCnameRecordType) Validate() error {
+	switch s {
+	case "CNAME":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s SiteConditionCombinator) Validate() error {
@@ -9805,24 +9851,6 @@ func (s *SiteSendingDomainResource) Validate() error {
 			Error: err,
 		})
 	}
-	if err := func() error {
-		if value, ok := s.TrackingRecord.Get(); ok {
-			if err := func() error {
-				if err := value.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "trackingRecord",
-			Error: err,
-		})
-	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -11374,29 +11402,20 @@ func (s *SiteTokensUpdateUnprocessableEntity) Validate() error {
 	return nil
 }
 
-func (s SiteTrackingReason) Validate() error {
-	switch s {
-	case "host_taken":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
-func (s *SiteTrackingRecord) Validate() error {
+func (s *SiteTrackingDomainResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if err := s.Type.Validate(); err != nil {
+		if err := s.Role.Validate(); err != nil {
 			return err
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "type",
+			Name:  "role",
 			Error: err,
 		})
 	}
@@ -11429,15 +11448,160 @@ func (s *SiteTrackingRecord) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if err := s.Record.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "record",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
 }
 
-func (s SiteTrackingRecordType) Validate() error {
+func (s SiteTrackingDomainRole) Validate() error {
 	switch s {
-	case "CNAME":
+	case "current":
+		return nil
+	case "replacement":
+		return nil
+	case "retired":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SiteTrackingDomainsListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTrackingDomainsListNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s SiteTrackingDomainsListOKApplicationJSON) Validate() error {
+	alias := ([]SiteTrackingDomainResource)(s)
+	if alias == nil {
+		return errors.New("nil is invalid value")
+	}
+	var failures []validate.FieldError
+	for i, elem := range alias {
+		if err := func() error {
+			if err := elem.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			failures = append(failures, validate.FieldError{
+				Name:  fmt.Sprintf("[%d]", i),
+				Error: err,
+			})
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SiteTrackingDomainsRemoveBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTrackingDomainsRemoveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTrackingDomainsRemoveNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTrackingDomainsSetBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTrackingDomainsSetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTrackingDomainsSetNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTrackingDomainsSetUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTrackingDomainsVerifyBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTrackingDomainsVerifyForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTrackingDomainsVerifyNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s SiteTrackingReason) Validate() error {
+	switch s {
+	case "host_taken":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

@@ -91,6 +91,8 @@ const (
 	EdgeSendingDomains = "sending_domains"
 	// EdgeJoinDomains holds the string denoting the join_domains edge name in mutations.
 	EdgeJoinDomains = "join_domains"
+	// EdgeTrackingDomains holds the string denoting the tracking_domains edge name in mutations.
+	EdgeTrackingDomains = "tracking_domains"
 	// EdgeProviderLimiters holds the string denoting the provider_limiters edge name in mutations.
 	EdgeProviderLimiters = "provider_limiters"
 	// EdgeSendCapLimiters holds the string denoting the send_cap_limiters edge name in mutations.
@@ -234,6 +236,13 @@ const (
 	JoinDomainsInverseTable = "join_domains"
 	// JoinDomainsColumn is the table column denoting the join_domains relation/edge.
 	JoinDomainsColumn = "workspace_id"
+	// TrackingDomainsTable is the table that holds the tracking_domains relation/edge.
+	TrackingDomainsTable = "tracking_domains"
+	// TrackingDomainsInverseTable is the table name for the TrackingDomain entity.
+	// It exists in this package in order to avoid circular dependency with the "trackingdomain" package.
+	TrackingDomainsInverseTable = "tracking_domains"
+	// TrackingDomainsColumn is the table column denoting the tracking_domains relation/edge.
+	TrackingDomainsColumn = "workspace_id"
 	// ProviderLimitersTable is the table that holds the provider_limiters relation/edge.
 	ProviderLimitersTable = "provider_limiters"
 	// ProviderLimitersInverseTable is the table name for the ProviderLimiter entity.
@@ -825,6 +834,20 @@ func ByJoinDomains(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByTrackingDomainsCount orders the results by tracking_domains count.
+func ByTrackingDomainsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTrackingDomainsStep(), opts...)
+	}
+}
+
+// ByTrackingDomains orders the results by tracking_domains terms.
+func ByTrackingDomains(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTrackingDomainsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByProviderLimitersCount orders the results by provider_limiters count.
 func ByProviderLimitersCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1263,6 +1286,13 @@ func newJoinDomainsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(JoinDomainsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, JoinDomainsTable, JoinDomainsColumn),
+	)
+}
+func newTrackingDomainsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TrackingDomainsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TrackingDomainsTable, TrackingDomainsColumn),
 	)
 }
 func newProviderLimitersStep() *sqlgraph.Step {

@@ -17,42 +17,6 @@ model DnsRecord {
   value: string;
 }
 
-/** State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving` */
-enum TrackingState {
-  pending,
-  dns_verified,
-  serving,
-}
-
-/** Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038) */
-enum TrackingReason {
-  host_taken: "host_taken",
-}
-
-/** The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only; absent when the instance has no tracking target configured. */
-model TrackingRecord {
-  /** The record type (always CNAME) */
-  type: "CNAME";
-
-  /** The host to create the record at: "track." followed by the domain */
-  host: string;
-
-  /** The edge host the CNAME must point at */
-  target: string;
-
-  /** Where the Tracking domain stands */
-  state: TrackingState;
-
-  /** Why the domain is not advancing; absent when nothing holds it back */
-  reason?: TrackingReason;
-
-  /** When the Tracking domain was most recently checked (null = never) */
-  lastCheckedAt?: Timestamp | null;
-
-  /** When the state most recently changed (null = never) */
-  stateChangedAt?: Timestamp | null;
-}
-
 /**
  * Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the
  * DKIM TXT record. The private key is never returned. `verified` is re-checked in the
@@ -83,9 +47,6 @@ model SendingDomainResource {
   /** The suggested DMARC TXT record (advisory bulk-readiness signal) */
   dmarcRecord: DnsRecord;
 
-  /** The Tracking domain CNAME; absent when the instance has no tracking target configured */
-  trackingRecord?: TrackingRecord;
-
   /** When the DKIM DNS was most recently checked (null = never) */
   lastCheckedAt?: Timestamp | null;
 
@@ -95,7 +56,7 @@ model SendingDomainResource {
   /** When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or verified again since) */
   verificationLostAt?: Timestamp | null;
 
-  /** When the domain was archived; null while it is kept. An archived domain serves no Tracking domain host. */
+  /** When the domain was archived; null while it is kept. */
   archivedAt?: Timestamp | null;
 
   /** Creation timestamp */
@@ -191,7 +152,7 @@ interface SendingDomains {
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Archive a Sending domain: it leaves the list, serves no Tracking domain host and can be restored. Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends from it. */
+  /** Archive a Sending domain: it leaves the list and can be restored. Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends from it. */
   @action("archive")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])
@@ -204,7 +165,7 @@ interface SendingDomains {
     | NotFoundProblem
     | InUseProblem;
 
-  /** Restore an archived Sending domain. It starts a new DNS check and serves its Tracking domain host again only once that passes. Refused with 409 when the same domain was added again meanwhile. */
+  /** Restore an archived Sending domain. It starts a new DNS check. Refused with 409 when the same domain was added again meanwhile. */
   @action("unarchive")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])

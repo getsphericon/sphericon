@@ -67,28 +67,6 @@ func (SendingDomain) Fields() []ent.Field {
 		field.Time("verification_lost_at").
 			Optional().
 			Nillable(),
-		// The state of the Tracking domain record track.<domain> (ADR 0038): pending until
-		// a live DNS check finds the CNAME at the Instance's edge host (dns_verified, the
-		// edge may now provision), serving once an HTTPS probe of the host succeeds. Mail
-		// builds its links on the host only while serving. The host itself is derived.
-		field.Enum("tracking_state").
-			Values("pending", "dns_verified", "serving").
-			Default("pending"),
-		// When the Tracking domain was most recently checked (nil = never checked yet).
-		field.Time("tracking_checked_at").
-			Optional().
-			Nillable(),
-		// Why the Tracking domain is not advancing although its CNAME is right: host_taken
-		// means another Workspace holds the host (ADR 0038). Set by the verifier when the
-		// claim loses, cleared by the next check that does not lose.
-		field.Enum("tracking_reason").
-			Values("host_taken").
-			Optional().
-			Nillable(),
-		// When tracking_state most recently changed (nil = never changed).
-		field.Time("tracking_state_changed_at").
-			Optional().
-			Nillable(),
 	}
 }
 
@@ -101,14 +79,6 @@ func (SendingDomain) Indexes() []ent.Index {
 			Annotations(entsql.IndexWhere("discarded_at IS NULL")),
 		// Supports the workspace foreign key, which the partial unique index above cannot.
 		index.Fields("workspace_id"),
-		// A Tracking domain host (track.<domain>) belongs to one Workspace across the
-		// Instance (ADR 0038): the host is derived from the domain, so the domain is unique
-		// among kept rows whose DNS is verified: an archived domain serves no host (ADR 0049).
-		// Unverified claims never block anyone. The
-		// migration builds it CONCURRENTLY (ADR 0033); the diff cannot emit that.
-		index.Fields("domain").
-			Unique().
-			Annotations(entsql.IndexWhere("tracking_state IN ('dns_verified', 'serving') AND discarded_at IS NULL")),
 		// Lets the periodic re-check job find the least-recently-checked rows.
 		index.Fields("last_checked_at"),
 	}

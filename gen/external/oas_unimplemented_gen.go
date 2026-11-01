@@ -825,9 +825,8 @@ func (UnimplementedHandler) SendingDomainRatesList(ctx context.Context, params S
 
 // SendingDomainsArchive implements SendingDomains_archive operation.
 //
-// Archive a Sending domain: it leaves the list, serves no Tracking domain host and can be restored.
-// Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends
-// from it.
+// Archive a Sending domain: it leaves the list and can be restored. Refused with 409 (`usedBy`) while
+// a scheduled or sending Broadcast or an active Automation sends from it.
 //
 // POST /sending-domains/{id}/archive
 func (UnimplementedHandler) SendingDomainsArchive(ctx context.Context, params SendingDomainsArchiveParams) (r SendingDomainsArchiveRes, _ error) {
@@ -863,8 +862,8 @@ func (UnimplementedHandler) SendingDomainsList(ctx context.Context, params Sendi
 
 // SendingDomainsUnarchive implements SendingDomains_unarchive operation.
 //
-// Restore an archived Sending domain. It starts a new DNS check and serves its Tracking domain host
-// again only once that passes. Refused with 409 when the same domain was added again meanwhile.
+// Restore an archived Sending domain. It starts a new DNS check. Refused with 409 when the same domain
+// was added again meanwhile.
 //
 // POST /sending-domains/{id}/unarchive
 func (UnimplementedHandler) SendingDomainsUnarchive(ctx context.Context, params SendingDomainsUnarchiveParams) (r SendingDomainsUnarchiveRes, _ error) {
@@ -989,6 +988,51 @@ func (UnimplementedHandler) TemplatesList(ctx context.Context, params TemplatesL
 //
 // PUT /templates/{id}
 func (UnimplementedHandler) TemplatesUpdate(ctx context.Context, req *UpdateTemplateInput, params TemplatesUpdateParams) (r TemplatesUpdateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// TrackingDomainsList implements TrackingDomains_list operation.
+//
+// List the Workspace's Tracking domains: the current one, the replacement, then the retired ones.
+// Empty while the Instance offers none.
+//
+// GET /tracking-domains
+func (UnimplementedHandler) TrackingDomainsList(ctx context.Context) (r TrackingDomainsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// TrackingDomainsRemove implements TrackingDomains_remove operation.
+//
+// Remove a Tracking domain by its role. The current one stops being used: it is retired when it served
+// (links already sent on it keep working while its CNAME points at the edge), deleted otherwise, and a
+// replacement becomes current. A replacement is cancelled. A retired one is forgotten: links sent on
+// it stop working.
+//
+// DELETE /tracking-domains/{id}
+func (UnimplementedHandler) TrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) (r TrackingDomainsRemoveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// TrackingDomainsSet implements TrackingDomains_set operation.
+//
+// Set the Workspace's Tracking domain. With none it becomes the current one. While the current one
+// serves it becomes the replacement (discarding a pending one) and takes over once it serves. When the
+// current one does not serve, the new one replaces it at once. A host the Workspace already uses is
+// returned as it is; a retired one is brought back. An invalid host or one of the Instance's own is
+// 422; 404 when the Instance offers no Tracking domains.
+//
+// POST /tracking-domains
+func (UnimplementedHandler) TrackingDomainsSet(ctx context.Context, req *SetTrackingDomainInput) (r TrackingDomainsSetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// TrackingDomainsVerify implements TrackingDomains_verify operation.
+//
+// Check the host now and answer once the check is done: the Tracking domain as it left it. A
+// replacement that reaches `serving` becomes current. Verification is never set by the caller.
+//
+// POST /tracking-domains/{id}/verify
+func (UnimplementedHandler) TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (r TrackingDomainsVerifyRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

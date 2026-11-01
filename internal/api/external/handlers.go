@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
+	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -37,28 +38,29 @@ var mapper = &resources.ConverterImpl{}
 var inputs = &resources.InputsImpl{}
 
 type Handlers struct {
-	accounts       *accounts.Accounts
-	bus            *events.Bus
-	eventlog       *eventlog.Module
-	outbound       *outbound.Module
-	segments       *segments.Module
-	webhooks       *webhooks.Module
-	integrations   *integrations.Module
-	captured       *capturedmessages.Module
-	sendingDomains *sendingdomains.Module
-	broadcasts     *broadcasts.Module
-	reputation     *reputation.Module
-	contacts       *contacts.Module
-	erasure        *erasure.Module
-	tags           *tags.Module
-	templates      *templates.Module
-	transactional  *transactional.Module
-	brandKit       *brandkit.Module
-	automations    *automations.Module
-	rules          *rules.Module
-	bootstrapToken string
-	audit          AuditLog
-	export         ExportStreams
+	accounts        *accounts.Accounts
+	bus             *events.Bus
+	eventlog        *eventlog.Module
+	outbound        *outbound.Module
+	segments        *segments.Module
+	webhooks        *webhooks.Module
+	integrations    *integrations.Module
+	captured        *capturedmessages.Module
+	sendingDomains  *sendingdomains.Module
+	trackingDomains *trackingdomains.Module
+	broadcasts      *broadcasts.Module
+	reputation      *reputation.Module
+	contacts        *contacts.Module
+	erasure         *erasure.Module
+	tags            *tags.Module
+	templates       *templates.Module
+	transactional   *transactional.Module
+	brandKit        *brandkit.Module
+	automations     *automations.Module
+	rules           *rules.Module
+	bootstrapToken  string
+	audit           AuditLog
+	export          ExportStreams
 }
 
 // AuditLog is the read seam of the Enterprise Audit log (ADR 0022), implemented by
@@ -89,6 +91,7 @@ type Deps struct {
 	// CapturedMessages is the store of what the Workspace's Test inbox kept.
 	CapturedMessages *capturedmessages.Module
 	SendingDomains   *sendingdomains.Module
+	TrackingDomains  *trackingdomains.Module
 	Outbound         *outbound.Module
 	Segments         *segments.Module
 	EventLog         *eventlog.Module
@@ -112,7 +115,7 @@ type Deps struct {
 
 func NewHandlers(d Deps) *Handlers {
 	return &Handlers{
-		accounts: d.Accounts, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, outbound: d.Outbound, segments: d.Segments,
+		accounts: d.Accounts, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
 		eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
 		audit: d.Audit, export: d.Export,

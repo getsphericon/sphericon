@@ -48,6 +48,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
@@ -75,6 +76,7 @@ type WorkspaceQuery struct {
 	withIntegrations        *IntegrationQuery
 	withSendingDomains      *SendingDomainQuery
 	withJoinDomains         *JoinDomainQuery
+	withTrackingDomains     *TrackingDomainQuery
 	withProviderLimiters    *ProviderLimiterQuery
 	withSendCapLimiters     *SendCapLimiterQuery
 	withHolds               *HoldQuery
@@ -416,6 +418,28 @@ func (_q *WorkspaceQuery) QueryJoinDomains() *JoinDomainQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(joindomain.Table, joindomain.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.JoinDomainsTable, workspace.JoinDomainsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTrackingDomains chains the current query on the "tracking_domains" edge.
+func (_q *WorkspaceQuery) QueryTrackingDomains() *TrackingDomainQuery {
+	query := (&TrackingDomainClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(trackingdomain.Table, trackingdomain.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.TrackingDomainsTable, workspace.TrackingDomainsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1178,6 +1202,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withIntegrations:        _q.withIntegrations.Clone(),
 		withSendingDomains:      _q.withSendingDomains.Clone(),
 		withJoinDomains:         _q.withJoinDomains.Clone(),
+		withTrackingDomains:     _q.withTrackingDomains.Clone(),
 		withProviderLimiters:    _q.withProviderLimiters.Clone(),
 		withSendCapLimiters:     _q.withSendCapLimiters.Clone(),
 		withHolds:               _q.withHolds.Clone(),
@@ -1350,6 +1375,17 @@ func (_q *WorkspaceQuery) WithJoinDomains(opts ...func(*JoinDomainQuery)) *Works
 		opt(query)
 	}
 	_q.withJoinDomains = query
+	return _q
+}
+
+// WithTrackingDomains tells the query-builder to eager-load the nodes that are connected to
+// the "tracking_domains" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithTrackingDomains(opts ...func(*TrackingDomainQuery)) *WorkspaceQuery {
+	query := (&TrackingDomainClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withTrackingDomains = query
 	return _q
 }
 
@@ -1706,7 +1742,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [38]bool{
+		loadedTypes = [39]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -1720,6 +1756,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withIntegrations != nil,
 			_q.withSendingDomains != nil,
 			_q.withJoinDomains != nil,
+			_q.withTrackingDomains != nil,
 			_q.withProviderLimiters != nil,
 			_q.withSendCapLimiters != nil,
 			_q.withHolds != nil,
@@ -1856,6 +1893,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadJoinDomains(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.JoinDomains = []*JoinDomain{} },
 			func(n *Workspace, e *JoinDomain) { n.Edges.JoinDomains = append(n.Edges.JoinDomains, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withTrackingDomains; query != nil {
+		if err := _q.loadTrackingDomains(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.TrackingDomains = []*TrackingDomain{} },
+			func(n *Workspace, e *TrackingDomain) { n.Edges.TrackingDomains = append(n.Edges.TrackingDomains, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -2418,6 +2462,36 @@ func (_q *WorkspaceQuery) loadJoinDomains(ctx context.Context, query *JoinDomain
 	}
 	query.Where(predicate.JoinDomain(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.JoinDomainsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadTrackingDomains(ctx context.Context, query *TrackingDomainQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *TrackingDomain)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(trackingdomain.FieldWorkspaceID)
+	}
+	query.Where(predicate.TrackingDomain(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.TrackingDomainsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

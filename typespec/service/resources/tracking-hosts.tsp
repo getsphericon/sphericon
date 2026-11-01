@@ -8,17 +8,18 @@ enum ServiceTrackingHostState {
   /** The host's CNAME reaches the edge: the edge may provision a certificate for it */
   dnsVerified: "dns_verified",
 
-  /** The host answers over HTTPS: mail builds its links on it */
+  /** The host answers over HTTPS: the Workspace's mail and tracker may use it */
   serving: "serving",
 
   /** The host left dns_verified and serving: tear it down. A host leaves when its record
-   * stops resolving or when its Sending domain is deleted or renamed. */
+   * stops resolving or when its Tracking domain goes (removed before it served, cancelled,
+   * forgotten, or retired and its CNAME gone, ADR 0071). A retired host is still served. */
   removed: "removed",
 }
 
 /** One change of a Tracking domain host */
 model ServiceTrackingHostChange {
-  /** The host, `track.<Sending domain>` */
+  /** The Tracking domain's host */
   host: string;
 
   /** The Workspace that held the host at this change */

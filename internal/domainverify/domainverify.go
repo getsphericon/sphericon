@@ -1,8 +1,6 @@
-// Package domainverify is the module behind the Sending domain verification jobs (ADR 0010,
-// ADR 0038): the live DKIM check and what it decides (the verified moments, the loss of
-// verification, the Owners' notice of it), and the Tracking domain check and what it decides
-// (a host another Workspace holds, a stale answer, a state that went back a step and its
-// notice). The jobs only pick which domains are due and call it.
+// Package domainverify is the module behind the Sending domain verification jobs (ADR 0010): the
+// live DKIM check and what it decides (the verified moments, the loss of verification, the
+// Owners' notice of it). The jobs only pick which domains are due and call it.
 //
 // It reads a Sending domain by id to learn its Workspace, before any scope exists, so it holds
 // the raw client (the same shape as internal/joindomains). Every write goes through the
@@ -11,7 +9,6 @@ package domainverify
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"net"
 	"strings"
@@ -25,32 +22,25 @@ import (
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/joindomains"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/sending"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/trackingdomain"
-	"github.com/getsphericon/sphericon/internal/trackinghostlog"
 )
 
-// Module checks Sending domains. tracking is nil while the Tracking domain feature is off.
+// Module checks Sending domains.
 type Module struct {
-	client   *ent.Client
-	lookup   sending.TXTLookup
-	tracking *trackingdomain.Verifier
-	notify   ownernotice.Notify
+	client *ent.Client
+	lookup sending.TXTLookup
+	notify ownernotice.Notify
 }
 
-func New(client *ent.Client, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, notify ownernotice.Notify) *Module {
-	return &Module{client: client, lookup: lookup, tracking: tracking, notify: notify}
+func New(client *ent.Client, lookup sending.TXTLookup, notify ownernotice.Notify) *Module {
+	return &Module{client: client, lookup: lookup, notify: notify}
 }
 
-// Verify runs both checks of one Sending domain. The Tracking domain check is independent of
-// DKIM: a DKIM lookup error is returned (the job retries) but never skips it.
+// Verify checks one Sending domain's DKIM; a lookup error is returned so the job retries.
 func (m *Module) Verify(ctx context.Context, id int64) error {
-	_, dkimErr := m.VerifyDKIM(ctx, id)
-	trackErr := m.VerifyTracking(ctx, id)
-	return errors.Join(dkimErr, trackErr)
+	_, err := m.VerifyDKIM(ctx, id)
+	return err
 }
 
 // VerifyDKIM re-checks a domain's DKIM DNS and persists the result: last_checked_at,
@@ -107,51 +97,6 @@ func (m *Module) notifyUnverified(ctx context.Context, dom *ent.SendingDomain) {
 	m.notify.TellBestEffort(ctx, dom.WorkspaceID, ownernotice.Notice{Subject: i18n.EmailSendingDomainUnverifiedSubject, Body: i18n.EmailSendingDomainUnverifiedBody}, data, "sending_domain_id", dom.ID)
 }
 
-// VerifyTracking re-checks a Sending domain's Tracking domain (the CNAME, then the HTTPS
-// probe) and stores the state (ADR 0038). No verifier (the feature is off) does nothing. A host
-// another Workspace already holds leaves this claim pending and is not an error: retrying
-// cannot change it. Neither is a state another check changed first
-// (lifecycle.ErrInvalidTransition): the stale answer is dropped. A host that was dns_verified
-// or serving and went back a step notifies the Workspace's Owners, best-effort; every change
-// publishes its domain event inside the check.
-func (m *Module) VerifyTracking(ctx context.Context, id int64) error {
-	if m.tracking == nil {
-		return nil
-	}
-	dom, err := m.client.SendingDomain.Get(ctx, id)
-	if err != nil {
-		return err
-	}
-	next, err := m.tracking.Check(ctx, m.client.Scoped(dom.WorkspaceID), id)
-	if errors.Is(err, trackingdomain.ErrHostTaken) {
-		slog.InfoContext(ctx, "tracking host held by another workspace",
-			"sending_domain_id", id, "workspace_id", dom.WorkspaceID, "domain", dom.Domain)
-		return nil
-	}
-	if errors.Is(err, lifecycle.ErrInvalidTransition) {
-		// Another check moved the row after this one read it: this answer is stale, and
-		// the check that won stored a fresher one. Retrying would only repeat the lookup.
-		slog.InfoContext(ctx, "tracking state changed during the check",
-			"sending_domain_id", id, "workspace_id", dom.WorkspaceID, "domain", dom.Domain)
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	if trackingRank(next) < trackingRank(dom.TrackingState) {
-		m.notifyRegressed(ctx, dom, next)
-	}
-	return nil
-}
-
-func (m *Module) notifyRegressed(ctx context.Context, dom *ent.SendingDomain, next sendingdomain.TrackingState) {
-	data := map[string]any{
-		"Host": sendingdomains.TrackingHost(dom.Domain), "Domain": dom.Domain,
-		"From": dom.TrackingState, "To": next, "Target": m.tracking.Target,
-	}
-	m.notify.TellBestEffort(ctx, dom.WorkspaceID, ownernotice.Notice{Subject: i18n.EmailTrackingDomainRegressedSubject, Body: i18n.EmailTrackingDomainRegressedBody}, data, "sending_domain_id", dom.ID)
-}
-
 // Due returns up to limit ids of the Sending domains whose DKIM is to be re-checked,
 // least-recently-checked first with NULLS FIRST: a freshly added, never-checked domain is
 // verified soonest rather than starved behind already-checked ones (plain ASC sorts NULLs
@@ -162,29 +107,6 @@ func (m *Module) Due(ctx context.Context, limit int) ([]int64, error) {
 		Order(sendingdomain.ByLastCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst())).
 		Limit(limit).
 		IDs(ctx)
-}
-
-// TrackingDue returns every Sending domain whose Tracking domain is dns_verified or serving,
-// so a host that stops answering is demoted within one tick. An archived Sending domain is
-// skipped, a named exception to ADR 0049's rule that job entry points include discarded rows:
-// it serves nothing to demote. There is no batch limit and no DKIM dependency: a pending
-// Tracking domain is only checked when its owner clicks Verify.
-func (m *Module) TrackingDue(ctx context.Context) ([]int64, error) {
-	return m.client.SendingDomain.Query().
-		Where(trackinghostlog.Serving()).
-		IDs(ctx)
-}
-
-// trackingRank orders the states from least to most verified.
-func trackingRank(s sendingdomain.TrackingState) int {
-	switch s {
-	case sendingdomain.TrackingStateServing:
-		return 2
-	case sendingdomain.TrackingStateDNSVerified:
-		return 1
-	default:
-		return 0
-	}
 }
 
 // recordDomain is the domain a proof record's name belongs to: a DKIM record

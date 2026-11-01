@@ -28,12 +28,14 @@ export const zApiTokenScope = z.enum([
   'webhooks:test',
   'custom_fields:read',
   'sending_domains:read',
+  'tracking_domains:read',
   'integrations:read',
   'emails:send',
   'broadcasts:send',
   'automations:publish',
   'mcp:send',
   'sending_domains:write',
+  'tracking_domains:write',
   'integrations:write',
   'contacts:erase',
   'captured_messages:read',
@@ -156,6 +158,7 @@ export const zGrantableScope = z.enum([
   'webhooks:test',
   'custom_fields:read',
   'sending_domains:read',
+  'tracking_domains:read',
   'integrations:read'
 ]);
 
@@ -245,6 +248,7 @@ export const zPermission = z.enum([
   'revenue:configure',
   'brand_kit:manage',
   'join_domains:manage',
+  'tracking_domains:manage',
   'holds:resolve',
   'account_link:open',
   'workspace:delete',
@@ -281,12 +285,14 @@ export const zPersonalScope = z.enum([
   'webhooks:test',
   'custom_fields:read',
   'sending_domains:read',
+  'tracking_domains:read',
   'integrations:read',
   'emails:send',
   'broadcasts:send',
   'automations:publish',
   'mcp:send',
   'sending_domains:write',
+  'tracking_domains:write',
   'integrations:write'
 ]);
 
@@ -361,12 +367,24 @@ export const zSesConfigInput = z.object({
 });
 
 /**
+ * Set the Workspace's Tracking domain
+ */
+export const zSetTrackingDomainInput = z.object({
+  host: z.string()
+});
+
+/**
  * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
- * authenticates, the Integrations and the provider credentials they hold). An OAuth client
+ * authenticates, the Tracking domain its links are on, the Integrations and the provider
+ * credentials they hold). An OAuth client
  * gets them only when it asked for them and the user ticks a box of their own for them,
  * apart from the send class: they are no send-class scope and bring no mcp:send.
  */
-export const zSetupScope = z.enum(['sending_domains:write', 'integrations:write']);
+export const zSetupScope = z.enum([
+  'sending_domains:write',
+  'tracking_domains:write',
+  'integrations:write'
+]);
 
 /**
  * A Sign-up item's key: its address, and the last segment of its Legal document's public page
@@ -729,6 +747,15 @@ export const zSiteCapturedMessageSurface = z.enum([
   'transactional',
   'test'
 ]);
+
+/**
+ * The CNAME record to publish: `host` must point at `target`
+ */
+export const zSiteCnameRecord = z.object({
+  type: z.enum(['CNAME']),
+  host: z.string(),
+  target: z.string()
+});
 
 /**
  * How a condition group combines its entries
@@ -1950,12 +1977,23 @@ export const zSiteTestSendBroadcastResult = z.object({
 });
 
 /**
+ * What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the
+ * snippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only
+ * the links already sent and the snippet already installed on it, until its CNAME leaves the edge
+ */
+export const zSiteTrackingDomainRole = z.enum([
+  'current',
+  'replacement',
+  'retired'
+]);
+
+/**
  * Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
  */
 export const zSiteTrackingReason = z.enum(['host_taken']);
 
 /**
- * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving`
+ * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers
  */
 export const zSiteTrackingState = z.enum([
   'pending',
@@ -2834,6 +2872,28 @@ export const zSiteRuleFiringResource = z.object({
 });
 
 /**
+ * Sending domain resource used by the site UI (ADR 0010). sphericon generates the
+ * DKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The
+ * private key is never exposed. `verified` is re-checked in the background:
+ * the domain loses it (`verificationLostAt`) if the DNS record disappears.
+ */
+export const zSiteSendingDomainResource = z.object({
+  id: zEntityId,
+  domain: z.string(),
+  dkimSelector: z.string(),
+  verified: z.boolean(),
+  dkimRecord: zSiteDnsRecord,
+  spfRecord: zSiteDnsRecord,
+  dmarcRecord: zSiteDnsRecord,
+  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
+  verifiedAt: z.exactOptional(zTimestamp.nullable()),
+  verificationLostAt: z.exactOptional(zTimestamp.nullable()),
+  archivedAt: z.exactOptional(zTimestamp.nullable()),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
  * A suppressed destination: the send path skips it on every surface
  */
 export const zSiteSuppressionResource = z.object({
@@ -2856,37 +2916,18 @@ export const zSiteTagResource = z.object({
 });
 
 /**
- * The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only; absent when the instance has no tracking target configured.
+ * A Tracking domain of the Workspace (ADR 0071): a host of its own on which the links of its mail and the first-party tracker are served
  */
-export const zSiteTrackingRecord = z.object({
-  type: z.enum(['CNAME']),
+export const zSiteTrackingDomainResource = z.object({
+  id: zEntityId,
   host: z.string(),
-  target: z.string(),
+  role: zSiteTrackingDomainRole,
   state: zSiteTrackingState,
   reason: z.exactOptional(zSiteTrackingReason),
+  record: zSiteCnameRecord,
+  servedAt: z.exactOptional(zTimestamp.nullable()),
   lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
-  stateChangedAt: z.exactOptional(zTimestamp.nullable())
-});
-
-/**
- * Sending domain resource used by the site UI (ADR 0010). sphericon generates the
- * DKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The
- * private key is never exposed. `verified` is re-checked in the background:
- * the domain loses it (`verificationLostAt`) if the DNS record disappears.
- */
-export const zSiteSendingDomainResource = z.object({
-  id: zEntityId,
-  domain: z.string(),
-  dkimSelector: z.string(),
-  verified: z.boolean(),
-  dkimRecord: zSiteDnsRecord,
-  spfRecord: zSiteDnsRecord,
-  dmarcRecord: zSiteDnsRecord,
-  trackingRecord: z.exactOptional(zSiteTrackingRecord),
-  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
-  verifiedAt: z.exactOptional(zTimestamp.nullable()),
-  verificationLostAt: z.exactOptional(zTimestamp.nullable()),
-  archivedAt: z.exactOptional(zTimestamp.nullable()),
+  stateChangedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3160,6 +3201,7 @@ export const zSiteWorkspaceResource = z.object({
   supportEmail: z.exactOptional(z.string().nullable()),
   mcpUrl: z.string(),
   trackerUrl: z.string(),
+  trackingTarget: z.exactOptional(z.string()),
   holds: z.array(zSiteWorkspaceHold),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
@@ -5432,6 +5474,46 @@ export const zSiteTokensUpdatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteTokensUpdateResponse = zSiteApiTokenResource;
+
+export const zSiteTrackingDomainsListPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteTrackingDomainsListResponse = z.array(zSiteTrackingDomainResource);
+
+export const zSiteTrackingDomainsSetBody = zSetTrackingDomainInput;
+
+export const zSiteTrackingDomainsSetPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteTrackingDomainsSetResponse = zSiteTrackingDomainResource;
+
+export const zSiteTrackingDomainsRemovePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteTrackingDomainsRemoveResponse = z.void();
+
+export const zSiteTrackingDomainsVerifyPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteTrackingDomainsVerifyResponse = zSiteTrackingDomainResource;
 
 export const zSiteTransactionalEmailsListPath = z.object({
   workspaceId: zWorkspaceId

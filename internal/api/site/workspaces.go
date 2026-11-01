@@ -51,6 +51,9 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	}
 	r.McpUrl = h.origins.MCP
 	r.TrackerUrl = h.origins.Tracker
+	if target := h.trackingDomains.Target(); target != "" {
+		r.TrackingTarget = siteapi.NewOptString(target)
+	}
 	held := accounts.Permissions(m.Role)
 	r.Permissions = mapper.PermissionsToResources(held)
 	r.AccountLinkAvailable = h.accountLink != nil && slices.Contains(held, accounts.PermAccountLinkOpen)

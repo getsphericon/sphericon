@@ -1089,9 +1089,8 @@ type Invoker interface {
 	SiteSegmentsUpdate(ctx context.Context, request *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (SiteSegmentsUpdateRes, error)
 	// SiteSendingDomainsArchive invokes SiteSendingDomains_archive operation.
 	//
-	// Archive a sending domain: it leaves the list, serves no Tracking domain host and can be restored.
-	// Refused with 409 while a scheduled or sending broadcast or an active automation sends from it.
-	// Owners and admins only.
+	// Archive a sending domain: it leaves the list and can be restored. Refused with 409 while a scheduled
+	// or sending broadcast or an active automation sends from it. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/archive
 	SiteSendingDomainsArchive(ctx context.Context, params SiteSendingDomainsArchiveParams) (SiteSendingDomainsArchiveRes, error)
@@ -1115,9 +1114,8 @@ type Invoker interface {
 	SiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (SiteSendingDomainsListRes, error)
 	// SiteSendingDomainsUnarchive invokes SiteSendingDomains_unarchive operation.
 	//
-	// Restore an archived sending domain. It starts a new DNS check and serves its Tracking domain host
-	// again only once that passes. Refused with 409 when the same domain was added again meanwhile. Owners
-	// and admins only.
+	// Restore an archived sending domain. It starts a new DNS check. Refused with 409 when the same domain
+	// was added again meanwhile. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/unarchive
 	SiteSendingDomainsUnarchive(ctx context.Context, params SiteSendingDomainsUnarchiveParams) (SiteSendingDomainsUnarchiveRes, error)
@@ -1248,6 +1246,39 @@ type Invoker interface {
 	//
 	// PUT /workspaces/{workspaceId}/tokens/{id}
 	SiteTokensUpdate(ctx context.Context, request *SiteUpdateTokenInput, params SiteTokensUpdateParams) (SiteTokensUpdateRes, error)
+	// SiteTrackingDomainsList invokes SiteTrackingDomains_list operation.
+	//
+	// List the Workspace's Tracking domains: the current one, the replacement, then the retired ones.
+	// Empty while the Instance offers none.
+	//
+	// GET /workspaces/{workspaceId}/tracking-domains
+	SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (SiteTrackingDomainsListRes, error)
+	// SiteTrackingDomainsRemove invokes SiteTrackingDomains_remove operation.
+	//
+	// Remove a Tracking domain by its role (owner and admin only). The current one stops being used: it is
+	// retired when it served (links already sent on it keep working while its CNAME points at the edge),
+	// deleted otherwise, and a replacement becomes current. A replacement is cancelled. A retired one is
+	// forgotten: links sent on it stop working.
+	//
+	// DELETE /workspaces/{workspaceId}/tracking-domains/{id}
+	SiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) (SiteTrackingDomainsRemoveRes, error)
+	// SiteTrackingDomainsSet invokes SiteTrackingDomains_set operation.
+	//
+	// Set the Workspace's Tracking domain (owner and admin only). With none it becomes the current one.
+	// While the current one serves it becomes the replacement (discarding a pending one) and takes over
+	// once it serves. When the current one does not serve, the new one replaces it at once. A host the
+	// Workspace already uses is returned as it is; a retired one is brought back. An invalid host or one
+	// of the Instance's own is 422; 404 when the Instance offers no Tracking domains.
+	//
+	// POST /workspaces/{workspaceId}/tracking-domains
+	SiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (SiteTrackingDomainsSetRes, error)
+	// SiteTrackingDomainsVerify invokes SiteTrackingDomains_verify operation.
+	//
+	// Check the host now (owner and admin only) and answer once the check is done: the Tracking domain as
+	// it left it. A replacement that reaches `serving` becomes current.
+	//
+	// POST /workspaces/{workspaceId}/tracking-domains/{id}/verify
+	SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (SiteTrackingDomainsVerifyRes, error)
 	// SiteTransactionalEmailsList invokes SiteTransactionalEmails_list operation.
 	//
 	// List transactional sends, most recent first.
@@ -22777,9 +22808,8 @@ func (c *Client) sendSiteSegmentsUpdate(ctx context.Context, request *SiteUpdate
 
 // SiteSendingDomainsArchive invokes SiteSendingDomains_archive operation.
 //
-// Archive a sending domain: it leaves the list, serves no Tracking domain host and can be restored.
-// Refused with 409 while a scheduled or sending broadcast or an active automation sends from it.
-// Owners and admins only.
+// Archive a sending domain: it leaves the list and can be restored. Refused with 409 while a scheduled
+// or sending broadcast or an active automation sends from it. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/archive
 func (c *Client) SiteSendingDomainsArchive(ctx context.Context, params SiteSendingDomainsArchiveParams) (SiteSendingDomainsArchiveRes, error) {
@@ -23420,9 +23450,8 @@ func (c *Client) sendSiteSendingDomainsList(ctx context.Context, params SiteSend
 
 // SiteSendingDomainsUnarchive invokes SiteSendingDomains_unarchive operation.
 //
-// Restore an archived sending domain. It starts a new DNS check and serves its Tracking domain host
-// again only once that passes. Refused with 409 when the same domain was added again meanwhile. Owners
-// and admins only.
+// Restore an archived sending domain. It starts a new DNS check. Refused with 409 when the same domain
+// was added again meanwhile. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/unarchive
 func (c *Client) SiteSendingDomainsUnarchive(ctx context.Context, params SiteSendingDomainsUnarchiveParams) (SiteSendingDomainsUnarchiveRes, error) {
@@ -26698,6 +26727,601 @@ func (c *Client) sendSiteTokensUpdate(ctx context.Context, request *SiteUpdateTo
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteTokensUpdateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteTrackingDomainsList invokes SiteTrackingDomains_list operation.
+//
+// List the Workspace's Tracking domains: the current one, the replacement, then the retired ones.
+// Empty while the Instance offers none.
+//
+// GET /workspaces/{workspaceId}/tracking-domains
+func (c *Client) SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (SiteTrackingDomainsListRes, error) {
+	res, err := c.sendSiteTrackingDomainsList(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (res SiteTrackingDomainsListRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteTrackingDomains_list"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/tracking-domains"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteTrackingDomainsListOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/tracking-domains"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteTrackingDomainsListOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteTrackingDomainsListResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteTrackingDomainsRemove invokes SiteTrackingDomains_remove operation.
+//
+// Remove a Tracking domain by its role (owner and admin only). The current one stops being used: it is
+// retired when it served (links already sent on it keep working while its CNAME points at the edge),
+// deleted otherwise, and a replacement becomes current. A replacement is cancelled. A retired one is
+// forgotten: links sent on it stop working.
+//
+// DELETE /workspaces/{workspaceId}/tracking-domains/{id}
+func (c *Client) SiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) (SiteTrackingDomainsRemoveRes, error) {
+	res, err := c.sendSiteTrackingDomainsRemove(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) (res SiteTrackingDomainsRemoveRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteTrackingDomains_remove"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/tracking-domains/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteTrackingDomainsRemoveOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [4]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/tracking-domains/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteTrackingDomainsRemoveOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteTrackingDomainsRemoveResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteTrackingDomainsSet invokes SiteTrackingDomains_set operation.
+//
+// Set the Workspace's Tracking domain (owner and admin only). With none it becomes the current one.
+// While the current one serves it becomes the replacement (discarding a pending one) and takes over
+// once it serves. When the current one does not serve, the new one replaces it at once. A host the
+// Workspace already uses is returned as it is; a retired one is brought back. An invalid host or one
+// of the Instance's own is 422; 404 when the Instance offers no Tracking domains.
+//
+// POST /workspaces/{workspaceId}/tracking-domains
+func (c *Client) SiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (SiteTrackingDomainsSetRes, error) {
+	res, err := c.sendSiteTrackingDomainsSet(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (res SiteTrackingDomainsSetRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteTrackingDomains_set"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/tracking-domains"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteTrackingDomainsSetOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/tracking-domains"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteTrackingDomainsSetRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteTrackingDomainsSetOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteTrackingDomainsSetResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteTrackingDomainsVerify invokes SiteTrackingDomains_verify operation.
+//
+// Check the host now (owner and admin only) and answer once the check is done: the Tracking domain as
+// it left it. A replacement that reaches `serving` becomes current.
+//
+// POST /workspaces/{workspaceId}/tracking-domains/{id}/verify
+func (c *Client) SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (SiteTrackingDomainsVerifyRes, error) {
+	res, err := c.sendSiteTrackingDomainsVerify(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (res SiteTrackingDomainsVerifyRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteTrackingDomains_verify"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/tracking-domains/{id}/verify"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteTrackingDomainsVerifyOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/tracking-domains/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/verify"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteTrackingDomainsVerifyOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteTrackingDomainsVerifyResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

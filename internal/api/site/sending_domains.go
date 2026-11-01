@@ -16,9 +16,6 @@ func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) siteapi.SiteSendi
 	res.DkimRecord = mapper.DnsRecordToResource(rec.DKIM)
 	res.SpfRecord = mapper.DnsRecordToResource(rec.SPF)
 	res.DmarcRecord = mapper.DnsRecordToResource(rec.DMARC)
-	if rec.Tracking != nil {
-		res.TrackingRecord = siteapi.NewOptSiteTrackingRecord(mapper.TrackingRecordToResource(*rec.Tracking))
-	}
 	return res
 }
 
@@ -56,8 +53,8 @@ func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.Sit
 	return &res, nil
 }
 
-// SiteSendingDomainsArchive archives a sending domain (ADR 0049): it leaves the list and serves
-// no Tracking domain host. Live sends from it refuse it with 409.
+// SiteSendingDomainsArchive archives a sending domain (ADR 0049): it leaves the list. Live sends
+// from it refuse it with 409.
 func (h *Handlers) SiteSendingDomainsArchive(ctx context.Context, params siteapi.SiteSendingDomainsArchiveParams) (siteapi.SiteSendingDomainsArchiveRes, error) {
 	s := workspaceScope(ctx)
 

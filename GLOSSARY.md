@@ -557,11 +557,15 @@ Outbound message holds none), expires with the Test inbox's retention and is nev
 _Avoid_: Inbox message, email log
 
 **Tracking domain**:
-The hostname `track.<sending domain>`, a CNAME to the Instance's edge, under which the links in mail
-sent from that Sending domain (click, open, unsubscribe, confirm) are built, so recipients see the
-sender's own domain. Set up with the Sending domain's DNS records but verified on its own; it serves
-only those link paths and the first-party tracker (`/t.js`, `/collect`, for its own Workspace's collect
-key, ADR 0059), and until it is serving, new mail uses the Instance's own host.
+A hostname of the Workspace's own choosing (e.g. `t.example.com`), a CNAME to the Instance's edge,
+on which the Workspace's tracking is served instead of the Instance's host once it serves: the links
+in its mail (open, click, unsubscribe, confirm) and the first-party tracker, for its own collect key
+only. A Workspace uses at most one; it belongs to the Workspace, not to a Sending domain, so a
+Workspace that sends no mail can have one. Another host is another Tracking domain: a replacement
+takes over only once it serves, and the one it replaces, or one removed, is **retired**: it serves
+no new mail or snippet but keeps serving the links already sent and the snippet already installed
+on it, and no other Workspace can take its host, until its CNAME no longer points at the
+Instance's edge or the Owner forgets it.
 _Avoid_: Click domain, link domain, custom domain (unqualified)
 
 **Sending domain**:

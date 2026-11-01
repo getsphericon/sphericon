@@ -10,20 +10,24 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/trackingdomains"
 )
 
 const linkHTML = `<p><a href="https://example.com/offer">Offer</a></p>`
 
-// sendFrom sends one tracked marketing message from a Sending domain and returns it as built.
-func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outbound.Module, key, domain string) messaging.EmailMessage {
+// sendFrom sends one tracked marketing message of the Workspace from its Sending domain and
+// returns it as built.
+func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outbound.Module, ws int64, key, domain string) messaging.EmailMessage {
 	t.Helper()
-	res, err := m.Send(context.Background(), env.DB.Scoped(fixtures.UmbrellaID), outbound.Request{
+	res, err := m.Send(context.Background(), env.DB.Scoped(ws), outbound.Request{
 		Kind:        outboundmessage.KindBroadcast,
 		Key:         key,
 		Destination: "reader@example.com",
@@ -43,11 +47,19 @@ func tracked(env *testhelper.TestEnv, opts ...outbound.Option) *outbound.Module 
 	return outbound.New(env.Bus, env.Holds, senders{sender: env.CustomerMail}, tracking.New("test-secret", "http://local"), opts...)
 }
 
+// trackingDomains is the option the composition root passes while the Instance offers Tracking
+// domains.
+func trackingDomains(env *testhelper.TestEnv) outbound.Option {
+	return outbound.WithTrackingDomains(trackingdomains.New(env.DB, env.Bus, nil, trackingdomains.Config{}))
+}
+
+// Every link of a Workspace whose current Tracking domain serves is on it, whatever the
+// From domain (ADR 0071).
 func TestServingTrackingDomainCarriesEveryLink(t *testing.T) {
 	env := testhelper.Setup(t)
-	msg := sendFrom(t, env, tracked(env, outbound.WithTrackingDomains()), "th:serving", fixtures.SendingDomainTrackingServingDomain)
+	msg := sendFrom(t, env, tracked(env, trackingDomains(env)), fixtures.UmbrellaID, "th:serving", fixtures.SendingDomainUmbrellaDomain)
 
-	host := "https://track." + fixtures.SendingDomainTrackingServingDomain
+	host := "https://" + fixtures.TrackingDomainServingHost
 	assert.Contains(t, msg.HTML, host+"/e/c/", "click link")
 	assert.Contains(t, msg.HTML, host+"/e/o/", "open pixel")
 	assert.Contains(t, msg.HTML, host+"/e/u/", "unsubscribe footer")
@@ -58,31 +70,22 @@ func TestServingTrackingDomainCarriesEveryLink(t *testing.T) {
 func TestNonServingOrDisabledTrackingUsesInstanceHost(t *testing.T) {
 	env := testhelper.Setup(t)
 	cases := []struct {
-		name   string
-		domain string
-		opts   []outbound.Option
+		name string
+		ws   int64
+		opts []outbound.Option
 	}{
-		{"dns verified", fixtures.SendingDomainTrackingDNSVerifiedDomain, []outbound.Option{outbound.WithTrackingDomains()}},
-		{"feature off", fixtures.SendingDomainTrackingServingDomain, nil},
+		{"dns verified", fixtures.InitechID, []outbound.Option{trackingDomains(env)}},
+		{"feature off", fixtures.UmbrellaID, nil},
 	}
 	for _, c := range cases {
-		msg := sendFrom(t, env, tracked(env, c.opts...), "th:"+c.name, c.domain)
+		domain, err := env.DB.SendingDomain.Query().Where(sendingdomain.WorkspaceID(c.ws), dkimstate.Verified()).First(t.Context())
+		require.NoError(t, err, c.name)
+		msg := sendFrom(t, env, tracked(env, c.opts...), c.ws, "th:"+c.name, domain.Domain)
 		assert.Contains(t, msg.HTML, "http://local/e/c/", c.name)
 		assert.Contains(t, msg.HTML, "http://local/e/o/", c.name)
 		assert.Contains(t, msg.HTML, "http://local/e/u/", c.name)
-		assert.NotContains(t, msg.HTML, "track.", c.name)
 		assert.Contains(t, msg.ListUnsubscribeURL, "http://local/e/u/", c.name)
 	}
-}
-
-func TestEachSendingDomainGetsItsOwnHost(t *testing.T) {
-	env := testhelper.Setup(t)
-	m := tracked(env, outbound.WithTrackingDomains())
-	serving := sendFrom(t, env, m, "th:a", fixtures.SendingDomainTrackingServingDomain)
-	other := sendFrom(t, env, m, "th:b", fixtures.SendingDomainTrackingDNSVerifiedDomain)
-
-	assert.Contains(t, serving.ListUnsubscribeURL, "https://track."+fixtures.SendingDomainTrackingServingDomain+"/")
-	assert.Contains(t, other.ListUnsubscribeURL, "http://local/")
 }
 
 // A tracking host that cannot be read says nothing about the message: the send is retried, not recorded
@@ -90,14 +93,14 @@ func TestEachSendingDomainGetsItsOwnHost(t *testing.T) {
 func TestTrackingHostLookupErrorIsRetriedNotFailed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := tracked(env, outbound.WithTrackingDomains())
+	m := tracked(env, trackingDomains(env))
 	scoped := env.DB.Scoped(fixtures.UmbrellaID)
 	lookup := errors.New("connection reset")
 
-	// The host lookup is the last Sending domain query of a tracked send: count them on a first send,
-	// then fail that last one.
+	// The host lookup is the last Tracking domain query of a tracked send: count them on a first
+	// send, then fail that last one.
 	var count, failAt int
-	env.DB.SendingDomain.Intercept(ent.InterceptFunc(func(next ent.Querier) ent.Querier {
+	env.DB.TrackingDomain.Intercept(ent.InterceptFunc(func(next ent.Querier) ent.Querier {
 		return ent.QuerierFunc(func(ctx context.Context, q ent.Query) (ent.Value, error) {
 			count++
 			if count == failAt {
@@ -114,7 +117,7 @@ func TestTrackingHostLookupErrorIsRetriedNotFailed(t *testing.T) {
 			Source:      eligibility.SourceBroadcasts,
 			Subject:     "News",
 			Body:        linkHTML,
-			FromEmail:   "news@" + fixtures.SendingDomainTrackingServingDomain,
+			FromEmail:   "news@" + fixtures.SendingDomainUmbrellaDomain,
 			Track:       true,
 		})
 	}

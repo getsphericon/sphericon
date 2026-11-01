@@ -60,6 +60,10 @@ var (
 	EmailSendingDomainUnverifiedSubject         = ID{key: "email.sending_domain_unverified.subject"}
 	EmailTrackingDomainRegressedBody            = ID{key: "email.tracking_domain_regressed.body"}
 	EmailTrackingDomainRegressedSubject         = ID{key: "email.tracking_domain_regressed.subject"}
+	EmailTrackingDomainReplacedBody             = ID{key: "email.tracking_domain_replaced.body"}
+	EmailTrackingDomainReplacedSubject          = ID{key: "email.tracking_domain_replaced.subject"}
+	EmailTrackingDomainRetiredGoneBody          = ID{key: "email.tracking_domain_retired_gone.body"}
+	EmailTrackingDomainRetiredGoneSubject       = ID{key: "email.tracking_domain_retired_gone.subject"}
 	EmailUserDeletedIntro                       = ID{key: "email.user_deleted.intro"}
 	EmailUserDeletedNotMe                       = ID{key: "email.user_deleted.not_me"}
 	EmailUserDeletedSubject                     = ID{key: "email.user_deleted.subject"}
@@ -201,6 +205,7 @@ var (
 	ErrorsPermissionSendingDomainsManage        = ID{key: "errors.permission.sending_domains_manage"}
 	ErrorsPermissionSuppressionsManage          = ID{key: "errors.permission.suppressions_manage"}
 	ErrorsPermissionTokensManage                = ID{key: "errors.permission.tokens_manage"}
+	ErrorsPermissionTrackingDomainsManage       = ID{key: "errors.permission.tracking_domains_manage"}
 	ErrorsPermissionUnknown                     = ID{key: "errors.permission.unknown"}
 	ErrorsPermissionWebhooksManage              = ID{key: "errors.permission.webhooks_manage"}
 	ErrorsPermissionWorkspaceDelete             = ID{key: "errors.permission.workspace_delete"}
@@ -266,6 +271,10 @@ var (
 	ErrorsTokenNotFound                         = ID{key: "errors.token_not_found"}
 	ErrorsTokenScopeEscalation                  = ID{key: "errors.token_scope_escalation"}
 	ErrorsTokenScopeUnknown                     = ID{key: "errors.token_scope_unknown"}
+	ErrorsTrackingDomainInvalid                 = ID{key: "errors.tracking_domain_invalid"}
+	ErrorsTrackingDomainNotFound                = ID{key: "errors.tracking_domain_not_found"}
+	ErrorsTrackingDomainOwnHost                 = ID{key: "errors.tracking_domain_own_host"}
+	ErrorsTrackingDomainsOff                    = ID{key: "errors.tracking_domains_off"}
 	ErrorsTrackingLinkInvalid                   = ID{key: "errors.tracking_link_invalid"}
 	ErrorsVariablesInvalid                      = ID{key: "errors.variables_invalid"}
 	ErrorsVerifyLinkBad                         = ID{key: "errors.verify_link_bad"}

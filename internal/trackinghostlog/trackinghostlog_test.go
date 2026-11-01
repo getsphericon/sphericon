@@ -9,7 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
@@ -18,11 +18,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
 )
 
-// logged is what the log holds for a domain, in log order.
-func logged(t *testing.T, env *testhelper.TestEnv, domain string) []trackinghostchange.State {
+// logged is what the log holds for a host, in log order.
+func logged(t *testing.T, env *testhelper.TestEnv, host string) []trackinghostchange.State {
 	t.Helper()
 	rows, err := env.DB.TrackingHostChange.Query().
-		Where(trackinghostchange.Domain(domain)).
+		Where(trackinghostchange.Host(host)).
 		Order(ent.Asc(trackinghostchange.FieldID)).
 		All(t.Context())
 	require.NoError(t, err)
@@ -33,63 +33,60 @@ func logged(t *testing.T, env *testhelper.TestEnv, domain string) []trackinghost
 	return states
 }
 
-// Renaming a verified host takes the old name out of service and puts the new one in,
-// in that order, so the edge never serves a name the Workspace no longer owns.
-func TestRenamingAVerifiedHostRemovesTheOldNameAndAddsTheNewOne(t *testing.T) {
+// A host that leaves the verified states is reported as removed, so the edge tears it down.
+func TestAHostThatFallsBackToPendingIsRemoved(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	// test writes: the hook fires on this write
+	require.NoError(t, env.FeedDB.Scoped(fixtures.UmbrellaID).TrackingDomain().
+		UpdateOneID(fixtures.TrackingDomainServingID).
+		SetState(trackingdomain.StatePending).Exec(t.Context()))
+
+	assert.Equal(t, []trackinghostchange.State{trackinghostchange.StateRemoved},
+		logged(t, env, fixtures.TrackingDomainServingHost))
+}
+
+// A deleted host that was verified is removed; one that never was has nothing to take back.
+func TestDeletingAHostLogsItOnlyWhenItWasVerified(t *testing.T) {
 	env := testhelper.Setup(t)
 	umbrella := env.FeedDB.Scoped(fixtures.UmbrellaID)
 
-	require.NoError(t, umbrella.SendingDomain().UpdateOneID(fixtures.SendingDomainTrackingServingID).
-		SetDomain("renamed.umbrella.test").Exec(t.Context()))
+	require.NoError(t, umbrella.TrackingDomain().DeleteOneID(fixtures.TrackingDomainRetiredID).Exec(t.Context()))
+	require.NoError(t, umbrella.TrackingDomain().DeleteOneID(fixtures.TrackingDomainReplacementID).Exec(t.Context()))
 
 	assert.Equal(t, []trackinghostchange.State{trackinghostchange.StateRemoved},
-		logged(t, env, fixtures.SendingDomainTrackingServingDomain))
-	assert.Equal(t, []trackinghostchange.State{trackinghostchange.StateServing},
-		logged(t, env, "renamed.umbrella.test"))
-}
-
-// A host that was never verified has nothing to take back when it is renamed.
-func TestRenamingAPendingHostLogsNothing(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	require.NoError(t, env.FeedDB.Scoped(fixtures.UmbrellaID).SendingDomain().
-		UpdateOneID(fixtures.SendingDomainTrackingPendingID).
-		SetDomain("renamed-pending.umbrella.test").Exec(t.Context()))
-
-	assert.Empty(t, logged(t, env, fixtures.SendingDomainTrackingPendingDomain))
-	assert.Empty(t, logged(t, env, "renamed-pending.umbrella.test"))
+		logged(t, env, fixtures.TrackingDomainRetiredHost))
+	assert.Empty(t, logged(t, env, fixtures.TrackingDomainReplacementHost))
 }
 
 func TestACreatedHostIsLoggedOnlyWhenItIsAlreadyVerified(t *testing.T) {
 	env := testhelper.Setup(t)
-	umbrella := env.FeedDB.Scoped(fixtures.UmbrellaID)
-	create := func(domain string) *ent.SendingDomainScopedCreate {
+	create := func(ws int64, host string) *ent.TrackingDomainScopedCreate {
 		// test writes: the hook fires on this write
-		return umbrella.SendingDomain().Create().
-			SetDomain(domain).
-			SetDkimSelector("sel").
-			SetDkimPrivateKeyEncrypted("sealed").
-			SetDkimPublicKey("v=DKIM1")
+		return env.FeedDB.Scoped(ws).TrackingDomain().Create().SetHost(host).SetRole(trackingdomain.RoleRetired)
 	}
 
-	require.NoError(t, create("new-pending.umbrella.test").Exec(t.Context()))
-	require.NoError(t, create("new-dns.umbrella.test").
-		SetTrackingState(sendingdomain.TrackingStateDNSVerified).Exec(t.Context()))
+	// test writes: the hook fires on this write
+	require.NoError(t, env.FeedDB.Scoped(fixtures.KramericaID).TrackingDomain().Create().
+		SetHost("new-pending.kramerica.test").SetRole(trackingdomain.RoleCurrent).Exec(t.Context()))
+	require.NoError(t, create(fixtures.KramericaID, "new-dns.kramerica.test").
+		SetState(trackingdomain.StateDNSVerified).Exec(t.Context()))
 
-	assert.Empty(t, logged(t, env, "new-pending.umbrella.test"))
+	assert.Empty(t, logged(t, env, "new-pending.kramerica.test"))
 	assert.Equal(t, []trackinghostchange.State{trackinghostchange.StateDNSVerified},
-		logged(t, env, "new-dns.umbrella.test"))
+		logged(t, env, "new-dns.kramerica.test"))
 }
 
-// A change to a column the host does not depend on is not a change of the host.
-func TestEditingAnUnrelatedColumnOfAServingHostLogsNothing(t *testing.T) {
+// A change of role keeps the host served: a retired host still serves what was sent on it.
+func TestRetiringAServingHostLogsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	require.NoError(t, env.FeedDB.Scoped(fixtures.UmbrellaID).SendingDomain().
-		UpdateOneID(fixtures.SendingDomainTrackingServingID).
-		SetDkimSelector("rotated").Exec(t.Context()))
+	// test writes: the hook fires on this write
+	require.NoError(t, env.FeedDB.Scoped(fixtures.UmbrellaID).TrackingDomain().
+		UpdateOneID(fixtures.TrackingDomainServingID).
+		SetRole(trackingdomain.RoleRetired).Exec(t.Context()))
 
-	assert.Empty(t, logged(t, env, fixtures.SendingDomainTrackingServingDomain))
+	assert.Empty(t, logged(t, env, fixtures.TrackingDomainServingHost))
 }
 
 // A log row written outside the transaction of its change is a separate statement: a
@@ -103,36 +100,25 @@ func TestPlainClientRefusesAChangeToAVerifiedHost(t *testing.T) {
 	t.Cleanup(func() { cleanup.Close(pool, "pool") })
 	client := db.NewEntClient(pool)
 
-	err = client.SendingDomain.UpdateOneID(fixtures.SendingDomainTrackingServingID).
-		SetTrackingState(sendingdomain.TrackingStatePending).Exec(t.Context())
+	err = client.TrackingDomain.UpdateOneID(fixtures.TrackingDomainServingID).
+		SetState(trackingdomain.StatePending).Exec(t.Context())
 	require.ErrorIs(t, err, trackinghostlog.ErrNeedsTransaction)
 
-	err = client.SendingDomain.UpdateOneID(fixtures.SendingDomainTrackingServingID).
-		SetDkimSelector("rotated").Exec(t.Context())
-	require.NoError(t, err, "a column the log does not depend on goes through")
+	err = client.TrackingDomain.DeleteOneID(fixtures.TrackingDomainRetiredID).Exec(t.Context())
+	require.ErrorIs(t, err, trackinghostlog.ErrNeedsTransaction)
 }
 
-// Serving is the query the host gate and the recheck job use: a verified state serves,
-// a pending one does not, and archiving a verified one takes it out, which is the same
-// answer the change log gives for the row (an archive logs the host as removed).
-func TestServingSelectsVerifiedHostsThatAreNotArchived(t *testing.T) {
+// Serving is the query the host gate and the recheck job use: a verified state serves in any
+// role, retired included, and a pending one does not.
+func TestServingSelectsVerifiedHostsInAnyRole(t *testing.T) {
 	env := testhelper.Setup(t)
-	umbrella := env.FeedDB.Scoped(fixtures.UmbrellaID)
-	ids := func() []int64 {
-		got, err := env.DB.SendingDomain.Query().Where(trackinghostlog.Serving()).IDs(t.Context())
-		require.NoError(t, err)
-		return got
-	}
 
-	before := ids()
-	assert.Contains(t, before, int64(fixtures.SendingDomainTrackingDNSVerifiedID))
-	assert.Contains(t, before, int64(fixtures.SendingDomainTrackingServingID))
-	assert.NotContains(t, before, int64(fixtures.SendingDomainTrackingPendingID))
+	ids, err := env.DB.TrackingDomain.Query().Where(trackinghostlog.Serving()).IDs(t.Context())
+	require.NoError(t, err)
 
-	require.NoError(t, umbrella.SendingDomain().Discard(t.Context(), fixtures.SendingDomainTrackingServingID))
-
-	after := ids()
-	assert.NotContains(t, after, int64(fixtures.SendingDomainTrackingServingID))
-	assert.Equal(t, []trackinghostchange.State{trackinghostchange.StateRemoved},
-		logged(t, env, fixtures.SendingDomainTrackingServingDomain))
+	assert.Contains(t, ids, int64(fixtures.TrackingDomainServingID))
+	assert.Contains(t, ids, int64(fixtures.TrackingDomainDNSVerifiedID))
+	assert.Contains(t, ids, int64(fixtures.TrackingDomainRetiredID))
+	assert.NotContains(t, ids, int64(fixtures.TrackingDomainReplacementID))
+	assert.NotContains(t, ids, int64(fixtures.TrackingDomainClaimID))
 }

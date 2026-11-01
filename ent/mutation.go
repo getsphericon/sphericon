@@ -72,6 +72,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
@@ -150,6 +151,7 @@ const (
 	TypeStaffMember          = "StaffMember"
 	TypeSuppression          = "Suppression"
 	TypeTag                  = "Tag"
+	TypeTrackingDomain       = "TrackingDomain"
 	TypeTrackingHostChange   = "TrackingHostChange"
 	TypeUnsubscribe          = "Unsubscribe"
 	TypeUsage                = "Usage"
@@ -48592,10 +48594,6 @@ type SendingDomainMutation struct {
 	last_checked_at            *time.Time
 	verified_at                *time.Time
 	verification_lost_at       *time.Time
-	tracking_state             *sendingdomain.TrackingState
-	tracking_checked_at        *time.Time
-	tracking_reason            *sendingdomain.TrackingReason
-	tracking_state_changed_at  *time.Time
 	clearedFields              map[string]struct{}
 	workspace                  *int64
 	clearedworkspace           bool
@@ -49156,189 +49154,6 @@ func (m *SendingDomainMutation) ResetVerificationLostAt() {
 	delete(m.clearedFields, sendingdomain.FieldVerificationLostAt)
 }
 
-// SetTrackingState sets the "tracking_state" field.
-func (m *SendingDomainMutation) SetTrackingState(ss sendingdomain.TrackingState) {
-	m.tracking_state = &ss
-}
-
-// TrackingState returns the value of the "tracking_state" field in the mutation.
-func (m *SendingDomainMutation) TrackingState() (r sendingdomain.TrackingState, exists bool) {
-	v := m.tracking_state
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTrackingState returns the old "tracking_state" field's value of the SendingDomain entity.
-// If the SendingDomain object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SendingDomainMutation) OldTrackingState(ctx context.Context) (v sendingdomain.TrackingState, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTrackingState is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTrackingState requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTrackingState: %w", err)
-	}
-	return oldValue.TrackingState, nil
-}
-
-// ResetTrackingState resets all changes to the "tracking_state" field.
-func (m *SendingDomainMutation) ResetTrackingState() {
-	m.tracking_state = nil
-}
-
-// SetTrackingCheckedAt sets the "tracking_checked_at" field.
-func (m *SendingDomainMutation) SetTrackingCheckedAt(t time.Time) {
-	m.tracking_checked_at = &t
-}
-
-// TrackingCheckedAt returns the value of the "tracking_checked_at" field in the mutation.
-func (m *SendingDomainMutation) TrackingCheckedAt() (r time.Time, exists bool) {
-	v := m.tracking_checked_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTrackingCheckedAt returns the old "tracking_checked_at" field's value of the SendingDomain entity.
-// If the SendingDomain object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SendingDomainMutation) OldTrackingCheckedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTrackingCheckedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTrackingCheckedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTrackingCheckedAt: %w", err)
-	}
-	return oldValue.TrackingCheckedAt, nil
-}
-
-// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
-func (m *SendingDomainMutation) ClearTrackingCheckedAt() {
-	m.tracking_checked_at = nil
-	m.clearedFields[sendingdomain.FieldTrackingCheckedAt] = struct{}{}
-}
-
-// TrackingCheckedAtCleared returns if the "tracking_checked_at" field was cleared in this mutation.
-func (m *SendingDomainMutation) TrackingCheckedAtCleared() bool {
-	_, ok := m.clearedFields[sendingdomain.FieldTrackingCheckedAt]
-	return ok
-}
-
-// ResetTrackingCheckedAt resets all changes to the "tracking_checked_at" field.
-func (m *SendingDomainMutation) ResetTrackingCheckedAt() {
-	m.tracking_checked_at = nil
-	delete(m.clearedFields, sendingdomain.FieldTrackingCheckedAt)
-}
-
-// SetTrackingReason sets the "tracking_reason" field.
-func (m *SendingDomainMutation) SetTrackingReason(sr sendingdomain.TrackingReason) {
-	m.tracking_reason = &sr
-}
-
-// TrackingReason returns the value of the "tracking_reason" field in the mutation.
-func (m *SendingDomainMutation) TrackingReason() (r sendingdomain.TrackingReason, exists bool) {
-	v := m.tracking_reason
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTrackingReason returns the old "tracking_reason" field's value of the SendingDomain entity.
-// If the SendingDomain object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SendingDomainMutation) OldTrackingReason(ctx context.Context) (v *sendingdomain.TrackingReason, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTrackingReason is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTrackingReason requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTrackingReason: %w", err)
-	}
-	return oldValue.TrackingReason, nil
-}
-
-// ClearTrackingReason clears the value of the "tracking_reason" field.
-func (m *SendingDomainMutation) ClearTrackingReason() {
-	m.tracking_reason = nil
-	m.clearedFields[sendingdomain.FieldTrackingReason] = struct{}{}
-}
-
-// TrackingReasonCleared returns if the "tracking_reason" field was cleared in this mutation.
-func (m *SendingDomainMutation) TrackingReasonCleared() bool {
-	_, ok := m.clearedFields[sendingdomain.FieldTrackingReason]
-	return ok
-}
-
-// ResetTrackingReason resets all changes to the "tracking_reason" field.
-func (m *SendingDomainMutation) ResetTrackingReason() {
-	m.tracking_reason = nil
-	delete(m.clearedFields, sendingdomain.FieldTrackingReason)
-}
-
-// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
-func (m *SendingDomainMutation) SetTrackingStateChangedAt(t time.Time) {
-	m.tracking_state_changed_at = &t
-}
-
-// TrackingStateChangedAt returns the value of the "tracking_state_changed_at" field in the mutation.
-func (m *SendingDomainMutation) TrackingStateChangedAt() (r time.Time, exists bool) {
-	v := m.tracking_state_changed_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTrackingStateChangedAt returns the old "tracking_state_changed_at" field's value of the SendingDomain entity.
-// If the SendingDomain object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SendingDomainMutation) OldTrackingStateChangedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTrackingStateChangedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTrackingStateChangedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTrackingStateChangedAt: %w", err)
-	}
-	return oldValue.TrackingStateChangedAt, nil
-}
-
-// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
-func (m *SendingDomainMutation) ClearTrackingStateChangedAt() {
-	m.tracking_state_changed_at = nil
-	m.clearedFields[sendingdomain.FieldTrackingStateChangedAt] = struct{}{}
-}
-
-// TrackingStateChangedAtCleared returns if the "tracking_state_changed_at" field was cleared in this mutation.
-func (m *SendingDomainMutation) TrackingStateChangedAtCleared() bool {
-	_, ok := m.clearedFields[sendingdomain.FieldTrackingStateChangedAt]
-	return ok
-}
-
-// ResetTrackingStateChangedAt resets all changes to the "tracking_state_changed_at" field.
-func (m *SendingDomainMutation) ResetTrackingStateChangedAt() {
-	m.tracking_state_changed_at = nil
-	delete(m.clearedFields, sendingdomain.FieldTrackingStateChangedAt)
-}
-
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *SendingDomainMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -49400,7 +49215,7 @@ func (m *SendingDomainMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SendingDomainMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, sendingdomain.FieldCreatedAt)
 	}
@@ -49434,18 +49249,6 @@ func (m *SendingDomainMutation) Fields() []string {
 	if m.verification_lost_at != nil {
 		fields = append(fields, sendingdomain.FieldVerificationLostAt)
 	}
-	if m.tracking_state != nil {
-		fields = append(fields, sendingdomain.FieldTrackingState)
-	}
-	if m.tracking_checked_at != nil {
-		fields = append(fields, sendingdomain.FieldTrackingCheckedAt)
-	}
-	if m.tracking_reason != nil {
-		fields = append(fields, sendingdomain.FieldTrackingReason)
-	}
-	if m.tracking_state_changed_at != nil {
-		fields = append(fields, sendingdomain.FieldTrackingStateChangedAt)
-	}
 	return fields
 }
 
@@ -49476,14 +49279,6 @@ func (m *SendingDomainMutation) Field(name string) (ent.Value, bool) {
 		return m.VerifiedAt()
 	case sendingdomain.FieldVerificationLostAt:
 		return m.VerificationLostAt()
-	case sendingdomain.FieldTrackingState:
-		return m.TrackingState()
-	case sendingdomain.FieldTrackingCheckedAt:
-		return m.TrackingCheckedAt()
-	case sendingdomain.FieldTrackingReason:
-		return m.TrackingReason()
-	case sendingdomain.FieldTrackingStateChangedAt:
-		return m.TrackingStateChangedAt()
 	}
 	return nil, false
 }
@@ -49515,14 +49310,6 @@ func (m *SendingDomainMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldVerifiedAt(ctx)
 	case sendingdomain.FieldVerificationLostAt:
 		return m.OldVerificationLostAt(ctx)
-	case sendingdomain.FieldTrackingState:
-		return m.OldTrackingState(ctx)
-	case sendingdomain.FieldTrackingCheckedAt:
-		return m.OldTrackingCheckedAt(ctx)
-	case sendingdomain.FieldTrackingReason:
-		return m.OldTrackingReason(ctx)
-	case sendingdomain.FieldTrackingStateChangedAt:
-		return m.OldTrackingStateChangedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown SendingDomain field %s", name)
 }
@@ -49609,34 +49396,6 @@ func (m *SendingDomainMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetVerificationLostAt(v)
 		return nil
-	case sendingdomain.FieldTrackingState:
-		v, ok := value.(sendingdomain.TrackingState)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTrackingState(v)
-		return nil
-	case sendingdomain.FieldTrackingCheckedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTrackingCheckedAt(v)
-		return nil
-	case sendingdomain.FieldTrackingReason:
-		v, ok := value.(sendingdomain.TrackingReason)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTrackingReason(v)
-		return nil
-	case sendingdomain.FieldTrackingStateChangedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTrackingStateChangedAt(v)
-		return nil
 	}
 	return fmt.Errorf("unknown SendingDomain field %s", name)
 }
@@ -49682,15 +49441,6 @@ func (m *SendingDomainMutation) ClearedFields() []string {
 	if m.FieldCleared(sendingdomain.FieldVerificationLostAt) {
 		fields = append(fields, sendingdomain.FieldVerificationLostAt)
 	}
-	if m.FieldCleared(sendingdomain.FieldTrackingCheckedAt) {
-		fields = append(fields, sendingdomain.FieldTrackingCheckedAt)
-	}
-	if m.FieldCleared(sendingdomain.FieldTrackingReason) {
-		fields = append(fields, sendingdomain.FieldTrackingReason)
-	}
-	if m.FieldCleared(sendingdomain.FieldTrackingStateChangedAt) {
-		fields = append(fields, sendingdomain.FieldTrackingStateChangedAt)
-	}
 	return fields
 }
 
@@ -49716,15 +49466,6 @@ func (m *SendingDomainMutation) ClearField(name string) error {
 		return nil
 	case sendingdomain.FieldVerificationLostAt:
 		m.ClearVerificationLostAt()
-		return nil
-	case sendingdomain.FieldTrackingCheckedAt:
-		m.ClearTrackingCheckedAt()
-		return nil
-	case sendingdomain.FieldTrackingReason:
-		m.ClearTrackingReason()
-		return nil
-	case sendingdomain.FieldTrackingStateChangedAt:
-		m.ClearTrackingStateChangedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown SendingDomain nullable field %s", name)
@@ -49766,18 +49507,6 @@ func (m *SendingDomainMutation) ResetField(name string) error {
 		return nil
 	case sendingdomain.FieldVerificationLostAt:
 		m.ResetVerificationLostAt()
-		return nil
-	case sendingdomain.FieldTrackingState:
-		m.ResetTrackingState()
-		return nil
-	case sendingdomain.FieldTrackingCheckedAt:
-		m.ResetTrackingCheckedAt()
-		return nil
-	case sendingdomain.FieldTrackingReason:
-		m.ResetTrackingReason()
-		return nil
-	case sendingdomain.FieldTrackingStateChangedAt:
-		m.ResetTrackingStateChangedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown SendingDomain field %s", name)
@@ -54954,6 +54683,960 @@ func (m *TagMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Tag edge %s", name)
 }
 
+// TrackingDomainMutation represents an operation that mutates the TrackingDomain nodes in the graph.
+type TrackingDomainMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	host             *string
+	role             *trackingdomain.Role
+	state            *trackingdomain.State
+	served_at        *time.Time
+	checked_at       *time.Time
+	reason           *trackingdomain.Reason
+	state_changed_at *time.Time
+	clearedFields    map[string]struct{}
+	workspace        *int64
+	clearedworkspace bool
+	done             bool
+	oldValue         func(context.Context) (*TrackingDomain, error)
+	predicates       []predicate.TrackingDomain
+}
+
+var _ ent.Mutation = (*TrackingDomainMutation)(nil)
+
+// trackingdomainOption allows management of the mutation configuration using functional options.
+type trackingdomainOption func(*TrackingDomainMutation)
+
+// newTrackingDomainMutation creates new mutation for the TrackingDomain entity.
+func newTrackingDomainMutation(c config, op Op, opts ...trackingdomainOption) *TrackingDomainMutation {
+	m := &TrackingDomainMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTrackingDomain,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTrackingDomainID sets the ID field of the mutation.
+func withTrackingDomainID(id int64) trackingdomainOption {
+	return func(m *TrackingDomainMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *TrackingDomain
+		)
+		m.oldValue = func(ctx context.Context) (*TrackingDomain, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().TrackingDomain.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTrackingDomain sets the old TrackingDomain of the mutation.
+func withTrackingDomain(node *TrackingDomain) trackingdomainOption {
+	return func(m *TrackingDomainMutation) {
+		m.oldValue = func(context.Context) (*TrackingDomain, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TrackingDomainMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TrackingDomainMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of TrackingDomain entities.
+func (m *TrackingDomainMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *TrackingDomainMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *TrackingDomainMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().TrackingDomain.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *TrackingDomainMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *TrackingDomainMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the TrackingDomain entity.
+// If the TrackingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackingDomainMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *TrackingDomainMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *TrackingDomainMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *TrackingDomainMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the TrackingDomain entity.
+// If the TrackingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackingDomainMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *TrackingDomainMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *TrackingDomainMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *TrackingDomainMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the TrackingDomain entity.
+// If the TrackingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackingDomainMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *TrackingDomainMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetHost sets the "host" field.
+func (m *TrackingDomainMutation) SetHost(s string) {
+	m.host = &s
+}
+
+// Host returns the value of the "host" field in the mutation.
+func (m *TrackingDomainMutation) Host() (r string, exists bool) {
+	v := m.host
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHost returns the old "host" field's value of the TrackingDomain entity.
+// If the TrackingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackingDomainMutation) OldHost(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHost: %w", err)
+	}
+	return oldValue.Host, nil
+}
+
+// ResetHost resets all changes to the "host" field.
+func (m *TrackingDomainMutation) ResetHost() {
+	m.host = nil
+}
+
+// SetRole sets the "role" field.
+func (m *TrackingDomainMutation) SetRole(t trackingdomain.Role) {
+	m.role = &t
+}
+
+// Role returns the value of the "role" field in the mutation.
+func (m *TrackingDomainMutation) Role() (r trackingdomain.Role, exists bool) {
+	v := m.role
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRole returns the old "role" field's value of the TrackingDomain entity.
+// If the TrackingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackingDomainMutation) OldRole(ctx context.Context) (v trackingdomain.Role, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRole is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRole requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRole: %w", err)
+	}
+	return oldValue.Role, nil
+}
+
+// ResetRole resets all changes to the "role" field.
+func (m *TrackingDomainMutation) ResetRole() {
+	m.role = nil
+}
+
+// SetState sets the "state" field.
+func (m *TrackingDomainMutation) SetState(t trackingdomain.State) {
+	m.state = &t
+}
+
+// State returns the value of the "state" field in the mutation.
+func (m *TrackingDomainMutation) State() (r trackingdomain.State, exists bool) {
+	v := m.state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldState returns the old "state" field's value of the TrackingDomain entity.
+// If the TrackingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackingDomainMutation) OldState(ctx context.Context) (v trackingdomain.State, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldState: %w", err)
+	}
+	return oldValue.State, nil
+}
+
+// ResetState resets all changes to the "state" field.
+func (m *TrackingDomainMutation) ResetState() {
+	m.state = nil
+}
+
+// SetServedAt sets the "served_at" field.
+func (m *TrackingDomainMutation) SetServedAt(t time.Time) {
+	m.served_at = &t
+}
+
+// ServedAt returns the value of the "served_at" field in the mutation.
+func (m *TrackingDomainMutation) ServedAt() (r time.Time, exists bool) {
+	v := m.served_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldServedAt returns the old "served_at" field's value of the TrackingDomain entity.
+// If the TrackingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackingDomainMutation) OldServedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldServedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldServedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldServedAt: %w", err)
+	}
+	return oldValue.ServedAt, nil
+}
+
+// ClearServedAt clears the value of the "served_at" field.
+func (m *TrackingDomainMutation) ClearServedAt() {
+	m.served_at = nil
+	m.clearedFields[trackingdomain.FieldServedAt] = struct{}{}
+}
+
+// ServedAtCleared returns if the "served_at" field was cleared in this mutation.
+func (m *TrackingDomainMutation) ServedAtCleared() bool {
+	_, ok := m.clearedFields[trackingdomain.FieldServedAt]
+	return ok
+}
+
+// ResetServedAt resets all changes to the "served_at" field.
+func (m *TrackingDomainMutation) ResetServedAt() {
+	m.served_at = nil
+	delete(m.clearedFields, trackingdomain.FieldServedAt)
+}
+
+// SetCheckedAt sets the "checked_at" field.
+func (m *TrackingDomainMutation) SetCheckedAt(t time.Time) {
+	m.checked_at = &t
+}
+
+// CheckedAt returns the value of the "checked_at" field in the mutation.
+func (m *TrackingDomainMutation) CheckedAt() (r time.Time, exists bool) {
+	v := m.checked_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCheckedAt returns the old "checked_at" field's value of the TrackingDomain entity.
+// If the TrackingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackingDomainMutation) OldCheckedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCheckedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCheckedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCheckedAt: %w", err)
+	}
+	return oldValue.CheckedAt, nil
+}
+
+// ClearCheckedAt clears the value of the "checked_at" field.
+func (m *TrackingDomainMutation) ClearCheckedAt() {
+	m.checked_at = nil
+	m.clearedFields[trackingdomain.FieldCheckedAt] = struct{}{}
+}
+
+// CheckedAtCleared returns if the "checked_at" field was cleared in this mutation.
+func (m *TrackingDomainMutation) CheckedAtCleared() bool {
+	_, ok := m.clearedFields[trackingdomain.FieldCheckedAt]
+	return ok
+}
+
+// ResetCheckedAt resets all changes to the "checked_at" field.
+func (m *TrackingDomainMutation) ResetCheckedAt() {
+	m.checked_at = nil
+	delete(m.clearedFields, trackingdomain.FieldCheckedAt)
+}
+
+// SetReason sets the "reason" field.
+func (m *TrackingDomainMutation) SetReason(t trackingdomain.Reason) {
+	m.reason = &t
+}
+
+// Reason returns the value of the "reason" field in the mutation.
+func (m *TrackingDomainMutation) Reason() (r trackingdomain.Reason, exists bool) {
+	v := m.reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReason returns the old "reason" field's value of the TrackingDomain entity.
+// If the TrackingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackingDomainMutation) OldReason(ctx context.Context) (v *trackingdomain.Reason, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReason: %w", err)
+	}
+	return oldValue.Reason, nil
+}
+
+// ClearReason clears the value of the "reason" field.
+func (m *TrackingDomainMutation) ClearReason() {
+	m.reason = nil
+	m.clearedFields[trackingdomain.FieldReason] = struct{}{}
+}
+
+// ReasonCleared returns if the "reason" field was cleared in this mutation.
+func (m *TrackingDomainMutation) ReasonCleared() bool {
+	_, ok := m.clearedFields[trackingdomain.FieldReason]
+	return ok
+}
+
+// ResetReason resets all changes to the "reason" field.
+func (m *TrackingDomainMutation) ResetReason() {
+	m.reason = nil
+	delete(m.clearedFields, trackingdomain.FieldReason)
+}
+
+// SetStateChangedAt sets the "state_changed_at" field.
+func (m *TrackingDomainMutation) SetStateChangedAt(t time.Time) {
+	m.state_changed_at = &t
+}
+
+// StateChangedAt returns the value of the "state_changed_at" field in the mutation.
+func (m *TrackingDomainMutation) StateChangedAt() (r time.Time, exists bool) {
+	v := m.state_changed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStateChangedAt returns the old "state_changed_at" field's value of the TrackingDomain entity.
+// If the TrackingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackingDomainMutation) OldStateChangedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStateChangedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStateChangedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStateChangedAt: %w", err)
+	}
+	return oldValue.StateChangedAt, nil
+}
+
+// ClearStateChangedAt clears the value of the "state_changed_at" field.
+func (m *TrackingDomainMutation) ClearStateChangedAt() {
+	m.state_changed_at = nil
+	m.clearedFields[trackingdomain.FieldStateChangedAt] = struct{}{}
+}
+
+// StateChangedAtCleared returns if the "state_changed_at" field was cleared in this mutation.
+func (m *TrackingDomainMutation) StateChangedAtCleared() bool {
+	_, ok := m.clearedFields[trackingdomain.FieldStateChangedAt]
+	return ok
+}
+
+// ResetStateChangedAt resets all changes to the "state_changed_at" field.
+func (m *TrackingDomainMutation) ResetStateChangedAt() {
+	m.state_changed_at = nil
+	delete(m.clearedFields, trackingdomain.FieldStateChangedAt)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *TrackingDomainMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[trackingdomain.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *TrackingDomainMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *TrackingDomainMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *TrackingDomainMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the TrackingDomainMutation builder.
+func (m *TrackingDomainMutation) Where(ps ...predicate.TrackingDomain) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the TrackingDomainMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TrackingDomainMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.TrackingDomain, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *TrackingDomainMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TrackingDomainMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (TrackingDomain).
+func (m *TrackingDomainMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *TrackingDomainMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, trackingdomain.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, trackingdomain.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, trackingdomain.FieldWorkspaceID)
+	}
+	if m.host != nil {
+		fields = append(fields, trackingdomain.FieldHost)
+	}
+	if m.role != nil {
+		fields = append(fields, trackingdomain.FieldRole)
+	}
+	if m.state != nil {
+		fields = append(fields, trackingdomain.FieldState)
+	}
+	if m.served_at != nil {
+		fields = append(fields, trackingdomain.FieldServedAt)
+	}
+	if m.checked_at != nil {
+		fields = append(fields, trackingdomain.FieldCheckedAt)
+	}
+	if m.reason != nil {
+		fields = append(fields, trackingdomain.FieldReason)
+	}
+	if m.state_changed_at != nil {
+		fields = append(fields, trackingdomain.FieldStateChangedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *TrackingDomainMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case trackingdomain.FieldCreatedAt:
+		return m.CreatedAt()
+	case trackingdomain.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case trackingdomain.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case trackingdomain.FieldHost:
+		return m.Host()
+	case trackingdomain.FieldRole:
+		return m.Role()
+	case trackingdomain.FieldState:
+		return m.State()
+	case trackingdomain.FieldServedAt:
+		return m.ServedAt()
+	case trackingdomain.FieldCheckedAt:
+		return m.CheckedAt()
+	case trackingdomain.FieldReason:
+		return m.Reason()
+	case trackingdomain.FieldStateChangedAt:
+		return m.StateChangedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *TrackingDomainMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case trackingdomain.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case trackingdomain.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case trackingdomain.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case trackingdomain.FieldHost:
+		return m.OldHost(ctx)
+	case trackingdomain.FieldRole:
+		return m.OldRole(ctx)
+	case trackingdomain.FieldState:
+		return m.OldState(ctx)
+	case trackingdomain.FieldServedAt:
+		return m.OldServedAt(ctx)
+	case trackingdomain.FieldCheckedAt:
+		return m.OldCheckedAt(ctx)
+	case trackingdomain.FieldReason:
+		return m.OldReason(ctx)
+	case trackingdomain.FieldStateChangedAt:
+		return m.OldStateChangedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown TrackingDomain field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TrackingDomainMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case trackingdomain.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case trackingdomain.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case trackingdomain.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case trackingdomain.FieldHost:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHost(v)
+		return nil
+	case trackingdomain.FieldRole:
+		v, ok := value.(trackingdomain.Role)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRole(v)
+		return nil
+	case trackingdomain.FieldState:
+		v, ok := value.(trackingdomain.State)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetState(v)
+		return nil
+	case trackingdomain.FieldServedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetServedAt(v)
+		return nil
+	case trackingdomain.FieldCheckedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCheckedAt(v)
+		return nil
+	case trackingdomain.FieldReason:
+		v, ok := value.(trackingdomain.Reason)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReason(v)
+		return nil
+	case trackingdomain.FieldStateChangedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStateChangedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TrackingDomain field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *TrackingDomainMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *TrackingDomainMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TrackingDomainMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown TrackingDomain numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *TrackingDomainMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(trackingdomain.FieldServedAt) {
+		fields = append(fields, trackingdomain.FieldServedAt)
+	}
+	if m.FieldCleared(trackingdomain.FieldCheckedAt) {
+		fields = append(fields, trackingdomain.FieldCheckedAt)
+	}
+	if m.FieldCleared(trackingdomain.FieldReason) {
+		fields = append(fields, trackingdomain.FieldReason)
+	}
+	if m.FieldCleared(trackingdomain.FieldStateChangedAt) {
+		fields = append(fields, trackingdomain.FieldStateChangedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *TrackingDomainMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TrackingDomainMutation) ClearField(name string) error {
+	switch name {
+	case trackingdomain.FieldServedAt:
+		m.ClearServedAt()
+		return nil
+	case trackingdomain.FieldCheckedAt:
+		m.ClearCheckedAt()
+		return nil
+	case trackingdomain.FieldReason:
+		m.ClearReason()
+		return nil
+	case trackingdomain.FieldStateChangedAt:
+		m.ClearStateChangedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown TrackingDomain nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *TrackingDomainMutation) ResetField(name string) error {
+	switch name {
+	case trackingdomain.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case trackingdomain.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case trackingdomain.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case trackingdomain.FieldHost:
+		m.ResetHost()
+		return nil
+	case trackingdomain.FieldRole:
+		m.ResetRole()
+		return nil
+	case trackingdomain.FieldState:
+		m.ResetState()
+		return nil
+	case trackingdomain.FieldServedAt:
+		m.ResetServedAt()
+		return nil
+	case trackingdomain.FieldCheckedAt:
+		m.ResetCheckedAt()
+		return nil
+	case trackingdomain.FieldReason:
+		m.ResetReason()
+		return nil
+	case trackingdomain.FieldStateChangedAt:
+		m.ResetStateChangedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown TrackingDomain field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *TrackingDomainMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, trackingdomain.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *TrackingDomainMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case trackingdomain.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *TrackingDomainMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *TrackingDomainMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *TrackingDomainMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, trackingdomain.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *TrackingDomainMutation) EdgeCleared(name string) bool {
+	switch name {
+	case trackingdomain.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *TrackingDomainMutation) ClearEdge(name string) error {
+	switch name {
+	case trackingdomain.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown TrackingDomain unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *TrackingDomainMutation) ResetEdge(name string) error {
+	switch name {
+	case trackingdomain.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown TrackingDomain edge %s", name)
+}
+
 // TrackingHostChangeMutation represents an operation that mutates the TrackingHostChange nodes in the graph.
 type TrackingHostChangeMutation struct {
 	config
@@ -54964,7 +55647,7 @@ type TrackingHostChangeMutation struct {
 	updated_at      *time.Time
 	workspace_id    *int64
 	addworkspace_id *int64
-	domain          *string
+	host            *string
 	state           *trackinghostchange.State
 	clearedFields   map[string]struct{}
 	done            bool
@@ -55204,40 +55887,40 @@ func (m *TrackingHostChangeMutation) ResetWorkspaceID() {
 	m.addworkspace_id = nil
 }
 
-// SetDomain sets the "domain" field.
-func (m *TrackingHostChangeMutation) SetDomain(s string) {
-	m.domain = &s
+// SetHost sets the "host" field.
+func (m *TrackingHostChangeMutation) SetHost(s string) {
+	m.host = &s
 }
 
-// Domain returns the value of the "domain" field in the mutation.
-func (m *TrackingHostChangeMutation) Domain() (r string, exists bool) {
-	v := m.domain
+// Host returns the value of the "host" field in the mutation.
+func (m *TrackingHostChangeMutation) Host() (r string, exists bool) {
+	v := m.host
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDomain returns the old "domain" field's value of the TrackingHostChange entity.
+// OldHost returns the old "host" field's value of the TrackingHostChange entity.
 // If the TrackingHostChange object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TrackingHostChangeMutation) OldDomain(ctx context.Context) (v string, err error) {
+func (m *TrackingHostChangeMutation) OldHost(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDomain is only allowed on UpdateOne operations")
+		return v, errors.New("OldHost is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDomain requires an ID field in the mutation")
+		return v, errors.New("OldHost requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDomain: %w", err)
+		return v, fmt.Errorf("querying old value for OldHost: %w", err)
 	}
-	return oldValue.Domain, nil
+	return oldValue.Host, nil
 }
 
-// ResetDomain resets all changes to the "domain" field.
-func (m *TrackingHostChangeMutation) ResetDomain() {
-	m.domain = nil
+// ResetHost resets all changes to the "host" field.
+func (m *TrackingHostChangeMutation) ResetHost() {
+	m.host = nil
 }
 
 // SetState sets the "state" field.
@@ -55320,8 +56003,8 @@ func (m *TrackingHostChangeMutation) Fields() []string {
 	if m.workspace_id != nil {
 		fields = append(fields, trackinghostchange.FieldWorkspaceID)
 	}
-	if m.domain != nil {
-		fields = append(fields, trackinghostchange.FieldDomain)
+	if m.host != nil {
+		fields = append(fields, trackinghostchange.FieldHost)
 	}
 	if m.state != nil {
 		fields = append(fields, trackinghostchange.FieldState)
@@ -55340,8 +56023,8 @@ func (m *TrackingHostChangeMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case trackinghostchange.FieldWorkspaceID:
 		return m.WorkspaceID()
-	case trackinghostchange.FieldDomain:
-		return m.Domain()
+	case trackinghostchange.FieldHost:
+		return m.Host()
 	case trackinghostchange.FieldState:
 		return m.State()
 	}
@@ -55359,8 +56042,8 @@ func (m *TrackingHostChangeMutation) OldField(ctx context.Context, name string) 
 		return m.OldUpdatedAt(ctx)
 	case trackinghostchange.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
-	case trackinghostchange.FieldDomain:
-		return m.OldDomain(ctx)
+	case trackinghostchange.FieldHost:
+		return m.OldHost(ctx)
 	case trackinghostchange.FieldState:
 		return m.OldState(ctx)
 	}
@@ -55393,12 +56076,12 @@ func (m *TrackingHostChangeMutation) SetField(name string, value ent.Value) erro
 		}
 		m.SetWorkspaceID(v)
 		return nil
-	case trackinghostchange.FieldDomain:
+	case trackinghostchange.FieldHost:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDomain(v)
+		m.SetHost(v)
 		return nil
 	case trackinghostchange.FieldState:
 		v, ok := value.(trackinghostchange.State)
@@ -55480,8 +56163,8 @@ func (m *TrackingHostChangeMutation) ResetField(name string) error {
 	case trackinghostchange.FieldWorkspaceID:
 		m.ResetWorkspaceID()
 		return nil
-	case trackinghostchange.FieldDomain:
-		m.ResetDomain()
+	case trackinghostchange.FieldHost:
+		m.ResetHost()
 		return nil
 	case trackinghostchange.FieldState:
 		m.ResetState()
@@ -62227,6 +62910,9 @@ type WorkspaceMutation struct {
 	join_domains                 map[int64]struct{}
 	removedjoin_domains          map[int64]struct{}
 	clearedjoin_domains          bool
+	tracking_domains             map[int64]struct{}
+	removedtracking_domains      map[int64]struct{}
+	clearedtracking_domains      bool
 	provider_limiters            map[int64]struct{}
 	removedprovider_limiters     map[int64]struct{}
 	clearedprovider_limiters     bool
@@ -64290,6 +64976,60 @@ func (m *WorkspaceMutation) ResetJoinDomains() {
 	m.removedjoin_domains = nil
 }
 
+// AddTrackingDomainIDs adds the "tracking_domains" edge to the TrackingDomain entity by ids.
+func (m *WorkspaceMutation) AddTrackingDomainIDs(ids ...int64) {
+	if m.tracking_domains == nil {
+		m.tracking_domains = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.tracking_domains[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTrackingDomains clears the "tracking_domains" edge to the TrackingDomain entity.
+func (m *WorkspaceMutation) ClearTrackingDomains() {
+	m.clearedtracking_domains = true
+}
+
+// TrackingDomainsCleared reports if the "tracking_domains" edge to the TrackingDomain entity was cleared.
+func (m *WorkspaceMutation) TrackingDomainsCleared() bool {
+	return m.clearedtracking_domains
+}
+
+// RemoveTrackingDomainIDs removes the "tracking_domains" edge to the TrackingDomain entity by IDs.
+func (m *WorkspaceMutation) RemoveTrackingDomainIDs(ids ...int64) {
+	if m.removedtracking_domains == nil {
+		m.removedtracking_domains = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.tracking_domains, ids[i])
+		m.removedtracking_domains[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTrackingDomains returns the removed IDs of the "tracking_domains" edge to the TrackingDomain entity.
+func (m *WorkspaceMutation) RemovedTrackingDomainsIDs() (ids []int64) {
+	for id := range m.removedtracking_domains {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TrackingDomainsIDs returns the "tracking_domains" edge IDs in the mutation.
+func (m *WorkspaceMutation) TrackingDomainsIDs() (ids []int64) {
+	for id := range m.tracking_domains {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTrackingDomains resets all changes to the "tracking_domains" edge.
+func (m *WorkspaceMutation) ResetTrackingDomains() {
+	m.tracking_domains = nil
+	m.clearedtracking_domains = false
+	m.removedtracking_domains = nil
+}
+
 // AddProviderLimiterIDs adds the "provider_limiters" edge to the ProviderLimiter entity by ids.
 func (m *WorkspaceMutation) AddProviderLimiterIDs(ids ...int64) {
 	if m.provider_limiters == nil {
@@ -66325,7 +67065,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 38)
+	edges := make([]string, 0, 39)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -66364,6 +67104,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.join_domains != nil {
 		edges = append(edges, workspace.EdgeJoinDomains)
+	}
+	if m.tracking_domains != nil {
+		edges = append(edges, workspace.EdgeTrackingDomains)
 	}
 	if m.provider_limiters != nil {
 		edges = append(edges, workspace.EdgeProviderLimiters)
@@ -66525,6 +67268,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeTrackingDomains:
+		ids := make([]ent.Value, 0, len(m.tracking_domains))
+		for id := range m.tracking_domains {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeProviderLimiters:
 		ids := make([]ent.Value, 0, len(m.provider_limiters))
 		for id := range m.provider_limiters {
@@ -66681,7 +67430,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 38)
+	edges := make([]string, 0, 39)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -66720,6 +67469,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedjoin_domains != nil {
 		edges = append(edges, workspace.EdgeJoinDomains)
+	}
+	if m.removedtracking_domains != nil {
+		edges = append(edges, workspace.EdgeTrackingDomains)
 	}
 	if m.removedprovider_limiters != nil {
 		edges = append(edges, workspace.EdgeProviderLimiters)
@@ -66881,6 +67633,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeTrackingDomains:
+		ids := make([]ent.Value, 0, len(m.removedtracking_domains))
+		for id := range m.removedtracking_domains {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeProviderLimiters:
 		ids := make([]ent.Value, 0, len(m.removedprovider_limiters))
 		for id := range m.removedprovider_limiters {
@@ -67037,7 +67795,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 38)
+	edges := make([]string, 0, 39)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -67076,6 +67834,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedjoin_domains {
 		edges = append(edges, workspace.EdgeJoinDomains)
+	}
+	if m.clearedtracking_domains {
+		edges = append(edges, workspace.EdgeTrackingDomains)
 	}
 	if m.clearedprovider_limiters {
 		edges = append(edges, workspace.EdgeProviderLimiters)
@@ -67185,6 +67946,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedsending_domains
 	case workspace.EdgeJoinDomains:
 		return m.clearedjoin_domains
+	case workspace.EdgeTrackingDomains:
+		return m.clearedtracking_domains
 	case workspace.EdgeProviderLimiters:
 		return m.clearedprovider_limiters
 	case workspace.EdgeSendCapLimiters:
@@ -67289,6 +68052,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeJoinDomains:
 		m.ResetJoinDomains()
+		return nil
+	case workspace.EdgeTrackingDomains:
+		m.ResetTrackingDomains()
 		return nil
 	case workspace.EdgeProviderLimiters:
 		m.ResetProviderLimiters()

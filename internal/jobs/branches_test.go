@@ -134,7 +134,7 @@ func TestSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
-	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, nil, accounts.OwnerNotifier(env.DB, env.SystemMail)))
+	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, accounts.OwnerNotifier(env.DB, env.SystemMail)))
 
 	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
 	require.Len(t, env.SystemMail.Messages(), 1)

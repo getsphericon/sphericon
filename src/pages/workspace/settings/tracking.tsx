@@ -6,25 +6,24 @@ import {
   Code,
   CopyButton,
   Group,
-  Select,
   Stack,
   Text,
   Title,
 } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import {
   siteEventsListOptions,
-  siteSendingDomainsListOptions,
+  siteTrackingDomainsListOptions,
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { DOCS_URL, SDK_SOURCE_URL } from '../../../utils/docs.ts'
 import { SettingsFrame } from './SettingsFrame.tsx'
+import { TrackingDomainSection } from './TrackingDomainSection.tsx'
 
 // InstallStatus polls the events feed and tells the user whether their tracker
 // is connected yet. Accurate only because the dashboard no longer self-tracks
@@ -93,8 +92,9 @@ function TestEvent({ collectKey, trackerUrl }: { collectKey: string; trackerUrl:
   )
 }
 
-// TrackingSection shows the embed snippet customers paste into their site. The
-// host is the instance's tracker origin; the collect key identifies the workspace.
+// TrackingSection shows the embed snippet customers paste into their site. The host is the
+// Workspace's Tracking domain while it serves, the Instance's tracker origin otherwise; the collect
+// key identifies the workspace.
 function TrackingSection({
   collectKey,
   trackerUrl,
@@ -167,46 +167,26 @@ function SendEvents() {
   )
 }
 
-// TrackerSetup lets the Owner pick the host the snippet is built on: the Instance's tracker origin, or
-// the Tracking domain of a Sending domain once it serves (ADR 0059). A host under the site's own
-// registrable domain is first-party, which the hint says; the app cannot know the site, so it checks nothing.
+// TrackerSetup builds the snippet and the test command on the host the Workspace's tracking is
+// served on (ADR 0071): its current Tracking domain while that serves, the Instance's tracker origin
+// otherwise (and while the list loads or fails, or when the Instance offers no Tracking domains).
 function TrackerSetup({ workspace }: { workspace: SiteWorkspaceResource }) {
-  const { t } = useTranslation()
-  const domainsQuery = useQuery(
-    siteSendingDomainsListOptions({
-      path: { workspaceId: workspace.id },
-      // A Workspace has few Sending domains; one large page lists every serving host.
-      query: { archived: false, pageSize: 100 },
-    }),
-  )
-  const [selected, setSelected] = useState(workspace.trackerUrl)
-
-  const hosts = (domainsQuery.data?.items ?? []).flatMap((domain) =>
-    domain.trackingRecord?.state === 'serving' ? [`https://${domain.trackingRecord.host}`] : [],
-  )
-  const options = [workspace.trackerUrl, ...hosts]
-  // A host that stopped serving (or was archived) drops out of the list: fall back to the default.
-  const trackerUrl = options.includes(selected) ? selected : workspace.trackerUrl
+  const domainsQuery = useQuery({
+    ...siteTrackingDomainsListOptions({ path: { workspaceId: workspace.id } }),
+    enabled: Boolean(workspace.trackingTarget),
+  })
+  const current = domainsQuery.data?.find((domain) => domain.role === 'current')
+  const trackerUrl = current?.state === 'serving' ? `https://${current.host}` : workspace.trackerUrl
 
   return (
     <Stack gap="xl">
-      {hosts.length > 0 ? (
-        <Select
-          maw={480}
-          label={t(($) => $.settings.trackerHostLabel)}
-          description={t(($) => $.settings.trackerHostDescription)}
-          data={options}
-          value={trackerUrl}
-          allowDeselect={false}
-          onChange={(value) => setSelected(value ?? '')}
-        />
-      ) : null}
       <TrackingSection
         collectKey={workspace.collectKey}
         trackerUrl={trackerUrl}
         workspaceId={workspace.id}
       />
       <TestEvent collectKey={workspace.collectKey} trackerUrl={trackerUrl} />
+      <TrackingDomainSection workspace={workspace} />
       <SendEvents />
     </Stack>
   )

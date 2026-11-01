@@ -19,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qmuntal/stateless"
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -30,7 +29,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/liveuse"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -77,42 +75,10 @@ type Module struct {
 	bus    *events.Bus
 	cipher *secrets.Cipher
 	verify Verifier
-	// trackingTarget is the edge host the Tracking domain CNAME points at
-	// (SPHERICON_TRACKING_CNAME_TARGET); empty turns the feature off (ADR 0038).
-	trackingTarget string
 }
 
-func New(bus *events.Bus, cipher *secrets.Cipher, verify Verifier, trackingTarget string) *Module {
-	return &Module{bus: bus, cipher: cipher, verify: verify, trackingTarget: trackingTarget}
-}
-
-// TrackingHost is the Tracking domain of a Sending domain: track.<domain> (ADR 0038).
-func TrackingHost(domain string) string { return trackingLabel + domain }
-
-const trackingLabel = "track."
-
-// DomainOfTrackingHost is the inverse of TrackingHost: the Sending domain a Tracking
-// domain host belongs to, lowercased. ok is false for anything that is not such a host.
-func DomainOfTrackingHost(host string) (string, bool) {
-	host = strings.ToLower(strings.TrimSuffix(strings.TrimSpace(host), "."))
-	domain, found := strings.CutPrefix(host, trackingLabel)
-	if !found || domain == "" || strings.ContainsAny(domain, "/:@ ?#") {
-		return "", false
-	}
-	return domain, true
-}
-
-// ServingTrackingHost returns the Tracking domain of the Workspace's Sending domain when
-// its state is serving, and "" otherwise (including an unknown domain): mail builds its
-// links on that host, or on the Instance's host when this is empty (ADR 0038).
-func ServingTrackingHost(ctx context.Context, s *ent.Scoped, domain string) (string, error) {
-	ok, err := s.SendingDomain().Query().
-		Where(sendingdomain.Domain(domain), sendingdomain.TrackingStateEQ(sendingdomain.TrackingStateServing)).
-		Exist(ctx)
-	if err != nil || !ok {
-		return "", err
-	}
-	return TrackingHost(domain), nil
+func New(bus *events.Bus, cipher *secrets.Cipher, verify Verifier) *Module {
+	return &Module{bus: bus, cipher: cipher, verify: verify}
 }
 
 // CreateInput is a new Sending domain. An empty Selector means DefaultSelector.
@@ -214,8 +180,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	return row, nil
 }
 
-// Archive discards a Sending domain (ADR 0049): it leaves the lists, serves no Tracking domain
-// host, and keeps the record of mail sent from it. Live work that sends from it refuses it with an
+// Archive discards a Sending domain (ADR 0049): it leaves the lists and keeps the record of mail sent from it. Live work that sends from it refuses it with an
 // *inuse.Error naming that work. A domain is used through the domain of a From address, not an
 // id: a scheduled or sending Broadcast uses the domain of its From address, and when it has none,
 // of the default Integration's configured one; an active Automation that sends email uses the
@@ -246,9 +211,7 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Sen
 	return m.Get(ctx, s, id)
 }
 
-// Unarchive brings an archived Sending domain back and starts a new DNS check. The Tracking
-// domain starts over from pending, so the host serves again only once the check proves it:
-// the certificate and the serving state are not restored. It returns ErrAddedAgain when the
+// Unarchive brings an archived Sending domain back and starts a new DNS check. It returns ErrAddedAgain when the
 // Workspace added the same domain again meanwhile. Restoring a domain that is not archived
 // changes nothing; an unknown id is ErrNotFound. It returns the domain as the restore left it.
 func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
@@ -267,12 +230,6 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.S
 		}
 		if taken {
 			return ErrAddedAgain
-		}
-		if row.TrackingState != sendingdomain.TrackingStatePending {
-			err := TrackingMachine(ts, row, time.Now()).FireCtx(ctx, sendingdomain.TrackingStatePending)
-			if err != nil {
-				return err
-			}
 		}
 		restored = true
 		return ts.SendingDomain().Undiscard(ctx, id)
@@ -364,24 +321,12 @@ type Record struct {
 	Value string
 }
 
-// TrackingRecord is the Tracking domain CNAME to publish: Host points at Target (the
-// Instance's edge host). State and the two times are read-only facts the checks keep.
-type TrackingRecord struct {
-	Host           string
-	Target         string
-	State          sendingdomain.TrackingState
-	Reason         *sendingdomain.TrackingReason
-	CheckedAt      *time.Time
-	StateChangedAt *time.Time
-}
-
 // DNSRecords are the records a Sending domain needs: DKIM gates sending, SPF and DMARC
-// are advisory. Tracking is nil while the Tracking domain feature is off.
+// are advisory.
 type DNSRecords struct {
-	DKIM     Record
-	SPF      Record
-	DMARC    Record
-	Tracking *TrackingRecord
+	DKIM  Record
+	SPF   Record
+	DMARC Record
 }
 
 // Records derives the DNS records for a stored domain. The public key only.
@@ -393,16 +338,6 @@ func (m *Module) Records(d *ent.SendingDomain) DNSRecords {
 		DKIM:  Record{Host: dkimHost, Value: dkimValue},
 		SPF:   Record{Host: spfHost, Value: spfValue},
 		DMARC: Record{Host: dmarcHost, Value: dmarcValue},
-	}
-	if m.trackingTarget != "" {
-		rec.Tracking = &TrackingRecord{
-			Host:           TrackingHost(d.Domain),
-			Target:         m.trackingTarget,
-			State:          d.TrackingState,
-			Reason:         d.TrackingReason,
-			CheckedAt:      d.TrackingCheckedAt,
-			StateChangedAt: d.TrackingStateChangedAt,
-		}
 	}
 	return rec
 }
@@ -436,34 +371,4 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, a
 		func(ctx context.Context, limit, offset int) ([]*ent.SendingDomain, error) {
 			return rows().Order(ent.Asc(sendingdomain.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
-}
-
-// TrackingMachine is the Tracking domain's lifecycle (ADR 0046): every state can move to
-// each of the others, so six edges, promotions and demotions alike. A trigger is the state it
-// moves to. The machine reads the state the row had when the check loaded it, and the write
-// is a compare-and-swap from that state: a check judged on a state another check already
-// changed fails with lifecycle.ErrInvalidTransition and stores nothing.
-func TrackingMachine(ts *ent.Scoped, row *ent.SendingDomain, now time.Time) *stateless.StateMachine {
-	m := lifecycle.New(lifecycle.Storage[sendingdomain.TrackingState]{
-		Read: func(context.Context) (sendingdomain.TrackingState, error) { return row.TrackingState, nil },
-		Write: func(ctx context.Context, from, to sendingdomain.TrackingState) (bool, error) {
-			n, err := ts.SendingDomain().Update().
-				Where(sendingdomain.ID(row.ID), sendingdomain.TrackingStateEQ(from)).
-				SetTrackingCheckedAt(now).ClearTrackingReason().
-				SetTrackingState(to).SetTrackingStateChangedAt(now).Save(ctx)
-			return n == 1, err
-		},
-	})
-	states := []sendingdomain.TrackingState{
-		sendingdomain.TrackingStatePending, sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing,
-	}
-	for _, from := range states {
-		cfg := m.Configure(from)
-		for _, to := range states {
-			if to != from {
-				cfg.Permit(to, to)
-			}
-		}
-	}
-	return m
 }

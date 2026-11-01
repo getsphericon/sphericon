@@ -898,10 +898,6 @@ func (e *SendingDomain) auditFields() map[string]any {
 		"last_checked_at":            derefAudit(e.LastCheckedAt),
 		"verified_at":                derefAudit(e.VerifiedAt),
 		"verification_lost_at":       derefAudit(e.VerificationLostAt),
-		"tracking_state":             e.TrackingState,
-		"tracking_checked_at":        derefAudit(e.TrackingCheckedAt),
-		"tracking_reason":            derefAudit(e.TrackingReason),
-		"tracking_state_changed_at":  derefAudit(e.TrackingStateChangedAt),
 	}
 }
 
@@ -997,6 +993,66 @@ func (b *TagDelete) auditRebind(c *Client) {
 	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Tag.Hooks()
 }
 func (b *TagCreateBulk) auditRebind(c *Client) {
+	b.config = c.config
+	for _, x := range b.builders {
+		x.auditRebind(c)
+	}
+}
+
+// TrackingDomainAuditSensitive lists the TrackingDomain fields whose values never reach the Audit log.
+var TrackingDomainAuditSensitive = map[string]bool{}
+
+// auditFields maps every audited field of the TrackingDomain to its value.
+func (e *TrackingDomain) auditFields() map[string]any {
+	return map[string]any{
+		"host":             e.Host,
+		"role":             e.Role,
+		"state":            e.State,
+		"served_at":        derefAudit(e.ServedAt),
+		"checked_at":       derefAudit(e.CheckedAt),
+		"reason":           derefAudit(e.Reason),
+		"state_changed_at": derefAudit(e.StateChangedAt),
+	}
+}
+
+// auditChangeTrackingDomain describes a TrackingDomain create (before is nil), update or delete
+// (after is nil).
+func auditChangeTrackingDomain(verb string, before, after *TrackingDomain) AuditChange {
+	var b, a map[string]any
+	target := before
+	if before != nil {
+		b = before.auditFields()
+	}
+	if after != nil {
+		a = after.auditFields()
+		target = after
+	}
+	change := AuditChange{
+		Action:     "tracking_domain." + verb,
+		TargetType: "tracking_domain",
+		TargetID:   auditID(target.ID),
+		Diff:       AuditDiff(b, a, TrackingDomainAuditSensitive),
+	}
+	change.TargetName = fmt.Sprint(derefAudit(target.Host))
+	return change
+}
+
+// auditRebind points the builders at the client of the transaction that carries the
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *TrackingDomainCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.TrackingDomain.Hooks()
+}
+func (b *TrackingDomainUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.TrackingDomain.Hooks()
+}
+func (b *TrackingDomainUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.TrackingDomain.Hooks()
+}
+func (b *TrackingDomainDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.TrackingDomain.Hooks()
+}
+func (b *TrackingDomainCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
 		x.auditRebind(c)

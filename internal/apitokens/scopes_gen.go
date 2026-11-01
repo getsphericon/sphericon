@@ -29,12 +29,14 @@ const (
 	ScopeWebhooksTest          Scope = "webhooks:test"
 	ScopeCustomFieldsRead      Scope = "custom_fields:read"
 	ScopeSendingDomainsRead    Scope = "sending_domains:read"
+	ScopeTrackingDomainsRead   Scope = "tracking_domains:read"
 	ScopeIntegrationsRead      Scope = "integrations:read"
 	ScopeEmailsSend            Scope = "emails:send"
 	ScopeBroadcastsSend        Scope = "broadcasts:send"
 	ScopeAutomationsPublish    Scope = "automations:publish"
 	ScopeMcpSend               Scope = "mcp:send"
 	ScopeSendingDomainsWrite   Scope = "sending_domains:write"
+	ScopeTrackingDomainsWrite  Scope = "tracking_domains:write"
 	ScopeIntegrationsWrite     Scope = "integrations:write"
 	ScopeContactsErase         Scope = "contacts:erase"
 	ScopeCapturedMessagesRead  Scope = "captured_messages:read"
@@ -68,12 +70,14 @@ var Scopes = []Scope{
 	ScopeWebhooksTest,
 	ScopeCustomFieldsRead,
 	ScopeSendingDomainsRead,
+	ScopeTrackingDomainsRead,
 	ScopeIntegrationsRead,
 	ScopeEmailsSend,
 	ScopeBroadcastsSend,
 	ScopeAutomationsPublish,
 	ScopeMcpSend,
 	ScopeSendingDomainsWrite,
+	ScopeTrackingDomainsWrite,
 	ScopeIntegrationsWrite,
 	ScopeContactsErase,
 	ScopeCapturedMessagesRead,
