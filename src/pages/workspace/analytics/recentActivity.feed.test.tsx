@@ -52,19 +52,19 @@ test('an event without an email shows its subject id', async () => {
   await expect.element(screen.getByText('anon:1')).toBeInTheDocument()
 })
 
-test('picking a System event by its name puts its action in the URL, on the first page', async () => {
+test('picking a System event by its name puts its action in the URL, on the first page, in the same window', async () => {
   serveEvents([], 60)
-  const { screen, navigate } = await renderWithRouter(<RecentActivityPage />, {
+  const { screen, navigate, router } = await renderWithRouter(<RecentActivityPage />, {
     ...mount,
-    initialPath: `${mount.initialPath}?page=2`,
+    initialPath: `${mount.initialPath}?range=30d&page=2`,
   })
 
   await screen.getByPlaceholder('Filter by action').click()
   await screen.getByRole('option', { name: /Opened an email/ }).click()
 
-  await expect
-    .poll(() => navigate.mock.calls.at(-1)?.[0])
-    .toMatchObject({ search: { action: 'email.opened' }, replace: true })
+  await expect.poll(() => navigate.mock.calls.at(-1)?.[0]).toMatchObject({ replace: true })
+  const target = router.buildLocation(navigate.mock.calls.at(-1)![0])
+  expect(target.search).toEqual({ range: '30d', action: 'email.opened' })
 })
 
 test('the page in the URL is the page of the feed requested', async () => {

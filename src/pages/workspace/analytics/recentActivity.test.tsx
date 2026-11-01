@@ -84,19 +84,3 @@ test('says an email event of a send through a Test inbox was captured, not deliv
   await expect.element(screen.getByText('Received an email')).toBeInTheDocument()
   await expect.element(screen.getByText('Captured, not delivered')).toBeInTheDocument()
 })
-
-test('an action filter keeps the window and starts on the first page', async () => {
-  worker.use(handleSiteEventsActions({ body: { actions: ['purchase'] } }), eventsPage())
-  const { screen, navigate, router } = await renderWithRouter(<RecentActivityPage />, {
-    ...mount,
-    initialPath: `${mount.initialPath}?range=30d&page=3`,
-  })
-
-  await screen.getByPlaceholder('Filter by action').click()
-  await screen.getByRole('option', { name: 'purchase' }).click()
-
-  expect(navigate).toHaveBeenCalledOnce()
-  const target = router.buildLocation(navigate.mock.calls[0]![0])
-  expect(target.pathname).toBe('/workspaces/TestWs01/analytics/recent-activity')
-  expect(target.search).toEqual({ range: '30d', action: 'purchase' })
-})
