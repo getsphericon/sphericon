@@ -197,11 +197,25 @@ layer, evaluated last so the negatives always dominate); (5) otherwise, send. Tr
 messages skip layers 2–4 (they still respect Suppression's hard bounces). Consent is
 per-channel: an email opt-out never silences SMS.
 
+**Channel**:
+The medium a message travels by, each with its own Destinations, consent and Message content:
+`email`, `sms`, `whatsapp`, `telegram`, `web_push` and `mobile_push`. WhatsApp is not SMS though
+both reach a phone, and web push (a browser) is not mobile push (an app).
+_Avoid_: Medium, transport, provider (that is what an Integration sends through)
+
 **Destination**:
 The channel-specific address a message is sent to — an email address on the email channel, a
-phone number on SMS, a messenger id on a bot channel. Suppression and Unsubscribe are keyed by
+phone number on SMS, a chat on Telegram. Suppression and Unsubscribe are keyed by
 (channel, destination); a Contact may have several (its email, its phone).
 _Avoid_: Address (unqualified), recipient, endpoint
+
+**Integration-bound Destination**:
+A Destination that only the Integration it was obtained through can reach: a Telegram chat (only
+the bot the person wrote to), a WhatsApp business-scoped user id, a web push subscription (signed
+for one key), a mobile push user (the Contact's subject_id in one app, reached through an external
+push service). A message to it goes through that Integration and no other. An email address or a phone number on SMS is not bound: any Integration of its Channel
+reaches it.
+_Avoid_: Integration-scoped address, bot subscriber
 
 **Suppression**:
 The workspace's authoritative, (channel, destination)-keyed do-not-send registry for hard,
@@ -543,8 +557,9 @@ erased Workspace leaves)
 
 **Integration**:
 A workspace-scoped, **outbound** connection to a sending provider, external or built in (the Test
-inbox) — channel-agnostic by design (email today via smtp/ses/inbox; sms reserved), with encrypted
-credentials where the provider has any and at most one default per (workspace, channel). Broadcasts and Automations send _through_ an Integration (the
+inbox, web push), for exactly **one Channel**: an account that sends SMS and WhatsApp is two
+Integrations. It holds encrypted credentials where the provider has any, and there is at most one
+default per (workspace, channel). Broadcasts and Automations send _through_ an Integration (the
 workspace default when unspecified), by its Send route. Sending is one half of a loop: bounces and complaints come
 back via the Integration's Ingest hook and land in Suppression.
 _Avoid_: Provider (alone), ESP, sender, connector
@@ -750,7 +765,9 @@ _Avoid_: Webhook (unqualified), inbound webhook
 
 **Preset**:
 A declarative description of one provider's callbacks — how its signature is verified and how its
-payload becomes Delivery notices. Built into the binary (ses, postmark, mailgun, generic) or
+payload becomes the closed set of inbound facts: Delivery notices, and on the channels that have
+them opt-outs, inbound messages and bindings of a Destination to a Contact. It describes only
+what comes in; how a provider is sent through is built into the binary. Built into the binary (ses, postmark, mailgun, generic) or
 supplied by the Self-hoster for the whole Instance, never by a Workspace.
 _Avoid_: Adapter, plugin, provider (alone)
 
@@ -1143,15 +1160,14 @@ _Avoid_: Breaking release
 The identity spine — **Contact + Visitor + Event** — is channel-agnostic and is the stable point
 every current and future surface plugs into. Sending is modelled _per channel_: an Integration
 has a channel, Send-eligibility is keyed by (channel, Destination), and Message content is
-channel-specific. Email is the only built channel; SMS is reserved.
+channel-specific. Email is the only built Channel; SMS, WhatsApp, Telegram, web push and mobile
+push are being designed.
 
 Deferred, additive surfaces — **not modelled until their shape is real**, and none should reshape
 the core now:
 
 - **On-site popup / form** — a capture-and-display surface; it feeds Events + Identify through
   the tracker. Additive entity, not a core change.
-- **Messenger bot** — just another channel (a Destination is a chat id); covered by the
-  channel-aware send model.
 - **On-site chatbot** — a separate, two-way conversational context; shares only the identity
   spine. Explicitly out of the send/eligibility/sequence model.
 
