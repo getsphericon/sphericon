@@ -129,6 +129,12 @@ type Inputs interface {
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
+	// The contract names a period "7d", the module counts its days: each member is mapped.
+	// goverter:enum:map AutomationsReportPeriod7d ReportPeriod7Days
+	// goverter:enum:map AutomationsReportPeriod14d ReportPeriod14Days
+	// goverter:enum:map AutomationsReportPeriod30d ReportPeriod30Days
+	// goverter:enum:map AutomationsReportPeriod90d ReportPeriod90Days
+	AutomationReportPeriod(source externalapi.AutomationsReportPeriod) automations.ReportPeriod
 	// goverter:enum:transform value
 	AutomationStepType(source externalapi.AutomationStepType) automations.StepType
 	// goverter:enum:transform value

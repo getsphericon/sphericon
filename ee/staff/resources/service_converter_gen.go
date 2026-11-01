@@ -7,6 +7,7 @@ import (
 	"fmt"
 	usage "github.com/getsphericon/sphericon/ee/usage"
 	ent "github.com/getsphericon/sphericon/ent"
+	trackinghostchange "github.com/getsphericon/sphericon/ent/trackinghostchange"
 	service "github.com/getsphericon/sphericon/gen/service"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -57,6 +58,20 @@ func (c *ServiceConverterImpl) TombstoneToResource(source *ent.UserTombstone) se
 		// serviceapiServiceUserResource.MailingsConsentChangedAt: ignore
 	}
 	return serviceapiServiceUserResource
+}
+func (c *ServiceConverterImpl) TrackingHostStateToResource(source trackinghostchange.State) service.ServiceTrackingHostState {
+	var serviceapiServiceTrackingHostState service.ServiceTrackingHostState
+	switch source {
+	case trackinghostchange.StateDNSVerified:
+		serviceapiServiceTrackingHostState = service.ServiceTrackingHostStateDNSVerified
+	case trackinghostchange.StateRemoved:
+		serviceapiServiceTrackingHostState = service.ServiceTrackingHostStateRemoved
+	case trackinghostchange.StateServing:
+		serviceapiServiceTrackingHostState = service.ServiceTrackingHostStateServing
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return serviceapiServiceTrackingHostState
 }
 func (c *ServiceConverterImpl) UsageFigureToResource(source usage.Figure) service.UsageFigure {
 	var serviceapiUsageFigure service.UsageFigure

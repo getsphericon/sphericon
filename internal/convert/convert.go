@@ -45,6 +45,17 @@ func Ptr[T any, O getter[T]](o O) *T {
 	return nil
 }
 
+// PtrVia is Ptr of the option's value mapped through f, nil when it is unset/null: an optional
+// enum of a request goes through its Inputs enum method,
+// PtrVia(o, c.SignupSource).
+func PtrVia[S any, T any, O getter[S]](o O, f func(S) T) *T {
+	if v, ok := o.Get(); ok {
+		t := f(v)
+		return &t
+	}
+	return nil
+}
+
 // Int64Ptr is like Ptr but coerces named int64 option values (e.g. an EntityId)
 // down to *int64, the type ent's Nillable setters take.
 func Int64Ptr[T ~int64, O getter[T]](o O) *int64 {

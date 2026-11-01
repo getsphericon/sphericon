@@ -122,21 +122,3 @@ func TestResultsOfAnotherWorkspacesAutomationAreNotFound(t *testing.T) {
 
 	require.ErrorIs(t, err, automations.ErrNotFound)
 }
-
-func TestAPeriodOfTheContractIsItsNumberOfDays(t *testing.T) {
-	week, err := automations.PeriodOf("7d")
-	require.NoError(t, err)
-	quarter, err := automations.PeriodOf("90d")
-	require.NoError(t, err)
-
-	assert.Equal(t, automations.ReportPeriod7Days, week)
-	assert.Equal(t, automations.ReportPeriod90Days, quarter)
-}
-
-func TestAPeriodTheReportDoesNotOfferIsRefused(t *testing.T) {
-	for _, p := range []string{"8d", "30", "d", ""} {
-		_, err := automations.PeriodOf(p)
-
-		require.ErrorIs(t, err, automations.ErrUnknownPeriod, p)
-	}
-}

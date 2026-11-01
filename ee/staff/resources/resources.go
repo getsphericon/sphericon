@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/usage"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
+	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
@@ -195,6 +196,8 @@ type ServiceConverter interface {
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
+	// goverter:enum:transform value
+	TrackingHostStateToResource(source trackinghostchange.State) serviceapi.ServiceTrackingHostState
 	// goverter:enum:transform value
 	UsageMetricToResource(source usage.Metric) serviceapi.UsageMetric
 }

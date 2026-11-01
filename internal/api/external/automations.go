@@ -5,7 +5,6 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -106,17 +105,12 @@ func (h *Handlers) AutomationsDeactivate(ctx context.Context, params externalapi
 // AutomationsReport reads the engagement of the Automation's emails and its results over the
 // period the request names; the contract's default fills it in when the request names none.
 func (h *Handlers) AutomationsReport(ctx context.Context, params externalapi.AutomationsReportParams) (externalapi.AutomationsReportRes, error) {
-	period, err := automations.PeriodOf(params.Period.Value)
-	if err != nil {
-		return nil, err
-	}
+	period := inputs.AutomationReportPeriod(params.Period.Value)
 	report, err := h.automations.ReportOf(ctx, auth.TokenScoped(ctx), int64(params.ID), period)
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationReportToResource(report)
-	res.Results.Period = externalapi.AutomationReportPeriod(params.Period.Value)
-	return &res, nil
+	return new(mapper.AutomationReportToResource(report)), nil
 }
 
 // AutomationsRevert drops the draft and changes nothing that sends, so it is authoring:

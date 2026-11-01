@@ -31,7 +31,7 @@ func (h *ServiceHandlers) ServiceTrackingHostFeedList(ctx context.Context, param
 		out.Items[i] = serviceapi.ServiceTrackingHostChange{
 			Host:        sendingdomains.TrackingHost(e.Domain),
 			WorkspaceId: serviceapi.WorkspaceId(publicIDs[e.WorkspaceID]),
-			State:       serviceapi.ServiceTrackingHostState(e.State),
+			State:       serviceMapper.TrackingHostStateToResource(e.State),
 			ChangedAt:   serviceapi.Timestamp(e.CreatedAt),
 		}
 	}

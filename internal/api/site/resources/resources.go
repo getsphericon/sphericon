@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/abusewatch"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
@@ -51,7 +52,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/signupitems"
+	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
@@ -100,6 +103,8 @@ import (
 // goverter:extend optTimestamp
 // goverter:extend optInt32
 // goverter:extend optString
+// goverter:extend optBool
+// goverter:extend optEditorDocument
 // goverter:extend optMembershipSource
 // goverter:extend optMessageRevenue
 // goverter:extend optTrackingReason
@@ -222,7 +227,6 @@ type Converter interface {
 	// goverter:autoMap ResultCounts
 	AutomationResultsPointToResource(source automations.ResultsPoint) siteapi.SiteAutomationResultsPoint
 	// The period is the one the request named: the handler attaches it.
-	// goverter:ignore Period
 	AutomationResultsToResource(source automations.Results) siteapi.SiteAutomationResults
 
 	// The delivery figures are derived from the Broadcast's recipients and their Outbound
@@ -294,9 +298,17 @@ type Converter interface {
 	// The stored definition string (the executor's JSON format) is decoded into the typed steps
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
-	// goverter:map . Steps | automationSteps
+	// goverter:map Steps | automationSteps
 	// goverter:map IntegrationID IntegrationId
 	AutomationVersionToResource(source *ent.AutomationVersion) siteapi.SiteAutomationVersion
+	// A step is the module's masked view: what it hides is never mapped.
+	// goverter:ignore URL
+	// goverter:ignore Secret
+	// goverter:ignore ClearSecret
+	AutomationStepToResource(source automations.StepView) siteapi.SiteAutomationStep
+	AutomationStepsToResources(source []automations.StepView) []siteapi.SiteAutomationStep
+	// goverter:ignore Value
+	AutomationHttpHeaderToResource(source automations.HeaderName) siteapi.SiteAutomationHttpHeader
 
 	// The config is a oneOf the generator cannot express, and the params, hook URL and
 	// retiring secrets come from the integrations module (decryption, instance URL), and
@@ -538,8 +550,22 @@ type Converter interface {
 	// goverter:skipCopySameType
 	BroadcastsListPage(source pagination.Page[siteapi.SiteBroadcastResource]) *siteapi.SiteBroadcastsListOK
 
+	SetupChecklistToResource(source setupchecklist.Checklist) siteapi.SiteSetupProgress
+
+	// The Permissions a Role holds, and the one each requested OAuth scope needs.
+	// goverter:useEmptyOnNil:slice
+	PermissionsToResources(source []accounts.Permission) []siteapi.Permission
+	// goverter:useEmptyOnNil:map
+	RequiredPermissionsToResource(source map[string]accounts.Permission) siteapi.SiteOAuthAuthorizationRequestRequiredPermissions
+
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
+	// The contract names a period "7d", the module counts its days: each member is mapped.
+	// goverter:enum:map ReportPeriod7Days SiteAutomationReportPeriod7d
+	// goverter:enum:map ReportPeriod14Days SiteAutomationReportPeriod14d
+	// goverter:enum:map ReportPeriod30Days SiteAutomationReportPeriod30d
+	// goverter:enum:map ReportPeriod90Days SiteAutomationReportPeriod90d
+	AutomationReportPeriodToResource(source automations.ReportPeriod) siteapi.SiteAutomationReportPeriod
 	// goverter:enum:transform value
 	AbuseMetricToResource(source abusewatch.Metric) siteapi.SiteAbuseMetric
 	// goverter:enum:transform value
@@ -556,6 +582,10 @@ type Converter interface {
 	ContactExportSourceToResource(source contact.Source) siteapi.ContactExportSource
 	// goverter:enum:transform value
 	CustomFieldTypeToResource(source customfield.Type) siteapi.SiteCustomFieldType
+	// What a test send of a Webhook endpoint failed with: a delivery's own error, not the one the
+	// endpoint keeps (WebhookErrorKindToResource).
+	// goverter:enum:transform value
+	DeliveryErrorKindToResource(source webhook.ErrorKind) siteapi.SiteWebhookErrorKind
 	// goverter:enum:transform value
 	EnrollmentFailureKindToResource(source automationrun.FailureKind) siteapi.SiteEnrollmentFailureKind
 	// goverter:enum:transform value
@@ -577,6 +607,8 @@ type Converter interface {
 	// goverter:enum:map DecisionShown @panic
 	OptionalConsentDecisionToResource(source consentrecord.Decision) siteapi.SiteOptionalConsentDecision
 	// goverter:enum:transform value
+	PermissionToResource(source accounts.Permission) siteapi.Permission
+	// goverter:enum:transform value
 	ProviderLimitSourceToResource(source providerlimit.Source) siteapi.SiteProviderLimitSource
 	// goverter:enum:transform value
 	ProviderLimitWarningToResource(source providerlimit.Warning) siteapi.SiteProviderLimitWarning
@@ -588,6 +620,8 @@ type Converter interface {
 	RuleDryRunOutcomeToResource(source rules.DryRunOutcome) siteapi.SiteRuleDryRunOutcome
 	// goverter:enum:transform value
 	RuleStatusToResource(source rule.Status) siteapi.SiteRuleStatus
+	// goverter:enum:transform value
+	SetupStepStatusToResource(source setupchecklist.Status) siteapi.SiteSetupStepStatus
 	// goverter:enum:transform value
 	SignupItemKindToResource(source signupitem.Kind) siteapi.SignupItemKind
 	// goverter:enum:transform value
@@ -775,41 +809,18 @@ func automationVersionOrNull(c Converter, v *ent.AutomationVersion) siteapi.NilS
 	return siteapi.NewNilSiteAutomationVersion(c.AutomationVersionToResource(v))
 }
 
-// automationSteps decodes the steps of an Automation version into the typed steps DTO.
-// Malformed steps yield no steps rather than an error.
-func automationSteps(c Converter, v *ent.AutomationVersion) []siteapi.SiteAutomationStep {
-	stored, err := automations.Decode(v.Steps)
-	if err != nil {
-		return nil
-	}
-	steps := make([]siteapi.SiteAutomationStep, 0, len(stored))
-	for i := range stored {
-		s := &stored[i]
-		step := siteapi.SiteAutomationStep{Type: c.AutomationStepTypeToResource(s.Type)}
-		switch s.Type {
-		case automations.StepWait:
-			step.Seconds = siteapi.NewOptInt32(narrow.Int32(s.Seconds))
-		case automations.StepApplyTag, automations.StepRemoveTag:
-			step.Tag = siteapi.NewOptString(s.Tag)
-		case automations.StepHTTP:
-			// Masked: the URL, header values and signing secret never leave the server.
-			step.ID = siteapi.NewOptString(s.ID)
-			step.Body = siteapi.NewOptString(s.Body)
-			step.HasSecret = siteapi.NewOptBool(s.Secret != "")
-			step.Headers = lo.Map(s.Headers, func(h automations.Header, _ int) siteapi.SiteAutomationHttpHeader {
-				return siteapi.SiteAutomationHttpHeader{Name: h.Name}
-			})
-		default:
-			step.Subject = siteapi.NewOptString(s.Subject)
-			step.Body = siteapi.NewOptString(s.Body)
-			if doc := convert.DocObject[siteapi.EditorDocument](s.Doc); doc != nil {
-				step.Doc = siteapi.NewOptEditorDocument(doc)
-				step.EditorVersion = siteapi.NewOptString(s.EditorVersion)
-			}
-		}
-		steps = append(steps, step)
-	}
-	return steps
+// automationSteps decodes the stored definition (the executor's JSON format) into the typed steps
+// DTO, through the automations module's masked view of each step.
+func automationSteps(c Converter, definition string) []siteapi.SiteAutomationStep {
+	return c.AutomationStepsToResources(automations.Views(definition))
+}
+
+func optBool(v *bool) siteapi.OptBool {
+	return convert.Opt[siteapi.OptBool](v)
+}
+
+func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
+	return convert.OptObject[siteapi.OptEditorDocument](convert.DocObject[siteapi.EditorDocument](doc))
 }
 
 // segmentCondition decodes the stored rule group into the typed DTO. A segment with no

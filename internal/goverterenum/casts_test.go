@@ -12,31 +12,37 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// The packages whose converters map enums between ent, the modules and the contracts.
-var converterPackages = []string{
+// The packages that map enums between ent, the modules and the contracts: each surface's
+// converters, and the handlers that call them.
+var apiPackages = []string{
 	"github.com/getsphericon/sphericon/internal/api/site/resources",
 	"github.com/getsphericon/sphericon/internal/api/external/resources",
 	"github.com/getsphericon/sphericon/internal/api/staff/resources",
 	"github.com/getsphericon/sphericon/ee/staff/resources",
+	"github.com/getsphericon/sphericon/internal/api/site",
+	"github.com/getsphericon/sphericon/internal/api/external",
+	"github.com/getsphericon/sphericon/internal/api/staff",
+	"github.com/getsphericon/sphericon/ee/staff",
 }
 
 // An enum crosses into another enum only through a converter's enum method, whose switch goverter
-// checks member by member. A plain conversion compiles whatever the value sets are, and goverter
-// writes one itself when it cannot see an enum's members: when the converter's file does not
-// import the enum's package, goverter reads the package through ent's export data, without its
-// constants. Add an enum method to the converter (`goverter:enum:transform value`), which imports
-// the package.
-func TestConvertersConvertNoEnumByCast(t *testing.T) {
+// checks member by member. A plain conversion compiles whatever the value sets are, in a handler
+// as in a converter, and goverter writes one itself when it cannot see an enum's members: when
+// the converter's file does not import the enum's package, goverter reads the package through
+// ent's export data, without its constants. Add an enum method to the surface's Converter
+// (response) or Inputs (request), `goverter:enum:transform value`, in a file that imports the
+// package, and call it.
+func TestAPIConvertsNoEnumByCast(t *testing.T) {
 	require.Empty(t, enumCasts(t), "enums converted by a plain conversion")
 }
 
-// enumCasts lists every conversion between two enums in the converter packages, sorted.
+// enumCasts lists every conversion between two enums in the API packages, sorted.
 func enumCasts(t *testing.T) []string {
 	t.Helper()
 	pkgs, err := packages.Load(&packages.Config{
 		Mode:  packages.NeedName | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedSyntax,
 		Tests: false,
-	}, converterPackages...)
+	}, apiPackages...)
 	require.NoError(t, err)
 
 	var casts []cast

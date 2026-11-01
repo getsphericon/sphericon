@@ -58,9 +58,10 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   no counterpart until the method maps it (`goverter:enum:map DecisionShown @panic`). A nested enum
   field never takes a method's own transform, and goverter casts an enum whose package the
   converter's file does not import (it sees the package through ent's export data, without its
-  constants), so the method is what makes the check happen. `TestConvertersConvertNoEnumByCast`
-  (`internal/goverterenum`) fails on any enum-to-enum cast left in a converter package, generated
-  or hand-written; a pointer goes through `convert.OptVia` and the enum method.
+  constants), so the method is what makes the check happen. `TestAPIConvertsNoEnumByCast`
+  (`internal/goverterenum`) fails on any enum-to-enum cast left in a converter or handler package,
+  generated or hand-written; an optional enum goes through `convert.OptVia` (response) or
+  `convert.PtrVia` (request) and the enum method.
 
 - **An opaque JSON object is a shared model, never an inline `Record<unknown>`.** A field whose
   members the contract leaves open is `JsonObject` (custom fields, properties, params, a diff) or

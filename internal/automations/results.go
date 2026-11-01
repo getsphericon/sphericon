@@ -3,19 +3,14 @@ package automations
 import (
 	"context"
 	"math"
-	"slices"
-	"strconv"
-	"strings"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/reportday"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ReportPeriod is the length of the period an Automation's results are read over, in Report days
@@ -29,23 +24,6 @@ const (
 	ReportPeriod90Days ReportPeriod = 90
 )
 
-var reportPeriods = []ReportPeriod{ReportPeriod7Days, ReportPeriod14Days, ReportPeriod30Days, ReportPeriod90Days}
-
-// ErrUnknownPeriod is a period that is not one of the report's.
-var ErrUnknownPeriod = validation.RefuseField("period", "automations: unknown report period", i18n.ErrorsAutomationUnknownReportPeriod)
-
-// PeriodOf is the ReportPeriod a period of the contract names, written as its number of days and
-// "d" (`7d`): the one mapping both surfaces use.
-func PeriodOf[P ~string](p P) (ReportPeriod, error) {
-	n, ok := strings.CutSuffix(string(p), "d")
-	days, err := strconv.Atoi(n)
-	period := ReportPeriod(days)
-	if !ok || err != nil || !slices.Contains(reportPeriods, period) {
-		return 0, ErrUnknownPeriod
-	}
-	return period, nil
-}
-
 // Results is what an Automation's Enrollments did over a period of Report days and over the
 // period just before it (#753), read from the Enrollments themselves. Each figure counts what
 // happened in the period: an Enrollment is entered on the Report day it began (began_at, when
@@ -53,6 +31,8 @@ func PeriodOf[P ~string](p P) (ReportPeriod, error) {
 // (ended_at). So a period is not short of the outcomes its newest Enrollments have not reached
 // yet, and two periods compare like for like.
 type Results struct {
+	// Period is the length of the current period, and of the previous one.
+	Period            ReportPeriod
 	Current, Previous PeriodResults
 	// Series is the current period by Report day, oldest first, a day with nothing at zero.
 	Series []ResultsPoint
@@ -138,7 +118,7 @@ func (m *Module) resultsOf(ctx context.Context, s *ent.Scoped, id int64, p Repor
 	for _, day := range cur.Dates {
 		series = append(series, ResultsPoint{Date: day, ResultCounts: byDay[day]})
 	}
-	return Results{Current: current, Previous: previous, Series: series}, nil
+	return Results{Period: p, Current: current, Previous: previous, Series: series}, nil
 }
 
 // countsByDay counts the Automation's Enrollments that began, and those that ended by outcome, in

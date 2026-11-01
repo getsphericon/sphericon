@@ -45,14 +45,14 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 // User and Workspace edges must be loaded.
 func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.Membership) (siteapi.SiteWorkspaceResource, error) {
 	r := mapper.WorkspaceToResource(m.Edges.Workspace)
-	r.Role = siteapi.SiteMembershipRole(m.Role)
+	r.Role = mapper.MembershipRoleToResource(m.Role)
 	if suspension.Is(m.Edges.Workspace) && h.supportEmail != "" {
 		r.SupportEmail = siteapi.NewOptNilString(h.supportEmail)
 	}
 	r.McpUrl = h.origins.MCP
 	r.TrackerUrl = h.origins.Tracker
 	held := accounts.Permissions(m.Role)
-	r.Permissions = lo.Map(held, func(p accounts.Permission, _ int) siteapi.Permission { return siteapi.Permission(p) })
+	r.Permissions = mapper.PermissionsToResources(held)
 	r.AccountLinkAvailable = h.accountLink != nil && slices.Contains(held, accounts.PermAccountLinkOpen)
 	// A strong session (a Passkey login or a Second factor step) meets the requirement, so it has
 	// no grace to count down: this is the decision secondfactor.Withheld makes.
