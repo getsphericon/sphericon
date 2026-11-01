@@ -204,18 +204,28 @@ both reach a phone, and web push (a browser) is not mobile push (an app).
 _Avoid_: Medium, transport, provider (that is what an Integration sends through)
 
 **Destination**:
-The channel-specific address a message is sent to — an email address on the email channel, a
-phone number on SMS, a chat on Telegram. Suppression and Unsubscribe are keyed by
-(channel, destination); a Contact may have several (its email, its phone).
+The channel-specific address a message is sent to: the Contact's email on email, its phone number
+(always in international form) on SMS and on WhatsApp, its subject_id on mobile push, and a
+**Binding** on Telegram and web push. Suppression and Unsubscribe are keyed by
+(channel, destination); a Contact may have several (its email, its phone, its Bindings).
 _Avoid_: Address (unqualified), recipient, endpoint
 
 **Integration-bound Destination**:
 A Destination that only the Integration it was obtained through can reach: a Telegram chat (only
-the bot the person wrote to), a WhatsApp business-scoped user id, a web push subscription (signed
-for one key), a mobile push user (the Contact's subject_id in one app, reached through an external
-push service). A message to it goes through that Integration and no other. An email address or a phone number on SMS is not bound: any Integration of its Channel
-reaches it.
+the bot the person wrote to), a web push subscription (signed for one key), a mobile push user (the
+Contact's subject_id in one app, reached through an external push service). A message to it goes
+through that Integration and no other. An email address, or a phone number on SMS or WhatsApp, is
+not bound: any Integration of its Channel reaches it.
 _Avoid_: Integration-scoped address, bot subscriber
+
+**Binding**:
+The record that one Integration can reach one Destination, and whose it is: a Telegram chat bound
+to a Contact, a web push subscription bound to a Visitor (and so to that Visitor's Contact, once
+Identify resolves it). It is made only by what comes in from the channel (a `/start` from a link
+sphericon made, a subscription reported by the tracker), never asserted through the API, and the
+latest one wins: a chat bound again moves to the new Contact. A Contact is reached through its own
+Bindings and those of its Visitors; one on a Visitor that belongs to no Contact reaches nobody yet.
+_Avoid_: Subscription (a rejected concept), endpoint, device, channel identity
 
 **Suppression**:
 The workspace's authoritative, (channel, destination)-keyed do-not-send registry for hard,
