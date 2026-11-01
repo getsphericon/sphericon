@@ -64,7 +64,7 @@ enum ProviderLimitSource {
 
 /** A reason to look at an Integration's Provider limit */
 enum ProviderLimitWarning {
-  /** No ceiling applies: sends are not paced and the provider may throttle or block them */
+  /** No ceiling applies: sends are not paced and the provider may throttle or block them (never set on a Test inbox, which sends to no provider) */
   unlimited,
 
   /** The provider's send quota could not be read (no permission, or a compatible service without the call), so only the manual limit applies */

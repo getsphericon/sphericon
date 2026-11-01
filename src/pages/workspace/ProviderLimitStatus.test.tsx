@@ -34,3 +34,16 @@ test('each ceiling names its source and the daily one gets a usage bar', async (
   await expect.element(screen.getByText('Provider')).toBeInTheDocument()
   await expect.element(screen.getByRole('progressbar')).toBeInTheDocument()
 })
+
+test('labels the row with its warnings only when asked', async () => {
+  const flagged = status({ warnings: ['unlimited', 'providerStopped'] })
+  const { screen } = await renderWithRouter(
+    <>
+      <ProviderLimitStatus status={flagged} withWarnings />
+      <ProviderLimitStatus status={flagged} />
+    </>,
+  )
+
+  await expect.element(screen.getByText('Stopped')).toBeInTheDocument()
+  expect(screen.getByText('No limit').all()).toHaveLength(1)
+})

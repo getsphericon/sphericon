@@ -1,6 +1,9 @@
 import { useTranslation } from 'react-i18next'
 
-import type { SiteIntegrationProvider } from '../../generated/site/types.gen.ts'
+import type {
+  SiteIntegrationProvider,
+  SiteProviderLimitWarning,
+} from '../../generated/site/types.gen.ts'
 import { zMaxPerDay, zMaxPerSecond } from '../../generated/site/zod.gen.ts'
 import { boundsOf } from '../../utils/bounds.ts'
 
@@ -56,4 +59,78 @@ export function useProviderLimitValidators<Values>(
     maxPerSecond: check(zMaxPerSecond, PER_SECOND),
     maxPerDay: check(zMaxPerDay, PER_DAY),
   }
+}
+
+export interface ProviderLimitWarningCopy {
+  warning: SiteProviderLimitWarning
+  color: 'red' | 'yellow'
+  // The short label on an Integration's row.
+  badge: string
+  // The alert above the list, for every Integration with the warning at once.
+  title: (names: string[]) => string
+  body: (count: number) => string
+}
+
+// What each Provider limit warning says, most serious first: a stopped account holds its sends
+// (red, ADR 0067), a sandbox keeps mail from the contacts, probation may lead to a stop, no ceiling
+// may get sends throttled, and an unread quota changes nothing about sending.
+export function useProviderLimitWarnings(): ProviderLimitWarningCopy[] {
+  const { t } = useTranslation()
+  return [
+    {
+      warning: 'providerStopped',
+      color: 'red',
+      badge: t(($) => $.settings.integrations.providerLimit.badge.stopped),
+      title: (names) =>
+        t(($) => $.settings.integrations.providerLimit.stoppedTitle, {
+          names,
+          count: names.length,
+        }),
+      body: (count) => t(($) => $.settings.integrations.providerLimit.stoppedWarning, { count }),
+    },
+    {
+      warning: 'providerSandbox',
+      color: 'yellow',
+      badge: t(($) => $.settings.integrations.providerLimit.badge.sandbox),
+      title: (names) =>
+        t(($) => $.settings.integrations.providerLimit.sandboxTitle, {
+          names,
+          count: names.length,
+        }),
+      body: () => t(($) => $.settings.integrations.providerLimit.sandboxWarning),
+    },
+    {
+      warning: 'providerProbation',
+      color: 'yellow',
+      badge: t(($) => $.settings.integrations.providerLimit.badge.probation),
+      title: (names) =>
+        t(($) => $.settings.integrations.providerLimit.probationTitle, {
+          names,
+          count: names.length,
+        }),
+      body: (count) => t(($) => $.settings.integrations.providerLimit.probationWarning, { count }),
+    },
+    {
+      warning: 'unlimited',
+      color: 'yellow',
+      badge: t(($) => $.settings.integrations.providerLimit.badge.unlimited),
+      title: (names) =>
+        t(($) => $.settings.integrations.providerLimit.unlimitedTitle, {
+          names,
+          count: names.length,
+        }),
+      body: () => t(($) => $.settings.integrations.providerLimit.unlimitedWarning),
+    },
+    {
+      warning: 'providerQuotaUnavailable',
+      color: 'yellow',
+      badge: t(($) => $.settings.integrations.providerLimit.badge.quotaUnavailable),
+      title: (names) =>
+        t(($) => $.settings.integrations.providerLimit.quotaUnavailableTitle, {
+          names,
+          count: names.length,
+        }),
+      body: () => t(($) => $.settings.integrations.providerLimit.quotaUnavailableWarning),
+    },
+  ]
 }

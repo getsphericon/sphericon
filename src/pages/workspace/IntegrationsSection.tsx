@@ -40,7 +40,6 @@ import type {
   IntegrationConfigInput,
   SiteIntegrationProvider,
   SiteIntegrationResource,
-  SiteProviderLimitWarning,
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -53,6 +52,7 @@ import {
   requiresProviderLimit,
   toLimit,
   useProviderLimitValidators,
+  useProviderLimitWarnings,
 } from './providerLimit.ts'
 import type { ProviderLimitValues } from './providerLimit.ts'
 import { ProviderLimitFields } from './ProviderLimitFields.tsx'
@@ -163,67 +163,24 @@ function IntegrationsList({
 }) {
   const { t } = useTranslation()
   const records = useSuspenseQuery(integrationsOptions(workspaceId, archived)).data
-  // An archived provider sends nothing, so its limits are nothing to warn about.
-  const withWarning = (warning: SiteProviderLimitWarning) =>
-    archived ? [] : records.filter((record) => record.providerLimit.warnings.includes(warning))
-  const unlimited = withWarning('unlimited')
-  // What the provider says about each account (ADR 0067): a stopped account holds its sends, so
-  // it is flagged red; the rest are warnings.
-  const accountAlerts = [
-    ...withWarning('providerStopped').map((record) => ({
-      record,
-      color: 'red',
-      title: t(($) => $.settings.integrations.providerLimit.stoppedTitle, { name: record.name }),
-      body: t(($) => $.settings.integrations.providerLimit.stoppedWarning),
-    })),
-    ...withWarning('providerProbation').map((record) => ({
-      record,
-      color: 'yellow',
-      title: t(($) => $.settings.integrations.providerLimit.probationTitle, { name: record.name }),
-      body: t(($) => $.settings.integrations.providerLimit.probationWarning),
-    })),
-    ...withWarning('providerSandbox').map((record) => ({
-      record,
-      color: 'yellow',
-      title: t(($) => $.settings.integrations.providerLimit.sandboxTitle, { name: record.name }),
-      body: t(($) => $.settings.integrations.providerLimit.sandboxWarning),
-    })),
-  ]
-  const quotaUnavailable = withWarning('providerQuotaUnavailable')
+  const warnings = useProviderLimitWarnings()
+  // One alert per kind of warning, naming every provider it applies to, so a Workspace with
+  // several providers gets at most one block per kind. An archived provider sends nothing, so its
+  // limits are nothing to warn about.
+  const alerts = archived
+    ? []
+    : warnings.flatMap((copy) => {
+        const names = records
+          .filter((record) => record.providerLimit.warnings.includes(copy.warning))
+          .map((record) => record.name)
+        return names.length === 0 ? [] : [{ ...copy, names }]
+      })
 
   return (
     <>
-      {unlimited.map((record) => (
-        <Alert
-          key={record.id}
-          color="yellow"
-          variant="light"
-          title={t(($) => $.settings.integrations.providerLimit.unlimitedTitle, {
-            name: record.name,
-          })}
-          mb="sm"
-        >
-          {t(($) => $.settings.integrations.providerLimit.unlimitedWarning)}
-        </Alert>
-      ))}
-
-      {accountAlerts.map(({ record, color, title, body }) => (
-        <Alert key={`${record.id}-${title}`} color={color} variant="light" title={title} mb="sm">
-          {body}
-        </Alert>
-      ))}
-
-      {quotaUnavailable.map((record) => (
-        <Alert
-          key={record.id}
-          color="yellow"
-          variant="light"
-          title={t(($) => $.settings.integrations.providerLimit.quotaUnavailableTitle, {
-            name: record.name,
-          })}
-          mb="sm"
-        >
-          {t(($) => $.settings.integrations.providerLimit.quotaUnavailableWarning)}
+      {alerts.map(({ warning, color, title, body, names }) => (
+        <Alert key={warning} color={color} variant="light" title={title(names)} mb="sm">
+          {body(names.length)}
         </Alert>
       ))}
 
@@ -243,7 +200,9 @@ function IntegrationsList({
           {
             accessor: 'providerLimit',
             title: t(($) => $.settings.integrations.providerLimit.title),
-            render: (record) => <ProviderLimitStatus status={record.providerLimit} />,
+            render: (record) => (
+              <ProviderLimitStatus status={record.providerLimit} withWarnings={!archived} />
+            ),
           },
           {
             accessor: 'actions',
