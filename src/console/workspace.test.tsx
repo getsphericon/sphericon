@@ -93,9 +93,9 @@ test('lists the audit log with a staff member shown as Sphericon staff, and load
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
   await expect.element(screen.getByText('Sphericon staff')).toBeInTheDocument()
-  await expect.element(screen.getByText('workspace.suspend')).toBeInTheDocument()
+  await expect.element(screen.getByText('Suspended the workspace')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Load more' }).click()
-  await expect.element(screen.getByText('tag.create')).toBeInTheDocument()
+  await expect.element(screen.getByText('Created a tag')).toBeInTheDocument()
   await expect.element(screen.getByText('Peter')).toBeInTheDocument()
 })
 

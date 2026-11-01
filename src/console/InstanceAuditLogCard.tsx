@@ -3,6 +3,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { AuditActionName } from '../components/AuditActionName.tsx'
 import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../components/Skeletons.tsx'
 import { staffInstanceListAuditEntriesOptions } from '../generated/staff/@tanstack/react-query.gen.ts'
@@ -94,7 +95,9 @@ function AuditRows({ cursor, first }: AuditPageProps) {
               <Table.Tr key={entry.id}>
                 <Table.Td>{formatDateTime(entry.occurredAt)}</Table.Td>
                 <Table.Td>{entry.actor.email}</Table.Td>
-                <Table.Td>{entry.action}</Table.Td>
+                <Table.Td>
+                  <AuditActionName action={entry.action} />
+                </Table.Td>
                 <Table.Td>
                   <Changes entry={entry} />
                 </Table.Td>
