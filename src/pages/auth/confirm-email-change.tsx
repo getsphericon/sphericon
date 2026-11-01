@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
+import { siteAuthConfirmEmailChangeMutationKey } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { siteAuthConfirmEmailChange } from '../../generated/site/sdk.gen.ts'
 import { Route as confirmEmailChangeRoute } from '../../routes/confirm-email-change.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
@@ -30,7 +31,9 @@ function Refused() {
 function Confirmed({ token }: { token: string }) {
   const { t } = useTranslation()
   const { data: accepted } = useSuspenseQuery({
-    queryKey: ['siteAuthConfirmEmailChange', token],
+    // A POST has no generated query key, so its mutation key names the operation and the token.
+    // A Site Auth mutation invalidates it by that key's tag, which a static query never refetches.
+    queryKey: siteAuthConfirmEmailChangeMutationKey({ body: { token } }),
     queryFn: async () => {
       try {
         await siteAuthConfirmEmailChange({ body: { token }, throwOnError: true })

@@ -2,15 +2,22 @@ import { useQuery } from '@tanstack/react-query'
 import type { QueryKey } from '@tanstack/react-query'
 import { expect, test, vi } from 'vitest'
 
+import {
+  siteSegmentsListQueryKey,
+  siteSegmentsUpdateMutationKey,
+  siteTagsListQueryKey,
+  siteTemplatesListQueryKey,
+} from '../generated/site/@tanstack/react-query.gen.ts'
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
 import { useResourceMutation } from './useResourceMutation.ts'
 
 const SAVE = 'Save'
 
 // The generated keys carry their operation's tags in their first element.
-const segmentsKey = [{ _id: 'siteSegmentsList', tags: ['Site Segments'] }]
-const templatesKey = [{ _id: 'siteTemplatesList', tags: ['Site Templates'] }]
-const tagsKey = [{ _id: 'siteTagsList', tags: ['Site Tags'] }]
+const path = { workspaceId: 'w1' }
+const segmentsKey = siteSegmentsListQueryKey({ path })
+const templatesKey = siteTemplatesListQueryKey({ path })
+const tagsKey = siteTagsListQueryKey({ path })
 
 interface Fetches {
   segments: () => Promise<string>
@@ -32,7 +39,7 @@ function Harness({
   useQuery({ queryKey: tagsKey, queryFn: fetches.tags })
   const save = useResourceMutation({
     mutation: {
-      mutationKey: [{ _id: 'siteSegmentsUpdate', tags: ['Site Segments'] }],
+      mutationKey: siteSegmentsUpdateMutationKey(),
       mutationFn: async () => Promise.resolve('saved'),
     },
     ...(invalidate === undefined ? {} : { invalidate }),

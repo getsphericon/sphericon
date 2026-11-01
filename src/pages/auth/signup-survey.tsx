@@ -15,10 +15,8 @@ import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as indexRoute } from '../../routes/index.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 
-// The longest an "Other" text may be (the contract's limit).
-const OTHER_MAX_LENGTH = 100
-
-type Question = 'role' | 'companySize' | 'mainGoal' | 'heardFrom'
+// A question is a field of the input that is not an `…Other` text.
+type Question = Exclude<keyof SiteSignupSurveyInput, `${string}Other`>
 
 interface Step {
   question: Question
@@ -28,6 +26,11 @@ interface Step {
 }
 
 type Answers = Partial<Record<Question, string>>
+
+// The longest a question's "Other" text may be (the contract's limit).
+function otherMaxLength(question: Question) {
+  return zSiteSignupSurveyInput.shape[`${question}Other`].unwrap().maxLength ?? undefined
+}
 
 function choices(labels: Record<string, string>) {
   return Object.entries(labels).map(([value, label]) => ({ value, label }))
@@ -178,7 +181,7 @@ export function SignupSurveyPage() {
           {answer === 'other' && (
             <TextInput
               label={t(($) => $.signupSurvey.otherLabel)}
-              maxLength={OTHER_MAX_LENGTH}
+              maxLength={otherMaxLength(step.question)}
               value={otherText}
               onChange={(event) =>
                 setOthers({ ...others, [step.question]: event.currentTarget.value })

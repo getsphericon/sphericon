@@ -34,6 +34,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteSecondFactorEnrollment,
+  SiteSecondFactorStartInput,
   SiteSecondFactorStatus,
 } from '../../generated/site/types.gen.ts'
 import { useActionModal } from '../../hooks/useActionModal.tsx'
@@ -42,9 +43,7 @@ import { Route as securityRoute } from '../../routes/account/security.tsx'
 
 // The proof a step carries: the password, or nothing for a User who has none (the server then
 // reads the fresh provider login from the session, ADR 0048).
-interface Proof {
-  currentPassword?: string
-}
+type Proof = SiteSecondFactorStartInput
 
 // The form field of a password, shown only to a User who has one.
 function PasswordField({ passwordless, ...props }: { passwordless: boolean } & PasswordInputProps) {

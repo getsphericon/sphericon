@@ -22,6 +22,7 @@ import {
   siteOAuthDescribeOptions,
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteOAuthDecisionInput } from '../../generated/site/types.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as oauthConsentRoute } from '../../routes/oauth/consent.tsx'
 import { getApiErrorMessage, isForbiddenError } from '../../utils/apiErrors.ts'
@@ -29,13 +30,9 @@ import { can } from '../../utils/permissions.ts'
 
 // The authorization request exactly as the OAuth client sent it (the backend's
 // /oauth/authorize hands the browser here with the same query string).
-export interface ConsentRequest {
-  clientId: string
-  redirectUri: string
-  codeChallenge: string
-  state: string
-  scope: string
-}
+export type ConsentRequest = Required<
+  Pick<SiteOAuthDecisionInput, 'clientId' | 'redirectUri' | 'codeChallenge' | 'state' | 'scope'>
+>
 
 export function OAuthConsentPage() {
   const search = oauthConsentRoute.useSearch()

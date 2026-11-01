@@ -27,7 +27,10 @@ import {
   siteSuppressionsListOptions,
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteSuppressionReason } from '../../generated/site/types.gen.ts'
+import type {
+  SiteCreateSuppressionInput,
+  SiteSuppressionReason,
+} from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId/suppressions/index.tsx'
@@ -140,7 +143,9 @@ export function SuppressionsListPage() {
     'suppressions:manage',
   )
 
-  const form = useForm<{ destination: string }>({ initialValues: { destination: '' } })
+  const form = useForm<Pick<SiteCreateSuppressionInput, 'destination'>>({
+    initialValues: { destination: '' },
+  })
 
   const createMutation = useResourceMutation({
     mutation: siteSuppressionsCreateMutation(),

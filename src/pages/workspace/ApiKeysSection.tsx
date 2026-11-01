@@ -30,7 +30,7 @@ import {
   siteTokensListOptions,
   siteTokensUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { ApiTokenScope } from '../../generated/site/types.gen.ts'
+import type { SiteCreateTokenInput } from '../../generated/site/types.gen.ts'
 import { zApiTokenScope } from '../../generated/site/zod.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
@@ -132,7 +132,7 @@ export function ApiKeysSection({
     setRenaming(record)
   }
 
-  const form = useForm<{ name: string; scopes: ApiTokenScope[] }>({
+  const form = useForm<Pick<SiteCreateTokenInput, 'name' | 'scopes'>>({
     initialValues: { name: '', scopes: [] },
   })
 

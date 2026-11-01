@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
+import { siteAuthSigninNotMeMutationKey } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { siteAuthSigninNotMe } from '../../generated/site/sdk.gen.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { Route as signinNotMeRoute } from '../../routes/signin-not-me.tsx'
@@ -30,7 +31,9 @@ function Refused() {
 function Reported({ token }: { token: string }) {
   const { t } = useTranslation()
   const { data: accepted } = useSuspenseQuery({
-    queryKey: ['siteAuthSigninNotMe', token],
+    // A POST has no generated query key, so its mutation key names the operation and the token.
+    // A Site Auth mutation invalidates it by that key's tag, which a static query never refetches.
+    queryKey: siteAuthSigninNotMeMutationKey({ body: { token } }),
     queryFn: async () => {
       try {
         await siteAuthSigninNotMe({ body: { token }, throwOnError: true })

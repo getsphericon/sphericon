@@ -6,7 +6,10 @@ import {
   siteWorkspacesSetTimezoneMutation,
   siteWorkspacesUpdateMutation,
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
+import type {
+  SiteUpdateWorkspaceInput,
+  SiteWorkspaceResource,
+} from '../../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
 import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { TIME_ZONES } from '../../../utils/datetime.ts'
@@ -19,7 +22,7 @@ import { SettingsFrame } from './SettingsFrame.tsx'
 // loaded workspace without an effect.
 function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   const { t } = useTranslation()
-  const form = useForm<{ name: string; postalAddress: string }>({
+  const form = useForm<Required<Pick<SiteUpdateWorkspaceInput, 'name' | 'postalAddress'>>>({
     initialValues: { name: workspace.name, postalAddress: workspace.postalAddress },
   })
 

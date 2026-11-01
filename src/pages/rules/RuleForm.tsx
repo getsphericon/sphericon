@@ -21,7 +21,7 @@ import {
   siteAutomationsListOptions,
   siteEventsActionsOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteConditionGroup, SiteRuleAction } from '../../generated/site/types.gen.ts'
+import type { SiteCreateRuleInput, SiteRuleAction } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as rulesRoute } from '../../routes/workspaces/$workspaceId/rules/index.tsx'
@@ -36,12 +36,9 @@ import {
 } from './actions.ts'
 import { HttpActionFields } from './HttpActionFields.tsx'
 
-export interface RulePayload {
-  name: string
-  triggerEvents: string[]
-  condition: SiteConditionGroup
-  actions: SiteRuleAction[]
-}
+// What the form submits: the create input, with the Condition and the Actions always given.
+export type RulePayload = Pick<SiteCreateRuleInput, 'name' | 'triggerEvents'> &
+  Required<Pick<SiteCreateRuleInput, 'condition' | 'actions'>>
 
 export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePayload>) {
   const { t } = useTranslation()
