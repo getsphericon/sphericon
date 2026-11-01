@@ -441,7 +441,8 @@ _Avoid_: Notification, system email, trigger (that is the Automation term), API 
 
 **Automation**:
 A workspace-scoped, event-triggered sequence: when its Trigger fires for a Contact, the
-Contact is enrolled and walks the Automation's ordered steps (send email, wait, …). Each
+Contact is enrolled and walks the Automation's ordered steps (send on a Channel, wait, …), the one
+surface where every Channel meets. Each
 Automation is its own unsubscribe Sending source. What it does is its **live version**: an edit
 writes a draft, and only **Publish** makes it live. Publishing starts enrolling; deactivating
 stops _new_ enrollments but lets in-flight Enrollments finish (deactivate ≠ halt). Removing
@@ -450,8 +451,8 @@ nobody while its Enrollments stay; only an Automation with no Enrollments at all
 _Avoid_: Workflow, flow, journey, drip, campaign
 
 **Automation version**:
-One copy of an Automation's definition: its Trigger, its exit and goal events, its Integration and
-its Steps. The **live
+One copy of an Automation's definition: its Trigger, its exit and goal events and its Steps (each
+send step names its own Integration). The **live
 version** is the one new Enrollments begin on; the **draft** is a newer version that edits are
 written into, rewritten in place until it is published. A live version is never rewritten, and an
 Enrollment stays on the version it began on. The name belongs to the Automation, not to a version.
@@ -510,15 +511,18 @@ It ends at the moment it reaches that state, and the Automation report counts it
 moment's Report day and its duration from when it began.
 An unsubscribe from the Automation has two
 effects from one action — it records the durable opt-out (scope `automation:<id>`) _and_ moves
-the active Enrollment to `exited`; suppression, hard bounces and an exit event likewise exit the
-Enrollment.
-A run never silently keeps walking steps while skipping every email.
+the active Enrollment to `exited`, whichever Channel it came from; an exit event likewise exits
+the Enrollment. Any other reason a send step's message is Skipped (no Destination on its Channel, an
+opt-out from that Channel, a Suppression) moves the Enrollment on to the next step, and the skip is
+recorded and reported, so one Channel's absence never ends a sequence that also uses others.
 _Avoid_: Run, automation run, journey instance, subscription
 
 **Step**:
 One node in an Automation's **ordered, linear** sequence; an Enrollment points at exactly one
-current Step. Five kinds today: **send** (an email — it holds its _own copy_ of Message
-content, per the marketing copy-at-author-time rule), **wait** (a delay before the next
+current Step. Five kinds today: **send** (a message on one Channel, the Channel fixed by the step,
+through the Integration the step names or that Channel's default; it holds its _own copy_ of
+Message content, per the marketing copy-at-author-time rule, except on WhatsApp, where it references
+a WhatsApp template), **wait** (a delay before the next
 Step), **apply tag** / **remove tag** (change the enrolled Contact's Tags; they send
 nothing and move straight on), and **HTTP step** (below). The Enrollment's single "current step" pointer is deliberate: there is no branching,
 no parallel paths, no per-step conditions yet. Conditional / branching steps are a real
