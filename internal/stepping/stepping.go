@@ -217,11 +217,12 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 		return m.advance(ctx, s, run.ID, step, move{resumeAt: &resume})
 
 	case automations.StepApplyTag, automations.StepRemoveTag:
-		// A tag step changes the Contact's Tags and moves straight on; it sends nothing. The
-		// move is made first, so a step that lost a race tags nothing, and the change commits
-		// with it. The change is the `system` actor's (ADR 0022): a Tag the step creates is
-		// audited.
-		return m.advance(ctx, s, run.ID, step, move{with: func(ts *ent.Scoped, pub events.Publisher) error {
+		// A tag step changes the Contact's Tags and moves straight on; it sends nothing. It
+		// writes the Contact's row, so it locks the Contact before it moves the Enrollment, in
+		// the order an exit takes them (automations.LockContact, #811). The move comes before
+		// the change, so a step that lost a race tags nothing, and the change commits with it.
+		// The change is the `system` actor's (ADR 0022): a Tag the step creates is audited.
+		return m.advance(ctx, s, run.ID, step, move{contactID: run.ContactID, with: func(ts *ent.Scoped, pub events.Publisher) error {
 			sys := m.out.AsSystem(ts)
 			if st.Type == automations.StepApplyTag {
 				_, err := tags.ApplyIn(ctx, sys, pub, run.ContactID, st.Tag)
@@ -304,16 +305,25 @@ func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 
 // move is what an advance does besides moving the Enrollment: resumeAt, when set, parks it and
 // schedules the next job for then; with makes writes of its own in the same transaction.
+// contactID, set when with writes the Contact's row, is that Contact: its lock is taken before the
+// Enrollment's (the lock order of automations.LockContact).
 type move struct {
-	resumeAt *time.Time
-	with     func(*ent.Scoped, events.Publisher) error
+	resumeAt  *time.Time
+	contactID int64
+	with      func(*ent.Scoped, events.Publisher) error
 }
 
 // advance moves the Enrollment from step to the next one and queues that step's job, in one
-// transaction with mv's own writes. A move that finds the Enrollment gone or elsewhere writes
-// nothing and returns nil.
+// transaction with mv's own writes. A move that finds the Enrollment gone or elsewhere, or its
+// Contact gone, writes nothing and returns nil.
 func (m *Module) advance(ctx context.Context, s *ent.Scoped, runID int64, from int, mv move) error {
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
+		if mv.contactID != 0 {
+			locked, err := automations.LockContact(ctx, ts, mv.contactID)
+			if err != nil || !locked {
+				return err // an erased Contact's Enrollment is erased with it
+			}
+		}
 		if err := automations.Advance(ctx, ts, runID, from, from+1, mv.resumeAt); err != nil {
 			return err
 		}

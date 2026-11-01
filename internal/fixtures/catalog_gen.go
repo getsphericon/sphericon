@@ -123,6 +123,12 @@ const (
 	AutomationJobsSystemTagName = "Jobs system tag"
 	// AutomationJobsSystemTagVersionID is from fixtures/automation_versions.
 	AutomationJobsSystemTagVersionID = 5565
+	// AutomationJobsTagWithExitID is from fixtures/automations.
+	AutomationJobsTagWithExitID = 5567
+	// AutomationJobsTagWithExitName is from fixtures/automations.
+	AutomationJobsTagWithExitName = "Jobs tag with exit"
+	// AutomationJobsTagWithExitVersionID is from fixtures/automation_versions.
+	AutomationJobsTagWithExitVersionID = 5567
 	// AutomationJobsUndecodableVersionID is from fixtures/automation_versions.
 	AutomationJobsUndecodableVersionID = 5563
 	// AutomationJobsUnknownStepVersionID is from fixtures/automation_versions.
