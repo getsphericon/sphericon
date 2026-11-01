@@ -6,6 +6,108 @@ export type ClientOptions = {
 };
 
 /**
+ * What an Audit entry says was done, as `<entity>.<verb>`: an action the server records on its
+ * own, or the create, update or delete of an audited object
+ */
+export const AuditAction = {
+  MEMBERSHIP_UPDATE: 'membership.update',
+  MEMBERSHIP_DELETE: 'membership.delete',
+  MEMBERSHIP_DOMAIN_JOIN: 'membership.domain_join',
+  INVITATION_CREATE: 'invitation.create',
+  INVITATION_ACCEPT: 'invitation.accept',
+  INVITATION_REVOKE: 'invitation.revoke',
+  USER_LOGIN: 'user.login',
+  USER_IDENTITY_LINK: 'user.identity_link',
+  USER_IDENTITY_UNLINK: 'user.identity_unlink',
+  USER_EMAIL_VERIFY: 'user.email_verify',
+  USER_PASSWORD_CHANGE: 'user.password_change',
+  USER_SIGN_OUT_EVERYWHERE: 'user.sign_out_everywhere',
+  USER_SECOND_FACTOR_ENROLL: 'user.second_factor_enroll',
+  USER_SECOND_FACTOR_DISABLE: 'user.second_factor_disable',
+  USER_SECOND_FACTOR_RESET: 'user.second_factor_reset',
+  USER_RECOVERY_CODES_REGENERATE: 'user.recovery_codes_regenerate',
+  USER_RECOVERY_CODE_USE: 'user.recovery_code_use',
+  WORKSPACE_CREATE: 'workspace.create',
+  WORKSPACE_UPDATE: 'workspace.update',
+  WORKSPACE_DELETE: 'workspace.delete',
+  WORKSPACE_RESTORE: 'workspace.restore',
+  WORKSPACE_SUSPEND: 'workspace.suspend',
+  WORKSPACE_UNSUSPEND: 'workspace.unsuspend',
+  WORKSPACE_ABUSE_EXEMPT: 'workspace.abuse_exempt',
+  WORKSPACE_ABUSE_UNEXEMPT: 'workspace.abuse_unexempt',
+  WORKSPACE_SEND_CAP_CHANGE: 'workspace.send_cap_change',
+  CONTACT_IMPORT: 'contact.import',
+  AUDIT_LOG_EXPORT: 'audit_log.export',
+  WEBHOOK_ENDPOINT_TEST: 'webhook_endpoint.test',
+  API_TOKEN_CREATE: 'api_token.create',
+  API_TOKEN_UPDATE: 'api_token.update',
+  API_TOKEN_DELETE: 'api_token.delete',
+  AUTOMATION_CREATE: 'automation.create',
+  AUTOMATION_UPDATE: 'automation.update',
+  AUTOMATION_DELETE: 'automation.delete',
+  AUTOMATION_DISCARD: 'automation.discard',
+  AUTOMATION_RESTORE: 'automation.restore',
+  BRAND_KIT_CREATE: 'brand_kit.create',
+  BRAND_KIT_UPDATE: 'brand_kit.update',
+  BRAND_KIT_DELETE: 'brand_kit.delete',
+  BROADCAST_CREATE: 'broadcast.create',
+  BROADCAST_UPDATE: 'broadcast.update',
+  BROADCAST_DELETE: 'broadcast.delete',
+  BROADCAST_DISCARD: 'broadcast.discard',
+  BROADCAST_RESTORE: 'broadcast.restore',
+  CONTACT_CREATE: 'contact.create',
+  CONTACT_UPDATE: 'contact.update',
+  CONTACT_DELETE: 'contact.delete',
+  CUSTOM_FIELD_CREATE: 'custom_field.create',
+  CUSTOM_FIELD_UPDATE: 'custom_field.update',
+  CUSTOM_FIELD_DELETE: 'custom_field.delete',
+  TEMPLATE_CREATE: 'template.create',
+  TEMPLATE_UPDATE: 'template.update',
+  TEMPLATE_DELETE: 'template.delete',
+  HOLD_CREATE: 'hold.create',
+  HOLD_UPDATE: 'hold.update',
+  HOLD_DELETE: 'hold.delete',
+  INTEGRATION_CREATE: 'integration.create',
+  INTEGRATION_UPDATE: 'integration.update',
+  INTEGRATION_DELETE: 'integration.delete',
+  INTEGRATION_DISCARD: 'integration.discard',
+  INTEGRATION_RESTORE: 'integration.restore',
+  JOIN_DOMAIN_CREATE: 'join_domain.create',
+  JOIN_DOMAIN_UPDATE: 'join_domain.update',
+  JOIN_DOMAIN_DELETE: 'join_domain.delete',
+  RULE_CREATE: 'rule.create',
+  RULE_UPDATE: 'rule.update',
+  RULE_DELETE: 'rule.delete',
+  RULE_DISCARD: 'rule.discard',
+  RULE_RESTORE: 'rule.restore',
+  SEGMENT_CREATE: 'segment.create',
+  SEGMENT_UPDATE: 'segment.update',
+  SEGMENT_DELETE: 'segment.delete',
+  SEGMENT_DISCARD: 'segment.discard',
+  SEGMENT_RESTORE: 'segment.restore',
+  SENDING_DOMAIN_CREATE: 'sending_domain.create',
+  SENDING_DOMAIN_UPDATE: 'sending_domain.update',
+  SENDING_DOMAIN_DELETE: 'sending_domain.delete',
+  SENDING_DOMAIN_DISCARD: 'sending_domain.discard',
+  SENDING_DOMAIN_RESTORE: 'sending_domain.restore',
+  TAG_CREATE: 'tag.create',
+  TAG_UPDATE: 'tag.update',
+  TAG_DELETE: 'tag.delete',
+  TRACKING_DOMAIN_CREATE: 'tracking_domain.create',
+  TRACKING_DOMAIN_UPDATE: 'tracking_domain.update',
+  TRACKING_DOMAIN_DELETE: 'tracking_domain.delete',
+  WEBHOOK_ENDPOINT_CREATE: 'webhook_endpoint.create',
+  WEBHOOK_ENDPOINT_UPDATE: 'webhook_endpoint.update',
+  WEBHOOK_ENDPOINT_DELETE: 'webhook_endpoint.delete'
+} as const;
+
+/**
+ * What an Audit entry says was done, as `<entity>.<verb>`: an action the server records on its
+ * own, or the create, update or delete of an audited object
+ */
+export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
+
+/**
  * RFC 7807 conflict response
  */
 export type ConflictProblem = {
@@ -363,9 +465,9 @@ export type StaffAuditEntryResource = {
    */
   actor: StaffAuditActor;
   /**
-   * What was done, as `<entity>.<verb>`
+   * What was done
    */
-  action: string;
+  action: AuditAction;
   /**
    * What it was done to
    */

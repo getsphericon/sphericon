@@ -32,7 +32,7 @@ func entriesNamed(t *testing.T, env *testhelper.TestEnv, ownerEmail string, work
 	var out []siteapi.SiteAuditEntryResource
 	items := auditPage(t, env.SiteActor(t, ownerEmail), workspaceID).Items
 	for i := range items {
-		if items[i].Action == action {
+		if string(items[i].Action) == action {
 			out = append(out, items[i])
 		}
 	}

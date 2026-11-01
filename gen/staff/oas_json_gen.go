@@ -93,6 +93,44 @@ func (s *EntityId) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes InstanceAuditAction as json.
+func (s InstanceAuditAction) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes InstanceAuditAction from json.
+func (s *InstanceAuditAction) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode InstanceAuditAction to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch InstanceAuditAction(v) {
+	case InstanceAuditActionInstanceDefaultSendCapChange:
+		*s = InstanceAuditActionInstanceDefaultSendCapChange
+	default:
+		*s = InstanceAuditAction(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s InstanceAuditAction) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *InstanceAuditAction) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s JsonObject) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -2252,7 +2290,7 @@ func (s *StaffInstanceAuditEntryResource) encodeFields(e *jx.Encoder) {
 	}
 	{
 		e.FieldStart("action")
-		e.Str(s.Action)
+		s.Action.Encode(e)
 	}
 	{
 		e.FieldStart("diff")
@@ -2310,9 +2348,7 @@ func (s *StaffInstanceAuditEntryResource) Decode(d *jx.Decoder) error {
 		case "action":
 			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
-				v, err := d.Str()
-				s.Action = string(v)
-				if err != nil {
+				if err := s.Action.Decode(d); err != nil {
 					return err
 				}
 				return nil

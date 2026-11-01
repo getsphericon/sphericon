@@ -52,8 +52,10 @@ import (
 type ScopedEntity struct {
 	// Name is the entity's schema name.
 	Name string
-	// Audited: the entity opted into the Audit log (schema.Audited).
-	Audited bool
+	// AuditActions are the actions its Audit entries record (`<entity>.<verb>`, the entity being
+	// schema.Audited.Action): create, update and delete, and discard and restore for an entity that
+	// is archived rather than deleted. None when the entity is not audited.
+	AuditActions []string
 	// IDs lists the ids of the Workspace's rows, read through the raw client.
 	IDs func(ctx context.Context, c *Client, ws int64) ([]int64, error)
 	// Get reads the row through the scoped client.
@@ -89,8 +91,8 @@ type ScopedRef struct {
 func ScopedEntities() []ScopedEntity {
 	return []ScopedEntity{
 		{
-			Name:    "ApiToken",
-			Audited: true,
+			Name:         "ApiToken",
+			AuditActions: []string{"api_token.create", "api_token.update", "api_token.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.ApiToken.Query().Where(apitoken.WorkspaceID(ws)).Order(Asc(apitoken.FieldID)).IDs(ctx)
 			},
@@ -145,8 +147,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "AuditEntry",
-			Audited: false,
+			Name:         "AuditEntry",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.AuditEntry.Query().Where(auditentry.WorkspaceID(ws)).Order(Asc(auditentry.FieldID)).IDs(ctx)
 			},
@@ -211,8 +213,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "Automation",
-			Audited: true,
+			Name:         "Automation",
+			AuditActions: []string{"automation.create", "automation.update", "automation.delete", "automation.discard", "automation.restore"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Automation.Query().Where(automation.WorkspaceID(ws)).Order(Asc(automation.FieldID)).IDs(ctx)
 			},
@@ -293,8 +295,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "AutomationRun",
-			Audited: false,
+			Name:         "AutomationRun",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.AutomationRun.Query().Where(automationrun.WorkspaceID(ws)).Order(Asc(automationrun.FieldID)).IDs(ctx)
 			},
@@ -376,8 +378,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "AutomationVersion",
-			Audited: false,
+			Name:         "AutomationVersion",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.AutomationVersion.Query().Where(automationversion.WorkspaceID(ws)).Order(Asc(automationversion.FieldID)).IDs(ctx)
 			},
@@ -443,8 +445,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "BrandKit",
-			Audited: true,
+			Name:         "BrandKit",
+			AuditActions: []string{"brand_kit.create", "brand_kit.update", "brand_kit.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.BrandKit.Query().Where(brandkit.WorkspaceID(ws)).Order(Asc(brandkit.FieldID)).IDs(ctx)
 			},
@@ -489,8 +491,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "Broadcast",
-			Audited: true,
+			Name:         "Broadcast",
+			AuditActions: []string{"broadcast.create", "broadcast.update", "broadcast.delete", "broadcast.discard", "broadcast.restore"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Broadcast.Query().Where(broadcast.WorkspaceID(ws)).Order(Asc(broadcast.FieldID)).IDs(ctx)
 			},
@@ -588,8 +590,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "BroadcastRecipient",
-			Audited: false,
+			Name:         "BroadcastRecipient",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.BroadcastRecipient.Query().Where(broadcastrecipient.WorkspaceID(ws)).Order(Asc(broadcastrecipient.FieldID)).IDs(ctx)
 			},
@@ -654,8 +656,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "CapturedMessage",
-			Audited: false,
+			Name:         "CapturedMessage",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(ws)).Order(Asc(capturedmessage.FieldID)).IDs(ctx)
 			},
@@ -717,8 +719,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "Confirmation",
-			Audited: false,
+			Name:         "Confirmation",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Confirmation.Query().Where(confirmation.WorkspaceID(ws)).Order(Asc(confirmation.FieldID)).IDs(ctx)
 			},
@@ -767,8 +769,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "Contact",
-			Audited: true,
+			Name:         "Contact",
+			AuditActions: []string{"contact.create", "contact.update", "contact.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Contact.Query().Where(contact.WorkspaceID(ws)).Order(Asc(contact.FieldID)).IDs(ctx)
 			},
@@ -868,8 +870,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "CustomField",
-			Audited: true,
+			Name:         "CustomField",
+			AuditActions: []string{"custom_field.create", "custom_field.update", "custom_field.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.CustomField.Query().Where(customfield.WorkspaceID(ws)).Order(Asc(customfield.FieldID)).IDs(ctx)
 			},
@@ -908,8 +910,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "EmailTemplate",
-			Audited: true,
+			Name:         "EmailTemplate",
+			AuditActions: []string{"template.create", "template.update", "template.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.EmailTemplate.Query().Where(emailtemplate.WorkspaceID(ws)).Order(Asc(emailtemplate.FieldID)).IDs(ctx)
 			},
@@ -954,8 +956,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "Erasure",
-			Audited: false,
+			Name:         "Erasure",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Erasure.Query().Where(erasure.WorkspaceID(ws)).Order(Asc(erasure.FieldID)).IDs(ctx)
 			},
@@ -1004,8 +1006,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "Event",
-			Audited: false,
+			Name:         "Event",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Event.Query().Where(event.WorkspaceID(ws)).Order(Asc(event.FieldID)).IDs(ctx)
 			},
@@ -1083,8 +1085,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "HeldOrderEvent",
-			Audited: false,
+			Name:         "HeldOrderEvent",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.HeldOrderEvent.Query().Where(heldorderevent.WorkspaceID(ws)).Order(Asc(heldorderevent.FieldID)).IDs(ctx)
 			},
@@ -1125,8 +1127,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "Hold",
-			Audited: true,
+			Name:         "Hold",
+			AuditActions: []string{"hold.create", "hold.update", "hold.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Hold.Query().Where(hold.WorkspaceID(ws)).Order(Asc(hold.FieldID)).IDs(ctx)
 			},
@@ -1170,8 +1172,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "Integration",
-			Audited: true,
+			Name:         "Integration",
+			AuditActions: []string{"integration.create", "integration.update", "integration.delete", "integration.discard", "integration.restore"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Integration.Query().Where(integration.WorkspaceID(ws)).Order(Asc(integration.FieldID)).IDs(ctx)
 			},
@@ -1258,8 +1260,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "Invitation",
-			Audited: false,
+			Name:         "Invitation",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Invitation.Query().Where(invitation.WorkspaceID(ws)).Order(Asc(invitation.FieldID)).IDs(ctx)
 			},
@@ -1305,8 +1307,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "JoinDomain",
-			Audited: true,
+			Name:         "JoinDomain",
+			AuditActions: []string{"join_domain.create", "join_domain.update", "join_domain.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.JoinDomain.Query().Where(joindomain.WorkspaceID(ws)).Order(Asc(joindomain.FieldID)).IDs(ctx)
 			},
@@ -1350,8 +1352,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "Membership",
-			Audited: false,
+			Name:         "Membership",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Membership.Query().Where(membership.WorkspaceID(ws)).Order(Asc(membership.FieldID)).IDs(ctx)
 			},
@@ -1402,8 +1404,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "Order",
-			Audited: false,
+			Name:         "Order",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Order.Query().Where(order.WorkspaceID(ws)).Order(Asc(order.FieldID)).IDs(ctx)
 			},
@@ -1466,8 +1468,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "OrderMovement",
-			Audited: false,
+			Name:         "OrderMovement",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.OrderMovement.Query().Where(ordermovement.WorkspaceID(ws)).Order(Asc(ordermovement.FieldID)).IDs(ctx)
 			},
@@ -1513,8 +1515,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "OutboundMessage",
-			Audited: false,
+			Name:         "OutboundMessage",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.OutboundMessage.Query().Where(outboundmessage.WorkspaceID(ws)).Order(Asc(outboundmessage.FieldID)).IDs(ctx)
 			},
@@ -1653,8 +1655,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "ProviderLimiter",
-			Audited: false,
+			Name:         "ProviderLimiter",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.ProviderLimiter.Query().Where(providerlimiter.WorkspaceID(ws)).Order(Asc(providerlimiter.FieldID)).IDs(ctx)
 			},
@@ -1694,8 +1696,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "Rule",
-			Audited: true,
+			Name:         "Rule",
+			AuditActions: []string{"rule.create", "rule.update", "rule.delete", "rule.discard", "rule.restore"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Rule.Query().Where(rule.WorkspaceID(ws)).Order(Asc(rule.FieldID)).IDs(ctx)
 			},
@@ -1770,8 +1772,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "RuleFiring",
-			Audited: false,
+			Name:         "RuleFiring",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.RuleFiring.Query().Where(rulefiring.WorkspaceID(ws)).Order(Asc(rulefiring.FieldID)).IDs(ctx)
 			},
@@ -1838,8 +1840,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "RuleVersion",
-			Audited: false,
+			Name:         "RuleVersion",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.RuleVersion.Query().Where(ruleversion.WorkspaceID(ws)).Order(Asc(ruleversion.FieldID)).IDs(ctx)
 			},
@@ -1900,8 +1902,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "RuleVersionTrigger",
-			Audited: false,
+			Name:         "RuleVersionTrigger",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.RuleVersionTrigger.Query().Where(ruleversiontrigger.WorkspaceID(ws)).Order(Asc(ruleversiontrigger.FieldID)).IDs(ctx)
 			},
@@ -1946,8 +1948,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "Segment",
-			Audited: true,
+			Name:         "Segment",
+			AuditActions: []string{"segment.create", "segment.update", "segment.delete", "segment.discard", "segment.restore"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Segment.Query().Where(segment.WorkspaceID(ws)).Order(Asc(segment.FieldID)).IDs(ctx)
 			},
@@ -1990,8 +1992,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "SendCapLimiter",
-			Audited: false,
+			Name:         "SendCapLimiter",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.SendCapLimiter.Query().Where(sendcaplimiter.WorkspaceID(ws)).Order(Asc(sendcaplimiter.FieldID)).IDs(ctx)
 			},
@@ -2029,8 +2031,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "SendingDomain",
-			Audited: true,
+			Name:         "SendingDomain",
+			AuditActions: []string{"sending_domain.create", "sending_domain.update", "sending_domain.delete", "sending_domain.discard", "sending_domain.restore"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.SendingDomain.Query().Where(sendingdomain.WorkspaceID(ws)).Order(Asc(sendingdomain.FieldID)).IDs(ctx)
 			},
@@ -2082,8 +2084,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "Suppression",
-			Audited: false,
+			Name:         "Suppression",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Suppression.Query().Where(suppression.WorkspaceID(ws)).Order(Asc(suppression.FieldID)).IDs(ctx)
 			},
@@ -2135,8 +2137,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "Tag",
-			Audited: true,
+			Name:         "Tag",
+			AuditActions: []string{"tag.create", "tag.update", "tag.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Tag.Query().Where(tag.WorkspaceID(ws)).Order(Asc(tag.FieldID)).IDs(ctx)
 			},
@@ -2180,8 +2182,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "TrackingDomain",
-			Audited: true,
+			Name:         "TrackingDomain",
+			AuditActions: []string{"tracking_domain.create", "tracking_domain.update", "tracking_domain.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.TrackingDomain.Query().Where(trackingdomain.WorkspaceID(ws)).Order(Asc(trackingdomain.FieldID)).IDs(ctx)
 			},
@@ -2232,8 +2234,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "Unsubscribe",
-			Audited: false,
+			Name:         "Unsubscribe",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Unsubscribe.Query().Where(unsubscribe.WorkspaceID(ws)).Order(Asc(unsubscribe.FieldID)).IDs(ctx)
 			},
@@ -2282,8 +2284,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "Usage",
-			Audited: false,
+			Name:         "Usage",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Usage.Query().Where(usage.WorkspaceID(ws)).Order(Asc(usage.FieldID)).IDs(ctx)
 			},
@@ -2326,8 +2328,8 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
-			Name:    "Visitor",
-			Audited: false,
+			Name:         "Visitor",
+			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Visitor.Query().Where(visitor.WorkspaceID(ws)).Order(Asc(visitor.FieldID)).IDs(ctx)
 			},
@@ -2375,8 +2377,8 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
-			Name:    "WebhookEndpoint",
-			Audited: true,
+			Name:         "WebhookEndpoint",
+			AuditActions: []string{"webhook_endpoint.create", "webhook_endpoint.update", "webhook_endpoint.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.WebhookEndpoint.Query().Where(webhookendpoint.WorkspaceID(ws)).Order(Asc(webhookendpoint.FieldID)).IDs(ctx)
 			},

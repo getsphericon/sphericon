@@ -13790,9 +13790,9 @@
         "name": "action",
         "in": "query",
         "required": false,
-        "description": "Only entries with exactly this action, e.g. membership.update",
+        "description": "Only entries with exactly this action",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/AuditAction"
         },
         "explode": false
       },
@@ -14472,6 +14472,101 @@
         "minimum": 1,
         "maximum": 90,
         "description": "A whole number of days the Attribution window lasts: 1 to 90 (ADR 0064)"
+      },
+      "AuditAction": {
+        "type": "string",
+        "enum": [
+          "membership.update",
+          "membership.delete",
+          "membership.domain_join",
+          "invitation.create",
+          "invitation.accept",
+          "invitation.revoke",
+          "user.login",
+          "user.identity_link",
+          "user.identity_unlink",
+          "user.email_verify",
+          "user.password_change",
+          "user.sign_out_everywhere",
+          "user.second_factor_enroll",
+          "user.second_factor_disable",
+          "user.second_factor_reset",
+          "user.recovery_codes_regenerate",
+          "user.recovery_code_use",
+          "workspace.create",
+          "workspace.update",
+          "workspace.delete",
+          "workspace.restore",
+          "workspace.suspend",
+          "workspace.unsuspend",
+          "workspace.abuse_exempt",
+          "workspace.abuse_unexempt",
+          "workspace.send_cap_change",
+          "contact.import",
+          "audit_log.export",
+          "webhook_endpoint.test",
+          "api_token.create",
+          "api_token.update",
+          "api_token.delete",
+          "automation.create",
+          "automation.update",
+          "automation.delete",
+          "automation.discard",
+          "automation.restore",
+          "brand_kit.create",
+          "brand_kit.update",
+          "brand_kit.delete",
+          "broadcast.create",
+          "broadcast.update",
+          "broadcast.delete",
+          "broadcast.discard",
+          "broadcast.restore",
+          "contact.create",
+          "contact.update",
+          "contact.delete",
+          "custom_field.create",
+          "custom_field.update",
+          "custom_field.delete",
+          "template.create",
+          "template.update",
+          "template.delete",
+          "hold.create",
+          "hold.update",
+          "hold.delete",
+          "integration.create",
+          "integration.update",
+          "integration.delete",
+          "integration.discard",
+          "integration.restore",
+          "join_domain.create",
+          "join_domain.update",
+          "join_domain.delete",
+          "rule.create",
+          "rule.update",
+          "rule.delete",
+          "rule.discard",
+          "rule.restore",
+          "segment.create",
+          "segment.update",
+          "segment.delete",
+          "segment.discard",
+          "segment.restore",
+          "sending_domain.create",
+          "sending_domain.update",
+          "sending_domain.delete",
+          "sending_domain.discard",
+          "sending_domain.restore",
+          "tag.create",
+          "tag.update",
+          "tag.delete",
+          "tracking_domain.create",
+          "tracking_domain.update",
+          "tracking_domain.delete",
+          "webhook_endpoint.create",
+          "webhook_endpoint.update",
+          "webhook_endpoint.delete"
+        ],
+        "description": "What an Audit entry says was done, as `<entity>.<verb>`: an action the server records on its\nown, or the create, update or delete of an audited object"
       },
       "BroadcastHoldReason": {
         "type": "string",
@@ -16890,8 +16985,12 @@
             "description": "Who did it"
           },
           "action": {
-            "type": "string",
-            "description": "What was done, as `<entity>.<verb>`"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AuditAction"
+              }
+            ],
+            "description": "What was done"
           },
           "target": {
             "allOf": [
@@ -16943,7 +17042,7 @@
           "actions": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/AuditAction"
             },
             "description": "Every action with an entry in the log, sorted"
           },

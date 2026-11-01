@@ -33,7 +33,7 @@ func TestExternalAuditListNeedsTheAuditReadScope(t *testing.T) {
 	require.Len(t, page.Items, 1, "only the Workspace's own fixture entry")
 	e := page.Items[0]
 	assert.EqualValues(t, fixtures.AcmeAuditEntryID, e.ID)
-	assert.Equal(t, fixtures.AcmeAuditEntryAction, e.Action)
+	assert.Equal(t, fixtures.AcmeAuditEntryAction, string(e.Action))
 	assert.Equal(t, externalapi.AuditActorKindUser, e.Actor.Kind)
 	diff, err := json.Marshal(e.Diff.Value)
 	require.NoError(t, err)
@@ -86,12 +86,12 @@ func TestExternalAuditFiltersNarrowTheRead(t *testing.T) {
 	}{
 		{"actor kind", externalapi.AuditEntriesListParams{ActorKind: externalapi.NewOptAuditActorKind(externalapi.AuditActorKindSystem)}, []string{fixtures.GlobexAuditWebhookCreateAction}},
 		{"actor id", externalapi.AuditEntriesListParams{ActorId: str("77")}, []string{fixtures.GlobexAuditIntegrationUpdateAction}},
-		{"action", externalapi.AuditEntriesListParams{Action: str(fixtures.GlobexAuditIntegrationDeleteAction)}, []string{fixtures.GlobexAuditIntegrationDeleteAction}},
+		{"action", externalapi.AuditEntriesListParams{Action: externalapi.NewOptAuditAction(externalapi.AuditActionIntegrationDelete)}, []string{fixtures.GlobexAuditIntegrationDeleteAction}},
 		{"target type and id", externalapi.AuditEntriesListParams{TargetType: str("integration"), TargetId: str("5")}, []string{fixtures.GlobexAuditIntegrationUpdateAction}},
 		{"ip", externalapi.AuditEntriesListParams{IP: str("10.0.0.1")}, []string{fixtures.GlobexAuditIntegrationDeleteAction, fixtures.GlobexAuditIntegrationUpdateAction}},
 		{"request id", externalapi.AuditEntriesListParams{RequestId: str("req-b")}, []string{fixtures.GlobexAuditWebhookCreateAction}},
 		{"period", externalapi.AuditEntriesListParams{From: day(time.February), To: day(time.April)}, []string{fixtures.GlobexAuditWebhookCreateAction, fixtures.GlobexAuditIntegrationUpdateAction}},
-		{"no match", externalapi.AuditEntriesListParams{Action: str("nothing.here")}, []string{}},
+		{"no match", externalapi.AuditEntriesListParams{Action: externalapi.NewOptAuditAction(externalapi.AuditActionRuleDelete)}, []string{}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -100,7 +100,7 @@ func TestExternalAuditFiltersNarrowTheRead(t *testing.T) {
 			page := res.(*externalapi.AuditEntryList)
 			got := make([]string, len(page.Items))
 			for i, e := range page.Items {
-				got[i] = e.Action
+				got[i] = string(e.Action)
 			}
 			assert.Equal(t, tc.want, got)
 		})

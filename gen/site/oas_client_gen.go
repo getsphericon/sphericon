@@ -2932,7 +2932,7 @@ func (c *Client) sendSiteAuditExport(ctx context.Context, params SiteAuditExport
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
 			if val, ok := params.Action.Get(); ok {
-				return e.EncodeValue(conv.StringToString(val))
+				return e.EncodeValue(conv.StringToString(string(val)))
 			}
 			return nil
 		}); err != nil {
@@ -3501,7 +3501,7 @@ func (c *Client) sendSiteAuditList(ctx context.Context, params SiteAuditListPara
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
 			if val, ok := params.Action.Get(); ok {
-				return e.EncodeValue(conv.StringToString(val))
+				return e.EncodeValue(conv.StringToString(string(val)))
 			}
 			return nil
 		}); err != nil {

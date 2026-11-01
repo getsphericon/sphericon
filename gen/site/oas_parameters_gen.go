@@ -1149,8 +1149,8 @@ type SiteAuditExportParams struct {
 	// Only entries by the actor with this id (a User id or an API token id); ignored for the staff member
 	// kind.
 	ActorId OptString `json:",omitempty,omitzero"`
-	// Only entries with exactly this action, e.g. membership.update.
-	Action OptString `json:",omitempty,omitzero"`
+	// Only entries with exactly this action.
+	Action OptAuditAction `json:",omitempty,omitzero"`
 	// Only entries about this target type, e.g. integration.
 	TargetType OptString `json:",omitempty,omitzero"`
 	// Only entries about the target with this id.
@@ -1211,7 +1211,7 @@ func unpackSiteAuditExportParams(packed middleware.Parameters) (params SiteAudit
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.Action = v.(OptString)
+			params.Action = v.(OptAuditAction)
 		}
 	}
 	{
@@ -1518,7 +1518,7 @@ func decodeSiteAuditExportParams(args [1]string, argsEscaped bool, r *http.Reque
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotActionVal string
+				var paramsDotActionVal AuditAction
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -1530,7 +1530,7 @@ func decodeSiteAuditExportParams(args [1]string, argsEscaped bool, r *http.Reque
 						return err
 					}
 
-					paramsDotActionVal = c
+					paramsDotActionVal = AuditAction(c)
 					return nil
 				}(); err != nil {
 					return err
@@ -1538,6 +1538,21 @@ func decodeSiteAuditExportParams(args [1]string, argsEscaped bool, r *http.Reque
 				params.Action.SetTo(paramsDotActionVal)
 				return nil
 			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.Action.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
 				return err
 			}
 		}
@@ -1888,8 +1903,8 @@ type SiteAuditListParams struct {
 	// Only entries by the actor with this id (a User id or an API token id); ignored for the staff member
 	// kind.
 	ActorId OptString `json:",omitempty,omitzero"`
-	// Only entries with exactly this action, e.g. membership.update.
-	Action OptString `json:",omitempty,omitzero"`
+	// Only entries with exactly this action.
+	Action OptAuditAction `json:",omitempty,omitzero"`
 	// Only entries about this target type, e.g. integration.
 	TargetType OptString `json:",omitempty,omitzero"`
 	// Only entries about the target with this id.
@@ -1954,7 +1969,7 @@ func unpackSiteAuditListParams(packed middleware.Parameters) (params SiteAuditLi
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.Action = v.(OptString)
+			params.Action = v.(OptAuditAction)
 		}
 	}
 	{
@@ -2279,7 +2294,7 @@ func decodeSiteAuditListParams(args [1]string, argsEscaped bool, r *http.Request
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotActionVal string
+				var paramsDotActionVal AuditAction
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -2291,7 +2306,7 @@ func decodeSiteAuditListParams(args [1]string, argsEscaped bool, r *http.Request
 						return err
 					}
 
-					paramsDotActionVal = c
+					paramsDotActionVal = AuditAction(c)
 					return nil
 				}(); err != nil {
 					return err
@@ -2299,6 +2314,21 @@ func decodeSiteAuditListParams(args [1]string, argsEscaped bool, r *http.Request
 				params.Action.SetTo(paramsDotActionVal)
 				return nil
 			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.Action.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
 				return err
 			}
 		}

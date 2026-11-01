@@ -46,8 +46,8 @@ model StaffAuditEntryResource {
   /** Who did it */
   actor: StaffAuditActor;
 
-  /** What was done, as `<entity>.<verb>` */
-  action: string;
+  /** What was done */
+  action: AuditAction;
 
   /** What it was done to */
   target: StaffAuditTarget;

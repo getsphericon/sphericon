@@ -29,6 +29,15 @@ func (s EmailAddress) Validate() error {
 	return nil
 }
 
+func (s InstanceAuditAction) Validate() error {
+	switch s {
+	case "instance.default_send_cap_change":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s LegalDocumentLabel) Validate() error {
 	alias := (string)(s)
 	if err := (validate.String{
@@ -412,6 +421,17 @@ func (s *StaffInstanceAuditEntryResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "actor",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Action.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "action",
 			Error: err,
 		})
 	}

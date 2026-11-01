@@ -1,11 +1,12 @@
 import { z } from 'zod'
 
 import type { SiteAuditActorKind } from '../generated/site/types.gen.ts'
-import { zSiteAuditActorKind } from '../generated/site/zod.gen.ts'
+import { zAuditAction, zSiteAuditActorKind } from '../generated/site/zod.gen.ts'
 
 // The Audit log filter lives in the settings route's search, so a Change history link
 // (and a reload) opens the log already narrowed. Every field is optional text; `from`
-// and `to` are calendar dates (YYYY-MM-DD).
+// and `to` are calendar dates (YYYY-MM-DD). An actor kind or an action the contract does
+// not know (an old link) is dropped rather than sent.
 // Coerced because the router parses an all-digit value (an id) back to a number.
 const optionalText = z.coerce.string().optional().catch(undefined)
 
@@ -14,7 +15,7 @@ export const auditFilterSchema = z.object({
   to: optionalText,
   actorKind: zSiteAuditActorKind.optional().catch(undefined),
   actorId: optionalText,
-  action: optionalText,
+  action: zAuditAction.optional().catch(undefined),
   targetType: optionalText,
   targetId: optionalText,
   ip: optionalText,
@@ -110,10 +111,18 @@ export function filterChips(filter: AuditFilter) {
   })
 }
 
+// withAction narrows the filter to the action of the action select's value, or, for none or
+// a value the contract does not know, to every action.
+export function withAction(filter: AuditFilter, value: string | null): AuditFilter {
+  const { action: _old, ...rest } = filter
+  const action = zAuditAction.safeParse(value)
+  return action.success ? { ...rest, action: action.data } : rest
+}
+
 // withValue narrows the filter by one field, or, for an empty value, stops narrowing by it.
 export function withValue(
   filter: AuditFilter,
-  field: 'action' | 'targetType' | AuditChipField,
+  field: 'targetType' | AuditChipField,
   value: string | null | undefined,
 ): AuditFilter {
   const { [field]: _old, ...rest } = filter

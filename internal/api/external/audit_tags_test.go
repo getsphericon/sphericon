@@ -40,7 +40,7 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 	require.Truef(t, ok, "got %T", list)
 	require.NotEmpty(t, page.Items)
 	listed := page.Items[0]
-	assert.Equal(t, "tag.create", listed.Action)
+	assert.Equal(t, siteapi.AuditActionTagCreate, listed.Action)
 	assert.Equal(t, siteapi.SiteAuditActorKindAPIToken, listed.Actor.Kind)
 	assert.Equal(t, strconv.Itoa(fixtures.AnchorTokenID), listed.Actor.ID.Value)
 }

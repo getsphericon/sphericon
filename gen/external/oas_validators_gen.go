@@ -170,6 +170,191 @@ func (s ApiTokenScope) Validate() error {
 	}
 }
 
+func (s AuditAction) Validate() error {
+	switch s {
+	case "membership.update":
+		return nil
+	case "membership.delete":
+		return nil
+	case "membership.domain_join":
+		return nil
+	case "invitation.create":
+		return nil
+	case "invitation.accept":
+		return nil
+	case "invitation.revoke":
+		return nil
+	case "user.login":
+		return nil
+	case "user.identity_link":
+		return nil
+	case "user.identity_unlink":
+		return nil
+	case "user.email_verify":
+		return nil
+	case "user.password_change":
+		return nil
+	case "user.sign_out_everywhere":
+		return nil
+	case "user.second_factor_enroll":
+		return nil
+	case "user.second_factor_disable":
+		return nil
+	case "user.second_factor_reset":
+		return nil
+	case "user.recovery_codes_regenerate":
+		return nil
+	case "user.recovery_code_use":
+		return nil
+	case "workspace.create":
+		return nil
+	case "workspace.update":
+		return nil
+	case "workspace.delete":
+		return nil
+	case "workspace.restore":
+		return nil
+	case "workspace.suspend":
+		return nil
+	case "workspace.unsuspend":
+		return nil
+	case "workspace.abuse_exempt":
+		return nil
+	case "workspace.abuse_unexempt":
+		return nil
+	case "workspace.send_cap_change":
+		return nil
+	case "contact.import":
+		return nil
+	case "audit_log.export":
+		return nil
+	case "webhook_endpoint.test":
+		return nil
+	case "api_token.create":
+		return nil
+	case "api_token.update":
+		return nil
+	case "api_token.delete":
+		return nil
+	case "automation.create":
+		return nil
+	case "automation.update":
+		return nil
+	case "automation.delete":
+		return nil
+	case "automation.discard":
+		return nil
+	case "automation.restore":
+		return nil
+	case "brand_kit.create":
+		return nil
+	case "brand_kit.update":
+		return nil
+	case "brand_kit.delete":
+		return nil
+	case "broadcast.create":
+		return nil
+	case "broadcast.update":
+		return nil
+	case "broadcast.delete":
+		return nil
+	case "broadcast.discard":
+		return nil
+	case "broadcast.restore":
+		return nil
+	case "contact.create":
+		return nil
+	case "contact.update":
+		return nil
+	case "contact.delete":
+		return nil
+	case "custom_field.create":
+		return nil
+	case "custom_field.update":
+		return nil
+	case "custom_field.delete":
+		return nil
+	case "template.create":
+		return nil
+	case "template.update":
+		return nil
+	case "template.delete":
+		return nil
+	case "hold.create":
+		return nil
+	case "hold.update":
+		return nil
+	case "hold.delete":
+		return nil
+	case "integration.create":
+		return nil
+	case "integration.update":
+		return nil
+	case "integration.delete":
+		return nil
+	case "integration.discard":
+		return nil
+	case "integration.restore":
+		return nil
+	case "join_domain.create":
+		return nil
+	case "join_domain.update":
+		return nil
+	case "join_domain.delete":
+		return nil
+	case "rule.create":
+		return nil
+	case "rule.update":
+		return nil
+	case "rule.delete":
+		return nil
+	case "rule.discard":
+		return nil
+	case "rule.restore":
+		return nil
+	case "segment.create":
+		return nil
+	case "segment.update":
+		return nil
+	case "segment.delete":
+		return nil
+	case "segment.discard":
+		return nil
+	case "segment.restore":
+		return nil
+	case "sending_domain.create":
+		return nil
+	case "sending_domain.update":
+		return nil
+	case "sending_domain.delete":
+		return nil
+	case "sending_domain.discard":
+		return nil
+	case "sending_domain.restore":
+		return nil
+	case "tag.create":
+		return nil
+	case "tag.update":
+		return nil
+	case "tag.delete":
+		return nil
+	case "tracking_domain.create":
+		return nil
+	case "tracking_domain.update":
+		return nil
+	case "tracking_domain.delete":
+		return nil
+	case "webhook_endpoint.create":
+		return nil
+	case "webhook_endpoint.update":
+		return nil
+	case "webhook_endpoint.delete":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *AuditActor) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -294,6 +479,17 @@ func (s *AuditEntryResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "actor",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Action.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "action",
 			Error: err,
 		})
 	}

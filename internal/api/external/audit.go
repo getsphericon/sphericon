@@ -30,7 +30,7 @@ func (h *Handlers) AuditEntriesList(ctx context.Context, params externalapi.Audi
 		To:         time.Time(params.To.Or(externalapi.Timestamp{})),
 		ActorKind:  string(params.ActorKind.Or("")),
 		ActorID:    params.ActorId.Or(""),
-		Action:     params.Action.Or(""),
+		Action:     string(params.Action.Or("")),
 		TargetType: params.TargetType.Or(""),
 		TargetID:   params.TargetId.Or(""),
 		IP:         params.IP.Or(""),

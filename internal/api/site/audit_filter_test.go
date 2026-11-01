@@ -16,7 +16,7 @@ import (
 func actions(items []siteapi.SiteAuditEntryResource) []string {
 	out := make([]string, len(items))
 	for i := range items {
-		out[i] = items[i].Action
+		out[i] = string(items[i].Action)
 	}
 	return out
 }
@@ -55,8 +55,8 @@ func TestAuditFiltersNarrowListAndExportAlike(t *testing.T) {
 			siteapi.SiteAuditExportParams{ActorId: str("77")},
 			[]string{"integration.update"}},
 		{"action",
-			siteapi.SiteAuditListParams{Action: str("integration.delete")},
-			siteapi.SiteAuditExportParams{Action: str("integration.delete")},
+			siteapi.SiteAuditListParams{Action: siteapi.NewOptAuditAction(siteapi.AuditActionIntegrationDelete)},
+			siteapi.SiteAuditExportParams{Action: siteapi.NewOptAuditAction(siteapi.AuditActionIntegrationDelete)},
 			[]string{"integration.delete"}},
 		{"target type",
 			siteapi.SiteAuditListParams{TargetType: str("integration")},
@@ -83,8 +83,8 @@ func TestAuditFiltersNarrowListAndExportAlike(t *testing.T) {
 			siteapi.SiteAuditExportParams{TargetType: str("integration"), From: day(time.March)},
 			[]string{"integration.delete"}},
 		{"no match",
-			siteapi.SiteAuditListParams{Action: str("nothing.here")},
-			siteapi.SiteAuditExportParams{Action: str("nothing.here")},
+			siteapi.SiteAuditListParams{Action: siteapi.NewOptAuditAction(siteapi.AuditActionRuleDelete)},
+			siteapi.SiteAuditExportParams{Action: siteapi.NewOptAuditAction(siteapi.AuditActionRuleDelete)},
 			[]string{}},
 	}
 	for _, tc := range cases {

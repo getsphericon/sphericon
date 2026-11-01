@@ -3,6 +3,7 @@ import "@typespec/rest";
 import "@typespec/openapi";
 
 import "../common/scalars.tsp";
+import "../common/audit.tsp";
 import "../common/errors.tsp";
 import "../common/pagination.tsp";
 import "../common/limits.tsp";

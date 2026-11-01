@@ -39,7 +39,7 @@ func TestTheWorkspaceAuditLogListsThatWorkspacesEntriesNewestFirst(t *testing.T)
 	}
 	assert.Equal(t, []int64{6, 5, 4, 3, 1}, ids, "only Globex's entries, newest first")
 	assert.False(t, page.NextCursor.IsSet() && !page.NextCursor.IsNull())
-	assert.Equal(t, "tag.create", page.Items[0].Action)
+	assert.Equal(t, staffeeapi.AuditActionTagCreate, page.Items[0].Action)
 }
 
 func TestTheWorkspaceAuditLogIsPaginatedByCursor(t *testing.T) {

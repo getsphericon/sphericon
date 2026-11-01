@@ -244,7 +244,7 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 	ctx := t.Context()
 	s := env.Bus.Act(env.DB.Scoped(acme), johnActor)
 
-	auditedEntities := lo.Filter(ent.ScopedEntities(), func(e ent.ScopedEntity, _ int) bool { return e.Audited })
+	auditedEntities := lo.Filter(ent.ScopedEntities(), func(e ent.ScopedEntity, _ int) bool { return len(e.AuditActions) > 0 })
 	for _, e := range auditedEntities {
 		ids, err := e.IDs(ctx, env.DB, acme)
 		require.NoError(t, err)

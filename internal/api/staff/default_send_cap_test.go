@@ -54,7 +54,7 @@ func diffs(t *testing.T, items []staffapi.StaffInstanceAuditEntryResource) []str
 	for i, e := range items {
 		b, err := json.Marshal(e.Diff)
 		require.NoError(t, err)
-		out[len(items)-1-i] = e.Action + " " + string(b)
+		out[len(items)-1-i] = string(e.Action) + " " + string(b)
 	}
 	return out
 }

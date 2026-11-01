@@ -26,7 +26,8 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
-import { AuditActionName, AuditActionOption } from '../../components/AuditActionName.tsx'
+import { ActionOption } from '../../components/ActionName.tsx'
+import { AuditActionName } from '../../components/AuditActionName.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
@@ -43,18 +44,20 @@ import type {
   SiteAuditEntryResource,
 } from '../../generated/site/types.gen.ts'
 import { zRetentionDays, zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
-import { useAuditActionFilter, useAuditActionLabel } from '../../hooks/useAuditActionLabel.ts'
+import { useAuditActionLabel } from '../../hooks/useAuditActionLabel.ts'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as auditLogRoute } from '../../routes/workspaces/$workspaceId/settings/audit-log.tsx'
+import { labelledActionFilter } from '../../utils/actionFilter.ts'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 import {
   actorValue,
   auditQuery,
   filterActorValue,
   filterChips,
+  withAction,
   withActor,
   withPeriod,
   withValue,
@@ -548,7 +551,7 @@ function PeriodInput({ filter, onFilterChange }: FilterProps) {
 
 // withCurrent offers the values of the log, and the filter's own value even when the log no
 // longer holds it, so a select never hides a filter that is applied.
-function withCurrent(values: string[], current: string | undefined) {
+function withCurrent<T extends string>(values: T[], current: T | undefined) {
   return current && !values.includes(current) ? [current, ...values] : values
 }
 
@@ -603,7 +606,6 @@ function FilterBar({ workspaceId, filter, onFilterChange }: FilterProps & { work
   const { t } = useTranslation()
   const actorLabel = useActorLabel()
   const actionLabel = useAuditActionLabel()
-  const actionFilter = useAuditActionFilter()
   const facets = useSuspenseQuery(siteAuditFacetsOptions({ path: { workspaceId } })).data
   const kindLabels: Record<SiteAuditActorKind, string> = {
     user: t(($) => $.settings.auditLog.kindUser),
@@ -649,10 +651,10 @@ function FilterBar({ workspaceId, filter, onFilterChange }: FilterProps & { work
             value,
             label: actionLabel(value),
           }))}
-          filter={actionFilter}
-          renderOption={({ option }) => <AuditActionOption action={option.value} />}
+          filter={labelledActionFilter}
+          renderOption={({ option }) => <ActionOption action={option.value} label={option.label} />}
           value={filter.action ?? null}
-          onChange={(value) => onFilterChange(withValue(filter, 'action', value))}
+          onChange={(value) => onFilterChange(withAction(filter, value))}
         />
         <Select
           searchable
