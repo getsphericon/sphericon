@@ -21,6 +21,10 @@ test('turns the period days into an inclusive start and an exclusive end', () =>
   expect(query.to).toBe(new Date(2026, 3, 1).toISOString())
 })
 
+test('a day missing its month and day starts on the first of the year', () => {
+  expect(auditQuery({ from: '2026' }).from).toBe(new Date(2026, 0, 1).toISOString())
+})
+
 test('passes every other field through', () => {
   const filter = {
     actorKind: 'user' as const,

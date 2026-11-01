@@ -95,6 +95,62 @@ test('shows a sensitive field as changed only', async () => {
   await expect.element(screen.getByText('changed', { exact: true })).toBeInTheDocument()
 })
 
+test('a blank side of a change reads empty and a structured one is shown as JSON', async () => {
+  worker.use(
+    handleSiteAuditList({
+      body: { items: [entry({ diff: { params: { from: null, to: { limit: 5 } } } })] },
+    }),
+  )
+  const { screen } = await renderWithRouter(
+    <AuditLogSection
+      workspaceId={WORKSPACE_ID}
+      onFilterChange={vi.fn<() => void>()}
+      canConfigureRetention
+    />,
+  )
+
+  await screen.getByRole('button', { name: 'Show details' }).click()
+  await expect.element(screen.getByText('empty', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('{"limit":5}', { exact: true })).toBeInTheDocument()
+})
+
+test('an actor known by neither name nor id is named by its kind', async () => {
+  worker.use(
+    handleSiteAuditList({
+      body: {
+        items: [
+          entry({ id: '6', actor: { kind: 'api_token' } }),
+          entry({ id: '7', actor: { kind: 'user' } }),
+        ],
+      },
+    }),
+  )
+  const { screen } = await renderWithRouter(
+    <AuditLogSection
+      workspaceId={WORKSPACE_ID}
+      onFilterChange={vi.fn<() => void>()}
+      canConfigureRetention
+    />,
+  )
+
+  await expect.element(screen.getByText('API token #', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('membership.update').nth(1)).toBeInTheDocument()
+})
+
+test('an applied actor the log no longer holds stays selectable', async () => {
+  worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
+  const { screen } = await renderWithRouter(
+    <AuditLogSection
+      workspaceId={WORKSPACE_ID}
+      filter={{ actorKind: 'user', actorId: '99' }}
+      onFilterChange={vi.fn<() => void>()}
+      canConfigureRetention
+    />,
+  )
+
+  await expect.element(screen.getByRole('combobox', { name: 'Actor' })).toHaveValue('99')
+})
+
 test('sends the applied filter to the list and to the export', async () => {
   const queries: string[] = []
   let exported = ''
