@@ -4462,6 +4462,74 @@ func (o OptNilSiteAbuseWarning) Or(d SiteAbuseWarning) SiteAbuseWarning {
 	return d
 }
 
+// NewOptNilSiteAttentionSubject returns new OptNilSiteAttentionSubject with value set to v.
+func NewOptNilSiteAttentionSubject(v SiteAttentionSubject) OptNilSiteAttentionSubject {
+	return OptNilSiteAttentionSubject{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSiteAttentionSubject is optional nullable SiteAttentionSubject.
+type OptNilSiteAttentionSubject struct {
+	Value SiteAttentionSubject
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSiteAttentionSubject was set.
+func (o OptNilSiteAttentionSubject) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSiteAttentionSubject) Reset() {
+	var v SiteAttentionSubject
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSiteAttentionSubject) SetTo(v SiteAttentionSubject) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSiteAttentionSubject) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSiteAttentionSubject) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SiteAttentionSubject
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSiteAttentionSubject) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSiteAttentionSubject) Get() (v SiteAttentionSubject, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSiteAttentionSubject) Or(d SiteAttentionSubject) SiteAttentionSubject {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilSiteBroadcastProgress returns new OptNilSiteBroadcastProgress with value set to v.
 func NewOptNilSiteBroadcastProgress(v SiteBroadcastProgress) OptNilSiteBroadcastProgress {
 	return OptNilSiteBroadcastProgress{
@@ -8099,9 +8167,6 @@ type SiteAnalyticsOverview struct {
 	Automations SiteAnalyticsAutomations `json:"automations"`
 	// Daily engagement series, oldest first, one point per day in the range.
 	Timeseries []SiteAnalyticsPoint `json:"timeseries"`
-	// Present while the Workspace is in the abuse detector's warning tier; absent otherwise and without
-	// the `staff` license.
-	AbuseWarning OptNilSiteAbuseWarning `json:"abuseWarning"`
 }
 
 // GetContacts returns the value of Contacts.
@@ -8129,11 +8194,6 @@ func (s *SiteAnalyticsOverview) GetTimeseries() []SiteAnalyticsPoint {
 	return s.Timeseries
 }
 
-// GetAbuseWarning returns the value of AbuseWarning.
-func (s *SiteAnalyticsOverview) GetAbuseWarning() OptNilSiteAbuseWarning {
-	return s.AbuseWarning
-}
-
 // SetContacts sets the value of Contacts.
 func (s *SiteAnalyticsOverview) SetContacts(val SiteAnalyticsContacts) {
 	s.Contacts = val
@@ -8157,11 +8217,6 @@ func (s *SiteAnalyticsOverview) SetAutomations(val SiteAnalyticsAutomations) {
 // SetTimeseries sets the value of Timeseries.
 func (s *SiteAnalyticsOverview) SetTimeseries(val []SiteAnalyticsPoint) {
 	s.Timeseries = val
-}
-
-// SetAbuseWarning sets the value of AbuseWarning.
-func (s *SiteAnalyticsOverview) SetAbuseWarning(val OptNilSiteAbuseWarning) {
-	s.AbuseWarning = val
 }
 
 func (*SiteAnalyticsOverview) siteAnalyticsOverviewRes() {}
@@ -8761,6 +8816,307 @@ func (s *SiteApiTokenResource) SetCreatedAt(val Timestamp) {
 }
 
 func (*SiteApiTokenResource) siteTokensUpdateRes() {}
+
+type SiteAttentionGetBadRequest ProblemDetails
+
+func (*SiteAttentionGetBadRequest) siteAttentionGetRes() {}
+
+type SiteAttentionGetNotFound ProblemDetails
+
+func (*SiteAttentionGetNotFound) siteAttentionGetRes() {}
+
+// One thing in the Workspace that needs a member's action now.
+// Ref: #/components/schemas/SiteAttentionItem
+type SiteAttentionItem struct {
+	Kind     SiteAttentionKind     `json:"kind"`
+	Severity SiteAttentionSeverity `json:"severity"`
+	// The object the item is about; absent for the Workspace's own Send cap and a deliverability warning.
+	Subject OptNilSiteAttentionSubject `json:"subject"`
+	// How many failures the item stands for: failed runs of an Automation, 1 for every other kind.
+	Count int32 `json:"count"`
+	// When the problem began, when that is known.
+	Since OptNilTimestamp `json:"since"`
+	// Why a held Broadcast is held: `no_integration`, `unverified_domain` or `provider_stopped`.
+	HoldReason OptNilString `json:"holdReason"`
+	// The rate behind a deliverability warning.
+	Abuse OptNilSiteAbuseWarning `json:"abuse"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteAttentionItem) GetKind() SiteAttentionKind {
+	return s.Kind
+}
+
+// GetSeverity returns the value of Severity.
+func (s *SiteAttentionItem) GetSeverity() SiteAttentionSeverity {
+	return s.Severity
+}
+
+// GetSubject returns the value of Subject.
+func (s *SiteAttentionItem) GetSubject() OptNilSiteAttentionSubject {
+	return s.Subject
+}
+
+// GetCount returns the value of Count.
+func (s *SiteAttentionItem) GetCount() int32 {
+	return s.Count
+}
+
+// GetSince returns the value of Since.
+func (s *SiteAttentionItem) GetSince() OptNilTimestamp {
+	return s.Since
+}
+
+// GetHoldReason returns the value of HoldReason.
+func (s *SiteAttentionItem) GetHoldReason() OptNilString {
+	return s.HoldReason
+}
+
+// GetAbuse returns the value of Abuse.
+func (s *SiteAttentionItem) GetAbuse() OptNilSiteAbuseWarning {
+	return s.Abuse
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteAttentionItem) SetKind(val SiteAttentionKind) {
+	s.Kind = val
+}
+
+// SetSeverity sets the value of Severity.
+func (s *SiteAttentionItem) SetSeverity(val SiteAttentionSeverity) {
+	s.Severity = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *SiteAttentionItem) SetSubject(val OptNilSiteAttentionSubject) {
+	s.Subject = val
+}
+
+// SetCount sets the value of Count.
+func (s *SiteAttentionItem) SetCount(val int32) {
+	s.Count = val
+}
+
+// SetSince sets the value of Since.
+func (s *SiteAttentionItem) SetSince(val OptNilTimestamp) {
+	s.Since = val
+}
+
+// SetHoldReason sets the value of HoldReason.
+func (s *SiteAttentionItem) SetHoldReason(val OptNilString) {
+	s.HoldReason = val
+}
+
+// SetAbuse sets the value of Abuse.
+func (s *SiteAttentionItem) SetAbuse(val OptNilSiteAbuseWarning) {
+	s.Abuse = val
+}
+
+// What a Needs attention item is about.
+// Ref: #/components/schemas/SiteAttentionKind
+type SiteAttentionKind string
+
+const (
+	SiteAttentionKindSendingDomainVerificationLost SiteAttentionKind = "sendingDomainVerificationLost"
+	SiteAttentionKindIntegrationProviderStopped    SiteAttentionKind = "integrationProviderStopped"
+	SiteAttentionKindBroadcastHeld                 SiteAttentionKind = "broadcastHeld"
+	SiteAttentionKindDeliverabilityWarning         SiteAttentionKind = "deliverabilityWarning"
+	SiteAttentionKindSendCapSpent                  SiteAttentionKind = "sendCapSpent"
+	SiteAttentionKindProviderLimitSpent            SiteAttentionKind = "providerLimitSpent"
+	SiteAttentionKindIntegrationProviderProbation  SiteAttentionKind = "integrationProviderProbation"
+	SiteAttentionKindIntegrationProviderSandbox    SiteAttentionKind = "integrationProviderSandbox"
+	SiteAttentionKindEnrollmentsFailed             SiteAttentionKind = "enrollmentsFailed"
+	SiteAttentionKindBroadcastFailed               SiteAttentionKind = "broadcastFailed"
+	SiteAttentionKindWebhookDisabled               SiteAttentionKind = "webhookDisabled"
+)
+
+// AllValues returns all SiteAttentionKind values.
+func (SiteAttentionKind) AllValues() []SiteAttentionKind {
+	return []SiteAttentionKind{
+		SiteAttentionKindSendingDomainVerificationLost,
+		SiteAttentionKindIntegrationProviderStopped,
+		SiteAttentionKindBroadcastHeld,
+		SiteAttentionKindDeliverabilityWarning,
+		SiteAttentionKindSendCapSpent,
+		SiteAttentionKindProviderLimitSpent,
+		SiteAttentionKindIntegrationProviderProbation,
+		SiteAttentionKindIntegrationProviderSandbox,
+		SiteAttentionKindEnrollmentsFailed,
+		SiteAttentionKindBroadcastFailed,
+		SiteAttentionKindWebhookDisabled,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteAttentionKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteAttentionKindSendingDomainVerificationLost:
+		return []byte(s), nil
+	case SiteAttentionKindIntegrationProviderStopped:
+		return []byte(s), nil
+	case SiteAttentionKindBroadcastHeld:
+		return []byte(s), nil
+	case SiteAttentionKindDeliverabilityWarning:
+		return []byte(s), nil
+	case SiteAttentionKindSendCapSpent:
+		return []byte(s), nil
+	case SiteAttentionKindProviderLimitSpent:
+		return []byte(s), nil
+	case SiteAttentionKindIntegrationProviderProbation:
+		return []byte(s), nil
+	case SiteAttentionKindIntegrationProviderSandbox:
+		return []byte(s), nil
+	case SiteAttentionKindEnrollmentsFailed:
+		return []byte(s), nil
+	case SiteAttentionKindBroadcastFailed:
+		return []byte(s), nil
+	case SiteAttentionKindWebhookDisabled:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteAttentionKind) UnmarshalText(data []byte) error {
+	switch SiteAttentionKind(data) {
+	case SiteAttentionKindSendingDomainVerificationLost:
+		*s = SiteAttentionKindSendingDomainVerificationLost
+		return nil
+	case SiteAttentionKindIntegrationProviderStopped:
+		*s = SiteAttentionKindIntegrationProviderStopped
+		return nil
+	case SiteAttentionKindBroadcastHeld:
+		*s = SiteAttentionKindBroadcastHeld
+		return nil
+	case SiteAttentionKindDeliverabilityWarning:
+		*s = SiteAttentionKindDeliverabilityWarning
+		return nil
+	case SiteAttentionKindSendCapSpent:
+		*s = SiteAttentionKindSendCapSpent
+		return nil
+	case SiteAttentionKindProviderLimitSpent:
+		*s = SiteAttentionKindProviderLimitSpent
+		return nil
+	case SiteAttentionKindIntegrationProviderProbation:
+		*s = SiteAttentionKindIntegrationProviderProbation
+		return nil
+	case SiteAttentionKindIntegrationProviderSandbox:
+		*s = SiteAttentionKindIntegrationProviderSandbox
+		return nil
+	case SiteAttentionKindEnrollmentsFailed:
+		*s = SiteAttentionKindEnrollmentsFailed
+		return nil
+	case SiteAttentionKindBroadcastFailed:
+		*s = SiteAttentionKindBroadcastFailed
+		return nil
+	case SiteAttentionKindWebhookDisabled:
+		*s = SiteAttentionKindWebhookDisabled
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What in the Workspace needs a member's action now, most urgent first and, within a severity, the
+// oldest first. Every item is true at the moment it is read; a Workspace suspension and a Staff hold
+// are not items, the Workspace itself carries them.
+// Ref: #/components/schemas/SiteAttentionList
+type SiteAttentionList struct {
+	Items []SiteAttentionItem `json:"items"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteAttentionList) GetItems() []SiteAttentionItem {
+	return s.Items
+}
+
+// SetItems sets the value of Items.
+func (s *SiteAttentionList) SetItems(val []SiteAttentionItem) {
+	s.Items = val
+}
+
+func (*SiteAttentionList) siteAttentionGetRes() {}
+
+// How urgent an item is.
+// Ref: #/components/schemas/SiteAttentionSeverity
+type SiteAttentionSeverity string
+
+const (
+	SiteAttentionSeverityBlocked  SiteAttentionSeverity = "blocked"
+	SiteAttentionSeverityDegraded SiteAttentionSeverity = "degraded"
+	SiteAttentionSeverityNotice   SiteAttentionSeverity = "notice"
+)
+
+// AllValues returns all SiteAttentionSeverity values.
+func (SiteAttentionSeverity) AllValues() []SiteAttentionSeverity {
+	return []SiteAttentionSeverity{
+		SiteAttentionSeverityBlocked,
+		SiteAttentionSeverityDegraded,
+		SiteAttentionSeverityNotice,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteAttentionSeverity) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteAttentionSeverityBlocked:
+		return []byte(s), nil
+	case SiteAttentionSeverityDegraded:
+		return []byte(s), nil
+	case SiteAttentionSeverityNotice:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteAttentionSeverity) UnmarshalText(data []byte) error {
+	switch SiteAttentionSeverity(data) {
+	case SiteAttentionSeverityBlocked:
+		*s = SiteAttentionSeverityBlocked
+		return nil
+	case SiteAttentionSeverityDegraded:
+		*s = SiteAttentionSeverityDegraded
+		return nil
+	case SiteAttentionSeverityNotice:
+		*s = SiteAttentionSeverityNotice
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The object a Needs attention item is about.
+// Ref: #/components/schemas/SiteAttentionSubject
+type SiteAttentionSubject struct {
+	// Its id: a Sending domain, an Integration, a Broadcast, an Automation or a Webhook endpoint, by
+	// `kind`.
+	ID EntityId `json:"id"`
+	// Its name: the domain, the label, the name, or the endpoint's URL.
+	Name string `json:"name"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteAttentionSubject) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SiteAttentionSubject) GetName() string {
+	return s.Name
+}
+
+// SetID sets the value of ID.
+func (s *SiteAttentionSubject) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SiteAttentionSubject) SetName(val string) {
+	s.Name = val
+}
 
 // The actor of an Audit entry.
 // Ref: #/components/schemas/SiteAuditActor

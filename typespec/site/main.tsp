@@ -57,6 +57,7 @@ import "./resources/sending-domains.tsp";
 import "./resources/tracking-domains.tsp";
 import "./resources/analytics.tsp";
 import "./resources/setup-checklist.tsp";
+import "./resources/attention.tsp";
 import "./resources/suppressions.tsp";
 import "./resources/transactional-emails.tsp";
 import "./resources/captured-messages.tsp";

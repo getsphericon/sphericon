@@ -26,6 +26,7 @@ import (
 	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
 	accounts "github.com/getsphericon/sphericon/internal/accounts"
 	analytics "github.com/getsphericon/sphericon/internal/analytics"
+	attention "github.com/getsphericon/sphericon/internal/attention"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
@@ -140,7 +141,6 @@ func (c *ConverterImpl) AnalyticsOverviewToResource(source *analytics.Overview) 
 		for i := 0; i < len((*source).Series); i++ {
 			siteapiSiteAnalyticsOverview.Timeseries[i] = c.analyticsPointToSiteapiSiteAnalyticsPoint((*source).Series[i])
 		}
-		// siteapiSiteAnalyticsOverview.AbuseWarning: ignore
 		pSiteapiSiteAnalyticsOverview = &siteapiSiteAnalyticsOverview
 	}
 	return pSiteapiSiteAnalyticsOverview
@@ -169,6 +169,64 @@ func (c *ConverterImpl) AnalyticsSubscribedPeopleToResource(source *analytics.Su
 		pSiteapiSiteAnalyticsSubscribedPeople = &siteapiSiteAnalyticsSubscribedPeople
 	}
 	return pSiteapiSiteAnalyticsSubscribedPeople
+}
+func (c *ConverterImpl) AttentionItemsToResources(source []attention.Item) []site.SiteAttentionItem {
+	var siteapiSiteAttentionItemList []site.SiteAttentionItem
+	siteapiSiteAttentionItemList = make([]site.SiteAttentionItem, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteAttentionItemList[i] = c.attentionItemToSiteapiSiteAttentionItem(source[i])
+	}
+	return siteapiSiteAttentionItemList
+}
+func (c *ConverterImpl) AttentionKindToResource(source attention.Kind) site.SiteAttentionKind {
+	var siteapiSiteAttentionKind site.SiteAttentionKind
+	switch source {
+	case attention.KindBroadcastFailed:
+		siteapiSiteAttentionKind = site.SiteAttentionKindBroadcastFailed
+	case attention.KindBroadcastHeld:
+		siteapiSiteAttentionKind = site.SiteAttentionKindBroadcastHeld
+	case attention.KindDeliverabilityWarning:
+		siteapiSiteAttentionKind = site.SiteAttentionKindDeliverabilityWarning
+	case attention.KindEnrollmentsFailed:
+		siteapiSiteAttentionKind = site.SiteAttentionKindEnrollmentsFailed
+	case attention.KindIntegrationProviderProbation:
+		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderProbation
+	case attention.KindIntegrationProviderSandbox:
+		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderSandbox
+	case attention.KindIntegrationProviderStopped:
+		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderStopped
+	case attention.KindProviderLimitSpent:
+		siteapiSiteAttentionKind = site.SiteAttentionKindProviderLimitSpent
+	case attention.KindSendCapSpent:
+		siteapiSiteAttentionKind = site.SiteAttentionKindSendCapSpent
+	case attention.KindSendingDomainVerificationLost:
+		siteapiSiteAttentionKind = site.SiteAttentionKindSendingDomainVerificationLost
+	case attention.KindWebhookDisabled:
+		siteapiSiteAttentionKind = site.SiteAttentionKindWebhookDisabled
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteAttentionKind
+}
+func (c *ConverterImpl) AttentionSeverityToResource(source attention.Severity) site.SiteAttentionSeverity {
+	var siteapiSiteAttentionSeverity site.SiteAttentionSeverity
+	switch source {
+	case attention.SeverityBlocked:
+		siteapiSiteAttentionSeverity = site.SiteAttentionSeverityBlocked
+	case attention.SeverityDegraded:
+		siteapiSiteAttentionSeverity = site.SiteAttentionSeverityDegraded
+	case attention.SeverityNotice:
+		siteapiSiteAttentionSeverity = site.SiteAttentionSeverityNotice
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteAttentionSeverity
+}
+func (c *ConverterImpl) AttentionSubjectToResource(source attention.Subject) site.SiteAttentionSubject {
+	var siteapiSiteAttentionSubject site.SiteAttentionSubject
+	siteapiSiteAttentionSubject.ID = site.EntityId(source.ID)
+	siteapiSiteAttentionSubject.Name = source.Name
+	return siteapiSiteAttentionSubject
 }
 func (c *ConverterImpl) AuditActorToResource(source auditapi.View) site.SiteAuditActor {
 	var siteapiSiteAuditActor site.SiteAuditActor
@@ -2281,6 +2339,17 @@ func (c *ConverterImpl) analyticsSubscribedPointToSiteapiSiteAnalyticsSubscribed
 	siteapiSiteAnalyticsSubscribedPoint.Unsubscribed = count(source.Unsubscribed)
 	siteapiSiteAnalyticsSubscribedPoint.Net = count(source.Net)
 	return siteapiSiteAnalyticsSubscribedPoint
+}
+func (c *ConverterImpl) attentionItemToSiteapiSiteAttentionItem(source attention.Item) site.SiteAttentionItem {
+	var siteapiSiteAttentionItem site.SiteAttentionItem
+	siteapiSiteAttentionItem.Kind = c.AttentionKindToResource(source.Kind)
+	siteapiSiteAttentionItem.Severity = c.AttentionSeverityToResource(source.Severity)
+	siteapiSiteAttentionItem.Subject = optAttentionSubject(c, source.Subject)
+	siteapiSiteAttentionItem.Count = count(source.Count)
+	siteapiSiteAttentionItem.Since = optNilTimestamp(source.Since)
+	siteapiSiteAttentionItem.HoldReason = optNilString(source.HoldReason)
+	siteapiSiteAttentionItem.Abuse = optAbuseWarning(c, source.Abuse)
+	return siteapiSiteAttentionItem
 }
 func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclicks.Clicks) site.SiteLinkClicks {
 	var siteapiSiteLinkClicks site.SiteLinkClicks

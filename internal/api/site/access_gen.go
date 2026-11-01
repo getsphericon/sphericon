@@ -19,6 +19,7 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteAnalyticsOverviewOperation:                     {workspace: true},
 	siteapi.SiteAnalyticsRevenueOperation:                      {workspace: true},
 	siteapi.SiteAnalyticsSubscribedPeopleOperation:             {workspace: true},
+	siteapi.SiteAttentionGetOperation:                          {workspace: true},
 	siteapi.SiteAuditExportOperation:                           {workspace: true, permissions: []accounts.Permission{accounts.PermAuditRead}},
 	siteapi.SiteAuditFacetsOperation:                           {workspace: true, permissions: []accounts.Permission{accounts.PermAuditRead}},
 	siteapi.SiteAuditGetRetentionOperation:                     {workspace: true, permissions: []accounts.Permission{accounts.PermAuditConfigure}},

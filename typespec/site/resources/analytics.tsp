@@ -137,10 +137,6 @@ model SiteAnalyticsOverview {
 
   /** Daily engagement series, oldest first, one point per day in the range */
   timeseries: SiteAnalyticsPoint[];
-
-  /** Present while the Workspace is in the abuse detector's warning tier; absent
-   * otherwise and without the `staff` license */
-  abuseWarning?: SiteAbuseWarning | null;
 }
 
 /**

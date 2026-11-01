@@ -3,6 +3,7 @@ import { beforeEach, expect, test } from 'vitest'
 
 import {
   handleSiteAnalyticsRevenue,
+  handleSiteAttentionGet,
   handleSiteAutomationsList,
   handleSiteBroadcastsList,
   handleSiteSendingDomainsList,
@@ -47,7 +48,83 @@ beforeEach(() => {
     handleSiteAutomationsList(() => HttpResponse.json({ items: [], totalItems: 0 })),
     handleSiteSetupChecklistGet({ body: finished }),
     handleSiteAnalyticsRevenue({ body: revenue }),
+    handleSiteAttentionGet({ body: { items: [] } }),
   )
+})
+
+test('nothing that needs attention shows no block', async () => {
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Create a new…')).toBeInTheDocument()
+  await expect.element(screen.getByText('Needs attention')).not.toBeInTheDocument()
+})
+
+test('each item says what is wrong and links to where it is fixed', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          {
+            kind: 'sendingDomainVerificationLost',
+            severity: 'blocked',
+            subject: { id: '6', name: 'lost.acme.com' },
+            count: 1,
+          },
+          {
+            kind: 'enrollmentsFailed',
+            severity: 'notice',
+            subject: { id: '100', name: 'Welcome series' },
+            count: 2,
+          },
+          { kind: 'sendCapSpent', severity: 'degraded', count: 1 },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Needs attention')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/The DKIM record of lost.acme.com is gone/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open email settings' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings/emails')
+  await expect
+    .element(screen.getByText('2 runs of Welcome series failed this week.'))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open the automation' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/automations/100')
+  await expect.element(screen.getByText(/sent its daily sending limit/)).toBeInTheDocument()
+})
+
+test('a held broadcast says what lifts the hold', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          {
+            kind: 'broadcastHeld',
+            severity: 'blocked',
+            subject: { id: '12', name: 'Spring launch' },
+            count: 1,
+            holdReason: 'unverified_domain',
+          },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByText(/Spring launch is on hold. The sender domain is not verified/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open the broadcast' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/12/report')
 })
 
 test('an unfinished checklist is shown with its steps', async () => {

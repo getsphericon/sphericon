@@ -1,5 +1,5 @@
 import { AreaChart, DonutChart } from '@mantine/charts'
-import { Alert, EmptyState, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { EmptyState, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import { IconChartBar } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -8,7 +8,6 @@ import { StatCard } from '../../../components/StatCard.tsx'
 import { siteAnalyticsOverviewOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { Route as emailMetricsRoute } from '../../../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
-import { formatPercent } from '../../../utils/percent.ts'
 import { ReportBoundary } from './ReportBoundary.tsx'
 
 // EmailMetricsPage is the Email metrics report: KPI cards and charts for the section's window.
@@ -28,20 +27,9 @@ function EmailMetricsReport() {
   const overview = useSuspenseQuery(
     siteAnalyticsOverviewOptions({ path: { workspaceId }, query: { range } }),
   ).data
-  const abuseWarning = overview.abuseWarning
 
   return (
     <Stack>
-      {abuseWarning && (
-        <Alert color="yellow" title={t(($) => $.analytics.abuseWarning.title)}>
-          {t(($) => $.analytics.abuseWarning.description, {
-            metric: t(($) => $.analytics.abuseWarning.metrics[abuseWarning.metric]),
-            rate: formatPercent(abuseWarning.rate),
-            domain: abuseWarning.domain,
-          })}
-        </Alert>
-      )}
-
       <Stack gap="xl">
         <Stack gap="xs">
           <Title order={4}>{t(($) => $.analytics.sections.email)}</Title>

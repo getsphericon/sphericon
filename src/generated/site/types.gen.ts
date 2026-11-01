@@ -1486,11 +1486,6 @@ export type SiteAnalyticsOverview = {
    * Daily engagement series, oldest first, one point per day in the range
    */
   timeseries: Array<SiteAnalyticsPoint>;
-  /**
-   * Present while the Workspace is in the abuse detector's warning tier; absent
-   * otherwise and without the `staff` license
-   */
-  abuseWarning?: SiteAbuseWarning | null;
 };
 
 /**
@@ -1690,6 +1685,93 @@ export type SiteApiTokenResource = {
    * Creation timestamp
    */
   createdAt: Timestamp;
+};
+
+/**
+ * One thing in the Workspace that needs a member's action now
+ */
+export type SiteAttentionItem = {
+  kind: SiteAttentionKind;
+  severity: SiteAttentionSeverity;
+  /**
+   * The object the item is about; absent for the Workspace's own Send cap and a deliverability warning
+   */
+  subject?: SiteAttentionSubject | null;
+  /**
+   * How many failures the item stands for: failed runs of an Automation, 1 for every other kind
+   */
+  count: number;
+  /**
+   * When the problem began, when that is known
+   */
+  since?: Timestamp | null;
+  /**
+   * Why a held Broadcast is held: `no_integration`, `unverified_domain` or `provider_stopped`
+   */
+  holdReason?: string | null;
+  /**
+   * The rate behind a deliverability warning
+   */
+  abuse?: SiteAbuseWarning | null;
+};
+
+/**
+ * What a Needs attention item is about
+ */
+export const SiteAttentionKind = {
+  SENDING_DOMAIN_VERIFICATION_LOST: 'sendingDomainVerificationLost',
+  INTEGRATION_PROVIDER_STOPPED: 'integrationProviderStopped',
+  BROADCAST_HELD: 'broadcastHeld',
+  DELIVERABILITY_WARNING: 'deliverabilityWarning',
+  SEND_CAP_SPENT: 'sendCapSpent',
+  PROVIDER_LIMIT_SPENT: 'providerLimitSpent',
+  INTEGRATION_PROVIDER_PROBATION: 'integrationProviderProbation',
+  INTEGRATION_PROVIDER_SANDBOX: 'integrationProviderSandbox',
+  ENROLLMENTS_FAILED: 'enrollmentsFailed',
+  BROADCAST_FAILED: 'broadcastFailed',
+  WEBHOOK_DISABLED: 'webhookDisabled'
+} as const;
+
+/**
+ * What a Needs attention item is about
+ */
+export type SiteAttentionKind = typeof SiteAttentionKind[keyof typeof SiteAttentionKind];
+
+/**
+ * What in the Workspace needs a member's action now, most urgent first and, within a severity,
+ * the oldest first. Every item is true at the moment it is read; a Workspace suspension and a
+ * Staff hold are not items, the Workspace itself carries them.
+ */
+export type SiteAttentionList = {
+  items: Array<SiteAttentionItem>;
+};
+
+/**
+ * How urgent an item is
+ */
+export const SiteAttentionSeverity = {
+  BLOCKED: 'blocked',
+  DEGRADED: 'degraded',
+  NOTICE: 'notice'
+} as const;
+
+/**
+ * How urgent an item is
+ */
+export type SiteAttentionSeverity = typeof SiteAttentionSeverity[keyof typeof SiteAttentionSeverity];
+
+/**
+ * The object a Needs attention item is about
+ */
+export type SiteAttentionSubject = {
+  /**
+   * Its id: a Sending domain, an Integration, a Broadcast, an Automation or a Webhook endpoint, by `kind`
+   */
+  id: EntityId;
+  /**
+   * Its name: the domain, the label, the name, or the endpoint's URL
+   */
+  name: string;
 };
 
 /**
@@ -9056,6 +9138,37 @@ export type SiteAnalyticsSubscribedPeopleResponses = {
 };
 
 export type SiteAnalyticsSubscribedPeopleResponse = SiteAnalyticsSubscribedPeopleResponses[keyof SiteAnalyticsSubscribedPeopleResponses];
+
+export type SiteAttentionGetData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/attention';
+};
+
+export type SiteAttentionGetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAttentionGetError = SiteAttentionGetErrors[keyof SiteAttentionGetErrors];
+
+export type SiteAttentionGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAttentionList;
+};
+
+export type SiteAttentionGetResponse = SiteAttentionGetResponses[keyof SiteAttentionGetResponses];
 
 export type SiteAuditListData = {
   body?: never;

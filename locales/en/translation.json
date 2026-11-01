@@ -100,14 +100,6 @@
     "transactionalEmailsLoadErrorTitle": "Failed to load transactional emails"
   },
   "analytics": {
-    "abuseWarning": {
-      "description": "The {{metric}} rate on {{domain}} is {{rate}} over the last 24 hours, over the warning limit. Clean your list: if it keeps rising, sending for this workspace is suspended automatically.",
-      "metrics": {
-        "bounce": "bounce",
-        "complaint": "complaint"
-      },
-      "title": "Your sending reputation needs attention"
-    },
     "automations": {
       "active": "Active",
       "runsActive": "Active runs",
@@ -1143,6 +1135,35 @@
     "useRecoveryCode": "Use a recovery code"
   },
   "overview": {
+    "attention": {
+      "actions": {
+        "automation": "Open the automation",
+        "broadcast": "Open the broadcast",
+        "emails": "Open email settings",
+        "suppressions": "Review suppressions",
+        "webhooks": "Open webhooks"
+      },
+      "kinds": {
+        "broadcastFailed": "{{name}} failed to send.",
+        "broadcastHeld": "{{name}} is on hold. {{reason}}",
+        "deliverabilityWarning": "The {{metric}} rate on {{domain}} is {{rate}} over the last 24 hours, over the warning limit. Clean your list: if it keeps rising, sending for this workspace is suspended automatically.",
+        "enrollmentsFailed_one": "{{count}} run of {{name}} failed this week.",
+        "enrollmentsFailed_other": "{{count}} runs of {{name}} failed this week.",
+        "integrationProviderProbation": "Your provider has put the account behind {{name}} under review. It still sends: keep bounces and complaints low.",
+        "integrationProviderSandbox": "{{name}} is in the provider's sandbox: it sends only to addresses verified with the provider.",
+        "integrationProviderStopped": "Your provider has stopped the account behind {{name}}: nothing sends through it until the provider reinstates it.",
+        "providerLimitSpent": "{{name}} has sent its daily limit: the rest goes out as the limit refills.",
+        "sendCapSpent": "This workspace has sent its daily sending limit: the rest goes out as it refills over the next 24 hours.",
+        "sendingDomainVerificationLost": "The DKIM record of {{name}} is gone: mail from it is held until the domain verifies again.",
+        "webhookDisabled": "The webhook {{name}} disabled itself after failing deliveries."
+      },
+      "loadError": "Failed to load what needs attention",
+      "metrics": {
+        "bounce": "bounce",
+        "complaint": "complaint"
+      },
+      "title": "Needs attention"
+    },
     "createAutomationDescription": "Send follow-up emails when a contact does something.",
     "createBroadcastDescription": "Send a one-time email to a segment of your contacts.",
     "createdLabel": "Created",

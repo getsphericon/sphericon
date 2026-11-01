@@ -32,6 +32,7 @@ import (
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
+	"github.com/getsphericon/sphericon/internal/attention"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
@@ -692,6 +693,10 @@ var contentPackage = do.Package(
 		policy := eventlog.LivePolicy{Window: do.MustInvoke[*config.Config](i).EventLiveWindow, Now: do.MustInvoke[Clock](i)}
 		return eventlog.New(do.MustInvoke[*events.Bus](i), policy), nil
 	}),
+	do.Lazy(func(i do.Injector) (*attention.Module, error) {
+		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
+		return attention.New(watch, do.MustInvoke[providerlimit.SendCaps](i)).WithClock(do.MustInvoke[Clock](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*analytics.Module, error) {
 		return analytics.New().WithClock(do.MustInvoke[Clock](i)).WithRetention(do.MustInvoke[*config.Config](i).EventsRetention), nil
 	}),
@@ -865,7 +870,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Deletion:                 do.MustInvoke[*workspacedeletion.Module](i),
 		AccountLink:              accountLink,
 		Holds:                    do.MustInvoke[*holds.Holds](i),
-		AbuseWatch:               edition.AbuseWatch(),
+		Attention:                do.MustInvoke[*attention.Module](i),
 		SupportEmail:             cfg.SupportEmail,
 		Origins:                  apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
 		Accounts:                 do.MustInvoke[*accounts.Accounts](i),

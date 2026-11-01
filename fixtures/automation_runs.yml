@@ -13,7 +13,7 @@
     updated_at: '{{daysAgo 1}}',
   }
 - {
-    id: 1001,
+    id: 1001, # fixture: AutomationRunWelcomeCompletedSecond
     automation_id: 100,
     version_id: 100,
     contact_id: 101,
@@ -24,7 +24,7 @@
     updated_at: '{{daysAgo 2}}',
   }
 - {
-    id: 1002,
+    id: 1002, # fixture: AutomationRunWelcomeCompletedThird
     automation_id: 100,
     version_id: 100,
     contact_id: 102,

@@ -583,8 +583,7 @@ export const zSiteAnalyticsOverview = z.object({
   sending: zSiteAnalyticsSending,
   email: zSiteAnalyticsEmail,
   automations: zSiteAnalyticsAutomations,
-  timeseries: z.array(zSiteAnalyticsPoint),
-  abuseWarning: z.exactOptional(zSiteAbuseWarning.nullable())
+  timeseries: z.array(zSiteAnalyticsPoint)
 });
 
 /**
@@ -604,6 +603,40 @@ export const zSiteAnalyticsSubscribedPoint = z.object({
 export const zSiteAnalyticsSubscribedPeople = z.object({
   current: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   series: z.array(zSiteAnalyticsSubscribedPoint)
+});
+
+/**
+ * What a Needs attention item is about
+ */
+export const zSiteAttentionKind = z.enum([
+  'sendingDomainVerificationLost',
+  'integrationProviderStopped',
+  'broadcastHeld',
+  'deliverabilityWarning',
+  'sendCapSpent',
+  'providerLimitSpent',
+  'integrationProviderProbation',
+  'integrationProviderSandbox',
+  'enrollmentsFailed',
+  'broadcastFailed',
+  'webhookDisabled'
+]);
+
+/**
+ * How urgent an item is
+ */
+export const zSiteAttentionSeverity = z.enum([
+  'blocked',
+  'degraded',
+  'notice'
+]);
+
+/**
+ * The object a Needs attention item is about
+ */
+export const zSiteAttentionSubject = z.object({
+  id: zEntityId,
+  name: z.string()
 });
 
 /**
@@ -2469,6 +2502,28 @@ export const zSiteApiTokenResource = z.object({
 });
 
 /**
+ * One thing in the Workspace that needs a member's action now
+ */
+export const zSiteAttentionItem = z.object({
+  kind: zSiteAttentionKind,
+  severity: zSiteAttentionSeverity,
+  subject: z.exactOptional(zSiteAttentionSubject.nullable()),
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  since: z.exactOptional(zTimestamp.nullable()),
+  holdReason: z.exactOptional(z.string().nullable()),
+  abuse: z.exactOptional(zSiteAbuseWarning.nullable())
+});
+
+/**
+ * What in the Workspace needs a member's action now, most urgent first and, within a severity,
+ * the oldest first. Every item is true at the moment it is read; a Workspace suspension and a
+ * Staff hold are not items, the Workspace itself carries them.
+ */
+export const zSiteAttentionList = z.object({
+  items: z.array(zSiteAttentionItem)
+});
+
+/**
  * One immutable Audit entry (Enterprise)
  */
 export const zSiteAuditEntryResource = z.object({
@@ -4240,6 +4295,15 @@ export const zSiteAnalyticsSubscribedPeopleQuery = z.object({
  * The request has succeeded.
  */
 export const zSiteAnalyticsSubscribedPeopleResponse = zSiteAnalyticsSubscribedPeople;
+
+export const zSiteAttentionGetPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAttentionGetResponse = zSiteAttentionList;
 
 export const zSiteAuditListPath = z.object({
   workspaceId: zWorkspaceId

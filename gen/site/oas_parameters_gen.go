@@ -1056,6 +1056,86 @@ func decodeSiteAnalyticsSubscribedPeopleParams(args [1]string, argsEscaped bool,
 	return params, nil
 }
 
+// SiteAttentionGetParams is parameters of SiteAttention_get operation.
+type SiteAttentionGetParams struct {
+	WorkspaceId WorkspaceId
+}
+
+func unpackSiteAttentionGetParams(packed middleware.Parameters) (params SiteAttentionGetParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	return params
+}
+
+func decodeSiteAttentionGetParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAttentionGetParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteAuditExportParams is parameters of SiteAudit_export operation.
 type SiteAuditExportParams struct {
 	WorkspaceId WorkspaceId

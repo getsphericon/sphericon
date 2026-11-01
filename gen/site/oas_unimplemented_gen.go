@@ -78,6 +78,15 @@ func (UnimplementedHandler) SiteAnalyticsSubscribedPeople(ctx context.Context, p
 	return r, ht.ErrNotImplemented
 }
 
+// SiteAttentionGet implements SiteAttention_get operation.
+//
+// What needs attention in the Workspace. Open to every member.
+//
+// GET /workspaces/{workspaceId}/attention
+func (UnimplementedHandler) SiteAttentionGet(ctx context.Context, params SiteAttentionGetParams) (r SiteAttentionGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAuditExport implements SiteAudit_export operation.
 //
 // Export the Audit log as CSV, newest first, narrowed by the same filter as the list (Enterprise;

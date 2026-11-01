@@ -52,6 +52,12 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/analytics/subscribed-people
 	SiteAnalyticsSubscribedPeople(ctx context.Context, params SiteAnalyticsSubscribedPeopleParams) (SiteAnalyticsSubscribedPeopleRes, error)
+	// SiteAttentionGet implements SiteAttention_get operation.
+	//
+	// What needs attention in the Workspace. Open to every member.
+	//
+	// GET /workspaces/{workspaceId}/attention
+	SiteAttentionGet(ctx context.Context, params SiteAttentionGetParams) (SiteAttentionGetRes, error)
 	// SiteAuditExport implements SiteAudit_export operation.
 	//
 	// Export the Audit log as CSV, newest first, narrowed by the same filter as the list (Enterprise;

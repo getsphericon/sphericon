@@ -11,7 +11,6 @@ export default defineConfig({
     // t(($) => $.rules.firingStatus[firing.status]). Every other key the code no longer reads is
     // removed by `mise run fix` and fails `mise run check:i18n`. A new dynamic family goes here.
     preservePatterns: [
-      'analytics.abuseWarning.metrics.*',
       'analytics.clicksByLink.automation',
       'analytics.clicksByLink.broadcast',
       'analytics.range.*',
@@ -24,6 +23,7 @@ export default defineConfig({
       'console.workspaces.review.systemFrozen',
       'console.workspaces.review.warned',
       'customFields.types.*',
+      'overview.attention.metrics.*',
       'rules.dryRunOutcome.*',
       'rules.firingStatus.*',
       'settings.members.source.*',

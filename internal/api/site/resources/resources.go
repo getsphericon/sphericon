@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/abusewatch"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
+	"github.com/getsphericon/sphericon/internal/attention"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
@@ -113,6 +114,8 @@ import (
 // goverter:extend optEditorDocument
 // goverter:extend optMembershipSource
 // goverter:extend optMessageRevenue
+// goverter:extend optAttentionSubject
+// goverter:extend optAbuseWarning
 // goverter:extend optTrackingReason
 // goverter:extend timestampOf
 // goverter:extend tagNames
@@ -193,11 +196,10 @@ type Converter interface {
 	RevenueToResource(source *orders.WorkspaceRevenue) siteapi.SiteAnalyticsRevenue
 
 	// The analytics reports map whole from the module's report, so a field the response gains
-	// with no source fails generation. A figure the module does not hold (the abuse warning, the
-	// Event retention) is attached by the handler.
+	// with no source fails generation. A figure the module does not hold (the Event retention) is
+	// attached by the handler.
 	// goverter:useEmptyOnNil:slice
 	// goverter:map Series Timeseries
-	// goverter:ignore AbuseWarning
 	AnalyticsOverviewToResource(source *analytics.Overview) *siteapi.SiteAnalyticsOverview
 	// goverter:map NewInWindow NewInRange
 	AnalyticsContactsToResource(source analytics.Contacts) siteapi.SiteAnalyticsContacts
@@ -219,6 +221,12 @@ type Converter interface {
 	// goverter:map Series Timeseries
 	AnalyticsNewPeopleToResource(source *analytics.NewPeople) *siteapi.SiteNewPeopleReport
 	AbuseWarningToResource(source abusewatch.Warning) siteapi.SiteAbuseWarning
+
+	// What needs attention maps whole from the module's items; an absent subject, start, hold
+	// reason or rate is left out.
+	// goverter:useEmptyOnNil:slice
+	AttentionItemsToResources(source []attention.Item) []siteapi.SiteAttentionItem
+	AttentionSubjectToResource(source attention.Subject) siteapi.SiteAttentionSubject
 
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 	// goverter:useEmptyOnNil:slice
@@ -579,6 +587,10 @@ type Converter interface {
 	AutomationReportPeriodToResource(source automations.ReportPeriod) siteapi.SiteAutomationReportPeriod
 	// goverter:enum:transform value
 	AbuseMetricToResource(source abusewatch.Metric) siteapi.SiteAbuseMetric
+	// goverter:enum:transform value
+	AttentionKindToResource(source attention.Kind) siteapi.SiteAttentionKind
+	// goverter:enum:transform value
+	AttentionSeverityToResource(source attention.Severity) siteapi.SiteAttentionSeverity
 	// goverter:enum:transform value
 	AnalyticsOwnerKindToResource(source linkclicks.OwnerKind) siteapi.SiteAnalyticsOwnerKind
 	// goverter:enum:transform value
@@ -1069,6 +1081,16 @@ func optNilContactSource(c Converter, v *contact.Source) siteapi.OptNilContactEx
 // Condition's table, listed so a client offers what the server takes.
 func customFieldRuleOperators(t customfield.Type) []siteapi.SiteConditionOperator {
 	return lo.Map(condition.RuleOperators(t), func(op string, _ int) siteapi.SiteConditionOperator { return siteapi.SiteConditionOperator(op) })
+}
+
+// optAttentionSubject is the object an attention item is about, absent for the Workspace's own.
+func optAttentionSubject(c Converter, v *attention.Subject) siteapi.OptNilSiteAttentionSubject {
+	return convert.OptVia[siteapi.OptNilSiteAttentionSubject](v, c.AttentionSubjectToResource)
+}
+
+// optAbuseWarning is the rate behind a deliverability warning, absent on every other item.
+func optAbuseWarning(c Converter, v *abusewatch.Warning) siteapi.OptNilSiteAbuseWarning {
+	return convert.OptVia[siteapi.OptNilSiteAbuseWarning](v, c.AbuseWarningToResource)
 }
 
 // optMessageRevenue is the revenue of a message, present wherever the module read it.

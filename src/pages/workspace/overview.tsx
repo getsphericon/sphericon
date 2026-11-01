@@ -11,6 +11,7 @@ import { zSiteAnalyticsRange } from '../../generated/site/zod.gen.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
+import { AttentionBlock } from './AttentionBlock.tsx'
 import { RecentlyCreated } from './RecentlyCreated.tsx'
 import { RevenueBlock } from './RevenueBlock.tsx'
 import { SetupChecklist } from './SetupChecklist.tsx'
@@ -43,6 +44,8 @@ export function OverviewPage() {
           data={RANGES.map((r) => ({ value: r, label: t(($) => $.analytics.range[r]) }))}
         />
       </Group>
+
+      <AttentionBlock workspaceId={workspaceId} />
 
       <QueryBoundary fallback={<BlockSkeleton />} errorTitle={t(($) => $.setupChecklist.loadError)}>
         <UnfinishedChecklist workspaceId={workspaceId} />

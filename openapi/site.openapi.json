@@ -82,6 +82,9 @@
       "name": "Site Setup Checklist"
     },
     {
+      "name": "Site Attention"
+    },
+    {
       "name": "Site Suppressions"
     },
     {
@@ -4449,6 +4452,56 @@
           }
         },
         "tags": ["Site Analytics"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/attention": {
+      "get": {
+        "operationId": "SiteAttention_get",
+        "description": "What needs attention in the Workspace. Open to every member.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAttentionList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Attention"],
         "x-required-permissions": []
       }
     },
@@ -16316,16 +16369,6 @@
               "$ref": "#/components/schemas/SiteAnalyticsPoint"
             },
             "description": "Daily engagement series, oldest first, one point per day in the range"
-          },
-          "abuseWarning": {
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteAbuseWarning"
-              }
-            ],
-            "nullable": true,
-            "description": "Present while the Workspace is in the abuse detector's warning tier; absent\notherwise and without the `staff` license"
           }
         },
         "description": "Workspace analytics overview powering the dashboard"
@@ -16592,6 +16635,113 @@
           }
         },
         "description": "A workspace API token (secret shown only once, at creation)"
+      },
+      "SiteAttentionItem": {
+        "type": "object",
+        "required": ["kind", "severity", "count"],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/SiteAttentionKind"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/SiteAttentionSeverity"
+          },
+          "subject": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAttentionSubject"
+              }
+            ],
+            "nullable": true,
+            "description": "The object the item is about; absent for the Workspace's own Send cap and a deliverability warning"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many failures the item stands for: failed runs of an Automation, 1 for every other kind"
+          },
+          "since": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the problem began, when that is known"
+          },
+          "holdReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why a held Broadcast is held: `no_integration`, `unverified_domain` or `provider_stopped`"
+          },
+          "abuse": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAbuseWarning"
+              }
+            ],
+            "nullable": true,
+            "description": "The rate behind a deliverability warning"
+          }
+        },
+        "description": "One thing in the Workspace that needs a member's action now"
+      },
+      "SiteAttentionKind": {
+        "type": "string",
+        "enum": [
+          "sendingDomainVerificationLost",
+          "integrationProviderStopped",
+          "broadcastHeld",
+          "deliverabilityWarning",
+          "sendCapSpent",
+          "providerLimitSpent",
+          "integrationProviderProbation",
+          "integrationProviderSandbox",
+          "enrollmentsFailed",
+          "broadcastFailed",
+          "webhookDisabled"
+        ],
+        "description": "What a Needs attention item is about"
+      },
+      "SiteAttentionList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAttentionItem"
+            }
+          }
+        },
+        "description": "What in the Workspace needs a member's action now, most urgent first and, within a severity,\nthe oldest first. Every item is true at the moment it is read; a Workspace suspension and a\nStaff hold are not items, the Workspace itself carries them."
+      },
+      "SiteAttentionSeverity": {
+        "type": "string",
+        "enum": ["blocked", "degraded", "notice"],
+        "description": "How urgent an item is"
+      },
+      "SiteAttentionSubject": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Its id: a Sending domain, an Integration, a Broadcast, an Automation or a Webhook endpoint, by `kind`"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name: the domain, the label, the name, or the endpoint's URL"
+          }
+        },
+        "description": "The object a Needs attention item is about"
       },
       "SiteAuditActor": {
         "type": "object",
