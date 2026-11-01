@@ -8,7 +8,7 @@ test.each([
   ['unverified_domain', /sender domain is not verified/],
   ['workspace_suspended', /Sending is suspended for this workspace/],
   ['provider_stopped', /email provider has stopped sending from your account/],
-  ['staff_hold', /Contact an Owner or Admin of this workspace/],
+  ['staff_hold', /Outbound email is on hold for this workspace/],
   ['workspace_pending_deletion', /Restore the workspace to resume/],
 ] as const)('the alert explains the %s hold', async (reason, explanation) => {
   const screen = await renderWithProviders(<BroadcastHoldAlert reason={reason} />)

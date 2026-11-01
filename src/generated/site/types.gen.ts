@@ -1725,7 +1725,8 @@ export type SiteAttentionItem = {
    */
   since?: Timestamp | null;
   /**
-   * Why a held Broadcast is held: a reason of its own source, never a Workspace-level one
+   * Why a held Broadcast is held, set on a `broadcastHeld` item only. Only a reason of the Broadcast's
+   * own source makes an item: a Workspace-level hold is the layout's banner
    */
   holdReason?: BroadcastHoldReason | null;
   /**

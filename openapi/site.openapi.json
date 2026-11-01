@@ -16744,7 +16744,7 @@
               }
             ],
             "nullable": true,
-            "description": "Why a held Broadcast is held: a reason of its own source, never a Workspace-level one"
+            "description": "Why a held Broadcast is held, set on a `broadcastHeld` item only. Only a reason of the Broadcast's\nown source makes an item: a Workspace-level hold is the layout's banner"
           },
           "abuse": {
             "type": "object",
