@@ -5,7 +5,9 @@ import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CountryFlag } from '../../components/CountryFlag.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
+import { RelativeTime } from '../../components/RelativeTime.tsx'
 import { MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { siteContactsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
@@ -97,9 +99,12 @@ export function ContactsListPage() {
                     alt={contactName(record)}
                   />
                   <Stack gap={0}>
-                    <Text size="sm" fw={500}>
-                      {fullName || identifier}
-                    </Text>
+                    <Group gap={6} wrap="nowrap">
+                      <Text size="sm" fw={500}>
+                        {fullName || identifier}
+                      </Text>
+                      {record.country ? <CountryFlag code={record.country} /> : null}
+                    </Group>
                     {fullName && identifier ? (
                       <Text size="xs" c="dimmed">
                         {identifier}
@@ -122,6 +127,11 @@ export function ContactsListPage() {
                 ))}
               </Group>
             ),
+          },
+          {
+            accessor: 'createdAt',
+            title: t(($) => $.table.added),
+            render: (record) => <RelativeTime value={record.createdAt} />,
           },
           {
             accessor: 'actions',

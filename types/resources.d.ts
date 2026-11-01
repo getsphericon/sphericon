@@ -2085,6 +2085,7 @@ export default interface Resources {
     },
     "table": {
       "actions": "Actions",
+      "added": "Added",
       "avatar": "Photo URL",
       "birthday": "Birthday",
       "city": "City",

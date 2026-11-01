@@ -32,6 +32,14 @@ test('lists the workspace contacts', async () => {
   await expect.element(screen.getByText('Alice Smith', { exact: true })).toBeInTheDocument()
 })
 
+test('shows the country flag of a contact next to its name', async () => {
+  worker.use(handleSiteContactsList({ body: page([{ ...ALICE, country: 'GB' }, BOB], 2) }))
+
+  const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByRole('img', { name: 'United Kingdom' })).toBeInTheDocument()
+})
+
 test('shows the tags of each contact', async () => {
   worker.use(handleSiteContactsList({ body: page([{ ...ALICE, tags: ['vip', 'beta'] }, BOB], 2) }))
 
