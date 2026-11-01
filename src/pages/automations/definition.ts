@@ -2,12 +2,12 @@ import { NodeType } from '@workflowbuilder/sdk'
 import type { WBIcon, WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
 import * as z from 'zod'
 
-import type { HttpHeader } from '../../components/HttpHeaderRows.tsx'
 import type {
   SiteAutomationHttpHeader,
   SiteAutomationStep,
   SiteAutomationVersion,
 } from '../../generated/site/types.gen.ts'
+import { zSiteAutomationHttpHeader } from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
 import {
@@ -164,18 +164,16 @@ function asText(value: unknown): string {
 }
 
 // An HTTP step's headers as the node holds them: JSON text (see jsonText).
-const headersCodec = jsonText.pipe(
-  z.array(z.object({ name: z.string(), value: z.exactOptional(z.string()) })),
-)
+const headersCodec = jsonText.pipe(z.array(zSiteAutomationHttpHeader))
 
 // headersOf reads an HTTP step's headers off the node; a blank or unreadable text is none.
-export function headersOf(text: string): HttpHeader[] {
+export function headersOf(text: string): SiteAutomationHttpHeader[] {
   const parsed = headersCodec.safeParse(text)
   return parsed.success ? parsed.data : []
 }
 
 // headersText is the JSON text a node holds its headers in.
-export function headersText(headers: HttpHeader[]): string {
+export function headersText(headers: SiteAutomationHttpHeader[]): string {
   return z.encode(headersCodec, headers)
 }
 

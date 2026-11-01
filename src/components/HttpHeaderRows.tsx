@@ -2,29 +2,26 @@ import { ActionIcon, Button, Group, PasswordInput, Stack, TextInput } from '@man
 import { IconTrash } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
+import type { SiteAutomationHttpHeader } from '../generated/site/types.gen.ts'
+
 // The most request headers an outgoing HTTP request carries: a Rule's http Action and an
 // Automation's HTTP step alike (the server refuses more).
 const MAX_HTTP_HEADERS = 5
 
-// One request header as edited: the server returns only the name of a stored header, so a value
-// left empty keeps the stored one.
-export interface HttpHeader {
-  name: string
-  value?: string
-}
-
 interface HttpHeaderRowsProps {
-  headers: HttpHeader[]
+  // The headers as edited: the server returns only the name of a stored header, so a value left
+  // empty keeps the stored one.
+  headers: SiteAutomationHttpHeader[]
   // Whether the headers were saved before: a header with no value then keeps its stored one.
   saved: boolean
-  onChange: (headers: HttpHeader[]) => void
+  onChange: (headers: SiteAutomationHttpHeader[]) => void
 }
 
 // The request headers of an outgoing HTTP call as rows of name and value, added up to the limit
 // and removed one by one. A value is a secret (an API key, a bearer token), so it is masked.
 export function HttpHeaderRows({ headers, saved, onChange }: HttpHeaderRowsProps) {
   const { t } = useTranslation()
-  const change = (index: number, edit: Partial<HttpHeader>) =>
+  const change = (index: number, edit: Partial<SiteAutomationHttpHeader>) =>
     onChange(headers.map((header, at) => (at === index ? { ...header, ...edit } : header)))
 
   return (
