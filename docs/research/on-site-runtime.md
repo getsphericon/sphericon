@@ -22,12 +22,12 @@ and marked "(search index)".
   Customer.io draws every in-app message in an iframe served from its own renderer host. None of the bundles read
   calls `attachShadow`.
 - **Shadow DOM stops selectors both ways but not inheritance**: the shadow tree inherits `font`, `color`,
-  `line-height` from its host, `rem` follows the page's root font size, and `@font-face` declared inside a shadow
-  root is ignored by every engine. An iframe isolates fully but needs a postMessage channel for its height and close,
+  `line-height` from its host, `rem` follows the page's root font size, and `@font-face` inside a shadow root
+  behaves inconsistently across engines, none scoping it as specified. An iframe isolates fully but needs a postMessage channel for its height and close,
   makes only its own document inert, and, served cross-origin, cannot ask for web push permission.
 - **Size.** sphericon's `t.js` is 16.3 kB gzip today, the size of OptinMonster's loader. Klaviyo loads about 95 kB
-  gzip of onsite modules at page load for an account with forms and fetches its 171 kB gzip renderer only when a form's
-  trigger passes. Customer.io loads its 37 kB gzip in-app code at init whenever the plugin is enabled. Braze's full
+  gzip of onsite modules at page load for an account with forms and fetches up to 171 kB gzip more, its renderer, only
+  when a form's trigger passes (part of that set may load earlier, §8). Customer.io loads its 37 kB gzip in-app code at init whenever the plugin is enabled. Braze's full
   CDN build is 81 kB gzip, and the build without UI is 61 kB. **The tracker's Vite IIFE build inlines a dynamic
   `import()` into the one file** (tested), so lazy display code needs a second build output and a new gate path.
 - **CSP.** The current snippet is an inline script, so a strict CSP already needs a nonce or hash for it. Styles via
@@ -47,7 +47,7 @@ and marked "(search index)".
   Go binary embeds it and serves it at `/t.js` with `Cache-Control: public, max-age=3600`
   (`internal/server/tracker.go`). Dependencies: `es-toolkit`, `js-cookie`, `ky`, `uuid` and the generated collect
   client.
-- **Measured** (source at `0b02d977e`, Vite 8.3.5, `pnpm exec vite build`): **46.9 kB raw, 16.3 kB gzip -9,
+- **Measured** (source at `0b02d977e`, unchanged at `be577a229`, Vite 8.3.5, `pnpm exec vite build`): **46.9 kB raw, 16.3 kB gzip -9,
   14.7 kB brotli -q 11**.
 - **Code splitting.** A test build with the same Vite version, library mode and `formats: ['iife']`, whose entry calls
   `import('./display.js')`, emitted a single `t.js` with the dynamic module inlined and no second file. Rollup
@@ -100,10 +100,13 @@ and marked "(search index)".
 
 ### 2.3 Fonts
 
-- `@font-face` inside a shadow tree: "Doesn't work" in Firefox and Chrome, "@-rules in shadow trees are ignored" in
-  Safari; "@-rules in document scope match from all scopes"
-  ([CSSWG scoped names interop](https://wiki.csswg.org/spec/css-scoping)). A custom typeface for a message drawn in
-  shadow DOM must be declared at document level, which touches the page.
+- `@font-face` inside a shadow tree: CSS Scoping specifies tree-scoped names, but "browsers currently have a
+  confusing panoply of behaviors, likely mostly accidental"; the CSSWG's interop table (undated) records "Doesn't
+  work" and "@-rules in shadow trees are ignored. @-rules in document scope match from all scopes"
+  ([CSSWG scoped names interop](https://wiki.csswg.org/spec/css-scoping)), and WebKit bug 270664 (2024) says WebKit
+  does not tree-scope `@font-face` names
+  ([bug](https://bugs.webkit.org/show_bug.cgi?id=270664), seen in search results only). A custom typeface that has to
+  work in every engine is declared at document level, which touches the page.
 - The page's own web fonts are usable from the shadow tree by family name (same table: document-scope rules match
   from all scopes), so "use the site's font" works there with no download.
 - An iframe loads its fonts itself; the site's fonts are reachable only if the frame requests them by URL and their
@@ -354,7 +357,10 @@ Facts above, framed as the choices they bear on; none is decided here.
   `'unsafe-inline'` (MDN names only `insertRule` and `cssText`).
 - How OptinMonster, Sleeknote and Drip Onsite draw a message (DOM, shadow, iframe); Sleeknote and Drip script sizes;
   the size of OptinMonster's per-campaign code and `api.min.css`.
-- Klaviyo: the exact moment the `Render` set loads (read from minified code, not documented); whether embedded forms
+- Klaviyo: the exact moment the `Render` set loads (read from minified code, not documented). The `signup_forms`
+  entry also hands a ClientStore loader (chunks `4298`, `8667`, `5204`, `1467`, `4813`, about 43.5 kB br, counted in
+  the `Render` row) to its startup code; if that runs at page load, page load is about 135 kB br and the on-trigger
+  part about 114 kB br; whether embedded forms
   load it at page load; the size of the `styles` CSS chunk.
 - That Customer.io's chunk `573` is `gist-web` (sizes differ by 77 bytes).
 - Browser autofill (`autocomplete="email"`, `tel`) and password managers on fields inside a shadow root: no source
