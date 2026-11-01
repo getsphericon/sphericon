@@ -1129,11 +1129,10 @@ export default interface Resources {
       "recentLoadError": "Failed to load recently created items",
       "recentTitle": "Recently created",
       "revenue": {
-        "chooseCurrency": "Choose the reporting currency",
         "credited": "Credited to messages",
-        "currencyUnsetBody": "Choose the currency revenue is reported in to see it here. Orders received meanwhile are counted once you do.",
-        "currencyUnsetTitle": "No reporting currency yet",
         "loadError": "Failed to load revenue",
+        "noOrdersBody": "Revenue appears here with the first order your shop sends, in that order's currency. You can change the reporting currency in the settings.",
+        "noOrdersTitle": "No orders yet",
         "note": "This is the revenue of the orders sent to Sphericon, not of your shop.",
         "orders": "Orders",
         "periods": {
@@ -1667,9 +1666,9 @@ export default interface Resources {
         "unsubscribes": "Unsubscribes: {{n}}"
       },
       "revenue": {
-        "currencyDescription": "Every revenue figure is shown in this currency. Revenue stays hidden until one is chosen.",
+        "currencyDescription": "Every revenue figure is shown in this currency. The first order your shop sends sets it; an order in another currency is kept but counted in no sum.",
         "currencyLabel": "Reporting currency",
-        "currencyPlaceholder": "Not chosen yet",
+        "currencyPlaceholder": "Set by the first order",
         "errorTitle": "Could not save the revenue settings",
         "forbidden": "Only owners and admins can change the revenue settings.",
         "loadError": "Failed to load the revenue settings",

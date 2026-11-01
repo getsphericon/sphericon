@@ -75,20 +75,6 @@ func (_c *HeldOrderEventCreate) SetProperties(v map[string]interface{}) *HeldOrd
 	return _c
 }
 
-// SetContactID sets the "contact_id" field.
-func (_c *HeldOrderEventCreate) SetContactID(v int64) *HeldOrderEventCreate {
-	_c.mutation.SetContactID(v)
-	return _c
-}
-
-// SetNillableContactID sets the "contact_id" field if the given value is not nil.
-func (_c *HeldOrderEventCreate) SetNillableContactID(v *int64) *HeldOrderEventCreate {
-	if v != nil {
-		_c.SetContactID(*v)
-	}
-	return _c
-}
-
 // SetEventID sets the "event_id" field.
 func (_c *HeldOrderEventCreate) SetEventID(v string) *HeldOrderEventCreate {
 	_c.mutation.SetEventID(v)
@@ -254,10 +240,6 @@ func (_c *HeldOrderEventCreate) createSpec() (*HeldOrderEvent, *sqlgraph.CreateS
 		_spec.SetField(heldorderevent.FieldProperties, field.TypeJSON, value)
 		_node.Properties = value
 	}
-	if value, ok := _c.mutation.ContactID(); ok {
-		_spec.SetField(heldorderevent.FieldContactID, field.TypeInt64, value)
-		_node.ContactID = &value
-	}
 	if value, ok := _c.mutation.EventID(); ok {
 		_spec.SetField(heldorderevent.FieldEventID, field.TypeString, value)
 		_node.EventID = value
@@ -387,9 +369,6 @@ func (u *HeldOrderEventUpsertOne) UpdateNewValues() *HeldOrderEventUpsertOne {
 		}
 		if _, exists := u.create.mutation.Properties(); exists {
 			s.SetIgnore(heldorderevent.FieldProperties)
-		}
-		if _, exists := u.create.mutation.ContactID(); exists {
-			s.SetIgnore(heldorderevent.FieldContactID)
 		}
 		if _, exists := u.create.mutation.EventID(); exists {
 			s.SetIgnore(heldorderevent.FieldEventID)
@@ -649,9 +628,6 @@ func (u *HeldOrderEventUpsertBulk) UpdateNewValues() *HeldOrderEventUpsertBulk {
 			}
 			if _, exists := b.mutation.Properties(); exists {
 				s.SetIgnore(heldorderevent.FieldProperties)
-			}
-			if _, exists := b.mutation.ContactID(); exists {
-				s.SetIgnore(heldorderevent.FieldContactID)
 			}
 			if _, exists := b.mutation.EventID(); exists {
 				s.SetIgnore(heldorderevent.FieldEventID)

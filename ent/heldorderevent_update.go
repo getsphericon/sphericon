@@ -131,9 +131,6 @@ func (_u *HeldOrderEventUpdate) sqlSave(ctx context.Context) (_node int, err err
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(heldorderevent.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if _u.mutation.ContactIDCleared() {
-		_spec.ClearField(heldorderevent.FieldContactID, field.TypeInt64)
-	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -315,9 +312,6 @@ func (_u *HeldOrderEventUpdateOne) sqlSave(ctx context.Context) (_node *HeldOrde
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(heldorderevent.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.ContactIDCleared() {
-		_spec.ClearField(heldorderevent.FieldContactID, field.TypeInt64)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

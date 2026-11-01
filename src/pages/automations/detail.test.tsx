@@ -249,7 +249,7 @@ test('shows the orders and the net revenue credited to the automation', async ()
   await expect.element(screen.getByText('$120.00')).toBeInTheDocument()
 })
 
-test('shows no orders or revenue on the automation until the currency is chosen', async () => {
+test('shows no orders or revenue on the automation until the first order sets the currency', async () => {
   worker.use(
     handleSiteAutomationsGet({
       body: {

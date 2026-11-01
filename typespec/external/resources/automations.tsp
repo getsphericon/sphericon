@@ -203,7 +203,7 @@ model AutomationsListFilter {
 
 /** Orders credited to a broadcast or an automation and their net revenue (ADR 0064) */
 model MessageRevenue {
-  /** The Reporting currency, null until an owner or admin chooses it; every figure is zero until then */
+  /** The Reporting currency, null until the first order or an owner or admin sets it; every figure is zero until then */
   reportingCurrency: CurrencyCode | null;
 
   /** Orders completed that are credited to it, in the Reporting currency */

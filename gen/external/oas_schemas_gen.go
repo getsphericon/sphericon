@@ -9719,7 +9719,8 @@ type MaxPerSecond int32
 // Orders credited to a broadcast or an automation and their net revenue (ADR 0064).
 // Ref: #/components/schemas/MessageRevenue
 type MessageRevenue struct {
-	// The Reporting currency, null until an owner or admin chooses it; every figure is zero until then.
+	// The Reporting currency, null until the first order or an owner or admin sets it; every figure is
+	// zero until then.
 	ReportingCurrency NilCurrencyCode `json:"reportingCurrency"`
 	// Orders completed that are credited to it, in the Reporting currency.
 	Orders int32 `json:"orders"`

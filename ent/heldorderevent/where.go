@@ -75,11 +75,6 @@ func OrderID(v string) predicate.HeldOrderEvent {
 	return predicate.HeldOrderEvent(sql.FieldEQ(FieldOrderID, v))
 }
 
-// ContactID applies equality check predicate on the "contact_id" field. It's identical to ContactIDEQ.
-func ContactID(v int64) predicate.HeldOrderEvent {
-	return predicate.HeldOrderEvent(sql.FieldEQ(FieldContactID, v))
-}
-
 // EventID applies equality check predicate on the "event_id" field. It's identical to EventIDEQ.
 func EventID(v string) predicate.HeldOrderEvent {
 	return predicate.HeldOrderEvent(sql.FieldEQ(FieldEventID, v))
@@ -273,56 +268,6 @@ func KindIn(vs ...Kind) predicate.HeldOrderEvent {
 // KindNotIn applies the NotIn predicate on the "kind" field.
 func KindNotIn(vs ...Kind) predicate.HeldOrderEvent {
 	return predicate.HeldOrderEvent(sql.FieldNotIn(FieldKind, vs...))
-}
-
-// ContactIDEQ applies the EQ predicate on the "contact_id" field.
-func ContactIDEQ(v int64) predicate.HeldOrderEvent {
-	return predicate.HeldOrderEvent(sql.FieldEQ(FieldContactID, v))
-}
-
-// ContactIDNEQ applies the NEQ predicate on the "contact_id" field.
-func ContactIDNEQ(v int64) predicate.HeldOrderEvent {
-	return predicate.HeldOrderEvent(sql.FieldNEQ(FieldContactID, v))
-}
-
-// ContactIDIn applies the In predicate on the "contact_id" field.
-func ContactIDIn(vs ...int64) predicate.HeldOrderEvent {
-	return predicate.HeldOrderEvent(sql.FieldIn(FieldContactID, vs...))
-}
-
-// ContactIDNotIn applies the NotIn predicate on the "contact_id" field.
-func ContactIDNotIn(vs ...int64) predicate.HeldOrderEvent {
-	return predicate.HeldOrderEvent(sql.FieldNotIn(FieldContactID, vs...))
-}
-
-// ContactIDGT applies the GT predicate on the "contact_id" field.
-func ContactIDGT(v int64) predicate.HeldOrderEvent {
-	return predicate.HeldOrderEvent(sql.FieldGT(FieldContactID, v))
-}
-
-// ContactIDGTE applies the GTE predicate on the "contact_id" field.
-func ContactIDGTE(v int64) predicate.HeldOrderEvent {
-	return predicate.HeldOrderEvent(sql.FieldGTE(FieldContactID, v))
-}
-
-// ContactIDLT applies the LT predicate on the "contact_id" field.
-func ContactIDLT(v int64) predicate.HeldOrderEvent {
-	return predicate.HeldOrderEvent(sql.FieldLT(FieldContactID, v))
-}
-
-// ContactIDLTE applies the LTE predicate on the "contact_id" field.
-func ContactIDLTE(v int64) predicate.HeldOrderEvent {
-	return predicate.HeldOrderEvent(sql.FieldLTE(FieldContactID, v))
-}
-
-// ContactIDIsNil applies the IsNil predicate on the "contact_id" field.
-func ContactIDIsNil() predicate.HeldOrderEvent {
-	return predicate.HeldOrderEvent(sql.FieldIsNull(FieldContactID))
-}
-
-// ContactIDNotNil applies the NotNil predicate on the "contact_id" field.
-func ContactIDNotNil() predicate.HeldOrderEvent {
-	return predicate.HeldOrderEvent(sql.FieldNotNull(FieldContactID))
 }
 
 // EventIDEQ applies the EQ predicate on the "event_id" field.

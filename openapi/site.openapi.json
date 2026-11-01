@@ -9791,7 +9791,7 @@
     "/workspaces/{workspaceId}/revenue-settings": {
       "get": {
         "operationId": "SiteWorkspaces_getRevenueSettings",
-        "description": "Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the\nAttribution window. Open to every member.",
+        "description": "Read the Workspace's revenue settings: the Reporting currency (null until set) and the\nAttribution window. Open to every member.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -16011,7 +16011,7 @@
               }
             ],
             "nullable": true,
-            "description": "The Reporting currency, null until chosen"
+            "description": "The Reporting currency, null until the first Order or an Owner or Admin sets it"
           },
           "total": {
             "type": "integer",
@@ -16046,7 +16046,7 @@
             "description": "One point per Report day in the range, oldest first, zero-filled"
           }
         },
-        "description": "The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the\nsum of Order Movements over the range, in the Reporting currency. Until an Owner or Admin\nchooses that currency `reportingCurrency` is null and every figure is zero; the Orders\nreceived meanwhile are counted once it is chosen."
+        "description": "The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the\nsum of Order Movements over the range, in the Reporting currency. Until the first Order\nCompleted sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and\nevery figure is zero."
       },
       "SiteAnalyticsSubscribedPeople": {
         "type": "object",
@@ -19377,7 +19377,7 @@
               }
             ],
             "nullable": true,
-            "description": "The Reporting currency, null until chosen"
+            "description": "The Reporting currency, null until set"
           },
           "orders": {
             "type": "integer",
@@ -19390,7 +19390,7 @@
             "description": "Net revenue of those Orders, in the minor unit of the Reporting currency"
           }
         },
-        "description": "The Orders credited to one Broadcast or Automation and the net revenue of their Movements\n(ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund\nlowers `amount` on its own day. Until the currency is chosen `reportingCurrency` is null and\nthere is no figure to show. Orders in another currency are counted in neither field."
+        "description": "The Orders credited to one Broadcast or Automation and the net revenue of their Movements\n(ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund\nlowers `amount` on its own day. Until the currency is set `reportingCurrency` is null and\nthere is no figure to show. Orders in another currency are counted in neither field."
       },
       "SiteNewPeoplePoint": {
         "type": "object",
@@ -20282,7 +20282,7 @@
               }
             ],
             "nullable": true,
-            "description": "The Reporting currency; null until an Owner or Admin chooses one, and revenue is not shown\nbefore then"
+            "description": "The Reporting currency; the currency of the first Order Completed unless an Owner or Admin\nchooses one, and null with no figure shown before either"
           },
           "attributionWindowDays": {
             "allOf": [

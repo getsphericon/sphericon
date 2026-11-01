@@ -1106,7 +1106,7 @@ export const zSiteMembershipSource = z.enum([
 /**
  * The Orders credited to one Broadcast or Automation and the net revenue of their Movements
  * (ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund
- * lowers `amount` on its own day. Until the currency is chosen `reportingCurrency` is null and
+ * lowers `amount` on its own day. Until the currency is set `reportingCurrency` is null and
  * there is no figure to show. Orders in another currency are counted in neither field.
  */
 export const zSiteMessageRevenue = z.object({
@@ -1511,9 +1511,9 @@ export const zSiteRevenuePoint = z.object({
 
 /**
  * The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
- * sum of Order Movements over the range, in the Reporting currency. Until an Owner or Admin
- * chooses that currency `reportingCurrency` is null and every figure is zero; the Orders
- * received meanwhile are counted once it is chosen.
+ * sum of Order Movements over the range, in the Reporting currency. Until the first Order
+ * Completed sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and
+ * every figure is zero.
  */
 export const zSiteAnalyticsRevenue = z.object({
   reportingCurrency: zCurrencyCode.nullable(),

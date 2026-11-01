@@ -48,6 +48,22 @@ func TestTheTrackerTakesAValidOrder(t *testing.T) {
 	assert.Equal(t, 1, env.OutboxCount(t, events.NameCollected, map[string]any{"action": "Order Completed"}))
 }
 
+func TestTheTrackerRefusesAnOrderCompletedWithoutACurrency(t *testing.T) {
+	env := testhelper.Setup(t)
+	in := orderCompleted("9.99")
+	delete(in.Properties.Value, "currency")
+
+	res, err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
+		Events: []collectapi.CollectEventInput{in},
+	})
+
+	require.NoError(t, err)
+	refused, ok := res.(*collectapi.CollectEventsCreateUnprocessableEntity)
+	require.Truef(t, ok, "got %T", res)
+	assert.Contains(t, refused.Detail.Or(""), "currency is required")
+	assert.Empty(t, env.OutboxEnvelopes(t, events.NameCollected))
+}
+
 func TestTheTrackerRefusesAnUnknownCurrencyCode(t *testing.T) {
 	env := testhelper.Setup(t)
 	in := orderCompleted("9.99")

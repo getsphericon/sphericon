@@ -1942,8 +1942,8 @@ func (UnimplementedHandler) SiteWorkspacesDelete(ctx context.Context, req *SiteD
 
 // SiteWorkspacesGetRevenueSettings implements SiteWorkspaces_getRevenueSettings operation.
 //
-// Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the
-// Attribution window. Open to every member.
+// Read the Workspace's revenue settings: the Reporting currency (null until set) and the Attribution
+// window. Open to every member.
 //
 // GET /workspaces/{workspaceId}/revenue-settings
 func (UnimplementedHandler) SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (r SiteWorkspacesGetRevenueSettingsRes, _ error) {

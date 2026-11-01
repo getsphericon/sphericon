@@ -2919,7 +2919,7 @@ export type MaxPerSecond = number;
  */
 export type MessageRevenue = {
   /**
-   * The Reporting currency, null until an owner or admin chooses it; every figure is zero until then
+   * The Reporting currency, null until the first order or an owner or admin sets it; every figure is zero until then
    */
   reportingCurrency: CurrencyCode | null;
   /**

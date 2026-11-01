@@ -163,8 +163,9 @@ a cancelled Order counting nothing. **Attributed revenue** is the part credited 
 _Avoid_: Sales, turnover, GMV
 
 **Reporting currency**:
-The one currency in which a Workspace's revenue is summed. An Order in another currency is kept but
-counted in no sum.
+The one currency in which a Workspace's revenue is summed: the currency of the first Order Completed
+the Workspace sends, unless the Owner or an Admin chooses another. An Order in another currency is kept
+but counted in no sum.
 _Avoid_: Base currency, default currency
 
 **Attribution window**:

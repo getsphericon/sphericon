@@ -35809,8 +35809,8 @@ func (s *Server) handleSiteWorkspacesDeleteRequest(args [1]string, argsEscaped b
 
 // handleSiteWorkspacesGetRevenueSettingsRequest handles SiteWorkspaces_getRevenueSettings operation.
 //
-// Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the
-// Attribution window. Open to every member.
+// Read the Workspace's revenue settings: the Reporting currency (null until set) and the Attribution
+// window. Open to every member.
 //
 // GET /workspaces/{workspaceId}/revenue-settings
 func (s *Server) handleSiteWorkspacesGetRevenueSettingsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

@@ -4,19 +4,17 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
-import { ButtonLink } from '../../components/RouterLink.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
 import { siteAnalyticsRevenueOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
-import { Route as settingsRoute } from '../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { formatMoney } from '../../utils/money.ts'
 import { formatPercent } from '../../utils/percent.ts'
 
 const PERIODS = [SiteAnalyticsRange['7D'], SiteAnalyticsRange['30D'], SiteAnalyticsRange['90D']]
 
-// RevenueFigures is the period's revenue, or the call to choose the Reporting currency; the block's
-// boundary shows the load and its failure.
+// RevenueFigures is the period's revenue, or, before the first order sets the Reporting currency,
+// a note that it will appear; the block's boundary shows the load and its failure.
 function RevenueFigures({
   workspaceId,
   range,
@@ -31,13 +29,8 @@ function RevenueFigures({
   const currency = revenue.reportingCurrency
 
   return currency === null ? (
-    <Alert color="blue" title={t(($) => $.overview.revenue.currencyUnsetTitle)}>
-      <Stack gap="xs" align="flex-start">
-        <Text size="sm">{t(($) => $.overview.revenue.currencyUnsetBody)}</Text>
-        <ButtonLink to={settingsRoute.to} params={{ workspaceId }} variant="default" size="xs">
-          {t(($) => $.overview.revenue.chooseCurrency)}
-        </ButtonLink>
-      </Stack>
+    <Alert color="blue" title={t(($) => $.overview.revenue.noOrdersTitle)}>
+      <Text size="sm">{t(($) => $.overview.revenue.noOrdersBody)}</Text>
     </Alert>
   ) : (
     <SimpleGrid cols={{ base: 1, sm: 3 }}>
@@ -55,7 +48,7 @@ function RevenueFigures({
 }
 
 // RevenueBlock is the overview's revenue of the orders sent to Sphericon for a period. Until the
-// Reporting currency is chosen it shows the call to choose it and no figure.
+// first order sets the Reporting currency it shows no figure.
 export function RevenueBlock({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const [range, setRange] = useState<SiteAnalyticsRange>(SiteAnalyticsRange['30D'])
