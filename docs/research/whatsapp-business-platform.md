@@ -67,8 +67,9 @@ per-user marketing limits and throughput tiers.
   when the user changes number.
 - **Access paths:** Cloud API directly (the customer's own Meta app and a system-user token), Embedded Signup (needs
   the operator to be a Meta Tech Provider: business verification, App Review, 10 then 200 new customers a week), or a
-  BSP. 360dialog and Gupshup's partner API pass Meta's JSON through; Twilio and Wazzup use their own formats; Wazzup
-  and Gupshup's passthrough cannot create templates by API.
+  BSP. 360dialog and Gupshup's partner API pass Meta's JSON through; Twilio and Wazzup use their own formats. 360dialog
+  and Twilio document template creation by API; Wazzup's API pages document only listing, and Gupshup's passthrough
+  excludes it.
 
 ## 1. The 24-hour customer service window
 
@@ -358,7 +359,9 @@ From [META/business-scoped-user-ids](https://developers.facebook.com/documentati
 - Embedded Signup (Facebook Login for Business plus the JS SDK) lets the customer create or pick a portfolio, WhatsApp
   account and phone number, accept the terms, and returns `waba_id`, `phone_number_id` and a code the partner exchanges
   for a customer-scoped **business token**; the partner then registers the number and subscribes its app to the
-  Messaging account's webhooks. Customers keep ownership and full WhatsApp Manager access. Default onboarding cap: 10
+  Messaging account's webhooks. Under the new account model "the standard Cloud API flow associates a WhatsApp account
+  — new or existing — with the phone number and creates a per-partner Messaging account for your integration".
+  Customers keep ownership and full WhatsApp Manager access. Default onboarding cap: 10
   new customers per rolling 7 days, 200 after verification, App Review and Access Verification. Versions 2 and 3 were
   deprecated on 2026-10-15 in favour of v4
   ([META/embedded-signup/overview](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/overview)).
@@ -371,8 +374,8 @@ From [META/business-scoped-user-ids](https://developers.facebook.com/documentati
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 360dialog         | Meta's Cloud API JSON at `https://waba-v2.360dialog.io/messages`, `D360-API-KEY` header per number ([messaging](https://docs.360dialog.com/docs/messaging/overview))                          | Yes: `/message_templates` create, list, edit, delete ([templates API](https://docs.360dialog.com/docs/messaging-api/api-reference/templates))                                                                                | WABA- or number-level URL with optional custom headers ([webhooks API](https://docs.360dialog.com/docs/messaging-api/api-reference/webhooks))                                                                     |
 | Twilio            | Own Messages API, `whatsapp:+E164` addresses; one WABA per Twilio account; ISVs go through Twilio's Tech Provider program ([Twilio WhatsApp](https://www.twilio.com/docs/whatsapp/api))       | Yes: Content API, then `POST /v1/Content/{sid}/ApprovalRequests/WhatsApp` with `name` and `category`; send with `ContentSid` + `ContentVariables` ([Content API](https://www.twilio.com/docs/content/content-api-resources)) | `StatusCallback`, signed per Twilio's webhook security; read receipts come as `EventType: READ` ([status guide](https://www.twilio.com/docs/messaging/guides/track-outbound-message-status))                      |
-| Gupshup (partner) | "raw passthrough APIs which will imitate Meta's format", `POST /partner/app/{APP_ID}/v3/message` ([passthrough](https://partner-docs.gupshup.io/docs/whatsapp-passthrough-apis-for-partners)) | Not in Meta format through the passthrough (same page)                                                                                                                                                                       | Meta-format v3 callbacks plus `gs_app_id` (same page)                                                                                                                                                             |
-| Wazzup (RU)       | Own API, `POST https://api.wazzup24.com/v3/message` with `templateId` and `templateValues` (array) ([send](https://wazzup24.ru/help/api/otpravka-soobshhenij))                                | List only (`GET /v3/templates/whatsapp`); created in Wazzup's UI ([templates](https://wazzup24.ru/help/api-ru/shablony-whatsapp-business-api))                                                                               | `message.status_update`: `accepted`, `sent`, `delivered`, `read`, `failed` with a `reason` such as `bad_contact`; Authorization header set by the subscriber ([webhooks](https://wazzup24.ru/help/api/webhooks/)) |
+| Gupshup (partner) | "raw passthrough APIs which will imitate Meta's format", `POST /partner/app/{APP_ID}/v3/message` ([passthrough](https://partner-docs.gupshup.io/docs/whatsapp-passthrough-apis-for-partners)) | Passthrough excludes creation in Meta format (same page); own-format API not read                                                                                                                                            | Meta-format v3 callbacks plus `gs_app_id` (same page)                                                                                                                                                             |
+| Wazzup (RU)       | Own API, `POST https://api.wazzup24.com/v3/message` with `templateId` and `templateValues` (array) ([send](https://wazzup24.ru/help/api/otpravka-soobshhenij))                                | Listing documented (`GET /v3/templates/whatsapp`); the page points to Wazzup's UI for creation ([templates](https://wazzup24.ru/help/api-ru/shablony-whatsapp-business-api))                                                 | `message.status_update`: `accepted`, `sent`, `delivered`, `read`, `failed` with a `reason` such as `bad_contact`; Authorization header set by the subscriber ([webhooks](https://wazzup24.ru/help/api/webhooks/)) |
 
 ## What this means for sphericon
 
@@ -384,10 +387,13 @@ These are readings of the facts above for the channel model; they decide nothing
   where the template has a media header. This is the opposite of email's copy-at-author-time rule: Meta can
   recategorize, pause, disable or archive the template after the step is authored, so the send must handle "template
   unavailable" (`132001`, `132015`, `132016`) as an outcome, and authoring needs the template's current status.
-- **Template creation by API is not universal.** Cloud API, 360dialog and Twilio allow it; Wazzup and Gupshup's
-  passthrough do not. A baseline that works on every path is to list and sync the provider's approved templates and
-  bind values to their parameters; submitting templates from sphericon would be an extra where the provider allows it,
-  with up to 24 h of review in between.
+- **Template creation by API is not documented everywhere.** Cloud API, 360dialog and Twilio document it; the Wazzup
+  pages read document only listing, and Gupshup's passthrough excludes it. Listing and syncing the provider's approved
+  templates and binding values to their parameters works on every path read; submitting templates from sphericon
+  (with up to 24 h of review) is the extra where the provider allows it.
+- **On the Embedded Signup path, creating templates may be required, not an extra.** Templates are Messaging-account
+  assets and the standard flow creates a per-partner Messaging account, so a customer onboarded that way likely starts
+  with none of the templates they already have elsewhere (a reading; not confirmed).
 - **Positional parameters are the common denominator.** Named parameters are Meta-only and opt-in.
 - **Consent keyed by (channel, destination) cannot express WhatsApp's marketing-only stop.** `131050` and the
   `user_preferences` `stop` leave utility messages deliverable and can be undone by `resume`. Either consent gains a
@@ -423,3 +429,9 @@ These are readings of the facts above for the channel model; they decide nothing
 - Whether Twilio Content templates accept named variables: every Content API example read uses numeric keys.
 - Whether Wazzup's `templateValues` map to template variables by position: the page shows an array but does not say.
 - The exact error code for marketing templates to US numbers: the per-user limits page says only "an error".
+- Whether Wazzup offers template creation by API: the template and send pages read document only listing and point to
+  its UI for creation.
+- Whether Gupshup's own-format partner API creates templates: only the passthrough page was read, which excludes
+  creation in Meta format.
+- Whether a per-partner Messaging account created by Embedded Signup starts with no templates: inferred from templates
+  being Messaging-account assets, not stated.
