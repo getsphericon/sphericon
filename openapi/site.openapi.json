@@ -16367,6 +16367,7 @@
         "type": "object",
         "required": [
           "reportingCurrency",
+          "firstOrderAt",
           "total",
           "credited",
           "orders",
@@ -16384,6 +16385,16 @@
             ],
             "nullable": true,
             "description": "The Reporting currency, null until the first Order or an Owner or Admin sets it"
+          },
+          "firstOrderAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Workspace's first Order was completed, in any currency and whatever the range; null\nwhile it has sent none. A Reporting currency chosen before any Order leaves it null."
           },
           "total": {
             "type": "integer",
@@ -16406,9 +16417,11 @@
             "description": "Orders completed in the range that are credited to a Broadcast or an Automation"
           },
           "otherCurrencyOrders": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Orders in the range kept in another currency: they are listed with the Workspace's\nEvents but counted in no sum"
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteOrdersInCurrency"
+            },
+            "description": "Orders completed in the range in another currency, one entry per currency ordered by its\ncode: they are listed with the Workspace's Events but counted in no sum"
           },
           "series": {
             "type": "array",
@@ -20107,6 +20120,26 @@
           }
         },
         "description": "The optional consents in effect, in the order of the sign-up form"
+      },
+      "SiteOrdersInCurrency": {
+        "type": "object",
+        "required": ["currency", "orders"],
+        "properties": {
+          "currency": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrencyCode"
+              }
+            ],
+            "description": "The currency the Orders are in"
+          },
+          "orders": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Orders completed in the range in that currency"
+          }
+        },
+        "description": "Orders completed in the range in one currency other than the Reporting currency"
       },
       "SitePasskey": {
         "type": "object",

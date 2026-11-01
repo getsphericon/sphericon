@@ -87,6 +87,7 @@ import (
 // goverter:extend attributionWindowDays
 // goverter:extend workspaceTimezone
 // goverter:extend optNilTimestamp
+// goverter:extend nilTimestamp
 // goverter:extend optNilInt32
 // goverter:extend jsonObject
 // goverter:extend editorDocument
@@ -188,6 +189,7 @@ type Converter interface {
 	RevenueSettingsToResource(source *ent.Workspace) siteapi.SiteRevenueSettingsResource
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:map Currency ReportingCurrency
+	// goverter:useEmptyOnNil:slice
 	RevenueToResource(source *orders.WorkspaceRevenue) siteapi.SiteAnalyticsRevenue
 
 	// The analytics reports map whole from the module's report, so a field the response gains
@@ -824,6 +826,11 @@ func optNilDate(v *time.Time) siteapi.OptNilDate { return convert.Opt[siteapi.Op
 
 func optNilTimestamp(v *time.Time) siteapi.OptNilTimestamp {
 	return convert.Opt[siteapi.OptNilTimestamp]((*siteapi.Timestamp)(v))
+}
+
+// nilTimestamp is a required time that may be null (the first Order of a Workspace that sent none).
+func nilTimestamp(v *time.Time) siteapi.NilTimestamp {
+	return convert.Nil[siteapi.NilTimestamp]((*siteapi.Timestamp)(v))
 }
 
 // automationVersionOrNull is a version of the Automation, or null when it has none.

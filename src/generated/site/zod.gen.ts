@@ -1284,6 +1284,14 @@ export const zSiteOptionalConsentDecision = z.enum([
 ]);
 
 /**
+ * Orders completed in the range in one currency other than the Reporting currency
+ */
+export const zSiteOrdersInCurrency = z.object({
+  currency: zCurrencyCode,
+  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * The browser's answer to the request options: the W3C `AuthenticationResponseJSON`
  * dictionary (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library.
  */
@@ -1549,22 +1557,6 @@ export const zSiteRevenuePoint = z.object({
   date: z.string(),
   amount: z.string().regex(/^[0-9]+$/),
   orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
- * sum of Order Movements over the range, in the Reporting currency. Until the first Order
- * Completed sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and
- * every figure is zero.
- */
-export const zSiteAnalyticsRevenue = z.object({
-  reportingCurrency: zCurrencyCode.nullable(),
-  total: z.string().regex(/^[0-9]+$/),
-  credited: z.string().regex(/^[0-9]+$/),
-  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  creditedOrders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  otherCurrencyOrders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  series: z.array(zSiteRevenuePoint)
 });
 
 /**
@@ -2428,6 +2420,23 @@ export const zSiteAnalyticsEventAction = z.object({
  */
 export const zSiteAnalyticsEvents = z.object({
   actions: z.array(zSiteAnalyticsEventAction)
+});
+
+/**
+ * The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
+ * sum of Order Movements over the range, in the Reporting currency. Until the first Order
+ * Completed sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and
+ * every figure is zero.
+ */
+export const zSiteAnalyticsRevenue = z.object({
+  reportingCurrency: zCurrencyCode.nullable(),
+  firstOrderAt: zTimestamp.nullable(),
+  total: z.string().regex(/^[0-9]+$/),
+  credited: z.string().regex(/^[0-9]+$/),
+  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  creditedOrders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  otherCurrencyOrders: z.array(zSiteOrdersInCurrency),
+  series: z.array(zSiteRevenuePoint)
 });
 
 /**

@@ -5447,6 +5447,50 @@ func (s *NilTimeZoneName) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes Timestamp as json.
+func (o NilTimestamp) Encode(e *jx.Encoder) {
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes Timestamp from json.
+func (o *NilTimestamp) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode NilTimestamp to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v Timestamp
+		o.Value = v
+		o.Null = true
+		return nil
+	}
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s NilTimestamp) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *NilTimestamp) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes AttributionWindowDays as json.
 func (o OptAttributionWindowDays) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -11834,6 +11878,10 @@ func (s *SiteAnalyticsRevenue) encodeFields(e *jx.Encoder) {
 		s.ReportingCurrency.Encode(e)
 	}
 	{
+		e.FieldStart("firstOrderAt")
+		s.FirstOrderAt.Encode(e)
+	}
+	{
 		e.FieldStart("total")
 		e.Int64(s.Total)
 	}
@@ -11851,7 +11899,11 @@ func (s *SiteAnalyticsRevenue) encodeFields(e *jx.Encoder) {
 	}
 	{
 		e.FieldStart("otherCurrencyOrders")
-		e.Int32(s.OtherCurrencyOrders)
+		e.ArrStart()
+		for _, elem := range s.OtherCurrencyOrders {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
 	}
 	{
 		e.FieldStart("series")
@@ -11863,14 +11915,15 @@ func (s *SiteAnalyticsRevenue) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteAnalyticsRevenue = [7]string{
+var jsonFieldsNameOfSiteAnalyticsRevenue = [8]string{
 	0: "reportingCurrency",
-	1: "total",
-	2: "credited",
-	3: "orders",
-	4: "creditedOrders",
-	5: "otherCurrencyOrders",
-	6: "series",
+	1: "firstOrderAt",
+	2: "total",
+	3: "credited",
+	4: "orders",
+	5: "creditedOrders",
+	6: "otherCurrencyOrders",
+	7: "series",
 }
 
 // Decode decodes SiteAnalyticsRevenue from json.
@@ -11892,8 +11945,18 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"reportingCurrency\"")
 			}
-		case "total":
+		case "firstOrderAt":
 			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.FirstOrderAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"firstOrderAt\"")
+			}
+		case "total":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Int64()
 				s.Total = int64(v)
@@ -11905,7 +11968,7 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"total\"")
 			}
 		case "credited":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Int64()
 				s.Credited = int64(v)
@@ -11917,7 +11980,7 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"credited\"")
 			}
 		case "orders":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Int32()
 				s.Orders = int32(v)
@@ -11929,7 +11992,7 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"orders\"")
 			}
 		case "creditedOrders":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Int32()
 				s.CreditedOrders = int32(v)
@@ -11941,11 +12004,17 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"creditedOrders\"")
 			}
 		case "otherCurrencyOrders":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
-				v, err := d.Int32()
-				s.OtherCurrencyOrders = int32(v)
-				if err != nil {
+				s.OtherCurrencyOrders = make([]SiteOrdersInCurrency, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SiteOrdersInCurrency
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.OtherCurrencyOrders = append(s.OtherCurrencyOrders, elem)
+					return nil
+				}); err != nil {
 					return err
 				}
 				return nil
@@ -11953,7 +12022,7 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"otherCurrencyOrders\"")
 			}
 		case "series":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				s.Series = make([]SiteRevenuePoint, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -11980,7 +12049,7 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01111111,
+		0b11111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -39661,6 +39730,117 @@ func (s *SiteOptionalConsentsSetUnprocessableEntity) MarshalJSON() ([]byte, erro
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteOptionalConsentsSetUnprocessableEntity) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteOrdersInCurrency) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteOrdersInCurrency) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("currency")
+		s.Currency.Encode(e)
+	}
+	{
+		e.FieldStart("orders")
+		e.Int32(s.Orders)
+	}
+}
+
+var jsonFieldsNameOfSiteOrdersInCurrency = [2]string{
+	0: "currency",
+	1: "orders",
+}
+
+// Decode decodes SiteOrdersInCurrency from json.
+func (s *SiteOrdersInCurrency) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteOrdersInCurrency to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "currency":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Currency.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"currency\"")
+			}
+		case "orders":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int32()
+				s.Orders = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"orders\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteOrdersInCurrency")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteOrdersInCurrency) {
+					name = jsonFieldsNameOfSiteOrdersInCurrency[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteOrdersInCurrency) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteOrdersInCurrency) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

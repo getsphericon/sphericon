@@ -273,6 +273,15 @@ model SiteRevenuePoint {
   orders: int32;
 }
 
+/** Orders completed in the range in one currency other than the Reporting currency */
+model SiteOrdersInCurrency {
+  /** The currency the Orders are in */
+  currency: CurrencyCode;
+
+  /** Orders completed in the range in that currency */
+  orders: int32;
+}
+
 /** The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
  * sum of Order Movements over the range, in the Reporting currency. Until the first Order
  * Completed sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and
@@ -280,6 +289,10 @@ model SiteRevenuePoint {
 model SiteAnalyticsRevenue {
   /** The Reporting currency, null until the first Order or an Owner or Admin sets it */
   reportingCurrency: CurrencyCode | null;
+
+  /** When the Workspace's first Order was completed, in any currency and whatever the range; null
+   * while it has sent none. A Reporting currency chosen before any Order leaves it null. */
+  firstOrderAt: Timestamp | null;
 
   /** Revenue over the range, in the minor unit of the Reporting currency */
   total: int64;
@@ -295,9 +308,9 @@ model SiteAnalyticsRevenue {
   /** Orders completed in the range that are credited to a Broadcast or an Automation */
   creditedOrders: int32;
 
-  /** Orders in the range kept in another currency: they are listed with the Workspace's
-   * Events but counted in no sum */
-  otherCurrencyOrders: int32;
+  /** Orders completed in the range in another currency, one entry per currency ordered by its
+   * code: they are listed with the Workspace's Events but counted in no sum */
+  otherCurrencyOrders: SiteOrdersInCurrency[];
 
   /** One point per Report day in the range, oldest first, zero-filled */
   series: SiteRevenuePoint[];

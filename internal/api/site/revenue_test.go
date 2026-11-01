@@ -132,7 +132,7 @@ func TestRevenueIsUnsetUntilTheFirstOrderThenCountsInItsCurrency(t *testing.T) {
 	assert.Equal(t, siteapi.CurrencyCode("EUR"), after.ReportingCurrency.Value, "the currency of the first Order")
 	assert.EqualValues(t, 1000, after.Total)
 	assert.EqualValues(t, 1, after.Orders)
-	assert.EqualValues(t, 1, after.OtherCurrencyOrders)
+	assert.Equal(t, []siteapi.SiteOrdersInCurrency{{Currency: "JPY", Orders: 1}}, after.OtherCurrencyOrders)
 }
 
 func TestAnOrderInAnotherCurrencyIsStoredAndCountedInNoSum(t *testing.T) {
@@ -147,7 +147,7 @@ func TestAnOrderInAnotherCurrencyIsStoredAndCountedInNoSum(t *testing.T) {
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.EqualValues(t, 1000, got.Total)
 	assert.EqualValues(t, 1, got.Orders)
-	assert.EqualValues(t, 1, got.OtherCurrencyOrders)
+	assert.Equal(t, []siteapi.SiteOrdersInCurrency{{Currency: "JPY", Orders: 1}}, got.OtherCurrencyOrders)
 	kept := env.DB.Scoped(fixtures.AcmeID).Order().Query().Where(order.OrderID("A-2")).OnlyX(t.Context())
 	assert.Equal(t, "JPY", kept.Currency)
 }
@@ -163,7 +163,38 @@ func TestAChosenCurrencyIsKeptWhateverTheFirstOrderIsIn(t *testing.T) {
 	got := revenue(t, owner, siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.Equal(t, siteapi.CurrencyCode("EUR"), got.ReportingCurrency.Value)
 	assert.EqualValues(t, 0, got.Total)
-	assert.EqualValues(t, 1, got.OtherCurrencyOrders)
+	assert.Equal(t, []siteapi.SiteOrdersInCurrency{{Currency: "USD", Orders: 1}}, got.OtherCurrencyOrders)
+}
+
+func TestACurrencyChosenBeforeAnyOrderLeavesFirstOrderAtNull(t *testing.T) {
+	env := testhelper.Setup(t)
+	art := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
+	res, err := art.SiteWorkspacesUpdateRevenueSettings(t.Context(),
+		&siteapi.SiteUpdateRevenueSettingsInput{ReportingCurrency: siteapi.NewOptCurrencyCode("EUR")},
+		siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.VandelayPublicID})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteRevenueSettingsResource{}, res)
+
+	read, err := art.SiteAnalyticsRevenue(t.Context(), siteapi.SiteAnalyticsRevenueParams{WorkspaceId: fixtures.VandelayPublicID})
+	require.NoError(t, err)
+	got, ok := read.(*siteapi.SiteAnalyticsRevenue)
+	require.Truef(t, ok, "got %T", read)
+	assert.Equal(t, siteapi.CurrencyCode("EUR"), got.ReportingCurrency.Value)
+	assert.True(t, got.FirstOrderAt.Null, "a chosen currency is not an Order")
+}
+
+func TestFirstOrderAtIsTheFirstOrderEverEvenOutsideTheRange(t *testing.T) {
+	env := testhelper.Setup(t)
+	chooseCurrency(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "USD")
+
+	newShop(t, env).completed("A-1", "10.00", "EUR")
+	env.DeliverOrders(t)
+
+	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.NewOptSiteAnalyticsRevenueRange(siteapi.SiteAnalyticsRevenueRange90d))
+	first := time.Time(got.FirstOrderAt.Value)
+	rangeStart := time.Now().AddDate(0, 0, -90)
+	assert.True(t, first.Before(rangeStart), "the fixture Order of 200 days ago, in any currency, got %s", first)
+	assert.EqualValues(t, 0, got.Total)
 }
 
 func TestAnOrderOfAnUnknownContactCountsAndCreatesNoContact(t *testing.T) {

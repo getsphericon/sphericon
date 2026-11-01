@@ -1533,16 +1533,18 @@ func (c *ConverterImpl) RevenueToResource(source *orders.WorkspaceRevenue) site.
 	var siteapiSiteAnalyticsRevenue site.SiteAnalyticsRevenue
 	if source != nil {
 		siteapiSiteAnalyticsRevenue.ReportingCurrency = nilCurrencyCode((*source).Currency)
+		siteapiSiteAnalyticsRevenue.FirstOrderAt = nilTimestamp((*source).FirstOrderAt)
 		siteapiSiteAnalyticsRevenue.Total = (*source).Total
 		siteapiSiteAnalyticsRevenue.Credited = (*source).Credited
 		siteapiSiteAnalyticsRevenue.Orders = count((*source).Orders)
 		siteapiSiteAnalyticsRevenue.CreditedOrders = count((*source).CreditedOrders)
-		siteapiSiteAnalyticsRevenue.OtherCurrencyOrders = count((*source).OtherCurrencyOrders)
-		if (*source).Series != nil {
-			siteapiSiteAnalyticsRevenue.Series = make([]site.SiteRevenuePoint, len((*source).Series))
-			for i := 0; i < len((*source).Series); i++ {
-				siteapiSiteAnalyticsRevenue.Series[i] = c.ordersRevenueDayToSiteapiSiteRevenuePoint((*source).Series[i])
-			}
+		siteapiSiteAnalyticsRevenue.OtherCurrencyOrders = make([]site.SiteOrdersInCurrency, len((*source).OtherCurrencyOrders))
+		for i := 0; i < len((*source).OtherCurrencyOrders); i++ {
+			siteapiSiteAnalyticsRevenue.OtherCurrencyOrders[i] = c.ordersCurrencyOrdersToSiteapiSiteOrdersInCurrency((*source).OtherCurrencyOrders[i])
+		}
+		siteapiSiteAnalyticsRevenue.Series = make([]site.SiteRevenuePoint, len((*source).Series))
+		for j := 0; j < len((*source).Series); j++ {
+			siteapiSiteAnalyticsRevenue.Series[j] = c.ordersRevenueDayToSiteapiSiteRevenuePoint((*source).Series[j])
 		}
 	}
 	return siteapiSiteAnalyticsRevenue
@@ -2274,6 +2276,12 @@ func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclick
 	siteapiSiteLinkClicks.URL = source.URL
 	siteapiSiteLinkClicks.Clicks = count(source.Clicks)
 	return siteapiSiteLinkClicks
+}
+func (c *ConverterImpl) ordersCurrencyOrdersToSiteapiSiteOrdersInCurrency(source orders.CurrencyOrders) site.SiteOrdersInCurrency {
+	var siteapiSiteOrdersInCurrency site.SiteOrdersInCurrency
+	siteapiSiteOrdersInCurrency.Currency = site.CurrencyCode(source.Currency)
+	siteapiSiteOrdersInCurrency.Orders = count(source.Orders)
+	return siteapiSiteOrdersInCurrency
 }
 func (c *ConverterImpl) ordersRevenueDayToSiteapiSiteRevenuePoint(source orders.RevenueDay) site.SiteRevenuePoint {
 	var siteapiSiteRevenuePoint site.SiteRevenuePoint

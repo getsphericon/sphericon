@@ -1551,6 +1551,11 @@ export type SiteAnalyticsRevenue = {
    */
   reportingCurrency: CurrencyCode | null;
   /**
+   * When the Workspace's first Order was completed, in any currency and whatever the range; null
+   * while it has sent none. A Reporting currency chosen before any Order leaves it null.
+   */
+  firstOrderAt: Timestamp | null;
+  /**
    * Revenue over the range, in the minor unit of the Reporting currency
    */
   total: number;
@@ -1569,10 +1574,10 @@ export type SiteAnalyticsRevenue = {
    */
   creditedOrders: number;
   /**
-   * Orders in the range kept in another currency: they are listed with the Workspace's
-   * Events but counted in no sum
+   * Orders completed in the range in another currency, one entry per currency ordered by its
+   * code: they are listed with the Workspace's Events but counted in no sum
    */
-  otherCurrencyOrders: number;
+  otherCurrencyOrders: Array<SiteOrdersInCurrency>;
   /**
    * One point per Report day in the range, oldest first, zero-filled
    */
@@ -4244,6 +4249,20 @@ export type SiteOptionalConsentDecision = typeof SiteOptionalConsentDecision[key
  */
 export type SiteOptionalConsentList = {
   items: Array<SiteOptionalConsent>;
+};
+
+/**
+ * Orders completed in the range in one currency other than the Reporting currency
+ */
+export type SiteOrdersInCurrency = {
+  /**
+   * The currency the Orders are in
+   */
+  currency: CurrencyCode;
+  /**
+   * Orders completed in the range in that currency
+   */
+  orders: number;
 };
 
 /**

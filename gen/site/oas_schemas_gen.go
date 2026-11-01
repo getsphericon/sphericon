@@ -3027,6 +3027,51 @@ func (o NilTimeZoneName) Or(d TimeZoneName) TimeZoneName {
 	return d
 }
 
+// NewNilTimestamp returns new NilTimestamp with value set to v.
+func NewNilTimestamp(v Timestamp) NilTimestamp {
+	return NilTimestamp{
+		Value: v,
+	}
+}
+
+// NilTimestamp is nullable Timestamp.
+type NilTimestamp struct {
+	Value Timestamp
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilTimestamp) SetTo(v Timestamp) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilTimestamp) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilTimestamp) SetToNull() {
+	o.Null = true
+	var v Timestamp
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilTimestamp) Get() (v Timestamp, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilTimestamp) Or(d Timestamp) Timestamp {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptAttributionWindowDays returns new OptAttributionWindowDays with value set to v.
 func NewOptAttributionWindowDays(v AttributionWindowDays) OptAttributionWindowDays {
 	return OptAttributionWindowDays{
@@ -8271,6 +8316,9 @@ func (s *SiteAnalyticsRange) UnmarshalText(data []byte) error {
 type SiteAnalyticsRevenue struct {
 	// The Reporting currency, null until the first Order or an Owner or Admin sets it.
 	ReportingCurrency NilCurrencyCode `json:"reportingCurrency"`
+	// When the Workspace's first Order was completed, in any currency and whatever the range; null while
+	// it has sent none. A Reporting currency chosen before any Order leaves it null.
+	FirstOrderAt NilTimestamp `json:"firstOrderAt"`
 	// Revenue over the range, in the minor unit of the Reporting currency.
 	Total int64 `json:"total"`
 	// The part of `total` credited to messages (ADR 0064): the sum of the Movements of the Orders credited
@@ -8281,9 +8329,9 @@ type SiteAnalyticsRevenue struct {
 	Orders int32 `json:"orders"`
 	// Orders completed in the range that are credited to a Broadcast or an Automation.
 	CreditedOrders int32 `json:"creditedOrders"`
-	// Orders in the range kept in another currency: they are listed with the Workspace's Events but
-	// counted in no sum.
-	OtherCurrencyOrders int32 `json:"otherCurrencyOrders"`
+	// Orders completed in the range in another currency, one entry per currency ordered by its code: they
+	// are listed with the Workspace's Events but counted in no sum.
+	OtherCurrencyOrders []SiteOrdersInCurrency `json:"otherCurrencyOrders"`
 	// One point per Report day in the range, oldest first, zero-filled.
 	Series []SiteRevenuePoint `json:"series"`
 }
@@ -8291,6 +8339,11 @@ type SiteAnalyticsRevenue struct {
 // GetReportingCurrency returns the value of ReportingCurrency.
 func (s *SiteAnalyticsRevenue) GetReportingCurrency() NilCurrencyCode {
 	return s.ReportingCurrency
+}
+
+// GetFirstOrderAt returns the value of FirstOrderAt.
+func (s *SiteAnalyticsRevenue) GetFirstOrderAt() NilTimestamp {
+	return s.FirstOrderAt
 }
 
 // GetTotal returns the value of Total.
@@ -8314,7 +8367,7 @@ func (s *SiteAnalyticsRevenue) GetCreditedOrders() int32 {
 }
 
 // GetOtherCurrencyOrders returns the value of OtherCurrencyOrders.
-func (s *SiteAnalyticsRevenue) GetOtherCurrencyOrders() int32 {
+func (s *SiteAnalyticsRevenue) GetOtherCurrencyOrders() []SiteOrdersInCurrency {
 	return s.OtherCurrencyOrders
 }
 
@@ -8326,6 +8379,11 @@ func (s *SiteAnalyticsRevenue) GetSeries() []SiteRevenuePoint {
 // SetReportingCurrency sets the value of ReportingCurrency.
 func (s *SiteAnalyticsRevenue) SetReportingCurrency(val NilCurrencyCode) {
 	s.ReportingCurrency = val
+}
+
+// SetFirstOrderAt sets the value of FirstOrderAt.
+func (s *SiteAnalyticsRevenue) SetFirstOrderAt(val NilTimestamp) {
+	s.FirstOrderAt = val
 }
 
 // SetTotal sets the value of Total.
@@ -8349,7 +8407,7 @@ func (s *SiteAnalyticsRevenue) SetCreditedOrders(val int32) {
 }
 
 // SetOtherCurrencyOrders sets the value of OtherCurrencyOrders.
-func (s *SiteAnalyticsRevenue) SetOtherCurrencyOrders(val int32) {
+func (s *SiteAnalyticsRevenue) SetOtherCurrencyOrders(val []SiteOrdersInCurrency) {
 	s.OtherCurrencyOrders = val
 }
 
@@ -18068,6 +18126,35 @@ func (*SiteOptionalConsentsSetNotFound) siteOptionalConsentsSetRes() {}
 type SiteOptionalConsentsSetUnprocessableEntity ProblemDetails
 
 func (*SiteOptionalConsentsSetUnprocessableEntity) siteOptionalConsentsSetRes() {}
+
+// Orders completed in the range in one currency other than the Reporting currency.
+// Ref: #/components/schemas/SiteOrdersInCurrency
+type SiteOrdersInCurrency struct {
+	// The currency the Orders are in.
+	Currency CurrencyCode `json:"currency"`
+	// Orders completed in the range in that currency.
+	Orders int32 `json:"orders"`
+}
+
+// GetCurrency returns the value of Currency.
+func (s *SiteOrdersInCurrency) GetCurrency() CurrencyCode {
+	return s.Currency
+}
+
+// GetOrders returns the value of Orders.
+func (s *SiteOrdersInCurrency) GetOrders() int32 {
+	return s.Orders
+}
+
+// SetCurrency sets the value of Currency.
+func (s *SiteOrdersInCurrency) SetCurrency(val CurrencyCode) {
+	s.Currency = val
+}
+
+// SetOrders sets the value of Orders.
+func (s *SiteOrdersInCurrency) SetOrders(val int32) {
+	s.Orders = val
+}
 
 // One Passkey of the authenticated User (ADR 0051). Its public key and credential id are never
 // returned.

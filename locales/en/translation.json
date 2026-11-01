@@ -1152,17 +1152,13 @@
     "recentLoadError": "Failed to load recently created items",
     "recentTitle": "Recently created",
     "revenue": {
+      "changeCurrency": "Change the reporting currency",
       "credited": "Credited to messages",
       "loadError": "Failed to load revenue",
-      "noOrdersBody": "Revenue appears here with the first order your shop sends, in that order's currency. You can change the reporting currency in the settings.",
-      "noOrdersTitle": "No orders yet",
       "note": "This is the revenue of the orders sent to Sphericon, not of your shop.",
       "orders": "Orders",
-      "periods": {
-        "30d": "30 days",
-        "7d": "7 days",
-        "90d": "90 days"
-      },
+      "otherCurrency_one": "{{count}} order in {{currency}} is not counted: revenue is summed in {{reportingCurrency}}.",
+      "otherCurrency_other": "{{count}} orders in {{currency}} are not counted: revenue is summed in {{reportingCurrency}}.",
       "title": "Revenue",
       "total": "Total revenue"
     },

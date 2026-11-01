@@ -27,23 +27,26 @@ const finished = {
 } as const
 
 const revenue: SiteAnalyticsRevenue = {
-  reportingCurrency: null,
+  reportingCurrency: 'USD',
+  firstOrderAt: '2026-10-01T10:00:00Z',
   total: 0,
   credited: 0,
   orders: 0,
   creditedOrders: 0,
-  otherCurrencyOrders: 0,
+  otherCurrencyOrders: [],
   series: [],
 }
 
-const mount = routeMount(overviewRoute, { workspaceId: 'TestWs01' })
+// The test router does not run the route's search validation, so the period is spelled out.
+const base = routeMount(overviewRoute, { workspaceId: 'TestWs01' })
+const mount = { ...base, initialPath: `${base.initialPath}?range=30d` }
 
 beforeEach(() => {
   worker.use(
     handleSiteBroadcastsList(() => HttpResponse.json({ items: [], totalItems: 0 })),
     handleSiteAutomationsList(() => HttpResponse.json({ items: [], totalItems: 0 })),
     handleSiteSetupChecklistGet({ body: finished }),
-    handleSiteAnalyticsRevenue({ body: { ...revenue, reportingCurrency: 'USD' } }),
+    handleSiteAnalyticsRevenue({ body: revenue }),
   )
 })
 
@@ -176,7 +179,6 @@ test('revenue shows the total, the credited share and the orders in the Reportin
     handleSiteAnalyticsRevenue({
       body: {
         ...revenue,
-        reportingCurrency: 'USD',
         total: 123456,
         credited: 30864,
         orders: 17,
@@ -207,37 +209,55 @@ test('a currency without minor units is formatted by its own exponent', async ()
   await expect.element(screen.getByText('¥5,000')).toBeInTheDocument()
 })
 
-test('the period is 30 days until another is picked and the pick is sent to the server', async () => {
+test('the period of the URL is the one sent to the server', async () => {
   const ranges: (string | null)[] = []
   worker.use(
     handleSiteAnalyticsRevenue(({ request }) => {
       ranges.push(new URL(request.url).searchParams.get('range'))
-      return HttpResponse.json({ ...revenue, reportingCurrency: 'USD' })
+      return HttpResponse.json(revenue)
+    }),
+  )
+
+  await renderWithRouter(<OverviewPage />, { ...base, initialPath: `${base.initialPath}?range=7d` })
+
+  await expect.poll(() => ranges).toEqual([SiteAnalyticsRange['7D']])
+})
+
+test('picking a period puts it in the URL', async () => {
+  const { screen, navigate } = await renderWithRouter(<OverviewPage />, mount)
+
+  await screen.getByText('Last 90 days').click()
+
+  await expect
+    .poll(() => navigate.mock.lastCall?.[0])
+    .toMatchObject({ search: { range: SiteAnalyticsRange['90D'] } })
+})
+
+test('a Workspace that never sent an Order has no revenue block, whatever its currency', async () => {
+  worker.use(handleSiteAnalyticsRevenue({ body: { ...revenue, firstOrderAt: null } }))
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Create a new…')).toBeInTheDocument()
+  await expect.element(screen.getByText('Revenue', { exact: true })).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Total revenue')).not.toBeInTheDocument()
+})
+
+test('orders in another currency are named with the way to change the currency', async () => {
+  worker.use(
+    handleSiteAnalyticsRevenue({
+      body: { ...revenue, otherCurrencyOrders: [{ currency: 'EUR', orders: 3 }] },
     }),
   )
 
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
 
-  await expect.poll(() => ranges).toEqual([SiteAnalyticsRange['30D']])
-  await screen.getByText('7 days').click()
-  await expect.poll(() => ranges).toEqual([SiteAnalyticsRange['30D'], SiteAnalyticsRange['7D']])
-  await screen.getByText('90 days').click()
   await expect
-    .poll(() => ranges)
-    .toEqual([SiteAnalyticsRange['30D'], SiteAnalyticsRange['7D'], SiteAnalyticsRange['90D']])
-})
-
-test('before the first order sets the Reporting currency there is no figure and no call to choose it', async () => {
-  worker.use(handleSiteAnalyticsRevenue({ body: { ...revenue, total: 999, orders: 3 } }))
-
-  const { screen } = await renderWithRouter(<OverviewPage />, mount)
-
-  await expect.element(screen.getByText('No orders yet')).toBeInTheDocument()
+    .element(screen.getByText(/3 orders in EUR are not counted: revenue is summed in USD/))
+    .toBeInTheDocument()
   await expect
-    .element(screen.getByRole('link', { name: 'Choose the reporting currency' }))
-    .not.toBeInTheDocument()
-  await expect.element(screen.getByText('$9.99')).not.toBeInTheDocument()
-  await expect.element(screen.getByText('Orders', { exact: true })).not.toBeInTheDocument()
+    .element(screen.getByRole('link', { name: 'Change the reporting currency' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings')
 })
 
 test('revenue is shown beside an unfinished checklist too', async () => {
