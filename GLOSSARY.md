@@ -325,10 +325,13 @@ live query and never materialized.
 _Avoid_: Send log, delivery row
 
 **Outbound send**:
-The one act of sending a single email on any surface (Broadcast, Automation step,
-Transactional): Send-eligibility, the Workspace freeze check, the Sending-domain gate,
-rendering, the unsubscribe footer and headers, DKIM signing, the provider call, and the record of
-the result. Every surface goes through it; none re-implements any part.
+The one act of sending a single message on any surface (Broadcast, Automation step,
+Transactional) and any Channel: Send-eligibility, the Workspace freeze check, the Send route,
+rendering, the provider call, and the record of the result; on email also the Sending-domain gate,
+the unsubscribe footer and headers and DKIM signing. Only the rendering and the provider call
+differ per Channel. On a Channel of Bindings one Outbound send reaches every Binding the Contact has
+on the Integration, each passing Send-eligibility on its own; a Contact with no Destination on the
+Channel is Skipped. Every surface goes through it; none re-implements any part.
 _Avoid_: Delivery pipeline, send path (unqualified), mailer
 
 **Send route**:
@@ -362,7 +365,8 @@ _Avoid_: No-reply sender, platform mailer
 The durable record of one Outbound send — which surface and which of its records it belongs to,
 the Sending source (none for Transactional), the Sending domain, the provider's message id, the
 outcome, and the delivery result: the first Delivery notice of each kind that arrives stamps it once
-(delivered, bounced, complained), and a stamp is never removed, so reports of old sends do not shrink
+(delivered, read and undelivered on any Channel that reports them; bounced and complained on
+email), and a stamp is never removed, so reports of old sends do not shrink
 when Events expire. Claimed before the provider is called, under a per-logical-send idempotency key, so a
 retry never sends twice. Holds provenance and outcome, never rendered content. A Broadcast
 recipient points at its Outbound message; it does not replace it.
@@ -372,8 +376,10 @@ _Avoid_: Send log, delivery row, email record
 Either **per-recipient** and final for that destination — _Sent_, _Skipped_ (Suppression,
 Unsubscribe, or missing Confirmation), or a permanent failure of that one message — or
 **per-source** and reversible: a **Hold** (Workspace suspension, Staff hold, an unverified
-Sending domain, no Integration, or a provider that has stopped the customer's account) or a **Deferral** (the Integration's Provider limit or the
-Workspace's Send cap is spent), after which the same messages may still be sent.
+Sending domain, no Integration, a provider that refuses the customer's account or credentials, or
+a WhatsApp template Meta has paused or disabled) or a **Deferral** (the Integration's Provider
+limit or the Workspace's Send cap is spent, or the provider asks to slow down), after which the
+same messages may still be sent.
 _Avoid_: Status, result (unqualified)
 
 **Provider limit**:
@@ -410,9 +416,10 @@ is refused. Distinct from _Skipped_, which is final for one destination.
 _Avoid_: Block, failure, ban
 
 **Sent** (vs delivered):
-"Sent" means a message was _accepted by the email provider_ — not that it reached the inbox
-(`email.sent`). **Delivered** means the receiving mail server accepted it, as the provider reports
-in a Delivery notice (`email.delivered`); it is still not "opened" or "in the inbox". A
+"Sent" means a message was _accepted by the provider_ — not that it reached the person
+(`email.sent`, `sms.sent`). **Delivered** means the receiving side accepted it, as the provider
+reports in a Delivery notice (`email.delivered`, `sms.delivered`); it is still not "opened" or "in
+the inbox". Telegram and web push report nothing after Sent. A
 broadcast's send rate is accepted-by-provider ÷ targeted.
 _Avoid_: Delivered (for the accepted-by-provider sense), Sent (for the receiving-server sense)
 
@@ -809,8 +816,9 @@ Workspace.
 _Avoid_: Adapter, plugin, provider (alone)
 
 **Delivery notice**:
-The one normalized shape every Preset produces: a Destination, its kind (bounce, complaint,
-delivery, delayed or dropped), for a bounce whether it is hard or soft, and, when the provider
+The one normalized shape of a delivery result a Preset produces: a Destination, its kind
+(delivery, read or undelivered on any Channel; bounce, complaint, delayed or dropped on email), for
+a bounce whether it is hard or soft, and, when the provider
 returns it, the provider's message id, which links the notice to the Outbound message it is
 about. Only hard bounces and complaints enter Suppression. A notice with no message id stays
 at the level of the address.
@@ -836,6 +844,12 @@ so that the chat that starts with it binds to the Contact or Visitor it was issu
 merge tag in a message, by the tracker for the current Visitor, or through the API; it lapses after
 30 days.
 _Avoid_: Deep link (that is the URL that carries it), invite code
+
+**Undelivered**:
+A Delivery notice that the message did not reach the person, on a Channel other than email (an SMS
+the carrier rejected, a WhatsApp message that failed). It has no hard and soft and no complaint, and
+it is not a bounce; whether its Destination is suppressed depends on the reason (ADR 0077).
+_Avoid_: Bounce (that is email's), failed delivery
 
 **Hard bounce**:
 A bounce the receiving side reports as permanent: the Destination does not exist or refuses mail
