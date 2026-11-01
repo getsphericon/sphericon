@@ -110,6 +110,16 @@ func VerificationLostAt(v time.Time) predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldEQ(FieldVerificationLostAt, v))
 }
 
+// DmarcCheckedAt applies equality check predicate on the "dmarc_checked_at" field. It's identical to DmarcCheckedAtEQ.
+func DmarcCheckedAt(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldEQ(FieldDmarcCheckedAt, v))
+}
+
+// DmarcFoundAt applies equality check predicate on the "dmarc_found_at" field. It's identical to DmarcFoundAtEQ.
+func DmarcFoundAt(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldEQ(FieldDmarcFoundAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldEQ(FieldCreatedAt, v))
@@ -668,6 +678,106 @@ func VerificationLostAtIsNil() predicate.SendingDomain {
 // VerificationLostAtNotNil applies the NotNil predicate on the "verification_lost_at" field.
 func VerificationLostAtNotNil() predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldNotNull(FieldVerificationLostAt))
+}
+
+// DmarcCheckedAtEQ applies the EQ predicate on the "dmarc_checked_at" field.
+func DmarcCheckedAtEQ(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldEQ(FieldDmarcCheckedAt, v))
+}
+
+// DmarcCheckedAtNEQ applies the NEQ predicate on the "dmarc_checked_at" field.
+func DmarcCheckedAtNEQ(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNEQ(FieldDmarcCheckedAt, v))
+}
+
+// DmarcCheckedAtIn applies the In predicate on the "dmarc_checked_at" field.
+func DmarcCheckedAtIn(vs ...time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIn(FieldDmarcCheckedAt, vs...))
+}
+
+// DmarcCheckedAtNotIn applies the NotIn predicate on the "dmarc_checked_at" field.
+func DmarcCheckedAtNotIn(vs ...time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotIn(FieldDmarcCheckedAt, vs...))
+}
+
+// DmarcCheckedAtGT applies the GT predicate on the "dmarc_checked_at" field.
+func DmarcCheckedAtGT(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldGT(FieldDmarcCheckedAt, v))
+}
+
+// DmarcCheckedAtGTE applies the GTE predicate on the "dmarc_checked_at" field.
+func DmarcCheckedAtGTE(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldGTE(FieldDmarcCheckedAt, v))
+}
+
+// DmarcCheckedAtLT applies the LT predicate on the "dmarc_checked_at" field.
+func DmarcCheckedAtLT(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldLT(FieldDmarcCheckedAt, v))
+}
+
+// DmarcCheckedAtLTE applies the LTE predicate on the "dmarc_checked_at" field.
+func DmarcCheckedAtLTE(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldLTE(FieldDmarcCheckedAt, v))
+}
+
+// DmarcCheckedAtIsNil applies the IsNil predicate on the "dmarc_checked_at" field.
+func DmarcCheckedAtIsNil() predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIsNull(FieldDmarcCheckedAt))
+}
+
+// DmarcCheckedAtNotNil applies the NotNil predicate on the "dmarc_checked_at" field.
+func DmarcCheckedAtNotNil() predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotNull(FieldDmarcCheckedAt))
+}
+
+// DmarcFoundAtEQ applies the EQ predicate on the "dmarc_found_at" field.
+func DmarcFoundAtEQ(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldEQ(FieldDmarcFoundAt, v))
+}
+
+// DmarcFoundAtNEQ applies the NEQ predicate on the "dmarc_found_at" field.
+func DmarcFoundAtNEQ(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNEQ(FieldDmarcFoundAt, v))
+}
+
+// DmarcFoundAtIn applies the In predicate on the "dmarc_found_at" field.
+func DmarcFoundAtIn(vs ...time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIn(FieldDmarcFoundAt, vs...))
+}
+
+// DmarcFoundAtNotIn applies the NotIn predicate on the "dmarc_found_at" field.
+func DmarcFoundAtNotIn(vs ...time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotIn(FieldDmarcFoundAt, vs...))
+}
+
+// DmarcFoundAtGT applies the GT predicate on the "dmarc_found_at" field.
+func DmarcFoundAtGT(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldGT(FieldDmarcFoundAt, v))
+}
+
+// DmarcFoundAtGTE applies the GTE predicate on the "dmarc_found_at" field.
+func DmarcFoundAtGTE(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldGTE(FieldDmarcFoundAt, v))
+}
+
+// DmarcFoundAtLT applies the LT predicate on the "dmarc_found_at" field.
+func DmarcFoundAtLT(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldLT(FieldDmarcFoundAt, v))
+}
+
+// DmarcFoundAtLTE applies the LTE predicate on the "dmarc_found_at" field.
+func DmarcFoundAtLTE(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldLTE(FieldDmarcFoundAt, v))
+}
+
+// DmarcFoundAtIsNil applies the IsNil predicate on the "dmarc_found_at" field.
+func DmarcFoundAtIsNil() predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIsNull(FieldDmarcFoundAt))
+}
+
+// DmarcFoundAtNotNil applies the NotNil predicate on the "dmarc_found_at" field.
+func DmarcFoundAtNotNil() predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotNull(FieldDmarcFoundAt))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

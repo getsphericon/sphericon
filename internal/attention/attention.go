@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/abusewatch"
+	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
@@ -53,10 +54,13 @@ const (
 	KindBroadcastFailed Kind = "broadcastFailed"
 	// KindWebhookDisabled: a Webhook endpoint disabled itself after failing deliveries.
 	KindWebhookDisabled Kind = "webhookDisabled"
+	// KindSendingDomainNotBulkReady: a verified Sending domain's last check found no published
+	// DMARC record, which bulk mail needs (ADR 0012); it still sends.
+	KindSendingDomainNotBulkReady Kind = "sendingDomainNotBulkReady"
 )
 
 // Severity orders the items: what stops mail, then what slows it or puts it at risk, then what
-// failed and was not retried.
+// failed and was not retried or what bulk mail needs set up.
 type Severity string
 
 const (
@@ -126,6 +130,7 @@ func (m *Module) Items(ctx context.Context, s *ent.Scoped) ([]Item, error) {
 		failedRuns,
 		failedBroadcasts,
 		disabledWebhooks,
+		domainsNotBulkReady,
 	}
 	var items []Item
 	for _, read := range readers {
@@ -300,6 +305,27 @@ func failedBroadcasts(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item
 		items = append(items, Item{
 			Kind: KindBroadcastFailed, Severity: SeverityNotice, Count: 1,
 			Subject: &Subject{ID: b.ID, Name: b.Name}, Since: b.FailedAt,
+		})
+	}
+	return items, nil
+}
+
+// domainsNotBulkReady reads the verified, kept Sending domains whose last DMARC lookup that
+// answered found no record. A domain no DMARC lookup has answered for is not judged (its DKIM
+// check says nothing of DMARC), and an unverified one is the loss item's or not yet sending.
+func domainsNotBulkReady(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error) {
+	domains, err := s.SendingDomain().Query().
+		Where(dkimstate.Verified(), sendingdomain.DmarcCheckedAtNotNil(), sendingdomain.DmarcFoundAtIsNil()).
+		Order(ent.Asc(sendingdomain.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]Item, 0, len(domains))
+	for _, d := range domains {
+		items = append(items, Item{
+			Kind: KindSendingDomainNotBulkReady, Severity: SeverityNotice, Count: 1,
+			Subject: &Subject{ID: d.ID, Name: d.Domain},
 		})
 	}
 	return items, nil

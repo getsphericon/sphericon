@@ -728,7 +728,8 @@ export const zSiteAttentionKind = z.enum([
   'integrationProviderSandbox',
   'enrollmentsFailed',
   'broadcastFailed',
-  'webhookDisabled'
+  'webhookDisabled',
+  'sendingDomainNotBulkReady'
 ]);
 
 /**
@@ -3115,6 +3116,8 @@ export const zSiteSendingDomainResource = z.object({
   dkimRecord: zSiteDnsRecord,
   spfRecord: zSiteDnsRecord,
   dmarcRecord: zSiteDnsRecord,
+  dmarcCheckedAt: z.exactOptional(zTimestamp.nullable()),
+  dmarcFoundAt: z.exactOptional(zTimestamp.nullable()),
   lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
   verifiedAt: z.exactOptional(zTimestamp.nullable()),
   verificationLostAt: z.exactOptional(zTimestamp.nullable()),

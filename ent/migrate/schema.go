@@ -2201,6 +2201,8 @@ var (
 		{Name: "last_checked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "verified_at", Type: field.TypeTime, Nullable: true},
 		{Name: "verification_lost_at", Type: field.TypeTime, Nullable: true},
+		{Name: "dmarc_checked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "dmarc_found_at", Type: field.TypeTime, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// SendingDomainsTable holds the schema information for the "sending_domains" table.
@@ -2211,7 +2213,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sending_domains_workspaces_sending_domains",
-				Columns:    []*schema.Column{SendingDomainsColumns[11]},
+				Columns:    []*schema.Column{SendingDomainsColumns[13]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2220,7 +2222,7 @@ var (
 			{
 				Name:    "sendingdomain_workspace_id_domain",
 				Unique:  true,
-				Columns: []*schema.Column{SendingDomainsColumns[11], SendingDomainsColumns[4]},
+				Columns: []*schema.Column{SendingDomainsColumns[13], SendingDomainsColumns[4]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "discarded_at IS NULL",
 				},
@@ -2228,7 +2230,7 @@ var (
 			{
 				Name:    "sendingdomain_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{SendingDomainsColumns[11]},
+				Columns: []*schema.Column{SendingDomainsColumns[13]},
 			},
 			{
 				Name:    "sendingdomain_last_checked_at",

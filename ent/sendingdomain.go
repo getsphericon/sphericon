@@ -40,6 +40,10 @@ type SendingDomain struct {
 	VerifiedAt *time.Time `json:"verified_at,omitempty"`
 	// VerificationLostAt holds the value of the "verification_lost_at" field.
 	VerificationLostAt *time.Time `json:"verification_lost_at,omitempty"`
+	// DmarcCheckedAt holds the value of the "dmarc_checked_at" field.
+	DmarcCheckedAt *time.Time `json:"dmarc_checked_at,omitempty"`
+	// DmarcFoundAt holds the value of the "dmarc_found_at" field.
+	DmarcFoundAt *time.Time `json:"dmarc_found_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SendingDomainQuery when eager-loading is set.
 	Edges        SendingDomainEdges `json:"edges"`
@@ -75,7 +79,7 @@ func (*SendingDomain) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case sendingdomain.FieldDomain, sendingdomain.FieldDkimSelector, sendingdomain.FieldDkimPrivateKeyEncrypted, sendingdomain.FieldDkimPublicKey:
 			values[i] = new(sql.NullString)
-		case sendingdomain.FieldCreatedAt, sendingdomain.FieldUpdatedAt, sendingdomain.FieldDiscardedAt, sendingdomain.FieldLastCheckedAt, sendingdomain.FieldVerifiedAt, sendingdomain.FieldVerificationLostAt:
+		case sendingdomain.FieldCreatedAt, sendingdomain.FieldUpdatedAt, sendingdomain.FieldDiscardedAt, sendingdomain.FieldLastCheckedAt, sendingdomain.FieldVerifiedAt, sendingdomain.FieldVerificationLostAt, sendingdomain.FieldDmarcCheckedAt, sendingdomain.FieldDmarcFoundAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -168,6 +172,20 @@ func (_m *SendingDomain) assignValues(columns []string, values []any) error {
 				_m.VerificationLostAt = new(time.Time)
 				*_m.VerificationLostAt = value.Time
 			}
+		case sendingdomain.FieldDmarcCheckedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field dmarc_checked_at", values[i])
+			} else if value.Valid {
+				_m.DmarcCheckedAt = new(time.Time)
+				*_m.DmarcCheckedAt = value.Time
+			}
+		case sendingdomain.FieldDmarcFoundAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field dmarc_found_at", values[i])
+			} else if value.Valid {
+				_m.DmarcFoundAt = new(time.Time)
+				*_m.DmarcFoundAt = value.Time
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -246,6 +264,16 @@ func (_m *SendingDomain) String() string {
 	builder.WriteString(", ")
 	if v := _m.VerificationLostAt; v != nil {
 		builder.WriteString("verification_lost_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.DmarcCheckedAt; v != nil {
+		builder.WriteString("dmarc_checked_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.DmarcFoundAt; v != nil {
+		builder.WriteString("dmarc_found_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')

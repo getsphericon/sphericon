@@ -64,6 +64,8 @@ const MESSAGE = {
     t(($) => $.overview.attention.kinds.broadcastFailed, { name: nameOf(item) }),
   webhookDisabled: (t, item) =>
     t(($) => $.overview.attention.kinds.webhookDisabled, { name: nameOf(item) }),
+  sendingDomainNotBulkReady: (t, item) =>
+    t(($) => $.overview.attention.kinds.sendingDomainNotBulkReady, { name: nameOf(item) }),
 } as const satisfies Record<SiteAttentionKind, (t: TFunction, item: SiteAttentionItem) => string>
 
 interface ActionProps {
@@ -129,6 +131,7 @@ const ACTION = {
   enrollmentsFailed: AutomationAction,
   broadcastFailed: BroadcastAction,
   webhookDisabled: WebhooksAction,
+  sendingDomainNotBulkReady: EmailsAction,
 } as const satisfies Record<SiteAttentionKind, ComponentType<ActionProps> | null>
 
 // ItemAction is the link to where the item is fixed, when there is one.

@@ -1184,6 +1184,8 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) exter
 		// externalapiSendingDomainResource.DkimRecord: ignore
 		// externalapiSendingDomainResource.SpfRecord: ignore
 		// externalapiSendingDomainResource.DmarcRecord: ignore
+		externalapiSendingDomainResource.DmarcCheckedAt = optNilTimestamp((*source).DmarcCheckedAt)
+		externalapiSendingDomainResource.DmarcFoundAt = optNilTimestamp((*source).DmarcFoundAt)
 		externalapiSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
 		externalapiSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
 		externalapiSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)

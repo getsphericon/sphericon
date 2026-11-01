@@ -29660,6 +29660,30 @@ func (x *SendingDomainScopedCreate) SetNillableVerificationLostAt(v *time.Time) 
 	return x
 }
 
+// SetDmarcCheckedAt sets the "dmarc_checked_at" field.
+func (x *SendingDomainScopedCreate) SetDmarcCheckedAt(v time.Time) *SendingDomainScopedCreate {
+	x.b.SetDmarcCheckedAt(v)
+	return x
+}
+
+// SetNillableDmarcCheckedAt sets the "dmarc_checked_at" field if the given value is not nil.
+func (x *SendingDomainScopedCreate) SetNillableDmarcCheckedAt(v *time.Time) *SendingDomainScopedCreate {
+	x.b.SetNillableDmarcCheckedAt(v)
+	return x
+}
+
+// SetDmarcFoundAt sets the "dmarc_found_at" field.
+func (x *SendingDomainScopedCreate) SetDmarcFoundAt(v time.Time) *SendingDomainScopedCreate {
+	x.b.SetDmarcFoundAt(v)
+	return x
+}
+
+// SetNillableDmarcFoundAt sets the "dmarc_found_at" field if the given value is not nil.
+func (x *SendingDomainScopedCreate) SetNillableDmarcFoundAt(v *time.Time) *SendingDomainScopedCreate {
+	x.b.SetNillableDmarcFoundAt(v)
+	return x
+}
+
 func (x *SendingDomainScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -29886,6 +29910,42 @@ func (u *SendingDomainScopedUpsert) UpdateVerificationLostAt() *SendingDomainSco
 // ClearVerificationLostAt clears the value of the "verification_lost_at" field.
 func (u *SendingDomainScopedUpsert) ClearVerificationLostAt() *SendingDomainScopedUpsert {
 	u.u.SetNull(sendingdomain.FieldVerificationLostAt)
+	return u
+}
+
+// SetDmarcCheckedAt sets the "dmarc_checked_at" field.
+func (u *SendingDomainScopedUpsert) SetDmarcCheckedAt(v time.Time) *SendingDomainScopedUpsert {
+	u.u.Set(sendingdomain.FieldDmarcCheckedAt, v)
+	return u
+}
+
+// UpdateDmarcCheckedAt sets the "dmarc_checked_at" field to the value that was provided on create.
+func (u *SendingDomainScopedUpsert) UpdateDmarcCheckedAt() *SendingDomainScopedUpsert {
+	u.u.SetExcluded(sendingdomain.FieldDmarcCheckedAt)
+	return u
+}
+
+// ClearDmarcCheckedAt clears the value of the "dmarc_checked_at" field.
+func (u *SendingDomainScopedUpsert) ClearDmarcCheckedAt() *SendingDomainScopedUpsert {
+	u.u.SetNull(sendingdomain.FieldDmarcCheckedAt)
+	return u
+}
+
+// SetDmarcFoundAt sets the "dmarc_found_at" field.
+func (u *SendingDomainScopedUpsert) SetDmarcFoundAt(v time.Time) *SendingDomainScopedUpsert {
+	u.u.Set(sendingdomain.FieldDmarcFoundAt, v)
+	return u
+}
+
+// UpdateDmarcFoundAt sets the "dmarc_found_at" field to the value that was provided on create.
+func (u *SendingDomainScopedUpsert) UpdateDmarcFoundAt() *SendingDomainScopedUpsert {
+	u.u.SetExcluded(sendingdomain.FieldDmarcFoundAt)
+	return u
+}
+
+// ClearDmarcFoundAt clears the value of the "dmarc_found_at" field.
+func (u *SendingDomainScopedUpsert) ClearDmarcFoundAt() *SendingDomainScopedUpsert {
+	u.u.SetNull(sendingdomain.FieldDmarcFoundAt)
 	return u
 }
 
@@ -30193,6 +30253,42 @@ func (x *SendingDomainScopedUpdateOne) ClearVerificationLostAt() *SendingDomainS
 	return x
 }
 
+// SetDmarcCheckedAt sets the "dmarc_checked_at" field.
+func (x *SendingDomainScopedUpdateOne) SetDmarcCheckedAt(v time.Time) *SendingDomainScopedUpdateOne {
+	x.b.SetDmarcCheckedAt(v)
+	return x
+}
+
+// SetNillableDmarcCheckedAt sets the "dmarc_checked_at" field if the given value is not nil.
+func (x *SendingDomainScopedUpdateOne) SetNillableDmarcCheckedAt(v *time.Time) *SendingDomainScopedUpdateOne {
+	x.b.SetNillableDmarcCheckedAt(v)
+	return x
+}
+
+// ClearDmarcCheckedAt clears the value of the "dmarc_checked_at" field.
+func (x *SendingDomainScopedUpdateOne) ClearDmarcCheckedAt() *SendingDomainScopedUpdateOne {
+	x.b.ClearDmarcCheckedAt()
+	return x
+}
+
+// SetDmarcFoundAt sets the "dmarc_found_at" field.
+func (x *SendingDomainScopedUpdateOne) SetDmarcFoundAt(v time.Time) *SendingDomainScopedUpdateOne {
+	x.b.SetDmarcFoundAt(v)
+	return x
+}
+
+// SetNillableDmarcFoundAt sets the "dmarc_found_at" field if the given value is not nil.
+func (x *SendingDomainScopedUpdateOne) SetNillableDmarcFoundAt(v *time.Time) *SendingDomainScopedUpdateOne {
+	x.b.SetNillableDmarcFoundAt(v)
+	return x
+}
+
+// ClearDmarcFoundAt clears the value of the "dmarc_found_at" field.
+func (x *SendingDomainScopedUpdateOne) ClearDmarcFoundAt() *SendingDomainScopedUpdateOne {
+	x.b.ClearDmarcFoundAt()
+	return x
+}
+
 func (x *SendingDomainScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -30388,6 +30484,42 @@ func (x *SendingDomainScopedUpdate) SetNillableVerificationLostAt(v *time.Time) 
 // ClearVerificationLostAt clears the value of the "verification_lost_at" field.
 func (x *SendingDomainScopedUpdate) ClearVerificationLostAt() *SendingDomainScopedUpdate {
 	x.b.ClearVerificationLostAt()
+	return x
+}
+
+// SetDmarcCheckedAt sets the "dmarc_checked_at" field.
+func (x *SendingDomainScopedUpdate) SetDmarcCheckedAt(v time.Time) *SendingDomainScopedUpdate {
+	x.b.SetDmarcCheckedAt(v)
+	return x
+}
+
+// SetNillableDmarcCheckedAt sets the "dmarc_checked_at" field if the given value is not nil.
+func (x *SendingDomainScopedUpdate) SetNillableDmarcCheckedAt(v *time.Time) *SendingDomainScopedUpdate {
+	x.b.SetNillableDmarcCheckedAt(v)
+	return x
+}
+
+// ClearDmarcCheckedAt clears the value of the "dmarc_checked_at" field.
+func (x *SendingDomainScopedUpdate) ClearDmarcCheckedAt() *SendingDomainScopedUpdate {
+	x.b.ClearDmarcCheckedAt()
+	return x
+}
+
+// SetDmarcFoundAt sets the "dmarc_found_at" field.
+func (x *SendingDomainScopedUpdate) SetDmarcFoundAt(v time.Time) *SendingDomainScopedUpdate {
+	x.b.SetDmarcFoundAt(v)
+	return x
+}
+
+// SetNillableDmarcFoundAt sets the "dmarc_found_at" field if the given value is not nil.
+func (x *SendingDomainScopedUpdate) SetNillableDmarcFoundAt(v *time.Time) *SendingDomainScopedUpdate {
+	x.b.SetNillableDmarcFoundAt(v)
+	return x
+}
+
+// ClearDmarcFoundAt clears the value of the "dmarc_found_at" field.
+func (x *SendingDomainScopedUpdate) ClearDmarcFoundAt() *SendingDomainScopedUpdate {
+	x.b.ClearDmarcFoundAt()
 	return x
 }
 

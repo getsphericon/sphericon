@@ -1270,6 +1270,7 @@
         "integrationProviderStopped": "Your provider has stopped the account behind {{name}}: nothing sends through it until the provider reinstates it.",
         "providerLimitSpent": "{{name}} has sent its daily limit: the rest goes out as the limit refills.",
         "sendCapSpent": "This workspace has sent its daily sending limit: the rest goes out as it refills over the next 24 hours.",
+        "sendingDomainNotBulkReady": "{{name}} has no published DMARC record: Gmail and Yahoo reject or spam-folder bulk mail from it. Publish the suggested DMARC record, then verify the domain again.",
         "sendingDomainVerificationLost": "The DKIM record of {{name}} is gone: mail from it is held until the domain verifies again.",
         "webhookDisabled": "The webhook {{name}} disabled itself after failing deliveries."
       },
@@ -1891,6 +1892,7 @@
     "sendingDomains": {
       "agentHint": "Paste this into an agent connected to this workspace; select the text or use the button.",
       "agentTab": "Prompt for agent",
+      "bulkReady": "Bulk-ready",
       "copyAgentPrompt": "Copy prompt for agent",
       "create": "Add domain",
       "createError": "Failed to add domain",
@@ -1904,6 +1906,7 @@
       "emptyArchived": "No archived domains",
       "loadError": "Failed to load sending domains",
       "lost": "Verification lost",
+      "notBulkReady": "Not bulk-ready",
       "notVerifiedTitle": "Not verified yet",
       "notVerifiedYet": "The DKIM record was not found. DNS can take a while to update; check again later.",
       "pending": "Pending",

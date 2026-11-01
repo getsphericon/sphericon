@@ -186,6 +186,46 @@ func (_u *SendingDomainUpdate) ClearVerificationLostAt() *SendingDomainUpdate {
 	return _u
 }
 
+// SetDmarcCheckedAt sets the "dmarc_checked_at" field.
+func (_u *SendingDomainUpdate) SetDmarcCheckedAt(v time.Time) *SendingDomainUpdate {
+	_u.mutation.SetDmarcCheckedAt(v)
+	return _u
+}
+
+// SetNillableDmarcCheckedAt sets the "dmarc_checked_at" field if the given value is not nil.
+func (_u *SendingDomainUpdate) SetNillableDmarcCheckedAt(v *time.Time) *SendingDomainUpdate {
+	if v != nil {
+		_u.SetDmarcCheckedAt(*v)
+	}
+	return _u
+}
+
+// ClearDmarcCheckedAt clears the value of the "dmarc_checked_at" field.
+func (_u *SendingDomainUpdate) ClearDmarcCheckedAt() *SendingDomainUpdate {
+	_u.mutation.ClearDmarcCheckedAt()
+	return _u
+}
+
+// SetDmarcFoundAt sets the "dmarc_found_at" field.
+func (_u *SendingDomainUpdate) SetDmarcFoundAt(v time.Time) *SendingDomainUpdate {
+	_u.mutation.SetDmarcFoundAt(v)
+	return _u
+}
+
+// SetNillableDmarcFoundAt sets the "dmarc_found_at" field if the given value is not nil.
+func (_u *SendingDomainUpdate) SetNillableDmarcFoundAt(v *time.Time) *SendingDomainUpdate {
+	if v != nil {
+		_u.SetDmarcFoundAt(*v)
+	}
+	return _u
+}
+
+// ClearDmarcFoundAt clears the value of the "dmarc_found_at" field.
+func (_u *SendingDomainUpdate) ClearDmarcFoundAt() *SendingDomainUpdate {
+	_u.mutation.ClearDmarcFoundAt()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *SendingDomainUpdate) SetWorkspace(v *Workspace) *SendingDomainUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -317,6 +357,18 @@ func (_u *SendingDomainUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.VerificationLostAtCleared() {
 		_spec.ClearField(sendingdomain.FieldVerificationLostAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DmarcCheckedAt(); ok {
+		_spec.SetField(sendingdomain.FieldDmarcCheckedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DmarcCheckedAtCleared() {
+		_spec.ClearField(sendingdomain.FieldDmarcCheckedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DmarcFoundAt(); ok {
+		_spec.SetField(sendingdomain.FieldDmarcFoundAt, field.TypeTime, value)
+	}
+	if _u.mutation.DmarcFoundAtCleared() {
+		_spec.ClearField(sendingdomain.FieldDmarcFoundAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -525,6 +577,46 @@ func (_u *SendingDomainUpdateOne) ClearVerificationLostAt() *SendingDomainUpdate
 	return _u
 }
 
+// SetDmarcCheckedAt sets the "dmarc_checked_at" field.
+func (_u *SendingDomainUpdateOne) SetDmarcCheckedAt(v time.Time) *SendingDomainUpdateOne {
+	_u.mutation.SetDmarcCheckedAt(v)
+	return _u
+}
+
+// SetNillableDmarcCheckedAt sets the "dmarc_checked_at" field if the given value is not nil.
+func (_u *SendingDomainUpdateOne) SetNillableDmarcCheckedAt(v *time.Time) *SendingDomainUpdateOne {
+	if v != nil {
+		_u.SetDmarcCheckedAt(*v)
+	}
+	return _u
+}
+
+// ClearDmarcCheckedAt clears the value of the "dmarc_checked_at" field.
+func (_u *SendingDomainUpdateOne) ClearDmarcCheckedAt() *SendingDomainUpdateOne {
+	_u.mutation.ClearDmarcCheckedAt()
+	return _u
+}
+
+// SetDmarcFoundAt sets the "dmarc_found_at" field.
+func (_u *SendingDomainUpdateOne) SetDmarcFoundAt(v time.Time) *SendingDomainUpdateOne {
+	_u.mutation.SetDmarcFoundAt(v)
+	return _u
+}
+
+// SetNillableDmarcFoundAt sets the "dmarc_found_at" field if the given value is not nil.
+func (_u *SendingDomainUpdateOne) SetNillableDmarcFoundAt(v *time.Time) *SendingDomainUpdateOne {
+	if v != nil {
+		_u.SetDmarcFoundAt(*v)
+	}
+	return _u
+}
+
+// ClearDmarcFoundAt clears the value of the "dmarc_found_at" field.
+func (_u *SendingDomainUpdateOne) ClearDmarcFoundAt() *SendingDomainUpdateOne {
+	_u.mutation.ClearDmarcFoundAt()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *SendingDomainUpdateOne) SetWorkspace(v *Workspace) *SendingDomainUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -686,6 +778,18 @@ func (_u *SendingDomainUpdateOne) sqlSave(ctx context.Context) (_node *SendingDo
 	}
 	if _u.mutation.VerificationLostAtCleared() {
 		_spec.ClearField(sendingdomain.FieldVerificationLostAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DmarcCheckedAt(); ok {
+		_spec.SetField(sendingdomain.FieldDmarcCheckedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DmarcCheckedAtCleared() {
+		_spec.ClearField(sendingdomain.FieldDmarcCheckedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DmarcFoundAt(); ok {
+		_spec.SetField(sendingdomain.FieldDmarcFoundAt, field.TypeTime, value)
+	}
+	if _u.mutation.DmarcFoundAtCleared() {
+		_spec.ClearField(sendingdomain.FieldDmarcFoundAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

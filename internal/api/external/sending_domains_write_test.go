@@ -148,6 +148,27 @@ func TestExternalSendingDomainsVerifyRunsALiveCheckAndReportsIt(t *testing.T) {
 	assert.True(t, checked, "the live check ran and is reported")
 }
 
+// A Sending domain says when its DMARC record was found, the bulk-ready signal (ADR 0012).
+// Fixtures: mail.acme.com has a DMARC record found; news.acme.com was never checked.
+func TestExternalSendingDomainsSayWhenTheDMARCRecordWasFound(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "sending_domains:read")
+
+	bulk, err := c.SendingDomainsGet(t.Context(), externalapi.SendingDomainsGetParams{ID: entityIDString(fixtures.SendingDomainVerifiedID)})
+	require.NoError(t, err)
+	fresh, err := c.SendingDomainsGet(t.Context(), externalapi.SendingDomainsGetParams{ID: entityIDString(fixtures.SendingDomainUnverifiedID)})
+	require.NoError(t, err)
+
+	bulkRes, ok := bulk.(*externalapi.SendingDomainResource)
+	require.Truef(t, ok, "got %T", bulk)
+	freshRes, ok := fresh.(*externalapi.SendingDomainResource)
+	require.Truef(t, ok, "got %T", fresh)
+	_, bulkReady := bulkRes.DmarcFoundAt.Get()
+	_, freshReady := freshRes.DmarcFoundAt.Get()
+	assert.True(t, bulkReady)
+	assert.False(t, freshReady)
+}
+
 func listedSendingDomainIDs(t *testing.T, c *externalapi.Client, archived bool) []externalapi.EntityId {
 	t.Helper()
 	res, err := c.SendingDomainsList(context.Background(), externalapi.SendingDomainsListParams{

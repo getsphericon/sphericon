@@ -10,6 +10,7 @@ import {
   Text,
   Textarea,
 } from '@mantine/core'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
@@ -56,18 +57,23 @@ function DnsRecord({
   label,
   record,
   hint,
+  status,
 }: {
   label: string
   record: { type: string; host: string; value: string }
   hint?: string
+  status?: ReactNode
 }) {
   const { t } = useTranslation()
   return (
     <Stack gap={6}>
       <div>
-        <Text fw={600} size="sm">
-          {label}
-        </Text>
+        <Group gap="xs">
+          <Text fw={600} size="sm">
+            {label}
+          </Text>
+          {status}
+        </Group>
         {hint ? (
           <Text c="dimmed" size="xs">
             {hint}
@@ -92,6 +98,25 @@ function DnsRecord({
   )
 }
 
+// BulkReady says whether the last DMARC lookup found the domain's record (ADR 0012), for a verified
+// domain a lookup answered for: the rule of the overview's notice. An unverified domain does not
+// send, and one no lookup answered for is not known, so it says nothing of those.
+function BulkReady({ record }: { record: SiteSendingDomainResource }) {
+  const { t } = useTranslation()
+  if (!record.verified || !record.dmarcCheckedAt) {
+    return null
+  }
+  return record.dmarcFoundAt ? (
+    <Badge color="teal" variant="light" size="sm">
+      {t(($) => $.settings.sendingDomains.bulkReady)}
+    </Badge>
+  ) : (
+    <Badge color="yellow" variant="light" size="sm">
+      {t(($) => $.settings.sendingDomains.notBulkReady)}
+    </Badge>
+  )
+}
+
 function SendingDomainRecords({ record }: { record: SiteSendingDomainResource }) {
   const { t } = useTranslation()
   return (
@@ -111,6 +136,7 @@ function SendingDomainRecords({ record }: { record: SiteSendingDomainResource })
         label={t(($) => $.settings.sendingDomains.dmarc)}
         hint={t(($) => $.settings.sendingDomains.dmarcHint)}
         record={record.dmarcRecord}
+        status={<BulkReady record={record} />}
       />
     </Stack>
   )

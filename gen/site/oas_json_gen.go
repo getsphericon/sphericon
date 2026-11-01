@@ -13585,6 +13585,8 @@ func (s *SiteAttentionKind) Decode(d *jx.Decoder) error {
 		*s = SiteAttentionKindBroadcastFailed
 	case SiteAttentionKindWebhookDisabled:
 		*s = SiteAttentionKindWebhookDisabled
+	case SiteAttentionKindSendingDomainNotBulkReady:
+		*s = SiteAttentionKindSendingDomainNotBulkReady
 	default:
 		*s = SiteAttentionKind(v)
 	}
@@ -52212,6 +52214,18 @@ func (s *SiteSendingDomainResource) encodeFields(e *jx.Encoder) {
 		s.DmarcRecord.Encode(e)
 	}
 	{
+		if s.DmarcCheckedAt.Set {
+			e.FieldStart("dmarcCheckedAt")
+			s.DmarcCheckedAt.Encode(e)
+		}
+	}
+	{
+		if s.DmarcFoundAt.Set {
+			e.FieldStart("dmarcFoundAt")
+			s.DmarcFoundAt.Encode(e)
+		}
+	}
+	{
 		if s.LastCheckedAt.Set {
 			e.FieldStart("lastCheckedAt")
 			s.LastCheckedAt.Encode(e)
@@ -52245,7 +52259,7 @@ func (s *SiteSendingDomainResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteSendingDomainResource = [13]string{
+var jsonFieldsNameOfSiteSendingDomainResource = [15]string{
 	0:  "id",
 	1:  "domain",
 	2:  "dkimSelector",
@@ -52253,12 +52267,14 @@ var jsonFieldsNameOfSiteSendingDomainResource = [13]string{
 	4:  "dkimRecord",
 	5:  "spfRecord",
 	6:  "dmarcRecord",
-	7:  "lastCheckedAt",
-	8:  "verifiedAt",
-	9:  "verificationLostAt",
-	10: "archivedAt",
-	11: "createdAt",
-	12: "updatedAt",
+	7:  "dmarcCheckedAt",
+	8:  "dmarcFoundAt",
+	9:  "lastCheckedAt",
+	10: "verifiedAt",
+	11: "verificationLostAt",
+	12: "archivedAt",
+	13: "createdAt",
+	14: "updatedAt",
 }
 
 // Decode decodes SiteSendingDomainResource from json.
@@ -52346,6 +52362,26 @@ func (s *SiteSendingDomainResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"dmarcRecord\"")
 			}
+		case "dmarcCheckedAt":
+			if err := func() error {
+				s.DmarcCheckedAt.Reset()
+				if err := s.DmarcCheckedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"dmarcCheckedAt\"")
+			}
+		case "dmarcFoundAt":
+			if err := func() error {
+				s.DmarcFoundAt.Reset()
+				if err := s.DmarcFoundAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"dmarcFoundAt\"")
+			}
 		case "lastCheckedAt":
 			if err := func() error {
 				s.LastCheckedAt.Reset()
@@ -52387,7 +52423,7 @@ func (s *SiteSendingDomainResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"archivedAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -52397,7 +52433,7 @@ func (s *SiteSendingDomainResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -52417,7 +52453,7 @@ func (s *SiteSendingDomainResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b01111111,
-		0b00011000,
+		0b01100000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

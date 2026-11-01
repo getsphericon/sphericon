@@ -19726,6 +19726,26 @@
             ],
             "description": "The suggested DMARC TXT record (advisory bulk-readiness signal)"
           },
+          "dmarcCheckedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When a DMARC lookup of the domain most recently answered, the record found or not (null = none has)"
+          },
+          "dmarcFoundAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When a lookup first found a DMARC record published for the domain, at the domain or its\norganizational domain (null = the last lookup found none, or none has answered). The domain is\nbulk-ready while it is set (ADR 0012); it never gates sending."
+          },
           "lastCheckedAt": {
             "type": "string",
             "allOf": [

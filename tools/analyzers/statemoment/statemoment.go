@@ -1,5 +1,5 @@
 // Package statemoment enforces rule 7 of docs/standards/review-rules.md for a state kept as a moment
-// (`verified_at`, `disabled_at`, `suspended_at`, `finalized_at`, `provider_quota_failed_at`): a field a background job moves on its own races with
+// (`verified_at`, `dmarc_found_at`, `disabled_at`, `suspended_at`, `finalized_at`, `provider_quota_failed_at`): a field a background job moves on its own races with
 // users, so the move is a compare-and-swap, an update that matches only while the row is still in the
 // state it leaves. A write of such a field through an ent update builder must carry a `Where` on that
 // builder (in the same chain, or called on the same variable in the same function). Creating a row in
@@ -24,7 +24,7 @@ import (
 
 // moments lists, by entity, the builder methods that move a state moment.
 var moments = map[string]map[string]bool{
-	"SendingDomain":   {"SetVerifiedAt": true, "SetVerificationLostAt": true},
+	"SendingDomain":   {"SetVerifiedAt": true, "SetVerificationLostAt": true, "SetDmarcFoundAt": true, "ClearDmarcFoundAt": true},
 	"WebhookEndpoint": {"SetDisabledAt": true},
 	"Workspace":       {"SetSuspendedAt": true},
 	"Usage":           {"SetFinalizedAt": true, "SetNillableFinalizedAt": true},

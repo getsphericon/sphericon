@@ -175,6 +175,7 @@ test('every kind of item is a sentence, with a link where there is somewhere to 
           { kind: 'integrationProviderSandbox', severity: 'degraded', ...about('5', 'Sandboxed') },
           { kind: 'broadcastFailed', severity: 'notice', ...about('6', 'Autumn sale') },
           { kind: 'webhookDisabled', severity: 'notice', ...about('7', 'https://hooks.test/x') },
+          { kind: 'sendingDomainNotBulkReady', severity: 'notice', ...about('8', 'bare.acme.com') },
         ],
       },
     }),
@@ -206,6 +207,9 @@ test('every kind of item is a sentence, with a link where there is somewhere to 
   await expect
     .element(screen.getByRole('link', { name: 'Open webhooks' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/settings/webhooks')
+  await expect
+    .element(screen.getByText(/bare.acme.com has no published DMARC record/))
+    .toBeInTheDocument()
 })
 
 test('a held broadcast says what lifts the hold', async () => {

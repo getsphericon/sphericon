@@ -2075,6 +2075,12 @@ func ScopedEntities() []ScopedEntity {
 				if src.VerificationLostAt != nil {
 					b.SetVerificationLostAt(*src.VerificationLostAt)
 				}
+				if src.DmarcCheckedAt != nil {
+					b.SetDmarcCheckedAt(*src.DmarcCheckedAt)
+				}
+				if src.DmarcFoundAt != nil {
+					b.SetDmarcFoundAt(*src.DmarcFoundAt)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
