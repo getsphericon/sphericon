@@ -131,11 +131,9 @@ func TestAUserWithAPasswordRegistersAPasskeyAndSeesItListed(t *testing.T) {
 		finishBody(t, fixtures.PasskeyPatPassword, "Pat's phone", credential))
 
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
-	fresh := reissued(t, rec)
-	require.NotEmpty(t, fresh, "the acting session is reissued")
-	list := listPasskeys(t, env, fresh)
+	list := listPasskeys(t, env, session)
 	assert.Equal(t, []string{fixtures.PasskeyPatLaptopName, "Pat's phone"}, names(list.Items))
-	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, other), "another session ended")
+	assert.Equal(t, http.StatusOK, workspacesStatus(t, env, other), "another session goes on")
 }
 
 func TestRegisteringAPasskeyMailsTheOwner(t *testing.T) {
@@ -197,12 +195,11 @@ func TestAReplayedFinishIsRefused(t *testing.T) {
 	body := finishBody(t, fixtures.PasskeyPatPassword, "Pat's phone", credential)
 	first := passkeyCall(t, env, http.MethodPost, passkeyFinishPath, session, ceremony, body)
 	require.Equal(t, http.StatusOK, first.Code, first.Body.String())
-	fresh := reissued(t, first)
 
-	replay := passkeyCall(t, env, http.MethodPost, passkeyFinishPath, fresh, ceremony, body)
+	replay := passkeyCall(t, env, http.MethodPost, passkeyFinishPath, session, ceremony, body)
 
 	assert.Equal(t, http.StatusUnprocessableEntity, replay.Code)
-	assert.Equal(t, []string{fixtures.PasskeyPatLaptopName, "Pat's phone"}, names(listPasskeys(t, env, fresh).Items))
+	assert.Equal(t, []string{fixtures.PasskeyPatLaptopName, "Pat's phone"}, names(listPasskeys(t, env, session).Items))
 }
 
 func TestAnotherUserCannotSeeOrFinishAPasskeyCeremonyOfTheFirst(t *testing.T) {
@@ -290,7 +287,7 @@ func TestAUserWithNoPasswordRegistersAPasskeyAfterAFreshProviderLogin(t *testing
 		finishBody(t, "", "Nina's laptop", credential))
 
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
-	list := listPasskeys(t, r.env, reissued(t, rec))
+	list := listPasskeys(t, r.env, session)
 	assert.Equal(t, []string{"Nina's laptop"}, names(list.Items))
 	assert.False(t, list.PasswordSet)
 }

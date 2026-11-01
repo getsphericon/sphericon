@@ -6080,29 +6080,12 @@ func encodeSitePasskeysFinishCheckResponse(response SitePasskeysFinishCheckRes, 
 
 func encodeSitePasskeysFinishRegistrationResponse(response SitePasskeysFinishRegistrationRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *SitePasskeyHeaders:
+	case *SitePasskey:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
-			}
-		}
 		w.WriteHeader(200)
 
 		e := new(jx.Encoder)
-		response.Response.Encode(e)
+		response.Encode(e)
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}

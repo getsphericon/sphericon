@@ -264,8 +264,8 @@ func (p *Passkeys) BeginRegistration(ctx context.Context, u *ent.User) (options 
 // FinishRegistration completes the ceremony begun under cookie for User userID, with the
 // authenticator's response (the browser's RegistrationResponseJSON), and stores the Passkey
 // under name. The caller has proven the User's identity. One transaction spends the
-// challenge, stores the Passkey and bumps the session epoch (ending every session of the
-// User), and returns the saved User for reissuing the acting session.
+// challenge and stores the Passkey; it returns the User and the stored Passkey. The session
+// epoch stays: a new way to sign in takes nothing from the sessions already open (ADR 0052).
 //
 // A ceremony that cannot finish is ErrRegistrationFailed, wrapping its cause: ErrCeremony for an
 // unusable cookie, ErrChallengeSpent when the ceremony already finished, ErrPasskeyRefused when
@@ -332,8 +332,8 @@ func (p *Passkeys) finishRegistration(ctx context.Context, userID int64, ceremon
 			}
 			return err
 		}
-		saved, err = tx.User.UpdateOneID(userID).AddSessionEpoch(1).Save(ctx)
-		return err
+		saved = u
+		return nil
 	})
 	if err != nil {
 		return nil, nil, err

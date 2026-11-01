@@ -58,8 +58,8 @@ func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (siteapi.S
 }
 
 // SitePasskeysFinishRegistration stores the Passkey once the User proves their identity (the
-// password, or a fresh provider login) and the authenticator's response checks out. It ends
-// the other sessions, reissues the acting one and mails the owner.
+// password, or a fresh provider login) and the authenticator's response checks out, and mails
+// the owner. Every session of the User goes on.
 func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *siteapi.SitePasskeyRegistrationInput, params siteapi.SitePasskeysFinishRegistrationParams) (siteapi.SitePasskeysFinishRegistrationRes, error) {
 	name, err := secondfactor.PasskeyName(string(req.Name))
 	if err != nil {
@@ -77,14 +77,11 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 	if err != nil {
 		return nil, err
 	}
-	cookie, err := h.sessions.Issue(u, currentSession(ctx))
-	if err != nil {
-		return nil, err
-	}
 	if err := h.mail.Enqueue(ctx, mailjobs.PasskeyNotice(u.Email, mailjobs.PasskeyAdded, row.Name)); err != nil {
 		mailNotQueued(ctx, "PasskeyNotice", err)
 	}
-	return &siteapi.SitePasskeyHeaders{SetCookie: cookie.String(), Response: mapper.PasskeyToResource(row)}, nil
+	res := mapper.PasskeyToResource(row)
+	return &res, nil
 }
 
 // SitePasskeysBeginCheck answers the request options of a fresh Passkey check of the session

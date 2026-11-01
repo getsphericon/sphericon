@@ -182,8 +182,7 @@ namespace SitePasskeys {
 
   /** Finish registering a Passkey, proving the password (or a fresh provider login or Passkey check). The
    * authenticator must have verified the user and the challenge must not have been used
-   * before. On success every other session ends, the acting one continues under the cookie
-   * set here and the owner is mailed. 403 on a wrong password (it feeds the Login throttle:
+   * before. On success the owner is mailed; every session of the User goes on. 403 on a wrong password (it feeds the Login throttle:
    * 429 while its delay runs), 422 when the ceremony fails: no ceremony cookie, an expired
    * or spent challenge, a response the library refuses, an authenticator that did not verify
    * the user, or a credential already registered. */
@@ -197,10 +196,6 @@ namespace SitePasskeys {
   ):
     | {
         @statusCode statusCode: 200;
-
-        /** The acting session reissued under the new session epoch */
-        @header("Set-Cookie") setCookie: string;
-
         @body body: SitePasskey;
       }
     | BadRequestProblem

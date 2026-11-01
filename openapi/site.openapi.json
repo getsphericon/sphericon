@@ -2562,7 +2562,7 @@
     "/me/passkeys/registration/finish": {
       "post": {
         "operationId": "SitePasskeys_finishRegistration",
-        "description": "Finish registering a Passkey, proving the password (or a fresh provider login or Passkey check). The\nauthenticator must have verified the user and the challenge must not have been used\nbefore. On success every other session ends, the acting one continues under the cookie\nset here and the owner is mailed. 403 on a wrong password (it feeds the Login throttle:\n429 while its delay runs), 422 when the ceremony fails: no ceremony cookie, an expired\nor spent challenge, a response the library refuses, an authenticator that did not verify\nthe user, or a credential already registered.",
+        "description": "Finish registering a Passkey, proving the password (or a fresh provider login or Passkey check). The\nauthenticator must have verified the user and the challenge must not have been used\nbefore. On success the owner is mailed; every session of the User goes on. 403 on a wrong password (it feeds the Login throttle:\n429 while its delay runs), 422 when the ceremony fails: no ceremony cookie, an expired\nor spent challenge, a response the library refuses, an authenticator that did not verify\nthe user, or a credential already registered.",
         "parameters": [
           {
             "name": "PASSKEY",
@@ -2578,15 +2578,6 @@
         "responses": {
           "200": {
             "description": "The request has succeeded.",
-            "headers": {
-              "Set-Cookie": {
-                "required": true,
-                "description": "The acting session reissued under the new session epoch",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {

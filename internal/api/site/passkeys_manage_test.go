@@ -131,7 +131,7 @@ func TestAUserWithALinkedIdentityAndNoPasswordMayRemoveTheirLastPasskey(t *testi
 	credential := r.env.NewAuthenticator(t).Attest(options)
 	added := passkeyCall(t, r.env, http.MethodPost, passkeyFinishPath, session, ceremony, finishBody(t, "", "Nina's laptop", credential))
 	require.Equal(t, http.StatusOK, added.Code, added.Body.String())
-	id := listPasskeys(t, r.env, reissued(t, added)).Items[0].ID
+	id := listPasskeys(t, r.env, session).Items[0].ID
 	numeric, err := strconv.ParseInt(id, 10, 64)
 	require.NoError(t, err)
 	session = r.signIn(t, newcomer)

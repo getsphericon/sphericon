@@ -83,7 +83,7 @@ func TestAFreshPasskeyCheckLetsAUserWithNoPasswordAddAPasskey(t *testing.T) {
 	rec := passkeyCall(t, env, http.MethodPost, passkeyFinishPath, session, ceremony, finishBody(t, "", "Peg's phone", credential))
 
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
-	assert.Equal(t, []string{fixtures.PasskeyPegKeyName, "Peg's phone"}, names(listPasskeys(t, env, reissued(t, rec)).Items))
+	assert.Equal(t, []string{fixtures.PasskeyPegKeyName, "Peg's phone"}, names(listPasskeys(t, env, session).Items))
 }
 
 func TestAFreshPasskeyCheckLetsAUserWithNoPasswordRegenerateRecoveryCodes(t *testing.T) {

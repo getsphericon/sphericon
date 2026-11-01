@@ -18675,42 +18675,7 @@ func decodeSitePasskeysFinishRegistrationResponse(resp *http.Response) (res Site
 			}(); err != nil {
 				return res, errors.Wrap(err, "validate")
 			}
-			var wrapper SitePasskeyHeaders
-			wrapper.Response = response
-			h := uri.NewHeaderDecoder(resp.Header)
-			// Parse "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToString(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.SetCookie = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse Set-Cookie header")
-				}
-			}
-			return &wrapper, nil
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}

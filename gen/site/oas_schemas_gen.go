@@ -17509,7 +17509,8 @@ func (s *SitePasskey) SetLastUsedAt(val OptTimestamp) {
 	s.LastUsedAt = val
 }
 
-func (*SitePasskey) sitePasskeysRenameRes() {}
+func (*SitePasskey) sitePasskeysFinishRegistrationRes() {}
+func (*SitePasskey) sitePasskeysRenameRes()             {}
 
 // The browser's answer to the request options: the W3C `AuthenticationResponseJSON` dictionary
 // (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library.
@@ -18060,34 +18061,6 @@ func (s *SitePasskeyDescriptorType) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
-
-// SitePasskeyHeaders wraps SitePasskey with response headers.
-type SitePasskeyHeaders struct {
-	SetCookie string
-	Response  SitePasskey
-}
-
-// GetSetCookie returns the value of SetCookie.
-func (s *SitePasskeyHeaders) GetSetCookie() string {
-	return s.SetCookie
-}
-
-// GetResponse returns the value of Response.
-func (s *SitePasskeyHeaders) GetResponse() SitePasskey {
-	return s.Response
-}
-
-// SetSetCookie sets the value of SetCookie.
-func (s *SitePasskeyHeaders) SetSetCookie(val string) {
-	s.SetCookie = val
-}
-
-// SetResponse sets the value of Response.
-func (s *SitePasskeyHeaders) SetResponse(val SitePasskey) {
-	s.Response = val
-}
-
-func (*SitePasskeyHeaders) sitePasskeysFinishRegistrationRes() {}
 
 // The Passkeys of the authenticated User, oldest first, and what proves the User for a change.
 // Ref: #/components/schemas/SitePasskeyList

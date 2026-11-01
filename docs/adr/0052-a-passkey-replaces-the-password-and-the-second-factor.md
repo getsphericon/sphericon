@@ -20,7 +20,9 @@ refused.
 - **Usernameless.** Credentials are discoverable; `/login` offers a Passkey button and conditional UI. The
   User is found by credential id, never by email, and the Login throttle (ADR 0025) counts against that User.
 - **Several per User**, each named, with its last use. Adding and removing one passes `Prove` (the password
-  a fresh provider login (ADR 0048) or a fresh Passkey check), bumps `session_epoch` and mails the owner.
+  a fresh provider login (ADR 0048) or a fresh Passkey check) and mails the owner. Removing one bumps
+  `session_epoch`; adding one does not: a new way to sign in takes nothing from the sessions already open,
+  and a stolen session that adds a Passkey would not be cut off by the bump anyway.
   There is no Audit entry: a Passkey belongs to the User and an Audit entry to a Workspace (ADR 0022), as
   for the self-service Second factor. A User with no password and no Linked identity cannot remove the
   last Passkey.
