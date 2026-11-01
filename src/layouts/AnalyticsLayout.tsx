@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 
 import { zSiteAnalyticsRange } from '../generated/site/zod.gen.ts'
 import { useAnalyticsRange } from '../hooks/useAnalyticsRange.ts'
-import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics/route.tsx'
 
 const RANGES = zSiteAnalyticsRange.options
 
@@ -21,9 +20,11 @@ export function AnalyticsLayout() {
         w={{ base: '100%', sm: 'fit-content' }}
         value={range}
         onChange={(next) =>
+          // The report being viewed stays. Resolved against the section itself, the target would
+          // be its index, which redirects to the first report.
           void navigate({
-            from: analyticsRoute.fullPath,
-            search: (prev) => ({ ...prev, range: next }),
+            to: '.',
+            search: (prev: Record<string, unknown>) => ({ ...prev, range: next }),
           })
         }
         data={RANGES.map((r) => ({ value: r, label: t(($) => $.analytics.range[r]) }))}

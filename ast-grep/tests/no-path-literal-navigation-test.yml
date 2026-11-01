@@ -6,9 +6,13 @@ valid:
     <Link to={contactsRoute.to}>x</Link>
   - |-
     const route = { path: '/contacts' }
+  - |-
+    navigate({ to: '.', search: (prev) => ({ ...prev, range }) })
 invalid:
   - |-
     navigate({ to: '/login' })
+  - |-
+    navigate({ to: './login' })
   - |-
     redirect({ to: `/w/${workspaceId}` })
   - |-

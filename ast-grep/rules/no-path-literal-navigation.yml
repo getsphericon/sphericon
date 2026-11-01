@@ -15,6 +15,11 @@ rule:
             any:
               - kind: string
               - kind: template_string
+        # `'.'` is the route being viewed, a target no route object names and none can drift from.
+        - not:
+            has:
+              field: value
+              regex: ^['"]\.['"]$
     - kind: jsx_attribute
       has:
         kind: property_identifier

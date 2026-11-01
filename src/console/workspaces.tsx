@@ -75,7 +75,6 @@ export function ConsoleWorkspacesPage() {
         <ApiErrorAlert
           error={workspacesQuery.error}
           title={t(($) => $.console.workspaces.loadError)}
-          fallback={t(($) => $.console.workspaces.loadError)}
         />
       ) : null}
       <DataTable

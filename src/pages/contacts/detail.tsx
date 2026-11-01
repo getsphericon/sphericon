@@ -172,11 +172,7 @@ function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contac
       </Group>
 
       {eventsQuery.isError ? (
-        <ApiErrorAlert
-          error={eventsQuery.error}
-          title={t(($) => $.activity.loadErrorTitle)}
-          fallback={t(($) => $.activity.loadErrorTitle)}
-        />
+        <ApiErrorAlert error={eventsQuery.error} title={t(($) => $.activity.loadErrorTitle)} />
       ) : null}
 
       <DataTable
@@ -223,11 +219,7 @@ export function ContactDetailPage() {
 
   if (contactQuery.isError || !contact) {
     return (
-      <ApiErrorAlert
-        error={contactQuery.error}
-        title={t(($) => $.alerts.contactLoadErrorTitle)}
-        fallback={t(($) => $.alerts.contactLoadErrorTitle)}
-      />
+      <ApiErrorAlert error={contactQuery.error} title={t(($) => $.alerts.contactLoadErrorTitle)} />
     )
   }
 

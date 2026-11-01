@@ -58,9 +58,7 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
 
   return (
     <Stack>
-      {list.isError ? (
-        <ApiErrorAlert error={list.error} title={loadErrorTitle} fallback={loadErrorTitle} />
-      ) : null}
+      {list.isError ? <ApiErrorAlert error={list.error} title={loadErrorTitle} /> : null}
 
       {/* While the first page loads only the skeleton shows: an empty table would flash its
           empty state under it. */}

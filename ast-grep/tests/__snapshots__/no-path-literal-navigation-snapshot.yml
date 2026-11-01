@@ -14,7 +14,7 @@ snapshots:
         style: secondary
         start: 6
         end: 8
-  <Link to={'/login'}>x</Link>:
+  "<Link to={'/login'}>x</Link>":
     labels:
       - source: to={'/login'}
         style: primary
@@ -32,6 +32,20 @@ snapshots:
         style: secondary
         start: 6
         end: 8
+  "navigate({ to: './login' })":
+    labels:
+      - source: "to: './login'"
+        style: primary
+        start: 11
+        end: 24
+      - source: "'./login'"
+        style: secondary
+        start: 15
+        end: 24
+      - source: to
+        style: secondary
+        start: 11
+        end: 13
   "navigate({ to: '/login' })":
     labels:
       - source: "to: '/login'"

@@ -33,13 +33,7 @@ function AutomationEdit() {
   // is always there.
   const edited = automation.draft ?? automation.live
   if (!edited) {
-    return (
-      <ApiErrorAlert
-        error={null}
-        title={t(($) => $.alerts.automationLoadErrorTitle)}
-        fallback={t(($) => $.alerts.automationLoadErrorTitle)}
-      />
-    )
+    return <ApiErrorAlert error={null} title={t(($) => $.alerts.automationLoadErrorTitle)} />
   }
 
   return (
