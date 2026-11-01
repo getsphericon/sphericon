@@ -282,6 +282,20 @@ test('a bare HTTP step opens blank and a header with no value keeps its stored o
   ).toEqual([{ type: 'http', body: '', headers: [{ name: 'X-Key' }] }])
 })
 
+test('an HTTP node whose headers text is not a header list sends none', () => {
+  expect(
+    graphToSteps(
+      chain(
+        node('a', 'http', { stepId: '', url: '', headers: 'X-Key: 1', body: '', secret: '' }),
+        node('b', 'http', { stepId: '', url: '', headers: '{"name":"X"}', body: '', secret: '' }),
+      ),
+    ).steps,
+  ).toEqual([
+    { type: 'http', body: '', headers: [] },
+    { type: 'http', body: '', headers: [] },
+  ])
+})
+
 test('graphToSteps stops on a cycle instead of looping', () => {
   const graph = {
     nodes: [TRIGGER, node('a', 'apply_tag', { tag: 'x' }), node('b', 'apply_tag', { tag: 'y' })],
