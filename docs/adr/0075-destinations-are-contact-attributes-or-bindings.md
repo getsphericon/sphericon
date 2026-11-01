@@ -23,7 +23,8 @@ person. The research is linked from the map issue (getsphericon/sphericon#916).
   opted in off WhatsApp with their number. The business-scoped user id WhatsApp introduces with
   usernames is not modelled yet; an inbound message that carries only that id binds to nobody.
 - **Telegram chats and web push subscriptions are Bindings.** A Binding is (Integration,
-  Destination) and its owner: a Contact for a Telegram chat, a Visitor for a web push subscription.
+  Destination) and its owner: the Contact or Visitor a Telegram start token was issued to (ADR
+  0076), the Visitor for a web push subscription.
   One entity serves both, and a Workspace may have several Telegram bots or web push keys. Per-channel
   fields on the Contact (`telegram_id`) were weighed and rejected: a field cannot say which bot can
   reach the person, and a browser subscription exists before its Visitor has a Contact.

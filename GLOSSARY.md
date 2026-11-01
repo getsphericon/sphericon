@@ -219,11 +219,12 @@ not bound: any Integration of its Channel reaches it.
 _Avoid_: Integration-scoped address, bot subscriber
 
 **Binding**:
-The record that one Integration can reach one Destination, and whose it is: a Telegram chat bound
-to a Contact, a web push subscription bound to a Visitor (and so to that Visitor's Contact, once
-Identify resolves it). It is made only by what comes in from the channel (a `/start` from a link
-sphericon made, a subscription reported by the tracker), never asserted through the API, and the
-latest one wins: a chat bound again moves to the new Contact. A Contact is reached through its own
+The record that one Integration can reach one Destination, and whose it is: the Contact or the
+Visitor a Telegram start token was issued to, or the Visitor whose browser reported a web push
+subscription (and so that Visitor's Contact, once Identify resolves it). It is made only by what
+comes in from the channel (a `/start` carrying a token sphericon issued, a subscription reported by
+the tracker), never asserted through the API, and the latest one wins: a chat bound again moves to
+its new owner. A Contact is reached through its own
 Bindings and those of its Visitors; one on a Visitor that belongs to no Contact reaches nobody yet.
 _Avoid_: Subscription (a rejected concept), endpoint, device, channel identity
 
@@ -768,17 +769,20 @@ deduplicates. Pull, the opposite direction from a Webhook endpoint, which pushes
 _Avoid_: Sync, replication, feed, data export (that is one Contact's subject access bundle)
 
 **Ingest hook** (inbound provider webhook):
-The inbound endpoint of one Integration that **receives** its provider's callbacks (bounce,
-complaint, delivery, delay, drop), addressed by the Integration's ingest key and decoded by the Integration's Preset. The
-opposite direction from a Webhook endpoint; it feeds Suppression.
+The inbound endpoint of one Integration that **receives** its provider's callbacks (delivery
+results, Inbound messages, Reachability changes), addressed by the Integration's ingest key and
+decoded by the Integration's Preset. The opposite direction from a Webhook endpoint; it feeds
+Suppression, Unsubscribes, Bindings and System events, and never creates a Contact.
 _Avoid_: Webhook (unqualified), inbound webhook
 
 **Preset**:
 A declarative description of one provider's callbacks — how its signature is verified and how its
-payload becomes the closed set of inbound facts: Delivery notices, and on the channels that have
-them opt-outs, inbound messages and bindings of a Destination to a Contact. It describes only
-what comes in; how a provider is sent through is built into the binary. Built into the binary (ses, postmark, mailgun, generic) or
-supplied by the Self-hoster for the whole Instance, never by a Workspace.
+payload becomes the closed set of inbound facts: Delivery notices, Inbound messages and
+Reachability changes. It only parses what the provider says; what a message means on its Channel
+(a `/start` token, a STOP keyword) is the same for every provider and is not the Preset's. How a
+provider is sent through is built into the binary. Presets are built into the binary (ses,
+postmark, mailgun, generic) or supplied by the Self-hoster for the whole Instance, never by a
+Workspace.
 _Avoid_: Adapter, plugin, provider (alone)
 
 **Delivery notice**:
@@ -788,6 +792,27 @@ returns it, the provider's message id, which links the notice to the Outbound me
 about. Only hard bounces and complaints enter Suppression. A notice with no message id stays
 at the level of the address.
 _Avoid_: Delivery failure (delivery and delay are not failures), Bounce event (it also covers complaints)
+
+**Inbound message**:
+What a person sent on a Channel, as one Preset parsed it: the Channel, the Destination it came
+from, its text and the payload of a button they pressed. sphericon reads it for what it means on
+its Channel (a `/start` with a token binds the chat, a STOP keyword opts out) and, from a known
+Contact, records it as a `<channel>.received` System event. From an unknown Destination it creates
+no Contact and no Event; only an opt-out in it is kept.
+_Avoid_: Reply (not every one answers something), incoming SMS, chat message
+
+**Reachability change**:
+A provider telling sphericon on its own that a Destination can or cannot be reached any more: a
+person blocked or unblocked the bot, stopped or resumed marketing on WhatsApp, a provider
+suppressed a number. Distinct from an Inbound message, which the person wrote.
+_Avoid_: Status update, opt-out (that is one of its consequences)
+
+**Start token**:
+The single-use, opaque token sphericon issues for a Telegram bot link (`t.me/<bot>?start=<token>`)
+so that the chat that starts with it binds to the Contact or Visitor it was issued to. Issued by a
+merge tag in a message, by the tracker for the current Visitor, or through the API; it lapses after
+30 days.
+_Avoid_: Deep link (that is the URL that carries it), invite code
 
 **Hard bounce**:
 A bounce the receiving side reports as permanent: the Destination does not exist or refuses mail
