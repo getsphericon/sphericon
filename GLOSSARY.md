@@ -183,8 +183,9 @@ but counted in no sum.
 _Avoid_: Base currency, default currency
 
 **Attribution window**:
-How long after a Contact clicks an email of a Broadcast or an Automation an Order of that Contact is credited to it. The
-Workspace edits it; 5 days until set. The last click inside it wins, and an open credits nothing.
+How long after a Contact clicks a message of a Broadcast or an Automation, on any Channel, an Order
+of that Contact is credited to it. The Workspace edits it; 5 days until set. The last click inside
+it wins whatever its Channel, and an open, a read or a delivery credits nothing.
 _Avoid_: Lookback, conversion window
 
 ### Send-eligibility
@@ -874,8 +875,9 @@ _Avoid_: Transient bounce, temporary failure (the industry says soft; one word f
 
 **Machine engagement**:
 An open or click made by software rather than the recipient: a mail client's privacy proxy (Apple
-Mail Privacy Protection), a security scanner or a link prefetcher. It is still recorded as an
-`email.opened` / `email.clicked` Event, flagged `machine`, but it never counts toward open or click
+Mail Privacy Protection), a security scanner, a link prefetcher, or a messenger fetching a link to
+build its preview (Telegram, WhatsApp). It is still recorded as an `email.opened` /
+`<channel>.clicked` Event, flagged `machine`, but it never counts toward open or click
 figures, never sets a Broadcast recipient's rollup and never starts an Automation. Detected from
 the request's user-agent and source address, neither of which is stored. Detection is a partial
 signal, not proof: a proxy that hides itself is not caught.
