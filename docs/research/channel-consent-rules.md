@@ -114,8 +114,10 @@ EU law for messengers and push is unsettled; see 3.4 and 3.5. Russia's 38-FZ app
   document, section E).
 - The deadline stays at ten business days; the confirmation text keeps the five-minute presumption (the new (a)(12)
   drops "the only additional message").
-- The FCC also reminds that a do-not-call request applies to the entity "as well as affiliated entities if the consumer
-  reasonably would expect them to be included" (64.1200(d)(5)).
+- The order also reminds that a do-not-call request applies to the calling entity "as well as affiliated entities if
+  the consumer reasonably would expect them to be included" (91 FR 67214, section A). The rule itself says the request
+  "will not apply to affiliated entities unless the consumer reasonably would expect them to be included"
+  (64.1200(d)(5)).
 
 **Pending.** A Further Notice
 ([91 FR 67239](https://www.federalregister.gov/documents/2026/10/26/2026-21820/modernizing-the-ability-of-consumers-to-control-robocalls),
@@ -233,8 +235,9 @@ differently; not researched.
   purposes, the personal data shall no longer be processed for such purposes" (art. 21(3)); the right must be brought
   to attention "at the latest at the time of the first communication" (art. 21(4)). The objection covers direct
   marketing as a purpose, not one campaign.
-- No EU-level deadline shorter than GDPR's general "without undue delay" was found for SMS opt-outs; no EU-level quiet
-  hours exist (national rules not researched).
+- The only EU-level deadline found is GDPR's general one for acting on a data-subject request: "without undue delay
+  and in any event within one month of receipt of the request" (art. 12(3)); ePrivacy sets none for SMS opt-outs. No
+  EU-level quiet hours exist (national rules not researched).
 
 ### 3.4 Messengers (WhatsApp, Telegram): ePrivacy probably applies [inference]
 
@@ -243,8 +246,9 @@ include "interpersonal communications service", and that includes the "number-in
 connect with publicly assigned numbering resources" (art. 2(4), 2(5), 2(7),
 [text](https://publications.europa.eu/resource/cellar/4bb873d0-01d2-11e9-adde-01aa75ed71a1.0006.01/DOC_1)). It applies
 from 21 December 2020, and "references to the repealed Directives shall be construed as references to this Directive"
-(art. 124, 125). The ePrivacy Directive borrowed its definitions from the repealed Directive 2002/21/EC, so it now
-reaches messenger apps; with C-102/20's broad reading of "electronic mail", a marketing message in WhatsApp or Telegram
+(art. 124, 125). The ePrivacy Directive's art. 2 takes its definitions from "Directive 2002/21/EC of the European
+Parliament and of the Council of 7 March 2002 on a common regulatory framework for electronic communications networks
+and services" (2002/58/EC art. 2), one of the repealed Directives, so it now reaches messenger apps; with C-102/20's broad reading of "electronic mail", a marketing message in WhatsApp or Telegram
 is most likely art. 13 electronic mail needing prior consent. That chain is this note's inference, not a holding.
 
 ### 3.5 Push notifications: unresolved
@@ -319,8 +323,9 @@ GDPR still applies to the processing behind a targeted push (art. 6, art. 21). T
   прекратить" such processing on request (art. 15(1)–(2),
   [КонсультантПлюс](https://www.consultant.ru/document/cons_doc_LAW_61801/5656527e0713bf229a6932ac7084dec50d0ebe1f/)).
 - Consent must be "конкретным, предметным, информированным, сознательным и однозначным", may be given "в любой
-  позволяющей подтвердить факт его получения форме", and since 156-FZ of 24.06.2025 "должно быть оформлено отдельно от
-  иных информации и (или) документов"; the burden of proof is on the operator (art. 9(1), 9(3),
+  позволяющей подтвердить факт его получения форме", and "должно быть оформлено отдельно от иных информации и (или)
+  документов" (art. 9(1) as edited by 266-FZ of 14.07.2022 and 156-FZ of 24.06.2025; which of the two added the
+  separate-document sentence was not confirmed); the burden of proof is on the operator (art. 9(1), 9(3),
   [КонсультантПлюс](https://www.consultant.ru/document/cons_doc_LAW_61801/6c94959bc017ac80140621762d2ac59f6006b08c/)).
   For the model: the marketing consent text must be its own document or checkbox, not a clause of terms.
 
@@ -469,6 +474,9 @@ What Send-eligibility must enforce, as findings for the grilling tickets, not de
    START/UNSTOP, WhatsApp `resume` and a Telegram unblock lift the Unsubscribe; whether an unblock counts as renewed
    marketing consent under EU or Russian law is open. The Russian operator-level refusal surfaces only as a delivery
    failure; whether it maps to Suppression or Unsubscribe depends on what the aggregator reports (not researched).
+   Interaction with ADR 0013: if STOP writes an `everything` Unsubscribe, it also invalidates the Confirmation gate
+   row, so START/UNSTOP alone lifts the Unsubscribe but leaves the Contact ineligible while the positive layer is
+   mandatory. A START sent from the Destination is itself a consenting action and could write the Confirmation too.
 6. **Two messages must pass an Unsubscribed gate.** The single opt-out confirmation after STOP (FCC (a)(12), presumed
    fine within 5 minutes, no marketing; CTIA "one final … confirmation") and the CTIA opt-in confirmation sent before
    the first recurring message. Both are non-marketing sends on SMS, which strains the map's "Transactional stays
@@ -481,7 +489,7 @@ What Send-eligibility must enforce, as findings for the grilling tickets, not de
    marketing has no federal US window, but the map already lists a send window as deferred.
 9. **Consent evidence grows.** Add the consent text shown, the purpose/category, the brand, and (for US written
    consent) the signature method; Russia favours a confirming action from the Destination (SMS reply or code). The
-   marketing consent must be a separate checkbox or document (152-FZ art. 9(1) since 2025).
+   marketing consent must be a separate checkbox or document (152-FZ art. 9(1)).
 10. **Destination keys differ per channel**: phone number (SMS), `wa_id` or a business-scoped user ID (WhatsApp, which
     may hide the number), chat id (Telegram), device token (mobile push), subscription endpoint (web push).
 11. **Workspace-level, not message-level:** 10DLC brand/campaign registration (US), the per-operator contract
