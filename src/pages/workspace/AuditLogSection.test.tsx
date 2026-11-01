@@ -157,6 +157,60 @@ test('choosing an actor or an action among those of the log applies it at once',
   expect(onFilterChange).toHaveBeenLastCalledWith({ ip: '10.0.0.1', action: 'integration.update' })
 })
 
+test('a filter the log no longer holds stays selected', async () => {
+  worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
+  const { screen } = await renderWithRouter(
+    <AuditLogSection
+      workspaceId={WORKSPACE_ID}
+      filter={{ actorKind: 'user', actorId: '9', action: 'contact.delete' }}
+      onFilterChange={vi.fn<() => void>()}
+      canConfigureRetention
+    />,
+  )
+
+  await expect.element(screen.getByRole('combobox', { name: 'Actor' })).toHaveValue('9')
+  await expect
+    .element(screen.getByRole('combobox', { name: 'Action' }))
+    .toHaveValue('contact.delete')
+  await screen.getByRole('combobox', { name: 'Actor' }).click()
+  await expect.element(screen.getByRole('option', { name: 'API token #77' })).toBeInTheDocument()
+})
+
+test('the system as the actor filter is named, though it has no id', async () => {
+  worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
+  const { screen } = await renderWithRouter(
+    <AuditLogSection
+      workspaceId={WORKSPACE_ID}
+      filter={{ actorKind: 'system' }}
+      onFilterChange={vi.fn<() => void>()}
+      canConfigureRetention
+    />,
+  )
+
+  await expect.element(screen.getByRole('combobox', { name: 'Actor' })).toHaveValue('System')
+})
+
+test('a period preset narrows the log to its days', async () => {
+  worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
+  const onFilterChange = vi.fn<(filter: AuditFilter) => void>()
+  const { screen } = await renderWithRouter(
+    <AuditLogSection
+      workspaceId={WORKSPACE_ID}
+      filter={{ ip: '10.0.0.1' }}
+      onFilterChange={onFilterChange}
+      canConfigureRetention
+    />,
+  )
+
+  await screen.getByRole('button', { name: 'Period' }).click()
+  await screen.getByRole('button', { name: 'Last 7 days' }).click()
+  expect(onFilterChange).toHaveBeenLastCalledWith({
+    ip: '10.0.0.1',
+    from: expect.any(String),
+    to: expect.any(String),
+  })
+})
+
 test('a chip removes its filter, and reset clears every filter', async () => {
   worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
   const onFilterChange = vi.fn<(filter: AuditFilter) => void>()
@@ -428,6 +482,22 @@ test('the retention control is not offered without its license', async () => {
 
   await expect.element(screen.getByRole('button', { name: 'Export CSV' })).toBeInTheDocument()
   await expect.poll(() => retentionAnswered).toBeGreaterThan(0)
+  await expect
+    .element(screen.getByRole('button', { name: 'Change retention' }))
+    .not.toBeInTheDocument()
+})
+
+test('a change shows an empty side as empty and a number as written', async () => {
+  worker.use(
+    handleSiteAuditList({ body: { items: [entry({ diff: { note: { from: '', to: 42 } } })] } }),
+  )
+  const { screen } = await renderWithRouter(
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
+  )
+
+  await screen.getByRole('button', { name: 'Show details' }).click()
+  await expect.element(screen.getByText('empty', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
   await expect
     .element(screen.getByRole('button', { name: 'Change retention' }))
     .not.toBeInTheDocument()
