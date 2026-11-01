@@ -24,6 +24,7 @@ import (
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	site "github.com/getsphericon/sphericon/gen/site"
 	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
+	accounts "github.com/getsphericon/sphericon/internal/accounts"
 	analytics "github.com/getsphericon/sphericon/internal/analytics"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
@@ -39,7 +40,9 @@ import (
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
+	setupchecklist "github.com/getsphericon/sphericon/internal/setupchecklist"
 	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
+	webhook "github.com/getsphericon/sphericon/internal/webhook"
 	"time"
 )
 
@@ -223,6 +226,12 @@ func (c *ConverterImpl) AuditTargetToResource(source auditapi.View) site.SiteAud
 	siteapiSiteAuditTarget.Name = optNilString(source.TargetName)
 	return siteapiSiteAuditTarget
 }
+func (c *ConverterImpl) AutomationHttpHeaderToResource(source automations.HeaderName) site.SiteAutomationHttpHeader {
+	var siteapiSiteAutomationHttpHeader site.SiteAutomationHttpHeader
+	siteapiSiteAutomationHttpHeader.Name = source.Name
+	// siteapiSiteAutomationHttpHeader.Value: ignore
+	return siteapiSiteAutomationHttpHeader
+}
 func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) site.SiteAutomationPeriodResults {
 	var siteapiSiteAutomationPeriodResults site.SiteAutomationPeriodResults
 	siteapiSiteAutomationPeriodResults.Entered = count(source.ResultCounts.Entered)
@@ -235,6 +244,22 @@ func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.Per
 	siteapiSiteAutomationPeriodResults.AverageDurationSeconds = durationSeconds(source.AverageDuration)
 	siteapiSiteAutomationPeriodResults.Revenue = c.MessageRevenueToResource(source.Revenue)
 	return siteapiSiteAutomationPeriodResults
+}
+func (c *ConverterImpl) AutomationReportPeriodToResource(source automations.ReportPeriod) site.SiteAutomationReportPeriod {
+	var siteapiSiteAutomationReportPeriod site.SiteAutomationReportPeriod
+	switch source {
+	case automations.ReportPeriod14Days:
+		siteapiSiteAutomationReportPeriod = site.SiteAutomationReportPeriod14d
+	case automations.ReportPeriod30Days:
+		siteapiSiteAutomationReportPeriod = site.SiteAutomationReportPeriod30d
+	case automations.ReportPeriod7Days:
+		siteapiSiteAutomationReportPeriod = site.SiteAutomationReportPeriod7d
+	case automations.ReportPeriod90Days:
+		siteapiSiteAutomationReportPeriod = site.SiteAutomationReportPeriod90d
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteAutomationReportPeriod
 }
 func (c *ConverterImpl) AutomationReportToResource(source automations.Report) site.SiteAutomationReport {
 	var siteapiSiteAutomationReport site.SiteAutomationReport
@@ -261,7 +286,7 @@ func (c *ConverterImpl) AutomationResultsPointToResource(source automations.Resu
 }
 func (c *ConverterImpl) AutomationResultsToResource(source automations.Results) site.SiteAutomationResults {
 	var siteapiSiteAutomationResults site.SiteAutomationResults
-	// siteapiSiteAutomationResults.Period: ignore
+	siteapiSiteAutomationResults.Period = c.AutomationReportPeriodToResource(source.Period)
 	siteapiSiteAutomationResults.Current = c.AutomationPeriodResultsToResource(source.Current)
 	siteapiSiteAutomationResults.Previous = c.AutomationPeriodResultsToResource(source.Previous)
 	if source.Series != nil {
@@ -285,6 +310,28 @@ func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) sit
 	}
 	return siteapiSiteAutomationStatus
 }
+func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) site.SiteAutomationStep {
+	var siteapiSiteAutomationStep site.SiteAutomationStep
+	siteapiSiteAutomationStep.Type = c.AutomationStepTypeToResource(source.Type)
+	siteapiSiteAutomationStep.Subject = optString(source.Subject)
+	siteapiSiteAutomationStep.Body = optString(source.Body)
+	siteapiSiteAutomationStep.Doc = optEditorDocument(source.Doc)
+	siteapiSiteAutomationStep.EditorVersion = optString(source.EditorVersion)
+	siteapiSiteAutomationStep.Seconds = optInt32(source.Seconds)
+	siteapiSiteAutomationStep.Tag = optString(source.Tag)
+	siteapiSiteAutomationStep.ID = optString(source.ID)
+	// siteapiSiteAutomationStep.URL: ignore
+	if source.Headers != nil {
+		siteapiSiteAutomationStep.Headers = make([]site.SiteAutomationHttpHeader, len(source.Headers))
+		for i := 0; i < len(source.Headers); i++ {
+			siteapiSiteAutomationStep.Headers[i] = c.AutomationHttpHeaderToResource(source.Headers[i])
+		}
+	}
+	// siteapiSiteAutomationStep.Secret: ignore
+	// siteapiSiteAutomationStep.ClearSecret: ignore
+	siteapiSiteAutomationStep.HasSecret = optBool(source.HasSecret)
+	return siteapiSiteAutomationStep
+}
 func (c *ConverterImpl) AutomationStepTypeToResource(source automations.StepType) site.SiteAutomationStepType {
 	var siteapiSiteAutomationStepType site.SiteAutomationStepType
 	switch source {
@@ -302,6 +349,16 @@ func (c *ConverterImpl) AutomationStepTypeToResource(source automations.StepType
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteAutomationStepType
+}
+func (c *ConverterImpl) AutomationStepsToResources(source []automations.StepView) []site.SiteAutomationStep {
+	var siteapiSiteAutomationStepList []site.SiteAutomationStep
+	if source != nil {
+		siteapiSiteAutomationStepList = make([]site.SiteAutomationStep, len(source))
+		for i := 0; i < len(source); i++ {
+			siteapiSiteAutomationStepList[i] = c.AutomationStepToResource(source[i])
+		}
+	}
+	return siteapiSiteAutomationStepList
 }
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAutomationResource {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
@@ -331,7 +388,7 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 		}
 		siteapiSiteAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
 		siteapiSiteAutomationVersion.IntegrationId = optNilEntityID((*source).IntegrationID)
-		siteapiSiteAutomationVersion.Steps = automationSteps(c, source)
+		siteapiSiteAutomationVersion.Steps = automationSteps(c, (*source).Steps)
 	}
 	return siteapiSiteAutomationVersion
 }
@@ -785,6 +842,22 @@ func (c *ConverterImpl) DeletedWorkspaceToResource(source *ent.Workspace) site.S
 		// siteapiSiteDeletedWorkspaceResource.OnlyOwner: ignore
 	}
 	return siteapiSiteDeletedWorkspaceResource
+}
+func (c *ConverterImpl) DeliveryErrorKindToResource(source webhook.ErrorKind) site.SiteWebhookErrorKind {
+	var siteapiSiteWebhookErrorKind site.SiteWebhookErrorKind
+	switch source {
+	case webhook.KindBlockedAddress:
+		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindBlockedAddress
+	case webhook.KindHTTPStatus:
+		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindHTTPStatus
+	case webhook.KindNetwork:
+		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindNetwork
+	case webhook.KindTimeout:
+		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindTimeout
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteWebhookErrorKind
 }
 func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) site.SiteDnsRecord {
 	var siteapiSiteDnsRecord site.SiteDnsRecord
@@ -1273,6 +1346,64 @@ func (c *ConverterImpl) PendingSignupToResource(source *ent.PendingSignup) *site
 	}
 	return pSiteapiSitePendingSignup
 }
+func (c *ConverterImpl) PermissionToResource(source accounts.Permission) site.Permission {
+	var siteapiPermission site.Permission
+	switch source {
+	case accounts.PermAccountLinkOpen:
+		siteapiPermission = site.PermissionAccountLinkOpen
+	case accounts.PermAuditConfigure:
+		siteapiPermission = site.PermissionAuditConfigure
+	case accounts.PermAuditRead:
+		siteapiPermission = site.PermissionAuditRead
+	case accounts.PermBrandKitManage:
+		siteapiPermission = site.PermissionBrandKitManage
+	case accounts.PermContactsErase:
+		siteapiPermission = site.PermissionContactsErase
+	case accounts.PermContactsExport:
+		siteapiPermission = site.PermissionContactsExport
+	case accounts.PermHoldsResolve:
+		siteapiPermission = site.PermissionHoldsResolve
+	case accounts.PermIntegrationsManage:
+		siteapiPermission = site.PermissionIntegrationsManage
+	case accounts.PermJoinDomainsManage:
+		siteapiPermission = site.PermissionJoinDomainsManage
+	case accounts.PermMembersManage:
+		siteapiPermission = site.PermissionMembersManage
+	case accounts.PermOwnersManage:
+		siteapiPermission = site.PermissionOwnersManage
+	case accounts.PermReleaseRead:
+		siteapiPermission = site.PermissionReleaseRead
+	case accounts.PermRevenueConfigure:
+		siteapiPermission = site.PermissionRevenueConfigure
+	case accounts.PermSecondFactorManage:
+		siteapiPermission = site.PermissionSecondFactorManage
+	case accounts.PermSendingDomainsManage:
+		siteapiPermission = site.PermissionSendingDomainsManage
+	case accounts.PermSuppressionsManage:
+		siteapiPermission = site.PermissionSuppressionsManage
+	case accounts.PermTokensManage:
+		siteapiPermission = site.PermissionTokensManage
+	case accounts.PermWebhooksManage:
+		siteapiPermission = site.PermissionWebhooksManage
+	case accounts.PermWorkspaceDelete:
+		siteapiPermission = site.PermissionWorkspaceDelete
+	case accounts.PermWorkspaceTimezone:
+		siteapiPermission = site.PermissionWorkspaceTimezone
+	case accounts.PermWorkspaceUpdate:
+		siteapiPermission = site.PermissionWorkspaceUpdate
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiPermission
+}
+func (c *ConverterImpl) PermissionsToResources(source []accounts.Permission) []site.Permission {
+	var siteapiPermissionList []site.Permission
+	siteapiPermissionList = make([]site.Permission, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiPermissionList[i] = c.PermissionToResource(source[i])
+	}
+	return siteapiPermissionList
+}
 func (c *ConverterImpl) PersonalTokenToResource(source *ent.ApiToken) site.SitePersonalTokenResource {
 	var siteapiSitePersonalTokenResource site.SitePersonalTokenResource
 	if source != nil {
@@ -1361,6 +1492,14 @@ func (c *ConverterImpl) ProviderLimitWarningToResource(source providerlimit.Warn
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteProviderLimitWarning
+}
+func (c *ConverterImpl) RequiredPermissionsToResource(source map[string]accounts.Permission) site.SiteOAuthAuthorizationRequestRequiredPermissions {
+	var siteapiSiteOAuthAuthorizationRequestRequiredPermissions site.SiteOAuthAuthorizationRequestRequiredPermissions
+	siteapiSiteOAuthAuthorizationRequestRequiredPermissions = make(site.SiteOAuthAuthorizationRequestRequiredPermissions, len(source))
+	for key, value := range source {
+		siteapiSiteOAuthAuthorizationRequestRequiredPermissions[key] = c.PermissionToResource(value)
+	}
+	return siteapiSiteOAuthAuthorizationRequestRequiredPermissions
 }
 func (c *ConverterImpl) RevenueSettingsToResource(source *ent.Workspace) site.SiteRevenueSettingsResource {
 	var siteapiSiteRevenueSettingsResource site.SiteRevenueSettingsResource
@@ -1622,6 +1761,26 @@ func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) sit
 	siteapiSiteSesConfig.Endpoint = omitEmpty(source.Endpoint)
 	siteapiSiteSesConfig.AccessKeyIdLast4 = omitEmpty(source.AccessKeyIDLast4)
 	return siteapiSiteSesConfig
+}
+func (c *ConverterImpl) SetupChecklistToResource(source setupchecklist.Checklist) site.SiteSetupProgress {
+	var siteapiSiteSetupProgress site.SiteSetupProgress
+	siteapiSiteSetupProgress.Steps = c.setupchecklistStepsToSiteapiSiteSetupSteps(source.Steps)
+	siteapiSiteSetupProgress.Complete = source.Complete()
+	return siteapiSiteSetupProgress
+}
+func (c *ConverterImpl) SetupStepStatusToResource(source setupchecklist.Status) site.SiteSetupStepStatus {
+	var siteapiSiteSetupStepStatus site.SiteSetupStepStatus
+	switch source {
+	case setupchecklist.Done:
+		siteapiSiteSetupStepStatus = site.SiteSetupStepStatusDone
+	case setupchecklist.Pending:
+		siteapiSiteSetupStepStatus = site.SiteSetupStepStatusPending
+	case setupchecklist.Todo:
+		siteapiSiteSetupStepStatus = site.SiteSetupStepStatusTodo
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteSetupStepStatus
 }
 func (c *ConverterImpl) SignupItemKindToResource(source signupitem.Kind) site.SignupItemKind {
 	var siteapiSignupItemKind site.SignupItemKind
@@ -2100,4 +2259,12 @@ func (c *ConverterImpl) schemaCapturedHeaderToSiteapiSiteCapturedMessageHeader(s
 	siteapiSiteCapturedMessageHeader.Name = source.Name
 	siteapiSiteCapturedMessageHeader.Value = source.Value
 	return siteapiSiteCapturedMessageHeader
+}
+func (c *ConverterImpl) setupchecklistStepsToSiteapiSiteSetupSteps(source setupchecklist.Steps) site.SiteSetupSteps {
+	var siteapiSiteSetupSteps site.SiteSetupSteps
+	siteapiSiteSetupSteps.Integration = c.SetupStepStatusToResource(source.Integration)
+	siteapiSiteSetupSteps.SendingDomain = c.SetupStepStatusToResource(source.SendingDomain)
+	siteapiSiteSetupSteps.Contact = c.SetupStepStatusToResource(source.Contact)
+	siteapiSiteSetupSteps.SentEmail = c.SetupStepStatusToResource(source.SentEmail)
+	return siteapiSiteSetupSteps
 }

@@ -32,7 +32,7 @@ func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.TestWebhoo
 		out.Status = siteapi.NewOptInt32(narrow.Int32(res.Status))
 	}
 	if res.Kind != "" {
-		out.Kind = siteapi.NewOptSiteWebhookErrorKind(siteapi.SiteWebhookErrorKind(res.Kind))
+		out.Kind = siteapi.NewOptSiteWebhookErrorKind(mapper.DeliveryErrorKindToResource(res.Kind))
 	}
 	return &out, nil
 }

@@ -19,14 +19,13 @@ func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAu
 		return nil, err
 	}
 	out := &siteapi.SiteOAuthAuthorizationRequest{
-		ClientName:    req.ClientName,
-		RedirectUri:   req.RedirectURI,
-		LocalRedirect: req.LocalRedirect,
-		Scopes:        lo.Map(req.Scopes, func(s string, _ int) siteapi.GrantableScope { return siteapi.GrantableScope(s) }),
-		SendScopes:    lo.Map(req.SendScopes, func(s string, _ int) siteapi.SendScope { return siteapi.SendScope(s) }),
-		SetupScopes:   lo.Map(req.SetupScopes, func(s string, _ int) siteapi.SetupScope { return siteapi.SetupScope(s) }),
-		RequiredPermissions: siteapi.SiteOAuthAuthorizationRequestRequiredPermissions(
-			lo.MapValues(req.RequiredPermissions, func(p accounts.Permission, _ string) siteapi.Permission { return siteapi.Permission(p) })),
+		ClientName:          req.ClientName,
+		RedirectUri:         req.RedirectURI,
+		LocalRedirect:       req.LocalRedirect,
+		Scopes:              lo.Map(req.Scopes, func(s string, _ int) siteapi.GrantableScope { return siteapi.GrantableScope(s) }),
+		SendScopes:          lo.Map(req.SendScopes, func(s string, _ int) siteapi.SendScope { return siteapi.SendScope(s) }),
+		SetupScopes:         lo.Map(req.SetupScopes, func(s string, _ int) siteapi.SetupScope { return siteapi.SetupScope(s) }),
+		RequiredPermissions: mapper.RequiredPermissionsToResource(req.RequiredPermissions),
 	}
 	if req.ClientHost != "" {
 		out.ClientHost = siteapi.NewOptString(req.ClientHost)

@@ -40,6 +40,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/transactional"
+	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
 )
@@ -52,41 +54,18 @@ func automationVersionOrNull(c Converter, v *ent.AutomationVersion) externalapi.
 	return externalapi.NewNilAutomationVersion(c.AutomationVersionToResource(v))
 }
 
-// automationSteps decodes the steps of an Automation version into the typed steps DTO.
-// Malformed steps yield no steps rather than an error.
-func automationSteps(c Converter, v *ent.AutomationVersion) []externalapi.AutomationStep {
-	stored, err := automations.Decode(v.Steps)
-	if err != nil {
-		return nil
-	}
-	steps := make([]externalapi.AutomationStep, 0, len(stored))
-	for i := range stored {
-		s := &stored[i]
-		step := externalapi.AutomationStep{Type: c.AutomationStepTypeToResource(s.Type)}
-		switch s.Type {
-		case automations.StepWait:
-			step.Seconds = externalapi.NewOptInt32(narrow.Int32(s.Seconds))
-		case automations.StepApplyTag, automations.StepRemoveTag:
-			step.Tag = externalapi.NewOptString(s.Tag)
-		case automations.StepHTTP:
-			// Masked: the URL, header values and signing secret never leave the server.
-			step.ID = externalapi.NewOptString(s.ID)
-			step.Body = externalapi.NewOptString(s.Body)
-			step.HasSecret = externalapi.NewOptBool(s.Secret != "")
-			step.Headers = lo.Map(s.Headers, func(h automations.Header, _ int) externalapi.AutomationHttpHeader {
-				return externalapi.AutomationHttpHeader{Name: h.Name}
-			})
-		default:
-			step.Subject = externalapi.NewOptString(s.Subject)
-			step.Body = externalapi.NewOptString(s.Body)
-			if doc := convert.DocObject[externalapi.EditorDocument](s.Doc); doc != nil {
-				step.Doc = externalapi.NewOptEditorDocument(doc)
-				step.EditorVersion = externalapi.NewOptString(s.EditorVersion)
-			}
-		}
-		steps = append(steps, step)
-	}
-	return steps
+// automationSteps decodes the stored definition (the executor's JSON format) into the typed steps
+// DTO, through the automations module's masked view of each step.
+func automationSteps(c Converter, definition string) []externalapi.AutomationStep {
+	return c.AutomationStepsToResources(automations.Views(definition))
+}
+
+func optBool(v *bool) externalapi.OptBool {
+	return convert.Opt[externalapi.OptBool](v)
+}
+
+func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
+	return convert.OptObject[externalapi.OptEditorDocument](convert.DocObject[externalapi.EditorDocument](doc))
 }
 
 // Converter maps ent entities to external API resources. goverter generates the
@@ -122,6 +101,8 @@ func automationSteps(c Converter, v *ent.AutomationVersion) []externalapi.Automa
 // goverter:extend optTimestamp
 // goverter:extend optInt32
 // goverter:extend optString
+// goverter:extend optBool
+// goverter:extend optEditorDocument
 // goverter:extend optTrackingReason
 // goverter:extend auditDiff
 // goverter:extend optWebhookDisabledReason
@@ -164,7 +145,6 @@ type Converter interface {
 	// goverter:autoMap ResultCounts
 	AutomationResultsPointToResource(source automations.ResultsPoint) externalapi.AutomationResultsPoint
 	// The period is the one the request named: the handler attaches it.
-	// goverter:ignore Period
 	AutomationResultsToResource(source automations.Results) externalapi.AutomationResults
 	ApiTokenToInfo(source *ent.ApiToken) externalapi.ApiTokenInfo
 	// goverter:useEmptyOnNil:slice
@@ -211,9 +191,17 @@ type Converter interface {
 	// The stored definition string (the executor's JSON format) is decoded into the typed steps
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
-	// goverter:map . Steps | automationSteps
+	// goverter:map Steps | automationSteps
 	// goverter:map IntegrationID IntegrationId
 	AutomationVersionToResource(source *ent.AutomationVersion) externalapi.AutomationVersion
+	// A step is the module's masked view: what it hides is never mapped.
+	// goverter:ignore URL
+	// goverter:ignore Secret
+	// goverter:ignore ClearSecret
+	AutomationStepToResource(source automations.StepView) externalapi.AutomationStep
+	AutomationStepsToResources(source []automations.StepView) []externalapi.AutomationStep
+	// goverter:ignore Value
+	AutomationHttpHeaderToResource(source automations.HeaderName) externalapi.AutomationHttpHeader
 
 	// The config is a oneOf the generator cannot express, and the params, hook URL and
 	// retiring secrets come from the integrations module (decryption, instance URL), and
@@ -395,6 +383,12 @@ type Converter interface {
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
+	// The contract names a period "7d", the module counts its days: each member is mapped.
+	// goverter:enum:map ReportPeriod7Days AutomationReportPeriod7d
+	// goverter:enum:map ReportPeriod14Days AutomationReportPeriod14d
+	// goverter:enum:map ReportPeriod30Days AutomationReportPeriod30d
+	// goverter:enum:map ReportPeriod90Days AutomationReportPeriod90d
+	AutomationReportPeriodToResource(source automations.ReportPeriod) externalapi.AutomationReportPeriod
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) externalapi.AutomationStatus
 	// goverter:enum:transform value
@@ -407,6 +401,10 @@ type Converter interface {
 	ContactExportSourceToResource(source contact.Source) externalapi.ContactExportSource
 	// goverter:enum:transform value
 	CustomFieldTypeToResource(source customfield.Type) externalapi.CustomFieldType
+	// What a test send of a Webhook endpoint failed with: a delivery's own error, not the one the
+	// endpoint keeps (WebhookErrorKindToResource).
+	// goverter:enum:transform value
+	DeliveryErrorKindToResource(source webhook.ErrorKind) externalapi.WebhookErrorKind
 	// goverter:enum:transform value
 	EnrollmentFailureKindToResource(source automationrun.FailureKind) externalapi.EnrollmentFailureKind
 	// goverter:enum:transform value
@@ -433,6 +431,8 @@ type Converter interface {
 	SuppressionReasonToResource(source suppression.Reason) externalapi.SuppressionReason
 	// goverter:enum:transform value
 	TrackingReasonToResource(source sendingdomain.TrackingReason) externalapi.TrackingReason
+	// goverter:enum:transform value
+	TransactionalSendStatusToResource(source transactional.Status) externalapi.TransactionalSendStatus
 	// goverter:enum:transform value
 	TrackingStateToResource(source sendingdomain.TrackingState) externalapi.TrackingState
 	// goverter:enum:transform value

@@ -9,18 +9,9 @@ import (
 
 // SiteSetupChecklistGet maps the Workspace's Setup checklist onto the DTO.
 func (h *Handlers) SiteSetupChecklistGet(ctx context.Context, _ siteapi.SiteSetupChecklistGetParams) (siteapi.SiteSetupChecklistGetRes, error) {
-	s := workspaceScope(ctx)
-	c, err := setupchecklist.Read(ctx, s)
+	c, err := setupchecklist.Read(ctx, workspaceScope(ctx))
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteSetupProgress{
-		Steps: siteapi.SiteSetupSteps{
-			Integration:   siteapi.SiteSetupStepStatus(c.Steps.Integration),
-			SendingDomain: siteapi.SiteSetupStepStatus(c.Steps.SendingDomain),
-			Contact:       siteapi.SiteSetupStepStatus(c.Steps.Contact),
-			SentEmail:     siteapi.SiteSetupStepStatus(c.Steps.SentEmail),
-		},
-		Complete: c.Complete(),
-	}, nil
+	return new(mapper.SetupChecklistToResource(c)), nil
 }

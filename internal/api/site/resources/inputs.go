@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
@@ -23,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/signup"
+	"github.com/getsphericon/sphericon/internal/signupsurvey"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -73,6 +76,7 @@ import (
 // goverter:extend objectPatch
 // goverter:extend nilObjectIn
 // goverter:extend nilObjectPatch
+// goverter:extend signupSourcePtrIn
 type Inputs interface {
 	// goverter:ignore Prepared
 	TemplateCreate(source *siteapi.CreateTemplateInput) templates.CreateInput
@@ -126,6 +130,9 @@ type Inputs interface {
 	// goverter:ignore InvitedBy
 	InvitationCreate(source *siteapi.SiteCreateInvitationInput) accounts.InviteInput
 
+	// Every answer was checked against the contract's enums when the request was decoded.
+	SignupSurvey(source *siteapi.SiteSignupSurveyInput) signupsurvey.Answers
+
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
 	// The contract names a window "7d", the module counts its days: each member is mapped.
@@ -137,12 +144,28 @@ type Inputs interface {
 	// goverter:enum:map SiteAnalyticsRevenueRange30d Window30Days
 	// goverter:enum:map SiteAnalyticsRevenueRange90d Window90Days
 	AnalyticsRevenueWindow(source siteapi.SiteAnalyticsRevenueRange) analytics.Window
+	// The contract names a period "7d", the module counts its days: each member is mapped.
+	// goverter:enum:map SiteAutomationReportsGetPeriod7d ReportPeriod7Days
+	// goverter:enum:map SiteAutomationReportsGetPeriod14d ReportPeriod14Days
+	// goverter:enum:map SiteAutomationReportsGetPeriod30d ReportPeriod30Days
+	// goverter:enum:map SiteAutomationReportsGetPeriod90d ReportPeriod90Days
+	AutomationReportPeriod(source siteapi.SiteAutomationReportsGetPeriod) automations.ReportPeriod
 	// goverter:enum:transform value
 	AutomationStepType(source siteapi.SiteAutomationStepType) automations.StepType
 	// goverter:enum:transform value
 	InvitableRole(source siteapi.SiteInvitableRole) invitation.Role
 	// goverter:enum:transform value
+	MembershipRole(source siteapi.SiteMembershipRole) membership.Role
+	// goverter:enum:transform value
 	RuleActionType(source siteapi.SiteRuleActionType) rules.ActionType
+	// goverter:enum:transform value
+	SignupCompanySize(source siteapi.SiteSignupCompanySize) signupsurveyresponse.CompanySize
+	// goverter:enum:transform value
+	SignupGoal(source siteapi.SiteSignupGoal) signupsurveyresponse.MainGoal
+	// goverter:enum:transform value
+	SignupRole(source siteapi.SiteSignupRole) signupsurveyresponse.Role
+	// goverter:enum:transform value
+	SignupSource(source siteapi.SiteSignupSource) signupsurveyresponse.HeardFrom
 }
 
 func stringPatch(o siteapi.OptString) patch.Field[string]            { return convert.Patch(o) }
@@ -185,6 +208,11 @@ func timestampPtrIn(o siteapi.OptNilTimestamp) *time.Time {
 	}
 	t := time.Time(v)
 	return &t
+}
+
+// signupSourcePtrIn is where the User heard about the product, nil when the request does not say.
+func signupSourcePtrIn(c Inputs, o siteapi.OptSiteSignupSource) *signupsurveyresponse.HeardFrom {
+	return convert.PtrVia(o, c.SignupSource)
 }
 
 // automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.

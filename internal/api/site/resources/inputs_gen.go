@@ -6,6 +6,8 @@ package resources
 import (
 	"fmt"
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
+	membership "github.com/getsphericon/sphericon/ent/membership"
+	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	site "github.com/getsphericon/sphericon/gen/site"
 	accounts "github.com/getsphericon/sphericon/internal/accounts"
 	analytics "github.com/getsphericon/sphericon/internal/analytics"
@@ -21,6 +23,7 @@ import (
 	segments "github.com/getsphericon/sphericon/internal/segments"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	signup "github.com/getsphericon/sphericon/internal/signup"
+	signupsurvey "github.com/getsphericon/sphericon/internal/signupsurvey"
 	templates "github.com/getsphericon/sphericon/internal/templates"
 	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -71,6 +74,22 @@ func (c *InputsImpl) AutomationCreate(source *site.SiteCreateAutomationInput) au
 		automationsCreateInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
 	return automationsCreateInput
+}
+func (c *InputsImpl) AutomationReportPeriod(source site.SiteAutomationReportsGetPeriod) automations.ReportPeriod {
+	var automationsReportPeriod automations.ReportPeriod
+	switch source {
+	case site.SiteAutomationReportsGetPeriod14d:
+		automationsReportPeriod = automations.ReportPeriod14Days
+	case site.SiteAutomationReportsGetPeriod30d:
+		automationsReportPeriod = automations.ReportPeriod30Days
+	case site.SiteAutomationReportsGetPeriod7d:
+		automationsReportPeriod = automations.ReportPeriod7Days
+	case site.SiteAutomationReportsGetPeriod90d:
+		automationsReportPeriod = automations.ReportPeriod90Days
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return automationsReportPeriod
 }
 func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automations.Step {
 	var automationsStep automations.Step
@@ -273,6 +292,20 @@ func (c *InputsImpl) InvitationCreate(source *site.SiteCreateInvitationInput) ac
 	}
 	return accountsInviteInput
 }
+func (c *InputsImpl) MembershipRole(source site.SiteMembershipRole) membership.Role {
+	var membershipRole membership.Role
+	switch source {
+	case site.SiteMembershipRoleAdmin:
+		membershipRole = membership.RoleAdmin
+	case site.SiteMembershipRoleMember:
+		membershipRole = membership.RoleMember
+	case site.SiteMembershipRoleOwner:
+		membershipRole = membership.RoleOwner
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return membershipRole
+}
 func (c *InputsImpl) PersonalTokenCreate(source *site.SiteCreatePersonalTokenInput) apitokens.PersonalInput {
 	var apitokensPersonalInput apitokens.PersonalInput
 	if source != nil {
@@ -407,6 +440,96 @@ func (c *InputsImpl) SignupAnswers(source []site.SiteSignupItemAnswer) []consent
 		}
 	}
 	return consentrecordsAnswerList
+}
+func (c *InputsImpl) SignupCompanySize(source site.SiteSignupCompanySize) signupsurveyresponse.CompanySize {
+	var signupsurveyresponseCompanySize signupsurveyresponse.CompanySize
+	switch source {
+	case site.SiteSignupCompanySize1:
+		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySize1
+	case site.SiteSignupCompanySize1000Plus:
+		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySize1000Plus
+	case site.SiteSignupCompanySize1150:
+		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySize1150
+	case site.SiteSignupCompanySize2011000:
+		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySize2011000
+	case site.SiteSignupCompanySize210:
+		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySize210
+	case site.SiteSignupCompanySize51200:
+		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySize51200
+	case site.SiteSignupCompanySizeOther:
+		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySizeOther
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return signupsurveyresponseCompanySize
+}
+func (c *InputsImpl) SignupGoal(source site.SiteSignupGoal) signupsurveyresponse.MainGoal {
+	var signupsurveyresponseMainGoal signupsurveyresponse.MainGoal
+	switch source {
+	case site.SiteSignupGoalAutomations:
+		signupsurveyresponseMainGoal = signupsurveyresponse.MainGoalAutomations
+	case site.SiteSignupGoalBroadcasts:
+		signupsurveyresponseMainGoal = signupsurveyresponse.MainGoalBroadcasts
+	case site.SiteSignupGoalMigrating:
+		signupsurveyresponseMainGoal = signupsurveyresponse.MainGoalMigrating
+	case site.SiteSignupGoalOther:
+		signupsurveyresponseMainGoal = signupsurveyresponse.MainGoalOther
+	case site.SiteSignupGoalTracking:
+		signupsurveyresponseMainGoal = signupsurveyresponse.MainGoalTracking
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return signupsurveyresponseMainGoal
+}
+func (c *InputsImpl) SignupRole(source site.SiteSignupRole) signupsurveyresponse.Role {
+	var signupsurveyresponseRole signupsurveyresponse.Role
+	switch source {
+	case site.SiteSignupRoleDeveloper:
+		signupsurveyresponseRole = signupsurveyresponse.RoleDeveloper
+	case site.SiteSignupRoleFounder:
+		signupsurveyresponseRole = signupsurveyresponse.RoleFounder
+	case site.SiteSignupRoleMarketer:
+		signupsurveyresponseRole = signupsurveyresponse.RoleMarketer
+	case site.SiteSignupRoleOther:
+		signupsurveyresponseRole = signupsurveyresponse.RoleOther
+	case site.SiteSignupRoleProduct:
+		signupsurveyresponseRole = signupsurveyresponse.RoleProduct
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return signupsurveyresponseRole
+}
+func (c *InputsImpl) SignupSource(source site.SiteSignupSource) signupsurveyresponse.HeardFrom {
+	var signupsurveyresponseHeardFrom signupsurveyresponse.HeardFrom
+	switch source {
+	case site.SiteSignupSourceGithub:
+		signupsurveyresponseHeardFrom = signupsurveyresponse.HeardFromGithub
+	case site.SiteSignupSourceOther:
+		signupsurveyresponseHeardFrom = signupsurveyresponse.HeardFromOther
+	case site.SiteSignupSourceRecommendation:
+		signupsurveyresponseHeardFrom = signupsurveyresponse.HeardFromRecommendation
+	case site.SiteSignupSourceSearch:
+		signupsurveyresponseHeardFrom = signupsurveyresponse.HeardFromSearch
+	case site.SiteSignupSourceSocial:
+		signupsurveyresponseHeardFrom = signupsurveyresponse.HeardFromSocial
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return signupsurveyresponseHeardFrom
+}
+func (c *InputsImpl) SignupSurvey(source *site.SiteSignupSurveyInput) signupsurvey.Answers {
+	var signupsurveyAnswers signupsurvey.Answers
+	if source != nil {
+		signupsurveyAnswers.Role = c.SignupRole((*source).Role)
+		signupsurveyAnswers.RoleOther = stringPtrIn((*source).RoleOther)
+		signupsurveyAnswers.CompanySize = c.SignupCompanySize((*source).CompanySize)
+		signupsurveyAnswers.CompanySizeOther = stringPtrIn((*source).CompanySizeOther)
+		signupsurveyAnswers.MainGoal = c.SignupGoal((*source).MainGoal)
+		signupsurveyAnswers.MainGoalOther = stringPtrIn((*source).MainGoalOther)
+		signupsurveyAnswers.HeardFrom = signupSourcePtrIn(c, (*source).HeardFrom)
+		signupsurveyAnswers.HeardFromOther = stringPtrIn((*source).HeardFromOther)
+	}
+	return signupsurveyAnswers
 }
 func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) templates.CreateInput {
 	var templatesCreateInput templates.CreateInput

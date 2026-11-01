@@ -89,7 +89,6 @@ var (
 	ErrorsAutomationNothingToRevert             = ID{key: "errors.automation_nothing_to_revert"}
 	ErrorsAutomationStepInvalid                 = ID{key: "errors.automation_step_invalid"}
 	ErrorsAutomationTriggerInvalid              = ID{key: "errors.automation_trigger_invalid"}
-	ErrorsAutomationUnknownReportPeriod         = ID{key: "errors.automation_unknown_report_period"}
 	ErrorsBodyAndDoc                            = ID{key: "errors.body_and_doc"}
 	ErrorsBootstrapTokenInvalid                 = ID{key: "errors.bootstrap_token_invalid"}
 	ErrorsBrandkitColor                         = ID{key: "errors.brandkit_color"}

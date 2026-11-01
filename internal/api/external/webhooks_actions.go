@@ -31,7 +31,7 @@ func (h *Handlers) WebhooksTest(ctx context.Context, req *externalapi.TestWebhoo
 		out.Status = externalapi.NewOptInt32(narrow.Int32(res.Status))
 	}
 	if res.Kind != "" {
-		out.Kind = externalapi.NewOptWebhookErrorKind(externalapi.WebhookErrorKind(res.Kind))
+		out.Kind = externalapi.NewOptWebhookErrorKind(mapper.DeliveryErrorKindToResource(res.Kind))
 	}
 	return &out, nil
 }

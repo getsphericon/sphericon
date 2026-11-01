@@ -53,6 +53,22 @@ func (c *InputsImpl) AutomationCreate(source *external.CreateAutomationInput) au
 	}
 	return automationsCreateInput
 }
+func (c *InputsImpl) AutomationReportPeriod(source external.AutomationsReportPeriod) automations.ReportPeriod {
+	var automationsReportPeriod automations.ReportPeriod
+	switch source {
+	case external.AutomationsReportPeriod14d:
+		automationsReportPeriod = automations.ReportPeriod14Days
+	case external.AutomationsReportPeriod30d:
+		automationsReportPeriod = automations.ReportPeriod30Days
+	case external.AutomationsReportPeriod7d:
+		automationsReportPeriod = automations.ReportPeriod7Days
+	case external.AutomationsReportPeriod90d:
+		automationsReportPeriod = automations.ReportPeriod90Days
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return automationsReportPeriod
+}
 func (c *InputsImpl) AutomationStep(source external.AutomationStep) automations.Step {
 	var automationsStep automations.Step
 	automationsStep.Type = c.AutomationStepType(source.Type)

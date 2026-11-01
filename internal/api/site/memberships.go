@@ -3,7 +3,6 @@ package site
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 )
@@ -29,7 +28,7 @@ func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteU
 
 	id := int64(params.ID)
 
-	updated, err := h.accounts.ChangeMembershipRole(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id, membership.Role(req.Role))
+	updated, err := h.accounts.ChangeMembershipRole(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id, inputs.MembershipRole(req.Role))
 	if err != nil {
 		return nil, err
 	}

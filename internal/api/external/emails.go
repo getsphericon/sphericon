@@ -29,7 +29,7 @@ func (h *Handlers) EmailsSend(ctx context.Context, req *externalapi.SendTransact
 		return nil, err
 	}
 	return &externalapi.SendTransactionalEmailResponse{
-		ID: entityID(res.MessageID), Status: externalapi.TransactionalSendStatus(res.Status), Destination: res.Destination,
+		ID: entityID(res.MessageID), Status: mapper.TransactionalSendStatusToResource(res.Status), Destination: res.Destination,
 	}, nil
 }
 

@@ -33,6 +33,8 @@ import (
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
+	transactional "github.com/getsphericon/sphericon/internal/transactional"
+	webhook "github.com/getsphericon/sphericon/internal/webhook"
 	jx "github.com/go-faster/jx"
 )
 
@@ -100,6 +102,12 @@ func (c *ConverterImpl) AuditTargetToResource(source auditapi.View) external.Aud
 	externalapiAuditTarget.Name = optNilString(source.TargetName)
 	return externalapiAuditTarget
 }
+func (c *ConverterImpl) AutomationHttpHeaderToResource(source automations.HeaderName) external.AutomationHttpHeader {
+	var externalapiAutomationHttpHeader external.AutomationHttpHeader
+	externalapiAutomationHttpHeader.Name = source.Name
+	// externalapiAutomationHttpHeader.Value: ignore
+	return externalapiAutomationHttpHeader
+}
 func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) external.AutomationPeriodResults {
 	var externalapiAutomationPeriodResults external.AutomationPeriodResults
 	externalapiAutomationPeriodResults.Entered = count(source.ResultCounts.Entered)
@@ -112,6 +120,22 @@ func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.Per
 	externalapiAutomationPeriodResults.AverageDurationSeconds = durationSeconds(source.AverageDuration)
 	externalapiAutomationPeriodResults.Revenue = c.MessageRevenueToResource(source.Revenue)
 	return externalapiAutomationPeriodResults
+}
+func (c *ConverterImpl) AutomationReportPeriodToResource(source automations.ReportPeriod) external.AutomationReportPeriod {
+	var externalapiAutomationReportPeriod external.AutomationReportPeriod
+	switch source {
+	case automations.ReportPeriod14Days:
+		externalapiAutomationReportPeriod = external.AutomationReportPeriod14d
+	case automations.ReportPeriod30Days:
+		externalapiAutomationReportPeriod = external.AutomationReportPeriod30d
+	case automations.ReportPeriod7Days:
+		externalapiAutomationReportPeriod = external.AutomationReportPeriod7d
+	case automations.ReportPeriod90Days:
+		externalapiAutomationReportPeriod = external.AutomationReportPeriod90d
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiAutomationReportPeriod
 }
 func (c *ConverterImpl) AutomationReportToResource(source automations.Report) external.AutomationReport {
 	var externalapiAutomationReport external.AutomationReport
@@ -143,7 +167,7 @@ func (c *ConverterImpl) AutomationResultsPointToResource(source automations.Resu
 }
 func (c *ConverterImpl) AutomationResultsToResource(source automations.Results) external.AutomationResults {
 	var externalapiAutomationResults external.AutomationResults
-	// externalapiAutomationResults.Period: ignore
+	externalapiAutomationResults.Period = c.AutomationReportPeriodToResource(source.Period)
 	externalapiAutomationResults.Current = c.AutomationPeriodResultsToResource(source.Current)
 	externalapiAutomationResults.Previous = c.AutomationPeriodResultsToResource(source.Previous)
 	if source.Series != nil {
@@ -167,6 +191,28 @@ func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) ext
 	}
 	return externalapiAutomationStatus
 }
+func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) external.AutomationStep {
+	var externalapiAutomationStep external.AutomationStep
+	externalapiAutomationStep.Type = c.AutomationStepTypeToResource(source.Type)
+	externalapiAutomationStep.Subject = optString(source.Subject)
+	externalapiAutomationStep.Body = optString(source.Body)
+	externalapiAutomationStep.Doc = optEditorDocument(source.Doc)
+	externalapiAutomationStep.EditorVersion = optString(source.EditorVersion)
+	externalapiAutomationStep.Seconds = optInt32(source.Seconds)
+	externalapiAutomationStep.Tag = optString(source.Tag)
+	externalapiAutomationStep.ID = optString(source.ID)
+	// externalapiAutomationStep.URL: ignore
+	if source.Headers != nil {
+		externalapiAutomationStep.Headers = make([]external.AutomationHttpHeader, len(source.Headers))
+		for i := 0; i < len(source.Headers); i++ {
+			externalapiAutomationStep.Headers[i] = c.AutomationHttpHeaderToResource(source.Headers[i])
+		}
+	}
+	// externalapiAutomationStep.Secret: ignore
+	// externalapiAutomationStep.ClearSecret: ignore
+	externalapiAutomationStep.HasSecret = optBool(source.HasSecret)
+	return externalapiAutomationStep
+}
 func (c *ConverterImpl) AutomationStepTypeToResource(source automations.StepType) external.AutomationStepType {
 	var externalapiAutomationStepType external.AutomationStepType
 	switch source {
@@ -184,6 +230,16 @@ func (c *ConverterImpl) AutomationStepTypeToResource(source automations.StepType
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return externalapiAutomationStepType
+}
+func (c *ConverterImpl) AutomationStepsToResources(source []automations.StepView) []external.AutomationStep {
+	var externalapiAutomationStepList []external.AutomationStep
+	if source != nil {
+		externalapiAutomationStepList = make([]external.AutomationStep, len(source))
+		for i := 0; i < len(source); i++ {
+			externalapiAutomationStepList[i] = c.AutomationStepToResource(source[i])
+		}
+	}
+	return externalapiAutomationStepList
 }
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.AutomationResource {
 	var externalapiAutomationResource external.AutomationResource
@@ -212,7 +268,7 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 		}
 		externalapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
 		externalapiAutomationVersion.IntegrationId = optNilEntityID((*source).IntegrationID)
-		externalapiAutomationVersion.Steps = automationSteps(c, source)
+		externalapiAutomationVersion.Steps = automationSteps(c, (*source).Steps)
 	}
 	return externalapiAutomationVersion
 }
@@ -538,6 +594,22 @@ func (c *ConverterImpl) CustomFieldsToResources(source []*ent.CustomField) []ext
 		externalapiCustomFieldResourceList[i] = c.CustomFieldToResource(source[i])
 	}
 	return externalapiCustomFieldResourceList
+}
+func (c *ConverterImpl) DeliveryErrorKindToResource(source webhook.ErrorKind) external.WebhookErrorKind {
+	var externalapiWebhookErrorKind external.WebhookErrorKind
+	switch source {
+	case webhook.KindBlockedAddress:
+		externalapiWebhookErrorKind = external.WebhookErrorKindBlockedAddress
+	case webhook.KindHTTPStatus:
+		externalapiWebhookErrorKind = external.WebhookErrorKindHTTPStatus
+	case webhook.KindNetwork:
+		externalapiWebhookErrorKind = external.WebhookErrorKindNetwork
+	case webhook.KindTimeout:
+		externalapiWebhookErrorKind = external.WebhookErrorKindTimeout
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiWebhookErrorKind
 }
 func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) external.DnsRecord {
 	var externalapiDnsRecord external.DnsRecord
@@ -1237,6 +1309,18 @@ func (c *ConverterImpl) TrackingStateToResource(source sendingdomain.TrackingSta
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return externalapiTrackingState
+}
+func (c *ConverterImpl) TransactionalSendStatusToResource(source transactional.Status) external.TransactionalSendStatus {
+	var externalapiTransactionalSendStatus external.TransactionalSendStatus
+	switch source {
+	case transactional.Sent:
+		externalapiTransactionalSendStatus = external.TransactionalSendStatusSent
+	case transactional.Suppressed:
+		externalapiTransactionalSendStatus = external.TransactionalSendStatusSuppressed
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiTransactionalSendStatus
 }
 func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) external.ContactExportUnsubscribe {
 	var externalapiContactExportUnsubscribe external.ContactExportUnsubscribe
