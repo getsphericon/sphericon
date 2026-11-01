@@ -13,6 +13,7 @@ import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
+import { contactName } from '../../utils/contactName.ts'
 import { ContactCreateModal } from './resource.tsx'
 
 export function ContactsListPage() {
@@ -83,14 +84,7 @@ export function ContactsListPage() {
             title: t(($) => $.table.email),
             render: (record) => (
               <Group gap="sm" wrap="nowrap">
-                <Avatar
-                  size="sm"
-                  color="initials"
-                  name={
-                    [record.firstName, record.lastName].filter(Boolean).join(' ') ||
-                    (record.email ?? '')
-                  }
-                />
+                <Avatar size="sm" color="initials" name={contactName(record)} />
                 <Text size="sm">{record.email}</Text>
               </Group>
             ),

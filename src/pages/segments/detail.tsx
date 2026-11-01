@@ -16,6 +16,7 @@ import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
+import { contactName } from '../../utils/contactName.ts'
 
 export function SegmentDetailPage() {
   const { t } = useTranslation()
@@ -74,14 +75,7 @@ function SegmentDetail() {
             title: t(($) => $.table.email),
             render: (record) => (
               <Group gap="sm" wrap="nowrap">
-                <Avatar
-                  size="sm"
-                  color="initials"
-                  name={
-                    [record.firstName, record.lastName].filter(Boolean).join(' ') ||
-                    (record.email ?? '')
-                  }
-                />
+                <Avatar size="sm" color="initials" name={contactName(record)} />
                 <Text size="sm">{record.email}</Text>
               </Group>
             ),

@@ -36,6 +36,7 @@ import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
+import { contactFullName, contactName } from '../../utils/contactName.ts'
 import { can } from '../../utils/permissions.ts'
 
 const EVENTS_PAGE_SIZE = 10
@@ -224,17 +225,16 @@ export function ContactDetailPage() {
     )
   }
 
-  const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ')
-  const identifier = contact.email ?? contact.subjectId ?? contact.phone ?? ''
+  const fullName = contactFullName(contact)
   const customFields = Object.entries(contact.customFields ?? {})
 
   return (
     <Stack>
       <Group justify="space-between" align="flex-start" wrap="wrap">
         <Group gap="md" wrap="nowrap">
-          <Avatar size="lg" color="initials" name={fullName || identifier} />
+          <Avatar size="lg" color="initials" name={contactName(contact)} />
           <Stack gap={4}>
-            <Title order={4}>{identifier || '—'}</Title>
+            <Title order={4}>{contact.email ?? contact.subjectId ?? contact.phone ?? '—'}</Title>
             {fullName ? <Text c="dimmed">{fullName}</Text> : null}
           </Stack>
         </Group>
