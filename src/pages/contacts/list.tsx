@@ -45,15 +45,41 @@ function TagFilter({
   const data = value && !names.includes(value) ? [value, ...names] : names
   return (
     <Select
-      w={200}
+      w={240}
       searchable
       clearable
       data={data}
       value={value ?? null}
       onChange={(next) => onChange(next ?? undefined)}
       onDropdownOpen={() => setOpened(true)}
-      placeholder={t(($) => $.contacts.tagFilter)}
-      aria-label={t(($) => $.contacts.tagFilter)}
+      label={t(($) => $.contacts.tagFilter)}
+      // Inside the filter popover: a portalled dropdown would count as a click outside.
+      comboboxProps={{ withinPortal: false }}
+    />
+  )
+}
+
+// The country to filter by. It sits on the Contact column, where a Contact's flag is.
+function CountryFilter({
+  value,
+  onChange,
+}: {
+  value: string | undefined
+  onChange: (next: string | undefined) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <Select
+      w={240}
+      searchable
+      clearable
+      data={countryOptions}
+      value={value ?? null}
+      onChange={(next) => onChange(next ?? undefined)}
+      label={t(($) => $.contacts.countryFilter)}
+      leftSection={value ? <CountryFlag code={value} /> : null}
+      // Inside the filter popover: a portalled dropdown would count as a click outside.
+      comboboxProps={{ withinPortal: false }}
     />
   )
 }
@@ -94,36 +120,16 @@ export function ContactsListPage() {
         <Button onClick={openCreate}>{t(($) => $.contacts.addContact)}</Button>
       </Group>
 
-      <Group gap="sm" align="flex-start">
-        <TextInput
-          flex={1}
-          miw={200}
-          value={search}
-          onChange={(event) => {
-            setSearch(event.currentTarget.value)
-            applySearch(event.currentTarget.value)
-          }}
-          placeholder={t(($) => $.contacts.searchPlaceholder)}
-          aria-label={t(($) => $.contacts.searchPlaceholder)}
-          leftSection={<IconSearch size={16} />}
-        />
-        <TagFilter
-          workspaceId={workspaceId}
-          value={tag}
-          onChange={(next) => setFilter({ tag: next })}
-        />
-        <Select
-          w={220}
-          searchable
-          clearable
-          data={countryOptions}
-          value={country ?? null}
-          onChange={(next) => setFilter({ country: next ?? undefined })}
-          placeholder={t(($) => $.contacts.countryFilter)}
-          aria-label={t(($) => $.contacts.countryFilter)}
-          leftSection={country ? <CountryFlag code={country} /> : null}
-        />
-      </Group>
+      <TextInput
+        value={search}
+        onChange={(event) => {
+          setSearch(event.currentTarget.value)
+          applySearch(event.currentTarget.value)
+        }}
+        placeholder={t(($) => $.contacts.searchPlaceholder)}
+        aria-label={t(($) => $.contacts.searchPlaceholder)}
+        leftSection={<IconSearch size={16} />}
+      />
 
       <PagedTable
         page={page}
@@ -160,6 +166,11 @@ export function ContactsListPage() {
             // without a name shows its first identifier alone.
             accessor: 'email',
             title: t(($) => $.table.contact),
+            // The country filter sits on this column, where a Contact's flag is.
+            filter: (
+              <CountryFilter value={country} onChange={(next) => setFilter({ country: next })} />
+            ),
+            filtering: Boolean(country),
             render: (record) => {
               const fullName = contactFullName(record)
               const identifier = record.email ?? record.subjectId ?? record.phone
@@ -192,6 +203,14 @@ export function ContactsListPage() {
           {
             accessor: 'tags',
             title: t(($) => $.table.tags),
+            filter: (
+              <TagFilter
+                workspaceId={workspaceId}
+                value={tag}
+                onChange={(next) => setFilter({ tag: next })}
+              />
+            ),
+            filtering: Boolean(tag),
             render: (record) => (
               <Group gap={4}>
                 {record.tags.map((name) => (

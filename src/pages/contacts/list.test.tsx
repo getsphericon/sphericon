@@ -12,6 +12,11 @@ import { ContactsListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(contactsRoute, { workspaceId: 'TestWs01' })
 
+// Opens the filter of a column: the button in its header.
+type Screen = Awaited<ReturnType<typeof renderWithRouter>>['screen']
+const openFilter = async (screen: Screen, column: string) =>
+  screen.getByRole('columnheader', { name: column }).getByRole('button').click()
+
 // Every search the page navigated to, each worked out from the search it was on: a filter updates
 // its own key of the search and leaves the others.
 type Navigate = Awaited<ReturnType<typeof renderWithRouter>>['navigate']
@@ -259,7 +264,20 @@ test('the tag and the country in the URL search filter the request and fill the 
 
   await expect.element(screen.getByText('alice@example.com')).toBeInTheDocument()
   expect(requested).toEqual([{ tag: 'vip', country: 'GB' }])
+  await openFilter(screen, 'Tags')
   await expect.element(screen.getByRole('combobox', { name: 'Tag' })).toHaveValue('vip')
+})
+
+test('the country filter on the Contact column shows the country of the URL search', async () => {
+  worker.use(handleSiteContactsList({ body: page([ALICE], 1) }))
+
+  const { screen } = await renderWithRouter(<ContactsListPage />, {
+    ...LIST_ROUTE,
+    initialPath: `${LIST_ROUTE.initialPath}?country=GB`,
+  })
+
+  await expect.element(screen.getByText('alice@example.com')).toBeInTheDocument()
+  await openFilter(screen, 'Contact')
   await expect
     .element(screen.getByRole('combobox', { name: 'Country' }))
     .toHaveValue('United Kingdom')
@@ -275,6 +293,7 @@ test('picking a tag puts it in the URL search and keeps the email search', async
 
   const { screen, navigate } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('alice@example.com')).toBeInTheDocument()
+  await openFilter(screen, 'Tags')
   await screen.getByRole('combobox', { name: 'Tag' }).click()
   await screen.getByRole('option', { name: 'vip' }).click()
 
