@@ -35,7 +35,7 @@ func TestTheAutomationReportCountsAnEnrollmentThatEndsTodayInThePeriod(t *testin
 	}
 	before := automationResults(t, c, params)
 
-	exited, err := automations.Exit(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationTagOnEngagementID, fixtures.ContactAliceID, time.Now())
+	exited, err := automations.Exit(context.Background(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationTagOnEngagementID, fixtures.ContactAliceID, time.Now())
 	require.NoError(t, err)
 	require.True(t, exited)
 	after := automationResults(t, c, params)

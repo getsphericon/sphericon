@@ -186,10 +186,10 @@ func (c *InputsImpl) ContactCreate(source *external.CreateContactInput) contacts
 func (c *InputsImpl) ContactUpdate(source *external.UpdateContactInput) contacts.UpdateInput {
 	var contactsUpdateInput contacts.UpdateInput
 	if source != nil {
+		contactsUpdateInput.Core = c.externalapiUpdateContactInputToContactsCore((*source))
 		contactsUpdateInput.SubjectID = nilStringPatch((*source).SubjectId)
 		contactsUpdateInput.Email = nilEmailPatch((*source).Email)
 		contactsUpdateInput.Phone = nilStringPatch((*source).Phone)
-		contactsUpdateInput.Core = c.externalapiUpdateContactInputToContactsCore((*source))
 		contactsUpdateInput.CustomFields = nilObjectPatch((*source).CustomFields)
 		// contactsUpdateInput.Tags: ignore
 	}
@@ -197,10 +197,10 @@ func (c *InputsImpl) ContactUpdate(source *external.UpdateContactInput) contacts
 }
 func (c *InputsImpl) ContactUpsert(source external.UpsertContactInput) contacts.UpsertInput {
 	var contactsUpsertInput contacts.UpsertInput
+	contactsUpsertInput.Core = c.externalapiUpsertContactInputToContactsCore(source)
 	contactsUpsertInput.SubjectID = nilStringPtrIn(source.SubjectId)
 	contactsUpsertInput.Email = nilEmailPtrIn(source.Email)
 	contactsUpsertInput.Phone = nilStringPtrIn(source.Phone)
-	contactsUpsertInput.Core = c.externalapiUpsertContactInputToContactsCore(source)
 	// contactsUpsertInput.GuessedTimeZone: ignore
 	// contactsUpsertInput.GuessedLocale: ignore
 	contactsUpsertInput.CustomFields = nilObjectIn(source.CustomFields)

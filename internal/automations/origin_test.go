@@ -29,7 +29,7 @@ func TestATriggeredEnrollmentCopiesItsEventsActionAndProperties(t *testing.T) {
 	origin, err := automations.OriginOf(ctx, s, eventOf(t, env, fixtures.EventPaymentFailedID))
 	require.NoError(t, err)
 
-	runID, enrolled, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID, origin)
+	runID, enrolled, err := automations.EnrollOnTrigger(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID, origin)
 	require.NoError(t, err)
 	run, err := env.DB.AutomationRun.Get(ctx, runID)
 	require.NoError(t, err)
@@ -69,7 +69,7 @@ func TestAnEnrollmentNoEventBeganKeepsNoCopy(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	runID, _, err := automations.Enroll(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
+	runID, _, err := automations.Enroll(ctx, env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
 	require.NoError(t, err)
 	run, err := env.DB.AutomationRun.Get(ctx, runID)
 	require.NoError(t, err)

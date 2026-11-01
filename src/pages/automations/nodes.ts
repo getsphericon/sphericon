@@ -3,6 +3,7 @@ import type { PaletteItem, UISchema, WBIcon } from '@workflowbuilder/sdk'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CONTACT_CHANGE_ACTIONS, ENROLLMENT_ACTIONS } from '../../utils/systemEvents.ts'
 import { HTTP_BODY_FORMAT, HTTP_HEADERS_FORMAT } from './httpFormat.ts'
 import { MESSAGE_FORMAT } from './messageFormat.ts'
 import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
@@ -27,9 +28,11 @@ export const TRIGGER_NODE_ICON: WBIcon = 'Lightning'
 
 export const TRIGGER_EVENTS = [
   'contact.created',
+  ...CONTACT_CHANGE_ACTIONS,
   'email.opened',
   'email.clicked',
   'email.unsubscribed',
+  ...ENROLLMENT_ACTIONS,
 ] as const
 export const DEFAULT_TRIGGER_EVENT = TRIGGER_EVENTS[0]
 

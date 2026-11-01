@@ -668,8 +668,8 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*brandkit.Module, error) {
 		return brandkit.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*templates.Module](i)), nil
 	}),
-	do.Lazy(func(do.Injector) (*tags.Module, error) {
-		return tags.New(), nil
+	do.Lazy(func(i do.Injector) (*tags.Module, error) {
+		return tags.New(do.MustInvoke[*events.Bus](i)), nil
 	}),
 	// The transactional send surface of /api: a Template sent through Outbound send.
 	do.Lazy(func(i do.Injector) (*transactional.Module, error) {

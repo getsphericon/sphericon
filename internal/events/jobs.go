@@ -38,10 +38,10 @@ func (b *Bus) UseJobs(q JobQueue) {
 }
 
 // WithinScopedEnqueueTx is WithinScopedTx for a caller that also queues a job in the
-// same transaction: a Broadcast's claim and its send job.
-func (b *Bus) WithinScopedEnqueueTx(ctx context.Context, s *ent.Scoped, fn func(ts *ent.Scoped, q Enqueuer) error) error {
+// same transaction: a Broadcast's claim and its send job, an Enrollment's move and its next step.
+func (b *Bus) WithinScopedEnqueueTx(ctx context.Context, s *ent.Scoped, fn func(ts *ent.Scoped, pub Publisher, q Enqueuer) error) error {
 	return b.within(ctx, func(tx *ent.Client, pub *txPublisher) error {
-		return fn(s.InTx(tx, auditPublisher{pub: pub}), txQueue{jobs: pub.jobs, tx: pub.tx})
+		return fn(s.InTx(tx, auditPublisher{pub: pub}), pub, txQueue{jobs: pub.jobs, tx: pub.tx})
 	})
 }
 

@@ -34,7 +34,7 @@ func TestExternalAutomationReportCountsAnEnrollmentThatEndsTodayInThePeriod(t *t
 	}
 	before := automationReport(t, c, params)
 
-	require.NoError(t, automations.Complete(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationRunTagOnEngagementAliceID, time.Now()))
+	require.NoError(t, automations.Complete(context.Background(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationRunTagOnEngagementAliceID, time.Now()))
 	after := automationReport(t, c, params)
 
 	assert.Equal(t, externalapi.AutomationReportPeriod14d, after.Results.Period)

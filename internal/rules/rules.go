@@ -766,7 +766,7 @@ func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond *string, ev Even
 // transaction. It returns nil when the Rule already fired for this Event.
 func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev Event) (*ent.RuleFiring, error) {
 	var fired *ent.RuleFiring
-	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
+	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
 		// Check first so a redelivered Event does not trip the unique index (a violation would
 		// poison the transaction); the index stays as the race safety net.
 		exists, err := ts.RuleFiring().Query().
@@ -818,12 +818,15 @@ func (m *Module) RunActions(ctx context.Context, s *ent.Scoped, firingID int64, 
 	if err != nil {
 		return fmt.Errorf("firing %d results: %w", f.ID, err)
 	}
+	// What an Action publishes (a Tag applied, an Enrollment begun) fires no Rule: Rules never
+	// chain (ADR 0054).
+	acting := events.CausedBy(ctx, fmt.Sprintf("rule:%d", f.RuleID))
 	for len(results) < len(actions) {
 		i := len(results)
 		a := &actions[i]
 		res := Result{Type: a.Type, Status: Failed, Detail: "no runner for this action type"}
 		if runner, ok := runners[a.Type]; ok {
-			if res, err = runner.Run(ctx, s, ActionInput{Action: *a, Index: i, ContactID: f.ContactID, Firing: f}); err != nil {
+			if res, err = runner.Run(acting, s, ActionInput{Action: *a, Index: i, ContactID: f.ContactID, Firing: f}); err != nil {
 				return err
 			}
 			res.Type = a.Type
@@ -842,7 +845,7 @@ func (m *Module) RunActions(ctx context.Context, s *ent.Scoped, firingID int64, 
 // returns the Firing's results as stored.
 func (m *Module) Record(ctx context.Context, s *ent.Scoped, firingID int64, index int, res Result) ([]Result, error) {
 	var results []Result
-	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
+	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
 		f, err := ts.RuleFiring().Query().Where(rulefiring.ID(firingID)).ForUpdate().Only(ctx)
 		if err != nil {
 			return err

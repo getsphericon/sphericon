@@ -46,6 +46,7 @@ import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from '../../utils/auditFilter.ts'
+import { CONTACT_CHANGE_ACTIONS, ENROLLMENT_ACTIONS } from '../../utils/systemEvents.ts'
 import { ChangeHistoryLink } from './AuditLogSection.tsx'
 
 // The domain events an endpoint can subscribe to. An empty selection means all customer
@@ -53,9 +54,11 @@ import { ChangeHistoryLink } from './AuditLogSection.tsx'
 const EVENT_OPTIONS = [
   'contact.created',
   'contact.erased',
+  ...CONTACT_CHANGE_ACTIONS,
   'email.opened',
   'email.clicked',
   'email.unsubscribed',
+  ...ENROLLMENT_ACTIONS,
   'audit.entry',
 ]
 

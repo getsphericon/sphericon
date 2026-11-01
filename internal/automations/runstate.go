@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/qmuntal/stateless"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
@@ -84,11 +86,43 @@ func machine(s *ent.Scoped, runID int64, endedAt time.Time, extra func(*ent.Auto
 	return m
 }
 
+// endingEvents is the System event each end of an Enrollment records (#897). A `failed` Enrollment
+// records none: it is an operational failure, not something the Contact did.
+var endingEvents = map[trigger]string{
+	triggerComplete:  events.NameAutomationCompleted,
+	triggerExit:      events.NameAutomationExited,
+	triggerReachGoal: events.NameAutomationGoalReached,
+}
+
 // move fires t on one Enrollment, making the move out of `active` a conditional update that
 // ends it at endedAt: the time of the Event that decided the end when an Event did (an exit or
-// goal Event), else the caller's clock.
-func move(ctx context.Context, s *ent.Scoped, runID int64, t trigger, endedAt time.Time, extra func(*ent.AutomationRunScopedUpdate)) error {
-	return machine(s, runID, endedAt, extra).FireCtx(ctx, t)
+// goal Event), else the caller's clock. The end is recorded as its System event through pub, in
+// the transaction of the move, so it is published iff this writer made the move.
+func move(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, t trigger, endedAt time.Time, extra func(*ent.AutomationRunScopedUpdate)) error {
+	if err := machine(s, runID, endedAt, extra).FireCtx(ctx, t); err != nil {
+		return err
+	}
+	action, recorded := endingEvents[t]
+	if !recorded {
+		return nil
+	}
+	run, err := s.AutomationRun().Query().Where(automationrun.ID(runID)).WithContact().Only(ctx)
+	if err != nil {
+		return err
+	}
+	return publishEnrollment(ctx, s, pub, action, run)
+}
+
+// publishEnrollment records the System event action of the Enrollment run, whose Contact edge is
+// loaded.
+func publishEnrollment(ctx context.Context, s *ent.Scoped, pub events.Publisher, action string, run *ent.AutomationRun) error {
+	var email string
+	if c := run.Edges.Contact; c != nil {
+		email = lo.FromPtr(c.Email)
+	}
+	return pub.Publish(ctx, &events.EnrollmentChange{
+		Action: action, WorkspaceID: s.WorkspaceID(), ContactID: run.ContactID, Email: email, AutomationID: run.AutomationID,
+	})
 }
 
 // IsActive reports, from a fresh read through the lifecycle table, whether the Enrollment
@@ -132,16 +166,17 @@ func Advance(ctx context.Context, s *ent.Scoped, runID int64, from, to int, resu
 	return nil
 }
 
-// Complete ends the Enrollment `completed` at now, the caller's clock. lifecycle.ErrInvalidTransition
-// when it is no longer active (an exit won), which the step executor treats as a finished step.
-func Complete(ctx context.Context, s *ent.Scoped, runID int64, now time.Time) error {
-	return move(ctx, s, runID, triggerComplete, now, nil)
+// Complete ends the Enrollment `completed` at now, the caller's clock, and records
+// automation.completed through pub. lifecycle.ErrInvalidTransition when it is no longer active (an
+// exit won), which the step executor treats as a finished step.
+func Complete(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, now time.Time) error {
+	return move(ctx, s, pub, runID, triggerComplete, now, nil)
 }
 
-// Fail ends the Enrollment `failed` at now, the caller's clock, keeping the reason.
-// lifecycle.ErrInvalidTransition when it is no longer active.
+// Fail ends the Enrollment `failed` at now, the caller's clock, keeping the reason. It records no
+// System event. lifecycle.ErrInvalidTransition when it is no longer active.
 func Fail(ctx context.Context, s *ent.Scoped, runID int64, now time.Time, f Failure) error {
-	return move(ctx, s, runID, triggerFail, now, func(u *ent.AutomationRunScopedUpdate) {
+	return move(ctx, s, nil, runID, triggerFail, now, func(u *ent.AutomationRunScopedUpdate) {
 		if f.Kind != "" {
 			u.SetFailureKind(f.Kind)
 		}

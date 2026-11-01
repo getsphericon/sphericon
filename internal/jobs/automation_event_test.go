@@ -40,7 +40,7 @@ func TestAnAutomationEmailRendersTheTriggeringEventsProperties(t *testing.T) {
 // An Enrollment no Event began renders every `event` tag empty.
 func TestAnAutomationEmailOfAnEnrollmentNoEventBeganRendersTheEventEmpty(t *testing.T) {
 	env := testhelper.Setup(t)
-	runID, enrolled, err := automations.Enroll(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
+	runID, enrolled, err := automations.Enroll(t.Context(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
 	queueStep(t, env, runID)

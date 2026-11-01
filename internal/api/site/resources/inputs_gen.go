@@ -228,10 +228,10 @@ func (c *InputsImpl) ContactCreate(source *site.SiteCreateContactInput) contacts
 func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts.UpdateInput {
 	var contactsUpdateInput contacts.UpdateInput
 	if source != nil {
+		contactsUpdateInput.Core = c.siteapiSiteUpdateContactInputToContactsCore((*source))
 		contactsUpdateInput.SubjectID = nilStringPatch((*source).SubjectId)
 		contactsUpdateInput.Email = nilEmailPatch((*source).Email)
 		contactsUpdateInput.Phone = nilStringPatch((*source).Phone)
-		contactsUpdateInput.Core = c.siteapiSiteUpdateContactInputToContactsCore((*source))
 		contactsUpdateInput.CustomFields = nilObjectPatch((*source).CustomFields)
 		contactsUpdateInput.Tags = listPatch((*source).Tags)
 	}

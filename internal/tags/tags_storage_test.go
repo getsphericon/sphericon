@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -14,21 +15,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// closedClient is an ent client whose database is gone: every query fails.
-func closedClient(t *testing.T) *ent.Client {
+// closedClient is an ent client, and a bus, whose database is gone: every query fails.
+func closedClient(t *testing.T) (*ent.Client, *events.Bus) {
 	t.Helper()
 	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
 	require.NoError(t, err)
 	require.NoError(t, sqlDB.Close())
-	return db.NewEntClient(sqlDB)
+	return db.NewEntClient(sqlDB), events.New(sqlDB)
 }
 
 // A storage failure surfaces as the underlying error: it is never mistaken for a
 // missing contact, an invalid name, or an empty catalogue.
 func TestStorageFailuresSurfaceAsErrors(t *testing.T) {
-	m := tags.New()
+	client, bus := closedClient(t)
+	m := tags.New(bus)
 	ctx := context.Background()
-	wsID := closedClient(t).Scoped(fixtures.AcmeID)
+	wsID := client.Scoped(fixtures.AcmeID)
 
 	_, err := m.List(ctx, wsID)
 	require.Error(t, err)
@@ -50,7 +52,7 @@ func TestStorageFailuresSurfaceAsErrors(t *testing.T) {
 // rolls back: the tag is not auto-created.
 func TestApplyToAnotherWorkspacesContactCreatesNoTag(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := tags.New()
+	m := tags.New(env.Bus)
 	ctx := context.Background()
 	otherWsID := env.DB.Scoped(fixtures.GlobexID)
 

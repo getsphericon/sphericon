@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
@@ -36,13 +37,17 @@ var (
 	ErrNotFound = validation.NotFound("tags: tag not found", i18n.ErrorsTagNotFound)
 )
 
-// Module is the tags module. It holds no state: every call receives the
-// Workspace-scoped client (ADR 0017) built by the entry point, so the module
-// writes no Workspace predicate and cannot name another Workspace.
-type Module struct{}
+// Module is the tags module. Every call receives the Workspace-scoped client (ADR 0017) built
+// by the entry point, so the module writes no Workspace predicate and cannot name another
+// Workspace; the bus opens the transaction a change of a Contact's Tags commits in with the
+// System event that records it (contact.tagged, contact.untagged). A caller that already holds a
+// transaction uses ApplyIn, RemoveIn and SetIn instead.
+type Module struct {
+	bus *events.Bus
+}
 
 // New builds the tags module.
-func New() *Module { return &Module{} }
+func New(bus *events.Bus) *Module { return &Module{bus: bus} }
 
 // List returns the Workspace's Tag catalogue ordered by name.
 func (m *Module) List(ctx context.Context, s *ent.Scoped) ([]*ent.Tag, error) {
@@ -60,15 +65,35 @@ func (m *Module) ForContact(ctx context.Context, s *ent.Scoped, contactID int64)
 		All(ctx)
 }
 
-// Apply gives the Contact the named Tag, creating the Tag on first use. It is
-// idempotent: applying a Tag the Contact already has changes nothing. The Contact
-// is checked before anything is written, so a failed apply creates no Tag.
+// Apply gives the Contact the named Tag in a transaction of its own (ApplyIn).
 func (m *Module) Apply(ctx context.Context, s *ent.Scoped, contactID int64, name string) (*ent.Tag, error) {
+	var t *ent.Tag
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		var err error
+		t, err = ApplyIn(ctx, ts, pub, contactID, name)
+		return err
+	})
+	return t, err
+}
+
+// Remove takes the named Tag off the Contact in a transaction of its own (RemoveIn).
+func (m *Module) Remove(ctx context.Context, s *ent.Scoped, contactID int64, name string) error {
+	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		return RemoveIn(ctx, ts, pub, contactID, name)
+	})
+}
+
+// ApplyIn gives the Contact the named Tag, creating the Tag on first use, and publishes
+// contact.tagged, inside the transaction s and pub are bound to. It is idempotent: applying a Tag
+// the Contact already has changes and records nothing. The Contact is checked before anything is
+// written, so a failed apply creates no Tag.
+func ApplyIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, name string) (*ent.Tag, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, ErrInvalidName
 	}
-	if err := requireContact(ctx, s, contactID); err != nil {
+	c, err := lockContact(ctx, s, contactID)
+	if err != nil {
 		return nil, err
 	}
 	// DO NOTHING, not Ignore: an insert is the audited create of the Tag (ADR 0022),
@@ -84,44 +109,24 @@ func (m *Module) Apply(ctx context.Context, s *ent.Scoped, contactID int64, name
 	if err != nil {
 		return nil, err
 	}
+	has, err := hasTag(ctx, s, contactID, t.ID)
+	if err != nil || has {
+		return t, err
+	}
 	// An update by id moves the Contact's updated_at (TimeMixin's UpdateDefault) in the
 	// same transaction as the join row, so the Contacts Export stream re-delivers it.
 	if err := events.Unaudited(s).Contact().UpdateOneID(contactID).AddTagIDs(t.ID).Exec(ctx); err != nil {
 		return nil, err
 	}
-	return t, nil
+	return t, publishChange(ctx, s, pub, events.NameContactTagged, c, t)
 }
 
-// Set makes the named Tags the Contact's complete set: it applies the missing ones
-// (creating them on first use) and removes the rest. Blank and repeated names are
-// dropped, so a form's empty chip changes nothing.
-func (m *Module) Set(ctx context.Context, s *ent.Scoped, contactID int64, names []string) error {
-	want := lo.Uniq(lo.FilterMap(names, func(n string, _ int) (string, bool) {
-		n = strings.TrimSpace(n)
-		return n, n != ""
-	}))
-	have, err := m.ForContact(ctx, s, contactID)
+// RemoveIn takes the named Tag off the Contact and publishes contact.untagged, inside the
+// transaction s and pub are bound to. It is idempotent: a Tag the Contact does not have (or that
+// does not exist) changes and records nothing. The Tag stays in the catalogue.
+func RemoveIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, name string) error {
+	c, err := lockContact(ctx, s, contactID)
 	if err != nil {
-		return err
-	}
-	haveNames := lo.Map(have, func(t *ent.Tag, _ int) string { return t.Name })
-	for _, name := range lo.Without(want, haveNames...) {
-		if _, err := m.Apply(ctx, s, contactID, name); err != nil {
-			return err
-		}
-	}
-	for _, name := range lo.Without(haveNames, want...) {
-		if err := m.Remove(ctx, s, contactID, name); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Remove takes the named Tag off the Contact. It is idempotent: a Tag the Contact
-// does not have (or that does not exist) is a no-op. The Tag stays in the catalogue.
-func (m *Module) Remove(ctx context.Context, s *ent.Scoped, contactID int64, name string) error {
-	if err := requireContact(ctx, s, contactID); err != nil {
 		return err
 	}
 	t, err := s.Tag().Query().Where(tag.Name(strings.TrimSpace(name))).Only(ctx)
@@ -131,8 +136,69 @@ func (m *Module) Remove(ctx context.Context, s *ent.Scoped, contactID int64, nam
 	if err != nil {
 		return err
 	}
-	// Same touch of updated_at as Apply, in the same transaction as the join row.
-	return events.Unaudited(s).Contact().UpdateOneID(contactID).RemoveTagIDs(t.ID).Exec(ctx)
+	has, err := hasTag(ctx, s, contactID, t.ID)
+	if err != nil || !has {
+		return err
+	}
+	// Same touch of updated_at as ApplyIn, in the same transaction as the join row.
+	if err := events.Unaudited(s).Contact().UpdateOneID(contactID).RemoveTagIDs(t.ID).Exec(ctx); err != nil {
+		return err
+	}
+	return publishChange(ctx, s, pub, events.NameContactUntagged, c, t)
+}
+
+// SetIn makes the named Tags the Contact's complete set inside the transaction s and pub are
+// bound to: it applies the missing ones (creating them on first use) and removes the rest, each
+// change recorded as ApplyIn and RemoveIn do. Blank and repeated names are dropped, so a form's
+// empty chip changes nothing.
+func SetIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, names []string) error {
+	want := lo.Uniq(lo.FilterMap(names, func(n string, _ int) (string, bool) {
+		n = strings.TrimSpace(n)
+		return n, n != ""
+	}))
+	if _, err := lockContact(ctx, s, contactID); err != nil {
+		return err
+	}
+	have, err := s.Tag().Query().Where(tag.HasContactsWith(contact.ID(contactID))).All(ctx)
+	if err != nil {
+		return err
+	}
+	haveNames := lo.Map(have, func(t *ent.Tag, _ int) string { return t.Name })
+	for _, name := range lo.Without(want, haveNames...) {
+		if _, err := ApplyIn(ctx, s, pub, contactID, name); err != nil {
+			return err
+		}
+	}
+	for _, name := range lo.Without(haveNames, want...) {
+		if err := RemoveIn(ctx, s, pub, contactID, name); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// lockContact locks the Contact's row to the end of the transaction s is bound to (contactlock), so
+// two changes of its Tags are ordered and each reads the set the other committed: an apply racing
+// another apply of the same Tag records it once. ErrContactNotFound when the Contact is not in the
+// Workspace.
+func lockContact(ctx context.Context, s *ent.Scoped, contactID int64) (*ent.Contact, error) {
+	c, err := contactlock.Lock(ctx, s, contactID)
+	if ent.IsNotFound(err) {
+		return nil, ErrContactNotFound
+	}
+	return c, err
+}
+
+// hasTag reports whether the Contact has the Tag.
+func hasTag(ctx context.Context, s *ent.Scoped, contactID, tagID int64) (bool, error) {
+	return s.Tag().Query().Where(tag.ID(tagID), tag.HasContactsWith(contact.ID(contactID))).Exist(ctx)
+}
+
+// publishChange records the change of the Contact's Tags as the System event action.
+func publishChange(ctx context.Context, s *ent.Scoped, pub events.Publisher, action string, c *ent.Contact, t *ent.Tag) error {
+	return pub.Publish(ctx, &events.ContactTagChange{
+		Action: action, WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email), Tag: t.Name,
+	})
 }
 
 // Delete removes a Tag from the catalogue, and from every Contact that has it, unless a Segment

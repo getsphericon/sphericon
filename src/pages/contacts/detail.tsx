@@ -19,8 +19,8 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { CountryFlag } from '../../components/CountryFlag.tsx'
-import { EventActionName } from '../../components/EventActionName.tsx'
 import { EventRowDetails } from '../../components/EventRowDetails.tsx'
+import { EventSummary } from '../../components/EventSummary.tsx'
 import { RelativeTime } from '../../components/RelativeTime.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
@@ -192,7 +192,7 @@ function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contac
           {
             accessor: 'action',
             title: t(($) => $.activity.action),
-            render: (record) => <EventActionName action={record.action} />,
+            render: (record) => <EventSummary workspaceId={workspaceId} event={record} />,
           },
         ]}
         rowExpansion={{ content: EventRowDetails }}

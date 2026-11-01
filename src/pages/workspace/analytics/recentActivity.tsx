@@ -5,8 +5,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../../components/ApiErrorAlert.tsx'
-import { EventActionName, EventActionOption } from '../../../components/EventActionName.tsx'
+import { EventActionOption } from '../../../components/EventActionName.tsx'
 import { DetailedEventRowDetails } from '../../../components/EventRowDetails.tsx'
+import { EventSummary } from '../../../components/EventSummary.tsx'
 import { RelativeTime } from '../../../components/RelativeTime.tsx'
 import { TableSkeleton } from '../../../components/Skeletons.tsx'
 import {
@@ -114,7 +115,7 @@ export function RecentActivityPage() {
             title: t(($) => $.activity.action),
             render: (record) => (
               <Group gap="xs">
-                <EventActionName action={record.action} />
+                <EventSummary workspaceId={workspaceId} event={record} />
                 {record.properties?.captured === true ? (
                   <Badge color="gray" variant="outline">
                     {t(($) => $.activity.captured)}

@@ -100,9 +100,10 @@ func (w *RunRuleActionsWorker) Work(ctx context.Context, job *river.Job[rules.Ac
 // RuleActionRunners are the Runners of the Actions a Rule can have. Each reuses the module that
 // already does the thing for an Automation step; internal/rules imports none of them.
 func RuleActionRunners(mod *outbound.Module, bus *events.Bus) rules.ActionRunners {
+	tagging := tags.New(bus)
 	return rules.ActionRunners{
-		rules.ActionApplyTag:  tagAction{mod: mod, apply: true},
-		rules.ActionRemoveTag: tagAction{mod: mod},
+		rules.ActionApplyTag:  tagAction{mod: mod, tags: tagging, apply: true},
+		rules.ActionRemoveTag: tagAction{mod: mod, tags: tagging},
 		rules.ActionEnroll:    enrollAction{bus: bus},
 		rules.ActionHTTP:      httpAction{},
 	}
@@ -141,6 +142,7 @@ func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInp
 // Automation's tag step is: a Tag the Action creates is audited.
 type tagAction struct {
 	mod   *outbound.Module
+	tags  *tags.Module
 	apply bool
 }
 
@@ -148,9 +150,9 @@ func (a tagAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInput)
 	sys := a.mod.AsSystem(s)
 	var err error
 	if a.apply {
-		_, err = tags.New().Apply(ctx, sys, in.ContactID, in.Action.Tag)
+		_, err = a.tags.Apply(ctx, sys, in.ContactID, in.Action.Tag)
 	} else {
-		err = tags.New().Remove(ctx, sys, in.ContactID, in.Action.Tag)
+		err = a.tags.Remove(ctx, sys, in.ContactID, in.Action.Tag)
 	}
 	switch {
 	case errors.Is(err, tags.ErrInvalidName), errors.Is(err, tags.ErrContactNotFound):

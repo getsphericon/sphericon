@@ -6,16 +6,15 @@ import (
 	"slices"
 	"time"
 
-	"entgo.io/ent/dialect/sql"
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
-	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 )
@@ -82,15 +81,15 @@ func storedEvent(ctx context.Context, s *ent.Scoped, sourceID string) (*ent.Even
 // Contact has been enrolled before (the common trigger-replay path) or another request won the
 // race. enrolled says that a step is to run: it is false too for an Enrollment made already ended
 // (enroll). The Contact's lock is held to the end of the transaction s is bound to.
-func Enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (runID int64, enrolled bool, err error) {
-	return enroll(ctx, s, automationID, contactID, Origin{OccurredAt: time.Now()}, admitsAll)
+func Enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64) (runID int64, enrolled bool, err error) {
+	return enroll(ctx, s, pub, automationID, contactID, Origin{OccurredAt: time.Now()}, admitsAll)
 }
 
 // EnrollOnRule enrolls the Contact as Enroll does, for a Rule that fired on the Event stored with
 // sourceID (the Firing's source_id): the Enrollment began when that Event occurred and keeps its
 // action and properties, as the Rule's own http Action binds them (#752). When no such Event is
 // stored any more (Retention or an Erasure removed it), it begins now and its `event` is empty.
-func EnrollOnRule(ctx context.Context, s *ent.Scoped, automationID, contactID int64, sourceID string) (runID int64, enrolled bool, err error) {
+func EnrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, sourceID string) (runID int64, enrolled bool, err error) {
 	fired, err := storedEvent(ctx, s, sourceID)
 	if err != nil {
 		return 0, false, err
@@ -99,7 +98,7 @@ func EnrollOnRule(ctx context.Context, s *ent.Scoped, automationID, contactID in
 	if fired != nil {
 		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
 	}
-	return enroll(ctx, s, automationID, contactID, o, admitsAll)
+	return enroll(ctx, s, pub, automationID, contactID, o, admitsAll)
 }
 
 // EnrollOnTrigger enrolls the Contact as Enroll does, for the Event of the Origin (OriginOf): the
@@ -107,8 +106,8 @@ func EnrollOnRule(ctx context.Context, s *ent.Scoped, automationID, contactID in
 // consumer picks the Automations before it enrolls, so a Publish that moved the Trigger, a
 // Deactivate or an Archive may have landed since: under the lock it enrolls nobody (runID 0) unless
 // the Automation is still kept, active and started by the action in its live version.
-func EnrollOnTrigger(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o Origin) (runID int64, enrolled bool, err error) {
-	return enroll(ctx, s, automationID, contactID, o, func(a *ent.Automation) bool {
+func EnrollOnTrigger(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o Origin) (runID int64, enrolled bool, err error) {
+	return enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) bool {
 		live := a.Edges.LiveVersion
 		return a.DiscardedAt == nil && a.Status == automation.StatusActive && live != nil && live.TriggerEvent == o.Action
 	})
@@ -122,7 +121,7 @@ func admitsAll(*ent.Automation) bool { return true }
 // have been handled before the Enrollment existed, with nothing to end then: the Enrollment is made
 // already ended by the first of them (exited or goal_reached, so it counts and the Contact stays
 // enrolled once ever), and no step is to run.
-func enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o Origin, admits func(*ent.Automation) bool) (runID int64, enrolled bool, err error) {
+func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o Origin, admits func(*ent.Automation) bool) (runID int64, enrolled bool, err error) {
 	locked, err := lockContact(ctx, s, contactID)
 	if err != nil {
 		return 0, false, err
@@ -182,26 +181,33 @@ func enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o
 	if err != nil {
 		return 0, false, err
 	}
+	// The Enrollment begins (automation.enrolled) and, made already ended, ends in the same
+	// transaction: the Contact entered and left.
+	begun, err := s.AutomationRun().Query().Where(automationrun.ID(run.ID)).WithContact().Only(ctx)
+	if err != nil {
+		return 0, false, err
+	}
+	if err := publishEnrollment(ctx, s, pub, events.NameAutomationEnrolled, begun); err != nil {
+		return 0, false, err
+	}
 	if !ended {
 		return run.ID, true, nil
 	}
-	if err := move(ctx, s, run.ID, ending, endedAt, nil); err != nil {
+	if err := move(ctx, s, pub, run.ID, ending, endedAt, nil); err != nil {
 		return 0, false, err
 	}
 	return run.ID, false, nil
 }
 
-// lockContact locks the Contact's row to the end of the transaction s is bound to: the one point
-// that orders the making of the Contact's Enrollments against the exit and goal Events that end
-// them. The lock is FOR NO KEY UPDATE, not FOR UPDATE: a row that references the Contact (an Event
-// stored for it, the Outbound message of a step's send) takes the key-share lock, which this one
-// leaves free, so neither an Events consumer nor a send in flight under the fence ever waits for
-// it. false when the Contact is not in the Workspace.
+// lockContact locks the Contact's row to the end of the transaction s is bound to (contactlock):
+// the one point that orders the making of the Contact's Enrollments against the exit and goal
+// Events that end them. false when the Contact is not in the Workspace.
 func lockContact(ctx context.Context, s *ent.Scoped, contactID int64) (bool, error) {
-	q := s.Contact().Query().Where(contact.ID(contactID))
-	q.Modify(func(sel *sql.Selector) { sel.For(sql.LockNoKeyUpdate) })
-	ids, err := q.IDs(ctx)
-	return len(ids) > 0, err
+	_, err := contactlock.Lock(ctx, s, contactID)
+	if ent.IsNotFound(err) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // endedSince is the end the first exit or goal Event of the version recorded for the Contact at
@@ -247,7 +253,7 @@ func byHuman(action string) predicate.Event {
 // Exit ends the Contact's active Enrollment in the Automation at now, the caller's clock (status
 // exited, no pending resume). It reports whether an active Enrollment was ended; a finished or
 // absent one is left alone, and so is one another writer moved first.
-func Exit(ctx context.Context, s *ent.Scoped, automationID, contactID int64, now time.Time) (bool, error) {
+func Exit(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, now time.Time) (bool, error) {
 	runID, err := s.AutomationRun().Query().
 		Where(
 			automationrun.AutomationID(automationID),
@@ -261,7 +267,7 @@ func Exit(ctx context.Context, s *ent.Scoped, automationID, contactID int64, now
 	if err != nil {
 		return false, err
 	}
-	err = ExitRun(ctx, s, runID, now)
+	err = ExitRun(ctx, s, pub, runID, now)
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return false, nil // another writer moved it out of active first
 	}
@@ -271,8 +277,8 @@ func Exit(ctx context.Context, s *ent.Scoped, automationID, contactID int64, now
 // ExitRun ends one Enrollment by run id at now, the caller's clock, for the step executor that
 // already holds the run (an ineligible destination exits it rather than walk on skipping mail).
 // lifecycle.ErrInvalidTransition when it is no longer active.
-func ExitRun(ctx context.Context, s *ent.Scoped, runID int64, now time.Time) error {
-	return move(ctx, s, runID, triggerExit, now, nil)
+func ExitRun(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, now time.Time) error {
+	return move(ctx, s, pub, runID, triggerExit, now, nil)
 }
 
 // EndOnEvent ends the Contact's active Enrollments that an Event with the action ends (#751): one
@@ -286,7 +292,7 @@ func ExitRun(ctx context.Context, s *ent.Scoped, runID int64, now time.Time) err
 // the Contact first, as making an Enrollment does, so s is bound to a transaction: an Enrollment
 // being made meanwhile is either committed before the active ones are read, or made after this
 // transaction and finds the Event among the stored ones.
-func EndOnEvent(ctx context.Context, s *ent.Scoped, contactID int64, action string, occurredAt time.Time) error {
+func EndOnEvent(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, action string, occurredAt time.Time) error {
 	locked, err := lockContact(ctx, s, contactID)
 	if err != nil || !locked {
 		return err // a Contact erased since has no Enrollment left to end
@@ -307,7 +313,7 @@ func EndOnEvent(ctx context.Context, s *ent.Scoped, contactID int64, action stri
 			continue
 		}
 		// It ends when the Event that ends it occurred, on the clock its beginning was read on.
-		err := move(ctx, s, run.ID, t, occurredAt, nil)
+		err := move(ctx, s, pub, run.ID, t, occurredAt, nil)
 		if errors.Is(err, lifecycle.ErrInvalidTransition) {
 			continue // another writer moved it out of active first
 		}

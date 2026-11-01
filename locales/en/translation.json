@@ -895,8 +895,15 @@
   },
   "eventActions": {
     "auditEntry": "Audit log entry",
+    "automationCompleted": "Completed an automation",
+    "automationEnrolled": "Entered an automation",
+    "automationExited": "Left an automation",
+    "automationGoalReached": "Reached the goal of an automation",
     "contactCreated": "Became a contact",
     "contactErased": "Was erased",
+    "contactFieldChanged": "Had a custom field changed",
+    "contactTagged": "Was tagged",
+    "contactUntagged": "Was untagged",
     "emailBounced": "Bounced",
     "emailClicked": "Clicked a link in an email",
     "emailComplained": "Marked an email as spam",
@@ -906,7 +913,20 @@
     "emailOpened": "Opened an email",
     "emailSent": "Was sent an email",
     "emailUnsubscribed": "Unsubscribed",
-    "marketingConfirmed": "Confirmed opt-in"
+    "marketingConfirmed": "Confirmed opt-in",
+    "pageView": "Visited a page"
+  },
+  "eventRows": {
+    "completed": "Completed",
+    "entered": "Entered",
+    "fieldCleared": "Cleared {{field}}",
+    "fieldSet": "Set {{field}} to \"{{value}}\"",
+    "left": "Left",
+    "quoted": "\"{{name}}\"",
+    "reachedGoalOf": "Reached the goal of",
+    "tagged": "Tagged",
+    "untagged": "Untagged",
+    "visited": "Visited \"{{name}}\""
   },
   "forgotPassword": {
     "backToLogin": "Back to sign in",

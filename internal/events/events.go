@@ -47,12 +47,27 @@ const (
 	NameEmailComplained    = suppression.EventComplained
 	NameMarketingConfirmed = "marketing.confirmed"
 	NameCollected          = "event.collected"
+
+	// NameContactTagged and the two below are what happened to a Contact's Tags and Custom
+	// fields, recorded only on a real change.
+	NameContactTagged       = "contact.tagged"
+	NameContactUntagged     = "contact.untagged"
+	NameContactFieldChanged = "contact.field_changed"
+
+	// NameAutomationEnrolled and the three below are an Enrollment's beginning and its ends, all
+	// but `failed`: an operational failure, not something the Contact did.
+	NameAutomationEnrolled    = "automation.enrolled"
+	NameAutomationCompleted   = "automation.completed"
+	NameAutomationGoalReached = "automation.goal_reached"
+	NameAutomationExited      = "automation.exited"
 )
 
 // reservedPrefixes are the namespaces of the actions only the system records: delivery
-// (`email.*`), consent (`marketing.*`) and the Contact lifecycle (`contact.*`). They are
-// evidence (ADR 0013, ADR 0019), so a customer's own Event never carries one.
-var reservedPrefixes = []string{"email.", "marketing.", "contact."}
+// (`email.*`), consent (`marketing.*`), the Contact's lifecycle, Tags and Custom fields
+// (`contact.*`) and its Enrollments (`automation.*`). Some are evidence (ADR 0013, ADR 0019), and
+// an Automation, a Rule or a Segment that names one must be sure the system recorded it, so a
+// customer's own Event never carries one.
+var reservedPrefixes = []string{"email.", "marketing.", "contact.", "automation."}
 
 // ReservedAction reports whether action belongs to the system and is refused from a
 // customer's Event.
@@ -116,8 +131,8 @@ type Envelope struct {
 	RecordedAt time.Time `json:"recordedAt"`
 	// CausedBy names what published the event when it was not a customer or a provider: an
 	// Action of a Rule stamps it on any event it publishes, and the Rule consumer skips an event
-	// that carries it, so Rules never chain (ADR 0054). No Action publishes an event today, so
-	// nothing stamps it yet; the consumer honours it already.
+	// that carries it, so Rules never chain (ADR 0054). The Action's work runs in a context
+	// CausedBy made, which the publisher stamps it from.
 	CausedBy string `json:"causedBy,omitempty"`
 	// CorrelationID is shared by every event of one chain: what a request, or the handling of
 	// an event, published (correlation.go). CausationID is the id of the event whose handling
@@ -152,8 +167,9 @@ type Projection struct {
 	// VisitorID is the anonymous device (→ events.visitor_id), kept so an anonymous
 	// event can be stitched onto a Contact at Identify. "" ⇒ unset.
 	VisitorID string
-	// AutomationID is the Automation whose email the Event came from (→ events.automation_id), 0
-	// for any other Event. An Automation never starts from an Event of its own email (ADR 0053).
+	// AutomationID is the Automation the Event came from (→ events.automation_id): the one whose
+	// email it is about, or whose Enrollment of the Contact began or ended; 0 for any other Event.
+	// An Automation never starts from an Event of its own (ADR 0053).
 	AutomationID int64
 	// BroadcastID is the Broadcast whose email the Event came from (→ events.broadcast_id), 0 for
 	// any other Event.
@@ -215,6 +231,13 @@ var registry = map[string]func() DomainEvent{
 	NameEmailComplained:       func() DomainEvent { return &EmailDelivery{} },
 	NameMarketingConfirmed:    func() DomainEvent { return &MarketingConfirmed{} },
 	NameCollected:             func() DomainEvent { return &CollectedEvent{} },
+	NameContactTagged:         func() DomainEvent { return &ContactTagChange{} },
+	NameContactUntagged:       func() DomainEvent { return &ContactTagChange{} },
+	NameContactFieldChanged:   func() DomainEvent { return &ContactFieldChanged{} },
+	NameAutomationEnrolled:    func() DomainEvent { return &EnrollmentChange{} },
+	NameAutomationCompleted:   func() DomainEvent { return &EnrollmentChange{} },
+	NameAutomationGoalReached: func() DomainEvent { return &EnrollmentChange{} },
+	NameAutomationExited:      func() DomainEvent { return &EnrollmentChange{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
 }

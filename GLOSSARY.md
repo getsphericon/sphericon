@@ -88,7 +88,8 @@ customer-tracked actions, with no parallel event stream.
 _Avoid_: Activity, log entry, signal
 
 **System event**:
-An Event that sphericon itself records — delivery, engagement, consent and the Contact lifecycle —
+An Event that sphericon itself records — delivery, engagement, consent, the Contact lifecycle, a
+change to a Contact's Tags or Custom fields and an Enrollment's progress through an Automation —
 never a customer: its action is reserved, and a customer's Event may not carry it. People see a
 System event by its name, worded as what the Contact did ("Opened an email"); the API, webhooks and
 conditions know it by its action (`email.opened`). A customer's own Event is shown by its action,
