@@ -36,13 +36,15 @@ opt-out, encoding and segments, throughput and inbound webhooks, for five global
   `unknown`, Exolve `delivery_status` 0 and SMSC `err` 245. The model needs four outcomes: sent, delivered, failed and
   unknown. Callbacks also arrive out of order (Twilio, Bird), so a later report must never move a message back.
 - **Providers that handle STOP scope the block to the sender, not the person.** Twilio blocks per number and per
-  Messaging Service, Vonage per number, Plivo per number or per 10DLC campaign, and Bird per (sender, subscriber). All
-  of them do it only for US/Canada number types or for a per-country keyword catalogue. Consent keyed by (channel,
-  destination) is therefore broader, and the platform must handle STOP itself everywhere else.
+  Messaging Service, Vonage per number, Plivo per number or per 10DLC campaign, and Bird per (sender, subscriber).
+  Coverage is partial too: Twilio filters long codes and toll-free numbers (no country limit stated, short codes only
+  with Advanced Opt-Out), Vonage and Plivo cover only US/Canada number types, and Bird only its catalogue countries.
+  Consent keyed by (channel, destination) is therefore broader, and the platform must handle STOP itself.
 - **An opt-out reaches the sender in three ways.** The STOP may be forwarded as an inbound message (Twilio, Vonage,
   Bird, SMSC replies). It may arrive as a provider event (Bird `sms_suppression.created`). Or it may show only as a
   refused send with a provider-specific code: Twilio 21610, Vonage err-code 9 or Messages 1240, Plivo 200, Bird
-  E12077 or E25000, Sinch `Deleted`, SMS.ru 209 or 215, SMSC 23. A Preset has to map all three to one consent signal.
+  E12077 or E25000, SMS.ru 209 or 215. A Preset has to map all three to one consent signal. Ambiguous codes (SMSC 23,
+  Sinch `Deleted`, Exolve 6) also cover other refusals, so they are failures, not opt-outs.
 - **Russia has no keyword STOP at all.** None of the four Russian providers documents STOP-keyword handling; each
   offers a stop list or blacklist API instead (except Exolve, whose blacklist looks call-only). Since 2025 a
   subscriber can also refuse mailings at their mobile operator (126-FZ art. 44.1 part 1.1), which the sender never
@@ -51,7 +53,7 @@ opt-out, encoding and segments, throughput and inbound webhooks, for five global
 - **Sender IDs are per country and mostly registered.** An alphanumeric sender has at most 11 characters, is one-way
   (no replies, so no STOP by reply), is not allowed in the US or Canada, and needs registration in many countries.
   US traffic needs a registered 10DLC brand and campaign, a verified toll-free number or a short code. In Russia every
-  alpha name is approved per mobile operator, and only legal entities may register one at Exolve.
+  alpha name is approved per mobile operator, and at Exolve only legal entities and sole proprietors may register one.
 - **Webhook authentication varies, and Russia mostly has none.** Bird uses a Standard-Webhooks-style signature.
   Twilio signs HMAC-SHA1 over the URL plus sorted form fields with the Auth Token. Vonage's Messages API sends a JWT
   with a body hash, while its SMS API is unsigned by default. Plivo V2 signs the URL and a nonce but not the body.
