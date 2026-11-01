@@ -47,8 +47,9 @@ A workspace-defined, typed, named attribute on the Contact, beyond the core fiel
 schemaless "trait". An unknown key arriving from Identify or an Event payload is
 _auto-created_ as a Custom field with an inferred type (declared-by-use), but it is a
 first-class, typed, renameable definition from the first sight, not an anonymous bag of
-keys — so the Segment builder always has a real, governed field list to offer. Core fields
-and Custom fields together are a Contact's attributes.
+keys — so the Segment builder always has a real, governed field list to offer. Its key never
+changes; a person may later change its name and its type, which reinterprets the stored values
+and rewrites none of them. Core fields and Custom fields together are a Contact's attributes.
 _Avoid_: Trait, property, attribute (unqualified), metadata
 
 **Tag**:
@@ -618,7 +619,8 @@ _Avoid_: Reputation, deliverability (those name the Sending-domain rates)
 
 **Workspace time zone**:
 The IANA time zone a Workspace reads its reports in (UTC until set). It decides where a **Report day**
-begins and ends and which hour an event falls in. Not a Contact's own time zone, which is about
+begins and ends and which hour an event falls in, and it places a date written without an offset in a
+datetime Custom field. Not a Contact's own time zone, which is about
 where that person is, nor the **User time zone**, which only moves where a time is shown.
 _Avoid_: Locale, region
 
