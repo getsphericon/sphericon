@@ -94,6 +94,9 @@ importers:
       content-disposition-header:
         specifier: ^0.6.0
         version: 0.6.0
+      country-flag-icons:
+        specifier: ^1.6.20
+        version: 1.6.20
       dayjs:
         specifier: ^1.11.23
         version: 1.11.23
@@ -3168,6 +3171,9 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  country-flag-icons@1.6.20:
+    resolution: {integrity: sha512-py8JiEKzjhYw6HPJ0L7SxLgCYim36UPRTZX43/kqGueUCZLSvnrqAiwW8HtQibur7mdkFQUkjOgdK+o/9FBtaw==}
 
   css-tree@3.2.1:
     resolution: {integrity: sha512-X7sjQzceUhu1u7Y/ylrRZFU2FS6LRiFVp6rKLPg23y3x3c3DOKAwuXGDp+PAGjh6CSnCjYeAul8pcT8bAl+lSA==}
@@ -7706,6 +7712,8 @@ snapshots:
       parse-json: 5.2.0
     optionalDependencies:
       typescript: 7.0.2
+
+  country-flag-icons@1.6.20: {}
 
   css-tree@3.2.1:
     dependencies:

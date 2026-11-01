@@ -141,6 +141,30 @@ test('the machine events switch puts the choice in the URL', async () => {
   )
 })
 
+test('shows the flag next to a country custom field', async () => {
+  worker.use(
+    handleSiteContactsGet({ body: { ...ADA, customFields: { country: 'us', plan: 'gb' } } }),
+    NO_EVENTS,
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+
+  await expect.element(screen.getByRole('img', { name: 'United States' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('img', { name: 'United Kingdom' })).not.toBeInTheDocument()
+})
+
+test('a country custom field that is no country code has no flag', async () => {
+  worker.use(
+    handleSiteContactsGet({ body: { ...ADA, customFields: { country: 'Atlantis' } } }),
+    NO_EVENTS,
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+
+  await expect.element(screen.getByText('Atlantis')).toBeInTheDocument()
+  await expect.element(screen.getByRole('img')).not.toBeInTheDocument()
+})
+
 test('falls back to the subject id as the title when there is no email', async () => {
   worker.use(
     handleSiteContactsGet({

@@ -52,6 +52,7 @@
     "ajv": "8.20.0",
     "ajv-formats": "2.1.1",
     "content-disposition-header": "^0.6.0",
+    "country-flag-icons": "^1.6.20",
     "dayjs": "^1.11.23",
     "file-saver": "^2.0.5",
     "i18next": "^26.5.12",

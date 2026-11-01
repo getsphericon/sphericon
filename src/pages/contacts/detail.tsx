@@ -13,7 +13,9 @@ import {
 } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
+import * as flagIcons from 'country-flag-icons/react/3x2'
 import { DataTable } from 'mantine-datatable'
+import type { ComponentType, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
@@ -41,15 +43,33 @@ import { can } from '../../utils/permissions.ts'
 
 const EVENTS_PAGE_SIZE = 10
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({ label, value, icon }: { label: string; value: string; icon?: ReactNode }) {
   return (
     <Card withBorder padding="md">
       <Text size="xs" c="dimmed" tt="uppercase">
         {label}
       </Text>
-      <Text fw={500}>{value || '—'}</Text>
+      <Group gap="xs" wrap="nowrap">
+        {icon}
+        <Text fw={500}>{value || '—'}</Text>
+      </Group>
     </Card>
   )
+}
+
+const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
+
+const flags: Record<string, ComponentType<{ title?: string; height?: number }>> = flagIcons
+
+// The flag of a `country` Custom field whose value is an ISO 3166-1 alpha-2 code; any other
+// field or value has none.
+function CountryFlag({ fieldKey, value }: { fieldKey: string; value: unknown }) {
+  if (fieldKey !== 'country' || typeof value !== 'string') {
+    return null
+  }
+  const code = value.toUpperCase()
+  const Flag = flags[code]
+  return Flag ? <Flag title={regionNames.of(code) ?? code} height={14} /> : null
 }
 
 // Custom field values are typed (string/number/bool/…); render scalars directly and
@@ -271,7 +291,12 @@ export function ContactDetailPage() {
           <Title order={5}>{t(($) => $.contacts.customFields)}</Title>
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
             {customFields.map(([key, value]) => (
-              <Field key={key} label={key} value={formatCustomValue(value)} />
+              <Field
+                key={key}
+                label={key}
+                value={formatCustomValue(value)}
+                icon={<CountryFlag fieldKey={key} value={value} />}
+              />
             ))}
           </SimpleGrid>
         </>
