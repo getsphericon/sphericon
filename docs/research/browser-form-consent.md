@@ -61,11 +61,11 @@ on each Channel? Five areas:
   browser_ typed a number or address.
   - **US [law]:** the FCC accepts a "website form" as written consent under E-SIGN. The seller bears the whole burden
     of proof, and consent typed in by a third party is no consent at all.
-  - **Germany [law/guidance]:** the courts and the DSK call email double opt-in "geboten". They hold that an email
-    confirmation proves nothing about a phone, and they rate SMS codes as weak evidence.
+  - **Germany:** the BGH holds that email double opt-in plus a ticked box documents email consent but proves nothing
+    about a phone [law]. The DSK calls double opt-in "geboten" and rates SMS codes as weak evidence [guidance].
   - **Russia [law]:** a form that does not identify the subscriber is inadequate.
-- **The FAS letter of 11.11.2019 N ДФ/98054/19 is marked "утратил силу или отменен" on КонсультантПлюс.** CCR, ADR
-  0077 and the GLOSSARY relied on it for "a site form alone is not enough". No replacing letter was found. The rule
+- **The FAS letter of 11.11.2019 N ДФ/98054/19 is marked "утратил силу или отменен" on КонсультантПлюс.** CCR (4.1)
+  and ADR 0077 ("Russia's FAS reading") relied on it for "a site form alone is not enough". No replacing letter was found. The rule
   still stands on two texts in force:
   - 126-FZ art. 44.1(1): an action "однозначно идентифицирующих этого абонента";
   - the ВАС Plenum N 58 para 15.
@@ -546,9 +546,10 @@ Meta:
 
 Findings, not decisions.
 
-1. **Recording a form's phone consent "as is".** The Confirmation's provenances (`double_opt_in`, `grandfathered`,
-   `imported`, `keyword`) have no value for "typed into a sphericon form, unverified".
-   - The form is not a customer's server.
+1. **Recording a form's phone consent "as is".** `GLOSSARY.md` already files a consent from "a sphericon on-site
+   form" under `imported`, beside the API and imports, with the wording, its source and the brand. That provenance
+   describes consent a customer collected and asserts.
+   - A browser submission carries no such guarantee: the collect key is public.
    - Under the sources above, such a record proves only that some browser submitted the number:
      - US: the seller's burden, and no consent if typed by another (5.1);
      - Russia: no identifying action (5.4);
@@ -574,11 +575,13 @@ Findings, not decisions.
    - Any challenge adds a step to the public collect path, which is an ADR 0036 contract.
 5. **The disclosure travels with the message.**
    - The CTIA handbook wants terms beneath or linked next to the call-to-action, not in a popup.
-   - 10DLC wants a separate unchecked SMS box and a public URL of the opt-in, while On-site messages appear only
-     through the tracker, never on a hosted page.
+   - 10DLC wants a separate unchecked SMS box and a live public URL of the opt-in. The customer's page is public, but
+     an On-site message shows only when its display rules (audience, timing, frequency) let it, so a reviewer opening
+     the URL may not see it.
    - 152-FZ wants the consent separate from other documents.
    - EDPB wants the exact text shown, kept per session.
-   - So the On-site message's consent text and version belong in the `marketing.confirmed` Event.
+   - Each asks for the exact consent text shown at the time; the `marketing.confirmed` Event does not carry it today
+     (CCR 9).
 6. **The tracker stores before any CMP answer.** `om_vid` and the localStorage queue are written on `init()` with no
    consent hook. A popup's frequency state would add a third store; the exemption is narrow (section 7).
 
@@ -589,7 +592,8 @@ Findings, not decisions.
    databases unreachable.)
 2. Does a user-sent `wa.me` prefilled message count as a WhatsApp marketing opt-in under Meta's policy? (Meta is
    silent; Klaviyo treats it as one.)
-3. Will a 10DLC reviewer accept a popup that appears only through a script as the "public URL" of the opt-in?
+3. Will a 10DLC reviewer accept the customer's public URL as the opt-in when the popup there shows only under its
+   display rules (audience, exit intent, frequency), or does the review need a page where it always shows?
 4. The CTIA handbook footnote ("Popups are not a method for displaying terms and conditions") against the vendors'
    popup copy, and Twilio's "separate checkbox" against Postscript's and Attentive's checkbox-less popups.
 5. Whether a Private Access Token challenge from a CNAME of the customer's domain counts as first-party for Apple.
