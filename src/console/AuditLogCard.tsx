@@ -3,6 +3,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { AuditActionName } from '../components/AuditActionName.tsx'
 import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../components/Skeletons.tsx'
 import { staffWorkspaceAuditListOptions } from '../generated/staffee/@tanstack/react-query.gen.ts'
@@ -87,7 +88,9 @@ function AuditRows({ workspaceId, cursor, first }: AuditPageProps) {
                 <Table.Td>
                   <ActorLabel entry={entry} />
                 </Table.Td>
-                <Table.Td>{entry.action}</Table.Td>
+                <Table.Td>
+                  <AuditActionName action={entry.action} />
+                </Table.Td>
                 <Table.Td>{targetLabel(entry)}</Table.Td>
               </Table.Tr>
             ))}

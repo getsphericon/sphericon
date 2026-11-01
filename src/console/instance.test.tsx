@@ -230,6 +230,7 @@ test('the Instance audit log says who changed which setting from what to what', 
   )
   const { screen } = await renderWithRouter(<ConsoleInstancePage />, PAGE)
 
+  await expect.element(screen.getByText('Changed the default Send cap').first()).toBeInTheDocument()
   await expect.element(screen.getByText('default_send_cap: 500 → 2000')).toBeInTheDocument()
   await expect.element(screen.getByText('default_send_cap: none → 500')).toBeInTheDocument()
   await expect.element(screen.getByText('ops@example.com').first()).toBeInTheDocument()

@@ -26,6 +26,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
+import { AuditActionName, AuditActionOption } from '../../components/AuditActionName.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
@@ -42,6 +43,7 @@ import type {
   SiteAuditEntryResource,
 } from '../../generated/site/types.gen.ts'
 import { zRetentionDays, zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
+import { useAuditActionFilter, useAuditActionLabel } from '../../hooks/useAuditActionLabel.ts'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -238,7 +240,9 @@ function EntryRows({
             {actorLabel(entry.actor)}
           </FilterValue>
         </Table.Td>
-        <Table.Td>{entry.action}</Table.Td>
+        <Table.Td>
+          <AuditActionName action={entry.action} />
+        </Table.Td>
         <Table.Td>
           <FilterValue next={targetFilter(filter, entry.target)} onFilterChange={onFilterChange}>
             <TargetLabel entry={entry} />
@@ -598,6 +602,8 @@ function FilterChips({ filter, onFilterChange }: FilterProps) {
 function FilterBar({ workspaceId, filter, onFilterChange }: FilterProps & { workspaceId: string }) {
   const { t } = useTranslation()
   const actorLabel = useActorLabel()
+  const actionLabel = useAuditActionLabel()
+  const actionFilter = useAuditActionFilter()
   const facets = useSuspenseQuery(siteAuditFacetsOptions({ path: { workspaceId } })).data
   const kindLabels: Record<SiteAuditActorKind, string> = {
     user: t(($) => $.settings.auditLog.kindUser),
@@ -639,7 +645,12 @@ function FilterBar({ workspaceId, filter, onFilterChange }: FilterProps & { work
           clearable
           label={t(($) => $.settings.auditLog.action)}
           placeholder={t(($) => $.settings.auditLog.anyAction)}
-          data={withCurrent(facets.actions, filter.action)}
+          data={withCurrent(facets.actions, filter.action).map((value) => ({
+            value,
+            label: actionLabel(value),
+          }))}
+          filter={actionFilter}
+          renderOption={({ option }) => <AuditActionOption action={option.value} />}
           value={filter.action ?? null}
           onChange={(value) => onFilterChange(withValue(filter, 'action', value))}
         />

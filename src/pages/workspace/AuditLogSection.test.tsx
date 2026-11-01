@@ -59,7 +59,9 @@ test('lists who changed what, with the change', async () => {
 
   await expect.element(screen.getByRole('combobox', { name: 'Action' })).toBeInTheDocument()
   await expect.element(screen.getByText('John', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByRole('cell', { name: 'membership.update' })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('cell', { name: "Changed a member's role" }))
+    .toBeInTheDocument()
   await expect.element(screen.getByText('membership Mary')).toBeInTheDocument()
 })
 
@@ -134,7 +136,7 @@ test('an actor known by neither name nor id is named by its kind', async () => {
   )
 
   await expect.element(screen.getByText('API token #', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByText('membership.update').nth(1)).toBeInTheDocument()
+  await expect.element(screen.getByText("Changed a member's role").nth(1)).toBeInTheDocument()
 })
 
 test('an applied actor the log no longer holds stays selectable', async () => {
@@ -213,7 +215,7 @@ test('choosing an actor or an action among those of the log applies it at once',
   })
 
   await screen.getByRole('combobox', { name: 'Action' }).click()
-  await screen.getByRole('option', { name: 'integration.update' }).click()
+  await screen.getByRole('option', { name: /Changed an integration/ }).click()
   expect(onFilterChange).toHaveBeenLastCalledWith({ ip: '10.0.0.1', action: 'integration.update' })
 })
 
@@ -231,7 +233,7 @@ test('a filter the log no longer holds stays selected', async () => {
   await expect.element(screen.getByRole('combobox', { name: 'Actor' })).toHaveValue('9')
   await expect
     .element(screen.getByRole('combobox', { name: 'Action' }))
-    .toHaveValue('contact.delete')
+    .toHaveValue('Deleted a contact')
   await screen.getByRole('combobox', { name: 'Actor' }).click()
   await expect.element(screen.getByRole('option', { name: 'API token #77' })).toBeInTheDocument()
 })
@@ -405,7 +407,9 @@ test('loading more appends the next page below the first', async () => {
   await screen.getByRole('button', { name: 'Load more' }).click()
 
   await expect.element(screen.getByText('membership.remove')).toBeInTheDocument()
-  await expect.element(screen.getByRole('cell', { name: 'membership.update' })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('cell', { name: "Changed a member's role" }))
+    .toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Load more' })).not.toBeInTheDocument()
   expect(cursors).toContain('2')
 })
@@ -656,4 +660,47 @@ test('reports a failed load of the log', async () => {
   )
 
   await expect.element(screen.getByText('Failed to load the audit log').first()).toBeInTheDocument()
+})
+
+test('an action reads as words, its code on hover', async () => {
+  worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
+  const { screen } = await renderWithRouter(
+    <AuditLogSection
+      workspaceId={WORKSPACE_ID}
+      onFilterChange={vi.fn<() => void>()}
+      canConfigureRetention
+    />,
+  )
+
+  await screen.getByRole('cell', { name: "Changed a member's role" }).getByText(/role/).hover()
+
+  await expect.element(screen.getByRole('tooltip', { name: 'membership.update' })).toBeVisible()
+})
+
+test('the action filter finds an action by its words or by its code, and filters by the code', async () => {
+  worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
+  const onFilterChange = vi.fn<(filter: AuditFilter) => void>()
+  const { screen } = await renderWithRouter(
+    <AuditLogSection
+      workspaceId={WORKSPACE_ID}
+      onFilterChange={onFilterChange}
+      canConfigureRetention
+    />,
+  )
+  const action = screen.getByRole('combobox', { name: 'Action' })
+
+  await action.fill('role')
+  await expect
+    .element(screen.getByRole('option', { name: /Changed a member's role/ }))
+    .toBeVisible()
+  await expect
+    .element(screen.getByRole('option', { name: /Changed an integration/ }))
+    .not.toBeInTheDocument()
+
+  await action.fill('integration.up')
+  await expect
+    .element(screen.getByRole('option', { name: /Changed a member's role/ }))
+    .not.toBeInTheDocument()
+  await screen.getByRole('option', { name: /Changed an integration/ }).click()
+  expect(onFilterChange).toHaveBeenLastCalledWith({ action: 'integration.update' })
 })
