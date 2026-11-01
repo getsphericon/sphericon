@@ -393,7 +393,8 @@ var (
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "scheduled", "sending", "sent", "failed"}, Default: "draft"},
 		{Name: "scheduled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
-		{Name: "hold_reason", Type: field.TypeString, Nullable: true},
+		{Name: "failed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "hold_reason", Type: field.TypeEnum, Nullable: true, Enums: []string{"workspace_suspended", "workspace_pending_deletion", "staff_hold", "no_integration", "unverified_domain", "provider_stopped"}},
 		{Name: "last_scheduled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "segment_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
@@ -407,19 +408,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcasts_segments_segment",
-				Columns:    []*schema.Column{BroadcastsColumns[17]},
+				Columns:    []*schema.Column{BroadcastsColumns[18]},
 				RefColumns: []*schema.Column{SegmentsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_integrations_integration",
-				Columns:    []*schema.Column{BroadcastsColumns[18]},
+				Columns:    []*schema.Column{BroadcastsColumns[19]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_workspaces_broadcasts",
-				Columns:    []*schema.Column{BroadcastsColumns[19]},
+				Columns:    []*schema.Column{BroadcastsColumns[20]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -428,17 +429,17 @@ var (
 			{
 				Name:    "broadcast_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[19]},
+				Columns: []*schema.Column{BroadcastsColumns[20]},
 			},
 			{
 				Name:    "broadcast_segment_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[17]},
+				Columns: []*schema.Column{BroadcastsColumns[18]},
 			},
 			{
 				Name:    "broadcast_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[18]},
+				Columns: []*schema.Column{BroadcastsColumns[19]},
 			},
 		},
 	}
@@ -2901,6 +2902,8 @@ func init() {
 		Table: "broadcasts",
 	}
 	BroadcastsTable.Annotation.Checks = map[string]string{
+		"broadcasts_failed_at_check":    "status <> 'failed' OR failed_at IS NOT NULL",
+		"broadcasts_hold_reason_check":  "hold_reason IN ('workspace_suspended', 'workspace_pending_deletion', 'staff_hold', 'no_integration', 'unverified_domain', 'provider_stopped')",
 		"broadcasts_scheduled_at_check": "status <> 'scheduled' OR scheduled_at IS NOT NULL",
 		"broadcasts_sent_at_check":      "status <> 'sent' OR sent_at IS NOT NULL",
 		"broadcasts_status_check":       "status IN ('draft', 'scheduled', 'sending', 'sent', 'failed')",

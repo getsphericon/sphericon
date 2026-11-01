@@ -120,7 +120,7 @@ func (d *delivery) claim(recipientID int64, age time.Duration) {
 func TestSentRecipientIsRecordedAndSettlesTheBroadcast(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
-	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetHoldReason(holds.ReasonSuspended).ExecX(d.t.Context())
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetHoldReason(broadcast.HoldReasonWorkspaceSuspended).ExecX(d.t.Context())
 
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
 
@@ -229,7 +229,7 @@ func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
 	assert.True(t, d.pending(id))
 	b := d.broadcastRow()
 	require.NotNil(t, b.HoldReason)
-	assert.Equal(t, holds.ReasonSuspended, *b.HoldReason)
+	assert.EqualValues(t, holds.ReasonSuspended, *b.HoldReason)
 	assert.Equal(t, broadcast.StatusSending, b.Status, "a hold keeps the status")
 }
 

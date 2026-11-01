@@ -1,6 +1,28 @@
-// The Broadcast write bodies: /site and /api take the same input.
+// The Broadcast write bodies and hold reason: /site and /api take and show the same.
 
 namespace Sphericon;
+
+/** Why a broadcast's sending is held. A hold is reversible and not a failure: the broadcast keeps
+ * its status and the remaining recipients send once it lifts. */
+enum BroadcastHoldReason {
+  /** Sending is suspended for the workspace */
+  workspace_suspended,
+
+  /** The workspace is deleted and pending erasure */
+  workspace_pending_deletion,
+
+  /** Sending is on hold for the workspace */
+  staff_hold,
+
+  /** No email integration can send: the one named is disabled or archived, or there is no default */
+  no_integration,
+
+  /** The sender's domain is not a verified sending domain */
+  unverified_domain,
+
+  /** The email provider has stopped sending from the integration's account */
+  provider_stopped,
+}
 
 /** Request body for creating a broadcast */
 model CreateBroadcastInput {

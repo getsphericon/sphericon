@@ -8,7 +8,9 @@ test.each([
   ['unverified_domain', /sender domain is not verified/],
   ['workspace_suspended', /Sending is suspended for this workspace/],
   ['provider_stopped', /email provider has stopped sending from your account/],
-])('the alert explains the %s hold', async (reason, explanation) => {
+  ['staff_hold', /Contact an Owner or Admin of this workspace/],
+  ['workspace_pending_deletion', /Restore the workspace to resume/],
+] as const)('the alert explains the %s hold', async (reason, explanation) => {
   const screen = await renderWithProviders(<BroadcastHoldAlert reason={reason} />)
 
   await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
@@ -16,14 +18,6 @@ test.each([
   await expect
     .element(screen.getByText(/the remaining recipients are sent automatically/))
     .toBeInTheDocument()
-})
-
-test('the alert falls back to the generic explanation for an unknown reason', async () => {
-  const screen = await renderWithProviders(<BroadcastHoldAlert reason="something_new" />)
-
-  await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
-  await expect.element(screen.getByText(/Sending is paused\./)).toBeInTheDocument()
-  await expect.element(screen.getByText(/No email provider/)).not.toBeInTheDocument()
 })
 
 test('the badge marks a row as on hold', async () => {

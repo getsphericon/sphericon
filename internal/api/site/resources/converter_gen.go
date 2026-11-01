@@ -535,6 +535,26 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKi
 	siteapiSiteBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return siteapiSiteBrandKitResource
 }
+func (c *ConverterImpl) BroadcastHoldReasonToResource(source broadcast.HoldReason) site.BroadcastHoldReason {
+	var siteapiBroadcastHoldReason site.BroadcastHoldReason
+	switch source {
+	case broadcast.HoldReasonNoIntegration:
+		siteapiBroadcastHoldReason = site.BroadcastHoldReasonNoIntegration
+	case broadcast.HoldReasonProviderStopped:
+		siteapiBroadcastHoldReason = site.BroadcastHoldReasonProviderStopped
+	case broadcast.HoldReasonStaffHold:
+		siteapiBroadcastHoldReason = site.BroadcastHoldReasonStaffHold
+	case broadcast.HoldReasonUnverifiedDomain:
+		siteapiBroadcastHoldReason = site.BroadcastHoldReasonUnverifiedDomain
+	case broadcast.HoldReasonWorkspacePendingDeletion:
+		siteapiBroadcastHoldReason = site.BroadcastHoldReasonWorkspacePendingDeletion
+	case broadcast.HoldReasonWorkspaceSuspended:
+		siteapiBroadcastHoldReason = site.BroadcastHoldReasonWorkspaceSuspended
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiBroadcastHoldReason
+}
 func (c *ConverterImpl) BroadcastLimitToResource(source providerlimit.Cause) site.SiteBroadcastLimit {
 	var siteapiSiteBroadcastLimit site.SiteBroadcastLimit
 	switch source {
@@ -624,9 +644,10 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 		siteapiSiteBroadcastResource.SegmentId = optNilEntityID((*source).SegmentID)
 		siteapiSiteBroadcastResource.IntegrationId = optNilEntityID((*source).IntegrationID)
 		siteapiSiteBroadcastResource.Status = c.BroadcastStatusToResource((*source).Status)
-		siteapiSiteBroadcastResource.HoldReason = optNilString((*source).HoldReason)
+		siteapiSiteBroadcastResource.HoldReason = optNilBroadcastHoldReason(c, (*source).HoldReason)
 		siteapiSiteBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
 		siteapiSiteBroadcastResource.SentAt = optNilTimestamp((*source).SentAt)
+		siteapiSiteBroadcastResource.FailedAt = optNilTimestamp((*source).FailedAt)
 		// siteapiSiteBroadcastResource.Stats: ignore
 		// siteapiSiteBroadcastResource.Progress: ignore
 		siteapiSiteBroadcastResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
@@ -1845,7 +1866,6 @@ func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) sit
 func (c *ConverterImpl) SetupChecklistToResource(source setupchecklist.Checklist) site.SiteSetupProgress {
 	var siteapiSiteSetupProgress site.SiteSetupProgress
 	siteapiSiteSetupProgress.Steps = c.setupchecklistStepsToSiteapiSiteSetupSteps(source.Steps)
-	siteapiSiteSetupProgress.Complete = source.Complete()
 	siteapiSiteSetupProgress.CompletedAt = optNilTimestamp(source.CompletedAt)
 	return siteapiSiteSetupProgress
 }
@@ -2348,7 +2368,7 @@ func (c *ConverterImpl) attentionItemToSiteapiSiteAttentionItem(source attention
 	siteapiSiteAttentionItem.Subject = optAttentionSubject(c, source.Subject)
 	siteapiSiteAttentionItem.Count = count(source.Count)
 	siteapiSiteAttentionItem.Since = optNilTimestamp(source.Since)
-	siteapiSiteAttentionItem.HoldReason = optNilString(source.HoldReason)
+	siteapiSiteAttentionItem.HoldReason = optNilBroadcastHoldReason(c, source.HoldReason)
 	siteapiSiteAttentionItem.Abuse = optAbuseWarning(c, source.Abuse)
 	return siteapiSiteAttentionItem
 }

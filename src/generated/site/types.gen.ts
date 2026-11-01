@@ -69,6 +69,25 @@ export type ApplyTagInput = {
 export type AttributionWindowDays = number;
 
 /**
+ * Why a broadcast's sending is held. A hold is reversible and not a failure: the broadcast keeps
+ * its status and the remaining recipients send once it lifts.
+ */
+export const BroadcastHoldReason = {
+  WORKSPACE_SUSPENDED: 'workspace_suspended',
+  WORKSPACE_PENDING_DELETION: 'workspace_pending_deletion',
+  STAFF_HOLD: 'staff_hold',
+  NO_INTEGRATION: 'no_integration',
+  UNVERIFIED_DOMAIN: 'unverified_domain',
+  PROVIDER_STOPPED: 'provider_stopped'
+} as const;
+
+/**
+ * Why a broadcast's sending is held. A hold is reversible and not a failure: the broadcast keeps
+ * its status and the remaining recipients send once it lifts.
+ */
+export type BroadcastHoldReason = typeof BroadcastHoldReason[keyof typeof BroadcastHoldReason];
+
+/**
  * The contact's engagement with one broadcast (how its send ended is in `outboundMessages`)
  */
 export type ContactExportBroadcastRecipient = {
@@ -1706,9 +1725,9 @@ export type SiteAttentionItem = {
    */
   since?: Timestamp | null;
   /**
-   * Why a held Broadcast is held: `no_integration`, `unverified_domain` or `provider_stopped`
+   * Why a held Broadcast is held: a reason of its own source, never a Workspace-level one
    */
-  holdReason?: string | null;
+  holdReason?: BroadcastHoldReason | null;
   /**
    * The rate behind a deliverability warning
    */
@@ -2429,12 +2448,9 @@ export type SiteBroadcastResource = {
    */
   status: SiteBroadcastStatus;
   /**
-   * Why sending is currently held, when it is: `workspace_suspended`,
-   * `unverified_domain`, `no_integration` or `provider_stopped` (the provider has
-   * stopped the account). A hold is reversible and not a failure:
-   * the broadcast keeps its status and the remaining recipients send once it lifts.
+   * Why sending is currently held, when it is
    */
-  holdReason?: string | null;
+  holdReason?: BroadcastHoldReason | null;
   /**
    * When the broadcast is scheduled to send
    */
@@ -2443,6 +2459,10 @@ export type SiteBroadcastResource = {
    * When the broadcast finished sending
    */
   sentAt?: Timestamp | null;
+  /**
+   * When the broadcast failed
+   */
+  failedAt?: Timestamp | null;
   /**
    * Delivery counters
    */
@@ -5411,11 +5431,7 @@ export type SiteSetDomainJoinInput = {
 export type SiteSetupProgress = {
   steps: SiteSetupSteps;
   /**
-   * Every step was found done once; a step that regresses later does not undo it
-   */
-  complete: boolean;
-  /**
-   * When every step was first found done; null until then
+   * When every step was first found done; null until then. A step that regresses later does not undo it
    */
   completedAt?: Timestamp | null;
 };

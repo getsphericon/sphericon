@@ -6835,14 +6835,26 @@ func (x *BroadcastScopedCreate) SetNillableSentAt(v *time.Time) *BroadcastScoped
 	return x
 }
 
+// SetFailedAt sets the "failed_at" field.
+func (x *BroadcastScopedCreate) SetFailedAt(v time.Time) *BroadcastScopedCreate {
+	x.b.SetFailedAt(v)
+	return x
+}
+
+// SetNillableFailedAt sets the "failed_at" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableFailedAt(v *time.Time) *BroadcastScopedCreate {
+	x.b.SetNillableFailedAt(v)
+	return x
+}
+
 // SetHoldReason sets the "hold_reason" field.
-func (x *BroadcastScopedCreate) SetHoldReason(v string) *BroadcastScopedCreate {
+func (x *BroadcastScopedCreate) SetHoldReason(v broadcast.HoldReason) *BroadcastScopedCreate {
 	x.b.SetHoldReason(v)
 	return x
 }
 
 // SetNillableHoldReason sets the "hold_reason" field if the given value is not nil.
-func (x *BroadcastScopedCreate) SetNillableHoldReason(v *string) *BroadcastScopedCreate {
+func (x *BroadcastScopedCreate) SetNillableHoldReason(v *broadcast.HoldReason) *BroadcastScopedCreate {
 	x.b.SetNillableHoldReason(v)
 	return x
 }
@@ -7217,8 +7229,26 @@ func (u *BroadcastScopedUpsert) ClearSentAt() *BroadcastScopedUpsert {
 	return u
 }
 
+// SetFailedAt sets the "failed_at" field.
+func (u *BroadcastScopedUpsert) SetFailedAt(v time.Time) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldFailedAt, v)
+	return u
+}
+
+// UpdateFailedAt sets the "failed_at" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateFailedAt() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldFailedAt)
+	return u
+}
+
+// ClearFailedAt clears the value of the "failed_at" field.
+func (u *BroadcastScopedUpsert) ClearFailedAt() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldFailedAt)
+	return u
+}
+
 // SetHoldReason sets the "hold_reason" field.
-func (u *BroadcastScopedUpsert) SetHoldReason(v string) *BroadcastScopedUpsert {
+func (u *BroadcastScopedUpsert) SetHoldReason(v broadcast.HoldReason) *BroadcastScopedUpsert {
 	u.u.Set(broadcast.FieldHoldReason, v)
 	return u
 }
@@ -7665,14 +7695,32 @@ func (x *BroadcastScopedUpdateOne) ClearSentAt() *BroadcastScopedUpdateOne {
 	return x
 }
 
+// SetFailedAt sets the "failed_at" field.
+func (x *BroadcastScopedUpdateOne) SetFailedAt(v time.Time) *BroadcastScopedUpdateOne {
+	x.b.SetFailedAt(v)
+	return x
+}
+
+// SetNillableFailedAt sets the "failed_at" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableFailedAt(v *time.Time) *BroadcastScopedUpdateOne {
+	x.b.SetNillableFailedAt(v)
+	return x
+}
+
+// ClearFailedAt clears the value of the "failed_at" field.
+func (x *BroadcastScopedUpdateOne) ClearFailedAt() *BroadcastScopedUpdateOne {
+	x.b.ClearFailedAt()
+	return x
+}
+
 // SetHoldReason sets the "hold_reason" field.
-func (x *BroadcastScopedUpdateOne) SetHoldReason(v string) *BroadcastScopedUpdateOne {
+func (x *BroadcastScopedUpdateOne) SetHoldReason(v broadcast.HoldReason) *BroadcastScopedUpdateOne {
 	x.b.SetHoldReason(v)
 	return x
 }
 
 // SetNillableHoldReason sets the "hold_reason" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableHoldReason(v *string) *BroadcastScopedUpdateOne {
+func (x *BroadcastScopedUpdateOne) SetNillableHoldReason(v *broadcast.HoldReason) *BroadcastScopedUpdateOne {
 	x.b.SetNillableHoldReason(v)
 	return x
 }
@@ -8070,14 +8118,32 @@ func (x *BroadcastScopedUpdate) ClearSentAt() *BroadcastScopedUpdate {
 	return x
 }
 
+// SetFailedAt sets the "failed_at" field.
+func (x *BroadcastScopedUpdate) SetFailedAt(v time.Time) *BroadcastScopedUpdate {
+	x.b.SetFailedAt(v)
+	return x
+}
+
+// SetNillableFailedAt sets the "failed_at" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableFailedAt(v *time.Time) *BroadcastScopedUpdate {
+	x.b.SetNillableFailedAt(v)
+	return x
+}
+
+// ClearFailedAt clears the value of the "failed_at" field.
+func (x *BroadcastScopedUpdate) ClearFailedAt() *BroadcastScopedUpdate {
+	x.b.ClearFailedAt()
+	return x
+}
+
 // SetHoldReason sets the "hold_reason" field.
-func (x *BroadcastScopedUpdate) SetHoldReason(v string) *BroadcastScopedUpdate {
+func (x *BroadcastScopedUpdate) SetHoldReason(v broadcast.HoldReason) *BroadcastScopedUpdate {
 	x.b.SetHoldReason(v)
 	return x
 }
 
 // SetNillableHoldReason sets the "hold_reason" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableHoldReason(v *string) *BroadcastScopedUpdate {
+func (x *BroadcastScopedUpdate) SetNillableHoldReason(v *broadcast.HoldReason) *BroadcastScopedUpdate {
 	x.b.SetNillableHoldReason(v)
 	return x
 }

@@ -56,8 +56,10 @@ type Broadcast struct {
 	ScheduledAt *time.Time `json:"scheduled_at,omitempty"`
 	// SentAt holds the value of the "sent_at" field.
 	SentAt *time.Time `json:"sent_at,omitempty"`
+	// FailedAt holds the value of the "failed_at" field.
+	FailedAt *time.Time `json:"failed_at,omitempty"`
 	// HoldReason holds the value of the "hold_reason" field.
-	HoldReason *string `json:"hold_reason,omitempty"`
+	HoldReason *broadcast.HoldReason `json:"hold_reason,omitempty"`
 	// LastScheduledAt holds the value of the "last_scheduled_at" field.
 	LastScheduledAt *time.Time `json:"last_scheduled_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -134,7 +136,7 @@ func (*Broadcast) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case broadcast.FieldName, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldCondition, broadcast.FieldStatus, broadcast.FieldHoldReason:
 			values[i] = new(sql.NullString)
-		case broadcast.FieldCreatedAt, broadcast.FieldUpdatedAt, broadcast.FieldDiscardedAt, broadcast.FieldScheduledAt, broadcast.FieldSentAt, broadcast.FieldLastScheduledAt:
+		case broadcast.FieldCreatedAt, broadcast.FieldUpdatedAt, broadcast.FieldDiscardedAt, broadcast.FieldScheduledAt, broadcast.FieldSentAt, broadcast.FieldFailedAt, broadcast.FieldLastScheduledAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -270,12 +272,19 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 				_m.SentAt = new(time.Time)
 				*_m.SentAt = value.Time
 			}
+		case broadcast.FieldFailedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field failed_at", values[i])
+			} else if value.Valid {
+				_m.FailedAt = new(time.Time)
+				*_m.FailedAt = value.Time
+			}
 		case broadcast.FieldHoldReason:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field hold_reason", values[i])
 			} else if value.Valid {
-				_m.HoldReason = new(string)
-				*_m.HoldReason = value.String
+				_m.HoldReason = new(broadcast.HoldReason)
+				*_m.HoldReason = broadcast.HoldReason(value.String)
 			}
 		case broadcast.FieldLastScheduledAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -409,9 +418,14 @@ func (_m *Broadcast) String() string {
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
+	if v := _m.FailedAt; v != nil {
+		builder.WriteString("failed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
 	if v := _m.HoldReason; v != nil {
 		builder.WriteString("hold_reason=")
-		builder.WriteString(*v)
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
 	if v := _m.LastScheduledAt; v != nil {

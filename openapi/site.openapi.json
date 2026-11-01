@@ -14473,6 +14473,18 @@
         "maximum": 90,
         "description": "A whole number of days the Attribution window lasts: 1 to 90 (ADR 0064)"
       },
+      "BroadcastHoldReason": {
+        "type": "string",
+        "enum": [
+          "workspace_suspended",
+          "workspace_pending_deletion",
+          "staff_hold",
+          "no_integration",
+          "unverified_domain",
+          "provider_stopped"
+        ],
+        "description": "Why a broadcast's sending is held. A hold is reversible and not a failure: the broadcast keeps\nits status and the remaining recipients send once it lifts."
+      },
       "ContactExportBroadcastRecipient": {
         "type": "object",
         "required": ["id", "broadcastId", "createdAt"],
@@ -16726,9 +16738,13 @@
             "description": "When the problem began, when that is known"
           },
           "holdReason": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BroadcastHoldReason"
+              }
+            ],
             "nullable": true,
-            "description": "Why a held Broadcast is held: `no_integration`, `unverified_domain` or `provider_stopped`"
+            "description": "Why a held Broadcast is held: a reason of its own source, never a Workspace-level one"
           },
           "abuse": {
             "type": "object",
@@ -17670,9 +17686,13 @@
             "description": "Lifecycle status"
           },
           "holdReason": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BroadcastHoldReason"
+              }
+            ],
             "nullable": true,
-            "description": "Why sending is currently held, when it is: `workspace_suspended`,\n`unverified_domain`, `no_integration` or `provider_stopped` (the provider has\nstopped the account). A hold is reversible and not a failure:\nthe broadcast keeps its status and the remaining recipients send once it lifts."
+            "description": "Why sending is currently held, when it is"
           },
           "scheduledAt": {
             "type": "string",
@@ -17693,6 +17713,16 @@
             ],
             "nullable": true,
             "description": "When the broadcast finished sending"
+          },
+          "failedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the broadcast failed"
           },
           "stats": {
             "allOf": [
@@ -21783,14 +21813,10 @@
       },
       "SiteSetupProgress": {
         "type": "object",
-        "required": ["steps", "complete"],
+        "required": ["steps"],
         "properties": {
           "steps": {
             "$ref": "#/components/schemas/SiteSetupSteps"
-          },
-          "complete": {
-            "type": "boolean",
-            "description": "Every step was found done once; a step that regresses later does not undo it"
           },
           "completedAt": {
             "type": "string",
@@ -21800,7 +21826,7 @@
               }
             ],
             "nullable": true,
-            "description": "When every step was first found done; null until then"
+            "description": "When every step was first found done; null until then. A step that regresses later does not undo it"
           }
         },
         "description": "The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read\nthat first finds every step done stamps the Workspace, which keeps it complete for good"

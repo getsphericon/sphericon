@@ -111,7 +111,7 @@ func TestPlanHoldsOnUnverifiedFromDomain(t *testing.T) {
 	got := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusDraft, got.Status, "a hold is not a failure: the status is unchanged")
 	require.NotNil(t, got.HoldReason)
-	assert.Equal(t, outbound.HoldUnverifiedDomain, *got.HoldReason)
+	assert.EqualValues(t, outbound.HoldUnverifiedDomain, *got.HoldReason)
 	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID), "no recipient rows while held")
 
 	// Reversible: once the From is on a verified domain the same plan goes through and the
@@ -134,8 +134,9 @@ func TestPlanFailsTheWholeBroadcastOnABrokenTemplate(t *testing.T) {
 
 	require.Error(t, err)
 	require.NotErrorIs(t, err, outbound.ErrInProgress)
-	status := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID).Status
-	assert.Equal(t, broadcast.StatusFailed, status)
+	b := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID)
+	assert.Equal(t, broadcast.StatusFailed, b.Status)
+	assert.NotNil(t, b.FailedAt, "the move to failed stamps when it failed")
 	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID), "no recipient rows for a Broadcast that cannot render")
 }
 
@@ -414,7 +415,7 @@ func TestPlanHoldsOnAWorkspaceFreezeAndResumes(t *testing.T) {
 	b := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
 	require.NotNil(t, b.HoldReason)
-	assert.Equal(t, holds.ReasonSuspended, *b.HoldReason)
+	assert.EqualValues(t, holds.ReasonSuspended, *b.HoldReason)
 	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID))
 
 	d.env.UnsuspendWorkspace(d.t.Context(), fixtures.AcmeID)
@@ -463,7 +464,7 @@ func TestRunFinishesCleanlyWhenThePlanFailsTheBroadcast(t *testing.T) {
 // A plan that was refused leaves a held Broadcast's hold alone: a stale job records nothing.
 func TestStalePlanLeavesTheHoldReasonAlone(t *testing.T) {
 	d := newDelivery(t)
-	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSentID).SetHoldReason("kept").ExecX(d.t.Context())
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSentID).SetHoldReason(broadcast.HoldReasonNoIntegration).ExecX(d.t.Context())
 	d.env.SuspendWorkspace(d.t.Context(), fixtures.AcmeID, fixedNow)
 
 	_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastSentID)
@@ -471,7 +472,7 @@ func TestStalePlanLeavesTheHoldReasonAlone(t *testing.T) {
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	hold := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastSentID).HoldReason
 	require.NotNil(t, hold)
-	assert.Equal(t, "kept", *hold)
+	assert.Equal(t, broadcast.HoldReasonNoIntegration, *hold)
 }
 
 // Pacing only decides when a send runs: an unsubscribe or Suppression that lands after

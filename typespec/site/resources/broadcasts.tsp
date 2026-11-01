@@ -161,19 +161,17 @@ model SiteBroadcastResource {
   /** Lifecycle status */
   status: SiteBroadcastStatus;
 
-  /**
-   * Why sending is currently held, when it is: `workspace_suspended`,
-   * `unverified_domain`, `no_integration` or `provider_stopped` (the provider has
-   * stopped the account). A hold is reversible and not a failure:
-   * the broadcast keeps its status and the remaining recipients send once it lifts.
-   */
-  holdReason?: string | null;
+  /** Why sending is currently held, when it is */
+  holdReason?: BroadcastHoldReason | null;
 
   /** When the broadcast is scheduled to send */
   scheduledAt?: Timestamp | null;
 
   /** When the broadcast finished sending */
   sentAt?: Timestamp | null;
+
+  /** When the broadcast failed */
+  failedAt?: Timestamp | null;
 
   /** Delivery counters */
   stats: SiteBroadcastStats;

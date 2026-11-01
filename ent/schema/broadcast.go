@@ -85,13 +85,24 @@ func (Broadcast) Fields() []ent.Field {
 		field.Time("sent_at").
 			Optional().
 			Nillable(),
+		// When the Broadcast failed, set in the write that moves it to failed: Needs attention
+		// reads a recent failure from it, so a later edit of the row does not move its age.
+		field.Time("failed_at").
+			Optional().
+			Nillable(),
 		// No delivery figures are stored: they are derived from the recipients and their
 		// Outbound messages (ADR 0015), so they cannot drift from the rows.
 		// Why the broadcast is currently held (ADR 0015): a reversible, per-source
 		// hold — Workspace suspension, an unverified Sending domain, no Integration —
 		// not a failure. Set while any recipient is held, cleared when one sends; the
-		// status stays "sending" and the pending recipients wait for the hold to lift.
-		field.String("hold_reason").
+		// status stays "sending" and the pending recipients wait for the hold to lift. The
+		// Workspace-level reasons are the holds package's, the source-level ones Outbound send's
+		// (holds.Reason*, outbound.Hold*); a Staff hold's own reason code is never one of them.
+		field.Enum("hold_reason").
+			Values(
+				"workspace_suspended", "workspace_pending_deletion", "staff_hold",
+				"no_integration", "unverified_domain", "provider_stopped",
+			).
 			Optional().
 			Nillable(),
 		// When the last paced recipient job is scheduled (ADR 0023): the planner spreads
@@ -130,10 +141,12 @@ func (Broadcast) Indexes() []ent.Index {
 }
 
 // broadcastTable adds the timestamps a status promises to the enum checks: a scheduled
-// Broadcast has its time, a sent one its sent_at (each set in the write that moves the status).
+// Broadcast has its time, a sent one its sent_at, a failed one its failed_at (each set in the
+// write that moves the status).
 func broadcastTable() entsql.Annotation {
 	a := TableWithEnumChecks("broadcasts", Broadcast{}.Fields())
 	a.Checks["broadcasts_scheduled_at_check"] = "status <> 'scheduled' OR scheduled_at IS NOT NULL"
 	a.Checks["broadcasts_sent_at_check"] = "status <> 'sent' OR sent_at IS NOT NULL"
+	a.Checks["broadcasts_failed_at_check"] = "status <> 'failed' OR failed_at IS NOT NULL"
 	return a
 }

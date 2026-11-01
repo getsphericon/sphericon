@@ -309,14 +309,34 @@ func (_u *BroadcastUpdate) ClearSentAt() *BroadcastUpdate {
 	return _u
 }
 
+// SetFailedAt sets the "failed_at" field.
+func (_u *BroadcastUpdate) SetFailedAt(v time.Time) *BroadcastUpdate {
+	_u.mutation.SetFailedAt(v)
+	return _u
+}
+
+// SetNillableFailedAt sets the "failed_at" field if the given value is not nil.
+func (_u *BroadcastUpdate) SetNillableFailedAt(v *time.Time) *BroadcastUpdate {
+	if v != nil {
+		_u.SetFailedAt(*v)
+	}
+	return _u
+}
+
+// ClearFailedAt clears the value of the "failed_at" field.
+func (_u *BroadcastUpdate) ClearFailedAt() *BroadcastUpdate {
+	_u.mutation.ClearFailedAt()
+	return _u
+}
+
 // SetHoldReason sets the "hold_reason" field.
-func (_u *BroadcastUpdate) SetHoldReason(v string) *BroadcastUpdate {
+func (_u *BroadcastUpdate) SetHoldReason(v broadcast.HoldReason) *BroadcastUpdate {
 	_u.mutation.SetHoldReason(v)
 	return _u
 }
 
 // SetNillableHoldReason sets the "hold_reason" field if the given value is not nil.
-func (_u *BroadcastUpdate) SetNillableHoldReason(v *string) *BroadcastUpdate {
+func (_u *BroadcastUpdate) SetNillableHoldReason(v *broadcast.HoldReason) *BroadcastUpdate {
 	if v != nil {
 		_u.SetHoldReason(*v)
 	}
@@ -471,6 +491,11 @@ func (_u *BroadcastUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Broadcast.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.HoldReason(); ok {
+		if err := broadcast.HoldReasonValidator(v); err != nil {
+			return &ValidationError{Name: "hold_reason", err: fmt.Errorf(`ent: validator failed for field "Broadcast.hold_reason": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Broadcast.workspace"`)
 	}
@@ -563,11 +588,17 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.SentAtCleared() {
 		_spec.ClearField(broadcast.FieldSentAt, field.TypeTime)
 	}
+	if value, ok := _u.mutation.FailedAt(); ok {
+		_spec.SetField(broadcast.FieldFailedAt, field.TypeTime, value)
+	}
+	if _u.mutation.FailedAtCleared() {
+		_spec.ClearField(broadcast.FieldFailedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.HoldReason(); ok {
-		_spec.SetField(broadcast.FieldHoldReason, field.TypeString, value)
+		_spec.SetField(broadcast.FieldHoldReason, field.TypeEnum, value)
 	}
 	if _u.mutation.HoldReasonCleared() {
-		_spec.ClearField(broadcast.FieldHoldReason, field.TypeString)
+		_spec.ClearField(broadcast.FieldHoldReason, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.LastScheduledAt(); ok {
 		_spec.SetField(broadcast.FieldLastScheduledAt, field.TypeTime, value)
@@ -1003,14 +1034,34 @@ func (_u *BroadcastUpdateOne) ClearSentAt() *BroadcastUpdateOne {
 	return _u
 }
 
+// SetFailedAt sets the "failed_at" field.
+func (_u *BroadcastUpdateOne) SetFailedAt(v time.Time) *BroadcastUpdateOne {
+	_u.mutation.SetFailedAt(v)
+	return _u
+}
+
+// SetNillableFailedAt sets the "failed_at" field if the given value is not nil.
+func (_u *BroadcastUpdateOne) SetNillableFailedAt(v *time.Time) *BroadcastUpdateOne {
+	if v != nil {
+		_u.SetFailedAt(*v)
+	}
+	return _u
+}
+
+// ClearFailedAt clears the value of the "failed_at" field.
+func (_u *BroadcastUpdateOne) ClearFailedAt() *BroadcastUpdateOne {
+	_u.mutation.ClearFailedAt()
+	return _u
+}
+
 // SetHoldReason sets the "hold_reason" field.
-func (_u *BroadcastUpdateOne) SetHoldReason(v string) *BroadcastUpdateOne {
+func (_u *BroadcastUpdateOne) SetHoldReason(v broadcast.HoldReason) *BroadcastUpdateOne {
 	_u.mutation.SetHoldReason(v)
 	return _u
 }
 
 // SetNillableHoldReason sets the "hold_reason" field if the given value is not nil.
-func (_u *BroadcastUpdateOne) SetNillableHoldReason(v *string) *BroadcastUpdateOne {
+func (_u *BroadcastUpdateOne) SetNillableHoldReason(v *broadcast.HoldReason) *BroadcastUpdateOne {
 	if v != nil {
 		_u.SetHoldReason(*v)
 	}
@@ -1178,6 +1229,11 @@ func (_u *BroadcastUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Broadcast.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.HoldReason(); ok {
+		if err := broadcast.HoldReasonValidator(v); err != nil {
+			return &ValidationError{Name: "hold_reason", err: fmt.Errorf(`ent: validator failed for field "Broadcast.hold_reason": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Broadcast.workspace"`)
 	}
@@ -1287,11 +1343,17 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	if _u.mutation.SentAtCleared() {
 		_spec.ClearField(broadcast.FieldSentAt, field.TypeTime)
 	}
+	if value, ok := _u.mutation.FailedAt(); ok {
+		_spec.SetField(broadcast.FieldFailedAt, field.TypeTime, value)
+	}
+	if _u.mutation.FailedAtCleared() {
+		_spec.ClearField(broadcast.FieldFailedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.HoldReason(); ok {
-		_spec.SetField(broadcast.FieldHoldReason, field.TypeString, value)
+		_spec.SetField(broadcast.FieldHoldReason, field.TypeEnum, value)
 	}
 	if _u.mutation.HoldReasonCleared() {
-		_spec.ClearField(broadcast.FieldHoldReason, field.TypeString)
+		_spec.ClearField(broadcast.FieldHoldReason, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.LastScheduledAt(); ok {
 		_spec.SetField(broadcast.FieldLastScheduledAt, field.TypeTime, value)

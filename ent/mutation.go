@@ -8304,7 +8304,8 @@ type BroadcastMutation struct {
 	status             *broadcast.Status
 	scheduled_at       *time.Time
 	sent_at            *time.Time
-	hold_reason        *string
+	failed_at          *time.Time
+	hold_reason        *broadcast.HoldReason
 	last_scheduled_at  *time.Time
 	clearedFields      map[string]struct{}
 	workspace          *int64
@@ -9183,13 +9184,62 @@ func (m *BroadcastMutation) ResetSentAt() {
 	delete(m.clearedFields, broadcast.FieldSentAt)
 }
 
+// SetFailedAt sets the "failed_at" field.
+func (m *BroadcastMutation) SetFailedAt(t time.Time) {
+	m.failed_at = &t
+}
+
+// FailedAt returns the value of the "failed_at" field in the mutation.
+func (m *BroadcastMutation) FailedAt() (r time.Time, exists bool) {
+	v := m.failed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailedAt returns the old "failed_at" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldFailedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailedAt: %w", err)
+	}
+	return oldValue.FailedAt, nil
+}
+
+// ClearFailedAt clears the value of the "failed_at" field.
+func (m *BroadcastMutation) ClearFailedAt() {
+	m.failed_at = nil
+	m.clearedFields[broadcast.FieldFailedAt] = struct{}{}
+}
+
+// FailedAtCleared returns if the "failed_at" field was cleared in this mutation.
+func (m *BroadcastMutation) FailedAtCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldFailedAt]
+	return ok
+}
+
+// ResetFailedAt resets all changes to the "failed_at" field.
+func (m *BroadcastMutation) ResetFailedAt() {
+	m.failed_at = nil
+	delete(m.clearedFields, broadcast.FieldFailedAt)
+}
+
 // SetHoldReason sets the "hold_reason" field.
-func (m *BroadcastMutation) SetHoldReason(s string) {
-	m.hold_reason = &s
+func (m *BroadcastMutation) SetHoldReason(br broadcast.HoldReason) {
+	m.hold_reason = &br
 }
 
 // HoldReason returns the value of the "hold_reason" field in the mutation.
-func (m *BroadcastMutation) HoldReason() (r string, exists bool) {
+func (m *BroadcastMutation) HoldReason() (r broadcast.HoldReason, exists bool) {
 	v := m.hold_reason
 	if v == nil {
 		return
@@ -9200,7 +9250,7 @@ func (m *BroadcastMutation) HoldReason() (r string, exists bool) {
 // OldHoldReason returns the old "hold_reason" field's value of the Broadcast entity.
 // If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastMutation) OldHoldReason(ctx context.Context) (v *string, err error) {
+func (m *BroadcastMutation) OldHoldReason(ctx context.Context) (v *broadcast.HoldReason, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldHoldReason is only allowed on UpdateOne operations")
 	}
@@ -9450,7 +9500,7 @@ func (m *BroadcastMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastMutation) Fields() []string {
-	fields := make([]string, 0, 19)
+	fields := make([]string, 0, 20)
 	if m.created_at != nil {
 		fields = append(fields, broadcast.FieldCreatedAt)
 	}
@@ -9502,6 +9552,9 @@ func (m *BroadcastMutation) Fields() []string {
 	if m.sent_at != nil {
 		fields = append(fields, broadcast.FieldSentAt)
 	}
+	if m.failed_at != nil {
+		fields = append(fields, broadcast.FieldFailedAt)
+	}
 	if m.hold_reason != nil {
 		fields = append(fields, broadcast.FieldHoldReason)
 	}
@@ -9550,6 +9603,8 @@ func (m *BroadcastMutation) Field(name string) (ent.Value, bool) {
 		return m.ScheduledAt()
 	case broadcast.FieldSentAt:
 		return m.SentAt()
+	case broadcast.FieldFailedAt:
+		return m.FailedAt()
 	case broadcast.FieldHoldReason:
 		return m.HoldReason()
 	case broadcast.FieldLastScheduledAt:
@@ -9597,6 +9652,8 @@ func (m *BroadcastMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldScheduledAt(ctx)
 	case broadcast.FieldSentAt:
 		return m.OldSentAt(ctx)
+	case broadcast.FieldFailedAt:
+		return m.OldFailedAt(ctx)
 	case broadcast.FieldHoldReason:
 		return m.OldHoldReason(ctx)
 	case broadcast.FieldLastScheduledAt:
@@ -9729,8 +9786,15 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSentAt(v)
 		return nil
+	case broadcast.FieldFailedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailedAt(v)
+		return nil
 	case broadcast.FieldHoldReason:
-		v, ok := value.(string)
+		v, ok := value.(broadcast.HoldReason)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -9806,6 +9870,9 @@ func (m *BroadcastMutation) ClearedFields() []string {
 	if m.FieldCleared(broadcast.FieldSentAt) {
 		fields = append(fields, broadcast.FieldSentAt)
 	}
+	if m.FieldCleared(broadcast.FieldFailedAt) {
+		fields = append(fields, broadcast.FieldFailedAt)
+	}
 	if m.FieldCleared(broadcast.FieldHoldReason) {
 		fields = append(fields, broadcast.FieldHoldReason)
 	}
@@ -9855,6 +9922,9 @@ func (m *BroadcastMutation) ClearField(name string) error {
 		return nil
 	case broadcast.FieldSentAt:
 		m.ClearSentAt()
+		return nil
+	case broadcast.FieldFailedAt:
+		m.ClearFailedAt()
 		return nil
 	case broadcast.FieldHoldReason:
 		m.ClearHoldReason()
@@ -9920,6 +9990,9 @@ func (m *BroadcastMutation) ResetField(name string) error {
 		return nil
 	case broadcast.FieldSentAt:
 		m.ResetSentAt()
+		return nil
+	case broadcast.FieldFailedAt:
+		m.ResetFailedAt()
 		return nil
 	case broadcast.FieldHoldReason:
 		m.ResetHoldReason()

@@ -21,7 +21,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/abusewatch"
 	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
@@ -89,7 +88,7 @@ type Item struct {
 	// Since is when the problem began, when that is known.
 	Since *time.Time
 	// HoldReason is why a held Broadcast is held (the Broadcast's own hold reason).
-	HoldReason *string
+	HoldReason *broadcast.HoldReason
 	// Abuse is the rate behind a deliverability warning.
 	Abuse *abusewatch.Warning
 }
@@ -215,7 +214,7 @@ func heldBroadcasts(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, er
 	held, err := s.Broadcast().Query().
 		Where(
 			broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending),
-			broadcast.HoldReasonIn(outbound.HoldNoIntegration, outbound.HoldUnverifiedDomain, outbound.HoldProviderStopped),
+			broadcast.HoldReasonIn(broadcast.HoldReasonNoIntegration, broadcast.HoldReasonUnverifiedDomain, broadcast.HoldReasonProviderStopped),
 		).
 		Order(ent.Asc(broadcast.FieldID)).
 		All(ctx)
@@ -291,7 +290,7 @@ func failedRuns(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, erro
 
 func failedBroadcasts(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, error) {
 	failed, err := s.Broadcast().Query().
-		Where(broadcast.StatusEQ(broadcast.StatusFailed), broadcast.UpdatedAtGTE(now.Add(-recent))).
+		Where(broadcast.StatusEQ(broadcast.StatusFailed), broadcast.FailedAtGTE(now.Add(-recent))).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -300,7 +299,7 @@ func failedBroadcasts(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item
 	for _, b := range failed {
 		items = append(items, Item{
 			Kind: KindBroadcastFailed, Severity: SeverityNotice, Count: 1,
-			Subject: &Subject{ID: b.ID, Name: b.Name}, Since: &b.UpdatedAt,
+			Subject: &Subject{ID: b.ID, Name: b.Name}, Since: b.FailedAt,
 		})
 	}
 	return items, nil

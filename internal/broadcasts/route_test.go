@@ -48,7 +48,7 @@ func TestPlanHoldsABroadcastWhoseNamedIntegrationCannotSend(t *testing.T) {
 	assert.Equal(t, outbound.HoldNoIntegration, held.Reason)
 	b := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID)
 	require.NotNil(t, b.HoldReason)
-	assert.Equal(t, outbound.HoldNoIntegration, *b.HoldReason)
+	assert.EqualValues(t, outbound.HoldNoIntegration, *b.HoldReason)
 	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID))
 	assert.Empty(t, d.box.sent)
 }
@@ -69,7 +69,7 @@ func TestPaceHoldsABroadcastWhoseRouteCannotSend(t *testing.T) {
 	assert.Equal(t, route.Hold, held.Reason, "the pace holds for the reason the route gives")
 	hold := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID).HoldReason
 	require.NotNil(t, hold)
-	assert.Equal(t, outbound.HoldNoIntegration, *hold)
+	assert.EqualValues(t, outbound.HoldNoIntegration, *hold)
 }
 
 // A sending Broadcast whose route cannot send has no estimate: it is blocked, not busy.

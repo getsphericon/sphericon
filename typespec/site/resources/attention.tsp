@@ -75,8 +75,8 @@ model SiteAttentionItem {
   /** When the problem began, when that is known */
   since?: Timestamp | null;
 
-  /** Why a held Broadcast is held: `no_integration`, `unverified_domain` or `provider_stopped` */
-  holdReason?: string | null;
+  /** Why a held Broadcast is held: a reason of its own source, never a Workspace-level one */
+  holdReason?: BroadcastHoldReason | null;
 
   /** The rate behind a deliverability warning */
   abuse?: SiteAbuseWarning | null;

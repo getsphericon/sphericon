@@ -259,6 +259,54 @@ func (s *AttributionWindowDays) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes BroadcastHoldReason as json.
+func (s BroadcastHoldReason) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes BroadcastHoldReason from json.
+func (s *BroadcastHoldReason) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode BroadcastHoldReason to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch BroadcastHoldReason(v) {
+	case BroadcastHoldReasonWorkspaceSuspended:
+		*s = BroadcastHoldReasonWorkspaceSuspended
+	case BroadcastHoldReasonWorkspacePendingDeletion:
+		*s = BroadcastHoldReasonWorkspacePendingDeletion
+	case BroadcastHoldReasonStaffHold:
+		*s = BroadcastHoldReasonStaffHold
+	case BroadcastHoldReasonNoIntegration:
+		*s = BroadcastHoldReasonNoIntegration
+	case BroadcastHoldReasonUnverifiedDomain:
+		*s = BroadcastHoldReasonUnverifiedDomain
+	case BroadcastHoldReasonProviderStopped:
+		*s = BroadcastHoldReasonProviderStopped
+	default:
+		*s = BroadcastHoldReason(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s BroadcastHoldReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *BroadcastHoldReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *ContactExportBroadcastRecipient) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -5858,6 +5906,55 @@ func (s OptJsonObject) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptJsonObject) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes BroadcastHoldReason as json.
+func (o OptNilBroadcastHoldReason) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes BroadcastHoldReason from json.
+func (o *OptNilBroadcastHoldReason) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilBroadcastHoldReason to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v BroadcastHoldReason
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilBroadcastHoldReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilBroadcastHoldReason) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -20228,6 +20325,12 @@ func (s *SiteBroadcastResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.FailedAt.Set {
+			e.FieldStart("failedAt")
+			s.FailedAt.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("stats")
 		s.Stats.Encode(e)
 	}
@@ -20253,7 +20356,7 @@ func (s *SiteBroadcastResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteBroadcastResource = [20]string{
+var jsonFieldsNameOfSiteBroadcastResource = [21]string{
 	0:  "id",
 	1:  "name",
 	2:  "subject",
@@ -20269,11 +20372,12 @@ var jsonFieldsNameOfSiteBroadcastResource = [20]string{
 	12: "holdReason",
 	13: "scheduledAt",
 	14: "sentAt",
-	15: "stats",
-	16: "progress",
-	17: "archivedAt",
-	18: "createdAt",
-	19: "updatedAt",
+	15: "failedAt",
+	16: "stats",
+	17: "progress",
+	18: "archivedAt",
+	19: "createdAt",
+	20: "updatedAt",
 }
 
 // Decode decodes SiteBroadcastResource from json.
@@ -20448,8 +20552,18 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"sentAt\"")
 			}
+		case "failedAt":
+			if err := func() error {
+				s.FailedAt.Reset()
+				if err := s.FailedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"failedAt\"")
+			}
 		case "stats":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				if err := s.Stats.Decode(d); err != nil {
 					return err
@@ -20479,7 +20593,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"archivedAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[2] |= 1 << 2
+			requiredBitSet[2] |= 1 << 3
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -20489,7 +20603,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[2] |= 1 << 3
+			requiredBitSet[2] |= 1 << 4
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -20509,8 +20623,8 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b00100111,
-		0b10001000,
-		0b00001100,
+		0b00001000,
+		0b00011001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -53474,10 +53588,6 @@ func (s *SiteSetupProgress) encodeFields(e *jx.Encoder) {
 		s.Steps.Encode(e)
 	}
 	{
-		e.FieldStart("complete")
-		e.Bool(s.Complete)
-	}
-	{
 		if s.CompletedAt.Set {
 			e.FieldStart("completedAt")
 			s.CompletedAt.Encode(e)
@@ -53485,10 +53595,9 @@ func (s *SiteSetupProgress) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteSetupProgress = [3]string{
+var jsonFieldsNameOfSiteSetupProgress = [2]string{
 	0: "steps",
-	1: "complete",
-	2: "completedAt",
+	1: "completedAt",
 }
 
 // Decode decodes SiteSetupProgress from json.
@@ -53510,18 +53619,6 @@ func (s *SiteSetupProgress) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"steps\"")
 			}
-		case "complete":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Bool()
-				s.Complete = bool(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"complete\"")
-			}
 		case "completedAt":
 			if err := func() error {
 				s.CompletedAt.Reset()
@@ -53542,7 +53639,7 @@ func (s *SiteSetupProgress) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

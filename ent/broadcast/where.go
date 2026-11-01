@@ -130,9 +130,9 @@ func SentAt(v time.Time) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldSentAt, v))
 }
 
-// HoldReason applies equality check predicate on the "hold_reason" field. It's identical to HoldReasonEQ.
-func HoldReason(v string) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldEQ(FieldHoldReason, v))
+// FailedAt applies equality check predicate on the "failed_at" field. It's identical to FailedAtEQ.
+func FailedAt(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldFailedAt, v))
 }
 
 // LastScheduledAt applies equality check predicate on the "last_scheduled_at" field. It's identical to LastScheduledAtEQ.
@@ -975,59 +975,74 @@ func SentAtNotNil() predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldNotNull(FieldSentAt))
 }
 
+// FailedAtEQ applies the EQ predicate on the "failed_at" field.
+func FailedAtEQ(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldFailedAt, v))
+}
+
+// FailedAtNEQ applies the NEQ predicate on the "failed_at" field.
+func FailedAtNEQ(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNEQ(FieldFailedAt, v))
+}
+
+// FailedAtIn applies the In predicate on the "failed_at" field.
+func FailedAtIn(vs ...time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIn(FieldFailedAt, vs...))
+}
+
+// FailedAtNotIn applies the NotIn predicate on the "failed_at" field.
+func FailedAtNotIn(vs ...time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotIn(FieldFailedAt, vs...))
+}
+
+// FailedAtGT applies the GT predicate on the "failed_at" field.
+func FailedAtGT(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGT(FieldFailedAt, v))
+}
+
+// FailedAtGTE applies the GTE predicate on the "failed_at" field.
+func FailedAtGTE(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGTE(FieldFailedAt, v))
+}
+
+// FailedAtLT applies the LT predicate on the "failed_at" field.
+func FailedAtLT(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLT(FieldFailedAt, v))
+}
+
+// FailedAtLTE applies the LTE predicate on the "failed_at" field.
+func FailedAtLTE(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLTE(FieldFailedAt, v))
+}
+
+// FailedAtIsNil applies the IsNil predicate on the "failed_at" field.
+func FailedAtIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldFailedAt))
+}
+
+// FailedAtNotNil applies the NotNil predicate on the "failed_at" field.
+func FailedAtNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldFailedAt))
+}
+
 // HoldReasonEQ applies the EQ predicate on the "hold_reason" field.
-func HoldReasonEQ(v string) predicate.Broadcast {
+func HoldReasonEQ(v HoldReason) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldHoldReason, v))
 }
 
 // HoldReasonNEQ applies the NEQ predicate on the "hold_reason" field.
-func HoldReasonNEQ(v string) predicate.Broadcast {
+func HoldReasonNEQ(v HoldReason) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldNEQ(FieldHoldReason, v))
 }
 
 // HoldReasonIn applies the In predicate on the "hold_reason" field.
-func HoldReasonIn(vs ...string) predicate.Broadcast {
+func HoldReasonIn(vs ...HoldReason) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldIn(FieldHoldReason, vs...))
 }
 
 // HoldReasonNotIn applies the NotIn predicate on the "hold_reason" field.
-func HoldReasonNotIn(vs ...string) predicate.Broadcast {
+func HoldReasonNotIn(vs ...HoldReason) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldNotIn(FieldHoldReason, vs...))
-}
-
-// HoldReasonGT applies the GT predicate on the "hold_reason" field.
-func HoldReasonGT(v string) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldGT(FieldHoldReason, v))
-}
-
-// HoldReasonGTE applies the GTE predicate on the "hold_reason" field.
-func HoldReasonGTE(v string) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldGTE(FieldHoldReason, v))
-}
-
-// HoldReasonLT applies the LT predicate on the "hold_reason" field.
-func HoldReasonLT(v string) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldLT(FieldHoldReason, v))
-}
-
-// HoldReasonLTE applies the LTE predicate on the "hold_reason" field.
-func HoldReasonLTE(v string) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldLTE(FieldHoldReason, v))
-}
-
-// HoldReasonContains applies the Contains predicate on the "hold_reason" field.
-func HoldReasonContains(v string) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldContains(FieldHoldReason, v))
-}
-
-// HoldReasonHasPrefix applies the HasPrefix predicate on the "hold_reason" field.
-func HoldReasonHasPrefix(v string) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldHasPrefix(FieldHoldReason, v))
-}
-
-// HoldReasonHasSuffix applies the HasSuffix predicate on the "hold_reason" field.
-func HoldReasonHasSuffix(v string) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldHasSuffix(FieldHoldReason, v))
 }
 
 // HoldReasonIsNil applies the IsNil predicate on the "hold_reason" field.
@@ -1038,16 +1053,6 @@ func HoldReasonIsNil() predicate.Broadcast {
 // HoldReasonNotNil applies the NotNil predicate on the "hold_reason" field.
 func HoldReasonNotNil() predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldNotNull(FieldHoldReason))
-}
-
-// HoldReasonEqualFold applies the EqualFold predicate on the "hold_reason" field.
-func HoldReasonEqualFold(v string) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldEqualFold(FieldHoldReason, v))
-}
-
-// HoldReasonContainsFold applies the ContainsFold predicate on the "hold_reason" field.
-func HoldReasonContainsFold(v string) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldContainsFold(FieldHoldReason, v))
 }
 
 // LastScheduledAtEQ applies the EQ predicate on the "last_scheduled_at" field.

@@ -1262,6 +1262,25 @@ func (s *BrandKitGetUnauthorized) Validate() error {
 	return nil
 }
 
+func (s BroadcastHoldReason) Validate() error {
+	switch s {
+	case "workspace_suspended":
+		return nil
+	case "workspace_pending_deletion":
+		return nil
+	case "staff_hold":
+		return nil
+	case "no_integration":
+		return nil
+	case "unverified_domain":
+		return nil
+	case "provider_stopped":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *BroadcastReport) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -1276,6 +1295,24 @@ func (s *BroadcastReport) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "status",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.HoldReason.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "holdReason",
 			Error: err,
 		})
 	}

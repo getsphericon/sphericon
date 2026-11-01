@@ -55,6 +55,9 @@ model BroadcastResource {
   /** When the broadcast finished sending */
   sentAt?: Timestamp | null;
 
+  /** When the broadcast failed */
+  failedAt?: Timestamp | null;
+
   /** When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived. */
   archivedAt?: Timestamp | null;
 
@@ -76,12 +79,8 @@ model BroadcastReport {
   /** Lifecycle status */
   status: BroadcastStatus;
 
-  /**
-   * Why sending is currently held, when it is: `workspace_suspended`,
-   * `unverified_domain`, `no_integration` or `provider_stopped` (the provider has
-   * stopped the account). A hold is reversible, not a failure.
-   */
-  holdReason?: string | null;
+  /** Why sending is currently held, when it is */
+  holdReason?: BroadcastHoldReason | null;
 
   /** Recipients the broadcast targets */
   recipientsTotal: int32;

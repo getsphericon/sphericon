@@ -305,6 +305,26 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) external.BrandKi
 	externalapiBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return externalapiBrandKitResource
 }
+func (c *ConverterImpl) BroadcastHoldReasonToResource(source broadcast.HoldReason) external.BroadcastHoldReason {
+	var externalapiBroadcastHoldReason external.BroadcastHoldReason
+	switch source {
+	case broadcast.HoldReasonNoIntegration:
+		externalapiBroadcastHoldReason = external.BroadcastHoldReasonNoIntegration
+	case broadcast.HoldReasonProviderStopped:
+		externalapiBroadcastHoldReason = external.BroadcastHoldReasonProviderStopped
+	case broadcast.HoldReasonStaffHold:
+		externalapiBroadcastHoldReason = external.BroadcastHoldReasonStaffHold
+	case broadcast.HoldReasonUnverifiedDomain:
+		externalapiBroadcastHoldReason = external.BroadcastHoldReasonUnverifiedDomain
+	case broadcast.HoldReasonWorkspacePendingDeletion:
+		externalapiBroadcastHoldReason = external.BroadcastHoldReasonWorkspacePendingDeletion
+	case broadcast.HoldReasonWorkspaceSuspended:
+		externalapiBroadcastHoldReason = external.BroadcastHoldReasonWorkspaceSuspended
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiBroadcastHoldReason
+}
 func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipient) external.ContactExportBroadcastRecipient {
 	var externalapiContactExportBroadcastRecipient external.ContactExportBroadcastRecipient
 	if source != nil {
@@ -320,7 +340,7 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) external.BroadcastReport {
 	var externalapiBroadcastReport external.BroadcastReport
 	externalapiBroadcastReport.Status = c.BroadcastStatusToResource(source.Status)
-	externalapiBroadcastReport.HoldReason = optNilString(source.HoldReason)
+	externalapiBroadcastReport.HoldReason = optNilBroadcastHoldReason(c, source.HoldReason)
 	externalapiBroadcastReport.RecipientsTotal = count(source.Stats.Recipients)
 	externalapiBroadcastReport.SentCount = count(source.Stats.Sent)
 	externalapiBroadcastReport.SkippedCount = count(source.Stats.Skipped)
@@ -370,6 +390,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 		externalapiBroadcastResource.Status = c.BroadcastStatusToResource((*source).Status)
 		externalapiBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
 		externalapiBroadcastResource.SentAt = optNilTimestamp((*source).SentAt)
+		externalapiBroadcastResource.FailedAt = optNilTimestamp((*source).FailedAt)
 		externalapiBroadcastResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiBroadcastResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiBroadcastResource.UpdatedAt = timestamp((*source).UpdatedAt)

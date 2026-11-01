@@ -59,6 +59,19 @@ export const zApplyTagInput = z.object({
 export const zAttributionWindowDays = z.int().gte(1).lte(90);
 
 /**
+ * Why a broadcast's sending is held. A hold is reversible and not a failure: the broadcast keeps
+ * its status and the remaining recipients send once it lifts.
+ */
+export const zBroadcastHoldReason = z.enum([
+  'workspace_suspended',
+  'workspace_pending_deletion',
+  'staff_hold',
+  'no_integration',
+  'unverified_domain',
+  'provider_stopped'
+]);
+
+/**
  * How the contact first came to exist
  */
 export const zContactExportSource = z.enum([
@@ -2511,7 +2524,7 @@ export const zSiteAttentionItem = z.object({
   subject: z.exactOptional(zSiteAttentionSubject.nullable()),
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   since: z.exactOptional(zTimestamp.nullable()),
-  holdReason: z.exactOptional(z.string().nullable()),
+  holdReason: z.exactOptional(zBroadcastHoldReason.nullable()),
   abuse: z.exactOptional(zSiteAbuseWarning.nullable())
 });
 
@@ -2611,9 +2624,10 @@ export const zSiteBroadcastResource = z.object({
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable()),
   status: zSiteBroadcastStatus,
-  holdReason: z.exactOptional(z.string().nullable()),
+  holdReason: z.exactOptional(zBroadcastHoldReason.nullable()),
   scheduledAt: z.exactOptional(zTimestamp.nullable()),
   sentAt: z.exactOptional(zTimestamp.nullable()),
+  failedAt: z.exactOptional(zTimestamp.nullable()),
   stats: zSiteBroadcastStats,
   progress: z.exactOptional(zSiteBroadcastProgress.nullable()),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
@@ -3019,7 +3033,6 @@ export const zSiteSendingDomainResource = z.object({
  */
 export const zSiteSetupProgress = z.object({
   steps: zSiteSetupSteps,
-  complete: z.boolean(),
   completedAt: z.exactOptional(zTimestamp.nullable())
 });
 

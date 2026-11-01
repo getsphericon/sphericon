@@ -38,7 +38,7 @@ const MESSAGE = {
   broadcastHeld: (t, item) =>
     t(($) => $.overview.attention.kinds.broadcastHeld, {
       name: nameOf(item),
-      reason: holdExplanation(t, item.holdReason ?? ''),
+      reason: item.holdReason ? holdExplanation(t, item.holdReason) : '',
     }),
   deliverabilityWarning: (t, item) => {
     const metric = item.abuse?.metric ?? 'bounce'
