@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 
-import { handleSiteEventsList } from '../../../generated/site/msw.gen.ts'
+import { handleSiteEventsActions, handleSiteEventsList } from '../../../generated/site/msw.gen.ts'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
@@ -8,6 +8,8 @@ import { worker } from '../../../test/worker.ts'
 import { RecentActivityPage } from './recentActivity.tsx'
 
 const mount = routeMount(recentActivityRoute, { workspaceId: 'TestWs01' })
+
+const noActions = () => handleSiteEventsActions({ body: { actions: [] } })
 
 const eventsPage = () =>
   handleSiteEventsList({
@@ -31,7 +33,7 @@ const eventsPage = () =>
   })
 
 test('renders the event feed with a live toggle and action filter', async () => {
-  worker.use(eventsPage())
+  worker.use(noActions(), eventsPage())
 
   const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
 
@@ -43,7 +45,7 @@ test('renders the event feed with a live toggle and action filter', async () => 
 })
 
 test('expands a row to reveal the full event properties', async () => {
-  worker.use(eventsPage())
+  worker.use(noActions(), eventsPage())
 
   const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
 
@@ -55,6 +57,7 @@ test('expands a row to reveal the full event properties', async () => {
 
 test('says an email event of a send through a Test inbox was captured, not delivered', async () => {
   worker.use(
+    noActions(),
     handleSiteEventsList({
       body: {
         items: [
@@ -78,6 +81,6 @@ test('says an email event of a send through a Test inbox was captured, not deliv
 
   const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
 
-  await expect.element(screen.getByText('email.delivered')).toBeInTheDocument()
+  await expect.element(screen.getByText('Received an email')).toBeInTheDocument()
   await expect.element(screen.getByText('Captured, not delivered')).toBeInTheDocument()
 })

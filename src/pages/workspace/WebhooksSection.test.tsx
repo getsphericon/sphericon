@@ -58,7 +58,7 @@ test('lists endpoints, showing all events and the enabled state', async () => {
   await expect.element(screen.getByText('https://example.com/hook')).toBeInTheDocument()
   await expect.element(screen.getByText('All events', { exact: true })).toBeInTheDocument()
   await expect
-    .element(screen.getByRole('cell', { name: 'email.opened', exact: true }))
+    .element(screen.getByRole('cell', { name: 'Opened an email', exact: true }))
     .toBeInTheDocument()
   await expect.element(screen.getByText('Disabled', { exact: true })).toBeInTheDocument()
 })

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { DraftControls } from '../../components/DraftControls.tsx'
+import { EventActionBadge, EventActionName } from '../../components/EventActionName.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
@@ -44,9 +45,7 @@ function RuleVersionSummary({ version }: { version: SiteRuleVersion }) {
           {t(($) => $.rules.triggerEventsLabel)}
         </Text>
         {version.triggerEvents.map((event) => (
-          <Badge key={event} variant="outline" color="gray">
-            {event}
-          </Badge>
+          <EventActionBadge key={event} action={event} color="gray" />
         ))}
       </Group>
       <Group gap="xs">
@@ -164,7 +163,11 @@ export function RuleDetailPage() {
             title: t(($) => $.rules.firingFired),
             render: (record) => formatDateTime(record.createdAt),
           },
-          { accessor: 'action', title: t(($) => $.rules.firingAction) },
+          {
+            accessor: 'action',
+            title: t(($) => $.rules.firingAction),
+            render: (record) => <EventActionName action={record.action} />,
+          },
           {
             accessor: 'contactId',
             title: t(($) => $.rules.firingContact),

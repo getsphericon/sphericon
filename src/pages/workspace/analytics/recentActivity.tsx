@@ -1,24 +1,18 @@
-import {
-  EmptyState,
-  Alert,
-  Badge,
-  Group,
-  Stack,
-  Switch,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core'
-import { useDebouncedCallback } from '@mantine/hooks'
+import { EmptyState, Alert, Badge, Group, Stack, Select, Switch, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { EventActionName, EventActionOption } from '../../../components/EventActionName.tsx'
 import { DetailedEventRowDetails } from '../../../components/EventRowDetails.tsx'
 import { RelativeTime } from '../../../components/RelativeTime.tsx'
 import { TableSkeleton } from '../../../components/Skeletons.tsx'
-import { siteEventsListOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
+import {
+  siteEventsActionsOptions,
+  siteEventsListOptions,
+} from '../../../generated/site/@tanstack/react-query.gen.ts'
+import { useEventActionFilter, useEventActionLabel } from '../../../hooks/useEventActionLabel.ts'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as workspaceRoute } from '../../../routes/workspaces/$workspaceId/route.tsx'
 import { withPage } from '../../../searchSchemas.ts'
@@ -31,22 +25,26 @@ const LIVE_REFETCH_MS = 5000
 // manual reload — the primary way to verify that tracking works.
 export function RecentActivityPage() {
   const { t } = useTranslation()
+  const actionFilter = useEventActionFilter()
   const { workspaceId } = workspaceRoute.useParams()
   const [live, setLive] = useState(true)
-  // The filter and the page are the URL's; the field holds what is being typed.
+  const labelOf = useEventActionLabel()
+  // The filter and the page are the URL's; another filter starts on its first page.
   const { action = '', page = 1 } = recentActivityRoute.useSearch()
   const navigate = recentActivityRoute.useNavigate()
-  const [actionFilter, setActionFilter] = useState(action)
-  // A filter reaches the URL once typing pauses; another filter starts on its first page.
-  const applyAction = useDebouncedCallback(
-    (next: string) =>
-      void navigate({
-        search: { action: next.trim() || undefined },
-        replace: true,
-        viewTransition: false,
-      }),
-    300,
-  )
+  const applyAction = (next: string | null) =>
+    void navigate({
+      search: { action: next ?? undefined },
+      replace: true,
+      viewTransition: false,
+    })
+  // The actions the Workspace has recorded, a System event by its name; the URL's own stays
+  // shown while the list loads or when it names an action not recorded.
+  const actionsQuery = useQuery(siteEventsActionsOptions({ path: { workspaceId } }))
+  const actionNames = actionsQuery.data?.actions ?? []
+  const actionOptions = (
+    action && !actionNames.includes(action) ? [action, ...actionNames] : actionNames
+  ).map((name) => ({ value: name, label: labelOf(name) }))
   const setPage = (next: number) =>
     void navigate({
       search: withPage(next),
@@ -73,13 +71,15 @@ export function RecentActivityPage() {
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.activity.title)}</Title>
         <Group gap="md">
-          <TextInput
+          <Select
             placeholder={t(($) => $.activity.filterActionPlaceholder)}
-            value={actionFilter}
-            onChange={(event) => {
-              setActionFilter(event.currentTarget.value)
-              applyAction(event.currentTarget.value)
-            }}
+            searchable
+            clearable
+            data={actionOptions}
+            renderOption={({ option }) => <EventActionOption action={option.value} />}
+            filter={actionFilter}
+            value={action || null}
+            onChange={applyAction}
           />
           <Switch
             label={t(($) => $.activity.live)}
@@ -114,7 +114,7 @@ export function RecentActivityPage() {
             title: t(($) => $.activity.action),
             render: (record) => (
               <Group gap="xs">
-                <Text span>{record.action}</Text>
+                <EventActionName action={record.action} />
                 {record.properties?.captured === true ? (
                   <Badge color="gray" variant="outline">
                     {t(($) => $.activity.captured)}

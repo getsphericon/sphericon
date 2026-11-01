@@ -890,6 +890,21 @@ export default interface Resources {
       "publish": "Publish",
       "revert": "Revert"
     },
+    "eventActions": {
+      "auditEntry": "Audit log entry",
+      "contactCreated": "Became a contact",
+      "contactErased": "Was erased",
+      "emailBounced": "Bounced",
+      "emailClicked": "Clicked a link in an email",
+      "emailComplained": "Marked an email as spam",
+      "emailDelayed": "Email delayed",
+      "emailDelivered": "Received an email",
+      "emailDropped": "Email dropped",
+      "emailOpened": "Opened an email",
+      "emailSent": "Was sent an email",
+      "emailUnsubscribed": "Unsubscribed",
+      "marketingConfirmed": "Confirmed opt-in"
+    },
     "forgotPassword": {
       "backToLogin": "Back to sign in",
       "description": "Enter your email and we'll send you a reset link.",
@@ -1357,6 +1372,7 @@ export default interface Resources {
       "conditionHint": "The tests that select matching contacts.",
       "conditionLabel": "Condition",
       "createTitle": "New segment",
+      "didEvent": "Did \"{{action}}\"",
       "editTitle": "Edit segment",
       "emptyState": "Create your first segment.",
       "eventTimesLabel": "Times",

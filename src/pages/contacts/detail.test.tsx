@@ -108,8 +108,8 @@ test('asks the API for machine events only when the URL says to show them', asyn
 
   const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
 
-  await expect.element(screen.getByText('email.clicked')).toBeInTheDocument()
-  await expect.element(screen.getByText('email.opened')).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Clicked a link in an email')).toBeInTheDocument()
+  await expect.element(screen.getByText('Opened an email')).not.toBeInTheDocument()
   expect(requested.at(-1)).not.toBe('true')
 })
 
@@ -125,7 +125,7 @@ test('machine events are shown when the URL asks for them', async () => {
     initialPath: `${DETAIL_ROUTE.initialPath}?machine=true`,
   })
 
-  await expect.element(screen.getByText('email.opened')).toBeInTheDocument()
+  await expect.element(screen.getByText('Opened an email')).toBeInTheDocument()
   expect(requested.at(-1)).toBe('true')
   await expect.element(screen.getByRole('switch', { name: 'Show machine events' })).toBeChecked()
 })

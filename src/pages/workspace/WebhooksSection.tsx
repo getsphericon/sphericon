@@ -23,6 +23,7 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { EventActionNames, EventActionOption } from '../../components/EventActionName.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
@@ -42,6 +43,7 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from '../../utils/auditFilter.ts'
 import { ChangeHistoryLink } from './AuditLogSection.tsx'
@@ -112,6 +114,7 @@ function TestEventModal({
   onClose: () => void
 }) {
   const { t } = useTranslation()
+  const labelOf = useEventActionLabel()
   const [eventType, setEventType] = useState<string | null>(TEST_EVENT_OPTIONS[0] ?? null)
   const [result, setResult] = useState<SiteWebhookTestResult | null>(null)
 
@@ -136,7 +139,8 @@ function TestEventModal({
         </Text>
         <Select
           label={t(($) => $.settings.webhooks.testEventLabel)}
-          data={TEST_EVENT_OPTIONS}
+          data={TEST_EVENT_OPTIONS.map((name) => ({ value: name, label: labelOf(name) }))}
+          renderOption={({ option }) => <EventActionOption action={option.value} />}
           value={eventType}
           onChange={setEventType}
           allowDeselect={false}
@@ -188,9 +192,11 @@ function WebhooksTable({
           accessor: 'eventTypes',
           title: t(($) => $.settings.webhooks.eventsLabel),
           render: (record) =>
-            record.eventTypes.length === 0
-              ? t(($) => $.settings.webhooks.allEvents)
-              : record.eventTypes.join(', '),
+            record.eventTypes.length === 0 ? (
+              t(($) => $.settings.webhooks.allEvents)
+            ) : (
+              <EventActionNames actions={record.eventTypes} />
+            ),
         },
         {
           accessor: 'enabled',
@@ -275,6 +281,7 @@ function WebhooksTable({
 
 export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
+  const labelOf = useEventActionLabel()
   const confirmDelete = useConfirmation()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [testingId, setTestingId] = useState<string | null>(null)
@@ -379,7 +386,8 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
             <MultiSelect
               label={t(($) => $.settings.webhooks.eventsLabel)}
               description={t(($) => $.settings.webhooks.eventsHint)}
-              data={EVENT_OPTIONS}
+              data={EVENT_OPTIONS.map((name) => ({ value: name, label: labelOf(name) }))}
+              renderOption={({ option }) => <EventActionOption action={option.value} />}
               {...form.getInputProps('eventTypes')}
             />
             <Button type="submit" loading={createMutation.isPending}>

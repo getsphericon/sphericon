@@ -14,6 +14,7 @@ import {
 import { SiteConditionEventOperator } from '../../generated/site/types.gen.ts'
 import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
 import { useTimeZone } from '../../hooks/useDateFormat.ts'
+import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { eventFieldPrefix, eventPresets, toCondition, toDraft, toQuery } from './condition.ts'
 import type { ConditionDraft } from './condition.ts'
 import { EventCountEditor } from './EventCountEditor.tsx'
@@ -70,6 +71,7 @@ export function ConditionBuilder({
   triggerLeaves = false,
 }: ConditionBuilderProps) {
   const { t } = useTranslation()
+  const labelOf = useEventActionLabel()
   // The days of before and after are days in the User time zone (ADR 0068).
   const timeZone = useTimeZone()
   const [initialQuery] = useState(() => toQuery(initialValue, timeZone))
@@ -92,9 +94,11 @@ export function ConditionBuilder({
       operators: operatorsOf(f),
       inputType: inputTypeOfField(f),
     }))
+    // A System event reads as its name ("Opened an email"); a customer's action as it was tracked.
     const eventFields = (actionsQuery.data?.actions ?? []).map<Field>((action) => ({
       name: `${eventFieldPrefix}${action}`,
-      label: `Did "${action}"`,
+      label:
+        labelOf(action) === action ? t(($) => $.segments.didEvent, { action }) : labelOf(action),
       operators: eventOperators,
       defaultOperator: eventPresets.performed,
     }))
@@ -102,7 +106,7 @@ export function ConditionBuilder({
       ? [{ name: triggerFieldPrefix, label: 'Event property' }]
       : []
     return [...contactFields, ...customFields, ...eventFields, ...triggerFields]
-  }, [actionsQuery.data, customFieldsQuery.data, triggerLeaves])
+  }, [actionsQuery.data, customFieldsQuery.data, labelOf, t, triggerLeaves])
 
   return (
     <Stack gap="xs">

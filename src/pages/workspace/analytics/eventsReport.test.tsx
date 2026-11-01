@@ -30,7 +30,7 @@ test('lists each action with its counts and last occurrence', async () => {
   const { screen } = await renderWithRouter(<EventsReportPage />, mount)
 
   await expect.element(screen.getByText('purchase')).toBeInTheDocument()
-  await expect.element(screen.getByText('email.opened')).toBeInTheDocument()
+  await expect.element(screen.getByText('Opened an email')).toBeInTheDocument()
   await expect.element(screen.getByText('12', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('7', { exact: true })).toBeInTheDocument()
 })
