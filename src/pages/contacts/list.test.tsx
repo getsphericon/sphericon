@@ -29,7 +29,16 @@ test('lists the workspace contacts', async () => {
 
   await expect.element(screen.getByText('alice@example.com')).toBeInTheDocument()
   await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
-  await expect.element(screen.getByText('Smith')).toBeInTheDocument()
+  await expect.element(screen.getByText('Alice Smith', { exact: true })).toBeInTheDocument()
+})
+
+test('shows the tags of each contact', async () => {
+  worker.use(handleSiteContactsList({ body: page([{ ...ALICE, tags: ['vip', 'beta'] }, BOB], 2) }))
+
+  const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByText('vip', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('beta', { exact: true })).toBeInTheDocument()
 })
 
 test('shows each contact with an avatar of their initials', async () => {

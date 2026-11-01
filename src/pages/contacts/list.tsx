@@ -1,4 +1,4 @@
-import { Avatar, Button, Group, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Avatar, Badge, Button, Group, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { IconSearch } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
@@ -13,7 +13,7 @@ import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
-import { contactName } from '../../utils/contactName.ts'
+import { contactFullName, contactName } from '../../utils/contactName.ts'
 import { ContactCreateModal } from './resource.tsx'
 
 export function ContactsListPage() {
@@ -80,24 +80,49 @@ export function ContactsListPage() {
         }
         columns={[
           {
+            // Who the Contact is in one cell: the name, with the email under it; a Contact
+            // without a name shows its first identifier alone.
             accessor: 'email',
-            title: t(($) => $.table.email),
+            title: t(($) => $.table.contact),
+            render: (record) => {
+              const fullName = contactFullName(record)
+              const identifier = record.email ?? record.subjectId ?? record.phone
+              return (
+                <Group gap="sm" wrap="nowrap">
+                  <Avatar
+                    size="sm"
+                    color="initials"
+                    name={contactName(record)}
+                    src={record.avatar ?? null}
+                    alt={contactName(record)}
+                  />
+                  <Stack gap={0}>
+                    <Text size="sm" fw={500}>
+                      {fullName || identifier}
+                    </Text>
+                    {fullName && identifier ? (
+                      <Text size="xs" c="dimmed">
+                        {identifier}
+                      </Text>
+                    ) : null}
+                  </Stack>
+                </Group>
+              )
+            },
+          },
+          {
+            accessor: 'tags',
+            title: t(($) => $.table.tags),
             render: (record) => (
-              <Group gap="sm" wrap="nowrap">
-                <Avatar
-                  size="sm"
-                  color="initials"
-                  name={contactName(record)}
-                  src={record.avatar ?? null}
-                  alt={contactName(record)}
-                />
-                <Text size="sm">{record.email}</Text>
+              <Group gap={4}>
+                {record.tags.map((tag) => (
+                  <Badge key={tag} variant="light" size="sm">
+                    {tag}
+                  </Badge>
+                ))}
               </Group>
             ),
           },
-          { accessor: 'firstName', title: t(($) => $.table.firstName) },
-          { accessor: 'lastName', title: t(($) => $.table.lastName) },
-          { accessor: 'timeZone', title: t(($) => $.table.timeZone) },
           {
             accessor: 'actions',
             title: t(($) => $.table.actions),

@@ -2088,6 +2088,7 @@ export default interface Resources {
       "avatar": "Photo URL",
       "birthday": "Birthday",
       "city": "City",
+      "contact": "Contact",
       "country": "Country",
       "email": "Email",
       "firstName": "First name",
