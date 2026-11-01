@@ -4,12 +4,15 @@ status: accepted
 
 # One attribute concept: typed Custom fields, auto-created — no schemaless traits
 
-Every Contact attribute beyond the core fields (email / phone / subject_id / name) is a
-**Custom field**: a workspace-defined, typed, named definition. There is no second,
-schemaless "trait" concept living alongside it. When an unknown key arrives — from Identify or
-an Event payload — it is **auto-created** as a Custom field with an inferred type
-(declared-by-use), but from that first sight it is a first-class, typed, renameable definition,
-not an anonymous key in a bag.
+Every Contact attribute beyond the core fields is a **Custom field**: a workspace-defined, typed,
+named definition. There is no second, schemaless "trait" concept living alongside it. When an
+unknown key arrives — from Identify or an Event payload — it is **auto-created** as a Custom field
+with an inferred type (declared-by-use), but from that first sight it is a first-class, typed,
+renameable definition, not an anonymous key in a bag.
+
+The core fields are the alias keys (subject_id, email, phone) and the core attributes: the ones
+sphericon itself reads and the ones most marketing platforms model as standard (first and last name,
+time zone, country, locale, birthday, city, avatar). How Identify writes them is ADR 0072.
 
 This rejects the usual CDP two-layer shape (Segment, Customer.io): raw schemaless traits
 flowing in from `identify`, plus a curated/typed subset "promoted" into custom fields. That

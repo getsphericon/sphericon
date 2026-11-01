@@ -41,9 +41,14 @@ Integration's ingest hook never creates a Contact. Set once at creation and neve
 predates the field has no source. Not a **Sending source** (the unsubscribe scope).
 _Avoid_: Origin, channel, acquisition source
 
+**Contact locale**:
+The language a Contact reads in, optionally with its region: `de`, `pt-BR`. A core attribute of the
+Contact, not the language the **Instance** writes its own system text in.
+_Avoid_: Language, lang
+
 **Custom field**:
 A workspace-defined, typed, named attribute on the Contact, beyond the core fields
-(email / phone / subject_id / name / time zone / country). The one attribute concept — there is no separate,
+(the alias keys, name, time zone, country, **Contact locale**, birthday, city, avatar). The one attribute concept — there is no separate,
 schemaless "trait". An unknown key arriving from Identify or an Event payload is
 _auto-created_ as a Custom field with an inferred type (declared-by-use), but it is a
 first-class, typed, renameable definition from the first sight, not an anonymous bag of
@@ -67,8 +72,8 @@ _Avoid_: Tracking visitor, session, device, anonymous user
 
 **Identify** (identity resolution):
 The act of binding a Visitor to a Contact and asserting that Contact's alias keys
-(subject_id / email / phone). It stitches the Visitor's earlier anonymous Events onto the
-Contact, so pre-identify behavior becomes visible to segmentation.
+(subject_id / email / phone) and its core attributes. It stitches the Visitor's earlier anonymous
+Events onto the Contact, so pre-identify behavior becomes visible to segmentation.
 _Avoid_: Alias, merge, reconcile
 
 **Event**:
