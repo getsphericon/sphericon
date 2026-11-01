@@ -38,7 +38,7 @@ func TestListIsNewestFirstAndWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 
-	page, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, false)
+	page, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, false, nil, broadcasts.OrderNewest)
 	require.NoError(t, err)
 	require.Len(t, page.Items, page.TotalItems)
 	require.Greater(t, page.TotalItems, 2)

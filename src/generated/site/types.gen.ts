@@ -1341,7 +1341,7 @@ export type SiteAnalyticsContacts = {
 };
 
 /**
- * Email engagement for the messages sent in the selected range (the send
+ * Email engagement for the Broadcast messages sent in the selected range (the send
  * cohort), from delivery logs. Opens/clicks are counted among that cohort, so
  * the counts reconcile and the rates stay in [0,1].
  */
@@ -1479,17 +1479,13 @@ export type SiteAnalyticsOpensCell = {
  */
 export type SiteAnalyticsOverview = {
   contacts: SiteAnalyticsContacts;
+  sending: SiteAnalyticsSending;
   email: SiteAnalyticsEmail;
   automations: SiteAnalyticsAutomations;
   /**
    * Daily engagement series, oldest first, one point per day in the range
    */
   timeseries: Array<SiteAnalyticsPoint>;
-  /**
-   * Present while the Workspace is in the abuse detector's warning tier; absent
-   * otherwise and without the `staff` license
-   */
-  abuseWarning?: SiteAbuseWarning | null;
 };
 
 /**
@@ -1503,12 +1499,12 @@ export const SiteAnalyticsOwnerKind = { BROADCAST: 'broadcast', AUTOMATION: 'aut
 export type SiteAnalyticsOwnerKind = typeof SiteAnalyticsOwnerKind[keyof typeof SiteAnalyticsOwnerKind];
 
 /**
- * One UTC send-day of the cohort, zero-filled across the range. Opened/clicked
+ * One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked
  * count the messages sent that day that were later opened/clicked.
  */
 export type SiteAnalyticsPoint = {
   /**
-   * Day bucket, YYYY-MM-DD (UTC)
+   * The Report day, `YYYY-MM-DD` in the Workspace time zone
    */
   date: string;
   /**
@@ -1551,6 +1547,11 @@ export type SiteAnalyticsRevenue = {
    */
   reportingCurrency: CurrencyCode | null;
   /**
+   * When the Workspace's first Order was completed, in any currency and whatever the range; null
+   * while it has sent none. A Reporting currency chosen before any Order leaves it null.
+   */
+  firstOrderAt: Timestamp | null;
+  /**
    * Revenue over the range, in the minor unit of the Reporting currency
    */
   total: number;
@@ -1569,14 +1570,46 @@ export type SiteAnalyticsRevenue = {
    */
   creditedOrders: number;
   /**
-   * Orders in the range kept in another currency: they are listed with the Workspace's
-   * Events but counted in no sum
+   * Orders completed in the range in another currency, one entry per currency ordered by its
+   * code: they are listed with the Workspace's Events but counted in no sum
    */
-  otherCurrencyOrders: number;
+  otherCurrencyOrders: Array<SiteOrdersInCurrency>;
   /**
    * One point per Report day in the range, oldest first, zero-filled
    */
   series: Array<SiteRevenuePoint>;
+};
+
+/**
+ * The messages sent in the range through every surface, read from the Outbound messages
+ * themselves (ADR 0053): what went out and what the provider said became of it. A Workspace that
+ * only runs Automations or Transactional sends has its sends here, not in `email`.
+ */
+export type SiteAnalyticsSending = {
+  /**
+   * Messages of Broadcasts sent in the range
+   */
+  broadcast: number;
+  /**
+   * Messages of Automations sent in the range
+   */
+  automation: number;
+  /**
+   * Transactional messages sent in the range
+   */
+  transactional: number;
+  /**
+   * Of all the messages sent in the range, those the provider reported delivered
+   */
+  delivered: number;
+  /**
+   * Of all the messages sent in the range, those the provider reported bounced
+   */
+  bounced: number;
+  /**
+   * Of all the messages sent in the range, those a recipient marked as spam
+   */
+  complained: number;
 };
 
 /**
@@ -1652,6 +1685,93 @@ export type SiteApiTokenResource = {
    * Creation timestamp
    */
   createdAt: Timestamp;
+};
+
+/**
+ * One thing in the Workspace that needs a member's action now
+ */
+export type SiteAttentionItem = {
+  kind: SiteAttentionKind;
+  severity: SiteAttentionSeverity;
+  /**
+   * The object the item is about; absent for the Workspace's own Send cap and a deliverability warning
+   */
+  subject?: SiteAttentionSubject | null;
+  /**
+   * How many failures the item stands for: failed runs of an Automation, 1 for every other kind
+   */
+  count: number;
+  /**
+   * When the problem began, when that is known
+   */
+  since?: Timestamp | null;
+  /**
+   * Why a held Broadcast is held: `no_integration`, `unverified_domain` or `provider_stopped`
+   */
+  holdReason?: string | null;
+  /**
+   * The rate behind a deliverability warning
+   */
+  abuse?: SiteAbuseWarning | null;
+};
+
+/**
+ * What a Needs attention item is about
+ */
+export const SiteAttentionKind = {
+  SENDING_DOMAIN_VERIFICATION_LOST: 'sendingDomainVerificationLost',
+  INTEGRATION_PROVIDER_STOPPED: 'integrationProviderStopped',
+  BROADCAST_HELD: 'broadcastHeld',
+  DELIVERABILITY_WARNING: 'deliverabilityWarning',
+  SEND_CAP_SPENT: 'sendCapSpent',
+  PROVIDER_LIMIT_SPENT: 'providerLimitSpent',
+  INTEGRATION_PROVIDER_PROBATION: 'integrationProviderProbation',
+  INTEGRATION_PROVIDER_SANDBOX: 'integrationProviderSandbox',
+  ENROLLMENTS_FAILED: 'enrollmentsFailed',
+  BROADCAST_FAILED: 'broadcastFailed',
+  WEBHOOK_DISABLED: 'webhookDisabled'
+} as const;
+
+/**
+ * What a Needs attention item is about
+ */
+export type SiteAttentionKind = typeof SiteAttentionKind[keyof typeof SiteAttentionKind];
+
+/**
+ * What in the Workspace needs a member's action now, most urgent first and, within a severity,
+ * the oldest first. Every item is true at the moment it is read; a Workspace suspension and a
+ * Staff hold are not items, the Workspace itself carries them.
+ */
+export type SiteAttentionList = {
+  items: Array<SiteAttentionItem>;
+};
+
+/**
+ * How urgent an item is
+ */
+export const SiteAttentionSeverity = {
+  BLOCKED: 'blocked',
+  DEGRADED: 'degraded',
+  NOTICE: 'notice'
+} as const;
+
+/**
+ * How urgent an item is
+ */
+export type SiteAttentionSeverity = typeof SiteAttentionSeverity[keyof typeof SiteAttentionSeverity];
+
+/**
+ * The object a Needs attention item is about
+ */
+export type SiteAttentionSubject = {
+  /**
+   * Its id: a Sending domain, an Integration, a Broadcast, an Automation or a Webhook endpoint, by `kind`
+   */
+  id: EntityId;
+  /**
+   * Its name: the domain, the label, the name, or the endpoint's URL
+   */
+  name: string;
 };
 
 /**
@@ -2434,6 +2554,20 @@ export const SiteBroadcastStatus = {
  * Broadcast lifecycle status
  */
 export type SiteBroadcastStatus = typeof SiteBroadcastStatus[keyof typeof SiteBroadcastStatus];
+
+/**
+ * The order of the broadcast list
+ */
+export const SiteBroadcastsOrder = {
+  NEWEST: 'newest',
+  SCHEDULED_SOONEST: 'scheduledSoonest',
+  SENT_LATEST: 'sentLatest'
+} as const;
+
+/**
+ * The order of the broadcast list
+ */
+export type SiteBroadcastsOrder = typeof SiteBroadcastsOrder[keyof typeof SiteBroadcastsOrder];
 
 /**
  * What a Captured message list shows of each message: everything but the content
@@ -4247,6 +4381,20 @@ export type SiteOptionalConsentList = {
 };
 
 /**
+ * Orders completed in the range in one currency other than the Reporting currency
+ */
+export type SiteOrdersInCurrency = {
+  /**
+   * The currency the Orders are in
+   */
+  currency: CurrencyCode;
+  /**
+   * Orders completed in the range in that currency
+   */
+  orders: number;
+};
+
+/**
  * One Passkey of the authenticated User (ADR 0051). Its public key and credential id are
  * never returned.
  */
@@ -5257,14 +5405,19 @@ export type SiteSetDomainJoinInput = {
 };
 
 /**
- * The Workspace's Setup checklist: a point-in-time read model, never ticked by hand
+ * The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read
+ * that first finds every step done stamps the Workspace, which keeps it complete for good
  */
 export type SiteSetupProgress = {
   steps: SiteSetupSteps;
   /**
-   * Every step is done
+   * Every step was found done once; a step that regresses later does not undo it
    */
   complete: boolean;
+  /**
+   * When every step was first found done; null until then
+   */
+  completedAt?: Timestamp | null;
 };
 
 /**
@@ -6735,7 +6888,17 @@ export type SiteBroadcastResourceParentKey = WorkspaceId;
 /**
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
-export type SiteBroadcastsListFilter = boolean;
+export type SiteBroadcastsListFilterArchived = boolean;
+
+/**
+ * The order of the list: `newest` when absent
+ */
+export type SiteBroadcastsListFilterOrder = SiteBroadcastsOrder;
+
+/**
+ * Only the broadcasts in one of these statuses; every status when absent
+ */
+export type SiteBroadcastsListFilterStatus = Array<SiteBroadcastStatus>;
 
 /**
  * Unique identifier
@@ -9005,6 +9168,37 @@ export type SiteAnalyticsSubscribedPeopleResponses = {
 
 export type SiteAnalyticsSubscribedPeopleResponse = SiteAnalyticsSubscribedPeopleResponses[keyof SiteAnalyticsSubscribedPeopleResponses];
 
+export type SiteAttentionGetData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/attention';
+};
+
+export type SiteAttentionGetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAttentionGetError = SiteAttentionGetErrors[keyof SiteAttentionGetErrors];
+
+export type SiteAttentionGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAttentionList;
+};
+
+export type SiteAttentionGetResponse = SiteAttentionGetResponses[keyof SiteAttentionGetResponses];
+
 export type SiteAuditListData = {
   body?: never;
   path: {
@@ -10044,6 +10238,14 @@ export type SiteBroadcastsListData = {
      * true lists the archived broadcasts instead of the kept ones; the default hides them
      */
     archived?: boolean;
+    /**
+     * Only the broadcasts in one of these statuses; every status when absent
+     */
+    status?: Array<SiteBroadcastStatus>;
+    /**
+     * The order of the list: `newest` when absent
+     */
+    order?: SiteBroadcastsOrder;
   };
   url: '/workspaces/{workspaceId}/broadcasts';
 };

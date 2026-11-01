@@ -963,8 +963,20 @@ The Workspace's path to its first sent email, shown on the Overview until it is 
 with a sent outcome, from any surface). Each step is
 read off the Workspace's own data, never ticked by hand, so it cannot disagree with the Workspace;
 a Sending domain still waiting for DNS is a step in progress and blocks no later step. A Test send
-does not complete the last step.
+does not complete the last step. The first time every step is found done the Workspace keeps that
+moment, and the checklist is done for good: a step that later regresses is not onboarding again
+(a Sending domain that loses its record is an item that **Needs attention**).
 _Avoid_: Onboarding wizard, getting started, tour
+
+**Needs attention**:
+What in a Workspace needs a member's action now, the Overview's first block, shown only while it
+holds an item: what stops its mail (a Sending domain that lost its DKIM record, an Integration whose
+provider stopped the account, a Broadcast held by a check of its own), what slows it or puts it at
+risk (the abuse detector's warning tier, a spent Send cap or Provider limit, a provider's probation
+or sandbox), and what failed without a retry this week (Automation runs, a Broadcast, a Webhook
+endpoint that disabled itself). Every item is read live from the rows that hold the fact; none is
+stored. A Workspace suspension and a Staff hold are banners of their own, not items.
+_Avoid_: Alerts, notifications, issues, health
 
 **Sign-up survey**:
 An optional set of four one-question screens (role, company size, main goal, how the User heard of the

@@ -46,7 +46,8 @@ func (h *Handlers) broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.
 func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBroadcastsListParams) (siteapi.SiteBroadcastsListRes, error) {
 	ws := workspaceScope(ctx)
 
-	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
+	order := inputs.BroadcastsOrder(params.Order.Or(siteapi.SiteBroadcastsOrderNewest))
+	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false), inputs.BroadcastStatuses(params.Status), order)
 	if err != nil {
 		return nil, err
 	}

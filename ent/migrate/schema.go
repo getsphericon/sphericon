@@ -2745,6 +2745,7 @@ var (
 		{Name: "postal_address", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "retention_days", Type: field.TypeInt, Nullable: true},
 		{Name: "timezone", Type: field.TypeString, Nullable: true},
+		{Name: "setup_completed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "reporting_currency", Type: field.TypeString, Nullable: true},
 		{Name: "attribution_window_days", Type: field.TypeInt, Default: 5},
 		{Name: "send_cap", Type: field.TypeInt, Nullable: true},
@@ -2770,7 +2771,7 @@ var (
 			{
 				Name:    "workspace_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{WorkspacesColumns[16], WorkspacesColumns[0]},
+				Columns: []*schema.Column{WorkspacesColumns[17], WorkspacesColumns[0]},
 			},
 		},
 	}

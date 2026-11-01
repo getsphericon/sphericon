@@ -13,6 +13,7 @@ const (
 	SiteAnalyticsOverviewOperation                     OperationName = "SiteAnalyticsOverview"
 	SiteAnalyticsRevenueOperation                      OperationName = "SiteAnalyticsRevenue"
 	SiteAnalyticsSubscribedPeopleOperation             OperationName = "SiteAnalyticsSubscribedPeople"
+	SiteAttentionGetOperation                          OperationName = "SiteAttentionGet"
 	SiteAuditExportOperation                           OperationName = "SiteAuditExport"
 	SiteAuditFacetsOperation                           OperationName = "SiteAuditFacets"
 	SiteAuditGetRetentionOperation                     OperationName = "SiteAuditGetRetention"

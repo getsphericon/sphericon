@@ -17,20 +17,14 @@ func analyticsReport[Res any](ctx context.Context, rng siteapi.OptSiteAnalyticsR
 	return build(workspaceScope(ctx), inputs.AnalyticsWindow(rng.Or(siteapi.SiteAnalyticsRange7d)))
 }
 
-// SiteAnalyticsOverview maps the analytics module's Overview onto the DTO, with the abuse warning.
+// SiteAnalyticsOverview maps the analytics module's Overview onto the DTO.
 func (h *Handlers) SiteAnalyticsOverview(ctx context.Context, params siteapi.SiteAnalyticsOverviewParams) (siteapi.SiteAnalyticsOverviewRes, error) {
 	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsOverviewRes, error) {
 		ov, err := h.analytics.Overview(ctx, s, w)
 		if err != nil {
 			return nil, err
 		}
-		warning, err := h.abuseWarning(ctx, s)
-		if err != nil {
-			return nil, err
-		}
-		out := mapper.AnalyticsOverviewToResource(ov)
-		out.AbuseWarning = warning
-		return out, nil
+		return mapper.AnalyticsOverviewToResource(ov), nil
 	})
 }
 
@@ -43,19 +37,6 @@ func (h *Handlers) SiteAnalyticsEvents(ctx context.Context, params siteapi.SiteA
 		}
 		return &siteapi.SiteAnalyticsEvents{Actions: mapper.AnalyticsEventActionsToResources(rows)}, nil
 	})
-}
-
-// abuseWarning is the Workspace's place in the abuse detector's warning tier, computed
-// live (ADR 0026); unset without the detector.
-func (h *Handlers) abuseWarning(ctx context.Context, s *ent.Scoped) (siteapi.OptNilSiteAbuseWarning, error) {
-	if h.abuseWatch == nil {
-		return siteapi.OptNilSiteAbuseWarning{}, nil
-	}
-	w, err := h.abuseWatch.Warning(ctx, s, h.now())
-	if err != nil || w == nil {
-		return siteapi.OptNilSiteAbuseWarning{}, err
-	}
-	return siteapi.NewOptNilSiteAbuseWarning(mapper.AbuseWarningToResource(*w)), nil
 }
 
 // SiteAnalyticsSubscribedPeople maps the Subscribed people report onto the DTO.

@@ -5,6 +5,7 @@ package resources
 
 import (
 	"fmt"
+	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
@@ -182,6 +183,34 @@ func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) broadcas
 	}
 	return broadcastsCreateInput
 }
+func (c *InputsImpl) BroadcastStatus(source site.SiteBroadcastStatus) broadcast.Status {
+	var broadcastStatus broadcast.Status
+	switch source {
+	case site.SiteBroadcastStatusDraft:
+		broadcastStatus = broadcast.StatusDraft
+	case site.SiteBroadcastStatusFailed:
+		broadcastStatus = broadcast.StatusFailed
+	case site.SiteBroadcastStatusScheduled:
+		broadcastStatus = broadcast.StatusScheduled
+	case site.SiteBroadcastStatusSending:
+		broadcastStatus = broadcast.StatusSending
+	case site.SiteBroadcastStatusSent:
+		broadcastStatus = broadcast.StatusSent
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return broadcastStatus
+}
+func (c *InputsImpl) BroadcastStatuses(source []site.SiteBroadcastStatus) []broadcast.Status {
+	var broadcastStatusList []broadcast.Status
+	if source != nil {
+		broadcastStatusList = make([]broadcast.Status, len(source))
+		for i := 0; i < len(source); i++ {
+			broadcastStatusList[i] = c.BroadcastStatus(source[i])
+		}
+	}
+	return broadcastStatusList
+}
 func (c *InputsImpl) BroadcastUpdate(source *site.UpdateBroadcastInput) broadcasts.UpdateInput {
 	var broadcastsUpdateInput broadcasts.UpdateInput
 	if source != nil {
@@ -195,6 +224,20 @@ func (c *InputsImpl) BroadcastUpdate(source *site.UpdateBroadcastInput) broadcas
 		broadcastsUpdateInput.IntegrationID = nilEntityIDPatch((*source).IntegrationId)
 	}
 	return broadcastsUpdateInput
+}
+func (c *InputsImpl) BroadcastsOrder(source site.SiteBroadcastsOrder) broadcasts.Order {
+	var broadcastsOrder broadcasts.Order
+	switch source {
+	case site.SiteBroadcastsOrderNewest:
+		broadcastsOrder = broadcasts.OrderNewest
+	case site.SiteBroadcastsOrderScheduledSoonest:
+		broadcastsOrder = broadcasts.OrderScheduledSoonest
+	case site.SiteBroadcastsOrderSentLatest:
+		broadcastsOrder = broadcasts.OrderSentLatest
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return broadcastsOrder
 }
 func (c *InputsImpl) ContactAttributes(source site.SiteCreateContactInput) contacts.Attributes {
 	var contactsAttributes contacts.Attributes

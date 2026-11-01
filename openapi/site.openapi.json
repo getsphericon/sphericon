@@ -82,6 +82,9 @@
       "name": "Site Setup Checklist"
     },
     {
+      "name": "Site Attention"
+    },
+    {
       "name": "Site Suppressions"
     },
     {
@@ -4452,6 +4455,56 @@
         "x-required-permissions": []
       }
     },
+    "/workspaces/{workspaceId}/attention": {
+      "get": {
+        "operationId": "SiteAttention_get",
+        "description": "What needs attention in the Workspace. Open to every member.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAttentionList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Attention"],
+        "x-required-permissions": []
+      }
+    },
     "/workspaces/{workspaceId}/audit-entries": {
       "get": {
         "operationId": "SiteAudit_list",
@@ -6032,7 +6085,13 @@
             "$ref": "#/components/parameters/PageQuery.pageSize"
           },
           {
-            "$ref": "#/components/parameters/SiteBroadcastsListFilter"
+            "$ref": "#/components/parameters/SiteBroadcastsListFilter.archived"
+          },
+          {
+            "$ref": "#/components/parameters/SiteBroadcastsListFilter.status"
+          },
+          {
+            "$ref": "#/components/parameters/SiteBroadcastsListFilter.order"
           }
         ],
         "responses": {
@@ -13875,7 +13934,7 @@
           "$ref": "#/components/schemas/WorkspaceId"
         }
       },
-      "SiteBroadcastsListFilter": {
+      "SiteBroadcastsListFilter.archived": {
         "name": "archived",
         "in": "query",
         "required": false,
@@ -13884,6 +13943,28 @@
           "type": "boolean"
         },
         "explode": false
+      },
+      "SiteBroadcastsListFilter.order": {
+        "name": "order",
+        "in": "query",
+        "required": false,
+        "description": "The order of the list: `newest` when absent",
+        "schema": {
+          "$ref": "#/components/schemas/SiteBroadcastsOrder"
+        },
+        "explode": false
+      },
+      "SiteBroadcastsListFilter.status": {
+        "name": "status",
+        "in": "query",
+        "required": false,
+        "description": "Only the broadcasts in one of these statuses; every status when absent",
+        "schema": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/SiteBroadcastStatus"
+          }
+        }
       },
       "SiteCapturedMessageResourceKey.id": {
         "name": "id",
@@ -16154,7 +16235,7 @@
             "description": "Clicked ÷ opened (0–1)"
           }
         },
-        "description": "Email engagement for the messages sent in the selected range (the send\ncohort), from delivery logs. Opens/clicks are counted among that cohort, so\nthe counts reconcile and the rates stay in [0,1]."
+        "description": "Email engagement for the Broadcast messages sent in the selected range (the send\ncohort), from delivery logs. Opens/clicks are counted among that cohort, so\nthe counts reconcile and the rates stay in [0,1]."
       },
       "SiteAnalyticsEventAction": {
         "type": "object",
@@ -16296,10 +16377,13 @@
       },
       "SiteAnalyticsOverview": {
         "type": "object",
-        "required": ["contacts", "email", "automations", "timeseries"],
+        "required": ["contacts", "sending", "email", "automations", "timeseries"],
         "properties": {
           "contacts": {
             "$ref": "#/components/schemas/SiteAnalyticsContacts"
+          },
+          "sending": {
+            "$ref": "#/components/schemas/SiteAnalyticsSending"
           },
           "email": {
             "$ref": "#/components/schemas/SiteAnalyticsEmail"
@@ -16313,16 +16397,6 @@
               "$ref": "#/components/schemas/SiteAnalyticsPoint"
             },
             "description": "Daily engagement series, oldest first, one point per day in the range"
-          },
-          "abuseWarning": {
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteAbuseWarning"
-              }
-            ],
-            "nullable": true,
-            "description": "Present while the Workspace is in the abuse detector's warning tier; absent\notherwise and without the `staff` license"
           }
         },
         "description": "Workspace analytics overview powering the dashboard"
@@ -16338,7 +16412,7 @@
         "properties": {
           "date": {
             "type": "string",
-            "description": "Day bucket, YYYY-MM-DD (UTC)"
+            "description": "The Report day, `YYYY-MM-DD` in the Workspace time zone"
           },
           "sent": {
             "type": "integer",
@@ -16356,7 +16430,7 @@
             "description": "Messages sent that day that were clicked"
           }
         },
-        "description": "One UTC send-day of the cohort, zero-filled across the range. Opened/clicked\ncount the messages sent that day that were later opened/clicked."
+        "description": "One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked\ncount the messages sent that day that were later opened/clicked."
       },
       "SiteAnalyticsRange": {
         "type": "string",
@@ -16367,6 +16441,7 @@
         "type": "object",
         "required": [
           "reportingCurrency",
+          "firstOrderAt",
           "total",
           "credited",
           "orders",
@@ -16384,6 +16459,16 @@
             ],
             "nullable": true,
             "description": "The Reporting currency, null until the first Order or an Owner or Admin sets it"
+          },
+          "firstOrderAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Workspace's first Order was completed, in any currency and whatever the range; null\nwhile it has sent none. A Reporting currency chosen before any Order leaves it null."
           },
           "total": {
             "type": "integer",
@@ -16406,9 +16491,11 @@
             "description": "Orders completed in the range that are credited to a Broadcast or an Automation"
           },
           "otherCurrencyOrders": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Orders in the range kept in another currency: they are listed with the Workspace's\nEvents but counted in no sum"
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteOrdersInCurrency"
+            },
+            "description": "Orders completed in the range in another currency, one entry per currency ordered by its\ncode: they are listed with the Workspace's Events but counted in no sum"
           },
           "series": {
             "type": "array",
@@ -16419,6 +16506,50 @@
           }
         },
         "description": "The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the\nsum of Order Movements over the range, in the Reporting currency. Until the first Order\nCompleted sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and\nevery figure is zero."
+      },
+      "SiteAnalyticsSending": {
+        "type": "object",
+        "required": [
+          "broadcast",
+          "automation",
+          "transactional",
+          "delivered",
+          "bounced",
+          "complained"
+        ],
+        "properties": {
+          "broadcast": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages of Broadcasts sent in the range"
+          },
+          "automation": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages of Automations sent in the range"
+          },
+          "transactional": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Transactional messages sent in the range"
+          },
+          "delivered": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Of all the messages sent in the range, those the provider reported delivered"
+          },
+          "bounced": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Of all the messages sent in the range, those the provider reported bounced"
+          },
+          "complained": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Of all the messages sent in the range, those a recipient marked as spam"
+          }
+        },
+        "description": "The messages sent in the range through every surface, read from the Outbound messages\nthemselves (ADR 0053): what went out and what the provider said became of it. A Workspace that\nonly runs Automations or Transactional sends has its sends here, not in `email`."
       },
       "SiteAnalyticsSubscribedPeople": {
         "type": "object",
@@ -16532,6 +16663,113 @@
           }
         },
         "description": "A workspace API token (secret shown only once, at creation)"
+      },
+      "SiteAttentionItem": {
+        "type": "object",
+        "required": ["kind", "severity", "count"],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/SiteAttentionKind"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/SiteAttentionSeverity"
+          },
+          "subject": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAttentionSubject"
+              }
+            ],
+            "nullable": true,
+            "description": "The object the item is about; absent for the Workspace's own Send cap and a deliverability warning"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many failures the item stands for: failed runs of an Automation, 1 for every other kind"
+          },
+          "since": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the problem began, when that is known"
+          },
+          "holdReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why a held Broadcast is held: `no_integration`, `unverified_domain` or `provider_stopped`"
+          },
+          "abuse": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAbuseWarning"
+              }
+            ],
+            "nullable": true,
+            "description": "The rate behind a deliverability warning"
+          }
+        },
+        "description": "One thing in the Workspace that needs a member's action now"
+      },
+      "SiteAttentionKind": {
+        "type": "string",
+        "enum": [
+          "sendingDomainVerificationLost",
+          "integrationProviderStopped",
+          "broadcastHeld",
+          "deliverabilityWarning",
+          "sendCapSpent",
+          "providerLimitSpent",
+          "integrationProviderProbation",
+          "integrationProviderSandbox",
+          "enrollmentsFailed",
+          "broadcastFailed",
+          "webhookDisabled"
+        ],
+        "description": "What a Needs attention item is about"
+      },
+      "SiteAttentionList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAttentionItem"
+            }
+          }
+        },
+        "description": "What in the Workspace needs a member's action now, most urgent first and, within a severity,\nthe oldest first. Every item is true at the moment it is read; a Workspace suspension and a\nStaff hold are not items, the Workspace itself carries them."
+      },
+      "SiteAttentionSeverity": {
+        "type": "string",
+        "enum": ["blocked", "degraded", "notice"],
+        "description": "How urgent an item is"
+      },
+      "SiteAttentionSubject": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Its id: a Sending domain, an Integration, a Broadcast, an Automation or a Webhook endpoint, by `kind`"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name: the domain, the label, the name, or the endpoint's URL"
+          }
+        },
+        "description": "The object a Needs attention item is about"
       },
       "SiteAuditActor": {
         "type": "object",
@@ -17594,6 +17832,11 @@
         "type": "string",
         "enum": ["draft", "scheduled", "sending", "sent", "failed"],
         "description": "Broadcast lifecycle status"
+      },
+      "SiteBroadcastsOrder": {
+        "type": "string",
+        "enum": ["newest", "scheduledSoonest", "sentLatest"],
+        "description": "The order of the broadcast list"
       },
       "SiteCapturedMessageFields": {
         "type": "object",
@@ -20108,6 +20351,26 @@
         },
         "description": "The optional consents in effect, in the order of the sign-up form"
       },
+      "SiteOrdersInCurrency": {
+        "type": "object",
+        "required": ["currency", "orders"],
+        "properties": {
+          "currency": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrencyCode"
+              }
+            ],
+            "description": "The currency the Orders are in"
+          },
+          "orders": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Orders completed in the range in that currency"
+          }
+        },
+        "description": "Orders completed in the range in one currency other than the Reporting currency"
+      },
       "SitePasskey": {
         "type": "object",
         "required": ["id", "name", "createdAt"],
@@ -21501,10 +21764,20 @@
           },
           "complete": {
             "type": "boolean",
-            "description": "Every step is done"
+            "description": "Every step was found done once; a step that regresses later does not undo it"
+          },
+          "completedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When every step was first found done; null until then"
           }
         },
-        "description": "The Workspace's Setup checklist: a point-in-time read model, never ticked by hand"
+        "description": "The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read\nthat first finds every step done stamps the Workspace, which keeps it complete for good"
       },
       "SiteSetupStepStatus": {
         "type": "string",

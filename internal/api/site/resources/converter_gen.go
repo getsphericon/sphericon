@@ -26,6 +26,7 @@ import (
 	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
 	accounts "github.com/getsphericon/sphericon/internal/accounts"
 	analytics "github.com/getsphericon/sphericon/internal/analytics"
+	attention "github.com/getsphericon/sphericon/internal/attention"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
@@ -133,13 +134,13 @@ func (c *ConverterImpl) AnalyticsOverviewToResource(source *analytics.Overview) 
 	if source != nil {
 		var siteapiSiteAnalyticsOverview site.SiteAnalyticsOverview
 		siteapiSiteAnalyticsOverview.Contacts = c.AnalyticsContactsToResource((*source).Contacts)
+		siteapiSiteAnalyticsOverview.Sending = c.analyticsSendingToSiteapiSiteAnalyticsSending((*source).Sending)
 		siteapiSiteAnalyticsOverview.Email = c.AnalyticsEmailToResource((*source).Email)
 		siteapiSiteAnalyticsOverview.Automations = c.analyticsAutomationsToSiteapiSiteAnalyticsAutomations((*source).Automations)
 		siteapiSiteAnalyticsOverview.Timeseries = make([]site.SiteAnalyticsPoint, len((*source).Series))
 		for i := 0; i < len((*source).Series); i++ {
 			siteapiSiteAnalyticsOverview.Timeseries[i] = c.analyticsPointToSiteapiSiteAnalyticsPoint((*source).Series[i])
 		}
-		// siteapiSiteAnalyticsOverview.AbuseWarning: ignore
 		pSiteapiSiteAnalyticsOverview = &siteapiSiteAnalyticsOverview
 	}
 	return pSiteapiSiteAnalyticsOverview
@@ -168,6 +169,64 @@ func (c *ConverterImpl) AnalyticsSubscribedPeopleToResource(source *analytics.Su
 		pSiteapiSiteAnalyticsSubscribedPeople = &siteapiSiteAnalyticsSubscribedPeople
 	}
 	return pSiteapiSiteAnalyticsSubscribedPeople
+}
+func (c *ConverterImpl) AttentionItemsToResources(source []attention.Item) []site.SiteAttentionItem {
+	var siteapiSiteAttentionItemList []site.SiteAttentionItem
+	siteapiSiteAttentionItemList = make([]site.SiteAttentionItem, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteAttentionItemList[i] = c.attentionItemToSiteapiSiteAttentionItem(source[i])
+	}
+	return siteapiSiteAttentionItemList
+}
+func (c *ConverterImpl) AttentionKindToResource(source attention.Kind) site.SiteAttentionKind {
+	var siteapiSiteAttentionKind site.SiteAttentionKind
+	switch source {
+	case attention.KindBroadcastFailed:
+		siteapiSiteAttentionKind = site.SiteAttentionKindBroadcastFailed
+	case attention.KindBroadcastHeld:
+		siteapiSiteAttentionKind = site.SiteAttentionKindBroadcastHeld
+	case attention.KindDeliverabilityWarning:
+		siteapiSiteAttentionKind = site.SiteAttentionKindDeliverabilityWarning
+	case attention.KindEnrollmentsFailed:
+		siteapiSiteAttentionKind = site.SiteAttentionKindEnrollmentsFailed
+	case attention.KindIntegrationProviderProbation:
+		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderProbation
+	case attention.KindIntegrationProviderSandbox:
+		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderSandbox
+	case attention.KindIntegrationProviderStopped:
+		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderStopped
+	case attention.KindProviderLimitSpent:
+		siteapiSiteAttentionKind = site.SiteAttentionKindProviderLimitSpent
+	case attention.KindSendCapSpent:
+		siteapiSiteAttentionKind = site.SiteAttentionKindSendCapSpent
+	case attention.KindSendingDomainVerificationLost:
+		siteapiSiteAttentionKind = site.SiteAttentionKindSendingDomainVerificationLost
+	case attention.KindWebhookDisabled:
+		siteapiSiteAttentionKind = site.SiteAttentionKindWebhookDisabled
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteAttentionKind
+}
+func (c *ConverterImpl) AttentionSeverityToResource(source attention.Severity) site.SiteAttentionSeverity {
+	var siteapiSiteAttentionSeverity site.SiteAttentionSeverity
+	switch source {
+	case attention.SeverityBlocked:
+		siteapiSiteAttentionSeverity = site.SiteAttentionSeverityBlocked
+	case attention.SeverityDegraded:
+		siteapiSiteAttentionSeverity = site.SiteAttentionSeverityDegraded
+	case attention.SeverityNotice:
+		siteapiSiteAttentionSeverity = site.SiteAttentionSeverityNotice
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteAttentionSeverity
+}
+func (c *ConverterImpl) AttentionSubjectToResource(source attention.Subject) site.SiteAttentionSubject {
+	var siteapiSiteAttentionSubject site.SiteAttentionSubject
+	siteapiSiteAttentionSubject.ID = site.EntityId(source.ID)
+	siteapiSiteAttentionSubject.Name = source.Name
+	return siteapiSiteAttentionSubject
 }
 func (c *ConverterImpl) AuditActorToResource(source auditapi.View) site.SiteAuditActor {
 	var siteapiSiteAuditActor site.SiteAuditActor
@@ -1533,16 +1592,18 @@ func (c *ConverterImpl) RevenueToResource(source *orders.WorkspaceRevenue) site.
 	var siteapiSiteAnalyticsRevenue site.SiteAnalyticsRevenue
 	if source != nil {
 		siteapiSiteAnalyticsRevenue.ReportingCurrency = nilCurrencyCode((*source).Currency)
+		siteapiSiteAnalyticsRevenue.FirstOrderAt = nilTimestamp((*source).FirstOrderAt)
 		siteapiSiteAnalyticsRevenue.Total = (*source).Total
 		siteapiSiteAnalyticsRevenue.Credited = (*source).Credited
 		siteapiSiteAnalyticsRevenue.Orders = count((*source).Orders)
 		siteapiSiteAnalyticsRevenue.CreditedOrders = count((*source).CreditedOrders)
-		siteapiSiteAnalyticsRevenue.OtherCurrencyOrders = count((*source).OtherCurrencyOrders)
-		if (*source).Series != nil {
-			siteapiSiteAnalyticsRevenue.Series = make([]site.SiteRevenuePoint, len((*source).Series))
-			for i := 0; i < len((*source).Series); i++ {
-				siteapiSiteAnalyticsRevenue.Series[i] = c.ordersRevenueDayToSiteapiSiteRevenuePoint((*source).Series[i])
-			}
+		siteapiSiteAnalyticsRevenue.OtherCurrencyOrders = make([]site.SiteOrdersInCurrency, len((*source).OtherCurrencyOrders))
+		for i := 0; i < len((*source).OtherCurrencyOrders); i++ {
+			siteapiSiteAnalyticsRevenue.OtherCurrencyOrders[i] = c.ordersCurrencyOrdersToSiteapiSiteOrdersInCurrency((*source).OtherCurrencyOrders[i])
+		}
+		siteapiSiteAnalyticsRevenue.Series = make([]site.SiteRevenuePoint, len((*source).Series))
+		for j := 0; j < len((*source).Series); j++ {
+			siteapiSiteAnalyticsRevenue.Series[j] = c.ordersRevenueDayToSiteapiSiteRevenuePoint((*source).Series[j])
 		}
 	}
 	return siteapiSiteAnalyticsRevenue
@@ -1785,6 +1846,7 @@ func (c *ConverterImpl) SetupChecklistToResource(source setupchecklist.Checklist
 	var siteapiSiteSetupProgress site.SiteSetupProgress
 	siteapiSiteSetupProgress.Steps = c.setupchecklistStepsToSiteapiSiteSetupSteps(source.Steps)
 	siteapiSiteSetupProgress.Complete = source.Complete()
+	siteapiSiteSetupProgress.CompletedAt = optNilTimestamp(source.CompletedAt)
 	return siteapiSiteSetupProgress
 }
 func (c *ConverterImpl) SetupStepStatusToResource(source setupchecklist.Status) site.SiteSetupStepStatus {
@@ -2261,6 +2323,16 @@ func (c *ConverterImpl) analyticsPointToSiteapiSiteAnalyticsPoint(source analyti
 	siteapiSiteAnalyticsPoint.Clicked = count(source.Clicked)
 	return siteapiSiteAnalyticsPoint
 }
+func (c *ConverterImpl) analyticsSendingToSiteapiSiteAnalyticsSending(source analytics.Sending) site.SiteAnalyticsSending {
+	var siteapiSiteAnalyticsSending site.SiteAnalyticsSending
+	siteapiSiteAnalyticsSending.Broadcast = count(source.Broadcast)
+	siteapiSiteAnalyticsSending.Automation = count(source.Automation)
+	siteapiSiteAnalyticsSending.Transactional = count(source.Transactional)
+	siteapiSiteAnalyticsSending.Delivered = count(source.Delivered)
+	siteapiSiteAnalyticsSending.Bounced = count(source.Bounced)
+	siteapiSiteAnalyticsSending.Complained = count(source.Complained)
+	return siteapiSiteAnalyticsSending
+}
 func (c *ConverterImpl) analyticsSubscribedPointToSiteapiSiteAnalyticsSubscribedPoint(source analytics.SubscribedPoint) site.SiteAnalyticsSubscribedPoint {
 	var siteapiSiteAnalyticsSubscribedPoint site.SiteAnalyticsSubscribedPoint
 	siteapiSiteAnalyticsSubscribedPoint.Date = source.Date
@@ -2269,11 +2341,28 @@ func (c *ConverterImpl) analyticsSubscribedPointToSiteapiSiteAnalyticsSubscribed
 	siteapiSiteAnalyticsSubscribedPoint.Net = count(source.Net)
 	return siteapiSiteAnalyticsSubscribedPoint
 }
+func (c *ConverterImpl) attentionItemToSiteapiSiteAttentionItem(source attention.Item) site.SiteAttentionItem {
+	var siteapiSiteAttentionItem site.SiteAttentionItem
+	siteapiSiteAttentionItem.Kind = c.AttentionKindToResource(source.Kind)
+	siteapiSiteAttentionItem.Severity = c.AttentionSeverityToResource(source.Severity)
+	siteapiSiteAttentionItem.Subject = optAttentionSubject(c, source.Subject)
+	siteapiSiteAttentionItem.Count = count(source.Count)
+	siteapiSiteAttentionItem.Since = optNilTimestamp(source.Since)
+	siteapiSiteAttentionItem.HoldReason = optNilString(source.HoldReason)
+	siteapiSiteAttentionItem.Abuse = optAbuseWarning(c, source.Abuse)
+	return siteapiSiteAttentionItem
+}
 func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclicks.Clicks) site.SiteLinkClicks {
 	var siteapiSiteLinkClicks site.SiteLinkClicks
 	siteapiSiteLinkClicks.URL = source.URL
 	siteapiSiteLinkClicks.Clicks = count(source.Clicks)
 	return siteapiSiteLinkClicks
+}
+func (c *ConverterImpl) ordersCurrencyOrdersToSiteapiSiteOrdersInCurrency(source orders.CurrencyOrders) site.SiteOrdersInCurrency {
+	var siteapiSiteOrdersInCurrency site.SiteOrdersInCurrency
+	siteapiSiteOrdersInCurrency.Currency = site.CurrencyCode(source.Currency)
+	siteapiSiteOrdersInCurrency.Orders = count(source.Orders)
+	return siteapiSiteOrdersInCurrency
 }
 func (c *ConverterImpl) ordersRevenueDayToSiteapiSiteRevenuePoint(source orders.RevenueDay) site.SiteRevenuePoint {
 	var siteapiSiteRevenuePoint site.SiteRevenuePoint

@@ -62775,6 +62775,7 @@ type WorkspaceMutation struct {
 	retention_days               *int
 	addretention_days            *int
 	timezone                     *string
+	setup_completed_at           *time.Time
 	reporting_currency           *string
 	attribution_window_days      *int
 	addattribution_window_days   *int
@@ -63451,6 +63452,55 @@ func (m *WorkspaceMutation) TimezoneCleared() bool {
 func (m *WorkspaceMutation) ResetTimezone() {
 	m.timezone = nil
 	delete(m.clearedFields, workspace.FieldTimezone)
+}
+
+// SetSetupCompletedAt sets the "setup_completed_at" field.
+func (m *WorkspaceMutation) SetSetupCompletedAt(t time.Time) {
+	m.setup_completed_at = &t
+}
+
+// SetupCompletedAt returns the value of the "setup_completed_at" field in the mutation.
+func (m *WorkspaceMutation) SetupCompletedAt() (r time.Time, exists bool) {
+	v := m.setup_completed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSetupCompletedAt returns the old "setup_completed_at" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldSetupCompletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSetupCompletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSetupCompletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSetupCompletedAt: %w", err)
+	}
+	return oldValue.SetupCompletedAt, nil
+}
+
+// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
+func (m *WorkspaceMutation) ClearSetupCompletedAt() {
+	m.setup_completed_at = nil
+	m.clearedFields[workspace.FieldSetupCompletedAt] = struct{}{}
+}
+
+// SetupCompletedAtCleared returns if the "setup_completed_at" field was cleared in this mutation.
+func (m *WorkspaceMutation) SetupCompletedAtCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldSetupCompletedAt]
+	return ok
+}
+
+// ResetSetupCompletedAt resets all changes to the "setup_completed_at" field.
+func (m *WorkspaceMutation) ResetSetupCompletedAt() {
+	m.setup_completed_at = nil
+	delete(m.clearedFields, workspace.FieldSetupCompletedAt)
 }
 
 // SetReportingCurrency sets the "reporting_currency" field.
@@ -66337,7 +66387,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 25)
+	fields := make([]string, 0, 26)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -66367,6 +66417,9 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.timezone != nil {
 		fields = append(fields, workspace.FieldTimezone)
+	}
+	if m.setup_completed_at != nil {
+		fields = append(fields, workspace.FieldSetupCompletedAt)
 	}
 	if m.reporting_currency != nil {
 		fields = append(fields, workspace.FieldReportingCurrency)
@@ -66441,6 +66494,8 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.RetentionDays()
 	case workspace.FieldTimezone:
 		return m.Timezone()
+	case workspace.FieldSetupCompletedAt:
+		return m.SetupCompletedAt()
 	case workspace.FieldReportingCurrency:
 		return m.ReportingCurrency()
 	case workspace.FieldAttributionWindowDays:
@@ -66500,6 +66555,8 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldRetentionDays(ctx)
 	case workspace.FieldTimezone:
 		return m.OldTimezone(ctx)
+	case workspace.FieldSetupCompletedAt:
+		return m.OldSetupCompletedAt(ctx)
 	case workspace.FieldReportingCurrency:
 		return m.OldReportingCurrency(ctx)
 	case workspace.FieldAttributionWindowDays:
@@ -66608,6 +66665,13 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTimezone(v)
+		return nil
+	case workspace.FieldSetupCompletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSetupCompletedAt(v)
 		return nil
 	case workspace.FieldReportingCurrency:
 		v, ok := value.(string)
@@ -66807,6 +66871,9 @@ func (m *WorkspaceMutation) ClearedFields() []string {
 	if m.FieldCleared(workspace.FieldTimezone) {
 		fields = append(fields, workspace.FieldTimezone)
 	}
+	if m.FieldCleared(workspace.FieldSetupCompletedAt) {
+		fields = append(fields, workspace.FieldSetupCompletedAt)
+	}
 	if m.FieldCleared(workspace.FieldReportingCurrency) {
 		fields = append(fields, workspace.FieldReportingCurrency)
 	}
@@ -66865,6 +66932,9 @@ func (m *WorkspaceMutation) ClearField(name string) error {
 		return nil
 	case workspace.FieldTimezone:
 		m.ClearTimezone()
+		return nil
+	case workspace.FieldSetupCompletedAt:
+		m.ClearSetupCompletedAt()
 		return nil
 	case workspace.FieldReportingCurrency:
 		m.ClearReportingCurrency()
@@ -66936,6 +67006,9 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldTimezone:
 		m.ResetTimezone()
+		return nil
+	case workspace.FieldSetupCompletedAt:
+		m.ResetSetupCompletedAt()
 		return nil
 	case workspace.FieldReportingCurrency:
 		m.ResetReportingCurrency()

@@ -29,6 +29,10 @@ type SiteAnalyticsSubscribedPeopleRes interface {
 	siteAnalyticsSubscribedPeopleRes()
 }
 
+type SiteAttentionGetRes interface {
+	siteAttentionGetRes()
+}
+
 type SiteAuditExportRes interface {
 	siteAuditExportRes()
 }

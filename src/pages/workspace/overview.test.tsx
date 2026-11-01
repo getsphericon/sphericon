@@ -2,14 +2,19 @@ import { HttpResponse } from 'msw'
 import { beforeEach, expect, test } from 'vitest'
 
 import {
+  handleSiteAnalyticsOverview,
   handleSiteAnalyticsRevenue,
-  handleSiteAutomationsList,
+  handleSiteAttentionGet,
   handleSiteBroadcastsList,
   handleSiteSendingDomainsList,
   handleSiteSetupChecklistGet,
 } from '../../generated/site/msw.gen.ts'
 import { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
-import type { SiteAnalyticsRevenue } from '../../generated/site/types.gen.ts'
+import type {
+  SiteAnalyticsOverview,
+  SiteAnalyticsRevenue,
+  SiteBroadcastResource,
+} from '../../generated/site/types.gen.ts'
 import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -27,24 +32,207 @@ const finished = {
 } as const
 
 const revenue: SiteAnalyticsRevenue = {
-  reportingCurrency: null,
+  reportingCurrency: 'USD',
+  firstOrderAt: '2026-10-01T10:00:00Z',
   total: 0,
   credited: 0,
   orders: 0,
   creditedOrders: 0,
-  otherCurrencyOrders: 0,
+  otherCurrencyOrders: [],
   series: [],
 }
 
-const mount = routeMount(overviewRoute, { workspaceId: 'TestWs01' })
+// The test router does not run the route's search validation, so the period is spelled out.
+const base = routeMount(overviewRoute, { workspaceId: 'TestWs01' })
+const overview: SiteAnalyticsOverview = {
+  contacts: { total: 0, active: 0, unsubscribed: 0, newInRange: 0 },
+  sending: {
+    broadcast: 0,
+    automation: 0,
+    transactional: 0,
+    delivered: 0,
+    bounced: 0,
+    complained: 0,
+  },
+  email: {
+    sentCount: 0,
+    openedCount: 0,
+    clickedCount: 0,
+    openRate: 0,
+    clickRate: 0,
+    clickToOpenRate: 0,
+  },
+  automations: { total: 0, active: 0, runsActive: 0, runsCompleted: 0 },
+  timeseries: [],
+}
+
+const broadcast = (b: Pick<SiteBroadcastResource, 'status'> & Partial<SiteBroadcastResource>) => ({
+  id: '1',
+  name: 'Spring launch',
+  subject: 'Spring is here',
+  body: '',
+  createdAt: '2026-10-27T08:09:00Z',
+  stats: {
+    recipientsTotal: 100,
+    sentCount: 100,
+    openedCount: 38,
+    clickedCount: 0,
+    unsubscribedCount: 0,
+    failedCount: 0,
+    deliveredCount: 100,
+    bouncedCount: 0,
+    complainedCount: 0,
+    capturedCount: 0,
+    deliveryRate: 1,
+    openRate: 0.38,
+    clickRate: 0,
+    clickToOpenRate: 0,
+    unsubscribeRate: 0,
+    failureRate: 0,
+    revenue: { reportingCurrency: null, orders: 0, amount: 0 },
+  },
+  ...b,
+})
+
+// about is an item's object, for an item that stands for one failure.
+const about = (id: string, name: string) => ({ subject: { id, name }, count: 1 })
+
+const mount = { ...base, initialPath: `${base.initialPath}?range=30d` }
 
 beforeEach(() => {
   worker.use(
     handleSiteBroadcastsList(() => HttpResponse.json({ items: [], totalItems: 0 })),
-    handleSiteAutomationsList(() => HttpResponse.json({ items: [], totalItems: 0 })),
+    handleSiteAnalyticsOverview({ body: overview }),
     handleSiteSetupChecklistGet({ body: finished }),
-    handleSiteAnalyticsRevenue({ body: { ...revenue, reportingCurrency: 'USD' } }),
+    handleSiteAnalyticsRevenue({ body: revenue }),
+    handleSiteAttentionGet({ body: { items: [] } }),
   )
+})
+
+test('nothing that needs attention shows no block', async () => {
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Sends', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Needs attention')).not.toBeInTheDocument()
+})
+
+test('each item says what is wrong and links to where it is fixed', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          {
+            kind: 'sendingDomainVerificationLost',
+            severity: 'blocked',
+            subject: { id: '6', name: 'lost.acme.com' },
+            count: 1,
+          },
+          {
+            kind: 'enrollmentsFailed',
+            severity: 'notice',
+            subject: { id: '100', name: 'Welcome series' },
+            count: 2,
+          },
+          { kind: 'sendCapSpent', severity: 'degraded', count: 1 },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Needs attention')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/The DKIM record of lost.acme.com is gone/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open email settings' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings/emails')
+  await expect
+    .element(screen.getByText('2 runs of Welcome series failed this week.'))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open the automation' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/automations/100')
+  await expect.element(screen.getByText(/sent its daily sending limit/)).toBeInTheDocument()
+})
+
+test('every kind of item is a sentence, with a link where there is somewhere to go', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          { kind: 'integrationProviderStopped', severity: 'blocked', ...about('1', 'Amazon SES') },
+          { kind: 'broadcastHeld', severity: 'blocked', ...about('2', 'Unexplained') },
+          {
+            kind: 'deliverabilityWarning',
+            severity: 'degraded',
+            count: 1,
+            abuse: { domain: 'mail.acme.test', metric: 'complaint', rate: 0.0015 },
+          },
+          { kind: 'providerLimitSpent', severity: 'degraded', ...about('3', 'Postmark') },
+          { kind: 'integrationProviderProbation', severity: 'degraded', ...about('4', 'Probed') },
+          { kind: 'integrationProviderSandbox', severity: 'degraded', ...about('5', 'Sandboxed') },
+          { kind: 'broadcastFailed', severity: 'notice', ...about('6', 'Autumn sale') },
+          { kind: 'webhookDisabled', severity: 'notice', ...about('7', 'https://hooks.test/x') },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByText(/stopped the account behind Amazon SES/))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText(/Unexplained is on hold/)).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/complaint rate on mail.acme.test is 0.15%/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Review suppressions' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/suppressions')
+  await expect.element(screen.getByText(/Postmark has sent its daily limit/)).toBeInTheDocument()
+  await expect.element(screen.getByText(/behind Probed under review/)).toBeInTheDocument()
+  await expect.element(screen.getByText(/Sandboxed is in the provider/)).toBeInTheDocument()
+  await expect.element(screen.getByText('Autumn sale failed to send.')).toBeInTheDocument()
+  await expect
+    .element(
+      screen.getByText(
+        'The webhook https://hooks.test/x disabled itself after failing deliveries.',
+      ),
+    )
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open webhooks' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings/webhooks')
+})
+
+test('a held broadcast says what lifts the hold', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          {
+            kind: 'broadcastHeld',
+            severity: 'blocked',
+            subject: { id: '12', name: 'Spring launch' },
+            count: 1,
+            holdReason: 'unverified_domain',
+          },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByText(/Spring launch is on hold. The sender domain is not verified/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open the broadcast' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/12/report')
 })
 
 test('an unfinished checklist is shown with its steps', async () => {
@@ -79,44 +267,84 @@ test('a finished checklist is not shown', async () => {
   await expect.element(screen.getByText('Set up Sphericon')).not.toBeInTheDocument()
 })
 
-test('a finished checklist leaves the shortcuts and what was created last', async () => {
+test('what is going out comes soonest first and what went out last with its open rate', async () => {
+  const asked: string[] = []
   worker.use(
-    handleSiteSetupChecklistGet({ body: finished }),
-    handleSiteBroadcastsList(() =>
-      HttpResponse.json({
-        items: [
-          {
-            id: '1',
-            name: 'Spring launch',
-            status: 'sent',
-            createdAt: '2026-10-27T08:09:00Z',
-            stats: { recipientsTotal: 100, sentCount: 100, openedCount: 38 },
-          },
-        ],
-        totalItems: 1,
-      }),
-    ),
-    handleSiteAutomationsList(() =>
-      HttpResponse.json({
-        items: [
-          {
-            id: '2',
-            name: 'Welcome series',
-            status: 'active',
-            createdAt: '2026-10-28T08:09:00Z',
-          },
-        ],
-        totalItems: 1,
-      }),
-    ),
+    handleSiteBroadcastsList(({ request }) => {
+      const query = new URL(request.url).searchParams
+      asked.push(`${query.getAll('status').join('+')} by ${query.get('order')}`)
+      return HttpResponse.json({
+        items:
+          query.get('order') === 'sentLatest'
+            ? [broadcast({ status: 'sent', sentAt: '2026-10-27T08:09:00Z' })]
+            : [
+                broadcast({ id: '3', name: 'Flash sale', status: 'sending' }),
+                broadcast({
+                  id: '2',
+                  name: 'Autumn sale',
+                  status: 'scheduled',
+                  scheduledAt: '2026-11-03T09:00:00Z',
+                }),
+              ],
+        totalItems: 2,
+      })
+    }),
   )
 
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
 
-  await expect.element(screen.getByText('Create a new…')).toBeInTheDocument()
+  await expect.element(screen.getByText('Autumn sale')).toBeInTheDocument()
+  await expect.element(screen.getByText(/^Scheduled for/)).toBeInTheDocument()
+  await expect.element(screen.getByText('Sending: 100 of 100')).toBeInTheDocument()
   await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
-  await expect.element(screen.getByText('Welcome series')).toBeInTheDocument()
-  await expect.element(screen.getByText('Automation', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText(/38% opened/)).toBeInTheDocument()
+  expect(asked.toSorted()).toEqual(['sending+scheduled by scheduledSoonest', 'sent by sentLatest'])
+})
+
+test('a new Workspace sees what to do and no wall of zeros', async () => {
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText(/Nothing has gone out yet/)).toBeInTheDocument()
+  await expect.element(screen.getByText('Nothing is sending or scheduled.')).not.toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'New broadcast' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/new')
+  await expect
+    .element(screen.getByRole('link', { name: 'New automation' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/automations')
+  await expect.element(screen.getByText('Last 30 days')).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Sending', { exact: true })).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Audience', { exact: true })).not.toBeInTheDocument()
+})
+
+test('the period shows what was sent through every surface and the audience', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: {
+        ...overview,
+        contacts: { total: 120, active: 110, unsubscribed: 10, newInRange: 7 },
+        sending: {
+          broadcast: 100,
+          automation: 30,
+          transactional: 5,
+          delivered: 130,
+          bounced: 4,
+          complained: 1,
+        },
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('135', { exact: true })).toBeInTheDocument()
+  await expect
+    .element(screen.getByText('Broadcasts 100 · Automations 30 · Transactional 5'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('110', { exact: true })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Email metrics' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/analytics/email-metrics?range=30d')
 })
 
 test('the contact step offers every way to add one and no single page', async () => {
@@ -176,7 +404,6 @@ test('revenue shows the total, the credited share and the orders in the Reportin
     handleSiteAnalyticsRevenue({
       body: {
         ...revenue,
-        reportingCurrency: 'USD',
         total: 123456,
         credited: 30864,
         orders: 17,
@@ -207,37 +434,60 @@ test('a currency without minor units is formatted by its own exponent', async ()
   await expect.element(screen.getByText('¥5,000')).toBeInTheDocument()
 })
 
-test('the period is 30 days until another is picked and the pick is sent to the server', async () => {
+test('the period of the URL is the one sent to the server', async () => {
   const ranges: (string | null)[] = []
   worker.use(
     handleSiteAnalyticsRevenue(({ request }) => {
       ranges.push(new URL(request.url).searchParams.get('range'))
-      return HttpResponse.json({ ...revenue, reportingCurrency: 'USD' })
+      return HttpResponse.json(revenue)
+    }),
+  )
+
+  await renderWithRouter(<OverviewPage />, { ...base, initialPath: `${base.initialPath}?range=7d` })
+
+  await expect.poll(() => ranges).toEqual([SiteAnalyticsRange['7D']])
+})
+
+test('picking a period puts it in the URL', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: { ...overview, contacts: { total: 3, active: 3, unsubscribed: 0, newInRange: 1 } },
+    }),
+  )
+  const { screen, navigate } = await renderWithRouter(<OverviewPage />, mount)
+
+  await screen.getByText('Last 90 days').click()
+
+  await expect
+    .poll(() => navigate.mock.lastCall?.[0])
+    .toMatchObject({ search: { range: SiteAnalyticsRange['90D'] } })
+})
+
+test('a Workspace that never sent an Order has no revenue block, whatever its currency', async () => {
+  worker.use(handleSiteAnalyticsRevenue({ body: { ...revenue, firstOrderAt: null } }))
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Sends', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Revenue', { exact: true })).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Total revenue')).not.toBeInTheDocument()
+})
+
+test('orders in another currency are named with the way to change the currency', async () => {
+  worker.use(
+    handleSiteAnalyticsRevenue({
+      body: { ...revenue, otherCurrencyOrders: [{ currency: 'EUR', orders: 3 }] },
     }),
   )
 
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
 
-  await expect.poll(() => ranges).toEqual([SiteAnalyticsRange['30D']])
-  await screen.getByText('7 days').click()
-  await expect.poll(() => ranges).toEqual([SiteAnalyticsRange['30D'], SiteAnalyticsRange['7D']])
-  await screen.getByText('90 days').click()
   await expect
-    .poll(() => ranges)
-    .toEqual([SiteAnalyticsRange['30D'], SiteAnalyticsRange['7D'], SiteAnalyticsRange['90D']])
-})
-
-test('before the first order sets the Reporting currency there is no figure and no call to choose it', async () => {
-  worker.use(handleSiteAnalyticsRevenue({ body: { ...revenue, total: 999, orders: 3 } }))
-
-  const { screen } = await renderWithRouter(<OverviewPage />, mount)
-
-  await expect.element(screen.getByText('No orders yet')).toBeInTheDocument()
+    .element(screen.getByText(/3 orders in EUR are not counted: revenue is summed in USD/))
+    .toBeInTheDocument()
   await expect
-    .element(screen.getByRole('link', { name: 'Choose the reporting currency' }))
-    .not.toBeInTheDocument()
-  await expect.element(screen.getByText('$9.99')).not.toBeInTheDocument()
-  await expect.element(screen.getByText('Orders', { exact: true })).not.toBeInTheDocument()
+    .element(screen.getByRole('link', { name: 'Change the reporting currency' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings')
 })
 
 test('revenue is shown beside an unfinished checklist too', async () => {

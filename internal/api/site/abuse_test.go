@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -28,36 +29,40 @@ func daysAgo(days int) func() time.Time {
 	return func() time.Time { return time.Now().Add(-time.Duration(days) * 24 * time.Hour) }
 }
 
-func overview(t *testing.T, env *testhelper.TestEnv, email string, workspaceID siteapi.WorkspaceId) *siteapi.SiteAnalyticsOverview {
+// warning is the deliverability warning among what needs attention in the Workspace, nil when
+// there is none.
+func warning(t *testing.T, env *testhelper.TestEnv, email string, workspaceID siteapi.WorkspaceId) *siteapi.SiteAttentionItem {
 	t.Helper()
-	res, err := env.SiteActor(t, email).SiteAnalyticsOverview(t.Context(), siteapi.SiteAnalyticsOverviewParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	ov, ok := res.(*siteapi.SiteAnalyticsOverview)
-	require.Truef(t, ok, "got %T", res)
-	return ov
+	items := attentionOf(t, env.SiteActor(t, email), workspaceID)
+	found, ok := lo.Find(items, func(i siteapi.SiteAttentionItem) bool {
+		return i.Kind == siteapi.SiteAttentionKindDeliverabilityWarning
+	})
+	return lo.Ternary(ok, &found, nil)
 }
 
 func TestTheDashboardShowsTheWarningTierLive(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(daysAgo(warningDay)), testhelper.WithStaffVolumeFloor(volumeFloor))
 
-	warning := overview(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID).AbuseWarning
+	item := warning(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID)
 
-	require.True(t, warning.Set)
-	assert.Equal(t, "mail.vandelay.test", warning.Value.Domain)
-	assert.Equal(t, siteapi.SiteAbuseMetricBounce, warning.Value.Metric)
-	assert.InDelta(t, 3.0/40.0, warning.Value.Rate, 1e-9)
+	require.NotNil(t, item)
+	assert.Equal(t, siteapi.SiteAttentionSeverityDegraded, item.Severity)
+	abuse := item.Abuse.Value
+	assert.Equal(t, "mail.vandelay.test", abuse.Domain)
+	assert.Equal(t, siteapi.SiteAbuseMetricBounce, abuse.Metric)
+	assert.InDelta(t, 3.0/40.0, abuse.Rate, 1e-9)
 }
 
 func TestTheDashboardShowsNoWarningBelowTheFloor(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(daysAgo(belowFloorDay)), testhelper.WithStaffVolumeFloor(volumeFloor))
 
-	assert.False(t, overview(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID).AbuseWarning.Set)
+	assert.Nil(t, warning(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID))
 }
 
 func TestTheDashboardShowsNoWarningWhenUnlicensed(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense(), testhelper.WithClock(daysAgo(warningDay)), testhelper.WithStaffVolumeFloor(volumeFloor))
 
-	assert.False(t, overview(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID).AbuseWarning.Set)
+	assert.Nil(t, warning(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID))
 }
 
 func TestASuspendedWorkspaceCarriesTheSupportContactForItsBanner(t *testing.T) {

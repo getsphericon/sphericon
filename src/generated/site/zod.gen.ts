@@ -479,7 +479,7 @@ export const zSiteAnalyticsContacts = z.object({
 });
 
 /**
- * Email engagement for the messages sent in the selected range (the send
+ * Email engagement for the Broadcast messages sent in the selected range (the send
  * cohort), from delivery logs. Opens/clicks are counted among that cohort, so
  * the counts reconcile and the rates stay in [0,1].
  */
@@ -542,7 +542,7 @@ export const zSiteAnalyticsClicksByLink = z.object({
 });
 
 /**
- * One UTC send-day of the cohort, zero-filled across the range. Opened/clicked
+ * One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked
  * count the messages sent that day that were later opened/clicked.
  */
 export const zSiteAnalyticsPoint = z.object({
@@ -553,17 +553,6 @@ export const zSiteAnalyticsPoint = z.object({
 });
 
 /**
- * Workspace analytics overview powering the dashboard
- */
-export const zSiteAnalyticsOverview = z.object({
-  contacts: zSiteAnalyticsContacts,
-  email: zSiteAnalyticsEmail,
-  automations: zSiteAnalyticsAutomations,
-  timeseries: z.array(zSiteAnalyticsPoint),
-  abuseWarning: z.exactOptional(zSiteAbuseWarning.nullable())
-});
-
-/**
  * Selectable window for the analytics overview
  */
 export const zSiteAnalyticsRange = z.enum([
@@ -571,6 +560,31 @@ export const zSiteAnalyticsRange = z.enum([
   '30d',
   '90d'
 ]);
+
+/**
+ * The messages sent in the range through every surface, read from the Outbound messages
+ * themselves (ADR 0053): what went out and what the provider said became of it. A Workspace that
+ * only runs Automations or Transactional sends has its sends here, not in `email`.
+ */
+export const zSiteAnalyticsSending = z.object({
+  broadcast: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  automation: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  transactional: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  delivered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  bounced: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  complained: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * Workspace analytics overview powering the dashboard
+ */
+export const zSiteAnalyticsOverview = z.object({
+  contacts: zSiteAnalyticsContacts,
+  sending: zSiteAnalyticsSending,
+  email: zSiteAnalyticsEmail,
+  automations: zSiteAnalyticsAutomations,
+  timeseries: z.array(zSiteAnalyticsPoint)
+});
 
 /**
  * One Report day of the Subscribed people report, zero-filled across the range
@@ -589,6 +603,40 @@ export const zSiteAnalyticsSubscribedPoint = z.object({
 export const zSiteAnalyticsSubscribedPeople = z.object({
   current: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   series: z.array(zSiteAnalyticsSubscribedPoint)
+});
+
+/**
+ * What a Needs attention item is about
+ */
+export const zSiteAttentionKind = z.enum([
+  'sendingDomainVerificationLost',
+  'integrationProviderStopped',
+  'broadcastHeld',
+  'deliverabilityWarning',
+  'sendCapSpent',
+  'providerLimitSpent',
+  'integrationProviderProbation',
+  'integrationProviderSandbox',
+  'enrollmentsFailed',
+  'broadcastFailed',
+  'webhookDisabled'
+]);
+
+/**
+ * How urgent an item is
+ */
+export const zSiteAttentionSeverity = z.enum([
+  'blocked',
+  'degraded',
+  'notice'
+]);
+
+/**
+ * The object a Needs attention item is about
+ */
+export const zSiteAttentionSubject = z.object({
+  id: zEntityId,
+  name: z.string()
 });
 
 /**
@@ -743,6 +791,15 @@ export const zSiteBroadcastStatus = z.enum([
   'sending',
   'sent',
   'failed'
+]);
+
+/**
+ * The order of the broadcast list
+ */
+export const zSiteBroadcastsOrder = z.enum([
+  'newest',
+  'scheduledSoonest',
+  'sentLatest'
 ]);
 
 /**
@@ -1284,6 +1341,14 @@ export const zSiteOptionalConsentDecision = z.enum([
 ]);
 
 /**
+ * Orders completed in the range in one currency other than the Reporting currency
+ */
+export const zSiteOrdersInCurrency = z.object({
+  currency: zCurrencyCode,
+  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * The browser's answer to the request options: the W3C `AuthenticationResponseJSON`
  * dictionary (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library.
  */
@@ -1552,22 +1617,6 @@ export const zSiteRevenuePoint = z.object({
 });
 
 /**
- * The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
- * sum of Order Movements over the range, in the Reporting currency. Until the first Order
- * Completed sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and
- * every figure is zero.
- */
-export const zSiteAnalyticsRevenue = z.object({
-  reportingCurrency: zCurrencyCode.nullable(),
-  total: z.string().regex(/^[0-9]+$/),
-  credited: z.string().regex(/^[0-9]+$/),
-  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  creditedOrders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  otherCurrencyOrders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  series: z.array(zSiteRevenuePoint)
-});
-
-/**
  * The Workspace's revenue settings (ADR 0064): the Reporting currency every revenue figure is
  * in, and the Attribution window an Order may follow a click by. Every member reads them.
  */
@@ -1761,14 +1810,6 @@ export const zSiteSetupSteps = z.object({
   sendingDomain: zSiteSetupStepStatus,
   contact: zSiteSetupStepStatus,
   sentEmail: zSiteSetupStepStatus
-});
-
-/**
- * The Workspace's Setup checklist: a point-in-time read model, never ticked by hand
- */
-export const zSiteSetupProgress = z.object({
-  steps: zSiteSetupSteps,
-  complete: z.boolean()
 });
 
 /**
@@ -2431,6 +2472,23 @@ export const zSiteAnalyticsEvents = z.object({
 });
 
 /**
+ * The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
+ * sum of Order Movements over the range, in the Reporting currency. Until the first Order
+ * Completed sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and
+ * every figure is zero.
+ */
+export const zSiteAnalyticsRevenue = z.object({
+  reportingCurrency: zCurrencyCode.nullable(),
+  firstOrderAt: zTimestamp.nullable(),
+  total: z.string().regex(/^[0-9]+$/),
+  credited: z.string().regex(/^[0-9]+$/),
+  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  creditedOrders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  otherCurrencyOrders: z.array(zSiteOrdersInCurrency),
+  series: z.array(zSiteRevenuePoint)
+});
+
+/**
  * A workspace API token (secret shown only once, at creation)
  */
 export const zSiteApiTokenResource = z.object({
@@ -2442,6 +2500,28 @@ export const zSiteApiTokenResource = z.object({
   expiresAt: z.exactOptional(zTimestamp.nullable()),
   revokedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp
+});
+
+/**
+ * One thing in the Workspace that needs a member's action now
+ */
+export const zSiteAttentionItem = z.object({
+  kind: zSiteAttentionKind,
+  severity: zSiteAttentionSeverity,
+  subject: z.exactOptional(zSiteAttentionSubject.nullable()),
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  since: z.exactOptional(zTimestamp.nullable()),
+  holdReason: z.exactOptional(z.string().nullable()),
+  abuse: z.exactOptional(zSiteAbuseWarning.nullable())
+});
+
+/**
+ * What in the Workspace needs a member's action now, most urgent first and, within a severity,
+ * the oldest first. Every item is true at the moment it is read; a Workspace suspension and a
+ * Staff hold are not items, the Workspace itself carries them.
+ */
+export const zSiteAttentionList = z.object({
+  items: z.array(zSiteAttentionItem)
 });
 
 /**
@@ -2931,6 +3011,16 @@ export const zSiteSendingDomainResource = z.object({
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read
+ * that first finds every step done stamps the Workspace, which keeps it complete for good
+ */
+export const zSiteSetupProgress = z.object({
+  steps: zSiteSetupSteps,
+  complete: z.boolean(),
+  completedAt: z.exactOptional(zTimestamp.nullable())
 });
 
 /**
@@ -3478,7 +3568,17 @@ export const zSiteBroadcastResourceParentKey = zWorkspaceId;
 /**
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
-export const zSiteBroadcastsListFilter = z.boolean();
+export const zSiteBroadcastsListFilterArchived = z.boolean();
+
+/**
+ * The order of the list: `newest` when absent
+ */
+export const zSiteBroadcastsListFilterOrder = zSiteBroadcastsOrder;
+
+/**
+ * Only the broadcasts in one of these statuses; every status when absent
+ */
+export const zSiteBroadcastsListFilterStatus = z.array(zSiteBroadcastStatus);
 
 /**
  * Unique identifier
@@ -4217,6 +4317,15 @@ export const zSiteAnalyticsSubscribedPeopleQuery = z.object({
  */
 export const zSiteAnalyticsSubscribedPeopleResponse = zSiteAnalyticsSubscribedPeople;
 
+export const zSiteAttentionGetPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAttentionGetResponse = zSiteAttentionList;
+
 export const zSiteAuditListPath = z.object({
   workspaceId: zWorkspaceId
 });
@@ -4498,7 +4607,9 @@ export const zSiteBroadcastsListPath = z.object({
 export const zSiteBroadcastsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  archived: z.exactOptional(z.boolean())
+  archived: z.exactOptional(z.boolean()),
+  status: z.exactOptional(z.array(zSiteBroadcastStatus)),
+  order: z.exactOptional(zSiteBroadcastsOrder)
 });
 
 /**

@@ -26,7 +26,32 @@ model SiteAnalyticsContacts {
 }
 
 /**
- * Email engagement for the messages sent in the selected range (the send
+ * The messages sent in the range through every surface, read from the Outbound messages
+ * themselves (ADR 0053): what went out and what the provider said became of it. A Workspace that
+ * only runs Automations or Transactional sends has its sends here, not in `email`.
+ */
+model SiteAnalyticsSending {
+  /** Messages of Broadcasts sent in the range */
+  broadcast: int32;
+
+  /** Messages of Automations sent in the range */
+  automation: int32;
+
+  /** Transactional messages sent in the range */
+  transactional: int32;
+
+  /** Of all the messages sent in the range, those the provider reported delivered */
+  delivered: int32;
+
+  /** Of all the messages sent in the range, those the provider reported bounced */
+  bounced: int32;
+
+  /** Of all the messages sent in the range, those a recipient marked as spam */
+  complained: int32;
+}
+
+/**
+ * Email engagement for the Broadcast messages sent in the selected range (the send
  * cohort), from delivery logs. Opens/clicks are counted among that cohort, so
  * the counts reconcile and the rates stay in [0,1].
  */
@@ -66,11 +91,11 @@ model SiteAnalyticsAutomations {
 }
 
 /**
- * One UTC send-day of the cohort, zero-filled across the range. Opened/clicked
+ * One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked
  * count the messages sent that day that were later opened/clicked.
  */
 model SiteAnalyticsPoint {
-  /** Day bucket, YYYY-MM-DD (UTC) */
+  /** The Report day, `YYYY-MM-DD` in the Workspace time zone */
   date: string;
 
   /** Messages sent that day */
@@ -106,15 +131,12 @@ model SiteAbuseWarning {
 /** Workspace analytics overview powering the dashboard */
 model SiteAnalyticsOverview {
   contacts: SiteAnalyticsContacts;
+  sending: SiteAnalyticsSending;
   email: SiteAnalyticsEmail;
   automations: SiteAnalyticsAutomations;
 
   /** Daily engagement series, oldest first, one point per day in the range */
   timeseries: SiteAnalyticsPoint[];
-
-  /** Present while the Workspace is in the abuse detector's warning tier; absent
-   * otherwise and without the `staff` license */
-  abuseWarning?: SiteAbuseWarning | null;
 }
 
 /**
@@ -273,6 +295,15 @@ model SiteRevenuePoint {
   orders: int32;
 }
 
+/** Orders completed in the range in one currency other than the Reporting currency */
+model SiteOrdersInCurrency {
+  /** The currency the Orders are in */
+  currency: CurrencyCode;
+
+  /** Orders completed in the range in that currency */
+  orders: int32;
+}
+
 /** The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
  * sum of Order Movements over the range, in the Reporting currency. Until the first Order
  * Completed sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and
@@ -280,6 +311,10 @@ model SiteRevenuePoint {
 model SiteAnalyticsRevenue {
   /** The Reporting currency, null until the first Order or an Owner or Admin sets it */
   reportingCurrency: CurrencyCode | null;
+
+  /** When the Workspace's first Order was completed, in any currency and whatever the range; null
+   * while it has sent none. A Reporting currency chosen before any Order leaves it null. */
+  firstOrderAt: Timestamp | null;
 
   /** Revenue over the range, in the minor unit of the Reporting currency */
   total: int64;
@@ -295,9 +330,9 @@ model SiteAnalyticsRevenue {
   /** Orders completed in the range that are credited to a Broadcast or an Automation */
   creditedOrders: int32;
 
-  /** Orders in the range kept in another currency: they are listed with the Workspace's
-   * Events but counted in no sum */
-  otherCurrencyOrders: int32;
+  /** Orders completed in the range in another currency, one entry per currency ordered by its
+   * code: they are listed with the Workspace's Events but counted in no sum */
+  otherCurrencyOrders: SiteOrdersInCurrency[];
 
   /** One point per Report day in the range, oldest first, zero-filled */
   series: SiteRevenuePoint[];

@@ -11,12 +11,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/abusewatch"
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
+	"github.com/getsphericon/sphericon/internal/attention"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
@@ -41,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/signupitems"
@@ -88,7 +89,8 @@ type Handlers struct {
 	rules           *rules.Module
 	oauth           *oauthserver.Service
 	audit           AuditLog
-	abuseWatch      abusewatch.Watch
+	attention       *attention.Module
+	setupChecklist  *setupchecklist.Module
 	supportEmail    string
 	analytics       *analytics.Module
 	sessions        *auth.Sessions
@@ -186,7 +188,10 @@ type Deps struct {
 	Tracker          *tracking.Tracker
 	AppURL           string
 	Audit            AuditLog
-	AbuseWatch       abusewatch.Watch
+	// Attention reads what in a Workspace needs a member's action now.
+	Attention *attention.Module
+	// SetupChecklist reads the Setup checklist and stamps its first completion.
+	SetupChecklist *setupchecklist.Module
 	// SupportEmail is where a suspended Workspace's owner appeals (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
 	// Origins are the public origins a Workspace's pages point at besides the app's own.
@@ -243,7 +248,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, mail: d.Mail,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, captured: d.CapturedMessages, links: accounts.NewLinks(d.Accounts, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		challenges: d.Tokens.WithClock(d.Clock),

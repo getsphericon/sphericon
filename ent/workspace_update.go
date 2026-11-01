@@ -203,6 +203,26 @@ func (_u *WorkspaceUpdate) ClearTimezone() *WorkspaceUpdate {
 	return _u
 }
 
+// SetSetupCompletedAt sets the "setup_completed_at" field.
+func (_u *WorkspaceUpdate) SetSetupCompletedAt(v time.Time) *WorkspaceUpdate {
+	_u.mutation.SetSetupCompletedAt(v)
+	return _u
+}
+
+// SetNillableSetupCompletedAt sets the "setup_completed_at" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableSetupCompletedAt(v *time.Time) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetSetupCompletedAt(*v)
+	}
+	return _u
+}
+
+// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
+func (_u *WorkspaceUpdate) ClearSetupCompletedAt() *WorkspaceUpdate {
+	_u.mutation.ClearSetupCompletedAt()
+	return _u
+}
+
 // SetReportingCurrency sets the "reporting_currency" field.
 func (_u *WorkspaceUpdate) SetReportingCurrency(v string) *WorkspaceUpdate {
 	_u.mutation.SetReportingCurrency(v)
@@ -2041,6 +2061,12 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.TimezoneCleared() {
 		_spec.ClearField(workspace.FieldTimezone, field.TypeString)
+	}
+	if value, ok := _u.mutation.SetupCompletedAt(); ok {
+		_spec.SetField(workspace.FieldSetupCompletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.SetupCompletedAtCleared() {
+		_spec.ClearField(workspace.FieldSetupCompletedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ReportingCurrency(); ok {
 		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
@@ -4041,6 +4067,26 @@ func (_u *WorkspaceUpdateOne) ClearTimezone() *WorkspaceUpdateOne {
 	return _u
 }
 
+// SetSetupCompletedAt sets the "setup_completed_at" field.
+func (_u *WorkspaceUpdateOne) SetSetupCompletedAt(v time.Time) *WorkspaceUpdateOne {
+	_u.mutation.SetSetupCompletedAt(v)
+	return _u
+}
+
+// SetNillableSetupCompletedAt sets the "setup_completed_at" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableSetupCompletedAt(v *time.Time) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetSetupCompletedAt(*v)
+	}
+	return _u
+}
+
+// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
+func (_u *WorkspaceUpdateOne) ClearSetupCompletedAt() *WorkspaceUpdateOne {
+	_u.mutation.ClearSetupCompletedAt()
+	return _u
+}
+
 // SetReportingCurrency sets the "reporting_currency" field.
 func (_u *WorkspaceUpdateOne) SetReportingCurrency(v string) *WorkspaceUpdateOne {
 	_u.mutation.SetReportingCurrency(v)
@@ -5909,6 +5955,12 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if _u.mutation.TimezoneCleared() {
 		_spec.ClearField(workspace.FieldTimezone, field.TypeString)
+	}
+	if value, ok := _u.mutation.SetupCompletedAt(); ok {
+		_spec.SetField(workspace.FieldSetupCompletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.SetupCompletedAtCleared() {
+		_spec.ClearField(workspace.FieldSetupCompletedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ReportingCurrency(); ok {
 		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)

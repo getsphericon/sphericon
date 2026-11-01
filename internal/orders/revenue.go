@@ -16,7 +16,8 @@ import (
 
 // Every read of revenue is here (ADR 0064): it is summed from the Order Movements, each on the
 // day of its own time, never stored on the Order, the Broadcast or the Automation. Only the
-// Orders in the Reporting currency count; until one is chosen every figure is zero.
+// Orders in the Reporting currency count; until the first Order sets it, or an Owner or Admin
+// chooses it, every figure is zero.
 
 // Credited is what a Broadcast or an Automation earned (ADR 0064): the Orders credited to it,
 // completed, and the net sum of their Movements, both in the Reporting currency. Nothing of it
@@ -28,15 +29,15 @@ type Credited struct {
 }
 
 // Figures is the Credited of a set of Broadcasts or Automations by id, with the Reporting
-// currency they are in. Currency is nil until an Owner or Admin chooses it; every figure is
-// then zero.
+// currency they are in. Currency is nil until the first Order sets it or an Owner or Admin
+// chooses it; every figure is then zero.
 type Figures struct {
 	Currency *string
 	ByID     map[int64]Credited
 }
 
-// Revenue is what one Broadcast or Automation earned, with the Reporting currency it is in: nil
-// until an Owner or Admin chooses it, every figure zero until then.
+// Revenue is what one Broadcast or Automation earned, with the Reporting currency it is in: nil,
+// and every figure zero, until the first Order sets it or an Owner or Admin chooses it.
 type Revenue struct {
 	Credited
 
@@ -105,8 +106,12 @@ func credited(ctx context.Context, s *ent.Scoped, ids []int64, column string, of
 // Report days, in its Reporting currency: the sum of Order Movements, each on the Report day of its
 // own time.
 type WorkspaceRevenue struct {
-	// Currency is the Reporting currency, nil until chosen; every figure is then zero.
+	// Currency is the Reporting currency, nil until the first Order sets it or an Owner or Admin
+	// chooses it; every figure is then zero.
 	Currency *string
+	// FirstOrderAt is when the Workspace's first Order was completed, in any currency and outside
+	// the window too: nil while it has sent none, whatever Currency is.
+	FirstOrderAt *time.Time
 	// Total is the sum of the Movements, in the minor unit of Currency.
 	Total int64
 	// Credited is the part of Total in the Movements of the Orders credited to a Broadcast or an
@@ -116,10 +121,16 @@ type WorkspaceRevenue struct {
 	Orders int
 	// CreditedOrders is the Orders completed in the window that are credited to one of them.
 	CreditedOrders int
-	// OtherCurrencyOrders is the Orders completed in the window in another currency: stored
-	// and listed, counted in no sum.
-	OtherCurrencyOrders int
+	// OtherCurrencyOrders is the Orders completed in the window in another currency, one entry
+	// per currency ordered by its code: stored and listed, counted in no sum.
+	OtherCurrencyOrders []CurrencyOrders
 	Series              []RevenueDay
+}
+
+// CurrencyOrders is the Orders completed in one currency.
+type CurrencyOrders struct {
+	Currency string
+	Orders   int
 }
 
 // RevenueDay is one Report day of WorkspaceRevenue, zero-filled across the window.
@@ -130,14 +141,17 @@ type RevenueDay struct {
 }
 
 // WorkspaceRevenueOver reads the revenue of the Workspace behind s over the window w. Until the
-// Reporting currency is chosen it answers with the currency unset and zeros, and counts every
-// Order already received once it is.
+// Reporting currency is set it answers with the currency unset and zeros.
 func WorkspaceRevenueOver(ctx context.Context, s *ent.Scoped, w reportday.Window) (*WorkspaceRevenue, error) {
 	ws, err := s.Workspace(ctx)
 	if err != nil {
 		return nil, err
 	}
-	report := &WorkspaceRevenue{Currency: ws.ReportingCurrency}
+	firstOrderAt, err := firstOrderAt(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	report := &WorkspaceRevenue{Currency: ws.ReportingCurrency, FirstOrderAt: firstOrderAt}
 	byDay := map[string]RevenueDay{}
 	if cur := ws.ReportingCurrency; cur != nil {
 		inWindow := between(w.Since, w.Until)
@@ -176,10 +190,7 @@ func WorkspaceRevenueOver(ctx context.Context, s *ent.Scoped, w reportday.Window
 			report.Credited += lo.FromPtr(r.Amount)
 			report.CreditedOrders += r.Orders
 		}
-		report.OtherCurrencyOrders, err = s.OrderMovement().Query().
-			Where(inWindow...).
-			Where(ordermovement.KindEQ(ordermovement.KindCompleted), ordermovement.HasOrderWith(order.CurrencyNEQ(*cur))).
-			Count(ctx)
+		report.OtherCurrencyOrders, err = otherCurrencyOrders(ctx, s, *cur, inWindow)
 		if err != nil {
 			return nil, err
 		}
@@ -191,6 +202,49 @@ func WorkspaceRevenueOver(ctx context.Context, s *ent.Scoped, w reportday.Window
 		report.Series = append(report.Series, p)
 	}
 	return report, nil
+}
+
+// firstOrderAt is the time of the Workspace's first completed Order, in any currency: nil while
+// there is none.
+func firstOrderAt(ctx context.Context, s *ent.Scoped) (*time.Time, error) {
+	first, err := s.OrderMovement().Query().
+		Where(ordermovement.KindEQ(ordermovement.KindCompleted)).
+		Order(ent.Asc(ordermovement.FieldOccurredAt)).
+		First(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &first.OccurredAt, nil
+}
+
+// otherCurrencyOrders counts the Orders completed in the window in a currency other than cur,
+// per currency, ordered by its code.
+func otherCurrencyOrders(ctx context.Context, s *ent.Scoped, cur string, inWindow []predicate.OrderMovement) ([]CurrencyOrders, error) {
+	var rows []struct {
+		Currency string `sql:"currency"`
+		Orders   int    `sql:"orders"`
+	}
+	err := s.OrderMovement().Query().
+		Where(inWindow...).
+		Where(ordermovement.KindEQ(ordermovement.KindCompleted), ordermovement.HasOrderWith(order.CurrencyNEQ(cur))).
+		Modify(func(sel *sql.Selector) {
+			o := sql.Table(order.Table)
+			sel.Join(o).On(sel.C(ordermovement.FieldOrderID), o.C(order.FieldID))
+			sel.Select(sql.As(o.C(order.FieldCurrency), "currency"), sql.As(sql.Count("*"), "orders")).
+				GroupBy(o.C(order.FieldCurrency)).
+				OrderBy(o.C(order.FieldCurrency))
+		}).Scan(ctx, &rows)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]CurrencyOrders, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, CurrencyOrders(r))
+	}
+	return out, nil
 }
 
 // creditedToMessages is an Order credited to a Broadcast or an Automation: the one definition of

@@ -195,6 +195,10 @@ const (
 	AutomationRunTagOnEngagementAliceID = 1100
 	// AutomationRunWelcomeCompletedID is from fixtures/automation_runs.
 	AutomationRunWelcomeCompletedID = 1000
+	// AutomationRunWelcomeCompletedSecondID is from fixtures/automation_runs.
+	AutomationRunWelcomeCompletedSecondID = 1001
+	// AutomationRunWelcomeCompletedThirdID is from fixtures/automation_runs.
+	AutomationRunWelcomeCompletedThirdID = 1002
 	// AutomationTagOnEngagementID is from fixtures/automations.
 	AutomationTagOnEngagementID = 104
 	// AutomationTagOnEngagementName is from fixtures/automations.
@@ -385,6 +389,12 @@ const (
 	BroadcastSentID = 200
 	// BroadcastSentName is from fixtures/broadcasts.
 	BroadcastSentName = "Python crash course is here"
+	// BroadcastSentNineDaysAgoID is from fixtures/broadcasts.
+	BroadcastSentNineDaysAgoID = 201
+	// BroadcastSentNineDaysAgoName is from fixtures/broadcasts.
+	BroadcastSentNineDaysAgoName = "Top 5 SQL mistakes to avoid"
+	// BroadcastSentNineDaysAgoSubject is from fixtures/broadcasts.
+	BroadcastSentNineDaysAgoSubject = "Top 5 SQL mistakes to avoid"
 	// BroadcastSentSubject is from fixtures/broadcasts.
 	BroadcastSentSubject = "Python crash course is here"
 	// BroadcastSentUntrackedID is from fixtures/broadcasts.

@@ -102,14 +102,6 @@ export default interface Resources {
       "transactionalEmailsLoadErrorTitle": "Failed to load transactional emails"
     },
     "analytics": {
-      "abuseWarning": {
-        "description": "The {{metric}} rate on {{domain}} is {{rate}} over the last 24 hours, over the warning limit. Clean your list: if it keeps rising, sending for this workspace is suspended automatically.",
-        "metrics": {
-          "bounce": "bounce",
-          "complaint": "complaint"
-        },
-        "title": "Your sending reputation needs attention"
-      },
       "automations": {
         "active": "Active",
         "runsActive": "Active runs",
@@ -1155,33 +1147,78 @@ export default interface Resources {
       "useRecoveryCode": "Use a recovery code"
     },
     "overview": {
-      "createAutomationDescription": "Send follow-up emails when a contact does something.",
-      "createBroadcastDescription": "Send a one-time email to a segment of your contacts.",
-      "createTitle": "Create a new…",
-      "createdLabel": "Created",
-      "nameLabel": "Name",
-      "recentEmpty": "Nothing created yet.",
-      "recentLoadError": "Failed to load recently created items",
-      "recentTitle": "Recently created",
+      "attention": {
+        "actions": {
+          "automation": "Open the automation",
+          "broadcast": "Open the broadcast",
+          "emails": "Open email settings",
+          "suppressions": "Review suppressions",
+          "webhooks": "Open webhooks"
+        },
+        "kinds": {
+          "broadcastFailed": "{{name}} failed to send.",
+          "broadcastHeld": "{{name}} is on hold. {{reason}}",
+          "deliverabilityWarning": "The {{metric}} rate on {{domain}} is {{rate}} over the last 24 hours, over the warning limit. Clean your list: if it keeps rising, sending for this workspace is suspended automatically.",
+          "enrollmentsFailed": "{{count}} run of {{name}} failed this week." | "{{count}} runs of {{name}} failed this week.",
+          "integrationProviderProbation": "Your provider has put the account behind {{name}} under review. It still sends: keep bounces and complaints low.",
+          "integrationProviderSandbox": "{{name}} is in the provider's sandbox: it sends only to addresses verified with the provider.",
+          "integrationProviderStopped": "Your provider has stopped the account behind {{name}}: nothing sends through it until the provider reinstates it.",
+          "providerLimitSpent": "{{name}} has sent its daily limit: the rest goes out as the limit refills.",
+          "sendCapSpent": "This workspace has sent its daily sending limit: the rest goes out as it refills over the next 24 hours.",
+          "sendingDomainVerificationLost": "The DKIM record of {{name}} is gone: mail from it is held until the domain verifies again.",
+          "webhookDisabled": "The webhook {{name}} disabled itself after failing deliveries."
+        },
+        "loadError": "Failed to load what needs attention",
+        "metrics": {
+          "bounce": "bounce",
+          "complaint": "complaint"
+        },
+        "title": "Needs attention"
+      },
+      "audience": {
+        "clickRate": "Broadcast click rate",
+        "new": "New contacts",
+        "openRate": "Broadcast open rate",
+        "report": "Subscribed people",
+        "subscribed": "Subscribed",
+        "title": "Audience"
+      },
+      "figuresLoadError": "Failed to load the figures of the period",
       "revenue": {
+        "changeCurrency": "Change the reporting currency",
         "credited": "Credited to messages",
         "loadError": "Failed to load revenue",
-        "noOrdersBody": "Revenue appears here with the first order your shop sends, in that order's currency. You can change the reporting currency in the settings.",
-        "noOrdersTitle": "No orders yet",
         "note": "This is the revenue of the orders sent to Sphericon, not of your shop.",
         "orders": "Orders",
-        "periods": {
-          "30d": "30 days",
-          "7d": "7 days",
-          "90d": "90 days"
-        },
+        "otherCurrency": "{{count}} order in {{currency}} is not counted: revenue is summed in {{reportingCurrency}}." | "{{count}} orders in {{currency}} are not counted: revenue is summed in {{reportingCurrency}}.",
         "title": "Revenue",
         "total": "Total revenue"
       },
-      "statusLabel": "Status",
-      "typeAutomation": "Automation",
-      "typeBroadcast": "Broadcast",
-      "typeLabel": "Type"
+      "sending": {
+        "bounced": "Bounced",
+        "complained": "Complaints",
+        "delivered": "Delivered",
+        "report": "Email metrics",
+        "sent": "Sent",
+        "split": "Broadcasts {{broadcast}} · Automations {{automation}} · Transactional {{transactional}}",
+        "title": "Sending"
+      },
+      "sends": {
+        "allAutomations": "All automations",
+        "allBroadcasts": "All broadcasts",
+        "automations": "{{count}} active automation, {{runs}} enrollments in progress." | "{{count}} active automations, {{runs}} enrollments in progress.",
+        "automationsTitle": "Automations",
+        "empty": "Nothing has gone out yet. Start with a broadcast, or an automation that sends when a contact does something.",
+        "lastSentEmpty": "Nothing has been sent yet.",
+        "lastSentTitle": "Last sent",
+        "loadError": "Failed to load what is going out",
+        "scheduledFor": "Scheduled for {{date}}",
+        "sending": "Sending: {{sent}} of {{total}}",
+        "sentDetail": "Sent {{date}}: {{opened}} opened, {{clicked}} clicked",
+        "title": "Sends",
+        "upcomingEmpty": "Nothing is sending or scheduled.",
+        "upcomingTitle": "Sending and scheduled"
+      }
     },
     "profile": {
       "changeEmailButton": "Send confirmation link",

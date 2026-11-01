@@ -400,6 +400,24 @@ func (a *Accounts) AdoptReportingCurrency(ctx context.Context, s *ent.Scoped, co
 	})
 }
 
+// MarkSetupComplete stamps the scoped Workspace's Setup checklist complete at now, once: a
+// Workspace already stamped keeps its first moment. It returns the moment the Workspace holds.
+// Nothing a member chose changes, so no Audit entry is written.
+func (a *Accounts) MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.Time) (time.Time, error) {
+	err := a.ent.Workspace.Update().
+		Where(workspace.ID(s.WorkspaceID()), workspace.SetupCompletedAtIsNil()).
+		SetSetupCompletedAt(now).
+		Exec(ctx)
+	if err != nil {
+		return time.Time{}, err
+	}
+	ws, err := a.ent.Workspace.Get(ctx, s.WorkspaceID())
+	if err != nil {
+		return time.Time{}, err
+	}
+	return *ws.SetupCompletedAt, nil
+}
+
 // SetSecondFactorRequirement switches the scoped Workspace's Two-factor requirement
 // (ADR 0020) on, starting at now, or off. Switching it on while it is on keeps the
 // original start, so no member's grace restarts. A change is recorded as a

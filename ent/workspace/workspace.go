@@ -35,6 +35,8 @@ const (
 	FieldRetentionDays = "retention_days"
 	// FieldTimezone holds the string denoting the timezone field in the database.
 	FieldTimezone = "timezone"
+	// FieldSetupCompletedAt holds the string denoting the setup_completed_at field in the database.
+	FieldSetupCompletedAt = "setup_completed_at"
 	// FieldReportingCurrency holds the string denoting the reporting_currency field in the database.
 	FieldReportingCurrency = "reporting_currency"
 	// FieldAttributionWindowDays holds the string denoting the attribution_window_days field in the database.
@@ -433,6 +435,7 @@ var Columns = []string{
 	FieldPostalAddress,
 	FieldRetentionDays,
 	FieldTimezone,
+	FieldSetupCompletedAt,
 	FieldReportingCurrency,
 	FieldAttributionWindowDays,
 	FieldSendCap,
@@ -575,6 +578,11 @@ func ByRetentionDays(opts ...sql.OrderTermOption) OrderOption {
 // ByTimezone orders the results by the timezone field.
 func ByTimezone(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTimezone, opts...).ToFunc()
+}
+
+// BySetupCompletedAt orders the results by the setup_completed_at field.
+func BySetupCompletedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSetupCompletedAt, opts...).ToFunc()
 }
 
 // ByReportingCurrency orders the results by the reporting_currency field.

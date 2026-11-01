@@ -3,10 +3,12 @@ package site_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -70,4 +72,35 @@ func TestSiteSetupChecklistStates(t *testing.T) {
 			assert.Equal(t, tc.complete, got.Complete)
 		})
 	}
+}
+
+func TestAChecklistFoundCompleteStaysCompleteWhenAStepRegresses(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	read := func() *siteapi.SiteSetupProgress {
+		t.Helper()
+		res, err := c.SiteSetupChecklistGet(t.Context(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.AcmePublicID})
+		require.NoError(t, err)
+		out, ok := res.(*siteapi.SiteSetupProgress)
+		require.Truef(t, ok, "got %T", res)
+		return out
+	}
+	first := read()
+	_, err := env.DB.Scoped(fixtures.AcmeID).SendingDomain().Update().
+		Where(sendingdomain.VerifiedAtNotNil()).SetVerificationLostAt(time.Now()).Save(t.Context())
+	require.NoError(t, err)
+
+	after := read()
+
+	assert.True(t, first.CompletedAt.Set, "the read that finds every step done stamps it")
+	assert.Equal(t, pending, after.Steps.SendingDomain, "the steps are still read now")
+	assert.True(t, after.Complete)
+	assert.Equal(t, first.CompletedAt.Value, after.CompletedAt.Value, "the first moment is kept")
+}
+
+func TestAChecklistNeverCompleteHasNoMoment(t *testing.T) {
+	got := setupChecklist(t, fixtures.OwnerSallyEmail, fixtures.HooliPublicID)
+
+	assert.False(t, got.Complete)
+	assert.False(t, got.CompletedAt.Set)
 }

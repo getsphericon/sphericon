@@ -81,6 +81,12 @@ func (Workspace) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			NotEmpty(),
+		// When the Setup checklist was first found complete. Stamped once, by the read that first
+		// finds every step done, and never cleared: after it the overview shows no checklist, and a
+		// step that regresses (a domain that loses its record) is an item that needs attention.
+		field.Time("setup_completed_at").
+			Optional().
+			Nillable(),
 		// The Reporting currency (ADR 0064): the ISO 4217 code every revenue figure is in. NULL until
 		// an Owner or Admin chooses one; internal/accounts checks the code against the registry.
 		field.String("reporting_currency").

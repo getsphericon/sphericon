@@ -37,6 +37,8 @@ type Workspace struct {
 	RetentionDays *int `json:"retention_days,omitempty"`
 	// Timezone holds the value of the "timezone" field.
 	Timezone *string `json:"timezone,omitempty"`
+	// SetupCompletedAt holds the value of the "setup_completed_at" field.
+	SetupCompletedAt *time.Time `json:"setup_completed_at,omitempty"`
 	// ReportingCurrency holds the value of the "reporting_currency" field.
 	ReportingCurrency *string `json:"reporting_currency,omitempty"`
 	// AttributionWindowDays holds the value of the "attribution_window_days" field.
@@ -520,7 +522,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldTimezone, workspace.FieldReportingCurrency, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
-		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldDiscardedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldErasedAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
+		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldDiscardedAt, workspace.FieldSetupCompletedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldErasedAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -605,6 +607,13 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Timezone = new(string)
 				*_m.Timezone = value.String
+			}
+		case workspace.FieldSetupCompletedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field setup_completed_at", values[i])
+			} else if value.Valid {
+				_m.SetupCompletedAt = new(time.Time)
+				*_m.SetupCompletedAt = value.Time
 			}
 		case workspace.FieldReportingCurrency:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -971,6 +980,11 @@ func (_m *Workspace) String() string {
 	if v := _m.Timezone; v != nil {
 		builder.WriteString("timezone=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.SetupCompletedAt; v != nil {
+		builder.WriteString("setup_completed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
 	if v := _m.ReportingCurrency; v != nil {

@@ -206,10 +206,28 @@ model SiteTestSendBroadcastResult {
   captured: boolean;
 }
 
+/** The order of the broadcast list */
+enum SiteBroadcastsOrder {
+  /** The newest first: the default */
+  newest,
+
+  /** The one scheduled soonest first; a broadcast with no schedule after every scheduled one */
+  scheduledSoonest,
+
+  /** The one sent last first; a broadcast not sent yet after every sent one */
+  sentLatest,
+}
+
 /** Filter of the broadcast list */
 model SiteBroadcastsListFilter {
   /** true lists the archived broadcasts instead of the kept ones; the default hides them */
   @query archived?: boolean;
+
+  /** Only the broadcasts in one of these statuses; every status when absent */
+  @query(#{ explode: true }) status?: SiteBroadcastStatus[];
+
+  /** The order of the list: `newest` when absent */
+  @query order?: SiteBroadcastsOrder;
 }
 
 /**

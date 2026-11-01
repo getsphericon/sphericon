@@ -105,6 +105,11 @@ func Timezone(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldTimezone, v))
 }
 
+// SetupCompletedAt applies equality check predicate on the "setup_completed_at" field. It's identical to SetupCompletedAtEQ.
+func SetupCompletedAt(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldSetupCompletedAt, v))
+}
+
 // ReportingCurrency applies equality check predicate on the "reporting_currency" field. It's identical to ReportingCurrencyEQ.
 func ReportingCurrency(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldReportingCurrency, v))
@@ -708,6 +713,56 @@ func TimezoneEqualFold(v string) predicate.Workspace {
 // TimezoneContainsFold applies the ContainsFold predicate on the "timezone" field.
 func TimezoneContainsFold(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldContainsFold(FieldTimezone, v))
+}
+
+// SetupCompletedAtEQ applies the EQ predicate on the "setup_completed_at" field.
+func SetupCompletedAtEQ(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldSetupCompletedAt, v))
+}
+
+// SetupCompletedAtNEQ applies the NEQ predicate on the "setup_completed_at" field.
+func SetupCompletedAtNEQ(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldSetupCompletedAt, v))
+}
+
+// SetupCompletedAtIn applies the In predicate on the "setup_completed_at" field.
+func SetupCompletedAtIn(vs ...time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldSetupCompletedAt, vs...))
+}
+
+// SetupCompletedAtNotIn applies the NotIn predicate on the "setup_completed_at" field.
+func SetupCompletedAtNotIn(vs ...time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldSetupCompletedAt, vs...))
+}
+
+// SetupCompletedAtGT applies the GT predicate on the "setup_completed_at" field.
+func SetupCompletedAtGT(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldSetupCompletedAt, v))
+}
+
+// SetupCompletedAtGTE applies the GTE predicate on the "setup_completed_at" field.
+func SetupCompletedAtGTE(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldSetupCompletedAt, v))
+}
+
+// SetupCompletedAtLT applies the LT predicate on the "setup_completed_at" field.
+func SetupCompletedAtLT(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldSetupCompletedAt, v))
+}
+
+// SetupCompletedAtLTE applies the LTE predicate on the "setup_completed_at" field.
+func SetupCompletedAtLTE(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldSetupCompletedAt, v))
+}
+
+// SetupCompletedAtIsNil applies the IsNil predicate on the "setup_completed_at" field.
+func SetupCompletedAtIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldSetupCompletedAt))
+}
+
+// SetupCompletedAtNotNil applies the NotNil predicate on the "setup_completed_at" field.
+func SetupCompletedAtNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldSetupCompletedAt))
 }
 
 // ReportingCurrencyEQ applies the EQ predicate on the "reporting_currency" field.

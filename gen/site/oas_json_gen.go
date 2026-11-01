@@ -5447,6 +5447,50 @@ func (s *NilTimeZoneName) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes Timestamp as json.
+func (o NilTimestamp) Encode(e *jx.Encoder) {
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes Timestamp from json.
+func (o *NilTimestamp) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode NilTimestamp to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v Timestamp
+		o.Value = v
+		o.Null = true
+		return nil
+	}
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s NilTimestamp) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *NilTimestamp) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes AttributionWindowDays as json.
 func (o OptAttributionWindowDays) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -6457,6 +6501,55 @@ func (s OptNilSiteAbuseWarning) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilSiteAbuseWarning) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteAttentionSubject as json.
+func (o OptNilSiteAttentionSubject) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes SiteAttentionSubject from json.
+func (o *OptNilSiteAttentionSubject) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilSiteAttentionSubject to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v SiteAttentionSubject
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilSiteAttentionSubject) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilSiteAttentionSubject) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -11403,6 +11496,10 @@ func (s *SiteAnalyticsOverview) encodeFields(e *jx.Encoder) {
 		s.Contacts.Encode(e)
 	}
 	{
+		e.FieldStart("sending")
+		s.Sending.Encode(e)
+	}
+	{
 		e.FieldStart("email")
 		s.Email.Encode(e)
 	}
@@ -11418,20 +11515,14 @@ func (s *SiteAnalyticsOverview) encodeFields(e *jx.Encoder) {
 		}
 		e.ArrEnd()
 	}
-	{
-		if s.AbuseWarning.Set {
-			e.FieldStart("abuseWarning")
-			s.AbuseWarning.Encode(e)
-		}
-	}
 }
 
 var jsonFieldsNameOfSiteAnalyticsOverview = [5]string{
 	0: "contacts",
-	1: "email",
-	2: "automations",
-	3: "timeseries",
-	4: "abuseWarning",
+	1: "sending",
+	2: "email",
+	3: "automations",
+	4: "timeseries",
 }
 
 // Decode decodes SiteAnalyticsOverview from json.
@@ -11453,8 +11544,18 @@ func (s *SiteAnalyticsOverview) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"contacts\"")
 			}
-		case "email":
+		case "sending":
 			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Sending.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sending\"")
+			}
+		case "email":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				if err := s.Email.Decode(d); err != nil {
 					return err
@@ -11464,7 +11565,7 @@ func (s *SiteAnalyticsOverview) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"email\"")
 			}
 		case "automations":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				if err := s.Automations.Decode(d); err != nil {
 					return err
@@ -11474,7 +11575,7 @@ func (s *SiteAnalyticsOverview) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"automations\"")
 			}
 		case "timeseries":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				s.Timeseries = make([]SiteAnalyticsPoint, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -11491,16 +11592,6 @@ func (s *SiteAnalyticsOverview) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"timeseries\"")
 			}
-		case "abuseWarning":
-			if err := func() error {
-				s.AbuseWarning.Reset()
-				if err := s.AbuseWarning.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"abuseWarning\"")
-			}
 		default:
 			return d.Skip()
 		}
@@ -11511,7 +11602,7 @@ func (s *SiteAnalyticsOverview) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001111,
+		0b00011111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -11834,6 +11925,10 @@ func (s *SiteAnalyticsRevenue) encodeFields(e *jx.Encoder) {
 		s.ReportingCurrency.Encode(e)
 	}
 	{
+		e.FieldStart("firstOrderAt")
+		s.FirstOrderAt.Encode(e)
+	}
+	{
 		e.FieldStart("total")
 		e.Int64(s.Total)
 	}
@@ -11851,7 +11946,11 @@ func (s *SiteAnalyticsRevenue) encodeFields(e *jx.Encoder) {
 	}
 	{
 		e.FieldStart("otherCurrencyOrders")
-		e.Int32(s.OtherCurrencyOrders)
+		e.ArrStart()
+		for _, elem := range s.OtherCurrencyOrders {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
 	}
 	{
 		e.FieldStart("series")
@@ -11863,14 +11962,15 @@ func (s *SiteAnalyticsRevenue) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteAnalyticsRevenue = [7]string{
+var jsonFieldsNameOfSiteAnalyticsRevenue = [8]string{
 	0: "reportingCurrency",
-	1: "total",
-	2: "credited",
-	3: "orders",
-	4: "creditedOrders",
-	5: "otherCurrencyOrders",
-	6: "series",
+	1: "firstOrderAt",
+	2: "total",
+	3: "credited",
+	4: "orders",
+	5: "creditedOrders",
+	6: "otherCurrencyOrders",
+	7: "series",
 }
 
 // Decode decodes SiteAnalyticsRevenue from json.
@@ -11892,8 +11992,18 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"reportingCurrency\"")
 			}
-		case "total":
+		case "firstOrderAt":
 			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.FirstOrderAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"firstOrderAt\"")
+			}
+		case "total":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Int64()
 				s.Total = int64(v)
@@ -11905,7 +12015,7 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"total\"")
 			}
 		case "credited":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Int64()
 				s.Credited = int64(v)
@@ -11917,7 +12027,7 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"credited\"")
 			}
 		case "orders":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Int32()
 				s.Orders = int32(v)
@@ -11929,7 +12039,7 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"orders\"")
 			}
 		case "creditedOrders":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Int32()
 				s.CreditedOrders = int32(v)
@@ -11941,11 +12051,17 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"creditedOrders\"")
 			}
 		case "otherCurrencyOrders":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
-				v, err := d.Int32()
-				s.OtherCurrencyOrders = int32(v)
-				if err != nil {
+				s.OtherCurrencyOrders = make([]SiteOrdersInCurrency, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SiteOrdersInCurrency
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.OtherCurrencyOrders = append(s.OtherCurrencyOrders, elem)
+					return nil
+				}); err != nil {
 					return err
 				}
 				return nil
@@ -11953,7 +12069,7 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"otherCurrencyOrders\"")
 			}
 		case "series":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				s.Series = make([]SiteRevenuePoint, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -11980,7 +12096,7 @@ func (s *SiteAnalyticsRevenue) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01111111,
+		0b11111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -12098,6 +12214,187 @@ func (s *SiteAnalyticsRevenueNotFound) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteAnalyticsRevenueNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteAnalyticsSending) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteAnalyticsSending) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("broadcast")
+		e.Int32(s.Broadcast)
+	}
+	{
+		e.FieldStart("automation")
+		e.Int32(s.Automation)
+	}
+	{
+		e.FieldStart("transactional")
+		e.Int32(s.Transactional)
+	}
+	{
+		e.FieldStart("delivered")
+		e.Int32(s.Delivered)
+	}
+	{
+		e.FieldStart("bounced")
+		e.Int32(s.Bounced)
+	}
+	{
+		e.FieldStart("complained")
+		e.Int32(s.Complained)
+	}
+}
+
+var jsonFieldsNameOfSiteAnalyticsSending = [6]string{
+	0: "broadcast",
+	1: "automation",
+	2: "transactional",
+	3: "delivered",
+	4: "bounced",
+	5: "complained",
+}
+
+// Decode decodes SiteAnalyticsSending from json.
+func (s *SiteAnalyticsSending) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAnalyticsSending to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "broadcast":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Int32()
+				s.Broadcast = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"broadcast\"")
+			}
+		case "automation":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int32()
+				s.Automation = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"automation\"")
+			}
+		case "transactional":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Int32()
+				s.Transactional = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"transactional\"")
+			}
+		case "delivered":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Int32()
+				s.Delivered = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"delivered\"")
+			}
+		case "bounced":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Int32()
+				s.Bounced = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"bounced\"")
+			}
+		case "complained":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Int32()
+				s.Complained = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"complained\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteAnalyticsSending")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00111111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteAnalyticsSending) {
+					name = jsonFieldsNameOfSiteAnalyticsSending[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteAnalyticsSending) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAnalyticsSending) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -12665,6 +12962,593 @@ func (s *SiteApiTokenResource) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteApiTokenResource) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteAttentionGetBadRequest as json.
+func (s *SiteAttentionGetBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteAttentionGetBadRequest from json.
+func (s *SiteAttentionGetBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAttentionGetBadRequest to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteAttentionGetBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteAttentionGetBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAttentionGetBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteAttentionGetNotFound as json.
+func (s *SiteAttentionGetNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteAttentionGetNotFound from json.
+func (s *SiteAttentionGetNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAttentionGetNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteAttentionGetNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteAttentionGetNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAttentionGetNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteAttentionItem) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteAttentionItem) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("severity")
+		s.Severity.Encode(e)
+	}
+	{
+		if s.Subject.Set {
+			e.FieldStart("subject")
+			s.Subject.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("count")
+		e.Int32(s.Count)
+	}
+	{
+		if s.Since.Set {
+			e.FieldStart("since")
+			s.Since.Encode(e)
+		}
+	}
+	{
+		if s.HoldReason.Set {
+			e.FieldStart("holdReason")
+			s.HoldReason.Encode(e)
+		}
+	}
+	{
+		if s.Abuse.Set {
+			e.FieldStart("abuse")
+			s.Abuse.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfSiteAttentionItem = [7]string{
+	0: "kind",
+	1: "severity",
+	2: "subject",
+	3: "count",
+	4: "since",
+	5: "holdReason",
+	6: "abuse",
+}
+
+// Decode decodes SiteAttentionItem from json.
+func (s *SiteAttentionItem) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAttentionItem to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "severity":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Severity.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"severity\"")
+			}
+		case "subject":
+			if err := func() error {
+				s.Subject.Reset()
+				if err := s.Subject.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"subject\"")
+			}
+		case "count":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Int32()
+				s.Count = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"count\"")
+			}
+		case "since":
+			if err := func() error {
+				s.Since.Reset()
+				if err := s.Since.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"since\"")
+			}
+		case "holdReason":
+			if err := func() error {
+				s.HoldReason.Reset()
+				if err := s.HoldReason.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"holdReason\"")
+			}
+		case "abuse":
+			if err := func() error {
+				s.Abuse.Reset()
+				if err := s.Abuse.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"abuse\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteAttentionItem")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteAttentionItem) {
+					name = jsonFieldsNameOfSiteAttentionItem[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteAttentionItem) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAttentionItem) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteAttentionKind as json.
+func (s SiteAttentionKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteAttentionKind from json.
+func (s *SiteAttentionKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAttentionKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteAttentionKind(v) {
+	case SiteAttentionKindSendingDomainVerificationLost:
+		*s = SiteAttentionKindSendingDomainVerificationLost
+	case SiteAttentionKindIntegrationProviderStopped:
+		*s = SiteAttentionKindIntegrationProviderStopped
+	case SiteAttentionKindBroadcastHeld:
+		*s = SiteAttentionKindBroadcastHeld
+	case SiteAttentionKindDeliverabilityWarning:
+		*s = SiteAttentionKindDeliverabilityWarning
+	case SiteAttentionKindSendCapSpent:
+		*s = SiteAttentionKindSendCapSpent
+	case SiteAttentionKindProviderLimitSpent:
+		*s = SiteAttentionKindProviderLimitSpent
+	case SiteAttentionKindIntegrationProviderProbation:
+		*s = SiteAttentionKindIntegrationProviderProbation
+	case SiteAttentionKindIntegrationProviderSandbox:
+		*s = SiteAttentionKindIntegrationProviderSandbox
+	case SiteAttentionKindEnrollmentsFailed:
+		*s = SiteAttentionKindEnrollmentsFailed
+	case SiteAttentionKindBroadcastFailed:
+		*s = SiteAttentionKindBroadcastFailed
+	case SiteAttentionKindWebhookDisabled:
+		*s = SiteAttentionKindWebhookDisabled
+	default:
+		*s = SiteAttentionKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteAttentionKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAttentionKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteAttentionList) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteAttentionList) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("items")
+		e.ArrStart()
+		for _, elem := range s.Items {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfSiteAttentionList = [1]string{
+	0: "items",
+}
+
+// Decode decodes SiteAttentionList from json.
+func (s *SiteAttentionList) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAttentionList to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "items":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Items = make([]SiteAttentionItem, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SiteAttentionItem
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Items = append(s.Items, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"items\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteAttentionList")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteAttentionList) {
+					name = jsonFieldsNameOfSiteAttentionList[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteAttentionList) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAttentionList) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteAttentionSeverity as json.
+func (s SiteAttentionSeverity) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteAttentionSeverity from json.
+func (s *SiteAttentionSeverity) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAttentionSeverity to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteAttentionSeverity(v) {
+	case SiteAttentionSeverityBlocked:
+		*s = SiteAttentionSeverityBlocked
+	case SiteAttentionSeverityDegraded:
+		*s = SiteAttentionSeverityDegraded
+	case SiteAttentionSeverityNotice:
+		*s = SiteAttentionSeverityNotice
+	default:
+		*s = SiteAttentionSeverity(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteAttentionSeverity) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAttentionSeverity) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteAttentionSubject) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteAttentionSubject) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+}
+
+var jsonFieldsNameOfSiteAttentionSubject = [2]string{
+	0: "id",
+	1: "name",
+}
+
+// Decode decodes SiteAttentionSubject from json.
+func (s *SiteAttentionSubject) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAttentionSubject to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteAttentionSubject")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteAttentionSubject) {
+					name = jsonFieldsNameOfSiteAttentionSubject[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteAttentionSubject) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAttentionSubject) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -39666,6 +40550,117 @@ func (s *SiteOptionalConsentsSetUnprocessableEntity) UnmarshalJSON(data []byte) 
 }
 
 // Encode implements json.Marshaler.
+func (s *SiteOrdersInCurrency) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteOrdersInCurrency) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("currency")
+		s.Currency.Encode(e)
+	}
+	{
+		e.FieldStart("orders")
+		e.Int32(s.Orders)
+	}
+}
+
+var jsonFieldsNameOfSiteOrdersInCurrency = [2]string{
+	0: "currency",
+	1: "orders",
+}
+
+// Decode decodes SiteOrdersInCurrency from json.
+func (s *SiteOrdersInCurrency) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteOrdersInCurrency to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "currency":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Currency.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"currency\"")
+			}
+		case "orders":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int32()
+				s.Orders = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"orders\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteOrdersInCurrency")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteOrdersInCurrency) {
+					name = jsonFieldsNameOfSiteOrdersInCurrency[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteOrdersInCurrency) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteOrdersInCurrency) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *SitePasskey) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -52482,11 +53477,18 @@ func (s *SiteSetupProgress) encodeFields(e *jx.Encoder) {
 		e.FieldStart("complete")
 		e.Bool(s.Complete)
 	}
+	{
+		if s.CompletedAt.Set {
+			e.FieldStart("completedAt")
+			s.CompletedAt.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteSetupProgress = [2]string{
+var jsonFieldsNameOfSiteSetupProgress = [3]string{
 	0: "steps",
 	1: "complete",
+	2: "completedAt",
 }
 
 // Decode decodes SiteSetupProgress from json.
@@ -52519,6 +53521,16 @@ func (s *SiteSetupProgress) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"complete\"")
+			}
+		case "completedAt":
+			if err := func() error {
+				s.CompletedAt.Reset()
+				if err := s.CompletedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"completedAt\"")
 			}
 		default:
 			return d.Skip()

@@ -15,6 +15,14 @@ const mount = { ...base, initialPath: `${base.initialPath}?range=30d` }
 
 const overview = {
   contacts: { total: 42, active: 40, unsubscribed: 2, newInRange: 5 },
+  sending: {
+    broadcast: 100,
+    automation: 0,
+    transactional: 0,
+    delivered: 98,
+    bounced: 1,
+    complained: 0,
+  },
   email: {
     sentCount: 100,
     openedCount: 60,
@@ -82,35 +90,4 @@ test('a workspace without contacts shows the empty hint instead of the chart', a
   const { screen } = await renderWithRouter(<EmailMetricsPage />, mount)
 
   await expect.element(screen.getByText('No contacts yet')).toBeInTheDocument()
-})
-
-test('a workspace in the warning tier sees which rate is over the limit', async () => {
-  worker.use(
-    handleSiteAnalyticsOverview({
-      body: {
-        ...overview,
-        abuseWarning: { domain: 'mail.acme.test', metric: 'complaint', rate: 0.0015 },
-      },
-    }),
-  )
-
-  const { screen } = await renderWithRouter(<EmailMetricsPage />, mount)
-
-  await expect
-    .element(screen.getByText('Your sending reputation needs attention'))
-    .toBeInTheDocument()
-  await expect
-    .element(screen.getByText(/complaint rate on mail.acme.test is 0.15%/))
-    .toBeInTheDocument()
-})
-
-test('no warning shows no alert', async () => {
-  worker.use(handleSiteAnalyticsOverview({ body: overview }))
-
-  const { screen } = await renderWithRouter(<EmailMetricsPage />, mount)
-
-  await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
-  await expect
-    .element(screen.getByText('Your sending reputation needs attention'))
-    .not.toBeInTheDocument()
 })

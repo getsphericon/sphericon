@@ -8,6 +8,9 @@
 // sent in the window, and opens and clicks are counted among that same cohort, so
 // opened never exceeds sent and every rate is within [0, 1]. They are not the
 // Sending-domain Complaint and Bounce rates of internal/reputation.
+//
+// Sending counts every message sent in the window, through every surface, from the Outbound
+// messages themselves (ADR 0053): what went out and what the provider said became of it.
 package analytics
 
 import (
@@ -39,6 +42,7 @@ const (
 // Overview is everything the dashboard shows for one Workspace and window.
 type Overview struct {
 	Contacts    Contacts
+	Sending     Sending
 	Email       Email
 	Automations Automations
 	Series      []Point
@@ -47,6 +51,13 @@ type Overview struct {
 // Contacts is the contact breakdown: Unsubscribed is "globally non-mailable" (ADR 0001), Active the remainder.
 type Contacts struct {
 	Total, Active, Unsubscribed, NewInWindow int
+}
+
+// Sending is the messages sent in the window by the surface that asked for them, and of all of
+// them, those a Delivery notice said were delivered, bounced or complained about.
+type Sending struct {
+	Broadcast, Automation, Transactional int
+	Delivered, Bounced, Complained       int
 }
 
 // Email is the send cohort's counts and Engagement rates.
@@ -117,6 +128,10 @@ func (m *Module) Overview(ctx context.Context, s *ent.Scoped, w Window) (*Overvi
 	if err != nil {
 		return nil, err
 	}
+	sending, err := sendingCounts(ctx, s, days.Since, days.Until)
+	if err != nil {
+		return nil, err
+	}
 	email, err := emailCounts(ctx, s, days.Since, days.Until)
 	if err != nil {
 		return nil, err
@@ -129,7 +144,7 @@ func (m *Module) Overview(ctx context.Context, s *ent.Scoped, w Window) (*Overvi
 	if err != nil {
 		return nil, err
 	}
-	return &Overview{Contacts: contacts, Email: email, Automations: automations, Series: series}, nil
+	return &Overview{Contacts: contacts, Sending: sending, Email: email, Automations: automations, Series: series}, nil
 }
 
 func contactCounts(ctx context.Context, s *ent.Scoped, since time.Time) (Contacts, error) {
@@ -162,6 +177,52 @@ func sentBetween(since, until time.Time) predicate.BroadcastRecipient {
 			)),
 		))
 	}
+}
+
+// sendingCounts counts the Outbound messages sent in [since, until) per kind, and the delivery
+// stamps among them.
+func sendingCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (Sending, error) {
+	var rows []struct {
+		Kind       outboundmessage.Kind `sql:"kind"`
+		Sent       int                  `sql:"sent"`
+		Delivered  int                  `sql:"delivered"`
+		Bounced    int                  `sql:"bounced"`
+		Complained int                  `sql:"complained"`
+	}
+	err := s.OutboundMessage().Query().
+		Where(
+			outboundmessage.StatusEQ(outboundmessage.StatusSent),
+			outboundmessage.SentAtGTE(since),
+			outboundmessage.SentAtLT(until),
+		).
+		Modify(func(sel *sql.Selector) {
+			sel.Select(
+				sel.C(outboundmessage.FieldKind),
+				sql.As(sql.Count("*"), "sent"),
+				sql.As(sql.Count(sel.C(outboundmessage.FieldDeliveredAt)), "delivered"),
+				sql.As(sql.Count(sel.C(outboundmessage.FieldBouncedAt)), "bounced"),
+				sql.As(sql.Count(sel.C(outboundmessage.FieldComplainedAt)), "complained"),
+			).GroupBy(sel.C(outboundmessage.FieldKind))
+		}).
+		Scan(ctx, &rows)
+	if err != nil {
+		return Sending{}, err
+	}
+	var out Sending
+	for _, r := range rows {
+		switch r.Kind {
+		case outboundmessage.KindBroadcast:
+			out.Broadcast = r.Sent
+		case outboundmessage.KindAutomation:
+			out.Automation = r.Sent
+		case outboundmessage.KindTransactional:
+			out.Transactional = r.Sent
+		}
+		out.Delivered += r.Delivered
+		out.Bounced += r.Bounced
+		out.Complained += r.Complained
+	}
+	return out, nil
 }
 
 func emailCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (Email, error) {

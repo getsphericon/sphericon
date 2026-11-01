@@ -1632,24 +1632,6 @@ func (s *SiteAnalyticsOverview) Validate() error {
 			Error: err,
 		})
 	}
-	if err := func() error {
-		if value, ok := s.AbuseWarning.Get(); ok {
-			if err := func() error {
-				if err := value.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "abuseWarning",
-			Error: err,
-		})
-	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -1717,6 +1699,34 @@ func (s *SiteAnalyticsRevenue) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "reportingCurrency",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.OtherCurrencyOrders == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.OtherCurrencyOrders {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "otherCurrencyOrders",
 			Error: err,
 		})
 	}
@@ -1843,6 +1853,156 @@ func (s *SiteApiTokenResource) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s *SiteAttentionGetBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAttentionGetNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAttentionItem) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Severity.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "severity",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Abuse.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "abuse",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteAttentionKind) Validate() error {
+	switch s {
+	case "sendingDomainVerificationLost":
+		return nil
+	case "integrationProviderStopped":
+		return nil
+	case "broadcastHeld":
+		return nil
+	case "deliverabilityWarning":
+		return nil
+	case "sendCapSpent":
+		return nil
+	case "providerLimitSpent":
+		return nil
+	case "integrationProviderProbation":
+		return nil
+	case "integrationProviderSandbox":
+		return nil
+	case "enrollmentsFailed":
+		return nil
+	case "broadcastFailed":
+		return nil
+	case "webhookDisabled":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SiteAttentionList) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Items == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Items {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "items",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteAttentionSeverity) Validate() error {
+	switch s {
+	case "blocked":
+		return nil
+	case "degraded":
+		return nil
+	case "notice":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *SiteAuditActor) Validate() error {
@@ -3527,6 +3687,19 @@ func (s *SiteBroadcastsListUnprocessableEntity) Validate() error {
 		return err
 	}
 	return nil
+}
+
+func (s SiteBroadcastsOrder) Validate() error {
+	switch s {
+	case "newest":
+		return nil
+	case "scheduledSoonest":
+		return nil
+	case "sentLatest":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *SiteBroadcastsScheduleBadRequest) Validate() error {
@@ -7590,6 +7763,29 @@ func (s *SiteOptionalConsentsSetUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (s *SiteOrdersInCurrency) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Currency.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "currency",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 	return nil
 }
