@@ -301,12 +301,14 @@ _Avoid_: Subscribed flag, subscription status, opt-in flag, double opt-in status
 ### Sending
 
 **Broadcast**:
-A one-off email send to an audience, authored and sent once (draft → scheduled → sending →
-sent / failed). Its audience is a Segment (or all Contacts). Scheduling takes a **copy of the
+A one-off send to an audience on one Channel, fixed when it is created, authored and sent once
+(draft → scheduled → sending → sent / failed). Its Message content takes that Channel's shape; its
+lifecycle, audience, Integration, Recipients and figures are the same on every Channel. It is never
+converted to another Channel. Its audience is a Segment (or all Contacts). Scheduling takes a **copy of the
 Segment's Condition**, so a later edit of the Segment does not change who the Broadcast reaches;
 the copy is resolved and **frozen into Recipients at send time**, then filtered per-recipient by
 Send-eligibility. Sends under the
-shared "broadcasts" unsubscribe scope. There is no "active contacts" audience — eligibility is
+shared "broadcasts" unsubscribe scope, which, like every Unsubscribe, is separate per Channel. There is no "active contacts" audience — eligibility is
 derived, not a contact status. "Audience" is prose for whoever a Broadcast reaches; the thing
 that picks them is always a Segment, and names say Segment.
 _Avoid_: Campaign, newsletter blast, mailshot, email blast
@@ -345,7 +347,9 @@ name such an Integration, and one disabled after Publish holds the sends.
 _Avoid_: Provider resolution, sender lookup
 
 **Test send**:
-A Broadcast's author sending it to one address they name, to see the mail before it goes out. It
+A Broadcast's author sending it to one address they name, to see the mail before it goes out. On
+SMS and WhatsApp the address is a phone number they type, sent through the Broadcast's Integration;
+Telegram and push have no Test send. It
 skips Send-eligibility and leaves no Outbound message or `email.sent` Event, so it never shows in
 Activity or the rates. It goes through the Integration the Broadcast sends through (its own, else
 the Workspace's default). While none of the Workspace's Sending domains is verified and that
