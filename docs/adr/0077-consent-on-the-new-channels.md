@@ -18,9 +18,9 @@ GDPR, WhatsApp policy), and that providers report both a person's choice and a d
   Binding is the opt-in: it exists only because the person started the bot or allowed
   notifications. On mobile push the external push service holds it (ADR 0074).
 - **How an SMS or WhatsApp Confirmation is recorded.** Through the API or an import, as `imported`,
-  carrying the consent wording, its source and the brand in the `marketing.confirmed` Event; or
-  through an on-site form, if that decision keeps forms. sphericon runs no SMS double opt-in of its
-  own: a customer who needs a code or an identifying action (Russia's FAS reading) uses their own
+  carrying the consent wording, its source and the brand in the `marketing.confirmed` Event, always
+  from the customer's server and never from the browser (ADR 0084). sphericon runs no SMS double
+  opt-in of its own: a customer who needs a code or an identifying action (Russia's FAS reading) uses their own
   app or a verification service and reports the result.
 - **An opt-out made in the Channel is Channel-wide.** A STOP keyword (in the languages sphericon
   supports), `/stop` and a blocked bot on Telegram, WhatsApp's marketing stop and an unsubscribe
