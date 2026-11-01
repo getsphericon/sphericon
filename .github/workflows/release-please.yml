@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - main
+  # Publishes the artifacts of a release that already exists, when its build failed:
+  # `gh workflow run release-please.yml -f tag=v1.2.3`.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The existing release tag to build and publish, such as v1.2.3
+        required: true
+        type: string
 
 permissions: {}
 
@@ -13,6 +21,7 @@ concurrency:
 
 jobs:
   release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -36,7 +45,9 @@ jobs:
   # `on: push: tags` workflow, so GoReleaser must be chained here.
   goreleaser:
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    if: >-
+      !cancelled() && (needs.release-please.outputs.release_created == 'true' ||
+      github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -46,7 +57,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.release-please.outputs.tag_name }}
+          ref: ${{ inputs.tag || needs.release-please.outputs.tag_name }}
           fetch-depth: 0
           persist-credentials: false
       # Same pinned toolchain as CI (go, node, pnpm, ...); provides `mise run` for the
@@ -67,7 +78,8 @@ jobs:
       - uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         with:
           version: '~> v2'
-          args: release --clean
+          # 0.4.0 died building four targets at once, most likely out of memory: two at a time.
+          args: release --clean --parallelism 2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
