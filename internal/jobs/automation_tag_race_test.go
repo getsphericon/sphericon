@@ -21,11 +21,17 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// queuedOnTheContact runs the writers in the order named while a transaction of the test's own
-// holds the Contact's row, each started once the ones before it wait for a lock, and then releases
-// the row: the writers meet in the order they queued, when all of them are already inside their
+// writer is one side of a race over a Contact: a transaction the test starts and names.
+type writer struct {
+	name string
+	run  func() error
+}
+
+// queuedOnTheContact runs the writers in their order while a transaction of the test's own holds
+// the Contact's row, each started once the ones before it wait for a lock, and then releases the
+// row: the writers meet in the order they queued, when all of them are already inside their
 // transactions. It returns each writer's error by its name.
-func queuedOnTheContact(t *testing.T, e *realEnv, contactID int64, writers map[string]func() error, order ...string) map[string]error {
+func queuedOnTheContact(t *testing.T, e *realEnv, contactID int64, writers ...writer) map[string]error {
 	t.Helper()
 	ctx := context.Background()
 	tx, err := e.client.Tx(ctx)
@@ -38,18 +44,18 @@ func queuedOnTheContact(t *testing.T, e *realEnv, contactID int64, writers map[s
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(probe, "probe") })
 
-	results := make(map[string]chan error, len(order))
-	for i, name := range order {
+	results := make(map[string]chan error, len(writers))
+	for i, w := range writers {
 		result, done := make(chan error, 1), make(chan struct{})
-		results[name] = result
+		results[w.name] = result
 		go func() {
-			result <- writers[name]()
+			result <- w.run()
 			close(done)
 		}()
 		require.Eventually(t, func() bool {
 			waiting, err := testhelper.LockWaiters(ctx, probe)
 			return settled(done) || (err == nil && waiting > i)
-		}, 10*time.Second, 5*time.Millisecond, "%s finished or waits for a lock", name)
+		}, 10*time.Second, 5*time.Millisecond, "%s finished or waits for a lock", w.name)
 	}
 	release()
 	errs := make(map[string]error, len(results))
@@ -60,16 +66,26 @@ func queuedOnTheContact(t *testing.T, e *realEnv, contactID int64, writers map[s
 }
 
 // A tag step and an exit Event of the same Contact both take the Contact's lock before they touch
-// the Enrollment, so neither waits for the other in a cycle: both commit, the Enrollment exits, and
-// the Tag is applied only when the step moved the Enrollment before the exit ended it (#811).
+// the Enrollment, so neither waits for the other in a cycle: both commit and the Enrollment exits.
+// The Tag is applied when the step moved the Enrollment before the exit ended it, and never after
+// the exit (#811).
 func TestATagStepAndAnExitOfOneContactNeverDeadlock(t *testing.T) {
 	for _, tc := range []struct {
 		name       string
-		order      []string
+		queue      func(step, exit writer) []writer
+		wantStep   int
 		wantTagged bool
 	}{
-		{name: "the exit queues first and wins", order: []string{"exit", "step"}, wantTagged: false},
-		{name: "the step queues first and tags", order: []string{"step", "exit"}, wantTagged: true},
+		{
+			name:     "the exit queues first and wins",
+			queue:    func(step, exit writer) []writer { return []writer{exit, step} },
+			wantStep: 0, wantTagged: false,
+		},
+		{
+			name:     "the step queues first and tags",
+			queue:    func(step, exit writer) []writer { return []writer{step, exit} },
+			wantStep: 1, wantTagged: true,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e := newRealEnv(t)
@@ -79,16 +95,14 @@ func TestATagStepAndAnExitOfOneContactNeverDeadlock(t *testing.T) {
 			require.True(t, enrolled)
 			stepper := e.stepper(t, &fakeSender{})
 			ending := e.bus(t)
+			step := writer{name: "step", run: func() error { return stepper.Step(ctx, e.scoped, runID, 0) }}
+			exit := writer{name: "exit", run: func() error {
+				left := automations.Event{Action: "job_tag_exit_left", OccurredAt: time.Now()}
+				return stepping.OnEvent(ctx, ending, e.scoped, fixtures.ContactAliceID, left, 0)
+			}}
 
-			errs := queuedOnTheContact(t, e, fixtures.ContactAliceID, map[string]func() error{
-				"step": func() error { return stepper.Step(ctx, e.scoped, runID, 0) },
-				"exit": func() error {
-					left := automations.Event{Action: "job_tag_exit_left", OccurredAt: time.Now()}
-					return stepping.OnEvent(ctx, ending, e.scoped, fixtures.ContactAliceID, left, 0)
-				},
-			}, tc.order...)
-			require.NoError(t, errs["step"], "the tag step")
-			require.NoError(t, errs["exit"], "the exit")
+			errs := queuedOnTheContact(t, e, fixtures.ContactAliceID, tc.queue(step, exit)...)
+			require.Equal(t, map[string]error{"step": nil, "exit": nil}, errs, "neither side is aborted")
 
 			run, err := e.client.AutomationRun.Get(ctx, runID)
 			require.NoError(t, err)
@@ -99,7 +113,7 @@ func TestATagStepAndAnExitOfOneContactNeverDeadlock(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, automationrun.StatusExited, run.Status)
-			assert.Equal(t, run.CurrentStep == 1, tagged, "the Tag is applied exactly when the step moved the Enrollment")
+			assert.Equal(t, tc.wantStep, run.CurrentStep)
 			assert.Equal(t, tc.wantTagged, tagged)
 		})
 	}

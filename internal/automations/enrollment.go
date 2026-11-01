@@ -32,12 +32,12 @@ import (
 // Enrollment looked for it, would be missed by both: the Enrollment would walk its steps after the
 // payment it was waiting for.
 //
-// Lock order: the Contact, then the Enrollment. Every transaction that writes both an Enrollment's
-// row and its Contact's row takes LockContact before it touches the Enrollment: making one, ending
-// them on an Event, and a tag step, whose change of the Contact's Tags updates the Contact's row
-// (#811). Taken the other way round, a tag step and an exit of the same Contact wait for each
-// other and Postgres aborts one of them. A move that writes no Contact row (a wait, an email or
-// HTTP step, a completion, a failure) takes no Contact lock.
+// Lock order: the Contact, then the Enrollment. Every Automations transaction that writes both an
+// Enrollment's row and its Contact's row takes LockContact before it touches the Enrollment:
+// making one, ending them on an Event, and a tag step, whose change of the Contact's Tags updates
+// the Contact's row (#811). Taken the other way round, a tag step and an exit of the same Contact
+// wait for each other and Postgres aborts one of them. A move that writes no Contact row (a wait,
+// an email or HTTP step, a completion, a failure) takes no Contact lock.
 //
 // EndOnEvent keeps the Contact's lock while it waits for an in-flight send's fence (FenceOn) on an
 // Enrollment it ends, so a write of that Contact row (an identify upsert, an /api update) waits up
