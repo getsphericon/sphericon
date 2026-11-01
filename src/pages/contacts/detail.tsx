@@ -4,7 +4,6 @@ import {
   Button,
   Badge,
   Group,
-  SimpleGrid,
   Stack,
   Switch,
   Table,
@@ -221,41 +220,40 @@ function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contac
   )
 }
 
-// The core attributes of the Contact in two tables side by side: who the Contact is, then where
-// and when.
+// Everything known about the Contact in one list: its core attributes, then its custom fields,
+// then when it was created and last changed.
 function ContactDetails({ contact }: { contact: SiteContactResource }) {
   const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
+  const customFields = Object.entries(contact.customFields ?? {}).map(([key, value]) => ({
+    label: key,
+    value: formatCustomValue(value),
+  }))
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }}>
-      <AttributeTable
-        rows={[
-          { label: t(($) => $.table.email), value: contact.email ?? '' },
-          { label: t(($) => $.table.subjectId), value: contact.subjectId ?? '' },
-          { label: t(($) => $.table.phone), value: contact.phone ?? '' },
-          { label: t(($) => $.table.firstName), value: contact.firstName ?? '' },
-          { label: t(($) => $.table.lastName), value: contact.lastName ?? '' },
-          {
-            label: t(($) => $.table.birthday),
-            value: contact.birthday ? formatLongDate(contact.birthday) : '',
-          },
-        ]}
-      />
-      <AttributeTable
-        rows={[
-          {
-            label: t(($) => $.table.country),
-            value: contact.country ? countryName(contact.country) : '',
-            icon: contact.country ? <CountryFlag code={contact.country} /> : null,
-          },
-          { label: t(($) => $.table.city), value: contact.city ?? '' },
-          { label: t(($) => $.table.timeZone), value: contact.timeZone ?? '' },
-          { label: t(($) => $.table.locale), value: contact.locale ?? '' },
-          { label: t(($) => $.activity.createdAt), value: formatDateTime(contact.createdAt) },
-          { label: t(($) => $.contacts.updatedAt), value: formatDateTime(contact.updatedAt) },
-        ]}
-      />
-    </SimpleGrid>
+    <AttributeTable
+      rows={[
+        { label: t(($) => $.table.email), value: contact.email ?? '' },
+        { label: t(($) => $.table.subjectId), value: contact.subjectId ?? '' },
+        { label: t(($) => $.table.phone), value: contact.phone ?? '' },
+        { label: t(($) => $.table.firstName), value: contact.firstName ?? '' },
+        { label: t(($) => $.table.lastName), value: contact.lastName ?? '' },
+        {
+          label: t(($) => $.table.birthday),
+          value: contact.birthday ? formatLongDate(contact.birthday) : '',
+        },
+        {
+          label: t(($) => $.table.country),
+          value: contact.country ? countryName(contact.country) : '',
+          icon: contact.country ? <CountryFlag code={contact.country} /> : null,
+        },
+        { label: t(($) => $.table.city), value: contact.city ?? '' },
+        { label: t(($) => $.table.timeZone), value: contact.timeZone ?? '' },
+        { label: t(($) => $.table.locale), value: contact.locale ?? '' },
+        ...customFields,
+        { label: t(($) => $.activity.createdAt), value: formatDateTime(contact.createdAt) },
+        { label: t(($) => $.contacts.updatedAt), value: formatDateTime(contact.updatedAt) },
+      ]}
+    />
   )
 }
 
@@ -277,7 +275,6 @@ export function ContactDetailPage() {
   }
 
   const fullName = contactFullName(contact)
-  const customFields = Object.entries(contact.customFields ?? {})
 
   return (
     <Stack>
@@ -311,18 +308,6 @@ export function ContactDetailPage() {
               </Badge>
             ))}
           </Group>
-        </>
-      ) : null}
-
-      {customFields.length > 0 ? (
-        <>
-          <Title order={5}>{t(($) => $.contacts.customFields)}</Title>
-          <AttributeTable
-            rows={customFields.map(([key, value]) => ({
-              label: key,
-              value: formatCustomValue(value),
-            }))}
-          />
         </>
       ) : null}
 

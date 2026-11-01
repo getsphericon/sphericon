@@ -61,7 +61,7 @@ test('shows the contact, its custom fields and its events', async () => {
 
   await expect.element(screen.getByRole('heading', { name: 'ada@example.com' })).toBeInTheDocument()
   await expect.element(screen.getByText('Ada Lovelace')).toBeInTheDocument()
-  await expect.element(screen.getByText('Custom fields')).toBeInTheDocument()
+  await expect.element(screen.getByText('plan', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('pro', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('{"beta":true}')).toBeInTheDocument()
   await expect.element(screen.getByText('No events yet')).toBeInTheDocument()
@@ -84,7 +84,6 @@ test('lists the contact events and filters them by contact id', async () => {
 
   await expect.element(screen.getByText('page.viewed')).toBeInTheDocument()
   expect(requestedContactId).toBe('9')
-  await expect.element(screen.getByText('Custom fields')).not.toBeInTheDocument()
 })
 
 const eventsBySwitch = (requested: (string | null)[]) =>

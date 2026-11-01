@@ -837,7 +837,6 @@ export default interface Resources {
     },
     "contacts": {
       "addContact": "Add contact",
-      "customFields": "Custom fields",
       "detailsTitle": "Details",
       "emptyState": "Create your first contact.",
       "erase": "Erase",
