@@ -70,17 +70,24 @@ func TestWhatStopsMailComesBeforeWhatFailedAndEveryMemberSeesIt(t *testing.T) {
 func TestAHeldBroadcastSaysWhyButAWorkspaceLevelHoldIsLeftToTheLayout(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, acme.Broadcast().UpdateOneID(fixtures.BroadcastDraftID).SetHoldReason(outbound.HoldUnverifiedDomain).Exec(t.Context()))
-	require.NoError(t, acme.Broadcast().UpdateOneID(fixtures.BroadcastAuthoredID).SetHoldReason(holds.ReasonSuspended).Exec(t.Context()))
+	hold := func(id int64, reason string) {
+		t.Helper()
+		require.NoError(t, acme.Broadcast().UpdateOneID(id).SetHoldReason(reason).Exec(t.Context()))
+	}
+	hold(fixtures.BroadcastScheduledID, outbound.HoldUnverifiedDomain)
+	hold(fixtures.BroadcastSendingID, holds.ReasonSuspended)
+	hold(fixtures.BroadcastFailedID, outbound.HoldNoIntegration)
 
 	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
 
-	held, ok := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastDraftID)
+	held, ok := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastScheduledID)
 	require.True(t, ok)
 	assert.Equal(t, siteapi.SiteAttentionSeverityBlocked, held.Severity)
 	assert.Equal(t, outbound.HoldUnverifiedDomain, held.HoldReason.Value)
-	_, suspended := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastAuthoredID)
-	assert.False(t, suspended)
+	_, suspended := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastSendingID)
+	assert.False(t, suspended, "a suspension is the layout's banner")
+	_, failed := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastFailedID)
+	assert.False(t, failed, "a failed Broadcast keeps its reason but is no longer held")
 }
 
 func TestTheProviderStandingOfAnIntegrationIsAnItem(t *testing.T) {

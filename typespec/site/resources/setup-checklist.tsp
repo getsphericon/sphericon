@@ -30,12 +30,16 @@ model SiteSetupSteps {
   sentEmail: SiteSetupStepStatus;
 }
 
-/** The Workspace's Setup checklist: a point-in-time read model, never ticked by hand */
+/** The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read
+ * that first finds every step done stamps the Workspace, which keeps it complete for good */
 model SiteSetupProgress {
   steps: SiteSetupSteps;
 
-  /** Every step is done */
+  /** Every step was found done once; a step that regresses later does not undo it */
   complete: boolean;
+
+  /** When every step was first found done; null until then */
+  completedAt?: Timestamp | null;
 }
 
 @route("/workspaces/{workspaceId}/setup-checklist")

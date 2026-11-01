@@ -2556,7 +2556,7 @@ export const SiteBroadcastStatus = {
 export type SiteBroadcastStatus = typeof SiteBroadcastStatus[keyof typeof SiteBroadcastStatus];
 
 /**
- * Filter of the broadcast listThe order of the broadcast list
+ * The order of the broadcast list
  */
 export const SiteBroadcastsOrder = {
   NEWEST: 'newest',
@@ -2565,7 +2565,7 @@ export const SiteBroadcastsOrder = {
 } as const;
 
 /**
- * Filter of the broadcast listThe order of the broadcast list
+ * The order of the broadcast list
  */
 export type SiteBroadcastsOrder = typeof SiteBroadcastsOrder[keyof typeof SiteBroadcastsOrder];
 
@@ -5405,14 +5405,19 @@ export type SiteSetDomainJoinInput = {
 };
 
 /**
- * The Workspace's Setup checklist: a point-in-time read model, never ticked by hand
+ * The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read
+ * that first finds every step done stamps the Workspace, which keeps it complete for good
  */
 export type SiteSetupProgress = {
   steps: SiteSetupSteps;
   /**
-   * Every step is done
+   * Every step was found done once; a step that regresses later does not undo it
    */
   complete: boolean;
+  /**
+   * When every step was first found done; null until then
+   */
+  completedAt?: Timestamp | null;
 };
 
 /**

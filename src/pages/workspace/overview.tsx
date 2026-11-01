@@ -42,18 +42,22 @@ export function OverviewPage() {
         <UnfinishedChecklist workspaceId={workspaceId} />
       </QueryBoundary>
 
-      <SendsBlock workspaceId={workspaceId} range={range} />
+      <SendsBlock workspaceId={workspaceId} />
 
-      <Group justify="flex-end">
-        <SegmentedControl
-          size="xs"
-          value={range}
-          onChange={(next) => void navigate({ search: { range: next } })}
-          data={RANGES.map((r) => ({ value: r, label: t(($) => $.analytics.range[r]) }))}
-        />
-      </Group>
-
-      <FiguresBlock workspaceId={workspaceId} range={range} />
+      <FiguresBlock
+        workspaceId={workspaceId}
+        range={range}
+        periodControl={
+          <Group justify="flex-end">
+            <SegmentedControl
+              size="xs"
+              value={range}
+              onChange={(next) => void navigate({ search: { range: next } })}
+              data={RANGES.map((r) => ({ value: r, label: t(($) => $.analytics.range[r]) }))}
+            />
+          </Group>
+        }
+      />
 
       <RevenueBlock workspaceId={workspaceId} range={range} />
     </Stack>

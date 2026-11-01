@@ -1633,29 +1633,29 @@ func init() {
 	// workspace.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
 	workspace.TimezoneValidator = workspaceDescTimezone.Validators[0].(func(string) error)
 	// workspaceDescReportingCurrency is the schema descriptor for reporting_currency field.
-	workspaceDescReportingCurrency := workspaceFields[8].Descriptor()
+	workspaceDescReportingCurrency := workspaceFields[9].Descriptor()
 	// workspace.ReportingCurrencyValidator is a validator for the "reporting_currency" field. It is called by the builders before save.
 	workspace.ReportingCurrencyValidator = workspaceDescReportingCurrency.Validators[0].(func(string) error)
 	// workspaceDescAttributionWindowDays is the schema descriptor for attribution_window_days field.
-	workspaceDescAttributionWindowDays := workspaceFields[9].Descriptor()
+	workspaceDescAttributionWindowDays := workspaceFields[10].Descriptor()
 	// workspace.DefaultAttributionWindowDays holds the default value on creation for the attribution_window_days field.
 	workspace.DefaultAttributionWindowDays = workspaceDescAttributionWindowDays.Default.(int)
 	// workspace.AttributionWindowDaysValidator is a validator for the "attribution_window_days" field. It is called by the builders before save.
 	workspace.AttributionWindowDaysValidator = workspaceDescAttributionWindowDays.Validators[0].(func(int) error)
 	// workspaceDescSendCap is the schema descriptor for send_cap field.
-	workspaceDescSendCap := workspaceFields[10].Descriptor()
+	workspaceDescSendCap := workspaceFields[11].Descriptor()
 	// workspace.SendCapValidator is a validator for the "send_cap" field. It is called by the builders before save.
 	workspace.SendCapValidator = workspaceDescSendCap.Validators[0].(func(int) error)
 	// workspaceDescDomainJoinEnabled is the schema descriptor for domain_join_enabled field.
-	workspaceDescDomainJoinEnabled := workspaceFields[11].Descriptor()
+	workspaceDescDomainJoinEnabled := workspaceFields[12].Descriptor()
 	// workspace.DefaultDomainJoinEnabled holds the default value on creation for the domain_join_enabled field.
 	workspace.DefaultDomainJoinEnabled = workspaceDescDomainJoinEnabled.Default.(bool)
 	// workspaceDescFeedPosition is the schema descriptor for feed_position field.
-	workspaceDescFeedPosition := workspaceFields[13].Descriptor()
+	workspaceDescFeedPosition := workspaceFields[14].Descriptor()
 	// workspace.DefaultFeedPosition holds the default value on creation for the feed_position field.
 	workspace.DefaultFeedPosition = workspaceDescFeedPosition.Default.(int64)
 	// workspaceDescAbuseExempt is the schema descriptor for abuse_exempt field.
-	workspaceDescAbuseExempt := workspaceFields[20].Descriptor()
+	workspaceDescAbuseExempt := workspaceFields[21].Descriptor()
 	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
 	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
 }

@@ -73,6 +73,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/server"
+	"github.com/getsphericon/sphericon/internal/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
@@ -693,6 +694,9 @@ var contentPackage = do.Package(
 		policy := eventlog.LivePolicy{Window: do.MustInvoke[*config.Config](i).EventLiveWindow, Now: do.MustInvoke[Clock](i)}
 		return eventlog.New(do.MustInvoke[*events.Bus](i), policy), nil
 	}),
+	do.Lazy(func(i do.Injector) (*setupchecklist.Module, error) {
+		return setupchecklist.New(do.MustInvoke[*accounts.Accounts](i)).WithClock(do.MustInvoke[Clock](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*attention.Module, error) {
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
 		return attention.New(watch, do.MustInvoke[providerlimit.SendCaps](i)).WithClock(do.MustInvoke[Clock](i)), nil
@@ -871,6 +875,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		AccountLink:              accountLink,
 		Holds:                    do.MustInvoke[*holds.Holds](i),
 		Attention:                do.MustInvoke[*attention.Module](i),
+		SetupChecklist:           do.MustInvoke[*setupchecklist.Module](i),
 		SupportEmail:             cfg.SupportEmail,
 		Origins:                  apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
 		Accounts:                 do.MustInvoke[*accounts.Accounts](i),

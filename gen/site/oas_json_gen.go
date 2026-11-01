@@ -53477,11 +53477,18 @@ func (s *SiteSetupProgress) encodeFields(e *jx.Encoder) {
 		e.FieldStart("complete")
 		e.Bool(s.Complete)
 	}
+	{
+		if s.CompletedAt.Set {
+			e.FieldStart("completedAt")
+			s.CompletedAt.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteSetupProgress = [2]string{
+var jsonFieldsNameOfSiteSetupProgress = [3]string{
 	0: "steps",
 	1: "complete",
+	2: "completedAt",
 }
 
 // Decode decodes SiteSetupProgress from json.
@@ -53514,6 +53521,16 @@ func (s *SiteSetupProgress) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"complete\"")
+			}
+		case "completedAt":
+			if err := func() error {
+				s.CompletedAt.Reset()
+				if err := s.CompletedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"completedAt\"")
 			}
 		default:
 			return d.Skip()

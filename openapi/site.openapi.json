@@ -17836,7 +17836,7 @@
       "SiteBroadcastsOrder": {
         "type": "string",
         "enum": ["newest", "scheduledSoonest", "sentLatest"],
-        "description": "Filter of the broadcast listThe order of the broadcast list"
+        "description": "The order of the broadcast list"
       },
       "SiteCapturedMessageFields": {
         "type": "object",
@@ -21764,10 +21764,20 @@
           },
           "complete": {
             "type": "boolean",
-            "description": "Every step is done"
+            "description": "Every step was found done once; a step that regresses later does not undo it"
+          },
+          "completedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When every step was first found done; null until then"
           }
         },
-        "description": "The Workspace's Setup checklist: a point-in-time read model, never ticked by hand"
+        "description": "The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read\nthat first finds every step done stamps the Workspace, which keeps it complete for good"
       },
       "SiteSetupStepStatus": {
         "type": "string",

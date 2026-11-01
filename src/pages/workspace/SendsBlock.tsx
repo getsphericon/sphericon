@@ -1,5 +1,6 @@
 import { Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import { useSuspenseQueries } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
@@ -9,7 +10,7 @@ import {
   siteAnalyticsOverviewOptions,
   siteBroadcastsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteAnalyticsRange, SiteBroadcastResource } from '../../generated/site/types.gen.ts'
+import type { SiteBroadcastResource } from '../../generated/site/types.gen.ts'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as broadcastReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
@@ -46,9 +47,46 @@ function BroadcastLine({
   )
 }
 
+// BroadcastColumn is one list of Broadcasts under its title, or the line that says it is empty.
+function BroadcastColumn({
+  workspaceId,
+  title,
+  empty,
+  items,
+  detail,
+  children,
+}: {
+  workspaceId: string
+  title: string
+  empty: string
+  items: SiteBroadcastResource[]
+  detail: (b: SiteBroadcastResource) => string
+  children?: ReactNode
+}) {
+  return (
+    <Stack gap="xs">
+      <Text size="sm" fw={600}>
+        {title}
+      </Text>
+      {items.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          {empty}
+        </Text>
+      ) : (
+        items.map((b) => (
+          <BroadcastLine key={b.id} workspaceId={workspaceId} broadcast={b} detail={detail(b)} />
+        ))
+      )}
+      {children}
+    </Stack>
+  )
+}
+
 // SendsLists is what is going out and what went out last: the Broadcasts sending or scheduled,
-// soonest first, the last ones sent with their open rate, and how many Automations are live.
-function SendsLists({ workspaceId, range }: { workspaceId: string; range: SiteAnalyticsRange }) {
+// soonest first, the last ones sent with their open rate, and how many Automations are live. A
+// Workspace that has none of them yet gets one line instead of three empty lists. The Automations
+// snapshot does not depend on the page's period, so it is read for the default one, once.
+function SendsLists({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const { formatDateTime } = useDateFormat()
   const [upcoming, sent, overview] = useSuspenseQueries({
@@ -61,10 +99,17 @@ function SendsLists({ workspaceId, range }: { workspaceId: string; range: SiteAn
         path: { workspaceId },
         query: { status: ['sent'], order: 'sentLatest', pageSize: LIMIT },
       }),
-      siteAnalyticsOverviewOptions({ path: { workspaceId }, query: { range } }),
+      siteAnalyticsOverviewOptions({ path: { workspaceId } }),
     ],
   })
   const automations = overview.data.automations
+  if (upcoming.data.items.length === 0 && sent.data.items.length === 0 && automations.total === 0) {
+    return (
+      <Text size="sm" c="dimmed">
+        {t(($) => $.overview.sends.empty)}
+      </Text>
+    )
+  }
 
   const upcomingDetail = (b: SiteBroadcastResource) =>
     b.status === 'sending'
@@ -78,52 +123,30 @@ function SendsLists({ workspaceId, range }: { workspaceId: string; range: SiteAn
   const sentDetail = (b: SiteBroadcastResource) =>
     t(($) => $.overview.sends.sentDetail, {
       date: b.sentAt ? formatDateTime(b.sentAt) : '',
-      rate: formatPercent(b.stats.openRate),
+      opened: formatPercent(b.stats.openRate),
+      clicked: formatPercent(b.stats.clickRate),
     })
 
   return (
     <SimpleGrid cols={{ base: 1, md: 3 }}>
-      <Stack gap="xs">
-        <Text size="sm" fw={600}>
-          {t(($) => $.overview.sends.upcomingTitle)}
-        </Text>
-        {upcoming.data.items.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            {t(($) => $.overview.sends.upcomingEmpty)}
-          </Text>
-        ) : (
-          upcoming.data.items.map((b) => (
-            <BroadcastLine
-              key={b.id}
-              workspaceId={workspaceId}
-              broadcast={b}
-              detail={upcomingDetail(b)}
-            />
-          ))
-        )}
-      </Stack>
-      <Stack gap="xs">
-        <Text size="sm" fw={600}>
-          {t(($) => $.overview.sends.lastSentTitle)}
-        </Text>
-        {sent.data.items.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            {t(($) => $.overview.sends.lastSentEmpty)}
-          </Text>
-        ) : (
-          sent.data.items.map((b) => (
-            <BroadcastLine
-              key={b.id}
-              workspaceId={workspaceId}
-              broadcast={b}
-              detail={sentDetail(b)}
-            />
-          ))
-        )}
+      <BroadcastColumn
+        workspaceId={workspaceId}
+        title={t(($) => $.overview.sends.upcomingTitle)}
+        empty={t(($) => $.overview.sends.upcomingEmpty)}
+        items={upcoming.data.items}
+        detail={upcomingDetail}
+      />
+      <BroadcastColumn
+        workspaceId={workspaceId}
+        title={t(($) => $.overview.sends.lastSentTitle)}
+        empty={t(($) => $.overview.sends.lastSentEmpty)}
+        items={sent.data.items}
+        detail={sentDetail}
+      >
         <AnchorLink to={broadcastsRoute.to} params={{ workspaceId }} size="sm">
           {t(($) => $.overview.sends.allBroadcasts)}
         </AnchorLink>
-      </Stack>
+      </BroadcastColumn>
       <Stack gap="xs">
         <Text size="sm" fw={600}>
           {t(($) => $.overview.sends.automationsTitle)}
@@ -143,31 +166,34 @@ function SendsLists({ workspaceId, range }: { workspaceId: string; range: SiteAn
 }
 
 // SendsBlock replaces the create cards and the list of what was created last: what is going out
-// and what went out tells more than creation order, and creating is one button in its header.
-// The overview's figures are read for the page's period, so the Automations snapshot shares that
-// one read.
-export function SendsBlock({
-  workspaceId,
-  range,
-}: {
-  workspaceId: string
-  range: SiteAnalyticsRange
-}) {
+// and what went out tells more than creation order, and creating is a button in its header. It
+// is live, not bound to the page's period.
+export function SendsBlock({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   return (
     <Card withBorder padding="lg">
       <Stack gap="md">
         <Group justify="space-between">
           <Title order={4}>{t(($) => $.overview.sends.title)}</Title>
-          <ButtonLink to={broadcastsCreateRoute.to} params={{ workspaceId }} size="xs">
-            {t(($) => $.broadcasts.addBroadcast)}
-          </ButtonLink>
+          <Group gap="xs">
+            <ButtonLink
+              to={automationsRoute.to}
+              params={{ workspaceId }}
+              size="xs"
+              variant="default"
+            >
+              {t(($) => $.automations.addAutomation)}
+            </ButtonLink>
+            <ButtonLink to={broadcastsCreateRoute.to} params={{ workspaceId }} size="xs">
+              {t(($) => $.broadcasts.addBroadcast)}
+            </ButtonLink>
+          </Group>
         </Group>
         <QueryBoundary
           fallback={<BlockSkeleton />}
           errorTitle={t(($) => $.overview.sends.loadError)}
         >
-          <SendsLists workspaceId={workspaceId} range={range} />
+          <SendsLists workspaceId={workspaceId} />
         </QueryBoundary>
       </Stack>
     </Card>

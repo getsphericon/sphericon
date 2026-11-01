@@ -248,11 +248,15 @@ test('what is going out comes soonest first and what went out last with its open
 test('a new Workspace sees what to do and no wall of zeros', async () => {
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
 
-  await expect.element(screen.getByText('Nothing is sending or scheduled.')).toBeInTheDocument()
-  await expect.element(screen.getByText('Nothing has been sent yet.')).toBeInTheDocument()
+  await expect.element(screen.getByText(/Nothing has gone out yet/)).toBeInTheDocument()
+  await expect.element(screen.getByText('Nothing is sending or scheduled.')).not.toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'New broadcast' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/new')
+  await expect
+    .element(screen.getByRole('link', { name: 'New automation' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/automations')
+  await expect.element(screen.getByText('Last 30 days')).not.toBeInTheDocument()
   await expect.element(screen.getByText('Sending', { exact: true })).not.toBeInTheDocument()
   await expect.element(screen.getByText('Audience', { exact: true })).not.toBeInTheDocument()
 })
@@ -389,6 +393,11 @@ test('the period of the URL is the one sent to the server', async () => {
 })
 
 test('picking a period puts it in the URL', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: { ...overview, contacts: { total: 3, active: 3, unsubscribed: 0, newInRange: 1 } },
+    }),
+  )
   const { screen, navigate } = await renderWithRouter(<OverviewPage />, mount)
 
   await screen.getByText('Last 90 days').click()

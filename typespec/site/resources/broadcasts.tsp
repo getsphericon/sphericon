@@ -206,7 +206,6 @@ model SiteTestSendBroadcastResult {
   captured: boolean;
 }
 
-/** Filter of the broadcast list */
 /** The order of the broadcast list */
 enum SiteBroadcastsOrder {
   /** The newest first: the default */
@@ -219,6 +218,7 @@ enum SiteBroadcastsOrder {
   sentLatest,
 }
 
+/** Filter of the broadcast list */
 model SiteBroadcastsListFilter {
   /** true lists the archived broadcasts instead of the kept ones; the default hides them */
   @query archived?: boolean;

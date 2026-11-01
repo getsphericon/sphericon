@@ -1846,6 +1846,7 @@ func (c *ConverterImpl) SetupChecklistToResource(source setupchecklist.Checklist
 	var siteapiSiteSetupProgress site.SiteSetupProgress
 	siteapiSiteSetupProgress.Steps = c.setupchecklistStepsToSiteapiSiteSetupSteps(source.Steps)
 	siteapiSiteSetupProgress.Complete = source.Complete()
+	siteapiSiteSetupProgress.CompletedAt = optNilTimestamp(source.CompletedAt)
 	return siteapiSiteSetupProgress
 }
 func (c *ConverterImpl) SetupStepStatusToResource(source setupchecklist.Status) site.SiteSetupStepStatus {

@@ -177,6 +177,20 @@ func (_c *WorkspaceCreate) SetNillableTimezone(v *string) *WorkspaceCreate {
 	return _c
 }
 
+// SetSetupCompletedAt sets the "setup_completed_at" field.
+func (_c *WorkspaceCreate) SetSetupCompletedAt(v time.Time) *WorkspaceCreate {
+	_c.mutation.SetSetupCompletedAt(v)
+	return _c
+}
+
+// SetNillableSetupCompletedAt sets the "setup_completed_at" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableSetupCompletedAt(v *time.Time) *WorkspaceCreate {
+	if v != nil {
+		_c.SetSetupCompletedAt(*v)
+	}
+	return _c
+}
+
 // SetReportingCurrency sets the "reporting_currency" field.
 func (_c *WorkspaceCreate) SetReportingCurrency(v string) *WorkspaceCreate {
 	_c.mutation.SetReportingCurrency(v)
@@ -1192,6 +1206,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		_spec.SetField(workspace.FieldTimezone, field.TypeString, value)
 		_node.Timezone = &value
 	}
+	if value, ok := _c.mutation.SetupCompletedAt(); ok {
+		_spec.SetField(workspace.FieldSetupCompletedAt, field.TypeTime, value)
+		_node.SetupCompletedAt = &value
+	}
 	if value, ok := _c.mutation.ReportingCurrency(); ok {
 		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
 		_node.ReportingCurrency = &value
@@ -2054,6 +2072,24 @@ func (u *WorkspaceUpsert) ClearTimezone() *WorkspaceUpsert {
 	return u
 }
 
+// SetSetupCompletedAt sets the "setup_completed_at" field.
+func (u *WorkspaceUpsert) SetSetupCompletedAt(v time.Time) *WorkspaceUpsert {
+	u.Set(workspace.FieldSetupCompletedAt, v)
+	return u
+}
+
+// UpdateSetupCompletedAt sets the "setup_completed_at" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateSetupCompletedAt() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldSetupCompletedAt)
+	return u
+}
+
+// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
+func (u *WorkspaceUpsert) ClearSetupCompletedAt() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldSetupCompletedAt)
+	return u
+}
+
 // SetReportingCurrency sets the "reporting_currency" field.
 func (u *WorkspaceUpsert) SetReportingCurrency(v string) *WorkspaceUpsert {
 	u.Set(workspace.FieldReportingCurrency, v)
@@ -2516,6 +2552,27 @@ func (u *WorkspaceUpsertOne) UpdateTimezone() *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) ClearTimezone() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearTimezone()
+	})
+}
+
+// SetSetupCompletedAt sets the "setup_completed_at" field.
+func (u *WorkspaceUpsertOne) SetSetupCompletedAt(v time.Time) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetSetupCompletedAt(v)
+	})
+}
+
+// UpdateSetupCompletedAt sets the "setup_completed_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateSetupCompletedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateSetupCompletedAt()
+	})
+}
+
+// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
+func (u *WorkspaceUpsertOne) ClearSetupCompletedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearSetupCompletedAt()
 	})
 }
 
@@ -3191,6 +3248,27 @@ func (u *WorkspaceUpsertBulk) UpdateTimezone() *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) ClearTimezone() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearTimezone()
+	})
+}
+
+// SetSetupCompletedAt sets the "setup_completed_at" field.
+func (u *WorkspaceUpsertBulk) SetSetupCompletedAt(v time.Time) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetSetupCompletedAt(v)
+	})
+}
+
+// UpdateSetupCompletedAt sets the "setup_completed_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateSetupCompletedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateSetupCompletedAt()
+	})
+}
+
+// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
+func (u *WorkspaceUpsertBulk) ClearSetupCompletedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearSetupCompletedAt()
 	})
 }
 

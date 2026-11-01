@@ -1,5 +1,6 @@
 import { Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import { useSuspenseQuery } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
@@ -14,21 +15,28 @@ import { Route as subscribedPeopleRoute } from '../../routes/workspaces/$workspa
 interface FiguresProps {
   workspaceId: string
   range: SiteAnalyticsRange
+  // periodControl picks the period; it is shown above the cards, and not at all when there is no
+  // card, so a new Workspace sees no control over nothing.
+  periodControl: ReactNode
 }
 
 // Figures is the period's sending and audience, each card only once it has something to show:
 // sending from the first message of the period, the audience from the first Contact. A new
 // Workspace sees neither, rather than a wall of zeros.
-function Figures({ workspaceId, range }: FiguresProps) {
+function Figures({ workspaceId, range, periodControl }: FiguresProps) {
   const { t } = useTranslation()
   const overview = useSuspenseQuery(
     siteAnalyticsOverviewOptions({ path: { workspaceId }, query: { range } }),
   ).data
   const { sending, email, contacts } = overview
   const sent = sending.broadcast + sending.automation + sending.transactional
+  if (sent === 0 && contacts.total === 0) {
+    return null
+  }
 
   return (
     <>
+      {periodControl}
       {sent > 0 && (
         <Card withBorder padding="lg">
           <Stack gap="sm">
@@ -95,7 +103,7 @@ function Figures({ workspaceId, range }: FiguresProps) {
 
 // FiguresBlock is the overview's sending and audience for the page's period; a new period starts
 // over, so a failed one does not stay on screen.
-export function FiguresBlock({ workspaceId, range }: FiguresProps) {
+export function FiguresBlock({ workspaceId, range, periodControl }: FiguresProps) {
   const { t } = useTranslation()
   return (
     <QueryBoundary
@@ -103,7 +111,7 @@ export function FiguresBlock({ workspaceId, range }: FiguresProps) {
       fallback={<BlockSkeleton />}
       errorTitle={t(($) => $.overview.figuresLoadError)}
     >
-      <Figures workspaceId={workspaceId} range={range} />
+      <Figures workspaceId={workspaceId} range={range} periodControl={periodControl} />
     </QueryBoundary>
   )
 }

@@ -207,12 +207,16 @@ func (m *Module) integrations(ctx context.Context, s *ent.Scoped, now time.Time)
 	return items, nil
 }
 
-// heldBroadcasts reads the Broadcasts whose sending is held by a check of their own source. A
+// heldBroadcasts reads the Broadcasts still to send whose sending is held by a check of their own
+// source; a failed Broadcast keeps the reason it was held for, and is a failure, not a hold. A
 // Workspace-level hold (a suspension, a Staff hold, a pending deletion) is left out: the layout
 // shows it on every page.
 func heldBroadcasts(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error) {
 	held, err := s.Broadcast().Query().
-		Where(broadcast.HoldReasonIn(outbound.HoldNoIntegration, outbound.HoldUnverifiedDomain, outbound.HoldProviderStopped)).
+		Where(
+			broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending),
+			broadcast.HoldReasonIn(outbound.HoldNoIntegration, outbound.HoldUnverifiedDomain, outbound.HoldProviderStopped),
+		).
 		Order(ent.Asc(broadcast.FieldID)).
 		All(ctx)
 	if err != nil {

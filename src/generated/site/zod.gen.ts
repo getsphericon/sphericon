@@ -794,7 +794,7 @@ export const zSiteBroadcastStatus = z.enum([
 ]);
 
 /**
- * Filter of the broadcast listThe order of the broadcast list
+ * The order of the broadcast list
  */
 export const zSiteBroadcastsOrder = z.enum([
   'newest',
@@ -1810,14 +1810,6 @@ export const zSiteSetupSteps = z.object({
   sendingDomain: zSiteSetupStepStatus,
   contact: zSiteSetupStepStatus,
   sentEmail: zSiteSetupStepStatus
-});
-
-/**
- * The Workspace's Setup checklist: a point-in-time read model, never ticked by hand
- */
-export const zSiteSetupProgress = z.object({
-  steps: zSiteSetupSteps,
-  complete: z.boolean()
 });
 
 /**
@@ -3019,6 +3011,16 @@ export const zSiteSendingDomainResource = z.object({
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read
+ * that first finds every step done stamps the Workspace, which keeps it complete for good
+ */
+export const zSiteSetupProgress = z.object({
+  steps: zSiteSetupSteps,
+  complete: z.boolean(),
+  completedAt: z.exactOptional(zTimestamp.nullable())
 });
 
 /**
