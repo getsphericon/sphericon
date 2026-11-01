@@ -85,7 +85,6 @@ export default defineConfig({
       '@tiptap/react',
       'ahooks',
       'ajv/dist/2020.js',
-      'country-flag-icons/react/3x2',
       'dayjs',
       'dayjs/plugin/localizedFormat.js',
       'dayjs/plugin/relativeTime.js',

@@ -94,15 +94,15 @@ importers:
       content-disposition-header:
         specifier: ^0.6.0
         version: 0.6.0
-      country-flag-icons:
-        specifier: ^1.6.20
-        version: 1.6.20
       dayjs:
         specifier: ^1.11.23
         version: 1.11.23
       file-saver:
         specifier: ^2.0.5
         version: 2.0.5
+      flag-icons:
+        specifier: ^7.6.0
+        version: 7.6.0
       i18next:
         specifier: ^26.5.12
         version: 26.5.12(typescript@7.0.2)
@@ -3172,9 +3172,6 @@ packages:
       typescript:
         optional: true
 
-  country-flag-icons@1.6.20:
-    resolution: {integrity: sha512-py8JiEKzjhYw6HPJ0L7SxLgCYim36UPRTZX43/kqGueUCZLSvnrqAiwW8HtQibur7mdkFQUkjOgdK+o/9FBtaw==}
-
   css-tree@3.2.1:
     resolution: {integrity: sha512-X7sjQzceUhu1u7Y/ylrRZFU2FS6LRiFVp6rKLPg23y3x3c3DOKAwuXGDp+PAGjh6CSnCjYeAul8pcT8bAl+lSA==}
     engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0}
@@ -3462,6 +3459,9 @@ packages:
 
   file-saver@2.0.5:
     resolution: {integrity: sha512-P9bmyZ3h/PRG+Nzga+rbdI4OEpNDzAVyy74uVO9ATgzLK6VtAsYybF/+TOCvrc0MO793d6+42lLyZTw7/ArVzA==}
+
+  flag-icons@7.6.0:
+    resolution: {integrity: sha512-hir/PsXwr0EESyizKrXJzmkzpLIMf+1vlNKLqAfvdh+bsU94a7LYWTiubkHKqptGoCPzOUGcm6c4PfC9/BaGSQ==}
 
   flatted@3.4.4:
     resolution: {integrity: sha512-5+ybhBZANEJxaH3X5evAFatUxLfEHSr7n6kYJ+1Qd0mUqr4eu9gIf6GDbWHf8RJijHrjjO8G+la14SlL2SeS1Q==}
@@ -7713,8 +7713,6 @@ snapshots:
     optionalDependencies:
       typescript: 7.0.2
 
-  country-flag-icons@1.6.20: {}
-
   css-tree@3.2.1:
     dependencies:
       mdn-data: 2.27.1
@@ -7984,6 +7982,8 @@ snapshots:
   fflate@0.8.3: {}
 
   file-saver@2.0.5: {}
+
+  flag-icons@7.6.0: {}
 
   flatted@3.4.4: {}
 

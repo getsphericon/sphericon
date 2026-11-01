@@ -5,6 +5,7 @@ import {
   Card,
   Badge,
   Group,
+  Image,
   SimpleGrid,
   Stack,
   Switch,
@@ -13,9 +14,8 @@ import {
 } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import * as flagIcons from 'country-flag-icons/react/3x2'
 import { DataTable } from 'mantine-datatable'
-import type { ComponentType, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
@@ -59,17 +59,25 @@ function Field({ label, value, icon }: { label: string; value: string; icon?: Re
 
 const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
 
-const flags: Record<string, ComponentType<{ title?: string; height?: number }>> = flagIcons
+// Each flag-icons SVG as a URL keyed by its file: the browser fetches only the flags shown.
+const flagUrls = import.meta.glob<string>('/node_modules/flag-icons/flags/4x3/*.svg', {
+  eager: true,
+  query: '?url&no-inline',
+  import: 'default',
+})
 
-// The flag of a `country` Custom field whose value is an ISO 3166-1 alpha-2 code; any other
-// field or value has none.
+// The flag of a `country` Custom field whose value is an ISO 3166-1 alpha-2 code, titled with
+// the country's name; any other field or value has none.
 function CountryFlag({ fieldKey, value }: { fieldKey: string; value: unknown }) {
   if (fieldKey !== 'country' || typeof value !== 'string') {
     return null
   }
-  const code = value.toUpperCase()
-  const Flag = flags[code]
-  return Flag ? <Flag title={regionNames.of(code) ?? code} height={14} /> : null
+  const src = flagUrls[`/node_modules/flag-icons/flags/4x3/${value.toLowerCase()}.svg`]
+  if (src === undefined) {
+    return null
+  }
+  const name = regionNames.of(value.toUpperCase()) ?? value
+  return <Image src={src} alt={name} title={name} h={14} w="auto" radius={2} />
 }
 
 // Custom field values are typed (string/number/bool/…); render scalars directly and
