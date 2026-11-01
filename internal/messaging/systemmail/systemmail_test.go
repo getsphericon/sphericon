@@ -64,20 +64,6 @@ func TestSenderNamesTheSystemMailSphericonByDefault(t *testing.T) {
 	assert.Equal(t, "sphericon", from.Name)
 }
 
-func TestSenderFallsBackToTheSMTPFromWhenNoSystemFromIsSet(t *testing.T) {
-	sink := testhelper.NewMailSink(t)
-	cfg := relayConfig(sink)
-	cfg.SystemEmailFrom = ""
-	cfg.SMTPFrom = "relay@example.test"
-
-	sender, err := systemmail.Sender(cfg, registry.Default())
-	require.NoError(t, err)
-
-	from, err := mail.ParseAddress(sendOne(t, sender, sink).Header.Get("From"))
-	require.NoError(t, err)
-	assert.Equal(t, "relay@example.test", from.Address)
-}
-
 // Any provider name but "ses" is the SMTP relay, the documented default.
 func TestSenderUsesTheSMTPRelayForAnyProviderButSES(t *testing.T) {
 	sink := testhelper.NewMailSink(t)

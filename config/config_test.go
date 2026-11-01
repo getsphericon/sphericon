@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -650,10 +649,6 @@ func TestConfigLoadEventLiveWindow(t *testing.T) {
 	require.Error(t, err, "a live window under an hour must be rejected: it cannot be switched off")
 }
 
-// publicVariables are the variables whose names look secret but whose values are not: the collect
-// site key ships in every customer page.
-var publicVariables = []string{"SPHERICON_COLLECT_SITE_KEY"}
-
 var secretLooking = regexp.MustCompile(`SECRET|TOKEN|_PASS$|_KEY$|_KEY_ID$|^DATABASE_URL$`)
 
 // secretVariables are the variables Load reads whose names look secret. Their companions are set,
@@ -664,7 +659,7 @@ func secretVariables(t *testing.T) []string {
 	t.Setenv("SPHERICON_SIGNIN_GOOGLE_CLIENT_ID", "google-client")
 	t.Setenv("SPHERICON_SIGNIN_GITHUB_CLIENT_ID", "github-client")
 	secrets := lo.Filter(config.Variables(), func(name string, _ int) bool {
-		return secretLooking.MatchString(name) && !slices.Contains(publicVariables, name)
+		return secretLooking.MatchString(name)
 	})
 	require.NotEmpty(t, secrets)
 	return secrets

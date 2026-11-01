@@ -33,34 +33,35 @@ func validateEnvironment(e *environment) error {
 	}
 	refusals := make([]error, 0, len(invalid))
 	for _, fe := range invalid {
-		refusals = append(refusals, fmt.Errorf("%s %s", fe.Field(), rule(fe)))
+		refusals = append(refusals, fmt.Errorf("%s %s", fe.Field(), rule(fe.Tag(), fe.Param())))
 	}
 	return errors.Join(refusals...)
 }
 
-// rule says what the value of fe must be.
-func rule(fe validator.FieldError) string {
-	switch fe.Tag() {
+// rule says what a value must be under the validator tag with its param: the refusal of a value
+// that breaks it, and the rule the configuration reference lists.
+func rule(tag, param string) string {
+	switch tag {
 	case "gt":
-		if fe.Param() == "0" {
+		if param == "0" {
 			return "must be positive"
 		}
-		return "must be above " + fe.Param()
+		return "must be above " + param
 	case "gte":
-		if fe.Param() == "0" {
+		if param == "0" {
 			return "must not be negative"
 		}
-		return "must be at least " + fe.Param()
+		return "must be at least " + param
 	case "lte":
-		return "must be at most " + fe.Param()
+		return "must be at most " + param
 	case "ltfield":
-		return "must be below " + fieldVariable(fe.Param())
+		return "must be below " + fieldVariable(param)
 	case "ltefield":
-		return "must not be above " + fieldVariable(fe.Param())
+		return "must not be above " + fieldVariable(param)
 	case "required_with":
-		return "must be set together with " + fieldVariable(fe.Param())
+		return "must be set together with " + fieldVariable(param)
 	default:
-		return fmt.Sprintf("breaks the rule %s=%s", fe.Tag(), fe.Param())
+		return fmt.Sprintf("breaks the rule %s=%s", tag, param)
 	}
 }
 

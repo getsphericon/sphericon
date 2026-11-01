@@ -28,6 +28,7 @@ openapi/site (`Permission` enum) ──cmd/scopegen──▶ internal/accounts/p
 openapi/external (`ApiTokenScope` enum) ──cmd/scopegen──▶ internal/apitokens/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary); the files are `scopegen.Tables`
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 internal/i18n/locales/en.json  ──cmd/i18ngen──▶ internal/i18n/ids_gen.go (one i18n.ID per message: a call can only name a message the catalog has)
+config (the `environment` struct: `env`, `envDefault` and `validate` tags, profile defaults, field doc comments)  ──cmd/configdoc──▶ docs/configuration.md (the configuration reference the docs site copies)
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
 ```
 
@@ -95,7 +96,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   `typespec/lib/testdata/` (`// expect-next-line: <code>` marks a statement that must fail) and a
   case in `decorators.test.ts`; `mise run test:typespec` runs them.
 
-- `mise run generate` — full cycle: typespec → openapi → backend (ent + ogen) → fixture catalog → frontend → i18n types → format.
+- `mise run generate` — full cycle: typespec → openapi → backend (ent + ogen) → fixture catalog → configuration reference → frontend → i18n types → format.
 - `mise run generate:typespec` / `mise run generate:backend` / `mise run generate:openapi` — partial regens.
 
 ### What is generated vs hand-written

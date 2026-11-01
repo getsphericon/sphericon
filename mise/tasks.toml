@@ -496,12 +496,16 @@ run = "go run ./cmd/fixturegen"
 description = "internal/i18n/locales/en.json -> Go (one i18n.ID per message of the backend catalog)"
 run = "go run ./cmd/i18ngen"
 
+["generate:configdoc"]
+description = "config (the environment struct's tags and doc comments) -> docs/configuration.md (the configuration reference)"
+run = "go run ./cmd/configdoc"
+
 ["generate:scopes"]
 description = "openapi/{service,external,site} (x-required-scopes, x-required-permissions, x-grant-permissions, the Permission and ApiTokenScope enums) -> Go (scopegen.Tables)"
 run = "go run ./cmd/scopegen"
 
 [generate]
-description = "Full cycle: typespec -> openapi -> backend -> test mocks -> fixture catalog -> backend i18n ids -> frontend (clients, route tree) -> i18n types -> format"
+description = "Full cycle: typespec -> openapi -> backend -> test mocks -> fixture catalog -> backend i18n ids -> configuration reference -> frontend (clients, route tree) -> i18n types -> format"
 run = [
   { task = "generate:typespec" },
   { task = "generate:openapi" },
@@ -511,6 +515,7 @@ run = [
   { task = "generate:mocks" },
   { task = "generate:fixtures" },
   { task = "generate:i18n-ids" },
+  { task = "generate:configdoc" },
   { task = "fix" },
 ]
 
