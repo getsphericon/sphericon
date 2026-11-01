@@ -78,7 +78,7 @@ importers:
         version: 3.32.1(@floating-ui/dom@1.8.0)(@tiptap/core@3.32.1(@tiptap/pm@3.32.1))(@tiptap/pm@3.32.1)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@workflowbuilder/sdk':
         specifier: ^3.0.0
-        version: 3.0.0(@types/react@19.3.0)(@xyflow/react@12.12.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(immer@11.2.9)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(class-variance-authority@0.7.1)(csstype@3.2.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwind-merge@3.7.0)(typescript@7.0.2)(zustand@5.0.16(@types/react@19.3.0)(immer@11.2.9)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1)))
+        version: 3.0.0(@types/react@19.3.0)(@xyflow/react@12.12.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(immer@11.2.9)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(class-variance-authority@0.7.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwind-merge@3.7.0)(typescript@7.0.2)(zustand@5.0.16(@types/react@19.3.0)(immer@11.2.9)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1)))
       '@xyflow/react':
         specifier: ^12.12.0
         version: 12.12.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(immer@11.2.9)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -88,6 +88,9 @@ importers:
       ajv:
         specifier: 8.20.0
         version: 8.20.0
+      ajv-formats:
+        specifier: 2.1.1
+        version: 2.1.1(ajv@8.20.0)
       content-disposition-header:
         specifier: ^0.6.0
         version: 0.6.0
@@ -7419,7 +7422,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.2.0
 
-  '@workflowbuilder/sdk@3.0.0(@types/react@19.3.0)(@xyflow/react@12.12.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(immer@11.2.9)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(class-variance-authority@0.7.1)(csstype@3.2.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwind-merge@3.7.0)(typescript@7.0.2)(zustand@5.0.16(@types/react@19.3.0)(immer@11.2.9)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1)))':
+  '@workflowbuilder/sdk@3.0.0(@types/react@19.3.0)(@xyflow/react@12.12.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(immer@11.2.9)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(class-variance-authority@0.7.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwind-merge@3.7.0)(typescript@7.0.2)(zustand@5.0.16(@types/react@19.3.0)(immer@11.2.9)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1)))':
     dependencies:
       '@base-ui/react': 1.7.0(@types/react@19.3.0)(date-fns@4.4.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@cfworker/json-schema': 4.1.1
@@ -7434,7 +7437,7 @@ snapshots:
       i18next: 24.2.3(typescript@7.0.2)
       i18next-browser-languagedetector: 8.2.3
       immer: 10.2.0
-      notistack: 3.0.2(csstype@3.2.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      notistack: 3.0.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react: 19.3.1
       react-ace: 14.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react-dom: 19.3.1(react@19.3.1)
@@ -7446,7 +7449,6 @@ snapshots:
       - '@date-fns/tz'
       - '@types/react'
       - class-variance-authority
-      - csstype
       - react-native
       - tailwind-merge
       - typescript
@@ -8680,14 +8682,13 @@ snapshots:
 
   node-releases@2.0.61: {}
 
-  notistack@3.0.2(csstype@3.2.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  notistack@3.0.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
       clsx: 1.2.1
+      csstype: 3.2.3
       goober: 2.1.19(csstype@3.2.3)
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
-    transitivePeerDependencies:
-      - csstype
 
   npm-check-updates@23.1.1: {}
 
