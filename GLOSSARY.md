@@ -289,8 +289,8 @@ a mutable flag. Required on SMS and WhatsApp always, and on email only when the 
 **require-confirmed-opt-in** policy is on (default off = single opt-in); then Send-eligibility adds
 the one positive layer (see Send-eligibility). Carries **provenance** — `double_opt_in` (clicked a
 confirmation link), `grandfathered` (existing contacts at policy-enablement), `imported`
-(asserted through the API or an import, from the customer's server and never the browser, with
-the consent wording, its source and the brand, by a customer who collected it, possibly through a verification service of their own) or `keyword` (a
+(asserted through the API or an import from the customer's server, or by a sphericon on-site form,
+with the consent wording, its source and the brand, by a customer who collected it, possibly through a verification service of their own) or `keyword` (a
 START sent on the Channel); the strongest provenance wins on dedup. sphericon runs no SMS
 confirmation flow of its own. Confirmed via a signed link whose endpoint
 is method-split (`GET` = page, `POST` = confirm) — a scanner GET must never fabricate consent. An
@@ -1250,11 +1250,11 @@ push are being designed.
 Deferred, additive surfaces — **not modelled until their shape is real**, and none should reshape
 the core now:
 
-- **On-site popup / banner / form** — a capture-and-display surface. sphericon ships none (ADR
-  0084): the customer's own forms or a form service feed Identify through the tracker or the API,
-  an SMS or WhatsApp Confirmation only through the API from the customer's server, and the tracker
-  offers the calls a site's own button needs (subscribe to web push, a Telegram start link).
-  An on-site message addressed to a known Contact would be a Channel of its own, not built.
+- **On-site popup / banner / form** — a capture-and-display surface shown by the tracker on the
+  customer's site (pop-ups, slide-ins, sticky bars, embedded forms). sphericon builds it (ADR 0084),
+  designed as an effort of its own; it feeds Identify, Confirmations on every Channel and the web
+  push permission prompt. Until it exists, the tracker offers the calls a site's own button needs
+  (subscribe to web push, a Telegram start link).
 - **On-site chatbot** — a separate, two-way conversational context; shares only the identity
   spine. Explicitly out of the send/eligibility/sequence model.
 
