@@ -389,14 +389,16 @@ _Avoid_: Status, result (unqualified)
 **Provider limit**:
 How fast an Integration may send, mirroring what the customer's own provider account allows: a
 maximum messages per second and a maximum messages per rolling 24 hours. The provider reports
-its own where it can (SES) and a user may set one; the lower of the two applies (the user's on a
+its own where it can (SES, WhatsApp), a known fixed limit is filled in when the Integration is
+connected (30 a second for a Telegram bot), and a user may set one; the lower of the two applies (the user's on a
 tie), and with neither the Integration is unlimited. It protects the customer's provider account,
 not the platform. Applies to Broadcast and Automation sends; Transactional sends are never
 delayed or deferred by it but still count against the 24-hour total.
 _Avoid_: Send rate limit, send limit, throttle (as a noun for the limit), quota
 
 **Send cap**:
-The most messages a Workspace may send per rolling 24 hours across all its Integrations, set by
+The most messages a Workspace may send per rolling 24 hours across all its Integrations and
+Channels, each message counting once whatever its Channel, set by
 a Staff member as a platform reputation-protection measure and not editable by the Workspace.
 Only a `saas` Instance has it: a self-hosted Instance does not limit what its Workspaces send. It
 slows sending rather than stopping it: a spent Send cap is a Deferral, and the Workspace sees the
