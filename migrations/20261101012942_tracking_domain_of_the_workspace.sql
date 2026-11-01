@@ -11,13 +11,13 @@
 -- modify "tracking_host_changes" table: the host replaces the Sending domain it was derived from
 ALTER TABLE "tracking_host_changes" ADD COLUMN "host" character varying NOT NULL DEFAULT '';
 UPDATE "tracking_host_changes" SET "host" = 'track.' || "domain";
+ALTER TABLE "tracking_host_changes" DROP COLUMN "domain";
 INSERT INTO "tracking_host_changes" ("workspace_id", "host", "state", "created_at", "updated_at")
 SELECT "workspace_id", 'track.' || "domain", 'removed', now(), now()
 FROM "sending_domains"
 WHERE "tracking_state" IN ('dns_verified', 'serving') AND "discarded_at" IS NULL
 ORDER BY "id";
 ALTER TABLE "tracking_host_changes" ALTER COLUMN "host" DROP DEFAULT;
-ALTER TABLE "tracking_host_changes" DROP COLUMN "domain";
 -- create index "trackinghostchange_host" to table: "tracking_host_changes"
 CREATE INDEX CONCURRENTLY "trackinghostchange_host" ON "tracking_host_changes" ("host");
 -- drop index "sendingdomain_domain" from table: "sending_domains"
