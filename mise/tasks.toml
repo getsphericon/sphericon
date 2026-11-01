@@ -414,6 +414,13 @@ run = "go get -u ./... && go mod tidy"
 description = "Update the vendored skills; in a terminal it offers to remove the ones their upstream deleted"
 run = "npx skills@latest update -p"
 
+# Named like a personal global `upgrade` task a developer may have, so that inside the repository
+# `mise run upgrade` resolves to this one. --no-global: a bare `mise upgrade` also upgrades every
+# tool of ~/.config/mise/config.toml, which is part of any project's toolset.
+[upgrade]
+description = "Upgrade the mise tools of .mise.toml (and mise.lock), not the global ones"
+run = "mise upgrade --no-global"
+
 # --- code generation (TypeSpec -> OpenAPI -> Go + TS) -----------------------------
 
 ["generate:typespec-external"]
