@@ -1,7 +1,12 @@
 // Package contactlock is the one row lock that orders the writes about one Contact: an Enrollment
 // made or ended (#751), a change of its Tags or of its Custom fields recorded as a System event
-// (#897). Each takes it first and holds it to the end of its transaction, so two of them run one
-// after the other and each reads what the other committed.
+// (#897), its Erasure. Each takes it first and holds it to the end of its transaction, so two of
+// them run one after the other and each reads what the other committed.
+//
+// First means before any other row about the Contact, an Enrollment's above all (#811): a
+// transaction that writes an Enrollment and then the Contact (a tag step, an Erasure) and one that
+// locks the Contact and then ends the Enrollment (an exit Event) would otherwise wait for each
+// other, and Postgres would abort one of them.
 package contactlock
 
 import (

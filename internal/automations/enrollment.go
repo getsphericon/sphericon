@@ -26,11 +26,26 @@ import (
 // transaction (the unsubscribe path exits inside the bus's).
 //
 // Making an Enrollment and ending Enrollments on an exit or goal Event (EndOnEvent) are ordered
-// per Contact: both lock the Contact's row first (lockContact) and hold it to the end of their
+// per Contact: both lock the Contact's row first (LockContact) and hold it to the end of their
 // transaction. Without it, at READ COMMITTED, an Enrollment written but not yet committed is
 // invisible to an exit or goal Event handled meanwhile, and that Event, stored after the
 // Enrollment looked for it, would be missed by both: the Enrollment would walk its steps after the
 // payment it was waiting for.
+//
+// Lock order: the Contact, then the Enrollment (contactlock). Every transaction that writes both an
+// Enrollment's row and its Contact's row takes the Contact's lock before it touches the
+// Enrollment: making one, ending them on an Event, a tag step, whose change of the Contact's Tags
+// updates the Contact's row, and an Erasure, which deletes both (#811). Taken the other way round,
+// such a transaction and an exit of the same Contact wait for each other and Postgres aborts one of
+// them. A move that writes no Contact row (a wait, an email or HTTP step, a completion, a failure)
+// takes no Contact lock.
+//
+// EndOnEvent keeps the Contact's lock while it waits for an in-flight send's fence (FenceOn) on an
+// Enrollment it ends, so a write of that Contact row (an identify upsert, an /api update) waits up
+// to the send's length, which the provider's and the job's timeouts bound. That is deliberate:
+// releasing the Contact before the end would reopen the race above (an Enrollment made meanwhile
+// missing the Event that ends it), and the send path writes no Contact row, so the wait cannot
+// close a cycle Postgres does not see.
 
 // Event is an Event the Automations react to, as its trigger job hands it on (#751, #752): its
 // action, the id its row is stored under (events.Envelope.SourceID; empty in a job of a release
@@ -122,7 +137,7 @@ func admitsAll(*ent.Automation) bool { return true }
 // already ended by the first of them (exited or goal_reached, so it counts and the Contact stays
 // enrolled once ever), and no step is to run.
 func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o Origin, admits func(*ent.Automation) bool) (runID int64, enrolled bool, err error) {
-	locked, err := lockContact(ctx, s, contactID)
+	locked, err := LockContact(ctx, s, contactID)
 	if err != nil {
 		return 0, false, err
 	}
@@ -199,10 +214,12 @@ func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 	return run.ID, false, nil
 }
 
-// lockContact locks the Contact's row to the end of the transaction s is bound to (contactlock):
+// LockContact locks the Contact's row to the end of the transaction s is bound to (contactlock):
 // the one point that orders the making of the Contact's Enrollments against the exit and goal
-// Events that end them. false when the Contact is not in the Workspace.
-func lockContact(ctx context.Context, s *ent.Scoped, contactID int64) (bool, error) {
+// Events that end them, and against a tag step's change of its Tags. It comes before any write of
+// an Enrollment in the transaction (the lock order above). false when the Contact is not in the
+// Workspace.
+func LockContact(ctx context.Context, s *ent.Scoped, contactID int64) (bool, error) {
 	_, err := contactlock.Lock(ctx, s, contactID)
 	if ent.IsNotFound(err) {
 		return false, nil
@@ -293,7 +310,7 @@ func ExitRun(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int
 // being made meanwhile is either committed before the active ones are read, or made after this
 // transaction and finds the Event among the stored ones.
 func EndOnEvent(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, action string, occurredAt time.Time) error {
-	locked, err := lockContact(ctx, s, contactID)
+	locked, err := LockContact(ctx, s, contactID)
 	if err != nil || !locked {
 		return err // a Contact erased since has no Enrollment left to end
 	}

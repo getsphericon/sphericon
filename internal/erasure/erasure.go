@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -211,9 +212,9 @@ func resolve(ctx context.Context, s *ent.Scoped, id Identifier) (*Target, error)
 	return t, nil
 }
 
-// findContact returns the Contact the identifier names, or nil when it names none
-// (an address or Visitor without a Contact). A contact id that resolves to nothing is
-// ErrContactNotFound.
+// findContact returns the Contact the identifier names, locked to the end of the transaction s is
+// bound to (contactlock), or nil when it names none (an address or Visitor without a Contact). A
+// contact id that resolves to nothing is ErrContactNotFound.
 func findContact(ctx context.Context, s *ent.Scoped, id Identifier) (*ent.Contact, error) {
 	var (
 		c   *ent.Contact
@@ -237,7 +238,16 @@ func findContact(ctx context.Context, s *ent.Scoped, id Identifier) (*ent.Contac
 	if ent.IsNotFound(err) {
 		return nil, nil
 	}
-	return c, err
+	if err != nil || c == nil {
+		return nil, err
+	}
+	// Erasure deletes the Contact's Enrollments before the Contact, so it locks the Contact
+	// first, in the order every writer of both rows takes them (contactlock, #811).
+	locked, err := contactlock.Lock(ctx, s, c.ID)
+	if ent.IsNotFound(err) {
+		return findContact(ctx, s, id) // erased meanwhile: resolve what the identifier names now
+	}
+	return locked, err
 }
 
 // resolveContactless resolves an email or visitor id that has no Contact: it is a
