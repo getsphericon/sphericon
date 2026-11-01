@@ -9,6 +9,7 @@ import (
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/usertombstone"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
+	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
 // UserFeedEntry is a User as the feed reports it: the User with their current consent to the
@@ -38,15 +39,6 @@ func (e UserFeedEntry) position() int64 {
 	return e.User.FeedPosition
 }
 
-// UserFeedPage is one page of the Users feed.
-type UserFeedPage struct {
-	Entries []UserFeedEntry
-	// NextCursor is the cursor after the last entry, or the requested one on an empty page.
-	NextCursor string
-	// HasMore reports whether entries follow the page.
-	HasMore bool
-}
-
 // UserFeed is the Users created or changed after cursor, and the tombstones of those deleted
 // after it, in the order of their change position (then User id), at most limit of them, each
 // User with their current consent to the operator's mailings (ADR 0062). An empty cursor starts
@@ -54,13 +46,13 @@ type UserFeedPage struct {
 // idempotent, the caller advances by saving NextCursor, and delivery is at-least-once; a User
 // changed again after it was read is listed again, as they are by then. It reads the Users and
 // their tombstones through the raw client, and the consents through internal/consentrecords.
-func (m *Module) UserFeed(ctx context.Context, cursor string, limit int) (UserFeedPage, error) {
+func (m *Module) UserFeed(ctx context.Context, cursor string, limit int) (pagination.CursorPage[UserFeedEntry], error) {
 	if err := m.licensed(); err != nil {
-		return UserFeedPage{}, err
+		return pagination.CursorPage[UserFeedEntry]{}, err
 	}
 	position, id, err := parseFeedCursor(cursor)
 	if err != nil {
-		return UserFeedPage{}, err
+		return pagination.CursorPage[UserFeedEntry]{}, err
 	}
 	users, err := m.ent.User.Query().
 		Where(entuser.Or(
@@ -71,7 +63,7 @@ func (m *Module) UserFeed(ctx context.Context, cursor string, limit int) (UserFe
 		Limit(limit + 1).
 		All(ctx)
 	if err != nil {
-		return UserFeedPage{}, err
+		return pagination.CursorPage[UserFeedEntry]{}, err
 	}
 	tombstones, err := m.ent.UserTombstone.Query().
 		Where(usertombstone.Or(
@@ -82,7 +74,7 @@ func (m *Module) UserFeed(ctx context.Context, cursor string, limit int) (UserFe
 		Limit(limit + 1).
 		All(ctx)
 	if err != nil {
-		return UserFeedPage{}, err
+		return pagination.CursorPage[UserFeedEntry]{}, err
 	}
 
 	// A User id is never reused, so (position, User id) orders the two sources as one.
@@ -96,27 +88,22 @@ func (m *Module) UserFeed(ctx context.Context, cursor string, limit int) (UserFe
 	slices.SortFunc(entries, func(a, b UserFeedEntry) int {
 		return cmp.Or(cmp.Compare(a.position(), b.position()), cmp.Compare(a.UserID(), b.UserID()))
 	})
-	page := UserFeedPage{NextCursor: cursor, HasMore: len(entries) > limit}
-	entries = entries[:min(len(entries), limit)]
+	page := pagination.Cursor(entries, limit, cursor, func(e UserFeedEntry) string { return feedCursor(e.position(), e.UserID()) })
 
 	var live []int64
-	for _, e := range entries {
+	for _, e := range page.Items {
 		if e.User != nil {
 			live = append(live, e.User.ID)
 		}
 	}
 	mailings, err := consentrecords.Mailings(ctx, m.ent, live...)
 	if err != nil {
-		return UserFeedPage{}, err
+		return pagination.CursorPage[UserFeedEntry]{}, err
 	}
-	for i := range entries {
-		if mailing, ok := mailings[entries[i].UserID()]; ok && entries[i].User != nil {
-			entries[i].Mailing = &mailing
+	for i := range page.Items {
+		if mailing, ok := mailings[page.Items[i].UserID()]; ok && page.Items[i].User != nil {
+			page.Items[i].Mailing = &mailing
 		}
-	}
-	page.Entries = entries
-	if n := len(entries); n > 0 {
-		page.NextCursor = feedCursor(entries[n-1].position(), entries[n-1].UserID())
 	}
 	return page, nil
 }

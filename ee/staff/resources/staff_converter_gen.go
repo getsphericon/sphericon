@@ -14,6 +14,7 @@ import (
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	reputation "github.com/getsphericon/sphericon/internal/reputation"
+	signupsurvey "github.com/getsphericon/sphericon/internal/signupsurvey"
 )
 
 type StaffConverterImpl struct{}
@@ -47,6 +48,14 @@ func (c *StaffConverterImpl) AuditActorToResource(source auditapi.View) staffee.
 	staffeeapiStaffAuditActor.ID = nilableString(source.ActorID)
 	staffeeapiStaffAuditActor.Name = nilableString(source.ActorName)
 	return staffeeapiStaffAuditActor
+}
+func (c *StaffConverterImpl) AuditEntriesToResources(source []auditapi.View) []staffee.StaffAuditEntryResource {
+	var staffeeapiStaffAuditEntryResourceList []staffee.StaffAuditEntryResource
+	staffeeapiStaffAuditEntryResourceList = make([]staffee.StaffAuditEntryResource, len(source))
+	for i := 0; i < len(source); i++ {
+		staffeeapiStaffAuditEntryResourceList[i] = c.AuditEntryToResource(source[i])
+	}
+	return staffeeapiStaffAuditEntryResourceList
 }
 func (c *StaffConverterImpl) AuditEntryToResource(source auditapi.View) staffee.StaffAuditEntryResource {
 	var staffeeapiStaffAuditEntryResource staffee.StaffAuditEntryResource
@@ -222,6 +231,43 @@ func (c *StaffConverterImpl) SignupSourceToResource(source signupsurveyresponse.
 	}
 	return staffeeapiStaffSignupSource
 }
+func (c *StaffConverterImpl) SignupSurveyCountsToResource(source signupsurvey.Counts) staffee.StaffSignupSurveyCounts {
+	var staffeeapiStaffSignupSurveyCounts staffee.StaffSignupSurveyCounts
+	staffeeapiStaffSignupSurveyCounts.Responses = count(source.Responses)
+	staffeeapiStaffSignupSurveyCounts.Role = make([]staffee.StaffSignupRoleCount, len(source.Role.Choices))
+	for i := 0; i < len(source.Role.Choices); i++ {
+		staffeeapiStaffSignupSurveyCounts.Role[i] = c.signupsurveyChoiceCountToStaffeeapiStaffSignupRoleCount(source.Role.Choices[i])
+	}
+	staffeeapiStaffSignupSurveyCounts.RoleOtherTexts = make([]staffee.StaffSignupOtherTextCount, len(source.Role.Others))
+	for j := 0; j < len(source.Role.Others); j++ {
+		staffeeapiStaffSignupSurveyCounts.RoleOtherTexts[j] = c.signupsurveyOtherCountToStaffeeapiStaffSignupOtherTextCount(source.Role.Others[j])
+	}
+	staffeeapiStaffSignupSurveyCounts.CompanySize = make([]staffee.StaffSignupCompanySizeCount, len(source.CompanySize.Choices))
+	for k := 0; k < len(source.CompanySize.Choices); k++ {
+		staffeeapiStaffSignupSurveyCounts.CompanySize[k] = c.signupsurveyChoiceCountToStaffeeapiStaffSignupCompanySizeCount(source.CompanySize.Choices[k])
+	}
+	staffeeapiStaffSignupSurveyCounts.CompanySizeOtherTexts = make([]staffee.StaffSignupOtherTextCount, len(source.CompanySize.Others))
+	for l := 0; l < len(source.CompanySize.Others); l++ {
+		staffeeapiStaffSignupSurveyCounts.CompanySizeOtherTexts[l] = c.signupsurveyOtherCountToStaffeeapiStaffSignupOtherTextCount(source.CompanySize.Others[l])
+	}
+	staffeeapiStaffSignupSurveyCounts.MainGoal = make([]staffee.StaffSignupGoalCount, len(source.MainGoal.Choices))
+	for m := 0; m < len(source.MainGoal.Choices); m++ {
+		staffeeapiStaffSignupSurveyCounts.MainGoal[m] = c.signupsurveyChoiceCountToStaffeeapiStaffSignupGoalCount(source.MainGoal.Choices[m])
+	}
+	staffeeapiStaffSignupSurveyCounts.MainGoalOtherTexts = make([]staffee.StaffSignupOtherTextCount, len(source.MainGoal.Others))
+	for n := 0; n < len(source.MainGoal.Others); n++ {
+		staffeeapiStaffSignupSurveyCounts.MainGoalOtherTexts[n] = c.signupsurveyOtherCountToStaffeeapiStaffSignupOtherTextCount(source.MainGoal.Others[n])
+	}
+	staffeeapiStaffSignupSurveyCounts.HeardFrom = make([]staffee.StaffSignupSourceCount, len(source.HeardFrom.Choices))
+	for o := 0; o < len(source.HeardFrom.Choices); o++ {
+		staffeeapiStaffSignupSurveyCounts.HeardFrom[o] = c.signupsurveyChoiceCountToStaffeeapiStaffSignupSourceCount(source.HeardFrom.Choices[o])
+	}
+	staffeeapiStaffSignupSurveyCounts.HeardFromOtherTexts = make([]staffee.StaffSignupOtherTextCount, len(source.HeardFrom.Others))
+	for p := 0; p < len(source.HeardFrom.Others); p++ {
+		staffeeapiStaffSignupSurveyCounts.HeardFromOtherTexts[p] = c.signupsurveyOtherCountToStaffeeapiStaffSignupOtherTextCount(source.HeardFrom.Others[p])
+	}
+	return staffeeapiStaffSignupSurveyCounts
+}
 func (c *StaffConverterImpl) SignupSurveyResponseToResource(source *ent.SignupSurveyResponse) staffee.StaffSignupSurveyResponseResource {
 	var staffeeapiStaffSignupSurveyResponseResource staffee.StaffSignupSurveyResponseResource
 	if source != nil {
@@ -295,4 +341,34 @@ func (c *StaffConverterImpl) WorkspacesListPage(source pagination.Page[*ent.Work
 	staffeeapiStaffWorkspacesListOK.TotalItems = count(source.TotalItems)
 	staffeeapiStaffWorkspacesListOK.TotalPages = count(source.TotalPages)
 	return &staffeeapiStaffWorkspacesListOK
+}
+func (c *StaffConverterImpl) signupsurveyChoiceCountToStaffeeapiStaffSignupCompanySizeCount(source signupsurvey.ChoiceCount) staffee.StaffSignupCompanySizeCount {
+	var staffeeapiStaffSignupCompanySizeCount staffee.StaffSignupCompanySizeCount
+	staffeeapiStaffSignupCompanySizeCount.Choice = staffee.StaffSignupCompanySize(source.Choice)
+	staffeeapiStaffSignupCompanySizeCount.Count = count(source.Count)
+	return staffeeapiStaffSignupCompanySizeCount
+}
+func (c *StaffConverterImpl) signupsurveyChoiceCountToStaffeeapiStaffSignupGoalCount(source signupsurvey.ChoiceCount) staffee.StaffSignupGoalCount {
+	var staffeeapiStaffSignupGoalCount staffee.StaffSignupGoalCount
+	staffeeapiStaffSignupGoalCount.Choice = staffee.StaffSignupGoal(source.Choice)
+	staffeeapiStaffSignupGoalCount.Count = count(source.Count)
+	return staffeeapiStaffSignupGoalCount
+}
+func (c *StaffConverterImpl) signupsurveyChoiceCountToStaffeeapiStaffSignupRoleCount(source signupsurvey.ChoiceCount) staffee.StaffSignupRoleCount {
+	var staffeeapiStaffSignupRoleCount staffee.StaffSignupRoleCount
+	staffeeapiStaffSignupRoleCount.Choice = staffee.StaffSignupRole(source.Choice)
+	staffeeapiStaffSignupRoleCount.Count = count(source.Count)
+	return staffeeapiStaffSignupRoleCount
+}
+func (c *StaffConverterImpl) signupsurveyChoiceCountToStaffeeapiStaffSignupSourceCount(source signupsurvey.ChoiceCount) staffee.StaffSignupSourceCount {
+	var staffeeapiStaffSignupSourceCount staffee.StaffSignupSourceCount
+	staffeeapiStaffSignupSourceCount.Choice = staffee.StaffSignupSource(source.Choice)
+	staffeeapiStaffSignupSourceCount.Count = count(source.Count)
+	return staffeeapiStaffSignupSourceCount
+}
+func (c *StaffConverterImpl) signupsurveyOtherCountToStaffeeapiStaffSignupOtherTextCount(source signupsurvey.OtherCount) staffee.StaffSignupOtherTextCount {
+	var staffeeapiStaffSignupOtherTextCount staffee.StaffSignupOtherTextCount
+	staffeeapiStaffSignupOtherTextCount.Text = source.Text
+	staffeeapiStaffSignupOtherTextCount.Count = count(source.Count)
+	return staffeeapiStaffSignupOtherTextCount
 }

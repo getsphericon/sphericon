@@ -205,5 +205,5 @@ func feedTail(t *testing.T, env *testhelper.TestEnv, cursor string) (entries []s
 	t.Helper()
 	page, err := env.StaffEnterprise.WorkspaceFeed(t.Context(), cursor, 200)
 	require.NoError(t, err)
-	return page.Entries, page.NextCursor
+	return page.Items, page.NextCursor
 }

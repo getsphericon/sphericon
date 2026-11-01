@@ -4,6 +4,7 @@ import (
 	"context"
 
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
+	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
 // ServiceWorkspaceFeedList is the Workspaces created or changed since a cursor, each
@@ -13,15 +14,9 @@ func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params s
 	if err != nil {
 		return nil, err
 	}
-	out := &serviceapi.ServiceWorkspaceFeedPage{
-		Items:      make([]serviceapi.ServiceWorkspaceResource, len(page.Entries)),
-		NextCursor: page.NextCursor,
-		HasMore:    page.HasMore,
-	}
-	for i, e := range page.Entries {
+	return serviceMapper.WorkspaceFeedPage(pagination.MapCursor(page, func(e FeedEntry) serviceapi.ServiceWorkspaceResource {
 		item := serviceMapper.WorkspaceToResource(e.Workspace)
 		item.Owners = serviceMapper.OwnersToResources(e.Owners)
-		out.Items[i] = item
-	}
-	return out, nil
+		return item
+	})), nil
 }

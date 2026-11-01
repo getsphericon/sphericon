@@ -149,3 +149,36 @@ func Whole[T any](items []T) Page[T] {
 	}
 	return Page[T]{Items: items, Page: DefaultPage, PageSize: len(items), TotalItems: len(items), TotalPages: 1}
 }
+
+// CursorPage is one page of a feed read after a cursor: the items, the cursor to read what
+// follows, and whether more items follow right now. A page method of a Converter maps it whole,
+// as it maps a Page.
+type CursorPage[T any] struct {
+	Items []T
+	// NextCursor is the cursor after the last item, or the requested one on an empty page.
+	NextCursor string
+	// HasMore reports whether items follow the page.
+	HasMore bool
+}
+
+// Cursor is the page of the rows a feed read for a limit: up to limit+1 rows in feed order, one
+// past the limit meaning that more follow. NextCursor is cursorOf the last row kept, or the
+// requested cursor when no row is. Items is never nil.
+func Cursor[T any](rows []T, limit int, requested string, cursorOf func(T) string) CursorPage[T] {
+	items := append([]T{}, rows[:min(len(rows), limit)]...)
+	page := CursorPage[T]{Items: items, NextCursor: requested, HasMore: len(rows) > limit}
+	if n := len(items); n > 0 {
+		page.NextCursor = cursorOf(items[n-1])
+	}
+	return page
+}
+
+// MapCursor is Map for a CursorPage: the cursor kept, each item passed through f (an extra a
+// Converter cannot attach). Items is never nil.
+func MapCursor[T, U any](p CursorPage[T], f func(T) U) CursorPage[U] {
+	items := make([]U, len(p.Items))
+	for i, item := range p.Items {
+		items[i] = f(item)
+	}
+	return CursorPage[U]{Items: items, NextCursor: p.NextCursor, HasMore: p.HasMore}
+}

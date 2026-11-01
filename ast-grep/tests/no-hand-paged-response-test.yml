@@ -16,6 +16,33 @@ valid:
     	}
     	return mapper.WebhooksListPage(pagination.Map(page, webhookResource)), nil
     }
+  - |
+    func (h *ServiceHandlers) ServiceUserFeedList(ctx context.Context, params serviceapi.ServiceUserFeedListParams) (serviceapi.ServiceUserFeedListRes, error) {
+    	page, err := h.module.UserFeed(ctx, params.Cursor.Or(""), int(params.Limit.Value))
+    	if err != nil {
+    		return nil, err
+    	}
+    	return serviceMapper.UserFeedPage(pagination.MapCursor(page, userFeedItem)), nil
+    }
+  - |
+    func (m *Module) TrackingHostFeed(ctx context.Context, cursor string, limit int) (pagination.CursorPage[*ent.TrackingHostChange], error) {
+    	rows, err := m.ent.TrackingHostChange.Query().Limit(limit + 1).All(ctx)
+    	if err != nil {
+    		return pagination.CursorPage[*ent.TrackingHostChange]{}, err
+    	}
+    	return pagination.Cursor(rows, limit, cursor, changeCursor), nil
+    }
+  - |
+    func (h *Handlers) ExportContacts(ctx context.Context, params externalapi.ExportContactsParams) (externalapi.ExportContactsRes, error) {
+    	page, err := exportstream.Contacts(ctx, auth.TokenScoped(ctx), params.Cursor.Or(""), int(params.Limit.Value))
+    	if err != nil {
+    		return nil, err
+    	}
+    	return &externalapi.ExportContactsOKHeaders{
+    		XNextCursor: page.Cursor,
+    		Response:    externalapi.ExportContactsOK{Data: page.Body},
+    	}, nil
+    }
 invalid:
   - |
     func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteContactsListParams) (siteapi.SiteContactsListRes, error) {
@@ -35,4 +62,25 @@ invalid:
     func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFieldsListRes, error) {
     	items := mapper.CustomFieldsToResources(fields)
     	return &externalapi.CustomFieldsListOK{Items: items, Page: 1, PageSize: narrow.Int32(len(items)), TotalItems: narrow.Int32(len(items)), TotalPages: 1}, nil
+    }
+  - |
+    func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params serviceapi.ServiceWorkspaceFeedListParams) (serviceapi.ServiceWorkspaceFeedListRes, error) {
+    	page, err := h.module.WorkspaceFeed(ctx, params.Cursor.Or(""), int(params.Limit.Value))
+    	if err != nil {
+    		return nil, err
+    	}
+    	out := &serviceapi.ServiceWorkspaceFeedPage{
+    		Items:      make([]serviceapi.ServiceWorkspaceResource, len(page.Items)),
+    		NextCursor: page.NextCursor,
+    		HasMore:    page.HasMore,
+    	}
+    	for i, e := range page.Items {
+    		out.Items[i] = serviceMapper.WorkspaceToResource(e.Workspace)
+    	}
+    	return out, nil
+    }
+  - |
+    func (m *Module) UserFeed(ctx context.Context, cursor string, limit int) (UserFeedPage, error) {
+    	page := UserFeedPage{HasMore: len(entries) > limit}
+    	return page, nil
     }

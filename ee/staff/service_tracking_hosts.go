@@ -3,8 +3,9 @@ package staff
 import (
 	"context"
 
+	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
 // ServiceTrackingHostFeedList is the Tracking domain hosts that entered or left the
@@ -14,26 +15,17 @@ func (h *ServiceHandlers) ServiceTrackingHostFeedList(ctx context.Context, param
 	if err != nil {
 		return nil, err
 	}
-	out := &serviceapi.ServiceTrackingHostFeedPage{
-		Items:      make([]serviceapi.ServiceTrackingHostChange, len(page.Entries)),
-		NextCursor: page.NextCursor,
-		HasMore:    page.HasMore,
-	}
-	ids := make([]int64, len(page.Entries))
-	for i, e := range page.Entries {
+	ids := make([]int64, len(page.Items))
+	for i, e := range page.Items {
 		ids[i] = e.WorkspaceID
 	}
 	publicIDs, err := h.module.publicIDs(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
-	for i, e := range page.Entries {
-		out.Items[i] = serviceapi.ServiceTrackingHostChange{
-			Host:        sendingdomains.TrackingHost(e.Domain),
-			WorkspaceId: serviceapi.WorkspaceId(publicIDs[e.WorkspaceID]),
-			State:       serviceMapper.TrackingHostStateToResource(e.State),
-			ChangedAt:   serviceapi.Timestamp(e.CreatedAt),
-		}
-	}
-	return out, nil
+	return serviceMapper.TrackingHostFeedPage(pagination.MapCursor(page, func(e *ent.TrackingHostChange) serviceapi.ServiceTrackingHostChange {
+		item := serviceMapper.TrackingHostChangeToResource(e)
+		item.WorkspaceId = serviceapi.WorkspaceId(publicIDs[e.WorkspaceID])
+		return item
+	})), nil
 }
