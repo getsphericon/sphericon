@@ -9030,6 +9030,14 @@ func (s *Server) handleSiteBroadcastsListRequest(args [1]string, argsEscaped boo
 					Name: "archived",
 					In:   "query",
 				}: params.Archived,
+				{
+					Name: "status",
+					In:   "query",
+				}: params.Status,
+				{
+					Name: "order",
+					In:   "query",
+				}: params.Order,
 			},
 			Raw: r,
 		}

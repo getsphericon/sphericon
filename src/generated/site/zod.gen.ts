@@ -794,6 +794,15 @@ export const zSiteBroadcastStatus = z.enum([
 ]);
 
 /**
+ * Filter of the broadcast listThe order of the broadcast list
+ */
+export const zSiteBroadcastsOrder = z.enum([
+  'newest',
+  'scheduledSoonest',
+  'sentLatest'
+]);
+
+/**
  * One header line of a Captured message
  */
 export const zSiteCapturedMessageHeader = z.object({
@@ -3557,7 +3566,17 @@ export const zSiteBroadcastResourceParentKey = zWorkspaceId;
 /**
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
-export const zSiteBroadcastsListFilter = z.boolean();
+export const zSiteBroadcastsListFilterArchived = z.boolean();
+
+/**
+ * The order of the list: `newest` when absent
+ */
+export const zSiteBroadcastsListFilterOrder = zSiteBroadcastsOrder;
+
+/**
+ * Only the broadcasts in one of these statuses; every status when absent
+ */
+export const zSiteBroadcastsListFilterStatus = z.array(zSiteBroadcastStatus);
 
 /**
  * Unique identifier
@@ -4586,7 +4605,9 @@ export const zSiteBroadcastsListPath = z.object({
 export const zSiteBroadcastsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  archived: z.exactOptional(z.boolean())
+  archived: z.exactOptional(z.boolean()),
+  status: z.exactOptional(z.array(zSiteBroadcastStatus)),
+  order: z.exactOptional(zSiteBroadcastsOrder)
 });
 
 /**

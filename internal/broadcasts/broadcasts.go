@@ -14,6 +14,7 @@ package broadcasts
 import (
 	"context"
 	"encoding/json"
+	"entgo.io/ent/dialect/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -302,18 +303,47 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadca
 
 // List returns one page of the Workspace's Broadcasts, newest first: the kept ones, or with
 // archived the archived ones.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Broadcast], error) {
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool, statuses []broadcast.Status, order Order) (pagination.Page[*ent.Broadcast], error) {
 	rows := func() *ent.BroadcastQuery {
+		q := s.Broadcast().Query()
 		if archived {
-			return s.Broadcast().QueryDiscarded()
+			q = s.Broadcast().QueryDiscarded()
 		}
-		return s.Broadcast().Query()
+		if len(statuses) > 0 {
+			q = q.Where(broadcast.StatusIn(statuses...))
+		}
+		return q
 	}
 	return pagination.List(ctx, p,
 		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.Broadcast, error) {
-			return rows().Order(ent.Desc(broadcast.FieldID)).Limit(limit).Offset(offset).All(ctx)
+			return rows().Order(order.terms()...).Limit(limit).Offset(offset).All(ctx)
 		})
+}
+
+// Order is the order of the Broadcast list.
+type Order string
+
+const (
+	// OrderNewest is the newest first.
+	OrderNewest Order = "newest"
+	// OrderScheduledSoonest is the one scheduled soonest first, the unscheduled after.
+	OrderScheduledSoonest Order = "scheduledSoonest"
+	// OrderSentLatest is the one sent last first, the unsent after.
+	OrderSentLatest Order = "sentLatest"
+)
+
+// terms is the ORDER BY of o; the newest first breaks every tie, so a page is stable.
+func (o Order) terms() []broadcast.OrderOption {
+	newest := broadcast.ByID(sql.OrderDesc())
+	switch o {
+	case OrderScheduledSoonest:
+		return []broadcast.OrderOption{broadcast.ByScheduledAt(sql.OrderAsc(), sql.OrderNullsLast()), newest}
+	case OrderSentLatest:
+		return []broadcast.OrderOption{broadcast.BySentAt(sql.OrderDesc(), sql.OrderNullsLast()), newest}
+	case OrderNewest:
+	}
+	return []broadcast.OrderOption{newest}
 }
 
 // Update applies a patch to a draft and returns it. The UPDATE only matches a draft row, so a

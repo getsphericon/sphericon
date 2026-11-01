@@ -280,7 +280,7 @@ Read at `f56ec3dbb`. Every line is a fact about the code or the contract unless 
 - [`RevenueBlock.tsx`](../../src/pages/workspace/RevenueBlock.tsx) reads `SiteAnalyticsRevenue` with its own
   7/30/90 control (30 by default) and shows total, credited share and orders; `series`, `creditedOrders` and
   `otherCurrencyOrders` are returned and not read.
-- [`RecentlyCreated.tsx`](../../src/pages/workspace/RecentlyCreated.tsx) merges the first page of the Broadcast and
+- `RecentlyCreated.tsx` (removed since) merges the first page of the Broadcast and
   Automation lists by `createdAt`. `SiteBroadcastsListFilter` has only `archived`: no status filter and no order by
   `scheduledAt` or `sentAt`, so "what is scheduled" or "what went out last" cannot be asked today.
 - [`WorkspaceLayout.tsx`](../../src/layouts/WorkspaceLayout.tsx) already shows, on every page, the Workspace

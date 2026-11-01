@@ -3689,6 +3689,19 @@ func (s *SiteBroadcastsListUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s SiteBroadcastsOrder) Validate() error {
+	switch s {
+	case "newest":
+		return nil
+	case "scheduledSoonest":
+		return nil
+	case "sentLatest":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *SiteBroadcastsScheduleBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {

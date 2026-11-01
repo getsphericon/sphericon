@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
@@ -159,6 +160,16 @@ type Inputs interface {
 	// goverter:enum:map SiteAutomationReportsGetPeriod30d ReportPeriod30Days
 	// goverter:enum:map SiteAutomationReportsGetPeriod90d ReportPeriod90Days
 	AutomationReportPeriod(source siteapi.SiteAutomationReportsGetPeriod) automations.ReportPeriod
+	// ent's Status has a Default constant beside StatusDraft, so every member is mapped.
+	// goverter:enum:map SiteBroadcastStatusDraft StatusDraft
+	// goverter:enum:map SiteBroadcastStatusScheduled StatusScheduled
+	// goverter:enum:map SiteBroadcastStatusSending StatusSending
+	// goverter:enum:map SiteBroadcastStatusSent StatusSent
+	// goverter:enum:map SiteBroadcastStatusFailed StatusFailed
+	BroadcastStatus(source siteapi.SiteBroadcastStatus) broadcast.Status
+	BroadcastStatuses(source []siteapi.SiteBroadcastStatus) []broadcast.Status
+	// goverter:enum:transform value
+	BroadcastsOrder(source siteapi.SiteBroadcastsOrder) broadcasts.Order
 	// goverter:enum:transform value
 	AutomationStepType(source siteapi.SiteAutomationStepType) automations.StepType
 	// goverter:enum:transform value

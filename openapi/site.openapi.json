@@ -6085,7 +6085,13 @@
             "$ref": "#/components/parameters/PageQuery.pageSize"
           },
           {
-            "$ref": "#/components/parameters/SiteBroadcastsListFilter"
+            "$ref": "#/components/parameters/SiteBroadcastsListFilter.archived"
+          },
+          {
+            "$ref": "#/components/parameters/SiteBroadcastsListFilter.status"
+          },
+          {
+            "$ref": "#/components/parameters/SiteBroadcastsListFilter.order"
           }
         ],
         "responses": {
@@ -13928,7 +13934,7 @@
           "$ref": "#/components/schemas/WorkspaceId"
         }
       },
-      "SiteBroadcastsListFilter": {
+      "SiteBroadcastsListFilter.archived": {
         "name": "archived",
         "in": "query",
         "required": false,
@@ -13937,6 +13943,28 @@
           "type": "boolean"
         },
         "explode": false
+      },
+      "SiteBroadcastsListFilter.order": {
+        "name": "order",
+        "in": "query",
+        "required": false,
+        "description": "The order of the list: `newest` when absent",
+        "schema": {
+          "$ref": "#/components/schemas/SiteBroadcastsOrder"
+        },
+        "explode": false
+      },
+      "SiteBroadcastsListFilter.status": {
+        "name": "status",
+        "in": "query",
+        "required": false,
+        "description": "Only the broadcasts in one of these statuses; every status when absent",
+        "schema": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/SiteBroadcastStatus"
+          }
+        }
       },
       "SiteCapturedMessageResourceKey.id": {
         "name": "id",
@@ -17804,6 +17832,11 @@
         "type": "string",
         "enum": ["draft", "scheduled", "sending", "sent", "failed"],
         "description": "Broadcast lifecycle status"
+      },
+      "SiteBroadcastsOrder": {
+        "type": "string",
+        "enum": ["newest", "scheduledSoonest", "sentLatest"],
+        "description": "Filter of the broadcast listThe order of the broadcast list"
       },
       "SiteCapturedMessageFields": {
         "type": "object",

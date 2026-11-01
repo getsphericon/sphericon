@@ -5284,6 +5284,52 @@ func (o OptSiteAutomationReportsGetPeriod) Or(d SiteAutomationReportsGetPeriod) 
 	return d
 }
 
+// NewOptSiteBroadcastsOrder returns new OptSiteBroadcastsOrder with value set to v.
+func NewOptSiteBroadcastsOrder(v SiteBroadcastsOrder) OptSiteBroadcastsOrder {
+	return OptSiteBroadcastsOrder{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteBroadcastsOrder is optional SiteBroadcastsOrder.
+type OptSiteBroadcastsOrder struct {
+	Value SiteBroadcastsOrder
+	Set   bool
+}
+
+// IsSet returns true if OptSiteBroadcastsOrder was set.
+func (o OptSiteBroadcastsOrder) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteBroadcastsOrder) Reset() {
+	var v SiteBroadcastsOrder
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteBroadcastsOrder) SetTo(v SiteBroadcastsOrder) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteBroadcastsOrder) Get() (v SiteBroadcastsOrder, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteBroadcastsOrder) Or(d SiteBroadcastsOrder) SiteBroadcastsOrder {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteConditionGroup returns new OptSiteConditionGroup with value set to v.
 func NewOptSiteConditionGroup(v SiteConditionGroup) OptSiteConditionGroup {
 	return OptSiteConditionGroup{
@@ -11997,6 +12043,56 @@ func (*SiteBroadcastsListOK) siteBroadcastsListRes() {}
 type SiteBroadcastsListUnprocessableEntity ProblemDetails
 
 func (*SiteBroadcastsListUnprocessableEntity) siteBroadcastsListRes() {}
+
+// Filter of the broadcast listThe order of the broadcast list.
+// Ref: #/components/schemas/SiteBroadcastsOrder
+type SiteBroadcastsOrder string
+
+const (
+	SiteBroadcastsOrderNewest           SiteBroadcastsOrder = "newest"
+	SiteBroadcastsOrderScheduledSoonest SiteBroadcastsOrder = "scheduledSoonest"
+	SiteBroadcastsOrderSentLatest       SiteBroadcastsOrder = "sentLatest"
+)
+
+// AllValues returns all SiteBroadcastsOrder values.
+func (SiteBroadcastsOrder) AllValues() []SiteBroadcastsOrder {
+	return []SiteBroadcastsOrder{
+		SiteBroadcastsOrderNewest,
+		SiteBroadcastsOrderScheduledSoonest,
+		SiteBroadcastsOrderSentLatest,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteBroadcastsOrder) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteBroadcastsOrderNewest:
+		return []byte(s), nil
+	case SiteBroadcastsOrderScheduledSoonest:
+		return []byte(s), nil
+	case SiteBroadcastsOrderSentLatest:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteBroadcastsOrder) UnmarshalText(data []byte) error {
+	switch SiteBroadcastsOrder(data) {
+	case SiteBroadcastsOrderNewest:
+		*s = SiteBroadcastsOrderNewest
+		return nil
+	case SiteBroadcastsOrderScheduledSoonest:
+		*s = SiteBroadcastsOrderScheduledSoonest
+		return nil
+	case SiteBroadcastsOrderSentLatest:
+		*s = SiteBroadcastsOrderSentLatest
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 type SiteBroadcastsScheduleBadRequest ProblemDetails
 

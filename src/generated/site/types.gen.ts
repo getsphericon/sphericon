@@ -2556,6 +2556,20 @@ export const SiteBroadcastStatus = {
 export type SiteBroadcastStatus = typeof SiteBroadcastStatus[keyof typeof SiteBroadcastStatus];
 
 /**
+ * Filter of the broadcast listThe order of the broadcast list
+ */
+export const SiteBroadcastsOrder = {
+  NEWEST: 'newest',
+  SCHEDULED_SOONEST: 'scheduledSoonest',
+  SENT_LATEST: 'sentLatest'
+} as const;
+
+/**
+ * Filter of the broadcast listThe order of the broadcast list
+ */
+export type SiteBroadcastsOrder = typeof SiteBroadcastsOrder[keyof typeof SiteBroadcastsOrder];
+
+/**
  * What a Captured message list shows of each message: everything but the content
  */
 export type SiteCapturedMessageFields = {
@@ -6869,7 +6883,17 @@ export type SiteBroadcastResourceParentKey = WorkspaceId;
 /**
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
-export type SiteBroadcastsListFilter = boolean;
+export type SiteBroadcastsListFilterArchived = boolean;
+
+/**
+ * The order of the list: `newest` when absent
+ */
+export type SiteBroadcastsListFilterOrder = SiteBroadcastsOrder;
+
+/**
+ * Only the broadcasts in one of these statuses; every status when absent
+ */
+export type SiteBroadcastsListFilterStatus = Array<SiteBroadcastStatus>;
 
 /**
  * Unique identifier
@@ -10209,6 +10233,14 @@ export type SiteBroadcastsListData = {
      * true lists the archived broadcasts instead of the kept ones; the default hides them
      */
     archived?: boolean;
+    /**
+     * Only the broadcasts in one of these statuses; every status when absent
+     */
+    status?: Array<SiteBroadcastStatus>;
+    /**
+     * The order of the list: `newest` when absent
+     */
+    order?: SiteBroadcastsOrder;
   };
   url: '/workspaces/{workspaceId}/broadcasts';
 };

@@ -83,7 +83,7 @@
   workspace_id: 1
   created_at: '{{daysAgo 4}}'
   updated_at: '{{daysAgo 3}}'
-- id: 201
+- id: 201 # fixture: BroadcastSentNineDaysAgo
   name: Top 5 SQL mistakes to avoid
   subject: Top 5 SQL mistakes to avoid
   from_name: CodeBasics

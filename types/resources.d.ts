@@ -1155,14 +1155,15 @@ export default interface Resources {
         },
         "title": "Needs attention"
       },
-      "createAutomationDescription": "Send follow-up emails when a contact does something.",
-      "createBroadcastDescription": "Send a one-time email to a segment of your contacts.",
-      "createTitle": "Create a new…",
-      "createdLabel": "Created",
-      "nameLabel": "Name",
-      "recentEmpty": "Nothing created yet.",
-      "recentLoadError": "Failed to load recently created items",
-      "recentTitle": "Recently created",
+      "audience": {
+        "clickRate": "Broadcast click rate",
+        "new": "New contacts",
+        "openRate": "Broadcast open rate",
+        "report": "Subscribed people",
+        "subscribed": "Subscribed",
+        "title": "Audience"
+      },
+      "figuresLoadError": "Failed to load the figures of the period",
       "revenue": {
         "changeCurrency": "Change the reporting currency",
         "credited": "Credited to messages",
@@ -1173,10 +1174,30 @@ export default interface Resources {
         "title": "Revenue",
         "total": "Total revenue"
       },
-      "statusLabel": "Status",
-      "typeAutomation": "Automation",
-      "typeBroadcast": "Broadcast",
-      "typeLabel": "Type"
+      "sending": {
+        "bounced": "Bounced",
+        "complained": "Complaints",
+        "delivered": "Delivered",
+        "report": "Email metrics",
+        "sent": "Sent",
+        "split": "Broadcasts {{broadcast}} · Automations {{automation}} · Transactional {{transactional}}",
+        "title": "Sending"
+      },
+      "sends": {
+        "allAutomations": "All automations",
+        "allBroadcasts": "All broadcasts",
+        "automations": "{{count}} active automation, {{runs}} enrollments in progress." | "{{count}} active automations, {{runs}} enrollments in progress.",
+        "automationsTitle": "Automations",
+        "lastSentEmpty": "Nothing has been sent yet.",
+        "lastSentTitle": "Last sent",
+        "loadError": "Failed to load what is going out",
+        "scheduledFor": "Scheduled for {{date}}",
+        "sending": "Sending: {{sent}} of {{total}}",
+        "sentDetail": "Sent {{date}}, {{rate}} opened",
+        "title": "Sends",
+        "upcomingEmpty": "Nothing is sending or scheduled.",
+        "upcomingTitle": "Sending and scheduled"
+      }
     },
     "profile": {
       "changeEmailButton": "Send confirmation link",
