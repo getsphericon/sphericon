@@ -191,11 +191,14 @@ _Avoid_: Lookback, conversion window
 
 Whether a message on channel C from sending source S may reach destination D is decided in
 layers — never by a single flag on the Contact: (1) (C, D) in Suppression → never; (2) (C, D)
-unsubscribed from _everything_ → never; (3) (C, D) unsubscribed from S → never; (4) _if the
-workspace requires confirmed opt-in_ and (C, D) has no Confirmation → never (the one positive
-layer, evaluated last so the negatives always dominate); (5) otherwise, send. Transactional
-messages skip layers 2–4 (they still respect Suppression's hard bounces). Consent is
-per-channel: an email opt-out never silences SMS.
+unsubscribed from _everything_ → never; (3) (C, D) unsubscribed from S → never; (4) (C, D) has
+no Confirmation where one is required → never (the one positive layer, evaluated last so the
+negatives always dominate); (5) otherwise, send. A Confirmation is always required on SMS and
+WhatsApp, and on email only when the workspace requires confirmed opt-in; on Telegram and web push
+the Binding is the opt-in (the person started the bot or allowed notifications), and on mobile
+push the external push service holds it. Transactional messages (email only) skip layers 2–4
+(they still respect Suppression's hard bounces). Consent is per-channel: an email opt-out never
+silences SMS.
 
 **Channel**:
 The medium a message travels by, each with its own Destinations, consent and Message content:
@@ -257,7 +260,12 @@ Absence means subscribed — there is no positive subscription row and no "subsc
 the Contact. The default in-email link unsubscribes from the _sending source_ only;
 "unsubscribe from everything" is a distinct, deliberate action. A bounce or complaint is not
 an Unsubscribe; those are Suppression entries.
-The opt-out is offered two ways with **identical scope**: the visible footer link and an RFC 8058
+On the other Channels an opt-out the person makes in the Channel itself — a STOP keyword, `/stop`
+or a blocked bot, WhatsApp's stop, an unsubscribe button — has the `everything` scope of that
+Channel, as the law and WhatsApp treat it; a source-scoped opt-out there is only a link to the
+unsubscribe page that the author put into the message. Its reversal (START, a resume, an unblocked
+bot) lifts it.
+On email the opt-out is offered two ways with **identical scope**: the visible footer link and an RFC 8058
 **one-click** `List-Unsubscribe` header (Broadcast + Automation only, never Transactional — see
 ADR 0012), both carrying the same source-scoped token; a mailbox provider's one-click button never
 reaches the `everything` scope. The endpoint is **method-split for safety**: `GET` renders a
@@ -276,11 +284,14 @@ recorded as a derived destination-keyed row (the fast eligibility gate) written 
 immutable `marketing.confirmed` **Event** (the source of truth — GDPR Art. 7 "demonstrate
 consent" proof, and a bus signal that can trigger a welcome Automation). It exists so double
 opt-in can be modeled **without** reintroducing a subscription status: the truth is an event, not
-a mutable flag. It matters only when the workspace's **require-confirmed-opt-in** policy is on
-(default off = today's single-opt-in, unaffected); then Send-eligibility adds the one positive
-layer (see Send-eligibility). Carries **provenance** — `double_opt_in` (clicked a confirmation
-link), `grandfathered` (existing contacts at policy-enablement), or `imported` (importer-asserted
-prior basis); the strongest provenance wins on dedup. Confirmed via a signed link whose endpoint
+a mutable flag. Required on SMS and WhatsApp always, and on email only when the workspace's
+**require-confirmed-opt-in** policy is on (default off = single opt-in); then Send-eligibility adds
+the one positive layer (see Send-eligibility). Carries **provenance** — `double_opt_in` (clicked a
+confirmation link), `grandfathered` (existing contacts at policy-enablement), `imported`
+(asserted through the API or an import, with the consent wording, its source and the brand, by a
+customer who collected it, possibly through a verification service of their own) or `keyword` (a
+START sent on the Channel); the strongest provenance wins on dedup. sphericon runs no SMS
+confirmation flow of its own. Confirmed via a signed link whose endpoint
 is method-split (`GET` = page, `POST` = confirm) — a scanner GET must never fabricate consent. An
 `everything` unsubscribe invalidates the gate row (the event log keeps the history), so returning
 after a full opt-out requires re-confirmation. Unlike an Unsubscribe it is **not** compliance-
