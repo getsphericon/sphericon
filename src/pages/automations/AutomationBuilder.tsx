@@ -48,6 +48,7 @@ import { graphToSteps, stepsToGraph } from './definition.ts'
 import type { AutomationGraph } from './definition.ts'
 import { automationDraftActions } from './draftActions.ts'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
+import { httpBodyRenderer, httpHeadersRenderer } from './httpRenderer.ts'
 import { LeaveGuard } from './LeaveGuard.tsx'
 import { automationSnapshot } from './leaveSnapshot.ts'
 import { messageRenderer } from './messageRenderer.ts'
@@ -60,10 +61,18 @@ import { exitEventsRenderer, goalEventRenderer, triggerRenderer } from './trigge
 // (e.g. the dashboard's body scroll).
 import builderStyles from '@workflowbuilder/sdk/style.css?inline'
 
-// The email step's message is edited by the editor, not a text field, and the Trigger's event,
-// exit events and goal event are typed with suggestions. A stable reference.
+// The email step's message is edited by the editor, not a text field, the Trigger's event, exit
+// events and goal event are typed with suggestions, and an HTTP step's headers are rows and its
+// body has a dry run. A stable reference.
 const jsonForm = {
-  renderers: [messageRenderer, triggerRenderer, exitEventsRenderer, goalEventRenderer],
+  renderers: [
+    messageRenderer,
+    triggerRenderer,
+    exitEventsRenderer,
+    goalEventRenderer,
+    httpHeadersRenderer,
+    httpBodyRenderer,
+  ],
 }
 
 // The SDK ships a Templates button in the palette footer, for diagrams the model cannot hold.

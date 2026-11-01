@@ -286,7 +286,12 @@
     "goalEventLabel": "Goal event",
     "httpBodyHint": "JSON. It sees the contact's fields and event.action and event.properties of the event that started the enrollment. Merge tags like {{ first_name }} are escaped for you, so write them inside quotes: the body must be valid JSON when they are empty.",
     "httpBodyLabel": "JSON body",
-    "httpHeadersHint": "One per line: Name: value. Leave a saved header's value empty to keep it.",
+    "httpDryRun": "Dry run",
+    "httpDryRunContactLabel": "Render for contact",
+    "httpDryRunContactPlaceholder": "Choose a contact",
+    "httpDryRunError": "Dry run failed",
+    "httpDryRunInvalid": "The body is not valid",
+    "httpDryRunRendered": "The request body this contact would get (nothing was sent):",
     "httpHeadersLabel": "Headers (up to 5)",
     "httpNodeDescription": "POST a JSON body to a URL such as a Slack or Zapier hook.",
     "httpSecretHint": "Optional. Signs the request; leave empty to keep the saved one.",
@@ -901,6 +906,13 @@
     "createTitle": "New contact",
     "editTitle": "Edit contact"
   },
+  "httpHeaders": {
+    "add": "Add header",
+    "keepHint": "Stored. Leave empty to keep it.",
+    "nameLabel": "Header name",
+    "remove": "Remove header",
+    "valueLabel": "Header value"
+  },
   "instance": {
     "update": {
       "description": "Version {{version}} of Sphericon has been released. Run `sphericon upgrade` to update this instance, or see the upgrade guide for your deployment.",
@@ -1245,13 +1257,9 @@
     },
     "firingsTitle": "Firings",
     "http": {
-      "addHeader": "Add header",
       "bodyHint": "A JSON template. It sees the contact's fields and event.action and event.properties, and must be valid JSON when they are empty.",
       "bodyLabel": "Request body",
-      "headerNameLabel": "Header name",
-      "headerValueLabel": "Header value",
       "keepHint": "Stored. Leave empty to keep it.",
-      "removeHeader": "Remove header",
       "secretHint": "Optional. When set, the request is signed (Standard Webhooks).",
       "secretLabel": "Signing secret",
       "urlLabel": "URL"

@@ -2,11 +2,13 @@ import { NodeType } from '@workflowbuilder/sdk'
 import type { WBIcon, WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
 import * as z from 'zod'
 
+import type { HttpHeader } from '../../components/HttpHeaderRows.tsx'
 import type {
   SiteAutomationHttpHeader,
   SiteAutomationStep,
   SiteAutomationVersion,
 } from '../../generated/site/types.gen.ts'
+import { jsonText } from '../../utils/jsonText.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
 import {
   APPLY_TAG_NODE_TYPE,
@@ -52,14 +54,14 @@ const STEP_ICON: Record<AutomationStep['type'], WBIcon> = {
 }
 
 // The server never returns an HTTP step's URL, header values or signing secret, so the
-// canvas holds them blank: a blank field is "keep what is stored". Header names are
-// shown as "Name:" lines for the same reason.
+// canvas holds them blank: a blank field is "keep what is stored". The headers come back as
+// names only, held as JSON text (headersText) for the same reason.
 function stepProperties(step: AutomationStep): Record<string, unknown> {
   if (step.type === 'http') {
     return {
       stepId: step.id ?? '',
       url: '',
-      headers: (step.headers ?? []).map((h) => `${h.name}:`).join('\n'),
+      headers: headersText((step.headers ?? []).map(({ name }) => ({ name }))),
       body: step.body ?? '',
       secret: '',
     }
@@ -161,19 +163,29 @@ function asText(value: unknown): string {
   return typeof value === 'string' ? value : ''
 }
 
-// parseHeaders reads "Name: value" lines; a line with no value after the colon keeps the
-// stored value of the header with that name.
-function parseHeaders(text: string): SiteAutomationHttpHeader[] {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line !== '')
-    .map((line) => {
-      const at = line.indexOf(':')
-      const name = (at === -1 ? line : line.slice(0, at)).trim()
-      const value = at === -1 ? '' : line.slice(at + 1).trim()
-      return value === '' ? { name } : { name, value }
-    })
+// An HTTP step's headers as the node holds them: JSON text (see jsonText).
+const headersCodec = jsonText.pipe(
+  z.array(z.object({ name: z.string(), value: z.exactOptional(z.string()) })),
+)
+
+// headersOf reads an HTTP step's headers off the node; a blank or unreadable text is none.
+export function headersOf(text: string): HttpHeader[] {
+  const parsed = headersCodec.safeParse(text)
+  return parsed.success ? parsed.data : []
+}
+
+// headersText is the JSON text a node holds its headers in.
+export function headersText(headers: HttpHeader[]): string {
+  return z.encode(headersCodec, headers)
+}
+
+// stepHeaders are the headers a step saves: a row left wholly blank is dropped, and a header
+// whose value is empty keeps the stored value of the header with that name.
+function stepHeaders(text: string): SiteAutomationHttpHeader[] {
+  return headersOf(text)
+    .map(({ name, value }) => ({ name: name.trim(), value: value ?? '' }))
+    .filter(({ name, value }) => name !== '' || value !== '')
+    .map(({ name, value }) => (value === '' ? { name } : { name, value }))
 }
 
 function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
@@ -185,7 +197,7 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
     return {
       type: 'http',
       body: asText(props.body),
-      headers: parseHeaders(asText(props.headers)),
+      headers: stepHeaders(asText(props.headers)),
       ...(id === '' ? {} : { id }),
       ...(url === '' ? {} : { url }),
       ...(secret === '' ? {} : { secret }),

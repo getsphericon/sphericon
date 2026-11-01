@@ -3,6 +3,7 @@ import type { PaletteItem, UISchema, WBIcon } from '@workflowbuilder/sdk'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { HTTP_BODY_FORMAT, HTTP_HEADERS_FORMAT } from './httpFormat.ts'
 import { MESSAGE_FORMAT } from './messageFormat.ts'
 import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
 
@@ -161,15 +162,23 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         icon: HTTP_NODE_ICON,
         label: t(($) => $.automations.stepHttp),
         description: t(($) => $.automations.httpNodeDescription),
-        defaultPropertiesData: { stepId: '', url: '', headers: '', body: '{}', secret: '' },
+        defaultPropertiesData: { stepId: '', url: '', headers: '[]', body: '{}', secret: '' },
         schema: {
           type: 'object',
           required: ['body'],
           properties: {
             ...sharedProperties,
             url: { type: 'string', label: t(($) => $.automations.httpUrlLabel) },
-            headers: { type: 'string', label: t(($) => $.automations.httpHeadersLabel) },
-            body: { type: 'string', label: t(($) => $.automations.httpBodyLabel) },
+            headers: {
+              type: 'string',
+              label: t(($) => $.automations.httpHeadersLabel),
+              format: HTTP_HEADERS_FORMAT,
+            },
+            body: {
+              type: 'string',
+              label: t(($) => $.automations.httpBodyLabel),
+              format: HTTP_BODY_FORMAT,
+            },
             secret: { type: 'string', label: t(($) => $.automations.httpSecretLabel) },
           },
         },
@@ -183,18 +192,16 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               placeholder: t(($) => $.automations.httpUrlHint),
             },
             {
-              type: 'TextArea',
+              type: 'Text',
               scope: '#/properties/headers',
               label: t(($) => $.automations.httpHeadersLabel),
-              minRows: 2,
-              placeholder: t(($) => $.automations.httpHeadersHint),
+              placeholder: '',
             },
             {
-              type: 'TextArea',
+              type: 'Text',
               scope: '#/properties/body',
               label: t(($) => $.automations.httpBodyLabel),
-              minRows: 6,
-              placeholder: t(($) => $.automations.httpBodyHint),
+              placeholder: '',
             },
             {
               type: 'Text',
