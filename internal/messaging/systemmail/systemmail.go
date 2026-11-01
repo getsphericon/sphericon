@@ -16,11 +16,11 @@ const defaultFromName = "sphericon"
 
 // Sender builds the system sender from config through the catalog: "ses" is SES, any other
 // provider name the SMTP relay (mailpit in development). The From address is
-// SPHERICON_SYSTEM_EMAIL_FROM, or SPHERICON_SMTP_FROM when that is unset. Same abstraction as a
+// SPHERICON_SYSTEM_EMAIL_FROM. Same abstraction as a
 // Workspace's sends, just the Instance's own provider; it is never signed with a Workspace's
 // Sending domain.
 func Sender(cfg *config.Config, catalog *messaging.Catalog) (messaging.EmailSender, error) {
-	from := cmp.Or(cfg.SystemEmailFrom, cfg.SMTPFrom)
+	from := cfg.SystemEmailFrom
 	fromName := cmp.Or(cfg.SystemEmailFromName, defaultFromName)
 	if cfg.SystemEmailProvider == string(messaging.ProviderSES) {
 		blob, err := json.Marshal(map[string]any{

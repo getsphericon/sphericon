@@ -35,40 +35,41 @@ type BodyLimits struct {
 	CollectEvent int64
 }
 
-// RateLimits are the per-policy request budgets per minute (ADR 0025). Every limit
-// has a default and 0 disables it. They are core, never gated by the EE licence.
+// RateLimits are the per-policy request budgets (ADR 0025). Every limit has a default and 0
+// disables it. They are core, never gated by the EE licence. Each field's doc comment is the
+// variable's description in the configuration reference.
 type RateLimits struct {
-	// Human caps the public human-facing endpoints (signup, invitation accept,
-	// consent confirm) per client IP and endpoint.
+	// Requests per minute per client IP and endpoint on the public human-facing endpoints
+	// (signup, invitation accept, consent confirm); over it `429` with `Retry-After`.
 	Human int `env:"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE" validate:"gte=0"`
-	// APIBurst caps /api and /mcp per Workspace per second (one shared budget).
+	// Requests per second per Workspace on `/api` and `/mcp` (one shared budget); over it `429`
+	// with `Retry-After`.
 	APIBurst int `env:"SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND" validate:"gte=0"`
-	// APIPerMinute caps /api and /mcp per Workspace per minute, stacked on APIBurst.
+	// Requests per minute per Workspace on `/api` and `/mcp`, stacked on the burst limit.
 	APIPerMinute int `env:"SPHERICON_RATE_LIMIT_API_PER_MINUTE" validate:"gte=0"`
-	// FailedAuth caps failed credential checks (bearer token, collect key) per
-	// client IP per minute; successful ones are not counted.
+	// Failed credential checks (bearer token, collect key) per minute per client IP; successful
+	// ones are not counted.
 	FailedAuth int `env:"SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE" validate:"gte=0"`
-	// Tracking caps how many opens and clicks one client IP may have recorded per
-	// minute. It never refuses a recipient: over it the event is not recorded.
+	// Opens and clicks recorded per minute per client IP. It never refuses a recipient: over it the
+	// redirect or pixel is still served and the event is not recorded.
 	Tracking int `env:"SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE" validate:"gte=0"`
-	// LoginFailures is how many failed logins one account may have within 15 minutes
-	// before login answers 429 with an exponentially growing delay (no lockout).
+	// Failed logins one account may have within 15 minutes before login answers `429` with an
+	// exponentially growing delay, even for a correct password (no lockout).
 	LoginFailures int `env:"SPHERICON_RATE_LIMIT_LOGIN_FAILURES" validate:"gte=0"`
-	// LoginIP caps login requests per client IP per minute.
+	// Login requests per minute per client IP.
 	LoginIP int `env:"SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE" validate:"gte=0"`
-	// Collect caps /collect per Workspace per minute (a budget of its own, apart
-	// from /api and /mcp).
+	// Requests per minute per Workspace on `/collect`, a budget of its own apart from `/api` and
+	// `/mcp`.
 	Collect int `env:"SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE" validate:"gte=0"`
-	// CollectIP caps /collect per client IP per minute.
+	// Requests per minute per client IP on `/collect`.
 	CollectIP int `env:"SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE" validate:"gte=0"`
-	// ServicePerMinute caps the internal listener's service endpoints per Service
-	// credential per minute.
+	// Requests per minute per Service credential on the internal listener's service endpoints.
 	ServicePerMinute int `env:"SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE" validate:"gte=0"`
-	// ForgotAddress is how many mails one address may be sent per hour by each of
-	// forgot-password, registration and an email-change request (ADR 0031). Over it
-	// the request is still answered 202 and nothing is sent.
+	// Mails one address may be sent per hour by each of forgot-password, registration and an
+	// email-change request (ADR 0031). Over it the request is still answered `202` and nothing is
+	// sent, so the answer never tells whether the address has an account.
 	ForgotAddress int `env:"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR" validate:"gte=0"`
-	// ForgotIP caps forgot-password requests per client IP per hour (429 over it).
+	// Forgot-password requests per client IP per hour; over it `429`.
 	ForgotIP int `env:"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR" validate:"gte=0"`
 }
 
@@ -100,7 +101,6 @@ const telemetrySchemaURL = "https://getsphericon.com/docs/operations/telemetry-s
 type Config struct {
 	DatabaseURL    string
 	Port           string
-	CollectSiteKey string
 	BootstrapToken string
 	CORSOrigins    []string
 	JWTSecret      string
@@ -121,7 +121,6 @@ type Config struct {
 	SMTPPort      int
 	SMTPUser      string
 	SMTPPass      string
-	SMTPFrom      string
 	EncryptionKey string
 	// LicenseKey is the offline EE license key (ADR 0014). Empty runs the plain core.
 	LicenseKey string
@@ -310,95 +309,238 @@ type Config struct {
 // the environment name and the rules each value must hold on its own (`validate`, checked by
 // validateEnvironment). Those that do (the rate limits, the log format,
 // SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS) are set by profileDefaults before the variables are read.
+//
+// Each field's doc comment is the variable's description in the configuration reference
+// (docs/configuration.md, `mise run generate`), written for the operator who sets it: a field
+// without one fails the generation.
 type environment struct {
+	// The PostgreSQL connection string, such as `postgres://user:pass@host:5432/db?sslmode=require`;
+	// `sslmode=verify-full` with `sslrootcert` also verifies the server's certificate. The job queue
+	// LISTENs for new jobs on a session of its own: behind PgBouncer, it must reach Postgres directly
+	// or a pool in session mode, never transaction mode.
 	DatabaseURL string `env:"DATABASE_URL,required,notEmpty"`
-	Port        string `env:"PORT" envDefault:"3000"`
-	AppURL      string `env:"SPHERICON_APP_URL" envDefault:"http://localhost:3000"`
-	MCPURL      string `env:"SPHERICON_MCP_URL"`
-	TrackerURL  string `env:"SPHERICON_TRACKER_URL"`
+	// The port the public HTTP server listens on, on every interface.
+	Port string `env:"PORT" envDefault:"3000"`
+	// The public origin of the Instance, `https://` in production: sessions, mailed links and
+	// tracking and unsubscribe links are built on it, an `https://` origin makes the session cookie
+	// Secure, and its host is the Passkey relying party id (ADR 0052), so changing the host
+	// invalidates every registered Passkey. An Instance served on an IP address cannot use Passkeys.
+	AppURL string `env:"SPHERICON_APP_URL" envDefault:"http://localhost:3000"`
+	// The public origin of a dedicated MCP host, such as `https://mcp.example.com`: the MCP resource
+	// is then served there while the OAuth issuer and consent screen stay on `SPHERICON_APP_URL`.
+	// Empty serves MCP on `SPHERICON_APP_URL`.
+	MCPURL string `env:"SPHERICON_MCP_URL"`
+	// The public origin the tracker snippet loads `/t.js` from and posts `/collect` to, such as
+	// `https://t.example.com`, when the tracker has a host of its own routed to the same Instance.
+	// Empty uses `SPHERICON_APP_URL`.
+	TrackerURL string `env:"SPHERICON_TRACKER_URL"`
 
-	CollectSiteKey     string        `env:"SPHERICON_COLLECT_SITE_KEY"`
-	BootstrapToken     string        `env:"SPHERICON_BOOTSTRAP_TOKEN"`
-	CORSOrigins        string        `env:"SPHERICON_CORS_ORIGINS"`
-	JWTSecret          string        `env:"SPHERICON_JWT_SECRET"`
-	JWTSecretSecondary string        `env:"SPHERICON_JWT_SECRET_SECONDARY"`
-	SessionTTL         time.Duration `env:"SPHERICON_SESSION_TTL" envDefault:"24h" validate:"gt=0"`
-	EncryptionKey      string        `env:"SPHERICON_ENCRYPTION_KEY"`
-	LicenseKey         string        `env:"SPHERICON_LICENSE_KEY"`
+	// The token the external API's bootstrap operation takes in `X-Bootstrap-Token` to mint an API
+	// token of the oldest Workspace without a caller token. Empty refuses every bootstrap.
+	BootstrapToken string `env:"SPHERICON_BOOTSTRAP_TOKEN"`
+	// Comma- or space-separated origins allowed credentialed CORS on the cookie-authenticated
+	// surfaces (`/site`, `/staff`). Empty is same-origin only, which the bundled app needs; the
+	// bearer-token surfaces answer any origin without credentials either way.
+	CORSOrigins string `env:"SPHERICON_CORS_ORIGINS"`
+	// Signs sessions and mailed links. Outside development and test the start is refused when it is
+	// empty, shorter than 32 characters or a documented placeholder; generate one with
+	// `openssl rand -hex 32`.
+	JWTSecret string `env:"SPHERICON_JWT_SECRET"`
+	// The second secret of a JWT secret rotation: accepted when a session or a mailed link is
+	// verified, never used to sign. It must differ from `SPHERICON_JWT_SECRET` and, outside
+	// development and test, holds the same rules. Empty outside a rotation.
+	JWTSecretSecondary string `env:"SPHERICON_JWT_SECRET_SECONDARY"`
+	// The lifetime of a site session, a Go duration such as `12h`: both the token's expiry and the
+	// cookie's, with no refresh (ADR 0020).
+	SessionTTL time.Duration `env:"SPHERICON_SESSION_TTL" envDefault:"24h" validate:"gt=0"`
+	// The base64 Tink keyset that encrypts stored provider credentials; the server does not start
+	// without one. Generate it with `sphericon genkey`.
+	EncryptionKey string `env:"SPHERICON_ENCRYPTION_KEY"`
+	// The Enterprise Edition license key (ADR 0014), a JWT signed with Ed25519. Empty runs the open
+	// core. An expired key also runs the open core and logs a warning (ADR 0035); a malformed key or
+	// one whose signature does not verify stops the start.
+	LicenseKey string `env:"SPHERICON_LICENSE_KEY"`
 
+	// The host of the SMTP relay the Instance's own mail goes through when
+	// `SPHERICON_SYSTEM_EMAIL_PROVIDER` is `smtp`. Empty leaves the Instance without outbound mail.
 	SMTPHost string `env:"SPHERICON_SMTP_HOST"`
-	SMTPPort int    `env:"SPHERICON_SMTP_PORT" envDefault:"1025"`
+	// The port of the SMTP relay.
+	SMTPPort int `env:"SPHERICON_SMTP_PORT" envDefault:"1025"`
+	// The user the SMTP relay is authenticated as; empty sends without authentication.
 	SMTPUser string `env:"SPHERICON_SMTP_USER"`
+	// The password of `SPHERICON_SMTP_USER`.
 	SMTPPass string `env:"SPHERICON_SMTP_PASS"`
-	SMTPFrom string `env:"SPHERICON_SMTP_FROM"`
 
-	AccountLinkURL        string `env:"SPHERICON_ACCOUNT_LINK_URL" validate:"required_with=AccountLinkSigningKey"`
+	// The address of an external account page. With `SPHERICON_ACCOUNT_LINK_SIGNING_KEY`, a
+	// Workspace Owner sees an Account link that opens it with a signed token. The app never calls
+	// this address.
+	AccountLinkURL string `env:"SPHERICON_ACCOUNT_LINK_URL" validate:"required_with=AccountLinkSigningKey"`
+	// The base64 Ed25519 seed that signs the Account link token (`openssl rand -base64 32`). The
+	// matching public key is published at `/.well-known/jwks.json`, so the receiver needs no secret.
 	AccountLinkSigningKey string `env:"SPHERICON_ACCOUNT_LINK_SIGNING_KEY" validate:"required_with=AccountLinkURL"`
 
-	StaffJWTSecret     string        `env:"SPHERICON_STAFF_JWT_SECRET"`
-	StaffSessionTTL    time.Duration `env:"SPHERICON_STAFF_SESSION_TTL" envDefault:"4h" validate:"gt=0"`
+	// Signs the Staff member session and login challenge (ADR 0026, ADR 0063). Empty turns the Staff
+	// sign-in off; set, it must differ from `SPHERICON_JWT_SECRET`. The `staff` license feature and
+	// `SPHERICON_MODE=saas` require it. Generate one with `openssl rand -hex 32`.
+	StaffJWTSecret string `env:"SPHERICON_STAFF_JWT_SECRET"`
+	// The lifetime of a Staff member session, a Go duration: no refresh and no "remember me".
+	StaffSessionTTL time.Duration `env:"SPHERICON_STAFF_SESSION_TTL" envDefault:"4h" validate:"gt=0"`
+	// How far ahead a service may set a Staff hold's expiry, a Go duration; a later expiry is
+	// refused.
 	StaffHoldMaxExpiry time.Duration `env:"SPHERICON_STAFF_HOLD_MAX_EXPIRY" envDefault:"720h" validate:"gt=0"`
 
-	AbuseVolumeFloor            int     `env:"SPHERICON_ABUSE_VOLUME_FLOOR" envDefault:"1000" validate:"gt=0"`
-	AbuseWarnComplaintPercent   float64 `env:"SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT" envDefault:"0.1" validate:"gt=0,ltfield=AbuseFreezeComplaintPercent"`
-	AbuseWarnBouncePercent      float64 `env:"SPHERICON_ABUSE_WARN_BOUNCE_PERCENT" envDefault:"5" validate:"gt=0,ltfield=AbuseFreezeBouncePercent"`
+	// The fewest sends in the trailing 24 hours, per Sending domain, for the abuse detector (`staff`
+	// license, ADR 0026) to judge its rates; below it nothing is warned or frozen.
+	AbuseVolumeFloor int `env:"SPHERICON_ABUSE_VOLUME_FLOOR" envDefault:"1000" validate:"gt=0"`
+	// The complaint rate, in percent, at which the abuse detector warns the Workspace's Owners by
+	// email, freezing nothing.
+	AbuseWarnComplaintPercent float64 `env:"SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT" envDefault:"0.1" validate:"gt=0,ltfield=AbuseFreezeComplaintPercent"`
+	// The bounce rate, in percent, at which the abuse detector warns the Workspace's Owners.
+	AbuseWarnBouncePercent float64 `env:"SPHERICON_ABUSE_WARN_BOUNCE_PERCENT" envDefault:"5" validate:"gt=0,ltfield=AbuseFreezeBouncePercent"`
+	// The complaint rate, in percent, at which the abuse detector suspends the whole Workspace and
+	// tells its Owners.
 	AbuseFreezeComplaintPercent float64 `env:"SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT" envDefault:"0.3" validate:"lte=100"`
-	AbuseFreezeBouncePercent    float64 `env:"SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT" envDefault:"10" validate:"lte=100"`
+	// The bounce rate, in percent, at which the abuse detector suspends the whole Workspace.
+	AbuseFreezeBouncePercent float64 `env:"SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT" envDefault:"10" validate:"lte=100"`
 
+	// The support address shown to a Workspace's Owners with a suspension (banner and notice email),
+	// where they appeal. Empty shows none.
 	SupportEmail string `env:"SPHERICON_SUPPORT_EMAIL"`
-	AutoMigrate  bool   `env:"SPHERICON_DB_AUTO_MIGRATE"`
+	// Applies the embedded migrations at start, convenient for a single replica.
+	AutoMigrate bool `env:"SPHERICON_DB_AUTO_MIGRATE"`
 
+	// With `SPHERICON_DB_AUTO_MIGRATE` on, the longest a start waits for the migration lock and
+	// the run before it fails, a Go duration; `0` is no limit. `sphericon migrate` has no limit.
 	MigrateTimeout time.Duration `env:"SPHERICON_DB_MIGRATE_TIMEOUT" envDefault:"10m"`
 
-	MaxBodyBytes         int64 `env:"SPHERICON_MAX_BODY_BYTES" envDefault:"1048576" validate:"gt=0"`
-	CollectMaxBodyBytes  int64 `env:"SPHERICON_COLLECT_MAX_BODY_BYTES" envDefault:"512000" validate:"gt=0"`
+	// The largest request body, in bytes, accepted on every surface but `/collect`; a larger one is
+	// answered `413`.
+	MaxBodyBytes int64 `env:"SPHERICON_MAX_BODY_BYTES" envDefault:"1048576" validate:"gt=0"`
+	// The largest `/collect` batch (`POST /collect/events`), in bytes; a larger one is answered `413`.
+	CollectMaxBodyBytes int64 `env:"SPHERICON_COLLECT_MAX_BODY_BYTES" envDefault:"512000" validate:"gt=0"`
+	// The largest single `/collect` event, in bytes: an identify body, or each event of a batch; a
+	// larger one is answered `413`.
 	CollectMaxEventBytes int64 `env:"SPHERICON_COLLECT_MAX_EVENT_BYTES" envDefault:"32768" validate:"gt=0"`
 
-	// RateLimits carry their variables and rules on their own fields.
+	// RateLimits carry their variables, rules and doc comments on their own fields.
 	RateLimits RateLimits
 
-	OutboxFloorDays             int `env:"SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS" envDefault:"7" validate:"gte=0"`
-	EventsRetentionDays         int `env:"SPHERICON_EVENTS_RETENTION_DAYS" envDefault:"400" validate:"gte=0"`
+	// The minimum age, in days, of a domain-event outbox row every consumer has processed before
+	// the prune job, which runs every 10 minutes, may delete it (ADR 0019).
+	OutboxFloorDays int `env:"SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS" envDefault:"7" validate:"gte=0"`
+	// The age, in days, past which analytical Events are deleted by a daily job; `0` disables it
+	// (ADR 0019). Evidentiary Events (`marketing.confirmed`, `email.complained`,
+	// `email.unsubscribed`, a permanent `email.bounced`) are never deleted by age.
+	EventsRetentionDays int `env:"SPHERICON_EVENTS_RETENTION_DAYS" envDefault:"400" validate:"gte=0"`
+	// The age, in days, past which an Unverified User with no Membership is deleted by a daily job,
+	// freeing the address; `0` disables it (ADR 0030).
 	UnverifiedUserRetentionDays int `env:"SPHERICON_UNVERIFIED_USER_RETENTION_DAYS" envDefault:"7" validate:"gte=0"`
-	EventLiveWindowHours        int `env:"SPHERICON_EVENT_LIVE_WINDOW_HOURS" envDefault:"72" validate:"gte=1"`
-	TestInboxRetentionDays      int `env:"SPHERICON_TEST_INBOX_RETENTION_DAYS" envDefault:"7" validate:"gte=1"`
-	TestInboxMaxMessages        int `env:"SPHERICON_TEST_INBOX_MAX_MESSAGES" envDefault:"200" validate:"gte=1"`
+	// The age, in hours, past which the external API refuses a live Event as history that belongs
+	// in a Backfill. A Backfill and `/collect` are not limited.
+	EventLiveWindowHours int `env:"SPHERICON_EVENT_LIVE_WINDOW_HOURS" envDefault:"72" validate:"gte=1"`
+	// How many days a Test inbox keeps a Captured message (ADR 0058).
+	TestInboxRetentionDays int `env:"SPHERICON_TEST_INBOX_RETENTION_DAYS" envDefault:"7" validate:"gte=1"`
+	// How many Captured messages a Workspace's Test inbox keeps, the newest ones (ADR 0058).
+	TestInboxMaxMessages int `env:"SPHERICON_TEST_INBOX_MAX_MESSAGES" envDefault:"200" validate:"gte=1"`
 
-	DBMaxOpenConns    int           `env:"SPHERICON_DB_MAX_OPEN_CONNS" envDefault:"15" validate:"gt=0"`
-	DBMaxIdleConns    *int          `env:"SPHERICON_DB_MAX_IDLE_CONNS" validate:"omitnil,gte=0,ltefield=DBMaxOpenConns"`
+	// The most open connections of one replica's `database/sql` pool (ent, the event bus, job
+	// workers). The defaults fit two replicas under Postgres' `max_connections=100`.
+	DBMaxOpenConns int `env:"SPHERICON_DB_MAX_OPEN_CONNS" envDefault:"15" validate:"gt=0"`
+	// The most idle connections that pool keeps. Empty is `SPHERICON_DB_MAX_OPEN_CONNS`.
+	DBMaxIdleConns *int `env:"SPHERICON_DB_MAX_IDLE_CONNS" validate:"omitnil,gte=0,ltefield=DBMaxOpenConns"`
+	// The longest a pooled connection lives, a Go duration.
 	DBConnMaxLifetime time.Duration `env:"SPHERICON_DB_CONN_MAX_LIFETIME" envDefault:"30m" validate:"gt=0"`
-	RiverMaxConns     int32         `env:"SPHERICON_RIVER_DB_MAX_CONNS" envDefault:"25" validate:"gt=0"`
+	// The most connections of the job queue's own pool (fetch, completion, leader election), plus
+	// one LISTEN connection outside it. Job workers use the `database/sql` pool, so it need not
+	// match their number.
+	RiverMaxConns int32 `env:"SPHERICON_RIVER_DB_MAX_CONNS" envDefault:"25" validate:"gt=0"`
 
-	SMTPAllowPrivateHosts bool   `env:"SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS"`
-	OutboundAllow         string `env:"SPHERICON_OUTBOUND_ALLOW"`
-	Locale                string `env:"SPHERICON_APP_LOCALE" envDefault:"en"`
-	DoNotTrack            string `env:"DO_NOT_TRACK"`
-	Mode                  string `env:"SPHERICON_MODE"`
-	SentryDSN             string `env:"SPHERICON_SENTRY_DSN"`
+	// Lets a Workspace's SMTP Integration reach a loopback or private host on any port. Off, it may
+	// only reach a public host on port 25, 465, 587 or 2525. The Instance's own
+	// `SPHERICON_SMTP_HOST` is exempt.
+	SMTPAllowPrivateHosts bool `env:"SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS"`
+	// Comma-separated `host:port` pairs (a name or an IP address, one port each, no wildcards) that
+	// an outbound call to a third-party URL, such as a Webhook endpoint delivery, may reach although
+	// the address is private or loopback, such as `n8n:5678` (ADR 0039). Redirects are still never
+	// followed; a malformed value stops the start. Leave it empty on a multi-tenant host.
+	OutboundAllow string `env:"SPHERICON_OUTBOUND_ALLOW"`
+	// The Instance's language for the UI and its own mail. `en` is the only one; any other value
+	// becomes `en`.
+	Locale string `env:"SPHERICON_APP_LOCALE" envDefault:"en"`
+	// `1` switches the Telemetry report off and locks the Owner's setting; it never switches the
+	// report on (ADR 0032).
+	DoNotTrack string `env:"DO_NOT_TRACK"`
+	// The kind of deployment, `selfhosted` or `saas` (ADR 0060): it alone decides the Release check,
+	// the Telemetry report, the email verification gate and the Sign-up survey. `saas` also requires
+	// `SPHERICON_STAFF_JWT_SECRET`, `SPHERICON_INTERNAL_ADDR`, `SPHERICON_TRACKING_CNAME_TARGET`
+	// and a system email provider. Any other value stops the start.
+	Mode string `env:"SPHERICON_MODE" envDefault:"selfhosted"`
+	// The Sentry-compatible DSN the browser app reports its errors to, handed to the page when it is
+	// served. Empty leaves the browser reporting off.
+	SentryDSN string `env:"SPHERICON_SENTRY_DSN"`
 
-	SigninGoogleClientID     string `env:"SPHERICON_SIGNIN_GOOGLE_CLIENT_ID"`
+	// The OAuth client id of the Instance's Google Cloud app: with its secret, enables "Continue with
+	// Google" (ADR 0048). Register `<SPHERICON_APP_URL>/site/auth/signin/google/callback` as its
+	// redirect URI. One of the pair without the other stops the start.
+	SigninGoogleClientID string `env:"SPHERICON_SIGNIN_GOOGLE_CLIENT_ID"`
+	// The OAuth client secret that goes with `SPHERICON_SIGNIN_GOOGLE_CLIENT_ID`.
 	SigninGoogleClientSecret string `env:"SPHERICON_SIGNIN_GOOGLE_CLIENT_SECRET"`
-	SigninGitHubClientID     string `env:"SPHERICON_SIGNIN_GITHUB_CLIENT_ID"`
+	// The OAuth client id of the Instance's GitHub OAuth app: with its secret, enables "Continue with
+	// GitHub" (ADR 0048). Set `<SPHERICON_APP_URL>/site/auth/signin/github/callback` as its
+	// callback URL. One of the pair without the other stops the start.
+	SigninGitHubClientID string `env:"SPHERICON_SIGNIN_GITHUB_CLIENT_ID"`
+	// The OAuth client secret that goes with `SPHERICON_SIGNIN_GITHUB_CLIENT_ID`.
 	SigninGitHubClientSecret string `env:"SPHERICON_SIGNIN_GITHUB_CLIENT_SECRET"`
 
-	LogLevel        string `env:"SPHERICON_LOG_LEVEL" envDefault:"info"`
-	LogFormat       string `env:"SPHERICON_LOG_FORMAT"`
+	// The log level: `debug`, `info`, `warn` or `error`; anything else is `info`.
+	LogLevel string `env:"SPHERICON_LOG_LEVEL" envDefault:"info"`
+	// The log format: `json`, or `text` for coloured human-readable lines.
+	LogFormat string `env:"SPHERICON_LOG_FORMAT"`
+	// The `service.name` reported on OpenTelemetry traces and metrics.
 	OtelServiceName string `env:"OTEL_SERVICE_NAME" envDefault:"sphericon"`
-	MetricsAddr     string `env:"SPHERICON_METRICS_ADDR"`
-	DNSAddr         string `env:"SPHERICON_DNS_ADDR"`
-	InternalAddr    string `env:"SPHERICON_INTERNAL_ADDR"`
-	PresetsDir      string `env:"SPHERICON_PRESETS_DIR"`
+	// The `host:port` of the opt-in Prometheus listener. Empty runs none; the public port never
+	// serves `/metrics` (ADR 0025). It must differ from `PORT`.
+	MetricsAddr string `env:"SPHERICON_METRICS_ADDR"`
+	// The `host:port` of a DNS server that verifies Sending domains and Join domains instead of the
+	// host's resolver, for a development stack that publishes its own records. Leave it empty in
+	// production.
+	DNSAddr string `env:"SPHERICON_DNS_ADDR"`
+	// The `host:port` of the opt-in internal listener: the edge's on-demand TLS `ask` and, with the
+	// `staff` license, the service endpoints of the Staff surface (ADR 0026, ADR 0038). Empty runs
+	// none. It must differ from `PORT` and `SPHERICON_METRICS_ADDR`.
+	InternalAddr string `env:"SPHERICON_INTERNAL_ADDR"`
+	// A directory of custom Presets (ADR 0037): every `*.yaml` and `*.yml` file at its root loads
+	// beside the built-in ones at start, and a file that does not load, or reuses a built-in name,
+	// stops the start. Empty loads only the built-in Presets.
+	PresetsDir string `env:"SPHERICON_PRESETS_DIR"`
 
+	// The edge host a Sending domain's Tracking domain CNAME (`track.<domain>`) must point at, such
+	// as `edge.example.com` (ADR 0038). Empty turns Tracking domains off: no record is shown or
+	// checked.
 	TrackingCNAMETarget string `env:"SPHERICON_TRACKING_CNAME_TARGET"`
-	TrackingHostHeader  string `env:"SPHERICON_TRACKING_HOST_HEADER"`
-	TrackingEdgeCIDRs   string `env:"SPHERICON_TRACKING_EDGE_CIDRS" envDefault:"127.0.0.0/8,::1/128"`
+	// The request header the edge sets to the customer's host, such as `X-Forwarded-Host` (ADR
+	// 0038), believed only from a peer inside `SPHERICON_TRACKING_EDGE_CIDRS`. Empty uses the
+	// connection's `Host`. Have the proxy of the Instance's own host drop this header.
+	TrackingHostHeader string `env:"SPHERICON_TRACKING_HOST_HEADER"`
+	// Comma- or space-separated CIDRs the edge connects from: the only peers whose
+	// `SPHERICON_TRACKING_HOST_HEADER` is believed. A proxy on another machine must be listed.
+	TrackingEdgeCIDRs string `env:"SPHERICON_TRACKING_EDGE_CIDRS" envDefault:"127.0.0.0/8,::1/128"`
 
+	// The provider of the Instance's own mail (verification, password reset, invitations): `smtp`,
+	// through `SPHERICON_SMTP_HOST`, or `ses`, through the `SPHERICON_SES_*` credentials.
 	SystemEmailProvider string `env:"SPHERICON_SYSTEM_EMAIL_PROVIDER" envDefault:"smtp"`
-	SystemEmailFrom     string `env:"SPHERICON_SYSTEM_EMAIL_FROM" envDefault:"noreply@sphericon.localhost"`
-	SystemEmailReplyTo  string `env:"SPHERICON_SYSTEM_EMAIL_REPLY_TO"`
-	SESRegion           string `env:"SPHERICON_SES_REGION"`
-	SESAccessKeyID      string `env:"SPHERICON_SES_ACCESS_KEY_ID"`
-	SESSecretAccessKey  string `env:"SPHERICON_SES_SECRET_ACCESS_KEY"`
+	// The From of the Instance's own mail: a bare address or `Name <noreply@example.com>`. An
+	// invalid value stops the start.
+	SystemEmailFrom string `env:"SPHERICON_SYSTEM_EMAIL_FROM" envDefault:"noreply@sphericon.localhost"`
+	// One bare address, such as `replies@example.com`, put in the `Reply-To` of the Instance's own
+	// mail. Empty sets no header; an invalid value stops the start.
+	SystemEmailReplyTo string `env:"SPHERICON_SYSTEM_EMAIL_REPLY_TO"`
+	// The region of the SES-compatible service of the `ses` provider.
+	SESRegion string `env:"SPHERICON_SES_REGION"`
+	// The access key id of the SES-compatible service of the `ses` provider.
+	SESAccessKeyID string `env:"SPHERICON_SES_ACCESS_KEY_ID"`
+	// The secret access key of the SES-compatible service of the `ses` provider.
+	SESSecretAccessKey string `env:"SPHERICON_SES_SECRET_ACCESS_KEY"`
 }
 
 // loadVars reads the variables of the process: the env files, then the environment over
@@ -526,7 +668,6 @@ func Load(envName string) (*Config, error) {
 	cfg := &Config{
 		DatabaseURL:        e.DatabaseURL,
 		Port:               e.Port,
-		CollectSiteKey:     e.CollectSiteKey,
 		BootstrapToken:     e.BootstrapToken,
 		CORSOrigins:        strings.FieldsFunc(e.CORSOrigins, func(r rune) bool { return r == ',' || unicode.IsSpace(r) }),
 		JWTSecret:          e.JWTSecret,
@@ -539,7 +680,6 @@ func Load(envName string) (*Config, error) {
 		SMTPPort:           e.SMTPPort,
 		SMTPUser:           e.SMTPUser,
 		SMTPPass:           e.SMTPPass,
-		SMTPFrom:           e.SMTPFrom,
 		EncryptionKey:      e.EncryptionKey,
 		LicenseKey:         e.LicenseKey,
 

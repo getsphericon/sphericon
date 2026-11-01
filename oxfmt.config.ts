@@ -11,6 +11,7 @@ export default defineConfig({
   ignorePatterns: [
     'dist',
     'CHANGELOG.md',
+    'docs/configuration.md',
     'src/generated',
     'src/routeTree.gen.ts',
     'internal/contractcopy/testdata',

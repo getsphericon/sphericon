@@ -18,5 +18,6 @@ src/routeTree.gen.ts                 linguist-generated=true
 packages/analytics/src/generated/**  linguist-generated=true
 packages/node/src/generated/**       linguist-generated=true
 internal/emaildoc/assets/**               linguist-generated=true
+docs/configuration.md                linguist-generated=true
 **/*_gen.go                          linguist-generated=true
 **/*_gen_test.go                     linguist-generated=true

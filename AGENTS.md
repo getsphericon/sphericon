@@ -63,7 +63,7 @@ mise run check          # tsc + oxlint + oxfmt --check + knip + golangci-lint wi
 mise run test:cover     # Go suite with coverage, fails under the total in .testcoverage.yml (nightly in CI)
 mise run check:vulns    # govulncheck (nightly in CI, not part of `check`)
 mise run fix            # i18n extract + oxlint --fix + tsp format + oxfmt + go fmt
-mise run generate       # typespec -> openapi -> backend -> frontend -> i18n types -> format
+mise run generate       # typespec -> openapi -> backend -> configuration reference -> frontend -> i18n types -> format
 ```
 
 Run Go tests only through `mise run test`: it sets `SPHERICON_ENV=test` and the test DB, and a bare
@@ -126,10 +126,13 @@ The rest of this file is for maintainers and the agents they run: how work lands
   commitlint runs on every commit; the header fits 120 characters and each body line 100.
   **Never create a merge commit** (`chore: merge origin/main` and the like): history stays linear.
   Bring `main` in with `git fetch origin && git rebase origin/main`, never `git merge`.
-- A new environment variable is documented in the configuration reference of the documentation site
-  repository (`getsphericon/getsphericon.github.io`, served at
-  https://getsphericon.com/docs/configuration); no automated check enforces it, and the README
-  links to the page. All public documentation lives in that repository, not here.
+- The configuration reference is generated: `mise run generate` writes `docs/configuration.md` from
+  the `environment` struct of `config/` (each variable's tags, the profile defaults and its field's doc
+  comment, which a new variable must have). The documentation site repository
+  (`getsphericon/getsphericon.github.io`, served at https://getsphericon.com/docs/configuration)
+  copies the file by hand to `src/content/docs/docs/configuration.md`: after changing a variable,
+  copy it there too. The README links to the page; all other public documentation lives in that
+  repository, not here.
 - **Agent guidance lives in this file, not in personal agent memory.** The repo has several
   developers: a rule an agent should follow goes here (or in `docs/`), never into one person's
   memory. Auto memory is off for this project (`autoMemoryEnabled: false` in
