@@ -52,8 +52,9 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   through a package function that does) or be registered in the converter (`goverter:extend`, or named in
   a `goverter:map ... | helper` line). Add the mapping to the surface's `Converter` instead; test files are not checked.
   The input direction is checked too: a struct literal of a module input (a struct named `...Input` of a package
-  under `internal/`) in the `/site` or `/api` handler package is a finding. Add a method to the surface's `Inputs`
-  (`resources/inputs.go`) and call it; a field the request does not carry (the actor) is a `goverter:ignore` with
+  under `internal/`) in a handler package (`/site`, `/api`, `/staff`, and in `ee/staff` the methods of its handler
+  types) is a finding. Add a method to the surface's `Inputs` (`resources/inputs.go`; `ServiceInputs` for the service
+  API) and call it; a field the request does not carry (the actor) is a `goverter:ignore` with
   its reason, assigned by the handler after the call, and a value of the request outside the mapped part (a
   batch's flag on each of its Events) is a `goverter:context` argument.
 - **Rule 6, `check:copies` (`cmd/contractcopy`, in `check`).** It reads the generated `openapi/*.openapi.json`
@@ -88,7 +89,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   is `entryPoints` in `tools/analyzers/entrywrite`: the site, external, collect and staff handlers, `internal/mcpserver`, `internal/jobs` and `internal/server`. `ee/staff` holds
   the handlers of the Staff console's Enterprise sections and their domain module in one package, so only the methods of its handler types
   (`Handlers`, `ServiceHandlers`, `SecurityHandler`, `ServiceSecurityHandler`, `Surface`, `ServiceSurface`) are
-  checked and `*Module` is the domain module; a new handler type there is added to `mixedPackages`. The write
+  checked and `*Module` is the domain module; a new handler type there is added to `packages` in `tools/analyzers/mixed`, which `handmapper` reads too. The write
   goes into the domain module that owns the entity (the raw-client packages of `docs/architecture.md`), which the entry
   point calls. The helpers the analyzers share about the generated package are in `tools/analyzers/entx`.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,

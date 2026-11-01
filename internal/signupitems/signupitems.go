@@ -314,8 +314,8 @@ func (m *Module) Get(ctx context.Context, id int64) (Item, error) {
 	return item(row, current[row.ID]), nil
 }
 
-// Update is a change to a Sign-up item; a nil field is left as it is.
-type Update struct {
+// UpdateInput is a change to a Sign-up item; a nil field is left as it is.
+type UpdateInput struct {
 	// Title is a new title: what the form shows at once, not a new version of the document.
 	Title           *string
 	MailingsConsent *bool
@@ -324,7 +324,7 @@ type Update struct {
 // Update changes a Sign-up item. ErrNotFound for an unknown id, ErrTitleBlank for a blank title,
 // ErrMailingsKind, ErrMailingsArchived and ErrMailingsTaken for a mailings consent the item cannot
 // hold.
-func (m *Module) Update(ctx context.Context, id int64, u Update) (Item, error) {
+func (m *Module) Update(ctx context.Context, id int64, u UpdateInput) (Item, error) {
 	row, err := m.ent.SignupItem.Get(ctx, id)
 	if ent.IsNotFound(err) {
 		return Item{}, ErrNotFound

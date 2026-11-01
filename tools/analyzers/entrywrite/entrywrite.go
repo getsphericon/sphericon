@@ -27,6 +27,7 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 
 	"github.com/getsphericon/sphericon/tools/analyzers/entx"
+	"github.com/getsphericon/sphericon/tools/analyzers/mixed"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 )
 
@@ -53,12 +54,6 @@ var surfaces = []string{
 	"internal/api/external",
 	"internal/api/collect",
 	"internal/api/staff",
-}
-
-// mixedPackages hold handlers next to their domain module, by package, with the receiver types that
-// are entry points.
-var mixedPackages = map[string][]string{
-	"ee/staff": {"Handlers", "ServiceHandlers", "SecurityHandler", "ServiceSecurityHandler", "Surface", "ServiceSurface"},
 }
 
 // Analyzer reports ent writes in entry-point packages.
@@ -97,20 +92,9 @@ func startsRead(name, named string) bool {
 		(name == "Workspace" && named == "Scoped")
 }
 
-// handlerReceivers is the set of entry-point receiver types of a mixed package, or nil for a package
-// that is an entry point as a whole.
-func handlerReceivers(path string) (recvs []string, mixed bool) {
-	for pkg, names := range mixedPackages {
-		if isIn(path, pkg) {
-			return names, true
-		}
-	}
-	return nil, false
-}
-
 func run(pass *analysis.Pass) (any, error) {
-	recvs, mixed := handlerReceivers(pass.Pkg.Path())
-	if !mixed && !isEntryPoint(pass.Pkg.Path()) {
+	recvs, isMixed := mixed.Receivers(pass.Pkg.Path())
+	if !isMixed && !isEntryPoint(pass.Pkg.Path()) {
 		return nil, nil
 	}
 	reads := isSurface(pass.Pkg.Path())
@@ -126,7 +110,7 @@ func run(pass *analysis.Pass) (any, error) {
 		if !push || strings.HasSuffix(pass.Fset.Position(call.Pos()).Filename, "_test.go") {
 			return true
 		}
-		if mixed && !slices.Contains(recvs, enclosingReceiver(stack)) {
+		if isMixed && !slices.Contains(recvs, mixed.EnclosingReceiver(stack)) {
 			return true
 		}
 		check(pass, call, reads)
@@ -195,27 +179,4 @@ func chainStartsWrite(e ast.Expr) bool {
 		}
 		e = sel.X
 	}
-}
-
-// enclosingReceiver is the name of the receiver type, without its pointer, of the method that holds
-// the node on top of the stack, or "" outside a method.
-func enclosingReceiver(stack []ast.Node) string {
-	var decl *ast.FuncDecl
-	for _, n := range slices.Backward(stack) {
-		if d, ok := n.(*ast.FuncDecl); ok {
-			decl = d
-			break
-		}
-	}
-	if decl == nil || decl.Recv == nil || len(decl.Recv.List) == 0 {
-		return ""
-	}
-	t := decl.Recv.List[0].Type
-	if star, ok := t.(*ast.StarExpr); ok {
-		t = star.X
-	}
-	if id, ok := t.(*ast.Ident); ok {
-		return id.Name
-	}
-	return ""
 }

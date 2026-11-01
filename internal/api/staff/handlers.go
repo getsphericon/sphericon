@@ -21,7 +21,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
-var mapper = &resources.ConverterImpl{}
+var (
+	mapper = &resources.ConverterImpl{}
+	inputs = &resources.InputsImpl{}
+)
 
 // Surface is the core /staff API: the handlers and the security handler over the Staff member
 // module, for the composition root to mount.

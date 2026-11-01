@@ -16,7 +16,8 @@ src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
 ent + gen/{site,external,staff,staffee,service}  ──goverter (cmd/goverter)──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
-gen/{site,external} request bodies  ──goverter──▶ internal/api/{site,external}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/patch fields)
+gen/{site,external,staff} request bodies  ──goverter──▶ internal/api/{site,external,staff}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/patch fields)
+gen/service request bodies  ──goverter──▶ ee/staff/resources/service_inputs_gen.go  (`ServiceInputs`; no gen/staffee body is a module input)
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
 openapi/service (`x-required-scopes` per operation, from `@requiresServiceScopes`) ──cmd/scopegen──▶ ee/staff/service_scopes_gen.go (`ServiceOperationScopes`)
 openapi/external (`x-required-scopes` per operation, from `@requiresScopes`) ──cmd/scopegen──▶ internal/api/auth/external_scopes_gen.go (`ExternalOperationScopes`)

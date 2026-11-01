@@ -128,9 +128,7 @@ func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceap
 // ServiceHoldsSet sets or renews a hold.
 func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.HoldInput, params serviceapi.ServiceHoldsSetParams) (serviceapi.ServiceHoldsSetRes, error) {
 	id := string(params.WorkspaceId)
-	change, err := h.module.SetHold(ctx, h.bus, CurrentService(ctx), id, params.Key, HoldInput{
-		ReasonCode: req.ReasonCode, Message: req.Message, ActionURL: optNilString(req.ActionUrl), ExpiresAt: time.Time(req.ExpiresAt),
-	})
+	change, err := h.module.SetHold(ctx, h.bus, CurrentService(ctx), id, params.Key, serviceInputs.HoldSet(req))
 	var tooLong *HoldTooLongError
 	switch {
 	case ent.IsNotFound(err):
@@ -161,13 +159,6 @@ func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params servicea
 		return nil, err
 	}
 	return &serviceapi.HoldClearResult{Changed: change.Changed}, nil
-}
-
-func optNilString(o serviceapi.OptNilString) *string {
-	if v, ok := o.Get(); ok {
-		return &v
-	}
-	return nil
 }
 
 func workspaceNotFoundProblem() serviceapi.ProblemDetails {

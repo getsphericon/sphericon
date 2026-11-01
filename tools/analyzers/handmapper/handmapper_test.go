@@ -10,5 +10,6 @@ import (
 
 func TestHandmapper(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), handmapper.Analyzer, "bad", "clean",
-		"example/internal/api/site", "example/internal/api/site/resources", "example/internal/api/external", "example/internal/automations")
+		"example/internal/api/site", "example/internal/api/site/resources", "example/internal/api/external",
+		"example/internal/api/staff", "example/ee/staff", "example/internal/automations")
 }
