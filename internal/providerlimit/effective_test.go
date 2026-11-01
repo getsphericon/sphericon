@@ -71,6 +71,14 @@ func TestEffectiveOfReportsTheAccountStanding(t *testing.T) {
 	assert.True(t, eff.Sandbox)
 }
 
+func TestEffectiveOfWarnsOfNoCeilingExceptOnATestInbox(t *testing.T) {
+	smtp := providerlimit.EffectiveOf(&ent.Integration{Provider: integration.ProviderSMTP})
+	inbox := providerlimit.EffectiveOf(&ent.Integration{Provider: integration.ProviderInbox})
+
+	assert.Equal(t, []providerlimit.Warning{providerlimit.WarningUnlimited}, smtp.Warnings())
+	assert.Empty(t, inbox.Warnings())
+}
+
 func TestStoppedIsTheShutdownAlone(t *testing.T) {
 	stopped, probation := integration.ProviderEnforcementShutdown, integration.ProviderEnforcementProbation
 	assert.True(t, providerlimit.Stopped(&ent.Integration{ProviderEnforcement: &stopped}))
@@ -100,6 +108,7 @@ func TestWarningsListsWhatIsWorthFlaggedInAStableOrder(t *testing.T) {
 	}{
 		{"nothing to flag", providerlimit.Effective{PerSecond: limited}, []providerlimit.Warning{}},
 		{"no ceiling at all", providerlimit.Effective{}, []providerlimit.Warning{providerlimit.WarningUnlimited}},
+		{"no ceiling on a Test inbox", providerlimit.Effective{Inbox: true}, []providerlimit.Warning{}},
 		{"provider quota unreadable", providerlimit.Effective{PerDay: limited, ProviderQuotaUnavailable: true}, []providerlimit.Warning{providerlimit.WarningProviderQuotaUnavailable}},
 		{"both", providerlimit.Effective{ProviderQuotaUnavailable: true}, []providerlimit.Warning{providerlimit.WarningUnlimited, providerlimit.WarningProviderQuotaUnavailable}},
 		{"account stopped", providerlimit.Effective{PerSecond: limited, Enforcement: messaging.EnforcementShutdown}, []providerlimit.Warning{providerlimit.WarningProviderStopped}},

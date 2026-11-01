@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/messaging"
 )
@@ -43,6 +44,10 @@ type Effective struct {
 	// (ADR 0067): a stopped account holds every send, the rest are warnings.
 	Enforcement messaging.Enforcement
 	Sandbox     bool
+
+	// Inbox is set on a Test inbox, which hands its mail to no provider: nothing throttles it, so
+	// having no ceiling is nothing to warn about.
+	Inbox bool
 }
 
 // EffectiveOf computes the ceilings an Integration is held to. It is the one place
@@ -54,6 +59,7 @@ func EffectiveOf(integ *ent.Integration) Effective {
 		ProviderQuotaUnavailable: integ.ProviderQuotaFailedAt != nil,
 		Enforcement:              enforcementOf(integ),
 		Sandbox:                  integ.ProviderSandbox,
+		Inbox:                    integ.Provider == integration.ProviderInbox,
 	}
 }
 
@@ -96,7 +102,7 @@ func (e Effective) Unlimited() bool { return !e.Limits().Any() }
 type Warning string
 
 const (
-	// WarningUnlimited: no ceiling applies, so sends are not paced.
+	// WarningUnlimited: no ceiling applies, so sends are not paced (never on a Test inbox).
 	WarningUnlimited Warning = "unlimited"
 	// WarningProviderQuotaUnavailable: the provider's quota could not be read.
 	WarningProviderQuotaUnavailable Warning = "providerQuotaUnavailable"
@@ -111,7 +117,7 @@ const (
 // Warnings lists what is worth flagging about the ceilings, in a stable order; never nil.
 func (e Effective) Warnings() []Warning {
 	out := []Warning{}
-	if e.Unlimited() {
+	if e.Unlimited() && !e.Inbox {
 		out = append(out, WarningUnlimited)
 	}
 	if e.ProviderQuotaUnavailable {

@@ -337,6 +337,45 @@ test('warns when an Integration has no Provider limit', async () => {
   await expect.element(screen.getByText('Per second: Unlimited')).toBeInTheDocument()
 })
 
+test('warns once about all the Integrations that share a warning', async () => {
+  const backup: SiteIntegrationResource = {
+    ...smtp,
+    id: '2',
+    name: 'Backup SMTP',
+    isDefault: false,
+  }
+  worker.use(list([smtp, backup]))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await expect
+    .element(screen.getByText('Primary SMTP and Backup SMTP have no Provider limit'))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByText('Without a limit, mail is not paced', { exact: false }))
+    .toBeInTheDocument()
+  expect(
+    screen.getByText('Without a limit, mail is not paced', { exact: false }).all(),
+  ).toHaveLength(1)
+  expect(screen.getByText('No limit', { exact: true }).all()).toHaveLength(2)
+})
+
+test('puts a stopped account above the other warnings', async () => {
+  const stopped: SiteIntegrationResource = {
+    ...limited,
+    id: '3',
+    name: 'Amazon SES',
+    providerLimit: { ...limited.providerLimit, warnings: ['providerStopped'] },
+  }
+  worker.use(list([smtp, stopped]))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  const titles = screen.getByText(/the provider has stopped this account|has no Provider limit/)
+  await expect
+    .element(titles.first())
+    .toHaveTextContent('Amazon SES: the provider has stopped this account')
+  await expect.element(titles.nth(1)).toHaveTextContent('Primary SMTP has no Provider limit')
+})
+
 test('warns when the provider send quota could not be read', async () => {
   const ses: SiteIntegrationResource = {
     ...limited,
