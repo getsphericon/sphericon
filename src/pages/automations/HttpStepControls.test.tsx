@@ -8,6 +8,7 @@ import {
   handleSiteContactsList,
 } from '../../generated/site/msw.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -153,4 +154,56 @@ test('a dry run shows why the body is refused', async () => {
 
   await expect.element(screen.getByText('The body is not valid')).toBeInTheDocument()
   await expect.element(screen.getByText('the body is not valid JSON')).toBeInTheDocument()
+})
+
+test('the body is edited as text', async () => {
+  let latest: StepData = { stepId: '', headers: '[]', body: '' }
+  worker.use(contacts)
+  const { screen } = await renderWithRouter(
+    <StepField
+      field="body"
+      data={latest}
+      onChange={(next) => {
+        latest = next
+      }}
+    />,
+    EDIT_ROUTE,
+  )
+
+  await screen.getByRole('textbox', { name: 'Body' }).fill('{"a":1}')
+
+  await expect.poll(() => latest.body).toBe('{"a":1}')
+})
+
+test('a contact without an email is offered by its id, and a failed dry run says so', async () => {
+  worker.use(
+    handleSiteContactsList({
+      body: {
+        items: [
+          {
+            id: '12',
+            tags: [],
+            createdAt: '2026-01-01T00:00:00Z',
+            updatedAt: '2026-01-01T00:00:00Z',
+          },
+        ],
+        page: 1,
+        pageSize: 50,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    }),
+    handleSiteAutomationsDryRunHttpStep(() => problem(500, { detail: 'renderer down' })),
+  )
+  const { screen } = await renderWithRouter(
+    <StepField field="body" data={{ stepId: '', headers: '[]', body: '{}' }} />,
+    EDIT_ROUTE,
+  )
+
+  await screen.getByRole('combobox', { name: 'Render for contact' }).click()
+  await screen.getByRole('option', { name: '12' }).click()
+  await screen.getByRole('button', { name: 'Dry run' }).click()
+
+  await expect.element(screen.getByText('Dry run failed')).toBeInTheDocument()
+  await expect.element(screen.getByText('renderer down')).toBeInTheDocument()
 })
