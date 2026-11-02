@@ -70,8 +70,8 @@ func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTP
 	}
 	s := w.ent.Scoped(f.WorkspaceID)
 	decision, err := w.mod.ExecuteHTTP(ctx, s, f.ID, job.Args.Index, httpcall.Attempt{
-		Number: job.Attempt, Limit: job.MaxAttempts, CreatedAt: job.CreatedAt, Now: w.now(),
-	}, w.client)
+		Number: job.Attempt, Limit: job.MaxAttempts, CreatedAt: job.CreatedAt,
+	}, w.client, w.now)
 	if err != nil {
 		return err
 	}

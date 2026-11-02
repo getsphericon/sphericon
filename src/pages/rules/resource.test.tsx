@@ -28,6 +28,8 @@ import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { RuleCreatePage, RuleEditPage } from './resource.tsx'
 
+const REFRESH_RULE = 'Refresh rule'
+
 const CONDITION: SiteConditionGroup = {
   kind: 'group',
   combinator: 'and',
@@ -83,7 +85,7 @@ function RefetchRule() {
           void query.refetch()
         }}
       >
-        {'Refresh rule'}
+        {REFRESH_RULE}
       </button>
       <output>{query.data?.name}</output>
     </>
@@ -316,7 +318,7 @@ test('a background refetch preserves unfinished structured edits and their dirty
   await expect.element(screen.getByLabelText('Tag')).toHaveValue('new')
   await screen.getByLabelText('Tag').fill('unfinished')
   latest = { ...STORED, name: 'Refetched name' }
-  await screen.getByRole('button', { name: 'Refresh rule' }).click()
+  await screen.getByRole('button', { name: REFRESH_RULE }).click()
 
   await expect.element(screen.getByText('Refetched name')).toBeInTheDocument()
   await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Tag signups')

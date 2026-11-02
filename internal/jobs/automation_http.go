@@ -42,8 +42,8 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[stepping.Ru
 	}
 	s := w.ent.Scoped(run.WorkspaceID)
 	decision, err := w.step.ExecuteHTTP(ctx, s, run.ID, job.Args.Step, httpcall.Attempt{
-		Number: job.Attempt, Limit: job.MaxAttempts, CreatedAt: job.CreatedAt, Now: w.now(),
-	}, w.cipher, w.client)
+		Number: job.Attempt, Limit: job.MaxAttempts, CreatedAt: job.CreatedAt,
+	}, w.cipher, w.client, w.now)
 	if err != nil {
 		return err
 	}

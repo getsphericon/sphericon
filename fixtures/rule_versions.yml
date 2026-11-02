@@ -157,3 +157,19 @@
   workspace_id: 20
   created_at: '{{daysAgo 6}}'
   updated_at: '{{daysAgo 6}}'
+
+- id: 140 # fixture: RuleHTTPExecutionVersion
+  rule_id: 140
+  version: 2
+  actions: '[{"type":"http","id":"01J00000000000000000000001","url":"{{ encrypt "https://hooks.example.com/notify" }}","body":"{}"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 2}}'
+
+- id: 141 # fixture: RuleHTTPExecutionTwoActionsVersion
+  rule_id: 140
+  version: 1
+  actions: '[{"type":"http","id":"01J00000000000000000000001","url":"{{ encrypt "https://hooks.example.com/notify" }}","body":"{}"},{"type":"http","id":"01J00000000000000000000002","url":"{{ encrypt "https://hooks.example.com/notify" }}","body":"{}"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 2}}'

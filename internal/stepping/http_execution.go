@@ -26,9 +26,9 @@ type HTTPExecution struct {
 
 // ExecuteHTTP selects the pinned Step, renders and executes its protected call under the
 // Enrollment's exit fence, then advances or fails the Enrollment. The adapter supplies only the
-// Workspace scope, ordinary attempt data and the existing secret and HTTP dependencies. An
+// Workspace scope, ordinary attempt data, clock and existing secret and HTTP dependencies. An
 // accepted request whose advancement fails can be repeated; external delivery is not exactly-once.
-func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, runID int64, step int, attempt httpcall.Attempt, cipher *secrets.Cipher, client webhook.Doer) (HTTPExecution, error) {
+func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, runID int64, step int, attempt httpcall.Attempt, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) (HTTPExecution, error) {
 	run, err := s.AutomationRun().Get(ctx, runID)
 	if ent.IsNotFound(err) {
 		return HTTPExecution{}, nil
@@ -83,7 +83,7 @@ func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, runID int64, st
 		return HTTPExecution{}, m.advance(ctx, s, run.ID, step, move{})
 	}
 	f := automations.FailureOfDelivery(sendErr)
-	if verdict, limited := webhook.DecideRateLimited(sendErr, attempt.CreatedAt, attempt.Now); limited {
+	if verdict, limited := webhook.DecideRateLimited(sendErr, attempt.CreatedAt, now()); limited {
 		if verdict.GiveUp {
 			return m.failHTTP(ctx, s, run.ID, f, HTTPExecution{Cancel: sendErr})
 		}

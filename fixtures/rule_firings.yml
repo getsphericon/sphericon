@@ -107,3 +107,27 @@
   workspace_id: 20
   created_at: '{{hoursAgo 91}}'
   updated_at: '{{hoursAgo 90}}'
+
+- id: 140 # fixture: RuleFiringHTTPPending
+  rule_id: 140
+  version_id: 140
+  contact_id: 2
+  action: execute_http
+  properties: '{"n":"not a number"}'
+  source_id: 'fixture:http-pending-140'
+  results: '[{"type":"http","status":"pending"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+
+- id: 141 # fixture: RuleFiringTwoHTTPPending
+  rule_id: 140
+  version_id: 141
+  contact_id: 2
+  action: execute_http
+  properties: '{"n":"not a number"}'
+  source_id: 'fixture:http-pending-141'
+  results: '[{"type":"http","status":"pending"},{"type":"http","status":"pending"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

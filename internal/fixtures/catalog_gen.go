@@ -63,6 +63,12 @@ const (
 	AutomationGothamResultsName = "Gotham results"
 	// AutomationGothamResultsVersionID is from fixtures/automation_versions.
 	AutomationGothamResultsVersionID = 6100
+	// AutomationHTTPExecutionID is from fixtures/automations.
+	AutomationHTTPExecutionID = 5580
+	// AutomationHTTPExecutionName is from fixtures/automations.
+	AutomationHTTPExecutionName = "HTTP execution"
+	// AutomationHTTPExecutionVersionID is from fixtures/automation_versions.
+	AutomationHTTPExecutionVersionID = 5580
 	// AutomationHoldDemoID is from fixtures/automations.
 	AutomationHoldDemoID = 103
 	// AutomationHoldDemoName is from fixtures/automations.
@@ -175,6 +181,8 @@ const (
 	AutomationRunErasableID = 3000
 	// AutomationRunHTTPFailedID is from fixtures/automation_runs.
 	AutomationRunHTTPFailedID = 1101
+	// AutomationRunHTTPPendingID is from fixtures/automation_runs.
+	AutomationRunHTTPPendingID = 5580
 	// AutomationRunJobsBrokenTemplateID is from fixtures/automation_runs.
 	AutomationRunJobsBrokenTemplateID = 5568
 	// AutomationRunJobsEmptyStepsID is from fixtures/automation_runs.
@@ -1743,14 +1751,30 @@ const (
 	RuleFiringGlobexAction = "rule_click"
 	// RuleFiringGlobexID is from fixtures/rule_firings.
 	RuleFiringGlobexID = 900
+	// RuleFiringHTTPPendingAction is from fixtures/rule_firings.
+	RuleFiringHTTPPendingAction = "execute_http"
+	// RuleFiringHTTPPendingID is from fixtures/rule_firings.
+	RuleFiringHTTPPendingID = 140
 	// RuleFiringPendingAction is from fixtures/rule_firings.
 	RuleFiringPendingAction = "rule_click"
 	// RuleFiringPendingID is from fixtures/rule_firings.
 	RuleFiringPendingID = 101
+	// RuleFiringTwoHTTPPendingAction is from fixtures/rule_firings.
+	RuleFiringTwoHTTPPendingAction = "execute_http"
+	// RuleFiringTwoHTTPPendingID is from fixtures/rule_firings.
+	RuleFiringTwoHTTPPendingID = 141
 	// RuleGlobexID is from fixtures/rules.
 	RuleGlobexID = 900
 	// RuleGlobexName is from fixtures/rules.
 	RuleGlobexName = "Globex rule"
+	// RuleHTTPExecutionID is from fixtures/rules.
+	RuleHTTPExecutionID = 140
+	// RuleHTTPExecutionName is from fixtures/rules.
+	RuleHTTPExecutionName = "Execute HTTP actions"
+	// RuleHTTPExecutionTwoActionsVersionID is from fixtures/rule_versions.
+	RuleHTTPExecutionTwoActionsVersionID = 141
+	// RuleHTTPExecutionVersionID is from fixtures/rule_versions.
+	RuleHTTPExecutionVersionID = 140
 	// RuleInactiveID is from fixtures/rules.
 	RuleInactiveID = 102
 	// RuleInactiveName is from fixtures/rules.

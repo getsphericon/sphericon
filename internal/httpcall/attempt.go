@@ -8,5 +8,4 @@ type Attempt struct {
 	Number    int
 	Limit     int
 	CreatedAt time.Time
-	Now       time.Time
 }

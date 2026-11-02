@@ -22,9 +22,9 @@ type HTTPExecution struct {
 }
 
 // ExecuteHTTP selects and executes the pending HTTP Action of a Firing, and records its result.
-// The adapter supplies the protected HTTP client and ordinary attempt information. It needs no
+// The adapter supplies the protected HTTP client, clock and ordinary attempt information. It needs no
 // queue job, and keeps the Firing's independent Actions and completion semantics.
-func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64, index int, attempt httpcall.Attempt, client webhook.Doer) (HTTPExecution, error) {
+func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64, index int, attempt httpcall.Attempt, client webhook.Doer, now func() time.Time) (HTTPExecution, error) {
 	f, err := s.RuleFiring().Get(ctx, firingID)
 	if ent.IsNotFound(err) {
 		return HTTPExecution{}, nil
@@ -71,7 +71,7 @@ func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64,
 		return record(Result{Status: Succeeded})
 	}
 	failed := Result{Status: Failed, Detail: failureDetail(sendErr)}
-	if verdict, limited := webhook.DecideRateLimited(sendErr, attempt.CreatedAt, attempt.Now); limited {
+	if verdict, limited := webhook.DecideRateLimited(sendErr, attempt.CreatedAt, now()); limited {
 		if verdict.GiveUp {
 			return record(failed)
 		}
