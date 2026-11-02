@@ -64,7 +64,7 @@ func (s cancelingSenders) EmailSender(context.Context, *ent.Scoped, *ent.Integra
 
 func TestDetailWordsEveryHold(t *testing.T) {
 	assert.Equal(t, "sending is suspended for this workspace", outbound.Detail(holds.ReasonSuspended))
-	assert.Equal(t, "no email integration can send: the one named is disabled or archived, or there is no default", outbound.Detail(outbound.HoldNoIntegration))
+	assert.Equal(t, "no integration of the channel can send: the one named is disabled, archived or of another channel, or the channel has no default", outbound.Detail(outbound.HoldNoIntegration))
 	assert.Equal(t, "sender domain is not a verified sending domain", outbound.Detail(outbound.HoldUnverifiedDomain))
 	assert.Equal(t, "the email provider has stopped sending from this account", outbound.Detail(outbound.HoldProviderStopped))
 	assert.Equal(t, "sending is currently on hold for this workspace: custom_reason", outbound.Detail("custom_reason"))

@@ -125,7 +125,7 @@ func Detail(reason string) string {
 	}
 	switch reason {
 	case HoldNoIntegration:
-		return "no email integration can send: the one named is disabled or archived, or there is no default"
+		return "no integration of the channel can send: the one named is disabled, archived or of another channel, or the channel has no default"
 	case HoldUnverifiedDomain:
 		return "sender domain is not a verified sending domain"
 	case HoldProviderStopped:
