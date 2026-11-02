@@ -24,6 +24,7 @@ import type {
   WorkflowBuilderPlugin,
   WorkflowBuilderIsValidConnection,
 } from '@workflowbuilder/sdk'
+// easement:disable-next-line symbol -- the builder subtree runs on the SDK's global instance (src/i18n.ts)
 import i18next from 'i18next'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { I18nextProvider, useTranslation } from 'react-i18next'
@@ -368,6 +369,7 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
         {/* The SDK initialises and reads the global i18next instance for its own
           strings. The app tree runs on a private instance (see main.tsx), so the
           builder subtree is bound back to the global one here. */}
+        {/* easement:disable-next-line symbol -- the SDK subtree is bound to the global instance on purpose */}
         <I18nextProvider i18n={i18next}>
           {/* Children replace the SDK's default layout: its top bar (logo, folder name,
             language, theme and read-only toggles) is swapped for <BuilderBar />, and

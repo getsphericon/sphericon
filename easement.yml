@@ -11,6 +11,15 @@ x-no-raw-client: &no-raw-client
 x-no-container: &no-container
   - name: github.com/samber/do
     because: no domain module or handler sees the DI container; a new dependency is a provider in internal/app/container.go (docs/architecture.md, Backend architecture)
+# The global i18next instance belongs to @workflowbuilder/sdk, which re-initialises it at import time;
+# the app runs on its own instance (src/i18n.ts). The types (`TFunction`, `i18n`) stay allowed.
+x-no-global-i18n: &no-global-i18n
+  forbid_symbol:
+    - name: i18next.i18next
+      because: the app's strings live on its own instance from src/i18n.ts, reached through useTranslation; the global one is the workflow builder SDK's, which wipes it on import
+x-no-dayjs: &no-dayjs
+  name: dayjs
+  because: dates go through src/utils/datetime.ts (src/AGENTS.md), which holds the plugins, the time zone and the formats
 
 components:
   # The public API surfaces. Each has its own TypeSpec contract, handler package and auth scheme.
@@ -151,26 +160,40 @@ rules:
     may_depend_on: []
     because: generated clients come from the OpenAPI contract and import nothing of ours
   web-shared:
+    <<: *no-global-i18n
     may_depend_on: [web-generated, web-routes, web-app]
     because: shared components, hooks and layouts sit below the pages; a page imports them, never the reverse (they link through a route's `Route`, never a path string)
   web-routes:
+    <<: *no-global-i18n
+    forbid_external: [*no-dayjs]
     may_depend_on: [web-generated, web-shared, web-app]
     because: a route file holds guards and search schemas and never imports a page (src/AGENTS.md)
   web-route-lazy:
+    <<: *no-global-i18n
+    forbid_external: [*no-dayjs]
     may_depend_on: [web-shared, web-pages, web-console, web-app]
     because: the lazy route file is the one place a page is bound to its route
   web-pages:
+    <<: *no-global-i18n
     forbid_external:
       - name: '@mantine/notifications'
         because: toasts go through useNotify (src/hooks/useNotify.ts), never Mantine's global store
+      - *no-dayjs
     may_depend_on: [web-generated, web-shared, web-routes, web-app]
     because: a page reaches its route through the route file's `Route` and never imports a lazy route file
   web-console:
+    <<: *no-global-i18n
+    forbid_external: [*no-dayjs]
     may_depend_on: [web-generated, web-shared, web-routes, web-app]
     because: the Staff console is its own feature and does not import the workspace pages
   web-app:
+    <<: *no-global-i18n
+    forbid_external: [*no-dayjs]
     may_depend_on: [web-generated, web-shared, web-routes]
     because: the files directly under src/ assemble the application
+
+# Each import of a package is declared in the nearest package.json.
+manifests: true
 
 # Every checked file belongs to a component, so a new package must be assigned to one. These
 # are the generated, tooling and separately built trees that have no layer of their own.
