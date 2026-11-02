@@ -27,7 +27,7 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 	testSend := siteapi.TestSendBroadcastInput{Email: "preview@example.com"}
 
 	t.Run("foreign workspace", func(t *testing.T) {
-		r1, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "x"}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: foreign})
+		r1, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "x", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: foreign})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsCreateNotFound{}, r1)
 		r2, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: foreign, ID: draft})
@@ -84,10 +84,10 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 
 	t.Run("invalid segment and integration references are 422", func(t *testing.T) {
 		bad := siteapi.NewOptNilEntityId(99999999) // no such row in any workspace
-		r1, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "x", SegmentId: bad}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
+		r1, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "x", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}), SegmentId: bad}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, r1)
-		r2, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "x", IntegrationId: bad}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
+		r2, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "x", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}), IntegrationId: bad}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, r2)
 		r3, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{SegmentId: bad}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: draft})
@@ -98,7 +98,7 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 		assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, r4)
 		count, err := env.DB.Broadcast.Query().Count(ctx)
 		require.NoError(t, err)
-		again, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "ok"}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
+		again, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "ok", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
 		require.NoError(t, err)
 		require.IsType(t, &siteapi.SiteBroadcastResource{}, again)
 		after, err := env.DB.Broadcast.Query().Count(ctx)

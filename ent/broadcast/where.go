@@ -356,6 +356,26 @@ func NameContainsFold(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldContainsFold(FieldName, v))
 }
 
+// ChannelEQ applies the EQ predicate on the "channel" field.
+func ChannelEQ(v Channel) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldChannel, v))
+}
+
+// ChannelNEQ applies the NEQ predicate on the "channel" field.
+func ChannelNEQ(v Channel) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNEQ(FieldChannel, v))
+}
+
+// ChannelIn applies the In predicate on the "channel" field.
+func ChannelIn(vs ...Channel) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIn(FieldChannel, vs...))
+}
+
+// ChannelNotIn applies the NotIn predicate on the "channel" field.
+func ChannelNotIn(vs ...Channel) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotIn(FieldChannel, vs...))
+}
+
 // SubjectEQ applies the EQ predicate on the "subject" field.
 func SubjectEQ(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldSubject, v))
@@ -409,6 +429,16 @@ func SubjectHasPrefix(v string) predicate.Broadcast {
 // SubjectHasSuffix applies the HasSuffix predicate on the "subject" field.
 func SubjectHasSuffix(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldHasSuffix(FieldSubject, v))
+}
+
+// SubjectIsNil applies the IsNil predicate on the "subject" field.
+func SubjectIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldSubject))
+}
+
+// SubjectNotNil applies the NotNil predicate on the "subject" field.
+func SubjectNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldSubject))
 }
 
 // SubjectEqualFold applies the EqualFold predicate on the "subject" field.
@@ -624,6 +654,16 @@ func BodyHasPrefix(v string) predicate.Broadcast {
 // BodyHasSuffix applies the HasSuffix predicate on the "body" field.
 func BodyHasSuffix(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldHasSuffix(FieldBody, v))
+}
+
+// BodyIsNil applies the IsNil predicate on the "body" field.
+func BodyIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldBody))
+}
+
+// BodyNotNil applies the NotNil predicate on the "body" field.
+func BodyNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldBody))
 }
 
 // BodyEqualFold applies the EqualFold predicate on the "body" field.

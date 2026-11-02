@@ -52,7 +52,14 @@ var (
 // way. The System sender's cap is no error: the Result is a Deferral whose Wait and Limit say when
 // capacity returns.
 func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, to string, asker *Asker) (Result, error) {
-	content := BroadcastContent(b)
+	stored, err := BroadcastContent(b)
+	if err != nil {
+		return Result{}, err
+	}
+	content, ok := stored.(EmailContent)
+	if !ok {
+		return Result{}, fmt.Errorf("outbound: broadcast %d on channel %q has no test send", b.ID, stored.Channel())
+	}
 	content.Subject = TestSubjectPrefix + content.Subject
 	res, err := m.SendTest(ctx, s, TestRequest{
 		To:      to,

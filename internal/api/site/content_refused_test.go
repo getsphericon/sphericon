@@ -28,7 +28,8 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 	assert.Contains(t, refused.Detail.Or(""), "render body")
 
 	bc, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name: "Broken", Body: siteapi.NewOptString("<div><span>hi</div>"),
+		Name:    "Broken",
+		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<div><span>hi</div>")}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	refusedBroadcast, ok := bc.(*siteapi.SiteBroadcastsCreateUnprocessableEntity)
@@ -36,7 +37,7 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 	assert.Contains(t, refusedBroadcast.Detail.Or(""), "<span> is never closed")
 
 	upd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		Subject: siteapi.NewOptString("{% if %}"),
+		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("{% if %}")}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, upd)

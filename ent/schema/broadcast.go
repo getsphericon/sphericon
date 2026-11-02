@@ -2,6 +2,9 @@ package schema
 
 import (
 	"encoding/json"
+	"fmt"
+	"slices"
+	"strings"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
@@ -13,10 +16,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/holdreason"
 )
 
-// Broadcast is a workspace-scoped one-off email campaign. Its lifecycle is
-// draft -> scheduled -> sending -> sent (or failed). The body is authored as
-// HTML; the plain-text part is derived from the final HTML of each send and never stored
-// (ADR 0056). Its Segment is the one named by
+// Broadcast is a workspace-scoped one-off send on one Channel, fixed when it is created (ADR
+// 0080). Its lifecycle is draft -> scheduled -> sending -> sent (or failed). Its content is the
+// Channel's (ADR 0078), and the table checks that exactly that Channel's columns are set: on email
+// a subject and a body authored as HTML, whose plain-text part is derived from the final HTML of
+// each send and never stored (ADR 0056). Its Segment is the one named by
 // segment_id, or all contacts in the workspace when it is unset; leaving draft takes a copy of the
 // Segment's Condition, which the plan resolves (ADR 0065).
 // Aggregate counters are denormalized for cheap reporting; per-recipient state
@@ -43,8 +47,17 @@ func (Broadcast) Fields() []ent.Field {
 			Immutable(),
 		field.String(nameField).
 			NotEmpty(),
+		// The Channel the Broadcast sends on, set when it is created and never changed: a
+		// Broadcast is never converted to another Channel (ADR 0080). Every write sets it; the
+		// column default only fills the rows that predate it.
+		field.Enum("channel").
+			Values("email").
+			Immutable().
+			Annotations(entsql.Default("email")),
+		// Email's content: set on an email Broadcast, unset on any other (broadcastContents).
 		field.String("subject").
-			Default(""),
+			Optional().
+			Nillable(),
 		field.String("from_name").
 			Optional().
 			Nillable(),
@@ -53,7 +66,8 @@ func (Broadcast) Fields() []ent.Field {
 			Nillable(),
 		// Email-ready HTML with Liquid merge tags (ADR 0040).
 		field.String("body").
-			Default(""),
+			Optional().
+			Nillable(),
 		// The editor's JSON document (ADR 0040), set only when the Broadcast was written as a
 		// document; the server rendered body from it in the same save. A body-only write clears it.
 		field.JSON("doc", json.RawMessage{}).
@@ -74,7 +88,8 @@ func (Broadcast) Fields() []ent.Field {
 		field.String("condition").
 			Optional().
 			Nillable(),
-		// Nil integration_id means "the workspace default email integration".
+		// The Integration of the Broadcast's Channel it sends through; nil means that Channel's
+		// default.
 		field.Int64("integration_id").
 			Optional().
 			Nillable(),
@@ -141,11 +156,47 @@ func (Broadcast) Indexes() []ent.Index {
 
 // broadcastTable adds the timestamps a status promises to the enum checks: a scheduled
 // Broadcast has its time, a sent one its sent_at, a failed one its failed_at (each set in the
-// write that moves the status).
+// write that moves the status). It also checks that the content is exactly the Channel's.
 func broadcastTable() entsql.Annotation {
 	a := TableWithEnumChecks("broadcasts", Broadcast{}.Fields())
+	a.Checks["broadcasts_content_check"] = contentCheck(broadcastContents)
 	a.Checks["broadcasts_scheduled_at_check"] = "status <> 'scheduled' OR scheduled_at IS NOT NULL"
 	a.Checks["broadcasts_sent_at_check"] = "status <> 'sent' OR sent_at IS NOT NULL"
 	a.Checks["broadcasts_failed_at_check"] = "status <> 'failed' OR failed_at IS NOT NULL"
 	return a
+}
+
+// channelContent names the columns of one Channel's content on the broadcasts table: required
+// ones are set on a Broadcast of that Channel, and none of them is set on another Channel's.
+type channelContent struct {
+	channel            string
+	required, optional []string
+}
+
+// broadcastContents is the content of each Channel a Broadcast is sent on (ADR 0078). A Channel
+// added to the channel enum adds its entry here.
+var broadcastContents = []channelContent{
+	{channel: "email", required: []string{"subject", "body"}, optional: []string{"from_name", "from_email", "doc", "editor_version"}},
+}
+
+// contentCheck is the CHECK that a row holds exactly its Channel's content: one arm per Channel,
+// each requiring that Channel's required columns and leaving every other Channel's columns unset.
+func contentCheck(contents []channelContent) string {
+	arms := make([]string, len(contents))
+	for i, c := range contents {
+		conds := []string{fmt.Sprintf("channel = '%s'", c.channel)}
+		for _, col := range c.required {
+			conds = append(conds, col+" IS NOT NULL")
+		}
+		for _, other := range contents {
+			if other.channel == c.channel {
+				continue
+			}
+			for _, col := range slices.Concat(other.required, other.optional) {
+				conds = append(conds, col+" IS NULL")
+			}
+		}
+		arms[i] = "(" + strings.Join(conds, " AND ") + ")"
+	}
+	return strings.Join(arms, " OR ")
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/automations"
@@ -80,13 +81,22 @@ import (
 // goverter:extend nilObjectIn
 // goverter:extend nilObjectPatch
 // goverter:extend customFieldTypePatch
+// goverter:extend broadcastContentIn
+// goverter:extend broadcastContentPatch
+// goverter:extend broadcastChannelPtrIn
 type Inputs interface {
 	// goverter:ignore Prepared
 	TemplateCreate(source *externalapi.CreateTemplateInput) templates.CreateInput
 	TemplateUpdate(source *externalapi.UpdateTemplateInput) templates.UpdateInput
 
-	BroadcastCreate(source *externalapi.CreateBroadcastInput) broadcasts.CreateInput
-	BroadcastUpdate(source *externalapi.UpdateBroadcastInput) broadcasts.UpdateInput
+	BroadcastCreate(source *externalapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
+	BroadcastUpdate(source *externalapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)
+	// The arms of a Broadcast's content, which broadcastContentIn and broadcastContentPatch pick.
+	EmailBroadcastContentIn(source externalapi.EmailBroadcastContentInput) broadcasts.EmailContentInput
+	EmailBroadcastContentPatch(source externalapi.EmailBroadcastContentInput) broadcasts.EmailContentPatch
+	// The list's filter: the API lists every status.
+	// goverter:ignore Statuses
+	BroadcastsListFilter(source externalapi.BroadcastsListParams) broadcasts.ListFilter
 
 	WebhookCreate(source *externalapi.CreateWebhookInput) webhooks.CreateInput
 	WebhookUpdate(source *externalapi.UpdateWebhookInput) webhooks.UpdateInput
@@ -155,6 +165,8 @@ type Inputs interface {
 	AutomationStepType(source externalapi.AutomationStepType) automationsteps.Kind
 	// goverter:enum:transform value
 	RuleActionType(source externalapi.RuleActionType) rules.ActionType
+	// goverter:enum:transform value
+	BroadcastChannel(source externalapi.BroadcastChannel) broadcast.Channel
 }
 
 // goverter:context backfill
@@ -300,6 +312,40 @@ func intPtr[T ~int32](o interface{ Get() (T, bool) }) *int {
 	}
 	n := int(v)
 	return &n
+}
+
+// errUnknownChannel: content whose channel the contract does not know, which the decoder never
+// lets through.
+var errUnknownChannel = errors.New("unsupported channel")
+
+// broadcastContentIn maps a Broadcast's content union onto the module's input of its Channel; a
+// oneOf is beyond goverter, so only the switch is written here.
+func broadcastContentIn(c Inputs, in externalapi.BroadcastContentInput) (broadcasts.ContentInput, error) {
+	if in.OneOf.Type == externalapi.EmailBroadcastContentInputBroadcastContentInputSum {
+		return c.EmailBroadcastContentIn(in.OneOf.EmailBroadcastContentInput), nil
+	}
+	return nil, errUnknownChannel
+}
+
+// broadcastContentPatch is the content of an update: absent keeps the content.
+func broadcastContentPatch(c Inputs, o externalapi.OptBroadcastContentInput) (broadcasts.ContentPatch, error) {
+	in, ok := o.Get()
+	if !ok {
+		return nil, nil
+	}
+	if in.OneOf.Type == externalapi.EmailBroadcastContentInputBroadcastContentInputSum {
+		return c.EmailBroadcastContentPatch(in.OneOf.EmailBroadcastContentInput), nil
+	}
+	return nil, errUnknownChannel
+}
+
+// broadcastChannelPtrIn is the Channel a list is narrowed to: nil for every Channel.
+func broadcastChannelPtrIn(c Inputs, o externalapi.OptBroadcastChannel) *broadcast.Channel {
+	v, ok := o.Get()
+	if !ok {
+		return nil
+	}
+	return new(c.BroadcastChannel(v))
 }
 
 // errUnknownProvider: a config whose kind the contract does not know, which the decoder never

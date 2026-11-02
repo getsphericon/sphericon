@@ -23,14 +23,13 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:    "Spring sale",
-		Subject: siteapi.NewOptString("Big news"),
-		Body:    siteapi.NewOptString("<p>Hi {{ first_name }}</p>"),
+		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Big news"), Body: siteapi.NewOptString("<p>Hi {{ first_name }}</p>")}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", created)
 	assert.Equal(t, "Spring sale", res.Name)
-	assert.Equal(t, "Big news", res.Subject)
+	assert.Equal(t, "Big news", testhelper.SiteEmailOf(res).Subject)
 	assert.Equal(t, siteapi.SiteBroadcastStatusDraft, res.Status)
 	assert.Equal(t, int32(0), res.Stats.RecipientsTotal)
 
@@ -125,24 +124,23 @@ func TestSiteBroadcastsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 	assert.EqualValues(t, 1, got.SegmentId.Or(0))
 	assert.EqualValues(t, 1, got.IntegrationId.Or(0))
-	assert.Equal(t, "CodeBasics", got.FromName.Or(""))
-	assert.Equal(t, "hello@codebasics.dev", string(got.FromEmail.Or("")))
+	assert.Equal(t, "CodeBasics", testhelper.SiteEmailOf(got).FromName.Or(""))
+	assert.Equal(t, "hello@codebasics.dev", string(testhelper.SiteEmailOf(got).FromEmail.Or("")))
 
 	// Explicit nulls clear all three.
 	var nullSeg, nullIntegration siteapi.OptNilEntityId
 	nullSeg.SetToNull()
 	nullIntegration.SetToNull()
 	res, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		FromName:      nullString(),
-		FromEmail:     nullEmail(),
+		Content:       testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{FromName: nullString(), FromEmail: nullEmail()}),
 		SegmentId:     nullSeg,
 		IntegrationId: nullIntegration,
 	}, params)
 	require.NoError(t, err)
 	got, ok = res.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", res)
-	assert.Empty(t, got.FromName.Or(""))
-	assert.Empty(t, got.FromEmail.Or(""))
+	assert.Empty(t, testhelper.SiteEmailOf(got).FromName.Or(""))
+	assert.Empty(t, testhelper.SiteEmailOf(got).FromEmail.Or(""))
 	assert.Empty(t, got.SegmentId.Or(0))
 	assert.Empty(t, got.IntegrationId.Or(0))
 	assert.Equal(t, "Summer sale teaser", got.Name, "absent name kept")
@@ -158,13 +156,17 @@ func TestSiteBroadcastsCreateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 	before := env.DB.Broadcast.Query().CountX(ctx)
 
 	got, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name: "forged", SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentGlobexID)),
+		Name:      "forged",
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
+		SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentGlobexID)),
 	}, workspaceID)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, got)
 
 	got, err = c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name: "forged", IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)),
+		Name:          "forged",
+		Content:       testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
+		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)),
 	}, workspaceID)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, got)

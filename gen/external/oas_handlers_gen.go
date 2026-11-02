@@ -4485,6 +4485,10 @@ func (s *Server) handleBroadcastsListRequest(args [0]string, argsEscaped bool, w
 					Name: "archived",
 					In:   "query",
 				}: params.Archived,
+				{
+					Name: "channel",
+					In:   "query",
+				}: params.Channel,
 			},
 			Raw: r,
 		}

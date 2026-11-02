@@ -26,6 +26,8 @@ const (
 	FieldDiscardedAt = "discarded_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldChannel holds the string denoting the channel field in the database.
+	FieldChannel = "channel"
 	// FieldSubject holds the string denoting the subject field in the database.
 	FieldSubject = "subject"
 	// FieldFromName holds the string denoting the from_name field in the database.
@@ -104,6 +106,7 @@ var Columns = []string{
 	FieldWorkspaceID,
 	FieldDiscardedAt,
 	FieldName,
+	FieldChannel,
 	FieldSubject,
 	FieldFromName,
 	FieldFromEmail,
@@ -140,11 +143,29 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
-	// DefaultSubject holds the default value on creation for the "subject" field.
-	DefaultSubject string
-	// DefaultBody holds the default value on creation for the "body" field.
-	DefaultBody string
 )
+
+// Channel defines the type for the "channel" enum field.
+type Channel string
+
+// Channel values.
+const (
+	ChannelEmail Channel = "email"
+)
+
+func (c Channel) String() string {
+	return string(c)
+}
+
+// ChannelValidator is a validator for the "channel" field enum values. It is called by the builders before save.
+func ChannelValidator(c Channel) error {
+	switch c {
+	case ChannelEmail:
+		return nil
+	default:
+		return fmt.Errorf("broadcast: invalid enum value for channel field: %q", c)
+	}
+}
 
 // Status defines the type for the "status" enum field.
 type Status string
@@ -216,6 +237,11 @@ func ByDiscardedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByChannel orders the results by the channel field.
+func ByChannel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChannel, opts...).ToFunc()
 }
 
 // BySubject orders the results by the subject field.

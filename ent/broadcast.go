@@ -33,14 +33,16 @@ type Broadcast struct {
 	DiscardedAt *time.Time `json:"discarded_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Channel holds the value of the "channel" field.
+	Channel broadcast.Channel `json:"channel,omitempty"`
 	// Subject holds the value of the "subject" field.
-	Subject string `json:"subject,omitempty"`
+	Subject *string `json:"subject,omitempty"`
 	// FromName holds the value of the "from_name" field.
 	FromName *string `json:"from_name,omitempty"`
 	// FromEmail holds the value of the "from_email" field.
 	FromEmail *string `json:"from_email,omitempty"`
 	// Body holds the value of the "body" field.
-	Body string `json:"body,omitempty"`
+	Body *string `json:"body,omitempty"`
 	// Doc holds the value of the "doc" field.
 	Doc jsontext.Value `json:"doc,omitempty"`
 	// EditorVersion holds the value of the "editor_version" field.
@@ -135,7 +137,7 @@ func (*Broadcast) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case broadcast.FieldID, broadcast.FieldWorkspaceID, broadcast.FieldSegmentID, broadcast.FieldIntegrationID:
 			values[i] = new(sql.NullInt64)
-		case broadcast.FieldName, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldCondition, broadcast.FieldStatus, broadcast.FieldHoldReason:
+		case broadcast.FieldName, broadcast.FieldChannel, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldCondition, broadcast.FieldStatus, broadcast.FieldHoldReason:
 			values[i] = new(sql.NullString)
 		case broadcast.FieldCreatedAt, broadcast.FieldUpdatedAt, broadcast.FieldDiscardedAt, broadcast.FieldScheduledAt, broadcast.FieldSentAt, broadcast.FieldFailedAt, broadcast.FieldLastScheduledAt:
 			values[i] = new(sql.NullTime)
@@ -191,11 +193,18 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Name = value.String
 			}
+		case broadcast.FieldChannel:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field channel", values[i])
+			} else if value.Valid {
+				_m.Channel = broadcast.Channel(value.String)
+			}
 		case broadcast.FieldSubject:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field subject", values[i])
 			} else if value.Valid {
-				_m.Subject = value.String
+				_m.Subject = new(string)
+				*_m.Subject = value.String
 			}
 		case broadcast.FieldFromName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -215,7 +224,8 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field body", values[i])
 			} else if value.Valid {
-				_m.Body = value.String
+				_m.Body = new(string)
+				*_m.Body = value.String
 			}
 		case broadcast.FieldDoc:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -367,8 +377,13 @@ func (_m *Broadcast) String() string {
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
-	builder.WriteString("subject=")
-	builder.WriteString(_m.Subject)
+	builder.WriteString("channel=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Channel))
+	builder.WriteString(", ")
+	if v := _m.Subject; v != nil {
+		builder.WriteString("subject=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	if v := _m.FromName; v != nil {
 		builder.WriteString("from_name=")
@@ -380,8 +395,10 @@ func (_m *Broadcast) String() string {
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
-	builder.WriteString("body=")
-	builder.WriteString(_m.Body)
+	if v := _m.Body; v != nil {
+		builder.WriteString("body=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("doc=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Doc))

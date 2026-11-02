@@ -6,7 +6,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
@@ -62,7 +62,7 @@ func (m *Module) progressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast
 	if pending == 0 || b.HoldReason != nil {
 		return p, nil
 	}
-	channel := outbound.BroadcastContent(b).Channel()
+	channel := messaging.Channel(b.Channel)
 	route, err := m.out.Route(ctx, s, channel, b.IntegrationID)
 	if err != nil {
 		return nil, err

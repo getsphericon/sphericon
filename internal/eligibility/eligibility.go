@@ -11,8 +11,8 @@
 //
 // The layers are defined exactly once (see layers) and consumed in two shapes that
 // therefore cannot drift: Check decides one (workspace, destination) pair, and
-// Predicate narrows a Contact query to the eligible audience. The rule is keyed by
-// destination, never by Contact — a transactional destination may have no Contact.
+// Audience narrows a Contact query to the Contacts with an eligible Destination. The rule is
+// keyed by destination, never by Contact — a transactional destination may have no Contact.
 //
 // A source of "" means a transactional send (ADR 0005): it skips layers 2–4 (you
 // cannot opt out of, nor must you confirm, your own password reset) but still
@@ -111,17 +111,42 @@ func Check(ctx context.Context, s *ent.Scoped, channel, dest, source string) (De
 // Workspace does not exist: the check fails closed instead of reporting eligible.
 const workspaceMissing = "!workspace"
 
-// Predicate narrows a Contact query to contacts whose email destination is
-// eligible for (channel, source); "" source means transactional (Suppression
-// only). It composes with a segment predicate (both are predicate.Contact). The
-// correlation joins on lower(contacts.email) — never on contact_id — because the
-// stores are destination-keyed.
-func Predicate(channel, source string) predicate.Contact {
+// A Destination is where a Channel reaches a Contact, as the audience predicate sees it (ADR
+// 0075): on email the Contact's own address. The Destination keys the eligibility stores, so the
+// predicate correlates on it, never on the Contact's id. A Channel of Bindings reaches a Contact
+// at each of its Bindings on the routed Integration, and its Destination adds itself here.
+type Destination interface {
+	// channel is the Channel whose stores the layers read.
+	channel() string
+	// reach narrows the outer contacts query to the Contacts that have a Destination for which
+	// eligible holds, given the Destination as a ref.
+	reach(s *sql.Selector, eligible func(ref) *sql.Predicate)
+}
+
+// EmailDestination is the email Destination: the Contact's address, which it must have.
+func EmailDestination() Destination { return emailDestination{} }
+
+type emailDestination struct{}
+
+func (emailDestination) channel() string { return ChannelEmail }
+
+func (emailDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate) {
+	s.Where(sql.And(sql.NotNull(s.C(contact.FieldEmail)), eligible(contactRef(s))))
+}
+
+// Audience narrows a Contact query to the Contacts reachable at dest on its Channel from
+// source: they have the Destination and it is eligible; "" source means transactional
+// (Suppression only). It composes with a Segment predicate (both are predicate.Contact).
+func Audience(dest Destination, source string) predicate.Contact {
 	return func(s *sql.Selector) {
-		r := contactRef(s)
-		for _, l := range layers(r, channel, source) {
-			s.Where(sql.Not(l.blocks))
-		}
+		dest.reach(s, func(r ref) *sql.Predicate {
+			ls := layers(r, dest.channel(), source)
+			kept := make([]*sql.Predicate, len(ls))
+			for i, l := range ls {
+				kept[i] = sql.Not(l.blocks)
+			}
+			return sql.And(kept...)
+		})
 	}
 }
 

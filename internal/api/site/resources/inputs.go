@@ -88,13 +88,22 @@ import (
 // goverter:extend nilObjectPatch
 // goverter:extend signupSourcePtrIn
 // goverter:extend customFieldTypePatch
+// goverter:extend broadcastContentIn
+// goverter:extend broadcastContentPatch
+// goverter:extend broadcastChannelPtrIn
 type Inputs interface {
 	// goverter:ignore Prepared
 	TemplateCreate(source *siteapi.CreateTemplateInput) templates.CreateInput
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) templates.UpdateInput
 
-	BroadcastCreate(source *siteapi.CreateBroadcastInput) broadcasts.CreateInput
-	BroadcastUpdate(source *siteapi.UpdateBroadcastInput) broadcasts.UpdateInput
+	BroadcastCreate(source *siteapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
+	BroadcastUpdate(source *siteapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)
+	// The arms of a Broadcast's content, which broadcastContentIn and broadcastContentPatch pick.
+	EmailBroadcastContentIn(source siteapi.EmailBroadcastContentInput) broadcasts.EmailContentInput
+	EmailBroadcastContentPatch(source siteapi.EmailBroadcastContentInput) broadcasts.EmailContentPatch
+	// The list's filter; the statuses go member by member (BroadcastStatuses).
+	// goverter:map Status Statuses
+	BroadcastsListFilter(source siteapi.SiteBroadcastsListParams) broadcasts.ListFilter
 
 	WebhookCreate(source *siteapi.CreateWebhookInput) webhooks.CreateInput
 	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhooks.UpdateInput
@@ -174,6 +183,8 @@ type Inputs interface {
 	BroadcastStatuses(source []siteapi.SiteBroadcastStatus) []broadcast.Status
 	// goverter:enum:transform value
 	BroadcastsOrder(source siteapi.SiteBroadcastsOrder) broadcasts.Order
+	// goverter:enum:transform value
+	BroadcastChannel(source siteapi.BroadcastChannel) broadcast.Channel
 	// goverter:enum:transform value
 	AutomationStepType(source siteapi.SiteAutomationStepType) automationsteps.Kind
 	// goverter:enum:transform value
@@ -347,6 +358,40 @@ func integrationConfigPatch(o siteapi.OptIntegrationConfigInput) (patch.Field[in
 		return patch.Field[integrations.ConfigInput]{}, err
 	}
 	return patch.Set(cfg), nil
+}
+
+// errUnknownChannel: content whose channel the contract does not know, which the decoder never
+// lets through.
+var errUnknownChannel = errors.New("unsupported channel")
+
+// broadcastContentIn maps a Broadcast's content union onto the module's input of its Channel; a
+// oneOf is beyond goverter, so only the switch is written here.
+func broadcastContentIn(c Inputs, in siteapi.BroadcastContentInput) (broadcasts.ContentInput, error) {
+	if in.OneOf.Type == siteapi.EmailBroadcastContentInputBroadcastContentInputSum {
+		return c.EmailBroadcastContentIn(in.OneOf.EmailBroadcastContentInput), nil
+	}
+	return nil, errUnknownChannel
+}
+
+// broadcastContentPatch is the content of an update: absent keeps the content.
+func broadcastContentPatch(c Inputs, o siteapi.OptBroadcastContentInput) (broadcasts.ContentPatch, error) {
+	in, ok := o.Get()
+	if !ok {
+		return nil, nil
+	}
+	if in.OneOf.Type == siteapi.EmailBroadcastContentInputBroadcastContentInputSum {
+		return c.EmailBroadcastContentPatch(in.OneOf.EmailBroadcastContentInput), nil
+	}
+	return nil, errUnknownChannel
+}
+
+// broadcastChannelPtrIn is the Channel a list is narrowed to: nil for every Channel.
+func broadcastChannelPtrIn(c Inputs, o siteapi.OptBroadcastChannel) *broadcast.Channel {
+	v, ok := o.Get()
+	if !ok {
+		return nil
+	}
+	return new(c.BroadcastChannel(v))
 }
 
 func createSegmentCondition(g siteapi.SiteConditionGroup) (*string, error) {

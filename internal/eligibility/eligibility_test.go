@@ -20,7 +20,7 @@ import (
 func inAudience(t *testing.T, env *testhelper.TestEnv, ws, contactID int64, source string) bool {
 	t.Helper()
 	ok, err := env.DB.Scoped(ws).Contact().Query().
-		Where(contact.ID(contactID), eligibility.Predicate(eligibility.ChannelEmail, source)).
+		Where(contact.ID(contactID), eligibility.Audience(eligibility.EmailDestination(), source)).
 		Exist(context.Background())
 	require.NoError(t, err)
 	return ok
@@ -178,7 +178,7 @@ func matrixEligibility(t *testing.T, env *testhelper.TestEnv, ws int64, source s
 			byCheck = append(byCheck, *c.Email)
 		}
 	}
-	kept, err := s.Contact().Query().Where(eligibility.Predicate(eligibility.ChannelEmail, source)).All(ctx)
+	kept, err := s.Contact().Query().Where(eligibility.Audience(eligibility.EmailDestination(), source)).All(ctx)
 	require.NoError(t, err)
 	for _, c := range kept {
 		byPredicate = append(byPredicate, *c.Email)

@@ -127,6 +127,8 @@ import (
 // goverter:extend optWebhookDisabledReason
 // goverter:extend optConsentDecision
 // goverter:extend durationSeconds
+// goverter:extend broadcastContent
+// goverter:extend emailContentChannel
 type Converter interface {
 	// The contact is read with its tags loaded (`WithTags`).
 	// goverter:map Edges.Tags Tags
@@ -262,7 +264,10 @@ type Converter interface {
 	// goverter:ignore Warnings
 	// The contract names the discarded state "archived" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
+	// goverter:map . Content | broadcastContent
 	BroadcastToResource(source *ent.Broadcast) siteapi.SiteBroadcastResource
+	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.
+	EmailBroadcastContentToResource(source *ent.Broadcast) siteapi.EmailBroadcastContent
 
 	// A Broadcast's delivery figures; the rates are Stats methods, ratios in [0,1].
 	// goverter:map Recipients RecipientsTotal
@@ -609,6 +614,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) siteapi.SiteBroadcastStatus
 	// goverter:enum:transform value
+	BroadcastChannelToResource(source broadcast.Channel) siteapi.BroadcastChannel
+	// goverter:enum:transform value
 	CapturedMessageSurfaceToResource(source capturedmessage.Surface) siteapi.SiteCapturedMessageSurface
 	// goverter:enum:transform value
 	ContactExportSourceToResource(source contact.Source) siteapi.ContactExportSource
@@ -741,6 +748,20 @@ func broadcastLimit(c Converter, v providerlimit.Cause) siteapi.NilSiteBroadcast
 
 func optNilInt32(v *int) siteapi.OptNilInt32 {
 	return convert.Opt[siteapi.OptNilInt32](convert.Int32Ptr(v))
+}
+
+// broadcastContent is a Broadcast's content in the arm of its Channel: a oneOf is beyond
+// goverter, so only the switch is written here.
+func broadcastContent(c Converter, b *ent.Broadcast) siteapi.BroadcastContent {
+	if b.Channel == broadcast.ChannelEmail {
+		return siteapi.BroadcastContent{OneOf: siteapi.NewEmailBroadcastContentBroadcastContentSum(c.EmailBroadcastContentToResource(b))}
+	}
+	return siteapi.BroadcastContent{}
+}
+
+// emailContentChannel is the discriminator of email's content arm.
+func emailContentChannel(broadcast.Channel) siteapi.EmailBroadcastContentChannel {
+	return siteapi.EmailBroadcastContentChannelEmail
 }
 
 // jsonObject renders a stored JSON object (custom fields, event properties): absent when it has

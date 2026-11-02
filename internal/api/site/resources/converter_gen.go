@@ -551,6 +551,16 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKi
 	siteapiSiteBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return siteapiSiteBrandKitResource
 }
+func (c *ConverterImpl) BroadcastChannelToResource(source broadcast.Channel) site.BroadcastChannel {
+	var siteapiBroadcastChannel site.BroadcastChannel
+	switch source {
+	case broadcast.ChannelEmail:
+		siteapiBroadcastChannel = site.BroadcastChannelEmail
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiBroadcastChannel
+}
 func (c *ConverterImpl) BroadcastLimitToResource(source providerlimit.Cause) site.SiteBroadcastLimit {
 	var siteapiSiteBroadcastLimit site.SiteBroadcastLimit
 	switch source {
@@ -630,12 +640,8 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 	if source != nil {
 		siteapiSiteBroadcastResource.ID = site.EntityId((*source).ID)
 		siteapiSiteBroadcastResource.Name = (*source).Name
-		siteapiSiteBroadcastResource.Subject = (*source).Subject
-		siteapiSiteBroadcastResource.FromName = optNilString((*source).FromName)
-		siteapiSiteBroadcastResource.FromEmail = optNilEmailAddress((*source).FromEmail)
-		siteapiSiteBroadcastResource.Body = (*source).Body
-		siteapiSiteBroadcastResource.Doc = editorDocument((*source).Doc)
-		siteapiSiteBroadcastResource.EditorVersion = optNilString((*source).EditorVersion)
+		siteapiSiteBroadcastResource.Channel = c.BroadcastChannelToResource((*source).Channel)
+		siteapiSiteBroadcastResource.Content = broadcastContent(c, source)
 		// siteapiSiteBroadcastResource.Warnings: ignore
 		siteapiSiteBroadcastResource.SegmentId = optNilEntityID((*source).SegmentID)
 		siteapiSiteBroadcastResource.IntegrationId = optNilEntityID((*source).IntegrationID)
@@ -959,6 +965,23 @@ func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) site.S
 	siteapiSiteDnsRecord.Host = source.Host
 	siteapiSiteDnsRecord.Value = source.Value
 	return siteapiSiteDnsRecord
+}
+func (c *ConverterImpl) EmailBroadcastContentToResource(source *ent.Broadcast) site.EmailBroadcastContent {
+	var siteapiEmailBroadcastContent site.EmailBroadcastContent
+	if source != nil {
+		siteapiEmailBroadcastContent.Channel = emailContentChannel((*source).Channel)
+		if (*source).Subject != nil {
+			siteapiEmailBroadcastContent.Subject = *(*source).Subject
+		}
+		siteapiEmailBroadcastContent.FromName = optNilString((*source).FromName)
+		siteapiEmailBroadcastContent.FromEmail = optNilEmailAddress((*source).FromEmail)
+		if (*source).Body != nil {
+			siteapiEmailBroadcastContent.Body = *(*source).Body
+		}
+		siteapiEmailBroadcastContent.Doc = editorDocument((*source).Doc)
+		siteapiEmailBroadcastContent.EditorVersion = optNilString((*source).EditorVersion)
+	}
+	return siteapiEmailBroadcastContent
 }
 func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) site.SiteEmailTemplateResource {
 	var siteapiSiteEmailTemplateResource site.SiteEmailTemplateResource

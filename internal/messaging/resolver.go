@@ -88,6 +88,15 @@ func IntegrationKept(ctx context.Context, s *ent.Scoped, id int64) (bool, error)
 	return s.Integration().Query().Where(integration.ID(id)).Exist(ctx)
 }
 
+// KeptIntegrationOn reports whether the Workspace has a kept Integration with the id on channel:
+// work on that Channel may name it (IntegrationKept), and work on another Channel never does
+// (ADR 0074). Like IntegrationKept it says nothing of whether the Integration can send.
+func KeptIntegrationOn(ctx context.Context, s *ent.Scoped, channel Channel, id int64) (bool, error) {
+	return s.Integration().Query().
+		Where(integration.ID(id), integration.ChannelEQ(integration.Channel(channel))).
+		Exist(ctx)
+}
+
 // Integration is the enabled Integration of channel that a send on that Channel goes through: the
 // one named by id, or the Channel's default when id is nil. A named Integration that is disabled,
 // discarded or of another Channel is ErrNoProvider, never the default in its place: no send goes

@@ -127,23 +127,11 @@ model SiteBroadcastResource {
   /** Internal broadcast name */
   name: string;
 
-  /** Email subject line */
-  subject: string;
+  /** The Channel the broadcast sends on, fixed when it was created */
+  channel: BroadcastChannel;
 
-  /** Sender display name (defaults to the integration's) */
-  fromName?: string | null;
-
-  /** Sender email address (defaults to the integration's) */
-  fromEmail?: EmailAddress | null;
-
-  /** HTML body with Liquid merge tags */
-  body: string;
-
-  /** The editor's JSON document the body was built from; null when the body was written as HTML */
-  doc?: EditorDocument | null;
-
-  /** Version of the editor that rendered the document; null with it */
-  editorVersion?: string | null;
+  /** What the broadcast says, in the shape of its Channel */
+  content: BroadcastContent;
 
   /** Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it */
   warnings?: LintFinding[];
@@ -223,6 +211,9 @@ model SiteBroadcastsListFilter {
 
   /** Only the broadcasts in one of these statuses; every status when absent */
   @query(#{ explode: true }) status?: SiteBroadcastStatus[];
+
+  /** Only the broadcasts on this Channel; every Channel when absent */
+  @query channel?: BroadcastChannel;
 
   /** The order of the list: `newest` when absent */
   @query order?: SiteBroadcastsOrder;

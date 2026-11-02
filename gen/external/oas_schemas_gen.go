@@ -2926,6 +2926,156 @@ func (s *BrandKitResource) SetUpdatedAt(val OptNilTimestamp) {
 
 func (*BrandKitResource) brandKitGetRes() {}
 
+// The Channel a Broadcast sends on, fixed when it is created (ADR 0080).
+// Ref: #/components/schemas/BroadcastChannel
+type BroadcastChannel string
+
+const (
+	BroadcastChannelEmail BroadcastChannel = "email"
+)
+
+// AllValues returns all BroadcastChannel values.
+func (BroadcastChannel) AllValues() []BroadcastChannel {
+	return []BroadcastChannel{
+		BroadcastChannelEmail,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BroadcastChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case BroadcastChannelEmail:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BroadcastChannel) UnmarshalText(data []byte) error {
+	switch BroadcastChannel(data) {
+	case BroadcastChannelEmail:
+		*s = BroadcastChannelEmail
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078).
+// Ref: #/components/schemas/BroadcastContent
+type BroadcastContent struct {
+	OneOf BroadcastContentSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *BroadcastContent) GetOneOf() BroadcastContentSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *BroadcastContent) SetOneOf(val BroadcastContentSum) {
+	s.OneOf = val
+}
+
+// What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078).
+// Ref: #/components/schemas/BroadcastContentInput
+type BroadcastContentInput struct {
+	OneOf BroadcastContentInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *BroadcastContentInput) GetOneOf() BroadcastContentInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *BroadcastContentInput) SetOneOf(val BroadcastContentInputSum) {
+	s.OneOf = val
+}
+
+// BroadcastContentInputSum represents sum type.
+type BroadcastContentInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                       BroadcastContentInputSumType
+	EmailBroadcastContentInput EmailBroadcastContentInput
+}
+
+// BroadcastContentInputSumType is oneOf type of BroadcastContentInputSum.
+type BroadcastContentInputSumType string
+
+// Possible values for BroadcastContentInputSumType.
+const (
+	EmailBroadcastContentInputBroadcastContentInputSum BroadcastContentInputSumType = "email"
+)
+
+// IsEmailBroadcastContentInput reports whether BroadcastContentInputSum is EmailBroadcastContentInput.
+func (s BroadcastContentInputSum) IsEmailBroadcastContentInput() bool {
+	return s.Type == EmailBroadcastContentInputBroadcastContentInputSum
+}
+
+// SetEmailBroadcastContentInput sets BroadcastContentInputSum to EmailBroadcastContentInput.
+func (s *BroadcastContentInputSum) SetEmailBroadcastContentInput(v EmailBroadcastContentInput) {
+	s.Type = EmailBroadcastContentInputBroadcastContentInputSum
+	s.EmailBroadcastContentInput = v
+}
+
+// GetEmailBroadcastContentInput returns EmailBroadcastContentInput and true boolean if BroadcastContentInputSum is EmailBroadcastContentInput.
+func (s BroadcastContentInputSum) GetEmailBroadcastContentInput() (v EmailBroadcastContentInput, ok bool) {
+	if !s.IsEmailBroadcastContentInput() {
+		return v, false
+	}
+	return s.EmailBroadcastContentInput, true
+}
+
+// NewEmailBroadcastContentInputBroadcastContentInputSum returns new BroadcastContentInputSum from EmailBroadcastContentInput.
+func NewEmailBroadcastContentInputBroadcastContentInputSum(v EmailBroadcastContentInput) BroadcastContentInputSum {
+	var s BroadcastContentInputSum
+	s.SetEmailBroadcastContentInput(v)
+	return s
+}
+
+// BroadcastContentSum represents sum type.
+type BroadcastContentSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                  BroadcastContentSumType
+	EmailBroadcastContent EmailBroadcastContent
+}
+
+// BroadcastContentSumType is oneOf type of BroadcastContentSum.
+type BroadcastContentSumType string
+
+// Possible values for BroadcastContentSumType.
+const (
+	EmailBroadcastContentBroadcastContentSum BroadcastContentSumType = "email"
+)
+
+// IsEmailBroadcastContent reports whether BroadcastContentSum is EmailBroadcastContent.
+func (s BroadcastContentSum) IsEmailBroadcastContent() bool {
+	return s.Type == EmailBroadcastContentBroadcastContentSum
+}
+
+// SetEmailBroadcastContent sets BroadcastContentSum to EmailBroadcastContent.
+func (s *BroadcastContentSum) SetEmailBroadcastContent(v EmailBroadcastContent) {
+	s.Type = EmailBroadcastContentBroadcastContentSum
+	s.EmailBroadcastContent = v
+}
+
+// GetEmailBroadcastContent returns EmailBroadcastContent and true boolean if BroadcastContentSum is EmailBroadcastContent.
+func (s BroadcastContentSum) GetEmailBroadcastContent() (v EmailBroadcastContent, ok bool) {
+	if !s.IsEmailBroadcastContent() {
+		return v, false
+	}
+	return s.EmailBroadcastContent, true
+}
+
+// NewEmailBroadcastContentBroadcastContentSum returns new BroadcastContentSum from EmailBroadcastContent.
+func NewEmailBroadcastContentBroadcastContentSum(v EmailBroadcastContent) BroadcastContentSum {
+	var s BroadcastContentSum
+	s.SetEmailBroadcastContent(v)
+	return s
+}
+
 // Delivery report of a broadcast.
 // Ref: #/components/schemas/BroadcastReport
 type BroadcastReport struct {
@@ -3120,18 +3270,10 @@ type BroadcastResource struct {
 	ID EntityId `json:"id"`
 	// Internal broadcast name.
 	Name string `json:"name"`
-	// Email subject line.
-	Subject string `json:"subject"`
-	// Sender display name (defaults to the integration's).
-	FromName OptNilString `json:"fromName"`
-	// Sender email address (defaults to the integration's).
-	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// HTML body with Liquid merge tags.
-	Body string `json:"body"`
-	// The editor's JSON document the body was built from; null when the body was written as HTML.
-	Doc OptNilEditorDocument `json:"doc"`
-	// Version of the editor that rendered the document; null with it.
-	EditorVersion OptNilString `json:"editorVersion"`
+	// The Channel the broadcast sends on, fixed when it was created.
+	Channel BroadcastChannel `json:"channel"`
+	// What the broadcast says, in the shape of its Channel.
+	Content BroadcastContent `json:"content"`
 	// Segment this broadcast goes to; null means all contacts. Once the broadcast leaves draft it holds a
 	// copy of the segment's condition taken then, and this names the segment only as where its audience
 	// came from.
@@ -3162,34 +3304,14 @@ func (s *BroadcastResource) GetName() string {
 	return s.Name
 }
 
-// GetSubject returns the value of Subject.
-func (s *BroadcastResource) GetSubject() string {
-	return s.Subject
+// GetChannel returns the value of Channel.
+func (s *BroadcastResource) GetChannel() BroadcastChannel {
+	return s.Channel
 }
 
-// GetFromName returns the value of FromName.
-func (s *BroadcastResource) GetFromName() OptNilString {
-	return s.FromName
-}
-
-// GetFromEmail returns the value of FromEmail.
-func (s *BroadcastResource) GetFromEmail() OptNilEmailAddress {
-	return s.FromEmail
-}
-
-// GetBody returns the value of Body.
-func (s *BroadcastResource) GetBody() string {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *BroadcastResource) GetDoc() OptNilEditorDocument {
-	return s.Doc
-}
-
-// GetEditorVersion returns the value of EditorVersion.
-func (s *BroadcastResource) GetEditorVersion() OptNilString {
-	return s.EditorVersion
+// GetContent returns the value of Content.
+func (s *BroadcastResource) GetContent() BroadcastContent {
+	return s.Content
 }
 
 // GetSegmentId returns the value of SegmentId.
@@ -3242,34 +3364,14 @@ func (s *BroadcastResource) SetName(val string) {
 	s.Name = val
 }
 
-// SetSubject sets the value of Subject.
-func (s *BroadcastResource) SetSubject(val string) {
-	s.Subject = val
+// SetChannel sets the value of Channel.
+func (s *BroadcastResource) SetChannel(val BroadcastChannel) {
+	s.Channel = val
 }
 
-// SetFromName sets the value of FromName.
-func (s *BroadcastResource) SetFromName(val OptNilString) {
-	s.FromName = val
-}
-
-// SetFromEmail sets the value of FromEmail.
-func (s *BroadcastResource) SetFromEmail(val OptNilEmailAddress) {
-	s.FromEmail = val
-}
-
-// SetBody sets the value of Body.
-func (s *BroadcastResource) SetBody(val string) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *BroadcastResource) SetDoc(val OptNilEditorDocument) {
-	s.Doc = val
-}
-
-// SetEditorVersion sets the value of EditorVersion.
-func (s *BroadcastResource) SetEditorVersion(val OptNilString) {
-	s.EditorVersion = val
+// SetContent sets the value of Content.
+func (s *BroadcastResource) SetContent(val BroadcastContent) {
+	s.Content = val
 }
 
 // SetSegmentId sets the value of SegmentId.
@@ -7163,23 +7265,13 @@ func (s *CreateAutomationInput) SetIntegrationId(val OptNilEntityId) {
 type CreateBroadcastInput struct {
 	// Internal broadcast name.
 	Name string `json:"name"`
-	// Email subject line.
-	Subject OptString `json:"subject"`
-	// Sender display name; null or omitted means the integration's default.
-	FromName OptNilString `json:"fromName"`
-	// Sender email address: its domain must be a verified Sending domain of the workspace, or the write is
-	// a 422. Null or omitted means the integration's default.
-	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// HTML body with Liquid merge tags. Write this or `doc`, not both.
-	Body OptString `json:"body"`
-	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
-	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
-	// a 422 with the reason and nothing is stored.
-	Doc OptEditorDocument `json:"doc"`
+	// What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a
+	// broadcast is never converted to another Channel.
+	Content BroadcastContentInput `json:"content"`
 	// Target segment; null or omitted means all contacts. An archived segment is refused with 422.
 	SegmentId OptNilEntityId `json:"segmentId"`
-	// Sending integration; null or omitted means the workspace default. An archived integration is refused
-	// with 422.
+	// Sending integration, of the broadcast's Channel; null or omitted means the Channel's default. An
+	// archived integration, or one of another Channel, is refused with 422.
 	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
@@ -7188,29 +7280,9 @@ func (s *CreateBroadcastInput) GetName() string {
 	return s.Name
 }
 
-// GetSubject returns the value of Subject.
-func (s *CreateBroadcastInput) GetSubject() OptString {
-	return s.Subject
-}
-
-// GetFromName returns the value of FromName.
-func (s *CreateBroadcastInput) GetFromName() OptNilString {
-	return s.FromName
-}
-
-// GetFromEmail returns the value of FromEmail.
-func (s *CreateBroadcastInput) GetFromEmail() OptNilEmailAddress {
-	return s.FromEmail
-}
-
-// GetBody returns the value of Body.
-func (s *CreateBroadcastInput) GetBody() OptString {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *CreateBroadcastInput) GetDoc() OptEditorDocument {
-	return s.Doc
+// GetContent returns the value of Content.
+func (s *CreateBroadcastInput) GetContent() BroadcastContentInput {
+	return s.Content
 }
 
 // GetSegmentId returns the value of SegmentId.
@@ -7228,29 +7300,9 @@ func (s *CreateBroadcastInput) SetName(val string) {
 	s.Name = val
 }
 
-// SetSubject sets the value of Subject.
-func (s *CreateBroadcastInput) SetSubject(val OptString) {
-	s.Subject = val
-}
-
-// SetFromName sets the value of FromName.
-func (s *CreateBroadcastInput) SetFromName(val OptNilString) {
-	s.FromName = val
-}
-
-// SetFromEmail sets the value of FromEmail.
-func (s *CreateBroadcastInput) SetFromEmail(val OptNilEmailAddress) {
-	s.FromEmail = val
-}
-
-// SetBody sets the value of Body.
-func (s *CreateBroadcastInput) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *CreateBroadcastInput) SetDoc(val OptEditorDocument) {
-	s.Doc = val
+// SetContent sets the value of Content.
+func (s *CreateBroadcastInput) SetContent(val BroadcastContentInput) {
+	s.Content = val
 }
 
 // SetSegmentId sets the value of SegmentId.
@@ -8197,6 +8249,249 @@ func (s *EditorDocument) init() EditorDocument {
 }
 
 type EmailAddress string
+
+// Email's content of a Broadcast as stored.
+// Ref: #/components/schemas/EmailBroadcastContent
+type EmailBroadcastContent struct {
+	// The Channel the content is for.
+	Channel EmailBroadcastContentChannel `json:"channel"`
+	// Email subject line.
+	Subject string `json:"subject"`
+	// Sender display name (defaults to the integration's).
+	FromName OptNilString `json:"fromName"`
+	// Sender email address (defaults to the integration's).
+	FromEmail OptNilEmailAddress `json:"fromEmail"`
+	// HTML body with Liquid merge tags.
+	Body string `json:"body"`
+	// The editor's JSON document the body was built from; null when the body was written as HTML.
+	Doc OptNilEditorDocument `json:"doc"`
+	// Version of the editor that rendered the document; null with it.
+	EditorVersion OptNilString `json:"editorVersion"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *EmailBroadcastContent) GetChannel() EmailBroadcastContentChannel {
+	return s.Channel
+}
+
+// GetSubject returns the value of Subject.
+func (s *EmailBroadcastContent) GetSubject() string {
+	return s.Subject
+}
+
+// GetFromName returns the value of FromName.
+func (s *EmailBroadcastContent) GetFromName() OptNilString {
+	return s.FromName
+}
+
+// GetFromEmail returns the value of FromEmail.
+func (s *EmailBroadcastContent) GetFromEmail() OptNilEmailAddress {
+	return s.FromEmail
+}
+
+// GetBody returns the value of Body.
+func (s *EmailBroadcastContent) GetBody() string {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *EmailBroadcastContent) GetDoc() OptNilEditorDocument {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *EmailBroadcastContent) GetEditorVersion() OptNilString {
+	return s.EditorVersion
+}
+
+// SetChannel sets the value of Channel.
+func (s *EmailBroadcastContent) SetChannel(val EmailBroadcastContentChannel) {
+	s.Channel = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *EmailBroadcastContent) SetSubject(val string) {
+	s.Subject = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *EmailBroadcastContent) SetFromName(val OptNilString) {
+	s.FromName = val
+}
+
+// SetFromEmail sets the value of FromEmail.
+func (s *EmailBroadcastContent) SetFromEmail(val OptNilEmailAddress) {
+	s.FromEmail = val
+}
+
+// SetBody sets the value of Body.
+func (s *EmailBroadcastContent) SetBody(val string) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *EmailBroadcastContent) SetDoc(val OptNilEditorDocument) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *EmailBroadcastContent) SetEditorVersion(val OptNilString) {
+	s.EditorVersion = val
+}
+
+// The Channel the content is for.
+type EmailBroadcastContentChannel string
+
+const (
+	EmailBroadcastContentChannelEmail EmailBroadcastContentChannel = "email"
+)
+
+// AllValues returns all EmailBroadcastContentChannel values.
+func (EmailBroadcastContentChannel) AllValues() []EmailBroadcastContentChannel {
+	return []EmailBroadcastContentChannel{
+		EmailBroadcastContentChannelEmail,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EmailBroadcastContentChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case EmailBroadcastContentChannelEmail:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EmailBroadcastContentChannel) UnmarshalText(data []byte) error {
+	switch EmailBroadcastContentChannel(data) {
+	case EmailBroadcastContentChannelEmail:
+		*s = EmailBroadcastContentChannelEmail
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on update
+// an omitted field keeps its value and null clears it.
+// Ref: #/components/schemas/EmailBroadcastContentInput
+type EmailBroadcastContentInput struct {
+	// The Channel the content is for: the Broadcast's own, which an update cannot change.
+	Channel EmailBroadcastContentInputChannel `json:"channel"`
+	// Email subject line.
+	Subject OptString `json:"subject"`
+	// Sender display name; null or omitted on create means the integration's default, null on update goes
+	// back to it.
+	FromName OptNilString `json:"fromName"`
+	// Sender email address: a new value must be on a verified Sending domain of the workspace, or the
+	// write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays
+	// editable. Null or omitted on create means the integration's default, null on update goes back to it.
+	FromEmail OptNilEmailAddress `json:"fromEmail"`
+	// HTML body with Liquid merge tags. Writing only a body on update clears the stored document. Write
+	// this or `doc`, not both.
+	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+	// a 422 with the reason and nothing is stored.
+	Doc OptEditorDocument `json:"doc"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *EmailBroadcastContentInput) GetChannel() EmailBroadcastContentInputChannel {
+	return s.Channel
+}
+
+// GetSubject returns the value of Subject.
+func (s *EmailBroadcastContentInput) GetSubject() OptString {
+	return s.Subject
+}
+
+// GetFromName returns the value of FromName.
+func (s *EmailBroadcastContentInput) GetFromName() OptNilString {
+	return s.FromName
+}
+
+// GetFromEmail returns the value of FromEmail.
+func (s *EmailBroadcastContentInput) GetFromEmail() OptNilEmailAddress {
+	return s.FromEmail
+}
+
+// GetBody returns the value of Body.
+func (s *EmailBroadcastContentInput) GetBody() OptString {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *EmailBroadcastContentInput) GetDoc() OptEditorDocument {
+	return s.Doc
+}
+
+// SetChannel sets the value of Channel.
+func (s *EmailBroadcastContentInput) SetChannel(val EmailBroadcastContentInputChannel) {
+	s.Channel = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *EmailBroadcastContentInput) SetSubject(val OptString) {
+	s.Subject = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *EmailBroadcastContentInput) SetFromName(val OptNilString) {
+	s.FromName = val
+}
+
+// SetFromEmail sets the value of FromEmail.
+func (s *EmailBroadcastContentInput) SetFromEmail(val OptNilEmailAddress) {
+	s.FromEmail = val
+}
+
+// SetBody sets the value of Body.
+func (s *EmailBroadcastContentInput) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *EmailBroadcastContentInput) SetDoc(val OptEditorDocument) {
+	s.Doc = val
+}
+
+// The Channel the content is for: the Broadcast's own, which an update cannot change.
+type EmailBroadcastContentInputChannel string
+
+const (
+	EmailBroadcastContentInputChannelEmail EmailBroadcastContentInputChannel = "email"
+)
+
+// AllValues returns all EmailBroadcastContentInputChannel values.
+func (EmailBroadcastContentInputChannel) AllValues() []EmailBroadcastContentInputChannel {
+	return []EmailBroadcastContentInputChannel{
+		EmailBroadcastContentInputChannelEmail,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EmailBroadcastContentInputChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case EmailBroadcastContentInputChannelEmail:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EmailBroadcastContentInputChannel) UnmarshalText(data []byte) error {
+	switch EmailBroadcastContentInputChannel(data) {
+	case EmailBroadcastContentInputChannelEmail:
+		*s = EmailBroadcastContentInputChannelEmail
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 type EmailLintLintBadRequest ProblemDetails
 
@@ -11514,6 +11809,98 @@ func (o OptBool) Get() (v bool, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptBool) Or(d bool) bool {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptBroadcastChannel returns new OptBroadcastChannel with value set to v.
+func NewOptBroadcastChannel(v BroadcastChannel) OptBroadcastChannel {
+	return OptBroadcastChannel{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptBroadcastChannel is optional BroadcastChannel.
+type OptBroadcastChannel struct {
+	Value BroadcastChannel
+	Set   bool
+}
+
+// IsSet returns true if OptBroadcastChannel was set.
+func (o OptBroadcastChannel) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptBroadcastChannel) Reset() {
+	var v BroadcastChannel
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptBroadcastChannel) SetTo(v BroadcastChannel) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptBroadcastChannel) Get() (v BroadcastChannel, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptBroadcastChannel) Or(d BroadcastChannel) BroadcastChannel {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptBroadcastContentInput returns new OptBroadcastContentInput with value set to v.
+func NewOptBroadcastContentInput(v BroadcastContentInput) OptBroadcastContentInput {
+	return OptBroadcastContentInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptBroadcastContentInput is optional BroadcastContentInput.
+type OptBroadcastContentInput struct {
+	Value BroadcastContentInput
+	Set   bool
+}
+
+// IsSet returns true if OptBroadcastContentInput was set.
+func (o OptBroadcastContentInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptBroadcastContentInput) Reset() {
+	var v BroadcastContentInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptBroadcastContentInput) SetTo(v BroadcastContentInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptBroadcastContentInput) Get() (v BroadcastContentInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptBroadcastContentInput) Or(d BroadcastContentInput) BroadcastContentInput {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -18493,23 +18880,13 @@ func (s *UpdateAutomationInput) SetIntegrationId(val OptNilEntityId) {
 type UpdateBroadcastInput struct {
 	// Internal broadcast name.
 	Name OptString `json:"name"`
-	// Email subject line.
-	Subject OptString `json:"subject"`
-	// Sender display name; null goes back to the integration's default.
-	FromName OptNilString `json:"fromName"`
-	// Sender email address: a changed value must be on a verified Sending domain of the workspace, or the
-	// write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays
-	// editable. Null goes back to the integration's default.
-	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
-	Body OptString `json:"body"`
-	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
-	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
-	// a 422 with the reason and nothing is stored.
-	Doc OptEditorDocument `json:"doc"`
+	// What the broadcast says; its `channel` must be the broadcast's own (422 otherwise). Omitted keeps
+	// the content.
+	Content OptBroadcastContentInput `json:"content"`
 	// Target segment; null means all contacts. An archived segment is refused with 422.
 	SegmentId OptNilEntityId `json:"segmentId"`
-	// Sending integration; null means the workspace default. An archived integration is refused with 422.
+	// Sending integration, of the broadcast's Channel; null means the Channel's default. An archived
+	// integration, or one of another Channel, is refused with 422.
 	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
@@ -18518,29 +18895,9 @@ func (s *UpdateBroadcastInput) GetName() OptString {
 	return s.Name
 }
 
-// GetSubject returns the value of Subject.
-func (s *UpdateBroadcastInput) GetSubject() OptString {
-	return s.Subject
-}
-
-// GetFromName returns the value of FromName.
-func (s *UpdateBroadcastInput) GetFromName() OptNilString {
-	return s.FromName
-}
-
-// GetFromEmail returns the value of FromEmail.
-func (s *UpdateBroadcastInput) GetFromEmail() OptNilEmailAddress {
-	return s.FromEmail
-}
-
-// GetBody returns the value of Body.
-func (s *UpdateBroadcastInput) GetBody() OptString {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *UpdateBroadcastInput) GetDoc() OptEditorDocument {
-	return s.Doc
+// GetContent returns the value of Content.
+func (s *UpdateBroadcastInput) GetContent() OptBroadcastContentInput {
+	return s.Content
 }
 
 // GetSegmentId returns the value of SegmentId.
@@ -18558,29 +18915,9 @@ func (s *UpdateBroadcastInput) SetName(val OptString) {
 	s.Name = val
 }
 
-// SetSubject sets the value of Subject.
-func (s *UpdateBroadcastInput) SetSubject(val OptString) {
-	s.Subject = val
-}
-
-// SetFromName sets the value of FromName.
-func (s *UpdateBroadcastInput) SetFromName(val OptNilString) {
-	s.FromName = val
-}
-
-// SetFromEmail sets the value of FromEmail.
-func (s *UpdateBroadcastInput) SetFromEmail(val OptNilEmailAddress) {
-	s.FromEmail = val
-}
-
-// SetBody sets the value of Body.
-func (s *UpdateBroadcastInput) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *UpdateBroadcastInput) SetDoc(val OptEditorDocument) {
-	s.Doc = val
+// SetContent sets the value of Content.
+func (s *UpdateBroadcastInput) SetContent(val OptBroadcastContentInput) {
+	s.Content = val
 }
 
 // SetSegmentId sets the value of SegmentId.

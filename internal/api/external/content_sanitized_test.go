@@ -26,10 +26,11 @@ func TestExternalSanitizesBodiesOnSave(t *testing.T) {
 	assert.Equal(t, `<p>Hi {{ first_name }}</p>`, created.Body)
 
 	bc, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
-		Name: "Hostile", Body: externalapi.NewOptString(hostile),
+		Name:    "Hostile",
+		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString(hostile)}),
 	})
 	require.NoError(t, err)
 	broadcast, ok := bc.(*externalapi.BroadcastResource)
 	require.Truef(t, ok, "got %T", bc)
-	assert.Equal(t, `<p>Hi {{ first_name }}</p>`, broadcast.Body)
+	assert.Equal(t, `<p>Hi {{ first_name }}</p>`, testhelper.ExternalEmailOf(broadcast).Body)
 }

@@ -8294,6 +8294,7 @@ type BroadcastMutation struct {
 	updated_at         *time.Time
 	discarded_at       *time.Time
 	name               *string
+	channel            *broadcast.Channel
 	subject            *string
 	from_name          *string
 	from_email         *string
@@ -8620,6 +8621,42 @@ func (m *BroadcastMutation) ResetName() {
 	m.name = nil
 }
 
+// SetChannel sets the "channel" field.
+func (m *BroadcastMutation) SetChannel(b broadcast.Channel) {
+	m.channel = &b
+}
+
+// Channel returns the value of the "channel" field in the mutation.
+func (m *BroadcastMutation) Channel() (r broadcast.Channel, exists bool) {
+	v := m.channel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannel returns the old "channel" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldChannel(ctx context.Context) (v broadcast.Channel, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannel: %w", err)
+	}
+	return oldValue.Channel, nil
+}
+
+// ResetChannel resets all changes to the "channel" field.
+func (m *BroadcastMutation) ResetChannel() {
+	m.channel = nil
+}
+
 // SetSubject sets the "subject" field.
 func (m *BroadcastMutation) SetSubject(s string) {
 	m.subject = &s
@@ -8637,7 +8674,7 @@ func (m *BroadcastMutation) Subject() (r string, exists bool) {
 // OldSubject returns the old "subject" field's value of the Broadcast entity.
 // If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastMutation) OldSubject(ctx context.Context) (v string, err error) {
+func (m *BroadcastMutation) OldSubject(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSubject is only allowed on UpdateOne operations")
 	}
@@ -8651,9 +8688,22 @@ func (m *BroadcastMutation) OldSubject(ctx context.Context) (v string, err error
 	return oldValue.Subject, nil
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (m *BroadcastMutation) ClearSubject() {
+	m.subject = nil
+	m.clearedFields[broadcast.FieldSubject] = struct{}{}
+}
+
+// SubjectCleared returns if the "subject" field was cleared in this mutation.
+func (m *BroadcastMutation) SubjectCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldSubject]
+	return ok
+}
+
 // ResetSubject resets all changes to the "subject" field.
 func (m *BroadcastMutation) ResetSubject() {
 	m.subject = nil
+	delete(m.clearedFields, broadcast.FieldSubject)
 }
 
 // SetFromName sets the "from_name" field.
@@ -8771,7 +8821,7 @@ func (m *BroadcastMutation) Body() (r string, exists bool) {
 // OldBody returns the old "body" field's value of the Broadcast entity.
 // If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastMutation) OldBody(ctx context.Context) (v string, err error) {
+func (m *BroadcastMutation) OldBody(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldBody is only allowed on UpdateOne operations")
 	}
@@ -8785,9 +8835,22 @@ func (m *BroadcastMutation) OldBody(ctx context.Context) (v string, err error) {
 	return oldValue.Body, nil
 }
 
+// ClearBody clears the value of the "body" field.
+func (m *BroadcastMutation) ClearBody() {
+	m.body = nil
+	m.clearedFields[broadcast.FieldBody] = struct{}{}
+}
+
+// BodyCleared returns if the "body" field was cleared in this mutation.
+func (m *BroadcastMutation) BodyCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldBody]
+	return ok
+}
+
 // ResetBody resets all changes to the "body" field.
 func (m *BroadcastMutation) ResetBody() {
 	m.body = nil
+	delete(m.clearedFields, broadcast.FieldBody)
 }
 
 // SetDoc sets the "doc" field.
@@ -9501,7 +9564,7 @@ func (m *BroadcastMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastMutation) Fields() []string {
-	fields := make([]string, 0, 20)
+	fields := make([]string, 0, 21)
 	if m.created_at != nil {
 		fields = append(fields, broadcast.FieldCreatedAt)
 	}
@@ -9516,6 +9579,9 @@ func (m *BroadcastMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, broadcast.FieldName)
+	}
+	if m.channel != nil {
+		fields = append(fields, broadcast.FieldChannel)
 	}
 	if m.subject != nil {
 		fields = append(fields, broadcast.FieldSubject)
@@ -9580,6 +9646,8 @@ func (m *BroadcastMutation) Field(name string) (ent.Value, bool) {
 		return m.DiscardedAt()
 	case broadcast.FieldName:
 		return m.Name()
+	case broadcast.FieldChannel:
+		return m.Channel()
 	case broadcast.FieldSubject:
 		return m.Subject()
 	case broadcast.FieldFromName:
@@ -9629,6 +9697,8 @@ func (m *BroadcastMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldDiscardedAt(ctx)
 	case broadcast.FieldName:
 		return m.OldName(ctx)
+	case broadcast.FieldChannel:
+		return m.OldChannel(ctx)
 	case broadcast.FieldSubject:
 		return m.OldSubject(ctx)
 	case broadcast.FieldFromName:
@@ -9702,6 +9772,13 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case broadcast.FieldChannel:
+		v, ok := value.(broadcast.Channel)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannel(v)
 		return nil
 	case broadcast.FieldSubject:
 		v, ok := value.(string)
@@ -9844,11 +9921,17 @@ func (m *BroadcastMutation) ClearedFields() []string {
 	if m.FieldCleared(broadcast.FieldDiscardedAt) {
 		fields = append(fields, broadcast.FieldDiscardedAt)
 	}
+	if m.FieldCleared(broadcast.FieldSubject) {
+		fields = append(fields, broadcast.FieldSubject)
+	}
 	if m.FieldCleared(broadcast.FieldFromName) {
 		fields = append(fields, broadcast.FieldFromName)
 	}
 	if m.FieldCleared(broadcast.FieldFromEmail) {
 		fields = append(fields, broadcast.FieldFromEmail)
+	}
+	if m.FieldCleared(broadcast.FieldBody) {
+		fields = append(fields, broadcast.FieldBody)
 	}
 	if m.FieldCleared(broadcast.FieldDoc) {
 		fields = append(fields, broadcast.FieldDoc)
@@ -9897,11 +9980,17 @@ func (m *BroadcastMutation) ClearField(name string) error {
 	case broadcast.FieldDiscardedAt:
 		m.ClearDiscardedAt()
 		return nil
+	case broadcast.FieldSubject:
+		m.ClearSubject()
+		return nil
 	case broadcast.FieldFromName:
 		m.ClearFromName()
 		return nil
 	case broadcast.FieldFromEmail:
 		m.ClearFromEmail()
+		return nil
+	case broadcast.FieldBody:
+		m.ClearBody()
 		return nil
 	case broadcast.FieldDoc:
 		m.ClearDoc()
@@ -9955,6 +10044,9 @@ func (m *BroadcastMutation) ResetField(name string) error {
 		return nil
 	case broadcast.FieldName:
 		m.ResetName()
+		return nil
+	case broadcast.FieldChannel:
+		m.ResetChannel()
 		return nil
 	case broadcast.FieldSubject:
 		m.ResetSubject()

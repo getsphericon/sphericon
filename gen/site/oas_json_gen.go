@@ -475,6 +475,368 @@ func (s *AuditAction) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes BroadcastChannel as json.
+func (s BroadcastChannel) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes BroadcastChannel from json.
+func (s *BroadcastChannel) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode BroadcastChannel to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch BroadcastChannel(v) {
+	case BroadcastChannelEmail:
+		*s = BroadcastChannelEmail
+	default:
+		*s = BroadcastChannel(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s BroadcastChannel) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *BroadcastChannel) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *BroadcastContent) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *BroadcastContent) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfBroadcastContent = [0]string{}
+
+// Decode decodes BroadcastContent from json.
+func (s *BroadcastContent) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode BroadcastContent to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode BroadcastContent")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *BroadcastContent) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *BroadcastContent) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *BroadcastContentInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *BroadcastContentInput) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfBroadcastContentInput = [0]string{}
+
+// Decode decodes BroadcastContentInput from json.
+func (s *BroadcastContentInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode BroadcastContentInput to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode BroadcastContentInput")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *BroadcastContentInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *BroadcastContentInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes BroadcastContentInputSum as json.
+func (s BroadcastContentInputSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s BroadcastContentInputSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case EmailBroadcastContentInputBroadcastContentInputSum:
+		e.FieldStart("channel")
+		e.Str("email")
+		{
+			s := s.EmailBroadcastContentInput
+			{
+				if s.Subject.Set {
+					e.FieldStart("subject")
+					s.Subject.Encode(e)
+				}
+			}
+			{
+				if s.FromName.Set {
+					e.FieldStart("fromName")
+					s.FromName.Encode(e)
+				}
+			}
+			{
+				if s.FromEmail.Set {
+					e.FieldStart("fromEmail")
+					s.FromEmail.Encode(e)
+				}
+			}
+			{
+				if s.Body.Set {
+					e.FieldStart("body")
+					s.Body.Encode(e)
+				}
+			}
+			{
+				if s.Doc.Set {
+					e.FieldStart("doc")
+					s.Doc.Encode(e)
+				}
+			}
+		}
+	}
+}
+
+// Decode decodes BroadcastContentInputSum from json.
+func (s *BroadcastContentInputSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode BroadcastContentInputSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "channel":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "email":
+					s.Type = EmailBroadcastContentInputBroadcastContentInputSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case EmailBroadcastContentInputBroadcastContentInputSum:
+		if err := s.EmailBroadcastContentInput.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s BroadcastContentInputSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *BroadcastContentInputSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes BroadcastContentSum as json.
+func (s BroadcastContentSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s BroadcastContentSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case EmailBroadcastContentBroadcastContentSum:
+		e.FieldStart("channel")
+		e.Str("email")
+		{
+			s := s.EmailBroadcastContent
+			{
+				e.FieldStart("subject")
+				e.Str(s.Subject)
+			}
+			{
+				if s.FromName.Set {
+					e.FieldStart("fromName")
+					s.FromName.Encode(e)
+				}
+			}
+			{
+				if s.FromEmail.Set {
+					e.FieldStart("fromEmail")
+					s.FromEmail.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("body")
+				e.Str(s.Body)
+			}
+			{
+				if s.Doc.Set {
+					e.FieldStart("doc")
+					s.Doc.Encode(e)
+				}
+			}
+			{
+				if s.EditorVersion.Set {
+					e.FieldStart("editorVersion")
+					s.EditorVersion.Encode(e)
+				}
+			}
+		}
+	}
+}
+
+// Decode decodes BroadcastContentSum from json.
+func (s *BroadcastContentSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode BroadcastContentSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "channel":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "email":
+					s.Type = EmailBroadcastContentBroadcastContentSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case EmailBroadcastContentBroadcastContentSum:
+		if err := s.EmailBroadcastContent.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s BroadcastContentSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *BroadcastContentSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *ContactExportBroadcastRecipient) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -2843,34 +3205,8 @@ func (s *CreateBroadcastInput) encodeFields(e *jx.Encoder) {
 		e.Str(s.Name)
 	}
 	{
-		if s.Subject.Set {
-			e.FieldStart("subject")
-			s.Subject.Encode(e)
-		}
-	}
-	{
-		if s.FromName.Set {
-			e.FieldStart("fromName")
-			s.FromName.Encode(e)
-		}
-	}
-	{
-		if s.FromEmail.Set {
-			e.FieldStart("fromEmail")
-			s.FromEmail.Encode(e)
-		}
-	}
-	{
-		if s.Body.Set {
-			e.FieldStart("body")
-			s.Body.Encode(e)
-		}
-	}
-	{
-		if s.Doc.Set {
-			e.FieldStart("doc")
-			s.Doc.Encode(e)
-		}
+		e.FieldStart("content")
+		s.Content.Encode(e)
 	}
 	{
 		if s.SegmentId.Set {
@@ -2886,15 +3222,11 @@ func (s *CreateBroadcastInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCreateBroadcastInput = [8]string{
+var jsonFieldsNameOfCreateBroadcastInput = [4]string{
 	0: "name",
-	1: "subject",
-	2: "fromName",
-	3: "fromEmail",
-	4: "body",
-	5: "doc",
-	6: "segmentId",
-	7: "integrationId",
+	1: "content",
+	2: "segmentId",
+	3: "integrationId",
 }
 
 // Decode decodes CreateBroadcastInput from json.
@@ -2918,55 +3250,15 @@ func (s *CreateBroadcastInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
-		case "subject":
+		case "content":
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
-				s.Subject.Reset()
-				if err := s.Subject.Decode(d); err != nil {
+				if err := s.Content.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"subject\"")
-			}
-		case "fromName":
-			if err := func() error {
-				s.FromName.Reset()
-				if err := s.FromName.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"fromName\"")
-			}
-		case "fromEmail":
-			if err := func() error {
-				s.FromEmail.Reset()
-				if err := s.FromEmail.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"fromEmail\"")
-			}
-		case "body":
-			if err := func() error {
-				s.Body.Reset()
-				if err := s.Body.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"body\"")
-			}
-		case "doc":
-			if err := func() error {
-				s.Doc.Reset()
-				if err := s.Doc.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"doc\"")
+				return errors.Wrap(err, "decode field \"content\"")
 			}
 		case "segmentId":
 			if err := func() error {
@@ -2998,7 +3290,7 @@ func (s *CreateBroadcastInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000001,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -3794,6 +4086,457 @@ func (s EmailAddress) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *EmailAddress) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *EmailBroadcastContent) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *EmailBroadcastContent) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("channel")
+		s.Channel.Encode(e)
+	}
+	{
+		e.FieldStart("subject")
+		e.Str(s.Subject)
+	}
+	{
+		if s.FromName.Set {
+			e.FieldStart("fromName")
+			s.FromName.Encode(e)
+		}
+	}
+	{
+		if s.FromEmail.Set {
+			e.FieldStart("fromEmail")
+			s.FromEmail.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("body")
+		e.Str(s.Body)
+	}
+	{
+		if s.Doc.Set {
+			e.FieldStart("doc")
+			s.Doc.Encode(e)
+		}
+	}
+	{
+		if s.EditorVersion.Set {
+			e.FieldStart("editorVersion")
+			s.EditorVersion.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfEmailBroadcastContent = [7]string{
+	0: "channel",
+	1: "subject",
+	2: "fromName",
+	3: "fromEmail",
+	4: "body",
+	5: "doc",
+	6: "editorVersion",
+}
+
+// Decode decodes EmailBroadcastContent from json.
+func (s *EmailBroadcastContent) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EmailBroadcastContent to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "channel":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Channel.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"channel\"")
+			}
+		case "subject":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Subject = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"subject\"")
+			}
+		case "fromName":
+			if err := func() error {
+				s.FromName.Reset()
+				if err := s.FromName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromName\"")
+			}
+		case "fromEmail":
+			if err := func() error {
+				s.FromEmail.Reset()
+				if err := s.FromEmail.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromEmail\"")
+			}
+		case "body":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Str()
+				s.Body = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"body\"")
+			}
+		case "doc":
+			if err := func() error {
+				s.Doc.Reset()
+				if err := s.Doc.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"doc\"")
+			}
+		case "editorVersion":
+			if err := func() error {
+				s.EditorVersion.Reset()
+				if err := s.EditorVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"editorVersion\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode EmailBroadcastContent")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00010011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfEmailBroadcastContent) {
+					name = jsonFieldsNameOfEmailBroadcastContent[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *EmailBroadcastContent) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EmailBroadcastContent) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EmailBroadcastContentChannel as json.
+func (s EmailBroadcastContentChannel) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes EmailBroadcastContentChannel from json.
+func (s *EmailBroadcastContentChannel) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EmailBroadcastContentChannel to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch EmailBroadcastContentChannel(v) {
+	case EmailBroadcastContentChannelEmail:
+		*s = EmailBroadcastContentChannelEmail
+	default:
+		*s = EmailBroadcastContentChannel(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s EmailBroadcastContentChannel) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EmailBroadcastContentChannel) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *EmailBroadcastContentInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *EmailBroadcastContentInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("channel")
+		s.Channel.Encode(e)
+	}
+	{
+		if s.Subject.Set {
+			e.FieldStart("subject")
+			s.Subject.Encode(e)
+		}
+	}
+	{
+		if s.FromName.Set {
+			e.FieldStart("fromName")
+			s.FromName.Encode(e)
+		}
+	}
+	{
+		if s.FromEmail.Set {
+			e.FieldStart("fromEmail")
+			s.FromEmail.Encode(e)
+		}
+	}
+	{
+		if s.Body.Set {
+			e.FieldStart("body")
+			s.Body.Encode(e)
+		}
+	}
+	{
+		if s.Doc.Set {
+			e.FieldStart("doc")
+			s.Doc.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfEmailBroadcastContentInput = [6]string{
+	0: "channel",
+	1: "subject",
+	2: "fromName",
+	3: "fromEmail",
+	4: "body",
+	5: "doc",
+}
+
+// Decode decodes EmailBroadcastContentInput from json.
+func (s *EmailBroadcastContentInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EmailBroadcastContentInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "channel":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Channel.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"channel\"")
+			}
+		case "subject":
+			if err := func() error {
+				s.Subject.Reset()
+				if err := s.Subject.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"subject\"")
+			}
+		case "fromName":
+			if err := func() error {
+				s.FromName.Reset()
+				if err := s.FromName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromName\"")
+			}
+		case "fromEmail":
+			if err := func() error {
+				s.FromEmail.Reset()
+				if err := s.FromEmail.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromEmail\"")
+			}
+		case "body":
+			if err := func() error {
+				s.Body.Reset()
+				if err := s.Body.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"body\"")
+			}
+		case "doc":
+			if err := func() error {
+				s.Doc.Reset()
+				if err := s.Doc.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"doc\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode EmailBroadcastContentInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfEmailBroadcastContentInput) {
+					name = jsonFieldsNameOfEmailBroadcastContentInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *EmailBroadcastContentInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EmailBroadcastContentInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EmailBroadcastContentInputChannel as json.
+func (s EmailBroadcastContentInputChannel) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes EmailBroadcastContentInputChannel from json.
+func (s *EmailBroadcastContentInputChannel) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EmailBroadcastContentInputChannel to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch EmailBroadcastContentInputChannel(v) {
+	case EmailBroadcastContentInputChannelEmail:
+		*s = EmailBroadcastContentInputChannelEmail
+	default:
+		*s = EmailBroadcastContentInputChannel(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s EmailBroadcastContentInputChannel) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EmailBroadcastContentInputChannel) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -5838,6 +6581,39 @@ func (s OptBool) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptBool) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes BroadcastContentInput as json.
+func (o OptBroadcastContentInput) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes BroadcastContentInput from json.
+func (o *OptBroadcastContentInput) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptBroadcastContentInput to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptBroadcastContentInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptBroadcastContentInput) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -20859,36 +21635,12 @@ func (s *SiteBroadcastResource) encodeFields(e *jx.Encoder) {
 		e.Str(s.Name)
 	}
 	{
-		e.FieldStart("subject")
-		e.Str(s.Subject)
+		e.FieldStart("channel")
+		s.Channel.Encode(e)
 	}
 	{
-		if s.FromName.Set {
-			e.FieldStart("fromName")
-			s.FromName.Encode(e)
-		}
-	}
-	{
-		if s.FromEmail.Set {
-			e.FieldStart("fromEmail")
-			s.FromEmail.Encode(e)
-		}
-	}
-	{
-		e.FieldStart("body")
-		e.Str(s.Body)
-	}
-	{
-		if s.Doc.Set {
-			e.FieldStart("doc")
-			s.Doc.Encode(e)
-		}
-	}
-	{
-		if s.EditorVersion.Set {
-			e.FieldStart("editorVersion")
-			s.EditorVersion.Encode(e)
-		}
+		e.FieldStart("content")
+		s.Content.Encode(e)
 	}
 	{
 		if s.Warnings != nil {
@@ -20966,28 +21718,24 @@ func (s *SiteBroadcastResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteBroadcastResource = [21]string{
+var jsonFieldsNameOfSiteBroadcastResource = [17]string{
 	0:  "id",
 	1:  "name",
-	2:  "subject",
-	3:  "fromName",
-	4:  "fromEmail",
-	5:  "body",
-	6:  "doc",
-	7:  "editorVersion",
-	8:  "warnings",
-	9:  "segmentId",
-	10: "integrationId",
-	11: "status",
-	12: "holdReason",
-	13: "scheduledAt",
-	14: "sentAt",
-	15: "failedAt",
-	16: "stats",
-	17: "progress",
-	18: "archivedAt",
-	19: "createdAt",
-	20: "updatedAt",
+	2:  "channel",
+	3:  "content",
+	4:  "warnings",
+	5:  "segmentId",
+	6:  "integrationId",
+	7:  "status",
+	8:  "holdReason",
+	9:  "scheduledAt",
+	10: "sentAt",
+	11: "failedAt",
+	12: "stats",
+	13: "progress",
+	14: "archivedAt",
+	15: "createdAt",
+	16: "updatedAt",
 }
 
 // Decode decodes SiteBroadcastResource from json.
@@ -21021,69 +21769,25 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
-		case "subject":
+		case "channel":
 			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
-				v, err := d.Str()
-				s.Subject = string(v)
-				if err != nil {
+				if err := s.Channel.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"subject\"")
+				return errors.Wrap(err, "decode field \"channel\"")
 			}
-		case "fromName":
+		case "content":
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
-				s.FromName.Reset()
-				if err := s.FromName.Decode(d); err != nil {
+				if err := s.Content.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"fromName\"")
-			}
-		case "fromEmail":
-			if err := func() error {
-				s.FromEmail.Reset()
-				if err := s.FromEmail.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"fromEmail\"")
-			}
-		case "body":
-			requiredBitSet[0] |= 1 << 5
-			if err := func() error {
-				v, err := d.Str()
-				s.Body = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"body\"")
-			}
-		case "doc":
-			if err := func() error {
-				s.Doc.Reset()
-				if err := s.Doc.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"doc\"")
-			}
-		case "editorVersion":
-			if err := func() error {
-				s.EditorVersion.Reset()
-				if err := s.EditorVersion.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"editorVersion\"")
+				return errors.Wrap(err, "decode field \"content\"")
 			}
 		case "warnings":
 			if err := func() error {
@@ -21123,7 +21827,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		case "status":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.Status.Decode(d); err != nil {
 					return err
@@ -21173,7 +21877,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"failedAt\"")
 			}
 		case "stats":
-			requiredBitSet[2] |= 1 << 0
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				if err := s.Stats.Decode(d); err != nil {
 					return err
@@ -21203,7 +21907,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"archivedAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[2] |= 1 << 3
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -21213,7 +21917,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[2] |= 1 << 4
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -21232,9 +21936,9 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
-		0b00100111,
-		0b00001000,
-		0b00011001,
+		0b10001111,
+		0b10010000,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -67931,33 +68635,9 @@ func (s *UpdateBroadcastInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Subject.Set {
-			e.FieldStart("subject")
-			s.Subject.Encode(e)
-		}
-	}
-	{
-		if s.FromName.Set {
-			e.FieldStart("fromName")
-			s.FromName.Encode(e)
-		}
-	}
-	{
-		if s.FromEmail.Set {
-			e.FieldStart("fromEmail")
-			s.FromEmail.Encode(e)
-		}
-	}
-	{
-		if s.Body.Set {
-			e.FieldStart("body")
-			s.Body.Encode(e)
-		}
-	}
-	{
-		if s.Doc.Set {
-			e.FieldStart("doc")
-			s.Doc.Encode(e)
+		if s.Content.Set {
+			e.FieldStart("content")
+			s.Content.Encode(e)
 		}
 	}
 	{
@@ -67974,15 +68654,11 @@ func (s *UpdateBroadcastInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUpdateBroadcastInput = [8]string{
+var jsonFieldsNameOfUpdateBroadcastInput = [4]string{
 	0: "name",
-	1: "subject",
-	2: "fromName",
-	3: "fromEmail",
-	4: "body",
-	5: "doc",
-	6: "segmentId",
-	7: "integrationId",
+	1: "content",
+	2: "segmentId",
+	3: "integrationId",
 }
 
 // Decode decodes UpdateBroadcastInput from json.
@@ -68003,55 +68679,15 @@ func (s *UpdateBroadcastInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
-		case "subject":
+		case "content":
 			if err := func() error {
-				s.Subject.Reset()
-				if err := s.Subject.Decode(d); err != nil {
+				s.Content.Reset()
+				if err := s.Content.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"subject\"")
-			}
-		case "fromName":
-			if err := func() error {
-				s.FromName.Reset()
-				if err := s.FromName.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"fromName\"")
-			}
-		case "fromEmail":
-			if err := func() error {
-				s.FromEmail.Reset()
-				if err := s.FromEmail.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"fromEmail\"")
-			}
-		case "body":
-			if err := func() error {
-				s.Body.Reset()
-				if err := s.Body.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"body\"")
-			}
-		case "doc":
-			if err := func() error {
-				s.Doc.Reset()
-				if err := s.Doc.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"doc\"")
+				return errors.Wrap(err, "decode field \"content\"")
 			}
 		case "segmentId":
 			if err := func() error {

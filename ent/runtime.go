@@ -277,14 +277,6 @@ func init() {
 	broadcastDescName := broadcastFields[1].Descriptor()
 	// broadcast.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	broadcast.NameValidator = broadcastDescName.Validators[0].(func(string) error)
-	// broadcastDescSubject is the schema descriptor for subject field.
-	broadcastDescSubject := broadcastFields[2].Descriptor()
-	// broadcast.DefaultSubject holds the default value on creation for the subject field.
-	broadcast.DefaultSubject = broadcastDescSubject.Default.(string)
-	// broadcastDescBody is the schema descriptor for body field.
-	broadcastDescBody := broadcastFields[5].Descriptor()
-	// broadcast.DefaultBody holds the default value on creation for the body field.
-	broadcast.DefaultBody = broadcastDescBody.Default.(string)
 	broadcastrecipientMixin := schema.BroadcastRecipient{}.Mixin()
 	broadcastrecipientMixinFields0 := broadcastrecipientMixin[0].Fields()
 	_ = broadcastrecipientMixinFields0

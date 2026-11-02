@@ -102,7 +102,8 @@ func TestSiteBroadcastSaveReturnsWarnings(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name: "Warned", Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString(lintBody),
+		Name:    "Warned",
+		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString(lintBody)}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteBroadcastResource)
@@ -112,7 +113,7 @@ func TestSiteBroadcastSaveReturnsWarnings(t *testing.T) {
 	assert.Len(t, got[siteapi.LintCodeOffBrandFont], 1)
 
 	// A write of the subject alone lints what is stored.
-	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Subject: siteapi.NewOptString("Hello")},
+	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hello")})},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteBroadcastResource)

@@ -40,18 +40,19 @@ func TestSiteSanitizesBodiesOnSave(t *testing.T) {
 	assert.Contains(t, upd.Body, "{{ first_name }}")
 
 	bc, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name: "Hostile", Body: siteapi.NewOptString(hostileBody),
+		Name:    "Hostile",
+		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString(hostileBody)}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	created2, ok := bc.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", bc)
-	assert.Equal(t, `<p>Hi {{ first_name }}</p>x`, created2.Body)
+	assert.Equal(t, `<p>Hi {{ first_name }}</p>x`, testhelper.SiteEmailOf(created2).Body)
 
 	bu, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		Body: siteapi.NewOptString(hostileBody),
+		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString(hostileBody)}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)
 	updated2, ok := bu.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", bu)
-	assert.Equal(t, `<p>Hi {{ first_name }}</p>x`, updated2.Body)
+	assert.Equal(t, `<p>Hi {{ first_name }}</p>x`, testhelper.SiteEmailOf(updated2).Body)
 }

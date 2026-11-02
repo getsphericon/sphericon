@@ -9035,6 +9035,10 @@ func (s *Server) handleSiteBroadcastsListRequest(args [1]string, argsEscaped boo
 					In:   "query",
 				}: params.Status,
 				{
+					Name: "channel",
+					In:   "query",
+				}: params.Channel,
+				{
 					Name: "order",
 					In:   "query",
 				}: params.Order,

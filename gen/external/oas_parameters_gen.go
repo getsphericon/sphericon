@@ -1988,6 +1988,8 @@ type BroadcastsListParams struct {
 	PageSize OptInt32 `json:",omitempty,omitzero"`
 	// True lists the archived broadcasts instead of the kept ones; the default hides them.
 	Archived OptBool `json:",omitempty,omitzero"`
+	// Only the broadcasts on this Channel; every Channel when absent.
+	Channel OptBroadcastChannel `json:",omitempty,omitzero"`
 }
 
 func unpackBroadcastsListParams(packed middleware.Parameters) (params BroadcastsListParams) {
@@ -2016,6 +2018,15 @@ func unpackBroadcastsListParams(packed middleware.Parameters) (params Broadcasts
 		}
 		if v, ok := packed[key]; ok {
 			params.Archived = v.(OptBool)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "channel",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Channel = v.(OptBroadcastChannel)
 		}
 	}
 	return params
@@ -2202,6 +2213,62 @@ func decodeBroadcastsListParams(args [0]string, argsEscaped bool, r *http.Reques
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "archived",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: channel.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "channel",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotChannelVal BroadcastChannel
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotChannelVal = BroadcastChannel(c)
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Channel.SetTo(paramsDotChannelVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.Channel.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "channel",
 			In:   "query",
 			Err:  err,
 		}

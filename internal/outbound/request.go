@@ -7,6 +7,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 )
@@ -19,30 +20,38 @@ func broadcastRecipientKey(recipientID int64) string {
 	return fmt.Sprintf("broadcast:%d", recipientID)
 }
 
-// BroadcastContent is the Message content of an email Broadcast: its subject, body and From.
-func BroadcastContent(b *ent.Broadcast) EmailContent {
-	return EmailContent{
-		Subject:   b.Subject,
-		Body:      b.Body,
-		FromEmail: lo.FromPtr(b.FromEmail),
-		FromName:  lo.FromPtr(b.FromName),
+// BroadcastContent is the Message content of a Broadcast, in the shape of its Channel (ADR 0078,
+// 0080): on email its subject, body and From.
+func BroadcastContent(b *ent.Broadcast) (Content, error) {
+	if b.Channel == broadcast.ChannelEmail {
+		return EmailContent{
+			Subject:   lo.FromPtr(b.Subject),
+			Body:      lo.FromPtr(b.Body),
+			FromEmail: lo.FromPtr(b.FromEmail),
+			FromName:  lo.FromPtr(b.FromName),
+		}, nil
 	}
+	return nil, fmt.Errorf("outbound: broadcast %d is on channel %q, which has no content", b.ID, b.Channel)
 }
 
-// BroadcastRecipient is the Request for one Broadcast recipient's email. The Contact
-// must have an email address.
-func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Contact) Request {
+// BroadcastRecipient is the Request for one Broadcast recipient's message on the Broadcast's
+// Channel. On email the Contact must have an email address.
+func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Contact) (Request, error) {
+	content, err := BroadcastContent(b)
+	if err != nil {
+		return Request{}, err
+	}
 	return Request{
 		Kind:          outboundmessage.KindBroadcast,
 		Key:           broadcastRecipientKey(rec.ID),
 		Destination:   *c.Email,
 		Contact:       c,
 		Source:        eligibility.SourceBroadcasts,
-		Content:       BroadcastContent(b),
+		Content:       content,
 		Track:         true,
 		Ref:           Ref{BroadcastID: b.ID, BroadcastRecipient: rec.ID},
 		IntegrationID: b.IntegrationID,
-	}
+	}, nil
 }
 
 // AutomationStep is the Request for the email at index step of an Automation run, sent through the

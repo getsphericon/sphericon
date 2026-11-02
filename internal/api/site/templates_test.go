@@ -59,7 +59,8 @@ func TestSiteBroadcastsTestSendHeldIs422(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name: "Preview me", Subject: siteapi.NewOptString("Hi"),
+		Name:    "Preview me",
+		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hi")}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	b := created.(*siteapi.SiteBroadcastResource)

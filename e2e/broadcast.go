@@ -56,18 +56,22 @@ func (w *Workspace) createBroadcast(b Broadcast) externalapi.EntityId {
 	if b.Name == "" {
 		b.Name = "e2e broadcast " + uniq()
 	}
-	in := &externalapi.CreateBroadcastInput{
-		Name:    b.Name,
+	email := externalapi.EmailBroadcastContentInput{
+		Channel: externalapi.EmailBroadcastContentInputChannelEmail,
 		Subject: externalapi.NewOptString(b.Subject),
 	}
 	if !b.WithoutFrom {
-		in.FromName = externalapi.NewOptNilString(w.FromName)
-		in.FromEmail = externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(w.FromEmail))
+		email.FromName = externalapi.NewOptNilString(w.FromName)
+		email.FromEmail = externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(w.FromEmail))
 	}
 	if len(b.Doc) > 0 {
-		in.Doc = externalapi.NewOptEditorDocument(docObject[externalapi.EditorDocument](w.t, b.Doc))
+		email.Doc = externalapi.NewOptEditorDocument(docObject[externalapi.EditorDocument](w.t, b.Doc))
 	} else {
-		in.Body = externalapi.NewOptString(b.Body)
+		email.Body = externalapi.NewOptString(b.Body)
+	}
+	in := &externalapi.CreateBroadcastInput{
+		Name:    b.Name,
+		Content: externalapi.BroadcastContentInput{OneOf: externalapi.NewEmailBroadcastContentInputBroadcastContentInputSum(email)},
 	}
 	res, err := w.api.BroadcastsCreate(w.t.Context(), in)
 	return ok[externalapi.BroadcastResource](w.t, "create broadcast", res, err).ID

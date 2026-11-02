@@ -14,7 +14,6 @@ import (
 	analytics "github.com/getsphericon/sphericon/internal/analytics"
 	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
-	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
@@ -93,54 +92,54 @@ func (c *InputsImpl) AutomationReportPeriod(source site.SiteAutomationReportsGet
 	}
 	return automationsReportPeriod
 }
-func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automationsteps.Step {
-	var automationstepsStep automationsteps.Step
-	automationstepsStep.Type = c.AutomationStepType(source.Type)
-	automationstepsStep.Subject = stringIn(source.Subject)
-	automationstepsStep.Body = stringIn(source.Body)
-	automationstepsStep.Doc = documentIn(source.Doc)
-	// automationstepsStep.EditorVersion: ignore
-	automationstepsStep.Seconds = int32In(source.Seconds)
-	automationstepsStep.Tag = stringIn(source.Tag)
-	automationstepsStep.ID = stringIn(source.ID)
-	automationstepsStep.URL = stringIn(source.URL)
+func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automations.Step {
+	var automationsStep automations.Step
+	automationsStep.Type = c.AutomationStepType(source.Type)
+	automationsStep.Subject = stringIn(source.Subject)
+	automationsStep.Body = stringIn(source.Body)
+	automationsStep.Doc = documentIn(source.Doc)
+	// automationsStep.EditorVersion: ignore
+	automationsStep.Seconds = int32In(source.Seconds)
+	automationsStep.Tag = stringIn(source.Tag)
+	automationsStep.ID = stringIn(source.ID)
+	automationsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		automationstepsStep.Headers = make([]httpcall.Header, len(source.Headers))
+		automationsStep.Headers = make([]httpcall.Header, len(source.Headers))
 		for i := 0; i < len(source.Headers); i++ {
-			automationstepsStep.Headers[i] = c.siteapiSiteAutomationHttpHeaderToHttpcallHeader(source.Headers[i])
+			automationsStep.Headers[i] = c.siteapiSiteAutomationHttpHeaderToHttpcallHeader(source.Headers[i])
 		}
 	}
-	automationstepsStep.Secret = stringIn(source.Secret)
-	automationstepsStep.ClearSecret = boolIn(source.ClearSecret)
-	return automationstepsStep
+	automationsStep.Secret = stringIn(source.Secret)
+	automationsStep.ClearSecret = boolIn(source.ClearSecret)
+	return automationsStep
 }
-func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) automationsteps.Kind {
-	var automationstepsKind automationsteps.Kind
+func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) automations.StepType {
+	var automationsStepType automations.StepType
 	switch source {
 	case site.SiteAutomationStepTypeApplyTag:
-		automationstepsKind = automationsteps.ApplyTag
+		automationsStepType = automations.StepApplyTag
 	case site.SiteAutomationStepTypeEmail:
-		automationstepsKind = automationsteps.Email
+		automationsStepType = automations.StepEmail
 	case site.SiteAutomationStepTypeHTTP:
-		automationstepsKind = automationsteps.HTTP
+		automationsStepType = automations.StepHTTP
 	case site.SiteAutomationStepTypeRemoveTag:
-		automationstepsKind = automationsteps.RemoveTag
+		automationsStepType = automations.StepRemoveTag
 	case site.SiteAutomationStepTypeWait:
-		automationstepsKind = automationsteps.Wait
+		automationsStepType = automations.StepWait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return automationstepsKind
+	return automationsStepType
 }
-func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStep) []automationsteps.Step {
-	var automationstepsStepList []automationsteps.Step
+func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStep) []automations.Step {
+	var automationsStepList []automations.Step
 	if source != nil {
-		automationstepsStepList = make([]automationsteps.Step, len(source))
+		automationsStepList = make([]automations.Step, len(source))
 		for i := 0; i < len(source); i++ {
-			automationstepsStepList[i] = c.AutomationStep(source[i])
+			automationsStepList[i] = c.AutomationStep(source[i])
 		}
 	}
-	return automationstepsStepList
+	return automationsStepList
 }
 func (c *InputsImpl) AutomationUpdate(source *site.SiteUpdateAutomationInput) automations.UpdateInput {
 	var automationsUpdateInput automations.UpdateInput
@@ -169,20 +168,30 @@ func (c *InputsImpl) BrandKitSave(source *site.SiteSaveBrandKitInput) brandkit.I
 	}
 	return brandkitInput
 }
-func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) broadcasts.CreateInput {
+func (c *InputsImpl) BroadcastChannel(source site.BroadcastChannel) broadcast.Channel {
+	var broadcastChannel broadcast.Channel
+	switch source {
+	case site.BroadcastChannelEmail:
+		broadcastChannel = broadcast.ChannelEmail
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return broadcastChannel
+}
+func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) (broadcasts.CreateInput, error) {
 	var broadcastsCreateInput broadcasts.CreateInput
 	if source != nil {
 		pString := (*source).Name
 		broadcastsCreateInput.Name = &pString
-		broadcastsCreateInput.Subject = stringPtrIn((*source).Subject)
-		broadcastsCreateInput.FromName = nilStringPtrIn((*source).FromName)
-		broadcastsCreateInput.FromEmail = nilEmailPtrIn((*source).FromEmail)
-		broadcastsCreateInput.Body = stringPtrIn((*source).Body)
-		broadcastsCreateInput.Doc = documentIn((*source).Doc)
+		broadcastsContentInput, err := broadcastContentIn(c, (*source).Content)
+		if err != nil {
+			return broadcastsCreateInput, err
+		}
+		broadcastsCreateInput.Content = broadcastsContentInput
 		broadcastsCreateInput.SegmentID = nilEntityIDPtrIn((*source).SegmentId)
 		broadcastsCreateInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
-	return broadcastsCreateInput
+	return broadcastsCreateInput, nil
 }
 func (c *InputsImpl) BroadcastStatus(source site.SiteBroadcastStatus) broadcast.Status {
 	var broadcastStatus broadcast.Status
@@ -212,19 +221,26 @@ func (c *InputsImpl) BroadcastStatuses(source []site.SiteBroadcastStatus) []broa
 	}
 	return broadcastStatusList
 }
-func (c *InputsImpl) BroadcastUpdate(source *site.UpdateBroadcastInput) broadcasts.UpdateInput {
+func (c *InputsImpl) BroadcastUpdate(source *site.UpdateBroadcastInput) (broadcasts.UpdateInput, error) {
 	var broadcastsUpdateInput broadcasts.UpdateInput
 	if source != nil {
 		broadcastsUpdateInput.Name = stringPatch((*source).Name)
-		broadcastsUpdateInput.Subject = stringPatch((*source).Subject)
-		broadcastsUpdateInput.FromName = nilStringPatch((*source).FromName)
-		broadcastsUpdateInput.FromEmail = nilEmailPatch((*source).FromEmail)
-		broadcastsUpdateInput.Body = stringPatch((*source).Body)
-		broadcastsUpdateInput.Doc = documentPatch((*source).Doc)
+		broadcastsContentPatch, err := broadcastContentPatch(c, (*source).Content)
+		if err != nil {
+			return broadcastsUpdateInput, err
+		}
+		broadcastsUpdateInput.Content = broadcastsContentPatch
 		broadcastsUpdateInput.SegmentID = nilEntityIDPatch((*source).SegmentId)
 		broadcastsUpdateInput.IntegrationID = nilEntityIDPatch((*source).IntegrationId)
 	}
-	return broadcastsUpdateInput
+	return broadcastsUpdateInput, nil
+}
+func (c *InputsImpl) BroadcastsListFilter(source site.SiteBroadcastsListParams) broadcasts.ListFilter {
+	var broadcastsListFilter broadcasts.ListFilter
+	broadcastsListFilter.Archived = boolIn(source.Archived)
+	broadcastsListFilter.Statuses = c.BroadcastStatuses(source.Status)
+	broadcastsListFilter.Channel = broadcastChannelPtrIn(c, source.Channel)
+	return broadcastsListFilter
 }
 func (c *InputsImpl) BroadcastsOrder(source site.SiteBroadcastsOrder) broadcasts.Order {
 	var broadcastsOrder broadcasts.Order
@@ -281,13 +297,23 @@ func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts
 	}
 	return contactsUpdateInput
 }
-func (c *InputsImpl) CustomFieldUpdate(source *site.SiteUpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
-	var contactsCustomFieldUpdateInput contacts.CustomFieldUpdateInput
-	if source != nil {
-		contactsCustomFieldUpdateInput.Name = stringPatch((*source).Name)
-		contactsCustomFieldUpdateInput.Type = customFieldTypePatch((*source).Type)
-	}
-	return contactsCustomFieldUpdateInput
+func (c *InputsImpl) EmailBroadcastContentIn(source site.EmailBroadcastContentInput) broadcasts.EmailContentInput {
+	var broadcastsEmailContentInput broadcasts.EmailContentInput
+	broadcastsEmailContentInput.Subject = stringPtrIn(source.Subject)
+	broadcastsEmailContentInput.FromName = nilStringPtrIn(source.FromName)
+	broadcastsEmailContentInput.FromEmail = nilEmailPtrIn(source.FromEmail)
+	broadcastsEmailContentInput.Body = stringPtrIn(source.Body)
+	broadcastsEmailContentInput.Doc = documentIn(source.Doc)
+	return broadcastsEmailContentInput
+}
+func (c *InputsImpl) EmailBroadcastContentPatch(source site.EmailBroadcastContentInput) broadcasts.EmailContentPatch {
+	var broadcastsEmailContentPatch broadcasts.EmailContentPatch
+	broadcastsEmailContentPatch.Subject = stringPatch(source.Subject)
+	broadcastsEmailContentPatch.FromName = nilStringPatch(source.FromName)
+	broadcastsEmailContentPatch.FromEmail = nilEmailPatch(source.FromEmail)
+	broadcastsEmailContentPatch.Body = stringPatch(source.Body)
+	broadcastsEmailContentPatch.Doc = documentPatch(source.Doc)
+	return broadcastsEmailContentPatch
 }
 func (c *InputsImpl) IntegrationCreate(source *site.CreateIntegrationInput) (integrations.CreateInput, error) {
 	var integrationsCreateInput integrations.CreateInput
@@ -479,7 +505,7 @@ func (c *InputsImpl) SendingDomainCreate(source *site.CreateSendingDomainInput) 
 func (c *InputsImpl) SignUp(source *site.SiteSignUpInput) signup.Input {
 	var signupInput signup.Input
 	if source != nil {
-		signupInput.Name = string((*source).Name)
+		signupInput.Name = (*source).Name
 		signupInput.Email = string((*source).Email)
 		signupInput.Password = stringIn((*source).Password)
 		signupInput.SignupItems = c.SignupAnswers((*source).SignupItems)
@@ -667,8 +693,6 @@ func (c *InputsImpl) siteapiPersonalScopeToSiteapiPersonalScope(source site.Pers
 		siteapiPersonalScope = site.PersonalScopeContactsWrite
 	case site.PersonalScopeCustomFieldsRead:
 		siteapiPersonalScope = site.PersonalScopeCustomFieldsRead
-	case site.PersonalScopeCustomFieldsWrite:
-		siteapiPersonalScope = site.PersonalScopeCustomFieldsWrite
 	case site.PersonalScopeEmailsSend:
 		siteapiPersonalScope = site.PersonalScopeEmailsSend
 	case site.PersonalScopeEnrollmentsRead:

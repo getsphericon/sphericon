@@ -104,6 +104,12 @@ func (_u *BroadcastUpdate) SetNillableSubject(v *string) *BroadcastUpdate {
 	return _u
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (_u *BroadcastUpdate) ClearSubject() *BroadcastUpdate {
+	_u.mutation.ClearSubject()
+	return _u
+}
+
 // SetFromName sets the "from_name" field.
 func (_u *BroadcastUpdate) SetFromName(v string) *BroadcastUpdate {
 	_u.mutation.SetFromName(v)
@@ -155,6 +161,12 @@ func (_u *BroadcastUpdate) SetNillableBody(v *string) *BroadcastUpdate {
 	if v != nil {
 		_u.SetBody(*v)
 	}
+	return _u
+}
+
+// ClearBody clears the value of the "body" field.
+func (_u *BroadcastUpdate) ClearBody() *BroadcastUpdate {
+	_u.mutation.ClearBody()
 	return _u
 }
 
@@ -536,6 +548,9 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Subject(); ok {
 		_spec.SetField(broadcast.FieldSubject, field.TypeString, value)
 	}
+	if _u.mutation.SubjectCleared() {
+		_spec.ClearField(broadcast.FieldSubject, field.TypeString)
+	}
 	if value, ok := _u.mutation.FromName(); ok {
 		_spec.SetField(broadcast.FieldFromName, field.TypeString, value)
 	}
@@ -550,6 +565,9 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Body(); ok {
 		_spec.SetField(broadcast.FieldBody, field.TypeString, value)
+	}
+	if _u.mutation.BodyCleared() {
+		_spec.ClearField(broadcast.FieldBody, field.TypeString)
 	}
 	if value, ok := _u.mutation.Doc(); ok {
 		_spec.SetField(broadcast.FieldDoc, field.TypeJSON, value)
@@ -829,6 +847,12 @@ func (_u *BroadcastUpdateOne) SetNillableSubject(v *string) *BroadcastUpdateOne 
 	return _u
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (_u *BroadcastUpdateOne) ClearSubject() *BroadcastUpdateOne {
+	_u.mutation.ClearSubject()
+	return _u
+}
+
 // SetFromName sets the "from_name" field.
 func (_u *BroadcastUpdateOne) SetFromName(v string) *BroadcastUpdateOne {
 	_u.mutation.SetFromName(v)
@@ -880,6 +904,12 @@ func (_u *BroadcastUpdateOne) SetNillableBody(v *string) *BroadcastUpdateOne {
 	if v != nil {
 		_u.SetBody(*v)
 	}
+	return _u
+}
+
+// ClearBody clears the value of the "body" field.
+func (_u *BroadcastUpdateOne) ClearBody() *BroadcastUpdateOne {
+	_u.mutation.ClearBody()
 	return _u
 }
 
@@ -1291,6 +1321,9 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	if value, ok := _u.mutation.Subject(); ok {
 		_spec.SetField(broadcast.FieldSubject, field.TypeString, value)
 	}
+	if _u.mutation.SubjectCleared() {
+		_spec.ClearField(broadcast.FieldSubject, field.TypeString)
+	}
 	if value, ok := _u.mutation.FromName(); ok {
 		_spec.SetField(broadcast.FieldFromName, field.TypeString, value)
 	}
@@ -1305,6 +1338,9 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	}
 	if value, ok := _u.mutation.Body(); ok {
 		_spec.SetField(broadcast.FieldBody, field.TypeString, value)
+	}
+	if _u.mutation.BodyCleared() {
+		_spec.ClearField(broadcast.FieldBody, field.TypeString)
 	}
 	if value, ok := _u.mutation.Doc(); ok {
 		_spec.SetField(broadcast.FieldDoc, field.TypeJSON, value)

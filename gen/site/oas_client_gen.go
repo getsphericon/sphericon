@@ -8677,6 +8677,23 @@ func (c *Client) sendSiteBroadcastsList(ctx context.Context, params SiteBroadcas
 		}
 	}
 	{
+		// Encode "channel" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "channel",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Channel.Get(); ok {
+				return e.EncodeValue(conv.StringToString(string(val)))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
 		// Encode "order" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
 			Name:    "order",

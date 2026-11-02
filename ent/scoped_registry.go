@@ -523,14 +523,19 @@ func ScopedEntities() []ScopedEntity {
 					b.SetDiscardedAt(*src.DiscardedAt)
 				}
 				b.SetName(src.Name)
-				b.SetSubject(src.Subject)
+				b.SetChannel(src.Channel)
+				if src.Subject != nil {
+					b.SetSubject(*src.Subject)
+				}
 				if src.FromName != nil {
 					b.SetFromName(*src.FromName)
 				}
 				if src.FromEmail != nil {
 					b.SetFromEmail(*src.FromEmail)
 				}
-				b.SetBody(src.Body)
+				if src.Body != nil {
+					b.SetBody(*src.Body)
+				}
 				if !reflect.ValueOf(src.Doc).IsZero() {
 					b.SetDoc(src.Doc)
 				}

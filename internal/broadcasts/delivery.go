@@ -91,7 +91,11 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 		return d.fail(ctx, s, rec, errNoEmail)
 	}
 
-	res, err := d.out.Send(ctx, s, outbound.BroadcastRecipient(b, rec, c))
+	req, err := outbound.BroadcastRecipient(b, rec, c)
+	if err != nil {
+		return err
+	}
+	res, err := d.out.Send(ctx, s, req)
 	if err != nil {
 		return err
 	}

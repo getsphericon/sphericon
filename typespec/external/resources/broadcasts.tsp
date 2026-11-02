@@ -25,23 +25,11 @@ model BroadcastResource {
   /** Internal broadcast name */
   name: string;
 
-  /** Email subject line */
-  subject: string;
+  /** The Channel the broadcast sends on, fixed when it was created */
+  channel: BroadcastChannel;
 
-  /** Sender display name (defaults to the integration's) */
-  fromName?: string | null;
-
-  /** Sender email address (defaults to the integration's) */
-  fromEmail?: EmailAddress | null;
-
-  /** HTML body with Liquid merge tags */
-  body: string;
-
-  /** The editor's JSON document the body was built from; null when the body was written as HTML */
-  doc?: EditorDocument | null;
-
-  /** Version of the editor that rendered the document; null with it */
-  editorVersion?: string | null;
+  /** What the broadcast says, in the shape of its Channel */
+  content: BroadcastContent;
 
   /** Segment this broadcast goes to; null means all contacts. Once the broadcast leaves draft it holds a copy of the segment's condition taken then, and this names the segment only as where its audience came from. */
   segmentId?: EntityId | null;
@@ -126,6 +114,9 @@ model BroadcastReport {
 model BroadcastsListFilter {
   /** true lists the archived broadcasts instead of the kept ones; the default hides them */
   @query archived?: boolean;
+
+  /** Only the broadcasts on this Channel; every Channel when absent */
+  @query channel?: BroadcastChannel;
 }
 
 @tag("Broadcasts")

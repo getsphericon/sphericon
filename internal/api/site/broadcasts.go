@@ -7,6 +7,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
@@ -47,7 +48,7 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 	ws := workspaceScope(ctx)
 
 	order := inputs.BroadcastsOrder(params.Order.Or(siteapi.SiteBroadcastsOrderNewest))
-	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false), inputs.BroadcastStatuses(params.Status), order)
+	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), inputs.BroadcastsListFilter(params), order)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +69,11 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.CreateBroadcastInput, _ siteapi.SiteBroadcastsCreateParams) (siteapi.SiteBroadcastsCreateRes, error) {
 	ws := workspaceScope(ctx)
 
-	b, err := h.broadcasts.Create(ctx, ws, inputs.BroadcastCreate(req))
+	in, err := inputs.BroadcastCreate(req)
+	if err != nil {
+		return nil, err
+	}
+	b, err := h.broadcasts.Create(ctx, ws, in)
 	if err != nil {
 		return nil, err
 	}
@@ -76,10 +81,20 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.Create
 	if err != nil {
 		return nil, err
 	}
-	if res.Warnings, err = h.lintWarnings(ctx, ws, b.Subject, req.Body, b.Body); err != nil {
+	if res.Warnings, err = h.broadcastWarnings(ctx, ws, b, req.Content.OneOf); err != nil {
 		return nil, err
 	}
 	return &res, nil
+}
+
+// broadcastWarnings is the lint of a saved Broadcast's content on its Channel (ADR 0040), over the
+// body as written when the save wrote one: on email the subject and the body.
+func (h *Handlers) broadcastWarnings(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, written siteapi.BroadcastContentInputSum) ([]siteapi.LintFinding, error) {
+	if b.Channel == broadcast.ChannelEmail {
+		body := written.EmailBroadcastContentInput.Body
+		return h.lintWarnings(ctx, s, lo.FromPtr(b.Subject), body, lo.FromPtr(b.Body))
+	}
+	return nil, nil
 }
 
 func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBroadcastsGetParams) (siteapi.SiteBroadcastsGetRes, error) {
@@ -102,7 +117,11 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.Update
 
 	id := int64(params.ID)
 
-	b, err := h.broadcasts.Update(ctx, ws, id, inputs.BroadcastUpdate(req))
+	in, err := inputs.BroadcastUpdate(req)
+	if err != nil {
+		return nil, err
+	}
+	b, err := h.broadcasts.Update(ctx, ws, id, in)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +129,7 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.Update
 	if err != nil {
 		return nil, err
 	}
-	if res.Warnings, err = h.lintWarnings(ctx, ws, b.Subject, req.Body, b.Body); err != nil {
+	if res.Warnings, err = h.broadcastWarnings(ctx, ws, b, req.Content.Value.OneOf); err != nil {
 		return nil, err
 	}
 	return &res, nil

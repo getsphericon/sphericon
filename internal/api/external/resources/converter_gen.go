@@ -307,6 +307,16 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) external.BrandKi
 	externalapiBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return externalapiBrandKitResource
 }
+func (c *ConverterImpl) BroadcastChannelToResource(source broadcast.Channel) external.BroadcastChannel {
+	var externalapiBroadcastChannel external.BroadcastChannel
+	switch source {
+	case broadcast.ChannelEmail:
+		externalapiBroadcastChannel = external.BroadcastChannelEmail
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiBroadcastChannel
+}
 func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipient) external.ContactExportBroadcastRecipient {
 	var externalapiContactExportBroadcastRecipient external.ContactExportBroadcastRecipient
 	if source != nil {
@@ -362,12 +372,8 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 	if source != nil {
 		externalapiBroadcastResource.ID = external.EntityId((*source).ID)
 		externalapiBroadcastResource.Name = (*source).Name
-		externalapiBroadcastResource.Subject = (*source).Subject
-		externalapiBroadcastResource.FromName = optNilString((*source).FromName)
-		externalapiBroadcastResource.FromEmail = optNilEmailAddress((*source).FromEmail)
-		externalapiBroadcastResource.Body = (*source).Body
-		externalapiBroadcastResource.Doc = editorDocument((*source).Doc)
-		externalapiBroadcastResource.EditorVersion = optNilString((*source).EditorVersion)
+		externalapiBroadcastResource.Channel = c.BroadcastChannelToResource((*source).Channel)
+		externalapiBroadcastResource.Content = broadcastContent(c, source)
 		externalapiBroadcastResource.SegmentId = optNilEntityID((*source).SegmentID)
 		externalapiBroadcastResource.Status = c.BroadcastStatusToResource((*source).Status)
 		externalapiBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
@@ -638,6 +644,23 @@ func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) extern
 	externalapiDnsRecord.Host = source.Host
 	externalapiDnsRecord.Value = source.Value
 	return externalapiDnsRecord
+}
+func (c *ConverterImpl) EmailBroadcastContentToResource(source *ent.Broadcast) external.EmailBroadcastContent {
+	var externalapiEmailBroadcastContent external.EmailBroadcastContent
+	if source != nil {
+		externalapiEmailBroadcastContent.Channel = emailContentChannel((*source).Channel)
+		if (*source).Subject != nil {
+			externalapiEmailBroadcastContent.Subject = *(*source).Subject
+		}
+		externalapiEmailBroadcastContent.FromName = optNilString((*source).FromName)
+		externalapiEmailBroadcastContent.FromEmail = optNilEmailAddress((*source).FromEmail)
+		if (*source).Body != nil {
+			externalapiEmailBroadcastContent.Body = *(*source).Body
+		}
+		externalapiEmailBroadcastContent.Doc = editorDocument((*source).Doc)
+		externalapiEmailBroadcastContent.EditorVersion = optNilString((*source).EditorVersion)
+	}
+	return externalapiEmailBroadcastContent
 }
 func (c *ConverterImpl) EmailSchemaToResource(source emaildoc.AgentDescription) external.EmailSchemaResult {
 	var externalapiEmailSchemaResult external.EmailSchemaResult

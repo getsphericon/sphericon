@@ -4101,6 +4101,23 @@ func (c *Client) sendBroadcastsList(ctx context.Context, params BroadcastsListPa
 			return res, errors.Wrap(err, "encode query")
 		}
 	}
+	{
+		// Encode "channel" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "channel",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Channel.Get(); ok {
+				return e.EncodeValue(conv.StringToString(string(val)))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
 	u.RawQuery = q.Values().Encode()
 
 	stage = "EncodeRequest"

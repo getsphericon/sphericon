@@ -6698,6 +6698,12 @@ func (x *BroadcastScopedCreate) SetName(v string) *BroadcastScopedCreate {
 	return x
 }
 
+// SetChannel sets the "channel" field.
+func (x *BroadcastScopedCreate) SetChannel(v broadcast.Channel) *BroadcastScopedCreate {
+	x.b.SetChannel(v)
+	return x
+}
+
 // SetSubject sets the "subject" field.
 func (x *BroadcastScopedCreate) SetSubject(v string) *BroadcastScopedCreate {
 	x.b.SetSubject(v)
@@ -7056,6 +7062,12 @@ func (u *BroadcastScopedUpsert) UpdateSubject() *BroadcastScopedUpsert {
 	return u
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (u *BroadcastScopedUpsert) ClearSubject() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldSubject)
+	return u
+}
+
 // SetFromName sets the "from_name" field.
 func (u *BroadcastScopedUpsert) SetFromName(v string) *BroadcastScopedUpsert {
 	u.u.Set(broadcast.FieldFromName, v)
@@ -7101,6 +7113,12 @@ func (u *BroadcastScopedUpsert) SetBody(v string) *BroadcastScopedUpsert {
 // UpdateBody sets the "body" field to the value that was provided on create.
 func (u *BroadcastScopedUpsert) UpdateBody() *BroadcastScopedUpsert {
 	u.u.SetExcluded(broadcast.FieldBody)
+	return u
+}
+
+// ClearBody clears the value of the "body" field.
+func (u *BroadcastScopedUpsert) ClearBody() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldBody)
 	return u
 }
 
@@ -7510,6 +7528,12 @@ func (x *BroadcastScopedUpdateOne) SetNillableSubject(v *string) *BroadcastScope
 	return x
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (x *BroadcastScopedUpdateOne) ClearSubject() *BroadcastScopedUpdateOne {
+	x.b.ClearSubject()
+	return x
+}
+
 // SetFromName sets the "from_name" field.
 func (x *BroadcastScopedUpdateOne) SetFromName(v string) *BroadcastScopedUpdateOne {
 	x.b.SetFromName(v)
@@ -7555,6 +7579,12 @@ func (x *BroadcastScopedUpdateOne) SetBody(v string) *BroadcastScopedUpdateOne {
 // SetNillableBody sets the "body" field if the given value is not nil.
 func (x *BroadcastScopedUpdateOne) SetNillableBody(v *string) *BroadcastScopedUpdateOne {
 	x.b.SetNillableBody(v)
+	return x
+}
+
+// ClearBody clears the value of the "body" field.
+func (x *BroadcastScopedUpdateOne) ClearBody() *BroadcastScopedUpdateOne {
+	x.b.ClearBody()
 	return x
 }
 
@@ -7933,6 +7963,12 @@ func (x *BroadcastScopedUpdate) SetNillableSubject(v *string) *BroadcastScopedUp
 	return x
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (x *BroadcastScopedUpdate) ClearSubject() *BroadcastScopedUpdate {
+	x.b.ClearSubject()
+	return x
+}
+
 // SetFromName sets the "from_name" field.
 func (x *BroadcastScopedUpdate) SetFromName(v string) *BroadcastScopedUpdate {
 	x.b.SetFromName(v)
@@ -7978,6 +8014,12 @@ func (x *BroadcastScopedUpdate) SetBody(v string) *BroadcastScopedUpdate {
 // SetNillableBody sets the "body" field if the given value is not nil.
 func (x *BroadcastScopedUpdate) SetNillableBody(v *string) *BroadcastScopedUpdate {
 	x.b.SetNillableBody(v)
+	return x
+}
+
+// ClearBody clears the value of the "body" field.
+func (x *BroadcastScopedUpdate) ClearBody() *BroadcastScopedUpdate {
+	x.b.ClearBody()
 	return x
 }
 

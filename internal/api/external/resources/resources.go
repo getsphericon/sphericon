@@ -118,13 +118,18 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend nilCurrencyCode
 // goverter:extend durationSeconds
 // goverter:extend eventAction
+// goverter:extend broadcastContent
+// goverter:extend emailContentChannel
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	// goverter:useEmptyOnNil:slice
 	ContactsToResources(source []*ent.Contact) []externalapi.ContactResource
 	// The contract names the discarded state "archived" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
+	// goverter:map . Content | broadcastContent
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
+	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.
+	EmailBroadcastContentToResource(source *ent.Broadcast) externalapi.EmailBroadcastContent
 	// goverter:useEmptyOnNil:slice
 	BroadcastsToResources(source []*ent.Broadcast) []externalapi.BroadcastResource
 
@@ -411,6 +416,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) externalapi.BroadcastStatus
 	// goverter:enum:transform value
+	BroadcastChannelToResource(source broadcast.Channel) externalapi.BroadcastChannel
+	// goverter:enum:transform value
 	CapturedMessageSurfaceToResource(source capturedmessage.Surface) externalapi.CapturedMessageSurface
 	// goverter:enum:transform value
 	ContactExportSourceToResource(source contact.Source) externalapi.ContactExportSource
@@ -540,6 +547,20 @@ func optNilInt32(v *int) externalapi.OptNilInt32 {
 // no keys.
 func jsonObject(m map[string]any) externalapi.OptNilJsonObject {
 	return convert.OptObject[externalapi.OptNilJsonObject](convert.RawObject[externalapi.JsonObject](m))
+}
+
+// broadcastContent is a Broadcast's content in the arm of its Channel: a oneOf is beyond
+// goverter, so only the switch is written here.
+func broadcastContent(c Converter, b *ent.Broadcast) externalapi.BroadcastContent {
+	if b.Channel == broadcast.ChannelEmail {
+		return externalapi.BroadcastContent{OneOf: externalapi.NewEmailBroadcastContentBroadcastContentSum(c.EmailBroadcastContentToResource(b))}
+	}
+	return externalapi.BroadcastContent{}
+}
+
+// emailContentChannel is the discriminator of email's content arm.
+func emailContentChannel(broadcast.Channel) externalapi.EmailBroadcastContentChannel {
+	return externalapi.EmailBroadcastContentChannelEmail
 }
 
 // editorDocument is a stored editor document (a Template's, a Broadcast's) as the opaque object of

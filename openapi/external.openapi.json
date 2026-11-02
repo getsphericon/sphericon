@@ -2594,7 +2594,10 @@
             "$ref": "#/components/parameters/PageQuery.pageSize"
           },
           {
-            "$ref": "#/components/parameters/BroadcastsListFilter"
+            "$ref": "#/components/parameters/BroadcastsListFilter.archived"
+          },
+          {
+            "$ref": "#/components/parameters/BroadcastsListFilter.channel"
           }
         ],
         "responses": {
@@ -14182,13 +14185,23 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "BroadcastsListFilter": {
+      "BroadcastsListFilter.archived": {
         "name": "archived",
         "in": "query",
         "required": false,
         "description": "true lists the archived broadcasts instead of the kept ones; the default hides them",
         "schema": {
           "type": "boolean"
+        },
+        "explode": false
+      },
+      "BroadcastsListFilter.channel": {
+        "name": "channel",
+        "in": "query",
+        "required": false,
+        "description": "Only the broadcasts on this Channel; every Channel when absent",
+        "schema": {
+          "$ref": "#/components/schemas/BroadcastChannel"
         },
         "explode": false
       },
@@ -15229,6 +15242,41 @@
         },
         "description": "The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. Write a\nmessage in these values. A Workspace that has not saved one has the defaults and `saved` false."
       },
+      "BroadcastChannel": {
+        "type": "string",
+        "enum": ["email"],
+        "description": "The Channel a Broadcast sends on, fixed when it is created (ADR 0080)"
+      },
+      "BroadcastContent": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailBroadcastContent"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "channel",
+          "mapping": {
+            "email": "#/components/schemas/EmailBroadcastContent"
+          }
+        },
+        "description": "What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)"
+      },
+      "BroadcastContentInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailBroadcastContentInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "channel",
+          "mapping": {
+            "email": "#/components/schemas/EmailBroadcastContentInput"
+          }
+        },
+        "description": "What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)"
+      },
       "BroadcastReport": {
         "type": "object",
         "required": [
@@ -15335,7 +15383,7 @@
       },
       "BroadcastResource": {
         "type": "object",
-        "required": ["id", "name", "subject", "body", "status", "createdAt", "updatedAt"],
+        "required": ["id", "name", "channel", "content", "status", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -15349,43 +15397,21 @@
             "type": "string",
             "description": "Internal broadcast name"
           },
-          "subject": {
-            "type": "string",
-            "description": "Email subject line"
-          },
-          "fromName": {
-            "type": "string",
-            "nullable": true,
-            "description": "Sender display name (defaults to the integration's)"
-          },
-          "fromEmail": {
-            "type": "string",
+          "channel": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EmailAddress"
+                "$ref": "#/components/schemas/BroadcastChannel"
               }
             ],
-            "nullable": true,
-            "description": "Sender email address (defaults to the integration's)"
+            "description": "The Channel the broadcast sends on, fixed when it was created"
           },
-          "body": {
-            "type": "string",
-            "description": "HTML body with Liquid merge tags"
-          },
-          "doc": {
-            "type": "object",
+          "content": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EditorDocument"
+                "$ref": "#/components/schemas/BroadcastContent"
               }
             ],
-            "nullable": true,
-            "description": "The editor's JSON document the body was built from; null when the body was written as HTML"
-          },
-          "editorVersion": {
-            "type": "string",
-            "nullable": true,
-            "description": "Version of the editor that rendered the document; null with it"
+            "description": "What the broadcast says, in the shape of its Channel"
           },
           "segmentId": {
             "type": "string",
@@ -16934,42 +16960,19 @@
       },
       "CreateBroadcastInput": {
         "type": "object",
-        "required": ["name"],
+        "required": ["name", "content"],
         "properties": {
           "name": {
             "type": "string",
             "description": "Internal broadcast name"
           },
-          "subject": {
-            "type": "string",
-            "description": "Email subject line"
-          },
-          "fromName": {
-            "type": "string",
-            "nullable": true,
-            "description": "Sender display name; null or omitted means the integration's default"
-          },
-          "fromEmail": {
-            "type": "string",
+          "content": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EmailAddress"
+                "$ref": "#/components/schemas/BroadcastContentInput"
               }
             ],
-            "nullable": true,
-            "description": "Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Null or omitted means the integration's default."
-          },
-          "body": {
-            "type": "string",
-            "description": "HTML body with Liquid merge tags. Write this or `doc`, not both."
-          },
-          "doc": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EditorDocument"
-              }
-            ],
-            "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
+            "description": "What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel."
           },
           "segmentId": {
             "type": "string",
@@ -16989,7 +16992,7 @@
               }
             ],
             "nullable": true,
-            "description": "Sending integration; null or omitted means the workspace default. An archived integration is refused with 422."
+            "description": "Sending integration, of the broadcast's Channel; null or omitted means the Channel's default. An archived integration, or one of another Channel, is refused with 422."
           }
         },
         "description": "Request body for creating a broadcast"
@@ -17440,6 +17443,99 @@
         "type": "string",
         "maxLength": 320,
         "format": "email"
+      },
+      "EmailBroadcastContent": {
+        "type": "object",
+        "required": ["channel", "subject", "body"],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["email"],
+            "description": "The Channel the content is for"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject line"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sender display name (defaults to the integration's)"
+          },
+          "fromEmail": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "nullable": true,
+            "description": "Sender email address (defaults to the integration's)"
+          },
+          "body": {
+            "type": "string",
+            "description": "HTML body with Liquid merge tags"
+          },
+          "doc": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
+            "nullable": true,
+            "description": "The editor's JSON document the body was built from; null when the body was written as HTML"
+          },
+          "editorVersion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Version of the editor that rendered the document; null with it"
+          }
+        },
+        "description": "Email's content of a Broadcast as stored"
+      },
+      "EmailBroadcastContentInput": {
+        "type": "object",
+        "required": ["channel"],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["email"],
+            "description": "The Channel the content is for: the Broadcast's own, which an update cannot change"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject line"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sender display name; null or omitted on create means the integration's default, null on update goes back to it"
+          },
+          "fromEmail": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "nullable": true,
+            "description": "Sender email address: a new value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. Null or omitted on create means the integration's default, null on update goes back to it."
+          },
+          "body": {
+            "type": "string",
+            "description": "HTML body with Liquid merge tags. Writing only a body on update clears the stored document. Write this or `doc`, not both."
+          },
+          "doc": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
+            "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
+          }
+        },
+        "description": "Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on\nupdate an omitted field keeps its value and null clears it."
       },
       "EmailSchemaAttribute": {
         "type": "object",
@@ -20558,36 +20654,13 @@
             "type": "string",
             "description": "Internal broadcast name"
           },
-          "subject": {
-            "type": "string",
-            "description": "Email subject line"
-          },
-          "fromName": {
-            "type": "string",
-            "nullable": true,
-            "description": "Sender display name; null goes back to the integration's default"
-          },
-          "fromEmail": {
-            "type": "string",
+          "content": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EmailAddress"
+                "$ref": "#/components/schemas/BroadcastContentInput"
               }
             ],
-            "nullable": true,
-            "description": "Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. Null goes back to the integration's default."
-          },
-          "body": {
-            "type": "string",
-            "description": "HTML body. Writing only a body clears the stored document. Write this or `doc`, not both."
-          },
-          "doc": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EditorDocument"
-              }
-            ],
-            "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
+            "description": "What the broadcast says; its `channel` must be the broadcast's own (422 otherwise). Omitted keeps the content."
           },
           "segmentId": {
             "type": "string",
@@ -20607,7 +20680,7 @@
               }
             ],
             "nullable": true,
-            "description": "Sending integration; null means the workspace default. An archived integration is refused with 422."
+            "description": "Sending integration, of the broadcast's Channel; null means the Channel's default. An archived integration, or one of another Channel, is refused with 422."
           }
         },
         "description": "Request body for updating a draft broadcast: an omitted field keeps its value, null clears it"

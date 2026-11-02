@@ -82,6 +82,12 @@ func (_c *BroadcastCreate) SetName(v string) *BroadcastCreate {
 	return _c
 }
 
+// SetChannel sets the "channel" field.
+func (_c *BroadcastCreate) SetChannel(v broadcast.Channel) *BroadcastCreate {
+	_c.mutation.SetChannel(v)
+	return _c
+}
+
 // SetSubject sets the "subject" field.
 func (_c *BroadcastCreate) SetSubject(v string) *BroadcastCreate {
 	_c.mutation.SetSubject(v)
@@ -363,14 +369,6 @@ func (_c *BroadcastCreate) defaults() {
 		v := broadcast.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := _c.mutation.Subject(); !ok {
-		v := broadcast.DefaultSubject
-		_c.mutation.SetSubject(v)
-	}
-	if _, ok := _c.mutation.Body(); !ok {
-		v := broadcast.DefaultBody
-		_c.mutation.SetBody(v)
-	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := broadcast.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -396,11 +394,13 @@ func (_c *BroadcastCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Broadcast.name": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.Subject(); !ok {
-		return &ValidationError{Name: "subject", err: errors.New(`ent: missing required field "Broadcast.subject"`)}
+	if _, ok := _c.mutation.Channel(); !ok {
+		return &ValidationError{Name: "channel", err: errors.New(`ent: missing required field "Broadcast.channel"`)}
 	}
-	if _, ok := _c.mutation.Body(); !ok {
-		return &ValidationError{Name: "body", err: errors.New(`ent: missing required field "Broadcast.body"`)}
+	if v, ok := _c.mutation.Channel(); ok {
+		if err := broadcast.ChannelValidator(v); err != nil {
+			return &ValidationError{Name: "channel", err: fmt.Errorf(`ent: validator failed for field "Broadcast.channel": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Broadcast.status"`)}
@@ -467,9 +467,13 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 		_spec.SetField(broadcast.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
+	if value, ok := _c.mutation.Channel(); ok {
+		_spec.SetField(broadcast.FieldChannel, field.TypeEnum, value)
+		_node.Channel = value
+	}
 	if value, ok := _c.mutation.Subject(); ok {
 		_spec.SetField(broadcast.FieldSubject, field.TypeString, value)
-		_node.Subject = value
+		_node.Subject = &value
 	}
 	if value, ok := _c.mutation.FromName(); ok {
 		_spec.SetField(broadcast.FieldFromName, field.TypeString, value)
@@ -481,7 +485,7 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.Body(); ok {
 		_spec.SetField(broadcast.FieldBody, field.TypeString, value)
-		_node.Body = value
+		_node.Body = &value
 	}
 	if value, ok := _c.mutation.Doc(); ok {
 		_spec.SetField(broadcast.FieldDoc, field.TypeJSON, value)
@@ -704,6 +708,12 @@ func (u *BroadcastUpsert) UpdateSubject() *BroadcastUpsert {
 	return u
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (u *BroadcastUpsert) ClearSubject() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldSubject)
+	return u
+}
+
 // SetFromName sets the "from_name" field.
 func (u *BroadcastUpsert) SetFromName(v string) *BroadcastUpsert {
 	u.Set(broadcast.FieldFromName, v)
@@ -749,6 +759,12 @@ func (u *BroadcastUpsert) SetBody(v string) *BroadcastUpsert {
 // UpdateBody sets the "body" field to the value that was provided on create.
 func (u *BroadcastUpsert) UpdateBody() *BroadcastUpsert {
 	u.SetExcluded(broadcast.FieldBody)
+	return u
+}
+
+// ClearBody clears the value of the "body" field.
+func (u *BroadcastUpsert) ClearBody() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldBody)
 	return u
 }
 
@@ -964,6 +980,9 @@ func (u *BroadcastUpsertOne) UpdateNewValues() *BroadcastUpsertOne {
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(broadcast.FieldCreatedAt)
 		}
+		if _, exists := u.create.mutation.Channel(); exists {
+			s.SetIgnore(broadcast.FieldChannel)
+		}
 	}))
 	return u
 }
@@ -1072,6 +1091,13 @@ func (u *BroadcastUpsertOne) UpdateSubject() *BroadcastUpsertOne {
 	})
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (u *BroadcastUpsertOne) ClearSubject() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearSubject()
+	})
+}
+
 // SetFromName sets the "from_name" field.
 func (u *BroadcastUpsertOne) SetFromName(v string) *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
@@ -1125,6 +1151,13 @@ func (u *BroadcastUpsertOne) SetBody(v string) *BroadcastUpsertOne {
 func (u *BroadcastUpsertOne) UpdateBody() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.UpdateBody()
+	})
+}
+
+// ClearBody clears the value of the "body" field.
+func (u *BroadcastUpsertOne) ClearBody() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearBody()
 	})
 }
 
@@ -1537,6 +1570,9 @@ func (u *BroadcastUpsertBulk) UpdateNewValues() *BroadcastUpsertBulk {
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(broadcast.FieldCreatedAt)
 			}
+			if _, exists := b.mutation.Channel(); exists {
+				s.SetIgnore(broadcast.FieldChannel)
+			}
 		}
 	}))
 	return u
@@ -1646,6 +1682,13 @@ func (u *BroadcastUpsertBulk) UpdateSubject() *BroadcastUpsertBulk {
 	})
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (u *BroadcastUpsertBulk) ClearSubject() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearSubject()
+	})
+}
+
 // SetFromName sets the "from_name" field.
 func (u *BroadcastUpsertBulk) SetFromName(v string) *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
@@ -1699,6 +1742,13 @@ func (u *BroadcastUpsertBulk) SetBody(v string) *BroadcastUpsertBulk {
 func (u *BroadcastUpsertBulk) UpdateBody() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.UpdateBody()
+	})
+}
+
+// ClearBody clears the value of the "body" field.
+func (u *BroadcastUpsertBulk) ClearBody() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearBody()
 	})
 }
 

@@ -97,12 +97,12 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "blank name", want: "name must not be empty",
 			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{Name: " "},
+				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{Name: " ", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})},
 					siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 				return res, err
 			},
 			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{Name: " "})
+				res, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{Name: " ", Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
 				return res, err
 			},
 		},
@@ -110,13 +110,15 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 			name: "body and document together", want: "write a body or a doc, not both",
 			site: func(c *siteapi.Client) (any, error) {
 				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
-					Name: "x", Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(badDoc),
+					Name:    "x",
+					Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(badDoc)}),
 				}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 				return res, err
 			},
 			ext: func(c *externalapi.Client) (any, error) {
 				res, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
-					Name: "x", Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(badDoc),
+					Name:    "x",
+					Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(badDoc)}),
 				})
 				return res, err
 			},
@@ -125,7 +127,9 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 			name: "unknown segment", want: "segment not found",
 			site: func(c *siteapi.Client) (any, error) {
 				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
-					Name: "x", SegmentId: siteapi.NewOptNilEntityId(missing),
+					Name:      "x",
+					Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
+					SegmentId: siteapi.NewOptNilEntityId(missing),
 				}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 				return res, err
 			},
@@ -151,7 +155,9 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 func TestBroadcastUnknownIntegrationReadsWithoutAPrefix(t *testing.T) {
 	env := testhelper.Setup(t)
 	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
-		Name: "x", IntegrationId: siteapi.NewOptNilEntityId(99999),
+		Name:          "x",
+		Content:       testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
+		IntegrationId: siteapi.NewOptNilEntityId(99999),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	assert.Equal(t, "integration not found", detailOf(t, res, err))
 }
@@ -232,10 +238,12 @@ func TestInvalidContentReadsTheSameOnBothSurfaces(t *testing.T) {
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	b1, err1 := site.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
-		Name: "x", Doc: siteapi.NewOptEditorDocument(badDoc),
+		Name:    "x",
+		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(badDoc)}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 	b2, err2 := ext.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
-		Name: "x", Doc: externalapi.NewOptEditorDocument(badDoc),
+		Name:    "x",
+		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Doc: externalapi.NewOptEditorDocument(badDoc)}),
 	})
 	t1, err3 := site.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
 		Name: "x", Doc: siteapi.NewOptEditorDocument(badDoc),
