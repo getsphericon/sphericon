@@ -2159,6 +2159,8 @@ func (s SiteAttentionKind) Validate() error {
 		return nil
 	case "providerLimitSpent":
 		return nil
+	case "scheduledBroadcastOverSendCap":
+		return nil
 	case "integrationProviderProbation":
 		return nil
 	case "integrationProviderSandbox":

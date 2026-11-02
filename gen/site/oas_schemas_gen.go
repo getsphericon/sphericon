@@ -9763,7 +9763,8 @@ type SiteAttentionItem struct {
 	Severity SiteAttentionSeverity `json:"severity"`
 	// The object the item is about; absent for the Workspace's own Send cap and a deliverability warning.
 	Subject OptNilSiteAttentionSubject `json:"subject"`
-	// How many failures the item stands for: failed runs of an Automation, 1 for every other kind.
+	// How many the item stands for: failed runs of an Automation, the estimated audience of a
+	// `scheduledBroadcastOverSendCap` Broadcast, 1 for every other kind.
 	Count int32 `json:"count"`
 	// When the problem began, when that is known.
 	Since OptNilTimestamp `json:"since"`
@@ -9772,6 +9773,10 @@ type SiteAttentionItem struct {
 	HoldReason OptNilBroadcastHoldReason `json:"holdReason"`
 	// The rate behind a deliverability warning.
 	Abuse OptNilSiteAbuseWarning `json:"abuse"`
+	// When the Send cap is expected to have let the Broadcast out, set on a
+	// `scheduledBroadcastOverSendCap` item only: the same estimate as the Broadcast's progress once it is
+	// sending.
+	EstimatedCompletionAt OptNilTimestamp `json:"estimatedCompletionAt"`
 }
 
 // GetKind returns the value of Kind.
@@ -9809,6 +9814,11 @@ func (s *SiteAttentionItem) GetAbuse() OptNilSiteAbuseWarning {
 	return s.Abuse
 }
 
+// GetEstimatedCompletionAt returns the value of EstimatedCompletionAt.
+func (s *SiteAttentionItem) GetEstimatedCompletionAt() OptNilTimestamp {
+	return s.EstimatedCompletionAt
+}
+
 // SetKind sets the value of Kind.
 func (s *SiteAttentionItem) SetKind(val SiteAttentionKind) {
 	s.Kind = val
@@ -9844,6 +9854,11 @@ func (s *SiteAttentionItem) SetAbuse(val OptNilSiteAbuseWarning) {
 	s.Abuse = val
 }
 
+// SetEstimatedCompletionAt sets the value of EstimatedCompletionAt.
+func (s *SiteAttentionItem) SetEstimatedCompletionAt(val OptNilTimestamp) {
+	s.EstimatedCompletionAt = val
+}
+
 // What a Needs attention item is about.
 // Ref: #/components/schemas/SiteAttentionKind
 type SiteAttentionKind string
@@ -9855,6 +9870,7 @@ const (
 	SiteAttentionKindDeliverabilityWarning         SiteAttentionKind = "deliverabilityWarning"
 	SiteAttentionKindSendCapSpent                  SiteAttentionKind = "sendCapSpent"
 	SiteAttentionKindProviderLimitSpent            SiteAttentionKind = "providerLimitSpent"
+	SiteAttentionKindScheduledBroadcastOverSendCap SiteAttentionKind = "scheduledBroadcastOverSendCap"
 	SiteAttentionKindIntegrationProviderProbation  SiteAttentionKind = "integrationProviderProbation"
 	SiteAttentionKindIntegrationProviderSandbox    SiteAttentionKind = "integrationProviderSandbox"
 	SiteAttentionKindEnrollmentsFailed             SiteAttentionKind = "enrollmentsFailed"
@@ -9872,6 +9888,7 @@ func (SiteAttentionKind) AllValues() []SiteAttentionKind {
 		SiteAttentionKindDeliverabilityWarning,
 		SiteAttentionKindSendCapSpent,
 		SiteAttentionKindProviderLimitSpent,
+		SiteAttentionKindScheduledBroadcastOverSendCap,
 		SiteAttentionKindIntegrationProviderProbation,
 		SiteAttentionKindIntegrationProviderSandbox,
 		SiteAttentionKindEnrollmentsFailed,
@@ -9895,6 +9912,8 @@ func (s SiteAttentionKind) MarshalText() ([]byte, error) {
 	case SiteAttentionKindSendCapSpent:
 		return []byte(s), nil
 	case SiteAttentionKindProviderLimitSpent:
+		return []byte(s), nil
+	case SiteAttentionKindScheduledBroadcastOverSendCap:
 		return []byte(s), nil
 	case SiteAttentionKindIntegrationProviderProbation:
 		return []byte(s), nil
@@ -9933,6 +9952,9 @@ func (s *SiteAttentionKind) UnmarshalText(data []byte) error {
 		return nil
 	case SiteAttentionKindProviderLimitSpent:
 		*s = SiteAttentionKindProviderLimitSpent
+		return nil
+	case SiteAttentionKindScheduledBroadcastOverSendCap:
+		*s = SiteAttentionKindScheduledBroadcastOverSendCap
 		return nil
 	case SiteAttentionKindIntegrationProviderProbation:
 		*s = SiteAttentionKindIntegrationProviderProbation

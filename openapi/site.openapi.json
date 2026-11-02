@@ -16820,7 +16820,7 @@
           "count": {
             "type": "integer",
             "format": "int32",
-            "description": "How many failures the item stands for: failed runs of an Automation, 1 for every other kind"
+            "description": "How many the item stands for: failed runs of an Automation, the estimated audience of a\n`scheduledBroadcastOverSendCap` Broadcast, 1 for every other kind"
           },
           "since": {
             "type": "string",
@@ -16850,6 +16850,16 @@
             ],
             "nullable": true,
             "description": "The rate behind a deliverability warning"
+          },
+          "estimatedCompletionAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Send cap is expected to have let the Broadcast out, set on a\n`scheduledBroadcastOverSendCap` item only: the same estimate as the Broadcast's progress once\nit is sending"
           }
         },
         "description": "One thing in the Workspace that needs a member's action now"
@@ -16863,6 +16873,7 @@
           "deliverabilityWarning",
           "sendCapSpent",
           "providerLimitSpent",
+          "scheduledBroadcastOverSendCap",
           "integrationProviderProbation",
           "integrationProviderSandbox",
           "enrollmentsFailed",

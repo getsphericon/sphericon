@@ -10,7 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -162,21 +161,19 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 		return nil, failPlan(ctx, s, b.ID, fmt.Errorf("broadcast %d: template does not render: %w", b.ID, verr))
 	}
 
-	// Audience: contacts in the workspace with an email address, narrowed by the Condition
-	// copied from the broadcast's segment when it left draft, then filtered to eligible recipients.
-	// Eligibility is derived (ADR 0001): suppressed destinations and ones
-	// unsubscribed from the "broadcasts" source (or from everything) are excluded
-	// at the query level. EmailNotNil keeps un-sendable contacts out so no row is
-	// created that could never send and would block finalization forever.
-	audience := s.Contact().Query().Where(
-		contact.EmailNotNil(),
-		eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts),
-	)
-	narrow, err := copiedCondition(ctx, s, b.ID)
+	// The Broadcast is read again: begin has taken the copy of a draft's Condition. An audience
+	// that cannot be resolved fails the Broadcast.
+	armed, err := s.Broadcast().Get(ctx, b.ID)
+	if err != nil {
+		return nil, fmt.Errorf("load broadcast %d: %w", b.ID, err)
+	}
+	audience, err := audienceOf(ctx, s, armed)
+	if errors.Is(err, ErrNoAudience) {
+		return nil, failPlan(ctx, s, b.ID, err)
+	}
 	if err != nil {
 		return nil, err
 	}
-	audience = audience.Where(narrow...)
 
 	contactIDs, err := audience.IDs(ctx)
 	if err != nil {
@@ -218,26 +215,44 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	return ids, nil
 }
 
-// copiedCondition narrows the audience to the Condition copied from the Broadcast's Segment when it
-// left draft (ADR 0065); a Broadcast to all contacts is not narrowed. It reads the Broadcast again,
-// after begin has taken the copy of a draft. A Segment Broadcast without a copy, or a copy that no
-// longer compiles, fails the Broadcast.
-func copiedCondition(ctx context.Context, s *ent.Scoped, id int64) ([]predicate.Contact, error) {
-	b, err := s.Broadcast().Get(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("load broadcast %d: %w", id, err)
-	}
+// ErrNoAudience marks a Broadcast whose audience cannot be resolved: a Segment Broadcast without
+// the copy of its Condition, or a copy that no longer compiles. Its plan fails it.
+var ErrNoAudience = errors.New("broadcasts: the audience of the broadcast cannot be resolved")
+
+// audienceOf is the Contacts the plan of the Broadcast b, which has left draft, takes: the
+// Workspace's Contacts with an email address, narrowed by the Condition copied from its Segment
+// when it left draft (ADR 0065; a Broadcast to all contacts is not narrowed), then filtered to
+// eligible recipients. Eligibility is derived (ADR 0001): suppressed destinations and ones
+// unsubscribed from the "broadcasts" source (or from everything) are excluded at the query level.
+// EmailNotNil keeps un-sendable contacts out so no row is created that could never send and would
+// block finalization forever.
+func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (*ent.ContactQuery, error) {
+	audience := s.Contact().Query().Where(
+		contact.EmailNotNil(),
+		eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts),
+	)
 	if b.SegmentID == nil {
-		return nil, nil
+		return audience, nil
 	}
 	if b.Condition == nil {
-		return nil, failPlan(ctx, s, id, fmt.Errorf("broadcast %d: the condition of segment %d was not copied", id, *b.SegmentID))
+		return nil, fmt.Errorf("%w: broadcast %d: the condition of segment %d was not copied", ErrNoAudience, b.ID, *b.SegmentID)
 	}
 	pred, err := condition.ContactPredicate(ctx, s, *b.Condition)
 	if err != nil {
-		return nil, failPlan(ctx, s, id, fmt.Errorf("broadcast %d condition: %w", id, err))
+		return nil, fmt.Errorf("%w: broadcast %d condition: %w", ErrNoAudience, b.ID, err)
 	}
-	return []predicate.Contact{pred}, nil
+	return audience.Where(pred), nil
+}
+
+// AudienceSize is how many Contacts the plan of the Broadcast b, which has left draft, would take
+// if it ran now: an estimate for a scheduled Broadcast, whose audience is taken when it starts.
+// ErrNoAudience when its plan would fail it instead.
+func AudienceSize(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (int, error) {
+	audience, err := audienceOf(ctx, s, b)
+	if err != nil {
+		return 0, err
+	}
+	return audience.Count(ctx)
 }
 
 // spread is the i-th send's time: i steps after start.

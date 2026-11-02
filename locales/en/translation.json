@@ -1269,6 +1269,8 @@
         "integrationProviderSandbox": "{{name}} is in the provider's sandbox: it sends only to addresses verified with the provider.",
         "integrationProviderStopped": "Your provider has stopped the account behind {{name}}: nothing sends through it until the provider reinstates it.",
         "providerLimitSpent": "{{name}} has sent its daily limit: the rest goes out as the limit refills.",
+        "scheduledBroadcastOverSendCap_one": "This workspace's daily sending limit will slow {{name}} (about {{count, number}} contact), together with what is scheduled before it: it is expected to finish by {{finish}}.",
+        "scheduledBroadcastOverSendCap_other": "This workspace's daily sending limit will slow {{name}} (about {{count, number}} contacts), together with what is scheduled before it: it is expected to finish by {{finish}}.",
         "sendCapSpent": "This workspace has sent its daily sending limit: the rest goes out as it refills over the next 24 hours.",
         "sendingDomainNotBulkReady": "{{name}} has no published DMARC record: Gmail and Yahoo reject or spam-folder bulk mail from it. Publish the suggested DMARC record, then verify the domain again.",
         "sendingDomainVerificationLost": "The DKIM record of {{name}} is gone: mail from it is held until the domain verifies again.",

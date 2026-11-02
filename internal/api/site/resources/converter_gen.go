@@ -197,6 +197,8 @@ func (c *ConverterImpl) AttentionKindToResource(source attention.Kind) site.Site
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderStopped
 	case attention.KindProviderLimitSpent:
 		siteapiSiteAttentionKind = site.SiteAttentionKindProviderLimitSpent
+	case attention.KindScheduledBroadcastOverSendCap:
+		siteapiSiteAttentionKind = site.SiteAttentionKindScheduledBroadcastOverSendCap
 	case attention.KindSendCapSpent:
 		siteapiSiteAttentionKind = site.SiteAttentionKindSendCapSpent
 	case attention.KindSendingDomainNotBulkReady:
@@ -2374,6 +2376,7 @@ func (c *ConverterImpl) attentionItemToSiteapiSiteAttentionItem(source attention
 	siteapiSiteAttentionItem.Since = optNilTimestamp(source.Since)
 	siteapiSiteAttentionItem.HoldReason = optNilBroadcastHoldReason(c, source.HoldReason)
 	siteapiSiteAttentionItem.Abuse = optAbuseWarning(c, source.Abuse)
+	siteapiSiteAttentionItem.EstimatedCompletionAt = optNilTimestamp(source.EstimatedCompletionAt)
 	return siteapiSiteAttentionItem
 }
 func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclicks.Clicks) site.SiteLinkClicks {

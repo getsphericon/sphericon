@@ -421,3 +421,41 @@
   workspace_id: 20
   created_at: '{{hoursAgo 300}}'
   updated_at: '{{hoursAgo 299}}'
+
+# Capton (workspace 63): two Broadcasts scheduled within the next day to the same three Contacts, with
+# the Condition they copied (ADR 0065). They draw from one Send cap bucket (#939).
+- id: 21100 # fixture: BroadcastCaptonSooner
+  name: Capton morning sale
+  subject: Morning sale
+  body: '<p>Sale</p>'
+  status: scheduled
+  scheduled_at: '{{hoursAhead 2}}'
+  segment_id: 20010
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"city","operator":"eq","value":"Capton"}]}'
+  workspace_id: 63
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 21101 # fixture: BroadcastCaptonLater
+  name: Capton evening sale
+  subject: Evening sale
+  body: '<p>Sale</p>'
+  status: scheduled
+  scheduled_at: '{{hoursAhead 3}}'
+  segment_id: 20010
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"city","operator":"eq","value":"Capton"}]}'
+  workspace_id: 63
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+# Sending to the same three Contacts, none sent yet, and held for a Workspace-level reason, which is
+# no item of Needs attention: it draws nothing from the Send cap bucket until a test lifts the hold.
+- id: 21102 # fixture: BroadcastCaptonSending
+  name: Capton clearance
+  subject: Clearance
+  body: '<p>Sale</p>'
+  status: sending
+  hold_reason: workspace_suspended
+  segment_id: 20010
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"city","operator":"eq","value":"Capton"}]}'
+  workspace_id: 63
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

@@ -187,3 +187,9 @@
   role: member
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
+- id: 5710 # fixture: CaptonCleoMembership
+  user_id: 5610
+  workspace_id: 63
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

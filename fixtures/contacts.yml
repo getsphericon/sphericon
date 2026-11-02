@@ -1238,3 +1238,13 @@
   workspace_id: 61
   created_at: '2026-03-08 12:00:00+00'
   updated_at: '2026-03-08 12:00:00+00'
+
+# --- Capton (workspace 63): the audience of its two scheduled Broadcasts (#939) ---
+# {{range $i := seq 20200 20202}}
+- id: '{{$i}}'
+  email: 'capton-{{$i}}@capton.test'
+  city: Capton
+  workspace_id: 63
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# {{end}}

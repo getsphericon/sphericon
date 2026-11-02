@@ -10,6 +10,7 @@ package attention
 import (
 	"cmp"
 	"context"
+	"errors"
 	"slices"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/abusewatch"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
@@ -42,6 +44,10 @@ const (
 	// KindSendCapSpent: the Workspace sent its Send cap over the last 24 hours, and sending is
 	// deferred until it refills.
 	KindSendCapSpent Kind = "sendCapSpent"
+	// KindScheduledBroadcastOverSendCap: a Broadcast scheduled within the next 24 hours that the
+	// Workspace's Send cap will not let out in full when it starts, together with the Broadcasts
+	// scheduled before it, so it is deferred (ADR 0067).
+	KindScheduledBroadcastOverSendCap Kind = "scheduledBroadcastOverSendCap"
 	// KindProviderLimitSpent: an Integration sent its Provider limit over the last 24 hours.
 	KindProviderLimitSpent Kind = "providerLimitSpent"
 	// KindIntegrationProviderProbation: the provider has the Integration's account under review.
@@ -87,7 +93,8 @@ type Item struct {
 	Severity Severity
 	// Subject is the object the item is about; nil for the Workspace's own Send cap.
 	Subject *Subject
-	// Count is how many failures the item stands for: failed runs of an Automation, 1 for the rest.
+	// Count is how many the item stands for: failed runs of an Automation, the estimated audience
+	// of a Broadcast over the Send cap, 1 for the rest.
 	Count int
 	// Since is when the problem began, when that is known.
 	Since *time.Time
@@ -95,6 +102,8 @@ type Item struct {
 	HoldReason *broadcast.HoldReason
 	// Abuse is the rate behind a deliverability warning.
 	Abuse *abusewatch.Warning
+	// EstimatedCompletionAt is when the Send cap is expected to have let a Broadcast over it out.
+	EstimatedCompletionAt *time.Time
 }
 
 // Module reads the items. Its clock is time.Now.
@@ -127,6 +136,7 @@ func (m *Module) Items(ctx context.Context, s *ent.Scoped) ([]Item, error) {
 		heldBroadcasts,
 		m.deliverability,
 		m.sendCap,
+		m.scheduledOverSendCap,
 		failedRuns,
 		failedBroadcasts,
 		disabledWebhooks,
@@ -261,6 +271,75 @@ func (m *Module) sendCap(ctx context.Context, s *ent.Scoped, now time.Time) ([]I
 		return nil, err
 	}
 	return []Item{{Kind: KindSendCapSpent, Severity: SeverityDegraded, Count: 1}}, nil
+}
+
+// overCapWindow is how far ahead a scheduled Broadcast is judged against the Send cap; one further
+// ahead is judged by a later read.
+const overCapWindow = 24 * time.Hour
+
+// scheduledOverSendCap reads the scheduled Broadcasts, held ones aside, that start within the next
+// 24 hours and that the Workspace's Send cap will not let out in full when they start. Each is
+// judged by the bucket as it will be at its start (now, for one past due that has not started
+// yet), the bucket the send path paces by: the wait is how long it then takes to let out the
+// Broadcast's estimated audience, those of every one starting before it and the recipients the
+// sending Broadcasts have left, since they all draw from the same bucket, and the Broadcast is an
+// item when there is a wait, finishing at its start plus the wait. Taking the earlier audiences at
+// its start leaves out what the bucket refills between their starts, so the read errs towards an
+// item. Nothing applies where no Send cap does.
+func (m *Module) scheduledOverSendCap(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, error) {
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return nil, err
+	}
+	perDay := m.sendCaps.Of(ws)
+	if perDay == nil {
+		return nil, nil
+	}
+	scheduled, err := s.Broadcast().Query().
+		Where(
+			broadcast.StatusEQ(broadcast.StatusScheduled),
+			broadcast.HoldReasonIsNil(),
+			broadcast.ScheduledAtLTE(now.Add(overCapWindow)),
+		).
+		Order(ent.Asc(broadcast.FieldScheduledAt), ent.Asc(broadcast.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// What the sending Broadcasts still have to send goes out of the bucket before any of these.
+	accumulated, err := broadcasts.PendingOfSending(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	var items []Item
+	for _, b := range scheduled {
+		audience, err := broadcasts.AudienceSize(ctx, s, b)
+		if errors.Is(err, broadcasts.ErrNoAudience) {
+			// Its plan fails it instead, a failure of its own: it draws nothing from the bucket.
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		accumulated += audience
+		start := *b.ScheduledAt
+		if start.Before(now) {
+			start = now
+		}
+		wait, err := providerlimit.SendCapDrain(ctx, s, *perDay, accumulated, start)
+		if err != nil {
+			return nil, err
+		}
+		if wait == 0 {
+			continue
+		}
+		finish := start.Add(wait)
+		items = append(items, Item{
+			Kind: KindScheduledBroadcastOverSendCap, Severity: SeverityDegraded, Count: audience,
+			Subject: &Subject{ID: b.ID, Name: b.Name}, EstimatedCompletionAt: &finish,
+		})
+	}
+	return items, nil
 }
 
 // failedRuns reads, per Automation, the runs that failed in the last week.
