@@ -36,6 +36,7 @@ function IntegrationName({ workspaceId, id }: { workspaceId: string; id: string 
 function stepLabel(t: TFunction, step: SiteAutomationStep): string {
   const kind = {
     [SiteAutomationStepType.EMAIL]: t(($) => $.automations.stepEmail),
+    [SiteAutomationStepType.TELEGRAM]: t(($) => $.automations.stepTelegram),
     [SiteAutomationStepType.WAIT]: t(($) => $.automations.stepWait),
     [SiteAutomationStepType.APPLY_TAG]: t(($) => $.automations.stepApplyTag),
     [SiteAutomationStepType.REMOVE_TAG]: t(($) => $.automations.stepRemoveTag),

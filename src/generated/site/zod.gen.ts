@@ -919,6 +919,7 @@ export const zSiteAutomationStepFigures = z.object({
  */
 export const zSiteAutomationStepType = z.enum([
   'email',
+  'telegram',
   'wait',
   'apply_tag',
   'remove_tag',
@@ -943,7 +944,8 @@ export const zSiteAutomationStep = z.object({
   secret: z.exactOptional(z.string()),
   clearSecret: z.exactOptional(z.boolean()),
   hasSecret: z.exactOptional(z.boolean()),
-  integrationId: z.exactOptional(zEntityId.nullable())
+  integrationId: z.exactOptional(zEntityId.nullable()),
+  text: z.exactOptional(z.string())
 });
 
 /**

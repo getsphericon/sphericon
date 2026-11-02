@@ -15269,7 +15269,11 @@
               }
             ],
             "nullable": true,
-            "description": "The Integration a send step sends through (email steps), of the step's Channel; null or\nomitted is that Channel's default. Each send step names its own, so one automation may send\nthrough several (ADR 0081)."
+            "description": "The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or\nomitted is that Channel's default. Each send step names its own, so one automation may send\nthrough several (ADR 0081)."
+          },
+          "text": {
+            "type": "string",
+            "description": "The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written: publishing a longer one is refused."
           }
         },
         "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds, tag steps carry the tag name."
@@ -15298,7 +15302,7 @@
       },
       "AutomationStepType": {
         "type": "string",
-        "enum": ["email", "wait", "apply_tag", "remove_tag", "http"],
+        "enum": ["email", "telegram", "wait", "apply_tag", "remove_tag", "http"],
         "description": "Kind of automation step"
       },
       "AutomationVersion": {

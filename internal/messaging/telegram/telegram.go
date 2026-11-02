@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -120,6 +121,23 @@ func (b *Bot) SetWebhook(ctx context.Context, hook messaging.TelegramWebhook) er
 // DeleteWebhook removes the bot's webhook, keeping its pending updates.
 func (b *Bot) DeleteWebhook(ctx context.Context) error {
 	return refusal(b.bot.DeleteWebhook(ctx, &telego.DeleteWebhookParams{}))
+}
+
+// SendMessage sends msg.Text, as HTML, to the chat msg.ChatID.
+func (b *Bot) SendMessage(ctx context.Context, msg messaging.TelegramMessage) (messaging.TelegramSent, error) {
+	chat, err := strconv.ParseInt(msg.ChatID, 10, 64)
+	if err != nil {
+		return messaging.TelegramSent{}, fmt.Errorf("telegram: chat id %q is not a number", msg.ChatID)
+	}
+	sent, err := b.bot.SendMessage(ctx, &telego.SendMessageParams{
+		ChatID:    telego.ChatID{ID: chat},
+		Text:      msg.Text,
+		ParseMode: telego.ModeHTML,
+	})
+	if err != nil {
+		return messaging.TelegramSent{}, refusal(err)
+	}
+	return messaging.TelegramSent{MessageID: int64(sent.MessageID)}, nil
 }
 
 // refusal turns telego's error into a messaging.TelegramError when the Bot API answered one; any

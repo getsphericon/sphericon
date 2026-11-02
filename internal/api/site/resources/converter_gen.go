@@ -29,6 +29,7 @@ import (
 	attention "github.com/getsphericon/sphericon/internal/attention"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
+	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
@@ -413,20 +414,23 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) si
 	// siteapiSiteAutomationStep.ClearSecret: ignore
 	siteapiSiteAutomationStep.HasSecret = optBool(source.HasSecret)
 	siteapiSiteAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
+	siteapiSiteAutomationStep.Text = optString(source.Text)
 	return siteapiSiteAutomationStep
 }
-func (c *ConverterImpl) AutomationStepTypeToResource(source automations.StepType) site.SiteAutomationStepType {
+func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) site.SiteAutomationStepType {
 	var siteapiSiteAutomationStepType site.SiteAutomationStepType
 	switch source {
-	case automations.StepApplyTag:
+	case automationsteps.ApplyTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeApplyTag
-	case automations.StepEmail:
+	case automationsteps.Email:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeEmail
-	case automations.StepHTTP:
+	case automationsteps.HTTP:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeHTTP
-	case automations.StepRemoveTag:
+	case automationsteps.RemoveTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeRemoveTag
-	case automations.StepWait:
+	case automationsteps.Telegram:
+		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeTelegram
+	case automationsteps.Wait:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeWait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -1525,6 +1529,8 @@ func (c *ConverterImpl) PermissionToResource(source accounts.Permission) site.Pe
 		siteapiPermission = site.PermissionContactsErase
 	case accounts.PermContactsExport:
 		siteapiPermission = site.PermissionContactsExport
+	case accounts.PermCustomFieldsManage:
+		siteapiPermission = site.PermissionCustomFieldsManage
 	case accounts.PermHoldsResolve:
 		siteapiPermission = site.PermissionHoldsResolve
 	case accounts.PermIntegrationsManage:

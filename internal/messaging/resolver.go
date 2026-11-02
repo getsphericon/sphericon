@@ -73,6 +73,20 @@ func (r *Resolver) EmailSender(ctx context.Context, s *ent.Scoped, row *ent.Inte
 	return sender, nil
 }
 
+// TelegramBot is Sender for a Telegram Integration, typed: the sender of an Integration of another
+// Channel is no bot and is an error.
+func (r *Resolver) TelegramBot(ctx context.Context, s *ent.Scoped, row *ent.Integration) (TelegramBot, error) {
+	built, err := r.Sender(ctx, s, row)
+	if err != nil {
+		return nil, err
+	}
+	bot, ok := built.(TelegramBot)
+	if !ok {
+		return nil, fmt.Errorf("integration %d of channel %q is no Telegram bot", row.ID, row.Channel)
+	}
+	return bot, nil
+}
+
 // DefaultEmailIntegration is the Workspace's default, enabled email Integration. It returns
 // ErrNoProvider when there is none.
 func DefaultEmailIntegration(ctx context.Context, s *ent.Scoped) (*ent.Integration, error) {

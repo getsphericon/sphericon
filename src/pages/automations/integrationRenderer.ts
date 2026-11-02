@@ -8,3 +8,8 @@ export const emailIntegrationRenderer: JsonFormsRendererExtension = appRenderer(
   integrationFormat('email'),
   integrationControl('email'),
 )
+
+export const telegramIntegrationRenderer: JsonFormsRendererExtension = appRenderer(
+  integrationFormat('telegram'),
+  integrationControl('telegram'),
+)

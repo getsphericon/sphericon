@@ -39,6 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
+	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
@@ -203,7 +204,9 @@ type Module struct {
 	// channels are the Channels a message can be sent on, each with its renderer and adapter.
 	channels map[messaging.Channel]channel
 	senders  Senders
-	tracker  *tracking.Tracker
+	// bots builds the Telegram bots; nil while the Instance has none.
+	bots    TelegramBots
+	tracker *tracking.Tracker
 	// trackingHosts names the Workspace's serving Tracking domain; nil while the Instance offers
 	// none.
 	trackingHosts TrackingHosts
@@ -268,7 +271,7 @@ func (m *Module) AsSystem(s *ent.Scoped) *ent.Scoped {
 // New builds the module. tracker may be nil only if no marketing Request is sent.
 func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *tracking.Tracker, opts ...Option) *Module {
 	m := &Module{bus: bus, holds: hs, senders: senders, tracker: tracker, lease: DefaultLease, now: time.Now}
-	m.channels = map[messaging.Channel]channel{messaging.ChannelEmail: emailChannel{m: m}}
+	m.channels = map[messaging.Channel]channel{messaging.ChannelEmail: emailChannel{m: m}, messaging.ChannelTelegram: telegramChannel{m: m}}
 	for _, o := range opts {
 		o(m)
 	}
@@ -412,23 +415,28 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return *replay, nil
 	}
 
-	// A Contact with no Destination on the Channel has nothing to send to: a Skipped, recorded on
-	// the claimed message like an opt-out, after the holds as eligibility is (ADR 0079, 0081).
-	if dest == "" {
-		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, eligibility.ReasonNoDestination)
-	}
-
-	// Send-eligibility on the Channel, per message at send time, fail-closed: if the check
-	// cannot be made the message is not sent and the attempt is retried.
-	eligibleOn := string(onChannel)
-	dec, err := eligibility.Check(ctx, s, eligibleOn, dest, req.Source)
+	// Where the message goes is the Channel's to resolve, after the claim: a Channel of Bindings
+	// reads the Contact's Bindings of the routed Integration. A Contact with no Destination on the
+	// Channel has nothing to send to: a Skipped, recorded on the claimed message like an opt-out,
+	// after the holds as eligibility is (ADR 0079, 0081).
+	targets, err := ch.targets(ctx, s, req, g.route, dest)
 	if err != nil {
 		m.release(ctx, s, msg)
 		return Result{}, err
 	}
-	if !dec.Eligible {
-		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, dec.Reason)
+	if len(targets) == 0 {
+		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, eligibility.ReasonNoDestination)
 	}
+
+	eligible, skip, err := m.eligibleTargets(ctx, s, req, targets)
+	if err != nil {
+		m.release(ctx, s, msg)
+		return Result{}, err
+	}
+	if len(eligible) == 0 {
+		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, skip)
+	}
+	dest = eligible[0].dest
 
 	rendered, err := ch.render(ctx, s, req, msg.ID, dest, ws)
 	if err != nil {
@@ -454,14 +462,59 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	}
 
 	origin := messaging.Origin{OutboundMessageID: msg.ID, Surface: messaging.Surface(req.Kind), Source: req.Source}
-	receipt, err := g.route.Sender.send(ctx, g.as, rendered, dest, origin)
+	first, stopped, err := m.deliver(ctx, g, req, rendered, eligible, origin, msg.ID)
 	if err != nil {
+		if stopped != nil {
+			m.dropClaim(ctx, s, msg)
+			return *stopped, nil
+		}
+		m.release(ctx, s, msg)
+		return Result{}, err
+	}
+	return m.recordSent(ctx, s, req, msg, g, first.to.dest, first.receipt)
+}
+
+// eligibleTargets is the targets that pass Send-eligibility, each checked on its own at send time,
+// fail-closed: an error is a check that could not be made. When none passes, skip is the first
+// one's reason.
+func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request, targets []target) (eligible []target, skip string, err error) {
+	onChannel := string(req.Channel())
+	for _, t := range targets {
+		dec, err := eligibility.Check(ctx, s, onChannel, t.dest, req.Source)
+		if err != nil {
+			return nil, "", err
+		}
+		if dec.Eligible {
+			eligible = append(eligible, t)
+		} else if skip == "" {
+			skip = dec.Reason
+		}
+	}
+	return eligible, skip, nil
+}
+
+// deliver hands the rendered message to each target in turn and returns the first the provider
+// accepted. A target that fails after one has accepted is not retried, which would send the first
+// again. Before any has: stopped is the Held or Deferral Result the failure means (the caller drops
+// the claim), else the error is retryable.
+func (m *Module) deliver(ctx context.Context, g gateResult, req Request, rendered any, targets []target, origin messaging.Origin, messageID int64) (first *accepted, stopped *Result, err error) {
+	for _, t := range targets {
+		receipt, err := g.route.Sender.send(ctx, g.as, rendered, t, origin)
+		if err == nil {
+			if first == nil {
+				first = &accepted{to: t, receipt: receipt}
+			}
+			continue
+		}
+		if first != nil {
+			logging.FromContext(ctx).Warn("outbound: a target did not take the message", "message_id", messageID, "err", err)
+			continue
+		}
 		if reason := heldBy(err); reason != "" {
 			// The adapter found the source blocked only at the provider (email: the Sending
 			// domain lost verification between prepare and the signer): a hold, not a failure.
 			// The claim is dropped so the same Request can run again.
-			m.dropClaim(ctx, s, msg)
-			return Result{Outcome: Held, Reason: reason}, nil
+			return nil, &Result{Outcome: Held, Reason: reason}, err
 		}
 		if wait := deferralBackoff(err); wait > 0 && req.Kind != outboundmessage.KindTransactional {
 			// The provider answered "too fast" or "quota exceeded": it refused the
@@ -469,14 +522,17 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 			// is dropped, no attempt is consumed and the same Request runs again later.
 			// Transactional mail never defers (ADR 0023): it falls through to the
 			// retryable error below, which releases the claim for the caller's retry.
-			m.dropClaim(ctx, s, msg)
-			return Result{Outcome: Deferral, Cause: providerlimit.CauseProvider, Wait: wait}, nil
+			return nil, &Result{Outcome: Deferral, Cause: providerlimit.CauseProvider, Wait: wait}, err
 		}
-		m.release(ctx, s, msg)
-		return Result{}, fmt.Errorf("outbound: send to %s: %w", dest, err)
+		return nil, nil, fmt.Errorf("outbound: send to %s: %w", t.dest, err)
 	}
+	return first, nil, nil
+}
 
-	return m.recordSent(ctx, s, req, msg, g, dest, receipt)
+// accepted is the first target the provider took a message for.
+type accepted struct {
+	to      target
+	receipt messaging.Receipt
 }
 
 // contactErased reports whether the Request carries a Contact that no longer exists in
@@ -707,12 +763,18 @@ func EnrollmentVariables(run *ent.AutomationRun) map[string]any {
 // the Event DedupID make a retry safe.
 func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg *ent.OutboundMessage, g gateResult, dest string, receipt messaging.Receipt) (Result, error) {
 	now := m.now()
+	var integrationID int64
+	if g.route.Integration != nil {
+		integrationID = g.route.Integration.ID
+	}
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		// A lost fence: our claim was taken over while the provider call ran (we outlived
 		// the lease). The taker owns the record; rolling back keeps it, and its
 		// sent Event, the only ones.
 		if err := moveOrStale(ctx, ts, msg, outboundmessage.StatusSent, func(upd *ent.OutboundMessageScopedUpdate) {
 			upd.SetSentAt(now)
+			// A Channel of Bindings had no Destination at the claim: it is the first that accepted.
+			upd.SetDestination(dest)
 			if g.route.Integration != nil {
 				upd.SetIntegrationID(g.route.Integration.ID)
 			}
@@ -733,13 +795,14 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 			}
 		}
 		return g.route.Sender.publishSent(ctx, pub, sentFact{
-			workspaceID: s.WorkspaceID(),
-			req:         req,
-			messageID:   msg.ID,
-			dest:        dest,
-			as:          g.as,
-			receipt:     receipt,
-			captured:    g.captured(),
+			workspaceID:   s.WorkspaceID(),
+			req:           req,
+			messageID:     msg.ID,
+			dest:          dest,
+			as:            g.as,
+			receipt:       receipt,
+			captured:      g.captured(),
+			integrationID: integrationID,
 		})
 	})
 	if err != nil {

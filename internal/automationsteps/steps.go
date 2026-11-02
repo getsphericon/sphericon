@@ -17,6 +17,7 @@ type Kind string
 // Step kinds.
 const (
 	Email     Kind = "email"
+	Telegram  Kind = "telegram"
 	Wait      Kind = "wait"
 	ApplyTag  Kind = "apply_tag"
 	RemoveTag Kind = "remove_tag"
@@ -30,6 +31,8 @@ func (k Kind) Channel() (messaging.Channel, bool) {
 	switch k {
 	case Email:
 		return messaging.ChannelEmail, true
+	case Telegram:
+		return messaging.ChannelTelegram, true
 	default:
 		return "", false
 	}
@@ -52,6 +55,8 @@ type Step struct {
 	EditorVersion string          `json:"editorVersion,omitempty"`
 	Seconds       int             `json:"seconds,omitempty"`
 	Tag           string          `json:"tag,omitempty"`
+	// Text is a Telegram step's message: Telegram's HTML subset with Liquid merge tags.
+	Text string `json:"text,omitempty"`
 
 	// HTTP steps (ADR 0039) hold ID, URL, Headers, Body (a Liquid JSON template) and
 	// Secret. Stored, URL, header values and Secret are ciphertext, sealed per field;

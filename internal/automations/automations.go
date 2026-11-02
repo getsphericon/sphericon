@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -83,6 +84,8 @@ func Encode(steps []automationsteps.Step) (string, error) {
 			stored = append(stored, automationsteps.Step{Type: s.Type, Tag: strings.TrimSpace(s.Tag)})
 		case automationsteps.HTTP:
 			stored = append(stored, automationsteps.Step{Type: automationsteps.HTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret})
+		case automationsteps.Telegram:
+			stored = append(stored, automationsteps.Step{Type: automationsteps.Telegram, IntegrationID: s.IntegrationID, Text: s.Text})
 		default:
 			email := automationsteps.Step{Type: automationsteps.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
 			if len(s.Doc) > 0 {
@@ -101,6 +104,13 @@ func validate(steps []automationsteps.Step) error {
 		switch s.Type {
 		case automationsteps.Email:
 			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
+				return ErrInvalidStep.With(err.Error())
+			}
+		case automationsteps.Telegram:
+			if strings.TrimSpace(s.Text) == "" {
+				return ErrInvalidStep.With("a Telegram step needs a text")
+			}
+			if err := telegramrender.Check(s.Text); err != nil {
 				return ErrInvalidStep.With(err.Error())
 			}
 		case automationsteps.HTTP:
@@ -133,11 +143,13 @@ func (s SendStep) Channel() messaging.Channel {
 }
 
 // Content is the step's Message content, its Channel's own shape (ADR 0078). A new send step kind
-// adds its case here beside StepType.Channel.
+// adds its case here beside Kind.Channel.
 func (s SendStep) Content() (outbound.Content, error) {
 	switch s.Step.Type {
 	case automationsteps.Email:
 		return outbound.EmailContent{Subject: s.Step.Subject, Body: s.Step.Body}, nil
+	case automationsteps.Telegram:
+		return outbound.TelegramContent{Text: s.Step.Text}, nil
 	default:
 		return nil, fmt.Errorf("automations: step type %q has no message content", s.Step.Type)
 	}
@@ -226,6 +238,12 @@ func (m *Module) build(ctx context.Context, steps []automationsteps.Step) ([]aut
 // for the figures and the log (ADR 0053).
 var engagementTriggers = []string{events.NameEmailOpened, events.NameEmailClicked, events.NameEmailUnsubscribed}
 
+// telegramTriggers are the `telegram.` Events an Automation may start from or end on: what happens
+// to a Binding and what the person does. `telegram.sent` is infrastructure, like `email.sent`.
+var telegramTriggers = []string{
+	events.NameTelegramBound, events.NameTelegramUnbound, "telegram.received", "telegram.clicked", "telegram.unsubscribed",
+}
+
 // validateTrigger refuses an empty trigger and an infrastructure Event as the trigger.
 func validateTrigger(trigger string) error {
 	if problem := eventProblem(trigger); problem != "" {
@@ -243,6 +261,9 @@ func eventProblem(action string) string {
 	}
 	if strings.HasPrefix(t, "email.") && !slices.Contains(engagementTriggers, t) {
 		return fmt.Sprintf("%q is not a customer action; use %s", action, strings.Join(engagementTriggers, ", "))
+	}
+	if strings.HasPrefix(t, "telegram.") && !slices.Contains(telegramTriggers, t) {
+		return fmt.Sprintf("%q is not a customer action; use %s", action, strings.Join(telegramTriggers, ", "))
 	}
 	return ""
 }
@@ -569,7 +590,8 @@ func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int
 // 0081), so the version is refused with outbound.ErrRouteHeld while the Send route of any of them,
 // on the step's Channel through the Integration it names (or that Channel's default), cannot send:
 // an edit may name such an Integration, only Publish is refused, and a route that stops sending
-// after it holds the sends at that step instead.
+// after it holds the sends at that step instead. A Telegram step whose text, as written, is over
+// Telegram's limit is refused too.
 func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent.AutomationVersion) error {
 	if err := validateEvents(definition{trigger: version.TriggerEvent, exits: version.ExitEvents, goal: version.GoalEvent}); err != nil {
 		return err
@@ -577,6 +599,12 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	sends, err := SendSteps(version)
 	if err != nil {
 		return err
+	}
+	for i := range sends {
+		st := &sends[i]
+		if n := telegramrender.WrittenLength(st.Step.Text); st.Step.Type == automationsteps.Telegram && n > telegramrender.MaxText {
+			return ErrInvalidStep.With(fmt.Sprintf("step %d: the text is %d characters long, Telegram takes %d", st.Index+1, n, telegramrender.MaxText))
+		}
 	}
 	type routeKey struct {
 		ch          messaging.Channel

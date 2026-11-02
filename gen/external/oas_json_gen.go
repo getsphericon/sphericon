@@ -3528,9 +3528,15 @@ func (s *AutomationStep) encodeFields(e *jx.Encoder) {
 			s.IntegrationId.Encode(e)
 		}
 	}
+	{
+		if s.Text.Set {
+			e.FieldStart("text")
+			s.Text.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfAutomationStep = [14]string{
+var jsonFieldsNameOfAutomationStep = [15]string{
 	0:  "type",
 	1:  "subject",
 	2:  "body",
@@ -3545,6 +3551,7 @@ var jsonFieldsNameOfAutomationStep = [14]string{
 	11: "clearSecret",
 	12: "hasSecret",
 	13: "integrationId",
+	14: "text",
 }
 
 // Decode decodes AutomationStep from json.
@@ -3702,6 +3709,16 @@ func (s *AutomationStep) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"integrationId\"")
+			}
+		case "text":
+			if err := func() error {
+				s.Text.Reset()
+				if err := s.Text.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"text\"")
 			}
 		default:
 			return d.Skip()
@@ -3908,6 +3925,8 @@ func (s *AutomationStepType) Decode(d *jx.Decoder) error {
 	switch AutomationStepType(v) {
 	case AutomationStepTypeEmail:
 		*s = AutomationStepTypeEmail
+	case AutomationStepTypeTelegram:
+		*s = AutomationStepTypeTelegram
 	case AutomationStepTypeWait:
 		*s = AutomationStepTypeWait
 	case AutomationStepTypeApplyTag:

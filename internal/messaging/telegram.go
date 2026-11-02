@@ -18,6 +18,21 @@ type TelegramBot interface {
 	SetWebhook(ctx context.Context, hook TelegramWebhook) error
 	// DeleteWebhook stops the bot's updates from reaching the webhook. Pending updates are kept.
 	DeleteWebhook(ctx context.Context) error
+	// SendMessage sends one text to a chat. A refusal of the Bot API is an error wrapping a
+	// *TelegramError; a network error or a 5xx is a plain error, which a retry may get past.
+	SendMessage(ctx context.Context, msg TelegramMessage) (TelegramSent, error)
+}
+
+// TelegramMessage is a sendMessage call: the chat it goes to (the Binding's chat id) and its text
+// in Telegram's HTML subset, sent with parse_mode=HTML.
+type TelegramMessage struct {
+	ChatID string
+	Text   string
+}
+
+// TelegramSent is what Telegram answers to an accepted message: its id in the chat.
+type TelegramSent struct {
+	MessageID int64
 }
 
 // TelegramBotInfo is what getMe says of a bot: its numeric id and its @username (without the @).

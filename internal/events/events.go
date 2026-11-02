@@ -67,6 +67,9 @@ const (
 	NameTelegramUnbound = "telegram.unbound"
 	// NameTelegramReceived is a message a bound Contact sent a bot (ADR 0076).
 	NameTelegramReceived = "telegram.received"
+	// NameTelegramSent is a message a bot's Telegram accepted for a Contact. Telegram reports
+	// nothing after that, so no delivered or read Event follows.
+	NameTelegramSent = "telegram.sent"
 )
 
 // reservedPrefixes are the namespaces of the actions only the system records: delivery
@@ -248,6 +251,7 @@ var registry = map[string]func() DomainEvent{
 	NameTelegramBound:         func() DomainEvent { return &BindingChange{} },
 	NameTelegramUnbound:       func() DomainEvent { return &BindingChange{} },
 	NameTelegramReceived:      func() DomainEvent { return &TelegramReceived{} },
+	NameTelegramSent:          func() DomainEvent { return &TelegramSent{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
 }

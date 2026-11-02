@@ -12,6 +12,8 @@ import (
 type StepView struct {
 	Type          automationsteps.Kind
 	Subject, Body *string
+	// Text is a Telegram step's message.
+	Text *string
 	// Doc is an email step's editor document, and EditorVersion the editor that rendered it; a
 	// step written as HTML has neither.
 	Doc           json.RawMessage
@@ -60,6 +62,9 @@ func viewOf(s *automationsteps.Step) StepView {
 		for i, h := range s.Headers {
 			v.Headers[i] = HeaderName{Name: h.Name}
 		}
+	case automationsteps.Telegram:
+		v.IntegrationID = s.IntegrationID
+		v.Text = &s.Text
 	case automationsteps.Email:
 		v.IntegrationID = s.IntegrationID
 		v.Subject = &s.Subject

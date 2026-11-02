@@ -18,6 +18,8 @@ import {
   HTTP_NODE_TYPE,
   REMOVE_TAG_NODE_TYPE,
   TAG_NODE_ICON,
+  TELEGRAM_NODE_ICON,
+  TELEGRAM_NODE_TYPE,
   TRIGGER_NODE_ICON,
   TRIGGER_NODE_TYPE,
   WAIT_NODE_ICON,
@@ -47,6 +49,7 @@ export interface AutomationGraph {
 
 const STEP_ICON: Record<AutomationStep['type'], WBIcon> = {
   email: EMAIL_NODE_ICON,
+  telegram: TELEGRAM_NODE_ICON,
   wait: WAIT_NODE_ICON,
   apply_tag: TAG_NODE_ICON,
   remove_tag: TAG_NODE_ICON,
@@ -71,6 +74,9 @@ function stepProperties(step: AutomationStep): Record<string, unknown> {
   }
   if (step.type === 'apply_tag' || step.type === 'remove_tag') {
     return { tag: step.tag ?? '' }
+  }
+  if (step.type === 'telegram') {
+    return { integrationId: step.integrationId ?? '', text: step.text ?? '' }
   }
   return {
     integrationId: step.integrationId ?? '',
@@ -209,6 +215,14 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
     return {
       type: node.data.type === APPLY_TAG_NODE_TYPE ? 'apply_tag' : 'remove_tag',
       tag: asText(props.tag),
+    }
+  }
+  if (node.data.type === TELEGRAM_NODE_TYPE) {
+    const integrationId = asText(props.integrationId)
+    return {
+      type: 'telegram',
+      text: asText(props.text),
+      ...(integrationId === '' ? {} : { integrationId }),
     }
   }
   if (node.data.type === EMAIL_NODE_TYPE) {

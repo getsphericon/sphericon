@@ -125,6 +125,50 @@ func (e *TelegramReceived) Project() Projection {
 	}
 }
 
+// TelegramSent is an Outbound send a bot's Telegram accepted (telegram.sent), recorded with the
+// Outbound message in one transaction. Destination is the Telegram user id of the first Binding
+// that accepted it; the Broadcast or Automation it came from is named when there is one.
+type TelegramSent struct {
+	WorkspaceID       int64  `json:"workspaceId"`
+	ContactID         int64  `json:"contactId"`
+	Email             string `json:"email,omitempty"`
+	IntegrationID     int64  `json:"integrationId,omitempty"`
+	Destination       string `json:"destination"`
+	BroadcastID       int64  `json:"broadcastId,omitempty"`
+	AutomationID      int64  `json:"automationId,omitempty"`
+	OutboundMessageID int64  `json:"outboundMessageId"`
+	Surface           string `json:"surface,omitempty"`
+	SendingSource     string `json:"sendingSource,omitempty"`
+	DedupID           string `json:"dedupId,omitempty"`
+}
+
+func (*TelegramSent) EventName() string  { return NameTelegramSent }
+func (*TelegramSent) EventVersion() int  { return 1 }
+func (e *TelegramSent) Workspace() int64 { return e.WorkspaceID }
+func (e *TelegramSent) EventID() string  { return e.DedupID }
+func (e *TelegramSent) Project() Projection {
+	props := map[string]any{"destination": e.Destination, "outboundMessageId": e.OutboundMessageID}
+	if e.IntegrationID != 0 {
+		props["integrationId"] = e.IntegrationID
+	}
+	if e.BroadcastID != 0 {
+		props["broadcastId"] = e.BroadcastID
+	}
+	if e.AutomationID != 0 {
+		props["automationId"] = e.AutomationID
+	}
+	if e.Surface != "" {
+		props["surface"] = e.Surface
+	}
+	if e.SendingSource != "" {
+		props["sendingSource"] = e.SendingSource
+	}
+	return Projection{
+		Subject: e.Email, Action: NameTelegramSent, Email: e.Email, ContactID: e.ContactID,
+		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
+	}
+}
+
 type causeKey struct{}
 
 // CausedBy returns ctx for the work of a Rule's Action: an event published in it carries cause

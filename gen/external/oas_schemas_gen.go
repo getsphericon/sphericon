@@ -2150,10 +2150,14 @@ type AutomationStep struct {
 	ClearSecret OptBool `json:"clearSecret"`
 	// Whether a signing secret is stored (HTTP steps, read only).
 	HasSecret OptBool `json:"hasSecret"`
-	// The Integration a send step sends through (email steps), of the step's Channel; null or omitted is
-	// that Channel's default. Each send step names its own, so one automation may send through several
-	// (ADR 0081).
+	// The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or
+	// omitted is that Channel's default. Each send step names its own, so one automation may send through
+	// several (ADR 0081).
 	IntegrationId OptNilEntityId `json:"integrationId"`
+	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
+	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
+	// escaped. Up to 4096 characters as written: publishing a longer one is refused.
+	Text OptString `json:"text"`
 }
 
 // GetType returns the value of Type.
@@ -2226,6 +2230,11 @@ func (s *AutomationStep) GetIntegrationId() OptNilEntityId {
 	return s.IntegrationId
 }
 
+// GetText returns the value of Text.
+func (s *AutomationStep) GetText() OptString {
+	return s.Text
+}
+
 // SetType sets the value of Type.
 func (s *AutomationStep) SetType(val AutomationStepType) {
 	s.Type = val
@@ -2296,6 +2305,11 @@ func (s *AutomationStep) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
 }
 
+// SetText sets the value of Text.
+func (s *AutomationStep) SetText(val OptString) {
+	s.Text = val
+}
+
 // The messages of the send step at one position.
 // Ref: #/components/schemas/AutomationStepFigures
 type AutomationStepFigures struct {
@@ -2344,6 +2358,7 @@ type AutomationStepType string
 
 const (
 	AutomationStepTypeEmail     AutomationStepType = "email"
+	AutomationStepTypeTelegram  AutomationStepType = "telegram"
 	AutomationStepTypeWait      AutomationStepType = "wait"
 	AutomationStepTypeApplyTag  AutomationStepType = "apply_tag"
 	AutomationStepTypeRemoveTag AutomationStepType = "remove_tag"
@@ -2354,6 +2369,7 @@ const (
 func (AutomationStepType) AllValues() []AutomationStepType {
 	return []AutomationStepType{
 		AutomationStepTypeEmail,
+		AutomationStepTypeTelegram,
 		AutomationStepTypeWait,
 		AutomationStepTypeApplyTag,
 		AutomationStepTypeRemoveTag,
@@ -2365,6 +2381,8 @@ func (AutomationStepType) AllValues() []AutomationStepType {
 func (s AutomationStepType) MarshalText() ([]byte, error) {
 	switch s {
 	case AutomationStepTypeEmail:
+		return []byte(s), nil
+	case AutomationStepTypeTelegram:
 		return []byte(s), nil
 	case AutomationStepTypeWait:
 		return []byte(s), nil
@@ -2384,6 +2402,9 @@ func (s *AutomationStepType) UnmarshalText(data []byte) error {
 	switch AutomationStepType(data) {
 	case AutomationStepTypeEmail:
 		*s = AutomationStepTypeEmail
+		return nil
+	case AutomationStepTypeTelegram:
+		*s = AutomationStepTypeTelegram
 		return nil
 	case AutomationStepTypeWait:
 		*s = AutomationStepTypeWait

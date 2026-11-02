@@ -42,6 +42,15 @@ func (c emailChannel) adapter(ctx context.Context, s *ent.Scoped, integ *ent.Int
 	return emailAdapter{sender: sender}, nil
 }
 
+// targets is the Request's Destination, the one address the message goes to; none for a Contact
+// with no email.
+func (emailChannel) targets(_ context.Context, _ *ent.Scoped, _ Request, _ Route, dest string) ([]target, error) {
+	if dest == "" {
+		return nil, nil
+	}
+	return []target{{dest: dest}}, nil
+}
+
 func (c emailChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error) {
 	msg, err := c.m.renderEmail(ctx, s, req, messageID, dest, ws)
 	if err != nil {
@@ -178,12 +187,12 @@ func (a emailAdapter) prepare(ctx context.Context, s *ent.Scoped, content Conten
 	return sendAs{address: from, name: name, sendingDomain: messaging.DomainOf(from)}, "", nil
 }
 
-func (a emailAdapter) send(ctx context.Context, as sendAs, msg any, dest string, origin messaging.Origin) (messaging.Receipt, error) {
+func (a emailAdapter) send(ctx context.Context, as sendAs, msg any, to target, origin messaging.Origin) (messaging.Receipt, error) {
 	email, ok := msg.(messaging.EmailMessage)
 	if !ok {
 		return messaging.Receipt{}, fmt.Errorf("outbound: %T is no email message", msg)
 	}
-	email.From, email.FromName, email.To, email.Origin = as.address, as.name, dest, &origin
+	email.From, email.FromName, email.To, email.Origin = as.address, as.name, to.dest, &origin
 	return sendEmail(ctx, a.sender, email)
 }
 

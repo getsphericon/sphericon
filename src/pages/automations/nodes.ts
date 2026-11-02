@@ -11,11 +11,13 @@ import {
 import { HTTP_BODY_FORMAT, HTTP_HEADERS_FORMAT } from './httpFormat.ts'
 import { integrationFormat } from './integrationFormat.ts'
 import { MESSAGE_FORMAT } from './messageFormat.ts'
+import { TELEGRAM_TEXT_FORMAT } from './telegramFormat.ts'
 import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
 
 // The palette `type` of each node, stored on `node.data.type` and used by the
 // graph ↔ definition converters to tell email steps from wait steps.
 export const EMAIL_NODE_TYPE = 'email'
+export const TELEGRAM_NODE_TYPE = 'telegram'
 export const WAIT_NODE_TYPE = 'wait'
 export const APPLY_TAG_NODE_TYPE = 'apply_tag'
 export const REMOVE_TAG_NODE_TYPE = 'remove_tag'
@@ -26,6 +28,7 @@ export const TRIGGER_NODE_TYPE = 'trigger'
 
 // Phosphor icon names (WBIcon) the SDK renders in the palette and node header.
 export const EMAIL_NODE_ICON = 'Envelope'
+export const TELEGRAM_NODE_ICON: WBIcon = 'TelegramLogo'
 export const WAIT_NODE_ICON = 'Timer'
 export const TAG_NODE_ICON: WBIcon = 'Tag'
 export const HTTP_NODE_ICON: WBIcon = 'WebhooksLogo'
@@ -142,6 +145,48 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               type: 'Text',
               scope: '#/properties/body',
               label: t(($) => $.automations.emailBodyLabel),
+              placeholder: '',
+            },
+          ],
+        } satisfies UISchema,
+      },
+      {
+        type: TELEGRAM_NODE_TYPE,
+        icon: TELEGRAM_NODE_ICON,
+        label: t(($) => $.automations.stepTelegram),
+        description: t(($) => $.automations.telegramNodeDescription),
+        // `integrationId` is the bot the step sends through, '' for the Telegram default (ADR 0081).
+        defaultPropertiesData: { integrationId: '', text: '' },
+        schema: {
+          type: 'object',
+          required: ['text'],
+          properties: {
+            ...sharedProperties,
+            integrationId: {
+              type: 'string',
+              label: t(($) => $.automations.integrationLabel),
+              format: integrationFormat('telegram'),
+            },
+            text: {
+              type: 'string',
+              label: t(($) => $.automations.telegramTextLabel),
+              format: TELEGRAM_TEXT_FORMAT,
+            },
+          },
+        },
+        uischema: {
+          type: 'VerticalLayout',
+          elements: [
+            {
+              type: 'Text',
+              scope: '#/properties/integrationId',
+              label: t(($) => $.automations.integrationLabel),
+              placeholder: '',
+            },
+            {
+              type: 'Text',
+              scope: '#/properties/text',
+              label: t(($) => $.automations.telegramTextLabel),
               placeholder: '',
             },
           ],

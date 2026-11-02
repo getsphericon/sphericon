@@ -226,24 +226,27 @@ func layers(r ref, channel, source string) []layer {
 	if source == "" {
 		return []layer{suppressed}
 	}
-	return []layer{
-		suppressed,
-		{
+	out := make([]layer, 0, 4)
+	out = append(out, suppressed,
+		layer{
 			reason: ReasonUnsubscribedEverything,
 			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, SourceEverything)),
 		},
-		{
+		layer{
 			reason: ReasonUnsubscribedSource,
 			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, source)),
-		},
-		{
-			reason: ReasonUnconfirmed,
-			// Only when the workspace has confirmed opt-in on (ADR 0013): the flag is
-			// read in SQL so the default single-opt-in path never touches the
-			// confirmation store and no caller can forget to pass it.
-			blocks: sql.And(requireConfirmed(r), sql.NotExists(match(r, confirmations, channel))),
-		},
+		})
+	if channel == ChannelTelegram {
+		// A Binding is the opt-in of a Channel of Bindings: there is no Confirmation to ask for.
+		return out
 	}
+	return append(out, layer{
+		reason: ReasonUnconfirmed,
+		// Only when the workspace has confirmed opt-in on (ADR 0013): the flag is
+		// read in SQL so the default single-opt-in path never touches the
+		// confirmation store and no caller can forget to pass it.
+		blocks: sql.And(requireConfirmed(r), sql.NotExists(match(r, confirmations, channel))),
+	})
 }
 
 // match builds SELECT id FROM store WHERE workspace/destination/channel equal the

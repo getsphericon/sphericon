@@ -14,6 +14,7 @@ enum AutomationStatus {
 /** Kind of automation step */
 enum AutomationStepType {
   email,
+  telegram,
   wait,
   apply_tag,
   remove_tag,
@@ -101,10 +102,13 @@ model AutomationStep {
   /** Whether a signing secret is stored (HTTP steps, read only) */
   hasSecret?: boolean;
 
-  /** The Integration a send step sends through (email steps), of the step's Channel; null or
+  /** The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or
    * omitted is that Channel's default. Each send step names its own, so one automation may send
    * through several (ADR 0081). */
   integrationId?: EntityId | null;
+
+  /** The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written: publishing a longer one is refused. */
+  text?: string;
 }
 
 /** One version of an automation's definition: what publishing makes it do (ADR 0065) */

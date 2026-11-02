@@ -102,6 +102,7 @@ func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automationst
 	// automationstepsStep.EditorVersion: ignore
 	automationstepsStep.Seconds = int32In(source.Seconds)
 	automationstepsStep.Tag = stringIn(source.Tag)
+	automationstepsStep.Text = stringIn(source.Text)
 	automationstepsStep.ID = stringIn(source.ID)
 	automationstepsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
@@ -125,6 +126,8 @@ func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) auto
 		automationstepsKind = automationsteps.HTTP
 	case site.SiteAutomationStepTypeRemoveTag:
 		automationstepsKind = automationsteps.RemoveTag
+	case site.SiteAutomationStepTypeTelegram:
+		automationstepsKind = automationsteps.Telegram
 	case site.SiteAutomationStepTypeWait:
 		automationstepsKind = automationsteps.Wait
 	default:

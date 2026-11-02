@@ -904,6 +904,8 @@ func (s AutomationStepType) Validate() error {
 	switch s {
 	case "email":
 		return nil
+	case "telegram":
+		return nil
 	case "wait":
 		return nil
 	case "apply_tag":

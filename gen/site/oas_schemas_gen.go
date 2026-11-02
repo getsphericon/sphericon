@@ -12260,10 +12260,14 @@ type SiteAutomationStep struct {
 	ClearSecret OptBool `json:"clearSecret"`
 	// Whether a signing secret is stored (HTTP steps, read only).
 	HasSecret OptBool `json:"hasSecret"`
-	// The Integration a send step sends through (email steps), of the step's Channel; null or omitted is
-	// that Channel's default. Each send step names its own, so one automation may send through several
-	// (ADR 0081).
+	// The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or
+	// omitted is that Channel's default. Each send step names its own, so one automation may send through
+	// several (ADR 0081).
 	IntegrationId OptNilEntityId `json:"integrationId"`
+	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
+	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
+	// escaped. Up to 4096 characters as written: publishing a longer one is refused.
+	Text OptString `json:"text"`
 }
 
 // GetType returns the value of Type.
@@ -12336,6 +12340,11 @@ func (s *SiteAutomationStep) GetIntegrationId() OptNilEntityId {
 	return s.IntegrationId
 }
 
+// GetText returns the value of Text.
+func (s *SiteAutomationStep) GetText() OptString {
+	return s.Text
+}
+
 // SetType sets the value of Type.
 func (s *SiteAutomationStep) SetType(val SiteAutomationStepType) {
 	s.Type = val
@@ -12406,6 +12415,11 @@ func (s *SiteAutomationStep) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
 }
 
+// SetText sets the value of Text.
+func (s *SiteAutomationStep) SetText(val OptString) {
+	s.Text = val
+}
+
 // The messages of the send step at one position.
 // Ref: #/components/schemas/SiteAutomationStepFigures
 type SiteAutomationStepFigures struct {
@@ -12454,6 +12468,7 @@ type SiteAutomationStepType string
 
 const (
 	SiteAutomationStepTypeEmail     SiteAutomationStepType = "email"
+	SiteAutomationStepTypeTelegram  SiteAutomationStepType = "telegram"
 	SiteAutomationStepTypeWait      SiteAutomationStepType = "wait"
 	SiteAutomationStepTypeApplyTag  SiteAutomationStepType = "apply_tag"
 	SiteAutomationStepTypeRemoveTag SiteAutomationStepType = "remove_tag"
@@ -12464,6 +12479,7 @@ const (
 func (SiteAutomationStepType) AllValues() []SiteAutomationStepType {
 	return []SiteAutomationStepType{
 		SiteAutomationStepTypeEmail,
+		SiteAutomationStepTypeTelegram,
 		SiteAutomationStepTypeWait,
 		SiteAutomationStepTypeApplyTag,
 		SiteAutomationStepTypeRemoveTag,
@@ -12475,6 +12491,8 @@ func (SiteAutomationStepType) AllValues() []SiteAutomationStepType {
 func (s SiteAutomationStepType) MarshalText() ([]byte, error) {
 	switch s {
 	case SiteAutomationStepTypeEmail:
+		return []byte(s), nil
+	case SiteAutomationStepTypeTelegram:
 		return []byte(s), nil
 	case SiteAutomationStepTypeWait:
 		return []byte(s), nil
@@ -12494,6 +12512,9 @@ func (s *SiteAutomationStepType) UnmarshalText(data []byte) error {
 	switch SiteAutomationStepType(data) {
 	case SiteAutomationStepTypeEmail:
 		*s = SiteAutomationStepTypeEmail
+		return nil
+	case SiteAutomationStepTypeTelegram:
+		*s = SiteAutomationStepTypeTelegram
 		return nil
 	case SiteAutomationStepTypeWait:
 		*s = SiteAutomationStepTypeWait
