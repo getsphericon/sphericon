@@ -19,7 +19,7 @@ import { Route as broadcastReportRoute } from '../../routes/workspaces/$workspac
 import { Route as emailsRoute } from '../../routes/workspaces/$workspaceId/settings/emails.tsx'
 import { Route as webhooksRoute } from '../../routes/workspaces/$workspaceId/settings/webhooks.tsx'
 import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId/suppressions/index.tsx'
-import { holdExplanation } from '../../utils/broadcastHold.ts'
+import { holdExplanation } from '../../utils/hold.ts'
 import { formatPercent } from '../../utils/percent.ts'
 
 const SEVERITY_ICON = {

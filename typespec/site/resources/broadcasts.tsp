@@ -162,7 +162,7 @@ model SiteBroadcastResource {
   status: SiteBroadcastStatus;
 
   /** Why sending is currently held, when it is */
-  holdReason?: BroadcastHoldReason | null;
+  holdReason?: HoldReason | null;
 
   /** When the broadcast is scheduled to send */
   scheduledAt?: Timestamp | null;

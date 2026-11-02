@@ -39,8 +39,10 @@ account without a shop.
   live.
 - **A failure's age is its own moment, and a hold reason is a contract enum** (#940). A Broadcast
   stamps `failed_at` in the move to failed and the item reads it, so a later edit of the row does
-  not bring an old failure back. `holdReason` is the `BroadcastHoldReason` enum on every resource
-  that carries it, and the Broadcast's column checks the same values.
+  not bring an old failure back. `holdReason` is the `HoldReason` enum on every resource that
+  carries it (a Broadcast, a held Broadcast's or an Automation's attention item), and the
+  Broadcast's column checks the same values: both are `internal/holdreason`, the one list of
+  reasons Outbound send holds a send for.
 - **Sending counts every surface.** The overview's `sending` reads the Outbound messages of the
   period (Broadcast, Automation, Transactional) and their delivery stamps. The open and click rates
   stay the Broadcast cohort's, labelled as such: only a Broadcast recipient carries its own open and

@@ -33,6 +33,7 @@ import (
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	emailrender "github.com/getsphericon/sphericon/internal/emailrender"
+	holdreason "github.com/getsphericon/sphericon/internal/holdreason"
 	instance "github.com/getsphericon/sphericon/internal/instance"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
@@ -549,26 +550,6 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKi
 	siteapiSiteBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return siteapiSiteBrandKitResource
 }
-func (c *ConverterImpl) BroadcastHoldReasonToResource(source broadcast.HoldReason) site.BroadcastHoldReason {
-	var siteapiBroadcastHoldReason site.BroadcastHoldReason
-	switch source {
-	case broadcast.HoldReasonNoIntegration:
-		siteapiBroadcastHoldReason = site.BroadcastHoldReasonNoIntegration
-	case broadcast.HoldReasonProviderStopped:
-		siteapiBroadcastHoldReason = site.BroadcastHoldReasonProviderStopped
-	case broadcast.HoldReasonStaffHold:
-		siteapiBroadcastHoldReason = site.BroadcastHoldReasonStaffHold
-	case broadcast.HoldReasonUnverifiedDomain:
-		siteapiBroadcastHoldReason = site.BroadcastHoldReasonUnverifiedDomain
-	case broadcast.HoldReasonWorkspacePendingDeletion:
-		siteapiBroadcastHoldReason = site.BroadcastHoldReasonWorkspacePendingDeletion
-	case broadcast.HoldReasonWorkspaceSuspended:
-		siteapiBroadcastHoldReason = site.BroadcastHoldReasonWorkspaceSuspended
-	default:
-		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	}
-	return siteapiBroadcastHoldReason
-}
 func (c *ConverterImpl) BroadcastLimitToResource(source providerlimit.Cause) site.SiteBroadcastLimit {
 	var siteapiSiteBroadcastLimit site.SiteBroadcastLimit
 	switch source {
@@ -658,7 +639,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 		siteapiSiteBroadcastResource.SegmentId = optNilEntityID((*source).SegmentID)
 		siteapiSiteBroadcastResource.IntegrationId = optNilEntityID((*source).IntegrationID)
 		siteapiSiteBroadcastResource.Status = c.BroadcastStatusToResource((*source).Status)
-		siteapiSiteBroadcastResource.HoldReason = optNilBroadcastHoldReason(c, (*source).HoldReason)
+		siteapiSiteBroadcastResource.HoldReason = optNilHoldReason(c, (*source).HoldReason)
 		siteapiSiteBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
 		siteapiSiteBroadcastResource.SentAt = optNilTimestamp((*source).SentAt)
 		siteapiSiteBroadcastResource.FailedAt = optNilTimestamp((*source).FailedAt)
@@ -1116,6 +1097,26 @@ func (c *ConverterImpl) EventsToResources(source []*ent.Event) []site.SiteEventR
 		siteapiSiteEventResourceList[i] = c.EventToResource(source[i])
 	}
 	return siteapiSiteEventResourceList
+}
+func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) site.HoldReason {
+	var siteapiHoldReason site.HoldReason
+	switch source {
+	case holdreason.NoIntegration:
+		siteapiHoldReason = site.HoldReasonNoIntegration
+	case holdreason.ProviderStopped:
+		siteapiHoldReason = site.HoldReasonProviderStopped
+	case holdreason.StaffHold:
+		siteapiHoldReason = site.HoldReasonStaffHold
+	case holdreason.UnverifiedDomain:
+		siteapiHoldReason = site.HoldReasonUnverifiedDomain
+	case holdreason.WorkspacePendingDeletion:
+		siteapiHoldReason = site.HoldReasonWorkspacePendingDeletion
+	case holdreason.WorkspaceSuspended:
+		siteapiHoldReason = site.HoldReasonWorkspaceSuspended
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiHoldReason
 }
 func (c *ConverterImpl) HoldToResource(source *ent.Hold) site.SiteWorkspaceHold {
 	var siteapiSiteWorkspaceHold site.SiteWorkspaceHold
@@ -2392,7 +2393,7 @@ func (c *ConverterImpl) attentionItemToSiteapiSiteAttentionItem(source attention
 	siteapiSiteAttentionItem.Subject = optAttentionSubject(c, source.Subject)
 	siteapiSiteAttentionItem.Count = count(source.Count)
 	siteapiSiteAttentionItem.Since = optNilTimestamp(source.Since)
-	siteapiSiteAttentionItem.HoldReason = optNilBroadcastHoldReason(c, source.HoldReason)
+	siteapiSiteAttentionItem.HoldReason = optNilHoldReason(c, source.HoldReason)
 	siteapiSiteAttentionItem.Abuse = optAbuseWarning(c, source.Abuse)
 	siteapiSiteAttentionItem.EstimatedCompletionAt = optNilTimestamp(source.EstimatedCompletionAt)
 	return siteapiSiteAttentionItem

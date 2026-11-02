@@ -23,6 +23,10 @@ func TestSendPathDoesNotCompareAProviderName(t *testing.T) {
 	assert.Empty(t, providerNameUses(t, files))
 }
 
+// notProviderNames are the Provider-prefixed names that name no provider: the provider's id of a
+// message, and the hold of a provider that stopped the account, whichever provider it is.
+var notProviderNames = map[string]bool{"ProviderMessageID": true, "ProviderStopped": true}
+
 // providerNameUses lists where the non-test files among files name a provider.
 func providerNameUses(t *testing.T, files []string) []string {
 	t.Helper()
@@ -37,7 +41,7 @@ func providerNameUses(t *testing.T, files []string) []string {
 		ast.Inspect(f, func(n ast.Node) bool {
 			switch n := n.(type) {
 			case *ast.SelectorExpr:
-				if strings.HasPrefix(n.Sel.Name, "Provider") && n.Sel.Name != "ProviderMessageID" {
+				if strings.HasPrefix(n.Sel.Name, "Provider") && !notProviderNames[n.Sel.Name] {
 					uses = append(uses, fset.Position(n.Pos()).String()+" names a provider: "+n.Sel.Name)
 				}
 			case *ast.BinaryExpr:

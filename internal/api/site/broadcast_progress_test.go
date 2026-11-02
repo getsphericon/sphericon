@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -70,9 +71,9 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 		assert.False(t, item.Progress.IsSet(), "the list leaves progress to get and send")
 	}
 
-	require.NoError(t, s.Broadcast().UpdateOneID(id).SetHoldReason(broadcast.HoldReasonUnverifiedDomain).Exec(ctx))
+	require.NoError(t, s.Broadcast().UpdateOneID(id).SetHoldReason(holdreason.UnverifiedDomain).Exec(ctx))
 	res := get()
-	assert.Equal(t, siteapi.BroadcastHoldReasonUnverifiedDomain, res.HoldReason.Value)
+	assert.Equal(t, siteapi.HoldReasonUnverifiedDomain, res.HoldReason.Value)
 	progress, ok = res.Progress.Get()
 	require.True(t, ok)
 	assert.Equal(t, int32(2), progress.RemainingCount, "recipients stay intact under a hold")

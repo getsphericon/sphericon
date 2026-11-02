@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -71,11 +72,11 @@ func TestExternalBroadcastReportCarriesTheHoldReason(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, authorScopes...)
-	env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetHoldReason(broadcast.HoldReasonWorkspaceSuspended).ExecX(ctx)
+	env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetHoldReason(holdreason.WorkspaceSuspended).ExecX(ctx)
 
 	res, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	report, ok := res.(*externalapi.BroadcastReport)
 	require.Truef(t, ok, "got %T", res)
-	assert.Equal(t, externalapi.BroadcastHoldReasonWorkspaceSuspended, report.HoldReason.Value)
+	assert.Equal(t, externalapi.HoldReasonWorkspaceSuspended, report.HoldReason.Value)
 }

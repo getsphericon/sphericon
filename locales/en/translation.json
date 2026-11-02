@@ -482,14 +482,6 @@
     "hold": {
       "badge": "On hold",
       "description": "Sending is paused. Nothing is lost: the remaining recipients are sent automatically once the hold lifts.",
-      "reasons": {
-        "no_integration": "No email integration can send it: the one it uses is disabled or archived, or the workspace has no default. Choose an integration that sends, or set a default, to resume.",
-        "provider_stopped": "Your email provider has stopped sending from your account. Resolve it with the provider: sending resumes on its own once the provider reinstates the account.",
-        "staff_hold": "Outbound email is on hold for this workspace. The notice at the top of the page says how to resolve it.",
-        "unverified_domain": "The sender domain is not verified. Publish its DKIM record and verify the domain to resume.",
-        "workspace_pending_deletion": "This workspace is deleted and waits to be erased, so nothing is sent. Restore the workspace to resume.",
-        "workspace_suspended": "Sending is suspended for this workspace. Contact your Sphericon administrator."
-      },
       "title": "Sending is on hold"
     },
     "integrationDefault": "Workspace default",
@@ -1028,6 +1020,14 @@
   "form": {
     "createTitle": "New contact",
     "editTitle": "Edit contact"
+  },
+  "holdReasons": {
+    "no_integration": "No email integration can send it: the one it uses is disabled or archived, or the workspace has no default. Choose an integration that sends, or set a default, to resume.",
+    "provider_stopped": "Your email provider has stopped sending from your account. Resolve it with the provider: sending resumes on its own once the provider reinstates the account.",
+    "staff_hold": "Outbound email is on hold for this workspace. The notice at the top of the page says how to resolve it.",
+    "unverified_domain": "The sender domain is not verified. Publish its DKIM record and verify the domain to resume.",
+    "workspace_pending_deletion": "This workspace is deleted and waits to be erased, so nothing is sent. Restore the workspace to resume.",
+    "workspace_suspended": "Sending is suspended for this workspace. Contact your Sphericon administrator."
   },
   "httpHeaders": {
     "add": "Add header",

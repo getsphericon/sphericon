@@ -171,25 +171,6 @@ export const AuditAction = {
 export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
 
 /**
- * Why a broadcast's sending is held. A hold is reversible and not a failure: the broadcast keeps
- * its status and the remaining recipients send once it lifts.
- */
-export const BroadcastHoldReason = {
-  WORKSPACE_SUSPENDED: 'workspace_suspended',
-  WORKSPACE_PENDING_DELETION: 'workspace_pending_deletion',
-  STAFF_HOLD: 'staff_hold',
-  NO_INTEGRATION: 'no_integration',
-  UNVERIFIED_DOMAIN: 'unverified_domain',
-  PROVIDER_STOPPED: 'provider_stopped'
-} as const;
-
-/**
- * Why a broadcast's sending is held. A hold is reversible and not a failure: the broadcast keeps
- * its status and the remaining recipients send once it lifts.
- */
-export type BroadcastHoldReason = typeof BroadcastHoldReason[keyof typeof BroadcastHoldReason];
-
-/**
  * The contact's engagement with one broadcast (how its send ended is in `outboundMessages`)
  */
 export type ContactExportBroadcastRecipient = {
@@ -846,6 +827,25 @@ export const GrantableScope = {
  * so a connector can never mint further credentials.
  */
 export type GrantableScope = typeof GrantableScope[keyof typeof GrantableScope];
+
+/**
+ * Why a send is held (a Hold). A hold is reversible and not a failure: a held Broadcast keeps its
+ * status and its remaining recipients send once it lifts, and an Automation's email steps wait.
+ */
+export const HoldReason = {
+  WORKSPACE_SUSPENDED: 'workspace_suspended',
+  WORKSPACE_PENDING_DELETION: 'workspace_pending_deletion',
+  STAFF_HOLD: 'staff_hold',
+  NO_INTEGRATION: 'no_integration',
+  UNVERIFIED_DOMAIN: 'unverified_domain',
+  PROVIDER_STOPPED: 'provider_stopped'
+} as const;
+
+/**
+ * Why a send is held (a Hold). A hold is reversible and not a failure: a held Broadcast keeps its
+ * status and its remaining recipients send once it lifts, and an Automation's email steps wait.
+ */
+export type HoldReason = typeof HoldReason[keyof typeof HoldReason];
 
 /**
  * The https URL of an image
@@ -1877,7 +1877,7 @@ export type SiteAttentionItem = {
    * `automationCannotSend` item (what a send of the Automation would be held for now) only. Only a
    * reason of the object's own source makes an item: a Workspace-level hold is the layout's banner
    */
-  holdReason?: BroadcastHoldReason | null;
+  holdReason?: HoldReason | null;
   /**
    * The rate behind a deliverability warning
    */
@@ -2609,7 +2609,7 @@ export type SiteBroadcastResource = {
   /**
    * Why sending is currently held, when it is
    */
-  holdReason?: BroadcastHoldReason | null;
+  holdReason?: HoldReason | null;
   /**
    * When the broadcast is scheduled to send
    */

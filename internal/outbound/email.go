@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -145,7 +146,7 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 
 // HoldUnverifiedDomain holds an email whose From is on no verified Sending domain of the Workspace
 // (ADR 0015): it lifts once the domain verifies.
-const HoldUnverifiedDomain = "unverified_domain"
+const HoldUnverifiedDomain = string(holdreason.UnverifiedDomain)
 
 // emailAdapter is email's provider adapter over the EmailSender built for the Integration: SMTP and
 // SES in production, a Test inbox, an in-memory one in tests.

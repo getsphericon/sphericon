@@ -14,11 +14,12 @@ package broadcasts
 import (
 	"context"
 	"encoding/json"
-	"entgo.io/ent/dialect/sql"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
+
+	"entgo.io/ent/dialect/sql"
 
 	"github.com/riverqueue/river"
 
@@ -29,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -464,7 +466,7 @@ type Report struct {
 	Stats
 
 	Status     broadcast.Status
-	HoldReason *broadcast.HoldReason
+	HoldReason *holdreason.Reason
 }
 
 // Report reads the Broadcast's delivery figures (see Stats).

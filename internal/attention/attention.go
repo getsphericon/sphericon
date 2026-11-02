@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
@@ -108,7 +109,7 @@ type Item struct {
 	Since *time.Time
 	// HoldReason is why a held Broadcast is held (the Broadcast's own hold reason), or what a send
 	// of an Automation that cannot send would be held for now.
-	HoldReason *broadcast.HoldReason
+	HoldReason *holdreason.Reason
 	// Abuse is the rate behind a deliverability warning.
 	Abuse *abusewatch.Warning
 	// EstimatedCompletionAt is when the Send cap is expected to have let a Broadcast over it out.
@@ -260,7 +261,7 @@ func heldBroadcasts(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, er
 
 // sourceHolds are the holds of an object's own source that make an item; a Workspace-level hold
 // (a suspension, a Staff hold, a pending deletion) is left out: the layout shows it on every page.
-var sourceHolds = lo.Map(outbound.SourceHolds, func(h string, _ int) broadcast.HoldReason { return broadcast.HoldReason(h) })
+var sourceHolds = holdreason.Source()
 
 // automationsCannotSend reads the active Automations whose live version has an email step that a
 // send would hold now for a reason of its own source: whatever Send would hold, the item shows.
@@ -286,7 +287,7 @@ func (m *Module) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ tim
 			}
 			holdOf[key] = hold
 		}
-		reason := broadcast.HoldReason(hold)
+		reason := holdreason.Reason(hold)
 		if !slices.Contains(sourceHolds, reason) {
 			continue
 		}

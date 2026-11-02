@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -464,7 +465,7 @@ func TestRunFinishesCleanlyWhenThePlanFailsTheBroadcast(t *testing.T) {
 // A plan that was refused leaves a held Broadcast's hold alone: a stale job records nothing.
 func TestStalePlanLeavesTheHoldReasonAlone(t *testing.T) {
 	d := newDelivery(t)
-	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSentID).SetHoldReason(broadcast.HoldReasonNoIntegration).ExecX(d.t.Context())
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSentID).SetHoldReason(holdreason.NoIntegration).ExecX(d.t.Context())
 	d.env.SuspendWorkspace(d.t.Context(), fixtures.AcmeID, fixedNow)
 
 	_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastSentID)
@@ -472,7 +473,7 @@ func TestStalePlanLeavesTheHoldReasonAlone(t *testing.T) {
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	hold := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastSentID).HoldReason
 	require.NotNil(t, hold)
-	assert.Equal(t, broadcast.HoldReasonNoIntegration, *hold)
+	assert.Equal(t, holdreason.NoIntegration, *hold)
 }
 
 // Pacing only decides when a send runs: an unsubscribe or Suppression that lands after

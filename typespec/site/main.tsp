@@ -15,6 +15,7 @@ import "../common/crud.tsp";
 import "../common/contact-export.tsp";
 import "../common/lint.tsp";
 import "../common/broadcasts.tsp";
+import "../common/holds.tsp";
 import "../common/contacts.tsp";
 import "../common/limits.tsp";
 import "../common/integrations.tsp";
