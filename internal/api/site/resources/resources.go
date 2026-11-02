@@ -195,6 +195,8 @@ type Converter interface {
 	// goverter:map Currency ReportingCurrency
 	// goverter:useEmptyOnNil:slice
 	RevenueToResource(source *orders.WorkspaceRevenue) siteapi.SiteAnalyticsRevenue
+	// goverter:useEmptyOnNil:slice
+	RevenuePeriodToResource(source orders.RevenuePeriod) siteapi.SiteAnalyticsRevenuePeriod
 
 	// The analytics reports map whole from the module's report, so a field the response gains
 	// with no source fails generation. A figure the module does not hold (the Event retention) is
@@ -202,8 +204,8 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	// goverter:map Series Timeseries
 	AnalyticsOverviewToResource(source *analytics.Overview) *siteapi.SiteAnalyticsOverview
-	// goverter:map NewInWindow NewInRange
 	AnalyticsContactsToResource(source analytics.Contacts) siteapi.SiteAnalyticsContacts
+	AnalyticsPeriodToResource(source analytics.Period) siteapi.SiteAnalyticsPeriod
 	// goverter:map Sent SentCount
 	// goverter:map Opened OpenedCount
 	// goverter:map Clicked ClickedCount

@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -51,15 +52,15 @@ func TestEngagementIsCountedOverTheSendCohortOfTheWindow(t *testing.T) {
 	}
 	for _, c := range cases {
 		ov := overview(t, fixtures.AcmeID, c.window)
-		assert.Equal(t, c.sent, ov.Email.Sent, c.window)
-		assert.Equal(t, c.opened, ov.Email.Opened, c.window)
-		assert.Equal(t, c.clicked, ov.Email.Clicked, c.window)
-		assert.InDelta(t, float64(c.opened)/float64(c.sent), ov.Email.OpenRate, 1e-6)
-		assert.InDelta(t, float64(c.clicked)/float64(c.sent), ov.Email.ClickRate, 1e-6)
-		assert.InDelta(t, float64(c.clicked)/float64(c.opened), ov.Email.ClickToOpenRate, 1e-6)
-		assert.LessOrEqual(t, ov.Email.Opened, ov.Email.Sent)
-		assert.LessOrEqual(t, ov.Email.Clicked, ov.Email.Opened)
-		assert.LessOrEqual(t, ov.Email.OpenRate, float32(1))
+		assert.Equal(t, c.sent, ov.Current.Email.Sent, c.window)
+		assert.Equal(t, c.opened, ov.Current.Email.Opened, c.window)
+		assert.Equal(t, c.clicked, ov.Current.Email.Clicked, c.window)
+		assert.InDelta(t, float64(c.opened)/float64(c.sent), ov.Current.Email.OpenRate, 1e-6)
+		assert.InDelta(t, float64(c.clicked)/float64(c.sent), ov.Current.Email.ClickRate, 1e-6)
+		assert.InDelta(t, float64(c.clicked)/float64(c.opened), ov.Current.Email.ClickToOpenRate, 1e-6)
+		assert.LessOrEqual(t, ov.Current.Email.Opened, ov.Current.Email.Sent)
+		assert.LessOrEqual(t, ov.Current.Email.Clicked, ov.Current.Email.Opened)
+		assert.LessOrEqual(t, ov.Current.Email.OpenRate, float32(1))
 	}
 }
 
@@ -73,7 +74,7 @@ func TestSendingCountsEveryMessageSentInTheWindowBySurface(t *testing.T) {
 	assert.Equal(t, analytics.Sending{
 		Broadcast: 14, Automation: 1, Transactional: 6,
 		Delivered: 3, Bounced: 1, Complained: 1,
-	}, ov.Sending)
+	}, ov.Current.Sending)
 }
 
 func TestTimeSeriesIsOneZeroFilledUTCDayPerDayEndingToday(t *testing.T) {
@@ -86,7 +87,7 @@ func TestTimeSeriesIsOneZeroFilledUTCDayPerDayEndingToday(t *testing.T) {
 		assert.Equal(t, today.AddDate(0, 0, i-6).Format("2006-01-02"), p.Date)
 		sent += p.Sent
 	}
-	assert.Equal(t, ov.Email.Sent, sent, "the series reconciles with the cards")
+	assert.Equal(t, ov.Current.Email.Sent, sent, "the series reconciles with the cards")
 
 	threeDaysAgo := ov.Series[3]
 	assert.Equal(t, 11, threeDaysAgo.Sent)
@@ -105,7 +106,7 @@ func TestContactsSplitByTheGlobalOptOutPredicate(t *testing.T) {
 	assert.Positive(t, ov.Contacts.Total)
 	assert.Positive(t, ov.Contacts.Unsubscribed, "suppressed and opted-out contacts are non-mailable")
 	assert.Equal(t, ov.Contacts.Total, ov.Contacts.Active+ov.Contacts.Unsubscribed)
-	assert.LessOrEqual(t, ov.Contacts.NewInWindow, ov.Contacts.Total)
+	assert.LessOrEqual(t, ov.Current.NewContacts, ov.Contacts.Total)
 }
 
 func TestAutomationsSnapshot(t *testing.T) {
@@ -121,9 +122,9 @@ func TestAnEmptyCohortHasZeroRates(t *testing.T) {
 
 	// A window nothing was sent in: no Workspace but Acme has recipients, so use the other.
 	other := overview(t, fixtures.GlobexID, analytics.Window7Days)
-	assert.Zero(t, other.Email.Sent)
-	assert.Zero(t, other.Email.OpenRate)
-	assert.Zero(t, other.Email.ClickToOpenRate)
+	assert.Zero(t, other.Current.Email.Sent)
+	assert.Zero(t, other.Current.Email.OpenRate)
+	assert.Zero(t, other.Current.Email.ClickToOpenRate)
 }
 
 // An archived Automation is out of the counts, active or not.
@@ -155,7 +156,7 @@ func TestTheSpringForwardDayIsOneTwentyThreeHourBucket(t *testing.T) {
 	}
 	assert.Equal(t, want, sentPerDay(ov))
 	assert.Len(t, ov.Series, 7, "no day is skipped or doubled")
-	assert.Equal(t, 4, ov.Email.Sent, "the cards and the series agree on the window")
+	assert.Equal(t, 4, ov.Current.Email.Sent, "the cards and the series agree on the window")
 }
 
 func TestTheFallBackDayIsOneTwentyFiveHourBucket(t *testing.T) {
@@ -193,4 +194,50 @@ func TestTodayIsTheLocalDayNotTheUTCDay(t *testing.T) {
 
 	assert.Equal(t, "2026-03-08", ov.Series[6].Date)
 	assert.Equal(t, 2, ov.Series[6].Sent)
+}
+
+// Read on 14 March over 7 days, Gotham's current period is 8-14 March in New York and the previous
+// one 1-7 March. Send A and the manual sign-up at 23:59 EST on 7 March (8 March in UTC) fall in the
+// previous period; sends B (opened and clicked), C and D and the four later sign-ups in the current one.
+func TestEachPeriodFigureIsReadForThePeriodJustBeforeTheWindowToo(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	ov := overviewAt(t, env, fixtures.GothamID, analytics.Window7Days, time.Date(2026, 3, 14, 12, 0, 0, 0, time.UTC))
+
+	assert.Equal(t, analytics.Period{
+		From: "2026-03-08", To: "2026-03-14",
+		Sending:     analytics.Sending{Broadcast: 3},
+		Email:       analytics.Email{Sent: 3, Opened: 1, Clicked: 1, OpenRate: 1.0 / 3, ClickRate: 1.0 / 3, ClickToOpenRate: 1},
+		NewContacts: 4,
+	}, ov.Current)
+	assert.Equal(t, analytics.Period{
+		From: "2026-03-01", To: "2026-03-07",
+		Sending:     analytics.Sending{Broadcast: 1},
+		Email:       analytics.Email{Sent: 1},
+		NewContacts: 1,
+	}, ov.Previous)
+	assert.Len(t, ov.Series, 7, "the series is the current period's")
+}
+
+// Read on 14 March over 7 days (Gotham, USD): the current period has the USD Order completed on 12
+// March (50.00), its 10.00 refund of 13 March and an Order in EUR the same day, counted in no sum; the
+// previous one the Order of 5 March (25.00), whose refund of 15 March is after both. Every one of
+// them is credited to Gotham results.
+func TestRevenueIsReadForThePeriodJustBeforeTheWindowToo(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := analytics.New().WithClock(func() time.Time { return time.Date(2026, 3, 14, 12, 0, 0, 0, time.UTC) })
+
+	report, err := m.Revenue(context.Background(), env.DB.Scoped(fixtures.GothamID), analytics.Window7Days)
+	require.NoError(t, err)
+
+	assert.Equal(t, orders.RevenuePeriod{
+		From: "2026-03-08", To: "2026-03-14",
+		Total: 4000, Credited: 4000, Orders: 1, CreditedOrders: 1,
+		OtherCurrencyOrders: []orders.CurrencyOrders{{Currency: "EUR", Orders: 1}},
+	}, report.Current)
+	assert.Equal(t, orders.RevenuePeriod{
+		From: "2026-03-01", To: "2026-03-07",
+		Total: 2500, Credited: 2500, Orders: 1, CreditedOrders: 1, OtherCurrencyOrders: []orders.CurrencyOrders{},
+	}, report.Previous)
+	assert.Len(t, report.Series, 7, "the series is the current period's")
 }

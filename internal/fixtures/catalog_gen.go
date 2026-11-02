@@ -1037,10 +1037,20 @@ const (
 	GlobexUsageSnapshotID = 2
 	// GothamCollectKey is from fixtures/workspaces.
 	GothamCollectKey = "omck_test_gotham_collect_key"
+	// GothamGusMembershipID is from fixtures/memberships.
+	GothamGusMembershipID = 5711
 	// GothamID is from fixtures/workspaces.
 	GothamID = 61
 	// GothamName is from fixtures/workspaces.
 	GothamName = "Gotham"
+	// GothamOwnerGusEmail is from fixtures/users.
+	GothamOwnerGusEmail = "gus@gotham.test"
+	// GothamOwnerGusID is from fixtures/users.
+	GothamOwnerGusID = 5611
+	// GothamOwnerGusName is from fixtures/users.
+	GothamOwnerGusName = "Gus"
+	// GothamOwnerGusPassword is from fixtures/users.
+	GothamOwnerGusPassword = "password"
 	// GothamPublicID is from fixtures/workspaces.
 	GothamPublicID = "GothmW61"
 	// HeldOrderEventAcmeID is from fixtures/held_order_events.

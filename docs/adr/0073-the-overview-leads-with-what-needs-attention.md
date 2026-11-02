@@ -67,8 +67,16 @@ account without a shop.
   Automation is an item of its own with that reason. Nothing stores when a route began to hold, so
   the item has no `since`.
 
+- **Every period figure has the previous period beside it** (#935). The overview and revenue
+  reports return `current` and `previous`, the shape of the Automation report's results: the
+  previous period is as many Report days just before the range (`reportday.Window.Previous`), read
+  by the same queries in the same request. A snapshot (the subscribed, the Automations) stays at the
+  root and has no previous period. A card shows the previous figure with the signed change: a count
+  or an amount as a share of the previous one (+100%), a rate in percentage points (20% to 30% is
+  +10 pp), as a share of a rate reads as points. No change is shown when the previous period had
+  nothing to compare with: a count of 0, or a rate of no messages or no revenue.
+
 ## Not decided here
 
-- A previous-period comparison beside each figure.
 - Per-Sending-domain Complaint and Bounce rates on the overview without the `staff` license
   (ADR 0011 puts them on the dashboard; the warning limits are the detector's configuration).

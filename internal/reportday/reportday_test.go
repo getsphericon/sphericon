@@ -84,6 +84,20 @@ func TestThePreviousWindowIsAsManyLocalDaysEndingWhereTheWindowBegins(t *testing
 	})
 }
 
+func TestAWindowIsNamedByTheReportDaysItBeginsAndEndsOn(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		loc, err := reportday.Load(rapid.SampledFrom(zones).Draw(t, "zone"))
+		require.NoError(t, err)
+		now := time.Unix(rapid.Int64Range(1_600_000_000, 1_900_000_000).Draw(t, "now"), 0)
+		w := reportday.Trailing(now, loc, rapid.SampledFrom([]int{7, 14, 30, 90}).Draw(t, "days"))
+
+		first, last := w.First(), w.Last()
+
+		assert.Equal(t, w.Since.In(loc).Format(reportday.Format), first, "the day of its first instant")
+		assert.Equal(t, now.In(loc).Format(reportday.Format), last, "a trailing window ends today")
+	})
+}
+
 func TestThePreviousWindowOverADaylightSavingChangeHoldsItsShortDay(t *testing.T) {
 	loc, err := reportday.Load("America/New_York")
 	require.NoError(t, err)

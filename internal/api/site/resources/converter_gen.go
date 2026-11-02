@@ -74,7 +74,6 @@ func (c *ConverterImpl) AnalyticsContactsToResource(source analytics.Contacts) s
 	siteapiSiteAnalyticsContacts.Total = count(source.Total)
 	siteapiSiteAnalyticsContacts.Active = count(source.Active)
 	siteapiSiteAnalyticsContacts.Unsubscribed = count(source.Unsubscribed)
-	siteapiSiteAnalyticsContacts.NewInRange = count(source.NewInWindow)
 	return siteapiSiteAnalyticsContacts
 }
 func (c *ConverterImpl) AnalyticsEmailToResource(source analytics.Email) site.SiteAnalyticsEmail {
@@ -134,9 +133,9 @@ func (c *ConverterImpl) AnalyticsOverviewToResource(source *analytics.Overview) 
 	if source != nil {
 		var siteapiSiteAnalyticsOverview site.SiteAnalyticsOverview
 		siteapiSiteAnalyticsOverview.Contacts = c.AnalyticsContactsToResource((*source).Contacts)
-		siteapiSiteAnalyticsOverview.Sending = c.analyticsSendingToSiteapiSiteAnalyticsSending((*source).Sending)
-		siteapiSiteAnalyticsOverview.Email = c.AnalyticsEmailToResource((*source).Email)
 		siteapiSiteAnalyticsOverview.Automations = c.analyticsAutomationsToSiteapiSiteAnalyticsAutomations((*source).Automations)
+		siteapiSiteAnalyticsOverview.Current = c.AnalyticsPeriodToResource((*source).Current)
+		siteapiSiteAnalyticsOverview.Previous = c.AnalyticsPeriodToResource((*source).Previous)
 		siteapiSiteAnalyticsOverview.Timeseries = make([]site.SiteAnalyticsPoint, len((*source).Series))
 		for i := 0; i < len((*source).Series); i++ {
 			siteapiSiteAnalyticsOverview.Timeseries[i] = c.analyticsPointToSiteapiSiteAnalyticsPoint((*source).Series[i])
@@ -156,6 +155,15 @@ func (c *ConverterImpl) AnalyticsOwnerKindToResource(source linkclicks.OwnerKind
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteAnalyticsOwnerKind
+}
+func (c *ConverterImpl) AnalyticsPeriodToResource(source analytics.Period) site.SiteAnalyticsPeriod {
+	var siteapiSiteAnalyticsPeriod site.SiteAnalyticsPeriod
+	siteapiSiteAnalyticsPeriod.From = source.From
+	siteapiSiteAnalyticsPeriod.To = source.To
+	siteapiSiteAnalyticsPeriod.Sending = c.analyticsSendingToSiteapiSiteAnalyticsSending(source.Sending)
+	siteapiSiteAnalyticsPeriod.Email = c.AnalyticsEmailToResource(source.Email)
+	siteapiSiteAnalyticsPeriod.NewContacts = count(source.NewContacts)
+	return siteapiSiteAnalyticsPeriod
 }
 func (c *ConverterImpl) AnalyticsSubscribedPeopleToResource(source *analytics.SubscribedPeople) *site.SiteAnalyticsSubscribedPeople {
 	var pSiteapiSiteAnalyticsSubscribedPeople *site.SiteAnalyticsSubscribedPeople
@@ -1607,6 +1615,20 @@ func (c *ConverterImpl) RequiredPermissionsToResource(source map[string]accounts
 	}
 	return siteapiSiteOAuthAuthorizationRequestRequiredPermissions
 }
+func (c *ConverterImpl) RevenuePeriodToResource(source orders.RevenuePeriod) site.SiteAnalyticsRevenuePeriod {
+	var siteapiSiteAnalyticsRevenuePeriod site.SiteAnalyticsRevenuePeriod
+	siteapiSiteAnalyticsRevenuePeriod.From = source.From
+	siteapiSiteAnalyticsRevenuePeriod.To = source.To
+	siteapiSiteAnalyticsRevenuePeriod.Total = source.Total
+	siteapiSiteAnalyticsRevenuePeriod.Credited = source.Credited
+	siteapiSiteAnalyticsRevenuePeriod.Orders = count(source.Orders)
+	siteapiSiteAnalyticsRevenuePeriod.CreditedOrders = count(source.CreditedOrders)
+	siteapiSiteAnalyticsRevenuePeriod.OtherCurrencyOrders = make([]site.SiteOrdersInCurrency, len(source.OtherCurrencyOrders))
+	for i := 0; i < len(source.OtherCurrencyOrders); i++ {
+		siteapiSiteAnalyticsRevenuePeriod.OtherCurrencyOrders[i] = c.ordersCurrencyOrdersToSiteapiSiteOrdersInCurrency(source.OtherCurrencyOrders[i])
+	}
+	return siteapiSiteAnalyticsRevenuePeriod
+}
 func (c *ConverterImpl) RevenueSettingsToResource(source *ent.Workspace) site.SiteRevenueSettingsResource {
 	var siteapiSiteRevenueSettingsResource site.SiteRevenueSettingsResource
 	if source != nil {
@@ -1620,17 +1642,11 @@ func (c *ConverterImpl) RevenueToResource(source *orders.WorkspaceRevenue) site.
 	if source != nil {
 		siteapiSiteAnalyticsRevenue.ReportingCurrency = nilCurrencyCode((*source).Currency)
 		siteapiSiteAnalyticsRevenue.FirstOrderAt = nilTimestamp((*source).FirstOrderAt)
-		siteapiSiteAnalyticsRevenue.Total = (*source).Total
-		siteapiSiteAnalyticsRevenue.Credited = (*source).Credited
-		siteapiSiteAnalyticsRevenue.Orders = count((*source).Orders)
-		siteapiSiteAnalyticsRevenue.CreditedOrders = count((*source).CreditedOrders)
-		siteapiSiteAnalyticsRevenue.OtherCurrencyOrders = make([]site.SiteOrdersInCurrency, len((*source).OtherCurrencyOrders))
-		for i := 0; i < len((*source).OtherCurrencyOrders); i++ {
-			siteapiSiteAnalyticsRevenue.OtherCurrencyOrders[i] = c.ordersCurrencyOrdersToSiteapiSiteOrdersInCurrency((*source).OtherCurrencyOrders[i])
-		}
+		siteapiSiteAnalyticsRevenue.Current = c.RevenuePeriodToResource((*source).Current)
+		siteapiSiteAnalyticsRevenue.Previous = c.RevenuePeriodToResource((*source).Previous)
 		siteapiSiteAnalyticsRevenue.Series = make([]site.SiteRevenuePoint, len((*source).Series))
-		for j := 0; j < len((*source).Series); j++ {
-			siteapiSiteAnalyticsRevenue.Series[j] = c.ordersRevenueDayToSiteapiSiteRevenuePoint((*source).Series[j])
+		for i := 0; i < len((*source).Series); i++ {
+			siteapiSiteAnalyticsRevenue.Series[i] = c.ordersRevenueDayToSiteapiSiteRevenuePoint((*source).Series[i])
 		}
 	}
 	return siteapiSiteAnalyticsRevenue

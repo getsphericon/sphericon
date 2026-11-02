@@ -48,7 +48,7 @@ func byDay(t *testing.T, env *testhelper.TestEnv) (total int64, days map[string]
 			days[p.Date] = p.Amount
 		}
 	}
-	return got.Total, days
+	return got.Current.Total, days
 }
 
 func reportDay(n int) string { return noonDaysAgo(n).Format("2006-01-02") }
@@ -171,8 +171,8 @@ func TestAnOrderEventForAnOrderThatNeverCompletesCountsNothing(t *testing.T) {
 	env.DeliverOrders(t)
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
-	assert.EqualValues(t, 0, got.Total)
-	assert.EqualValues(t, 0, got.Orders)
+	assert.EqualValues(t, 0, got.Current.Total)
+	assert.EqualValues(t, 0, got.Current.Orders)
 }
 
 func TestARefundIdThatIsNotTextOrANumberIsRefusedAtIngest(t *testing.T) {

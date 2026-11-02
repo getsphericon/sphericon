@@ -178,8 +178,8 @@ func TestTheOverviewCountsThePartOfRevenueCreditedToMessages(t *testing.T) {
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 
-	assert.EqualValues(t, 2725, got.Total)
-	assert.EqualValues(t, 2, got.Orders)
-	assert.EqualValues(t, 2000, got.Credited)
-	assert.EqualValues(t, 1, got.CreditedOrders)
+	assert.EqualValues(t, 2725, got.Current.Total)
+	assert.EqualValues(t, 2, got.Current.Orders)
+	assert.EqualValues(t, 2000, got.Current.Credited)
+	assert.EqualValues(t, 1, got.Current.CreditedOrders)
 }

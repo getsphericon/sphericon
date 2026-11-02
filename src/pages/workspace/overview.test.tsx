@@ -12,7 +12,10 @@ import {
 import { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
 import type {
   SiteAnalyticsOverview,
+  SiteAnalyticsPeriod,
   SiteAnalyticsRevenue,
+  SiteAnalyticsRevenuePeriod,
+  SiteAnalyticsSending,
   SiteBroadcastResource,
 } from '../../generated/site/types.gen.ts'
 import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
@@ -32,29 +35,48 @@ const finished = {
   completedAt: '2026-10-01T10:00:00Z',
 } as const
 
-const revenue: SiteAnalyticsRevenue = {
-  reportingCurrency: 'USD',
-  firstOrderAt: '2026-10-01T10:00:00Z',
+const revenuePeriod: SiteAnalyticsRevenuePeriod = {
+  from: '2026-10-02',
+  to: '2026-10-31',
   total: 0,
   credited: 0,
   orders: 0,
   creditedOrders: 0,
   otherCurrencyOrders: [],
+}
+
+const revenue: SiteAnalyticsRevenue = {
+  reportingCurrency: 'USD',
+  firstOrderAt: '2026-10-01T10:00:00Z',
+  current: revenuePeriod,
+  previous: { ...revenuePeriod, from: '2026-09-02', to: '2026-10-01' },
   series: [],
 }
 
+// withRevenue is the revenue with the given figures of the current and the previous period.
+const withRevenue = (
+  current: Partial<SiteAnalyticsRevenuePeriod>,
+  previous: Partial<SiteAnalyticsRevenuePeriod> = {},
+): SiteAnalyticsRevenue => ({
+  ...revenue,
+  current: { ...revenue.current, ...current },
+  previous: { ...revenue.previous, ...previous },
+})
+
 // The test router does not run the route's search validation, so the period is spelled out.
 const base = routeMount(overviewRoute, { workspaceId: 'TestWs01' })
-const overview: SiteAnalyticsOverview = {
-  contacts: { total: 0, active: 0, unsubscribed: 0, newInRange: 0 },
-  sending: {
-    broadcast: 0,
-    automation: 0,
-    transactional: 0,
-    delivered: 0,
-    bounced: 0,
-    complained: 0,
-  },
+const noSends: SiteAnalyticsSending = {
+  broadcast: 0,
+  automation: 0,
+  transactional: 0,
+  delivered: 0,
+  bounced: 0,
+  complained: 0,
+}
+const period: SiteAnalyticsPeriod = {
+  from: '2026-10-02',
+  to: '2026-10-31',
+  sending: noSends,
   email: {
     sentCount: 0,
     openedCount: 0,
@@ -63,7 +85,13 @@ const overview: SiteAnalyticsOverview = {
     clickRate: 0,
     clickToOpenRate: 0,
   },
+  newContacts: 0,
+}
+const overview: SiteAnalyticsOverview = {
+  contacts: { total: 0, active: 0, unsubscribed: 0 },
   automations: { total: 0, active: 0, runsActive: 0, runsCompleted: 0 },
+  current: period,
+  previous: { ...period, from: '2026-09-02', to: '2026-10-01' },
   timeseries: [],
 }
 
@@ -388,14 +416,18 @@ test('the period shows what was sent through every surface and the audience', as
     handleSiteAnalyticsOverview({
       body: {
         ...overview,
-        contacts: { total: 120, active: 110, unsubscribed: 10, newInRange: 7 },
-        sending: {
-          broadcast: 100,
-          automation: 30,
-          transactional: 5,
-          delivered: 130,
-          bounced: 4,
-          complained: 1,
+        contacts: { total: 120, active: 110, unsubscribed: 10 },
+        current: {
+          ...period,
+          sending: {
+            broadcast: 100,
+            automation: 30,
+            transactional: 5,
+            delivered: 130,
+            bounced: 4,
+            complained: 1,
+          },
+          newContacts: 7,
         },
       },
     }),
@@ -463,16 +495,110 @@ test('a done contact step offers no action', async () => {
     .not.toBeInTheDocument()
 })
 
+test('each period figure shows the previous period and the change since', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: {
+        ...overview,
+        contacts: { total: 120, active: 110, unsubscribed: 10 },
+        current: {
+          ...period,
+          sending: { ...noSends, broadcast: 10, delivered: 9, bounced: 3, complained: 1 },
+          email: { ...period.email, sentCount: 10, openRate: 0.5, clickRate: 0.2 },
+          newContacts: 6,
+        },
+        previous: {
+          ...overview.previous,
+          sending: { ...noSends, broadcast: 5, delivered: 4, bounced: 2, complained: 2 },
+          email: { ...period.email, sentCount: 8, openRate: 0.25, clickRate: 0.1 },
+          newContacts: 4,
+        },
+      },
+    }),
+    handleSiteAnalyticsRevenue({ body: { ...revenue, firstOrderAt: null } }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Previous 30 days: 5 (+100%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 4 (+125%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 2 (+50%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 2 (-50%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 4 (+50%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 25% (+25 pp)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 10% (+10 pp)')).toBeInTheDocument()
+  // Eight cards, seven of them period figures: the snapshot of the subscribed has no previous period.
+  expect(screen.getByText(/^Previous 30 days/).elements()).toHaveLength(7)
+})
+
+test('a figure the previous period had nothing of shows no change', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: {
+        ...overview,
+        contacts: { total: 120, active: 110, unsubscribed: 10 },
+        current: {
+          ...period,
+          sending: { ...noSends, broadcast: 10 },
+          email: { ...period.email, sentCount: 10, openRate: 0.5 },
+        },
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('10', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 0%').first()).toBeInTheDocument()
+  await expect.element(screen.getByText(/Previous 30 days: .*\(/)).not.toBeInTheDocument()
+})
+
+test('a rate that was zero over sent messages still changes by its points', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: {
+        ...overview,
+        contacts: { total: 120, active: 110, unsubscribed: 10 },
+        current: {
+          ...period,
+          sending: { ...noSends, broadcast: 10 },
+          email: { ...period.email, sentCount: 10, openRate: 0.5 },
+        },
+        previous: {
+          ...overview.previous,
+          sending: { ...noSends, broadcast: 8 },
+          email: { ...period.email, sentCount: 8 },
+        },
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Previous 30 days: 0% (+50 pp)')).toBeInTheDocument()
+})
+
+test('revenue compares the total, the credited share and the orders with the previous period', async () => {
+  worker.use(
+    handleSiteAnalyticsRevenue({
+      body: withRevenue(
+        { total: 123456, credited: 30864, orders: 17, creditedOrders: 5 },
+        { total: 61728, credited: 30864, orders: 0, creditedOrders: 0 },
+      ),
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Previous 30 days: $617.28 (+100%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 50% (-25 pp)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 0', { exact: true })).toBeInTheDocument()
+})
+
 test('revenue shows the total, the credited share and the orders in the Reporting currency', async () => {
   worker.use(
     handleSiteAnalyticsRevenue({
-      body: {
-        ...revenue,
-        total: 123456,
-        credited: 30864,
-        orders: 17,
-        creditedOrders: 5,
-      },
+      body: withRevenue({ total: 123456, credited: 30864, orders: 17, creditedOrders: 5 }),
     }),
   )
 
@@ -489,7 +615,7 @@ test('revenue shows the total, the credited share and the orders in the Reportin
 test('a currency without minor units is formatted by its own exponent', async () => {
   worker.use(
     handleSiteAnalyticsRevenue({
-      body: { ...revenue, reportingCurrency: 'JPY', total: 5000, credited: 0, orders: 2 },
+      body: { ...withRevenue({ total: 5000, orders: 2 }), reportingCurrency: 'JPY' },
     }),
   )
 
@@ -515,7 +641,7 @@ test('the period of the URL is the one sent to the server', async () => {
 test('picking a period puts it in the URL', async () => {
   worker.use(
     handleSiteAnalyticsOverview({
-      body: { ...overview, contacts: { total: 3, active: 3, unsubscribed: 0, newInRange: 1 } },
+      body: { ...overview, contacts: { total: 3, active: 3, unsubscribed: 0 } },
     }),
   )
   const { screen, navigate } = await renderWithRouter(<OverviewPage />, mount)
@@ -540,7 +666,7 @@ test('a Workspace that never sent an Order has no revenue block, whatever its cu
 test('orders in another currency are named with the way to change the currency', async () => {
   worker.use(
     handleSiteAnalyticsRevenue({
-      body: { ...revenue, otherCurrencyOrders: [{ currency: 'EUR', orders: 3 }] },
+      body: withRevenue({ otherCurrencyOrders: [{ currency: 'EUR', orders: 3 }] }),
     }),
   )
 

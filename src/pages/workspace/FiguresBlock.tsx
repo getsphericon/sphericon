@@ -8,9 +8,10 @@ import { AnchorLink } from '../../components/RouterLink.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
 import { siteAnalyticsOverviewOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
+import type { SiteAnalyticsRange, SiteAnalyticsSending } from '../../generated/site/types.gen.ts'
 import { Route as emailMetricsRoute } from '../../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { Route as subscribedPeopleRoute } from '../../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
+import { formatChange, formatPointChange } from '../../utils/change.ts'
 
 interface FiguresProps {
   workspaceId: string
@@ -20,19 +21,42 @@ interface FiguresProps {
   periodControl: ReactNode
 }
 
+// sentIn is every message a period sent, through every surface.
+const sentIn = (sending: SiteAnalyticsSending) =>
+  sending.broadcast + sending.automation + sending.transactional
+
 // Figures is the period's sending and audience, each card only once it has something to show:
 // sending from the first message of the period, the audience from the first Contact. A new
-// Workspace sees neither, rather than a wall of zeros.
+// Workspace sees neither, rather than a wall of zeros. Every figure of the period has the previous
+// period under it, with the change since; the number of the subscribed is a snapshot and has none.
 function Figures({ workspaceId, range, periodControl }: FiguresProps) {
   const { t } = useTranslation()
   const overview = useSuspenseQuery(
     siteAnalyticsOverviewOptions({ path: { workspaceId }, query: { range } }),
   ).data
-  const { sending, email, contacts } = overview
-  const sent = sending.broadcast + sending.automation + sending.transactional
+  const { current, previous, contacts } = overview
+  const sent = sentIn(current.sending)
   if (sent === 0 && contacts.total === 0) {
     return null
   }
+
+  const label = t(($) => $.overview.previous[range])
+  // compared is the line under a count: its value in the previous period and the change since.
+  const compared = (now: number, before: number) => ({
+    label,
+    value: before,
+    change: formatChange(now, before),
+  })
+  // comparedRate is the line under an engagement rate: its change is in percentage points, and
+  // there is none when the previous period sent no Broadcast message to have a rate of.
+  const comparedRate = (now: number, before: number) => ({
+    label,
+    value: before,
+    change:
+      previous.email.sentCount === 0
+        ? null
+        : t(($) => $.overview.pointChange, { change: formatPointChange(now, before) }),
+  })
 
   return (
     <>
@@ -52,16 +76,29 @@ function Figures({ workspaceId, range, periodControl }: FiguresProps) {
               </AnchorLink>
             </Group>
             <SimpleGrid cols={{ base: 2, sm: 4 }}>
-              <StatCard label={t(($) => $.overview.sending.sent)} value={sent} />
-              <StatCard label={t(($) => $.overview.sending.delivered)} value={sending.delivered} />
-              <StatCard label={t(($) => $.overview.sending.bounced)} value={sending.bounced} />
+              <StatCard
+                label={t(($) => $.overview.sending.sent)}
+                value={sent}
+                comparison={compared(sent, sentIn(previous.sending))}
+              />
+              <StatCard
+                label={t(($) => $.overview.sending.delivered)}
+                value={current.sending.delivered}
+                comparison={compared(current.sending.delivered, previous.sending.delivered)}
+              />
+              <StatCard
+                label={t(($) => $.overview.sending.bounced)}
+                value={current.sending.bounced}
+                comparison={compared(current.sending.bounced, previous.sending.bounced)}
+              />
               <StatCard
                 label={t(($) => $.overview.sending.complained)}
-                value={sending.complained}
+                value={current.sending.complained}
+                comparison={compared(current.sending.complained, previous.sending.complained)}
               />
             </SimpleGrid>
             <Text size="xs" c="dimmed">
-              {t(($) => $.overview.sending.split, sending)}
+              {t(($) => $.overview.sending.split, current.sending)}
             </Text>
           </Stack>
         </Card>
@@ -82,16 +119,22 @@ function Figures({ workspaceId, range, periodControl }: FiguresProps) {
             </Group>
             <SimpleGrid cols={{ base: 2, sm: 4 }}>
               <StatCard label={t(($) => $.overview.audience.subscribed)} value={contacts.active} />
-              <StatCard label={t(($) => $.overview.audience.new)} value={contacts.newInRange} />
+              <StatCard
+                label={t(($) => $.overview.audience.new)}
+                value={current.newContacts}
+                comparison={compared(current.newContacts, previous.newContacts)}
+              />
               <StatCard
                 label={t(($) => $.overview.audience.openRate)}
-                value={email.openRate}
+                value={current.email.openRate}
                 percent
+                comparison={comparedRate(current.email.openRate, previous.email.openRate)}
               />
               <StatCard
                 label={t(($) => $.overview.audience.clickRate)}
-                value={email.clickRate}
+                value={current.email.clickRate}
                 percent
+                comparison={comparedRate(current.email.clickRate, previous.email.clickRate)}
               />
             </SimpleGrid>
           </Stack>
