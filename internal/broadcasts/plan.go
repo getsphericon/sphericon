@@ -275,7 +275,8 @@ func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, n int, now
 	if err != nil {
 		return nil, fmt.Errorf("load broadcast %d: %w", id, err)
 	}
-	route, err := d.out.Route(ctx, s, outbound.BroadcastContent(b).Channel(), b.IntegrationID)
+	channel := outbound.BroadcastContent(b).Channel()
+	route, err := d.out.Route(ctx, s, channel, b.IntegrationID)
 	if err != nil {
 		return nil, err
 	}

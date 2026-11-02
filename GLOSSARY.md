@@ -335,8 +335,8 @@ message, Send-eligibility on the Channel, rendering, the Provider limit and Send
 call, and the record of the result with the Channel's `<channel>.sent` Event. Only a per-Channel
 **renderer** and **provider adapter** differ: email's hold the Sending-domain gate, the unsubscribe
 footer and List-Unsubscribe, the open pixel and DKIM signing, and a Test send and the System sender
-are email's alone. Adding a Channel adds its renderer, adapter and catalogue entry and touches no
-step. On a Channel of Bindings one Outbound send reaches every Binding the Contact has
+are email's alone. Adding a Channel adds its renderer and adapter to the Outbound send and its
+providers to the catalogue, and touches no step of the pipeline. On a Channel of Bindings one Outbound send reaches every Binding the Contact has
 on the Integration, each passing Send-eligibility on its own; a Contact with no Destination on the
 Channel is Skipped. Every surface goes through it; none re-implements any part.
 _Avoid_: Delivery pipeline, send path (unqualified), mailer

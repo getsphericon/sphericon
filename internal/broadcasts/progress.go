@@ -62,7 +62,8 @@ func (m *Module) progressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast
 	if pending == 0 || b.HoldReason != nil {
 		return p, nil
 	}
-	route, err := m.out.Route(ctx, s, outbound.BroadcastContent(b).Channel(), b.IntegrationID)
+	channel := outbound.BroadcastContent(b).Channel()
+	route, err := m.out.Route(ctx, s, channel, b.IntegrationID)
 	if err != nil {
 		return nil, err
 	}

@@ -42,11 +42,11 @@ func (c emailChannel) adapter(ctx context.Context, s *ent.Scoped, integ *ent.Int
 }
 
 func (c emailChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error) {
-	content, err := emailContentOf(req.Content)
+	msg, err := c.m.renderEmail(ctx, s, req, messageID, dest, ws)
 	if err != nil {
 		return nil, err
 	}
-	return c.m.renderEmail(ctx, s, req, content, messageID, dest, ws)
+	return msg, nil
 }
 
 // emailContentOf is content as email's: a Request whose content is another Channel's never
@@ -63,8 +63,13 @@ func emailContentOf(content Content) (EmailContent, error) {
 // unsubscribe footer, the open/click tracking and the one-click header. A contentError is
 // deterministic for this message, so the caller records it as Failed; any other error is not the
 // message's and is returned to be retried. From and To are the adapter's.
-func (m *Module) renderEmail(ctx context.Context, s *ent.Scoped, req Request, content EmailContent, messageID int64, dest string, ws *ent.Workspace) (messaging.EmailMessage, error) {
-	email, err := emailrender.RenderEmail(content.Subject, content.Body, Bindings(req.Contact, req.Variables))
+func (m *Module) renderEmail(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (messaging.EmailMessage, error) {
+	content, err := emailContentOf(req.Content)
+	if err != nil {
+		return messaging.EmailMessage{}, err
+	}
+	bindings := Bindings(req.Contact, req.Variables)
+	email, err := emailrender.RenderEmail(content.Subject, content.Body, bindings)
 	if err != nil {
 		return messaging.EmailMessage{}, contentError{err}
 	}
@@ -138,6 +143,10 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 	return out, nil
 }
 
+// HoldUnverifiedDomain holds an email whose From is on no verified Sending domain of the Workspace
+// (ADR 0015): it lifts once the domain verifies.
+const HoldUnverifiedDomain = "unverified_domain"
+
 // emailAdapter is email's provider adapter over the EmailSender built for the Integration: SMTP and
 // SES in production, a Test inbox, an in-memory one in tests.
 type emailAdapter struct{ sender messaging.EmailSender }
@@ -193,7 +202,7 @@ func (a emailAdapter) publishSent(ctx context.Context, pub events.Publisher, f s
 	if err := pub.Publish(ctx, &events.EmailEngagement{
 		Action:            events.NameEmailSent,
 		WorkspaceID:       f.workspaceID,
-		ContactID:         f.contactID,
+		ContactID:         f.req.contactID(),
 		Email:             f.dest,
 		BroadcastID:       f.req.Ref.BroadcastID,
 		DedupID:           fmt.Sprintf("email.sent:%d", f.messageID),
@@ -213,7 +222,7 @@ func (a emailAdapter) publishSent(ctx context.Context, pub events.Publisher, f s
 	return pub.Publish(ctx, &events.EmailDelivery{
 		Action:            events.NameEmailDelivered,
 		WorkspaceID:       f.workspaceID,
-		ContactID:         f.contactID,
+		ContactID:         f.req.contactID(),
 		Email:             f.dest,
 		ProviderMessageID: f.receipt.MessageID,
 		SendingDomain:     f.as.sendingDomain,

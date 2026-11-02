@@ -31,10 +31,11 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 		return msg, nil, err
 	}
 
+	onChannel := outboundmessage.Channel(req.Channel())
 	create := s.OutboundMessage().Create().
 		SetKind(req.Kind).
 		SetIdempotencyKey(req.Key).
-		SetChannel(outboundmessage.Channel(req.Channel())).
+		SetChannel(onChannel).
 		SetDestination(dest).
 		SetClaimedAt(m.claimTime())
 	if m.tracker != nil {

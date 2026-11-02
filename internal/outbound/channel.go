@@ -62,7 +62,6 @@ type sentFact struct {
 	workspaceID int64
 	req         Request
 	messageID   int64
-	contactID   int64
 	dest        string
 	as          sendAs
 	receipt     messaging.Receipt

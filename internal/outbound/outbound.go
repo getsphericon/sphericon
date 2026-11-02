@@ -98,10 +98,10 @@ func deferralBackoff(err error) time.Duration {
 const SkipContactErased = "contact_erased"
 
 // Reasons an Outbound send is Held by its own source-level checks. The Workspace-level
-// reasons (suspended, pending deletion, Staff hold) are declared by the holds package.
+// reasons (suspended, pending deletion, Staff hold) are declared by the holds package, and
+// email's own (HoldUnverifiedDomain) by email's adapter.
 const (
-	HoldNoIntegration    = "no_integration"
-	HoldUnverifiedDomain = "unverified_domain"
+	HoldNoIntegration = "no_integration"
 	// HoldProviderStopped: the provider has stopped the account behind the Integration (SES
 	// EnforcementStatus SHUTDOWN, ADR 0067); it lifts when a quota read finds it sending again.
 	HoldProviderStopped = "provider_stopped"
@@ -366,7 +366,8 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	if req.Source != "" && m.tracker == nil {
 		return Result{}, ErrNoTracker
 	}
-	ch, err := m.channel(req.Channel())
+	onChannel := req.Channel()
+	ch, err := m.channel(onChannel)
 	if err != nil {
 		return Result{}, err
 	}
@@ -395,7 +396,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	if err != nil {
 		return Result{}, err
 	}
-	g, err := m.gate(ctx, s, req.Channel(), req.IntegrationID, req.Content)
+	g, err := m.gate(ctx, s, req.Content, req.IntegrationID)
 	if err != nil {
 		return Result{}, err
 	}
@@ -413,7 +414,8 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 
 	// Send-eligibility on the Channel, per message at send time, fail-closed: if the check
 	// cannot be made the message is not sent and the attempt is retried.
-	dec, err := eligibility.Check(ctx, s, string(req.Channel()), dest, req.Source)
+	eligibleOn := string(onChannel)
+	dec, err := eligibility.Check(ctx, s, eligibleOn, dest, req.Source)
 	if err != nil {
 		m.release(ctx, s, msg)
 		return Result{}, err
@@ -488,7 +490,10 @@ func (m *Module) contactErased(ctx context.Context, s *ent.Scoped, req Request) 
 // anything. Planning code (Broadcast) calls it to fail or pause fast instead of finding out per
 // recipient; the answer is the same Send route and gate Send applies.
 func (m *Module) Preflight(ctx context.Context, s *ent.Scoped, content Content, integrationID *int64) (hold string, err error) {
-	g, err := m.gate(ctx, s, content.Channel(), integrationID, content)
+	if content == nil {
+		return "", errors.New("outbound: content required")
+	}
+	g, err := m.gate(ctx, s, content, integrationID)
 	if err != nil {
 		return "", err
 	}
@@ -594,14 +599,15 @@ func (g gateResult) captured() bool { return !g.route.DeliversOutside }
 
 // gate runs the source-level checks, in order: Workspace freeze (the reason holds names:
 // deletion, suspension, Staff hold, in that priority; a Test send from the System sender passes it
-// too), then the Send route of ch through the Integration integrationID names (nil is ch's
-// default) and its own hold, and the Channel's own check of content (through).
-func (m *Module) gate(ctx context.Context, s *ent.Scoped, ch messaging.Channel, integrationID *int64, content Content) (gateResult, error) {
+// too), then the Send route of content's Channel through the Integration integrationID names (nil
+// is that Channel's default) and its own hold, and the Channel's own check of content (through).
+func (m *Module) gate(ctx context.Context, s *ent.Scoped, content Content, integrationID *int64) (gateResult, error) {
 	hold, err := m.holds.Reason(ctx, s)
 	if err != nil || hold != "" {
 		return gateResult{hold: hold}, err
 	}
-	route, err := m.Route(ctx, s, ch, integrationID)
+	onChannel := content.Channel()
+	route, err := m.Route(ctx, s, onChannel, integrationID)
 	if err != nil {
 		return gateResult{}, err
 	}
@@ -724,7 +730,6 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 			workspaceID: s.WorkspaceID(),
 			req:         req,
 			messageID:   msg.ID,
-			contactID:   req.contactID(),
 			dest:        dest,
 			as:          g.as,
 			receipt:     receipt,
