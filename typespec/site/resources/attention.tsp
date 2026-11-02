@@ -38,6 +38,10 @@ enum SiteAttentionKind {
 
   /** A Webhook endpoint disabled itself after failing deliveries */
   webhookDisabled,
+
+  /** A verified Sending domain whose last DMARC lookup found no published record: it is not
+   * bulk-ready (ADR 0012), and Gmail and Yahoo reject or spam-folder bulk mail from it */
+  sendingDomainNotBulkReady,
 }
 
 /** How urgent an item is */
@@ -48,7 +52,7 @@ enum SiteAttentionSeverity {
   /** It sends, slower or at risk */
   degraded,
 
-  /** Something failed and was not retried */
+  /** Something failed and was not retried, or a setup that bulk mail needs is missing */
   notice,
 }
 

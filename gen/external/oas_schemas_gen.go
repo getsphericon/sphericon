@@ -16098,6 +16098,12 @@ type SendingDomainResource struct {
 	SpfRecord DnsRecord `json:"spfRecord"`
 	// The suggested DMARC TXT record (advisory bulk-readiness signal).
 	DmarcRecord DnsRecord `json:"dmarcRecord"`
+	// When a DMARC lookup of the domain most recently answered, the record found or not (null = none has).
+	DmarcCheckedAt OptNilTimestamp `json:"dmarcCheckedAt"`
+	// When a lookup first found a DMARC record published for the domain, at the domain or its
+	// organizational domain (null = the last lookup found none, or none has answered). The domain is
+	// bulk-ready while it is set (ADR 0012); it never gates sending.
+	DmarcFoundAt OptNilTimestamp `json:"dmarcFoundAt"`
 	// When the DKIM DNS was most recently checked (null = never).
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
 	// When the domain most recently became verified (null = never); kept after a loss.
@@ -16146,6 +16152,16 @@ func (s *SendingDomainResource) GetSpfRecord() DnsRecord {
 // GetDmarcRecord returns the value of DmarcRecord.
 func (s *SendingDomainResource) GetDmarcRecord() DnsRecord {
 	return s.DmarcRecord
+}
+
+// GetDmarcCheckedAt returns the value of DmarcCheckedAt.
+func (s *SendingDomainResource) GetDmarcCheckedAt() OptNilTimestamp {
+	return s.DmarcCheckedAt
+}
+
+// GetDmarcFoundAt returns the value of DmarcFoundAt.
+func (s *SendingDomainResource) GetDmarcFoundAt() OptNilTimestamp {
+	return s.DmarcFoundAt
 }
 
 // GetLastCheckedAt returns the value of LastCheckedAt.
@@ -16211,6 +16227,16 @@ func (s *SendingDomainResource) SetSpfRecord(val DnsRecord) {
 // SetDmarcRecord sets the value of DmarcRecord.
 func (s *SendingDomainResource) SetDmarcRecord(val DnsRecord) {
 	s.DmarcRecord = val
+}
+
+// SetDmarcCheckedAt sets the value of DmarcCheckedAt.
+func (s *SendingDomainResource) SetDmarcCheckedAt(val OptNilTimestamp) {
+	s.DmarcCheckedAt = val
+}
+
+// SetDmarcFoundAt sets the value of DmarcFoundAt.
+func (s *SendingDomainResource) SetDmarcFoundAt(val OptNilTimestamp) {
+	s.DmarcFoundAt = val
 }
 
 // SetLastCheckedAt sets the value of LastCheckedAt.

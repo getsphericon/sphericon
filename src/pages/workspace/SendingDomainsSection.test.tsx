@@ -194,6 +194,28 @@ test('clicking a domain row opens its DNS records in a modal', async () => {
   await expect
     .element(screen.getByRole('textbox', { name: 'DMARC (recommended): Value' }))
     .toHaveValue('v=DMARC1; p=none')
+  // A pending domain says nothing of bulk-readiness yet.
+  await expect.element(screen.getByText(/bulk-ready/i)).not.toBeInTheDocument()
+})
+
+const checked = {
+  verified: true,
+  lastCheckedAt: '2026-02-01T00:00:00Z',
+  dmarcCheckedAt: '2026-02-01T00:00:00Z',
+}
+
+test.each([
+  ['a found record', { ...checked, dmarcFoundAt: '2026-01-15T00:00:00Z' }, 'Bulk-ready'],
+  ['no record found', checked, 'Not bulk-ready'],
+])('says next to the DMARC record when the last check found %s', async (_, over, badge) => {
+  worker.use(list([domain(over)]))
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
+  )
+
+  await screen.getByText('mail.acme.com').click()
+
+  await expect.element(screen.getByText(badge, { exact: true })).toBeInTheDocument()
 })
 
 test('shows the records of a domain right after it is added', async () => {

@@ -48590,6 +48590,8 @@ type SendingDomainMutation struct {
 	last_checked_at            *time.Time
 	verified_at                *time.Time
 	verification_lost_at       *time.Time
+	dmarc_checked_at           *time.Time
+	dmarc_found_at             *time.Time
 	clearedFields              map[string]struct{}
 	workspace                  *int64
 	clearedworkspace           bool
@@ -49150,6 +49152,104 @@ func (m *SendingDomainMutation) ResetVerificationLostAt() {
 	delete(m.clearedFields, sendingdomain.FieldVerificationLostAt)
 }
 
+// SetDmarcCheckedAt sets the "dmarc_checked_at" field.
+func (m *SendingDomainMutation) SetDmarcCheckedAt(t time.Time) {
+	m.dmarc_checked_at = &t
+}
+
+// DmarcCheckedAt returns the value of the "dmarc_checked_at" field in the mutation.
+func (m *SendingDomainMutation) DmarcCheckedAt() (r time.Time, exists bool) {
+	v := m.dmarc_checked_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDmarcCheckedAt returns the old "dmarc_checked_at" field's value of the SendingDomain entity.
+// If the SendingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainMutation) OldDmarcCheckedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDmarcCheckedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDmarcCheckedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDmarcCheckedAt: %w", err)
+	}
+	return oldValue.DmarcCheckedAt, nil
+}
+
+// ClearDmarcCheckedAt clears the value of the "dmarc_checked_at" field.
+func (m *SendingDomainMutation) ClearDmarcCheckedAt() {
+	m.dmarc_checked_at = nil
+	m.clearedFields[sendingdomain.FieldDmarcCheckedAt] = struct{}{}
+}
+
+// DmarcCheckedAtCleared returns if the "dmarc_checked_at" field was cleared in this mutation.
+func (m *SendingDomainMutation) DmarcCheckedAtCleared() bool {
+	_, ok := m.clearedFields[sendingdomain.FieldDmarcCheckedAt]
+	return ok
+}
+
+// ResetDmarcCheckedAt resets all changes to the "dmarc_checked_at" field.
+func (m *SendingDomainMutation) ResetDmarcCheckedAt() {
+	m.dmarc_checked_at = nil
+	delete(m.clearedFields, sendingdomain.FieldDmarcCheckedAt)
+}
+
+// SetDmarcFoundAt sets the "dmarc_found_at" field.
+func (m *SendingDomainMutation) SetDmarcFoundAt(t time.Time) {
+	m.dmarc_found_at = &t
+}
+
+// DmarcFoundAt returns the value of the "dmarc_found_at" field in the mutation.
+func (m *SendingDomainMutation) DmarcFoundAt() (r time.Time, exists bool) {
+	v := m.dmarc_found_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDmarcFoundAt returns the old "dmarc_found_at" field's value of the SendingDomain entity.
+// If the SendingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainMutation) OldDmarcFoundAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDmarcFoundAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDmarcFoundAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDmarcFoundAt: %w", err)
+	}
+	return oldValue.DmarcFoundAt, nil
+}
+
+// ClearDmarcFoundAt clears the value of the "dmarc_found_at" field.
+func (m *SendingDomainMutation) ClearDmarcFoundAt() {
+	m.dmarc_found_at = nil
+	m.clearedFields[sendingdomain.FieldDmarcFoundAt] = struct{}{}
+}
+
+// DmarcFoundAtCleared returns if the "dmarc_found_at" field was cleared in this mutation.
+func (m *SendingDomainMutation) DmarcFoundAtCleared() bool {
+	_, ok := m.clearedFields[sendingdomain.FieldDmarcFoundAt]
+	return ok
+}
+
+// ResetDmarcFoundAt resets all changes to the "dmarc_found_at" field.
+func (m *SendingDomainMutation) ResetDmarcFoundAt() {
+	m.dmarc_found_at = nil
+	delete(m.clearedFields, sendingdomain.FieldDmarcFoundAt)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *SendingDomainMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -49211,7 +49311,7 @@ func (m *SendingDomainMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SendingDomainMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, sendingdomain.FieldCreatedAt)
 	}
@@ -49245,6 +49345,12 @@ func (m *SendingDomainMutation) Fields() []string {
 	if m.verification_lost_at != nil {
 		fields = append(fields, sendingdomain.FieldVerificationLostAt)
 	}
+	if m.dmarc_checked_at != nil {
+		fields = append(fields, sendingdomain.FieldDmarcCheckedAt)
+	}
+	if m.dmarc_found_at != nil {
+		fields = append(fields, sendingdomain.FieldDmarcFoundAt)
+	}
 	return fields
 }
 
@@ -49275,6 +49381,10 @@ func (m *SendingDomainMutation) Field(name string) (ent.Value, bool) {
 		return m.VerifiedAt()
 	case sendingdomain.FieldVerificationLostAt:
 		return m.VerificationLostAt()
+	case sendingdomain.FieldDmarcCheckedAt:
+		return m.DmarcCheckedAt()
+	case sendingdomain.FieldDmarcFoundAt:
+		return m.DmarcFoundAt()
 	}
 	return nil, false
 }
@@ -49306,6 +49416,10 @@ func (m *SendingDomainMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldVerifiedAt(ctx)
 	case sendingdomain.FieldVerificationLostAt:
 		return m.OldVerificationLostAt(ctx)
+	case sendingdomain.FieldDmarcCheckedAt:
+		return m.OldDmarcCheckedAt(ctx)
+	case sendingdomain.FieldDmarcFoundAt:
+		return m.OldDmarcFoundAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown SendingDomain field %s", name)
 }
@@ -49392,6 +49506,20 @@ func (m *SendingDomainMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetVerificationLostAt(v)
 		return nil
+	case sendingdomain.FieldDmarcCheckedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDmarcCheckedAt(v)
+		return nil
+	case sendingdomain.FieldDmarcFoundAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDmarcFoundAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SendingDomain field %s", name)
 }
@@ -49437,6 +49565,12 @@ func (m *SendingDomainMutation) ClearedFields() []string {
 	if m.FieldCleared(sendingdomain.FieldVerificationLostAt) {
 		fields = append(fields, sendingdomain.FieldVerificationLostAt)
 	}
+	if m.FieldCleared(sendingdomain.FieldDmarcCheckedAt) {
+		fields = append(fields, sendingdomain.FieldDmarcCheckedAt)
+	}
+	if m.FieldCleared(sendingdomain.FieldDmarcFoundAt) {
+		fields = append(fields, sendingdomain.FieldDmarcFoundAt)
+	}
 	return fields
 }
 
@@ -49462,6 +49596,12 @@ func (m *SendingDomainMutation) ClearField(name string) error {
 		return nil
 	case sendingdomain.FieldVerificationLostAt:
 		m.ClearVerificationLostAt()
+		return nil
+	case sendingdomain.FieldDmarcCheckedAt:
+		m.ClearDmarcCheckedAt()
+		return nil
+	case sendingdomain.FieldDmarcFoundAt:
+		m.ClearDmarcFoundAt()
 		return nil
 	}
 	return fmt.Errorf("unknown SendingDomain nullable field %s", name)
@@ -49503,6 +49643,12 @@ func (m *SendingDomainMutation) ResetField(name string) error {
 		return nil
 	case sendingdomain.FieldVerificationLostAt:
 		m.ResetVerificationLostAt()
+		return nil
+	case sendingdomain.FieldDmarcCheckedAt:
+		m.ResetDmarcCheckedAt()
+		return nil
+	case sendingdomain.FieldDmarcFoundAt:
+		m.ResetDmarcFoundAt()
 		return nil
 	}
 	return fmt.Errorf("unknown SendingDomain field %s", name)

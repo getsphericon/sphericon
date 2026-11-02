@@ -6,6 +6,7 @@ import (
 	"net"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/foxcpp/go-mockdns"
 	"github.com/stretchr/testify/assert"
@@ -210,4 +211,104 @@ func TestDevTXTLookup_aJoinDomainNobodyClaimsIsNotFound(t *testing.T) {
 	var dnsErr *net.DNSError
 	require.ErrorAs(t, err, &dnsErr)
 	assert.True(t, dnsErr.IsNotFound)
+}
+
+// A check looks the DMARC record up next to DKIM and keeps when it found one: publishing the
+// record makes the domain bulk-ready, withdrawing it clears that, and a record at the
+// organizational domain counts as one at the domain.
+func TestVerify_aPublishedDMARCRecordMakesTheDomainBulkReady(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	zone := dnstest.NewZone(t)
+	m := module(env, zone.LookupTXT)
+	// check runs a check of news.acme.com and reads when its DMARC record was found.
+	check := func() *time.Time {
+		t.Helper()
+		err := m.Verify(ctx, fixtures.SendingDomainUnverifiedID)
+		require.NoError(t, err)
+		row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainUnverifiedID)
+		require.NoError(t, err)
+		return row.DmarcFoundAt
+	}
+
+	none := check()
+	assert.Nil(t, none, "news.acme.com publishes no DMARC record")
+	looked, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainUnverifiedID)
+	require.NoError(t, err)
+	assert.NotNil(t, looked.DmarcCheckedAt, "a lookup that found nothing is still a lookup")
+
+	zone.PublishTXT(t, "_dmarc.news.acme.com.", "v=DMARC1; p=none;")
+	first := check()
+	require.NotNil(t, first)
+
+	again := check()
+	require.NotNil(t, again)
+	assert.Equal(t, *first, *again, "a repeated check keeps the moment it was first found")
+
+	zone.WithdrawTXT("_dmarc.news.acme.com.")
+	withdrawn := check()
+	assert.Nil(t, withdrawn, "a check that finds no record clears it")
+
+	zone.PublishTXT(t, "_dmarc.acme.com.", "v=DMARC1; p=quarantine;")
+	organizational := check()
+	assert.NotNil(t, organizational, "the organizational domain's record covers news.acme.com")
+}
+
+// A failed DMARC lookup changes nothing: neither what the domain's DMARC was known to be, nor its
+// DKIM result, nor the check, which still succeeds.
+func TestVerify_aFailedDMARCLookupChangesNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	before, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
+	require.NoError(t, err)
+	require.NotNil(t, before.DmarcFoundAt)
+	lookup := dnstest.Resolver(t, map[string]mockdns.Zone{
+		"sphericon._domainkey.mail.acme.com.": {TXT: []string{before.DkimPublicKey}},
+		"_dmarc.mail.acme.com.":               {Err: errors.New("servfail")},
+	}).LookupTXT
+
+	err = module(env, lookup).Verify(ctx, fixtures.SendingDomainVerifiedID)
+
+	require.NoError(t, err)
+	after, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
+	require.NoError(t, err)
+	require.NotNil(t, after.DmarcFoundAt)
+	assert.Equal(t, *before.DmarcFoundAt, *after.DmarcFoundAt)
+	assert.Equal(t, before.DmarcCheckedAt, after.DmarcCheckedAt, "a failed lookup is not a lookup")
+	verified := dkimstate.Is(after)
+	assert.True(t, verified)
+	require.NotNil(t, after.LastCheckedAt)
+	assert.NotEqual(t, *before.LastCheckedAt, *after.LastCheckedAt, "the DKIM check was stored")
+}
+
+// A domain whose DMARC lookups have only failed was never looked up: its DKIM check is stored, but
+// nothing says its DMARC record is missing.
+func TestVerify_aFirstDMARCLookupThatFailsLeavesTheDomainUnjudged(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	lookup := dnstest.Resolver(t, map[string]mockdns.Zone{
+		"_dmarc.news.acme.com.": {Err: errors.New("servfail")},
+	}).LookupTXT
+
+	err := module(env, lookup).Verify(ctx, fixtures.SendingDomainUnverifiedID)
+
+	require.NoError(t, err)
+	row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainUnverifiedID)
+	require.NoError(t, err)
+	assert.NotNil(t, row.LastCheckedAt, "the DKIM check was stored")
+	assert.Nil(t, row.DmarcCheckedAt)
+	assert.Nil(t, row.DmarcFoundAt)
+}
+
+// The end-to-end resolver answers a Sending domain's DMARC record with the suggested one, so a
+// domain a scenario adds is bulk-ready too.
+func TestDevTXTLookup_answersASendingDomainsDMARCRecord(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	err := module(env, domainverify.DevTXTLookup(env.DB)).Verify(t.Context(), fixtures.SendingDomainUnverifiedID)
+
+	require.NoError(t, err)
+	row, err := env.DB.SendingDomain.Get(t.Context(), fixtures.SendingDomainUnverifiedID)
+	require.NoError(t, err)
+	assert.NotNil(t, row.DmarcFoundAt)
 }

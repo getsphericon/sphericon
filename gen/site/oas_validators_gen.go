@@ -2169,6 +2169,8 @@ func (s SiteAttentionKind) Validate() error {
 		return nil
 	case "webhookDisabled":
 		return nil
+	case "sendingDomainNotBulkReady":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

@@ -303,7 +303,7 @@ func (m *Module) configuredFromDomain(ctx context.Context, s *ent.Scoped) (strin
 }
 
 // Verify runs the live DNS check of the domain now and returns the domain as the check left
-// it: `verified` and `lastCheckedAt` are the outcome. It confirms the domain is in the
+// it: `verified`, `lastCheckedAt`, `dmarcCheckedAt` and `dmarcFoundAt` are the outcome. It confirms the domain is in the
 // Workspace first (ErrNotFound).
 func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
 	if _, err := s.SendingDomain().Get(ctx, id); err != nil {

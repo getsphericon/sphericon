@@ -6,6 +6,8 @@
 # Anchor rows referenced across the suite — DO NOT change ids/domains:
 #   id 1  mail.acme.com   verified   (a live, authenticated domain)
 #   id 2  news.acme.com   unverified (added, DKIM TXT not yet published)
+# The checked, verified rows had their DMARC record found (dmarc_checked_at, dmarc_found_at), so
+# no overview shows them as not bulk-ready.
 - id: 1 # fixture: SendingDomainVerified
   domain: mail.acme.com
   dkim_selector: 'sphericon'
@@ -13,6 +15,8 @@
   dkim_public_key: 'v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAujnj+1IVTCVSB43rbzUmyy6G2Ke/c8tV3577MyovaNBSfFZpUZZbzrBkpksqc/a2RmFZB4fuO+FW4bcXmw3jN/EvHKuPotuySV9TsSWdEzMjleg4GGxVH3GdnHfpv6S7lLQ8WHZQA0pNzKiqL/6CUB8M3vPgvIrYgnGz8araOS/jqi4UiiAj1LzVpXNYrhMZiglmPrnaYumA0UcG9j/2j19NDC0N1uCWtEmfUlse55VEWSFV/OaPNShPhdeuPR9AoIoK0XXiHtdw4kyDgc3llHUb0KFzuRu7ZZghapB6SvnlN2OGuzJKyktc3EIj6+6DEZZL92y/zBSwiwiJmwL8SQIDAQAB'
   last_checked_at: '{{daysAgo 1}}'
   verified_at: '{{daysAgo 30}}'
+  dmarc_checked_at: '{{daysAgo 1}}'
+  dmarc_found_at: '{{daysAgo 29}}'
   workspace_id: 1
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 1}}'
@@ -34,6 +38,8 @@
   dkim_public_key: 'v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAujnj+1IVTCVSB43rbzUmyy6G2Ke/c8tV3577MyovaNBSfFZpUZZbzrBkpksqc/a2RmFZB4fuO+FW4bcXmw3jN/EvHKuPotuySV9TsSWdEzMjleg4GGxVH3GdnHfpv6S7lLQ8WHZQA0pNzKiqL/6CUB8M3vPgvIrYgnGz8araOS/jqi4UiiAj1LzVpXNYrhMZiglmPrnaYumA0UcG9j/2j19NDC0N1uCWtEmfUlse55VEWSFV/OaPNShPhdeuPR9AoIoK0XXiHtdw4kyDgc3llHUb0KFzuRu7ZZghapB6SvnlN2OGuzJKyktc3EIj6+6DEZZL92y/zBSwiwiJmwL8SQIDAQAB'
   last_checked_at: '{{daysAgo 1}}'
   verified_at: '{{daysAgo 20}}'
+  dmarc_checked_at: '{{daysAgo 1}}'
+  dmarc_found_at: '{{daysAgo 19}}'
   workspace_id: 1
   created_at: '{{daysAgo 20}}'
   updated_at: '{{daysAgo 1}}'
@@ -160,6 +166,8 @@
   dkim_public_key: 'v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAujnj+1IVTCVSB43rbzUmyy6G2Ke/c8tV3577MyovaNBSfFZpUZZbzrBkpksqc/a2RmFZB4fuO+FW4bcXmw3jN/EvHKuPotuySV9TsSWdEzMjleg4GGxVH3GdnHfpv6S7lLQ8WHZQA0pNzKiqL/6CUB8M3vPgvIrYgnGz8araOS/jqi4UiiAj1LzVpXNYrhMZiglmPrnaYumA0UcG9j/2j19NDC0N1uCWtEmfUlse55VEWSFV/OaPNShPhdeuPR9AoIoK0XXiHtdw4kyDgc3llHUb0KFzuRu7ZZghapB6SvnlN2OGuzJKyktc3EIj6+6DEZZL92y/zBSwiwiJmwL8SQIDAQAB'
   last_checked_at: '{{daysAgo 1}}'
   verified_at: '{{daysAgo 100}}'
+  dmarc_checked_at: '{{daysAgo 1}}'
+  dmarc_found_at: '{{daysAgo 99}}'
   workspace_id: 20
   created_at: '{{daysAgo 101}}'
   updated_at: '{{daysAgo 1}}'
@@ -170,6 +178,8 @@
   dkim_public_key: 'v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAujnj+1IVTCVSB43rbzUmyy6G2Ke/c8tV3577MyovaNBSfFZpUZZbzrBkpksqc/a2RmFZB4fuO+FW4bcXmw3jN/EvHKuPotuySV9TsSWdEzMjleg4GGxVH3GdnHfpv6S7lLQ8WHZQA0pNzKiqL/6CUB8M3vPgvIrYgnGz8araOS/jqi4UiiAj1LzVpXNYrhMZiglmPrnaYumA0UcG9j/2j19NDC0N1uCWtEmfUlse55VEWSFV/OaPNShPhdeuPR9AoIoK0XXiHtdw4kyDgc3llHUb0KFzuRu7ZZghapB6SvnlN2OGuzJKyktc3EIj6+6DEZZL92y/zBSwiwiJmwL8SQIDAQAB'
   last_checked_at: '{{daysAgo 1}}'
   verified_at: '{{daysAgo 45}}'
+  dmarc_checked_at: '{{daysAgo 1}}'
+  dmarc_found_at: '{{daysAgo 44}}'
   workspace_id: 20
   created_at: '{{daysAgo 46}}'
   updated_at: '{{daysAgo 1}}'
@@ -180,6 +190,8 @@
   dkim_public_key: 'v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAujnj+1IVTCVSB43rbzUmyy6G2Ke/c8tV3577MyovaNBSfFZpUZZbzrBkpksqc/a2RmFZB4fuO+FW4bcXmw3jN/EvHKuPotuySV9TsSWdEzMjleg4GGxVH3GdnHfpv6S7lLQ8WHZQA0pNzKiqL/6CUB8M3vPgvIrYgnGz8araOS/jqi4UiiAj1LzVpXNYrhMZiglmPrnaYumA0UcG9j/2j19NDC0N1uCWtEmfUlse55VEWSFV/OaPNShPhdeuPR9AoIoK0XXiHtdw4kyDgc3llHUb0KFzuRu7ZZghapB6SvnlN2OGuzJKyktc3EIj6+6DEZZL92y/zBSwiwiJmwL8SQIDAQAB'
   last_checked_at: '{{hoursAgo 1}}'
   verified_at: '{{daysAgo 1}}'
+  dmarc_checked_at: '{{hoursAgo 1}}'
+  dmarc_found_at: '{{daysAgo 1}}'
   workspace_id: 20
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 2}}'

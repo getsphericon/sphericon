@@ -1,6 +1,7 @@
 // Package domainverify is the module behind the Sending domain verification jobs (ADR 0010): the
 // live DKIM check and what it decides (the verified moments, the loss of verification, the
-// Owners' notice of it). The jobs only pick which domains are due and call it.
+// Owners' notice of it), and the DMARC lookup next to it, the bulk-ready signal of ADR 0012. The
+// jobs only pick which domains are due and call it.
 //
 // It reads a Sending domain by id to learn its Workspace, before any scope exists, so it holds
 // the raw client (the same shape as internal/joindomains). Every write goes through the
@@ -37,10 +38,45 @@ func New(client *ent.Client, lookup sending.TXTLookup, notify ownernotice.Notify
 	return &Module{client: client, lookup: lookup, notify: notify}
 }
 
-// Verify checks one Sending domain's DKIM; a lookup error is returned so the job retries.
+// Verify checks one Sending domain: its DKIM, then its DMARC record. A DKIM lookup error is
+// returned so the job retries; DMARC never fails the check nor changes its DKIM result (ADR 0012).
 func (m *Module) Verify(ctx context.Context, id int64) error {
-	_, err := m.VerifyDKIM(ctx, id)
-	return err
+	dom, err := m.client.SendingDomain.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if _, err := m.verifyDKIM(ctx, dom); err != nil {
+		return err
+	}
+	m.checkDMARC(ctx, dom)
+	return nil
+}
+
+// checkDMARC looks the domain's DMARC record up and stores the answer: dmarc_checked_at that a
+// lookup answered, and dmarc_found_at when the record was first found, set when a lookup finds it
+// and it was not yet, cleared when one finds none. The move of dmarc_found_at is a
+// compare-and-swap on the state it leaves; the write is an update of its own, so it never touches
+// the DKIM moments, and a check that loses the swap leaves the answer the winner stored. A failed
+// lookup or write is logged and changes nothing: the domain stays as the last answer left it.
+func (m *Module) checkDMARC(ctx context.Context, dom *ent.SendingDomain) {
+	found, err := sending.LookupDMARC(ctx, m.lookup, dom.Domain)
+	if err != nil {
+		slog.WarnContext(ctx, "sending domain DMARC lookup failed",
+			"sending_domain_id", dom.ID, "workspace_id", dom.WorkspaceID, "domain", dom.Domain, "err", err)
+		return
+	}
+	now := time.Now()
+	upd := m.client.Scoped(dom.WorkspaceID).SendingDomain().UpdateOneID(dom.ID).SetDmarcCheckedAt(now)
+	switch {
+	case found && dom.DmarcFoundAt == nil:
+		upd.Where(sendingdomain.DmarcFoundAtIsNil()).SetDmarcFoundAt(now)
+	case !found && dom.DmarcFoundAt != nil:
+		upd.Where(sendingdomain.DmarcFoundAtNotNil()).ClearDmarcFoundAt()
+	}
+	if err := upd.Exec(ctx); err != nil && !ent.IsNotFound(err) {
+		slog.WarnContext(ctx, "sending domain DMARC result not stored",
+			"sending_domain_id", dom.ID, "workspace_id", dom.WorkspaceID, "err", err)
+	}
 }
 
 // VerifyDKIM re-checks a domain's DKIM DNS and persists the result: last_checked_at,
@@ -54,6 +90,12 @@ func (m *Module) VerifyDKIM(ctx context.Context, id int64) (verified bool, err e
 	if err != nil {
 		return false, err
 	}
+	return m.verifyDKIM(ctx, dom)
+}
+
+// verifyDKIM is VerifyDKIM of a domain already read.
+func (m *Module) verifyDKIM(ctx context.Context, dom *ent.SendingDomain) (verified bool, err error) {
+	id := dom.ID
 	verified, err = sending.VerifyDKIM(ctx, m.lookup, dom.DkimSelector, dom.Domain, dom.DkimPublicKey)
 	if err != nil {
 		return false, err
@@ -110,16 +152,23 @@ func (m *Module) Due(ctx context.Context, limit int) ([]int64, error) {
 }
 
 // recordDomain is the domain a proof record's name belongs to: a DKIM record
-// (<selector>._domainkey.<domain>.) or a Join domain's (_sphericon-join.<domain>.).
+// (<selector>._domainkey.<domain>.), a DMARC record (_dmarc.<domain>.) or a Join domain's
+// (_sphericon-join.<domain>.).
 func recordDomain(name string) (string, bool) {
 	if joined, ok := strings.CutPrefix(name, joindomains.RecordLabel); ok {
 		return strings.TrimSuffix(joined, "."), true
+	}
+	if domain, ok := strings.CutPrefix(name, dmarcLabel); ok {
+		return strings.TrimSuffix(domain, "."), true
 	}
 	_, after, ok := strings.Cut(name, dkimMarker)
 	return strings.TrimSuffix(after, "."), ok
 }
 
-const dkimMarker = "._domainkey."
+const (
+	dkimMarker = "._domainkey."
+	dmarcLabel = "_dmarc."
+)
 
 // DevTXTLookup is the sending-domain DKIM resolver of the end-to-end suite: instead of
 // querying real DNS (which no test domain publishes), it echoes back each domain's own
@@ -130,6 +179,7 @@ const dkimMarker = "._domainkey."
 // stores, so a domain an Owner adds in the members settings verifies without DNS.
 // Because it answers every Workspace's token, two Workspaces claiming one domain both verify, so
 // a hand-over (the loser of a take-over) can never fire here.
+// A Sending domain's DMARC name answers the suggested record, so every such domain is bulk-ready.
 func DevTXTLookup(client *ent.Client) sending.TXTLookup {
 	return func(ctx context.Context, name string) ([]string, error) {
 		domain, ok := recordDomain(name)
@@ -147,6 +197,10 @@ func DevTXTLookup(client *ent.Client) sending.TXTLookup {
 		}
 		if err != nil {
 			return nil, err
+		}
+		if strings.HasPrefix(name, dmarcLabel) {
+			_, record := sending.DMARCRecord(row.Domain)
+			return []string{record}, nil
 		}
 		return []string{row.DkimPublicKey}, nil
 	}

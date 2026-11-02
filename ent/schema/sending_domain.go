@@ -67,6 +67,17 @@ func (SendingDomain) Fields() []ent.Field {
 		field.Time("verification_lost_at").
 			Optional().
 			Nillable(),
+		// When a DMARC lookup most recently got an answer, the record found or not (nil = none has:
+		// never run, or every lookup failed). Until then nothing is known of the domain's DMARC.
+		field.Time("dmarc_checked_at").
+			Optional().
+			Nillable(),
+		// When a lookup first found the domain's DMARC record published, at the domain or its
+		// organizational domain (nil = the last lookup found none, or none has answered). It is the
+		// bulk-ready signal of ADR 0012 and never gates sending.
+		field.Time("dmarc_found_at").
+			Optional().
+			Nillable(),
 	}
 }
 

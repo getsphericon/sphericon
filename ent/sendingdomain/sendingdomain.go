@@ -36,6 +36,10 @@ const (
 	FieldVerifiedAt = "verified_at"
 	// FieldVerificationLostAt holds the string denoting the verification_lost_at field in the database.
 	FieldVerificationLostAt = "verification_lost_at"
+	// FieldDmarcCheckedAt holds the string denoting the dmarc_checked_at field in the database.
+	FieldDmarcCheckedAt = "dmarc_checked_at"
+	// FieldDmarcFoundAt holds the string denoting the dmarc_found_at field in the database.
+	FieldDmarcFoundAt = "dmarc_found_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// Table holds the table name of the sendingdomain in the database.
@@ -63,6 +67,8 @@ var Columns = []string{
 	FieldLastCheckedAt,
 	FieldVerifiedAt,
 	FieldVerificationLostAt,
+	FieldDmarcCheckedAt,
+	FieldDmarcFoundAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -151,6 +157,16 @@ func ByVerifiedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByVerificationLostAt orders the results by the verification_lost_at field.
 func ByVerificationLostAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVerificationLostAt, opts...).ToFunc()
+}
+
+// ByDmarcCheckedAt orders the results by the dmarc_checked_at field.
+func ByDmarcCheckedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDmarcCheckedAt, opts...).ToFunc()
+}
+
+// ByDmarcFoundAt orders the results by the dmarc_found_at field.
+func ByDmarcFoundAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDmarcFoundAt, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

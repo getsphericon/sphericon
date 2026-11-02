@@ -909,6 +909,8 @@ func (e *SendingDomain) auditFields() map[string]any {
 		"last_checked_at":            derefAudit(e.LastCheckedAt),
 		"verified_at":                derefAudit(e.VerifiedAt),
 		"verification_lost_at":       derefAudit(e.VerificationLostAt),
+		"dmarc_checked_at":           derefAudit(e.DmarcCheckedAt),
+		"dmarc_found_at":             derefAudit(e.DmarcFoundAt),
 	}
 }
 

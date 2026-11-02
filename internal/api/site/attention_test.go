@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -188,4 +189,77 @@ func TestABroadcastThatFailedLongAgoIsNoItemAfterAnEdit(t *testing.T) {
 
 	_, failed := itemAbout(items, siteapi.SiteAttentionKindBroadcastFailed, fixtures.BroadcastFailedID)
 	assert.False(t, failed, "a rename does not bring back a failure of eight days ago")
+}
+
+// A verified Sending domain whose last check found no DMARC record is not bulk-ready (ADR 0012):
+// a notice that names it, until a check finds the record. The check is the "re-check now" of the
+// Sending domain, which answers with when the record was found.
+func TestAVerifiedDomainWithoutADMARCRecordIsANoticeUntilOneIsPublished(t *testing.T) {
+	zone := dnstest.NewZone(t)
+	env := testhelper.Setup(t, testhelper.WithTXTLookup(zone.LookupTXT))
+	ctx := t.Context()
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	dom, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
+	require.NoError(t, err)
+	zone.PublishTXT(t, "sphericon._domainkey.mail.acme.com.", dom.DkimPublicKey)
+	recheck := func() *siteapi.SiteSendingDomainResource {
+		t.Helper()
+		res, err := c.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{
+			WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.SendingDomainVerifiedID),
+		})
+		require.NoError(t, err)
+		d, ok := res.(*siteapi.SiteSendingDomainResource)
+		require.Truef(t, ok, "got %T", res)
+		return d
+	}
+
+	missing := recheck()
+
+	assert.True(t, missing.Verified, "DMARC never gates sending")
+	_, looked := missing.DmarcCheckedAt.Get()
+	_, found := missing.DmarcFoundAt.Get()
+	assert.True(t, looked, "the DMARC lookup answered")
+	assert.False(t, found, "the check found no DMARC record")
+	noticed := attentionOf(t, c, fixtures.AcmePublicID)
+	notice, ok := itemAbout(noticed, siteapi.SiteAttentionKindSendingDomainNotBulkReady, fixtures.SendingDomainVerifiedID)
+	require.True(t, ok)
+	assert.Equal(t, siteapi.SiteAttentionSeverityNotice, notice.Severity)
+	assert.Equal(t, fixtures.SendingDomainVerifiedDomain, notice.Subject.Value.Name)
+
+	zone.PublishTXT(t, "_dmarc.acme.com.", "v=DMARC1; p=none;")
+	published := recheck()
+
+	_, found = published.DmarcFoundAt.Get()
+	assert.True(t, found, "the organizational domain's record covers mail.acme.com")
+	read, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{
+		WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.SendingDomainVerifiedID),
+	})
+	require.NoError(t, err)
+	readRes, ok := read.(*siteapi.SiteSendingDomainResource)
+	require.Truef(t, ok, "got %T", read)
+	assert.Equal(t, published.DmarcFoundAt, readRes.DmarcFoundAt, "a read of the domain shows the same moment")
+	cleared := attentionOf(t, c, fixtures.AcmePublicID)
+	_, still := itemAbout(cleared, siteapi.SiteAttentionKindSendingDomainNotBulkReady, fixtures.SendingDomainVerifiedID)
+	assert.False(t, still)
+}
+
+// Only a verified, kept domain whose DMARC was looked up is judged: a domain whose DMARC lookup
+// never ran or never succeeded (a DKIM check alone says nothing of DMARC), an unverified one (a
+// lost verification is an item of its own) and an archived one are not notices.
+// Fixtures: Acme's domains without dmarc_found_at are unverified, never checked or archived.
+func TestOnlyALookedUpVerifiedKeptDomainIsJudgedBulkReady(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	now := time.Now()
+	// mail.acme.com is verified and its DKIM checked, but its DMARC never looked up; news.acme.com
+	// is looked up but unverified; the archived old.acme.com is verified and looked up. None has a
+	// DMARC record found.
+	require.NoError(t, env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).ClearDmarcCheckedAt().ClearDmarcFoundAt().Exec(ctx))
+	require.NoError(t, env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainUnverifiedID).SetLastCheckedAt(now).SetDmarcCheckedAt(now).Exec(ctx))
+	require.NoError(t, env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainArchivedID).SetLastCheckedAt(now).SetDmarcCheckedAt(now).Exec(ctx))
+
+	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
+
+	got := kinds(items)
+	assert.NotContains(t, got, siteapi.SiteAttentionKindSendingDomainNotBulkReady)
 }

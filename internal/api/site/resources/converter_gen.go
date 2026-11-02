@@ -199,6 +199,8 @@ func (c *ConverterImpl) AttentionKindToResource(source attention.Kind) site.Site
 		siteapiSiteAttentionKind = site.SiteAttentionKindProviderLimitSpent
 	case attention.KindSendCapSpent:
 		siteapiSiteAttentionKind = site.SiteAttentionKindSendCapSpent
+	case attention.KindSendingDomainNotBulkReady:
+		siteapiSiteAttentionKind = site.SiteAttentionKindSendingDomainNotBulkReady
 	case attention.KindSendingDomainVerificationLost:
 		siteapiSiteAttentionKind = site.SiteAttentionKindSendingDomainVerificationLost
 	case attention.KindWebhookDisabled:
@@ -1835,6 +1837,8 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.
 		// siteapiSiteSendingDomainResource.DkimRecord: ignore
 		// siteapiSiteSendingDomainResource.SpfRecord: ignore
 		// siteapiSiteSendingDomainResource.DmarcRecord: ignore
+		siteapiSiteSendingDomainResource.DmarcCheckedAt = optNilTimestamp((*source).DmarcCheckedAt)
+		siteapiSiteSendingDomainResource.DmarcFoundAt = optNilTimestamp((*source).DmarcFoundAt)
 		siteapiSiteSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
 		siteapiSiteSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
 		siteapiSiteSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
