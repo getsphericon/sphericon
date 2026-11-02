@@ -292,9 +292,8 @@ a mutable flag. Required on SMS and WhatsApp always, and on email only when the 
 **require-confirmed-opt-in** policy is on (default off = single opt-in); then Send-eligibility adds
 the one positive layer (see Send-eligibility). Carries **provenance** — `double_opt_in` (clicked a
 confirmation link), `grandfathered` (existing contacts at policy-enablement), `imported`
-(asserted through the API or an import from the customer's server, or by an **On-site form**,
-with the consent wording, its source and the brand, by a customer who collected it, possibly through a verification service of their own) or `keyword` (a
-START sent on the Channel); the strongest provenance wins on dedup. sphericon runs no SMS
+(asserted through the API or an import from the customer's server, with the consent wording, its source and the brand, by a customer who collected it, possibly through a verification service of their own) or `keyword` (a
+START sent on the Channel, from an On-site form's prefilled link carrying a Start token too); the strongest provenance wins on dedup. sphericon runs no SMS
 confirmation flow of its own. Confirmed via a signed link whose endpoint
 is method-split (`GET` = page, `POST` = confirm) — a scanner GET must never fabricate consent. An
 `everything` unsubscribe invalidates the gate row (the event log keeps the history), so returning
@@ -850,7 +849,7 @@ What a person sent on a Channel, as one Preset parsed it: the Channel, the Desti
 from, its text and the payload of a button they pressed. sphericon reads it for what it means on
 its Channel (a `/start` with a token binds the chat, a STOP keyword opts out) and, from a known
 Contact, records it as a `<channel>.received` System event. From an unknown Destination it creates
-no Contact and no Event; only an opt-out in it is kept.
+no Contact and no Event; only an opt-out in it is kept, and a valid Start token makes its sender known.
 _Avoid_: Reply (not every one answers something), incoming SMS, chat message
 
 **Reachability change**:
@@ -860,10 +859,11 @@ suppressed a number. Distinct from an Inbound message, which the person wrote.
 _Avoid_: Status update, opt-out (that is one of its consequences)
 
 **Start token**:
-The single-use, opaque token sphericon issues for a Telegram bot link (`t.me/<bot>?start=<token>`)
-so that the chat that starts with it binds to the Contact or Visitor it was issued to. Issued by a
-merge tag in a message, by the tracker for the current Visitor, or through the API; it lapses after
-30 days.
+The single-use, opaque token sphericon issues so that what a person sends with it is tied to the
+Contact or Visitor it was issued to: a Telegram bot link (`t.me/<bot>?start=<token>`) binds the
+chat; a prefilled `START <token>` text on SMS or WhatsApp, from an On-site form, confirms the number
+and gives it to that Contact or Visitor. Issued by a merge tag in a message, by the tracker for the
+current Visitor, or through the API; it lapses after 30 days.
 _Avoid_: Deep link (that is the URL that carries it), invite code
 
 **Undelivered**:
@@ -1270,7 +1270,9 @@ names the person (or at the last step of a form that names no one). Unlike Ident
 anyone, so it binds only an anonymous Visitor to the Contact it names, never moves a Visitor that
 belongs to another Contact, and only fills a known Contact's empty attributes. It acts on nothing
 else: Tags, enrollments and calls are a Rule's, reacting to its Event. There is no submission record
-besides that Event.
+besides that Event. It records no consent for a phone typed into it (that comes from a message the
+person sends) and never lifts an `everything` Unsubscribe or a Suppression; returning through a
+form takes the email confirmation link.
 _Avoid_: Submission, lead, conversion (that is a figure)
 
 **Format** (of an On-site form):

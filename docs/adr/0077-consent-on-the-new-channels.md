@@ -19,8 +19,8 @@ GDPR, WhatsApp policy), and that providers report both a person's choice and a d
   notifications. On mobile push the external push service holds it (ADR 0074).
 - **How an SMS or WhatsApp Confirmation is recorded.** Through the API or an import, as `imported`,
   carrying the consent wording, its source and the brand in the `marketing.confirmed` Event, from the
-  customer's server; or from a sphericon on-site form (ADR 0084), whose way of making a browser's
-  consent trustworthy is decided with the forms. sphericon runs no SMS double opt-in of its own: a customer who needs a code uses their own
+  customer's server; or as `keyword`, from a START the person sends, which an On-site form prefills
+  with a Start token (ADR 0088). sphericon runs no SMS double opt-in of its own: a customer who needs a code uses their own
   app or a verification service and reports the result.
 - **An opt-out made in the Channel is Channel-wide.** A STOP keyword (in the languages sphericon
   supports), `/stop` and a blocked bot on Telegram, WhatsApp's marketing stop and an unsubscribe
