@@ -105,7 +105,7 @@ test('shows the hold alert when the broadcast is on hold', async () => {
   const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
 
   await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
-  await expect.element(screen.getByText(/No email provider is configured/)).toBeInTheDocument()
+  await expect.element(screen.getByText(/No email integration can send it/)).toBeInTheDocument()
 })
 
 test('shows an error alert when the broadcast fails to load', async () => {

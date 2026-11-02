@@ -4,7 +4,7 @@ import { renderWithProviders } from '../../test/renderWithProviders.tsx'
 import { BroadcastHoldAlert, BroadcastHoldBadge } from './BroadcastHold.tsx'
 
 test.each([
-  ['no_integration', /No email provider is configured/],
+  ['no_integration', /No email integration can send it/],
   ['unverified_domain', /sender domain is not verified/],
   ['workspace_suspended', /Sending is suspended for this workspace/],
   ['provider_stopped', /email provider has stopped sending from your account/],
