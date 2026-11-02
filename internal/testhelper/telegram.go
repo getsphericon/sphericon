@@ -2,13 +2,16 @@ package testhelper
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 )
@@ -59,4 +62,23 @@ func (env *TestEnv) PostTelegramUpdate(t *testing.T, bot TelegramBot, update str
 	rec := httptest.NewRecorder()
 	env.Server.ServeHTTP(rec, req)
 	return rec
+}
+
+// BindTelegram binds the Telegram user to the Contact on the bot as a person does: a start link
+// is issued for the Contact and the user sends the bot its `/start <token>`. The chat is the
+// user's private one, and the update ids are the ones the call takes from updateID.
+func (env *TestEnv) BindTelegram(t *testing.T, bot TelegramBot, contactID, userID, updateID int64) {
+	t.Helper()
+	botID := externalapi.EntityId(bot.Integration.ID)
+	res, err := env.ExternalScoped(t, "contacts:write").TelegramStartLinksIssue(t.Context(),
+		&externalapi.IssueTelegramStartLinkInput{IntegrationId: externalapi.NewOptNilEntityId(botID)},
+		externalapi.TelegramStartLinksIssueParams{ContactId: externalapi.EntityId(contactID)})
+	require.NoError(t, err)
+	link, ok := res.(*externalapi.TelegramStartLinkResource)
+	require.Truef(t, ok, "issue the start link: got %T", res)
+	u, err := url.Parse(link.URL)
+	require.NoError(t, err)
+	env.PostTelegramUpdate(t, bot, fmt.Sprintf(
+		`{"update_id":%d,"message":{"message_id":%d,"date":1767225600,"chat":{"id":%d,"type":"private"},"from":{"id":%d,"is_bot":false,"first_name":"P"},"text":%q}}`,
+		updateID, updateID, userID, userID, "/start "+u.Query().Get("start")))
 }

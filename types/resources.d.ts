@@ -1020,6 +1020,7 @@ export default interface Resources {
       "marketingConfirmed": "Confirmed opt-in",
       "pageView": "Visited a page",
       "telegramBound": "Telegram chat bound",
+      "telegramReceived": "Sent a Telegram message",
       "telegramUnbound": "Telegram chat unbound"
     },
     "eventRows": {

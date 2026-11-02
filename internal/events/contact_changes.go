@@ -98,6 +98,33 @@ func (e *BindingChange) Project() Projection {
 	}
 }
 
+// MaxReceivedText is the most of a message TelegramReceived keeps, in bytes (1 KiB).
+const MaxReceivedText = 1024
+
+// TelegramReceived is a message a Contact sent a bot from a chat Bound to it (telegram.received),
+// recorded in the transaction of the Ingest request. Text is the message cut at MaxReceivedText;
+// the Integration is the bot, a property `integrationId` next to `text` that a Trigger, a Rule or
+// a Segment may read. DedupID is the update's key, so a redelivery records nothing twice.
+type TelegramReceived struct {
+	WorkspaceID   int64  `json:"workspaceId"`
+	ContactID     int64  `json:"contactId"`
+	Email         string `json:"email,omitempty"`
+	IntegrationID int64  `json:"integrationId"`
+	Text          string `json:"text"`
+	DedupID       string `json:"dedupId,omitempty"`
+}
+
+func (*TelegramReceived) EventName() string  { return NameTelegramReceived }
+func (*TelegramReceived) EventVersion() int  { return 1 }
+func (e *TelegramReceived) Workspace() int64 { return e.WorkspaceID }
+func (e *TelegramReceived) EventID() string  { return e.DedupID }
+func (e *TelegramReceived) Project() Projection {
+	return Projection{
+		Subject: e.Email, Action: NameTelegramReceived, Email: e.Email, ContactID: e.ContactID,
+		Properties: map[string]any{"integrationId": e.IntegrationID, "text": e.Text},
+	}
+}
+
 type causeKey struct{}
 
 // CausedBy returns ctx for the work of a Rule's Action: an event published in it carries cause
