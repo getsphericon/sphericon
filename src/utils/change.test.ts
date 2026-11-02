@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 
-import { changeFrom, formatChange } from './change.ts'
+import { changeFrom, formatChange, formatPointChange } from './change.ts'
 
 test('a change is a share of the previous period', () => {
   const grew = changeFrom(6, 4)
@@ -38,4 +38,18 @@ test('a change is shown with its sign, and no change without one', () => {
   expect(down).toBe('-20%')
   expect(flat).toBe('0%')
   expect(fromNone).toBeNull()
+})
+
+test('a rate changes by the points between the two rates, not by a share of the earlier one', () => {
+  const up = formatPointChange(0.3, 0.2)
+  const down = formatPointChange(0.25, 0.5)
+  const fromNone = formatPointChange(0.05, 0)
+  const flat = formatPointChange(0.4, 0.4)
+  const fraction = formatPointChange(0.256, 0.25)
+
+  expect(up).toBe('+10')
+  expect(down).toBe('-25')
+  expect(fromNone).toBe('+5')
+  expect(flat).toBe('0')
+  expect(fraction).toBe('+0.6')
 })

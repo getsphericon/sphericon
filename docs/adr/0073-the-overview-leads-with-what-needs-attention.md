@@ -61,8 +61,10 @@ account without a shop.
   reports return `current` and `previous`, the shape of the Automation report's results: the
   previous period is as many Report days just before the range (`reportday.Window.Previous`), read
   by the same queries in the same request. A snapshot (the subscribed, the Automations) stays at the
-  root and has no previous period. A card shows the previous figure with the signed change, and no
-  change when the previous period had none (a count of 0, or a rate of no messages).
+  root and has no previous period. A card shows the previous figure with the signed change: a count
+  or an amount as a share of the previous one (+100%), a rate in percentage points (20% to 30% is
+  +10 pp), as a share of a rate reads as points. No change is shown when the previous period had
+  nothing to compare with: a count of 0, or a rate of no messages or no revenue.
 
 ## Not decided here
 

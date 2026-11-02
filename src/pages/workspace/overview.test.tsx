@@ -494,8 +494,8 @@ test('each period figure shows the previous period and the change since', async 
   await expect.element(screen.getByText('Previous 30 days: 2 (+50%)')).toBeInTheDocument()
   await expect.element(screen.getByText('Previous 30 days: 2 (-50%)')).toBeInTheDocument()
   await expect.element(screen.getByText('Previous 30 days: 4 (+50%)')).toBeInTheDocument()
-  await expect.element(screen.getByText('Previous 30 days: 25% (+100%)')).toBeInTheDocument()
-  await expect.element(screen.getByText('Previous 30 days: 10% (+100%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 25% (+25 pp)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 10% (+10 pp)')).toBeInTheDocument()
   // Eight cards, seven of them period figures: the snapshot of the subscribed has no previous period.
   expect(screen.getByText(/^Previous 30 days/).elements()).toHaveLength(7)
 })
@@ -522,6 +522,31 @@ test('a figure the previous period had nothing of shows no change', async () => 
   await expect.element(screen.getByText(/Previous 30 days: .*\(/)).not.toBeInTheDocument()
 })
 
+test('a rate that was zero over sent messages still changes by its points', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: {
+        ...overview,
+        contacts: { total: 120, active: 110, unsubscribed: 10 },
+        current: {
+          ...period,
+          sending: { ...noSends, broadcast: 10 },
+          email: { ...period.email, sentCount: 10, openRate: 0.5 },
+        },
+        previous: {
+          ...overview.previous,
+          sending: { ...noSends, broadcast: 8 },
+          email: { ...period.email, sentCount: 8 },
+        },
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Previous 30 days: 0% (+50 pp)')).toBeInTheDocument()
+})
+
 test('revenue compares the total, the credited share and the orders with the previous period', async () => {
   worker.use(
     handleSiteAnalyticsRevenue({
@@ -535,7 +560,7 @@ test('revenue compares the total, the credited share and the orders with the pre
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
 
   await expect.element(screen.getByText('Previous 30 days: $617.28 (+100%)')).toBeInTheDocument()
-  await expect.element(screen.getByText('Previous 30 days: 50% (-50%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 50% (-25 pp)')).toBeInTheDocument()
   await expect.element(screen.getByText('Previous 30 days: 0', { exact: true })).toBeInTheDocument()
 })
 

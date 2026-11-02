@@ -11,7 +11,7 @@ import { siteAnalyticsOverviewOptions } from '../../generated/site/@tanstack/rea
 import type { SiteAnalyticsRange, SiteAnalyticsSending } from '../../generated/site/types.gen.ts'
 import { Route as emailMetricsRoute } from '../../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { Route as subscribedPeopleRoute } from '../../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
-import { formatChange } from '../../utils/change.ts'
+import { formatChange, formatPointChange } from '../../utils/change.ts'
 
 interface FiguresProps {
   workspaceId: string
@@ -41,11 +41,21 @@ function Figures({ workspaceId, range, periodControl }: FiguresProps) {
   }
 
   const label = t(($) => $.overview.previous[range])
-  // compared is the line under a figure: its value in the previous period and the change since.
+  // compared is the line under a count: its value in the previous period and the change since.
   const compared = (now: number, before: number) => ({
     label,
     value: before,
     change: formatChange(now, before),
+  })
+  // comparedRate is the line under an engagement rate: its change is in percentage points, and
+  // there is none when the previous period sent no Broadcast message to have a rate of.
+  const comparedRate = (now: number, before: number) => ({
+    label,
+    value: before,
+    change:
+      previous.email.sentCount === 0
+        ? null
+        : t(($) => $.overview.pointChange, { change: formatPointChange(now, before) }),
   })
 
   return (
@@ -118,13 +128,13 @@ function Figures({ workspaceId, range, periodControl }: FiguresProps) {
                 label={t(($) => $.overview.audience.openRate)}
                 value={current.email.openRate}
                 percent
-                comparison={compared(current.email.openRate, previous.email.openRate)}
+                comparison={comparedRate(current.email.openRate, previous.email.openRate)}
               />
               <StatCard
                 label={t(($) => $.overview.audience.clickRate)}
                 value={current.email.clickRate}
                 percent
-                comparison={compared(current.email.clickRate, previous.email.clickRate)}
+                comparison={comparedRate(current.email.clickRate, previous.email.clickRate)}
               />
             </SimpleGrid>
           </Stack>

@@ -12,7 +12,7 @@ import type {
   SiteAnalyticsRevenuePeriod,
 } from '../../generated/site/types.gen.ts'
 import { Route as settingsRoute } from '../../routes/workspaces/$workspaceId/settings/index.tsx'
-import { formatChange } from '../../utils/change.ts'
+import { formatChange, formatPointChange } from '../../utils/change.ts'
 import { formatMoney } from '../../utils/money.ts'
 import { formatPercent } from '../../utils/percent.ts'
 
@@ -42,8 +42,11 @@ function RevenueCard({ workspaceId, range }: { workspaceId: string; range: SiteA
   const label = t(($) => $.overview.previous[range])
   const share = creditedShare(current)
   const shareBefore = creditedShare(previous)
+  // The credited share is a rate: it changes by percentage points.
   const shareChange =
-    share === null || shareBefore === null ? null : formatChange(share, shareBefore)
+    share === null || shareBefore === null
+      ? null
+      : t(($) => $.overview.pointChange, { change: formatPointChange(share, shareBefore) })
 
   return (
     <Card withBorder padding="lg">
