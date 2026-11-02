@@ -28,6 +28,7 @@ const (
 	ScopeWebhooksRegenerate    Scope = "webhooks:regenerate"
 	ScopeWebhooksTest          Scope = "webhooks:test"
 	ScopeCustomFieldsRead      Scope = "custom_fields:read"
+	ScopeCustomFieldsWrite     Scope = "custom_fields:write"
 	ScopeSendingDomainsRead    Scope = "sending_domains:read"
 	ScopeTrackingDomainsRead   Scope = "tracking_domains:read"
 	ScopeIntegrationsRead      Scope = "integrations:read"
@@ -69,6 +70,7 @@ var Scopes = []Scope{
 	ScopeWebhooksRegenerate,
 	ScopeWebhooksTest,
 	ScopeCustomFieldsRead,
+	ScopeCustomFieldsWrite,
 	ScopeSendingDomainsRead,
 	ScopeTrackingDomainsRead,
 	ScopeIntegrationsRead,

@@ -82,6 +82,7 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteContactsLookupOperation:                        {workspace: true, permissions: []accounts.Permission{accounts.PermContactsErase}},
 	siteapi.SiteContactsUpdateOperation:                        {workspace: true},
 	siteapi.SiteCustomFieldsListOperation:                      {workspace: true},
+	siteapi.SiteCustomFieldsUpdateOperation:                    {workspace: true, permissions: []accounts.Permission{accounts.PermCustomFieldsManage}},
 	siteapi.SiteDomainJoinGetOperation:                         {workspace: true, permissions: []accounts.Permission{accounts.PermJoinDomainsManage}},
 	siteapi.SiteDomainJoinSetOperation:                         {workspace: true, permissions: []accounts.Permission{accounts.PermJoinDomainsManage}},
 	siteapi.SiteEnrollmentsGetOperation:                        {workspace: true},

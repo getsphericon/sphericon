@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
@@ -433,6 +434,23 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 		return err
 	}
 	return &inuse.Error{What: inuse.SubjectRule, Users: []inuse.User{inuse.Firings(id, r.Name, firings)}}
+}
+
+// UnfitForCustomFieldType returns the Workspace's kept Rules, in id order, whose live version or
+// draft tests the Custom field key in its Condition with a leaf a field of type t does not take, so
+// it would stop compiling were the field retyped. An archived Rule acts on nothing, so it does not
+// count.
+func UnfitForCustomFieldType(ctx context.Context, s *ent.Scoped, key string, t customfield.Type) ([]*ent.Rule, error) {
+	kept, err := withVersions(s.Rule().Query()).Order(ent.Asc(rule.FieldID)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return lo.Filter(kept, func(r *ent.Rule, _ int) bool {
+		return lo.SomeBy(versions(r), func(v *ent.RuleVersion) bool {
+			g, err := condition.Parse(lo.FromPtr(v.Condition))
+			return err == nil && !g.FitsCustomFieldType(key, t)
+		})
+	}), nil
 }
 
 // UsingTag returns the Workspace's kept Rules, in id order, whose live version or draft names the

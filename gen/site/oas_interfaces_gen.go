@@ -273,6 +273,10 @@ type SiteCustomFieldsListRes interface {
 	siteCustomFieldsListRes()
 }
 
+type SiteCustomFieldsUpdateRes interface {
+	siteCustomFieldsUpdateRes()
+}
+
 type SiteDomainJoinGetRes interface {
 	siteDomainJoinGetRes()
 }

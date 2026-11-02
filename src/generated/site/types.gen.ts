@@ -29,6 +29,7 @@ export const ApiTokenScope = {
   WEBHOOKS_REGENERATE: 'webhooks:regenerate',
   WEBHOOKS_TEST: 'webhooks:test',
   CUSTOM_FIELDS_READ: 'custom_fields:read',
+  CUSTOM_FIELDS_WRITE: 'custom_fields:write',
   SENDING_DOMAINS_READ: 'sending_domains:read',
   TRACKING_DOMAINS_READ: 'tracking_domains:read',
   INTEGRATIONS_READ: 'integrations:read',
@@ -679,7 +680,11 @@ export type CreateContactInput = {
    */
   avatar?: ImageUrl | null;
   /**
-   * Typed custom field values keyed by the field's machine key
+   * Typed custom field values keyed by the field's machine key. A new key's first value sets the
+   * field's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,
+   * `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.
+   * Send a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes
+   * as UTC and lands on the previous day east of UTC
    */
   customFields?: JsonObject | null;
 };
@@ -816,6 +821,7 @@ export const GrantableScope = {
   WEBHOOKS_REGENERATE: 'webhooks:regenerate',
   WEBHOOKS_TEST: 'webhooks:test',
   CUSTOM_FIELDS_READ: 'custom_fields:read',
+  CUSTOM_FIELDS_WRITE: 'custom_fields:write',
   SENDING_DOMAINS_READ: 'sending_domains:read',
   TRACKING_DOMAINS_READ: 'tracking_domains:read',
   INTEGRATIONS_READ: 'integrations:read'
@@ -1024,6 +1030,7 @@ export const Permission = {
   SENDING_DOMAINS_MANAGE: 'sending_domains:manage',
   CONTACTS_ERASE: 'contacts:erase',
   CONTACTS_EXPORT: 'contacts:export',
+  CUSTOM_FIELDS_MANAGE: 'custom_fields:manage',
   SUPPRESSIONS_MANAGE: 'suppressions:manage',
   SECOND_FACTOR_MANAGE: 'second_factor:manage',
   WORKSPACE_UPDATE: 'workspace:update',
@@ -1075,6 +1082,7 @@ export const PersonalScope = {
   WEBHOOKS_REGENERATE: 'webhooks:regenerate',
   WEBHOOKS_TEST: 'webhooks:test',
   CUSTOM_FIELDS_READ: 'custom_fields:read',
+  CUSTOM_FIELDS_WRITE: 'custom_fields:write',
   SENDING_DOMAINS_READ: 'sending_domains:read',
   TRACKING_DOMAINS_READ: 'tracking_domains:read',
   INTEGRATIONS_READ: 'integrations:read',
@@ -3392,7 +3400,11 @@ export type SiteCreateContactInput = {
    */
   avatar?: ImageUrl | null;
   /**
-   * Typed custom field values keyed by the field's machine key
+   * Typed custom field values keyed by the field's machine key. A new key's first value sets the
+   * field's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,
+   * `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.
+   * Send a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes
+   * as UTC and lands on the previous day east of UTC
    */
   customFields?: JsonObject | null;
   /**
@@ -3527,7 +3539,7 @@ export type SiteCustomFieldResource = {
    */
   name: string;
   /**
-   * Inferred value type
+   * Value type: inferred from the first value, changed by an owner or admin
    */
   type: SiteCustomFieldType;
   /**
@@ -6253,13 +6265,31 @@ export type SiteUpdateContactInput = {
    */
   avatar?: ImageUrl | null;
   /**
-   * Typed custom field values keyed by the field's machine key
+   * Typed custom field values keyed by the field's machine key. A new key's first value sets the
+   * field's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,
+   * `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.
+   * Send a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes
+   * as UTC and lands on the previous day east of UTC
    */
   customFields?: JsonObject | null;
   /**
    * The contact's complete tag set when given: tags not listed are removed from it, an absent key keeps them
    */
   tags?: Array<string>;
+};
+
+/**
+ * Request body for updating a custom field: its key never changes
+ */
+export type SiteUpdateCustomFieldInput = {
+  /**
+   * Display name
+   */
+  name?: string;
+  /**
+   * Value type. Stored values are not rewritten: the leaves of the new type read them as they are
+   */
+  type?: SiteCustomFieldType;
 };
 
 /**
@@ -6841,7 +6871,11 @@ export type UpdateContactInput = {
    */
   avatar?: ImageUrl | null;
   /**
-   * Typed custom field values keyed by the field's machine key
+   * Typed custom field values keyed by the field's machine key. A new key's first value sets the
+   * field's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,
+   * `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.
+   * Send a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes
+   * as UTC and lands on the previous day east of UTC
    */
   customFields?: JsonObject | null;
 };
@@ -7171,6 +7205,17 @@ export type SiteContactsListFilterEmail = string;
  * Keeps the contacts that carry the Tag of this exact name
  */
 export type SiteContactsListFilterTag = string;
+
+/**
+ * Unique identifier
+ */
+export type SiteCustomFieldResourceKeyId = EntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export type SiteCustomFieldResourceKeyWorkspaceId = WorkspaceId;
 
 /**
  * The Workspace id: its short opaque public address and the route key for nested
@@ -11775,6 +11820,59 @@ export type SiteCustomFieldsListResponses = {
 };
 
 export type SiteCustomFieldsListResponse = SiteCustomFieldsListResponses[keyof SiteCustomFieldsListResponses];
+
+export type SiteCustomFieldsUpdateData = {
+  body: SiteUpdateCustomFieldInput;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/custom-fields/{id}';
+};
+
+export type SiteCustomFieldsUpdateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteCustomFieldsUpdateError = SiteCustomFieldsUpdateErrors[keyof SiteCustomFieldsUpdateErrors];
+
+export type SiteCustomFieldsUpdateResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteCustomFieldResource;
+};
+
+export type SiteCustomFieldsUpdateResponse = SiteCustomFieldsUpdateResponses[keyof SiteCustomFieldsUpdateResponses];
 
 export type SiteWorkspacesDeleteData = {
   body: SiteDeleteWorkspaceInput;

@@ -55,6 +55,7 @@ var ExternalOperationScopes = map[externalapi.OperationName][]apitokens.Scope{
 	externalapi.ContactsListOperation:              {apitokens.ScopeContactsRead},
 	externalapi.ContactsUpdateOperation:            {apitokens.ScopeContactsWrite},
 	externalapi.CustomFieldsListOperation:          {apitokens.ScopeCustomFieldsRead},
+	externalapi.CustomFieldsUpdateOperation:        {apitokens.ScopeCustomFieldsWrite},
 	externalapi.EmailLintLintOperation:             {apitokens.ScopeTemplatesRead},
 	externalapi.EmailSchemaGetOperation:            {apitokens.ScopeTemplatesRead},
 	externalapi.EmailsSendOperation:                {apitokens.ScopeEmailsSend},

@@ -736,6 +736,17 @@ func (UnimplementedHandler) SiteCustomFieldsList(ctx context.Context, params Sit
 	return r, ht.ErrNotImplemented
 }
 
+// SiteCustomFieldsUpdate implements SiteCustomFields_update operation.
+//
+// Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled
+// broadcast tests the field with an operator the new type does not take (`usedBy` names them). Owners
+// and admins only.
+//
+// PUT /workspaces/{workspaceId}/custom-fields/{id}
+func (UnimplementedHandler) SiteCustomFieldsUpdate(ctx context.Context, req *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (r SiteCustomFieldsUpdateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteDomainJoinGet implements SiteDomainJoin_get operation.
 //
 // Read the domain join switch (owner and admin only).

@@ -63,6 +63,10 @@ enum GrantableScope {
   webhooksTest: "webhooks:test",
 
   customFieldsRead: "custom_fields:read",
+
+  @grantedWith(Permission.customFieldsManage)
+  customFieldsWrite: "custom_fields:write",
+
   sendingDomainsRead: "sending_domains:read",
   trackingDomainsRead: "tracking_domains:read",
   integrationsRead: "integrations:read",

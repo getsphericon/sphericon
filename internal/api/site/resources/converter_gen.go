@@ -1474,6 +1474,8 @@ func (c *ConverterImpl) PermissionToResource(source accounts.Permission) site.Pe
 		siteapiPermission = site.PermissionContactsErase
 	case accounts.PermContactsExport:
 		siteapiPermission = site.PermissionContactsExport
+	case accounts.PermCustomFieldsManage:
+		siteapiPermission = site.PermissionCustomFieldsManage
 	case accounts.PermHoldsResolve:
 		siteapiPermission = site.PermissionHoldsResolve
 	case accounts.PermIntegrationsManage:

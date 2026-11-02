@@ -426,6 +426,16 @@ func (UnimplementedHandler) CustomFieldsList(ctx context.Context) (r CustomField
 	return r, ht.ErrNotImplemented
 }
 
+// CustomFieldsUpdate implements CustomFields_update operation.
+//
+// Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled
+// broadcast tests the field with an operator the new type does not take (`usedBy` names them).
+//
+// PUT /custom-fields/{id}
+func (UnimplementedHandler) CustomFieldsUpdate(ctx context.Context, req *UpdateCustomFieldInput, params CustomFieldsUpdateParams) (r CustomFieldsUpdateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // EmailLintLint implements EmailLint_lint operation.
 //
 // Lint a message before a person sees it: the same lint that runs when a message is saved and when a

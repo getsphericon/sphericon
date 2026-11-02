@@ -78,6 +78,7 @@ import (
 // goverter:extend objectPatch
 // goverter:extend nilObjectIn
 // goverter:extend nilObjectPatch
+// goverter:extend customFieldTypePatch
 type Inputs interface {
 	// goverter:ignore Prepared
 	TemplateCreate(source *externalapi.CreateTemplateInput) templates.CreateInput
@@ -102,6 +103,8 @@ type Inputs interface {
 	// goverter:ignore Tags
 	// goverter:map . Core
 	ContactUpdate(source *externalapi.UpdateContactInput) contacts.UpdateInput
+
+	CustomFieldUpdate(source *externalapi.UpdateCustomFieldInput) contacts.CustomFieldUpdateInput
 	// The API asserts a Contact; only the tracker sends the browser's guesses.
 	// goverter:map . Core
 	// goverter:ignore GuessedTimeZone GuessedLocale
@@ -156,7 +159,12 @@ type Inputs interface {
 // goverter:context backfill
 func backfillIn(backfill bool) bool { return backfill }
 
-func stringPatch(o externalapi.OptString) patch.Field[string]       { return convert.Patch(o) }
+func stringPatch(o externalapi.OptString) patch.Field[string] { return convert.Patch(o) }
+
+// customFieldTypePatch is a Custom field's new type as the enum's value: the module reads it as its own.
+func customFieldTypePatch(o externalapi.OptCustomFieldType) patch.Field[string] {
+	return convert.StringPatch(o)
+}
 func nilStringPatch(o externalapi.OptNilString) patch.Field[string] { return convert.Patch(o) }
 func nilEmailPatch(o externalapi.OptNilEmailAddress) patch.Field[string] {
 	return convert.StringPatch(o)

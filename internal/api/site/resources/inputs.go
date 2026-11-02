@@ -86,6 +86,7 @@ import (
 // goverter:extend nilObjectIn
 // goverter:extend nilObjectPatch
 // goverter:extend signupSourcePtrIn
+// goverter:extend customFieldTypePatch
 type Inputs interface {
 	// goverter:ignore Prepared
 	TemplateCreate(source *siteapi.CreateTemplateInput) templates.CreateInput
@@ -105,6 +106,8 @@ type Inputs interface {
 	ContactAttributes(source siteapi.SiteCreateContactInput) contacts.Attributes
 	// goverter:map . Core
 	ContactUpdate(source *siteapi.SiteUpdateContactInput) contacts.UpdateInput
+
+	CustomFieldUpdate(source *siteapi.SiteUpdateCustomFieldInput) contacts.CustomFieldUpdateInput
 
 	IntegrationCreate(source *siteapi.CreateIntegrationInput) (integrations.CreateInput, error)
 	IntegrationUpdate(source *siteapi.UpdateIntegrationInput) (integrations.UpdateInput, error)
@@ -188,7 +191,12 @@ type Inputs interface {
 	SignupSource(source siteapi.SiteSignupSource) signupsurveyresponse.HeardFrom
 }
 
-func stringPatch(o siteapi.OptString) patch.Field[string]            { return convert.Patch(o) }
+func stringPatch(o siteapi.OptString) patch.Field[string] { return convert.Patch(o) }
+
+// customFieldTypePatch is a Custom field's new type as the enum's value: the module reads it as its own.
+func customFieldTypePatch(o siteapi.OptSiteCustomFieldType) patch.Field[string] {
+	return convert.StringPatch(o)
+}
 func nilStringPatch(o siteapi.OptNilString) patch.Field[string]      { return convert.Patch(o) }
 func nilEmailPatch(o siteapi.OptNilEmailAddress) patch.Field[string] { return convert.StringPatch(o) }
 func nilTimeZonePatch(o siteapi.OptNilTimeZoneName) patch.Field[string] {

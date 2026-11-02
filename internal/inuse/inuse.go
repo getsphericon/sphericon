@@ -49,6 +49,9 @@ const (
 	SubjectSendingDomain Subject = "sending domain"
 	SubjectAutomation    Subject = "automation"
 	SubjectRule          Subject = "rule"
+	// SubjectCustomField is a Custom field whose type change was refused: what uses it is a
+	// Condition leaf the new type does not take.
+	SubjectCustomField Subject = "custom field"
 )
 
 // User is one row that uses the row a removal was refused for.
@@ -90,9 +93,10 @@ func Rules(rows []*ent.Rule) []User {
 	})
 }
 
-// Error is a removal refused because Users still use the row. Callers match it with As.
+// Error is a removal refused because Users still use the row, or a change refused because they
+// use it in a way the change would break (a Custom field's type). Callers match it with As.
 type Error struct {
-	// What is the removed row, for the message.
+	// What is the row removed or changed, for the message.
 	What  Subject
 	Users []User
 }

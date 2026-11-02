@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/reportday"
 )
 
 const (
@@ -190,6 +191,8 @@ type compiler struct {
 	s    *ent.Scoped
 	now  time.Time
 	keys map[string]customfield.Type
+	// loc is the Workspace time zone, loaded by the first date leaf that needs it.
+	loc *time.Location
 	// trigger is the properties of the Event a Rule's "trigger:" leaves read; nil in a Segment,
 	// where such a leaf is refused.
 	trigger *map[string]any
@@ -373,7 +376,13 @@ func (c *compiler) date(ctx context.Context, l DateLeaf) (predicate.Contact, err
 	if err != nil {
 		return nil, err
 	}
-	return jsonPath(key, asMoment, filter, map[string]any{"at": l.At.UTC().Format(momentLayout)})
+	loc, err := c.location(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return jsonPath(key, asMoment, filter, map[string]any{
+		"at": l.At.UTC().Format(momentLayout), "atLocal": l.At.In(loc).Format(localLayout),
+	})
 }
 
 // dateWithin tests that a datetime Custom field's moment is within the last WithinDays days up to
@@ -394,9 +403,32 @@ func (c *compiler) dateWithin(ctx context.Context, l DateWithinLeaf) (predicate.
 	if err != nil {
 		return nil, err
 	}
+	loc, err := c.location(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return jsonPath(key, asMoment, window, map[string]any{
 		"since": since.UTC().Format(momentLayout), "now": c.now.UTC().Format(momentLayout),
+		"sinceLocal": since.In(loc).Format(localLayout), "nowLocal": c.now.In(loc).Format(localLayout),
 	})
+}
+
+// location is the Workspace time zone, in which a datetime Custom field's value without an offset
+// is read (ADR 0087); it is loaded the first time a date leaf needs it.
+func (c *compiler) location(ctx context.Context) (*time.Location, error) {
+	if c.loc != nil {
+		return c.loc, nil
+	}
+	ws, err := c.s.Workspace(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%w: load workspace: %w", ErrStorage, err)
+	}
+	loc, err := reportday.Location(ws.Timezone)
+	if err != nil {
+		return nil, fmt.Errorf("workspace time zone: %w", err)
+	}
+	c.loc = loc
+	return loc, nil
 }
 
 // datetimeField is the key of the datetime Custom field a date leaf tests. An Event's property has
@@ -686,6 +718,49 @@ func (g Group) Size() int {
 		n++
 	}
 	return n
+}
+
+// FitsCustomFieldType reports whether every leaf of the group, at any depth, that tests the Custom
+// field key would still compile were the field of type t: a rule leaf whose operator t takes (the
+// one table, customFieldOperators), a number leaf only on a number field, a date leaf only on a
+// datetime one. A malformed entry tests nothing.
+func (g Group) FitsCustomFieldType(key string, t customfield.Type) bool {
+	field := customFieldPrefix + key
+	for _, raw := range g.Rules {
+		var probe struct {
+			Kind  string `json:"kind"`
+			Field string `json:"field"`
+		}
+		if json.Unmarshal(raw, &probe) != nil {
+			continue
+		}
+		if probe.Kind == kindGroup {
+			var sub Group
+			if json.Unmarshal(raw, &sub) == nil && !sub.FitsCustomFieldType(key, t) {
+				return false
+			}
+			continue
+		}
+		if probe.Field == field && !leafFits(probe.Kind, raw, t) {
+			return false
+		}
+	}
+	return true
+}
+
+// leafFits reports whether the leaf raw of kind, on a Custom field, compiles on a field of type t.
+func leafFits(kind string, raw json.RawMessage, t customfield.Type) bool {
+	switch kind {
+	case kindNumber:
+		return t == customfield.TypeNumber
+	case kindDate, kindDateWithin:
+		return t == customfield.TypeDatetime
+	case kindRule:
+		var r Leaf
+		return json.Unmarshal(raw, &r) != nil || slices.Contains(customFieldOperators[t], operator(r.Operator))
+	default:
+		return true
+	}
 }
 
 // NamesTag reports whether any rule of the group, at any depth, targets the Tag called name.

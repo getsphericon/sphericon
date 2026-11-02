@@ -110,25 +110,48 @@ func number(have any) (float64, bool) {
 	}
 }
 
-// isMoment is the jsonpath test that a datetime Custom field's value @ is a moment: a date-time
-// with an offset. && stops at it, so a value without an offset (a bare date, a date-time without
-// one) is false, never compared with a moment, which Postgres would do in its own time zone or
-// refuse.
-const isMoment = `@.datetime().type() == "timestamp with time zone" && `
+// A datetime Custom field's value @ is a moment in one of two kinds, and each is compared only with
+// a bound of its own kind: jsonpath refuses to compare a date or a date-time without an offset with
+// one that has an offset (outside the _tz functions, which would read the session's zone), and
+// silent mode does not hide that error. && stops at the kind test, so the comparison never meets
+// the other kind; a value of neither kind (a time alone, text that is no date) matches no side.
+const (
+	// isZoned is a date-time with an offset, compared with a bound written as a moment.
+	isZoned = `@.datetime().type() == "timestamp with time zone"`
+	// isLocal is a date-time without an offset or a bare date (the start of that day): read in the
+	// Workspace time zone (ADR 0087), so it is compared with the bound written as the wall-clock time
+	// there. In the hour a daylight-saving change repeats, a value names the first of the two.
+	isLocal = `(@.datetime().type() == "timestamp without time zone" || @.datetime().type() == "date")`
+)
 
-// momentLayout writes a bound of a date leaf as jsonpath's datetime() reads it: RFC 3339 with the
-// offset written out, never "Z".
+// momentLayout writes a bound of a date leaf as jsonpath's datetime() reads a moment: RFC 3339
+// with the offset written out, never "Z".
 const momentLayout = "2006-01-02T15:04:05.999999-07:00"
 
-// sides is each operator of a date leaf as its jsonpath filter of a datetime Custom field against
-// the moment $at: before is strictly earlier, after is at or later, so the two split time at $at.
-var sides = map[operator]string{
-	opBefore: isMoment + "@.datetime() < $at.datetime()",
-	opAfter:  isMoment + "@.datetime() >= $at.datetime()",
+// localLayout writes a bound of a date leaf as the wall-clock time in the Workspace time zone,
+// without an offset, which jsonpath's datetime() reads as a timestamp without a time zone.
+const localLayout = "2006-01-02T15:04:05.999999"
+
+// eitherKind is the jsonpath filter that holds when @ is a moment with an offset and zoned holds,
+// or a moment without one and local holds: the same test, against the bounds of each kind.
+func eitherKind(zoned, local string) string {
+	return "(" + isZoned + " && " + zoned + ") || (" + isLocal + " && " + local + ")"
 }
 
-// window is the jsonpath filter of a date-within leaf: a moment from $since up to $now.
-const window = isMoment + "@.datetime() >= $since.datetime() && @.datetime() <= $now.datetime()"
+// sides is each operator of a date leaf as its jsonpath filter of a datetime Custom field against
+// the bound $at ($atLocal for a value without an offset): before is strictly earlier, after is at
+// or later, so the two split time at the bound.
+var sides = map[operator]string{
+	opBefore: eitherKind("@.datetime() < $at.datetime()", "@.datetime() < $atLocal.datetime()"),
+	opAfter:  eitherKind("@.datetime() >= $at.datetime()", "@.datetime() >= $atLocal.datetime()"),
+}
+
+// window is the jsonpath filter of a date-within leaf: a moment from $since up to $now, each bound
+// written in both kinds.
+var window = eitherKind(
+	"@.datetime() >= $since.datetime() && @.datetime() <= $now.datetime()",
+	"@.datetime() >= $sinceLocal.datetime() && @.datetime() <= $nowLocal.datetime()",
+)
 
 // customFieldOperators is what a rule leaf may test on a Custom field, by the field's type: the one
 // table of what fits, which the API lists as each Custom field's ruleOperators. contains is the

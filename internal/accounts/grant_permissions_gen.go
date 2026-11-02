@@ -7,6 +7,7 @@ package accounts
 // any member's to grant.
 var GrantPermissions = map[string]Permission{
 	"contacts:export":        PermContactsExport,
+	"custom_fields:write":    PermCustomFieldsManage,
 	"integrations:write":     PermIntegrationsManage,
 	"sending_domains:write":  PermSendingDomainsManage,
 	"suppressions:write":     PermSuppressionsManage,

@@ -27,6 +27,7 @@ export const zApiTokenScope = z.enum([
   'webhooks:regenerate',
   'webhooks:test',
   'custom_fields:read',
+  'custom_fields:write',
   'sending_domains:read',
   'tracking_domains:read',
   'integrations:read',
@@ -258,6 +259,7 @@ export const zGrantableScope = z.enum([
   'webhooks:regenerate',
   'webhooks:test',
   'custom_fields:read',
+  'custom_fields:write',
   'sending_domains:read',
   'tracking_domains:read',
   'integrations:read'
@@ -365,6 +367,7 @@ export const zPermission = z.enum([
   'sending_domains:manage',
   'contacts:erase',
   'contacts:export',
+  'custom_fields:manage',
   'suppressions:manage',
   'second_factor:manage',
   'workspace:update',
@@ -408,6 +411,7 @@ export const zPersonalScope = z.enum([
   'webhooks:regenerate',
   'webhooks:test',
   'custom_fields:read',
+  'custom_fields:write',
   'sending_domains:read',
   'tracking_domains:read',
   'integrations:read',
@@ -2207,6 +2211,14 @@ export const zSiteUpdateAutomationInput = z.object({
 });
 
 /**
+ * Request body for updating a custom field: its key never changes
+ */
+export const zSiteUpdateCustomFieldInput = z.object({
+  name: z.exactOptional(z.string().min(1)),
+  type: z.exactOptional(zSiteCustomFieldType)
+});
+
+/**
  * Change a member's role. Only an owner may grant/transfer the owner role.
  */
 export const zSiteUpdateMembershipInput = z.object({
@@ -3798,6 +3810,17 @@ export const zSiteContactsListFilterEmail = z.string();
 export const zSiteContactsListFilterTag = z.string();
 
 /**
+ * Unique identifier
+ */
+export const zSiteCustomFieldResourceKeyId = zEntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSiteCustomFieldResourceKeyWorkspaceId = zWorkspaceId;
+
+/**
  * The Workspace id: its short opaque public address and the route key for nested
  * workspace resources (ADR 0043)
  */
@@ -5123,6 +5146,18 @@ export const zSiteCustomFieldsListResponse = z.object({
   totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
+
+export const zSiteCustomFieldsUpdateBody = zSiteUpdateCustomFieldInput;
+
+export const zSiteCustomFieldsUpdatePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteCustomFieldsUpdateResponse = zSiteCustomFieldResource;
 
 export const zSiteWorkspacesDeleteBody = zSiteDeleteWorkspaceInput;
 

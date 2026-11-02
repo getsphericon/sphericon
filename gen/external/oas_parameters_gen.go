@@ -3724,6 +3724,78 @@ func decodeContactsUpdateParams(args [1]string, argsEscaped bool, r *http.Reques
 	return params, nil
 }
 
+// CustomFieldsUpdateParams is parameters of CustomFields_update operation.
+type CustomFieldsUpdateParams struct {
+	ID EntityId
+}
+
+func unpackCustomFieldsUpdateParams(packed middleware.Parameters) (params CustomFieldsUpdateParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeCustomFieldsUpdateParams(args [1]string, argsEscaped bool, r *http.Request) (params CustomFieldsUpdateParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // EmailsSendParams is parameters of Emails_send operation.
 type EmailsSendParams struct {
 	// Client-supplied key that makes a retried send idempotent (Stripe-style).

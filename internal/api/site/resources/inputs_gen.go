@@ -280,6 +280,14 @@ func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts
 	}
 	return contactsUpdateInput
 }
+func (c *InputsImpl) CustomFieldUpdate(source *site.SiteUpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
+	var contactsCustomFieldUpdateInput contacts.CustomFieldUpdateInput
+	if source != nil {
+		contactsCustomFieldUpdateInput.Name = stringPatch((*source).Name)
+		contactsCustomFieldUpdateInput.Type = customFieldTypePatch((*source).Type)
+	}
+	return contactsCustomFieldUpdateInput
+}
 func (c *InputsImpl) IntegrationCreate(source *site.CreateIntegrationInput) (integrations.CreateInput, error) {
 	var integrationsCreateInput integrations.CreateInput
 	if source != nil {
@@ -658,6 +666,8 @@ func (c *InputsImpl) siteapiPersonalScopeToSiteapiPersonalScope(source site.Pers
 		siteapiPersonalScope = site.PersonalScopeContactsWrite
 	case site.PersonalScopeCustomFieldsRead:
 		siteapiPersonalScope = site.PersonalScopeCustomFieldsRead
+	case site.PersonalScopeCustomFieldsWrite:
+		siteapiPersonalScope = site.PersonalScopeCustomFieldsWrite
 	case site.PersonalScopeEmailsSend:
 		siteapiPersonalScope = site.PersonalScopeEmailsSend
 	case site.PersonalScopeEnrollmentsRead:

@@ -77,17 +77,18 @@ func TestDateLeafTestsADatetimeCustomField(t *testing.T) {
 	env := testhelper.Setup(t)
 	const ten, nine, minus, list = fixtures.WonkaTenEmail, fixtures.WonkaNineAndAHalfEmail, fixtures.WonkaMinusEmail, fixtures.WonkaListEmail
 	const zulu, offset = fixtures.WonkaZuluEmail, fixtures.WonkaOffsetEmail
+	const flag, null = fixtures.WonkaFlagEmail, fixtures.WonkaNullEmail // a bare date, a date-time without an offset
 	fiveDaysAgo := time.Now().AddDate(0, 0, -5)
 
 	for name, tc := range map[string]struct {
 		leaf any
 		want []string
 	}{
-		"before":                     {dateAt(seenAt, siteapi.SiteConditionDateOperatorBefore, fiveDaysAgo), []string{minus, nine, offset, zulu}},
+		"before":                     {dateAt(seenAt, siteapi.SiteConditionDateOperatorBefore, fiveDaysAgo), []string{flag, minus, nine, null, offset, zulu}},
 		"after, a moment to come":    {dateAt(seenAt, siteapi.SiteConditionDateOperatorAfter, fiveDaysAgo), []string{list, ten}},
 		"within a week":              {dateWithin(seenAt, 7), []string{ten}},
 		"within a month":             {dateWithin(seenAt, 30), []string{nine, ten}},
-		"a window past every moment": {dateWithin(seenAt, math.MaxInt32), []string{minus, nine, offset, ten, zulu}},
+		"a window past every moment": {dateWithin(seenAt, math.MaxInt32), []string{flag, minus, nine, null, offset, ten, zulu}},
 	} {
 		got := emailsIn(t, env, fixtures.WonkaID, opsGroup(tc.leaf))
 		assert.Equal(t, tc.want, got, name)
@@ -113,6 +114,24 @@ func TestDateLeafReadsAZuluAndAnOffsetMoment(t *testing.T) {
 	assert.Contains(t, after, fixtures.WonkaZuluEmail)
 	assert.NotContains(t, after, fixtures.WonkaOffsetEmail)
 	assert.Equal(t, []string{fixtures.WonkaOffsetEmail, fixtures.WonkaZuluEmail}, inWindow)
+}
+
+// A value without an offset is a moment in the Workspace time zone (ADR 0087): Flag's bare date
+// 2026-01-01 is the start of that day there, so against 23:00 UTC of the evening before it is after
+// that bound in UTC and before it in Tokyo, where the day began at 15:00 UTC of the 31st.
+func TestDateLeafReadsAValueWithoutAnOffsetInTheWorkspaceTimeZone(t *testing.T) {
+	env := testhelper.Setup(t)
+	eve := time.Date(2025, time.December, 31, 23, 0, 0, 0, time.UTC)
+	beforeEve := opsGroup(dateAt(seenAt, siteapi.SiteConditionDateOperatorBefore, eve))
+	utc := emailsIn(t, env, fixtures.WonkaID, beforeEve)
+	err := env.DB.Workspace.UpdateOneID(fixtures.WonkaID).SetTimezone("Asia/Tokyo").Exec(context.Background())
+	require.NoError(t, err)
+
+	tokyo := emailsIn(t, env, fixtures.WonkaID, beforeEve)
+
+	assert.NotContains(t, utc, fixtures.WonkaFlagEmail)
+	assert.Contains(t, tokyo, fixtures.WonkaFlagEmail)
+	assert.NotContains(t, tokyo, fixtures.WonkaTextEmail, "text is no moment")
 }
 
 // The moment of before and after keeps its offset: the same instant written in another zone

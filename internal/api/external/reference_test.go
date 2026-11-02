@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
+
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -58,6 +60,31 @@ func TestExternalReferenceDataIsWorkspaceScoped(t *testing.T) {
 	for _, r := range rates.(*externalapi.SendingDomainRatesListOK).Items {
 		assert.NotEqual(t, fixtures.SendingDomainGlobexDomain, r.Domain)
 	}
+}
+
+// An /api token with custom_fields:write renames a Custom field; without the scope it is refused.
+func TestExternalCustomFieldsUpdateNeedsTheWriteScope(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	list, err := env.ExternalScoped(t, "custom_fields:read").CustomFieldsList(ctx)
+	require.NoError(t, err)
+	ok, isOK := list.(*externalapi.CustomFieldsListOK)
+	require.Truef(t, isOK, "got %T", list)
+	plan, found := lo.Find(ok.Items, func(f externalapi.CustomFieldResource) bool { return f.Key == "plan" })
+	require.True(t, found)
+	rename := &externalapi.UpdateCustomFieldInput{Name: externalapi.NewOptString("Subscription plan")}
+	params := externalapi.CustomFieldsUpdateParams{ID: plan.ID}
+
+	denied, err := env.ExternalScoped(t, "custom_fields:read").CustomFieldsUpdate(ctx, rename, params)
+	require.NoError(t, err)
+	allowed, err := env.ExternalScoped(t, "custom_fields:write").CustomFieldsUpdate(ctx, rename, params)
+	require.NoError(t, err)
+
+	assert.IsType(t, &externalapi.CustomFieldsUpdateForbidden{}, denied)
+	renamed, isField := allowed.(*externalapi.CustomFieldResource)
+	require.Truef(t, isField, "got %T", allowed)
+	assert.Equal(t, "Subscription plan", renamed.Name)
+	assert.Equal(t, "plan", renamed.Key)
 }
 
 func TestExternalSendingDomainsList(t *testing.T) {

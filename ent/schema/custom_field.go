@@ -39,8 +39,9 @@ func (CustomField) Fields() []ent.Field {
 			NotEmpty(),
 		field.String(nameField).
 			NotEmpty(),
-		// Inferred on first sight; later values of a conflicting type widen to string
-		// (coercion is handled at ingest, not constrained here).
+		// Inferred on first sight, changed by a person afterwards. A later value of another
+		// shape is stored as it came and never retypes the field; no change of type rewrites
+		// a stored value.
 		field.Enum("type").
 			Values("string", "number", "bool", "datetime").
 			Default("string"),

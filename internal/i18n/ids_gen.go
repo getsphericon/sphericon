@@ -120,6 +120,7 @@ var (
 	ErrorsCurrentPasswordIncorrect              = ID{key: "errors.current_password_incorrect"}
 	ErrorsCurrentPasswordRequired               = ID{key: "errors.current_password_required"}
 	ErrorsCustomFieldKeyReserved                = ID{key: "errors.custom_field_key_reserved"}
+	ErrorsCustomFieldNotFound                   = ID{key: "errors.custom_field_not_found"}
 	ErrorsDeleteUserEmailMismatch               = ID{key: "errors.delete_user_email_mismatch"}
 	ErrorsDeleteUserOnlyOwner                   = ID{key: "errors.delete_user_only_owner"}
 	ErrorsDeleteUserProofStale                  = ID{key: "errors.delete_user_proof_stale"}
@@ -196,6 +197,7 @@ var (
 	ErrorsPermissionBrandKitManage              = ID{key: "errors.permission.brand_kit_manage"}
 	ErrorsPermissionContactsErase               = ID{key: "errors.permission.contacts_erase"}
 	ErrorsPermissionContactsExport              = ID{key: "errors.permission.contacts_export"}
+	ErrorsPermissionCustomFieldsManage          = ID{key: "errors.permission.custom_fields_manage"}
 	ErrorsPermissionHoldsResolve                = ID{key: "errors.permission.holds_resolve"}
 	ErrorsPermissionIntegrationsManage          = ID{key: "errors.permission.integrations_manage"}
 	ErrorsPermissionJoinDomainsManage           = ID{key: "errors.permission.join_domains_manage"}
