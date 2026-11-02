@@ -464,6 +464,22 @@ func TestOnlyAnActiveAutomationThatSendsEmailInAWorkspaceThatSendsIsAnItem(t *te
 	assert.True(t, payment, "an active one with an email step is still an item")
 }
 
+// Fixtures: the Welcome series has a live version and a draft, both with email steps; this test
+// leaves the email steps to the draft alone, with the default stopped.
+func TestAnEmailStepOnlyInTheDraftMakesNoItem(t *testing.T) {
+	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
+		SetProviderEnforcement(integration.ProviderEnforcementShutdown).Exec(t.Context()))
+	require.NoError(t, acme.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesVersionID).
+		SetSteps(`[{"type":"apply_tag","tag":"welcomed"}]`).Exec(t.Context()))
+
+	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
+
+	_, welcome := cannotSendOf(items, fixtures.AutomationWelcomeSeriesID)
+	assert.False(t, welcome, "a draft sends nothing until it is published")
+}
+
 // The default is stopped too, so the suspension is what leaves the item out.
 func TestASuspendedWorkspaceShowsNoAutomationThatCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
