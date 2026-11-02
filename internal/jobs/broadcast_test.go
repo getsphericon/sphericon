@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
@@ -267,6 +268,34 @@ func TestSendBroadcastToContactsWithoutTelegram(t *testing.T) {
 	assert.Contains(t, got, *noah.Email, "a Contact with no chat is in the audience")
 	assert.NotContains(t, got, *liam.Email, "a Contact bound in person is left out")
 	assert.NotContains(t, got, *emma.Email, "a Contact bound through its Visitor is left out")
+}
+
+// The start-link email of the spec: a Broadcast with {{ telegram_start_url }} to the "does not have
+// Telegram" Segment issues tokens for exactly the Contacts it emails, none for Liam and Emma.
+func TestABroadcastWithTheStartTagIssuesTokensOnlyForContactsWithoutTelegram(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	bot := env.ConnectTelegram(t, 7800, "acme_audience_bot")
+	env.MakeDefaultTelegram(t, bot)
+	env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).
+		SetCondition(`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"doesNotHave"}]}`).
+		ExecX(ctx)
+	env.DB.Broadcast.UpdateOneID(fixtures.BroadcastProSegmentID).
+		SetBody(`<p><a href="{{ telegram_start_url }}">Join us on Telegram</a></p>`).ClearDoc().ClearEditorVersion().
+		ExecX(ctx)
+	before := env.DB.StartToken.Query().CountX(ctx)
+
+	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), fixtures.BroadcastProSegmentID))
+
+	sent := env.CustomerMail.Messages()
+	require.NotEmpty(t, sent)
+	assert.Equal(t, before+len(sent), env.DB.StartToken.Query().CountX(ctx), "one token per email sent")
+	issuedTo := env.DB.StartToken.Query().Where(starttoken.IntegrationID(int64(bot.Integration.ID))).AllX(ctx)
+	require.Len(t, issuedTo, len(sent))
+	for _, tok := range issuedTo {
+		require.NotNil(t, tok.ContactID)
+		assert.NotContains(t, []int64{fixtures.ContactLiamID, 101}, *tok.ContactID, "no start link for a Contact that has Telegram")
+	}
 }
 
 // A send failure marks the recipient rows failed, finalizes the broadcast with
