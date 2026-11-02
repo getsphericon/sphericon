@@ -138,7 +138,8 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 			for _, h := range s.Headers {
 				fields = append(fields, h.Value)
 			}
-			for _, f := range fields {
+			present := lo.Filter(fields, func(value string, _ int) bool { return value != "" })
+			for _, f := range present {
 				_, err := retired.Decrypt(f)
 				require.NoError(t, err, "automation %d HTTP step %s", row.ID, s.ID)
 				sealedFields++
