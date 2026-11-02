@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
 // recipientInsertChunk bounds a single CreateBulk so a very large audience is planned in
@@ -131,11 +132,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	// exists: a Workspace freeze, no Integration, or an unverified From domain is a
 	// reversible hold (ADR 0015): the broadcast keeps its status, records why, and the
 	// plan is retried later; it is not failed.
-	var from string
-	if b.FromEmail != nil {
-		from = *b.FromEmail
-	}
-	hold, err := d.out.Preflight(ctx, s, from, b.IntegrationID)
+	hold, err := d.out.Preflight(ctx, s, outbound.BroadcastContent(b), b.IntegrationID)
 	if err != nil {
 		return nil, fmt.Errorf("preflight broadcast %d: %w", b.ID, err)
 	}
@@ -278,7 +275,7 @@ func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, n int, now
 	if err != nil {
 		return nil, fmt.Errorf("load broadcast %d: %w", id, err)
 	}
-	route, err := d.out.Route(ctx, s, b.IntegrationID)
+	route, err := d.out.Route(ctx, s, outbound.BroadcastContent(b).Channel(), b.IntegrationID)
 	if err != nil {
 		return nil, err
 	}

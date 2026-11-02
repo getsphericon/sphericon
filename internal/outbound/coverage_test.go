@@ -142,7 +142,7 @@ func TestSendAndPreflightAgreeOnAStaffHold(t *testing.T) {
 	m := newModule(env)
 	agree := func(key, want string) {
 		t.Helper()
-		hold, err := m.Preflight(ctx, s, "", nil)
+		hold, err := m.Preflight(ctx, s, outbound.EmailContent{}, nil)
 		require.NoError(t, err)
 		res, err := m.Send(ctx, s, transactional(key, "a@example.com"))
 		require.NoError(t, err)
@@ -248,7 +248,7 @@ func TestReplayReportsSkippedAndFailedOutcomes(t *testing.T) {
 	assert.Equal(t, first.MessageID, again.MessageID)
 
 	broken := transactional("tx:broken", "a@example.com")
-	broken.Subject = "{% if %}broken"
+	broken.Content = outbound.EmailContent{Subject: "{% if %}broken", Body: htmlBody}
 	first, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), broken)
 	require.NoError(t, err)
 	require.Equal(t, outbound.Failed, first.Outcome)
@@ -266,7 +266,7 @@ func TestComposeBindsContactFieldsWithRequestVariablesWinning(t *testing.T) {
 	email := "ada@example.com"
 
 	req := transactional("tx:bind", email)
-	req.Subject = "{{ nick }}|{{ first_name }}|{{ last_name }}|{{ email }}|{{ plan }}"
+	req = withSubject(req, "{{ nick }}|{{ first_name }}|{{ last_name }}|{{ email }}|{{ plan }}")
 	req.Contact = &ent.Contact{
 		Email: &email, FirstName: &first, LastName: &last,
 		// A custom field must never shadow a core field; the Request wins over both.
@@ -282,7 +282,7 @@ func TestComposeBindsContactFieldsWithRequestVariablesWinning(t *testing.T) {
 
 	// A Contact with no core fields binds them as empty, not as a missing variable.
 	bare := transactional("tx:bind-bare", "bare@example.com")
-	bare.Subject = "[{{ first_name }}][{{ email }}]"
+	bare = withSubject(bare, "[{{ first_name }}][{{ email }}]")
 	bare.Contact = &ent.Contact{}
 	_, err = m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), bare)
 	require.NoError(t, err)
@@ -295,7 +295,7 @@ func TestTrackedMarketingSendRewritesLinksAndAddsPixel(t *testing.T) {
 	env := testhelper.Setup(t)
 	req := marketing(t, env, "bc:tracked", fixtures.ContactAliceID)
 	req.Track = true
-	req.Body = `<p><a href="https://example.com/x">go</a></p>`
+	req = withBody(req, `<p><a href="https://example.com/x">go</a></p>`)
 
 	res, err := newModule(env).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), req)
 	require.NoError(t, err)
@@ -541,7 +541,7 @@ func TestAStaleClaimTokenCannotWriteFailed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	req := transactional("tx:stale-failed", "a@example.com")
-	req.Subject = "{% if %}broken"
+	req = withSubject(req, "{% if %}broken")
 	onOutboundMutation(env, func(ctx context.Context, m *ent.OutboundMessageMutation, next ent.Mutator) (ent.Value, error) {
 		if st, ok := m.Status(); ok && st == outboundmessage.StatusFailed {
 			// Another attempt takes the claim over just before this one writes.
@@ -594,18 +594,19 @@ func TestPreflightErrors(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := newModule(env).Preflight(ctx, env.DB.Scoped(987654), "", nil)
+	_, err := newModule(env).Preflight(ctx, env.DB.Scoped(987654), outbound.EmailContent{}, nil)
 	require.ErrorContains(t, err, "freeze check")
 
 	canceled, cancel := context.WithCancel(ctx)
 	cancel()
-	_, err = newModule(env).Preflight(canceled, env.DB.Scoped(fixtures.AcmeID), "", nil)
+	_, err = newModule(env).Preflight(canceled, env.DB.Scoped(fixtures.AcmeID), outbound.EmailContent{}, nil)
 	assert.ErrorContains(t, err, "freeze check")
 }
 
 func TestSendTestOutcomes(t *testing.T) {
 	ctx := context.Background()
-	req := outbound.TestRequest{To: "Preview@Example.com", Subject: "s", Body: htmlBody}
+	req := outbound.TestRequest{To: "Preview@Example.com",
+		Content: outbound.EmailContent{Subject: "s", Body: htmlBody}}
 
 	t.Run("unknown workspace", func(t *testing.T) {
 		env := testhelper.Setup(t)
@@ -616,7 +617,7 @@ func TestSendTestOutcomes(t *testing.T) {
 	t.Run("content that does not render is Failed", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		bad := req
-		bad.Subject = "{% if %}broken"
+		bad.Content.Subject = "{% if %}broken"
 		res, err := newModule(env).SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), bad)
 		require.NoError(t, err)
 		assert.Equal(t, outbound.Failed, res.Outcome)

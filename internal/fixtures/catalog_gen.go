@@ -1229,6 +1229,14 @@ const (
 	IntegrationAcmeSesName = "Amazon SES (disabled)"
 	// IntegrationAcmeSesProvider is from fixtures/integrations.
 	IntegrationAcmeSesProvider = "ses"
+	// IntegrationAcmeSmsID is from fixtures/integrations.
+	IntegrationAcmeSmsID = 8
+	// IntegrationAcmeSmsIngestKey is from fixtures/integrations.
+	IntegrationAcmeSmsIngestKey = "omik_test_integrationacmesms"
+	// IntegrationAcmeSmsName is from fixtures/integrations.
+	IntegrationAcmeSmsName = "SMS relay (reserved Channel)"
+	// IntegrationAcmeSmsProvider is from fixtures/integrations.
+	IntegrationAcmeSmsProvider = "smtp"
 	// IntegrationGlobexID is from fixtures/integrations.
 	IntegrationGlobexID = 900
 	// IntegrationGlobexInboxID is from fixtures/integrations.

@@ -32,9 +32,7 @@ func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outbound.Module, ws int6
 		Key:         key,
 		Destination: "reader@example.com",
 		Source:      eligibility.SourceBroadcasts,
-		Subject:     "News",
-		Body:        linkHTML,
-		FromEmail:   "news@" + domain,
+		Content:     outbound.EmailContent{Subject: "News", Body: linkHTML, FromEmail: "news@" + domain},
 		Track:       true,
 	})
 	require.NoError(t, err)
@@ -115,9 +113,7 @@ func TestTrackingHostLookupErrorIsRetriedNotFailed(t *testing.T) {
 			Key:         key,
 			Destination: "reader@example.com",
 			Source:      eligibility.SourceBroadcasts,
-			Subject:     "News",
-			Body:        linkHTML,
-			FromEmail:   "news@" + fixtures.SendingDomainUmbrellaDomain,
+			Content:     outbound.EmailContent{Subject: "News", Body: linkHTML, FromEmail: "news@" + fixtures.SendingDomainUmbrellaDomain},
 			Track:       true,
 		})
 	}

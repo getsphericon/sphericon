@@ -30,10 +30,8 @@ const textPartBody = `<style>p{color:#123456}</style>` +
 func sendUmbrella(t *testing.T, env *testhelper.TestEnv, req outbound.Request) messaging.EmailMessage {
 	t.Helper()
 	req.Destination = "reader@example.com"
-	req.Subject = "News"
-	req.Body = textPartBody
+	req.Content = outbound.EmailContent{Subject: "News", Body: textPartBody, FromEmail: "news@" + fixtures.SendingDomainUmbrellaDomain}
 	req.Variables = map[string]any{"name": "Grace"}
-	req.FromEmail = "news@" + fixtures.SendingDomainUmbrellaDomain
 	res, err := newModule(env).Send(context.Background(), env.DB.Scoped(fixtures.UmbrellaID), req)
 	require.NoError(t, err)
 	require.Equal(t, outbound.Sent, res.Outcome)

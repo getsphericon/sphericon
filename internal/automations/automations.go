@@ -607,7 +607,7 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	if err != nil || !sends {
 		return err
 	}
-	route, err := v.m.out.Route(ctx, ts, version.IntegrationID)
+	route, err := v.m.out.Route(ctx, ts, messaging.ChannelEmail, version.IntegrationID)
 	if err != nil {
 		return err
 	}

@@ -39,7 +39,7 @@ func TestSenderThatDeliversNowhereIsSentThroughWithoutAVerifiedSendingDomain(t *
 	kept := &keepingSender{}
 
 	req := transactional("tx:kept", "a@example.com")
-	req.FromEmail = "noreply@news.acme.com" // fixture domain id 2: unverified
+	req = sentFrom(req, "noreply@news.acme.com") // fixture domain id 2: unverified
 	res, err := moduleThrough(env, kept).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), req)
 	require.NoError(t, err)
 

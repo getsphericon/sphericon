@@ -137,7 +137,7 @@ func TestSkippedAndHeldMessagesSpendNoCapacity(t *testing.T) {
 
 	// Held: an unverified Sending domain.
 	held := marketing(t, env, "bc:held", fixtures.ContactAliceID)
-	held.FromEmail = "noreply@news.acme.com"
+	held = sentFrom(held, "noreply@news.acme.com")
 	res, err = m.Send(ctx, acme(env), held)
 	require.NoError(t, err)
 	require.Equal(t, outbound.Held, res.Outcome)

@@ -34,22 +34,19 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 	create := s.OutboundMessage().Create().
 		SetKind(req.Kind).
 		SetIdempotencyKey(req.Key).
+		SetChannel(outboundmessage.Channel(req.Channel())).
 		SetDestination(dest).
 		SetClaimedAt(m.claimTime())
 	if m.tracker != nil {
 		create.SetAppOrigin(m.tracker.Origin())
 	}
-	if g.domain != "" {
-		create.SetSendingDomain(g.domain)
+	if g.as.sendingDomain != "" {
+		create.SetSendingDomain(g.as.sendingDomain)
 	}
 	if req.Source != "" {
 		create.SetSendingSource(req.Source)
 	}
-	contactID := req.ContactID
-	if req.Contact != nil {
-		contactID = req.Contact.ID
-	}
-	if contactID != 0 {
+	if contactID := req.contactID(); contactID != 0 {
 		create.SetContactID(contactID)
 	}
 	ref := req.Ref

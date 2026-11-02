@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -18,43 +19,44 @@ func broadcastRecipientKey(recipientID int64) string {
 	return fmt.Sprintf("broadcast:%d", recipientID)
 }
 
+// BroadcastContent is the Message content of an email Broadcast: its subject, body and From.
+func BroadcastContent(b *ent.Broadcast) EmailContent {
+	return EmailContent{
+		Subject:   b.Subject,
+		Body:      b.Body,
+		FromEmail: lo.FromPtr(b.FromEmail),
+		FromName:  lo.FromPtr(b.FromName),
+	}
+}
+
 // BroadcastRecipient is the Request for one Broadcast recipient's email. The Contact
 // must have an email address.
 func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Contact) Request {
-	req := Request{
-		Kind:        outboundmessage.KindBroadcast,
-		Key:         broadcastRecipientKey(rec.ID),
-		Destination: *c.Email,
-		Contact:     c,
-		Source:      eligibility.SourceBroadcasts,
-		Subject:     b.Subject,
-		Body:        b.Body,
-		Track:       true,
-		Ref:         Ref{BroadcastID: b.ID, BroadcastRecipient: rec.ID},
+	return Request{
+		Kind:          outboundmessage.KindBroadcast,
+		Key:           broadcastRecipientKey(rec.ID),
+		Destination:   *c.Email,
+		Contact:       c,
+		Source:        eligibility.SourceBroadcasts,
+		Content:       BroadcastContent(b),
+		Track:         true,
+		Ref:           Ref{BroadcastID: b.ID, BroadcastRecipient: rec.ID},
+		IntegrationID: b.IntegrationID,
 	}
-	if b.FromEmail != nil {
-		req.FromEmail = *b.FromEmail
-	}
-	if b.FromName != nil {
-		req.FromName = *b.FromName
-	}
-	req.IntegrationID = b.IntegrationID
-	return req
 }
 
 // AutomationStep is the Request for the email at index step of an Automation run, sent through the
 // Integration of the version the run stands on (ADR 0065). The Contact must have an email address.
 // Each Automation is its own unsubscribe Sending source; the unsubscribe click exits the
 // enrollment (ADR 0001). The message binds the Event the run began on as `event` (#752).
-func AutomationStep(a *ent.Automation, run *ent.AutomationRun, v *ent.AutomationVersion, step int, c *ent.Contact, subject, body string) Request {
+func AutomationStep(a *ent.Automation, run *ent.AutomationRun, v *ent.AutomationVersion, step int, c *ent.Contact, content EmailContent) Request {
 	return Request{
 		Kind:          outboundmessage.KindAutomation,
 		Key:           fmt.Sprintf("automation:%d:%d", run.ID, step),
 		Destination:   *c.Email,
 		Contact:       c,
 		Source:        eligibility.AutomationSource(a.ID),
-		Subject:       subject,
-		Body:          body,
+		Content:       content,
 		Track:         true,
 		Ref:           Ref{AutomationID: a.ID, AutomationRunID: run.ID, AutomationStep: &step},
 		IntegrationID: v.IntegrationID,
@@ -70,9 +72,9 @@ type TransactionalMessage struct {
 	Destination string
 	ContactID   int64
 	TemplateID  int64
-	Subject     string
-	Body        string
-	Variables   map[string]any
+	// Content is the Template's current content.
+	Content   EmailContent
+	Variables map[string]any
 	// Track opts the send into open and click tracking; it stays Transactional (ADR 0053).
 	Track bool
 }
@@ -88,8 +90,7 @@ func Transactional(m TransactionalMessage) Request {
 		Key:         key,
 		Destination: m.Destination,
 		ContactID:   m.ContactID,
-		Subject:     m.Subject,
-		Body:        m.Body,
+		Content:     m.Content,
 		Variables:   m.Variables,
 		Track:       m.Track,
 		Ref:         Ref{TemplateID: m.TemplateID},

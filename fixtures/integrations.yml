@@ -258,3 +258,17 @@
   workspace_id: 20
   created_at: '{{daysAgo 60}}'
   updated_at: '{{daysAgo 60}}'
+
+# Acme's Integration on the reserved `sms` Channel (no SMS provider is built, so it names `smtp`):
+# the Send route never routes another Channel's send through it, named or not (ADR 0079).
+- id: 8 # fixture: IntegrationAcmeSms
+  ingest_key: omik_test_integrationacmesms
+  name: SMS relay (reserved Channel)
+  channel: sms
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"sms-relay.example.com\",\"port\":587,\"from\":\"hello@codebasics.dev\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 15}}'
+  updated_at: '{{daysAgo 15}}'

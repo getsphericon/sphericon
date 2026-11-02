@@ -240,7 +240,7 @@ func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
 		res, err := d.out.Send(d.t.Context(), d.s, outbound.Request{
 			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
-			Subject: "Receipt", Body: "<p>Hi</p>",
+			Content: outbound.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"},
 		})
 		require.NoError(t, err)
 		require.Equal(t, outbound.Sent, res.Outcome)
@@ -268,7 +268,7 @@ func TestDeferralFollowsTheBroadcastsOwnIntegration(t *testing.T) {
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
 		res, err := d.out.Send(d.t.Context(), d.s, outbound.Request{
 			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
-			Subject: "Receipt", Body: "<p>Hi</p>", IntegrationID: &mailgun,
+			Content: outbound.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"}, IntegrationID: &mailgun,
 		})
 		require.NoError(t, err)
 		require.Equal(t, outbound.Sent, res.Outcome)

@@ -103,13 +103,40 @@ func (c *Catalog) Validate(channel Channel, provider Provider, config []byte) er
 	return d.Validate(config)
 }
 
-// BuildEmail builds an EmailSender for an email-channel provider from deps.
-func (c *Catalog) BuildEmail(provider Provider, config []byte, deps Deps) (EmailSender, error) {
-	d, ok := c.Descriptor(ChannelEmail, provider)
+// Build builds the sender of a provider of channel from deps: a value of that Channel's own send
+// interface (EmailSender on email), decorated as every sender of the Channel is. Adding a Channel
+// adds its descriptors and its entry in instruments.
+func (c *Catalog) Build(channel Channel, provider Provider, config []byte, deps Deps) (any, error) {
+	d, ok := c.Descriptor(channel, provider)
 	if !ok {
-		return nil, fmt.Errorf("unknown email provider %q", provider)
+		return nil, fmt.Errorf("unknown %s provider %q", channel, provider)
+	}
+	instrument, ok := instruments[channel]
+	if !ok {
+		return nil, fmt.Errorf("no sender of channel %q is built", channel)
 	}
 	built, err := d.Build(config, deps)
+	if err != nil {
+		return nil, err
+	}
+	return instrument(provider, built)
+}
+
+// instruments checks that a freshly built sender of each Channel is of the Channel's send
+// interface and decorates it: with the metrics decorator on email.
+var instruments = map[Channel]func(Provider, any) (any, error){
+	ChannelEmail: func(provider Provider, built any) (any, error) {
+		sender, ok := built.(EmailSender)
+		if !ok {
+			return nil, fmt.Errorf("provider %q did not build an EmailSender", provider)
+		}
+		return instrumentedSender{EmailSender: sender, provider: provider}, nil
+	},
+}
+
+// BuildEmail builds an EmailSender for an email-channel provider from deps: Build, typed.
+func (c *Catalog) BuildEmail(provider Provider, config []byte, deps Deps) (EmailSender, error) {
+	built, err := c.Build(ChannelEmail, provider, config, deps)
 	if err != nil {
 		return nil, err
 	}
@@ -117,5 +144,5 @@ func (c *Catalog) BuildEmail(provider Provider, config []byte, deps Deps) (Email
 	if !ok {
 		return nil, fmt.Errorf("provider %q did not build an EmailSender", provider)
 	}
-	return instrumentedSender{EmailSender: sender, provider: provider}, nil
+	return sender, nil
 }

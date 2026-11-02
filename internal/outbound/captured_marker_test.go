@@ -64,7 +64,7 @@ func TestASendThroughASenderThatDeliversOutsideIsNotMarkedCaptured(t *testing.T)
 	m := moduleThrough(env, deliveringSender{})
 
 	req := transactional("cap:out", "a@example.com")
-	req.FromEmail = "noreply@mail.acme.com" // fixture domain id 1: verified
+	req = sentFrom(req, "noreply@mail.acme.com") // fixture domain id 1: verified
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 	require.NoError(t, err)
 

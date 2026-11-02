@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -64,7 +65,7 @@ func TestPaceHoldsABroadcastWhoseRouteCannotSend(t *testing.T) {
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
 	assert.Nil(t, times)
-	route, err := d.out.Route(d.t.Context(), d.s, new(int64(fixtures.IntegrationAcmeSesID)))
+	route, err := d.out.Route(d.t.Context(), d.s, messaging.ChannelEmail, new(int64(fixtures.IntegrationAcmeSesID)))
 	require.NoError(t, err)
 	assert.Equal(t, route.Hold, held.Reason, "the pace holds for the reason the route gives")
 	hold := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID).HoldReason

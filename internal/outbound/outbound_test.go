@@ -63,8 +63,7 @@ func transactional(key, to string) outbound.Request {
 		Kind:        outboundmessage.KindTransactional,
 		Key:         key,
 		Destination: to,
-		Subject:     "Receipt {{ order }}",
-		Body:        htmlBody,
+		Content:     outbound.EmailContent{Subject: "Receipt {{ order }}", Body: htmlBody},
 		Variables:   map[string]any{"order": "42"},
 	}
 }
@@ -78,9 +77,31 @@ func marketing(t *testing.T, env *testhelper.TestEnv, key string, contactID int6
 		Destination: *c.Email,
 		Contact:     c,
 		Source:      eligibility.SourceBroadcasts,
-		Subject:     "News",
-		Body:        htmlBody,
+		Content:     outbound.EmailContent{Subject: "News", Body: htmlBody},
 	}
+}
+
+// withEmail is the email req with its content changed by change.
+func withEmail(req outbound.Request, change func(*outbound.EmailContent)) outbound.Request {
+	content := req.Content.(outbound.EmailContent)
+	change(&content)
+	req.Content = content
+	return req
+}
+
+// sentFrom is the email req sent from the address from instead of its Integration's.
+func sentFrom(req outbound.Request, from string) outbound.Request {
+	return withEmail(req, func(c *outbound.EmailContent) { c.FromEmail = from })
+}
+
+// withSubject is the email req with the subject subject.
+func withSubject(req outbound.Request, subject string) outbound.Request {
+	return withEmail(req, func(c *outbound.EmailContent) { c.Subject = subject })
+}
+
+// withBody is the email req with the HTML body body.
+func withBody(req outbound.Request, body string) outbound.Request {
+	return withEmail(req, func(c *outbound.EmailContent) { c.Body = body })
 }
 
 // byKey loads the Outbound message recorded under key (the fixtures already hold
@@ -207,7 +228,7 @@ func TestRenderErrorIsAPermanentFailureOfThatMessage(t *testing.T) {
 	ctx := context.Background()
 
 	req := transactional("tx:badliquid", "a@example.com")
-	req.Subject = "{% if %}broken"
+	req = withSubject(req, "{% if %}broken")
 	res, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Failed, res.Outcome)
@@ -273,7 +294,7 @@ func TestUnverifiedFromDomainIsHeld(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	req := transactional("tx:unverified", "a@example.com")
-	req.FromEmail = "noreply@news.acme.com" // fixture domain id 2: unverified
+	req = sentFrom(req, "noreply@news.acme.com") // fixture domain id 2: unverified
 	res, err := newModule(env).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), req)
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)
@@ -396,10 +417,10 @@ func TestPreflightReportsHoldsWithoutRecording(t *testing.T) {
 	m := newModule(env)
 
 	before := env.DB.OutboundMessage.Query().CountX(ctx)
-	hold, err := m.Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), "", nil)
+	hold, err := m.Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.EmailContent{}, nil)
 	require.NoError(t, err)
 	assert.Empty(t, hold)
-	hold, err = m.Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), "x@news.acme.com", nil)
+	hold, err = m.Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.EmailContent{FromEmail: "x@news.acme.com"}, nil)
 	require.NoError(t, err)
 	assert.Equal(t, outbound.HoldUnverifiedDomain, hold)
 	assert.Equal(t, before, env.DB.OutboundMessage.Query().CountX(ctx), "a preflight records nothing")
@@ -427,7 +448,8 @@ func TestSendTestSkipsEligibilityAndRecordsNothingButHonorsTheFreeze(t *testing.
 	before := env.DB.OutboundMessage.Query().CountX(ctx)
 
 	// Even a suppressed address can be the target of an explicit author preview.
-	res, err := m.SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.TestRequest{To: suppressd, Subject: "[Test] Hi", Body: htmlBody,
+	res, err := m.SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.TestRequest{To: suppressd,
+		Content:   outbound.EmailContent{Subject: "[Test] Hi", Body: htmlBody},
 		Variables: map[string]any{"first_name": "Alex"}})
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Sent, res.Outcome)
@@ -439,7 +461,8 @@ func TestSendTestSkipsEligibilityAndRecordsNothingButHonorsTheFreeze(t *testing.
 
 	// But a suspended Workspace sends nothing, test or not.
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
-	res, err = m.SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.TestRequest{To: "a@example.com", Subject: "s", Body: htmlBody})
+	res, err = m.SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.TestRequest{To: "a@example.com",
+		Content: outbound.EmailContent{Subject: "s", Body: htmlBody}})
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)
 	assert.Equal(t, holds.ReasonSuspended, res.Reason)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -19,7 +20,7 @@ func TestTheRouteOfTheDefaultCarriesItsIntegrationAndPace(t *testing.T) {
 	env := testhelper.Setup(t)
 	limited(t, env, new(4), nil)
 
-	route, err := newModule(env).Route(context.Background(), acme(env), nil)
+	route, err := newModule(env).Route(context.Background(), acme(env), messaging.ChannelEmail, nil)
 
 	require.NoError(t, err)
 	assert.False(t, route.Held())
@@ -43,7 +44,7 @@ func TestTheRouteOfANamedIntegrationThatCannotSendIsHeld(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 
-			route, err := newModule(env).Route(context.Background(), acme(env), &id)
+			route, err := newModule(env).Route(context.Background(), acme(env), messaging.ChannelEmail, &id)
 
 			require.NoError(t, err)
 			assert.Equal(t, outbound.HoldNoIntegration, route.Hold)
@@ -66,12 +67,12 @@ func TestASendThroughADisabledNamedIntegrationIsHeld(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)
-	route, err := m.Route(context.Background(), acme(env), req.IntegrationID)
+	route, err := m.Route(context.Background(), acme(env), messaging.ChannelEmail, req.IntegrationID)
 	require.NoError(t, err)
 	assert.Equal(t, route.Hold, res.Reason, "the send holds for the reason its route gives")
 	assert.Zero(t, res.MessageID)
 	assert.Empty(t, env.CustomerMail.Messages())
-	hold, err := m.Preflight(context.Background(), acme(env), "", req.IntegrationID)
+	hold, err := m.Preflight(context.Background(), acme(env), outbound.EmailContent{}, req.IntegrationID)
 	require.NoError(t, err)
 	assert.Equal(t, route.Hold, hold, "the plan's Preflight agrees")
 }
@@ -107,4 +108,27 @@ func TestTheProviderLimitRunsOnTheInjectedClock(t *testing.T) {
 func TestAStoppedProviderHoldsTheRouteButArmingStillPasses(t *testing.T) {
 	require.NoError(t, outbound.Route{Hold: outbound.HoldProviderStopped}.Armable())
 	assert.ErrorIs(t, outbound.Route{Hold: outbound.HoldNoIntegration}.Armable(), outbound.ErrRouteHeld)
+}
+
+// The Send route resolves an Integration of the send's own Channel: an Integration of another
+// Channel (the reserved `sms`) named by an email send holds the route, never the email default in
+// its place, and a send through it claims nothing and sends nothing.
+func TestTheRouteNeverGoesThroughAnotherChannelsIntegration(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := newModule(env)
+	req := marketing(t, env, "bc:sms", fixtures.ContactAliceID)
+	req.IntegrationID = new(int64(fixtures.IntegrationAcmeSmsID))
+
+	route, err := m.Route(context.Background(), acme(env), messaging.ChannelEmail, req.IntegrationID)
+	require.NoError(t, err)
+	res, err := m.Send(context.Background(), acme(env), req)
+	require.NoError(t, err)
+
+	assert.Equal(t, outbound.HoldNoIntegration, route.Hold)
+	assert.Nil(t, route.Integration, "not the email default in its place")
+	require.ErrorIs(t, route.Armable(), outbound.ErrRouteHeld)
+	assert.Equal(t, outbound.Held, res.Outcome)
+	assert.Equal(t, outbound.HoldNoIntegration, res.Reason)
+	assert.Zero(t, res.MessageID)
+	assert.Empty(t, env.CustomerMail.Messages())
 }

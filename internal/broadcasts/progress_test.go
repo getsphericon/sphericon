@@ -165,7 +165,7 @@ func TestProgressCountsTheSendCapSpentByTransactionalSends(t *testing.T) {
 	for _, key := range []string{"tx:1", "tx:2"} {
 		res, err := env.OutboundModule().Send(ctx, s, outbound.Request{
 			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
-			Subject: "Receipt", Body: "<p>Hi</p>",
+			Content: outbound.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"},
 		})
 		require.NoError(t, err)
 		require.Equal(t, outbound.Sent, res.Outcome)

@@ -19,8 +19,9 @@ func globexTestSend(env *testhelper.TestEnv, via senders, to string) (outbound.R
 	m := outbound.New(env.Bus, env.Holds, via, tracking.New("test-secret", "http://local"),
 		outbound.WithSystemSender(env.SystemMail))
 	return m.SendTest(context.Background(), env.DB.Scoped(fixtures.GlobexID), outbound.TestRequest{
-		To: to, Subject: "[Test] Hi", Body: htmlBody,
-		Asker: &outbound.Asker{UserID: fixtures.OwnerJaneID, Email: fixtures.OwnerJaneEmail},
+		To:      to,
+		Content: outbound.EmailContent{Subject: "[Test] Hi", Body: htmlBody},
+		Asker:   &outbound.Asker{UserID: fixtures.OwnerJaneID, Email: fixtures.OwnerJaneEmail},
 	})
 }
 

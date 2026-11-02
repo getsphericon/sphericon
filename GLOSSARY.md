@@ -329,18 +329,23 @@ _Avoid_: Send log, delivery row
 
 **Outbound send**:
 The one act of sending a single message on any surface (Broadcast, Automation step,
-Transactional) and any Channel: Send-eligibility, the Workspace freeze check, the Send route,
-rendering, the provider call, and the record of the result; on email also the Sending-domain gate,
-the unsubscribe footer and headers and DKIM signing. Only the rendering and the provider call
-differ per Channel. On a Channel of Bindings one Outbound send reaches every Binding the Contact has
+Transactional) and any Channel. It is asked with the Channel's Message content and runs one
+pipeline: the Workspace freeze check, the Send route of that Channel, the claim of the Outbound
+message, Send-eligibility on the Channel, rendering, the Provider limit and Send cap, the provider
+call, and the record of the result with the Channel's `<channel>.sent` Event. Only a per-Channel
+**renderer** and **provider adapter** differ: email's hold the Sending-domain gate, the unsubscribe
+footer and List-Unsubscribe, the open pixel and DKIM signing, and a Test send and the System sender
+are email's alone. Adding a Channel adds its renderer, adapter and catalogue entry and touches no
+step. On a Channel of Bindings one Outbound send reaches every Binding the Contact has
 on the Integration, each passing Send-eligibility on its own; a Contact with no Destination on the
 Channel is Skipped. Every surface goes through it; none re-implements any part.
 _Avoid_: Delivery pipeline, send path (unqualified), mailer
 
 **Send route**:
-The one answer to how a send leaves through an Integration: the one it names, else the Workspace's
-default, with the sender built for it, whether that sender delivers outside, its Provider limit and
-why it cannot send, if it cannot. A named Integration that is disabled or archived holds the route
+The one answer to how a send on a Channel leaves through an Integration of that Channel: the one it
+names, else that Channel's default, never another Channel's, with the provider adapter built for
+it, whether that sender delivers outside, its Provider limit and why it cannot send, if it cannot.
+A named Integration that is disabled, archived or of another Channel holds the route
 (`no_integration`), never the default in its place. Every send asks it (Outbound send, a Test send,
 the Broadcast planner's pace), and so do the moments that arm a send: an Automation's Publish (with
 an email step) and a Broadcast's Schedule are refused while the route cannot send. A draft may still

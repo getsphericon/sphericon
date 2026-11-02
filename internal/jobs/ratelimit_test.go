@@ -150,7 +150,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
 			res, err := mod.Send(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.Request{
 				Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
-				Subject: "Receipt", Body: "<p>Hi</p>",
+				Content: outbound.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"},
 			})
 			require.NoError(t, err)
 			require.Equal(t, outbound.Sent, res.Outcome, "Transactional is never delayed")
@@ -187,7 +187,7 @@ func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 
 		res, err := mod.Send(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.Request{
 			Kind: outboundmessage.KindTransactional, Key: "tx:1", Destination: "a@example.com",
-			Subject: "Receipt", Body: "<p>Hi</p>",
+			Content: outbound.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"},
 		})
 		require.NoError(t, err)
 		require.Equal(t, outbound.Sent, res.Outcome, "the day's one token goes to Transactional")

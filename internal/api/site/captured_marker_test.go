@@ -75,8 +75,7 @@ func TestTheAutomationReportCountsTheMessagesCapturedInATestInbox(t *testing.T) 
 		Destination: *contact.Email,
 		Contact:     contact,
 		Source:      eligibility.AutomationSource(fixtures.AutomationGlobexID),
-		Subject:     "Welcome",
-		Body:        "<p>Hi</p>",
+		Content:     outbound.EmailContent{Subject: "Welcome", Body: "<p>Hi</p>"},
 		Ref:         outbound.Ref{AutomationID: fixtures.AutomationGlobexID},
 	})
 	require.NoError(t, err)

@@ -272,7 +272,7 @@ func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 	var res outbound.Result
 	err = m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		var sendErr error
-		res, sendErr = m.out.Send(ctx, s, outbound.AutomationStep(a, run, v, step, c, st.Subject, st.Body))
+		res, sendErr = m.out.Send(ctx, s, outbound.AutomationStep(a, run, v, step, c, outbound.EmailContent{Subject: st.Subject, Body: st.Body}))
 		return sendErr
 	})
 	if automations.Stale(err) {

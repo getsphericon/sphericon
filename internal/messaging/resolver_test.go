@@ -44,7 +44,7 @@ func TestResolverEmailSender(t *testing.T) {
 	resolver := messaging.NewResolver(envCipher(t), registry.Default())
 
 	s := env.DB.Scoped(fixtures.AcmeID)
-	integ, err := messaging.EmailIntegration(ctx, s, nil)
+	integ, err := messaging.Integration(ctx, s, messaging.ChannelEmail, nil)
 	require.NoError(t, err)
 
 	sender, err := resolver.EmailSender(ctx, s, integ)
@@ -60,7 +60,7 @@ func TestResolverNoDefault(t *testing.T) {
 	// The Globex fixture tenant has no integration.
 	resolver := messaging.NewResolver(newTestCipher(t), registry.Default())
 
-	_, err := messaging.EmailIntegration(ctx, env.DB.Scoped(fixtures.GlobexID), nil)
+	_, err := messaging.Integration(ctx, env.DB.Scoped(fixtures.GlobexID), messaging.ChannelEmail, nil)
 	require.ErrorIs(t, err, messaging.ErrNoProvider)
 
 	_, err = resolver.EmailSender(ctx, env.DB.Scoped(fixtures.GlobexID), nil)
@@ -69,10 +69,10 @@ func TestResolverNoDefault(t *testing.T) {
 	// A named Integration of another Workspace, or one that is disabled, is no provider either.
 	other := env.DB.Scoped(fixtures.GlobexID)
 	acme := int64(fixtures.IntegrationAcmeMailgunID)
-	_, err = messaging.EmailIntegration(ctx, other, &acme)
+	_, err = messaging.Integration(ctx, other, messaging.ChannelEmail, &acme)
 	require.ErrorIs(t, err, messaging.ErrNoProvider, "another Workspace's Integration")
 
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetEnabled(false).ExecX(ctx)
-	_, err = messaging.EmailIntegration(ctx, env.DB.Scoped(fixtures.AcmeID), &acme)
+	_, err = messaging.Integration(ctx, env.DB.Scoped(fixtures.AcmeID), messaging.ChannelEmail, &acme)
 	require.ErrorIs(t, err, messaging.ErrNoProvider, "a disabled Integration")
 }
