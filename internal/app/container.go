@@ -574,7 +574,7 @@ var deliveryPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*outbound.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		opts := []outbound.Option{
-			outbound.WithStartLinks(do.MustInvoke[*bindings.Module](i)),
+			outbound.WithStartLinks(lazyStartLinks{i}),
 			outbound.WithTestSendBudget(do.MustInvoke[*accounts.Attempts](i)),
 			outbound.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
 			outbound.WithTelegramBots(do.MustInvoke[*messaging.Resolver](i)),
@@ -948,4 +948,12 @@ func urlHost(origin string) string {
 		return ""
 	}
 	return strings.ToLower(u.Hostname())
+}
+
+// lazyStartLinks resolves the bindings module when a start link is issued, not when Outbound is
+// built: bindings reaches the Integrations module, which needs the Enqueuer, which needs Outbound.
+type lazyStartLinks struct{ i do.Injector }
+
+func (l lazyStartLinks) IssueStartLink(ctx context.Context, s *ent.Scoped, contactID int64, integrationID *int64) (bindings.StartLink, error) {
+	return do.MustInvoke[*bindings.Module](l.i).IssueStartLink(ctx, s, contactID, integrationID)
 }
