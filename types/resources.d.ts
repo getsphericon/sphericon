@@ -952,18 +952,21 @@ export default interface Resources {
       "verifyFirst": "Verify your email address before creating a workspace."
     },
     "customFields": {
+      "editTitle": "Edit custom field",
       "emptyState": "Custom fields appear here once a contact is identified with a new attribute.",
-      "hint": "Attributes beyond the core contact fields. A new key from Identify or an event becomes a field automatically.",
+      "hint": "Attributes beyond the core contact fields. A new key from Identify or an event becomes a field automatically, typed by its first value.",
       "keyLabel": "Key",
       "nameLabel": "Name",
       "noRecords": "No custom fields yet",
+      "typeHint": "Stored values are not changed: a date is an ISO string, and a date without a time zone is read in the workspace time zone.",
       "typeLabel": "Type",
       "types": {
         "bool": "Boolean",
         "datetime": "Date and time",
         "number": "Number",
         "string": "Text"
-      }
+      },
+      "updateError": "Could not update the custom field"
     },
     "draft": {
       "pending": "Unpublished changes",

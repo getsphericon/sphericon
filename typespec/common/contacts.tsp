@@ -38,7 +38,11 @@ model CreateContactInput {
   /** https URL of the contact's photo */
   avatar?: ImageUrl | null;
 
-  /** Typed custom field values keyed by the field's machine key */
+  /** Typed custom field values keyed by the field's machine key. A new key's first value sets the
+   * field's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,
+   * `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.
+   * Send a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes
+   * as UTC and lands on the previous day east of UTC */
   customFields?: JsonObject | null;
 }
 
@@ -78,6 +82,10 @@ model UpdateContactInput {
   /** https URL of the contact's photo */
   avatar?: ImageUrl | null;
 
-  /** Typed custom field values keyed by the field's machine key */
+  /** Typed custom field values keyed by the field's machine key. A new key's first value sets the
+   * field's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,
+   * `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.
+   * Send a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes
+   * as UTC and lands on the previous day east of UTC */
   customFields?: JsonObject | null;
 }

@@ -50,6 +50,7 @@ const (
 	ContactsListOperation              OperationName = "ContactsList"
 	ContactsUpdateOperation            OperationName = "ContactsUpdate"
 	CustomFieldsListOperation          OperationName = "CustomFieldsList"
+	CustomFieldsUpdateOperation        OperationName = "CustomFieldsUpdate"
 	EmailLintLintOperation             OperationName = "EmailLintLint"
 	EmailSchemaGetOperation            OperationName = "EmailSchemaGet"
 	EmailsSendOperation                OperationName = "EmailsSend"

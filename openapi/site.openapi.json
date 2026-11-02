@@ -8022,6 +8022,94 @@
         "x-required-permissions": []
       }
     },
+    "/workspaces/{workspaceId}/custom-fields/{id}": {
+      "put": {
+        "operationId": "SiteCustomFields_update",
+        "description": "Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled broadcast tests the field with an operator the new type does not take (`usedBy` names them). Owners and admins only.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteCustomFieldResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteCustomFieldResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteCustomFieldResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response for a removal refused because live work still uses the row\n(ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,\nIntegration, Sending domain or Automation answers it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InUseProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Custom Fields"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteUpdateCustomFieldInput"
+              }
+            }
+          }
+        },
+        "x-required-permissions": ["custom_fields:manage"]
+      }
+    },
     "/workspaces/{workspaceId}/delete": {
       "post": {
         "operationId": "SiteWorkspaces_delete",
@@ -14083,6 +14171,24 @@
         },
         "explode": false
       },
+      "SiteCustomFieldResourceKey.id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Unique identifier",
+        "schema": {
+          "$ref": "#/components/schemas/EntityId"
+        }
+      },
+      "SiteCustomFieldResourceKey.workspaceId": {
+        "name": "workspaceId",
+        "in": "path",
+        "required": true,
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
+        "schema": {
+          "$ref": "#/components/schemas/WorkspaceId"
+        }
+      },
       "SiteCustomFieldResourceParentKey": {
         "name": "workspaceId",
         "in": "path",
@@ -14435,6 +14541,7 @@
           "webhooks:regenerate",
           "webhooks:test",
           "custom_fields:read",
+          "custom_fields:write",
           "sending_domains:read",
           "tracking_domains:read",
           "integrations:read",
@@ -15387,7 +15494,7 @@
               }
             ],
             "nullable": true,
-            "description": "Typed custom field values keyed by the field's machine key"
+            "description": "Typed custom field values keyed by the field's machine key. A new key's first value sets the\nfield's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,\n`2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.\nSend a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes\nas UTC and lands on the previous day east of UTC"
           }
         },
         "description": "Request body for creating a contact"
@@ -15552,6 +15659,7 @@
           "webhooks:regenerate",
           "webhooks:test",
           "custom_fields:read",
+          "custom_fields:write",
           "sending_domains:read",
           "tracking_domains:read",
           "integrations:read"
@@ -15623,6 +15731,10 @@
           },
           {
             "scope": "custom_fields:read"
+          },
+          {
+            "scope": "custom_fields:write",
+            "permission": "custom_fields:manage"
           },
           {
             "scope": "sending_domains:read"
@@ -15859,6 +15971,7 @@
           "sending_domains:manage",
           "contacts:erase",
           "contacts:export",
+          "custom_fields:manage",
           "suppressions:manage",
           "second_factor:manage",
           "workspace:update",
@@ -15898,6 +16011,7 @@
           "webhooks:regenerate",
           "webhooks:test",
           "custom_fields:read",
+          "custom_fields:write",
           "sending_domains:read",
           "tracking_domains:read",
           "integrations:read",
@@ -18986,7 +19100,7 @@
               }
             ],
             "nullable": true,
-            "description": "Typed custom field values keyed by the field's machine key"
+            "description": "Typed custom field values keyed by the field's machine key. A new key's first value sets the\nfield's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,\n`2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.\nSend a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes\nas UTC and lands on the previous day east of UTC"
           },
           "tags": {
             "type": "array",
@@ -19204,7 +19318,7 @@
                 "$ref": "#/components/schemas/SiteCustomFieldType"
               }
             ],
-            "description": "Inferred value type"
+            "description": "Value type: inferred from the first value, changed by an owner or admin"
           },
           "ruleOperators": {
             "type": "array",
@@ -22826,7 +22940,7 @@
               }
             ],
             "nullable": true,
-            "description": "Typed custom field values keyed by the field's machine key"
+            "description": "Typed custom field values keyed by the field's machine key. A new key's first value sets the\nfield's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,\n`2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.\nSend a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes\nas UTC and lands on the previous day east of UTC"
           },
           "tags": {
             "type": "array",
@@ -22837,6 +22951,25 @@
           }
         },
         "description": "Site request body for updating a contact: the attributes /api takes, and its tag set. The\napp's contact form sets the tags in the same save; /api tags a contact through its own\noperations (`tags_apply`, `tags_remove`), which is why its body has no tags."
+      },
+      "SiteUpdateCustomFieldInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Display name"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteCustomFieldType"
+              }
+            ],
+            "description": "Value type. Stored values are not rewritten: the leaves of the new type read them as they are"
+          }
+        },
+        "description": "Request body for updating a custom field: its key never changes"
       },
       "SiteUpdateMeInput": {
         "type": "object",
@@ -23643,7 +23776,7 @@
               }
             ],
             "nullable": true,
-            "description": "Typed custom field values keyed by the field's machine key"
+            "description": "Typed custom field values keyed by the field's machine key. A new key's first value sets the\nfield's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,\n`2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.\nSend a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes\nas UTC and lands on the previous day east of UTC"
           }
         },
         "description": "Request body for updating a contact"

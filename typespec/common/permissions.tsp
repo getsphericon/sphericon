@@ -44,6 +44,9 @@ enum Permission {
   /** Exporting Contacts */
   contactsExport: "contacts:export",
 
+  /** Renaming a Custom field and changing its type */
+  customFieldsManage: "custom_fields:manage",
+
   /** Adding and lifting Suppressions (reading them stays open) */
   suppressionsManage: "suppressions:manage",
 

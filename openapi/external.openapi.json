@@ -6019,6 +6019,150 @@
         }
       }
     },
+    "/custom-fields/{id}": {
+      "put": {
+        "operationId": "CustomFields_update",
+        "description": "Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled broadcast tests the field with an operator the new type does not take (`usedBy` names them).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomFieldResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response for a removal refused because live work still uses the row\n(ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,\nIntegration, Sending domain or Automation answers it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InUseProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Custom fields"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomFieldInput"
+              }
+            }
+          }
+        },
+        "x-required-scopes": ["custom_fields:write"]
+      }
+    },
     "/emails": {
       "post": {
         "operationId": "Emails_send",
@@ -14259,6 +14403,7 @@
           "webhooks:regenerate",
           "webhooks:test",
           "custom_fields:read",
+          "custom_fields:write",
           "sending_domains:read",
           "tracking_domains:read",
           "integrations:read",
@@ -16922,7 +17067,7 @@
               }
             ],
             "nullable": true,
-            "description": "Typed custom field values keyed by the field's machine key"
+            "description": "Typed custom field values keyed by the field's machine key. A new key's first value sets the\nfield's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,\n`2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.\nSend a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes\nas UTC and lands on the previous day east of UTC"
           }
         },
         "description": "Request body for creating a contact"
@@ -17157,7 +17302,7 @@
                 "$ref": "#/components/schemas/CustomFieldType"
               }
             ],
-            "description": "Inferred value type"
+            "description": "Value type: inferred from the first value, changed by an owner or admin"
           },
           "ruleOperators": {
             "type": "array",
@@ -18236,6 +18381,7 @@
           "webhooks:regenerate",
           "webhooks:test",
           "custom_fields:read",
+          "custom_fields:write",
           "sending_domains:read",
           "tracking_domains:read",
           "integrations:read"
@@ -18307,6 +18453,10 @@
           },
           {
             "scope": "custom_fields:read"
+          },
+          {
+            "scope": "custom_fields:write",
+            "permission": "custom_fields:manage"
           },
           {
             "scope": "sending_domains:read"
@@ -18795,6 +18945,7 @@
           "sending_domains:manage",
           "contacts:erase",
           "contacts:export",
+          "custom_fields:manage",
           "suppressions:manage",
           "second_factor:manage",
           "workspace:update",
@@ -20491,10 +20642,29 @@
               }
             ],
             "nullable": true,
-            "description": "Typed custom field values keyed by the field's machine key"
+            "description": "Typed custom field values keyed by the field's machine key. A new key's first value sets the\nfield's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,\n`2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.\nSend a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes\nas UTC and lands on the previous day east of UTC"
           }
         },
         "description": "Request body for updating a contact"
+      },
+      "UpdateCustomFieldInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Display name"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomFieldType"
+              }
+            ],
+            "description": "Value type. Stored values are not rewritten: the leaves of the new type read them as they are"
+          }
+        },
+        "description": "Request body for updating a custom field: its key never changes"
       },
       "UpdateIntegrationInput": {
         "type": "object",
@@ -20746,7 +20916,7 @@
               }
             ],
             "nullable": true,
-            "description": "Typed custom field values keyed by the field's machine key, merged into the contact's"
+            "description": "Typed custom field values keyed by the field's machine key, merged into the contact's. A new\nkey's first value sets the field's type: a boolean, a number, a date (an ISO string:\n`2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the\nWorkspace time zone) or text. Send a date without time as a `YYYY-MM-DD` string, not a\nJavaScript `Date`: that serializes as UTC and lands on the previous day east of UTC"
           }
         },
         "description": "One contact to upsert, matched by its alias keys (subject id, email, phone). An alias key fills\nonly a contact that has none; every other attribute given replaces the contact's, and null clears\nit."

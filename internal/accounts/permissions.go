@@ -46,6 +46,7 @@ var grants = []grant{
 	row(PermSendingDomainsManage, i18n.ErrorsPermissionSendingDomainsManage, ownerAndAdmin),
 	row(PermContactsErase, i18n.ErrorsPermissionContactsErase, ownerAndAdmin),
 	row(PermContactsExport, i18n.ErrorsPermissionContactsExport, ownerAndAdmin),
+	row(PermCustomFieldsManage, i18n.ErrorsPermissionCustomFieldsManage, ownerAndAdmin),
 	row(PermSuppressionsManage, i18n.ErrorsPermissionSuppressionsManage, ownerAndAdmin),
 	row(PermSecondFactorManage, i18n.ErrorsPermissionSecondFactorManage, ownerAndAdmin),
 	row(PermWorkspaceUpdate, i18n.ErrorsPermissionWorkspaceUpdate, ownerAndAdmin),

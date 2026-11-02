@@ -51,6 +51,8 @@ func (s ApiTokenScope) Validate() error {
 		return nil
 	case "custom_fields:read":
 		return nil
+	case "custom_fields:write":
+		return nil
 	case "sending_domains:read":
 		return nil
 	case "tracking_domains:read":
@@ -661,6 +663,8 @@ func (s GrantableScope) Validate() error {
 		return nil
 	case "custom_fields:read":
 		return nil
+	case "custom_fields:write":
+		return nil
 	case "sending_domains:read":
 		return nil
 	case "tracking_domains:read":
@@ -1064,6 +1068,8 @@ func (s Permission) Validate() error {
 		return nil
 	case "contacts:export":
 		return nil
+	case "custom_fields:manage":
+		return nil
 	case "suppressions:manage":
 		return nil
 	case "second_factor:manage":
@@ -1136,6 +1142,8 @@ func (s PersonalScope) Validate() error {
 	case "webhooks:test":
 		return nil
 	case "custom_fields:read":
+		return nil
+	case "custom_fields:write":
 		return nil
 	case "sending_domains:read":
 		return nil
@@ -5972,6 +5980,38 @@ func (s *SiteCustomFieldsListOK) Validate() error {
 	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SiteCustomFieldsUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteCustomFieldsUpdateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteCustomFieldsUpdateNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteCustomFieldsUpdateUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -12680,6 +12720,66 @@ func (s *SiteUpdateContactInput) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "avatar",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SiteUpdateCustomFieldInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if value, ok := s.Name.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     1,
+					MinLengthSet:  true,
+					MaxLength:     0,
+					MaxLengthSet:  false,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "name",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Type.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
 			Error: err,
 		})
 	}

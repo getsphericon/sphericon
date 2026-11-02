@@ -21,6 +21,16 @@ func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFiel
 	return mapper.CustomFieldsListPage(pagination.Whole(items)), nil
 }
 
+// CustomFieldsUpdate renames a Custom field or changes its type.
+func (h *Handlers) CustomFieldsUpdate(ctx context.Context, req *externalapi.UpdateCustomFieldInput, params externalapi.CustomFieldsUpdateParams) (externalapi.CustomFieldsUpdateRes, error) {
+	field, err := contacts.UpdateCustomField(ctx, auth.TokenScoped(ctx), int64(params.ID), inputs.CustomFieldUpdate(req))
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.CustomFieldToResource(field)
+	return &res, nil
+}
+
 // SendingDomainRatesList returns the (numerator, denominator, rate) triples of ADR 0011
 // for every Sending domain, over the trailing window.
 func (h *Handlers) SendingDomainRatesList(ctx context.Context, params externalapi.SendingDomainRatesListParams) (externalapi.SendingDomainRatesListRes, error) {

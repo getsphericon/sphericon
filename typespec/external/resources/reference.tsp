@@ -25,7 +25,7 @@ model CustomFieldResource {
   @untrusted
   name: string;
 
-  /** Inferred value type */
+  /** Value type: inferred from the first value, changed by an owner or admin */
   type: CustomFieldType;
 
   /** The operators a rule leaf on this field takes, by its type */
@@ -36,6 +36,16 @@ model CustomFieldResource {
 
   /** Last update timestamp */
   updatedAt: Timestamp;
+}
+
+/** Request body for updating a custom field: its key never changes */
+model UpdateCustomFieldInput {
+  /** Display name */
+  @minLength(1)
+  name?: string;
+
+  /** Value type. Stored values are not rewritten: the leaves of the new type read them as they are */
+  type?: CustomFieldType;
 }
 
 /** Delivery channel an integration belongs to */
@@ -152,6 +162,20 @@ namespace CustomFields {
     | UnauthorizedProblem
     | ForbiddenProblem
     | TooManyRequestsProblem;
+
+  /** Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled broadcast tests the field with an operator the new type does not take (`usedBy` names them). */
+  @route("/{id}")
+  @put
+  @requiresScopes(#[ApiTokenScope.customFieldsWrite])
+  op update(@path id: EntityId, @body body: UpdateCustomFieldInput):
+    | CustomFieldResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | ForbiddenProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem
+    | InUseProblem
+    | UnprocessableEntityProblem;
 }
 
 @route("/sending-domains/rates")

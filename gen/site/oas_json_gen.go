@@ -69,6 +69,8 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeWebhooksTest
 	case ApiTokenScopeCustomFieldsRead:
 		*s = ApiTokenScopeCustomFieldsRead
+	case ApiTokenScopeCustomFieldsWrite:
+		*s = ApiTokenScopeCustomFieldsWrite
 	case ApiTokenScopeSendingDomainsRead:
 		*s = ApiTokenScopeSendingDomainsRead
 	case ApiTokenScopeTrackingDomainsRead:
@@ -3892,6 +3894,8 @@ func (s *GrantableScope) Decode(d *jx.Decoder) error {
 		*s = GrantableScopeWebhooksTest
 	case GrantableScopeCustomFieldsRead:
 		*s = GrantableScopeCustomFieldsRead
+	case GrantableScopeCustomFieldsWrite:
+		*s = GrantableScopeCustomFieldsWrite
 	case GrantableScopeSendingDomainsRead:
 		*s = GrantableScopeSendingDomainsRead
 	case GrantableScopeTrackingDomainsRead:
@@ -7312,6 +7316,39 @@ func (s *OptSiteConditionGroup) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteCustomFieldType as json.
+func (o OptSiteCustomFieldType) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes SiteCustomFieldType from json.
+func (o *OptSiteCustomFieldType) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptSiteCustomFieldType to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptSiteCustomFieldType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptSiteCustomFieldType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteDeleteUserProblemDetailsErrors as json.
 func (o OptSiteDeleteUserProblemDetailsErrors) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -8083,6 +8120,8 @@ func (s *Permission) Decode(d *jx.Decoder) error {
 		*s = PermissionContactsErase
 	case PermissionContactsExport:
 		*s = PermissionContactsExport
+	case PermissionCustomFieldsManage:
+		*s = PermissionCustomFieldsManage
 	case PermissionSuppressionsManage:
 		*s = PermissionSuppressionsManage
 	case PermissionSecondFactorManage:
@@ -8185,6 +8224,8 @@ func (s *PersonalScope) Decode(d *jx.Decoder) error {
 		*s = PersonalScopeWebhooksTest
 	case PersonalScopeCustomFieldsRead:
 		*s = PersonalScopeCustomFieldsRead
+	case PersonalScopeCustomFieldsWrite:
+		*s = PersonalScopeCustomFieldsWrite
 	case PersonalScopeSendingDomainsRead:
 		*s = PersonalScopeSendingDomainsRead
 	case PersonalScopeTrackingDomainsRead:
@@ -30399,6 +30440,158 @@ func (s *SiteCustomFieldsListOK) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteCustomFieldsListOK) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteCustomFieldsUpdateBadRequest as json.
+func (s *SiteCustomFieldsUpdateBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteCustomFieldsUpdateBadRequest from json.
+func (s *SiteCustomFieldsUpdateBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteCustomFieldsUpdateBadRequest to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteCustomFieldsUpdateBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteCustomFieldsUpdateBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteCustomFieldsUpdateBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteCustomFieldsUpdateForbidden as json.
+func (s *SiteCustomFieldsUpdateForbidden) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteCustomFieldsUpdateForbidden from json.
+func (s *SiteCustomFieldsUpdateForbidden) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteCustomFieldsUpdateForbidden to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteCustomFieldsUpdateForbidden(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteCustomFieldsUpdateForbidden) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteCustomFieldsUpdateForbidden) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteCustomFieldsUpdateNotFound as json.
+func (s *SiteCustomFieldsUpdateNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteCustomFieldsUpdateNotFound from json.
+func (s *SiteCustomFieldsUpdateNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteCustomFieldsUpdateNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteCustomFieldsUpdateNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteCustomFieldsUpdateNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteCustomFieldsUpdateNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteCustomFieldsUpdateUnprocessableEntity as json.
+func (s *SiteCustomFieldsUpdateUnprocessableEntity) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteCustomFieldsUpdateUnprocessableEntity from json.
+func (s *SiteCustomFieldsUpdateUnprocessableEntity) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteCustomFieldsUpdateUnprocessableEntity to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteCustomFieldsUpdateUnprocessableEntity(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteCustomFieldsUpdateUnprocessableEntity) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteCustomFieldsUpdateUnprocessableEntity) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -61388,6 +61581,86 @@ func (s *SiteUpdateContactInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteUpdateContactInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteUpdateCustomFieldInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteUpdateCustomFieldInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.Name.Set {
+			e.FieldStart("name")
+			s.Name.Encode(e)
+		}
+	}
+	{
+		if s.Type.Set {
+			e.FieldStart("type")
+			s.Type.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfSiteUpdateCustomFieldInput = [2]string{
+	0: "name",
+	1: "type",
+}
+
+// Decode decodes SiteUpdateCustomFieldInput from json.
+func (s *SiteUpdateCustomFieldInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteUpdateCustomFieldInput to nil")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "name":
+			if err := func() error {
+				s.Name.Reset()
+				if err := s.Name.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "type":
+			if err := func() error {
+				s.Type.Reset()
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteUpdateCustomFieldInput")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteUpdateCustomFieldInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteUpdateCustomFieldInput) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

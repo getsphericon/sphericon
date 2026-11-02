@@ -29,7 +29,7 @@ model SiteCustomFieldResource {
   /** Display name (renameable) */
   name: string;
 
-  /** Inferred value type */
+  /** Value type: inferred from the first value, changed by an owner or admin */
   type: SiteCustomFieldType;
 
   /** The operators a rule leaf on this field takes, by its type */
@@ -42,7 +42,17 @@ model SiteCustomFieldResource {
   updatedAt: Timestamp;
 }
 
-// Read-only catalogue: list only. Nested via @parentResource + @autoRoute.
+/** Request body for updating a custom field: its key never changes */
+model SiteUpdateCustomFieldInput {
+  /** Display name */
+  @minLength(1)
+  name?: string;
+
+  /** Value type. Stored values are not rewritten: the leaves of the new type read them as they are */
+  type?: SiteCustomFieldType;
+}
+
+// The catalogue: created by use, listed, renamed and retyped. Nested via @parentResource + @autoRoute.
 @tag("Site Custom Fields")
 namespace SiteCustomFields {
   /** List the workspace's custom field definitions */
@@ -54,4 +64,20 @@ namespace SiteCustomFields {
     | Page<SiteCustomFieldResource>
     | BadRequestProblem
     | NotFoundProblem;
+
+  /** Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled broadcast tests the field with an operator the new type does not take (`usedBy` names them). Owners and admins only. */
+  @updatesResource(SiteCustomFieldResource)
+  @put
+  @autoRoute
+  @requiresPermissions(#[Permission.customFieldsManage])
+  op update(
+    ...ResourceParameters<SiteCustomFieldResource>,
+    @body body: SiteUpdateCustomFieldInput,
+  ):
+    | SiteCustomFieldResource
+    | BadRequestProblem
+    | ForbiddenProblem
+    | NotFoundProblem
+    | InUseProblem
+    | UnprocessableEntityProblem;
 }

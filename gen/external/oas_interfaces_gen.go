@@ -177,6 +177,10 @@ type CustomFieldsListRes interface {
 	customFieldsListRes()
 }
 
+type CustomFieldsUpdateRes interface {
+	customFieldsUpdateRes()
+}
+
 type EmailLintLintRes interface {
 	emailLintLintRes()
 }

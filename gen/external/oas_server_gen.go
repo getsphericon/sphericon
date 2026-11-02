@@ -289,6 +289,13 @@ type Handler interface {
 	//
 	// GET /custom-fields
 	CustomFieldsList(ctx context.Context) (CustomFieldsListRes, error)
+	// CustomFieldsUpdate implements CustomFields_update operation.
+	//
+	// Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled
+	// broadcast tests the field with an operator the new type does not take (`usedBy` names them).
+	//
+	// PUT /custom-fields/{id}
+	CustomFieldsUpdate(ctx context.Context, req *UpdateCustomFieldInput, params CustomFieldsUpdateParams) (CustomFieldsUpdateRes, error)
 	// EmailLintLint implements EmailLint_lint operation.
 	//
 	// Lint a message before a person sees it: the same lint that runs when a message is saved and when a

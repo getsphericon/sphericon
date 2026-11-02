@@ -17,6 +17,7 @@ const (
 	PermSendingDomainsManage  Permission = "sending_domains:manage"
 	PermContactsErase         Permission = "contacts:erase"
 	PermContactsExport        Permission = "contacts:export"
+	PermCustomFieldsManage    Permission = "custom_fields:manage"
 	PermSuppressionsManage    Permission = "suppressions:manage"
 	PermSecondFactorManage    Permission = "second_factor:manage"
 	PermWorkspaceUpdate       Permission = "workspace:update"

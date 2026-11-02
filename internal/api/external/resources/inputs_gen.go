@@ -217,6 +217,14 @@ func (c *InputsImpl) ContactUpserts(source []external.UpsertContactInput) []cont
 	}
 	return contactsUpsertInputList
 }
+func (c *InputsImpl) CustomFieldUpdate(source *external.UpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
+	var contactsCustomFieldUpdateInput contacts.CustomFieldUpdateInput
+	if source != nil {
+		contactsCustomFieldUpdateInput.Name = stringPatch((*source).Name)
+		contactsCustomFieldUpdateInput.Type = customFieldTypePatch((*source).Type)
+	}
+	return contactsCustomFieldUpdateInput
+}
 func (c *InputsImpl) Event(source external.EventInput, context bool) (eventlog.Input, error) {
 	var eventlogInput eventlog.Input
 	eventlogInput.SubjectID = source.SubjectId

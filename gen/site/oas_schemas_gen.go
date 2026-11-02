@@ -60,6 +60,7 @@ const (
 	ApiTokenScopeWebhooksRegenerate    ApiTokenScope = "webhooks:regenerate"
 	ApiTokenScopeWebhooksTest          ApiTokenScope = "webhooks:test"
 	ApiTokenScopeCustomFieldsRead      ApiTokenScope = "custom_fields:read"
+	ApiTokenScopeCustomFieldsWrite     ApiTokenScope = "custom_fields:write"
 	ApiTokenScopeSendingDomainsRead    ApiTokenScope = "sending_domains:read"
 	ApiTokenScopeTrackingDomainsRead   ApiTokenScope = "tracking_domains:read"
 	ApiTokenScopeIntegrationsRead      ApiTokenScope = "integrations:read"
@@ -102,6 +103,7 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeWebhooksRegenerate,
 		ApiTokenScopeWebhooksTest,
 		ApiTokenScopeCustomFieldsRead,
+		ApiTokenScopeCustomFieldsWrite,
 		ApiTokenScopeSendingDomainsRead,
 		ApiTokenScopeTrackingDomainsRead,
 		ApiTokenScopeIntegrationsRead,
@@ -164,6 +166,8 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeWebhooksTest:
 		return []byte(s), nil
 	case ApiTokenScopeCustomFieldsRead:
+		return []byte(s), nil
+	case ApiTokenScopeCustomFieldsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeSendingDomainsRead:
 		return []byte(s), nil
@@ -266,6 +270,9 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeCustomFieldsRead:
 		*s = ApiTokenScopeCustomFieldsRead
+		return nil
+	case ApiTokenScopeCustomFieldsWrite:
+		*s = ApiTokenScopeCustomFieldsWrite
 		return nil
 	case ApiTokenScopeSendingDomainsRead:
 		*s = ApiTokenScopeSendingDomainsRead
@@ -2524,6 +2531,7 @@ const (
 	GrantableScopeWebhooksRegenerate  GrantableScope = "webhooks:regenerate"
 	GrantableScopeWebhooksTest        GrantableScope = "webhooks:test"
 	GrantableScopeCustomFieldsRead    GrantableScope = "custom_fields:read"
+	GrantableScopeCustomFieldsWrite   GrantableScope = "custom_fields:write"
 	GrantableScopeSendingDomainsRead  GrantableScope = "sending_domains:read"
 	GrantableScopeTrackingDomainsRead GrantableScope = "tracking_domains:read"
 	GrantableScopeIntegrationsRead    GrantableScope = "integrations:read"
@@ -2552,6 +2560,7 @@ func (GrantableScope) AllValues() []GrantableScope {
 		GrantableScopeWebhooksRegenerate,
 		GrantableScopeWebhooksTest,
 		GrantableScopeCustomFieldsRead,
+		GrantableScopeCustomFieldsWrite,
 		GrantableScopeSendingDomainsRead,
 		GrantableScopeTrackingDomainsRead,
 		GrantableScopeIntegrationsRead,
@@ -2600,6 +2609,8 @@ func (s GrantableScope) MarshalText() ([]byte, error) {
 	case GrantableScopeWebhooksTest:
 		return []byte(s), nil
 	case GrantableScopeCustomFieldsRead:
+		return []byte(s), nil
+	case GrantableScopeCustomFieldsWrite:
 		return []byte(s), nil
 	case GrantableScopeSendingDomainsRead:
 		return []byte(s), nil
@@ -2674,6 +2685,9 @@ func (s *GrantableScope) UnmarshalText(data []byte) error {
 		return nil
 	case GrantableScopeCustomFieldsRead:
 		*s = GrantableScopeCustomFieldsRead
+		return nil
+	case GrantableScopeCustomFieldsWrite:
+		*s = GrantableScopeCustomFieldsWrite
 		return nil
 	case GrantableScopeSendingDomainsRead:
 		*s = GrantableScopeSendingDomainsRead
@@ -2914,6 +2928,7 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 
 func (*InUseProblemDetails) siteAutomationsArchiveRes()    {}
 func (*InUseProblemDetails) siteAutomationsDeleteRes()     {}
+func (*InUseProblemDetails) siteCustomFieldsUpdateRes()    {}
 func (*InUseProblemDetails) siteIntegrationsArchiveRes()   {}
 func (*InUseProblemDetails) siteRulesDeleteRes()           {}
 func (*InUseProblemDetails) siteSegmentsArchiveRes()       {}
@@ -6261,6 +6276,52 @@ func (o OptSiteConditionGroup) Or(d SiteConditionGroup) SiteConditionGroup {
 	return d
 }
 
+// NewOptSiteCustomFieldType returns new OptSiteCustomFieldType with value set to v.
+func NewOptSiteCustomFieldType(v SiteCustomFieldType) OptSiteCustomFieldType {
+	return OptSiteCustomFieldType{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteCustomFieldType is optional SiteCustomFieldType.
+type OptSiteCustomFieldType struct {
+	Value SiteCustomFieldType
+	Set   bool
+}
+
+// IsSet returns true if OptSiteCustomFieldType was set.
+func (o OptSiteCustomFieldType) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteCustomFieldType) Reset() {
+	var v SiteCustomFieldType
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteCustomFieldType) SetTo(v SiteCustomFieldType) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteCustomFieldType) Get() (v SiteCustomFieldType, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteCustomFieldType) Or(d SiteCustomFieldType) SiteCustomFieldType {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteDeleteUserProblemDetailsErrors returns new OptSiteDeleteUserProblemDetailsErrors with value set to v.
 func NewOptSiteDeleteUserProblemDetailsErrors(v SiteDeleteUserProblemDetailsErrors) OptSiteDeleteUserProblemDetailsErrors {
 	return OptSiteDeleteUserProblemDetailsErrors{
@@ -7292,6 +7353,7 @@ const (
 	PermissionSendingDomainsManage  Permission = "sending_domains:manage"
 	PermissionContactsErase         Permission = "contacts:erase"
 	PermissionContactsExport        Permission = "contacts:export"
+	PermissionCustomFieldsManage    Permission = "custom_fields:manage"
 	PermissionSuppressionsManage    Permission = "suppressions:manage"
 	PermissionSecondFactorManage    Permission = "second_factor:manage"
 	PermissionWorkspaceUpdate       Permission = "workspace:update"
@@ -7319,6 +7381,7 @@ func (Permission) AllValues() []Permission {
 		PermissionSendingDomainsManage,
 		PermissionContactsErase,
 		PermissionContactsExport,
+		PermissionCustomFieldsManage,
 		PermissionSuppressionsManage,
 		PermissionSecondFactorManage,
 		PermissionWorkspaceUpdate,
@@ -7355,6 +7418,8 @@ func (s Permission) MarshalText() ([]byte, error) {
 	case PermissionContactsErase:
 		return []byte(s), nil
 	case PermissionContactsExport:
+		return []byte(s), nil
+	case PermissionCustomFieldsManage:
 		return []byte(s), nil
 	case PermissionSuppressionsManage:
 		return []byte(s), nil
@@ -7416,6 +7481,9 @@ func (s *Permission) UnmarshalText(data []byte) error {
 		return nil
 	case PermissionContactsExport:
 		*s = PermissionContactsExport
+		return nil
+	case PermissionCustomFieldsManage:
+		*s = PermissionCustomFieldsManage
 		return nil
 	case PermissionSuppressionsManage:
 		*s = PermissionSuppressionsManage
@@ -7490,6 +7558,7 @@ const (
 	PersonalScopeWebhooksRegenerate   PersonalScope = "webhooks:regenerate"
 	PersonalScopeWebhooksTest         PersonalScope = "webhooks:test"
 	PersonalScopeCustomFieldsRead     PersonalScope = "custom_fields:read"
+	PersonalScopeCustomFieldsWrite    PersonalScope = "custom_fields:write"
 	PersonalScopeSendingDomainsRead   PersonalScope = "sending_domains:read"
 	PersonalScopeTrackingDomainsRead  PersonalScope = "tracking_domains:read"
 	PersonalScopeIntegrationsRead     PersonalScope = "integrations:read"
@@ -7525,6 +7594,7 @@ func (PersonalScope) AllValues() []PersonalScope {
 		PersonalScopeWebhooksRegenerate,
 		PersonalScopeWebhooksTest,
 		PersonalScopeCustomFieldsRead,
+		PersonalScopeCustomFieldsWrite,
 		PersonalScopeSendingDomainsRead,
 		PersonalScopeTrackingDomainsRead,
 		PersonalScopeIntegrationsRead,
@@ -7580,6 +7650,8 @@ func (s PersonalScope) MarshalText() ([]byte, error) {
 	case PersonalScopeWebhooksTest:
 		return []byte(s), nil
 	case PersonalScopeCustomFieldsRead:
+		return []byte(s), nil
+	case PersonalScopeCustomFieldsWrite:
 		return []byte(s), nil
 	case PersonalScopeSendingDomainsRead:
 		return []byte(s), nil
@@ -7668,6 +7740,9 @@ func (s *PersonalScope) UnmarshalText(data []byte) error {
 		return nil
 	case PersonalScopeCustomFieldsRead:
 		*s = PersonalScopeCustomFieldsRead
+		return nil
+	case PersonalScopeCustomFieldsWrite:
+		*s = PersonalScopeCustomFieldsWrite
 		return nil
 	case PersonalScopeSendingDomainsRead:
 		*s = PersonalScopeSendingDomainsRead
@@ -15589,7 +15664,11 @@ type SiteCreateContactInput struct {
 	City OptNilString `json:"city"`
 	// Https URL of the contact's photo.
 	Avatar OptNilImageUrl `json:"avatar"`
-	// Typed custom field values keyed by the field's machine key.
+	// Typed custom field values keyed by the field's machine key. A new key's first value sets the field's
+	// type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or
+	// `2026-01-15`, the last two read in the Workspace time zone) or text. Send a date without time as a
+	// `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes as UTC and lands on the previous day
+	// east of UTC.
 	CustomFields OptNilJsonObject `json:"customFields"`
 	// Tags to give the contact, created on first use.
 	Tags []string `json:"tags"`
@@ -16053,7 +16132,7 @@ type SiteCustomFieldResource struct {
 	Key string `json:"key"`
 	// Display name (renameable).
 	Name string `json:"name"`
-	// Inferred value type.
+	// Value type: inferred from the first value, changed by an owner or admin.
 	Type SiteCustomFieldType `json:"type"`
 	// The operators a rule leaf on this field takes, by its type.
 	RuleOperators []SiteConditionOperator `json:"ruleOperators"`
@@ -16132,6 +16211,8 @@ func (s *SiteCustomFieldResource) SetCreatedAt(val Timestamp) {
 func (s *SiteCustomFieldResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
+
+func (*SiteCustomFieldResource) siteCustomFieldsUpdateRes() {}
 
 // A Custom field's value type.
 // Ref: #/components/schemas/SiteCustomFieldType
@@ -16263,6 +16344,22 @@ func (s *SiteCustomFieldsListOK) SetTotalPages(val int32) {
 }
 
 func (*SiteCustomFieldsListOK) siteCustomFieldsListRes() {}
+
+type SiteCustomFieldsUpdateBadRequest ProblemDetails
+
+func (*SiteCustomFieldsUpdateBadRequest) siteCustomFieldsUpdateRes() {}
+
+type SiteCustomFieldsUpdateForbidden ProblemDetails
+
+func (*SiteCustomFieldsUpdateForbidden) siteCustomFieldsUpdateRes() {}
+
+type SiteCustomFieldsUpdateNotFound ProblemDetails
+
+func (*SiteCustomFieldsUpdateNotFound) siteCustomFieldsUpdateRes() {}
+
+type SiteCustomFieldsUpdateUnprocessableEntity ProblemDetails
+
+func (*SiteCustomFieldsUpdateUnprocessableEntity) siteCustomFieldsUpdateRes() {}
 
 // Confirmation of User deletion (ADR 0050): the User's own email typed in, their password (a User with
 // no password sends the token of the mailed link instead) and, when a Second factor is enrolled, a
@@ -26289,7 +26386,11 @@ type SiteUpdateContactInput struct {
 	City OptNilString `json:"city"`
 	// Https URL of the contact's photo.
 	Avatar OptNilImageUrl `json:"avatar"`
-	// Typed custom field values keyed by the field's machine key.
+	// Typed custom field values keyed by the field's machine key. A new key's first value sets the field's
+	// type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or
+	// `2026-01-15`, the last two read in the Workspace time zone) or text. Send a date without time as a
+	// `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes as UTC and lands on the previous day
+	// east of UTC.
 	CustomFields OptNilJsonObject `json:"customFields"`
 	// The contact's complete tag set when given: tags not listed are removed from it, an absent key keeps
 	// them.
@@ -26424,6 +26525,35 @@ func (s *SiteUpdateContactInput) SetCustomFields(val OptNilJsonObject) {
 // SetTags sets the value of Tags.
 func (s *SiteUpdateContactInput) SetTags(val []string) {
 	s.Tags = val
+}
+
+// Request body for updating a custom field: its key never changes.
+// Ref: #/components/schemas/SiteUpdateCustomFieldInput
+type SiteUpdateCustomFieldInput struct {
+	// Display name.
+	Name OptString `json:"name"`
+	// Value type. Stored values are not rewritten: the leaves of the new type read them as they are.
+	Type OptSiteCustomFieldType `json:"type"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteUpdateCustomFieldInput) GetName() OptString {
+	return s.Name
+}
+
+// GetType returns the value of Type.
+func (s *SiteUpdateCustomFieldInput) GetType() OptSiteCustomFieldType {
+	return s.Type
+}
+
+// SetName sets the value of Name.
+func (s *SiteUpdateCustomFieldInput) SetName(val OptString) {
+	s.Name = val
+}
+
+// SetType sets the value of Type.
+func (s *SiteUpdateCustomFieldInput) SetType(val OptSiteCustomFieldType) {
+	s.Type = val
 }
 
 // Update the authenticated user's profile. To change the password, provide both currentPassword and
