@@ -1260,7 +1260,8 @@ Contacts and their consent and shows notices; one with no field is still an On-s
 frequency, the Placement and the schedule; the name, the Format and the status stay on the form.
 Not a Channel and not a send: it never makes an Outbound message, and what it shows is not Message
 content. The content is a linear run of steps, an optional success step and, on a popup or a
-slide-in, a teaser; one design serves every device, with per-device overrides.
+slide-in, a teaser; one design serves every device, with per-device overrides. It carries no merge
+tags: every visitor sees the same live version.
 _Avoid_: On-site message, site message (a message shown to a known Contact by an Automation, not
 built), campaign, widget, popup (as the umbrella term)
 
@@ -1295,6 +1296,13 @@ corner), `bar` (a strip at the top or the bottom) or `embedded` (inside the page
 Chosen when the form is created and never changed; a form in another Format is made by
 **Duplicate**.
 _Avoid_: Type, layout, kind
+
+**Form host**:
+The Instance's own hostname that the tracker loads On-site forms from: their display code, the
+Workspace's live forms and which of them a Visitor's audience admits. Kept apart from the Tracking
+domain, so a blocker that stops forms leaves tracking, clicks and Identify working; a Form submit
+still goes to the Tracking domain.
+_Avoid_: CDN, widget host, forms domain
 
 **Placement**:
 The name the customer's site gives an element it reserves for an embedded On-site form; the form
