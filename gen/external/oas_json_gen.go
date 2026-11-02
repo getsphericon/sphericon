@@ -6530,54 +6530,6 @@ func (s *BrandKitResource) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes BroadcastHoldReason as json.
-func (s BroadcastHoldReason) Encode(e *jx.Encoder) {
-	e.Str(string(s))
-}
-
-// Decode decodes BroadcastHoldReason from json.
-func (s *BroadcastHoldReason) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode BroadcastHoldReason to nil")
-	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch BroadcastHoldReason(v) {
-	case BroadcastHoldReasonWorkspaceSuspended:
-		*s = BroadcastHoldReasonWorkspaceSuspended
-	case BroadcastHoldReasonWorkspacePendingDeletion:
-		*s = BroadcastHoldReasonWorkspacePendingDeletion
-	case BroadcastHoldReasonStaffHold:
-		*s = BroadcastHoldReasonStaffHold
-	case BroadcastHoldReasonNoIntegration:
-		*s = BroadcastHoldReasonNoIntegration
-	case BroadcastHoldReasonUnverifiedDomain:
-		*s = BroadcastHoldReasonUnverifiedDomain
-	case BroadcastHoldReasonProviderStopped:
-		*s = BroadcastHoldReasonProviderStopped
-	default:
-		*s = BroadcastHoldReason(v)
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s BroadcastHoldReason) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *BroadcastHoldReason) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode implements json.Marshaler.
 func (s *BroadcastReport) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -24317,6 +24269,54 @@ func (s *ExportMessagesUnauthorized) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes HoldReason as json.
+func (s HoldReason) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes HoldReason from json.
+func (s *HoldReason) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode HoldReason to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch HoldReason(v) {
+	case HoldReasonWorkspaceSuspended:
+		*s = HoldReasonWorkspaceSuspended
+	case HoldReasonWorkspacePendingDeletion:
+		*s = HoldReasonWorkspacePendingDeletion
+	case HoldReasonStaffHold:
+		*s = HoldReasonStaffHold
+	case HoldReasonNoIntegration:
+		*s = HoldReasonNoIntegration
+	case HoldReasonUnverifiedDomain:
+		*s = HoldReasonUnverifiedDomain
+	case HoldReasonProviderStopped:
+		*s = HoldReasonProviderStopped
+	default:
+		*s = HoldReason(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s HoldReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *HoldReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes ImageUrl as json.
 func (s ImageUrl) Encode(e *jx.Encoder) {
 	unwrapped := string(s)
@@ -28937,55 +28937,6 @@ func (s *OptJsonObject) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes BroadcastHoldReason as json.
-func (o OptNilBroadcastHoldReason) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	if o.Null {
-		e.Null()
-		return
-	}
-	e.Str(string(o.Value))
-}
-
-// Decode decodes BroadcastHoldReason from json.
-func (o *OptNilBroadcastHoldReason) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptNilBroadcastHoldReason to nil")
-	}
-	if d.Next() == jx.Null {
-		if err := d.Null(); err != nil {
-			return err
-		}
-
-		var v BroadcastHoldReason
-		o.Value = v
-		o.Set = true
-		o.Null = true
-		return nil
-	}
-	o.Set = true
-	o.Null = false
-	if err := o.Value.Decode(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptNilBroadcastHoldReason) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptNilBroadcastHoldReason) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode encodes ContactExportSource as json.
 func (o OptNilContactExportSource) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -29279,6 +29230,55 @@ func (s OptNilEntityId) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilEntityId) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes HoldReason as json.
+func (o OptNilHoldReason) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes HoldReason from json.
+func (o *OptNilHoldReason) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilHoldReason to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v HoldReason
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilHoldReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilHoldReason) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

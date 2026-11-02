@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 )
 
 // BroadcastUpdate is the builder for updating Broadcast entities.
@@ -330,13 +331,13 @@ func (_u *BroadcastUpdate) ClearFailedAt() *BroadcastUpdate {
 }
 
 // SetHoldReason sets the "hold_reason" field.
-func (_u *BroadcastUpdate) SetHoldReason(v broadcast.HoldReason) *BroadcastUpdate {
+func (_u *BroadcastUpdate) SetHoldReason(v holdreason.Reason) *BroadcastUpdate {
 	_u.mutation.SetHoldReason(v)
 	return _u
 }
 
 // SetNillableHoldReason sets the "hold_reason" field if the given value is not nil.
-func (_u *BroadcastUpdate) SetNillableHoldReason(v *broadcast.HoldReason) *BroadcastUpdate {
+func (_u *BroadcastUpdate) SetNillableHoldReason(v *holdreason.Reason) *BroadcastUpdate {
 	if v != nil {
 		_u.SetHoldReason(*v)
 	}
@@ -1055,13 +1056,13 @@ func (_u *BroadcastUpdateOne) ClearFailedAt() *BroadcastUpdateOne {
 }
 
 // SetHoldReason sets the "hold_reason" field.
-func (_u *BroadcastUpdateOne) SetHoldReason(v broadcast.HoldReason) *BroadcastUpdateOne {
+func (_u *BroadcastUpdateOne) SetHoldReason(v holdreason.Reason) *BroadcastUpdateOne {
 	_u.mutation.SetHoldReason(v)
 	return _u
 }
 
 // SetNillableHoldReason sets the "hold_reason" field if the given value is not nil.
-func (_u *BroadcastUpdateOne) SetNillableHoldReason(v *broadcast.HoldReason) *BroadcastUpdateOne {
+func (_u *BroadcastUpdateOne) SetNillableHoldReason(v *holdreason.Reason) *BroadcastUpdateOne {
 	if v != nil {
 		_u.SetHoldReason(*v)
 	}

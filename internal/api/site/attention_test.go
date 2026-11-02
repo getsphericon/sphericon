@@ -10,11 +10,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -72,20 +72,20 @@ func TestWhatStopsMailComesBeforeWhatFailedAndEveryMemberSeesIt(t *testing.T) {
 func TestAHeldBroadcastSaysWhyButAWorkspaceLevelHoldIsLeftToTheLayout(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	hold := func(id int64, reason broadcast.HoldReason) {
+	hold := func(id int64, reason holdreason.Reason) {
 		t.Helper()
 		require.NoError(t, acme.Broadcast().UpdateOneID(id).SetHoldReason(reason).Exec(t.Context()))
 	}
-	hold(fixtures.BroadcastScheduledID, broadcast.HoldReasonUnverifiedDomain)
-	hold(fixtures.BroadcastSendingID, broadcast.HoldReasonWorkspaceSuspended)
-	hold(fixtures.BroadcastFailedID, broadcast.HoldReasonNoIntegration)
+	hold(fixtures.BroadcastScheduledID, holdreason.UnverifiedDomain)
+	hold(fixtures.BroadcastSendingID, holdreason.WorkspaceSuspended)
+	hold(fixtures.BroadcastFailedID, holdreason.NoIntegration)
 
 	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
 
 	held, ok := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastScheduledID)
 	require.True(t, ok)
 	assert.Equal(t, siteapi.SiteAttentionSeverityBlocked, held.Severity)
-	assert.Equal(t, siteapi.BroadcastHoldReasonUnverifiedDomain, held.HoldReason.Value)
+	assert.Equal(t, siteapi.HoldReasonUnverifiedDomain, held.HoldReason.Value)
 	_, suspended := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastSendingID)
 	assert.False(t, suspended, "a suspension is the layout's banner")
 	_, failed := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastFailedID)
@@ -365,7 +365,7 @@ func TestABroadcastScheduledAfterTheNext24HoursIsNoItem(t *testing.T) {
 // the later one, alone, fits a Send cap of 4.
 func TestAHeldScheduledBroadcastIsNoSendCapItemAndTakesNothingFromTheOthers(t *testing.T) {
 	env := withSendCap(t, 4)
-	hold := env.DB.Scoped(fixtures.CaptonID).Broadcast().UpdateOneID(fixtures.BroadcastCaptonSoonerID).SetHoldReason(broadcast.HoldReasonNoIntegration)
+	hold := env.DB.Scoped(fixtures.CaptonID).Broadcast().UpdateOneID(fixtures.BroadcastCaptonSoonerID).SetHoldReason(holdreason.NoIntegration)
 	require.NoError(t, hold.Exec(t.Context()))
 
 	items := attentionOf(t, env.SiteActor(t, fixtures.CaptonOwnerCleoEmail), fixtures.CaptonPublicID)
@@ -405,7 +405,7 @@ func TestAnActiveAutomationWhoseIntegrationIsArchivedCannotSend(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, siteapi.SiteAttentionSeverityBlocked, held.Severity)
 	assert.Equal(t, siteapi.SiteAttentionSubject{ID: fixtures.AutomationHoldDemoID, Name: fixtures.AutomationHoldDemoName}, held.Subject.Value)
-	assert.Equal(t, siteapi.BroadcastHoldReasonNoIntegration, held.HoldReason.Value)
+	assert.Equal(t, siteapi.HoldReasonNoIntegration, held.HoldReason.Value)
 	assert.False(t, held.Since.Set, "no moment is stored for when a route started holding")
 	_, welcome := cannotSendOf(items, fixtures.AutomationWelcomeSeriesID)
 	assert.False(t, welcome, "the Automations on the default still send")
@@ -422,7 +422,7 @@ func TestAnActiveAutomationWhoseFromDomainIsNotVerifiedCannotSend(t *testing.T) 
 
 	held, ok := cannotSendOf(items, fixtures.AutomationWelcomeSeriesID)
 	require.True(t, ok)
-	assert.Equal(t, siteapi.BroadcastHoldReasonUnverifiedDomain, held.HoldReason.Value)
+	assert.Equal(t, siteapi.HoldReasonUnverifiedDomain, held.HoldReason.Value)
 	_, holdDemo := cannotSendOf(items, fixtures.AutomationHoldDemoID)
 	assert.True(t, holdDemo, "every Automation that cannot send is an item of its own")
 }
@@ -437,7 +437,7 @@ func TestAnActiveAutomationWhoseProviderStoppedTheAccountCannotSend(t *testing.T
 
 	held, ok := cannotSendOf(items, fixtures.AutomationWelcomeSeriesID)
 	require.True(t, ok)
-	assert.Equal(t, siteapi.BroadcastHoldReasonProviderStopped, held.HoldReason.Value)
+	assert.Equal(t, siteapi.HoldReasonProviderStopped, held.HoldReason.Value)
 }
 
 // The default is stopped in every case, so each Automation left out is left out for what it is.

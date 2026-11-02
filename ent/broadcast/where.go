@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 )
 
 // ID filters vertices based on their ID field.
@@ -1026,23 +1027,33 @@ func FailedAtNotNil() predicate.Broadcast {
 }
 
 // HoldReasonEQ applies the EQ predicate on the "hold_reason" field.
-func HoldReasonEQ(v HoldReason) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldEQ(FieldHoldReason, v))
+func HoldReasonEQ(v holdreason.Reason) predicate.Broadcast {
+	vc := v
+	return predicate.Broadcast(sql.FieldEQ(FieldHoldReason, vc))
 }
 
 // HoldReasonNEQ applies the NEQ predicate on the "hold_reason" field.
-func HoldReasonNEQ(v HoldReason) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldNEQ(FieldHoldReason, v))
+func HoldReasonNEQ(v holdreason.Reason) predicate.Broadcast {
+	vc := v
+	return predicate.Broadcast(sql.FieldNEQ(FieldHoldReason, vc))
 }
 
 // HoldReasonIn applies the In predicate on the "hold_reason" field.
-func HoldReasonIn(vs ...HoldReason) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldIn(FieldHoldReason, vs...))
+func HoldReasonIn(vs ...holdreason.Reason) predicate.Broadcast {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Broadcast(sql.FieldIn(FieldHoldReason, v...))
 }
 
 // HoldReasonNotIn applies the NotIn predicate on the "hold_reason" field.
-func HoldReasonNotIn(vs ...HoldReason) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldNotIn(FieldHoldReason, vs...))
+func HoldReasonNotIn(vs ...holdreason.Reason) predicate.Broadcast {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Broadcast(sql.FieldNotIn(FieldHoldReason, v...))
 }
 
 // HoldReasonIsNil applies the IsNil predicate on the "hold_reason" field.

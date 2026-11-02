@@ -293,25 +293,6 @@ func (s AuditAction) Validate() error {
 	}
 }
 
-func (s BroadcastHoldReason) Validate() error {
-	switch s {
-	case "workspace_suspended":
-		return nil
-	case "workspace_pending_deletion":
-		return nil
-	case "staff_hold":
-		return nil
-	case "no_integration":
-		return nil
-	case "unverified_domain":
-		return nil
-	case "provider_stopped":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
 func (s *ContactExportContact) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -685,6 +666,25 @@ func (s GrantableScope) Validate() error {
 	case "tracking_domains:read":
 		return nil
 	case "integrations:read":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s HoldReason) Validate() error {
+	switch s {
+	case "workspace_suspended":
+		return nil
+	case "workspace_pending_deletion":
+		return nil
+	case "staff_hold":
+		return nil
+	case "no_integration":
+		return nil
+	case "unverified_domain":
+		return nil
+	case "provider_stopped":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

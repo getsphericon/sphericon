@@ -9,6 +9,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/holdreason"
 )
 
 // Broadcast is a workspace-scoped one-off email campaign. Its lifecycle is
@@ -96,13 +98,10 @@ func (Broadcast) Fields() []ent.Field {
 		// hold — Workspace suspension, an unverified Sending domain, no Integration —
 		// not a failure. Set while any recipient is held, cleared when one sends; the
 		// status stays "sending" and the pending recipients wait for the hold to lift. The
-		// Workspace-level reasons are the holds package's, the source-level ones Outbound send's
-		// (holds.Reason*, outbound.Hold*); a Staff hold's own reason code is never one of them.
+		// reasons are holdreason's, the one list Outbound send holds a send for; a Staff hold's own
+		// reason code is never one of them.
 		field.Enum("hold_reason").
-			Values(
-				"workspace_suspended", "workspace_pending_deletion", "staff_hold",
-				"no_integration", "unverified_domain", "provider_stopped",
-			).
+			GoType(holdreason.Reason("")).
 			Optional().
 			Nillable(),
 		// When the last paced recipient job is scheduled (ADR 0023): the planner spreads

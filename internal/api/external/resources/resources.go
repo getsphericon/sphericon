@@ -9,6 +9,9 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/go-faster/jx"
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
@@ -31,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -43,8 +47,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/webhook"
-	"github.com/go-faster/jx"
-	"github.com/samber/lo"
 )
 
 // automationVersionOrNull is a version of the Automation, or null when it has none.
@@ -82,7 +84,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optNilString
 // goverter:extend optNilSendCap
 // goverter:extend optNilContactSource
-// goverter:extend optNilBroadcastHoldReason
+// goverter:extend optNilHoldReason
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
 // goverter:extend optNilCountry
@@ -409,7 +411,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	ContactExportSourceToResource(source contact.Source) externalapi.ContactExportSource
 	// goverter:enum:transform value
-	BroadcastHoldReasonToResource(source broadcast.HoldReason) externalapi.BroadcastHoldReason
+	HoldReasonToResource(source holdreason.Reason) externalapi.HoldReason
 	// goverter:enum:transform value
 	CustomFieldTypeToResource(source customfield.Type) externalapi.CustomFieldType
 	// What a test send of a Webhook endpoint failed with: a delivery's own error, not the one the
@@ -743,8 +745,8 @@ func optNilContactSource(c Converter, v *contact.Source) externalapi.OptNilConta
 	return convert.OptVia[externalapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
 }
 
-func optNilBroadcastHoldReason(c Converter, v *broadcast.HoldReason) externalapi.OptNilBroadcastHoldReason {
-	return convert.OptVia[externalapi.OptNilBroadcastHoldReason](v, c.BroadcastHoldReasonToResource)
+func optNilHoldReason(c Converter, v *holdreason.Reason) externalapi.OptNilHoldReason {
+	return convert.OptVia[externalapi.OptNilHoldReason](v, c.HoldReasonToResource)
 }
 
 // schemaExample is the agent schema's example document as the contract's opaque object.

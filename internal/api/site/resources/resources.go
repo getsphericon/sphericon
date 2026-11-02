@@ -35,8 +35,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
+
+	"github.com/go-faster/jx"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
@@ -58,8 +62,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
-	"github.com/go-faster/jx"
-	"github.com/samber/lo"
 )
 
 // Converter maps ent entities to site API resources. goverter generates the
@@ -75,7 +77,7 @@ import (
 // goverter:extend timestamp
 // goverter:extend optNilString
 // goverter:extend optNilContactSource
-// goverter:extend optNilBroadcastHoldReason
+// goverter:extend optNilHoldReason
 // goverter:extend omitEmpty
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilEntityID
@@ -607,7 +609,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	ContactExportSourceToResource(source contact.Source) siteapi.ContactExportSource
 	// goverter:enum:transform value
-	BroadcastHoldReasonToResource(source broadcast.HoldReason) siteapi.BroadcastHoldReason
+	HoldReasonToResource(source holdreason.Reason) siteapi.HoldReason
 	// goverter:enum:transform value
 	CustomFieldTypeToResource(source customfield.Type) siteapi.SiteCustomFieldType
 	// What a test send of a Webhook endpoint failed with: a delivery's own error, not the one the
@@ -1082,8 +1084,8 @@ func optNilContactSource(c Converter, v *contact.Source) siteapi.OptNilContactEx
 	return convert.OptVia[siteapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
 }
 
-func optNilBroadcastHoldReason(c Converter, v *broadcast.HoldReason) siteapi.OptNilBroadcastHoldReason {
-	return convert.OptVia[siteapi.OptNilBroadcastHoldReason](v, c.BroadcastHoldReasonToResource)
+func optNilHoldReason(c Converter, v *holdreason.Reason) siteapi.OptNilHoldReason {
+	return convert.OptVia[siteapi.OptNilHoldReason](v, c.HoldReasonToResource)
 }
 
 // customFieldRuleOperators is the operators a rule leaf may test on a Custom field of the type: the

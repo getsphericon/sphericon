@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 )
 
 const (
@@ -174,27 +175,10 @@ func StatusValidator(s Status) error {
 	}
 }
 
-// HoldReason defines the type for the "hold_reason" enum field.
-type HoldReason string
-
-// HoldReason values.
-const (
-	HoldReasonWorkspaceSuspended       HoldReason = "workspace_suspended"
-	HoldReasonWorkspacePendingDeletion HoldReason = "workspace_pending_deletion"
-	HoldReasonStaffHold                HoldReason = "staff_hold"
-	HoldReasonNoIntegration            HoldReason = "no_integration"
-	HoldReasonUnverifiedDomain         HoldReason = "unverified_domain"
-	HoldReasonProviderStopped          HoldReason = "provider_stopped"
-)
-
-func (hr HoldReason) String() string {
-	return string(hr)
-}
-
 // HoldReasonValidator is a validator for the "hold_reason" field enum values. It is called by the builders before save.
-func HoldReasonValidator(hr HoldReason) error {
+func HoldReasonValidator(hr holdreason.Reason) error {
 	switch hr {
-	case HoldReasonWorkspaceSuspended, HoldReasonWorkspacePendingDeletion, HoldReasonStaffHold, HoldReasonNoIntegration, HoldReasonUnverifiedDomain, HoldReasonProviderStopped:
+	case "workspace_suspended", "workspace_pending_deletion", "staff_hold", "no_integration", "unverified_domain", "provider_stopped":
 		return nil
 	default:
 		return fmt.Errorf("broadcast: invalid enum value for hold_reason field: %q", hr)

@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
@@ -23,9 +24,9 @@ import (
 // is neither a Hold row nor the pending-deletion Hold: it keeps its own state and fields,
 // and only its reason code is declared here.
 const (
-	ReasonSuspended       = "workspace_suspended"
-	ReasonPendingDeletion = "workspace_pending_deletion"
-	ReasonStaff           = "staff_hold"
+	ReasonSuspended       = string(holdreason.WorkspaceSuspended)
+	ReasonPendingDeletion = string(holdreason.WorkspacePendingDeletion)
+	ReasonStaff           = string(holdreason.StaffHold)
 )
 
 // Message words a Workspace-level reason for a human, "" for any other reason. Outbound

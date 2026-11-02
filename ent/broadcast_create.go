@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 )
 
 // BroadcastCreate is the builder for creating a Broadcast entity.
@@ -256,13 +257,13 @@ func (_c *BroadcastCreate) SetNillableFailedAt(v *time.Time) *BroadcastCreate {
 }
 
 // SetHoldReason sets the "hold_reason" field.
-func (_c *BroadcastCreate) SetHoldReason(v broadcast.HoldReason) *BroadcastCreate {
+func (_c *BroadcastCreate) SetHoldReason(v holdreason.Reason) *BroadcastCreate {
 	_c.mutation.SetHoldReason(v)
 	return _c
 }
 
 // SetNillableHoldReason sets the "hold_reason" field if the given value is not nil.
-func (_c *BroadcastCreate) SetNillableHoldReason(v *broadcast.HoldReason) *BroadcastCreate {
+func (_c *BroadcastCreate) SetNillableHoldReason(v *holdreason.Reason) *BroadcastCreate {
 	if v != nil {
 		_c.SetHoldReason(*v)
 	}
@@ -908,7 +909,7 @@ func (u *BroadcastUpsert) ClearFailedAt() *BroadcastUpsert {
 }
 
 // SetHoldReason sets the "hold_reason" field.
-func (u *BroadcastUpsert) SetHoldReason(v broadcast.HoldReason) *BroadcastUpsert {
+func (u *BroadcastUpsert) SetHoldReason(v holdreason.Reason) *BroadcastUpsert {
 	u.Set(broadcast.FieldHoldReason, v)
 	return u
 }
@@ -1310,7 +1311,7 @@ func (u *BroadcastUpsertOne) ClearFailedAt() *BroadcastUpsertOne {
 }
 
 // SetHoldReason sets the "hold_reason" field.
-func (u *BroadcastUpsertOne) SetHoldReason(v broadcast.HoldReason) *BroadcastUpsertOne {
+func (u *BroadcastUpsertOne) SetHoldReason(v holdreason.Reason) *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.SetHoldReason(v)
 	})
@@ -1884,7 +1885,7 @@ func (u *BroadcastUpsertBulk) ClearFailedAt() *BroadcastUpsertBulk {
 }
 
 // SetHoldReason sets the "hold_reason" field.
-func (u *BroadcastUpsertBulk) SetHoldReason(v broadcast.HoldReason) *BroadcastUpsertBulk {
+func (u *BroadcastUpsertBulk) SetHoldReason(v holdreason.Reason) *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.SetHoldReason(v)
 	})

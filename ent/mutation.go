@@ -81,6 +81,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 )
 
 const (
@@ -8305,7 +8306,7 @@ type BroadcastMutation struct {
 	scheduled_at       *time.Time
 	sent_at            *time.Time
 	failed_at          *time.Time
-	hold_reason        *broadcast.HoldReason
+	hold_reason        *holdreason.Reason
 	last_scheduled_at  *time.Time
 	clearedFields      map[string]struct{}
 	workspace          *int64
@@ -9234,12 +9235,12 @@ func (m *BroadcastMutation) ResetFailedAt() {
 }
 
 // SetHoldReason sets the "hold_reason" field.
-func (m *BroadcastMutation) SetHoldReason(br broadcast.HoldReason) {
-	m.hold_reason = &br
+func (m *BroadcastMutation) SetHoldReason(h holdreason.Reason) {
+	m.hold_reason = &h
 }
 
 // HoldReason returns the value of the "hold_reason" field in the mutation.
-func (m *BroadcastMutation) HoldReason() (r broadcast.HoldReason, exists bool) {
+func (m *BroadcastMutation) HoldReason() (r holdreason.Reason, exists bool) {
 	v := m.hold_reason
 	if v == nil {
 		return
@@ -9250,7 +9251,7 @@ func (m *BroadcastMutation) HoldReason() (r broadcast.HoldReason, exists bool) {
 // OldHoldReason returns the old "hold_reason" field's value of the Broadcast entity.
 // If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastMutation) OldHoldReason(ctx context.Context) (v *broadcast.HoldReason, err error) {
+func (m *BroadcastMutation) OldHoldReason(ctx context.Context) (v *holdreason.Reason, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldHoldReason is only allowed on UpdateOne operations")
 	}
@@ -9794,7 +9795,7 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 		m.SetFailedAt(v)
 		return nil
 	case broadcast.FieldHoldReason:
-		v, ok := value.(broadcast.HoldReason)
+		v, ok := value.(holdreason.Reason)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

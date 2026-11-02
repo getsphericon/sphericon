@@ -52,6 +52,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 )
 
 var (
@@ -6848,13 +6849,13 @@ func (x *BroadcastScopedCreate) SetNillableFailedAt(v *time.Time) *BroadcastScop
 }
 
 // SetHoldReason sets the "hold_reason" field.
-func (x *BroadcastScopedCreate) SetHoldReason(v broadcast.HoldReason) *BroadcastScopedCreate {
+func (x *BroadcastScopedCreate) SetHoldReason(v holdreason.Reason) *BroadcastScopedCreate {
 	x.b.SetHoldReason(v)
 	return x
 }
 
 // SetNillableHoldReason sets the "hold_reason" field if the given value is not nil.
-func (x *BroadcastScopedCreate) SetNillableHoldReason(v *broadcast.HoldReason) *BroadcastScopedCreate {
+func (x *BroadcastScopedCreate) SetNillableHoldReason(v *holdreason.Reason) *BroadcastScopedCreate {
 	x.b.SetNillableHoldReason(v)
 	return x
 }
@@ -7248,7 +7249,7 @@ func (u *BroadcastScopedUpsert) ClearFailedAt() *BroadcastScopedUpsert {
 }
 
 // SetHoldReason sets the "hold_reason" field.
-func (u *BroadcastScopedUpsert) SetHoldReason(v broadcast.HoldReason) *BroadcastScopedUpsert {
+func (u *BroadcastScopedUpsert) SetHoldReason(v holdreason.Reason) *BroadcastScopedUpsert {
 	u.u.Set(broadcast.FieldHoldReason, v)
 	return u
 }
@@ -7714,13 +7715,13 @@ func (x *BroadcastScopedUpdateOne) ClearFailedAt() *BroadcastScopedUpdateOne {
 }
 
 // SetHoldReason sets the "hold_reason" field.
-func (x *BroadcastScopedUpdateOne) SetHoldReason(v broadcast.HoldReason) *BroadcastScopedUpdateOne {
+func (x *BroadcastScopedUpdateOne) SetHoldReason(v holdreason.Reason) *BroadcastScopedUpdateOne {
 	x.b.SetHoldReason(v)
 	return x
 }
 
 // SetNillableHoldReason sets the "hold_reason" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableHoldReason(v *broadcast.HoldReason) *BroadcastScopedUpdateOne {
+func (x *BroadcastScopedUpdateOne) SetNillableHoldReason(v *holdreason.Reason) *BroadcastScopedUpdateOne {
 	x.b.SetNillableHoldReason(v)
 	return x
 }
@@ -8137,13 +8138,13 @@ func (x *BroadcastScopedUpdate) ClearFailedAt() *BroadcastScopedUpdate {
 }
 
 // SetHoldReason sets the "hold_reason" field.
-func (x *BroadcastScopedUpdate) SetHoldReason(v broadcast.HoldReason) *BroadcastScopedUpdate {
+func (x *BroadcastScopedUpdate) SetHoldReason(v holdreason.Reason) *BroadcastScopedUpdate {
 	x.b.SetHoldReason(v)
 	return x
 }
 
 // SetNillableHoldReason sets the "hold_reason" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableHoldReason(v *broadcast.HoldReason) *BroadcastScopedUpdate {
+func (x *BroadcastScopedUpdate) SetNillableHoldReason(v *holdreason.Reason) *BroadcastScopedUpdate {
 	x.b.SetNillableHoldReason(v)
 	return x
 }

@@ -26,6 +26,7 @@ import (
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	emaildoc "github.com/getsphericon/sphericon/internal/emaildoc"
 	emailrender "github.com/getsphericon/sphericon/internal/emailrender"
+	holdreason "github.com/getsphericon/sphericon/internal/holdreason"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
 	orders "github.com/getsphericon/sphericon/internal/orders"
@@ -305,26 +306,6 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) external.BrandKi
 	externalapiBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return externalapiBrandKitResource
 }
-func (c *ConverterImpl) BroadcastHoldReasonToResource(source broadcast.HoldReason) external.BroadcastHoldReason {
-	var externalapiBroadcastHoldReason external.BroadcastHoldReason
-	switch source {
-	case broadcast.HoldReasonNoIntegration:
-		externalapiBroadcastHoldReason = external.BroadcastHoldReasonNoIntegration
-	case broadcast.HoldReasonProviderStopped:
-		externalapiBroadcastHoldReason = external.BroadcastHoldReasonProviderStopped
-	case broadcast.HoldReasonStaffHold:
-		externalapiBroadcastHoldReason = external.BroadcastHoldReasonStaffHold
-	case broadcast.HoldReasonUnverifiedDomain:
-		externalapiBroadcastHoldReason = external.BroadcastHoldReasonUnverifiedDomain
-	case broadcast.HoldReasonWorkspacePendingDeletion:
-		externalapiBroadcastHoldReason = external.BroadcastHoldReasonWorkspacePendingDeletion
-	case broadcast.HoldReasonWorkspaceSuspended:
-		externalapiBroadcastHoldReason = external.BroadcastHoldReasonWorkspaceSuspended
-	default:
-		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	}
-	return externalapiBroadcastHoldReason
-}
 func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipient) external.ContactExportBroadcastRecipient {
 	var externalapiContactExportBroadcastRecipient external.ContactExportBroadcastRecipient
 	if source != nil {
@@ -340,7 +321,7 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) external.BroadcastReport {
 	var externalapiBroadcastReport external.BroadcastReport
 	externalapiBroadcastReport.Status = c.BroadcastStatusToResource(source.Status)
-	externalapiBroadcastReport.HoldReason = optNilBroadcastHoldReason(c, source.HoldReason)
+	externalapiBroadcastReport.HoldReason = optNilHoldReason(c, source.HoldReason)
 	externalapiBroadcastReport.RecipientsTotal = count(source.Stats.Recipients)
 	externalapiBroadcastReport.SentCount = count(source.Stats.Sent)
 	externalapiBroadcastReport.SkippedCount = count(source.Stats.Skipped)
@@ -797,6 +778,26 @@ func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportE
 		externalapiContactExportEvent.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportEvent
+}
+func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) external.HoldReason {
+	var externalapiHoldReason external.HoldReason
+	switch source {
+	case holdreason.NoIntegration:
+		externalapiHoldReason = external.HoldReasonNoIntegration
+	case holdreason.ProviderStopped:
+		externalapiHoldReason = external.HoldReasonProviderStopped
+	case holdreason.StaffHold:
+		externalapiHoldReason = external.HoldReasonStaffHold
+	case holdreason.UnverifiedDomain:
+		externalapiHoldReason = external.HoldReasonUnverifiedDomain
+	case holdreason.WorkspacePendingDeletion:
+		externalapiHoldReason = external.HoldReasonWorkspacePendingDeletion
+	case holdreason.WorkspaceSuspended:
+		externalapiHoldReason = external.HoldReasonWorkspaceSuspended
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiHoldReason
 }
 func (c *ConverterImpl) IntegrationChannelToResource(source integration.Channel) external.IntegrationChannel {
 	var externalapiIntegrationChannel external.IntegrationChannel

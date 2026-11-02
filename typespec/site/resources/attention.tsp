@@ -93,7 +93,7 @@ model SiteAttentionItem {
   /** Why sending is held, set on a `broadcastHeld` item (the Broadcast's own hold reason) and an
    * `automationCannotSend` item (what a send of the Automation would be held for now) only. Only a
    * reason of the object's own source makes an item: a Workspace-level hold is the layout's banner */
-  holdReason?: BroadcastHoldReason | null;
+  holdReason?: HoldReason | null;
 
   /** The rate behind a deliverability warning */
   abuse?: SiteAbuseWarning | null;

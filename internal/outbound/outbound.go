@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -97,20 +98,13 @@ func deferralBackoff(err error) time.Duration {
 // carry the erased person's address.
 const SkipContactErased = "contact_erased"
 
-// Reasons an Outbound send is Held by its own source-level checks. The Workspace-level
-// reasons (suspended, pending deletion, Staff hold) are declared by the holds package, and
-// email's own (HoldUnverifiedDomain) by email's adapter.
+// Reasons an Outbound send is Held by its own source-level checks (holdreason). The Workspace-level
+// reasons (suspended, pending deletion, Staff hold) are reported by the holds package, and email's
+// own (HoldUnverifiedDomain) by email's adapter.
 const (
-	HoldNoIntegration = "no_integration"
-	// HoldProviderStopped: the provider has stopped the account behind the Integration (SES
-	// EnforcementStatus SHUTDOWN, ADR 0067); it lifts when a quota read finds it sending again.
-	HoldProviderStopped = "provider_stopped"
+	HoldNoIntegration   = string(holdreason.NoIntegration)
+	HoldProviderStopped = string(holdreason.ProviderStopped)
 )
-
-// SourceHolds are the reasons above and email's HoldUnverifiedDomain: the holds a member fixes on
-// the object that sends (its Integration, its Sending domain), where a Workspace-level hold is the
-// Workspace's own.
-var SourceHolds = []string{HoldNoIntegration, HoldUnverifiedDomain, HoldProviderStopped}
 
 // Reasons a Test send from the System sender is Refused (ADR 0041).
 const (

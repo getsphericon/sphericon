@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -120,7 +121,7 @@ func (d *delivery) claim(recipientID int64, age time.Duration) {
 func TestSentRecipientIsRecordedAndSettlesTheBroadcast(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
-	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetHoldReason(broadcast.HoldReasonWorkspaceSuspended).ExecX(d.t.Context())
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetHoldReason(holdreason.WorkspaceSuspended).ExecX(d.t.Context())
 
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
 

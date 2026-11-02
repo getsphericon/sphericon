@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/holdreason"
 )
 
 // Broadcast is the model entity for the Broadcast schema.
@@ -59,7 +60,7 @@ type Broadcast struct {
 	// FailedAt holds the value of the "failed_at" field.
 	FailedAt *time.Time `json:"failed_at,omitempty"`
 	// HoldReason holds the value of the "hold_reason" field.
-	HoldReason *broadcast.HoldReason `json:"hold_reason,omitempty"`
+	HoldReason *holdreason.Reason `json:"hold_reason,omitempty"`
 	// LastScheduledAt holds the value of the "last_scheduled_at" field.
 	LastScheduledAt *time.Time `json:"last_scheduled_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -283,8 +284,8 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field hold_reason", values[i])
 			} else if value.Valid {
-				_m.HoldReason = new(broadcast.HoldReason)
-				*_m.HoldReason = broadcast.HoldReason(value.String)
+				_m.HoldReason = new(holdreason.Reason)
+				*_m.HoldReason = holdreason.Reason(value.String)
 			}
 		case broadcast.FieldLastScheduledAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {

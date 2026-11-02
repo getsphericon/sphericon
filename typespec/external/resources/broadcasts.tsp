@@ -80,7 +80,7 @@ model BroadcastReport {
   status: BroadcastStatus;
 
   /** Why sending is currently held, when it is */
-  holdReason?: BroadcastHoldReason | null;
+  holdReason?: HoldReason | null;
 
   /** Recipients the broadcast targets */
   recipientsTotal: int32;

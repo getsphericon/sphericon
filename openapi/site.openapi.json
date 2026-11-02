@@ -14568,18 +14568,6 @@
         ],
         "description": "What an Audit entry says was done, as `<entity>.<verb>`: an action the server records on its\nown, or the create, update or delete of an audited object"
       },
-      "BroadcastHoldReason": {
-        "type": "string",
-        "enum": [
-          "workspace_suspended",
-          "workspace_pending_deletion",
-          "staff_hold",
-          "no_integration",
-          "unverified_domain",
-          "provider_stopped"
-        ],
-        "description": "Why a broadcast's sending is held. A hold is reversible and not a failure: the broadcast keeps\nits status and the remaining recipients send once it lifts."
-      },
       "ContactExportBroadcastRecipient": {
         "type": "object",
         "required": ["id", "broadcastId", "createdAt"],
@@ -15646,6 +15634,18 @@
             "scope": "integrations:read"
           }
         ]
+      },
+      "HoldReason": {
+        "type": "string",
+        "enum": [
+          "workspace_suspended",
+          "workspace_pending_deletion",
+          "staff_hold",
+          "no_integration",
+          "unverified_domain",
+          "provider_stopped"
+        ],
+        "description": "Why a send is held (a Hold). A hold is reversible and not a failure: a held Broadcast keeps its\nstatus and its remaining recipients send once it lifts, and an Automation's email steps wait."
       },
       "ImageUrl": {
         "type": "string",
@@ -16896,7 +16896,7 @@
           "holdReason": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/BroadcastHoldReason"
+                "$ref": "#/components/schemas/HoldReason"
               }
             ],
             "nullable": true,
@@ -17861,7 +17861,7 @@
           "holdReason": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/BroadcastHoldReason"
+                "$ref": "#/components/schemas/HoldReason"
               }
             ],
             "nullable": true,
