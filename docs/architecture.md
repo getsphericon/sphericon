@@ -13,7 +13,9 @@ coding standards in `CODING_STANDARDS.md`.
   replacing only the seams `Container` names (`do.Override`) and setting the rest through the
   config. A new dependency is a provider there, never a constructor call in a handler, the
   server package or the harness. No domain module or handler sees the container: `samber/do` is
-  imported by `internal/app`, the harness and `internal/cleanup` (its shutdown report) only.
+  imported by `internal/app`, the harness and `internal/cleanup` (its shutdown report) only
+  (easement fails an import of it in the core, a surface or `ee/`; `internal/cleanup` carries
+  the one suppression).
 - **HTTP**: `internal/server/server.go` `New()` mounts the four public ogen servers (the fifth,
   `/service`, is served by `NewInternal` on the internal listener, which also always serves the
   edge's on-demand TLS `GET /tls/ask`, core, ADR 0038) and the
@@ -81,7 +83,9 @@ coding standards in `CODING_STANDARDS.md`.
   assemble them; only they import `ee/`. A new wiring package is added to the `wiring` component,
   never to a baseline. The check is strict: a new Go package under `internal/` or `ee/` is covered by
   the `core` and `ee` components, and a new top-level tree must be assigned a component or listed
-  as `unowned` in `easement.yml`.
+  as `unowned` in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
+  its ogen package, whose own imports are not checked. The same file also holds the raw
+  `*ent.Client` list (`core-raw`, see "Workspace scoping") and the `samber/do` ban.
 - **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
   `Converter` (`internal/api/{site,external,staff}/resources`, `ee/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
@@ -231,7 +235,10 @@ only caller of their writes (`forbidigo`).
   transferred or changes email or verification: it must reach the Workspace a User or
   Membership change belongs to; `ee/staff` serves the feed in `Module.WorkspaceFeed`), `internal/userfeed` (the same pair of hooks for the service feed of Users, ADR 0062, installed on every client: it gives a User the next feed position when they are created, renamed, change email or verification, make a new decision on the Sign-up item that stands for consent to the operator's mailings or that item's mark is set or cleared, and leaves a tombstone when a User is deleted; it reads Consent records, Legal document versions and Sign-up items to find the Users a change belongs to, and refuses every Consent record written outside a transaction; `ee/staff` serves the feed in `Module.UserFeed`, reading the consents through `consentrecords.Mailings`), `internal/trackinghostlog` (the same pair of hooks for the Tracking host change log, ADR 0038, ADR 0071: it reads the Tracking domains a change touches, across Workspaces for a bulk write, to log the hosts it adds or removes; `ee/staff` serves it in `Module.TrackingHostFeed`) and the composition roots
   (`internal/app`, `internal/db`, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above). Needing raw access anywhere else
-  means a new small package in this list, not a field on `Handlers`.
+  means a new small package in this list, not a field on `Handlers`. easement holds the core
+  packages of the list as the `core-raw` component of `easement.yml` and fails a use of
+  `ent.Client` anywhere else in `internal/` (and in a surface package), so a new package goes into
+  both lists.
   `internal/eligibility` holds no raw client: it takes a `*ent.Scoped` and passes
   `s.WorkspaceID()` as a bound SQL argument inside one raw expression (the correlated
   contact check reads the outer row's `workspace_id` column), not as a hand-written

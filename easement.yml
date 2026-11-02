@@ -3,6 +3,15 @@
 # the rule's `because`, so read it before reaching for a baseline entry.
 version: 1
 
+# The rule parts several components share, merged with `<<`.
+x-no-raw-client: &no-raw-client
+  forbid_symbol:
+    - name: github.com/getsphericon/sphericon/ent.Client
+      because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
+x-no-container: &no-container
+  - name: github.com/samber/do
+    because: no domain module or handler sees the DI container; a new dependency is a provider in internal/app/container.go (docs/architecture.md, Backend architecture)
+
 components:
   # The public API surfaces. Each has its own TypeSpec contract, handler package and auth scheme.
   api-site: { in: internal/api/site }
@@ -46,54 +55,96 @@ components:
   # The files directly under src/: router, guards, theme, instance, i18n, entry points.
   web-app: { in: 'src/*' }
 
+  # The core packages that may hold the raw *ent.Client: the closed list "The raw *ent.Client is
+  # allowed only in" of docs/architecture.md (Workspace scoping), kept in step with it. A package
+  # is the unit, so the doc's narrower grants (`capturedmessages` only `Purge`, `automations` only
+  # `FenceOn`) are left to review. The composition roots and `internal/api/auth` are in the doc's
+  # list too; they sit in `wiring` and `api-auth`, which do not forbid the client.
+  core-raw:
+    in:
+      [
+        internal/accounts,
+        internal/automations,
+        internal/capturedmessages,
+        internal/consent,
+        internal/consentrecords,
+        internal/db,
+        internal/domainverify,
+        internal/events,
+        internal/instance,
+        internal/instanceaudit,
+        internal/jobs,
+        internal/joindomains,
+        internal/machine,
+        internal/oauthserver,
+        internal/rekey,
+        internal/secondfactor,
+        internal/signupitems,
+        internal/signupsurvey,
+        internal/staffmembers,
+        internal/suspension,
+        internal/trackingdomains,
+        internal/trackinghostlog,
+        internal/userfeed,
+        internal/workspacedeletion,
+        internal/workspacefeed,
+      ]
+    # The Role definitions take no client at all.
+    except: [internal/accounts/roles]
+
   # Everything else under internal/ is the core domain.
   core: { in: ['internal/**', config] }
 
-# Files that are not part of a component's own layer (tests drive whole programs, generated
-# code follows the contract).
-exclude:
-  ['**/*_test.go', '**/*_gen.go', '**/*.test.ts', '**/*.test.tsx', 'src/test/**', '**/testdata/**']
+# Files that are not part of a component's own layer (tests drive whole programs).
+exclude: ['**/*_test.go', '**/*.test.ts', '**/*.test.tsx', 'src/test/**', '**/testdata/**']
 
-# Generated code stays in the graph as a target (a page may import a client, nothing may import
-# the other way) but its own imports are not checked.
-target_only: ['src/generated/**', '**/*.gen.ts']
+# Generated code stays in the graph as a target (a page may import a client, a handler its ogen
+# package, nothing may import the other way) but its own imports are not checked.
+target_only: ['src/generated/**', '**/*.gen.ts', '**/*_gen.go']
 
 rules:
   api-site:
-    may_depend_on: [api-auth, core]
+    <<: *no-raw-client
+    may_depend_on: [api-auth, core, core-raw]
+    forbid_external: *no-container
     because: a surface depends on the shared auth handlers and the core, never on another surface
-    forbid_symbol:
-      - name: github.com/getsphericon/sphericon/ent.Client
-        because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
   api-external:
-    may_depend_on: [api-auth, core]
+    <<: *no-raw-client
+    may_depend_on: [api-auth, core, core-raw]
+    forbid_external: *no-container
     because: a surface depends on the shared auth handlers and the core, never on another surface
-    forbid_symbol:
-      - name: github.com/getsphericon/sphericon/ent.Client
-        because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
   api-collect:
-    may_depend_on: [api-auth, core]
+    <<: *no-raw-client
+    may_depend_on: [api-auth, core, core-raw]
+    forbid_external: *no-container
     because: a surface depends on the shared auth handlers and the core, never on another surface
-    forbid_symbol:
-      - name: github.com/getsphericon/sphericon/ent.Client
-        because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
   api-staff:
-    may_depend_on: [core]
+    <<: *no-raw-client
+    may_depend_on: [core, core-raw]
+    forbid_external: *no-container
     because: the Staff surface depends on the core (its session check is the Staff member module's), never on another surface
-    forbid_symbol:
-      - name: github.com/getsphericon/sphericon/ent.Client
-        because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
   api-auth:
-    may_depend_on: [core]
+    may_depend_on: [core, core-raw]
+    forbid_external: *no-container
     because: the security handlers sit below every surface
   core:
-    may_depend_on: []
+    may_depend_on: [core-raw]
+    forbid_symbol:
+      - name: github.com/getsphericon/sphericon/ent.Client
+        because: a domain module takes a *ent.Scoped; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in `core-raw` here, never a field of a module
+    # internal/cleanup reads the container for its shutdown report, the one core exception the doc names.
+    forbid_external: *no-container
+    because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
+  core-raw:
+    may_depend_on: [core]
+    forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   ee:
-    may_depend_on: [core]
+    may_depend_on: [core, core-raw]
+    forbid_external: *no-container
     because: the Enterprise Edition builds on the core and never on the open surfaces' handlers
   wiring:
-    may_depend_on: [core, ee, api-site, api-external, api-collect, api-staff, api-auth]
+    may_depend_on: [core, core-raw, ee, api-site, api-external, api-collect, api-staff, api-auth]
     because: wiring is where the program is assembled
 
   web-generated:

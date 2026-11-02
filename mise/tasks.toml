@@ -579,7 +579,7 @@ fi
 '''
 
 ["check:arch"]
-description = "Package boundaries in easement.yml, Go and frontend: a surface never imports another surface, core imports neither a surface nor ee, a route file never imports a page, shared UI never imports a page (easement; `easement check --format json` for a machine-readable report)"
+description = "Package boundaries in easement.yml, Go and frontend: a surface never imports another surface, core imports neither a surface nor ee, only the packages of the raw-client list (core-raw) use *ent.Client, only the wiring imports samber/do, a route file never imports a page, shared UI never imports a page (easement; `easement check --format json` for a machine-readable report)"
 run = ["easement check", "easement suggest --check"]
 
 ["check:upgrade"]
