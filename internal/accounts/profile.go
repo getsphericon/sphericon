@@ -98,6 +98,9 @@ func (a *Accounts) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChan
 		if trimmed == "" {
 			return ProfileChanged{}, validation.Refused("name", i18n.T(i18n.ErrorsNameEmpty, nil))
 		}
+		if err := CheckName(trimmed); err != nil {
+			return ProfileChanged{}, err
+		}
 		w.Name = &trimmed
 	}
 	if c.Timezone != nil {

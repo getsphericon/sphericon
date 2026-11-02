@@ -78,18 +78,20 @@ var requiredMessages = map[string]i18n.ID{
 // ruleMessages words a failed rule of this package, whatever the field.
 var ruleMessages = map[string]i18n.ID{
 	"account_email":      i18n.ErrorsEmailInvalid,
+	"display_name":       i18n.ErrorsNameInvalid,
 	"password_length":    i18n.ErrorsPasswordLength,
 	"password_not_blank": i18n.ErrorsPasswordBlank,
 }
 
-// passwordLength fills the bounds into errors.password_length; the other messages ignore it.
-var passwordLength = map[string]any{"Min": PasswordMinLength, "Max": PasswordMaxLength}
+// ruleLimits fills the bounds into errors.password_length and errors.name_invalid; the other
+// messages ignore them.
+var ruleLimits = map[string]any{"Min": PasswordMinLength, "Max": PasswordMaxLength, "NameMax": NameMaxLength}
 
 func fieldMessage(f validator.FieldError) string {
 	if f.Tag() == "required" {
 		return i18n.T(requiredMessages[f.Field()], nil)
 	}
-	return i18n.T(ruleMessages[f.Tag()], passwordLength)
+	return i18n.T(ruleMessages[f.Tag()], ruleLimits)
 }
 
 // The json names of the form fields a refusal is reported against and a person is shown by

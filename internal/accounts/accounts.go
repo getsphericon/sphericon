@@ -562,6 +562,20 @@ func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
 	return a.ent.User.Query().Where(user.Email(NormalizeEmail(email))).Exist(ctx)
 }
 
+// ErrNameInvalid means a User's name is one validation.DisplayName refuses: too long, empty to
+// the eye, or holding a character that breaks a line or hides.
+var ErrNameInvalid = errors.New("accounts: the name is not a valid display name")
+
+// CheckName checks every way a person names a User. A Sign-in provider's invalid name is
+// dropped instead (providerName).
+func CheckName(name string) error {
+	if !validation.DisplayName(name) {
+		return fmt.Errorf("%w: %w", ErrNameInvalid, validation.Refused(validation.FieldName,
+			i18n.T(i18n.ErrorsNameInvalid, map[string]any{"NameMax": validation.NameMaxLength})))
+	}
+	return nil
+}
+
 // CreateUnverified creates the Unverified User of a Sign-up (ADR 0030): its name, email and
 // password hash from the Sign-up form, no Membership, and in the same transaction the Consent
 // records of its answers to the Sign-up items (ADR 0062). The password goes live only when the
@@ -569,6 +583,9 @@ func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
 // email refuses a taken address (see db.IsUniqueViolation). SurveyDue marks the User as owing the
 // Sign-up survey (the Instance asks it).
 func (a *Accounts) CreateUnverified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
+	if err := CheckName(n.Name); err != nil {
+		return nil, err
+	}
 	var created *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		u, err := tx.User.Create().SetName(n.Name).SetEmail(n.Email).SetPasswordHash(n.PasswordHash).
@@ -608,6 +625,9 @@ func (a *Accounts) ReplaceUnverifiedPassword(ctx context.Context, id int64, pass
 // CreateUser creates a User whose email is already proven, with a password hash: a
 // User made by the platform itself rather than by a Sign-up.
 func (a *Accounts) CreateUser(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
+	if err := CheckName(name); err != nil {
+		return nil, err
+	}
 	var u *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		var err error
@@ -670,6 +690,9 @@ func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *stri
 // unique index on the email refuses a taken address (see db.IsUniqueViolation). SurveyDue marks
 // the User as owing the Sign-up survey.
 func (a *Accounts) SignUpVerified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
+	if err := CheckName(n.Name); err != nil {
+		return nil, err
+	}
 	u, _, err := a.verified(ctx, noJoin, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
 		u, err := tx.User.Create().
 			SetName(n.Name).
@@ -766,6 +789,11 @@ type profileWrite struct {
 // entry in every Workspace the User belongs to, in the same transaction. proven also stamps the
 // address as proven (a reset link was followed, which was mailed to it).
 func (a *Accounts) updateProfile(ctx context.Context, id int64, w profileWrite, proven bool) (*ent.User, error) {
+	if w.Name != nil {
+		if err := CheckName(*w.Name); err != nil {
+			return nil, err
+		}
+	}
 	var saved *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		// The mailed link proves the address; only a stamp from empty is a domain-join step,
@@ -1070,6 +1098,9 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 	}
 	if account.refused != nil {
 		return nil, acceptProof{}, account.refused
+	}
+	if err := CheckName(name); err != nil {
+		return nil, acceptProof{}, err
 	}
 	hash, herr := passwords.Hash(account.password)
 	if herr != nil {

@@ -129,13 +129,14 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 	name, _ := req.Name.Get()
 	password, _ := req.Password.Get()
 	// Whether a name and a password are needed at all is the transaction's to say (a Verified
-	// User's address needs neither); one that is sent must pass the password rule.
+	// User's address needs neither, and the name's rule is the transaction's too); a password
+	// that is sent must pass its rule.
 	if err := validation.Form(acceptForm{Password: password}); err != nil {
 		return nil, err
 	}
 
 	err = h.accounts.AcceptInvitation(ctx, inv, accounts.InvitationAcceptance{
-		Name: strings.TrimSpace(name), Password: password, SignupItems: inputs.SignupAnswers(req.SignupItems), SessionEmail: sessionEmail,
+		Name: strings.TrimSpace(string(name)), Password: password, SignupItems: inputs.SignupAnswers(req.SignupItems), SessionEmail: sessionEmail,
 	})
 	if err != nil {
 		return nil, err

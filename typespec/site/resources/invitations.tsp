@@ -111,7 +111,7 @@ model SiteInvitationLookupResult {
  * Verified User the body is not read: the session of that same User is the proof, and consent
  * follows the User, so nothing is asked again (ADR 0062). */
 model SiteAcceptInvitationInput {
-  name?: string;
+  name?: UserName;
   password?: string;
 
   /** The answers to the Sign-up items in effect, read only when the accept sets up the account

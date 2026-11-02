@@ -470,7 +470,7 @@ func (c *InputsImpl) SendingDomainCreate(source *site.CreateSendingDomainInput) 
 func (c *InputsImpl) SignUp(source *site.SiteSignUpInput) signup.Input {
 	var signupInput signup.Input
 	if source != nil {
-		signupInput.Name = (*source).Name
+		signupInput.Name = string((*source).Name)
 		signupInput.Email = string((*source).Email)
 		signupInput.Password = stringIn((*source).Password)
 		signupInput.SignupItems = c.SignupAnswers((*source).SignupItems)
