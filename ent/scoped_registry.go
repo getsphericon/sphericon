@@ -476,6 +476,7 @@ func ScopedEntities() []ScopedEntity {
 				if src.VisitorID != nil {
 					b.SetVisitorID(remap("Visitor", *src.VisitorID))
 				}
+				b.SetAnnounced(src.Announced)
 				b.SetBoundAt(src.BoundAt)
 				created, err := b.Save(ctx)
 				if err != nil {

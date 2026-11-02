@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/orders"
@@ -77,6 +78,10 @@ func Identify(ctx context.Context, bus *events.Bus, s *ent.Scoped, input Identif
 			SetContactID(c.ID).
 			SetLastSeenAt(time.Now()).
 			Exec(ctx); err != nil {
+			return err
+		}
+		// The chats the Visitor started a bot with now reach the Contact: announce them.
+		if err := bindings.AnnounceVisitor(ctx, ts, pub, vis, c); err != nil {
 			return err
 		}
 

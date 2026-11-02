@@ -219,6 +219,8 @@ type Module struct {
 	system messaging.EmailSender
 	// testBudget caps Test sends from the System sender; nil means uncapped.
 	testBudget TestSendBudget
+	// startLinks issues the Start tokens of {{ telegram_start_url }}; nil renders the tag empty.
+	startLinks StartLinks
 	// now is the clock the Provider limit and the claim lease are read at.
 	now func() time.Time
 }

@@ -8,6 +8,10 @@ export const CONTACT_TAGS = [
   'locale',
 ] as const
 
+// The Telegram start link of the message's Contact, on the Workspace's default Telegram bot: it
+// renders empty when the Workspace has none. A token is issued only for a message that uses it.
+export const TELEGRAM_START_TAG = 'telegram_start_url'
+
 // The action of the Event an Automation's Enrollment began on (#752). An Automation's messages bind
 // that Event as `event`, the shape a Rule's HTTP action binds: `event.action` and `event.properties`.
 export const EVENT_ACTION_TAG = 'event.action'

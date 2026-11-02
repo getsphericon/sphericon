@@ -82,3 +82,20 @@ func (env *TestEnv) BindTelegram(t *testing.T, bot TelegramBot, contactID, userI
 		`{"update_id":%d,"message":{"message_id":%d,"date":1767225600,"chat":{"id":%d,"type":"private"},"from":{"id":%d,"is_bot":false,"first_name":"P"},"text":%q}}`,
 		updateID, updateID, userID, userID, "/start "+u.Query().Get("start")))
 }
+
+// MakeDefaultTelegram makes the bot the default Telegram Integration of Acme: the one a merge tag
+// or the tracker issues start links for.
+func (env *TestEnv) MakeDefaultTelegram(t *testing.T, bot TelegramBot) {
+	t.Helper()
+	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Integration().UpdateOneID(int64(bot.Integration.ID)).SetIsDefault(true).Exec(t.Context()))
+}
+
+// StartTelegram posts the update of person `from` pressing Start with the link's token to the bot.
+func (env *TestEnv) StartTelegram(t *testing.T, bot TelegramBot, updateID, from int64, link string) {
+	t.Helper()
+	u, err := url.Parse(link)
+	require.NoError(t, err)
+	update := fmt.Sprintf(`{"update_id":%d,"message":{"message_id":%d,"date":1767225600,"chat":{"id":%d,"type":"private"},"from":{"id":%d,"is_bot":false,"first_name":"P"},"text":%q}}`,
+		updateID, updateID, from, from, "/start "+u.Query().Get("start"))
+	require.Equal(t, http.StatusOK, env.PostTelegramUpdate(t, bot, update).Code)
+}

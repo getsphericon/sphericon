@@ -574,6 +574,7 @@ var deliveryPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*outbound.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		opts := []outbound.Option{
+			outbound.WithStartLinks(do.MustInvoke[*bindings.Module](i)),
 			outbound.WithTestSendBudget(do.MustInvoke[*accounts.Attempts](i)),
 			outbound.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
 			outbound.WithTelegramBots(do.MustInvoke[*messaging.Resolver](i)),

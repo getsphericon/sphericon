@@ -39,6 +39,8 @@ type Binding struct {
 	ContactID *int64 `json:"contact_id,omitempty"`
 	// VisitorID holds the value of the "visitor_id" field.
 	VisitorID *int64 `json:"visitor_id,omitempty"`
+	// Announced holds the value of the "announced" field.
+	Announced bool `json:"announced,omitempty"`
 	// BoundAt holds the value of the "bound_at" field.
 	BoundAt time.Time `json:"bound_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -111,6 +113,8 @@ func (*Binding) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case binding.FieldAnnounced:
+			values[i] = new(sql.NullBool)
 		case binding.FieldID, binding.FieldWorkspaceID, binding.FieldIntegrationID, binding.FieldContactID, binding.FieldVisitorID:
 			values[i] = new(sql.NullInt64)
 		case binding.FieldChannel, binding.FieldDestination, binding.FieldChatID:
@@ -193,6 +197,12 @@ func (_m *Binding) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.VisitorID = new(int64)
 				*_m.VisitorID = value.Int64
+			}
+		case binding.FieldAnnounced:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field announced", values[i])
+			} else if value.Valid {
+				_m.Announced = value.Bool
 			}
 		case binding.FieldBoundAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -286,6 +296,9 @@ func (_m *Binding) String() string {
 		builder.WriteString("visitor_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("announced=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Announced))
 	builder.WriteString(", ")
 	builder.WriteString("bound_at=")
 	builder.WriteString(_m.BoundAt.Format(time.ANSIC))

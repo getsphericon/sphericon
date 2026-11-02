@@ -78,6 +78,38 @@ func (m *Module) IssueStartLink(ctx context.Context, s *ent.Scoped, contactID in
 	if !exists {
 		return StartLink{}, ErrContactNotFound
 	}
+	return m.issue(ctx, s, integrationID, func(c *ent.StartTokenScopedCreate) { c.SetContactID(contactID) })
+}
+
+// IssueVisitorStartLink issues a single-use Start token for the Visitor with the tracker's id
+// visitorID, creating the Visitor when it has not been seen, on the default Telegram Integration.
+// The chat that starts with it binds to the Visitor and reaches its Contact once Identify resolves
+// it (ADR 0076). ErrNoIntegration and ErrBotOff when there is no bot to link to.
+func (m *Module) IssueVisitorStartLink(ctx context.Context, s *ent.Scoped, visitorID string) (StartLink, error) {
+	vis, err := findOrCreateVisitor(ctx, s, visitorID)
+	if err != nil {
+		return StartLink{}, err
+	}
+	return m.issue(ctx, s, nil, func(c *ent.StartTokenScopedCreate) { c.SetVisitorID(vis.ID) })
+}
+
+func findOrCreateVisitor(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visitor, error) {
+	vis, err := s.Visitor().Query().Where(visitor.VisitorID(visitorID)).First(ctx)
+	if err == nil {
+		return vis, nil
+	}
+	if !ent.IsNotFound(err) {
+		return nil, fmt.Errorf("find visitor: %w", err)
+	}
+	vis, err = s.Visitor().Create().SetVisitorID(visitorID).SetLastSeenAt(time.Now()).Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("create visitor: %w", err)
+	}
+	return vis, nil
+}
+
+// issue stores a Start token whose owner own sets and returns the link that carries it.
+func (m *Module) issue(ctx context.Context, s *ent.Scoped, integrationID *int64, own func(*ent.StartTokenScopedCreate)) (StartLink, error) {
 	row, err := m.bot(ctx, s, integrationID)
 	if err != nil {
 		return StartLink{}, err
@@ -91,13 +123,12 @@ func (m *Module) IssueStartLink(ctx context.Context, s *ent.Scoped, contactID in
 		return StartLink{}, err
 	}
 	expires := m.now().Add(TokenTTL)
-	err = s.StartToken().Create().
+	create := s.StartToken().Create().
 		SetIntegrationID(row.ID).
-		SetContactID(contactID).
 		SetTokenHash(hashOf(token)).
-		SetExpiresAt(expires).
-		Exec(ctx)
-	if err != nil {
+		SetExpiresAt(expires)
+	own(create)
+	if err := create.Exec(ctx); err != nil {
 		return StartLink{}, fmt.Errorf("store start token: %w", err)
 	}
 	return StartLink{URL: "https://t.me/" + cfg.Telegram.Username + "?start=" + token, ExpiresAt: expires}, nil
@@ -263,7 +294,8 @@ func bind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Int
 			SetChannel(binding.ChannelTelegram).
 			SetDestination(r.Destination).
 			SetChatID(r.ChatID).
-			SetBoundAt(now)
+			SetBoundAt(now).
+			SetAnnounced(tok.ContactID != nil)
 		if tok.ContactID != nil {
 			create.SetContactID(*tok.ContactID)
 		} else {
@@ -285,7 +317,7 @@ func bind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Int
 		}
 		return nil
 	}
-	move := s.Binding().UpdateOneID(existing.ID).SetChatID(r.ChatID).SetBoundAt(now)
+	move := s.Binding().UpdateOneID(existing.ID).SetChatID(r.ChatID).SetBoundAt(now).SetAnnounced(tok.ContactID != nil)
 	if tok.ContactID != nil {
 		move.SetContactID(*tok.ContactID).ClearVisitorID()
 	} else {
@@ -361,4 +393,32 @@ func cut(s string, n int) string {
 		n--
 	}
 	return s[:n]
+}
+
+// AnnounceVisitor records telegram.bound for c, the Contact Identify has just resolved the Visitor
+// vis to, for each of the Visitor's Bindings not yet announced (ADR 0076). A Visitor that was
+// another Contact's before has all of its Bindings announced to c. Run it in the transaction s and
+// pub are bound to. Each Binding is announced once per Contact: a repeated Identify records nothing.
+func AnnounceVisitor(ctx context.Context, s *ent.Scoped, pub events.Publisher, vis *ent.Visitor, c *ent.Contact) error {
+	q := s.Binding().Query().Where(binding.VisitorID(vis.ID)).Order(binding.ByID())
+	if vis.ContactID == nil || *vis.ContactID == c.ID {
+		q = q.Where(binding.Announced(false))
+	}
+	rows, err := q.All(ctx)
+	if err != nil {
+		return fmt.Errorf("list visitor bindings: %w", err)
+	}
+	for _, b := range rows {
+		err := pub.Publish(ctx, &events.BindingChange{
+			Action: events.NameTelegramBound, WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email),
+			IntegrationID: b.IntegrationID, DedupID: fmt.Sprintf("telegram:binding:%d:contact:%d/bound", b.ID, c.ID),
+		})
+		if err != nil {
+			return err
+		}
+		if err := s.Binding().UpdateOneID(b.ID).SetAnnounced(true).Exec(ctx); err != nil {
+			return fmt.Errorf("mark binding announced: %w", err)
+		}
+	}
+	return nil
 }

@@ -5592,6 +5592,18 @@ func (x *BindingScopedCreate) SetNillableVisitorID(v *int64) *BindingScopedCreat
 	return x
 }
 
+// SetAnnounced sets the "announced" field.
+func (x *BindingScopedCreate) SetAnnounced(v bool) *BindingScopedCreate {
+	x.b.SetAnnounced(v)
+	return x
+}
+
+// SetNillableAnnounced sets the "announced" field if the given value is not nil.
+func (x *BindingScopedCreate) SetNillableAnnounced(v *bool) *BindingScopedCreate {
+	x.b.SetNillableAnnounced(v)
+	return x
+}
+
 // SetBoundAt sets the "bound_at" field.
 func (x *BindingScopedCreate) SetBoundAt(v time.Time) *BindingScopedCreate {
 	x.b.SetBoundAt(v)
@@ -5738,6 +5750,18 @@ func (u *BindingScopedUpsert) UpdateVisitorID() *BindingScopedUpsert {
 // ClearVisitorID clears the value of the "visitor_id" field.
 func (u *BindingScopedUpsert) ClearVisitorID() *BindingScopedUpsert {
 	u.u.SetNull(binding.FieldVisitorID)
+	return u
+}
+
+// SetAnnounced sets the "announced" field.
+func (u *BindingScopedUpsert) SetAnnounced(v bool) *BindingScopedUpsert {
+	u.u.Set(binding.FieldAnnounced, v)
+	return u
+}
+
+// UpdateAnnounced sets the "announced" field to the value that was provided on create.
+func (u *BindingScopedUpsert) UpdateAnnounced() *BindingScopedUpsert {
+	u.u.SetExcluded(binding.FieldAnnounced)
 	return u
 }
 
@@ -5953,6 +5977,18 @@ func (x *BindingScopedUpdateOne) ClearVisitorID() *BindingScopedUpdateOne {
 	return x
 }
 
+// SetAnnounced sets the "announced" field.
+func (x *BindingScopedUpdateOne) SetAnnounced(v bool) *BindingScopedUpdateOne {
+	x.b.SetAnnounced(v)
+	return x
+}
+
+// SetNillableAnnounced sets the "announced" field if the given value is not nil.
+func (x *BindingScopedUpdateOne) SetNillableAnnounced(v *bool) *BindingScopedUpdateOne {
+	x.b.SetNillableAnnounced(v)
+	return x
+}
+
 // SetBoundAt sets the "bound_at" field.
 func (x *BindingScopedUpdateOne) SetBoundAt(v time.Time) *BindingScopedUpdateOne {
 	x.b.SetBoundAt(v)
@@ -6105,6 +6141,18 @@ func (x *BindingScopedUpdate) SetNillableVisitorID(v *int64) *BindingScopedUpdat
 // ClearVisitorID clears the value of the "visitor_id" field.
 func (x *BindingScopedUpdate) ClearVisitorID() *BindingScopedUpdate {
 	x.b.ClearVisitorID()
+	return x
+}
+
+// SetAnnounced sets the "announced" field.
+func (x *BindingScopedUpdate) SetAnnounced(v bool) *BindingScopedUpdate {
+	x.b.SetAnnounced(v)
+	return x
+}
+
+// SetNillableAnnounced sets the "announced" field if the given value is not nil.
+func (x *BindingScopedUpdate) SetNillableAnnounced(v *bool) *BindingScopedUpdate {
+	x.b.SetNillableAnnounced(v)
 	return x
 }
 

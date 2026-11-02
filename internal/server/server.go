@@ -117,7 +117,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 
 	// Collect API — /collect (x-collect-key via generated SecurityHandler).
 	colSrv, err := collectapi.NewServer(
-		apicollect.NewHandlers(bus),
+		apicollect.NewHandlers(bus, site.Bindings),
 		apiauth.NewCollectSecurityHandler(client),
 		collectapi.WithPathPrefix(collectPrefix),
 		collectapi.WithErrorHandler(collectErrorHandler),

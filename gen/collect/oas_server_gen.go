@@ -16,6 +16,13 @@ type Handler interface {
 	//
 	// POST /identify
 	CollectIdentifyCreate(ctx context.Context, req *CollectIdentifyInput) (CollectIdentifyCreateRes, error)
+	// CollectTelegramStartLinksCreate implements CollectTelegramStartLinks_create operation.
+	//
+	// Issues a start link on the workspace's default Telegram integration. It is refused with 422 when the
+	// workspace has no enabled default one.
+	//
+	// POST /telegram-start-links
+	CollectTelegramStartLinksCreate(ctx context.Context, req *CollectTelegramStartLinkInput) (CollectTelegramStartLinksCreateRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

@@ -147,7 +147,7 @@ func TestCollectEventsStorageFailureIsNotAcknowledged(t *testing.T) {
 	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
 	require.NoError(t, err)
 	require.NoError(t, sqlDB.Close())
-	h := collect.NewHandlers(events.New(sqlDB))
+	h := collect.NewHandlers(events.New(sqlDB), nil)
 
 	res, err := h.CollectEventsCreate(
 		auth.WithCollectAuth(context.Background(), &auth.CollectAuth{WorkspaceID: fixtures.AcmeID, Scoped: db.NewEntClient(sqlDB).Scoped(fixtures.AcmeID)}),

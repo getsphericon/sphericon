@@ -112,6 +112,20 @@ func (_c *BindingCreate) SetNillableVisitorID(v *int64) *BindingCreate {
 	return _c
 }
 
+// SetAnnounced sets the "announced" field.
+func (_c *BindingCreate) SetAnnounced(v bool) *BindingCreate {
+	_c.mutation.SetAnnounced(v)
+	return _c
+}
+
+// SetNillableAnnounced sets the "announced" field if the given value is not nil.
+func (_c *BindingCreate) SetNillableAnnounced(v *bool) *BindingCreate {
+	if v != nil {
+		_c.SetAnnounced(*v)
+	}
+	return _c
+}
+
 // SetBoundAt sets the "bound_at" field.
 func (_c *BindingCreate) SetBoundAt(v time.Time) *BindingCreate {
 	_c.mutation.SetBoundAt(v)
@@ -187,6 +201,10 @@ func (_c *BindingCreate) defaults() {
 		v := binding.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Announced(); !ok {
+		v := binding.DefaultAnnounced
+		_c.mutation.SetAnnounced(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -226,6 +244,9 @@ func (_c *BindingCreate) check() error {
 		if err := binding.ChatIDValidator(v); err != nil {
 			return &ValidationError{Name: "chat_id", err: fmt.Errorf(`ent: validator failed for field "Binding.chat_id": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.Announced(); !ok {
+		return &ValidationError{Name: "announced", err: errors.New(`ent: missing required field "Binding.announced"`)}
 	}
 	if _, ok := _c.mutation.BoundAt(); !ok {
 		return &ValidationError{Name: "bound_at", err: errors.New(`ent: missing required field "Binding.bound_at"`)}
@@ -288,6 +309,10 @@ func (_c *BindingCreate) createSpec() (*Binding, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ChatID(); ok {
 		_spec.SetField(binding.FieldChatID, field.TypeString, value)
 		_node.ChatID = value
+	}
+	if value, ok := _c.mutation.Announced(); ok {
+		_spec.SetField(binding.FieldAnnounced, field.TypeBool, value)
+		_node.Announced = value
 	}
 	if value, ok := _c.mutation.BoundAt(); ok {
 		_spec.SetField(binding.FieldBoundAt, field.TypeTime, value)
@@ -485,6 +510,18 @@ func (u *BindingUpsert) ClearVisitorID() *BindingUpsert {
 	return u
 }
 
+// SetAnnounced sets the "announced" field.
+func (u *BindingUpsert) SetAnnounced(v bool) *BindingUpsert {
+	u.Set(binding.FieldAnnounced, v)
+	return u
+}
+
+// UpdateAnnounced sets the "announced" field to the value that was provided on create.
+func (u *BindingUpsert) UpdateAnnounced() *BindingUpsert {
+	u.SetExcluded(binding.FieldAnnounced)
+	return u
+}
+
 // SetBoundAt sets the "bound_at" field.
 func (u *BindingUpsert) SetBoundAt(v time.Time) *BindingUpsert {
 	u.Set(binding.FieldBoundAt, v)
@@ -638,6 +675,20 @@ func (u *BindingUpsertOne) UpdateVisitorID() *BindingUpsertOne {
 func (u *BindingUpsertOne) ClearVisitorID() *BindingUpsertOne {
 	return u.Update(func(s *BindingUpsert) {
 		s.ClearVisitorID()
+	})
+}
+
+// SetAnnounced sets the "announced" field.
+func (u *BindingUpsertOne) SetAnnounced(v bool) *BindingUpsertOne {
+	return u.Update(func(s *BindingUpsert) {
+		s.SetAnnounced(v)
+	})
+}
+
+// UpdateAnnounced sets the "announced" field to the value that was provided on create.
+func (u *BindingUpsertOne) UpdateAnnounced() *BindingUpsertOne {
+	return u.Update(func(s *BindingUpsert) {
+		s.UpdateAnnounced()
 	})
 }
 
@@ -962,6 +1013,20 @@ func (u *BindingUpsertBulk) UpdateVisitorID() *BindingUpsertBulk {
 func (u *BindingUpsertBulk) ClearVisitorID() *BindingUpsertBulk {
 	return u.Update(func(s *BindingUpsert) {
 		s.ClearVisitorID()
+	})
+}
+
+// SetAnnounced sets the "announced" field.
+func (u *BindingUpsertBulk) SetAnnounced(v bool) *BindingUpsertBulk {
+	return u.Update(func(s *BindingUpsert) {
+		s.SetAnnounced(v)
+	})
+}
+
+// UpdateAnnounced sets the "announced" field to the value that was provided on create.
+func (u *BindingUpsertBulk) UpdateAnnounced() *BindingUpsertBulk {
+	return u.Update(func(s *BindingUpsert) {
+		s.UpdateAnnounced()
 	})
 }
 

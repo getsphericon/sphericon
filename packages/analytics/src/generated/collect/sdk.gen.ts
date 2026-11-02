@@ -3,7 +3,7 @@
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { CollectEventsCreateData, CollectEventsCreateErrors, CollectEventsCreateResponses, CollectIdentifyCreateData, CollectIdentifyCreateErrors, CollectIdentifyCreateResponses } from './types.gen.ts';
+import type { CollectEventsCreateData, CollectEventsCreateErrors, CollectEventsCreateResponses, CollectIdentifyCreateData, CollectIdentifyCreateErrors, CollectIdentifyCreateResponses, CollectTelegramStartLinksCreateData, CollectTelegramStartLinksCreateErrors, CollectTelegramStartLinksCreateResponses } from './types.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -32,6 +32,19 @@ export const collectEventsCreate = <ThrowOnError extends boolean = false>(option
 export const collectIdentifyCreate = <ThrowOnError extends boolean = false>(options: Options<CollectIdentifyCreateData, ThrowOnError>): RequestResult<CollectIdentifyCreateResponses, CollectIdentifyCreateErrors, ThrowOnError> => (options.client ?? client).post<CollectIdentifyCreateResponses, CollectIdentifyCreateErrors, ThrowOnError>({
   security: [{ name: 'x-collect-key', type: 'apiKey' }],
   url: '/identify',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
+
+/**
+ * Issues a start link on the workspace's default Telegram integration. It is refused with 422 when the workspace has no enabled default one.
+ */
+export const collectTelegramStartLinksCreate = <ThrowOnError extends boolean = false>(options: Options<CollectTelegramStartLinksCreateData, ThrowOnError>): RequestResult<CollectTelegramStartLinksCreateResponses, CollectTelegramStartLinksCreateErrors, ThrowOnError> => (options.client ?? client).post<CollectTelegramStartLinksCreateResponses, CollectTelegramStartLinksCreateErrors, ThrowOnError>({
+  security: [{ name: 'x-collect-key', type: 'apiKey' }],
+  url: '/telegram-start-links',
   ...options,
   headers: {
     'Content-Type': 'application/json',

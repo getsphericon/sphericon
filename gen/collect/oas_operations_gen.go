@@ -6,6 +6,7 @@ package collectapi
 type OperationName = string
 
 const (
-	CollectEventsCreateOperation   OperationName = "CollectEventsCreate"
-	CollectIdentifyCreateOperation OperationName = "CollectIdentifyCreate"
+	CollectEventsCreateOperation             OperationName = "CollectEventsCreate"
+	CollectIdentifyCreateOperation           OperationName = "CollectIdentifyCreate"
+	CollectTelegramStartLinksCreateOperation OperationName = "CollectTelegramStartLinksCreate"
 )

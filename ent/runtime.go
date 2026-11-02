@@ -260,6 +260,10 @@ func init() {
 	bindingDescChatID := bindingFields[4].Descriptor()
 	// binding.ChatIDValidator is a validator for the "chat_id" field. It is called by the builders before save.
 	binding.ChatIDValidator = bindingDescChatID.Validators[0].(func(string) error)
+	// bindingDescAnnounced is the schema descriptor for announced field.
+	bindingDescAnnounced := bindingFields[7].Descriptor()
+	// binding.DefaultAnnounced holds the default value on creation for the announced field.
+	binding.DefaultAnnounced = bindingDescAnnounced.Default.(bool)
 	brandkitMixin := schema.BrandKit{}.Mixin()
 	brandkitMixinFields0 := brandkitMixin[0].Fields()
 	_ = brandkitMixinFields0

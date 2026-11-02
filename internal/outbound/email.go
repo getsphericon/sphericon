@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -79,6 +80,11 @@ func (m *Module) renderEmail(ctx context.Context, s *ent.Scoped, req Request, me
 		return messaging.EmailMessage{}, err
 	}
 	bindings := Bindings(req.Contact, req.Variables)
+	start, err := m.startLinkBinding(ctx, s, req, messageID, content.Subject, content.Body)
+	if err != nil {
+		return messaging.EmailMessage{}, err
+	}
+	maps.Copy(bindings, start)
 	email, err := emailrender.RenderEmail(content.Subject, content.Body, bindings)
 	if err != nil {
 		return messaging.EmailMessage{}, contentError{err}

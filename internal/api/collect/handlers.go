@@ -10,6 +10,7 @@ import (
 
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/visitors"
@@ -18,13 +19,14 @@ import (
 )
 
 type Handlers struct {
-	bus *events.Bus
+	bus      *events.Bus
+	bindings *bindings.Module
 }
 
 // NewHandlers builds the collect handlers. Payload size caps (batch, per event) are
 // enforced before decoding, in internal/server.
-func NewHandlers(bus *events.Bus) *Handlers {
-	return &Handlers{bus: bus}
+func NewHandlers(bus *events.Bus, telegram *bindings.Module) *Handlers {
+	return &Handlers{bus: bus, bindings: telegram}
 }
 
 // rawMap decodes an ogen map[string]jx.Raw into map[string]any using
@@ -118,6 +120,15 @@ func (h *Handlers) CollectIdentifyCreate(ctx context.Context, req *collectapi.Co
 		return nil, err
 	}
 	return &collectapi.CollectOkResponse{Ok: collectapi.CollectOkResponseOkTrue}, nil
+}
+
+// CollectTelegramStartLinksCreate issues the Visitor's start link on the default Telegram bot.
+func (h *Handlers) CollectTelegramStartLinksCreate(ctx context.Context, req *collectapi.CollectTelegramStartLinkInput) (collectapi.CollectTelegramStartLinksCreateRes, error) {
+	link, err := h.bindings.IssueVisitorStartLink(ctx, auth.CollectScoped(ctx), req.VisitorId)
+	if err != nil {
+		return nil, err
+	}
+	return &collectapi.CollectTelegramStartLink{URL: link.URL, ExpiresAt: collectapi.Timestamp(link.ExpiresAt)}, nil
 }
 
 var _ collectapi.Handler = (*Handlers)(nil)

@@ -106,6 +106,20 @@ func (_u *BindingUpdate) ClearVisitorID() *BindingUpdate {
 	return _u
 }
 
+// SetAnnounced sets the "announced" field.
+func (_u *BindingUpdate) SetAnnounced(v bool) *BindingUpdate {
+	_u.mutation.SetAnnounced(v)
+	return _u
+}
+
+// SetNillableAnnounced sets the "announced" field if the given value is not nil.
+func (_u *BindingUpdate) SetNillableAnnounced(v *bool) *BindingUpdate {
+	if v != nil {
+		_u.SetAnnounced(*v)
+	}
+	return _u
+}
+
 // SetBoundAt sets the "bound_at" field.
 func (_u *BindingUpdate) SetBoundAt(v time.Time) *BindingUpdate {
 	_u.mutation.SetBoundAt(v)
@@ -233,6 +247,9 @@ func (_u *BindingUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.ChatID(); ok {
 		_spec.SetField(binding.FieldChatID, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Announced(); ok {
+		_spec.SetField(binding.FieldAnnounced, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.BoundAt(); ok {
 		_spec.SetField(binding.FieldBoundAt, field.TypeTime, value)
@@ -420,6 +437,20 @@ func (_u *BindingUpdateOne) ClearVisitorID() *BindingUpdateOne {
 	return _u
 }
 
+// SetAnnounced sets the "announced" field.
+func (_u *BindingUpdateOne) SetAnnounced(v bool) *BindingUpdateOne {
+	_u.mutation.SetAnnounced(v)
+	return _u
+}
+
+// SetNillableAnnounced sets the "announced" field if the given value is not nil.
+func (_u *BindingUpdateOne) SetNillableAnnounced(v *bool) *BindingUpdateOne {
+	if v != nil {
+		_u.SetAnnounced(*v)
+	}
+	return _u
+}
+
 // SetBoundAt sets the "bound_at" field.
 func (_u *BindingUpdateOne) SetBoundAt(v time.Time) *BindingUpdateOne {
 	_u.mutation.SetBoundAt(v)
@@ -577,6 +608,9 @@ func (_u *BindingUpdateOne) sqlSave(ctx context.Context) (_node *Binding, err er
 	}
 	if value, ok := _u.mutation.ChatID(); ok {
 		_spec.SetField(binding.FieldChatID, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Announced(); ok {
+		_spec.SetField(binding.FieldAnnounced, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.BoundAt(); ok {
 		_spec.SetField(binding.FieldBoundAt, field.TypeTime, value)

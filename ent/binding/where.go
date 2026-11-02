@@ -95,6 +95,11 @@ func VisitorID(v int64) predicate.Binding {
 	return predicate.Binding(sql.FieldEQ(FieldVisitorID, v))
 }
 
+// Announced applies equality check predicate on the "announced" field. It's identical to AnnouncedEQ.
+func Announced(v bool) predicate.Binding {
+	return predicate.Binding(sql.FieldEQ(FieldAnnounced, v))
+}
+
 // BoundAt applies equality check predicate on the "bound_at" field. It's identical to BoundAtEQ.
 func BoundAt(v time.Time) predicate.Binding {
 	return predicate.Binding(sql.FieldEQ(FieldBoundAt, v))
@@ -428,6 +433,16 @@ func VisitorIDIsNil() predicate.Binding {
 // VisitorIDNotNil applies the NotNil predicate on the "visitor_id" field.
 func VisitorIDNotNil() predicate.Binding {
 	return predicate.Binding(sql.FieldNotNull(FieldVisitorID))
+}
+
+// AnnouncedEQ applies the EQ predicate on the "announced" field.
+func AnnouncedEQ(v bool) predicate.Binding {
+	return predicate.Binding(sql.FieldEQ(FieldAnnounced, v))
+}
+
+// AnnouncedNEQ applies the NEQ predicate on the "announced" field.
+func AnnouncedNEQ(v bool) predicate.Binding {
+	return predicate.Binding(sql.FieldNEQ(FieldAnnounced, v))
 }
 
 // BoundAtEQ applies the EQ predicate on the "bound_at" field.
