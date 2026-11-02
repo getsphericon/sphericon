@@ -181,6 +181,8 @@ func (c *ConverterImpl) AttentionItemsToResources(source []attention.Item) []sit
 func (c *ConverterImpl) AttentionKindToResource(source attention.Kind) site.SiteAttentionKind {
 	var siteapiSiteAttentionKind site.SiteAttentionKind
 	switch source {
+	case attention.KindAutomationCannotSend:
+		siteapiSiteAttentionKind = site.SiteAttentionKindAutomationCannotSend
 	case attention.KindBroadcastFailed:
 		siteapiSiteAttentionKind = site.SiteAttentionKindBroadcastFailed
 	case attention.KindBroadcastHeld:

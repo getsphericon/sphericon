@@ -240,6 +240,37 @@ test('a held broadcast says what lifts the hold', async () => {
     .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/12/report')
 })
 
+test('an automation that cannot send says why and links to it', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          {
+            kind: 'automationCannotSend',
+            severity: 'blocked',
+            subject: { id: '31', name: 'Welcome series' },
+            count: 1,
+            holdReason: 'provider_stopped',
+          },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(
+      screen.getByText(
+        /Welcome series cannot send its emails.*Your email provider has stopped sending/,
+      ),
+    )
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open the automation' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/automations/31')
+})
+
 test('a broadcast the sending limit will slow says when it is expected to finish', async () => {
   const finish = '2026-11-02T21:00:00Z'
   worker.use(

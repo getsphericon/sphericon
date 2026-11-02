@@ -484,7 +484,7 @@ export default interface Resources {
         "badge": "On hold",
         "description": "Sending is paused. Nothing is lost: the remaining recipients are sent automatically once the hold lifts.",
         "reasons": {
-          "no_integration": "No email provider is configured for this workspace. Add a default integration to resume.",
+          "no_integration": "No email integration can send it: the one it uses is disabled or archived, or the workspace has no default. Choose an integration that sends, or set a default, to resume.",
           "provider_stopped": "Your email provider has stopped sending from your account. Resolve it with the provider: sending resumes on its own once the provider reinstates the account.",
           "staff_hold": "Outbound email is on hold for this workspace. The notice at the top of the page says how to resolve it.",
           "unverified_domain": "The sender domain is not verified. Publish its DKIM record and verify the domain to resume.",
@@ -1252,6 +1252,7 @@ export default interface Resources {
           "webhooks": "Open webhooks"
         },
         "kinds": {
+          "automationCannotSend": "{{name}} cannot send its emails: each one waits until this is fixed. {{reason}}",
           "broadcastFailed": "{{name}} failed to send.",
           "broadcastHeld": "{{name}} is on hold. {{reason}}",
           "deliverabilityWarning": "The {{metric}} rate on {{domain}} is {{rate}} over the last 24 hours, over the warning limit. Clean your list: if it keeps rising, sending for this workspace is suspended automatically.",

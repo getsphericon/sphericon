@@ -29,8 +29,8 @@ account without a shop.
 - **The Setup checklist is done for good once it is found complete.** The Workspace stamps
   `setup_completed_at` the first time a read finds every step done; after it the overview shows no
   checklist, and a step that regresses is not onboarding again. A Sending domain that loses its DKIM
-  record and a Broadcast held for want of an Integration are items that need attention; a Workspace
-  that loses its last Integration with nothing scheduled shows nothing until something is held.
+  record and a Broadcast held for want of an Integration are items that need attention, and so is an
+  active Automation that cannot send (below).
 - **Revenue appears with the first Order, not with a currency.** The revenue report returns
   `firstOrderAt` (any currency, any time), and the block is absent while it is null, whatever the
   Reporting currency. Orders in another currency are named inside the block.
@@ -56,10 +56,19 @@ account without a shop.
   (`count`) and its start plus the wait (`estimatedCompletionAt`), what the Broadcast's progress
   shows once it sends. The audience is an estimate: the Contacts its plan would take now (the
   Condition copied when it left draft, eligibility), counted by the same query as the plan.
+- **An active Automation that cannot send is a blocked item, decided by the send path** (#938). An
+  Automation has no stored hold, so the item asks `outbound.Module.Preflight` what a send of its
+  email steps would be held for now: the same route and gate Send applies. It is an item when the
+  Automation is active and kept, its live version has an email step (a draft sends nothing), and
+  the answer is a hold of its own source (`no_integration`, `unverified_domain`,
+  `provider_stopped`), the set a held Broadcast is an item for; a Workspace-level hold is the
+  banner's. An email step has no From of its own, so the answer depends only on the Integration the
+  live version names, or the default: the send path is asked once per Integration, and every
+  Automation is an item of its own with that reason. Nothing stores when a route began to hold, so
+  the item has no `since`.
 
 ## Not decided here
 
 - A previous-period comparison beside each figure.
 - Per-Sending-domain Complaint and Bounce rates on the overview without the `staff` license
   (ADR 0011 puts them on the dashboard; the warning limits are the detector's configuration).
-- An item for an active Automation that cannot send.

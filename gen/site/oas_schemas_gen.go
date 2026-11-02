@@ -9768,8 +9768,9 @@ type SiteAttentionItem struct {
 	Count int32 `json:"count"`
 	// When the problem began, when that is known.
 	Since OptNilTimestamp `json:"since"`
-	// Why a held Broadcast is held, set on a `broadcastHeld` item only. Only a reason of the Broadcast's
-	// own source makes an item: a Workspace-level hold is the layout's banner.
+	// Why sending is held, set on a `broadcastHeld` item (the Broadcast's own hold reason) and an
+	// `automationCannotSend` item (what a send of the Automation would be held for now) only. Only a
+	// reason of the object's own source makes an item: a Workspace-level hold is the layout's banner.
 	HoldReason OptNilBroadcastHoldReason `json:"holdReason"`
 	// The rate behind a deliverability warning.
 	Abuse OptNilSiteAbuseWarning `json:"abuse"`
@@ -9867,6 +9868,7 @@ const (
 	SiteAttentionKindSendingDomainVerificationLost SiteAttentionKind = "sendingDomainVerificationLost"
 	SiteAttentionKindIntegrationProviderStopped    SiteAttentionKind = "integrationProviderStopped"
 	SiteAttentionKindBroadcastHeld                 SiteAttentionKind = "broadcastHeld"
+	SiteAttentionKindAutomationCannotSend          SiteAttentionKind = "automationCannotSend"
 	SiteAttentionKindDeliverabilityWarning         SiteAttentionKind = "deliverabilityWarning"
 	SiteAttentionKindSendCapSpent                  SiteAttentionKind = "sendCapSpent"
 	SiteAttentionKindProviderLimitSpent            SiteAttentionKind = "providerLimitSpent"
@@ -9885,6 +9887,7 @@ func (SiteAttentionKind) AllValues() []SiteAttentionKind {
 		SiteAttentionKindSendingDomainVerificationLost,
 		SiteAttentionKindIntegrationProviderStopped,
 		SiteAttentionKindBroadcastHeld,
+		SiteAttentionKindAutomationCannotSend,
 		SiteAttentionKindDeliverabilityWarning,
 		SiteAttentionKindSendCapSpent,
 		SiteAttentionKindProviderLimitSpent,
@@ -9906,6 +9909,8 @@ func (s SiteAttentionKind) MarshalText() ([]byte, error) {
 	case SiteAttentionKindIntegrationProviderStopped:
 		return []byte(s), nil
 	case SiteAttentionKindBroadcastHeld:
+		return []byte(s), nil
+	case SiteAttentionKindAutomationCannotSend:
 		return []byte(s), nil
 	case SiteAttentionKindDeliverabilityWarning:
 		return []byte(s), nil
@@ -9943,6 +9948,9 @@ func (s *SiteAttentionKind) UnmarshalText(data []byte) error {
 		return nil
 	case SiteAttentionKindBroadcastHeld:
 		*s = SiteAttentionKindBroadcastHeld
+		return nil
+	case SiteAttentionKindAutomationCannotSend:
+		*s = SiteAttentionKindAutomationCannotSend
 		return nil
 	case SiteAttentionKindDeliverabilityWarning:
 		*s = SiteAttentionKindDeliverabilityWarning

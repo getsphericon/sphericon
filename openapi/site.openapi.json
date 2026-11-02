@@ -16839,7 +16839,7 @@
               }
             ],
             "nullable": true,
-            "description": "Why a held Broadcast is held, set on a `broadcastHeld` item only. Only a reason of the Broadcast's\nown source makes an item: a Workspace-level hold is the layout's banner"
+            "description": "Why sending is held, set on a `broadcastHeld` item (the Broadcast's own hold reason) and an\n`automationCannotSend` item (what a send of the Automation would be held for now) only. Only a\nreason of the object's own source makes an item: a Workspace-level hold is the layout's banner"
           },
           "abuse": {
             "type": "object",
@@ -16870,6 +16870,7 @@
           "sendingDomainVerificationLost",
           "integrationProviderStopped",
           "broadcastHeld",
+          "automationCannotSend",
           "deliverabilityWarning",
           "sendCapSpent",
           "providerLimitSpent",

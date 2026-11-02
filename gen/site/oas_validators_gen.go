@@ -2153,6 +2153,8 @@ func (s SiteAttentionKind) Validate() error {
 		return nil
 	case "broadcastHeld":
 		return nil
+	case "automationCannotSend":
+		return nil
 	case "deliverabilityWarning":
 		return nil
 	case "sendCapSpent":

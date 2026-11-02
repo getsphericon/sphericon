@@ -624,6 +624,31 @@ func sendsEmail(version *ent.AutomationVersion) (bool, error) {
 	return slices.ContainsFunc(steps, func(s Step) bool { return s.Type == StepEmail }), nil
 }
 
+// EmailSenders returns the Workspace's active, kept Automations whose live version has an email
+// step, each with its live version loaded, in id order: the ones that send through a Send route
+// whenever a run reaches such a step. A draft sends nothing until it is published.
+func EmailSenders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error) {
+	active, err := s.Automation().Query().
+		Where(automation.StatusEQ(automation.StatusActive), automation.HasLiveVersion()).
+		WithLiveVersion().
+		Order(ent.Asc(automation.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	senders := active[:0]
+	for _, a := range active {
+		sends, err := sendsEmail(a.Edges.LiveVersion)
+		if err != nil {
+			return nil, err
+		}
+		if sends {
+			senders = append(senders, a)
+		}
+	}
+	return senders, nil
+}
+
 // Archivable refuses to archive an Automation a kept Rule enrolls Contacts in, or one with active
 // Enrollments: an *inuse.Error carrying them.
 func (versioned) Archivable(ctx context.Context, ts *ent.Scoped, a *ent.Automation) error {
