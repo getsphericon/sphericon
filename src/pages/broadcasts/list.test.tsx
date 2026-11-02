@@ -25,12 +25,14 @@ const STATS = {
 const DRAFT = {
   id: '1',
   name: 'Spring launch',
+  channel: 'email',
   status: 'draft',
   stats: STATS,
 }
 const HELD = {
   id: '2',
   name: 'Autumn digest',
+  channel: 'email',
   status: 'sending',
   holdReason: 'unverified_domain',
   stats: STATS,
@@ -191,6 +193,7 @@ test('a failed delete shows the error toast and keeps the broadcast', async () =
 const SENT = {
   id: '3',
   name: 'Winter recap',
+  channel: 'email',
   status: 'sent',
   stats: STATS,
 }
@@ -254,4 +257,42 @@ test('archiving a sent broadcast calls archive and refreshes the list', async ()
   await expect.poll(() => archived).toEqual(['3'])
   await expect.element(screen.getByText('Broadcast archived')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
+})
+
+test('each broadcast shows its Channel, and the list filters by Channel through the URL', async () => {
+  const channels: (string | null)[] = []
+  worker.use(
+    handleSiteBroadcastsList(({ request }) => {
+      channels.push(new URL(request.url).searchParams.get('channel'))
+      return HttpResponse.json({ items: [DRAFT], totalItems: 1 })
+    }),
+  )
+
+  const { screen, navigate } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
+  await expect.element(screen.getByRole('cell', { name: 'Email' })).toBeInTheDocument()
+  await screen.getByRole('combobox', { name: 'Channel' }).click()
+  await screen.getByRole('option', { name: 'Email' }).click()
+
+  expect(channels).toEqual([null])
+  expect(navigate).toHaveBeenCalledWith(
+    expect.objectContaining({ search: { channel: 'email' }, replace: true }),
+  )
+})
+
+test('a list opened on a Channel asks the API for that Channel only', async () => {
+  const channels: (string | null)[] = []
+  worker.use(
+    handleSiteBroadcastsList(({ request }) => {
+      channels.push(new URL(request.url).searchParams.get('channel'))
+      return HttpResponse.json({ items: [DRAFT], totalItems: 1 })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastsListPage />, {
+    ...LIST_ROUTE,
+    initialPath: `${LIST_ROUTE.initialPath}?channel=email`,
+  })
+
+  await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
+  expect(channels).toEqual(['email'])
 })

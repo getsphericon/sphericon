@@ -305,9 +305,14 @@ _Avoid_: Subscribed flag, subscription status, opt-in flag, double opt-in status
 
 **Broadcast**:
 A one-off send to an audience on one Channel, fixed when it is created, authored and sent once
-(draft → scheduled → sending → sent / failed). Its Message content takes that Channel's shape; its
-lifecycle, audience, Integration, Recipients and figures are the same on every Channel. It is never
-converted to another Channel. Its audience is a Segment (or all Contacts). Scheduling takes a **copy of the
+(draft → scheduled → sending → sent / failed). Its Message content takes that Channel's shape, and
+exactly that Channel's content is stored; its lifecycle, audience, Integration, Recipients and
+figures are the same on every Channel, and its Integration is one of its Channel (or that Channel's
+default). It is never converted to another Channel, nor copied into one. A new Broadcast asks for
+its Channel first, among the Channels the Workspace has an enabled Integration for, and the
+Broadcasts of every Channel share one list with a Channel column and filter. Its audience is a
+Segment (or all Contacts), reached at the Channel's Destination: a Contact without one is never a
+Recipient. Scheduling takes a **copy of the
 Segment's Condition**, so a later edit of the Segment does not change who the Broadcast reaches;
 the copy is resolved and **frozen into Recipients at send time**, then filtered per-recipient by
 Send-eligibility. Sends under the

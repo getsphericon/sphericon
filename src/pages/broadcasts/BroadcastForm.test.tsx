@@ -57,6 +57,38 @@ const VIPS = {
   rules: [{ kind: 'rule' as const, field: 'email', operator: 'contains' as const, value: 'vip' }],
 }
 
+// The Workspace's one Integration: email is the Channel a new Broadcast is offered.
+const EMAIL_INTEGRATION = {
+  id: '1',
+  name: 'Primary SMTP',
+  channel: 'email' as const,
+  provider: 'smtp' as const,
+  enabled: true,
+  isDefault: true,
+  maxPerSecond: null,
+  maxPerDay: null,
+  providerLimit: {
+    perSecond: { limit: null, source: null },
+    perDay: { limit: null, source: null },
+    sentLast24h: 0,
+    warnings: ['unlimited' as const],
+  },
+  config: { kind: 'smtp' as const, host: 'smtp.test', port: 587, from: 'a@acme.com' },
+  preset: null,
+  params: {},
+  secretsRetiring: [],
+  hookUrl: 'https://app.test/hooks/omik_one',
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
+}
+
+// The new-Broadcast page past its Channel step: the email editor.
+async function openEmailEditor() {
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  await screen.getByRole('button', { name: 'Continue' }).click()
+  return screen
+}
+
 function serve(
   templates: ReturnType<typeof template>[],
   bodies: unknown[] = [],
@@ -71,7 +103,7 @@ function serve(
       HttpResponse.json({ items: templates, totalItems: templates.length }),
     ),
     handleSiteSendingDomainsList(() => HttpResponse.json({ items: [], totalItems: 0 })),
-    handleSiteIntegrationsList({ body: [] }),
+    handleSiteIntegrationsList({ body: [EMAIL_INTEGRATION] }),
     handleSiteBroadcastsCreate(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json({ id: '42', name: 'x' }, { status: 201 })
@@ -82,7 +114,7 @@ function serve(
 test('picking a template copies its subject and document, and saves the document only', async () => {
   const bodies: unknown[] = []
   serve([template('1', 'Welcome aboard', DOC)], bodies)
-  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  const screen = await openEmailEditor()
 
   await screen.getByLabelText(/^Name/).fill('Launch')
   await screen.getByRole('combobox', { name: 'Start from template' }).click()
@@ -91,13 +123,17 @@ test('picking a template copies its subject and document, and saves the document
   await expect.element(screen.getByRole('button', { name: 'Insert variable' })).toBeEnabled()
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Launch', subject: 'Welcome aboard', doc: DOC }])
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      { name: 'Launch', content: { channel: 'email', subject: 'Welcome aboard', doc: DOC } },
+    ])
 })
 
 test('a template written as HTML is copied as source and saves its body only', async () => {
   const bodies: unknown[] = []
   serve([template('2', 'Plain')], bodies)
-  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  const screen = await openEmailEditor()
 
   await screen.getByLabelText(/^Name/).fill('Launch')
   await screen.getByRole('combobox', { name: 'Start from template' }).click()
@@ -105,12 +141,16 @@ test('a template written as HTML is copied as source and saves its body only', a
   await expect.element(screen.getByLabelText('Body')).toHaveValue('<p>2</p>')
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Launch', subject: 'Plain', body: '<p>2</p>' }])
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      { name: 'Launch', content: { channel: 'email', subject: 'Plain', body: '<p>2</p>' } },
+    ])
 })
 
 test('a template without a subject keeps the subject already typed', async () => {
   serve([template('3', '')])
-  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  const screen = await openEmailEditor()
 
   await screen.getByLabelText(/^Subject/).fill('My subject')
   await screen.getByRole('combobox', { name: 'Start from template' }).click()
@@ -122,7 +162,7 @@ test('a template without a subject keeps the subject already typed', async () =>
 
 test('the template picker is hidden when the workspace has no templates', async () => {
   serve([])
-  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  const screen = await openEmailEditor()
 
   await expect.element(screen.getByLabelText(/^Subject/)).toBeInTheDocument()
   expect(screen.getByText('Start from template').elements()).toHaveLength(0)
@@ -130,7 +170,7 @@ test('the template picker is hidden when the workspace has no templates', async 
 
 test('Cancel links back to the broadcasts list of the current workspace', async () => {
   serve([])
-  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  const screen = await openEmailEditor()
 
   await expect
     .element(screen.getByRole('link', { name: 'Cancel' }))
@@ -142,7 +182,7 @@ test('Cancel links back to the broadcasts list of the current workspace', async 
 test('an audience larger than the Send cap is warned about with the days it takes', async () => {
   serve([], [], { perDay: 5000, sentLast24h: 0 })
   worker.use(handleSiteSegmentsPreview({ body: { count: 12_000 } }))
-  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  const screen = await openEmailEditor()
 
   await expect
     .element(screen.getByText(/12,000 contacts.*Send cap.*about 2 days/))
@@ -153,7 +193,7 @@ test('an audience larger than the Send cap is warned about with the days it take
 // request once it settles.
 test('without a Send cap nothing is warned about and the audience is not counted', async () => {
   serve([])
-  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  const screen = await openEmailEditor()
 
   await expect.element(screen.getByRole('combobox', { name: 'Segment' })).toBeInTheDocument()
   expect(screen.getByText(/Send cap/).elements()).toHaveLength(0)
@@ -168,7 +208,7 @@ test('an audience that goes out within a day of the Send cap is not warned about
       return HttpResponse.json({ count: body.condition ? 20_000 : 5000 })
     }),
   )
-  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  const screen = await openEmailEditor()
   const segment = screen.getByRole('combobox', { name: 'Segment' })
 
   await segment.click()
@@ -190,7 +230,7 @@ test('the chosen Segment is counted by its condition', async () => {
       return HttpResponse.json({ count: body.condition ? 20_000 : 3000 })
     }),
   )
-  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  const screen = await openEmailEditor()
 
   await expect.poll(() => previews).toEqual([{}])
   await screen.getByRole('combobox', { name: 'Segment' }).click()
@@ -204,7 +244,7 @@ test('the Send cap warning does not stop the Broadcast from being saved', async 
   const bodies: unknown[] = []
   serve([], bodies, { perDay: 5000, sentLast24h: 0 })
   worker.use(handleSiteSegmentsPreview({ body: { count: 12_000 } }))
-  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  const screen = await openEmailEditor()
 
   await expect.element(screen.getByText(/about 2 days/)).toBeInTheDocument()
   await screen.getByLabelText(/^Name/).fill('Launch')

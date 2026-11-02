@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Select, Stack, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Radio, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,7 +11,8 @@ import {
   siteSendingDomainsListOptions,
   siteTemplatesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { CreateBroadcastInput } from '../../generated/site/types.gen.ts'
+import type { BroadcastChannel, CreateBroadcastInput } from '../../generated/site/types.gen.ts'
+import { zBroadcastChannel } from '../../generated/site/zod.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
@@ -22,6 +23,8 @@ import { SendCapWarning } from './SendCapWarning.tsx'
 
 export interface BroadcastValues {
   name: string
+  // Blank until a new Broadcast's Channel is chosen; fixed from then on.
+  channel: string
   subject: string
   fromName: string
   fromEmail: string
@@ -31,7 +34,77 @@ export interface BroadcastValues {
   doc: MessageDoc | null
 }
 
-export function BroadcastForm({
+
+// A new Broadcast asks for its Channel first (ADR 0080), then shows that Channel's editor; the
+// Channel is fixed from then on, so an existing Broadcast opens on its editor.
+export function BroadcastForm(props: ResourceFormProps<CreateBroadcastInput, BroadcastValues>) {
+  const { form } = props
+  const channel = zBroadcastChannel.safeParse(form.values.channel)
+  if (!channel.success) {
+    return <ChannelStep onChoose={(chosen) => form.setFieldValue('channel', chosen)} />
+  }
+  return <EmailBroadcastForm {...props} />
+}
+
+// The Channels a Broadcast can be sent on: only those the Workspace has an enabled Integration
+// for. With one, it is chosen already; the person still sees which.
+function ChannelStep({ onChoose }: { onChoose: (channel: BroadcastChannel) => void }) {
+  const { t } = useTranslation()
+  const { workspaceId } = workspaceRoute.useParams()
+  const integrationsQuery = useQuery(
+    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
+  )
+  const integrations = integrationsQuery.data ?? []
+  const available = zBroadcastChannel.options.filter((channel) =>
+    integrations.some((integration) => integration.enabled && integration.channel === channel),
+  )
+  const [chosen, setChosen] = useState<BroadcastChannel | null>(null)
+  const only = available.length === 1 ? available[0] : undefined
+  const value = chosen ?? only ?? null
+
+  return (
+    <Stack>
+      <Radio.Group
+        label={t(($) => $.broadcasts.channelLabel)}
+        description={t(($) => $.broadcasts.channelHint)}
+        value={value}
+        onChange={(next) => setChosen(zBroadcastChannel.parse(next))}
+      >
+        <Stack gap="xs" mt="xs">
+          {available.map((channel) => (
+            <Radio key={channel} value={channel} label={t(($) => $.broadcasts.channels[channel])} />
+          ))}
+        </Stack>
+      </Radio.Group>
+      {integrationsQuery.isSuccess && available.length === 0 ? (
+        <Alert color="blue" variant="light">
+          {t(($) => $.broadcasts.channelNone)}{' '}
+          <AnchorLink to={emailsRoute.to} params={{ workspaceId }}>
+            {t(($) => $.broadcasts.channelNoneLink)}
+          </AnchorLink>
+        </Alert>
+      ) : null}
+      <Group justify="flex-end">
+        <ButtonLink variant="default" to={broadcastsRoute.to} params={{ workspaceId }}>
+          {t(($) => $.actions.cancel)}
+        </ButtonLink>
+        <Button
+          disabled={value === null}
+          onClick={() => {
+            if (value !== null) {
+              onChoose(value)
+            }
+          }}
+        >
+          {t(($) => $.actions.continue)}
+        </Button>
+      </Group>
+    </Stack>
+  )
+}
+
+// The editor of an email Broadcast: its From, Integration, Segment and message.
+function EmailBroadcastForm({
   form,
   isPending,
   onSubmit,
@@ -110,28 +183,12 @@ export function BroadcastForm({
     setEditorKey((key) => key + 1)
   }
 
-  // A message written in the editor is its document and the server builds the body; sending
-  // both is a 422.
-  const submit = (payload: CreateBroadcastInput) => {
-    const { doc: written, name, subject, fromName, fromEmail, segmentId, integrationId } = payload
-    onSubmit(
-      written
-        ? {
-            name,
-            doc: written,
-            ...(subject !== undefined && { subject }),
-            ...(fromName !== undefined && { fromName }),
-            ...(fromEmail !== undefined && { fromEmail }),
-            ...(segmentId !== undefined && { segmentId }),
-            ...(integrationId !== undefined && { integrationId }),
-          }
-        : payload,
-    )
-  }
-
   return (
-    <form onSubmit={form.onSubmit(submit)}>
+    <form onSubmit={form.onSubmit(onSubmit)}>
       <Stack>
+        <Text size="sm">
+          {t(($) => $.broadcasts.channelShown, { channel: t(($) => $.broadcasts.channels.email) })}
+        </Text>
         <TextInput
           label={t(($) => $.broadcasts.nameLabel)}
           required

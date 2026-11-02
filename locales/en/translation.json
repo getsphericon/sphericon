@@ -468,6 +468,16 @@
       "copied": "Its audience is the segment's conditions as they were when it was scheduled or sent: editing the segment since changes nothing for it.",
       "segment": "Audience: segment {{name}}"
     },
+    "channelAll": "Every channel",
+    "channelFilter": "Channel",
+    "channelHint": "Fixed once the broadcast is created: its content is written for this channel only.",
+    "channelLabel": "Channel",
+    "channelNone": "No channel can send yet: add an integration first.",
+    "channelNoneLink": "Integrations",
+    "channels": {
+      "email": "Email"
+    },
+    "channelShown": "Channel: {{channel}}",
     "createTitle": "New broadcast",
     "deliveryHint": "Send now, or schedule it for a future time. Only draft broadcasts can be sent.",
     "deliveryLabel": "Delivery",

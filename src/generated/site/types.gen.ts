@@ -172,6 +172,26 @@ export const AuditAction = {
 export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
 
 /**
+ * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
+ */
+export const BroadcastChannel = { EMAIL: 'email' } as const;
+
+/**
+ * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
+ */
+export type BroadcastChannel = typeof BroadcastChannel[keyof typeof BroadcastChannel];
+
+/**
+ * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
+ */
+export type BroadcastContent = EmailBroadcastContent;
+
+/**
+ * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
+ */
+export type BroadcastContentInput = EmailBroadcastContentInput;
+
+/**
  * The contact's engagement with one broadcast (how its send ended is in `outboundMessages`)
  */
 export type ContactExportBroadcastRecipient = {
@@ -601,32 +621,15 @@ export type CreateBroadcastInput = {
    */
   name: string;
   /**
-   * Email subject line
+   * What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel.
    */
-  subject?: string;
-  /**
-   * Sender display name; null or omitted means the integration's default
-   */
-  fromName?: string | null;
-  /**
-   * Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Null or omitted means the integration's default.
-   */
-  fromEmail?: EmailAddress | null;
-  /**
-   * HTML body with Liquid merge tags. Write this or `doc`, not both.
-   */
-  body?: string;
-  /**
-   * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
-   */
-  doc?: EditorDocument;
+  content: BroadcastContentInput;
   /**
    * Target segment; null or omitted means all contacts. An archived segment is refused with 422.
    */
   segmentId?: EntityId | null;
   /**
-   * Sending integration; null or omitted means the workspace default. An archived integration is refused with 422.
+   * Sending integration, of the broadcast's Channel; null or omitted means the Channel's default. An archived integration, or one of another Channel, is refused with 422.
    */
   integrationId?: EntityId | null;
 };
@@ -785,6 +788,72 @@ export type EditorDocument = {
 };
 
 export type EmailAddress = string;
+
+/**
+ * Email's content of a Broadcast as stored
+ */
+export type EmailBroadcastContent = {
+  /**
+   * The Channel the content is for
+   */
+  channel: 'email';
+  /**
+   * Email subject line
+   */
+  subject: string;
+  /**
+   * Sender display name (defaults to the integration's)
+   */
+  fromName?: string | null;
+  /**
+   * Sender email address (defaults to the integration's)
+   */
+  fromEmail?: EmailAddress | null;
+  /**
+   * HTML body with Liquid merge tags
+   */
+  body: string;
+  /**
+   * The editor's JSON document the body was built from; null when the body was written as HTML
+   */
+  doc?: EditorDocument | null;
+  /**
+   * Version of the editor that rendered the document; null with it
+   */
+  editorVersion?: string | null;
+};
+
+/**
+ * Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on
+ * update an omitted field keeps its value and null clears it.
+ */
+export type EmailBroadcastContentInput = {
+  /**
+   * The Channel the content is for: the Broadcast's own, which an update cannot change
+   */
+  channel: 'email';
+  /**
+   * Email subject line
+   */
+  subject?: string;
+  /**
+   * Sender display name; null or omitted on create means the integration's default, null on update goes back to it
+   */
+  fromName?: string | null;
+  /**
+   * Sender email address: a new value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. Null or omitted on create means the integration's default, null on update goes back to it.
+   */
+  fromEmail?: EmailAddress | null;
+  /**
+   * HTML body with Liquid merge tags. Writing only a body on update clears the stored document. Write this or `doc`, not both.
+   */
+  body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
+   */
+  doc?: EditorDocument;
+};
 
 /**
  * A primary key, written as a decimal string so JavaScript never rounds it. The format
@@ -2575,29 +2644,13 @@ export type SiteBroadcastResource = {
    */
   name: string;
   /**
-   * Email subject line
+   * The Channel the broadcast sends on, fixed when it was created
    */
-  subject: string;
+  channel: BroadcastChannel;
   /**
-   * Sender display name (defaults to the integration's)
+   * What the broadcast says, in the shape of its Channel
    */
-  fromName?: string | null;
-  /**
-   * Sender email address (defaults to the integration's)
-   */
-  fromEmail?: EmailAddress | null;
-  /**
-   * HTML body with Liquid merge tags
-   */
-  body: string;
-  /**
-   * The editor's JSON document the body was built from; null when the body was written as HTML
-   */
-  doc?: EditorDocument | null;
-  /**
-   * Version of the editor that rendered the document; null with it
-   */
-  editorVersion?: string | null;
+  content: BroadcastContent;
   /**
    * Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it
    */
@@ -6827,32 +6880,15 @@ export type UpdateBroadcastInput = {
    */
   name?: string;
   /**
-   * Email subject line
+   * What the broadcast says; its `channel` must be the broadcast's own (422 otherwise). Omitted keeps the content.
    */
-  subject?: string;
-  /**
-   * Sender display name; null goes back to the integration's default
-   */
-  fromName?: string | null;
-  /**
-   * Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. Null goes back to the integration's default.
-   */
-  fromEmail?: EmailAddress | null;
-  /**
-   * HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
-   */
-  body?: string;
-  /**
-   * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
-   */
-  doc?: EditorDocument;
+  content?: BroadcastContentInput;
   /**
    * Target segment; null means all contacts. An archived segment is refused with 422.
    */
   segmentId?: EntityId | null;
   /**
-   * Sending integration; null means the workspace default. An archived integration is refused with 422.
+   * Sending integration, of the broadcast's Channel; null means the Channel's default. An archived integration, or one of another Channel, is refused with 422.
    */
   integrationId?: EntityId | null;
 };
@@ -7164,6 +7200,11 @@ export type SiteBroadcastResourceParentKey = WorkspaceId;
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
 export type SiteBroadcastsListFilterArchived = boolean;
+
+/**
+ * Only the broadcasts on this Channel; every Channel when absent
+ */
+export type SiteBroadcastsListFilterChannel = BroadcastChannel;
 
 /**
  * The order of the list: `newest` when absent
@@ -10538,6 +10579,10 @@ export type SiteBroadcastsListData = {
      * Only the broadcasts in one of these statuses; every status when absent
      */
     status?: Array<SiteBroadcastStatus>;
+    /**
+     * Only the broadcasts on this Channel; every Channel when absent
+     */
+    channel?: BroadcastChannel;
     /**
      * The order of the list: `newest` when absent
      */

@@ -43,7 +43,8 @@ const DAY_MS = 86_400_000
 const BROADCAST = {
   id: '5',
   name: 'Big news',
-  subject: 'Read this',
+  channel: 'email',
+  content: { channel: 'email', subject: 'Read this', body: '<p></p>' },
   status: 'sent',
   stats: STATS,
 }

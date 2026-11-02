@@ -156,6 +156,11 @@ export const zAuditAction = z.enum([
 ]);
 
 /**
+ * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
+ */
+export const zBroadcastChannel = z.enum(['email']);
+
+/**
  * How the contact first came to exist
  */
 export const zContactExportSource = z.enum([
@@ -211,6 +216,42 @@ export const zCreateTemplateInput = z.object({
 export const zEmailAddress = z.email().max(320);
 
 /**
+ * Email's content of a Broadcast as stored
+ */
+export const zEmailBroadcastContent = z.object({
+  channel: z.enum(['email']),
+  subject: z.string(),
+  fromName: z.exactOptional(z.string().nullable()),
+  fromEmail: z.exactOptional(zEmailAddress.nullable()),
+  body: z.string(),
+  doc: z.exactOptional(zEditorDocument.nullable()),
+  editorVersion: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
+ */
+export const zBroadcastContent = zEmailBroadcastContent;
+
+/**
+ * Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on
+ * update an omitted field keeps its value and null clears it.
+ */
+export const zEmailBroadcastContentInput = z.object({
+  channel: z.enum(['email']),
+  subject: z.exactOptional(z.string()),
+  fromName: z.exactOptional(z.string().nullable()),
+  fromEmail: z.exactOptional(zEmailAddress.nullable()),
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(zEditorDocument)
+});
+
+/**
+ * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
+ */
+export const zBroadcastContentInput = zEmailBroadcastContentInput;
+
+/**
  * A primary key, written as a decimal string so JavaScript never rounds it. The format
  * makes the Go servers parse it into an int64: a malformed id is refused as a 400 before
  * a handler runs. The pattern says the same in the contract, so a client (or a fuzzer) can
@@ -224,11 +265,7 @@ export const zEntityId = z.string().regex(/^[0-9]+$/);
  */
 export const zCreateBroadcastInput = z.object({
   name: z.string(),
-  subject: z.exactOptional(z.string()),
-  fromName: z.exactOptional(z.string().nullable()),
-  fromEmail: z.exactOptional(zEmailAddress.nullable()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument),
+  content: zBroadcastContentInput,
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -2744,12 +2781,8 @@ export const zSiteBroadcastProgress = z.object({
 export const zSiteBroadcastResource = z.object({
   id: zEntityId,
   name: z.string(),
-  subject: z.string(),
-  fromName: z.exactOptional(z.string().nullable()),
-  fromEmail: z.exactOptional(zEmailAddress.nullable()),
-  body: z.string(),
-  doc: z.exactOptional(zEditorDocument.nullable()),
-  editorVersion: z.exactOptional(z.string().nullable()),
+  channel: zBroadcastChannel,
+  content: zBroadcastContent,
   warnings: z.exactOptional(z.array(zLintFinding)),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable()),
@@ -3294,11 +3327,7 @@ export const zTokenOnlyScope = z.enum([
  */
 export const zUpdateBroadcastInput = z.object({
   name: z.exactOptional(z.string()),
-  subject: z.exactOptional(z.string()),
-  fromName: z.exactOptional(z.string().nullable()),
-  fromEmail: z.exactOptional(zEmailAddress.nullable()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument),
+  content: z.exactOptional(zBroadcastContentInput),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -3756,6 +3785,11 @@ export const zSiteBroadcastResourceParentKey = zWorkspaceId;
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
 export const zSiteBroadcastsListFilterArchived = z.boolean();
+
+/**
+ * Only the broadcasts on this Channel; every Channel when absent
+ */
+export const zSiteBroadcastsListFilterChannel = zBroadcastChannel;
 
 /**
  * The order of the list: `newest` when absent
@@ -4817,6 +4851,7 @@ export const zSiteBroadcastsListQuery = z.object({
   pageSize: z.int().gte(1).lte(100).optional().default(25),
   archived: z.exactOptional(z.boolean()),
   status: z.exactOptional(z.array(zSiteBroadcastStatus)),
+  channel: z.exactOptional(zBroadcastChannel),
   order: z.exactOptional(zSiteBroadcastsOrder)
 });
 

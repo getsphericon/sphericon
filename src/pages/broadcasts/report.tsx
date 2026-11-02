@@ -145,7 +145,7 @@ function BroadcastReport() {
         <Title order={4}>{broadcast.name}</Title>
         <BroadcastStatusBadge status={broadcast.status} size="lg" />
       </Group>
-      <Text c="dimmed">{broadcast.subject}</Text>
+      <Text c="dimmed">{broadcast.content.subject}</Text>
       <BroadcastAudience workspaceId={workspaceId} broadcast={broadcast} />
       {broadcast.holdReason && <BroadcastHoldAlert reason={broadcast.holdReason} />}
       {broadcast.progress && <BroadcastProgress progress={broadcast.progress} />}

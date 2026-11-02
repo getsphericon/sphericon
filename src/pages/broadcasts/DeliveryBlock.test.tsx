@@ -20,8 +20,8 @@ const SEND_FAILED = 'Failed to send broadcast'
 const draft: SiteBroadcastResource = {
   id: '7',
   name: 'Launch',
-  subject: 'Hello',
-  body: '<p></p>',
+  channel: 'email',
+  content: { channel: 'email', subject: 'Hello', body: '<p></p>' },
   status: 'draft',
   stats: {
     recipientsTotal: 0,

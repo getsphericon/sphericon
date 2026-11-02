@@ -2,9 +2,16 @@ import * as z from 'zod'
 
 // Loaded resources can omit edited fields or carry null for a cleared value. Fields outside
 // the picked contract schema never round-trip into the request.
+// A nested object (a Channel's content) can carry a null for a cleared value too.
 export type ResourceValues<TPayload> = {
-  [K in keyof TPayload]?: TPayload[K] | null | undefined
+  [K in keyof TPayload]?: Loaded<TPayload[K]> | null | undefined
 }
+
+type Loaded<TValue> = TValue extends readonly unknown[]
+  ? TValue
+  : TValue extends object
+    ? ResourceValues<TValue>
+    : TValue
 
 export interface ResourceFormSchema<TPayload, TValues extends object> {
   blank: TValues
