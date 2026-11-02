@@ -94,7 +94,7 @@ After changing TypeSpec or `ent/schema`, run `mise run generate` and commit the 
 
 **The only prerequisite is [mise](https://mise.jdx.dev).** It installs and pins the whole
 toolchain from `.mise.toml` / `mise.lock` (Go, Node, pnpm, golangci-lint, air,
-Caddy, Mailpit, gitleaks, jactionlint, zizmor, hk, …), runs the dev stack as daemons and
+Caddy, Mailpit, betterleaks, jactionlint, zizmor, hk, …), runs the dev stack as daemons and
 installs the git hooks.
 
 ```sh
@@ -102,7 +102,7 @@ mise install # install the pinned toolchain (also installs the git hooks)
 mise run setup   # install deps, start Postgres, create dev/test/diff DBs, migrate, seed
 mise run dev     # start the whole dev stack (mise daemons)
 mise run test    # creates test DB, then `go test ./...` (packages in parallel); never run a bare `go test`
-mise run check   # tsc, oxlint, oxfmt --check, knip, golangci-lint (+ our analyzers), easement, gitleaks, jactionlint, zizmor, links
+mise run check   # tsc, oxlint, oxfmt --check, knip, golangci-lint (+ our analyzers), easement, betterleaks, jactionlint, zizmor, links
 mise run generate # regenerate TypeSpec → OpenAPI → Go + TS
 ```
 

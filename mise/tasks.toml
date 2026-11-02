@@ -782,7 +782,7 @@ run = "lychee --config lychee.toml --no-progress '**/*.md'"
 
 ["check:security"]
 description = "Secrets and workflow linters"
-run = ["gitleaks git --no-banner --redact", "jactionlint", "zizmor --no-progress .github"]
+run = ["betterleaks git --no-banner --redact", "jactionlint", "zizmor --no-progress .github"]
 
 [fix]
 description = "Auto-fix i18n keys, lint and formatting"

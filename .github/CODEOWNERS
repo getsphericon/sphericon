@@ -22,7 +22,7 @@
 /sgconfig.yml       @mokevnin
 /ast-grep/          @mokevnin
 /_typos.toml        @mokevnin
-/.gitleaks.toml     @mokevnin
+/.betterleaks.toml  @mokevnin
 /lychee.toml        @mokevnin
 /tools/analyzers/   @mokevnin
 /cmd/upgradecheck/  @mokevnin
