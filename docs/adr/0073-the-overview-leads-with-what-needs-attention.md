@@ -62,5 +62,4 @@ account without a shop.
 - A previous-period comparison beside each figure.
 - Per-Sending-domain Complaint and Bounce rates on the overview without the `staff` license
   (ADR 0011 puts them on the dashboard; the warning limits are the detector's configuration).
-- A DMARC lookup, which a "not bulk-ready" item would need.
 - An item for an active Automation that cannot send.
