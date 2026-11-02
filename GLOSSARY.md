@@ -1078,7 +1078,8 @@ _Avoid_: Onboarding wizard, getting started, tour
 **Needs attention**:
 What in a Workspace needs a member's action now, the Overview's first block, shown only while it
 holds an item: what stops its mail (a Sending domain that lost its DKIM record, an Integration whose
-provider stopped the account, a Broadcast held by a check of its own), what slows it or puts it at
+provider stopped the account, a Broadcast held by a check of its own, an active Automation whose
+email steps a send would hold now), what slows it or puts it at
 risk (the abuse detector's warning tier, a spent Send cap or Provider limit, a Broadcast scheduled
 within a day that the Send cap will slow, a provider's probation or sandbox), and what failed without a retry this week (Automation runs, a Broadcast, a Webhook
 endpoint that disabled itself). Every item is read live from the rows that hold the fact; none is

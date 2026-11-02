@@ -8,12 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -377,4 +379,95 @@ func TestWithoutASendCapNoScheduledBroadcastIsAnItem(t *testing.T) {
 	items := attentionOf(t, env.SiteActor(t, fixtures.CaptonOwnerCleoEmail), fixtures.CaptonPublicID)
 
 	assert.Empty(t, items)
+}
+
+// cannotSendOf is the automationCannotSend item about the Automation id, and whether there is one.
+func cannotSendOf(items []siteapi.SiteAttentionItem, id int64) (siteapi.SiteAttentionItem, bool) {
+	return itemAbout(items, siteapi.SiteAttentionKindAutomationCannotSend, id)
+}
+
+// Fixtures: the Hold demo is active and its live version is one email step on the Workspace
+// default; this test moves it to Integration A, then archives A.
+func TestAnActiveAutomationWhoseIntegrationIsArchivedCannotSend(t *testing.T) {
+	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	member := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	require.NoError(t, acme.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
+		SetIntegrationID(fixtures.IntegrationAcmeGenericAID).Exec(t.Context()))
+	_, before := cannotSendOf(attentionOf(t, member, fixtures.AcmePublicID), fixtures.AutomationHoldDemoID)
+	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeGenericAID).
+		SetDiscardedAt(time.Now()).Exec(t.Context()))
+
+	items := attentionOf(t, member, fixtures.AcmePublicID)
+
+	assert.False(t, before, "it sends while its Integration is kept")
+	held, ok := cannotSendOf(items, fixtures.AutomationHoldDemoID)
+	require.True(t, ok)
+	assert.Equal(t, siteapi.SiteAttentionSeverityBlocked, held.Severity)
+	assert.Equal(t, siteapi.SiteAttentionSubject{ID: fixtures.AutomationHoldDemoID, Name: fixtures.AutomationHoldDemoName}, held.Subject.Value)
+	assert.Equal(t, siteapi.BroadcastHoldReasonNoIntegration, held.HoldReason.Value)
+	assert.False(t, held.Since.Set, "no moment is stored for when a route started holding")
+	_, welcome := cannotSendOf(items, fixtures.AutomationWelcomeSeriesID)
+	assert.False(t, welcome, "the Automations on the default still send")
+}
+
+// Fixtures: the Workspace default's sender sends from hello@codebasics.dev.
+func TestAnActiveAutomationWhoseFromDomainIsNotVerifiedCannotSend(t *testing.T) {
+	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	require.NoError(t, acme.SendingDomain().UpdateOneID(fixtures.SendingDomainCodebasicsID).
+		SetVerificationLostAt(time.Now()).Exec(t.Context()))
+
+	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
+
+	held, ok := cannotSendOf(items, fixtures.AutomationWelcomeSeriesID)
+	require.True(t, ok)
+	assert.Equal(t, siteapi.BroadcastHoldReasonUnverifiedDomain, held.HoldReason.Value)
+	_, holdDemo := cannotSendOf(items, fixtures.AutomationHoldDemoID)
+	assert.True(t, holdDemo, "every Automation that cannot send is an item of its own")
+}
+
+func TestAnActiveAutomationWhoseProviderStoppedTheAccountCannotSend(t *testing.T) {
+	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
+		SetProviderEnforcement(integration.ProviderEnforcementShutdown).Exec(t.Context()))
+
+	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
+
+	held, ok := cannotSendOf(items, fixtures.AutomationWelcomeSeriesID)
+	require.True(t, ok)
+	assert.Equal(t, siteapi.BroadcastHoldReasonProviderStopped, held.HoldReason.Value)
+}
+
+// The default is stopped in every case, so each Automation left out is left out for what it is.
+func TestOnlyAnActiveAutomationThatSendsEmailInAWorkspaceThatSendsIsAnItem(t *testing.T) {
+	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	member := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
+		SetProviderEnforcement(integration.ProviderEnforcementShutdown).Exec(t.Context()))
+	require.NoError(t, acme.Automation().UpdateOneID(fixtures.AutomationWelcomeSeriesID).
+		SetStatus(automation.StatusInactive).Exec(t.Context()))
+	require.NoError(t, acme.Automation().UpdateOneID(fixtures.AutomationHoldDemoID).
+		SetStatus(automation.StatusInactive).SetDiscardedAt(time.Now()).Exec(t.Context()))
+
+	items := attentionOf(t, member, fixtures.AcmePublicID)
+
+	_, paused := cannotSendOf(items, fixtures.AutomationWelcomeSeriesID)
+	assert.False(t, paused, "a paused Automation sends nothing")
+	_, archived := cannotSendOf(items, fixtures.AutomationHoldDemoID)
+	assert.False(t, archived, "an archived Automation sends nothing")
+	_, tags := cannotSendOf(items, fixtures.AutomationTagOnEngagementID)
+	assert.False(t, tags, "an Automation with no email step sends through no Integration")
+	_, payment := cannotSendOf(items, fixtures.AutomationPaymentRecoveryID)
+	assert.True(t, payment, "an active one with an email step is still an item")
+
+	suspended, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, suspension.System, "abuse")
+	require.NoError(t, err)
+	require.True(t, suspended)
+
+	frozen := attentionOf(t, member, fixtures.AcmePublicID)
+
+	assert.NotContains(t, kinds(frozen), siteapi.SiteAttentionKindAutomationCannotSend, "the suspension is the layout's banner")
 }

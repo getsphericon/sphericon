@@ -13586,6 +13586,8 @@ func (s *SiteAttentionKind) Decode(d *jx.Decoder) error {
 		*s = SiteAttentionKindIntegrationProviderStopped
 	case SiteAttentionKindBroadcastHeld:
 		*s = SiteAttentionKindBroadcastHeld
+	case SiteAttentionKindAutomationCannotSend:
+		*s = SiteAttentionKindAutomationCannotSend
 	case SiteAttentionKindDeliverabilityWarning:
 		*s = SiteAttentionKindDeliverabilityWarning
 	case SiteAttentionKindSendCapSpent:

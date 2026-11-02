@@ -1260,6 +1260,7 @@
         "webhooks": "Open webhooks"
       },
       "kinds": {
+        "automationCannotSend": "{{name}} cannot send its emails: each one waits until this is fixed. {{reason}}",
         "broadcastFailed": "{{name}} failed to send.",
         "broadcastHeld": "{{name}} is on hold. {{reason}}",
         "deliverabilityWarning": "The {{metric}} rate on {{domain}} is {{rate}} over the last 24 hours, over the warning limit. Clean your list: if it keeps rising, sending for this workspace is suspended automatically.",

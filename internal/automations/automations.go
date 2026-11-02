@@ -603,7 +603,7 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	if err := checkIntegration(ctx, ts, version.IntegrationID); err != nil {
 		return err
 	}
-	sends, err := sendsEmail(version)
+	sends, err := SendsEmail(version)
 	if err != nil || !sends {
 		return err
 	}
@@ -614,14 +614,39 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	return route.Armable()
 }
 
-// sendsEmail reports whether the version has an email step: one that has none sends through no
+// SendsEmail reports whether the version has an email step: one that has none sends through no
 // Integration, so its Send route is not asked.
-func sendsEmail(version *ent.AutomationVersion) (bool, error) {
+func SendsEmail(version *ent.AutomationVersion) (bool, error) {
 	steps, err := Decode(version.Steps)
 	if err != nil {
 		return false, err
 	}
 	return slices.ContainsFunc(steps, func(s Step) bool { return s.Type == StepEmail }), nil
+}
+
+// EmailSenders returns the Workspace's active, kept Automations whose live version has an email
+// step, each with its live version loaded, in id order: the ones that send through a Send route
+// whenever a run reaches such a step. A draft sends nothing until it is published.
+func EmailSenders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error) {
+	active, err := s.Automation().Query().
+		Where(automation.StatusEQ(automation.StatusActive), automation.HasLiveVersion()).
+		WithLiveVersion().
+		Order(ent.Asc(automation.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	senders := active[:0]
+	for _, a := range active {
+		sends, err := SendsEmail(a.Edges.LiveVersion)
+		if err != nil {
+			return nil, err
+		}
+		if sends {
+			senders = append(senders, a)
+		}
+	}
+	return senders, nil
 }
 
 // Archivable refuses to archive an Automation a kept Rule enrolls Contacts in, or one with active

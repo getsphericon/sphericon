@@ -44,6 +44,11 @@ const MESSAGE = {
       name: nameOf(item),
       reason: item.holdReason ? holdExplanation(t, item.holdReason) : '',
     }),
+  automationCannotSend: (t, item) =>
+    t(($) => $.overview.attention.kinds.automationCannotSend, {
+      name: nameOf(item),
+      reason: item.holdReason ? holdExplanation(t, item.holdReason) : '',
+    }),
   deliverabilityWarning: (t, item) => {
     const metric = item.abuse?.metric ?? 'bounce'
     return t(($) => $.overview.attention.kinds.deliverabilityWarning, {
@@ -136,6 +141,7 @@ const ACTION = {
   sendingDomainVerificationLost: EmailsAction,
   integrationProviderStopped: EmailsAction,
   broadcastHeld: BroadcastAction,
+  automationCannotSend: AutomationAction,
   deliverabilityWarning: SuppressionsAction,
   sendCapSpent: null,
   scheduledBroadcastOverSendCap: BroadcastAction,

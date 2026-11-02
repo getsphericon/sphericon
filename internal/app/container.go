@@ -699,7 +699,7 @@ var contentPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*attention.Module, error) {
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
-		return attention.New(watch, do.MustInvoke[providerlimit.SendCaps](i)).WithClock(do.MustInvoke[Clock](i)), nil
+		return attention.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outbound.Module](i)).WithClock(do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analytics.Module, error) {
 		return analytics.New().WithClock(do.MustInvoke[Clock](i)).WithRetention(do.MustInvoke[*config.Config](i).EventsRetention), nil

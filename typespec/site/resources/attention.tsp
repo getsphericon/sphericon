@@ -15,6 +15,11 @@ enum SiteAttentionKind {
    * not verified, or its provider stopped the account. `holdReason` says which. */
   broadcastHeld,
 
+  /** An active Automation whose live version has an email step that cannot send now, for the same
+   * reasons a Broadcast is held: no Integration can send it, the Sending domain of its From is not
+   * verified, or its provider stopped the account. `holdReason` says which. */
+  automationCannotSend,
+
   /** A Sending domain is in the abuse detector's warning tier (ADR 0026); only where it runs */
   deliverabilityWarning,
 
@@ -85,8 +90,9 @@ model SiteAttentionItem {
   /** When the problem began, when that is known */
   since?: Timestamp | null;
 
-  /** Why a held Broadcast is held, set on a `broadcastHeld` item only. Only a reason of the Broadcast's
-   * own source makes an item: a Workspace-level hold is the layout's banner */
+  /** Why sending is held, set on a `broadcastHeld` item (the Broadcast's own hold reason) and an
+   * `automationCannotSend` item (what a send of the Automation would be held for now) only. Only a
+   * reason of the object's own source makes an item: a Workspace-level hold is the layout's banner */
   holdReason?: BroadcastHoldReason | null;
 
   /** The rate behind a deliverability warning */

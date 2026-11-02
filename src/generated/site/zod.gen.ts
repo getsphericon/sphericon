@@ -721,6 +721,7 @@ export const zSiteAttentionKind = z.enum([
   'sendingDomainVerificationLost',
   'integrationProviderStopped',
   'broadcastHeld',
+  'automationCannotSend',
   'deliverabilityWarning',
   'sendCapSpent',
   'providerLimitSpent',

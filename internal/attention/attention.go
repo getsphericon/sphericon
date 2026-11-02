@@ -2,7 +2,8 @@
 // mail, what slows it or puts it at risk, and what failed without a retry. It is the overview's
 // first block, shown only while it holds an item, so every item is true at the moment it is read
 // and none is stored: the facts already live on the Sending domains, Integrations, Broadcasts,
-// Automation runs and Webhook endpoints, and this package only gathers them.
+// Automation runs and Webhook endpoints, and this package only gathers them. Whether an
+// Automation can send is not stored anywhere: the send path's Preflight answers it.
 //
 // A Workspace suspension and a Staff hold are not items: the layout shows them on every page.
 package attention
@@ -14,6 +15,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
@@ -21,9 +24,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/abusewatch"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
@@ -39,6 +44,9 @@ const (
 	KindIntegrationProviderStopped Kind = "integrationProviderStopped"
 	// KindBroadcastHeld: a Broadcast whose sending is held for a reason a member can fix.
 	KindBroadcastHeld Kind = "broadcastHeld"
+	// KindAutomationCannotSend: an active Automation whose live version has an email step that a
+	// send would hold now, for a reason of its own source.
+	KindAutomationCannotSend Kind = "automationCannotSend"
 	// KindDeliverabilityWarning: a Sending domain is in the abuse detector's warning tier.
 	KindDeliverabilityWarning Kind = "deliverabilityWarning"
 	// KindSendCapSpent: the Workspace sent its Send cap over the last 24 hours, and sending is
@@ -98,7 +106,8 @@ type Item struct {
 	Count int
 	// Since is when the problem began, when that is known.
 	Since *time.Time
-	// HoldReason is why a held Broadcast is held (the Broadcast's own hold reason).
+	// HoldReason is why a held Broadcast is held (the Broadcast's own hold reason), or what a send
+	// of an Automation that cannot send would be held for now.
 	HoldReason *broadcast.HoldReason
 	// Abuse is the rate behind a deliverability warning.
 	Abuse *abusewatch.Warning
@@ -111,12 +120,14 @@ type Module struct {
 	now      func() time.Time
 	watch    abusewatch.Watch
 	sendCaps providerlimit.SendCaps
+	out      *outbound.Module
 }
 
 // New is the module: watch is the abuse detector's warning tier, nil where the detector does not
-// run, and sendCaps says whether the Instance has Send caps (ADR 0067).
-func New(watch abusewatch.Watch, sendCaps providerlimit.SendCaps) *Module {
-	return &Module{now: time.Now, watch: watch, sendCaps: sendCaps}
+// run, sendCaps says whether the Instance has Send caps (ADR 0067), and out is the send path, whose
+// Preflight says whether an Automation's email step could send now.
+func New(watch abusewatch.Watch, sendCaps providerlimit.SendCaps, out *outbound.Module) *Module {
+	return &Module{now: time.Now, watch: watch, sendCaps: sendCaps, out: out}
 }
 
 // WithClock returns the module reading now from the given clock.
@@ -134,6 +145,7 @@ func (m *Module) Items(ctx context.Context, s *ent.Scoped) ([]Item, error) {
 		domainsLost,
 		m.integrations,
 		heldBroadcasts,
+		m.automationsCannotSend,
 		m.deliverability,
 		m.sendCap,
 		m.scheduledOverSendCap,
@@ -229,7 +241,7 @@ func heldBroadcasts(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, er
 	held, err := s.Broadcast().Query().
 		Where(
 			broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending),
-			broadcast.HoldReasonIn(broadcast.HoldReasonNoIntegration, broadcast.HoldReasonUnverifiedDomain, broadcast.HoldReasonProviderStopped),
+			broadcast.HoldReasonIn(sourceHolds...),
 		).
 		Order(ent.Asc(broadcast.FieldID)).
 		All(ctx)
@@ -241,6 +253,47 @@ func heldBroadcasts(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, er
 		items = append(items, Item{
 			Kind: KindBroadcastHeld, Severity: SeverityBlocked, Count: 1,
 			Subject: &Subject{ID: b.ID, Name: b.Name}, HoldReason: b.HoldReason,
+		})
+	}
+	return items, nil
+}
+
+// sourceHolds are the holds of an object's own source that make an item; a Workspace-level hold
+// (a suspension, a Staff hold, a pending deletion) is left out: the layout shows it on every page.
+var sourceHolds = []broadcast.HoldReason{
+	broadcast.HoldReasonNoIntegration, broadcast.HoldReasonUnverifiedDomain, broadcast.HoldReasonProviderStopped,
+}
+
+// automationsCannotSend reads the active Automations whose live version has an email step that a
+// send would hold now for a reason of its own source: whatever Send would hold, the item shows.
+// An email step has no From of its own, so the answer depends only on the Integration the live
+// version names (or the default), and the send path is asked once per Integration, not once per
+// Automation. Nothing stores when a route began to hold, so the item has no since.
+func (m *Module) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error) {
+	senders, err := automations.EmailSenders(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	// The answer of each Integration choice, by its id; the default is under 0, which no row has.
+	holdOf := map[int64]string{}
+	var items []Item
+	for _, a := range senders {
+		integrationID := a.Edges.LiveVersion.IntegrationID
+		key := lo.FromPtr(integrationID)
+		hold, asked := holdOf[key]
+		if !asked {
+			if hold, err = m.out.Preflight(ctx, s, "", integrationID); err != nil {
+				return nil, err
+			}
+			holdOf[key] = hold
+		}
+		reason := broadcast.HoldReason(hold)
+		if !slices.Contains(sourceHolds, reason) {
+			continue
+		}
+		items = append(items, Item{
+			Kind: KindAutomationCannotSend, Severity: SeverityBlocked, Count: 1,
+			Subject: &Subject{ID: a.ID, Name: a.Name}, HoldReason: &reason,
 		})
 	}
 	return items, nil
