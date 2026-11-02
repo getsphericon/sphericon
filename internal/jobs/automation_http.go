@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -60,11 +61,11 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[stepping.Ru
 	if err != nil {
 		return err
 	}
-	steps, err := automations.Decode(version.Steps)
+	steps, err := automationsteps.Decode(version.Steps)
 	if err != nil {
 		return w.fail(ctx, run, automations.Failure{Kind: automationrun.FailureKindInvalidBody}, river.JobCancel(err))
 	}
-	if run.CurrentStep >= len(steps) || steps[run.CurrentStep].Type != automations.StepHTTP {
+	if run.CurrentStep >= len(steps) || steps[run.CurrentStep].Type != automationsteps.HTTP {
 		return nil // the Enrollment moved on since the job was queued
 	}
 	step := steps[run.CurrentStep]

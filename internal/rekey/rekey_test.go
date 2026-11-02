@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/rekey"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -43,8 +44,8 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 
 	// An Enrollment stands on the first version of the Slack Automation (fixture), so editing its
 	// steps leaves that version as it was and adds a second: both hold sealed secrets.
-	_, err = automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule()).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &[]automations.Step{
-		{Type: automations.StepHTTP, ID: "01J00000000000000000000001", URL: "https://hooks.example.test/v2", Body: `{"v":2}`, Secret: "whsec_second_version"},
+	_, err = automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule()).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &[]automationsteps.Step{
+		{Type: automationsteps.HTTP, ID: "01J00000000000000000000001", URL: "https://hooks.example.test/v2", Body: `{"v":2}`, Secret: "whsec_second_version"},
 	}})
 	require.NoError(t, err)
 	slackVersions, err := env.DB.AutomationVersion.Query().Where(automationversion.AutomationID(fixtures.AutomationNotifySlackID)).Count(ctx)
@@ -128,9 +129,9 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 	require.NoError(t, err)
 	var sealedFields int
 	for _, row := range rows {
-		steps, err := automations.Decode(row.Steps)
+		steps, err := automationsteps.Decode(row.Steps)
 		require.NoError(t, err)
-		httpSteps := lo.Filter(steps, func(s automations.Step, _ int) bool { return s.Type == automations.StepHTTP })
+		httpSteps := lo.Filter(steps, func(s automationsteps.Step, _ int) bool { return s.Type == automationsteps.HTTP })
 		for _, s := range httpSteps {
 			fields := make([]string, 0, 2+len(s.Headers))
 			fields = append(fields, s.URL, s.Secret)

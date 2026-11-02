@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -30,22 +31,22 @@ func versionsOf(t *testing.T, env *testhelper.TestEnv, automationID int64) []int
 }
 
 // stepsOf decodes the steps of a version the test expects to exist.
-func stepsOf(t *testing.T, v *ent.AutomationVersion) []automations.Step {
+func stepsOf(t *testing.T, v *ent.AutomationVersion) []automationsteps.Step {
 	t.Helper()
 	require.NotNil(t, v)
-	steps, err := automations.Decode(v.Steps)
+	steps, err := automationsteps.Decode(v.Steps)
 	require.NoError(t, err)
 	return steps
 }
 
 // liveSteps and draftSteps are the steps of an Automation's live version and of its draft.
-func liveSteps(t *testing.T, a *ent.Automation) []automations.Step {
+func liveSteps(t *testing.T, a *ent.Automation) []automationsteps.Step {
 	t.Helper()
 	live, _ := automations.LiveAndDraft(a)
 	return stepsOf(t, live)
 }
 
-func draftSteps(t *testing.T, a *ent.Automation) []automations.Step {
+func draftSteps(t *testing.T, a *ent.Automation) []automationsteps.Step {
 	t.Helper()
 	_, draft := automations.LiveAndDraft(a)
 	return stepsOf(t, draft)
@@ -78,9 +79,9 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 	require.NoError(t, err)
 	published := liveSteps(t, before)
 
-	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automations.Step{{Type: automations.StepWait, Seconds: 60}}, TriggerEvent: new("hold_demo_edited")})
+	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationsteps.Step{{Type: automationsteps.Wait, Seconds: 60}}, TriggerEvent: new("hold_demo_edited")})
 	require.NoError(t, err)
-	edited := []automations.Step{{Type: automations.StepWait, Seconds: 120}}
+	edited := []automationsteps.Step{{Type: automationsteps.Wait, Seconds: 120}}
 	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &edited})
 	require.NoError(t, err)
 
@@ -123,7 +124,7 @@ func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testi
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	first, _, err := automations.Enroll(ctx, acme, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
 	require.NoError(t, err)
-	edited := []automations.Step{{Type: automations.StepWait, Seconds: 99}}
+	edited := []automationsteps.Step{{Type: automationsteps.Wait, Seconds: 99}}
 	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &edited})
 	require.NoError(t, err)
 

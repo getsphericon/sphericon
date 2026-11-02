@@ -291,6 +291,13 @@ only caller of their writes (`forbidigo`).
   `internal/liveuse` finds the live work (today the active email Automations) for the modules that
   cannot import `internal/automations`. Both are leaves that hold no raw `*ent.Client`: `liveuse`
   takes a `*ent.Scoped`, `inuse` only maps rows to users.
+- **Stored Automation Steps:** `internal/automationsteps` owns the stored Step model, its kinds,
+  decoding and whether a definition sends email. Publish, Needs attention and live-use checks
+  share that interpretation: an empty stored string means no Steps; damaged JSON returns an error,
+  so a removal cannot treat an unreadable definition as unused. The reader chooses the version:
+  dependencies use live, an Enrollment uses its pinned version. `internal/automations` keeps
+  preparation for writing (normalization, HTML sanitization, validation and secret sealing), masked
+  API views and the version lifecycle. The shared reader neither queries nor executes Steps.
 - **Owner notices**: a module that tells the Owners of a Workspace something (Join domains, Sending domains,
   webhooks, suspension, the abuse detector) takes an `ownernotice.Notify` (`internal/ownernotice`, a leaf, so
   that modules `accounts` imports can share it) and calls `Tell` or `TellBestEffort`; `accounts.OwnerNotifier`

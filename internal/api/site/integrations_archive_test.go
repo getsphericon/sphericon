@@ -177,3 +177,31 @@ func TestSiteIntegrationsArchiveNeedsAnOwnerOrAdmin(t *testing.T) {
 	assert.IsType(t, new(siteapi.SiteIntegrationsArchiveForbidden), archiveIntegration(t, member, fixtures.IntegrationAcmeSesID))
 	assert.IsType(t, new(siteapi.SiteIntegrationsUnarchiveForbidden), unarchiveIntegration(t, member, fixtures.IntegrationAcmeArchivedID))
 }
+
+// A stored empty definition means no Steps to Publish and Needs attention. Removal must make
+// the same decision: this Automation does not need its otherwise disabled Integration.
+func TestAnEmptyStoredDefinitionAllowsPublishingAndRemovingItsUnusedIntegration(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
+		SetIntegrationID(fixtures.IntegrationAcmeMailgunID).SetSteps("").Exec(ctx)
+	require.NoError(t, err)
+	err = s.Integration().UpdateOneID(fixtures.IntegrationAcmeMailgunID).
+		SetEnabled(false).Exec(ctx)
+	require.NoError(t, err)
+
+	published, err := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{
+		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationHoldDemoID),
+	})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteAutomationResource{}, published)
+	items := attentionOf(t, c, fixtures.AcmePublicID)
+	_, needsAttention := cannotSendOf(items, fixtures.AutomationHoldDemoID)
+	assert.False(t, needsAttention, "no Step sends through the disabled Integration")
+
+	archived, err := env.Integrations.Archive(ctx, s, fixtures.IntegrationAcmeMailgunID)
+	require.NoError(t, err, "an empty stored definition must not disagree with Publish")
+	assert.NotNil(t, archived.DiscardedAt)
+}

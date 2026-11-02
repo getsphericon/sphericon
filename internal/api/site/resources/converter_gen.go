@@ -29,6 +29,7 @@ import (
 	attention "github.com/getsphericon/sphericon/internal/attention"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
+	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
@@ -407,18 +408,18 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) si
 	siteapiSiteAutomationStep.HasSecret = optBool(source.HasSecret)
 	return siteapiSiteAutomationStep
 }
-func (c *ConverterImpl) AutomationStepTypeToResource(source automations.StepType) site.SiteAutomationStepType {
+func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) site.SiteAutomationStepType {
 	var siteapiSiteAutomationStepType site.SiteAutomationStepType
 	switch source {
-	case automations.StepApplyTag:
+	case automationsteps.ApplyTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeApplyTag
-	case automations.StepEmail:
+	case automationsteps.Email:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeEmail
-	case automations.StepHTTP:
+	case automationsteps.HTTP:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeHTTP
-	case automations.StepRemoveTag:
+	case automationsteps.RemoveTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeRemoveTag
-	case automations.StepWait:
+	case automationsteps.Wait:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeWait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))

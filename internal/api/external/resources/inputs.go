@@ -9,6 +9,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/contacts"
@@ -118,8 +119,8 @@ type Inputs interface {
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
-	AutomationStep(source externalapi.AutomationStep) automations.Step
-	AutomationSteps(source []externalapi.AutomationStep) []automations.Step
+	AutomationStep(source externalapi.AutomationStep) automationsteps.Step
+	AutomationSteps(source []externalapi.AutomationStep) []automationsteps.Step
 	AutomationCreate(source *externalapi.CreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *externalapi.UpdateAutomationInput) automations.UpdateInput
 
@@ -148,7 +149,7 @@ type Inputs interface {
 	// goverter:enum:map AutomationsReportPeriod90d ReportPeriod90Days
 	AutomationReportPeriod(source externalapi.AutomationsReportPeriod) automations.ReportPeriod
 	// goverter:enum:transform value
-	AutomationStepType(source externalapi.AutomationStepType) automations.StepType
+	AutomationStepType(source externalapi.AutomationStepType) automationsteps.Kind
 	// goverter:enum:transform value
 	RuleActionType(source externalapi.RuleActionType) rules.ActionType
 }
@@ -221,7 +222,7 @@ func timestampPtrIn(o externalapi.OptNilTimestamp) *time.Time {
 }
 
 // automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.
-func automationStepsPtrIn(c Inputs, steps []externalapi.AutomationStep) *[]automations.Step {
+func automationStepsPtrIn(c Inputs, steps []externalapi.AutomationStep) *[]automationsteps.Step {
 	if steps == nil {
 		return nil
 	}

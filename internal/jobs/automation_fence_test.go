@@ -19,11 +19,13 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
+	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -205,9 +207,9 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 		close(started)
 		<-gate
 	}
-	steps := []automations.Step{{
-		Type: automations.StepHTTP, ID: "01J00000000000000000000001", URL: rcv.srv.URL, Body: `{"ok":true}`,
-		Headers: []automations.Header{{Name: "Authorization"}},
+	steps := []automationsteps.Step{{
+		Type: automationsteps.HTTP, ID: "01J00000000000000000000001", URL: rcv.srv.URL, Body: `{"ok":true}`,
+		Headers: []httpcall.Header{{Name: "Authorization"}},
 	}}
 	bus := e.bus(t)
 	out := outbound.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(&fakeSender{}), tracking.New("test-secret", "http://local"))

@@ -20,7 +20,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/stepping"
@@ -101,11 +103,11 @@ func newHTTPStepHarness(t *testing.T, body string, signed bool) *httpStepHarness
 	e := newRiverEnv(t)
 	h := &httpStepHarness{riverEnv: e, rcv: newHookReceiver(t), clock: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)}
 	// The fixture step keeps its sealed header and secret: an empty value means "as stored".
-	step := automations.Step{
-		Type: automations.StepHTTP, ID: "01J00000000000000000000001", URL: h.rcv.srv.URL, Body: body,
-		Headers: []automations.Header{{Name: "Authorization"}}, ClearSecret: !signed,
+	step := automationsteps.Step{
+		Type: automationsteps.HTTP, ID: "01J00000000000000000000001", URL: h.rcv.srv.URL, Body: body,
+		Headers: []httpcall.Header{{Name: "Authorization"}}, ClearSecret: !signed,
 	}
-	steps := []automations.Step{step, {Type: automations.StepApplyTag, Tag: "notified"}}
+	steps := []automationsteps.Step{step, {Type: automationsteps.ApplyTag, Tag: "notified"}}
 	mod := automations.New(e.cipher, e.Bus, testhelper.Renderer(), e.OutboundModule())
 	acme := e.DB.Scoped(fixtures.AcmeID)
 	_, err := mod.Update(context.Background(), acme, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})

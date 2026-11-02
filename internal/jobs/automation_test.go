@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/messaging"
 
 	"github.com/stretchr/testify/assert"
@@ -462,10 +463,10 @@ func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
 
 	// The owner edits the steps: a wait is inserted ahead and the email is reworded. Were the
 	// Enrollment to read the live steps, its index 1 would now be the new wait.
-	_, err := mod.Update(ctx, acme, fixtures.AutomationJobsEditableID, automations.UpdateInput{Steps: &[]automations.Step{
-		{Type: automations.StepWait, Seconds: 1},
-		{Type: automations.StepWait, Seconds: 2},
-		{Type: automations.StepEmail, Subject: "New steps", Body: "<p>new</p>"},
+	_, err := mod.Update(ctx, acme, fixtures.AutomationJobsEditableID, automations.UpdateInput{Steps: &[]automationsteps.Step{
+		{Type: automationsteps.Wait, Seconds: 1},
+		{Type: automationsteps.Wait, Seconds: 2},
+		{Type: automationsteps.Email, Subject: "New steps", Body: "<p>new</p>"},
 	}})
 	require.NoError(t, err)
 	_, err = mod.Publish(ctx, acme, fixtures.AutomationJobsEditableID)

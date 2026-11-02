@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -165,4 +166,81 @@ func TestSiteSendingDomainArchiveRefusedThroughTheConfiguredFrom(t *testing.T) {
 	_, err = acme.Automation().Update().SetStatus(automation.StatusInactive).Save(ctx)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, del())
+}
+
+func TestDamagedStoredStepsDoNotPermitIntegrationRemoval(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	ctx := t.Context()
+	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
+		SetIntegrationID(fixtures.IntegrationAcmeMailgunID).SetSteps(`[{"type":"wait"},`).Exec(ctx)
+	require.NoError(t, err)
+
+	_, err = env.Integrations.Archive(ctx, s, fixtures.IntegrationAcmeMailgunID)
+
+	require.Error(t, err, "an unreadable definition cannot prove the Integration unused")
+	var used *inuse.Error
+	assert.NotErrorAs(t, err, &used, "propagate the read failure, rather than claiming known use")
+	kept, err := env.Integrations.Get(ctx, s, fixtures.IntegrationAcmeMailgunID)
+	require.NoError(t, err)
+	assert.Nil(t, kept.DiscardedAt)
+}
+
+func TestDamagedStoredStepsDoNotPermitSendingDomainRemoval(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	ctx := t.Context()
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
+		SetSteps(`[{"type":"email"},`).Exec(ctx)
+	require.NoError(t, err)
+
+	_, err = c.SiteSendingDomainsArchive(ctx, siteapi.SiteSendingDomainsArchiveParams{
+		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SendingDomainCodebasicsID),
+	})
+
+	require.Error(t, err, "the unreadable definition must fail the removal check")
+	got, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{
+		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SendingDomainCodebasicsID),
+	})
+	require.NoError(t, err)
+	kept, ok := got.(*siteapi.SiteSendingDomainResource)
+	require.Truef(t, ok, "got %T", got)
+	archived := kept.ArchivedAt.IsSet()
+	assert.False(t, archived)
+}
+
+// A draft's email does not establish a dependency; only the kept, active live version does.
+func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		steps    string
+		status   automation.Status
+		archived *time.Time
+	}{
+		{name: "draft only", steps: `[{"type":"wait","seconds":60}]`, status: automation.StatusActive},
+		{name: "HTTP and Tags send no email", steps: `[{"type":"http","body":"email"},{"type":"apply_tag","tag":"email"}]`, status: automation.StatusActive},
+		{name: "inactive", steps: `[{"type":"email","subject":"Hello"}]`, status: automation.StatusInactive},
+		{name: "archived", steps: `[{"type":"email","subject":"Hello"}]`, status: automation.StatusActive, archived: new(time.Now())},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			s := env.DB.Scoped(fixtures.AcmeID)
+			ctx := t.Context()
+			err := s.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesVersionID).
+				SetIntegrationID(fixtures.IntegrationAcmeMailgunID).SetSteps(tc.steps).Exec(ctx)
+			require.NoError(t, err)
+			err = s.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesDraftVersionID).
+				SetIntegrationID(fixtures.IntegrationAcmeMailgunID).Exec(ctx)
+			require.NoError(t, err)
+			err = s.Automation().UpdateOneID(fixtures.AutomationWelcomeSeriesID).
+				SetStatus(tc.status).SetNillableDiscardedAt(tc.archived).Exec(ctx)
+			require.NoError(t, err)
+
+			archived, err := env.Integrations.Archive(ctx, s, fixtures.IntegrationAcmeMailgunID)
+
+			require.NoError(t, err)
+			assert.NotNil(t, archived.DiscardedAt)
+		})
+	}
 }

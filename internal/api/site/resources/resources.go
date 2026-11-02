@@ -33,9 +33,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/attention"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 
@@ -47,7 +49,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/emailrender"
-	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/linkclicks"
@@ -601,7 +602,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) siteapi.SiteAutomationStatus
 	// goverter:enum:transform value
-	AutomationStepTypeToResource(source automations.StepType) siteapi.SiteAutomationStepType
+	AutomationStepTypeToResource(source automationsteps.Kind) siteapi.SiteAutomationStepType
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) siteapi.SiteBroadcastStatus
 	// goverter:enum:transform value
