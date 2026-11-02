@@ -46,8 +46,8 @@ The research behind this is on the `research/*` branches linked from the map iss
   send description is not built.
 - **Prefer what an external service already does.** Where a provider or service already does a job
   (delivery, device registration, template review, retries), sphericon integrates with it rather
-  than repeating it. Send-eligibility is the exception: providers block a STOP only per sender, the
-  Russian ones not at all, and the law puts the proof of consent on the sender, so consent and
+  than repeating it. Send-eligibility is the exception: providers block a STOP only per sender, some
+  not at all, and the law puts the proof of consent on the sender, so consent and
   opt-outs stay sphericon's.
 
 ## Consequences

@@ -18,7 +18,7 @@ marketing stop, a provider-side suppression). Bindings are made only from such i
   a decision like this one.
 - **The Preset parses; the core interprets.** What a message means on its Channel is the same for
   every provider and lives in the core: `/start <token>` binds a chat, a STOP keyword in any
-  language sphericon supports opts out (Russian SMS providers do not recognise one). Putting that in
+  language sphericon supports opts out (some SMS providers do not recognise one). Putting that in
   every Preset would repeat it per provider and let two providers disagree.
 - **System events.** From a known Contact an Inbound message is recorded as `<channel>.received`,
   its text cut at 1 KiB, so later triggers and the customer's Webhook endpoints can read it. A

@@ -8,7 +8,7 @@ Send-eligibility (ADR 0013) has four layers keyed by (Channel, Destination): Sup
 `everything` Unsubscribe, a source Unsubscribe, and a Confirmation that only a Workspace requiring
 confirmed opt-in asks for. That fits email. The research on the map issue
 (getsphericon/sphericon#916, `research/channel-consent-rules`) found that every new Channel needs a
-positive opt-in, that a STOP revokes all of a sender's marketing on the Channel (FCC 26-67, 38-FZ,
+positive opt-in, that a STOP revokes all of a sender's marketing on the Channel (FCC 26-67,
 GDPR, WhatsApp policy), and that providers report both a person's choice and a dead address.
 
 ## Decisions
@@ -20,7 +20,7 @@ GDPR, WhatsApp policy), and that providers report both a person's choice and a d
 - **How an SMS or WhatsApp Confirmation is recorded.** Through the API or an import, as `imported`,
   carrying the consent wording, its source and the brand in the `marketing.confirmed` Event, from the
   customer's server; or from a sphericon on-site form (ADR 0084), whose way of making a browser's
-  consent trustworthy is decided with the forms. sphericon runs no SMS double opt-in of its own: a customer who needs a code or an identifying action (Russia's FAS reading) uses their own
+  consent trustworthy is decided with the forms. sphericon runs no SMS double opt-in of its own: a customer who needs a code uses their own
   app or a verification service and reports the result.
 - **An opt-out made in the Channel is Channel-wide.** A STOP keyword (in the languages sphericon
   supports), `/stop` and a blocked bot on Telegram, WhatsApp's marketing stop and an unsubscribe
@@ -33,7 +33,7 @@ GDPR, WhatsApp policy), and that providers report both a person's choice and a d
   provenance `keyword`, since the person asked to receive again.
 - **A dead address is not an opt-out.** A web push 404 or 410 and a deactivated Telegram user remove
   the Binding (`<channel>.unbound`). An SMS number the provider reports as not existing is
-  suppressed like a hard bounce. Ambiguous failures (WhatsApp `131026`, a Russian operator refusing
+  suppressed like a hard bounce. Ambiguous failures (WhatsApp `131026`, an operator refusing
   mass SMS, an unknown-state report) record nothing beyond the failed message. A mobile push
   service saying the person is not subscribed makes the message Skipped and is not recorded.
 - **sphericon sends no compliance replies.** The confirmation of a STOP or a START is a provider's
@@ -47,5 +47,5 @@ GDPR, WhatsApp policy), and that providers report both a person's choice and a d
 
 - An SMS or WhatsApp audience starts empty until the customer asserts Confirmations.
 - A STOP on one Sending source's message silences every Broadcast and Automation on that Channel.
-- Eligibility is checked per message at send time, as it is for email, which meets Russia's
-  "immediately".
+- Eligibility is checked per message at send time, as it is for email, so an opt-out takes effect
+  at once.
