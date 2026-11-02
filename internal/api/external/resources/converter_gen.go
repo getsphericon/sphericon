@@ -22,7 +22,7 @@ import (
 	external "github.com/getsphericon/sphericon/gen/external"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
-	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
+	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	emaildoc "github.com/getsphericon/sphericon/internal/emaildoc"
@@ -223,18 +223,18 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) ex
 	externalapiAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
 	return externalapiAutomationStep
 }
-func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) external.AutomationStepType {
+func (c *ConverterImpl) AutomationStepTypeToResource(source automations.StepType) external.AutomationStepType {
 	var externalapiAutomationStepType external.AutomationStepType
 	switch source {
-	case automationsteps.ApplyTag:
+	case automations.StepApplyTag:
 		externalapiAutomationStepType = external.AutomationStepTypeApplyTag
-	case automationsteps.Email:
+	case automations.StepEmail:
 		externalapiAutomationStepType = external.AutomationStepTypeEmail
-	case automationsteps.HTTP:
+	case automations.StepHTTP:
 		externalapiAutomationStepType = external.AutomationStepTypeHTTP
-	case automationsteps.RemoveTag:
+	case automations.StepRemoveTag:
 		externalapiAutomationStepType = external.AutomationStepTypeRemoveTag
-	case automationsteps.Wait:
+	case automations.StepWait:
 		externalapiAutomationStepType = external.AutomationStepTypeWait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -1258,6 +1258,12 @@ func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) e
 	externalapiSmtpConfig.From = external.EmailAddress(source.From)
 	externalapiSmtpConfig.FromName = omitEmpty(source.FromName)
 	return externalapiSmtpConfig
+}
+func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) external.TelegramStartLinkResource {
+	var externalapiTelegramStartLinkResource external.TelegramStartLinkResource
+	externalapiTelegramStartLinkResource.URL = source.URL
+	externalapiTelegramStartLinkResource.ExpiresAt = timestamp(source.ExpiresAt)
+	return externalapiTelegramStartLinkResource
 }
 func (c *ConverterImpl) SuppressionReasonToResource(source suppression.Reason) external.SuppressionReason {
 	var externalapiSuppressionReason external.SuppressionReason

@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -46,6 +47,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
@@ -72,6 +74,8 @@ type WorkspaceQuery struct {
 	withOrderMovements      *OrderMovementQuery
 	withHeldOrderEvents     *HeldOrderEventQuery
 	withVisitors            *VisitorQuery
+	withBindings            *BindingQuery
+	withStartTokens         *StartTokenQuery
 	withAPITokens           *ApiTokenQuery
 	withIntegrations        *IntegrationQuery
 	withSendingDomains      *SendingDomainQuery
@@ -330,6 +334,50 @@ func (_q *WorkspaceQuery) QueryVisitors() *VisitorQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(visitor.Table, visitor.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.VisitorsTable, workspace.VisitorsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBindings chains the current query on the "bindings" edge.
+func (_q *WorkspaceQuery) QueryBindings() *BindingQuery {
+	query := (&BindingClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(binding.Table, binding.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.BindingsTable, workspace.BindingsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryStartTokens chains the current query on the "start_tokens" edge.
+func (_q *WorkspaceQuery) QueryStartTokens() *StartTokenQuery {
+	query := (&StartTokenClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(starttoken.Table, starttoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.StartTokensTable, workspace.StartTokensColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1198,6 +1246,8 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withOrderMovements:      _q.withOrderMovements.Clone(),
 		withHeldOrderEvents:     _q.withHeldOrderEvents.Clone(),
 		withVisitors:            _q.withVisitors.Clone(),
+		withBindings:            _q.withBindings.Clone(),
+		withStartTokens:         _q.withStartTokens.Clone(),
 		withAPITokens:           _q.withAPITokens.Clone(),
 		withIntegrations:        _q.withIntegrations.Clone(),
 		withSendingDomains:      _q.withSendingDomains.Clone(),
@@ -1331,6 +1381,28 @@ func (_q *WorkspaceQuery) WithVisitors(opts ...func(*VisitorQuery)) *WorkspaceQu
 		opt(query)
 	}
 	_q.withVisitors = query
+	return _q
+}
+
+// WithBindings tells the query-builder to eager-load the nodes that are connected to
+// the "bindings" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithBindings(opts ...func(*BindingQuery)) *WorkspaceQuery {
+	query := (&BindingClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withBindings = query
+	return _q
+}
+
+// WithStartTokens tells the query-builder to eager-load the nodes that are connected to
+// the "start_tokens" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithStartTokens(opts ...func(*StartTokenQuery)) *WorkspaceQuery {
+	query := (&StartTokenClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withStartTokens = query
 	return _q
 }
 
@@ -1742,7 +1814,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [39]bool{
+		loadedTypes = [41]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -1752,6 +1824,8 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withOrderMovements != nil,
 			_q.withHeldOrderEvents != nil,
 			_q.withVisitors != nil,
+			_q.withBindings != nil,
+			_q.withStartTokens != nil,
 			_q.withAPITokens != nil,
 			_q.withIntegrations != nil,
 			_q.withSendingDomains != nil,
@@ -1865,6 +1939,20 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadVisitors(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.Visitors = []*Visitor{} },
 			func(n *Workspace, e *Visitor) { n.Edges.Visitors = append(n.Edges.Visitors, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withBindings; query != nil {
+		if err := _q.loadBindings(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.Bindings = []*Binding{} },
+			func(n *Workspace, e *Binding) { n.Edges.Bindings = append(n.Edges.Bindings, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withStartTokens; query != nil {
+		if err := _q.loadStartTokens(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.StartTokens = []*StartToken{} },
+			func(n *Workspace, e *StartToken) { n.Edges.StartTokens = append(n.Edges.StartTokens, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -2342,6 +2430,66 @@ func (_q *WorkspaceQuery) loadVisitors(ctx context.Context, query *VisitorQuery,
 	}
 	query.Where(predicate.Visitor(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.VisitorsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadBindings(ctx context.Context, query *BindingQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *Binding)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(binding.FieldWorkspaceID)
+	}
+	query.Where(predicate.Binding(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.BindingsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadStartTokens(ctx context.Context, query *StartTokenQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *StartToken)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(starttoken.FieldWorkspaceID)
+	}
+	query.Where(predicate.StartToken(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.StartTokensColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

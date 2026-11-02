@@ -1,0 +1,32 @@
+# Telegram chats (ADR 0075). Acme: Liam's own chat, and a chat of Emma's phone (a Visitor of
+# Contact 101), which reaches Emma. Globex: its Contact's chat.
+- id: 1 # fixture: BindingLiam
+  integration_id: 9
+  channel: telegram
+  destination: '70001'
+  chat_id: '70001'
+  contact_id: 100
+  bound_at: '{{daysAgo 5}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 5}}'
+  updated_at: '{{daysAgo 5}}'
+- id: 2 # fixture: BindingEmmaPhone
+  integration_id: 9
+  channel: telegram
+  destination: '70002'
+  chat_id: '70002'
+  visitor_id: 101
+  bound_at: '{{daysAgo 3}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 900 # fixture: BindingGlobex
+  integration_id: 903
+  channel: telegram
+  destination: '80001'
+  chat_id: '80001'
+  contact_id: 900
+  bound_at: '2026-01-01 00:00:00'
+  workspace_id: 2
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

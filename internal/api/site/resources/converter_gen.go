@@ -29,7 +29,7 @@ import (
 	attention "github.com/getsphericon/sphericon/internal/attention"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
-	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
+	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
@@ -415,18 +415,18 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) si
 	siteapiSiteAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
 	return siteapiSiteAutomationStep
 }
-func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) site.SiteAutomationStepType {
+func (c *ConverterImpl) AutomationStepTypeToResource(source automations.StepType) site.SiteAutomationStepType {
 	var siteapiSiteAutomationStepType site.SiteAutomationStepType
 	switch source {
-	case automationsteps.ApplyTag:
+	case automations.StepApplyTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeApplyTag
-	case automationsteps.Email:
+	case automations.StepEmail:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeEmail
-	case automationsteps.HTTP:
+	case automations.StepHTTP:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeHTTP
-	case automationsteps.RemoveTag:
+	case automations.StepRemoveTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeRemoveTag
-	case automationsteps.Wait:
+	case automations.StepWait:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeWait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -541,6 +541,23 @@ func (c *ConverterImpl) AutomationsWithRevenueToResources(source []automations.W
 		siteapiSiteAutomationResourceList[i] = c.AutomationWithRevenueToResource(source[i])
 	}
 	return siteapiSiteAutomationResourceList
+}
+func (c *ConverterImpl) BindingToResource(source bindings.Chat) site.SiteBindingResource {
+	var siteapiSiteBindingResource site.SiteBindingResource
+	siteapiSiteBindingResource.ID = site.EntityId(source.ID)
+	siteapiSiteBindingResource.IntegrationId = site.EntityId(source.IntegrationID)
+	siteapiSiteBindingResource.IntegrationName = source.IntegrationName
+	siteapiSiteBindingResource.BotUsername = omitEmpty(source.BotUsername)
+	siteapiSiteBindingResource.BoundAt = timestamp(source.BoundAt)
+	return siteapiSiteBindingResource
+}
+func (c *ConverterImpl) BindingsToResources(source []bindings.Chat) []site.SiteBindingResource {
+	var siteapiSiteBindingResourceList []site.SiteBindingResource
+	siteapiSiteBindingResourceList = make([]site.SiteBindingResource, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteBindingResourceList[i] = c.BindingToResource(source[i])
+	}
+	return siteapiSiteBindingResourceList
 }
 func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKitResource {
 	var siteapiSiteBrandKitResource site.SiteBrandKitResource
@@ -1508,8 +1525,6 @@ func (c *ConverterImpl) PermissionToResource(source accounts.Permission) site.Pe
 		siteapiPermission = site.PermissionContactsErase
 	case accounts.PermContactsExport:
 		siteapiPermission = site.PermissionContactsExport
-	case accounts.PermCustomFieldsManage:
-		siteapiPermission = site.PermissionCustomFieldsManage
 	case accounts.PermHoldsResolve:
 		siteapiPermission = site.PermissionHoldsResolve
 	case accounts.PermIntegrationsManage:
@@ -1985,6 +2000,12 @@ func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) s
 	siteapiSiteSmtpConfig.From = site.EmailAddress(source.From)
 	siteapiSiteSmtpConfig.FromName = omitEmpty(source.FromName)
 	return siteapiSiteSmtpConfig
+}
+func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) site.TelegramStartLinkResource {
+	var siteapiTelegramStartLinkResource site.TelegramStartLinkResource
+	siteapiTelegramStartLinkResource.URL = source.URL
+	siteapiTelegramStartLinkResource.ExpiresAt = timestamp(source.ExpiresAt)
+	return siteapiTelegramStartLinkResource
 }
 func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel) site.SiteSuppressionChannel {
 	var siteapiSiteSuppressionChannel site.SiteSuppressionChannel

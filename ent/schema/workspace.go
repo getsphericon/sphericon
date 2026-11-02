@@ -186,6 +186,8 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("order_movements", OrderMovement.Type),
 		edge.To("held_order_events", HeldOrderEvent.Type),
 		edge.To("visitors", Visitor.Type),
+		edge.To("bindings", Binding.Type),
+		edge.To("start_tokens", StartToken.Type),
 		edge.To("api_tokens", ApiToken.Type),
 		edge.To("integrations", Integration.Type),
 		edge.To("sending_domains", SendingDomain.Type),

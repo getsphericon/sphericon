@@ -60,14 +60,19 @@ const (
 	NameAutomationCompleted   = "automation.completed"
 	NameAutomationGoalReached = "automation.goal_reached"
 	NameAutomationExited      = "automation.exited"
+
+	// NameTelegramBound and the one below are a Telegram chat Bound to a Contact and a Binding
+	// moved away from one (ADR 0076).
+	NameTelegramBound   = "telegram.bound"
+	NameTelegramUnbound = "telegram.unbound"
 )
 
 // reservedPrefixes are the namespaces of the actions only the system records: delivery
 // (`email.*`), consent (`marketing.*`), the Contact's lifecycle, Tags and Custom fields
-// (`contact.*`) and its Enrollments (`automation.*`). Some are evidence (ADR 0013, ADR 0019), and
+// (`contact.*`), its Enrollments (`automation.*`) and its Telegram Bindings (`telegram.*`). Some are evidence (ADR 0013, ADR 0019), and
 // an Automation, a Rule or a Segment that names one must be sure the system recorded it, so a
 // customer's own Event never carries one.
-var reservedPrefixes = []string{"email.", "marketing.", "contact.", "automation."}
+var reservedPrefixes = []string{"email.", "marketing.", "contact.", "automation.", "telegram."}
 
 // ReservedAction reports whether action belongs to the system and is refused from a
 // customer's Event.
@@ -238,6 +243,8 @@ var registry = map[string]func() DomainEvent{
 	NameAutomationCompleted:   func() DomainEvent { return &EnrollmentChange{} },
 	NameAutomationGoalReached: func() DomainEvent { return &EnrollmentChange{} },
 	NameAutomationExited:      func() DomainEvent { return &EnrollmentChange{} },
+	NameTelegramBound:         func() DomainEvent { return &BindingChange{} },
+	NameTelegramUnbound:       func() DomainEvent { return &BindingChange{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
 }

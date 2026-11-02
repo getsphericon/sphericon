@@ -18,6 +18,7 @@ func TestCollectRefusesReservedActions(t *testing.T) {
 		Events: []collectapi.CollectEventInput{
 			{VisitorId: "v-1", Action: "page_view"},
 			{VisitorId: "v-1", Action: "email.opened"},
+			{VisitorId: "v-1", Action: "telegram.bound"},
 		},
 	})
 	require.NoError(t, err)

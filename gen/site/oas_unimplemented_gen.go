@@ -1690,6 +1690,24 @@ func (UnimplementedHandler) SiteTagsRemove(ctx context.Context, params SiteTagsR
 	return r, ht.ErrNotImplemented
 }
 
+// SiteTelegramIssueStartLink implements SiteTelegram_issueStartLink operation.
+//
+// Issue a Telegram start link for a contact. Each call issues a new link.
+//
+// POST /workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links
+func (UnimplementedHandler) SiteTelegramIssueStartLink(ctx context.Context, req *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (r SiteTelegramIssueStartLinkRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteTelegramListBindings implements SiteTelegram_listBindings operation.
+//
+// List the Telegram chats a contact is reached through.
+//
+// GET /workspaces/{workspaceId}/contacts/{contactId}/bindings
+func (UnimplementedHandler) SiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) (r SiteTelegramListBindingsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteTemplatesCreate implements SiteTemplates_create operation.
 //
 // Create a resource from the site UI.

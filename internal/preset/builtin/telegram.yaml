@@ -18,18 +18,61 @@ verify:
   kind: token
   secret: secret
   header: X-Telegram-Bot-Api-Secret-Token
-# Reading the updates (a `/start`, a message, a button press, a block) is the inbound model of
-# the Telegram channel (ADR 0076): until it is built, a verified update yields nothing.
+# Reading the updates (ADR 0076): a text message in a private chat becomes an Inbound message,
+# whose Destination is the sender's user id and whose chat id is kept apart (a private chat's id
+# is not promised to equal it). The id is the update_id, unique per bot. Ids are strings: Telegram
+# sends numbers. Groups, channels, edits, buttons and membership changes yield nothing yet.
 transform: |
-  []
+  def keep: with_entries(select(.value != null and .value != ""));
+  [(.body | objects) as $u
+   | ($u.message | objects) as $m
+   | select(($m.chat | objects | .type) == "private" and ($m.text | type) == "string" and ($m.from | objects | .id) != null)
+   | {kind: "inbound_message", id: ($u.update_id | tostring), channel: "telegram",
+      destination: ($m.from.id | tostring), chat_id: ($m.chat.id | tostring),
+      message_id: ($m.message_id | tostring), text: $m.text} | keep]
 tests:
-  - name: an update with the webhook's secret is read
+  - name: a private message becomes an Inbound message
     params:
       secret: telegram-test-secret-0123456789
     request:
       headers:
         X-Telegram-Bot-Api-Secret-Token: telegram-test-secret-0123456789
-      body: '{"update_id":10000,"message":{"message_id":1,"date":1767225600,"chat":{"id":42,"type":"private","first_name":"Alice"},"from":{"id":42,"is_bot":false,"first_name":"Alice"},"text":"/start"}}'
+      body: '{"update_id":10000,"message":{"message_id":1,"date":1767225600,"chat":{"id":4242,"type":"private","first_name":"Alice"},"from":{"id":42,"is_bot":false,"first_name":"Alice"},"text":"/start abc_DEF-1"}}'
+    expect:
+      inbound_messages:
+        - {
+            id: '10000',
+            channel: telegram,
+            destination: '42',
+            chat_id: '4242',
+            message_id: '1',
+            text: /start abc_DEF-1,
+          }
+  - name: a message in a group yields nothing
+    params:
+      secret: telegram-test-secret-0123456789
+    request:
+      headers:
+        X-Telegram-Bot-Api-Secret-Token: telegram-test-secret-0123456789
+      body: '{"update_id":10001,"message":{"message_id":2,"date":1767225600,"chat":{"id":-100,"type":"supergroup"},"from":{"id":42,"is_bot":false},"text":"/start abc"}}'
+    expect:
+      notices: []
+  - name: a message with no text yields nothing
+    params:
+      secret: telegram-test-secret-0123456789
+    request:
+      headers:
+        X-Telegram-Bot-Api-Secret-Token: telegram-test-secret-0123456789
+      body: '{"update_id":10002,"message":{"message_id":3,"date":1767225600,"chat":{"id":42,"type":"private"},"from":{"id":42,"is_bot":false},"sticker":{}}}'
+    expect:
+      notices: []
+  - name: an update of another kind yields nothing
+    params:
+      secret: telegram-test-secret-0123456789
+    request:
+      headers:
+        X-Telegram-Bot-Api-Secret-Token: telegram-test-secret-0123456789
+      body: '{"update_id":10003,"edited_message":{"message_id":3,"chat":{"id":42,"type":"private"},"from":{"id":42},"text":"hi"}}'
     expect:
       notices: []
   - name: an update without the secret is refused

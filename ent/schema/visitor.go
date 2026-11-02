@@ -47,6 +47,11 @@ func (Visitor) Fields() []ent.Field {
 
 func (Visitor) Edges() []ent.Edge {
 	return []ent.Edge{
+		// Its Telegram chats and the Start tokens issued for it die with it.
+		edge.To("bindings", Binding.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("start_tokens", StartToken.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.From("contact", Contact.Type).
 			Ref("visitors").
 			Field("contact_id").

@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
@@ -192,6 +193,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsToResources(source []*ent.CustomField) []externalapi.CustomFieldResource
 	TagToResource(source *ent.Tag) externalapi.TagResource
+	StartLinkToResource(source bindings.StartLink) externalapi.TelegramStartLinkResource
 	// goverter:useEmptyOnNil:slice
 	TagsToResources(source []*ent.Tag) []externalapi.TagResource
 	// The contract names the discarded state "archived" (ADR 0049). The live version and the

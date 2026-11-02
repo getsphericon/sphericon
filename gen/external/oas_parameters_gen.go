@@ -8884,6 +8884,78 @@ func decodeTagsRemoveParams(args [2]string, argsEscaped bool, r *http.Request) (
 	return params, nil
 }
 
+// TelegramStartLinksIssueParams is parameters of TelegramStartLinks_issue operation.
+type TelegramStartLinksIssueParams struct {
+	ContactId EntityId
+}
+
+func unpackTelegramStartLinksIssueParams(packed middleware.Parameters) (params TelegramStartLinksIssueParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "contactId",
+			In:   "path",
+		}
+		params.ContactId = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeTelegramStartLinksIssueParams(args [1]string, argsEscaped bool, r *http.Request) (params TelegramStartLinksIssueParams, _ error) {
+	// Decode path: contactId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "contactId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotContactIdVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotContactIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ContactId = EntityId(paramsDotContactIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "contactId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // TemplatesDeleteParams is parameters of Templates_delete operation.
 type TemplatesDeleteParams struct {
 	// Unique identifier.

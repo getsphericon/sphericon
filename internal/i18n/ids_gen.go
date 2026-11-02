@@ -279,6 +279,9 @@ var (
 	ErrorsSuppressionNotFound                   = ID{key: "errors.suppression_not_found"}
 	ErrorsSuspensionReasonRequired              = ID{key: "errors.suspension_reason_required"}
 	ErrorsTagNotFound                           = ID{key: "errors.tag_not_found"}
+	ErrorsTelegramStartBotOff                   = ID{key: "errors.telegram_start_bot_off"}
+	ErrorsTelegramStartNoIntegration            = ID{key: "errors.telegram_start_no_integration"}
+	ErrorsTelegramStartNotTelegram              = ID{key: "errors.telegram_start_not_telegram"}
 	ErrorsTelemetryLocked                       = ID{key: "errors.telemetry_locked"}
 	ErrorsTemplateNotFound                      = ID{key: "errors.template_not_found"}
 	ErrorsTestSendRefused                       = ID{key: "errors.test_send_refused"}

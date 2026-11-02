@@ -10936,6 +10936,24 @@ type IntegrationsUpdateUnprocessableEntity ProblemDetails
 
 func (*IntegrationsUpdateUnprocessableEntity) integrationsUpdateRes() {}
 
+// Request body for issuing a Telegram start link.
+// Ref: #/components/schemas/IssueTelegramStartLinkInput
+type IssueTelegramStartLinkInput struct {
+	// The Telegram bot the link is for; null or omitted means the workspace's default Telegram
+	// integration. A disabled or archived bot, or an integration of another channel, is refused with 422.
+	IntegrationId OptNilEntityId `json:"integrationId"`
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *IssueTelegramStartLinkInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *IssueTelegramStartLinkInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
 // A JSON object whose members the contract leaves open: custom field values, event properties,
 // integration params, an audit diff. One named model, so every surface's Go code has one type for it
 // rather than one per field.
@@ -14720,6 +14738,7 @@ func (*ProblemDetailsHeaders) tagsDeleteRes()                {}
 func (*ProblemDetailsHeaders) tagsListForContactRes()        {}
 func (*ProblemDetailsHeaders) tagsListRes()                  {}
 func (*ProblemDetailsHeaders) tagsRemoveRes()                {}
+func (*ProblemDetailsHeaders) telegramStartLinksIssueRes()   {}
 func (*ProblemDetailsHeaders) templatesCreateRes()           {}
 func (*ProblemDetailsHeaders) templatesDeleteRes()           {}
 func (*ProblemDetailsHeaders) templatesGetRes()              {}
@@ -18079,6 +18098,59 @@ func (s *TelegramConfigKind) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+// A Telegram start link: the person who opens it and presses Start binds their chat to the contact it
+// was issued for. The link works once.
+// Ref: #/components/schemas/TelegramStartLinkResource
+type TelegramStartLinkResource struct {
+	// `https://t.me/<bot>?start=<token>`. The token is shown only here: treat the link as a secret until
+	// it is used.
+	URL string `json:"url"`
+	// When the link lapses, 30 days after it is issued.
+	ExpiresAt Timestamp `json:"expiresAt"`
+}
+
+// GetURL returns the value of URL.
+func (s *TelegramStartLinkResource) GetURL() string {
+	return s.URL
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *TelegramStartLinkResource) GetExpiresAt() Timestamp {
+	return s.ExpiresAt
+}
+
+// SetURL sets the value of URL.
+func (s *TelegramStartLinkResource) SetURL(val string) {
+	s.URL = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *TelegramStartLinkResource) SetExpiresAt(val Timestamp) {
+	s.ExpiresAt = val
+}
+
+func (*TelegramStartLinkResource) telegramStartLinksIssueRes() {}
+
+type TelegramStartLinksIssueBadRequest ProblemDetails
+
+func (*TelegramStartLinksIssueBadRequest) telegramStartLinksIssueRes() {}
+
+type TelegramStartLinksIssueForbidden ProblemDetails
+
+func (*TelegramStartLinksIssueForbidden) telegramStartLinksIssueRes() {}
+
+type TelegramStartLinksIssueNotFound ProblemDetails
+
+func (*TelegramStartLinksIssueNotFound) telegramStartLinksIssueRes() {}
+
+type TelegramStartLinksIssueUnauthorized ProblemDetails
+
+func (*TelegramStartLinksIssueUnauthorized) telegramStartLinksIssueRes() {}
+
+type TelegramStartLinksIssueUnprocessableEntity ProblemDetails
+
+func (*TelegramStartLinksIssueUnprocessableEntity) telegramStartLinksIssueRes() {}
 
 // Reusable email template.
 // Ref: #/components/schemas/TemplateResource

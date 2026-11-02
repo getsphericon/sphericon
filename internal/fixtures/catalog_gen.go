@@ -249,6 +249,20 @@ const (
 	AviatoName = "Aviato"
 	// AviatoPublicID is from fixtures/workspaces.
 	AviatoPublicID = "AviatW11"
+	// BindingEmmaPhoneDestination is from fixtures/bindings.
+	BindingEmmaPhoneDestination = "70002"
+	// BindingEmmaPhoneID is from fixtures/bindings.
+	BindingEmmaPhoneID = 2
+	// BindingEmmaPhoneVisitorID is from fixtures/bindings.
+	BindingEmmaPhoneVisitorID = "101"
+	// BindingGlobexDestination is from fixtures/bindings.
+	BindingGlobexDestination = "80001"
+	// BindingGlobexID is from fixtures/bindings.
+	BindingGlobexID = 900
+	// BindingLiamDestination is from fixtures/bindings.
+	BindingLiamDestination = "70001"
+	// BindingLiamID is from fixtures/bindings.
+	BindingLiamID = 1
 	// BluthCollectKey is from fixtures/workspaces.
 	BluthCollectKey = "omck_test_bluth_collect_key"
 	// BluthDanMembershipID is from fixtures/memberships.
@@ -1261,6 +1275,14 @@ const (
 	IntegrationAcmeSmsName = "SMS relay (reserved Channel)"
 	// IntegrationAcmeSmsProvider is from fixtures/integrations.
 	IntegrationAcmeSmsProvider = "smtp"
+	// IntegrationAcmeTelegramID is from fixtures/integrations.
+	IntegrationAcmeTelegramID = 9
+	// IntegrationAcmeTelegramIngestKey is from fixtures/integrations.
+	IntegrationAcmeTelegramIngestKey = "omik_test_integrationacmetelegram"
+	// IntegrationAcmeTelegramName is from fixtures/integrations.
+	IntegrationAcmeTelegramName = "Acme bot"
+	// IntegrationAcmeTelegramProvider is from fixtures/integrations.
+	IntegrationAcmeTelegramProvider = "telegram"
 	// IntegrationGlobexID is from fixtures/integrations.
 	IntegrationGlobexID = 900
 	// IntegrationGlobexInboxID is from fixtures/integrations.
@@ -1285,6 +1307,14 @@ const (
 	IntegrationGlobexSesNoTopicName = "Globex SES (stored without an SNS topic)"
 	// IntegrationGlobexSesNoTopicProvider is from fixtures/integrations.
 	IntegrationGlobexSesNoTopicProvider = "ses"
+	// IntegrationGlobexTelegramID is from fixtures/integrations.
+	IntegrationGlobexTelegramID = 903
+	// IntegrationGlobexTelegramIngestKey is from fixtures/integrations.
+	IntegrationGlobexTelegramIngestKey = "omik_test_integrationglobextelegram"
+	// IntegrationGlobexTelegramName is from fixtures/integrations.
+	IntegrationGlobexTelegramName = "Globex bot"
+	// IntegrationGlobexTelegramProvider is from fixtures/integrations.
+	IntegrationGlobexTelegramProvider = "telegram"
 	// IntegrationUmbrellaDefaultID is from fixtures/integrations.
 	IntegrationUmbrellaDefaultID = 910
 	// IntegrationUmbrellaDefaultIngestKey is from fixtures/integrations.
@@ -2063,6 +2093,10 @@ const (
 	StaleUnverifiedUserID = 15
 	// StaleUnverifiedUserName is from fixtures/users.
 	StaleUnverifiedUserName = "Stale"
+	// StartTokenAcmeUsedID is from fixtures/start_tokens.
+	StartTokenAcmeUsedID = 1
+	// StartTokenGlobexUsedID is from fixtures/start_tokens.
+	StartTokenGlobexUsedID = 900
 	// SuppressionErasableDestination is from fixtures/suppressions.
 	SuppressionErasableDestination = "erin@initech.test"
 	// SuppressionErasableID is from fixtures/suppressions.

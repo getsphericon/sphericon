@@ -397,6 +397,10 @@ type TagsRemoveRes interface {
 	tagsRemoveRes()
 }
 
+type TelegramStartLinksIssueRes interface {
+	telegramStartLinksIssueRes()
+}
+
 type TemplatesCreateRes interface {
 	templatesCreateRes()
 }

@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/attention"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
@@ -649,6 +650,9 @@ var audiencePackage = do.Package(
 		return integrations.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*messaging.Catalog](i), do.MustInvoke[Enqueuer](i),
 			do.MustInvoke[*preset.Registry](i), cfg.AppURL, do.MustInvoke[IntegrationOptions](i)...), nil
 	}),
+	do.Lazy(func(i do.Injector) (*bindings.Module, error) {
+		return bindings.New(do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*sendingdomains.Module, error) {
 		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Enqueuer](i)), nil
 	}),
@@ -838,6 +842,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Contacts:         do.MustInvoke[*contacts.Module](i),
 		Erasure:          do.MustInvoke[*erasure.Module](i),
 		Tags:             do.MustInvoke[*tags.Module](i),
+		Bindings:         do.MustInvoke[*bindings.Module](i),
 		Templates:        do.MustInvoke[*templates.Module](i),
 		Transactional:    do.MustInvoke[*transactional.Module](i),
 		BrandKit:         do.MustInvoke[*brandkit.Module](i),
@@ -891,6 +896,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Contacts:                 do.MustInvoke[*contacts.Module](i),
 		Erasure:                  do.MustInvoke[*erasure.Module](i),
 		Tags:                     do.MustInvoke[*tags.Module](i),
+		Bindings:                 do.MustInvoke[*bindings.Module](i),
 		Templates:                do.MustInvoke[*templates.Module](i),
 		BrandKit:                 do.MustInvoke[*brandkit.Module](i),
 		Automations:              do.MustInvoke[*automations.Module](i),

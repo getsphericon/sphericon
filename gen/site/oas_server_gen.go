@@ -1190,6 +1190,18 @@ type Handler interface {
 	//
 	// DELETE /workspaces/{workspaceId}/contacts/{contactId}/tags/{name}
 	SiteTagsRemove(ctx context.Context, params SiteTagsRemoveParams) (SiteTagsRemoveRes, error)
+	// SiteTelegramIssueStartLink implements SiteTelegram_issueStartLink operation.
+	//
+	// Issue a Telegram start link for a contact. Each call issues a new link.
+	//
+	// POST /workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links
+	SiteTelegramIssueStartLink(ctx context.Context, req *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (SiteTelegramIssueStartLinkRes, error)
+	// SiteTelegramListBindings implements SiteTelegram_listBindings operation.
+	//
+	// List the Telegram chats a contact is reached through.
+	//
+	// GET /workspaces/{workspaceId}/contacts/{contactId}/bindings
+	SiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) (SiteTelegramListBindingsRes, error)
 	// SiteTemplatesCreate implements SiteTemplates_create operation.
 	//
 	// Create a resource from the site UI.

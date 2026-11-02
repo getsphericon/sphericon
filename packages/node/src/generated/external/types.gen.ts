@@ -3135,6 +3135,16 @@ export type IntegrationResource = {
 };
 
 /**
+ * Request body for issuing a Telegram start link
+ */
+export type IssueTelegramStartLinkInput = {
+  /**
+   * The Telegram bot the link is for; null or omitted means the workspace's default Telegram integration. A disabled or archived bot, or an integration of another channel, is refused with 422.
+   */
+  integrationId?: EntityId | null;
+};
+
+/**
  * A JSON object whose members the contract leaves open: custom field values, event properties,
  * integration params, an audit diff. One named model, so every surface's Go code has one type for
  * it rather than one per field.
@@ -4216,6 +4226,20 @@ export type TelegramConfigInput = {
    * The bot token
    */
   token: string;
+};
+
+/**
+ * A Telegram start link: the person who opens it and presses Start binds their chat to the contact it was issued for. The link works once.
+ */
+export type TelegramStartLinkResource = {
+  /**
+   * `https://t.me/<bot>?start=<token>`. The token is shown only here: treat the link as a secret until it is used.
+   */
+  url: string;
+  /**
+   * When the link lapses, 30 days after it is issued
+   */
+  expiresAt: Timestamp;
 };
 
 /**
@@ -7363,6 +7387,53 @@ export type TagsRemoveResponses = {
 };
 
 export type TagsRemoveResponse = TagsRemoveResponses[keyof TagsRemoveResponses];
+
+export type TelegramStartLinksIssueData = {
+  body: IssueTelegramStartLinkInput;
+  path: {
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/contacts/{contactId}/telegram-start-links';
+};
+
+export type TelegramStartLinksIssueErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type TelegramStartLinksIssueError = TelegramStartLinksIssueErrors[keyof TelegramStartLinksIssueErrors];
+
+export type TelegramStartLinksIssueResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: TelegramStartLinkResource;
+};
+
+export type TelegramStartLinksIssueResponse = TelegramStartLinksIssueResponses[keyof TelegramStartLinksIssueResponses];
 
 export type ContactsDeleteData = {
   body?: never;

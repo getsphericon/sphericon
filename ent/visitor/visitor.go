@@ -28,6 +28,10 @@ const (
 	FieldLastSeenAt = "last_seen_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
+	// EdgeBindings holds the string denoting the bindings edge name in mutations.
+	EdgeBindings = "bindings"
+	// EdgeStartTokens holds the string denoting the start_tokens edge name in mutations.
+	EdgeStartTokens = "start_tokens"
 	// EdgeContact holds the string denoting the contact edge name in mutations.
 	EdgeContact = "contact"
 	// Table holds the table name of the visitor in the database.
@@ -39,6 +43,20 @@ const (
 	WorkspaceInverseTable = "workspaces"
 	// WorkspaceColumn is the table column denoting the workspace relation/edge.
 	WorkspaceColumn = "workspace_id"
+	// BindingsTable is the table that holds the bindings relation/edge.
+	BindingsTable = "bindings"
+	// BindingsInverseTable is the table name for the Binding entity.
+	// It exists in this package in order to avoid circular dependency with the "binding" package.
+	BindingsInverseTable = "bindings"
+	// BindingsColumn is the table column denoting the bindings relation/edge.
+	BindingsColumn = "visitor_id"
+	// StartTokensTable is the table that holds the start_tokens relation/edge.
+	StartTokensTable = "start_tokens"
+	// StartTokensInverseTable is the table name for the StartToken entity.
+	// It exists in this package in order to avoid circular dependency with the "starttoken" package.
+	StartTokensInverseTable = "start_tokens"
+	// StartTokensColumn is the table column denoting the start_tokens relation/edge.
+	StartTokensColumn = "visitor_id"
 	// ContactTable is the table that holds the contact relation/edge.
 	ContactTable = "visitors"
 	// ContactInverseTable is the table name for the Contact entity.
@@ -127,6 +145,34 @@ func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// ByBindingsCount orders the results by bindings count.
+func ByBindingsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBindingsStep(), opts...)
+	}
+}
+
+// ByBindings orders the results by bindings terms.
+func ByBindings(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBindingsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByStartTokensCount orders the results by start_tokens count.
+func ByStartTokensCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newStartTokensStep(), opts...)
+	}
+}
+
+// ByStartTokens orders the results by start_tokens terms.
+func ByStartTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStartTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByContactField orders the results by contact field.
 func ByContactField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -138,6 +184,20 @@ func newWorkspaceStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(WorkspaceInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
+	)
+}
+func newBindingsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BindingsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, BindingsTable, BindingsColumn),
+	)
+}
+func newStartTokensStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StartTokensInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, StartTokensTable, StartTokensColumn),
 	)
 }
 func newContactStep() *sqlgraph.Step {

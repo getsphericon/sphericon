@@ -19,6 +19,9 @@
       "name": "Site Tags"
     },
     {
+      "name": "Site Telegram"
+    },
+    {
       "name": "Site Auth"
     },
     {
@@ -7536,6 +7539,67 @@
         "x-required-permissions": ["contacts:erase"]
       }
     },
+    "/workspaces/{workspaceId}/contacts/{contactId}/bindings": {
+      "get": {
+        "operationId": "SiteTelegram_listBindings",
+        "description": "List the Telegram chats a contact is reached through",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SiteBindingResource"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Telegram"],
+        "x-required-permissions": []
+      }
+    },
     "/workspaces/{workspaceId}/contacts/{contactId}/tags": {
       "get": {
         "operationId": "SiteTags_listForContact",
@@ -7773,6 +7837,84 @@
           }
         },
         "tags": ["Site Tags"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links": {
+      "post": {
+        "operationId": "SiteTelegram_issueStartLink",
+        "description": "Issue a Telegram start link for a contact. Each call issues a new link.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramStartLinkResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Telegram"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueTelegramStartLinkInput"
+              }
+            }
+          }
+        },
         "x-required-permissions": []
       }
     },
@@ -16018,6 +16160,22 @@
         },
         "description": "Provider config submitted by the caller, discriminated by `kind`."
       },
+      "IssueTelegramStartLinkInput": {
+        "type": "object",
+        "properties": {
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Telegram bot the link is for; null or omitted means the workspace's default Telegram integration. A disabled or archived bot, or an integration of another channel, is refused with 422."
+          }
+        },
+        "description": "Request body for issuing a Telegram start link"
+      },
       "JsonObject": {
         "type": "object",
         "additionalProperties": {},
@@ -17926,6 +18084,46 @@
           }
         },
         "description": "One version of an automation's definition: what publishing makes it do (ADR 0065)"
+      },
+      "SiteBindingResource": {
+        "type": "object",
+        "required": ["id", "integrationId", "integrationName", "boundAt"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "integrationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Telegram integration (the bot) the chat is on"
+          },
+          "integrationName": {
+            "type": "string",
+            "description": "The bot's name as the integration is named"
+          },
+          "botUsername": {
+            "type": "string",
+            "nullable": true,
+            "description": "The bot's `@username`, without the"
+          },
+          "boundAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the chat was bound to its current owner"
+          }
+        },
+        "description": "A Telegram chat a contact is reached through: its own, or that of one of its visitors. Made only by what the bot receives, so it is read here and never written."
       },
       "SiteBrandKitResource": {
         "type": "object",
@@ -23753,6 +23951,25 @@
           }
         },
         "description": "A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had: use a bot dedicated to sphericon"
+      },
+      "TelegramStartLinkResource": {
+        "type": "object",
+        "required": ["url", "expiresAt"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "`https://t.me/<bot>?start=<token>`. The token is shown only here: treat the link as a secret until it is used."
+          },
+          "expiresAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the link lapses, 30 days after it is issued"
+          }
+        },
+        "description": "A Telegram start link: the person who opens it and presses Start binds their chat to the contact it was issued for. The link works once."
       },
       "TestSendBroadcastInput": {
         "type": "object",

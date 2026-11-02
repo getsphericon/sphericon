@@ -63,6 +63,10 @@ type ContactEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// Visitors holds the value of the visitors edge.
 	Visitors []*Visitor `json:"visitors,omitempty"`
+	// Bindings holds the value of the bindings edge.
+	Bindings []*Binding `json:"bindings,omitempty"`
+	// StartTokens holds the value of the start_tokens edge.
+	StartTokens []*StartToken `json:"start_tokens,omitempty"`
 	// Tags holds the value of the tags edge.
 	Tags []*Tag `json:"tags,omitempty"`
 	// Events holds the value of the events edge.
@@ -73,7 +77,7 @@ type ContactEdges struct {
 	ContactTags []*ContactTag `json:"contact_tags,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [8]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -96,10 +100,28 @@ func (e ContactEdges) VisitorsOrErr() ([]*Visitor, error) {
 	return nil, &NotLoadedError{edge: "visitors"}
 }
 
+// BindingsOrErr returns the Bindings value or an error if the edge
+// was not loaded in eager-loading.
+func (e ContactEdges) BindingsOrErr() ([]*Binding, error) {
+	if e.loadedTypes[2] {
+		return e.Bindings, nil
+	}
+	return nil, &NotLoadedError{edge: "bindings"}
+}
+
+// StartTokensOrErr returns the StartTokens value or an error if the edge
+// was not loaded in eager-loading.
+func (e ContactEdges) StartTokensOrErr() ([]*StartToken, error) {
+	if e.loadedTypes[3] {
+		return e.StartTokens, nil
+	}
+	return nil, &NotLoadedError{edge: "start_tokens"}
+}
+
 // TagsOrErr returns the Tags value or an error if the edge
 // was not loaded in eager-loading.
 func (e ContactEdges) TagsOrErr() ([]*Tag, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[4] {
 		return e.Tags, nil
 	}
 	return nil, &NotLoadedError{edge: "tags"}
@@ -108,7 +130,7 @@ func (e ContactEdges) TagsOrErr() ([]*Tag, error) {
 // EventsOrErr returns the Events value or an error if the edge
 // was not loaded in eager-loading.
 func (e ContactEdges) EventsOrErr() ([]*Event, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[5] {
 		return e.Events, nil
 	}
 	return nil, &NotLoadedError{edge: "events"}
@@ -117,7 +139,7 @@ func (e ContactEdges) EventsOrErr() ([]*Event, error) {
 // OrdersOrErr returns the Orders value or an error if the edge
 // was not loaded in eager-loading.
 func (e ContactEdges) OrdersOrErr() ([]*Order, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[6] {
 		return e.Orders, nil
 	}
 	return nil, &NotLoadedError{edge: "orders"}
@@ -126,7 +148,7 @@ func (e ContactEdges) OrdersOrErr() ([]*Order, error) {
 // ContactTagsOrErr returns the ContactTags value or an error if the edge
 // was not loaded in eager-loading.
 func (e ContactEdges) ContactTagsOrErr() ([]*ContactTag, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[7] {
 		return e.ContactTags, nil
 	}
 	return nil, &NotLoadedError{edge: "contact_tags"}
@@ -297,6 +319,16 @@ func (_m *Contact) QueryWorkspace() *WorkspaceQuery {
 // QueryVisitors queries the "visitors" edge of the Contact entity.
 func (_m *Contact) QueryVisitors() *VisitorQuery {
 	return NewContactClient(_m.config).QueryVisitors(_m)
+}
+
+// QueryBindings queries the "bindings" edge of the Contact entity.
+func (_m *Contact) QueryBindings() *BindingQuery {
+	return NewContactClient(_m.config).QueryBindings(_m)
+}
+
+// QueryStartTokens queries the "start_tokens" edge of the Contact entity.
+func (_m *Contact) QueryStartTokens() *StartTokenQuery {
+	return NewContactClient(_m.config).QueryStartTokens(_m)
 }
 
 // QueryTags queries the "tags" edge of the Contact entity.

@@ -231,8 +231,12 @@ Visitor a Telegram start token was issued to, or the Visitor whose browser repor
 subscription (and so that Visitor's Contact, once Identify resolves it). It is made only by what
 comes in from the channel (a `/start` carrying a token sphericon issued, a subscription reported by
 the tracker), never asserted through the API, and the latest one wins: a chat bound again moves to
-its new owner. A Contact is reached through its own
+its new owner. It is unique per (Integration, Destination); it keeps the chat id apart from the
+Destination (the Telegram user id) and when the current owner got it. A Contact is reached through its own
 Bindings and those of its Visitors; one on a Visitor that belongs to no Contact reaches nobody yet.
+A `/start` that gives a Binding to a Contact records `telegram.bound` for it, and one that takes it
+from another Contact records `telegram.unbound` for that one; the same Contact starting again
+records nothing.
 _Avoid_: Subscription (a rejected concept), endpoint, device, channel identity
 
 **Suppression**:
@@ -879,9 +883,11 @@ _Avoid_: Status update, opt-out (that is one of its consequences)
 **Start token**:
 The single-use, opaque token sphericon issues so that what a person sends with it is tied to the
 Contact or Visitor it was issued to: a Telegram bot link (`t.me/<bot>?start=<token>`) binds the
-chat; a prefilled `START <token>` text on SMS or WhatsApp, from an On-site form, confirms the number
-and gives it to that Contact or Visitor. Issued by a merge tag in a message, by the tracker for the
-current Visitor, or through the API; it lapses after 30 days.
+chat that starts with it; a prefilled `START <token>` text on SMS or WhatsApp, from an On-site form,
+confirms the number and gives it to that Contact or Visitor. Issued by a merge tag in a message, by
+the tracker for the current Visitor, or through the API (for a Contact: `/api` and the Contact
+card's "Copy Telegram link"); it lapses after 30 days. Only its hash is stored, it works once, and a
+used, expired or another bot's token, like a bare `/start`, binds nothing and records nothing.
 _Avoid_: Deep link (that is the URL that carries it), invite code
 
 **Undelivered**:

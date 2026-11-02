@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/holdreason"
@@ -372,6 +373,10 @@ type Converter interface {
 	CustomFieldToResource(source *ent.CustomField) siteapi.SiteCustomFieldResource
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsToResources(source []*ent.CustomField) []siteapi.SiteCustomFieldResource
+	StartLinkToResource(source bindings.StartLink) siteapi.TelegramStartLinkResource
+	BindingToResource(source bindings.Chat) siteapi.SiteBindingResource
+	// goverter:useEmptyOnNil:slice
+	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
 	TagToResource(source *ent.Tag) siteapi.SiteTagResource
 	// goverter:useEmptyOnNil:slice
 	TagsToResources(source []*ent.Tag) []siteapi.SiteTagResource

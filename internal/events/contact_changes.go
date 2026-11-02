@@ -73,6 +73,31 @@ func (e *EnrollmentChange) Project() Projection {
 	}
 }
 
+// BindingChange is a Telegram chat becoming a Contact's (telegram.bound) or leaving it for another
+// (telegram.unbound), recorded in the transaction of the `/start` that moved it. The Integration
+// is the bot, a property `integrationId` a Trigger, a Rule or a Segment may read. DedupID is unique
+// per fact so that the same update's two events (one Contact's unbound, another's bound) both stand
+// and a redelivery of the update records neither twice.
+type BindingChange struct {
+	Action        string `json:"action"` // telegram.bound|telegram.unbound
+	WorkspaceID   int64  `json:"workspaceId"`
+	ContactID     int64  `json:"contactId"`
+	Email         string `json:"email,omitempty"`
+	IntegrationID int64  `json:"integrationId"`
+	DedupID       string `json:"dedupId,omitempty"`
+}
+
+func (e *BindingChange) EventName() string { return e.Action }
+func (*BindingChange) EventVersion() int   { return 1 }
+func (e *BindingChange) Workspace() int64  { return e.WorkspaceID }
+func (e *BindingChange) EventID() string   { return e.DedupID }
+func (e *BindingChange) Project() Projection {
+	return Projection{
+		Subject: e.Email, Action: e.Action, Email: e.Email, ContactID: e.ContactID,
+		Properties: map[string]any{"integrationId": e.IntegrationID},
+	}
+}
+
 type causeKey struct{}
 
 // CausedBy returns ctx for the work of a Rule's Action: an event published in it carries cause

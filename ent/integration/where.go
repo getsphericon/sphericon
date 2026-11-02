@@ -1109,6 +1109,52 @@ func HasCapturedMessagesWith(preds ...predicate.CapturedMessage) predicate.Integ
 	})
 }
 
+// HasBindings applies the HasEdge predicate on the "bindings" edge.
+func HasBindings() predicate.Integration {
+	return predicate.Integration(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BindingsTable, BindingsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBindingsWith applies the HasEdge predicate on the "bindings" edge with a given conditions (other predicates).
+func HasBindingsWith(preds ...predicate.Binding) predicate.Integration {
+	return predicate.Integration(func(s *sql.Selector) {
+		step := newBindingsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasStartTokens applies the HasEdge predicate on the "start_tokens" edge.
+func HasStartTokens() predicate.Integration {
+	return predicate.Integration(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, StartTokensTable, StartTokensColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStartTokensWith applies the HasEdge predicate on the "start_tokens" edge with a given conditions (other predicates).
+func HasStartTokensWith(preds ...predicate.StartToken) predicate.Integration {
+	return predicate.Integration(func(s *sql.Selector) {
+		step := newStartTokensStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Integration) predicate.Integration {
 	return predicate.Integration(sql.AndPredicates(predicates...))

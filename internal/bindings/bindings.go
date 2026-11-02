@@ -1,0 +1,320 @@
+// Package bindings is where a Telegram chat becomes a Contact's: the Start token a start link
+// carries and the Binding a `/start <token>` makes (ADR 0075, ADR 0076). A Binding is made only by
+// what the bot receives, never written through an API; the token is issued for a Contact through
+// the APIs, and later for a Visitor by the tracker or a merge tag.
+package bindings
+
+import (
+	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
+	"fmt"
+	"regexp"
+	"strings"
+	"time"
+
+	"github.com/samber/lo"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/binding"
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/starttoken"
+	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/contactlock"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/validation"
+)
+
+// TokenTTL is how long a start link works: a link waits in an inbox for weeks (ADR 0076).
+const TokenTTL = 30 * 24 * time.Hour
+
+var (
+	// ErrContactNotFound: no such Contact in this Workspace.
+	ErrContactNotFound = validation.NotFound("bindings: contact not found", i18n.ErrorsContactNotFound)
+	// ErrNoIntegration: no Integration to issue the link for: the Workspace has no default
+	// Telegram Integration.
+	ErrNoIntegration = validation.RefuseField("integrationId", "bindings: no default Telegram integration", i18n.ErrorsTelegramStartNoIntegration)
+	// ErrNotTelegram: the named Integration is not a Telegram bot.
+	ErrNotTelegram = validation.RefuseField("integrationId", "bindings: not a Telegram integration", i18n.ErrorsTelegramStartNotTelegram)
+	// ErrBotOff: the named bot holds no webhook (disabled or archived), so a link to it would
+	// bind nothing.
+	ErrBotOff = validation.RefuseField("integrationId", "bindings: the bot is off", i18n.ErrorsTelegramStartBotOff)
+)
+
+// tokenPattern is what a Start token may be: Telegram's limit on a deep-link parameter.
+var tokenPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+
+// Module issues start links and lists Bindings.
+type Module struct {
+	integ *integrations.Module
+	now   func() time.Time
+}
+
+// New builds the module; now is the clock a token's expiry is counted from.
+func New(integ *integrations.Module, now func() time.Time) *Module {
+	return &Module{integ: integ, now: now}
+}
+
+// StartLink is a start link and when it lapses.
+type StartLink struct {
+	URL       string
+	ExpiresAt time.Time
+}
+
+// IssueStartLink issues a single-use Start token for the Contact and returns the link
+// `https://t.me/<bot>?start=<token>` that carries it. Only the token's hash is stored. The bot is
+// the named Integration, or the default Telegram one when integrationID is nil.
+func (m *Module) IssueStartLink(ctx context.Context, s *ent.Scoped, contactID int64, integrationID *int64) (StartLink, error) {
+	exists, err := s.Contact().Query().Where(contact.ID(contactID)).Exist(ctx)
+	if err != nil {
+		return StartLink{}, fmt.Errorf("find contact: %w", err)
+	}
+	if !exists {
+		return StartLink{}, ErrContactNotFound
+	}
+	row, err := m.bot(ctx, s, integrationID)
+	if err != nil {
+		return StartLink{}, err
+	}
+	cfg, err := m.integ.Redact(row)
+	if err != nil || cfg.Telegram == nil {
+		return StartLink{}, fmt.Errorf("open the bot of integration %d: %w", row.ID, err)
+	}
+	token, err := newToken()
+	if err != nil {
+		return StartLink{}, err
+	}
+	expires := m.now().Add(TokenTTL)
+	err = s.StartToken().Create().
+		SetIntegrationID(row.ID).
+		SetContactID(contactID).
+		SetTokenHash(hashOf(token)).
+		SetExpiresAt(expires).
+		Exec(ctx)
+	if err != nil {
+		return StartLink{}, fmt.Errorf("store start token: %w", err)
+	}
+	return StartLink{URL: "https://t.me/" + cfg.Telegram.Username + "?start=" + token, ExpiresAt: expires}, nil
+}
+
+// bot is the Integration a link is issued for: the named one, or the default Telegram one.
+func (m *Module) bot(ctx context.Context, s *ent.Scoped, id *int64) (*ent.Integration, error) {
+	q := s.Integration().Query().Where(integration.DiscardedAtIsNil())
+	if id != nil {
+		q = q.Where(integration.ID(*id))
+	} else {
+		q = q.Where(integration.ChannelEQ(integration.ChannelTelegram), integration.IsDefault(true))
+	}
+	row, err := q.Only(ctx)
+	switch {
+	case ent.IsNotFound(err) && id == nil:
+		return nil, ErrNoIntegration
+	case ent.IsNotFound(err):
+		return nil, integrations.ErrNotFound
+	case err != nil:
+		return nil, fmt.Errorf("find integration: %w", err)
+	}
+	if row.Channel != integration.ChannelTelegram {
+		return nil, ErrNotTelegram
+	}
+	if !row.Enabled {
+		return nil, ErrBotOff
+	}
+	return row, nil
+}
+
+// newToken is 32 random bytes in URL-safe base64 without padding: 43 characters of
+// [A-Za-z0-9_-].
+func newToken() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("generate start token: %w", err)
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func hashOf(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
+// Chat is a Binding as the Contact's card shows it: the bot and since when.
+type Chat struct {
+	ID              int64
+	IntegrationID   int64
+	IntegrationName string
+	// BotUsername is the bot's @username without the @-sign, "" when it cannot be read.
+	BotUsername string
+	BoundAt     time.Time
+}
+
+// ForContact lists the Telegram Bindings a Contact is reached through, its own and those of its
+// Visitors, with the bot each is on, oldest first.
+func (m *Module) ForContact(ctx context.Context, s *ent.Scoped, contactID int64) ([]Chat, error) {
+	exists, err := s.Contact().Query().Where(contact.ID(contactID)).Exist(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("find contact: %w", err)
+	}
+	if !exists {
+		return nil, ErrContactNotFound
+	}
+	rows, err := s.Binding().Query().
+		Where(binding.Or(binding.ContactID(contactID), binding.HasVisitorWith(visitor.ContactID(contactID)))).
+		WithIntegration().
+		Order(binding.ByBoundAt(), binding.ByID()).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list bindings: %w", err)
+	}
+	return lo.Map(rows, func(b *ent.Binding, _ int) Chat {
+		bot := b.Edges.Integration
+		c := Chat{ID: b.ID, IntegrationID: bot.ID, IntegrationName: bot.Name, BoundAt: b.BoundAt}
+		if cfg, err := m.integ.Redact(bot); err == nil && cfg.Telegram != nil {
+			c.BotUsername = cfg.Telegram.Username
+		}
+		return c
+	}), nil
+}
+
+// Redemption is what a `/start <token>` carries to Redeem.
+type Redemption struct {
+	// Destination is the sender's Telegram user id and ChatID the chat the bot answers in.
+	Destination string
+	ChatID      string
+	// Text is the message as sent.
+	Text string
+	// DedupKey is the update's key (ingest.Tx.DedupKey): the events it records derive theirs from it.
+	DedupKey string
+}
+
+// Redeem reads a message for a `/start <token>`. A token that is unused, unexpired and of this
+// Integration is consumed, and the chat is bound to its owner: a new Binding, or the existing one
+// moved to the token's owner (the latest owner wins). It records telegram.bound for a Contact that
+// gained the chat and telegram.unbound for the Contact that lost it. Anything else (another
+// message, a bare `/start`, a used, expired or other bot's token) records nothing: the bot never
+// answers. Run it inside the transaction s and pub are bound to.
+func Redeem(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, now time.Time, r Redemption) error {
+	token, ok := startToken(r.Text)
+	if !ok {
+		return nil
+	}
+	tok, err := s.StartToken().Query().
+		Where(starttoken.TokenHash(hashOf(token)), starttoken.IntegrationID(bot.ID), starttoken.UsedAtIsNil(), starttoken.ExpiresAtGT(now)).
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("find start token: %w", err)
+	}
+	// Single use is one conditional write: a redelivery or a second chat racing for the token
+	// finds it used and records nothing.
+	used, err := s.StartToken().Update().
+		Where(starttoken.ID(tok.ID), starttoken.UsedAtIsNil()).
+		SetUsedAt(now).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("use start token: %w", err)
+	}
+	if used == 0 {
+		return nil
+	}
+	if tok.ContactID != nil {
+		// The owner's row is locked first, as every write about a Contact does (contactlock), so
+		// an Erasure of it and this bind are ordered.
+		if _, err := contactlock.Lock(ctx, s, *tok.ContactID); err != nil {
+			if ent.IsNotFound(err) {
+				return nil
+			}
+			return fmt.Errorf("lock contact: %w", err)
+		}
+	}
+	return bind(ctx, s, pub, bot, now, tok, r)
+}
+
+// startToken is the token of a `/start <token>` message: `/start`, optionally addressed to a bot
+// (`/start@name`), then one word of what a Start token may be.
+func startToken(text string) (string, bool) {
+	command, rest, found := strings.Cut(strings.TrimSpace(text), " ")
+	if !found {
+		return "", false
+	}
+	if name, _, _ := strings.Cut(command, "@"); name != "/start" {
+		return "", false
+	}
+	token := strings.TrimSpace(rest)
+	return token, tokenPattern.MatchString(token)
+}
+
+func bind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, now time.Time, tok *ent.StartToken, r Redemption) error {
+	existing, err := s.Binding().Query().
+		Where(binding.IntegrationID(bot.ID), binding.Destination(r.Destination)).
+		Only(ctx)
+	switch {
+	case ent.IsNotFound(err):
+		create := s.Binding().Create().
+			SetIntegrationID(bot.ID).
+			SetChannel(binding.ChannelTelegram).
+			SetDestination(r.Destination).
+			SetChatID(r.ChatID).
+			SetBoundAt(now)
+		if tok.ContactID != nil {
+			create.SetContactID(*tok.ContactID)
+		} else {
+			create.SetVisitorID(*tok.VisitorID)
+		}
+		if err := create.Exec(ctx); err != nil {
+			return fmt.Errorf("create binding: %w", err)
+		}
+		return announce(ctx, s, pub, bot, events.NameTelegramBound, tok.ContactID, r.DedupKey+"/bound")
+	case err != nil:
+		return fmt.Errorf("find binding: %w", err)
+	}
+	if sameOwner(existing, tok) {
+		if existing.ChatID == r.ChatID {
+			return nil
+		}
+		if err := s.Binding().UpdateOneID(existing.ID).SetChatID(r.ChatID).Exec(ctx); err != nil {
+			return fmt.Errorf("update binding chat: %w", err)
+		}
+		return nil
+	}
+	move := s.Binding().UpdateOneID(existing.ID).SetChatID(r.ChatID).SetBoundAt(now)
+	if tok.ContactID != nil {
+		move.SetContactID(*tok.ContactID).ClearVisitorID()
+	} else {
+		move.SetVisitorID(*tok.VisitorID).ClearContactID()
+	}
+	if err := move.Exec(ctx); err != nil {
+		return fmt.Errorf("move binding: %w", err)
+	}
+	if err := announce(ctx, s, pub, bot, events.NameTelegramUnbound, existing.ContactID, r.DedupKey+"/unbound"); err != nil {
+		return err
+	}
+	return announce(ctx, s, pub, bot, events.NameTelegramBound, tok.ContactID, r.DedupKey+"/bound")
+}
+
+func sameOwner(b *ent.Binding, tok *ent.StartToken) bool {
+	return lo.FromPtr(b.ContactID) == lo.FromPtr(tok.ContactID) && lo.FromPtr(b.VisitorID) == lo.FromPtr(tok.VisitorID)
+}
+
+// announce records the System event of a Contact gaining or losing the chat; a Visitor with no
+// Contact has none to record it for.
+func announce(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, action string, contactID *int64, dedup string) error {
+	if contactID == nil {
+		return nil
+	}
+	c, err := s.Contact().Get(ctx, *contactID)
+	if err != nil {
+		return fmt.Errorf("read contact: %w", err)
+	}
+	return pub.Publish(ctx, &events.BindingChange{
+		Action: action, WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email),
+		IntegrationID: bot.ID, DedupID: dedup,
+	})
+}

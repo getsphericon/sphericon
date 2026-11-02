@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -130,9 +131,10 @@ func TestSiteTelegramRefusesWhatTelegramRefuses(t *testing.T) {
 
 	list, err := c.SiteIntegrationsList(context.Background(), siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	for _, row := range *list.(*siteapi.SiteIntegrationsListOKApplicationJSON) {
-		assert.NotEqual(t, siteapi.SiteIntegrationProviderTelegram, row.Provider, "a refused connect saved nothing")
-	}
+	bots := lo.Filter(*list.(*siteapi.SiteIntegrationsListOKApplicationJSON), func(row siteapi.SiteIntegrationResource, _ int) bool {
+		return row.Provider == siteapi.SiteIntegrationProviderTelegram
+	})
+	assert.Len(t, bots, 1, "a refused connect saved nothing: only the fixture bot is there")
 }
 
 func TestSiteTelegramUpdateReconnectsTheSameBotOnly(t *testing.T) {

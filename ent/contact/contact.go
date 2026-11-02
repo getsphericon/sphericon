@@ -51,6 +51,10 @@ const (
 	EdgeWorkspace = "workspace"
 	// EdgeVisitors holds the string denoting the visitors edge name in mutations.
 	EdgeVisitors = "visitors"
+	// EdgeBindings holds the string denoting the bindings edge name in mutations.
+	EdgeBindings = "bindings"
+	// EdgeStartTokens holds the string denoting the start_tokens edge name in mutations.
+	EdgeStartTokens = "start_tokens"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
 	// EdgeEvents holds the string denoting the events edge name in mutations.
@@ -75,6 +79,20 @@ const (
 	VisitorsInverseTable = "visitors"
 	// VisitorsColumn is the table column denoting the visitors relation/edge.
 	VisitorsColumn = "contact_id"
+	// BindingsTable is the table that holds the bindings relation/edge.
+	BindingsTable = "bindings"
+	// BindingsInverseTable is the table name for the Binding entity.
+	// It exists in this package in order to avoid circular dependency with the "binding" package.
+	BindingsInverseTable = "bindings"
+	// BindingsColumn is the table column denoting the bindings relation/edge.
+	BindingsColumn = "contact_id"
+	// StartTokensTable is the table that holds the start_tokens relation/edge.
+	StartTokensTable = "start_tokens"
+	// StartTokensInverseTable is the table name for the StartToken entity.
+	// It exists in this package in order to avoid circular dependency with the "starttoken" package.
+	StartTokensInverseTable = "start_tokens"
+	// StartTokensColumn is the table column denoting the start_tokens relation/edge.
+	StartTokensColumn = "contact_id"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
 	TagsTable = "contact_tags"
 	// TagsInverseTable is the table name for the Tag entity.
@@ -277,6 +295,34 @@ func ByVisitors(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByBindingsCount orders the results by bindings count.
+func ByBindingsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBindingsStep(), opts...)
+	}
+}
+
+// ByBindings orders the results by bindings terms.
+func ByBindings(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBindingsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByStartTokensCount orders the results by start_tokens count.
+func ByStartTokensCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newStartTokensStep(), opts...)
+	}
+}
+
+// ByStartTokens orders the results by start_tokens terms.
+func ByStartTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStartTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByTagsCount orders the results by tags count.
 func ByTagsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -344,6 +390,20 @@ func newVisitorsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(VisitorsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, VisitorsTable, VisitorsColumn),
+	)
+}
+func newBindingsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BindingsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, BindingsTable, BindingsColumn),
+	)
+}
+func newStartTokensStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StartTokensInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, StartTokensTable, StartTokensColumn),
 	)
 }
 func newTagsStep() *sqlgraph.Step {

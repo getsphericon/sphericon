@@ -177,6 +177,8 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteTagsListForContactOperation:                    {workspace: true},
 	siteapi.SiteTagsListOperation:                              {workspace: true},
 	siteapi.SiteTagsRemoveOperation:                            {workspace: true},
+	siteapi.SiteTelegramIssueStartLinkOperation:                {workspace: true},
+	siteapi.SiteTelegramListBindingsOperation:                  {workspace: true},
 	siteapi.SiteTemplatesCreateOperation:                       {workspace: true},
 	siteapi.SiteTemplatesDeleteOperation:                       {workspace: true},
 	siteapi.SiteTemplatesGetOperation:                          {workspace: true},

@@ -63,6 +63,10 @@ const (
 	EdgeProviderLimiter = "provider_limiter"
 	// EdgeCapturedMessages holds the string denoting the captured_messages edge name in mutations.
 	EdgeCapturedMessages = "captured_messages"
+	// EdgeBindings holds the string denoting the bindings edge name in mutations.
+	EdgeBindings = "bindings"
+	// EdgeStartTokens holds the string denoting the start_tokens edge name in mutations.
+	EdgeStartTokens = "start_tokens"
 	// Table holds the table name of the integration in the database.
 	Table = "integrations"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -86,6 +90,20 @@ const (
 	CapturedMessagesInverseTable = "captured_messages"
 	// CapturedMessagesColumn is the table column denoting the captured_messages relation/edge.
 	CapturedMessagesColumn = "integration_id"
+	// BindingsTable is the table that holds the bindings relation/edge.
+	BindingsTable = "bindings"
+	// BindingsInverseTable is the table name for the Binding entity.
+	// It exists in this package in order to avoid circular dependency with the "binding" package.
+	BindingsInverseTable = "bindings"
+	// BindingsColumn is the table column denoting the bindings relation/edge.
+	BindingsColumn = "integration_id"
+	// StartTokensTable is the table that holds the start_tokens relation/edge.
+	StartTokensTable = "start_tokens"
+	// StartTokensInverseTable is the table name for the StartToken entity.
+	// It exists in this package in order to avoid circular dependency with the "starttoken" package.
+	StartTokensInverseTable = "start_tokens"
+	// StartTokensColumn is the table column denoting the start_tokens relation/edge.
+	StartTokensColumn = "integration_id"
 )
 
 // Columns holds all SQL columns for integration fields.
@@ -364,6 +382,34 @@ func ByCapturedMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption 
 		sqlgraph.OrderByNeighborTerms(s, newCapturedMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByBindingsCount orders the results by bindings count.
+func ByBindingsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBindingsStep(), opts...)
+	}
+}
+
+// ByBindings orders the results by bindings terms.
+func ByBindings(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBindingsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByStartTokensCount orders the results by start_tokens count.
+func ByStartTokensCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newStartTokensStep(), opts...)
+	}
+}
+
+// ByStartTokens orders the results by start_tokens terms.
+func ByStartTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStartTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -383,5 +429,19 @@ func newCapturedMessagesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CapturedMessagesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, CapturedMessagesTable, CapturedMessagesColumn),
+	)
+}
+func newBindingsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BindingsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, BindingsTable, BindingsColumn),
+	)
+}
+func newStartTokensStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StartTokensInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, StartTokensTable, StartTokensColumn),
 	)
 }

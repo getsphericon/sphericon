@@ -24,6 +24,9 @@ type AutomationRun func(*sql.Selector)
 // AutomationVersion is the predicate function for automationversion builders.
 type AutomationVersion func(*sql.Selector)
 
+// Binding is the predicate function for binding builders.
+type Binding func(*sql.Selector)
+
 // BrandKit is the predicate function for brandkit builders.
 type BrandKit func(*sql.Selector)
 
@@ -170,6 +173,9 @@ type SignupSurveyResponse func(*sql.Selector)
 
 // StaffMember is the predicate function for staffmember builders.
 type StaffMember func(*sql.Selector)
+
+// StartToken is the predicate function for starttoken builders.
+type StartToken func(*sql.Selector)
 
 // Suppression is the predicate function for suppression builders.
 type Suppression func(*sql.Selector)

@@ -1006,6 +1006,16 @@ export type IntegrationConfigInput = ({
 } & TelegramConfigInput);
 
 /**
+ * Request body for issuing a Telegram start link
+ */
+export type IssueTelegramStartLinkInput = {
+  /**
+   * The Telegram bot the link is for; null or omitted means the workspace's default Telegram integration. A disabled or archived bot, or an integration of another channel, is refused with 422.
+   */
+  integrationId?: EntityId | null;
+};
+
+/**
  * A JSON object whose members the contract leaves open: custom field values, event properties,
  * integration params, an audit diff. One named model, so every surface's Go code has one type for
  * it rather than one per field.
@@ -2559,6 +2569,32 @@ export type SiteAutomationVersion = {
    * The ordered, linear steps
    */
   steps: Array<SiteAutomationStep>;
+};
+
+/**
+ * A Telegram chat a contact is reached through: its own, or that of one of its visitors. Made only by what the bot receives, so it is read here and never written.
+ */
+export type SiteBindingResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The Telegram integration (the bot) the chat is on
+   */
+  integrationId: EntityId;
+  /**
+   * The bot's name as the integration is named
+   */
+  integrationName: string;
+  /**
+   * The bot's `@username`, without the
+   */
+  botUsername?: string | null;
+  /**
+   * When the chat was bound to its current owner
+   */
+  boundAt: Timestamp;
 };
 
 /**
@@ -6848,6 +6884,20 @@ export type TelegramConfigInput = {
    * The bot token
    */
   token: string;
+};
+
+/**
+ * A Telegram start link: the person who opens it and presses Start binds their chat to the contact it was issued for. The link works once.
+ */
+export type TelegramStartLinkResource = {
+  /**
+   * `https://t.me/<bot>?start=<token>`. The token is shown only here: treat the link as a secret until it is used.
+   */
+  url: string;
+  /**
+   * When the link lapses, 30 days after it is issued
+   */
+  expiresAt: Timestamp;
 };
 
 /**
@@ -11602,6 +11652,38 @@ export type SiteContactsLookupResponses = {
 
 export type SiteContactsLookupResponse = SiteContactsLookupResponses[keyof SiteContactsLookupResponses];
 
+export type SiteTelegramListBindingsData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/bindings';
+};
+
+export type SiteTelegramListBindingsErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteTelegramListBindingsError = SiteTelegramListBindingsErrors[keyof SiteTelegramListBindingsErrors];
+
+export type SiteTelegramListBindingsResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Array<SiteBindingResource>;
+};
+
+export type SiteTelegramListBindingsResponse = SiteTelegramListBindingsResponses[keyof SiteTelegramListBindingsResponses];
+
 export type SiteTagsListForContactData = {
   body?: never;
   path: {
@@ -11736,6 +11818,42 @@ export type SiteTagsRemoveResponses = {
 };
 
 export type SiteTagsRemoveResponse = SiteTagsRemoveResponses[keyof SiteTagsRemoveResponses];
+
+export type SiteTelegramIssueStartLinkData = {
+  body: IssueTelegramStartLinkInput;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links';
+};
+
+export type SiteTelegramIssueStartLinkErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteTelegramIssueStartLinkError = SiteTelegramIssueStartLinkErrors[keyof SiteTelegramIssueStartLinkErrors];
+
+export type SiteTelegramIssueStartLinkResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: TelegramStartLinkResource;
+};
+
+export type SiteTelegramIssueStartLinkResponse = SiteTelegramIssueStartLinkResponses[keyof SiteTelegramIssueStartLinkResponses];
 
 export type SiteContactsDeleteData = {
   body?: never;

@@ -11,9 +11,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/order"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -261,6 +263,36 @@ func (_c *ContactCreate) AddVisitors(v ...*Visitor) *ContactCreate {
 	return _c.AddVisitorIDs(ids...)
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (_c *ContactCreate) AddBindingIDs(ids ...int64) *ContactCreate {
+	_c.mutation.AddBindingIDs(ids...)
+	return _c
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (_c *ContactCreate) AddBindings(v ...*Binding) *ContactCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddBindingIDs(ids...)
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (_c *ContactCreate) AddStartTokenIDs(ids ...int64) *ContactCreate {
+	_c.mutation.AddStartTokenIDs(ids...)
+	return _c
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (_c *ContactCreate) AddStartTokens(v ...*StartToken) *ContactCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddStartTokenIDs(ids...)
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (_c *ContactCreate) AddTagIDs(ids ...int64) *ContactCreate {
 	_c.mutation.AddTagIDs(ids...)
@@ -489,6 +521,38 @@ func (_c *ContactCreate) createSpec() (*Contact, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(visitor.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.BindingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.BindingsTable,
+			Columns: []string{contact.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.StartTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.StartTokensTable,
+			Columns: []string{contact.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

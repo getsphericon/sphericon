@@ -658,6 +658,13 @@ type Handler interface {
 	//
 	// DELETE /contacts/{contactId}/tags/{name}
 	TagsRemove(ctx context.Context, params TagsRemoveParams) (TagsRemoveRes, error)
+	// TelegramStartLinksIssue implements TelegramStartLinks_issue operation.
+	//
+	// Issue a start link for a contact: `https://t.me/<bot>?start=<token>`. The chat that starts with it
+	// binds to the contact, once. Each call issues a new link.
+	//
+	// POST /contacts/{contactId}/telegram-start-links
+	TelegramStartLinksIssue(ctx context.Context, req *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (TelegramStartLinksIssueRes, error)
 	// TemplatesCreate implements Templates_create operation.
 	//
 	// Create a resource.

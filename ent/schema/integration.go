@@ -128,6 +128,11 @@ func (Integration) Edges() []ent.Edge {
 		// removes an Integration, since an Integration is archived, never deleted (ADR 0049).
 		edge.To("captured_messages", CapturedMessage.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// The chats the bot reached and the Start tokens issued for it die with it likewise.
+		edge.To("bindings", Binding.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("start_tokens", StartToken.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 

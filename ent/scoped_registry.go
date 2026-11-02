@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -38,6 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
@@ -431,6 +433,67 @@ func ScopedEntities() []ScopedEntity {
 					Name: "runs", Target: "AutomationRun",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.AutomationVersion().UpdateOneID(id).AddRunIDs(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Name:         "Binding",
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.Binding.Query().Where(binding.WorkspaceID(ws)).Order(Asc(binding.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.Binding().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Binding().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Binding().Update().Where(binding.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Binding().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Binding().Delete().Where(binding.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.Binding.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.Binding().Create()
+				b.SetIntegrationID(remap("Integration", src.IntegrationID))
+				b.SetChannel(src.Channel)
+				b.SetDestination(src.Destination)
+				b.SetChatID(src.ChatID)
+				if src.ContactID != nil {
+					b.SetContactID(remap("Contact", *src.ContactID))
+				}
+				if src.VisitorID != nil {
+					b.SetVisitorID(remap("Visitor", *src.VisitorID))
+				}
+				b.SetBoundAt(src.BoundAt)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "contact", Target: "Contact",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Binding().UpdateOneID(id).SetContactID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "visitor", Target: "Visitor",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Binding().UpdateOneID(id).SetVisitorID(target).Exec(ctx)
 					},
 				},
 			},
@@ -846,6 +909,18 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 				{
+					Name: "bindings", Target: "Binding",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Contact().UpdateOneID(id).AddBindingIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "start_tokens", Target: "StartToken",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Contact().UpdateOneID(id).AddStartTokenIDs(target).Exec(ctx)
+					},
+				},
+				{
 					Name: "tags", Target: "Tag",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Contact().UpdateOneID(id).AddTagIDs(target).Exec(ctx)
@@ -1251,6 +1326,18 @@ func ScopedEntities() []ScopedEntity {
 					Name: "captured_messages", Target: "CapturedMessage",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Integration().UpdateOneID(id).AddCapturedMessageIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "bindings", Target: "Binding",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Integration().UpdateOneID(id).AddBindingIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "start_tokens", Target: "StartToken",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Integration().UpdateOneID(id).AddStartTokenIDs(target).Exec(ctx)
 					},
 				},
 			},
@@ -2086,6 +2173,55 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Name:         "StartToken",
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.StartToken.Query().Where(starttoken.WorkspaceID(ws)).Order(Asc(starttoken.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.StartToken().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.StartToken().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.StartToken().Update().Where(starttoken.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.StartToken().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.StartToken().Delete().Where(starttoken.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.StartToken.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.StartToken().Create()
+				b.SetIntegrationID(remap("Integration", src.IntegrationID))
+				if src.ContactID != nil {
+					b.SetContactID(remap("Contact", *src.ContactID))
+				}
+				if src.VisitorID != nil {
+					b.SetVisitorID(remap("Visitor", *src.VisitorID))
+				}
+				b.SetTokenHash(src.TokenHash)
+				b.SetExpiresAt(src.ExpiresAt)
+				if src.UsedAt != nil {
+					b.SetUsedAt(*src.UsedAt)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
 			Name:         "Suppression",
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
@@ -2370,6 +2506,18 @@ func ScopedEntities() []ScopedEntity {
 				return created.WorkspaceID, nil
 			},
 			Refs: []ScopedRef{
+				{
+					Name: "bindings", Target: "Binding",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Visitor().UpdateOneID(id).AddBindingIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "start_tokens", Target: "StartToken",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Visitor().UpdateOneID(id).AddStartTokenIDs(target).Exec(ctx)
+					},
+				},
 				{
 					Name: "contact", Target: "Contact",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {

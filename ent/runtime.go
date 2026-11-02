@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -57,6 +58,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/staffmember"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
@@ -235,6 +237,29 @@ func init() {
 	automationversionDescExitEvents := automationversionFields[3].Descriptor()
 	// automationversion.DefaultExitEvents holds the default value on creation for the exit_events field.
 	automationversion.DefaultExitEvents = automationversionDescExitEvents.Default.([]string)
+	bindingMixin := schema.Binding{}.Mixin()
+	bindingMixinFields0 := bindingMixin[0].Fields()
+	_ = bindingMixinFields0
+	bindingFields := schema.Binding{}.Fields()
+	_ = bindingFields
+	// bindingDescCreatedAt is the schema descriptor for created_at field.
+	bindingDescCreatedAt := bindingMixinFields0[0].Descriptor()
+	// binding.DefaultCreatedAt holds the default value on creation for the created_at field.
+	binding.DefaultCreatedAt = bindingDescCreatedAt.Default.(func() time.Time)
+	// bindingDescUpdatedAt is the schema descriptor for updated_at field.
+	bindingDescUpdatedAt := bindingMixinFields0[1].Descriptor()
+	// binding.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	binding.DefaultUpdatedAt = bindingDescUpdatedAt.Default.(func() time.Time)
+	// binding.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	binding.UpdateDefaultUpdatedAt = bindingDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// bindingDescDestination is the schema descriptor for destination field.
+	bindingDescDestination := bindingFields[3].Descriptor()
+	// binding.DestinationValidator is a validator for the "destination" field. It is called by the builders before save.
+	binding.DestinationValidator = bindingDescDestination.Validators[0].(func(string) error)
+	// bindingDescChatID is the schema descriptor for chat_id field.
+	bindingDescChatID := bindingFields[4].Descriptor()
+	// binding.ChatIDValidator is a validator for the "chat_id" field. It is called by the builders before save.
+	binding.ChatIDValidator = bindingDescChatID.Validators[0].(func(string) error)
 	brandkitMixin := schema.BrandKit{}.Mixin()
 	brandkitMixinFields0 := brandkitMixin[0].Fields()
 	_ = brandkitMixinFields0
@@ -1328,6 +1353,25 @@ func init() {
 	staffmemberDescSessionEpoch := staffmemberFields[6].Descriptor()
 	// staffmember.DefaultSessionEpoch holds the default value on creation for the session_epoch field.
 	staffmember.DefaultSessionEpoch = staffmemberDescSessionEpoch.Default.(int64)
+	starttokenMixin := schema.StartToken{}.Mixin()
+	starttokenMixinFields0 := starttokenMixin[0].Fields()
+	_ = starttokenMixinFields0
+	starttokenFields := schema.StartToken{}.Fields()
+	_ = starttokenFields
+	// starttokenDescCreatedAt is the schema descriptor for created_at field.
+	starttokenDescCreatedAt := starttokenMixinFields0[0].Descriptor()
+	// starttoken.DefaultCreatedAt holds the default value on creation for the created_at field.
+	starttoken.DefaultCreatedAt = starttokenDescCreatedAt.Default.(func() time.Time)
+	// starttokenDescUpdatedAt is the schema descriptor for updated_at field.
+	starttokenDescUpdatedAt := starttokenMixinFields0[1].Descriptor()
+	// starttoken.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	starttoken.DefaultUpdatedAt = starttokenDescUpdatedAt.Default.(func() time.Time)
+	// starttoken.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	starttoken.UpdateDefaultUpdatedAt = starttokenDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// starttokenDescTokenHash is the schema descriptor for token_hash field.
+	starttokenDescTokenHash := starttokenFields[4].Descriptor()
+	// starttoken.TokenHashValidator is a validator for the "token_hash" field. It is called by the builders before save.
+	starttoken.TokenHashValidator = starttokenDescTokenHash.Validators[0].(func(string) error)
 	suppressionMixin := schema.Suppression{}.Mixin()
 	suppressionMixinFields0 := suppressionMixin[0].Fields()
 	_ = suppressionMixinFields0

@@ -1111,6 +1111,52 @@ func HasVisitorsWith(preds ...predicate.Visitor) predicate.Contact {
 	})
 }
 
+// HasBindings applies the HasEdge predicate on the "bindings" edge.
+func HasBindings() predicate.Contact {
+	return predicate.Contact(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BindingsTable, BindingsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBindingsWith applies the HasEdge predicate on the "bindings" edge with a given conditions (other predicates).
+func HasBindingsWith(preds ...predicate.Binding) predicate.Contact {
+	return predicate.Contact(func(s *sql.Selector) {
+		step := newBindingsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasStartTokens applies the HasEdge predicate on the "start_tokens" edge.
+func HasStartTokens() predicate.Contact {
+	return predicate.Contact(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, StartTokensTable, StartTokensColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStartTokensWith applies the HasEdge predicate on the "start_tokens" edge with a given conditions (other predicates).
+func HasStartTokensWith(preds ...predicate.StartToken) predicate.Contact {
+	return predicate.Contact(func(s *sql.Selector) {
+		step := newStartTokensStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasTags applies the HasEdge predicate on the "tags" edge.
 func HasTags() predicate.Contact {
 	return predicate.Contact(func(s *sql.Selector) {

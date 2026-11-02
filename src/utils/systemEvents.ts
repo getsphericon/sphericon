@@ -15,3 +15,6 @@ export const ENROLLMENT_ACTIONS = [
   'automation.goal_reached',
   'automation.exited',
 ] as const
+
+// A Telegram chat bound to a Contact, and one moved to another Contact (ADR 0076).
+export const TELEGRAM_ACTIONS = ['telegram.bound', 'telegram.unbound'] as const

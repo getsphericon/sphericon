@@ -13,6 +13,9 @@
       "name": "Tags"
     },
     {
+      "name": "Telegram"
+    },
+    {
       "name": "Enrollments"
     },
     {
@@ -5544,6 +5547,140 @@
           }
         },
         "tags": ["Tags"],
+        "x-required-scopes": ["contacts:write"]
+      }
+    },
+    "/contacts/{contactId}/telegram-start-links": {
+      "post": {
+        "operationId": "TelegramStartLinks_issue",
+        "description": "Issue a start link for a contact: `https://t.me/<bot>?start=<token>`. The chat that starts with it binds to the contact, once. Each call issues a new link.",
+        "parameters": [
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramStartLinkResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Telegram"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueTelegramStartLinkInput"
+              }
+            }
+          }
+        },
         "x-required-scopes": ["contacts:write"]
       }
     },
@@ -18925,6 +19062,22 @@
         },
         "description": "A sending-provider Integration. Credentials are write-only: the config is returned with secrets redacted."
       },
+      "IssueTelegramStartLinkInput": {
+        "type": "object",
+        "properties": {
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Telegram bot the link is for; null or omitted means the workspace's default Telegram integration. A disabled or archived bot, or an integration of another channel, is refused with 422."
+          }
+        },
+        "description": "Request body for issuing a Telegram start link"
+      },
       "JsonObject": {
         "type": "object",
         "additionalProperties": {},
@@ -20374,6 +20527,25 @@
           }
         },
         "description": "A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had: use a bot dedicated to sphericon"
+      },
+      "TelegramStartLinkResource": {
+        "type": "object",
+        "required": ["url", "expiresAt"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "`https://t.me/<bot>?start=<token>`. The token is shown only here: treat the link as a secret until it is used."
+          },
+          "expiresAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the link lapses, 30 days after it is issued"
+          }
+        },
+        "description": "A Telegram start link: the person who opens it and presses Start binds their chat to the contact it was issued for. The link works once."
       },
       "TemplateResource": {
         "type": "object",

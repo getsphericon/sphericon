@@ -327,6 +327,74 @@ var (
 			},
 		},
 	}
+	// BindingsColumns holds the columns for the "bindings" table.
+	BindingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"telegram"}},
+		{Name: "destination", Type: field.TypeString},
+		{Name: "chat_id", Type: field.TypeString},
+		{Name: "bound_at", Type: field.TypeTime},
+		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "integration_id", Type: field.TypeInt64},
+		{Name: "visitor_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// BindingsTable holds the schema information for the "bindings" table.
+	BindingsTable = &schema.Table{
+		Name:       "bindings",
+		Columns:    BindingsColumns,
+		PrimaryKey: []*schema.Column{BindingsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "bindings_contacts_bindings",
+				Columns:    []*schema.Column{BindingsColumns[7]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "bindings_integrations_bindings",
+				Columns:    []*schema.Column{BindingsColumns[8]},
+				RefColumns: []*schema.Column{IntegrationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "bindings_visitors_bindings",
+				Columns:    []*schema.Column{BindingsColumns[9]},
+				RefColumns: []*schema.Column{VisitorsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "bindings_workspaces_bindings",
+				Columns:    []*schema.Column{BindingsColumns[10]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "bindings_integration_destination",
+				Unique:  true,
+				Columns: []*schema.Column{BindingsColumns[8], BindingsColumns[4]},
+			},
+			{
+				Name:    "bindings_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{BindingsColumns[7]},
+			},
+			{
+				Name:    "bindings_visitor_id",
+				Unique:  false,
+				Columns: []*schema.Column{BindingsColumns[9]},
+			},
+			{
+				Name:    "binding_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{BindingsColumns[10]},
+			},
+		},
+	}
 	// BrandKitsColumns holds the columns for the "brand_kits" table.
 	BrandKitsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2322,6 +2390,73 @@ var (
 		Columns:    StaffMembersColumns,
 		PrimaryKey: []*schema.Column{StaffMembersColumns[0]},
 	}
+	// StartTokensColumns holds the columns for the "start_tokens" table.
+	StartTokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "token_hash", Type: field.TypeString},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "used_at", Type: field.TypeTime, Nullable: true},
+		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "integration_id", Type: field.TypeInt64},
+		{Name: "visitor_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// StartTokensTable holds the schema information for the "start_tokens" table.
+	StartTokensTable = &schema.Table{
+		Name:       "start_tokens",
+		Columns:    StartTokensColumns,
+		PrimaryKey: []*schema.Column{StartTokensColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "start_tokens_contacts_start_tokens",
+				Columns:    []*schema.Column{StartTokensColumns[6]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "start_tokens_integrations_start_tokens",
+				Columns:    []*schema.Column{StartTokensColumns[7]},
+				RefColumns: []*schema.Column{IntegrationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "start_tokens_visitors_start_tokens",
+				Columns:    []*schema.Column{StartTokensColumns[8]},
+				RefColumns: []*schema.Column{VisitorsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "start_tokens_workspaces_start_tokens",
+				Columns:    []*schema.Column{StartTokensColumns[9]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "start_tokens_token_hash",
+				Unique:  true,
+				Columns: []*schema.Column{StartTokensColumns[9], StartTokensColumns[3]},
+			},
+			{
+				Name:    "start_tokens_integration_id",
+				Unique:  false,
+				Columns: []*schema.Column{StartTokensColumns[7]},
+			},
+			{
+				Name:    "start_tokens_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{StartTokensColumns[6]},
+			},
+			{
+				Name:    "start_tokens_visitor_id",
+				Unique:  false,
+				Columns: []*schema.Column{StartTokensColumns[8]},
+			},
+		},
+	}
 	// SuppressionsColumns holds the columns for the "suppressions" table.
 	SuppressionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2775,6 +2910,7 @@ var (
 		AutomationsTable,
 		AutomationRunsTable,
 		AutomationVersionsTable,
+		BindingsTable,
 		BrandKitsTable,
 		BroadcastsTable,
 		BroadcastRecipientsTable,
@@ -2821,6 +2957,7 @@ var (
 		SignupItemsTable,
 		SignupSurveyResponsesTable,
 		StaffMembersTable,
+		StartTokensTable,
 		SuppressionsTable,
 		TagsTable,
 		TrackingDomainsTable,
@@ -2880,6 +3017,17 @@ func init() {
 	AutomationVersionsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	AutomationVersionsTable.Annotation = &entsql.Annotation{
 		Table: "automation_versions",
+	}
+	BindingsTable.ForeignKeys[0].RefTable = ContactsTable
+	BindingsTable.ForeignKeys[1].RefTable = IntegrationsTable
+	BindingsTable.ForeignKeys[2].RefTable = VisitorsTable
+	BindingsTable.ForeignKeys[3].RefTable = WorkspacesTable
+	BindingsTable.Annotation = &entsql.Annotation{
+		Table: "bindings",
+	}
+	BindingsTable.Annotation.Checks = map[string]string{
+		"bindings_channel_check": "channel IN ('telegram')",
+		"bindings_owner_check":   "(contact_id IS NULL) <> (visitor_id IS NULL)",
 	}
 	BrandKitsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	BrandKitsTable.Annotation = &entsql.Annotation{
@@ -3157,6 +3305,16 @@ func init() {
 	}
 	StaffMembersTable.Annotation = &entsql.Annotation{
 		Table: "staff_members",
+	}
+	StartTokensTable.ForeignKeys[0].RefTable = ContactsTable
+	StartTokensTable.ForeignKeys[1].RefTable = IntegrationsTable
+	StartTokensTable.ForeignKeys[2].RefTable = VisitorsTable
+	StartTokensTable.ForeignKeys[3].RefTable = WorkspacesTable
+	StartTokensTable.Annotation = &entsql.Annotation{
+		Table: "start_tokens",
+	}
+	StartTokensTable.Annotation.Checks = map[string]string{
+		"start_tokens_owner_check": "(contact_id IS NULL) <> (visitor_id IS NULL)",
 	}
 	SuppressionsTable.ForeignKeys[0].RefTable = ContactsTable
 	SuppressionsTable.ForeignKeys[1].RefTable = WorkspacesTable

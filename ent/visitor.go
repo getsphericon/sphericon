@@ -41,11 +41,15 @@ type Visitor struct {
 type VisitorEdges struct {
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
+	// Bindings holds the value of the bindings edge.
+	Bindings []*Binding `json:"bindings,omitempty"`
+	// StartTokens holds the value of the start_tokens edge.
+	StartTokens []*StartToken `json:"start_tokens,omitempty"`
 	// Contact holds the value of the contact edge.
 	Contact *Contact `json:"contact,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [4]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -59,12 +63,30 @@ func (e VisitorEdges) WorkspaceOrErr() (*Workspace, error) {
 	return nil, &NotLoadedError{edge: "workspace"}
 }
 
+// BindingsOrErr returns the Bindings value or an error if the edge
+// was not loaded in eager-loading.
+func (e VisitorEdges) BindingsOrErr() ([]*Binding, error) {
+	if e.loadedTypes[1] {
+		return e.Bindings, nil
+	}
+	return nil, &NotLoadedError{edge: "bindings"}
+}
+
+// StartTokensOrErr returns the StartTokens value or an error if the edge
+// was not loaded in eager-loading.
+func (e VisitorEdges) StartTokensOrErr() ([]*StartToken, error) {
+	if e.loadedTypes[2] {
+		return e.StartTokens, nil
+	}
+	return nil, &NotLoadedError{edge: "start_tokens"}
+}
+
 // ContactOrErr returns the Contact value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e VisitorEdges) ContactOrErr() (*Contact, error) {
 	if e.Contact != nil {
 		return e.Contact, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[3] {
 		return nil, &NotFoundError{label: contact.Label}
 	}
 	return nil, &NotLoadedError{edge: "contact"}
@@ -155,6 +177,16 @@ func (_m *Visitor) Value(name string) (ent.Value, error) {
 // QueryWorkspace queries the "workspace" edge of the Visitor entity.
 func (_m *Visitor) QueryWorkspace() *WorkspaceQuery {
 	return NewVisitorClient(_m.config).QueryWorkspace(_m)
+}
+
+// QueryBindings queries the "bindings" edge of the Visitor entity.
+func (_m *Visitor) QueryBindings() *BindingQuery {
+	return NewVisitorClient(_m.config).QueryBindings(_m)
+}
+
+// QueryStartTokens queries the "start_tokens" edge of the Visitor entity.
+func (_m *Visitor) QueryStartTokens() *StartTokenQuery {
+	return NewVisitorClient(_m.config).QueryStartTokens(_m)
 }
 
 // QueryContact queries the "contact" edge of the Visitor entity.

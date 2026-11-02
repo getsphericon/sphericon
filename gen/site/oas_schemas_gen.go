@@ -3497,6 +3497,24 @@ func NewTelegramConfigInputIntegrationConfigInputSum(v TelegramConfigInput) Inte
 	return s
 }
 
+// Request body for issuing a Telegram start link.
+// Ref: #/components/schemas/IssueTelegramStartLinkInput
+type IssueTelegramStartLinkInput struct {
+	// The Telegram bot the link is for; null or omitted means the workspace's default Telegram
+	// integration. A disabled or archived bot, or an integration of another channel, is refused with 422.
+	IntegrationId OptNilEntityId `json:"integrationId"`
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *IssueTelegramStartLinkInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *IssueTelegramStartLinkInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
 // A JSON object whose members the contract leaves open: custom field values, event properties,
 // integration params, an audit diff. One named model, so every surface's Go code has one type for it
 // rather than one per field.
@@ -12747,6 +12765,72 @@ func (*SiteAutomationsUpdateNotFound) siteAutomationsUpdateRes() {}
 type SiteAutomationsUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteAutomationsUpdateUnprocessableEntity) siteAutomationsUpdateRes() {}
+
+// A Telegram chat a contact is reached through: its own, or that of one of its visitors. Made only by
+// what the bot receives, so it is read here and never written.
+// Ref: #/components/schemas/SiteBindingResource
+type SiteBindingResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The Telegram integration (the bot) the chat is on.
+	IntegrationId EntityId `json:"integrationId"`
+	// The bot's name as the integration is named.
+	IntegrationName string `json:"integrationName"`
+	// The bot's `@username`, without the.
+	BotUsername OptNilString `json:"botUsername"`
+	// When the chat was bound to its current owner.
+	BoundAt Timestamp `json:"boundAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteBindingResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SiteBindingResource) GetIntegrationId() EntityId {
+	return s.IntegrationId
+}
+
+// GetIntegrationName returns the value of IntegrationName.
+func (s *SiteBindingResource) GetIntegrationName() string {
+	return s.IntegrationName
+}
+
+// GetBotUsername returns the value of BotUsername.
+func (s *SiteBindingResource) GetBotUsername() OptNilString {
+	return s.BotUsername
+}
+
+// GetBoundAt returns the value of BoundAt.
+func (s *SiteBindingResource) GetBoundAt() Timestamp {
+	return s.BoundAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteBindingResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SiteBindingResource) SetIntegrationId(val EntityId) {
+	s.IntegrationId = val
+}
+
+// SetIntegrationName sets the value of IntegrationName.
+func (s *SiteBindingResource) SetIntegrationName(val string) {
+	s.IntegrationName = val
+}
+
+// SetBotUsername sets the value of BotUsername.
+func (s *SiteBindingResource) SetBotUsername(val OptNilString) {
+	s.BotUsername = val
+}
+
+// SetBoundAt sets the value of BoundAt.
+func (s *SiteBindingResource) SetBoundAt(val Timestamp) {
+	s.BoundAt = val
+}
 
 type SiteBrandKitGetBadRequest ProblemDetails
 
@@ -26042,6 +26126,30 @@ func (s *SiteTelegramConfigKind) UnmarshalText(data []byte) error {
 	}
 }
 
+type SiteTelegramIssueStartLinkBadRequest ProblemDetails
+
+func (*SiteTelegramIssueStartLinkBadRequest) siteTelegramIssueStartLinkRes() {}
+
+type SiteTelegramIssueStartLinkNotFound ProblemDetails
+
+func (*SiteTelegramIssueStartLinkNotFound) siteTelegramIssueStartLinkRes() {}
+
+type SiteTelegramIssueStartLinkUnprocessableEntity ProblemDetails
+
+func (*SiteTelegramIssueStartLinkUnprocessableEntity) siteTelegramIssueStartLinkRes() {}
+
+type SiteTelegramListBindingsBadRequest ProblemDetails
+
+func (*SiteTelegramListBindingsBadRequest) siteTelegramListBindingsRes() {}
+
+type SiteTelegramListBindingsNotFound ProblemDetails
+
+func (*SiteTelegramListBindingsNotFound) siteTelegramListBindingsRes() {}
+
+type SiteTelegramListBindingsOKApplicationJSON []SiteBindingResource
+
+func (*SiteTelegramListBindingsOKApplicationJSON) siteTelegramListBindingsRes() {}
+
 type SiteTemplatesCreateBadRequest ProblemDetails
 
 func (*SiteTemplatesCreateBadRequest) siteTemplatesCreateRes() {}
@@ -28861,6 +28969,39 @@ func (s *TelegramConfigInputKind) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+// A Telegram start link: the person who opens it and presses Start binds their chat to the contact it
+// was issued for. The link works once.
+// Ref: #/components/schemas/TelegramStartLinkResource
+type TelegramStartLinkResource struct {
+	// `https://t.me/<bot>?start=<token>`. The token is shown only here: treat the link as a secret until
+	// it is used.
+	URL string `json:"url"`
+	// When the link lapses, 30 days after it is issued.
+	ExpiresAt Timestamp `json:"expiresAt"`
+}
+
+// GetURL returns the value of URL.
+func (s *TelegramStartLinkResource) GetURL() string {
+	return s.URL
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *TelegramStartLinkResource) GetExpiresAt() Timestamp {
+	return s.ExpiresAt
+}
+
+// SetURL sets the value of URL.
+func (s *TelegramStartLinkResource) SetURL(val string) {
+	s.URL = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *TelegramStartLinkResource) SetExpiresAt(val Timestamp) {
+	s.ExpiresAt = val
+}
+
+func (*TelegramStartLinkResource) siteTelegramIssueStartLinkRes() {}
 
 // Request body for a test send.
 // Ref: #/components/schemas/TestSendBroadcastInput

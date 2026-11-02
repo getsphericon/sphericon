@@ -629,6 +629,14 @@ type SiteTagsRemoveRes interface {
 	siteTagsRemoveRes()
 }
 
+type SiteTelegramIssueStartLinkRes interface {
+	siteTelegramIssueStartLinkRes()
+}
+
+type SiteTelegramListBindingsRes interface {
+	siteTelegramListBindingsRes()
+}
+
 type SiteTemplatesCreateRes interface {
 	siteTemplatesCreateRes()
 }

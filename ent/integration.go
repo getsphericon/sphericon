@@ -75,9 +75,13 @@ type IntegrationEdges struct {
 	ProviderLimiter *ProviderLimiter `json:"provider_limiter,omitempty"`
 	// CapturedMessages holds the value of the captured_messages edge.
 	CapturedMessages []*CapturedMessage `json:"captured_messages,omitempty"`
+	// Bindings holds the value of the bindings edge.
+	Bindings []*Binding `json:"bindings,omitempty"`
+	// StartTokens holds the value of the start_tokens edge.
+	StartTokens []*StartToken `json:"start_tokens,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [5]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -109,6 +113,24 @@ func (e IntegrationEdges) CapturedMessagesOrErr() ([]*CapturedMessage, error) {
 		return e.CapturedMessages, nil
 	}
 	return nil, &NotLoadedError{edge: "captured_messages"}
+}
+
+// BindingsOrErr returns the Bindings value or an error if the edge
+// was not loaded in eager-loading.
+func (e IntegrationEdges) BindingsOrErr() ([]*Binding, error) {
+	if e.loadedTypes[3] {
+		return e.Bindings, nil
+	}
+	return nil, &NotLoadedError{edge: "bindings"}
+}
+
+// StartTokensOrErr returns the StartTokens value or an error if the edge
+// was not loaded in eager-loading.
+func (e IntegrationEdges) StartTokensOrErr() ([]*StartToken, error) {
+	if e.loadedTypes[4] {
+		return e.StartTokens, nil
+	}
+	return nil, &NotLoadedError{edge: "start_tokens"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -306,6 +328,16 @@ func (_m *Integration) QueryProviderLimiter() *ProviderLimiterQuery {
 // QueryCapturedMessages queries the "captured_messages" edge of the Integration entity.
 func (_m *Integration) QueryCapturedMessages() *CapturedMessageQuery {
 	return NewIntegrationClient(_m.config).QueryCapturedMessages(_m)
+}
+
+// QueryBindings queries the "bindings" edge of the Integration entity.
+func (_m *Integration) QueryBindings() *BindingQuery {
+	return NewIntegrationClient(_m.config).QueryBindings(_m)
+}
+
+// QueryStartTokens queries the "start_tokens" edge of the Integration entity.
+func (_m *Integration) QueryStartTokens() *StartTokenQuery {
+	return NewIntegrationClient(_m.config).QueryStartTokens(_m)
 }
 
 // Update returns a builder for updating this Integration.

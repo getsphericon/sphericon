@@ -955,6 +955,13 @@ export default interface Resources {
       "showMachineEvents": "Show machine events",
       "tagFilter": "Tag",
       "tagsTitle": "Tags",
+      "telegramBot": "Bot",
+      "telegramBoundSince": "Bound since",
+      "telegramCopyLink": "Copy Telegram link",
+      "telegramLinkCopied": "Start link copied. It works once and lapses in 30 days.",
+      "telegramLinkErrorTitle": "Could not issue the Telegram link",
+      "telegramNoChats": "No Telegram chat is bound to this contact yet.",
+      "telegramTitle": "Telegram",
       "updatedAt": "Updated at"
     },
     "createWorkspace": {
@@ -1011,7 +1018,9 @@ export default interface Resources {
       "emailSent": "Was sent an email",
       "emailUnsubscribed": "Unsubscribed",
       "marketingConfirmed": "Confirmed opt-in",
-      "pageView": "Visited a page"
+      "pageView": "Visited a page",
+      "telegramBound": "Telegram chat bound",
+      "telegramUnbound": "Telegram chat unbound"
     },
     "eventRows": {
       "completed": "Completed",

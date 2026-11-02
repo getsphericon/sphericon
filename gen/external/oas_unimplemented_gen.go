@@ -960,6 +960,16 @@ func (UnimplementedHandler) TagsRemove(ctx context.Context, params TagsRemovePar
 	return r, ht.ErrNotImplemented
 }
 
+// TelegramStartLinksIssue implements TelegramStartLinks_issue operation.
+//
+// Issue a start link for a contact: `https://t.me/<bot>?start=<token>`. The chat that starts with it
+// binds to the contact, once. Each call issues a new link.
+//
+// POST /contacts/{contactId}/telegram-start-links
+func (UnimplementedHandler) TelegramStartLinksIssue(ctx context.Context, req *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (r TelegramStartLinksIssueRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // TemplatesCreate implements Templates_create operation.
 //
 // Create a resource.

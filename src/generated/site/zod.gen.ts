@@ -328,6 +328,13 @@ export const zInboxConfigInput = z.object({
 });
 
 /**
+ * Request body for issuing a Telegram start link
+ */
+export const zIssueTelegramStartLinkInput = z.object({
+  integrationId: z.exactOptional(zEntityId.nullable())
+});
+
+/**
  * A JSON object whose members the contract leaves open: custom field values, event properties,
  * integration params, an audit diff. One named model, so every surface's Go code has one type for
  * it rather than one per field.
@@ -2751,6 +2758,17 @@ export const zSiteAutomationResource = z.object({
 });
 
 /**
+ * A Telegram chat a contact is reached through: its own, or that of one of its visitors. Made only by what the bot receives, so it is read here and never written.
+ */
+export const zSiteBindingResource = z.object({
+  id: zEntityId,
+  integrationId: zEntityId,
+  integrationName: z.string(),
+  botUsername: z.exactOptional(z.string().nullable()),
+  boundAt: zTimestamp
+});
+
+/**
  * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
  * the palette the editor offers and what an agent is told to use. Its values are written into a
  * message when the message is authored, so saving it never changes a message already written. A
@@ -3315,6 +3333,14 @@ export const zSiteWorkspaceHold = z.object({
   message: z.string(),
   since: zTimestamp,
   actionUrl: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * A Telegram start link: the person who opens it and presses Start binds their chat to the contact it was issued for. The link works once.
+ */
+export const zTelegramStartLinkResource = z.object({
+  url: z.string(),
+  expiresAt: zTimestamp
 });
 
 /**
@@ -5123,6 +5149,16 @@ export const zSiteContactsLookupQuery = z.object({
  */
 export const zSiteContactsLookupResponse = zSiteContactHoldings;
 
+export const zSiteTelegramListBindingsPath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteTelegramListBindingsResponse = z.array(zSiteBindingResource);
+
 export const zSiteTagsListForContactPath = z.object({
   workspaceId: zWorkspaceId,
   contactId: zEntityId
@@ -5166,6 +5202,18 @@ export const zSiteTagsRemovePath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteTagsRemoveResponse = z.void();
+
+export const zSiteTelegramIssueStartLinkBody = zIssueTelegramStartLinkInput;
+
+export const zSiteTelegramIssueStartLinkPath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteTelegramIssueStartLinkResponse = zTelegramStartLinkResource;
 
 export const zSiteContactsDeletePath = z.object({
   workspaceId: zWorkspaceId,
