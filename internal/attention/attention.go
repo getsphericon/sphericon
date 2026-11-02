@@ -260,9 +260,7 @@ func heldBroadcasts(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, er
 
 // sourceHolds are the holds of an object's own source that make an item; a Workspace-level hold
 // (a suspension, a Staff hold, a pending deletion) is left out: the layout shows it on every page.
-var sourceHolds = []broadcast.HoldReason{
-	broadcast.HoldReasonNoIntegration, broadcast.HoldReasonUnverifiedDomain, broadcast.HoldReasonProviderStopped,
-}
+var sourceHolds = lo.Map(outbound.SourceHolds, func(h string, _ int) broadcast.HoldReason { return broadcast.HoldReason(h) })
 
 // automationsCannotSend reads the active Automations whose live version has an email step that a
 // send would hold now for a reason of its own source: whatever Send would hold, the item shows.

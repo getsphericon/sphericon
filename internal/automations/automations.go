@@ -603,7 +603,7 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	if err := checkIntegration(ctx, ts, version.IntegrationID); err != nil {
 		return err
 	}
-	sends, err := SendsEmail(version)
+	sends, err := sendsEmail(version)
 	if err != nil || !sends {
 		return err
 	}
@@ -614,9 +614,9 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	return route.Armable()
 }
 
-// SendsEmail reports whether the version has an email step: one that has none sends through no
+// sendsEmail reports whether the version has an email step: one that has none sends through no
 // Integration, so its Send route is not asked.
-func SendsEmail(version *ent.AutomationVersion) (bool, error) {
+func sendsEmail(version *ent.AutomationVersion) (bool, error) {
 	steps, err := Decode(version.Steps)
 	if err != nil {
 		return false, err
@@ -638,7 +638,7 @@ func EmailSenders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error)
 	}
 	senders := active[:0]
 	for _, a := range active {
-		sends, err := SendsEmail(a.Edges.LiveVersion)
+		sends, err := sendsEmail(a.Edges.LiveVersion)
 		if err != nil {
 			return nil, err
 		}

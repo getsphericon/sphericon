@@ -462,12 +462,19 @@ func TestOnlyAnActiveAutomationThatSendsEmailInAWorkspaceThatSendsIsAnItem(t *te
 	assert.False(t, tags, "an Automation with no email step sends through no Integration")
 	_, payment := cannotSendOf(items, fixtures.AutomationPaymentRecoveryID)
 	assert.True(t, payment, "an active one with an email step is still an item")
+}
 
+// The default is stopped too, so the suspension is what leaves the item out.
+func TestASuspendedWorkspaceShowsNoAutomationThatCannotSend(t *testing.T) {
+	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
+		SetProviderEnforcement(integration.ProviderEnforcementShutdown).Exec(t.Context()))
 	suspended, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, suspension.System, "abuse")
 	require.NoError(t, err)
 	require.True(t, suspended)
 
-	frozen := attentionOf(t, member, fixtures.AcmePublicID)
+	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
 
-	assert.NotContains(t, kinds(frozen), siteapi.SiteAttentionKindAutomationCannotSend, "the suspension is the layout's banner")
+	assert.NotContains(t, kinds(items), siteapi.SiteAttentionKindAutomationCannotSend, "the suspension is the layout's banner")
 }
