@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=../../preset.schema.json
+# A made-up chat provider whose callbacks carry what people send and whether they can still be
+# reached: the Preset maps them to Inbound messages and Reachability changes (ADR 0076).
+version: 1
+name: chat
+params:
+  type: object
+  required: [token]
+  properties:
+    token:
+      type: string
+      writeOnly: true
+verify:
+  kind: token
+  secret: token
+  header: X-Token
+transform: |
+  [.body.events[] |
+    if .type == "message" then
+      {kind: "inbound_message", id: .event_id, channel: "telegram", destination: (.from | tostring),
+       chat_id: (.chat | tostring), text: .text, message_id: (.message | tostring)}
+    elif .type == "button" then
+      {kind: "inbound_message", id: .event_id, channel: "telegram", destination: (.from | tostring),
+       chat_id: (.chat | tostring), payload: .data, message_id: (.message | tostring)}
+    elif .type == "blocked" then
+      {kind: "reachability_change", id: .event_id, destination: (.from | tostring), reachable: false, reason: "blocked"}
+    elif .type == "gone" then
+      {kind: "reachability_change", id: .event_id, destination: (.from | tostring), reachable: false, reason: "deactivated"}
+    elif .type == "unblocked" then
+      {kind: "reachability_change", id: .event_id, destination: (.from | tostring), reachable: true}
+    else empty end]
+tests:
+  - name: a message becomes an Inbound message with its text
+    params: &params { token: chat-token }
+    request:
+      headers: &headers { X-Token: chat-token }
+      body: '{"events":[{"type":"message","event_id":"7","from":42,"chat":42,"message":11,"text":"  /start abc_DEF-1  "}]}'
+    expect:
+      inbound_messages:
+        - {
+            id: '7',
+            channel: telegram,
+            destination: '42',
+            chat_id: '42',
+            message_id: '11',
+            text: '  /start abc_DEF-1  ',
+          }
+  - name: a pressed button becomes an Inbound message with its payload
+    params: *params
+    request:
+      headers: *headers
+      body: '{"events":[{"type":"button","event_id":"8","from":42,"chat":42,"message":11,"data":"unsubscribe"}]}'
+    expect:
+      inbound_messages:
+        - {
+            id: '8',
+            channel: telegram,
+            destination: '42',
+            chat_id: '42',
+            message_id: '11',
+            payload: unsubscribe,
+          }
+  - name: a block, a deactivation and an unblock become Reachability changes
+    params: *params
+    request:
+      headers: *headers
+      body: '{"events":[{"type":"blocked","event_id":"9","from":42},{"type":"gone","event_id":"10","from":43},{"type":"unblocked","event_id":"11","from":44}]}'
+    expect:
+      reachability_changes:
+        - { id: '9', destination: '42', reachable: false, reason: blocked }
+        - { id: '10', destination: '43', reachable: false, reason: deactivated }
+        - { id: '11', destination: '44', reachable: true }
+  - name: an event of no interest yields no facts
+    params: *params
+    request: { headers: *headers, body: '{"events":[{"type":"typing","event_id":"12","from":42}]}' }
+    expect: { notices: [] }
+  - name: another token is refused
+    params: *params
+    request: { headers: { X-Token: wrong }, body: '{"events":[]}' }
+    expect: { refused: unauthentic }

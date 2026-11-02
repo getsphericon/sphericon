@@ -50,8 +50,10 @@ type testCase struct {
 		Body    string            `json:"body"`
 	} `json:"request"`
 	Expect struct {
-		Notices *[]DeliveryNotice `json:"notices"`
-		Action  *struct {
+		Notices             *[]DeliveryNotice     `json:"notices"`
+		InboundMessages     *[]InboundMessage     `json:"inbound_messages"`
+		ReachabilityChanges *[]ReachabilityChange `json:"reachability_changes"`
+		Action              *struct {
 			Kind ActionKind `json:"kind"`
 			URL  string     `json:"url"`
 		} `json:"action"`
@@ -302,7 +304,7 @@ type CaseResult struct {
 }
 
 // RunTests runs each case the Preset carries: it posts the case's request with its
-// params and clock and expects the Delivery notices, or the refusal, it names.
+// params and clock and expects the facts, or the refusal, it names.
 func (p *Preset) RunTests(ctx context.Context) []CaseResult {
 	results := make([]CaseResult, 0, len(p.tests))
 	for _, c := range p.tests {
@@ -337,28 +339,50 @@ func (p *Preset) runCase(ctx context.Context, c testCase) error {
 	}
 	res, err := p.Handle(ctx, Request{Header: header, Body: []byte(c.Request.Body)}, Params(c.Params), now)
 
-	if c.Expect.Notices == nil {
+	if c.Expect.Refused != "" {
 		want := map[string]error{
 			"unauthentic":      ErrUnauthentic,
 			"malformed":        ErrMalformed,
 			"transform_failed": ErrTransformFailed,
 		}[c.Expect.Refused]
 		if !errors.Is(err, want) {
-			return fmt.Errorf("expected a refusal %q, got notices %v and error %w", c.Expect.Refused, res.Notices, err)
+			return fmt.Errorf("expected a refusal %q, got facts %+v and error %w", c.Expect.Refused, res, err)
 		}
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("expected notices, got an error: %w", err)
+		return fmt.Errorf("expected facts, got an error: %w", err)
 	}
-	if !slices.Equal(res.Notices, *c.Expect.Notices) && (len(res.Notices) != 0 || len(*c.Expect.Notices) != 0) {
-		return fmt.Errorf("expected notices %v, got %v", *c.Expect.Notices, res.Notices)
+	if err := sameFacts("notices", c.Expect.Notices, res.Notices); err != nil {
+		return err
+	}
+	if err := sameFacts("inbound messages", c.Expect.InboundMessages, res.InboundMessages); err != nil {
+		return err
+	}
+	if err := sameFacts("reachability changes", c.Expect.ReachabilityChanges, res.ReachabilityChanges); err != nil {
+		return err
 	}
 	switch want := c.Expect.Action; {
 	case want == nil && res.Action != nil:
 		return fmt.Errorf("expected no action, got %s %s", res.Action.Kind, res.Action.URL)
 	case want != nil && (res.Action == nil || res.Action.Kind != want.Kind || res.Action.URL != want.URL):
 		return fmt.Errorf("expected action %s %s, got %v", want.Kind, want.URL, res.Action)
+	}
+	return nil
+}
+
+// sameFacts compares the facts of one kind a case expects with those it got; a kind the case
+// does not list is expected to be absent.
+func sameFacts[F comparable](label string, want *[]F, got []F) error {
+	var w []F
+	if want != nil {
+		w = *want
+	}
+	if len(w) == 0 && len(got) == 0 {
+		return nil
+	}
+	if !slices.Equal(w, got) {
+		return fmt.Errorf("expected %s %+v, got %+v", label, w, got)
 	}
 	return nil
 }

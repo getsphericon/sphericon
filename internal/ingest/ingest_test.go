@@ -1,0 +1,19 @@
+package ingest_test
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/ingest"
+)
+
+// A provider's event id is unique only per provider account (a Telegram update_id per bot), so
+// the key a fact deduplicates on names the Channel and the Integration too.
+func TestADedupKeyNamesTheChannelAndTheIntegration(t *testing.T) {
+	tx := ingest.Tx{Integration: &ent.Integration{ID: 7, Channel: integration.ChannelSms}}
+
+	assert.Equal(t, "sms:7:1234", tx.DedupKey("1234"))
+}

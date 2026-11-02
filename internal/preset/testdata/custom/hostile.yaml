@@ -25,6 +25,15 @@ transform: |
   elif .body.case == "multiple" then [], []
   elif .body.case == "object" then {}
   elif .body.case == "none" then empty
+  elif .body.case == "inbound-no-destination" then [{kind: "inbound_message", id: "1", channel: "telegram", text: "hi"}]
+  elif .body.case == "inbound-number" then [{kind: "inbound_message", id: "1", channel: "telegram", destination: 42}]
+  elif .body.case == "inbound-channel" then [{kind: "inbound_message", id: "1", channel: "pigeon", destination: "42"}]
+  elif .body.case == "inbound-shape" then [{kind: "inbound_message", id: "1", channel: "telegram", destination: "42", hard: true}]
+  elif .body.case == "reachability-reason" then [{kind: "reachability_change", id: "1", destination: "42", reachable: false, reason: "moved"}]
+  elif .body.case == "reachability-no-reason" then [{kind: "reachability_change", id: "1", destination: "42", reachable: false}]
+  elif .body.case == "reachable-with-reason" then [{kind: "reachability_change", id: "1", destination: "42", reachable: true, reason: "blocked"}]
+  elif .body.case == "reachability-no-flag" then [{kind: "reachability_change", id: "1", destination: "42"}]
+  elif .body.case == "mixed" then [range(51) | {kind: "inbound_message", id: tostring, channel: "telegram", destination: "42"}, {id: tostring, destination: "a@example.com", kind: "bounce"}]
   elif .body.case == "env" then [{id: "1", destination: ($ENV.HOME // "env-is-empty@example.com"), kind: "bounce"}]
   else [] end
 tests:
@@ -67,6 +76,42 @@ tests:
   - name: no result is refused
     params: *params
     request: { headers: *headers, body: '{"case":"none"}' }
+    expect: { refused: transform_failed }
+  - name: an Inbound message without a destination is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"inbound-no-destination"}' }
+    expect: { refused: transform_failed }
+  - name: an Inbound message whose destination is not a string is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"inbound-number"}' }
+    expect: { refused: transform_failed }
+  - name: an Inbound message on an unknown Channel is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"inbound-channel"}' }
+    expect: { refused: transform_failed }
+  - name: an Inbound message with a field of another kind is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"inbound-shape"}' }
+    expect: { refused: transform_failed }
+  - name: a Reachability change with an unknown reason is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"reachability-reason"}' }
+    expect: { refused: transform_failed }
+  - name: an unreachable Destination without a reason is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"reachability-no-reason"}' }
+    expect: { refused: transform_failed }
+  - name: a reachable Destination with a reason is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"reachable-with-reason"}' }
+    expect: { refused: transform_failed }
+  - name: a Reachability change that does not say whether it is reachable is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"reachability-no-flag"}' }
+    expect: { refused: transform_failed }
+  - name: the limit counts facts of every kind together
+    params: *params
+    request: { headers: *headers, body: '{"case":"mixed"}' }
     expect: { refused: transform_failed }
   - name: the environment is empty
     params: *params

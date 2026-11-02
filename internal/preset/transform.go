@@ -16,6 +16,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/itchyny/gojq"
+	"github.com/samber/lo"
 )
 
 const (
@@ -86,7 +87,7 @@ func forbiddenCall(v reflect.Value) (string, bool) {
 }
 
 // run evaluates the transform under the timeout and validates what comes out.
-func (p *Preset) run(ctx context.Context, body any, header http.Header) ([]DeliveryNotice, error) {
+func (p *Preset) run(ctx context.Context, body any, header http.Header) (Result, error) {
 	ctx, cancel := context.WithTimeout(ctx, TransformTimeout)
 	defer cancel()
 
@@ -101,23 +102,90 @@ func (p *Preset) run(ctx context.Context, body any, header http.Header) ([]Deliv
 		}
 		if err, isErr := v.(error); isErr {
 			if errors.Is(err, context.DeadlineExceeded) {
-				return nil, fmt.Errorf("%w: exceeded %s", ErrTransformFailed, TransformTimeout)
+				return Result{}, fmt.Errorf("%w: exceeded %s", ErrTransformFailed, TransformTimeout)
 			}
-			return nil, fmt.Errorf("%w: %w", ErrTransformFailed, err)
+			return Result{}, fmt.Errorf("%w: %w", ErrTransformFailed, err)
 		}
 		count++
 		if count > 1 {
-			return nil, fmt.Errorf("%w: the program produced more than one result", ErrTransformFailed)
+			return Result{}, fmt.Errorf("%w: the program produced more than one result", ErrTransformFailed)
 		}
 		out = v
 	}
 	if count == 0 {
-		return nil, fmt.Errorf("%w: the program produced no result", ErrTransformFailed)
+		return Result{}, fmt.Errorf("%w: the program produced no result", ErrTransformFailed)
 	}
-	return validateNotices(out)
+	return validateFacts(out)
 }
 
-// rawNotice is the program's output element, decoded strictly: a closed shape.
+// validateFacts never trusts the program's shape: a list of at most MaxFacts objects, each
+// of a closed kind with that kind's closed shape, bounded strings, a parsed address where
+// the kind has one.
+func validateFacts(out any) (Result, error) {
+	list, ok := out.([]any)
+	if !ok {
+		return Result{}, fmt.Errorf("%w: the result is not an array", ErrTransformFailed)
+	}
+	if len(list) > MaxFacts {
+		return Result{}, fmt.Errorf("%w: %d facts, the limit is %d", ErrTransformFailed, len(list), MaxFacts)
+	}
+	var res Result
+	for i, item := range list {
+		if err := addFact(&res, item); err != nil {
+			return Result{}, fmt.Errorf("%w: fact %d: %w", ErrTransformFailed, i, err)
+		}
+	}
+	return res, nil
+}
+
+// noticeKinds are the kinds of a Delivery notice.
+var noticeKinds = []Kind{Bounce, Complaint, Delivery, Delay, Drop}
+
+// addFact validates one element of the program's output by its kind and appends it to r.
+func addFact(r *Result, item any) error {
+	obj, ok := item.(map[string]any)
+	if !ok {
+		return errors.New("a fact is an object")
+	}
+	kind, _ := obj["kind"].(string)
+	raw, err := json.Marshal(item)
+	if err != nil {
+		return err
+	}
+	switch {
+	case kind == kindInboundMessage:
+		m, err := validateInbound(raw)
+		if err != nil {
+			return err
+		}
+		r.InboundMessages = append(r.InboundMessages, m)
+	case kind == kindReachabilityChange:
+		c, err := validateReachability(raw)
+		if err != nil {
+			return err
+		}
+		r.ReachabilityChanges = append(r.ReachabilityChanges, c)
+	case slices.Contains(noticeKinds, Kind(kind)):
+		n, err := validateNotice(raw)
+		if err != nil {
+			return err
+		}
+		r.Notices = append(r.Notices, n)
+	default:
+		return fmt.Errorf("kind %v is not %s, %s, bounce, complaint, delivery, delay or drop",
+			obj["kind"], kindInboundMessage, kindReachabilityChange)
+	}
+	return nil
+}
+
+// decodeStrict decodes one fact into its closed shape: a field outside it is refused.
+func decodeStrict(raw []byte, into any) error {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.DisallowUnknownFields()
+	return dec.Decode(into)
+}
+
+// rawNotice is a Delivery notice as the program returns it.
 type rawNotice struct {
 	ID            string  `json:"id"`
 	Destination   string  `json:"destination"`
@@ -128,45 +196,13 @@ type rawNotice struct {
 	Reason        *string `json:"reason"`
 }
 
-// validateNotices never trusts the program's shape: a list of at most MaxNotices
-// objects, each a closed kind, a parsed address, bounded strings.
-func validateNotices(out any) ([]DeliveryNotice, error) {
-	list, ok := out.([]any)
-	if !ok {
-		return nil, fmt.Errorf("%w: the result is not an array", ErrTransformFailed)
-	}
-	if len(list) > MaxNotices {
-		return nil, fmt.Errorf("%w: %d notices, the limit is %d", ErrTransformFailed, len(list), MaxNotices)
-	}
-	notices := make([]DeliveryNotice, 0, len(list))
-	for i, item := range list {
-		f, err := validateNotice(item)
-		if err != nil {
-			return nil, fmt.Errorf("%w: notice %d: %w", ErrTransformFailed, i, err)
-		}
-		notices = append(notices, f)
-	}
-	return notices, nil
-}
-
-func validateNotice(item any) (DeliveryNotice, error) {
-	raw, err := json.Marshal(item)
-	if err != nil {
-		return DeliveryNotice{}, err
-	}
-	dec := json.NewDecoder(bytes.NewReader(raw))
-	dec.DisallowUnknownFields()
+func validateNotice(raw []byte) (DeliveryNotice, error) {
 	var r rawNotice
-	if err := dec.Decode(&r); err != nil {
+	if err := decodeStrict(raw, &r); err != nil {
 		return DeliveryNotice{}, err
 	}
-
-	if r.ID == "" || len(r.ID) > maxIDBytes || !utf8.ValidString(r.ID) {
-		return DeliveryNotice{}, errors.New("id must be a non-empty string of at most 255 bytes")
-	}
-	kind := Kind(r.Kind)
-	if !slices.Contains([]Kind{Bounce, Complaint, Delivery, Delay, Drop}, kind) {
-		return DeliveryNotice{}, fmt.Errorf("kind %q is not bounce, complaint, delivery, delay or drop", r.Kind)
+	if err := validID(r.ID); err != nil {
+		return DeliveryNotice{}, err
 	}
 	if len(r.Destination) > maxAddrBytes {
 		return DeliveryNotice{}, errors.New("destination is too long")
@@ -178,7 +214,7 @@ func validateNotice(item any) (DeliveryNotice, error) {
 	f := DeliveryNotice{
 		ID:          r.ID,
 		Destination: strings.ToLower(strings.TrimSpace(addr.Address)),
-		Kind:        kind,
+		Kind:        Kind(r.Kind),
 		Hard:        r.Hard != nil && *r.Hard,
 	}
 	if r.SendingDomain != nil && *r.SendingDomain != "" {
@@ -188,11 +224,8 @@ func validateNotice(item any) (DeliveryNotice, error) {
 		}
 		f.SendingDomain = domain
 	}
-	if r.MessageID != nil && *r.MessageID != "" {
-		if len(*r.MessageID) > maxIDBytes || !utf8.ValidString(*r.MessageID) {
-			return DeliveryNotice{}, errors.New("message_id must be a string of at most 255 bytes")
-		}
-		f.MessageID = *r.MessageID
+	if f.MessageID, err = optionalID("message_id", r.MessageID); err != nil {
+		return DeliveryNotice{}, err
 	}
 	if r.Reason != nil {
 		if !utf8.ValidString(*r.Reason) {
@@ -201,6 +234,127 @@ func validateNotice(item any) (DeliveryNotice, error) {
 		f.Reason = truncateChars(strings.TrimSpace(*r.Reason), MaxReasonChars)
 	}
 	return f, nil
+}
+
+// rawInbound is an Inbound message as the program returns it.
+type rawInbound struct {
+	Kind        string  `json:"kind"`
+	ID          string  `json:"id"`
+	Channel     string  `json:"channel"`
+	Destination string  `json:"destination"`
+	ChatID      *string `json:"chat_id"`
+	Text        *string `json:"text"`
+	Payload     *string `json:"payload"`
+	MessageID   *string `json:"message_id"`
+}
+
+func validateInbound(raw []byte) (InboundMessage, error) {
+	var r rawInbound
+	if err := decodeStrict(raw, &r); err != nil {
+		return InboundMessage{}, err
+	}
+	if err := validID(r.ID); err != nil {
+		return InboundMessage{}, err
+	}
+	if !slices.Contains(channels, Channel(r.Channel)) {
+		return InboundMessage{}, fmt.Errorf("channel %q is not a Channel", r.Channel)
+	}
+	dest, err := validDestination(r.Destination)
+	if err != nil {
+		return InboundMessage{}, err
+	}
+	m := InboundMessage{ID: r.ID, Channel: Channel(r.Channel), Destination: dest}
+	if m.ChatID, err = optionalID("chat_id", r.ChatID); err != nil {
+		return InboundMessage{}, err
+	}
+	if m.MessageID, err = optionalID("message_id", r.MessageID); err != nil {
+		return InboundMessage{}, err
+	}
+	if m.Text, err = optionalText("text", r.Text, MaxTextChars); err != nil {
+		return InboundMessage{}, err
+	}
+	if m.Payload, err = optionalText("payload", r.Payload, MaxPayloadChars); err != nil {
+		return InboundMessage{}, err
+	}
+	return m, nil
+}
+
+// rawReachability is a Reachability change as the program returns it.
+type rawReachability struct {
+	Kind        string  `json:"kind"`
+	ID          string  `json:"id"`
+	Destination string  `json:"destination"`
+	Reachable   *bool   `json:"reachable"`
+	Reason      *string `json:"reason"`
+}
+
+func validateReachability(raw []byte) (ReachabilityChange, error) {
+	var r rawReachability
+	if err := decodeStrict(raw, &r); err != nil {
+		return ReachabilityChange{}, err
+	}
+	if err := validID(r.ID); err != nil {
+		return ReachabilityChange{}, err
+	}
+	dest, err := validDestination(r.Destination)
+	if err != nil {
+		return ReachabilityChange{}, err
+	}
+	if r.Reachable == nil {
+		return ReachabilityChange{}, errors.New("reachable must be true or false")
+	}
+	c := ReachabilityChange{ID: r.ID, Destination: dest, Reachable: *r.Reachable}
+	switch reason := Unreachability(lo.FromPtr(r.Reason)); {
+	case c.Reachable && r.Reason != nil:
+		return ReachabilityChange{}, errors.New("a reachable Destination has no reason")
+	case c.Reachable:
+	case reason == Blocked, reason == Deactivated:
+		c.Reason = reason
+	default:
+		return ReachabilityChange{}, fmt.Errorf("reason %q is not blocked or deactivated", reason)
+	}
+	return c, nil
+}
+
+// validID checks a fact's provider event id.
+func validID(id string) error {
+	if id == "" || len(id) > maxIDBytes || !utf8.ValidString(id) {
+		return errors.New("id must be a non-empty string of at most 255 bytes")
+	}
+	return nil
+}
+
+// optionalID checks an optional provider id (a message id, a chat id): "" when absent.
+func optionalID(name string, v *string) (string, error) {
+	if v == nil || *v == "" {
+		return "", nil
+	}
+	if len(*v) > maxIDBytes || !utf8.ValidString(*v) {
+		return "", fmt.Errorf("%s must be a string of at most 255 bytes", name)
+	}
+	return *v, nil
+}
+
+// validDestination checks the Destination of an Inbound message or a Reachability change: a
+// trimmed, non-empty, bounded string. It is not parsed as an email address: on most Channels
+// it is not one (a Telegram user id, a phone number).
+func validDestination(d string) (string, error) {
+	d = strings.TrimSpace(d)
+	if d == "" || len(d) > maxAddrBytes || !utf8.ValidString(d) {
+		return "", errors.New("destination must be a non-empty string of at most 254 bytes")
+	}
+	return d, nil
+}
+
+// optionalText checks free text a person wrote: valid UTF-8, cut at limit characters.
+func optionalText(name string, v *string, limit int) (string, error) {
+	if v == nil {
+		return "", nil
+	}
+	if !utf8.ValidString(*v) {
+		return "", fmt.Errorf("%s is not valid UTF-8", name)
+	}
+	return truncateChars(*v, limit), nil
 }
 
 // truncateChars cuts s to at most n characters.

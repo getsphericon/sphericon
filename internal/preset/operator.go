@@ -53,7 +53,7 @@ func (p *Preset) WriteTests(ctx context.Context, w io.Writer) error {
 }
 
 // WriteSample verifies a sample request with the Preset's scheme and the Integration's params
-// at the clock now, then prints the Delivery notices it makes, or the reason it was refused
+// at the clock now, then prints the facts it makes, one line each, or the reason it was refused
 // (and returns that refusal).
 func (p *Preset) WriteSample(ctx context.Context, w io.Writer, req Request, params Params, now time.Time) error {
 	res, err := p.Handle(ctx, req, params, now)
@@ -65,8 +65,19 @@ func (p *Preset) WriteSample(ctx context.Context, w io.Writer, req Request, para
 		_, _ = fmt.Fprintf(w, "%s %s id=%s sending_domain=%s message_id=%s reason=%q\n",
 			noticeKind(n), n.Destination, n.ID, n.SendingDomain, n.MessageID, n.Reason)
 	}
-	if len(res.Notices) == 0 {
-		_, _ = fmt.Fprintln(w, "verified, no Delivery notices (an event the Preset does not handle)")
+	for _, m := range res.InboundMessages {
+		_, _ = fmt.Fprintf(w, "%s %s %s id=%s chat_id=%s message_id=%s text=%q payload=%q\n",
+			kindInboundMessage, m.Channel, m.Destination, m.ID, m.ChatID, m.MessageID, m.Text, m.Payload)
+	}
+	for _, c := range res.ReachabilityChanges {
+		if c.Reachable {
+			_, _ = fmt.Fprintf(w, "%s %s id=%s reachable\n", kindReachabilityChange, c.Destination, c.ID)
+			continue
+		}
+		_, _ = fmt.Fprintf(w, "%s %s id=%s unreachable reason=%s\n", kindReachabilityChange, c.Destination, c.ID, c.Reason)
+	}
+	if res.Empty() {
+		_, _ = fmt.Fprintln(w, "verified, no facts (an event the Preset does not handle)")
 	}
 	return nil
 }

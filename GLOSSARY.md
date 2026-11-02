@@ -836,8 +836,9 @@ _Avoid_: Webhook (unqualified), inbound webhook
 **Preset**:
 A declarative description of one provider's callbacks — how its signature is verified and how its
 payload becomes the closed set of inbound facts: Delivery notices, Inbound messages and
-Reachability changes. It only parses what the provider says; what a message means on its Channel
-(a `/start` token, a STOP keyword) is the same for every provider and is not the Preset's. How a
+Reachability changes, each carrying the provider's event id. It only parses what the provider
+says; what a fact means is read by the core, by the Channel of the Integration the callback came
+to, the same for every provider (a `/start` token, a STOP keyword), never by the Preset. How a
 provider is sent through is built into the binary. Presets are built into the binary (ses,
 postmark, mailgun, generic) or supplied by the Self-hoster for the whole Instance, never by a
 Workspace.
@@ -854,7 +855,9 @@ _Avoid_: Delivery failure (delivery and delay are not failures), Bounce event (i
 
 **Inbound message**:
 What a person sent on a Channel, as one Preset parsed it: the Channel, the Destination it came
-from, its text and the payload of a button they pressed. sphericon reads it for what it means on
+from, the chat it came in where the Channel has one (a Telegram chat id), its text, the payload of
+a button they pressed, and the provider's ids of the message and of the event (the core
+deduplicates on the event id). sphericon reads it for what it means on
 its Channel (a `/start` with a token binds the chat, a STOP keyword opts out) and, from a known
 Contact, records it as a `<channel>.received` System event. From an unknown Destination it creates
 no Contact and no Event; only an opt-out in it is kept, and a valid Start token makes its sender known.
@@ -863,7 +866,9 @@ _Avoid_: Reply (not every one answers something), incoming SMS, chat message
 **Reachability change**:
 A provider telling sphericon on its own that a Destination can or cannot be reached any more: a
 person blocked or unblocked the bot, stopped or resumed marketing on WhatsApp, a provider
-suppressed a number. Distinct from an Inbound message, which the person wrote.
+suppressed a number. It carries the Destination, whether it is now reachable, the provider's event
+id and, only when it is not, the reason: `blocked` (the person may come back) or `deactivated`
+(the account is gone). Distinct from an Inbound message, which the person wrote.
 _Avoid_: Status update, opt-out (that is one of its consequences)
 
 **Start token**:

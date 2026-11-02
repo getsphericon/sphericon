@@ -1,24 +1,18 @@
 package server
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/ingest"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/logging"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
 )
 
@@ -30,18 +24,19 @@ import (
 // A Workspace in its deletion window takes no new data (ADR 0043): its keys answer 404.
 //
 // The Integration's Preset verifies the request (a bad signature or wrong source is 4xx)
-// and turns the payload into Delivery notices, which are published through the bus in
-// one transaction before the 2xx; our own failure is 5xx so the provider retries; a valid
-// request the Preset does not handle is 2xx with nothing published.
+// and turns the payload into facts (Delivery notices, Inbound messages, Reachability
+// changes), which the core interprets by the Integration's Channel (internal/ingest) in one
+// transaction before the 2xx; our own failure is 5xx so the provider retries; a valid
+// request the Preset does not handle is 2xx with nothing recorded.
 func hooksHandler(client *ent.Client, bus *events.Bus, integ *integrations.Module, now func() time.Time) http.Handler {
 	if now == nil {
 		now = time.Now
 	}
 	h := &hook{
-		ent:   client,
-		bus:   bus,
-		integ: integ,
-		now:   now,
+		ent:    client,
+		ingest: ingest.New(bus),
+		integ:  integ,
+		now:    now,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /hooks/{key}", h.handle)
@@ -49,10 +44,10 @@ func hooksHandler(client *ent.Client, bus *events.Bus, integ *integrations.Modul
 }
 
 type hook struct {
-	ent   *ent.Client
-	bus   *events.Bus
-	integ *integrations.Module
-	now   func() time.Time
+	ent    *ent.Client
+	ingest *ingest.Module
+	integ  *integrations.Module
+	now    func() time.Time
 }
 
 func (h *hook) handle(w http.ResponseWriter, r *http.Request) {
@@ -151,128 +146,10 @@ func (h *hook) servePreset(w http.ResponseWriter, r *http.Request, row *ent.Inte
 	}
 
 	s := events.Ingest(h.ent.Scoped(row.WorkspaceID))
-	if err := h.publish(ctx, s, p.Name(), res.Notices); err != nil {
-		log.Error("hooks: publishing delivery notices failed", "integration_id", row.ID, "err", err)
+	if err := h.ingest.Interpret(ctx, s, row, p.Name(), res, h.now()); err != nil {
+		log.Error("hooks: interpreting the facts failed", "integration_id", row.ID, "err", err)
 		writeProblem(w, http.StatusInternalServerError, "processing failed")
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-}
-
-// noticeEvent is a Delivery notice ready to publish, with the Outbound message it was
-// linked to (nil when the notice named none, or none matched: it stays at the address).
-type noticeEvent struct {
-	ev  *events.EmailDelivery
-	msg *ent.OutboundMessage
-}
-
-// resultOf is the delivery result a notice's Event stamps on its Outbound message. Delay and
-// drop stamp nothing (ADR 0053).
-func resultOf(action string) (outbound.DeliveryResult, bool) {
-	switch action {
-	case events.NameEmailDelivered:
-		return outbound.ResultDelivered, true
-	case events.NameEmailBounced:
-		return outbound.ResultBounced, true
-	case events.NameEmailComplained:
-		return outbound.ResultComplained, true
-	}
-	return "", false
-}
-
-// publish writes the Delivery notices to the outbox in one transaction, and stamps the
-// delivery result of each Outbound message a notice is linked to by the provider's message
-// id. A redelivery of the same provider event dedupes downstream on its DedupID (the
-// provider's event id plus the Destination), and a stamp is set only while it is empty, so
-// it never changes. Every kind is published; only a hard bounce and a complaint enter
-// Suppression, which is the suppression consumer's rule.
-func (h *hook) publish(ctx context.Context, s *ent.Scoped, provider string, notices []preset.DeliveryNotice) error {
-	if len(notices) == 0 {
-		return nil
-	}
-	linked := make([]noticeEvent, 0, len(notices))
-	for _, n := range notices {
-		email := strings.ToLower(strings.TrimSpace(n.Destination))
-		if email == "" {
-			continue
-		}
-		var contactID int64
-		c, err := s.Contact().Query().Where(contact.EmailEqualFold(email)).Only(ctx)
-		switch {
-		case err == nil:
-			contactID = c.ID
-		case ent.IsNotFound(err):
-			// An address that is no Contact is suppressed anyway, with no Contact link.
-		default:
-			return fmt.Errorf("lookup contact %q: %w", email, err)
-		}
-		ev := &events.EmailDelivery{
-			Action:            actionOf(n.Kind),
-			WorkspaceID:       s.WorkspaceID(),
-			ContactID:         contactID,
-			Email:             email,
-			Provider:          provider,
-			SendingDomain:     n.SendingDomain,
-			Reason:            n.Reason,
-			ProviderMessageID: n.MessageID,
-			DedupID:           n.ID + "/" + email,
-		}
-		if n.Kind == preset.Bounce {
-			ev.BounceKind = events.BounceKindSoft
-			if n.Hard {
-				ev.BounceKind = events.BounceKindHard
-			}
-		}
-		msg, err := outbound.FindByProviderMessageID(ctx, s, n.MessageID)
-		if err != nil {
-			return err
-		}
-		if msg != nil {
-			ev.OutboundMessageID = msg.ID
-			ev.Surface = string(msg.Kind)
-			ev.AutomationID = lo.FromPtr(msg.AutomationID)
-			ev.BroadcastID = lo.FromPtr(msg.BroadcastID)
-			ev.SendingSource = lo.FromPtr(msg.SendingSource)
-			if ev.SendingDomain == "" {
-				ev.SendingDomain = lo.FromPtr(msg.SendingDomain)
-			}
-			if ev.ContactID == 0 {
-				ev.ContactID = lo.FromPtr(msg.ContactID)
-			}
-		}
-		linked = append(linked, noticeEvent{ev: ev, msg: msg})
-	}
-	now := h.now()
-	return h.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		for _, l := range linked {
-			if err := pub.Publish(ctx, l.ev); err != nil {
-				return err
-			}
-			if l.msg == nil {
-				continue
-			}
-			if result, ok := resultOf(l.ev.Action); ok {
-				if err := outbound.StampDelivery(ctx, ts, l.msg.ID, result, now); err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	})
-}
-
-// actionOf is the Event action a Delivery notice kind becomes.
-func actionOf(k preset.Kind) string {
-	switch k {
-	case preset.Delivery:
-		return events.NameEmailDelivered
-	case preset.Delay:
-		return events.NameEmailDelayed
-	case preset.Drop:
-		return events.NameEmailDropped
-	case preset.Complaint:
-		return events.NameEmailComplained
-	default:
-		return events.NameEmailBounced
-	}
 }
