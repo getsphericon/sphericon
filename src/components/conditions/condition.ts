@@ -19,7 +19,6 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { zSiteConditionEventLeaf, zSiteConditionGroup } from '../../generated/site/zod.gen.ts'
 import { dayOf, nextDay, startOfDay } from '../../utils/datetime.ts'
-import { jsonText } from '../../utils/jsonText.ts'
 
 // A Segment is always a rule: the empty group matches every contact.
 export const emptyGroup: SiteConditionGroup = {
@@ -276,14 +275,4 @@ export function toDraft(query: RuleGroupType, timeZone?: string): ConditionDraft
 export function toCondition(draft: ConditionDraft): SiteConditionGroup | undefined {
   const parsed = zSiteConditionGroup.safeParse(draft)
   return parsed.success ? parsed.data : undefined
-}
-
-// The form holds a rule group as JSON text (jsonText); validated by the generated schema, so a
-// draft with a blank count, number, day or window is refused on submit.
-export const conditionCodec: z.ZodType<SiteConditionGroup, string> =
-  jsonText.pipe(zSiteConditionGroup)
-
-// draftText is the JSON text a form holds for the builder's draft, complete or not.
-export function draftText(draft: ConditionDraft): string {
-  return z.encode(jsonText, draft)
 }

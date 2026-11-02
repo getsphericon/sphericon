@@ -3,6 +3,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import type { QueryKey, UseMutationOptions, UseSuspenseQueryOptions } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
+import { useState } from 'react'
 import type { ComponentType, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -12,20 +13,20 @@ import { PageSkeleton } from '../components/Skeletons.tsx'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
-import type { FormValues, ResourceFormSchema, ResourceValues } from './resourceFormSchema.ts'
+import type { ResourceFormSchema, ResourceValues } from './resourceFormSchema.ts'
 import { useSchemaForm } from './schemaForm.ts'
 import type { SchemaForm } from './schemaForm.ts'
 
 // The form a resource's form component receives. Validation comes from the schema (parse
 // direction, errors only); the same schema yields the payload via transformValues once
 // validation has passed.
-type ResourceForm<TPayload> = SchemaForm<FormValues, TPayload>
+type ResourceForm<TPayload, TValues extends object> = SchemaForm<TValues, TPayload>
 
 // What a resource's form component receives. `form` validates through the resource's form
 // schema and `onSubmit` is handed the normalized API payload; the component only renders
 // fields and buttons.
-export interface ResourceFormProps<TPayload> {
-  form: ResourceForm<TPayload>
+export interface ResourceFormProps<TPayload, TValues extends object> {
+  form: ResourceForm<TPayload, TValues>
   isPending: boolean
   onSubmit: (payload: TPayload) => void
   // Set when the form is shown in a modal: Cancel closes it instead of leaving the page.
@@ -47,6 +48,7 @@ interface ResourceTexts {
 // are inferred from the generated pieces; callers never write them.
 export interface ResourceDescription<
   TPayload,
+  TValues extends object,
   TResource extends ResourceValues<TPayload>,
   TCreated extends { id: string },
   TError extends ApiErrorLike,
@@ -54,9 +56,9 @@ export interface ResourceDescription<
   TIdParam extends string,
 > {
   // Form values <-> API payload, derived from the generated zod schema (resourceFormSchema).
-  schema: ResourceFormSchema<TPayload>
+  schema: ResourceFormSchema<TPayload, TValues>
   // The resource's field-rendering form.
-  Form: ComponentType<ResourceFormProps<TPayload>>
+  Form: ComponentType<ResourceFormProps<TPayload, TValues>>
   // The generated react-query pieces, passed as generated. The module calls them with
   // { path: { workspaceId } } (list, create) or { path: { workspaceId, id } } (get, update).
   getOptions: (options: {
@@ -98,12 +100,15 @@ export interface ResourceEditPageProps<TResource> {
 
 export function defineResource<
   TPayload,
+  TValues extends object,
   TResource extends ResourceValues<TPayload>,
   TCreated extends { id: string },
   TError extends ApiErrorLike,
   TGetKey extends QueryKey,
   TIdParam extends string,
->(resource: ResourceDescription<TPayload, TResource, TCreated, TError, TGetKey, TIdParam>) {
+>(
+  resource: ResourceDescription<TPayload, TValues, TResource, TCreated, TError, TGetKey, TIdParam>,
+) {
   function CreatePage() {
     const { t } = useTranslation()
     const navigate = useNavigate()
@@ -190,6 +195,7 @@ export function defineResource<
     const values = (from: TResource) =>
       resource.schema.toValues(resource.editedValues?.(from) ?? from)
     const form = useSchemaForm(resource.schema.update, values(loaded))
+    const [savedRevision, setSavedRevision] = useState(0)
 
     const mutation = useResourceMutation({
       mutation: resource.updateMutation(),
@@ -199,6 +205,9 @@ export function defineResource<
         const next = values(saved)
         form.setValues(next)
         form.resetDirty(next)
+        // Stateful editors read their initial value once. A successful save reloads them
+        // from the normalized response; background refetches leave unfinished edits alone.
+        setSavedRevision((revision) => revision + 1)
       },
     })
 
@@ -206,6 +215,7 @@ export function defineResource<
       <Stack>
         <Title order={4}>{texts.editTitle}</Title>
         <resource.Form
+          key={savedRevision}
           form={form}
           isPending={mutation.isPending}
           onSubmit={(body) => mutation.mutate({ path: { workspaceId, id }, body })}

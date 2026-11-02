@@ -1,8 +1,8 @@
 import { Button, Group, Input, Stack, TextInput } from '@mantine/core'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { conditionCodec, draftText, emptyGroup } from '../../components/conditions/condition.ts'
+import { toCondition, emptyGroup } from '../../components/conditions/condition.ts'
+import type { ConditionDraft } from '../../components/conditions/condition.ts'
 import { ConditionBuilder } from '../../components/conditions/ConditionBuilder.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteCreateSegmentInput } from '../../generated/site/types.gen.ts'
@@ -13,16 +13,18 @@ import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/seg
 // What the form submits: the create input, which always carries a Condition (a Segment is one).
 export type SegmentPayload = Pick<SiteCreateSegmentInput, 'name' | 'condition'>
 
-export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<SegmentPayload>) {
+export interface SegmentValues {
+  name: string
+  condition: ConditionDraft
+}
+
+export function SegmentForm({
+  form,
+  isPending,
+  onSubmit,
+}: ResourceFormProps<SegmentPayload, SegmentValues>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
-  // The form holds the Condition as JSON text; a blank or unreadable text is the empty group. The
-  // builder starts from it and keeps its own state; the form gets every edit back as a draft, which
-  // the schema refuses on submit while an event count is blank.
-  const [initialCondition] = useState(() => {
-    const parsed = conditionCodec.safeParse(form.values.condition)
-    return parsed.success ? parsed.data : emptyGroup
-  })
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
@@ -38,8 +40,8 @@ export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<Seg
         >
           <ConditionBuilder
             workspaceId={workspaceId}
-            initialValue={initialCondition}
-            onChange={(next) => form.setFieldValue('condition', draftText(next))}
+            initialValue={toCondition(form.values.condition) ?? emptyGroup}
+            onChange={(next) => form.setFieldValue('condition', next)}
           />
         </Input.Wrapper>
 

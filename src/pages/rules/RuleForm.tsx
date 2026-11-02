@@ -10,11 +10,10 @@ import {
 } from '@mantine/core'
 import { IconTrash } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import * as z from 'zod'
 
-import { conditionCodec, draftText, emptyGroup } from '../../components/conditions/condition.ts'
+import { toCondition, emptyGroup } from '../../components/conditions/condition.ts'
+import type { ConditionDraft } from '../../components/conditions/condition.ts'
 import { ConditionBuilder } from '../../components/conditions/ConditionBuilder.tsx'
 import { EventActionOption } from '../../components/EventActionName.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
@@ -27,40 +26,30 @@ import { useEventActionFilter } from '../../hooks/useEventActionLabel.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as rulesRoute } from '../../routes/workspaces/$workspaceId/rules/index.tsx'
-import {
-  actionsCodec,
-  newAction,
-  ruleActionKinds,
-  takesAutomation,
-  takesCall,
-  takesTag,
-  triggerEventsCodec,
-} from './actions.ts'
+import { newAction, ruleActionKinds, takesAutomation, takesCall, takesTag } from './actions.ts'
 import { HttpActionFields } from './HttpActionFields.tsx'
 
 // What the form submits: the create input, with the Condition and the Actions always given.
 export type RulePayload = Pick<SiteCreateRuleInput, 'name' | 'triggerEvents'> &
   Required<Pick<SiteCreateRuleInput, 'condition' | 'actions'>>
 
-export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePayload>) {
+export interface RuleValues {
+  name: string
+  triggerEvents: string[]
+  condition: ConditionDraft
+  actions: SiteRuleAction[]
+}
+
+export function RuleForm({
+  form,
+  isPending,
+  onSubmit,
+}: ResourceFormProps<RulePayload, RuleValues>) {
   const { t } = useTranslation()
   const actionFilter = useEventActionFilter()
   const { workspaceId } = workspaceRoute.useParams()
 
-  // The form holds each structured field as JSON text; a blank or unreadable text is empty.
-  const triggerEvents = useMemo(() => {
-    const parsed = triggerEventsCodec.safeParse(form.values.triggerEvents)
-    return parsed.success ? parsed.data : []
-  }, [form.values.triggerEvents])
-  // The builder starts from the stored Condition and keeps its own state (see SegmentForm).
-  const [initialCondition] = useState(() => {
-    const parsed = conditionCodec.safeParse(form.values.condition)
-    return parsed.success ? parsed.data : emptyGroup
-  })
-  const actions = useMemo(() => {
-    const parsed = actionsCodec.safeParse(form.values.actions)
-    return parsed.success ? parsed.data : []
-  }, [form.values.actions])
+  const { triggerEvents, actions } = form.values
 
   const knownEvents = useQuery(siteEventsActionsOptions({ path: { workspaceId } }))
   // The automations an enroll action can pick from; read only once an action needs them.
@@ -72,8 +61,7 @@ export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePa
     value: automation.id,
     label: automation.name,
   }))
-  const setActions = (next: SiteRuleAction[]) =>
-    form.setFieldValue('actions', z.encode(actionsCodec, next))
+  const setActions = (next: SiteRuleAction[]) => form.setFieldValue('actions', next)
   const changeAction = (index: number, change: Partial<SiteRuleAction>) =>
     setActions(actions.map((action, at) => (at === index ? { ...action, ...change } : action)))
 
@@ -94,12 +82,7 @@ export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePa
           renderOption={({ option }) => <EventActionOption action={option.value} />}
           filter={actionFilter}
           value={triggerEvents}
-          onChange={(next) =>
-            form.setFieldValue(
-              'triggerEvents',
-              next.length > 0 ? z.encode(triggerEventsCodec, next) : '',
-            )
-          }
+          onChange={(next) => form.setFieldValue('triggerEvents', next)}
           error={form.errors.triggerEvents}
         />
         <Input.Wrapper
@@ -109,8 +92,8 @@ export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePa
           <ConditionBuilder
             workspaceId={workspaceId}
             triggerLeaves
-            initialValue={initialCondition}
-            onChange={(next) => form.setFieldValue('condition', draftText(next))}
+            initialValue={toCondition(form.values.condition) ?? emptyGroup}
+            onChange={(next) => form.setFieldValue('condition', next)}
           />
         </Input.Wrapper>
         <Input.Wrapper

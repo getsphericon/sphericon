@@ -1,7 +1,9 @@
+import { useQuery } from '@tanstack/react-query'
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 import { userEvent } from 'vitest/browser'
 
+import { siteRulesGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import {
   handleSiteAutomationsList,
   handleSiteCustomFieldsList,
@@ -68,6 +70,23 @@ function serveCatalogue() {
     handleSiteEventsActions({ body: { actions: ['signed_up', 'purchased'] } }),
     handleSiteCustomFieldsList({ body: page([], 0) }),
     handleSiteEventsList({ body: page([], 0) }),
+  )
+}
+
+function RefetchRule() {
+  const query = useQuery(siteRulesGetOptions({ path: { workspaceId: 'TestWs01', id: '7' } }))
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          void query.refetch()
+        }}
+      >
+        {'Refresh rule'}
+      </button>
+      <output>{query.data?.name}</output>
+    </>
   )
 }
 
@@ -154,6 +173,7 @@ test('editing shows the stored rule and saves a change, a removed action include
     .poll(() => bodies)
     .toEqual([{ name: 'Renamed', triggerEvents: ['signed_up'], condition: CONDITION, actions: [] }])
   await expect.element(screen.getByText('Rule updated')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
 })
 
 const automation = (id: string, name: string): SiteAutomationResource => ({
@@ -279,4 +299,27 @@ test('after a revert the editor shows the live version', async () => {
 
   await expect.poll(() => reverted).toEqual(['7'])
   await expect.element(screen.getByLabelText('Tag')).toHaveValue('live')
+})
+
+test('a background refetch preserves unfinished structured edits and their dirty state', async () => {
+  let latest = STORED
+  serveCatalogue()
+  worker.use(handleSiteRulesGet(() => HttpResponse.json(latest)))
+
+  const { screen } = await renderWithRouter(
+    <>
+      <RefetchRule />
+      <RuleEditPage />
+    </>,
+    EDIT_ROUTE,
+  )
+  await expect.element(screen.getByLabelText('Tag')).toHaveValue('new')
+  await screen.getByLabelText('Tag').fill('unfinished')
+  latest = { ...STORED, name: 'Refetched name' }
+  await screen.getByRole('button', { name: 'Refresh rule' }).click()
+
+  await expect.element(screen.getByText('Refetched name')).toBeInTheDocument()
+  await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Tag signups')
+  await expect.element(screen.getByLabelText('Tag')).toHaveValue('unfinished')
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
 })

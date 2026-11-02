@@ -1,7 +1,7 @@
 import * as z from 'zod'
 
-// Form state is strings, so a form holds a structured value as its JSON text; this codec is the
-// one place the text meets the JSON value. A blank or unreadable text is an issue.
+// Text editors and library exports meet structured JSON here. A blank or unreadable text
+// is an issue; resource forms hold structured values directly.
 export const jsonText = z.codec(z.string(), z.json(), {
   decode: (text, ctx) => {
     try {

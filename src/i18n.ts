@@ -47,10 +47,13 @@ void i18n.use(initReactI18next).init({
 // Zod's default message for a missing required value ("Invalid input: expected string,
 // received undefined") is useless in a form. Whatever the rule that failed, a value is missing
 // when it is absent (resource forms drop blank fields), null (a Select with nothing chosen) or
-// an empty string (a trimmed text input left blank).
+// an empty string (a trimmed text input left blank) or an empty required collection.
 z.config({
   customError: (issue) =>
-    issue.input === undefined || issue.input === null || issue.input === ''
+    issue.input === undefined ||
+    issue.input === null ||
+    issue.input === '' ||
+    (Array.isArray(issue.input) && issue.input.length === 0)
       ? i18n.t(($) => $.validation.required)
       : undefined,
 })

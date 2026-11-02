@@ -1,7 +1,5 @@
 import { Button, Group, Stack, TextInput } from '@mantine/core'
-import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import * as z from 'zod'
 
 import { MessageEditor } from '../../components/MessageEditor.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
@@ -9,21 +7,22 @@ import type { CreateTemplateInput } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as templatesRoute } from '../../routes/workspaces/$workspaceId/templates/index.tsx'
-import { docCodec } from '../../utils/messageDoc.ts'
+import type { MessageDoc } from '../../utils/messageDoc.ts'
+
+export interface TemplateValues {
+  name: string
+  subject: string
+  body: string
+  doc: MessageDoc | null
+}
 
 export function TemplateForm({
   form,
   isPending,
   onSubmit,
-}: ResourceFormProps<CreateTemplateInput>) {
+}: ResourceFormProps<CreateTemplateInput, TemplateValues>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
-  // The form holds the document as JSON text; a blank or unreadable text is no document.
-  const docText = form.values.doc
-  const doc = useMemo(() => {
-    const parsed = docCodec.safeParse(docText)
-    return parsed.success ? parsed.data : null
-  }, [docText])
   // A message written in the editor is its document and the server builds the body; sending
   // both is a 422.
   const submit = (payload: CreateTemplateInput) => {
@@ -41,13 +40,13 @@ export function TemplateForm({
         />
         <TextInput label={t(($) => $.templates.subjectLabel)} {...form.getInputProps('subject')} />
         <MessageEditor
-          doc={doc}
-          body={form.values.body ?? ''}
+          doc={form.values.doc}
+          body={form.values.body}
           onChange={(edit) => {
             if ('doc' in edit) {
-              form.setFieldValue('doc', z.encode(docCodec, edit.doc))
+              form.setFieldValue('doc', edit.doc)
             } else {
-              form.setFieldValue('doc', '')
+              form.setFieldValue('doc', null)
               form.setFieldValue('body', edit.body)
             }
           }}

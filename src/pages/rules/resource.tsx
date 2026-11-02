@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import * as z from 'zod'
 
-import { conditionCodec, emptyGroup } from '../../components/conditions/condition.ts'
+import { emptyGroup } from '../../components/conditions/condition.ts'
 import { DraftControls } from '../../components/DraftControls.tsx'
 import {
   siteRulesCreateMutation,
@@ -12,20 +11,18 @@ import { zSiteCreateRuleInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
-import { actionsCodec, triggerEventsCodec } from './actions.ts'
 import { ruleDraftActions } from './draftActions.ts'
 import { RuleDryRun } from './RuleDryRun.tsx'
 import { RuleForm } from './RuleForm.tsx'
+import type { RuleValues } from './RuleForm.tsx'
 
 // A Rule's Condition is optional on the wire; the editor always holds one, and the empty group
 // matches every Contact. A new Rule has no Actions yet.
+const blankRule: RuleValues = { name: '', triggerEvents: [], condition: emptyGroup, actions: [] }
+
 const ruleSchema = resourceFormSchema(
-  z.object({
-    name: zSiteCreateRuleInput.shape.name,
-    triggerEvents: triggerEventsCodec,
-    condition: conditionCodec.default(emptyGroup),
-    actions: actionsCodec.default([]),
-  }),
+  zSiteCreateRuleInput.required({ condition: true, actions: true }),
+  blankRule,
 )
 
 const ruleResource = defineResource({

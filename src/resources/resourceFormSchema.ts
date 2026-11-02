@@ -1,92 +1,77 @@
 import * as z from 'zod'
 
-// Form state is raw strings, keyed by the edited field names. A structured field (a Segment's
-// Condition) is held as its JSON text and decoded by a codec on the field's own schema.
-export type FormValues = Record<string, string>
-
-// What the form layer hands to the API schema: a string, or the API's "no value" markers.
-type Wire = Record<string, string | null | undefined>
-
-// Every edited field must be a string field on the API side.
-type StringFieldsSchema = z.ZodObject<Record<string, z.ZodType<unknown, string | null | undefined>>>
-
-// The one place form strings meet the API's null/absent semantics (JSON Merge Patch: absent
-// keeps a value, null clears it), as a zod codec between the two.
-//   - decode (form -> wire): trim; a blank value is `blankOf(field)`, or dropped when undefined.
-//   - encode (wire -> form): null or absent becomes a blank string, so inputs never see null.
-function formCodec(blankOf: (field: string) => string | null | undefined) {
-  return z.codec(z.record(z.string(), z.string()), z.record(z.string(), z.string().nullish()), {
-    decode: (values) =>
-      Object.fromEntries(
-        Object.entries(values).flatMap(([field, value]) => {
-          const decoded = value.trim() || blankOf(field)
-          return decoded === undefined ? [] : [[field, decoded]]
-        }),
-      ),
-    encode: (wire: Wire) =>
-      Object.fromEntries(Object.entries(wire).map(([field, value]) => [field, value ?? ''])),
-  })
-}
-
-// A bidirectional form schema derived from a generated (TypeSpec) zod object schema. The
-// codec is piped into the generated schema, so TypeSpec stays the single source of truth for
-// validation.
-//   - create: a blank field is absent; a blank required field is reported missing by the schema.
-//   - update: a blank field is cleared: null where the API field is nullable, an empty string
-//     for other optional fields; a blank required field is reported missing.
-//   - toValues: loaded resource -> form values.
-// Pick the edited fields from the generated schema (`zSiteUpdateContactInput.pick({ email: true })`);
-// anything not picked never round-trips into a payload.
-// What a loaded resource must offer: each edited field as a string, a structured value, null or
-// absent.
+// Loaded resources can omit edited fields or carry null for a cleared value. Fields outside
+// the picked contract schema never round-trip into the request.
 export type ResourceValues<TPayload> = {
-  [K in keyof TPayload]?: string | object | null | undefined
+  [K in keyof TPayload]?: TPayload[K] | null | undefined
 }
 
-export interface ResourceFormSchema<TPayload> {
-  // Form values with every field blank.
-  blank: FormValues
-  create: z.ZodType<TPayload, FormValues>
-  update: z.ZodType<TPayload, FormValues>
-  toValues: (resource: ResourceValues<TPayload>) => FormValues
+export interface ResourceFormSchema<TPayload, TValues extends object> {
+  blank: TValues
+  create: z.ZodType<TPayload, TValues>
+  update: z.ZodType<TPayload, TValues>
+  toValues: (resource: ResourceValues<TPayload>) => TValues
 }
 
-export function resourceFormSchema<TSchema extends StringFieldsSchema>(
+// Typed editor values meet the generated request schema here. Initial values describe the
+// editor's empty state, including collections and incomplete structured drafts; only the
+// generated schema decides whether a submitted value is valid.
+export function resourceFormSchema<TSchema extends z.ZodObject, TValues extends object>(
   schema: TSchema,
-): ResourceFormSchema<z.output<TSchema>> {
+  blank: TValues,
+): ResourceFormSchema<z.output<TSchema>, TValues> {
   const fields = Object.keys(schema.shape)
-  // The generated schemas mark optional fields with z.exactOptional (see openapi-ts.config.ts),
-  // for which isOptional() is false (it parses undefined), so match the wrapper itself.
+  const empty = new Map<string, unknown>(Object.entries(blank))
   const clearedOnUpdate = (field: string) => {
     const shape = schema.shape[field]
+    // Generated optional fields use exactOptional, whose isOptional() is false.
     if (!(shape instanceof z.ZodExactOptional)) {
       return undefined
     }
     if (shape.safeParse(null).success) {
       return null
     }
-    // A field a blank string cannot stand for (a JSON text) is left out instead.
     return shape.safeParse('').success ? '' : undefined
   }
-  const decoder = formCodec(clearedOnUpdate)
-  const form = (codec: typeof decoder) => codec.pipe(schema)
-  return {
-    blank: Object.fromEntries(fields.map((field) => [field, ''])),
-    create: form(formCodec(() => undefined)),
-    update: form(decoder),
-    toValues: (resource) => {
-      const values = new Map<string, unknown>(Object.entries(resource))
-      return z.encode(
-        decoder,
+  const request = (update: boolean) =>
+    z
+      .custom<TValues>(
+        (value) => typeof value === 'object' && value !== null && !Array.isArray(value),
+      )
+      .transform((values): Record<string, unknown> =>
         Object.fromEntries(
-          fields.map((field) => {
-            const value = values.get(field)
-            if (typeof value === 'string') {
-              return [field, value]
+          Object.entries(values).flatMap(([field, value]) => {
+            const shape = schema.shape[field]
+            if (!shape) {
+              return []
             }
-            return [field, value === undefined || value === null ? null : JSON.stringify(value)]
+            let supplied: unknown = value
+            if (typeof value === 'string' && typeof empty.get(field) === 'string') {
+              supplied = value.trim() || (update ? clearedOnUpdate(field) : undefined)
+            } else if (
+              value === null &&
+              empty.get(field) === null &&
+              !shape.safeParse(null).success
+            ) {
+              // A null empty state explicitly omits a nonnullable field (source-only documents).
+              supplied = undefined
+            }
+            return supplied === undefined ? [] : [[field, supplied]]
           }),
         ),
+      )
+      .pipe(schema)
+
+  return {
+    blank,
+    create: request(false),
+    update: request(true),
+    toValues: (resource) => {
+      const loaded = new Map<string, unknown>(Object.entries(resource))
+      return Object.assign(
+        {},
+        blank,
+        Object.fromEntries(fields.map((field) => [field, loaded.get(field) ?? empty.get(field)])),
       )
     },
   }
