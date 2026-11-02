@@ -304,6 +304,14 @@ only caller of their writes (`forbidigo`).
   (per-workspace providers: smtp/ses). Both providers share `messaging.BuildMIME`
   (wneessen/go-mail) — smtp sends the `*mail.Msg` directly, ses serializes it to raw
   bytes for SES v2 `SendEmail` (raw content).
+- **Rule HTTP Actions**: `rules.Module.ExecuteHTTP` selects the pending Action of a Firing,
+  opens its secrets, renders its Contact and Event, executes the protected call and records the
+  result. It receives ordinary attempt and timing data (`httpcall.Attempt`) and the existing
+  protected HTTP adapter, returning a retry or wait decision without River types. The River
+  worker loads the Firing to establish Workspace scope and translates that decision. A final
+  failure belongs to the Action's result; it does not cancel the Firing's other Actions or adopt
+  Enrollment lifecycle rules. The call retains its stable request identity and existing delivery
+  guarantees: a request accepted before a failed result write may be repeated.
 - `internal/emaildoc` (ADR 0040) turns an editor document into email HTML inside the binary: the editor's own
   export code, bundled by `packages/emaildoc` (`mise run build:emaildoc`; rerun it after any change to the pinned
   `@react-email/editor`, then `go test ./internal/emaildoc -update` to accept the new golden HTML) and run in goja,
