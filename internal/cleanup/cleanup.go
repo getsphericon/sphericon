@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 
+	// easement:disable-next-line external -- the shutdown report reads the container's errors (docs/architecture.md, Backend architecture)
 	"github.com/samber/do/v2"
 )
 
