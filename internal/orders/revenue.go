@@ -103,8 +103,8 @@ func credited(ctx context.Context, s *ent.Scoped, ids []int64, column string, of
 }
 
 // WorkspaceRevenue is the revenue of the Orders a Workspace sent to Sphericon over a window of
-// Report days, in its Reporting currency: the sum of Order Movements, each on the Report day of its
-// own time.
+// Report days and over the period just before it, in its Reporting currency: the sum of Order
+// Movements, each on the Report day of its own time.
 type WorkspaceRevenue struct {
 	// Currency is the Reporting currency, nil until the first Order sets it or an Owner or Admin
 	// chooses it; every figure is then zero.
@@ -112,19 +112,29 @@ type WorkspaceRevenue struct {
 	// FirstOrderAt is when the Workspace's first Order was completed, in any currency and outside
 	// the window too: nil while it has sent none, whatever Currency is.
 	FirstOrderAt *time.Time
-	// Total is the sum of the Movements, in the minor unit of Currency.
+	// Current is the window; Previous is as many Report days just before it
+	// (reportday.Window.Previous, the rule of the Automation report), both in Currency.
+	Current, Previous RevenuePeriod
+	// Series is the current period by Report day.
+	Series []RevenueDay
+}
+
+// RevenuePeriod is the revenue of one period of Report days.
+type RevenuePeriod struct {
+	// From and To are its first and last Report day, YYYY-MM-DD.
+	From, To string
+	// Total is the sum of the Movements, in the minor unit of the Reporting currency.
 	Total int64
 	// Credited is the part of Total in the Movements of the Orders credited to a Broadcast or an
 	// Automation.
 	Credited int64
-	// Orders is the Orders completed in the window, in Currency.
+	// Orders is the Orders completed in the period, in the Reporting currency.
 	Orders int
-	// CreditedOrders is the Orders completed in the window that are credited to one of them.
+	// CreditedOrders is the Orders completed in the period that are credited to one of them.
 	CreditedOrders int
-	// OtherCurrencyOrders is the Orders completed in the window in another currency, one entry
+	// OtherCurrencyOrders is the Orders completed in the period in another currency, one entry
 	// per currency ordered by its code: stored and listed, counted in no sum.
 	OtherCurrencyOrders []CurrencyOrders
-	Series              []RevenueDay
 }
 
 // CurrencyOrders is the Orders completed in one currency.
@@ -140,8 +150,8 @@ type RevenueDay struct {
 	Orders int
 }
 
-// WorkspaceRevenueOver reads the revenue of the Workspace behind s over the window w. Until the
-// Reporting currency is set it answers with the currency unset and zeros.
+// WorkspaceRevenueOver reads the revenue of the Workspace behind s over the window w and the period
+// just before it. Until the Reporting currency is set it answers with the currency unset and zeros.
 func WorkspaceRevenueOver(ctx context.Context, s *ent.Scoped, w reportday.Window) (*WorkspaceRevenue, error) {
 	ws, err := s.Workspace(ctx)
 	if err != nil {
@@ -151,50 +161,16 @@ func WorkspaceRevenueOver(ctx context.Context, s *ent.Scoped, w reportday.Window
 	if err != nil {
 		return nil, err
 	}
-	report := &WorkspaceRevenue{Currency: ws.ReportingCurrency, FirstOrderAt: firstOrderAt}
-	byDay := map[string]RevenueDay{}
-	if cur := ws.ReportingCurrency; cur != nil {
-		inWindow := between(w.Since, w.Until)
-		var days []struct {
-			Day    string `sql:"day"`
-			Amount int64  `sql:"amount"`
-			Orders int    `sql:"orders"`
-		}
-		err := s.OrderMovement().Query().
-			Where(inWindow...).
-			Where(ordermovement.HasOrderWith(order.Currency(*cur))).
-			Modify(func(sel *sql.Selector) {
-				netAndCompleted(sel)
-				sel.AppendSelectExprAs(reportday.Label(sel.C(ordermovement.FieldOccurredAt), w.Loc), "day").GroupBy("day")
-			}).Scan(ctx, &days)
-		if err != nil {
-			return nil, err
-		}
-		for _, r := range days {
-			byDay[r.Day] = RevenueDay{Amount: r.Amount, Orders: r.Orders}
-			report.Total += r.Amount
-			report.Orders += r.Orders
-		}
-		var credited []struct {
-			Amount *int64 `sql:"amount"`
-			Orders int    `sql:"orders"`
-		}
-		err = s.OrderMovement().Query().
-			Where(inWindow...).
-			Where(ordermovement.HasOrderWith(order.Currency(*cur), creditedToMessages())).
-			Modify(netAndCompleted).Scan(ctx, &credited)
-		if err != nil {
-			return nil, err
-		}
-		for _, r := range credited {
-			report.Credited += lo.FromPtr(r.Amount)
-			report.CreditedOrders += r.Orders
-		}
-		report.OtherCurrencyOrders, err = otherCurrencyOrders(ctx, s, *cur, inWindow)
-		if err != nil {
-			return nil, err
-		}
+	current, byDay, err := revenuePeriodOf(ctx, s, ws.ReportingCurrency, w)
+	if err != nil {
+		return nil, err
 	}
+	prev := w.Previous()
+	previous, _, err := revenuePeriodOf(ctx, s, ws.ReportingCurrency, prev)
+	if err != nil {
+		return nil, err
+	}
+	report := &WorkspaceRevenue{Currency: ws.ReportingCurrency, FirstOrderAt: firstOrderAt, Current: current, Previous: previous}
 	report.Series = make([]RevenueDay, 0, len(w.Dates))
 	for _, day := range w.Dates {
 		p := byDay[day]
@@ -202,6 +178,57 @@ func WorkspaceRevenueOver(ctx context.Context, s *ent.Scoped, w reportday.Window
 		report.Series = append(report.Series, p)
 	}
 	return report, nil
+}
+
+// revenuePeriodOf sums the Movements of the period w in the Reporting currency cur, and returns
+// them by Report day too. With no currency every figure is zero.
+func revenuePeriodOf(ctx context.Context, s *ent.Scoped, cur *string, w reportday.Window) (RevenuePeriod, map[string]RevenueDay, error) {
+	out := RevenuePeriod{From: w.First(), To: w.Last()}
+	byDay := map[string]RevenueDay{}
+	if cur == nil {
+		return out, byDay, nil
+	}
+	inWindow := between(w.Since, w.Until)
+	var days []struct {
+		Day    string `sql:"day"`
+		Amount int64  `sql:"amount"`
+		Orders int    `sql:"orders"`
+	}
+	err := s.OrderMovement().Query().
+		Where(inWindow...).
+		Where(ordermovement.HasOrderWith(order.Currency(*cur))).
+		Modify(func(sel *sql.Selector) {
+			netAndCompleted(sel)
+			sel.AppendSelectExprAs(reportday.Label(sel.C(ordermovement.FieldOccurredAt), w.Loc), "day").GroupBy("day")
+		}).Scan(ctx, &days)
+	if err != nil {
+		return RevenuePeriod{}, nil, err
+	}
+	for _, r := range days {
+		byDay[r.Day] = RevenueDay{Amount: r.Amount, Orders: r.Orders}
+		out.Total += r.Amount
+		out.Orders += r.Orders
+	}
+	var credited []struct {
+		Amount *int64 `sql:"amount"`
+		Orders int    `sql:"orders"`
+	}
+	err = s.OrderMovement().Query().
+		Where(inWindow...).
+		Where(ordermovement.HasOrderWith(order.Currency(*cur), creditedToMessages())).
+		Modify(netAndCompleted).Scan(ctx, &credited)
+	if err != nil {
+		return RevenuePeriod{}, nil, err
+	}
+	for _, r := range credited {
+		out.Credited += lo.FromPtr(r.Amount)
+		out.CreditedOrders += r.Orders
+	}
+	out.OtherCurrencyOrders, err = otherCurrencyOrders(ctx, s, *cur, inWindow)
+	if err != nil {
+		return RevenuePeriod{}, nil, err
+	}
+	return out, byDay, nil
 }
 
 // firstOrderAt is the time of the Workspace's first completed Order, in any currency: nil while

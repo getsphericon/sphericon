@@ -583,8 +583,7 @@ export const zSiteAnalyticsAutomations = z.object({
 export const zSiteAnalyticsContacts = z.object({
   total: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   active: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  unsubscribed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  newInRange: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  unsubscribed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
@@ -685,13 +684,25 @@ export const zSiteAnalyticsSending = z.object({
 });
 
 /**
- * Workspace analytics overview powering the dashboard
+ * The figures of one period of Report days
+ */
+export const zSiteAnalyticsPeriod = z.object({
+  from: z.string(),
+  to: z.string(),
+  sending: zSiteAnalyticsSending,
+  email: zSiteAnalyticsEmail,
+  newContacts: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * Workspace analytics overview powering the dashboard: the snapshots, and the figures of the range
+ * with those of the period just before it to compare with
  */
 export const zSiteAnalyticsOverview = z.object({
   contacts: zSiteAnalyticsContacts,
-  sending: zSiteAnalyticsSending,
-  email: zSiteAnalyticsEmail,
   automations: zSiteAnalyticsAutomations,
+  current: zSiteAnalyticsPeriod,
+  previous: zSiteAnalyticsPeriod,
   timeseries: z.array(zSiteAnalyticsPoint)
 });
 
@@ -1452,11 +1463,24 @@ export const zSiteOptionalConsentDecision = z.enum([
 ]);
 
 /**
- * Orders completed in the range in one currency other than the Reporting currency
+ * Orders completed in a period in one currency other than the Reporting currency
  */
 export const zSiteOrdersInCurrency = z.object({
   currency: zCurrencyCode,
   orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * The revenue of one period of Report days, in the Reporting currency
+ */
+export const zSiteAnalyticsRevenuePeriod = z.object({
+  from: z.string(),
+  to: z.string(),
+  total: z.string().regex(/^[0-9]+$/),
+  credited: z.string().regex(/^[0-9]+$/),
+  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  creditedOrders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  otherCurrencyOrders: z.array(zSiteOrdersInCurrency)
 });
 
 /**
@@ -1699,6 +1723,14 @@ export const zSiteRecoveryCodes = z.object({
  */
 export const zSiteRecoveryCodesInput = z.object({
   currentPassword: z.exactOptional(z.string())
+});
+
+/**
+ * The Report days a period of a report runs over, spread into each period model
+ */
+export const zSiteReportPeriod = z.object({
+  from: z.string(),
+  to: z.string()
 });
 
 /**
@@ -2584,18 +2616,15 @@ export const zSiteAnalyticsEvents = z.object({
 
 /**
  * The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
- * sum of Order Movements over the range, in the Reporting currency. Until the first Order
- * Completed sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and
- * every figure is zero.
+ * sum of Order Movements over the range and over the period just before it, both in the Reporting
+ * currency. Until the first Order Completed sets that currency, or an Owner or Admin chooses it,
+ * `reportingCurrency` is null and every figure is zero.
  */
 export const zSiteAnalyticsRevenue = z.object({
   reportingCurrency: zCurrencyCode.nullable(),
   firstOrderAt: zTimestamp.nullable(),
-  total: z.string().regex(/^[0-9]+$/),
-  credited: z.string().regex(/^[0-9]+$/),
-  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  creditedOrders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  otherCurrencyOrders: z.array(zSiteOrdersInCurrency),
+  current: zSiteAnalyticsRevenuePeriod,
+  previous: zSiteAnalyticsRevenuePeriod,
   series: z.array(zSiteRevenuePoint)
 });
 

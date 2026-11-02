@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -86,15 +87,40 @@ func TestSiteAnalyticsOverviewMapsTheModule(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 
 	assert.Len(t, ov.Timeseries, 7)
-	assert.Equal(t, int32(11), ov.Email.SentCount)
-	assert.Equal(t, int32(5), ov.Email.OpenedCount)
-	assert.Equal(t, int32(2), ov.Email.ClickedCount)
+	assert.Equal(t, int32(11), ov.Current.Email.SentCount)
+	assert.Equal(t, int32(5), ov.Current.Email.OpenedCount)
+	assert.Equal(t, int32(2), ov.Current.Email.ClickedCount)
 	assert.Positive(t, ov.Contacts.Total)
 	assert.Positive(t, ov.Automations.Total)
 
 	res, err = c.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.Len(t, res.(*siteapi.SiteAnalyticsOverview).Timeseries, 7, "7d is the default window")
+}
+
+// Read on 14 March 2026 over 7 days, Gotham's periods are cut in New York: 8-14 March and 1-7
+// March. Its Broadcast send of 23:59 EST on 7 March, 8 March in UTC, is in the previous period; the
+// three sends after midnight are in the current one (outbound_messages.yml).
+func TestSiteAnalyticsOverviewHasThePeriodBeforeTheRangeInTheWorkspaceTimeZone(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return time.Date(2026, 3, 14, 12, 0, 0, 0, time.UTC) }))
+	c := env.SiteActor(t, fixtures.GothamOwnerGusEmail)
+
+	res, err := c.SiteAnalyticsOverview(t.Context(), siteapi.SiteAnalyticsOverviewParams{
+		WorkspaceId: fixtures.GothamPublicID,
+		Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
+	})
+	require.NoError(t, err)
+	ov, ok := res.(*siteapi.SiteAnalyticsOverview)
+	require.Truef(t, ok, "got %T", res)
+
+	assert.Equal(t, "2026-03-08", ov.Current.From)
+	assert.Equal(t, "2026-03-14", ov.Current.To)
+	assert.Equal(t, "2026-03-01", ov.Previous.From)
+	assert.Equal(t, "2026-03-07", ov.Previous.To)
+	assert.Equal(t, siteapi.SiteAnalyticsSending{Broadcast: 3}, ov.Current.Sending)
+	assert.Equal(t, siteapi.SiteAnalyticsSending{Broadcast: 1}, ov.Previous.Sending)
+	assert.Equal(t, int32(1), ov.Previous.Email.SentCount)
+	assert.Equal(t, ov.Current.From, ov.Timeseries[0].Date, "the series is the current period's")
 }
 
 func TestSubscribedPeopleRequiresAuth(t *testing.T) {

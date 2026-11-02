@@ -16301,7 +16301,7 @@
       },
       "SiteAnalyticsContacts": {
         "type": "object",
-        "required": ["total", "active", "unsubscribed", "newInRange"],
+        "required": ["total", "active", "unsubscribed"],
         "properties": {
           "total": {
             "type": "integer",
@@ -16317,11 +16317,6 @@
             "type": "integer",
             "format": "int32",
             "description": "Contacts with status = unsubscribed"
-          },
-          "newInRange": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Contacts created within the selected range"
           }
         },
         "description": "Current contact counts (point-in-time snapshot, not range-scoped)"
@@ -16510,10 +16505,56 @@
       },
       "SiteAnalyticsOverview": {
         "type": "object",
-        "required": ["contacts", "sending", "email", "automations", "timeseries"],
+        "required": ["contacts", "automations", "current", "previous", "timeseries"],
         "properties": {
           "contacts": {
             "$ref": "#/components/schemas/SiteAnalyticsContacts"
+          },
+          "automations": {
+            "$ref": "#/components/schemas/SiteAnalyticsAutomations"
+          },
+          "current": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAnalyticsPeriod"
+              }
+            ],
+            "description": "The range ending today"
+          },
+          "previous": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAnalyticsPeriod"
+              }
+            ],
+            "description": "As many Report days just before it"
+          },
+          "timeseries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAnalyticsPoint"
+            },
+            "description": "Daily engagement series of the current period, oldest first, one point per day in the range"
+          }
+        },
+        "description": "Workspace analytics overview powering the dashboard: the snapshots, and the figures of the range\nwith those of the period just before it to compare with"
+      },
+      "SiteAnalyticsOwnerKind": {
+        "type": "string",
+        "enum": ["broadcast", "automation"],
+        "description": "What carried a clicked link: a Broadcast or an Automation"
+      },
+      "SiteAnalyticsPeriod": {
+        "type": "object",
+        "required": ["from", "to", "sending", "email", "newContacts"],
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "The period's first Report day, `YYYY-MM-DD` in the Workspace time zone"
+          },
+          "to": {
+            "type": "string",
+            "description": "The period's last Report day, included"
           },
           "sending": {
             "$ref": "#/components/schemas/SiteAnalyticsSending"
@@ -16521,23 +16562,13 @@
           "email": {
             "$ref": "#/components/schemas/SiteAnalyticsEmail"
           },
-          "automations": {
-            "$ref": "#/components/schemas/SiteAnalyticsAutomations"
-          },
-          "timeseries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SiteAnalyticsPoint"
-            },
-            "description": "Daily engagement series, oldest first, one point per day in the range"
+          "newContacts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts created in the period"
           }
         },
-        "description": "Workspace analytics overview powering the dashboard"
-      },
-      "SiteAnalyticsOwnerKind": {
-        "type": "string",
-        "enum": ["broadcast", "automation"],
-        "description": "What carried a clicked link: a Broadcast or an Automation"
+        "description": "The figures of one period of Report days"
       },
       "SiteAnalyticsPoint": {
         "type": "object",
@@ -16572,16 +16603,7 @@
       },
       "SiteAnalyticsRevenue": {
         "type": "object",
-        "required": [
-          "reportingCurrency",
-          "firstOrderAt",
-          "total",
-          "credited",
-          "orders",
-          "creditedOrders",
-          "otherCurrencyOrders",
-          "series"
-        ],
+        "required": ["reportingCurrency", "firstOrderAt", "current", "previous", "series"],
         "properties": {
           "reportingCurrency": {
             "type": "string",
@@ -16603,10 +16625,56 @@
             "nullable": true,
             "description": "When the Workspace's first Order was completed, in any currency and whatever the range; null\nwhile it has sent none. A Reporting currency chosen before any Order leaves it null."
           },
+          "current": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAnalyticsRevenuePeriod"
+              }
+            ],
+            "description": "The range ending today"
+          },
+          "previous": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAnalyticsRevenuePeriod"
+              }
+            ],
+            "description": "As many Report days just before it"
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteRevenuePoint"
+            },
+            "description": "One point per Report day of the current period, oldest first, zero-filled"
+          }
+        },
+        "description": "The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the\nsum of Order Movements over the range and over the period just before it, both in the Reporting\ncurrency. Until the first Order Completed sets that currency, or an Owner or Admin chooses it,\n`reportingCurrency` is null and every figure is zero."
+      },
+      "SiteAnalyticsRevenuePeriod": {
+        "type": "object",
+        "required": [
+          "from",
+          "to",
+          "total",
+          "credited",
+          "orders",
+          "creditedOrders",
+          "otherCurrencyOrders"
+        ],
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "The period's first Report day, `YYYY-MM-DD` in the Workspace time zone"
+          },
+          "to": {
+            "type": "string",
+            "description": "The period's last Report day, included"
+          },
           "total": {
             "type": "integer",
             "format": "int64",
-            "description": "Revenue over the range, in the minor unit of the Reporting currency"
+            "description": "Revenue over the period, in the minor unit of the Reporting currency"
           },
           "credited": {
             "type": "integer",
@@ -16616,29 +16684,22 @@
           "orders": {
             "type": "integer",
             "format": "int32",
-            "description": "Orders completed in the range, in the Reporting currency"
+            "description": "Orders completed in the period, in the Reporting currency"
           },
           "creditedOrders": {
             "type": "integer",
             "format": "int32",
-            "description": "Orders completed in the range that are credited to a Broadcast or an Automation"
+            "description": "Orders completed in the period that are credited to a Broadcast or an Automation"
           },
           "otherCurrencyOrders": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SiteOrdersInCurrency"
             },
-            "description": "Orders completed in the range in another currency, one entry per currency ordered by its\ncode: they are listed with the Workspace's Events but counted in no sum"
-          },
-          "series": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SiteRevenuePoint"
-            },
-            "description": "One point per Report day in the range, oldest first, zero-filled"
+            "description": "Orders completed in the period in another currency, one entry per currency ordered by its\ncode: they are listed with the Workspace's Events but counted in no sum"
           }
         },
-        "description": "The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the\nsum of Order Movements over the range, in the Reporting currency. Until the first Order\nCompleted sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and\nevery figure is zero."
+        "description": "The revenue of one period of Report days, in the Reporting currency"
       },
       "SiteAnalyticsSending": {
         "type": "object",
@@ -20533,10 +20594,10 @@
           "orders": {
             "type": "integer",
             "format": "int32",
-            "description": "Orders completed in the range in that currency"
+            "description": "Orders completed in the period in that currency"
           }
         },
-        "description": "Orders completed in the range in one currency other than the Reporting currency"
+        "description": "Orders completed in a period in one currency other than the Reporting currency"
       },
       "SitePasskey": {
         "type": "object",
@@ -21132,6 +21193,21 @@
           }
         },
         "description": "Proof of the User's password (or a fresh provider login or Passkey check), for regenerating Recovery codes"
+      },
+      "SiteReportPeriod": {
+        "type": "object",
+        "required": ["from", "to"],
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "The period's first Report day, `YYYY-MM-DD` in the Workspace time zone"
+          },
+          "to": {
+            "type": "string",
+            "description": "The period's last Report day, included"
+          }
+        },
+        "description": "The Report days a period of a report runs over, spread into each period model"
       },
       "SiteResendVerificationInput": {
         "type": "object",

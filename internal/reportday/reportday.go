@@ -68,6 +68,12 @@ func (w Window) Previous() Window {
 	return span(w.Loc, y, m, d-days, days)
 }
 
+// First is the label of w's first Report day, the one a report names its period from.
+func (w Window) First() string { return w.Dates[0] }
+
+// Last is the label of w's last Report day, included.
+func (w Window) Last() string { return w.Dates[len(w.Dates)-1] }
+
 // span is the days Report days in loc from the calendar date y-m-first on; time.Date normalizes a
 // first day outside the month.
 func span(loc *time.Location, y int, m time.Month, first, days int) Window {

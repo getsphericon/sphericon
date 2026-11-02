@@ -1455,10 +1455,6 @@ export type SiteAnalyticsContacts = {
    * Contacts with status = unsubscribed
    */
   unsubscribed: number;
-  /**
-   * Contacts created within the selected range
-   */
-  newInRange: number;
 };
 
 /**
@@ -1596,15 +1592,22 @@ export type SiteAnalyticsOpensCell = {
 };
 
 /**
- * Workspace analytics overview powering the dashboard
+ * Workspace analytics overview powering the dashboard: the snapshots, and the figures of the range
+ * with those of the period just before it to compare with
  */
 export type SiteAnalyticsOverview = {
   contacts: SiteAnalyticsContacts;
-  sending: SiteAnalyticsSending;
-  email: SiteAnalyticsEmail;
   automations: SiteAnalyticsAutomations;
   /**
-   * Daily engagement series, oldest first, one point per day in the range
+   * The range ending today
+   */
+  current: SiteAnalyticsPeriod;
+  /**
+   * As many Report days just before it
+   */
+  previous: SiteAnalyticsPeriod;
+  /**
+   * Daily engagement series of the current period, oldest first, one point per day in the range
    */
   timeseries: Array<SiteAnalyticsPoint>;
 };
@@ -1618,6 +1621,26 @@ export const SiteAnalyticsOwnerKind = { BROADCAST: 'broadcast', AUTOMATION: 'aut
  * What carried a clicked link: a Broadcast or an Automation
  */
 export type SiteAnalyticsOwnerKind = typeof SiteAnalyticsOwnerKind[keyof typeof SiteAnalyticsOwnerKind];
+
+/**
+ * The figures of one period of Report days
+ */
+export type SiteAnalyticsPeriod = {
+  /**
+   * The period's first Report day, `YYYY-MM-DD` in the Workspace time zone
+   */
+  from: string;
+  /**
+   * The period's last Report day, included
+   */
+  to: string;
+  sending: SiteAnalyticsSending;
+  email: SiteAnalyticsEmail;
+  /**
+   * Contacts created in the period
+   */
+  newContacts: number;
+};
 
 /**
  * One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked
@@ -1658,9 +1681,9 @@ export type SiteAnalyticsRange = typeof SiteAnalyticsRange[keyof typeof SiteAnal
 
 /**
  * The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
- * sum of Order Movements over the range, in the Reporting currency. Until the first Order
- * Completed sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and
- * every figure is zero.
+ * sum of Order Movements over the range and over the period just before it, both in the Reporting
+ * currency. Until the first Order Completed sets that currency, or an Owner or Admin chooses it,
+ * `reportingCurrency` is null and every figure is zero.
  */
 export type SiteAnalyticsRevenue = {
   /**
@@ -1673,7 +1696,33 @@ export type SiteAnalyticsRevenue = {
    */
   firstOrderAt: Timestamp | null;
   /**
-   * Revenue over the range, in the minor unit of the Reporting currency
+   * The range ending today
+   */
+  current: SiteAnalyticsRevenuePeriod;
+  /**
+   * As many Report days just before it
+   */
+  previous: SiteAnalyticsRevenuePeriod;
+  /**
+   * One point per Report day of the current period, oldest first, zero-filled
+   */
+  series: Array<SiteRevenuePoint>;
+};
+
+/**
+ * The revenue of one period of Report days, in the Reporting currency
+ */
+export type SiteAnalyticsRevenuePeriod = {
+  /**
+   * The period's first Report day, `YYYY-MM-DD` in the Workspace time zone
+   */
+  from: string;
+  /**
+   * The period's last Report day, included
+   */
+  to: string;
+  /**
+   * Revenue over the period, in the minor unit of the Reporting currency
    */
   total: number;
   /**
@@ -1683,22 +1732,18 @@ export type SiteAnalyticsRevenue = {
    */
   credited: number;
   /**
-   * Orders completed in the range, in the Reporting currency
+   * Orders completed in the period, in the Reporting currency
    */
   orders: number;
   /**
-   * Orders completed in the range that are credited to a Broadcast or an Automation
+   * Orders completed in the period that are credited to a Broadcast or an Automation
    */
   creditedOrders: number;
   /**
-   * Orders completed in the range in another currency, one entry per currency ordered by its
+   * Orders completed in the period in another currency, one entry per currency ordered by its
    * code: they are listed with the Workspace's Events but counted in no sum
    */
   otherCurrencyOrders: Array<SiteOrdersInCurrency>;
-  /**
-   * One point per Report day in the range, oldest first, zero-filled
-   */
-  series: Array<SiteRevenuePoint>;
 };
 
 /**
@@ -4513,7 +4558,7 @@ export type SiteOptionalConsentList = {
 };
 
 /**
- * Orders completed in the range in one currency other than the Reporting currency
+ * Orders completed in a period in one currency other than the Reporting currency
  */
 export type SiteOrdersInCurrency = {
   /**
@@ -4521,7 +4566,7 @@ export type SiteOrdersInCurrency = {
    */
   currency: CurrencyCode;
   /**
-   * Orders completed in the range in that currency
+   * Orders completed in the period in that currency
    */
   orders: number;
 };
@@ -4961,6 +5006,20 @@ export type SiteRecoveryCodesInput = {
    * sign-in of the last few minutes instead (ADR 0048).
    */
   currentPassword?: string;
+};
+
+/**
+ * The Report days a period of a report runs over, spread into each period model
+ */
+export type SiteReportPeriod = {
+  /**
+   * The period's first Report day, `YYYY-MM-DD` in the Workspace time zone
+   */
+  from: string;
+  /**
+   * The period's last Report day, included
+   */
+  to: string;
 };
 
 /**

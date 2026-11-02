@@ -8703,8 +8703,6 @@ type SiteAnalyticsContacts struct {
 	Active int32 `json:"active"`
 	// Contacts with status = unsubscribed.
 	Unsubscribed int32 `json:"unsubscribed"`
-	// Contacts created within the selected range.
-	NewInRange int32 `json:"newInRange"`
 }
 
 // GetTotal returns the value of Total.
@@ -8722,11 +8720,6 @@ func (s *SiteAnalyticsContacts) GetUnsubscribed() int32 {
 	return s.Unsubscribed
 }
 
-// GetNewInRange returns the value of NewInRange.
-func (s *SiteAnalyticsContacts) GetNewInRange() int32 {
-	return s.NewInRange
-}
-
 // SetTotal sets the value of Total.
 func (s *SiteAnalyticsContacts) SetTotal(val int32) {
 	s.Total = val
@@ -8740,11 +8733,6 @@ func (s *SiteAnalyticsContacts) SetActive(val int32) {
 // SetUnsubscribed sets the value of Unsubscribed.
 func (s *SiteAnalyticsContacts) SetUnsubscribed(val int32) {
 	s.Unsubscribed = val
-}
-
-// SetNewInRange sets the value of NewInRange.
-func (s *SiteAnalyticsContacts) SetNewInRange(val int32) {
-	s.NewInRange = val
 }
 
 // Email engagement for the Broadcast messages sent in the selected range (the send cohort), from
@@ -9089,14 +9077,17 @@ func (s *SiteAnalyticsOpensCell) SetOpens(val int32) {
 	s.Opens = val
 }
 
-// Workspace analytics overview powering the dashboard.
+// Workspace analytics overview powering the dashboard: the snapshots, and the figures of the range
+// with those of the period just before it to compare with.
 // Ref: #/components/schemas/SiteAnalyticsOverview
 type SiteAnalyticsOverview struct {
 	Contacts    SiteAnalyticsContacts    `json:"contacts"`
-	Sending     SiteAnalyticsSending     `json:"sending"`
-	Email       SiteAnalyticsEmail       `json:"email"`
 	Automations SiteAnalyticsAutomations `json:"automations"`
-	// Daily engagement series, oldest first, one point per day in the range.
+	// The range ending today.
+	Current SiteAnalyticsPeriod `json:"current"`
+	// As many Report days just before it.
+	Previous SiteAnalyticsPeriod `json:"previous"`
+	// Daily engagement series of the current period, oldest first, one point per day in the range.
 	Timeseries []SiteAnalyticsPoint `json:"timeseries"`
 }
 
@@ -9105,19 +9096,19 @@ func (s *SiteAnalyticsOverview) GetContacts() SiteAnalyticsContacts {
 	return s.Contacts
 }
 
-// GetSending returns the value of Sending.
-func (s *SiteAnalyticsOverview) GetSending() SiteAnalyticsSending {
-	return s.Sending
-}
-
-// GetEmail returns the value of Email.
-func (s *SiteAnalyticsOverview) GetEmail() SiteAnalyticsEmail {
-	return s.Email
-}
-
 // GetAutomations returns the value of Automations.
 func (s *SiteAnalyticsOverview) GetAutomations() SiteAnalyticsAutomations {
 	return s.Automations
+}
+
+// GetCurrent returns the value of Current.
+func (s *SiteAnalyticsOverview) GetCurrent() SiteAnalyticsPeriod {
+	return s.Current
+}
+
+// GetPrevious returns the value of Previous.
+func (s *SiteAnalyticsOverview) GetPrevious() SiteAnalyticsPeriod {
+	return s.Previous
 }
 
 // GetTimeseries returns the value of Timeseries.
@@ -9130,19 +9121,19 @@ func (s *SiteAnalyticsOverview) SetContacts(val SiteAnalyticsContacts) {
 	s.Contacts = val
 }
 
-// SetSending sets the value of Sending.
-func (s *SiteAnalyticsOverview) SetSending(val SiteAnalyticsSending) {
-	s.Sending = val
-}
-
-// SetEmail sets the value of Email.
-func (s *SiteAnalyticsOverview) SetEmail(val SiteAnalyticsEmail) {
-	s.Email = val
-}
-
 // SetAutomations sets the value of Automations.
 func (s *SiteAnalyticsOverview) SetAutomations(val SiteAnalyticsAutomations) {
 	s.Automations = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *SiteAnalyticsOverview) SetCurrent(val SiteAnalyticsPeriod) {
+	s.Current = val
+}
+
+// SetPrevious sets the value of Previous.
+func (s *SiteAnalyticsOverview) SetPrevious(val SiteAnalyticsPeriod) {
+	s.Previous = val
 }
 
 // SetTimeseries sets the value of Timeseries.
@@ -9201,6 +9192,69 @@ func (s *SiteAnalyticsOwnerKind) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// The figures of one period of Report days.
+// Ref: #/components/schemas/SiteAnalyticsPeriod
+type SiteAnalyticsPeriod struct {
+	// The period's first Report day, `YYYY-MM-DD` in the Workspace time zone.
+	From string `json:"from"`
+	// The period's last Report day, included.
+	To      string               `json:"to"`
+	Sending SiteAnalyticsSending `json:"sending"`
+	Email   SiteAnalyticsEmail   `json:"email"`
+	// Contacts created in the period.
+	NewContacts int32 `json:"newContacts"`
+}
+
+// GetFrom returns the value of From.
+func (s *SiteAnalyticsPeriod) GetFrom() string {
+	return s.From
+}
+
+// GetTo returns the value of To.
+func (s *SiteAnalyticsPeriod) GetTo() string {
+	return s.To
+}
+
+// GetSending returns the value of Sending.
+func (s *SiteAnalyticsPeriod) GetSending() SiteAnalyticsSending {
+	return s.Sending
+}
+
+// GetEmail returns the value of Email.
+func (s *SiteAnalyticsPeriod) GetEmail() SiteAnalyticsEmail {
+	return s.Email
+}
+
+// GetNewContacts returns the value of NewContacts.
+func (s *SiteAnalyticsPeriod) GetNewContacts() int32 {
+	return s.NewContacts
+}
+
+// SetFrom sets the value of From.
+func (s *SiteAnalyticsPeriod) SetFrom(val string) {
+	s.From = val
+}
+
+// SetTo sets the value of To.
+func (s *SiteAnalyticsPeriod) SetTo(val string) {
+	s.To = val
+}
+
+// SetSending sets the value of Sending.
+func (s *SiteAnalyticsPeriod) SetSending(val SiteAnalyticsSending) {
+	s.Sending = val
+}
+
+// SetEmail sets the value of Email.
+func (s *SiteAnalyticsPeriod) SetEmail(val SiteAnalyticsEmail) {
+	s.Email = val
+}
+
+// SetNewContacts sets the value of NewContacts.
+func (s *SiteAnalyticsPeriod) SetNewContacts(val int32) {
+	s.NewContacts = val
 }
 
 // One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked count the
@@ -9308,8 +9362,9 @@ func (s *SiteAnalyticsRange) UnmarshalText(data []byte) error {
 }
 
 // The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the sum of
-// Order Movements over the range, in the Reporting currency. Until the first Order Completed sets that
-// currency, or an Owner or Admin chooses it, `reportingCurrency` is null and every figure is zero.
+// Order Movements over the range and over the period just before it, both in the Reporting currency.
+// Until the first Order Completed sets that currency, or an Owner or Admin chooses it,
+// `reportingCurrency` is null and every figure is zero.
 // Ref: #/components/schemas/SiteAnalyticsRevenue
 type SiteAnalyticsRevenue struct {
 	// The Reporting currency, null until the first Order or an Owner or Admin sets it.
@@ -9317,20 +9372,11 @@ type SiteAnalyticsRevenue struct {
 	// When the Workspace's first Order was completed, in any currency and whatever the range; null while
 	// it has sent none. A Reporting currency chosen before any Order leaves it null.
 	FirstOrderAt NilTimestamp `json:"firstOrderAt"`
-	// Revenue over the range, in the minor unit of the Reporting currency.
-	Total int64 `json:"total"`
-	// The part of `total` credited to messages (ADR 0064): the sum of the Movements of the Orders credited
-	// to a Broadcast or an Automation, in the minor unit of the Reporting currency. `total` minus
-	// `credited` is the revenue of unattributed Orders.
-	Credited int64 `json:"credited"`
-	// Orders completed in the range, in the Reporting currency.
-	Orders int32 `json:"orders"`
-	// Orders completed in the range that are credited to a Broadcast or an Automation.
-	CreditedOrders int32 `json:"creditedOrders"`
-	// Orders completed in the range in another currency, one entry per currency ordered by its code: they
-	// are listed with the Workspace's Events but counted in no sum.
-	OtherCurrencyOrders []SiteOrdersInCurrency `json:"otherCurrencyOrders"`
-	// One point per Report day in the range, oldest first, zero-filled.
+	// The range ending today.
+	Current SiteAnalyticsRevenuePeriod `json:"current"`
+	// As many Report days just before it.
+	Previous SiteAnalyticsRevenuePeriod `json:"previous"`
+	// One point per Report day of the current period, oldest first, zero-filled.
 	Series []SiteRevenuePoint `json:"series"`
 }
 
@@ -9344,29 +9390,14 @@ func (s *SiteAnalyticsRevenue) GetFirstOrderAt() NilTimestamp {
 	return s.FirstOrderAt
 }
 
-// GetTotal returns the value of Total.
-func (s *SiteAnalyticsRevenue) GetTotal() int64 {
-	return s.Total
+// GetCurrent returns the value of Current.
+func (s *SiteAnalyticsRevenue) GetCurrent() SiteAnalyticsRevenuePeriod {
+	return s.Current
 }
 
-// GetCredited returns the value of Credited.
-func (s *SiteAnalyticsRevenue) GetCredited() int64 {
-	return s.Credited
-}
-
-// GetOrders returns the value of Orders.
-func (s *SiteAnalyticsRevenue) GetOrders() int32 {
-	return s.Orders
-}
-
-// GetCreditedOrders returns the value of CreditedOrders.
-func (s *SiteAnalyticsRevenue) GetCreditedOrders() int32 {
-	return s.CreditedOrders
-}
-
-// GetOtherCurrencyOrders returns the value of OtherCurrencyOrders.
-func (s *SiteAnalyticsRevenue) GetOtherCurrencyOrders() []SiteOrdersInCurrency {
-	return s.OtherCurrencyOrders
+// GetPrevious returns the value of Previous.
+func (s *SiteAnalyticsRevenue) GetPrevious() SiteAnalyticsRevenuePeriod {
+	return s.Previous
 }
 
 // GetSeries returns the value of Series.
@@ -9384,29 +9415,14 @@ func (s *SiteAnalyticsRevenue) SetFirstOrderAt(val NilTimestamp) {
 	s.FirstOrderAt = val
 }
 
-// SetTotal sets the value of Total.
-func (s *SiteAnalyticsRevenue) SetTotal(val int64) {
-	s.Total = val
+// SetCurrent sets the value of Current.
+func (s *SiteAnalyticsRevenue) SetCurrent(val SiteAnalyticsRevenuePeriod) {
+	s.Current = val
 }
 
-// SetCredited sets the value of Credited.
-func (s *SiteAnalyticsRevenue) SetCredited(val int64) {
-	s.Credited = val
-}
-
-// SetOrders sets the value of Orders.
-func (s *SiteAnalyticsRevenue) SetOrders(val int32) {
-	s.Orders = val
-}
-
-// SetCreditedOrders sets the value of CreditedOrders.
-func (s *SiteAnalyticsRevenue) SetCreditedOrders(val int32) {
-	s.CreditedOrders = val
-}
-
-// SetOtherCurrencyOrders sets the value of OtherCurrencyOrders.
-func (s *SiteAnalyticsRevenue) SetOtherCurrencyOrders(val []SiteOrdersInCurrency) {
-	s.OtherCurrencyOrders = val
+// SetPrevious sets the value of Previous.
+func (s *SiteAnalyticsRevenue) SetPrevious(val SiteAnalyticsRevenuePeriod) {
+	s.Previous = val
 }
 
 // SetSeries sets the value of Series.
@@ -9423,6 +9439,98 @@ func (*SiteAnalyticsRevenueBadRequest) siteAnalyticsRevenueRes() {}
 type SiteAnalyticsRevenueNotFound ProblemDetails
 
 func (*SiteAnalyticsRevenueNotFound) siteAnalyticsRevenueRes() {}
+
+// The revenue of one period of Report days, in the Reporting currency.
+// Ref: #/components/schemas/SiteAnalyticsRevenuePeriod
+type SiteAnalyticsRevenuePeriod struct {
+	// The period's first Report day, `YYYY-MM-DD` in the Workspace time zone.
+	From string `json:"from"`
+	// The period's last Report day, included.
+	To string `json:"to"`
+	// Revenue over the period, in the minor unit of the Reporting currency.
+	Total int64 `json:"total"`
+	// The part of `total` credited to messages (ADR 0064): the sum of the Movements of the Orders credited
+	// to a Broadcast or an Automation, in the minor unit of the Reporting currency. `total` minus
+	// `credited` is the revenue of unattributed Orders.
+	Credited int64 `json:"credited"`
+	// Orders completed in the period, in the Reporting currency.
+	Orders int32 `json:"orders"`
+	// Orders completed in the period that are credited to a Broadcast or an Automation.
+	CreditedOrders int32 `json:"creditedOrders"`
+	// Orders completed in the period in another currency, one entry per currency ordered by its code: they
+	// are listed with the Workspace's Events but counted in no sum.
+	OtherCurrencyOrders []SiteOrdersInCurrency `json:"otherCurrencyOrders"`
+}
+
+// GetFrom returns the value of From.
+func (s *SiteAnalyticsRevenuePeriod) GetFrom() string {
+	return s.From
+}
+
+// GetTo returns the value of To.
+func (s *SiteAnalyticsRevenuePeriod) GetTo() string {
+	return s.To
+}
+
+// GetTotal returns the value of Total.
+func (s *SiteAnalyticsRevenuePeriod) GetTotal() int64 {
+	return s.Total
+}
+
+// GetCredited returns the value of Credited.
+func (s *SiteAnalyticsRevenuePeriod) GetCredited() int64 {
+	return s.Credited
+}
+
+// GetOrders returns the value of Orders.
+func (s *SiteAnalyticsRevenuePeriod) GetOrders() int32 {
+	return s.Orders
+}
+
+// GetCreditedOrders returns the value of CreditedOrders.
+func (s *SiteAnalyticsRevenuePeriod) GetCreditedOrders() int32 {
+	return s.CreditedOrders
+}
+
+// GetOtherCurrencyOrders returns the value of OtherCurrencyOrders.
+func (s *SiteAnalyticsRevenuePeriod) GetOtherCurrencyOrders() []SiteOrdersInCurrency {
+	return s.OtherCurrencyOrders
+}
+
+// SetFrom sets the value of From.
+func (s *SiteAnalyticsRevenuePeriod) SetFrom(val string) {
+	s.From = val
+}
+
+// SetTo sets the value of To.
+func (s *SiteAnalyticsRevenuePeriod) SetTo(val string) {
+	s.To = val
+}
+
+// SetTotal sets the value of Total.
+func (s *SiteAnalyticsRevenuePeriod) SetTotal(val int64) {
+	s.Total = val
+}
+
+// SetCredited sets the value of Credited.
+func (s *SiteAnalyticsRevenuePeriod) SetCredited(val int64) {
+	s.Credited = val
+}
+
+// SetOrders sets the value of Orders.
+func (s *SiteAnalyticsRevenuePeriod) SetOrders(val int32) {
+	s.Orders = val
+}
+
+// SetCreditedOrders sets the value of CreditedOrders.
+func (s *SiteAnalyticsRevenuePeriod) SetCreditedOrders(val int32) {
+	s.CreditedOrders = val
+}
+
+// SetOtherCurrencyOrders sets the value of OtherCurrencyOrders.
+func (s *SiteAnalyticsRevenuePeriod) SetOtherCurrencyOrders(val []SiteOrdersInCurrency) {
+	s.OtherCurrencyOrders = val
+}
 
 // Merged schema.
 type SiteAnalyticsRevenueRange string
@@ -19595,12 +19703,12 @@ type SiteOptionalConsentsSetUnprocessableEntity ProblemDetails
 
 func (*SiteOptionalConsentsSetUnprocessableEntity) siteOptionalConsentsSetRes() {}
 
-// Orders completed in the range in one currency other than the Reporting currency.
+// Orders completed in a period in one currency other than the Reporting currency.
 // Ref: #/components/schemas/SiteOrdersInCurrency
 type SiteOrdersInCurrency struct {
 	// The currency the Orders are in.
 	Currency CurrencyCode `json:"currency"`
-	// Orders completed in the range in that currency.
+	// Orders completed in the period in that currency.
 	Orders int32 `json:"orders"`
 }
 

@@ -97,10 +97,10 @@ func TestSiteAnalyticsRangesAndEmptyWorkspace(t *testing.T) {
 		ov, ok := res.(*siteapi.SiteAnalyticsOverview)
 		require.Truef(t, ok, "got %T", res)
 		assert.Len(t, ov.Timeseries, tc.days, string(tc.r))
-		assert.Zero(t, ov.Email.SentCount)
-		assert.Zero(t, ov.Email.OpenRate)
-		assert.Zero(t, ov.Email.ClickRate)
-		assert.Zero(t, ov.Email.ClickToOpenRate)
+		assert.Zero(t, ov.Current.Email.SentCount)
+		assert.Zero(t, ov.Current.Email.OpenRate)
+		assert.Zero(t, ov.Current.Email.ClickRate)
+		assert.Zero(t, ov.Current.Email.ClickToOpenRate)
 	}
 
 	// No range given defaults to 7 days.

@@ -2,6 +2,10 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import { handleSiteAnalyticsOverview } from '../../../generated/site/msw.gen.ts'
+import type {
+  SiteAnalyticsOverview,
+  SiteAnalyticsPeriod,
+} from '../../../generated/site/types.gen.ts'
 import { Route as emailMetricsRoute } from '../../../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
@@ -13,8 +17,9 @@ import { EmailMetricsPage } from './emailMetrics.tsx'
 const base = routeMount(emailMetricsRoute, { workspaceId: 'TestWs01' })
 const mount = { ...base, initialPath: `${base.initialPath}?range=30d` }
 
-const overview = {
-  contacts: { total: 42, active: 40, unsubscribed: 2, newInRange: 5 },
+const period: SiteAnalyticsPeriod = {
+  from: '2026-10-02',
+  to: '2026-10-31',
   sending: {
     broadcast: 100,
     automation: 0,
@@ -31,7 +36,14 @@ const overview = {
     clickRate: 0.2,
     clickToOpenRate: 0.33,
   },
+  newContacts: 5,
+}
+
+const overview: SiteAnalyticsOverview = {
+  contacts: { total: 42, active: 40, unsubscribed: 2 },
   automations: { total: 3, active: 2, runsActive: 1, runsCompleted: 9 },
+  current: period,
+  previous: { ...period, from: '2026-09-02', to: '2026-10-01' },
   timeseries: [],
 }
 
@@ -62,7 +74,7 @@ test('reads the section window from the URL', async () => {
 test('a window without sent email shows the empty state instead of the chart', async () => {
   worker.use(
     handleSiteAnalyticsOverview({
-      body: { ...overview, email: { ...overview.email, sentCount: 0 } },
+      body: { ...overview, current: { ...period, email: { ...period.email, sentCount: 0 } } },
     }),
   )
   const { screen } = await renderWithRouter(<EmailMetricsPage />, mount)
@@ -83,7 +95,7 @@ test('a workspace without contacts shows the empty hint instead of the chart', a
     handleSiteAnalyticsOverview({
       body: {
         ...overview,
-        contacts: { total: 0, active: 0, unsubscribed: 0, newInRange: 0 },
+        contacts: { total: 0, active: 0, unsubscribed: 0 },
       },
     }),
   )

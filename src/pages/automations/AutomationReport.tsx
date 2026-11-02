@@ -13,9 +13,10 @@ import type {
   SiteAutomationResults,
 } from '../../generated/site/types.gen.ts'
 import { zSiteAutomationReportPeriod } from '../../generated/site/zod.gen.ts'
+import { formatChange } from '../../utils/change.ts'
 import { formatDate } from '../../utils/datetime.ts'
 import { formatMessageRevenue } from '../../utils/messageRevenue.ts'
-import { formatChange, formatDuration } from './resultsFormat.ts'
+import { formatDuration } from './resultsFormat.ts'
 
 const PERIODS = zSiteAutomationReportPeriod.options
 

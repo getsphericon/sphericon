@@ -39,18 +39,31 @@ const (
 	Window90Days Window = 90
 )
 
-// Overview is everything the dashboard shows for one Workspace and window.
+// Overview is everything the dashboard shows for one Workspace and window: the snapshots, which
+// have no earlier period, and the figures of the window with those of the period just before it.
 type Overview struct {
 	Contacts    Contacts
-	Sending     Sending
-	Email       Email
 	Automations Automations
-	Series      []Point
+	// Current is the window ending today; Previous is as many Report days just before it
+	// (reportday.Window.Previous, the rule of the Automation report).
+	Current, Previous Period
+	// Series is the current period by Report day.
+	Series []Point
 }
 
-// Contacts is the contact breakdown: Unsubscribed is "globally non-mailable" (ADR 0001), Active the remainder.
+// Period is the figures of one period of Report days.
+type Period struct {
+	// From and To are its first and last Report day, YYYY-MM-DD.
+	From, To    string
+	Sending     Sending
+	Email       Email
+	NewContacts int
+}
+
+// Contacts is the contact breakdown now: Unsubscribed is "globally non-mailable" (ADR 0001),
+// Active the remainder.
 type Contacts struct {
-	Total, Active, Unsubscribed, NewInWindow int
+	Total, Active, Unsubscribed int
 }
 
 // Sending is the messages sent in the window by the surface that asked for them, and of all of
@@ -124,15 +137,7 @@ func (m *Module) Overview(ctx context.Context, s *ent.Scoped, w Window) (*Overvi
 	if err != nil {
 		return nil, err
 	}
-	contacts, err := contactCounts(ctx, s, days.Since)
-	if err != nil {
-		return nil, err
-	}
-	sending, err := sendingCounts(ctx, s, days.Since, days.Until)
-	if err != nil {
-		return nil, err
-	}
-	email, err := emailCounts(ctx, s, days.Since, days.Until)
+	contacts, err := contactCounts(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -140,14 +145,40 @@ func (m *Module) Overview(ctx context.Context, s *ent.Scoped, w Window) (*Overvi
 	if err != nil {
 		return nil, err
 	}
+	current, err := periodOf(ctx, s, days)
+	if err != nil {
+		return nil, err
+	}
+	prev := days.Previous()
+	previous, err := periodOf(ctx, s, prev)
+	if err != nil {
+		return nil, err
+	}
 	series, err := timeSeries(ctx, s, days)
 	if err != nil {
 		return nil, err
 	}
-	return &Overview{Contacts: contacts, Sending: sending, Email: email, Automations: automations, Series: series}, nil
+	return &Overview{Contacts: contacts, Automations: automations, Current: current, Previous: previous, Series: series}, nil
 }
 
-func contactCounts(ctx context.Context, s *ent.Scoped, since time.Time) (Contacts, error) {
+// periodOf reads the figures of the period of Report days w.
+func periodOf(ctx context.Context, s *ent.Scoped, w reportday.Window) (Period, error) {
+	sending, err := sendingCounts(ctx, s, w.Since, w.Until)
+	if err != nil {
+		return Period{}, err
+	}
+	email, err := emailCounts(ctx, s, w.Since, w.Until)
+	if err != nil {
+		return Period{}, err
+	}
+	newContacts, err := s.Contact().Query().Where(contact.CreatedAtGTE(w.Since), contact.CreatedAtLT(w.Until)).Count(ctx)
+	if err != nil {
+		return Period{}, err
+	}
+	return Period{From: w.First(), To: w.Last(), Sending: sending, Email: email, NewContacts: newContacts}, nil
+}
+
+func contactCounts(ctx context.Context, s *ent.Scoped) (Contacts, error) {
 	total, err := s.Contact().Query().Count(ctx)
 	if err != nil {
 		return Contacts{}, err
@@ -156,11 +187,7 @@ func contactCounts(ctx context.Context, s *ent.Scoped, since time.Time) (Contact
 	if err != nil {
 		return Contacts{}, err
 	}
-	fresh, err := s.Contact().Query().Where(contact.CreatedAtGTE(since)).Count(ctx)
-	if err != nil {
-		return Contacts{}, err
-	}
-	return Contacts{Total: total, Active: total - unsub, Unsubscribed: unsub, NewInWindow: fresh}, nil
+	return Contacts{Total: total, Active: total - unsub, Unsubscribed: unsub}, nil
 }
 
 // sentBetween matches the recipients whose email was sent in [since, until): the send time is

@@ -57,9 +57,15 @@ account without a shop.
   shows once it sends. The audience is an estimate: the Contacts its plan would take now (the
   Condition copied when it left draft, eligibility), counted by the same query as the plan.
 
+- **Every period figure has the previous period beside it** (#935). The overview and revenue
+  reports return `current` and `previous`, the shape of the Automation report's results: the
+  previous period is as many Report days just before the range (`reportday.Window.Previous`), read
+  by the same queries in the same request. A snapshot (the subscribed, the Automations) stays at the
+  root and has no previous period. A card shows the previous figure with the signed change, and no
+  change when the previous period had none (a count of 0, or a rate of no messages).
+
 ## Not decided here
 
-- A previous-period comparison beside each figure.
 - Per-Sending-domain Complaint and Bounce rates on the overview without the `staff` license
   (ADR 0011 puts them on the dashboard; the warning limits are the detector's configuration).
 - An item for an active Automation that cannot send.

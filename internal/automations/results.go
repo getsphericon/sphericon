@@ -169,7 +169,7 @@ func countsByDay(ctx context.Context, s *ent.Scoped, id int64, w reportday.Windo
 
 // periodResultsOf sums the days of w and reads its average duration and revenue.
 func periodResultsOf(ctx context.Context, s *ent.Scoped, id int64, w reportday.Window, byDay map[string]ResultCounts) (PeriodResults, error) {
-	out := PeriodResults{From: w.Dates[0], To: w.Dates[len(w.Dates)-1]}
+	out := PeriodResults{From: w.First(), To: w.Last()}
 	for _, day := range w.Dates {
 		out.plus(byDay[day])
 	}

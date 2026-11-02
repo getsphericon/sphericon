@@ -355,12 +355,7 @@ model SiteAutomationResultCounts {
  */
 model SiteAutomationPeriodResults {
   ...SiteAutomationResultCounts;
-
-  /** The period's first Report day, `YYYY-MM-DD` in the Workspace time zone */
-  from: string;
-
-  /** The period's last Report day, included */
-  to: string;
+  ...SiteReportPeriod;
 
   /** Mean time in whole seconds from the beginning to the end of the enrollments that ended in
    * the period, whatever their outcome; null when none ended */

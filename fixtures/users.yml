@@ -303,3 +303,11 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
+# Gotham's owner, who reads its reports (America/New_York) through the Site API.
+- id: 5611 # fixture: GothamOwnerGus
+  name: Gus
+  email: gus@gotham.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'

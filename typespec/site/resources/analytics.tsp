@@ -10,6 +10,15 @@ enum SiteAnalyticsRange {
   `90d`,
 }
 
+/** The Report days a period of a report runs over, spread into each period model */
+model SiteReportPeriod {
+  /** The period's first Report day, `YYYY-MM-DD` in the Workspace time zone */
+  from: string;
+
+  /** The period's last Report day, included */
+  to: string;
+}
+
 /** Current contact counts (point-in-time snapshot, not range-scoped) */
 model SiteAnalyticsContacts {
   /** All contacts in the workspace */
@@ -20,9 +29,6 @@ model SiteAnalyticsContacts {
 
   /** Contacts with status = unsubscribed */
   unsubscribed: int32;
-
-  /** Contacts created within the selected range */
-  newInRange: int32;
 }
 
 /**
@@ -128,14 +134,29 @@ model SiteAbuseWarning {
   rate: float64;
 }
 
-/** Workspace analytics overview powering the dashboard */
-model SiteAnalyticsOverview {
-  contacts: SiteAnalyticsContacts;
+/** The figures of one period of Report days */
+model SiteAnalyticsPeriod {
+  ...SiteReportPeriod;
   sending: SiteAnalyticsSending;
   email: SiteAnalyticsEmail;
+
+  /** Contacts created in the period */
+  newContacts: int32;
+}
+
+/** Workspace analytics overview powering the dashboard: the snapshots, and the figures of the range
+ * with those of the period just before it to compare with */
+model SiteAnalyticsOverview {
+  contacts: SiteAnalyticsContacts;
   automations: SiteAnalyticsAutomations;
 
-  /** Daily engagement series, oldest first, one point per day in the range */
+  /** The range ending today */
+  current: SiteAnalyticsPeriod;
+
+  /** As many Report days just before it */
+  previous: SiteAnalyticsPeriod;
+
+  /** Daily engagement series of the current period, oldest first, one point per day in the range */
   timeseries: SiteAnalyticsPoint[];
 }
 
@@ -295,19 +316,42 @@ model SiteRevenuePoint {
   orders: int32;
 }
 
-/** Orders completed in the range in one currency other than the Reporting currency */
+/** Orders completed in a period in one currency other than the Reporting currency */
 model SiteOrdersInCurrency {
   /** The currency the Orders are in */
   currency: CurrencyCode;
 
-  /** Orders completed in the range in that currency */
+  /** Orders completed in the period in that currency */
   orders: int32;
 }
 
+/** The revenue of one period of Report days, in the Reporting currency */
+model SiteAnalyticsRevenuePeriod {
+  ...SiteReportPeriod;
+
+  /** Revenue over the period, in the minor unit of the Reporting currency */
+  total: int64;
+
+  /** The part of `total` credited to messages (ADR 0064): the sum of the Movements of the Orders
+   * credited to a Broadcast or an Automation, in the minor unit of the Reporting currency.
+   * `total` minus `credited` is the revenue of unattributed Orders. */
+  credited: int64;
+
+  /** Orders completed in the period, in the Reporting currency */
+  orders: int32;
+
+  /** Orders completed in the period that are credited to a Broadcast or an Automation */
+  creditedOrders: int32;
+
+  /** Orders completed in the period in another currency, one entry per currency ordered by its
+   * code: they are listed with the Workspace's Events but counted in no sum */
+  otherCurrencyOrders: SiteOrdersInCurrency[];
+}
+
 /** The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
- * sum of Order Movements over the range, in the Reporting currency. Until the first Order
- * Completed sets that currency, or an Owner or Admin chooses it, `reportingCurrency` is null and
- * every figure is zero. */
+ * sum of Order Movements over the range and over the period just before it, both in the Reporting
+ * currency. Until the first Order Completed sets that currency, or an Owner or Admin chooses it,
+ * `reportingCurrency` is null and every figure is zero. */
 model SiteAnalyticsRevenue {
   /** The Reporting currency, null until the first Order or an Owner or Admin sets it */
   reportingCurrency: CurrencyCode | null;
@@ -316,25 +360,13 @@ model SiteAnalyticsRevenue {
    * while it has sent none. A Reporting currency chosen before any Order leaves it null. */
   firstOrderAt: Timestamp | null;
 
-  /** Revenue over the range, in the minor unit of the Reporting currency */
-  total: int64;
+  /** The range ending today */
+  current: SiteAnalyticsRevenuePeriod;
 
-  /** The part of `total` credited to messages (ADR 0064): the sum of the Movements of the Orders
-   * credited to a Broadcast or an Automation, in the minor unit of the Reporting currency.
-   * `total` minus `credited` is the revenue of unattributed Orders. */
-  credited: int64;
+  /** As many Report days just before it */
+  previous: SiteAnalyticsRevenuePeriod;
 
-  /** Orders completed in the range, in the Reporting currency */
-  orders: int32;
-
-  /** Orders completed in the range that are credited to a Broadcast or an Automation */
-  creditedOrders: int32;
-
-  /** Orders completed in the range in another currency, one entry per currency ordered by its
-   * code: they are listed with the Workspace's Events but counted in no sum */
-  otherCurrencyOrders: SiteOrdersInCurrency[];
-
-  /** One point per Report day in the range, oldest first, zero-filled */
+  /** One point per Report day of the current period, oldest first, zero-filled */
   series: SiteRevenuePoint[];
 }
 

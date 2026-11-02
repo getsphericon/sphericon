@@ -82,8 +82,8 @@ func TestACompletedOrderIsRevenueInTheMinorUnitOfTheReportingCurrency(t *testing
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.Equal(t, siteapi.CurrencyCode("USD"), got.ReportingCurrency.Value)
-	assert.EqualValues(t, 1999, got.Total)
-	assert.EqualValues(t, 1, got.Orders)
+	assert.EqualValues(t, 1999, got.Current.Total)
+	assert.EqualValues(t, 1, got.Current.Orders)
 	assert.Len(t, got.Series, 30, "the range is 30 Report days until another is asked for")
 	today := got.Series[len(got.Series)-1]
 	assert.EqualValues(t, 1999, today.Amount)
@@ -98,7 +98,7 @@ func TestYenAreWholeUnitsAndTheRangeCanBeSevenDays(t *testing.T) {
 	env.DeliverOrders(t)
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.NewOptSiteAnalyticsRevenueRange(siteapi.SiteAnalyticsRevenueRange7d))
-	assert.EqualValues(t, 1500, got.Total)
+	assert.EqualValues(t, 1500, got.Current.Total)
 	assert.Len(t, got.Series, 7)
 }
 
@@ -113,8 +113,8 @@ func TestARepeatOfTheSameOrderIdChangesNothing(t *testing.T) {
 	env.DeliverOrders(t) // at-least-once delivery: the whole outbox again
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
-	assert.EqualValues(t, 1000, got.Total)
-	assert.EqualValues(t, 1, got.Orders)
+	assert.EqualValues(t, 1000, got.Current.Total)
+	assert.EqualValues(t, 1, got.Current.Orders)
 }
 
 func TestRevenueIsUnsetUntilTheFirstOrderThenCountsInItsCurrency(t *testing.T) {
@@ -129,10 +129,12 @@ func TestRevenueIsUnsetUntilTheFirstOrderThenCountsInItsCurrency(t *testing.T) {
 
 	after := revenue(t, member, siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.True(t, before.ReportingCurrency.Null)
+	assert.Equal(t, []siteapi.SiteOrdersInCurrency{}, before.Current.OtherCurrencyOrders, "a list, empty, not null")
+	assert.Equal(t, []siteapi.SiteOrdersInCurrency{}, before.Previous.OtherCurrencyOrders, "a list, empty, not null")
 	assert.Equal(t, siteapi.CurrencyCode("EUR"), after.ReportingCurrency.Value, "the currency of the first Order")
-	assert.EqualValues(t, 1000, after.Total)
-	assert.EqualValues(t, 1, after.Orders)
-	assert.Equal(t, []siteapi.SiteOrdersInCurrency{{Currency: "JPY", Orders: 1}}, after.OtherCurrencyOrders)
+	assert.EqualValues(t, 1000, after.Current.Total)
+	assert.EqualValues(t, 1, after.Current.Orders)
+	assert.Equal(t, []siteapi.SiteOrdersInCurrency{{Currency: "JPY", Orders: 1}}, after.Current.OtherCurrencyOrders)
 }
 
 func TestAnOrderInAnotherCurrencyIsStoredAndCountedInNoSum(t *testing.T) {
@@ -145,9 +147,9 @@ func TestAnOrderInAnotherCurrencyIsStoredAndCountedInNoSum(t *testing.T) {
 	env.DeliverOrders(t)
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
-	assert.EqualValues(t, 1000, got.Total)
-	assert.EqualValues(t, 1, got.Orders)
-	assert.Equal(t, []siteapi.SiteOrdersInCurrency{{Currency: "JPY", Orders: 1}}, got.OtherCurrencyOrders)
+	assert.EqualValues(t, 1000, got.Current.Total)
+	assert.EqualValues(t, 1, got.Current.Orders)
+	assert.Equal(t, []siteapi.SiteOrdersInCurrency{{Currency: "JPY", Orders: 1}}, got.Current.OtherCurrencyOrders)
 	kept := env.DB.Scoped(fixtures.AcmeID).Order().Query().Where(order.OrderID("A-2")).OnlyX(t.Context())
 	assert.Equal(t, "JPY", kept.Currency)
 }
@@ -162,8 +164,8 @@ func TestAChosenCurrencyIsKeptWhateverTheFirstOrderIsIn(t *testing.T) {
 
 	got := revenue(t, owner, siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.Equal(t, siteapi.CurrencyCode("EUR"), got.ReportingCurrency.Value)
-	assert.EqualValues(t, 0, got.Total)
-	assert.Equal(t, []siteapi.SiteOrdersInCurrency{{Currency: "USD", Orders: 1}}, got.OtherCurrencyOrders)
+	assert.EqualValues(t, 0, got.Current.Total)
+	assert.Equal(t, []siteapi.SiteOrdersInCurrency{{Currency: "USD", Orders: 1}}, got.Current.OtherCurrencyOrders)
 }
 
 func TestACurrencyChosenBeforeAnyOrderLeavesFirstOrderAtNull(t *testing.T) {
@@ -194,7 +196,7 @@ func TestFirstOrderAtIsTheFirstOrderEverEvenOutsideTheRange(t *testing.T) {
 	first := time.Time(got.FirstOrderAt.Value)
 	rangeStart := time.Now().AddDate(0, 0, -90)
 	assert.True(t, first.Before(rangeStart), "the fixture Order of 200 days ago, in any currency, got %s", first)
-	assert.EqualValues(t, 0, got.Total)
+	assert.EqualValues(t, 0, got.Current.Total)
 }
 
 func TestAnOrderOfAnUnknownContactCountsAndCreatesNoContact(t *testing.T) {
@@ -207,7 +209,7 @@ func TestAnOrderOfAnUnknownContactCountsAndCreatesNoContact(t *testing.T) {
 	env.DeliverOrders(t)
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
-	assert.EqualValues(t, 725, got.Total)
+	assert.EqualValues(t, 725, got.Current.Total)
 	assert.Equal(t, 0, env.OutboxCount(t, "contact.created", map[string]any{"email": ""}), "no Contact is created")
 	guest := env.DB.Scoped(fixtures.AcmeID).Order().Query().Where(order.OrderID("G-1")).OnlyX(t.Context())
 	assert.Nil(t, guest.ContactID)
@@ -231,13 +233,12 @@ func TestErasingTheContactUnlinksItsOrdersAndTheAmountsStay(t *testing.T) {
 	gone := env.DB.Scoped(fixtures.AcmeID).Contact().Query().Where(contact.Email(fixtures.ContactAliceEmail)).ExistX(t.Context())
 	assert.False(t, gone)
 	assert.Nil(t, kept.ContactID)
-	assert.EqualValues(t, 2000, got.Total)
+	assert.EqualValues(t, 2000, got.Current.Total)
 }
 
-func TestABackfilledHistoryBuildsOrdersOnTheDaysTheyHappened(t *testing.T) {
-	env := testhelper.Setup(t)
-	chooseCurrency(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "USD")
-	old := externalapi.Timestamp(time.Now().AddDate(0, 0, -40))
+// backfillCompleted sends a backfilled Order Completed of 30.00 USD that happened at old.
+func backfillCompleted(t *testing.T, env *testhelper.TestEnv, old externalapi.Timestamp) {
+	t.Helper()
 	in := orderInput("alice", "Order Completed", map[string]string{"order_id": `"H-1"`, "total": `30.00`, "currency": `"USD"`})
 	in.OccurredAt = externalapi.NewOptNilTimestamp(old)
 
@@ -245,15 +246,40 @@ func TestABackfilledHistoryBuildsOrdersOnTheDaysTheyHappened(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.RecordEventsBatchResult{}, res)
 	env.DeliverOrders(t)
+}
+
+func TestABackfilledHistoryBuildsOrdersOnTheDaysTheyHappened(t *testing.T) {
+	env := testhelper.Setup(t)
+	chooseCurrency(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "USD")
+	old := externalapi.Timestamp(time.Now().AddDate(0, 0, -40))
+	backfillCompleted(t, env, old)
 
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	thirty := revenue(t, member, siteapi.OptSiteAnalyticsRevenueRange{})
 	ninety := revenue(t, member, siteapi.NewOptSiteAnalyticsRevenueRange(siteapi.SiteAnalyticsRevenueRange90d))
-	assert.EqualValues(t, 0, thirty.Total)
-	assert.EqualValues(t, 3000, ninety.Total)
+	assert.EqualValues(t, 0, thirty.Current.Total)
+	assert.EqualValues(t, 3000, ninety.Current.Total)
 	day, found := lo.Find(ninety.Series, func(p siteapi.SiteRevenuePoint) bool { return p.Amount != 0 })
 	require.True(t, found)
 	assert.Equal(t, time.Time(old).UTC().Format("2006-01-02"), day.Date, "UTC Workspace: the Report day is the UTC date")
+}
+
+// The previous period of 30 days is the 30 Report days before them: days 30 to 59 ago. That of 7
+// days ends 7 days ago, so an Order of 40 days ago is in neither period of 7 days.
+func TestAnOrderOfFortyDaysAgoIsInThePreviousPeriodOfThirtyDaysOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+	chooseCurrency(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "USD")
+	backfillCompleted(t, env, externalapi.Timestamp(time.Now().AddDate(0, 0, -40)))
+
+	member := env.SiteActor(t, fixtures.MemberMaryEmail)
+	thirty := revenue(t, member, siteapi.OptSiteAnalyticsRevenueRange{})
+	seven := revenue(t, member, siteapi.NewOptSiteAnalyticsRevenueRange(siteapi.SiteAnalyticsRevenueRange7d))
+
+	assert.EqualValues(t, 0, thirty.Current.Total)
+	assert.EqualValues(t, 3000, thirty.Previous.Total)
+	assert.EqualValues(t, 1, thirty.Previous.Orders)
+	assert.EqualValues(t, 0, seven.Current.Total)
+	assert.EqualValues(t, 0, seven.Previous.Total)
 }
 
 func TestAResentBackfillLoadChangesNothing(t *testing.T) {
@@ -275,8 +301,8 @@ func TestAResentBackfillLoadChangesNothing(t *testing.T) {
 	load("ce-2", "H-1") // a new Event for the same order: the order_id rule makes it a no-op
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.NewOptSiteAnalyticsRevenueRange(siteapi.SiteAnalyticsRevenueRange90d))
-	assert.EqualValues(t, 3000, got.Total)
-	assert.EqualValues(t, 1, got.Orders)
+	assert.EqualValues(t, 3000, got.Current.Total)
+	assert.EqualValues(t, 1, got.Current.Orders)
 }
 
 func TestALiveOrderEventOlderThanTheLiveWindowIsRefusedNamingBackfill(t *testing.T) {
@@ -295,7 +321,7 @@ func TestALiveOrderEventOlderThanTheLiveWindowIsRefusedNamingBackfill(t *testing
 	env.DeliverOrders(t)
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.NewOptSiteAnalyticsRevenueRange(siteapi.SiteAnalyticsRevenueRange90d))
-	assert.EqualValues(t, 0, got.Total)
+	assert.EqualValues(t, 0, got.Current.Total)
 }
 
 func TestOnlyAMemberOfTheWorkspaceReadsItsRevenue(t *testing.T) {
@@ -319,7 +345,7 @@ func TestAChangeWithoutACurrencyThatArrivesFirstIsReadInTheCurrencyOfItsOrder(t 
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.Equal(t, siteapi.CurrencyCode("JPY"), got.ReportingCurrency.Value)
-	assert.EqualValues(t, 20-5, got.Total, "the refund is read in the yen of its Order")
+	assert.EqualValues(t, 20-5, got.Current.Total, "the refund is read in the yen of its Order")
 }
 
 func TestAnOrderWithoutACurrencyIsReadInTheCurrencyOfTheOrderItChanges(t *testing.T) {
@@ -336,7 +362,7 @@ func TestAnOrderWithoutACurrencyIsReadInTheCurrencyOfTheOrderItChanges(t *testin
 
 	chooseCurrency(t, owner, "EUR")
 	got := revenue(t, owner, siteapi.OptSiteAnalyticsRevenueRange{})
-	assert.EqualValues(t, 9000, got.Total, "the refund is in the Order's euro, not in the yen of the day")
+	assert.EqualValues(t, 9000, got.Current.Total, "the refund is in the Order's euro, not in the yen of the day")
 }
 
 // orderProps2 is the properties of an order Event that names no currency.

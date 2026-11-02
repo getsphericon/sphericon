@@ -1282,6 +1282,11 @@ export default interface Resources {
         "title": "Audience"
       },
       "figuresLoadError": "Failed to load the figures of the period",
+      "previous": {
+        "30d": "Previous 30 days",
+        "7d": "Previous 7 days",
+        "90d": "Previous 90 days"
+      },
       "revenue": {
         "changeCurrency": "Change the reporting currency",
         "credited": "Credited to messages",

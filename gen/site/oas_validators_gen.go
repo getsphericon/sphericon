@@ -1815,13 +1815,24 @@ func (s *SiteAnalyticsOverview) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if err := s.Email.Validate(); err != nil {
+		if err := s.Current.Validate(); err != nil {
 			return err
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "email",
+			Name:  "current",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Previous.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "previous",
 			Error: err,
 		})
 	}
@@ -1869,6 +1880,29 @@ func (s SiteAnalyticsOwnerKind) Validate() error {
 	}
 }
 
+func (s *SiteAnalyticsPeriod) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Email.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "email",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s SiteAnalyticsRange) Validate() error {
 	switch s {
 	case "7d":
@@ -1907,30 +1941,24 @@ func (s *SiteAnalyticsRevenue) Validate() error {
 		})
 	}
 	if err := func() error {
-		if s.OtherCurrencyOrders == nil {
-			return errors.New("nil is invalid value")
-		}
-		var failures []validate.FieldError
-		for i, elem := range s.OtherCurrencyOrders {
-			if err := func() error {
-				if err := elem.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				failures = append(failures, validate.FieldError{
-					Name:  fmt.Sprintf("[%d]", i),
-					Error: err,
-				})
-			}
-		}
-		if len(failures) > 0 {
-			return &validate.Error{Fields: failures}
+		if err := s.Current.Validate(); err != nil {
+			return err
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "otherCurrencyOrders",
+			Name:  "current",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Previous.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "previous",
 			Error: err,
 		})
 	}
@@ -1963,6 +1991,46 @@ func (s *SiteAnalyticsRevenueNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (s *SiteAnalyticsRevenuePeriod) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.OtherCurrencyOrders == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.OtherCurrencyOrders {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "otherCurrencyOrders",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 	return nil
 }

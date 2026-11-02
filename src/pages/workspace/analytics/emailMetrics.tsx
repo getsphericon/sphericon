@@ -27,6 +27,8 @@ function EmailMetricsReport() {
   const overview = useSuspenseQuery(
     siteAnalyticsOverviewOptions({ path: { workspaceId }, query: { range } }),
   ).data
+  // The report shows the range itself; the period before it is the overview's to compare with.
+  const { email, newContacts } = overview.current
 
   return (
     <Stack>
@@ -37,32 +39,22 @@ function EmailMetricsReport() {
             {t(($) => $.analytics.email.rangeNote)}
           </Text>
           <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }}>
-            <StatCard label={t(($) => $.analytics.email.sent)} value={overview.email.sentCount} />
-            <StatCard
-              label={t(($) => $.analytics.email.opened)}
-              value={overview.email.openedCount}
-            />
-            <StatCard
-              label={t(($) => $.analytics.email.clicked)}
-              value={overview.email.clickedCount}
-            />
-            <StatCard
-              label={t(($) => $.analytics.email.openRate)}
-              value={overview.email.openRate}
-              percent
-            />
+            <StatCard label={t(($) => $.analytics.email.sent)} value={email.sentCount} />
+            <StatCard label={t(($) => $.analytics.email.opened)} value={email.openedCount} />
+            <StatCard label={t(($) => $.analytics.email.clicked)} value={email.clickedCount} />
+            <StatCard label={t(($) => $.analytics.email.openRate)} value={email.openRate} percent />
             <StatCard
               label={t(($) => $.analytics.email.clickRate)}
-              value={overview.email.clickRate}
+              value={email.clickRate}
               percent
             />
             <StatCard
               label={t(($) => $.analytics.email.clickToOpenRate)}
-              value={overview.email.clickToOpenRate}
+              value={email.clickToOpenRate}
               percent
             />
           </SimpleGrid>
-          {overview.email.sentCount === 0 ? (
+          {email.sentCount === 0 ? (
             <EmptyState icon={<IconChartBar />} title={t(($) => $.analytics.email.empty)} />
           ) : (
             <AreaChart
@@ -100,10 +92,7 @@ function EmailMetricsReport() {
                 label={t(($) => $.analytics.contacts.unsubscribed)}
                 value={overview.contacts.unsubscribed}
               />
-              <StatCard
-                label={t(($) => $.analytics.contacts.newInRange)}
-                value={overview.contacts.newInRange}
-              />
+              <StatCard label={t(($) => $.analytics.contacts.newInRange)} value={newContacts} />
             </SimpleGrid>
             {overview.contacts.total > 0 ? (
               <DonutChart

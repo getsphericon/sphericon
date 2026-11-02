@@ -24,6 +24,7 @@ export default defineConfig({
       'console.workspaces.review.warned',
       'customFields.types.*',
       'overview.attention.metrics.*',
+      'overview.previous.*',
       'rules.dryRunOutcome.*',
       'rules.firingStatus.*',
       'settings.members.source.*',
