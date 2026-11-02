@@ -30,17 +30,18 @@ func subjectsOf(fs *fakeSender) []string {
 	return lo.Map(fs.sent, func(m messaging.EmailMessage, _ int) string { return m.Subject })
 }
 
-// editGreeting rewrites the greeting Automation's Trigger, Steps and Integration through /api.
+// editGreeting rewrites the greeting Automation's Trigger and Steps, its email step through the
+// Mailgun relay, through /api.
 func editGreeting(t *testing.T, c *externalapi.Client) {
 	t.Helper()
 	res, err := c.AutomationsUpdate(t.Context(), &externalapi.UpdateAutomationInput{
 		TriggerEvent: externalapi.NewOptString("job_hijacked"),
 		Steps: []externalapi.AutomationStep{{
-			Type:    externalapi.AutomationStepTypeEmail,
-			Subject: externalapi.NewOptString("Hijacked"),
-			Body:    externalapi.NewOptString("<p>Hijacked</p>"),
+			Type:          externalapi.AutomationStepTypeEmail,
+			Subject:       externalapi.NewOptString("Hijacked"),
+			Body:          externalapi.NewOptString("<p>Hijacked</p>"),
+			IntegrationId: externalapi.NewOptNilEntityId(externalapi.EntityId(fixtures.IntegrationAcmeMailgunID)),
 		}},
-		IntegrationId: externalapi.NewOptNilEntityId(externalapi.EntityId(fixtures.IntegrationAcmeMailgunID)),
 	}, externalapi.AutomationsUpdateParams{ID: externalapi.EntityId(fixtures.AutomationJobsGreetingID)})
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.AutomationResource{}, res)

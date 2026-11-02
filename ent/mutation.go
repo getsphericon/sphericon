@@ -6129,31 +6129,29 @@ func (m *AutomationRunMutation) ResetEdge(name string) error {
 // AutomationVersionMutation represents an operation that mutates the AutomationVersion nodes in the graph.
 type AutomationVersionMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *int64
-	created_at         *time.Time
-	updated_at         *time.Time
-	version            *int
-	addversion         *int
-	steps              *string
-	trigger_event      *string
-	exit_events        *[]string
-	appendexit_events  []string
-	goal_event         *string
-	clearedFields      map[string]struct{}
-	workspace          *int64
-	clearedworkspace   bool
-	automation         *int64
-	clearedautomation  bool
-	runs               map[int64]struct{}
-	removedruns        map[int64]struct{}
-	clearedruns        bool
-	integration        *int64
-	clearedintegration bool
-	done               bool
-	oldValue           func(context.Context) (*AutomationVersion, error)
-	predicates         []predicate.AutomationVersion
+	op                Op
+	typ               string
+	id                *int64
+	created_at        *time.Time
+	updated_at        *time.Time
+	version           *int
+	addversion        *int
+	steps             *string
+	trigger_event     *string
+	exit_events       *[]string
+	appendexit_events []string
+	goal_event        *string
+	clearedFields     map[string]struct{}
+	workspace         *int64
+	clearedworkspace  bool
+	automation        *int64
+	clearedautomation bool
+	runs              map[int64]struct{}
+	removedruns       map[int64]struct{}
+	clearedruns       bool
+	done              bool
+	oldValue          func(context.Context) (*AutomationVersion, error)
+	predicates        []predicate.AutomationVersion
 }
 
 var _ ent.Mutation = (*AutomationVersionMutation)(nil)
@@ -6632,55 +6630,6 @@ func (m *AutomationVersionMutation) ResetGoalEvent() {
 	delete(m.clearedFields, automationversion.FieldGoalEvent)
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (m *AutomationVersionMutation) SetIntegrationID(i int64) {
-	m.integration = &i
-}
-
-// IntegrationID returns the value of the "integration_id" field in the mutation.
-func (m *AutomationVersionMutation) IntegrationID() (r int64, exists bool) {
-	v := m.integration
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIntegrationID returns the old "integration_id" field's value of the AutomationVersion entity.
-// If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationVersionMutation) OldIntegrationID(ctx context.Context) (v *int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIntegrationID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIntegrationID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIntegrationID: %w", err)
-	}
-	return oldValue.IntegrationID, nil
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (m *AutomationVersionMutation) ClearIntegrationID() {
-	m.integration = nil
-	m.clearedFields[automationversion.FieldIntegrationID] = struct{}{}
-}
-
-// IntegrationIDCleared returns if the "integration_id" field was cleared in this mutation.
-func (m *AutomationVersionMutation) IntegrationIDCleared() bool {
-	_, ok := m.clearedFields[automationversion.FieldIntegrationID]
-	return ok
-}
-
-// ResetIntegrationID resets all changes to the "integration_id" field.
-func (m *AutomationVersionMutation) ResetIntegrationID() {
-	m.integration = nil
-	delete(m.clearedFields, automationversion.FieldIntegrationID)
-}
-
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *AutomationVersionMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -6789,33 +6738,6 @@ func (m *AutomationVersionMutation) ResetRuns() {
 	m.removedruns = nil
 }
 
-// ClearIntegration clears the "integration" edge to the Integration entity.
-func (m *AutomationVersionMutation) ClearIntegration() {
-	m.clearedintegration = true
-	m.clearedFields[automationversion.FieldIntegrationID] = struct{}{}
-}
-
-// IntegrationCleared reports if the "integration" edge to the Integration entity was cleared.
-func (m *AutomationVersionMutation) IntegrationCleared() bool {
-	return m.IntegrationIDCleared() || m.clearedintegration
-}
-
-// IntegrationIDs returns the "integration" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// IntegrationID instead. It exists only for internal usage by the builders.
-func (m *AutomationVersionMutation) IntegrationIDs() (ids []int64) {
-	if id := m.integration; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetIntegration resets all changes to the "integration" edge.
-func (m *AutomationVersionMutation) ResetIntegration() {
-	m.integration = nil
-	m.clearedintegration = false
-}
-
 // Where appends a list predicates to the AutomationVersionMutation builder.
 func (m *AutomationVersionMutation) Where(ps ...predicate.AutomationVersion) {
 	m.predicates = append(m.predicates, ps...)
@@ -6850,7 +6772,7 @@ func (m *AutomationVersionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationVersionMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, automationversion.FieldCreatedAt)
 	}
@@ -6878,9 +6800,6 @@ func (m *AutomationVersionMutation) Fields() []string {
 	if m.goal_event != nil {
 		fields = append(fields, automationversion.FieldGoalEvent)
 	}
-	if m.integration != nil {
-		fields = append(fields, automationversion.FieldIntegrationID)
-	}
 	return fields
 }
 
@@ -6907,8 +6826,6 @@ func (m *AutomationVersionMutation) Field(name string) (ent.Value, bool) {
 		return m.ExitEvents()
 	case automationversion.FieldGoalEvent:
 		return m.GoalEvent()
-	case automationversion.FieldIntegrationID:
-		return m.IntegrationID()
 	}
 	return nil, false
 }
@@ -6936,8 +6853,6 @@ func (m *AutomationVersionMutation) OldField(ctx context.Context, name string) (
 		return m.OldExitEvents(ctx)
 	case automationversion.FieldGoalEvent:
 		return m.OldGoalEvent(ctx)
-	case automationversion.FieldIntegrationID:
-		return m.OldIntegrationID(ctx)
 	}
 	return nil, fmt.Errorf("unknown AutomationVersion field %s", name)
 }
@@ -7010,13 +6925,6 @@ func (m *AutomationVersionMutation) SetField(name string, value ent.Value) error
 		}
 		m.SetGoalEvent(v)
 		return nil
-	case automationversion.FieldIntegrationID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIntegrationID(v)
-		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion field %s", name)
 }
@@ -7065,9 +6973,6 @@ func (m *AutomationVersionMutation) ClearedFields() []string {
 	if m.FieldCleared(automationversion.FieldGoalEvent) {
 		fields = append(fields, automationversion.FieldGoalEvent)
 	}
-	if m.FieldCleared(automationversion.FieldIntegrationID) {
-		fields = append(fields, automationversion.FieldIntegrationID)
-	}
 	return fields
 }
 
@@ -7084,9 +6989,6 @@ func (m *AutomationVersionMutation) ClearField(name string) error {
 	switch name {
 	case automationversion.FieldGoalEvent:
 		m.ClearGoalEvent()
-		return nil
-	case automationversion.FieldIntegrationID:
-		m.ClearIntegrationID()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion nullable field %s", name)
@@ -7123,16 +7025,13 @@ func (m *AutomationVersionMutation) ResetField(name string) error {
 	case automationversion.FieldGoalEvent:
 		m.ResetGoalEvent()
 		return nil
-	case automationversion.FieldIntegrationID:
-		m.ResetIntegrationID()
-		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AutomationVersionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 3)
 	if m.workspace != nil {
 		edges = append(edges, automationversion.EdgeWorkspace)
 	}
@@ -7141,9 +7040,6 @@ func (m *AutomationVersionMutation) AddedEdges() []string {
 	}
 	if m.runs != nil {
 		edges = append(edges, automationversion.EdgeRuns)
-	}
-	if m.integration != nil {
-		edges = append(edges, automationversion.EdgeIntegration)
 	}
 	return edges
 }
@@ -7166,17 +7062,13 @@ func (m *AutomationVersionMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case automationversion.EdgeIntegration:
-		if id := m.integration; id != nil {
-			return []ent.Value{*id}
-		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AutomationVersionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 3)
 	if m.removedruns != nil {
 		edges = append(edges, automationversion.EdgeRuns)
 	}
@@ -7199,7 +7091,7 @@ func (m *AutomationVersionMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AutomationVersionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 3)
 	if m.clearedworkspace {
 		edges = append(edges, automationversion.EdgeWorkspace)
 	}
@@ -7208,9 +7100,6 @@ func (m *AutomationVersionMutation) ClearedEdges() []string {
 	}
 	if m.clearedruns {
 		edges = append(edges, automationversion.EdgeRuns)
-	}
-	if m.clearedintegration {
-		edges = append(edges, automationversion.EdgeIntegration)
 	}
 	return edges
 }
@@ -7225,8 +7114,6 @@ func (m *AutomationVersionMutation) EdgeCleared(name string) bool {
 		return m.clearedautomation
 	case automationversion.EdgeRuns:
 		return m.clearedruns
-	case automationversion.EdgeIntegration:
-		return m.clearedintegration
 	}
 	return false
 }
@@ -7240,9 +7127,6 @@ func (m *AutomationVersionMutation) ClearEdge(name string) error {
 		return nil
 	case automationversion.EdgeAutomation:
 		m.ClearAutomation()
-		return nil
-	case automationversion.EdgeIntegration:
-		m.ClearIntegration()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion unique edge %s", name)
@@ -7260,9 +7144,6 @@ func (m *AutomationVersionMutation) ResetEdge(name string) error {
 		return nil
 	case automationversion.EdgeRuns:
 		m.ResetRuns()
-		return nil
-	case automationversion.EdgeIntegration:
-		m.ResetIntegration()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion edge %s", name)

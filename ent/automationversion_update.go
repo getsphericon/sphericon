@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -128,26 +127,6 @@ func (_u *AutomationVersionUpdate) ClearGoalEvent() *AutomationVersionUpdate {
 	return _u
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (_u *AutomationVersionUpdate) SetIntegrationID(v int64) *AutomationVersionUpdate {
-	_u.mutation.SetIntegrationID(v)
-	return _u
-}
-
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (_u *AutomationVersionUpdate) SetNillableIntegrationID(v *int64) *AutomationVersionUpdate {
-	if v != nil {
-		_u.SetIntegrationID(*v)
-	}
-	return _u
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (_u *AutomationVersionUpdate) ClearIntegrationID() *AutomationVersionUpdate {
-	_u.mutation.ClearIntegrationID()
-	return _u
-}
-
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationVersionUpdate) SetWorkspace(v *Workspace) *AutomationVersionUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -171,11 +150,6 @@ func (_u *AutomationVersionUpdate) AddRuns(v ...*AutomationRun) *AutomationVersi
 		ids[i] = v[i].ID
 	}
 	return _u.AddRunIDs(ids...)
-}
-
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (_u *AutomationVersionUpdate) SetIntegration(v *Integration) *AutomationVersionUpdate {
-	return _u.SetIntegrationID(v.ID)
 }
 
 // Mutation returns the AutomationVersionMutation object of the builder.
@@ -214,12 +188,6 @@ func (_u *AutomationVersionUpdate) RemoveRuns(v ...*AutomationRun) *AutomationVe
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRunIDs(ids...)
-}
-
-// ClearIntegration clears the "integration" edge to the Integration entity.
-func (_u *AutomationVersionUpdate) ClearIntegration() *AutomationVersionUpdate {
-	_u.mutation.ClearIntegration()
-	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -413,35 +381,6 @@ func (_u *AutomationVersionUpdate) sqlSave(ctx context.Context) (_node int, err 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.IntegrationCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   automationversion.IntegrationTable,
-			Columns: []string{automationversion.IntegrationColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.IntegrationIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   automationversion.IntegrationTable,
-			Columns: []string{automationversion.IntegrationColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -558,26 +497,6 @@ func (_u *AutomationVersionUpdateOne) ClearGoalEvent() *AutomationVersionUpdateO
 	return _u
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (_u *AutomationVersionUpdateOne) SetIntegrationID(v int64) *AutomationVersionUpdateOne {
-	_u.mutation.SetIntegrationID(v)
-	return _u
-}
-
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (_u *AutomationVersionUpdateOne) SetNillableIntegrationID(v *int64) *AutomationVersionUpdateOne {
-	if v != nil {
-		_u.SetIntegrationID(*v)
-	}
-	return _u
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (_u *AutomationVersionUpdateOne) ClearIntegrationID() *AutomationVersionUpdateOne {
-	_u.mutation.ClearIntegrationID()
-	return _u
-}
-
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationVersionUpdateOne) SetWorkspace(v *Workspace) *AutomationVersionUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -601,11 +520,6 @@ func (_u *AutomationVersionUpdateOne) AddRuns(v ...*AutomationRun) *AutomationVe
 		ids[i] = v[i].ID
 	}
 	return _u.AddRunIDs(ids...)
-}
-
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (_u *AutomationVersionUpdateOne) SetIntegration(v *Integration) *AutomationVersionUpdateOne {
-	return _u.SetIntegrationID(v.ID)
 }
 
 // Mutation returns the AutomationVersionMutation object of the builder.
@@ -644,12 +558,6 @@ func (_u *AutomationVersionUpdateOne) RemoveRuns(v ...*AutomationRun) *Automatio
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRunIDs(ids...)
-}
-
-// ClearIntegration clears the "integration" edge to the Integration entity.
-func (_u *AutomationVersionUpdateOne) ClearIntegration() *AutomationVersionUpdateOne {
-	_u.mutation.ClearIntegration()
-	return _u
 }
 
 // Where appends a list predicates to the AutomationVersionUpdate builder.
@@ -866,35 +774,6 @@ func (_u *AutomationVersionUpdateOne) sqlSave(ctx context.Context) (_node *Autom
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.IntegrationCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   automationversion.IntegrationTable,
-			Columns: []string{automationversion.IntegrationColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.IntegrationIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   automationversion.IntegrationTable,
-			Columns: []string{automationversion.IntegrationColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

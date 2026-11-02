@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/samber/lo"
@@ -78,8 +79,9 @@ func automationUsers(users []externalapi.UsedBy, id int64) []externalapi.UsedBy 
 	})
 }
 
-// An active Automation with an email step uses the Integration it names, so that Integration is
-// refused an archive while it is live.
+// An active Automation with an email step through an Integration uses it, so that Integration is
+// refused an archive while it is live. Fixtures: the second email step of "Jobs emails then tag"
+// sends through the Mailgun relay.
 func TestExternalIntegrationArchiveIsRefusedWhileAnAutomationNamesIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
@@ -89,14 +91,15 @@ func TestExternalIntegrationArchiveIsRefusedWhileAnAutomationNamesIt(t *testing.
 		require.NoError(t, err)
 		return out
 	}
-	env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationJobsGreetingVersionID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
 
 	users := usersOfRefusal(t, archive(fixtures.IntegrationAcmeMailgunID))
 
-	assert.Len(t, automationUsers(users, fixtures.AutomationJobsGreetingID), 1)
+	assert.Len(t, automationUsers(users, fixtures.AutomationJobsEmailsThenTagID), 1)
+	assert.Empty(t, automationUsers(users, fixtures.AutomationJobsGreetingID), "its steps send through the default")
 }
 
-// An Automation that names an Integration no longer counts as a user of the default one.
+// An Automation whose every email step names another Integration no longer counts as a user of the
+// default one.
 func TestExternalDefaultIntegrationIsNotUsedByAnAutomationThatNamesAnother(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
@@ -108,7 +111,9 @@ func TestExternalDefaultIntegrationIsNotUsedByAnAutomationThatNamesAnother(t *te
 	}
 	require.Len(t, automationUsers(archiveDefault(), fixtures.AutomationJobsGreetingID), 1, "naming none, it uses the default")
 
-	env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationJobsGreetingVersionID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
+	env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationJobsGreetingVersionID).
+		SetSteps(fmt.Sprintf(`[{"type":"email","subject":"Hi","body":"<p>Hi</p>","integrationId":%[1]d},{"type":"wait","seconds":60},{"type":"email","subject":"Hi","body":"<p>Hi</p>","integrationId":%[1]d}]`, fixtures.IntegrationAcmeMailgunID)).
+		ExecX(ctx)
 
 	assert.Empty(t, automationUsers(archiveDefault(), fixtures.AutomationJobsGreetingID))
 }

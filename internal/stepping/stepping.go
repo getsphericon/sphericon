@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -171,7 +172,7 @@ func New(bus *events.Bus, out *outbound.Module, fence automations.Fencer, opts .
 // that step: it is erased with its Contact (ADR 0021), has left `active`, or stands elsewhere
 // than step because this job was delivered twice or a competing writer moved it. A step that
 // runs before the Enrollment's recorded resume time queues itself for that time and does
-// nothing else. An email step is one Outbound send under the Automation's Sending source
+// nothing else. A send step is one Outbound send under the Automation's Sending source
 // (ADR 0015): the module owns eligibility, the unsubscribe footer and the send record, and
 // Step only turns its Outcome into the Enrollment's next state.
 func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int) error {
@@ -237,30 +238,36 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 		// the Enrollment on through ExecuteHTTP.
 		return m.enqueue(ctx, s, RunHTTPStepArgs{RunID: run.ID, Step: step}, nil)
 
-	case automationsteps.Email:
-		return m.email(ctx, s, a, run, version, step, st)
-
 	default:
+		if _, sends := st.Type.Channel(); sends {
+			return m.send(ctx, s, a, run, automations.SendStep{Index: step, Step: st})
+		}
 		return m.fail(ctx, s, run.ID, fmt.Errorf("unknown step type %q", st.Type))
 	}
 }
 
-func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, v *ent.AutomationVersion, step int, st automationsteps.Step) error {
+// send executes a send step: one Outbound send of the step's content on its Channel, through the
+// Integration the step names (ADR 0081). Outbound send owns eligibility, the unsubscribe and the
+// send record; send only turns its Outcome into the Enrollment's next state. A Hold or a Deferral
+// asks again later at the same step, so a held Integration stops only the Enrollments standing on
+// the steps that send through it. A Skipped send moves on to the next step, the skip recorded on
+// the step's Outbound message for its report, except an unsubscribe from this Automation, which
+// exits the Enrollment.
+func (m *Module) send(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, st automations.SendStep) error {
+	content, err := st.Content()
+	if err != nil {
+		return m.fail(ctx, s, run.ID, err)
+	}
 	c, err := s.Contact().Get(ctx, run.ContactID)
 	if err != nil {
 		return err
-	}
-	// Email channel: a Contact with no email address can't receive this step. Not an opt-out:
-	// the sequence simply completes.
-	if c.Email == nil {
-		return m.complete(ctx, s, run.ID)
 	}
 	// The send is fenced against an exit (Fencer): it starts only on an Enrollment that is
 	// still active and an exit waits for it, so nothing is sent after an exit.
 	var res outbound.Result
 	err = m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		var sendErr error
-		res, sendErr = m.out.Send(ctx, s, outbound.AutomationStep(a, run, v, step, c, outbound.EmailContent{Subject: st.Subject, Body: st.Body}))
+		res, sendErr = m.out.Send(ctx, s, outbound.AutomationStep(a, run, st.Index, st.Step.IntegrationID, c, content))
 		return sendErr
 	})
 	if automations.Stale(err) {
@@ -272,22 +279,26 @@ func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 	// A Hold or a Deferral waits, unchanged, and asks again later (an Automation step cannot
 	// snooze, so it queues itself).
 	if retry := res.Retry(0); retry.Wanted {
-		return m.requeue(ctx, s, run.ID, step, m.now().Add(retry.After))
+		return m.requeue(ctx, s, run.ID, st.Index, m.now().Add(retry.After))
 	}
 	switch res.Outcome {
 	case outbound.Sent:
 		// A crash between the send and this move replays the recorded Sent on retry, so the
 		// step never sends twice.
-		return m.advance(ctx, s, run.ID, step, move{})
+		return m.advance(ctx, s, run.ID, st.Index, move{})
 	case outbound.Skipped:
-		// An ineligible destination (suppressed, or unsubscribed from this Automation or from
-		// everything) exits the Enrollment: a run never silently keeps walking steps while
-		// skipping every email.
-		return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-			return automations.ExitRun(ctx, ts, pub, run.ID, m.now())
-		}))
+		if res.Reason == eligibility.ReasonUnsubscribedSource {
+			// The Contact unsubscribed from this Automation: that exits the Enrollment, from
+			// whichever Channel it came (ADR 0081).
+			return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+				return automations.ExitRun(ctx, ts, pub, run.ID, m.now())
+			}))
+		}
+		// No Destination on the step's Channel, an opt-out from the Channel or a Suppression: the
+		// sequence goes on with its next step, so one Channel's absence never ends it.
+		return m.advance(ctx, s, run.ID, st.Index, move{})
 	default: // outbound.Failed
-		return m.fail(ctx, s, run.ID, fmt.Errorf("email step %d: %s", step, res.Reason))
+		return m.fail(ctx, s, run.ID, fmt.Errorf("%s step %d: %s", st.Step.Type, st.Index, res.Reason))
 	}
 }
 

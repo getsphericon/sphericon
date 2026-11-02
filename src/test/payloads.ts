@@ -1,4 +1,4 @@
-import type { SiteBrandKitResource } from '../generated/site/types.gen.ts'
+import type { SiteBrandKitResource, SiteIntegrationResource } from '../generated/site/types.gen.ts'
 
 // Typed building blocks for the contract-typed `{ body }` responses of the generated MSW handlers.
 
@@ -26,4 +26,35 @@ export const UNSAVED_BRAND_KIT: SiteBrandKitResource = {
   buttonRadius: 4,
   footerText: '',
   updatedAt: null,
+}
+
+// An enabled SMTP Integration of the email Channel, not the default, as the API returns it.
+export function emailIntegration(
+  id: string,
+  name: string,
+  extra: Partial<SiteIntegrationResource> = {},
+): SiteIntegrationResource {
+  return {
+    id,
+    name,
+    channel: 'email',
+    provider: 'smtp',
+    enabled: true,
+    isDefault: false,
+    maxPerSecond: null,
+    maxPerDay: null,
+    providerLimit: {
+      perSecond: { limit: null, source: null },
+      perDay: { limit: null, source: null },
+      sentLast24h: 0,
+      warnings: ['unlimited'],
+    },
+    config: { kind: 'smtp', host: 'smtp.test', port: 587, from: 'a@acme.com' },
+    preset: null,
+    params: {},
+    secretsRetiring: [],
+    hookUrl: `https://app.test/hooks/omik_${id}`,
+    ...TIMESTAMPS,
+    ...extra,
+  }
 }

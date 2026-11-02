@@ -272,7 +272,7 @@ func (m *Module) liveUsers(ctx context.Context, s *ent.Scoped, domain string) ([
 	if configured != domain {
 		return users, nil
 	}
-	automations, err := liveuse.EmailAutomations(ctx, s)
+	automations, err := liveuse.SendingAutomations(ctx, s, messaging.ChannelEmail, liveuse.AnyIntegration)
 	if err != nil {
 		return nil, err
 	}

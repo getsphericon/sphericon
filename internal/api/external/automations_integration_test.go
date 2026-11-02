@@ -12,41 +12,43 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// /api names an Automation's Integration like /site does: set on create, kept when absent on
-// update, cleared by an explicit null, refused with a 422 when it is not the Workspace's.
-func TestExternalAutomationsNameTheirIntegration(t *testing.T) {
+// emailStepVia is an email step through the Integration id names; an unset one is the default.
+func emailStepVia(id externalapi.OptNilEntityId) externalapi.AutomationStep {
+	return externalapi.AutomationStep{
+		Type: externalapi.AutomationStepTypeEmail, Subject: externalapi.NewOptString("Hi"),
+		Body: externalapi.NewOptString("<p>Hi</p>"), IntegrationId: id,
+	}
+}
+
+// /api names the Integration of each send step like /site does: saved with the step, read back on
+// it, none for the default, refused with a 422 when it is not the Workspace's (ADR 0081).
+func TestExternalAutomationStepsNameTheirIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "automations:read", "automations:write")
 	ctx := context.Background()
+	mailgun := externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationAcmeMailgunID))
 
 	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name: "Onboarding", TriggerEvent: "signup", IntegrationId: externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationAcmeMailgunID)),
+		Name: "Onboarding", TriggerEvent: "signup",
+		Steps: []externalapi.AutomationStep{emailStepVia(mailgun), emailStepVia(externalapi.OptNilEntityId{})},
 	})
 	require.NoError(t, err)
 	res, ok := created.(*externalapi.AutomationResource)
 	require.Truef(t, ok, "got %T", created)
-	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, res.Draft.Value.IntegrationId.Or(0))
-
-	renamed, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Name: externalapi.NewOptString("Renamed")},
-		externalapi.AutomationsUpdateParams{ID: res.ID})
-	require.NoError(t, err)
-	kept, ok := renamed.(*externalapi.AutomationResource)
-	require.Truef(t, ok, "got %T", renamed)
-	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, kept.Draft.Value.IntegrationId.Or(0), "an absent key keeps it")
-
-	var null externalapi.OptNilEntityId
-	null.SetToNull()
-	cleared, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{IntegrationId: null}, externalapi.AutomationsUpdateParams{ID: res.ID})
-	require.NoError(t, err)
-	got, ok := cleared.(*externalapi.AutomationResource)
-	require.Truef(t, ok, "got %T", cleared)
-	assert.Empty(t, got.Draft.Value.IntegrationId.Or(0), "an explicit null goes back to the default")
+	steps := res.Draft.Value.Steps
 
 	bad := externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationGlobexID)) // another Workspace's
-	refusedCreate, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{Name: "x", TriggerEvent: "signup", IntegrationId: bad})
+	refusedCreate, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+		Name: "x", TriggerEvent: "signup", Steps: []externalapi.AutomationStep{emailStepVia(bad)},
+	})
 	require.NoError(t, err)
+	refusedUpdate, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Steps: []externalapi.AutomationStep{emailStepVia(bad)}},
+		externalapi.AutomationsUpdateParams{ID: res.ID})
+	require.NoError(t, err)
+
+	require.Len(t, steps, 2)
+	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, steps[0].IntegrationId.Or(0), "the first step through the relay")
+	assert.False(t, steps[1].IntegrationId.Set, "the second step names none: the default")
 	assert.IsType(t, &externalapi.AutomationsCreateUnprocessableEntity{}, refusedCreate)
-	refusedUpdate, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{IntegrationId: bad}, externalapi.AutomationsUpdateParams{ID: res.ID})
-	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AutomationsUpdateUnprocessableEntity{}, refusedUpdate)
 }

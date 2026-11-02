@@ -420,6 +420,13 @@ export default interface Resources {
       "statusLabel": "Status",
       "stepApplyTag": "Apply tag",
       "stepEmail": "Send email",
+      "stepFigures": {
+        "hint": "What each send step sent and skipped, across every version. A contact skipped at a step (no address, opted out of the channel, or suppressed) moves on to the next step.",
+        "sent": "Sent",
+        "skipped": "Skipped",
+        "step": "Step",
+        "title": "Send steps"
+      },
       "stepHttp": "Call a URL",
       "stepRemoveTag": "Remove tag",
       "stepTrigger": "Trigger",

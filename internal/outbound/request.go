@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/messaging"
 )
 
 // The three Request constructors are the only code that derives a Kind, a Source, a Ref
@@ -54,22 +55,35 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 	}, nil
 }
 
-// AutomationStep is the Request for the email at index step of an Automation run, sent through the
-// Integration of the version the run stands on (ADR 0065). The Contact must have an email address.
-// Each Automation is its own unsubscribe Sending source; the unsubscribe click exits the
-// enrollment (ADR 0001). The message binds the Event the run began on as `event` (#752).
-func AutomationStep(a *ent.Automation, run *ent.AutomationRun, v *ent.AutomationVersion, step int, c *ent.Contact, content EmailContent) Request {
+// AutomationStep is the Request for the send step at index step of an Automation run: its content,
+// on the content's Channel, through the Integration the step names (nil: that Channel's default,
+// ADR 0081). The Destination is the Contact's on that Channel; a Contact with none is Skipped
+// with eligibility.ReasonNoDestination, recorded for the step like any other skip. Each Automation
+// is its own unsubscribe Sending source; the unsubscribe click exits the enrollment (ADR 0001). The
+// message binds the Event the run began on as `event` (#752).
+func AutomationStep(a *ent.Automation, run *ent.AutomationRun, step int, integrationID *int64, c *ent.Contact, content Content) Request {
 	return Request{
 		Kind:          outboundmessage.KindAutomation,
 		Key:           fmt.Sprintf("automation:%d:%d", run.ID, step),
-		Destination:   *c.Email,
+		Destination:   contactDestination(content.Channel(), c),
 		Contact:       c,
 		Source:        eligibility.AutomationSource(a.ID),
 		Content:       content,
 		Track:         true,
 		Ref:           Ref{AutomationID: a.ID, AutomationRunID: run.ID, AutomationStep: &step},
-		IntegrationID: v.IntegrationID,
+		IntegrationID: integrationID,
 		Variables:     EnrollmentVariables(run),
+	}
+}
+
+// contactDestination is the Contact's Destination on the Channel, "" when it has none: on email its
+// address.
+func contactDestination(ch messaging.Channel, c *ent.Contact) string {
+	switch ch {
+	case messaging.ChannelEmail:
+		return lo.FromPtr(c.Email)
+	default:
+		return ""
 	}
 }
 

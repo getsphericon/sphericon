@@ -22,6 +22,8 @@ type StepView struct {
 	// Headers is set, possibly empty, on an HTTP step only.
 	Headers   []HeaderName
 	HasSecret *bool
+	// IntegrationID is a send step's Integration, nil for its Channel's default.
+	IntegrationID *int64
 }
 
 // HeaderName is a header of an HTTP step without its value.
@@ -59,6 +61,7 @@ func viewOf(s *automationsteps.Step) StepView {
 			v.Headers[i] = HeaderName{Name: h.Name}
 		}
 	case automationsteps.Email:
+		v.IntegrationID = s.IntegrationID
 		v.Subject = &s.Subject
 		v.Body = &s.Body
 		if len(s.Doc) > 0 {

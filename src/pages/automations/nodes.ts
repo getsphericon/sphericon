@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { CONTACT_CHANGE_ACTIONS, ENROLLMENT_ACTIONS } from '../../utils/systemEvents.ts'
 import { HTTP_BODY_FORMAT, HTTP_HEADERS_FORMAT } from './httpFormat.ts'
+import { integrationFormat } from './integrationFormat.ts'
 import { MESSAGE_FORMAT } from './messageFormat.ts'
 import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
 
@@ -95,13 +96,19 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         label: t(($) => $.automations.stepEmail),
         description: t(($) => $.automations.emailNodeDescription),
         // `doc` is the editor's document as JSON text ('' for a step written as HTML); the
-        // message control edits it and the body together.
-        defaultPropertiesData: { subject: '', body: '', doc: '' },
+        // message control edits it and the body together. `integrationId` is the Integration the
+        // step sends through, '' for the email default (ADR 0081).
+        defaultPropertiesData: { integrationId: '', subject: '', body: '', doc: '' },
         schema: {
           type: 'object',
           required: ['subject'],
           properties: {
             ...sharedProperties,
+            integrationId: {
+              type: 'string',
+              label: t(($) => $.automations.integrationLabel),
+              format: integrationFormat('email'),
+            },
             subject: { type: 'string', label: t(($) => $.automations.emailSubjectLabel) },
             body: {
               type: 'string',
@@ -114,6 +121,12 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         uischema: {
           type: 'VerticalLayout',
           elements: [
+            {
+              type: 'Text',
+              scope: '#/properties/integrationId',
+              label: t(($) => $.automations.integrationLabel),
+              placeholder: '',
+            },
             {
               type: 'Text',
               scope: '#/properties/subject',

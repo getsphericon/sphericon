@@ -263,38 +263,53 @@ func heldBroadcasts(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, er
 // (a suspension, a Staff hold, a pending deletion) is left out: the layout shows it on every page.
 var sourceHolds = holdreason.Source()
 
-// automationsCannotSend reads the active Automations whose live version has an email step that a
-// send would hold now for a reason of its own source: whatever Send would hold, the item shows.
-// An email step has no From of its own, so the answer depends only on the Integration the live
-// version names (or the default), and the send path is asked once per Integration, not once per
-// Automation. Nothing stores when a route began to hold, so the item has no since.
+// automationsCannotSend reads the active Automations whose live version has a send step that a
+// send would hold now for a reason of its own source: whatever Send would hold, the item shows,
+// once per Automation, with the reason of its first such step. A send step has no From of its own,
+// so the answer depends only on the step's Channel and the Integration it names (or that Channel's
+// default), and the send path is asked once per such pair, not once per step. Nothing stores when
+// a route began to hold, so the item has no since.
 func (m *Module) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error) {
-	senders, err := automations.EmailSenders(ctx, s)
+	senders, err := automations.Senders(ctx, s)
 	if err != nil {
 		return nil, err
 	}
-	// The answer of each Integration choice, by its id; the default is under 0, which no row has.
-	holdOf := map[int64]string{}
+	// The answer of each Channel and Integration choice; the default is under 0, which no row has.
+	type choice struct {
+		ch          messaging.Channel
+		integration int64
+	}
+	holdOf := map[choice]string{}
 	var items []Item
 	for _, a := range senders {
-		integrationID := a.Edges.LiveVersion.IntegrationID
-		key := lo.FromPtr(integrationID)
-		hold, asked := holdOf[key]
-		if !asked {
-			// An email step's content carries no From: it sends from the Integration's sender.
-			if hold, err = m.out.Preflight(ctx, s, outbound.EmailContent{}, integrationID); err != nil {
-				return nil, err
+		steps, err := automations.SendSteps(a.Edges.LiveVersion)
+		if err != nil {
+			return nil, err
+		}
+		for i := range steps {
+			st := &steps[i]
+			key := choice{st.Channel(), lo.FromPtr(st.Step.IntegrationID)}
+			hold, asked := holdOf[key]
+			if !asked {
+				content, err := st.Content()
+				if err != nil {
+					return nil, err
+				}
+				if hold, err = m.out.Preflight(ctx, s, content, st.Step.IntegrationID); err != nil {
+					return nil, err
+				}
+				holdOf[key] = hold
 			}
-			holdOf[key] = hold
+			reason := holdreason.Reason(hold)
+			if !slices.Contains(sourceHolds, reason) {
+				continue
+			}
+			items = append(items, Item{
+				Kind: KindAutomationCannotSend, Severity: SeverityBlocked, Count: 1,
+				Subject: &Subject{ID: a.ID, Name: a.Name}, HoldReason: &reason,
+			})
+			break
 		}
-		reason := holdreason.Reason(hold)
-		if !slices.Contains(sourceHolds, reason) {
-			continue
-		}
-		items = append(items, Item{
-			Kind: KindAutomationCannotSend, Severity: SeverityBlocked, Count: 1,
-			Subject: &Subject{ID: a.ID, Name: a.Name}, HoldReason: &reason,
-		})
 	}
 	return items, nil
 }

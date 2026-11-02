@@ -18,7 +18,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/credentials"
@@ -487,14 +486,14 @@ func liveUsers(ctx context.Context, s *ent.Scoped, row *ent.Integration) ([]inus
 		return nil, err
 	}
 	users := inuse.Broadcasts(live)
-	if row.Channel != integration.ChannelEmail {
-		return users, nil
-	}
-	sendsThrough := automationversion.IntegrationID(row.ID)
-	if row.IsDefault {
-		sendsThrough = automationversion.Or(sendsThrough, automationversion.IntegrationIDIsNil())
-	}
-	sending, err := liveuse.EmailAutomations(ctx, s, sendsThrough)
+	// A send step of the Integration's Channel that names it, or names none while it is that
+	// Channel's default, sends through it (ADR 0081).
+	sending, err := liveuse.SendingAutomations(ctx, s, messaging.Channel(row.Channel), func(id *int64) bool {
+		if id == nil {
+			return row.IsDefault
+		}
+		return *id == row.ID
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -288,7 +288,6 @@ var (
 		{Name: "exit_events", Type: field.TypeJSON, Default: "[]"},
 		{Name: "goal_event", Type: field.TypeString, Nullable: true},
 		{Name: "automation_id", Type: field.TypeInt64},
-		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// AutomationVersionsTable holds the schema information for the "automation_versions" table.
@@ -304,14 +303,8 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "automation_versions_integrations_integration",
-				Columns:    []*schema.Column{AutomationVersionsColumns[9]},
-				RefColumns: []*schema.Column{IntegrationsColumns[0]},
-				OnDelete:   schema.Restrict,
-			},
-			{
 				Symbol:     "automation_versions_workspaces_automation_versions",
-				Columns:    []*schema.Column{AutomationVersionsColumns[10]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[9]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -320,7 +313,7 @@ var (
 			{
 				Name:    "automation_versions_workspace_id_automation_id_version",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationVersionsColumns[10], AutomationVersionsColumns[8], AutomationVersionsColumns[3]},
+				Columns: []*schema.Column{AutomationVersionsColumns[9], AutomationVersionsColumns[8], AutomationVersionsColumns[3]},
 			},
 			{
 				Name:    "automationversion_automation_id",
@@ -330,12 +323,7 @@ var (
 			{
 				Name:    "automationversion_workspace_id_trigger_event",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[10], AutomationVersionsColumns[5]},
-			},
-			{
-				Name:    "automationversion_integration_id",
-				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[9]},
+				Columns: []*schema.Column{AutomationVersionsColumns[9], AutomationVersionsColumns[5]},
 			},
 		},
 	}
@@ -2889,8 +2877,7 @@ func init() {
 		"automation_runs_status_check":       "status IN ('active', 'completed', 'failed', 'exited', 'goal_reached')",
 	}
 	AutomationVersionsTable.ForeignKeys[0].RefTable = AutomationsTable
-	AutomationVersionsTable.ForeignKeys[1].RefTable = IntegrationsTable
-	AutomationVersionsTable.ForeignKeys[2].RefTable = WorkspacesTable
+	AutomationVersionsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	AutomationVersionsTable.Annotation = &entsql.Annotation{
 		Table: "automation_versions",
 	}

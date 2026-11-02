@@ -126,9 +126,10 @@ func (UnimplementedHandler) AutomationsList(ctx context.Context, params Automati
 // AutomationsPublish implements Automations_publish operation.
 //
 // Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
-// draft, the live version is resumed. 422 with neither. 409 when the version going live has an email
-// step and the integration it sends through cannot send (disabled or archived, or no default): a draft
-// may name such an integration, only publishing it is refused. Needs the automations:publish scope.
+// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
+// live sends through an integration that cannot send (disabled, archived, of another channel, or no
+// default for the step's channel): a draft may name such an integration, only publishing it is
+// refused. Needs the automations:publish scope.
 //
 // POST /automations/{id}/publish
 func (UnimplementedHandler) AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (r AutomationsPublishRes, _ error) {

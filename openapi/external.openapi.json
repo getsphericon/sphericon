@@ -2013,7 +2013,7 @@
     "/automations/{id}/publish": {
       "post": {
         "operationId": "Automations_publish",
-        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when the version going live has an email step and the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only publishing it is refused. Needs the automations:publish scope.",
+        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. Needs the automations:publish scope.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -14756,7 +14756,7 @@
           "exited": {
             "type": "integer",
             "format": "int32",
-            "description": "Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event"
+            "description": "Enrollments that left early in it: an unsubscribe from the automation or an exit event. A\nskipped send (no address, an opt-out from the Channel, a suppression) moves on instead."
           },
           "failed": {
             "type": "integer",
@@ -14799,7 +14799,8 @@
           "captured",
           "revenue",
           "links",
-          "results"
+          "results",
+          "steps"
         ],
         "properties": {
           "opens": {
@@ -14854,6 +14855,13 @@
               }
             ],
             "description": "What the automation's enrollments did over the chosen period and the period before it"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationStepFigures"
+            },
+            "description": "The send steps' messages by step position, in step order: one entry per position any of the\nautomation's messages was sent from, across its versions"
           }
         },
         "description": "An automation's engagement figures over its whole history and its results over a period"
@@ -14958,7 +14966,7 @@
           "exited": {
             "type": "integer",
             "format": "int32",
-            "description": "Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event"
+            "description": "Enrollments that left early in it: an unsubscribe from the automation or an exit event. A\nskipped send (no address, an opt-out from the Channel, a suppression) moves on instead."
           },
           "failed": {
             "type": "integer",
@@ -15028,7 +15036,7 @@
           "exited": {
             "type": "integer",
             "format": "int32",
-            "description": "Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event"
+            "description": "Enrollments that left early in it: an unsubscribe from the automation or an exit event. A\nskipped send (no address, an opt-out from the Channel, a suppression) moves on instead."
           },
           "failed": {
             "type": "integer",
@@ -15115,9 +15123,41 @@
           "hasSecret": {
             "type": "boolean",
             "description": "Whether a signing secret is stored (HTTP steps, read only)"
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Integration a send step sends through (email steps), of the step's Channel; null or\nomitted is that Channel's default. Each send step names its own, so one automation may send\nthrough several (ADR 0081)."
           }
         },
         "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds, tag steps carry the tag name."
+      },
+      "AutomationStepFigures": {
+        "type": "object",
+        "required": ["step", "sent", "skipped"],
+        "properties": {
+          "step": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The step's position, 0 for the first step"
+          },
+          "sent": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the provider accepted"
+          },
+          "skipped": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages skipped: the contact had no address on the step's Channel, had opted out of it, or\nwas suppressed. The enrollment moved on to the next step."
+          }
+        },
+        "description": "The messages of the send step at one position"
       },
       "AutomationStepType": {
         "type": "string",
@@ -15148,16 +15188,6 @@
             "type": "string",
             "nullable": true,
             "description": "Event action that ends an active enrollment as goal_reached (e.g. \"payment_succeeded\"); null\nwhen there is none"
-          },
-          "integrationId": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "nullable": true,
-            "description": "Sending integration of the email steps; null means the workspace default"
           },
           "steps": {
             "type": "array",
@@ -16944,16 +16974,6 @@
             "items": {
               "$ref": "#/components/schemas/AutomationStep"
             }
-          },
-          "integrationId": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "nullable": true,
-            "description": "Sending integration of the email steps; null/omitted means the workspace default"
           }
         },
         "description": "Request body for creating an automation (always created inactive)"
@@ -20633,19 +20653,9 @@
             "items": {
               "$ref": "#/components/schemas/AutomationStep"
             }
-          },
-          "integrationId": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "nullable": true,
-            "description": "Sending integration of the email steps; null means the workspace default, omitted keeps it"
           }
         },
-        "description": "Request body for updating an automation. The name changes at once; the trigger, steps and\nintegration write the draft (ADR 0065): omitted fields keep the draft's, else the live\nversion's, and only publishing makes the draft live."
+        "description": "Request body for updating an automation. The name changes at once; the trigger, exit and\ngoal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live\nversion's, and only publishing makes the draft live."
       },
       "UpdateBroadcastInput": {
         "type": "object",

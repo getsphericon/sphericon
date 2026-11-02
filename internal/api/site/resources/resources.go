@@ -326,12 +326,12 @@ type Converter interface {
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
 	// goverter:map Steps | automationSteps
-	// goverter:map IntegrationID IntegrationId
 	AutomationVersionToResource(source *ent.AutomationVersion) siteapi.SiteAutomationVersion
 	// A step is the module's masked view: what it hides is never mapped.
 	// goverter:ignore URL
 	// goverter:ignore Secret
 	// goverter:ignore ClearSecret
+	// goverter:map IntegrationID IntegrationId
 	AutomationStepToResource(source automations.StepView) siteapi.SiteAutomationStep
 	AutomationStepsToResources(source []automations.StepView) []siteapi.SiteAutomationStep
 	// goverter:ignore Value

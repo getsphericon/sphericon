@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -112,20 +111,6 @@ func (_c *AutomationVersionCreate) SetNillableGoalEvent(v *string) *AutomationVe
 	return _c
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (_c *AutomationVersionCreate) SetIntegrationID(v int64) *AutomationVersionCreate {
-	_c.mutation.SetIntegrationID(v)
-	return _c
-}
-
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (_c *AutomationVersionCreate) SetNillableIntegrationID(v *int64) *AutomationVersionCreate {
-	if v != nil {
-		_c.SetIntegrationID(*v)
-	}
-	return _c
-}
-
 // SetID sets the "id" field.
 func (_c *AutomationVersionCreate) SetID(v int64) *AutomationVersionCreate {
 	_c.mutation.SetID(v)
@@ -155,11 +140,6 @@ func (_c *AutomationVersionCreate) AddRuns(v ...*AutomationRun) *AutomationVersi
 		ids[i] = v[i].ID
 	}
 	return _c.AddRunIDs(ids...)
-}
-
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (_c *AutomationVersionCreate) SetIntegration(v *Integration) *AutomationVersionCreate {
-	return _c.SetIntegrationID(v.ID)
 }
 
 // Mutation returns the AutomationVersionMutation object of the builder.
@@ -363,23 +343,6 @@ func (_c *AutomationVersionCreate) createSpec() (*AutomationVersion, *sqlgraph.C
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.IntegrationIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   automationversion.IntegrationTable,
-			Columns: []string{automationversion.IntegrationColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.IntegrationID = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
 	return _node, _spec
 }
 
@@ -519,24 +482,6 @@ func (u *AutomationVersionUpsert) UpdateGoalEvent() *AutomationVersionUpsert {
 // ClearGoalEvent clears the value of the "goal_event" field.
 func (u *AutomationVersionUpsert) ClearGoalEvent() *AutomationVersionUpsert {
 	u.SetNull(automationversion.FieldGoalEvent)
-	return u
-}
-
-// SetIntegrationID sets the "integration_id" field.
-func (u *AutomationVersionUpsert) SetIntegrationID(v int64) *AutomationVersionUpsert {
-	u.Set(automationversion.FieldIntegrationID, v)
-	return u
-}
-
-// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
-func (u *AutomationVersionUpsert) UpdateIntegrationID() *AutomationVersionUpsert {
-	u.SetExcluded(automationversion.FieldIntegrationID)
-	return u
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (u *AutomationVersionUpsert) ClearIntegrationID() *AutomationVersionUpsert {
-	u.SetNull(automationversion.FieldIntegrationID)
 	return u
 }
 
@@ -696,27 +641,6 @@ func (u *AutomationVersionUpsertOne) UpdateGoalEvent() *AutomationVersionUpsertO
 func (u *AutomationVersionUpsertOne) ClearGoalEvent() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.ClearGoalEvent()
-	})
-}
-
-// SetIntegrationID sets the "integration_id" field.
-func (u *AutomationVersionUpsertOne) SetIntegrationID(v int64) *AutomationVersionUpsertOne {
-	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetIntegrationID(v)
-	})
-}
-
-// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
-func (u *AutomationVersionUpsertOne) UpdateIntegrationID() *AutomationVersionUpsertOne {
-	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateIntegrationID()
-	})
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (u *AutomationVersionUpsertOne) ClearIntegrationID() *AutomationVersionUpsertOne {
-	return u.Update(func(s *AutomationVersionUpsert) {
-		s.ClearIntegrationID()
 	})
 }
 
@@ -1042,27 +966,6 @@ func (u *AutomationVersionUpsertBulk) UpdateGoalEvent() *AutomationVersionUpsert
 func (u *AutomationVersionUpsertBulk) ClearGoalEvent() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.ClearGoalEvent()
-	})
-}
-
-// SetIntegrationID sets the "integration_id" field.
-func (u *AutomationVersionUpsertBulk) SetIntegrationID(v int64) *AutomationVersionUpsertBulk {
-	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetIntegrationID(v)
-	})
-}
-
-// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
-func (u *AutomationVersionUpsertBulk) UpdateIntegrationID() *AutomationVersionUpsertBulk {
-	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateIntegrationID()
-	})
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (u *AutomationVersionUpsertBulk) ClearIntegrationID() *AutomationVersionUpsertBulk {
-	return u.Update(func(s *AutomationVersionUpsert) {
-		s.ClearIntegrationID()
 	})
 }
 

@@ -1808,22 +1808,6 @@ func (c *AutomationVersionClient) QueryRuns(_m *AutomationVersion) *AutomationRu
 	return query
 }
 
-// QueryIntegration queries the integration edge of a AutomationVersion.
-func (c *AutomationVersionClient) QueryIntegration(_m *AutomationVersion) *IntegrationQuery {
-	query := (&IntegrationClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(automationversion.Table, automationversion.FieldID, id),
-			sqlgraph.To(integration.Table, integration.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, automationversion.IntegrationTable, automationversion.IntegrationColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
 func (c *AutomationVersionClient) Hooks() []Hook {
 	return c.hooks.AutomationVersion

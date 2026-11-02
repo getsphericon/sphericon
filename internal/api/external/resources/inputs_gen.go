@@ -9,6 +9,7 @@ import (
 	external "github.com/getsphericon/sphericon/gen/external"
 	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
+	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	eventlog "github.com/getsphericon/sphericon/internal/eventlog"
@@ -50,7 +51,6 @@ func (c *InputsImpl) AutomationCreate(source *external.CreateAutomationInput) au
 		}
 		automationsCreateInput.GoalEvent = nilStringPtrIn((*source).GoalEvent)
 		automationsCreateInput.Steps = c.AutomationSteps((*source).Steps)
-		automationsCreateInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
 	return automationsCreateInput
 }
@@ -70,54 +70,55 @@ func (c *InputsImpl) AutomationReportPeriod(source external.AutomationsReportPer
 	}
 	return automationsReportPeriod
 }
-func (c *InputsImpl) AutomationStep(source external.AutomationStep) automations.Step {
-	var automationsStep automations.Step
-	automationsStep.Type = c.AutomationStepType(source.Type)
-	automationsStep.Subject = stringIn(source.Subject)
-	automationsStep.Body = stringIn(source.Body)
-	automationsStep.Doc = documentIn(source.Doc)
-	// automationsStep.EditorVersion: ignore
-	automationsStep.Seconds = int32In(source.Seconds)
-	automationsStep.Tag = stringIn(source.Tag)
-	automationsStep.ID = stringIn(source.ID)
-	automationsStep.URL = stringIn(source.URL)
+func (c *InputsImpl) AutomationStep(source external.AutomationStep) automationsteps.Step {
+	var automationstepsStep automationsteps.Step
+	automationstepsStep.Type = c.AutomationStepType(source.Type)
+	automationstepsStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
+	automationstepsStep.Subject = stringIn(source.Subject)
+	automationstepsStep.Body = stringIn(source.Body)
+	automationstepsStep.Doc = documentIn(source.Doc)
+	// automationstepsStep.EditorVersion: ignore
+	automationstepsStep.Seconds = int32In(source.Seconds)
+	automationstepsStep.Tag = stringIn(source.Tag)
+	automationstepsStep.ID = stringIn(source.ID)
+	automationstepsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		automationsStep.Headers = make([]httpcall.Header, len(source.Headers))
+		automationstepsStep.Headers = make([]httpcall.Header, len(source.Headers))
 		for i := 0; i < len(source.Headers); i++ {
-			automationsStep.Headers[i] = c.externalapiAutomationHttpHeaderToHttpcallHeader(source.Headers[i])
+			automationstepsStep.Headers[i] = c.externalapiAutomationHttpHeaderToHttpcallHeader(source.Headers[i])
 		}
 	}
-	automationsStep.Secret = stringIn(source.Secret)
-	automationsStep.ClearSecret = boolIn(source.ClearSecret)
-	return automationsStep
+	automationstepsStep.Secret = stringIn(source.Secret)
+	automationstepsStep.ClearSecret = boolIn(source.ClearSecret)
+	return automationstepsStep
 }
-func (c *InputsImpl) AutomationStepType(source external.AutomationStepType) automations.StepType {
-	var automationsStepType automations.StepType
+func (c *InputsImpl) AutomationStepType(source external.AutomationStepType) automationsteps.Kind {
+	var automationstepsKind automationsteps.Kind
 	switch source {
 	case external.AutomationStepTypeApplyTag:
-		automationsStepType = automations.StepApplyTag
+		automationstepsKind = automationsteps.ApplyTag
 	case external.AutomationStepTypeEmail:
-		automationsStepType = automations.StepEmail
+		automationstepsKind = automationsteps.Email
 	case external.AutomationStepTypeHTTP:
-		automationsStepType = automations.StepHTTP
+		automationstepsKind = automationsteps.HTTP
 	case external.AutomationStepTypeRemoveTag:
-		automationsStepType = automations.StepRemoveTag
+		automationstepsKind = automationsteps.RemoveTag
 	case external.AutomationStepTypeWait:
-		automationsStepType = automations.StepWait
+		automationstepsKind = automationsteps.Wait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return automationsStepType
+	return automationstepsKind
 }
-func (c *InputsImpl) AutomationSteps(source []external.AutomationStep) []automations.Step {
-	var automationsStepList []automations.Step
+func (c *InputsImpl) AutomationSteps(source []external.AutomationStep) []automationsteps.Step {
+	var automationstepsStepList []automationsteps.Step
 	if source != nil {
-		automationsStepList = make([]automations.Step, len(source))
+		automationstepsStepList = make([]automationsteps.Step, len(source))
 		for i := 0; i < len(source); i++ {
-			automationsStepList[i] = c.AutomationStep(source[i])
+			automationstepsStepList[i] = c.AutomationStep(source[i])
 		}
 	}
-	return automationsStepList
+	return automationstepsStepList
 }
 func (c *InputsImpl) AutomationUpdate(source *external.UpdateAutomationInput) automations.UpdateInput {
 	var automationsUpdateInput automations.UpdateInput
@@ -127,7 +128,6 @@ func (c *InputsImpl) AutomationUpdate(source *external.UpdateAutomationInput) au
 		automationsUpdateInput.ExitEvents = listPtrIn((*source).ExitEvents)
 		automationsUpdateInput.GoalEvent = nilStringPatch((*source).GoalEvent)
 		automationsUpdateInput.Steps = automationStepsPtrIn(c, (*source).Steps)
-		automationsUpdateInput.IntegrationID = nilEntityIDPatch((*source).IntegrationId)
 	}
 	return automationsUpdateInput
 }
@@ -233,6 +233,14 @@ func (c *InputsImpl) ContactUpserts(source []external.UpsertContactInput) []cont
 		}
 	}
 	return contactsUpsertInputList
+}
+func (c *InputsImpl) CustomFieldUpdate(source *external.UpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
+	var contactsCustomFieldUpdateInput contacts.CustomFieldUpdateInput
+	if source != nil {
+		contactsCustomFieldUpdateInput.Name = stringPatch((*source).Name)
+		contactsCustomFieldUpdateInput.Type = customFieldTypePatch((*source).Type)
+	}
+	return contactsCustomFieldUpdateInput
 }
 func (c *InputsImpl) EmailBroadcastContentIn(source external.EmailBroadcastContentInput) broadcasts.EmailContentInput {
 	var broadcastsEmailContentInput broadcasts.EmailContentInput

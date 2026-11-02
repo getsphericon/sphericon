@@ -390,8 +390,8 @@ recipient points at its Outbound message; it does not replace it.
 _Avoid_: Send log, delivery row, email record
 
 **Outcome** (of an Outbound send):
-Either **per-recipient** and final for that destination — _Sent_, _Skipped_ (Suppression,
-Unsubscribe, or missing Confirmation), or a permanent failure of that one message — or
+Either **per-recipient** and final for that destination — _Sent_, _Skipped_ (no Destination on the
+Channel, Suppression, Unsubscribe, or missing Confirmation), or a permanent failure of that one message — or
 **per-source** and reversible: a **Hold** (Workspace suspension, Staff hold, an unverified
 Sending domain, no Integration, a provider that refuses the customer's account or credentials, or
 a WhatsApp template Meta has paused or disabled) or a **Deferral** (the Integration's Provider
@@ -624,8 +624,8 @@ erased Workspace leaves)
 A workspace-scoped, **outbound** connection to a sending provider, external or built in (the Test
 inbox, web push), for exactly **one Channel**: an account that sends SMS and WhatsApp is two
 Integrations. It holds encrypted credentials where the provider has any, and there is at most one
-default per (workspace, channel). Broadcasts and Automations send _through_ an Integration (the
-workspace default when unspecified), by its Send route. Sending is one half of a loop: bounces and complaints come
+default per (workspace, channel). A Broadcast and each Automation send step send _through_ an
+Integration (its Channel's default when unspecified), by its Send route. Sending is one half of a loop: bounces and complaints come
 back via the Integration's Ingest hook and land in Suppression.
 A **Telegram** Integration is the Workspace's own bot on the `telegram` Channel: its credential is
 the bot token, and it keeps the bot's id and @username as Telegram reported them. Saving it

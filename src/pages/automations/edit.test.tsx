@@ -119,7 +119,6 @@ test('saving from the builder sends the edited name, the trigger and the canvas 
           { type: 'wait', seconds: 60 },
           { type: 'apply_tag', tag: 'vip' },
         ],
-        integrationId: null,
       },
     ])
   await expect.element(screen.getByText('Automation updated')).toBeInTheDocument()
@@ -189,7 +188,6 @@ test('saving an email step written in the editor sends its document and no body'
         exitEvents: [],
         goalEvent: null,
         steps: [{ type: 'email', subject: 'Hi', doc: AUTHORED_DOC }],
-        integrationId: null,
       },
     ])
 })

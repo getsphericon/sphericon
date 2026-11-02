@@ -95,11 +95,6 @@ func GoalEvent(v string) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldGoalEvent, v))
 }
 
-// IntegrationID applies equality check predicate on the "integration_id" field. It's identical to IntegrationIDEQ.
-func IntegrationID(v int64) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldEQ(FieldIntegrationID, v))
-}
-
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldCreatedAt, v))
@@ -465,36 +460,6 @@ func GoalEventContainsFold(v string) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldContainsFold(FieldGoalEvent, v))
 }
 
-// IntegrationIDEQ applies the EQ predicate on the "integration_id" field.
-func IntegrationIDEQ(v int64) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldEQ(FieldIntegrationID, v))
-}
-
-// IntegrationIDNEQ applies the NEQ predicate on the "integration_id" field.
-func IntegrationIDNEQ(v int64) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldNEQ(FieldIntegrationID, v))
-}
-
-// IntegrationIDIn applies the In predicate on the "integration_id" field.
-func IntegrationIDIn(vs ...int64) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldIn(FieldIntegrationID, vs...))
-}
-
-// IntegrationIDNotIn applies the NotIn predicate on the "integration_id" field.
-func IntegrationIDNotIn(vs ...int64) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldNotIn(FieldIntegrationID, vs...))
-}
-
-// IntegrationIDIsNil applies the IsNil predicate on the "integration_id" field.
-func IntegrationIDIsNil() predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldIsNull(FieldIntegrationID))
-}
-
-// IntegrationIDNotNil applies the NotNil predicate on the "integration_id" field.
-func IntegrationIDNotNil() predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldNotNull(FieldIntegrationID))
-}
-
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.
 func HasWorkspace() predicate.AutomationVersion {
 	return predicate.AutomationVersion(func(s *sql.Selector) {
@@ -556,29 +521,6 @@ func HasRuns() predicate.AutomationVersion {
 func HasRunsWith(preds ...predicate.AutomationRun) predicate.AutomationVersion {
 	return predicate.AutomationVersion(func(s *sql.Selector) {
 		step := newRunsStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasIntegration applies the HasEdge predicate on the "integration" edge.
-func HasIntegration() predicate.AutomationVersion {
-	return predicate.AutomationVersion(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, IntegrationTable, IntegrationColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasIntegrationWith applies the HasEdge predicate on the "integration" edge with a given conditions (other predicates).
-func HasIntegrationWith(preds ...predicate.Integration) predicate.AutomationVersion {
-	return predicate.AutomationVersion(func(s *sql.Selector) {
-		step := newIntegrationStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

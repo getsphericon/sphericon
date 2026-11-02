@@ -36,8 +36,10 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 		SetKind(req.Kind).
 		SetIdempotencyKey(req.Key).
 		SetChannel(onChannel).
-		SetDestination(dest).
 		SetClaimedAt(m.claimTime())
+	if dest != "" {
+		create.SetDestination(dest)
+	}
 	if m.tracker != nil {
 		create.SetAppOrigin(m.tracker.Origin())
 	}

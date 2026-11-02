@@ -73,6 +73,7 @@ function stepProperties(step: AutomationStep): Record<string, unknown> {
     return { tag: step.tag ?? '' }
   }
   return {
+    integrationId: step.integrationId ?? '',
     subject: step.subject ?? '',
     body: step.body ?? '',
     doc: step.doc ? z.encode(docCodec, step.doc) : '',
@@ -212,12 +213,15 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
   }
   if (node.data.type === EMAIL_NODE_TYPE) {
     // A message written in the editor is saved as its document alone (the server builds the
-    // body; sending both is a 422), and one written as HTML as its body alone.
+    // body; sending both is a 422), and one written as HTML as its body alone. A step that names
+    // no Integration ('') leaves it out: it sends through the email default.
     const subject = asText(props.subject)
+    const integrationId = asText(props.integrationId)
+    const via = integrationId === '' ? {} : { integrationId }
     const doc = docCodec.safeParse(asText(props.doc))
     return doc.success
-      ? { type: 'email', subject, doc: doc.data }
-      : { type: 'email', subject, body: asText(props.body) }
+      ? { type: 'email', ...via, subject, doc: doc.data }
+      : { type: 'email', ...via, subject, body: asText(props.body) }
   }
   return null
 }

@@ -899,6 +899,15 @@ export const zSiteAutomationResultsPoint = z.object({
 export const zSiteAutomationStatus = z.enum(['active', 'inactive']);
 
 /**
+ * The messages of the send step at one position
+ */
+export const zSiteAutomationStepFigures = z.object({
+  step: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  sent: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skipped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * Kind of automation step
  */
 export const zSiteAutomationStepType = z.enum([
@@ -926,7 +935,8 @@ export const zSiteAutomationStep = z.object({
   headers: z.exactOptional(z.array(zSiteAutomationHttpHeader).max(5)),
   secret: z.exactOptional(z.string()),
   clearSecret: z.exactOptional(z.boolean()),
-  hasSecret: z.exactOptional(z.boolean())
+  hasSecret: z.exactOptional(z.boolean()),
+  integrationId: z.exactOptional(zEntityId.nullable())
 });
 
 /**
@@ -937,7 +947,6 @@ export const zSiteAutomationVersion = z.object({
   triggerEvent: z.string(),
   exitEvents: z.array(z.string()),
   goalEvent: z.string().nullable(),
-  integrationId: z.exactOptional(zEntityId.nullable()),
   steps: z.array(zSiteAutomationStep)
 });
 
@@ -1112,8 +1121,7 @@ export const zSiteCreateAutomationInput = z.object({
   triggerEvent: z.string(),
   exitEvents: z.exactOptional(z.array(z.string())),
   goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(z.array(zSiteAutomationStep)),
-  integrationId: z.exactOptional(zEntityId.nullable())
+  steps: z.exactOptional(z.array(zSiteAutomationStep))
 });
 
 /**
@@ -1423,7 +1431,8 @@ export const zSiteAutomationReport = z.object({
   captured: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   revenue: zSiteMessageRevenue,
   links: z.array(zSiteLinkClicks),
-  results: zSiteAutomationResults
+  results: zSiteAutomationResults,
+  steps: z.array(zSiteAutomationStepFigures)
 });
 
 /**
@@ -2249,8 +2258,8 @@ export const zSiteTransactionalEmailStatus = z.enum([
 ]);
 
 /**
- * Site request body for updating an automation. The name changes at once; the trigger, steps
- * and integration write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * Site request body for updating an automation. The name changes at once; the trigger, exit and
+ * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
  * version's, and publishing makes the draft live.
  */
 export const zSiteUpdateAutomationInput = z.object({
@@ -2258,8 +2267,7 @@ export const zSiteUpdateAutomationInput = z.object({
   triggerEvent: z.exactOptional(z.string()),
   exitEvents: z.exactOptional(z.array(z.string())),
   goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(z.array(zSiteAutomationStep)),
-  integrationId: z.exactOptional(zEntityId.nullable())
+  steps: z.exactOptional(z.array(zSiteAutomationStep))
 });
 
 /**

@@ -1,4 +1,4 @@
-import { Group, SegmentedControl, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Group, SegmentedControl, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,6 +11,7 @@ import type {
   SiteAutomationReport,
   SiteAutomationReportPeriod,
   SiteAutomationResults,
+  SiteAutomationStepFigures,
 } from '../../generated/site/types.gen.ts'
 import { zSiteAutomationReportPeriod } from '../../generated/site/zod.gen.ts'
 import { formatChange } from '../../utils/change.ts'
@@ -110,6 +111,45 @@ function ResultsFigures({ results }: { results: SiteAutomationResults }) {
   )
 }
 
+// What each send step sent and skipped, by its position: a skipped send moves the Enrollment on
+// (ADR 0081), so this is where a step that missed people shows. Renders nothing before any send.
+function StepFigures({ steps }: { steps: SiteAutomationStepFigures[] }) {
+  const { t } = useTranslation()
+
+  if (steps.length === 0) {
+    return null
+  }
+
+  return (
+    <Stack gap="xs">
+      <Title order={5}>{t(($) => $.automations.stepFigures.title)}</Title>
+      <Text size="sm" c="dimmed">
+        {t(($) => $.automations.stepFigures.hint)}
+      </Text>
+      <Table.ScrollContainer minWidth={320}>
+        <Table>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>{t(($) => $.automations.stepFigures.step)}</Table.Th>
+              <Table.Th>{t(($) => $.automations.stepFigures.sent)}</Table.Th>
+              <Table.Th>{t(($) => $.automations.stepFigures.skipped)}</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {steps.map((figures) => (
+              <Table.Tr key={figures.step}>
+                <Table.Td>{figures.step + 1}</Table.Td>
+                <Table.Td>{figures.sent}</Table.Td>
+                <Table.Td>{figures.skipped}</Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+    </Stack>
+  )
+}
+
 // How the emails of an Automation were engaged with over its whole history.
 function Engagement({ report }: { report: SiteAutomationReport }) {
   const { t } = useTranslation()
@@ -186,6 +226,7 @@ export function AutomationReport({
         )}
         {report && !reportQuery.isPlaceholderData && <ResultsFigures results={report.results} />}
       </Stack>
+      {report && <StepFigures steps={report.steps} />}
       {report && <Engagement report={report} />}
     </Stack>
   )

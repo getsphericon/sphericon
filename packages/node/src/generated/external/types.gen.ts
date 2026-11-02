@@ -328,7 +328,8 @@ export type AutomationPeriodResults = {
    */
   goalReached: number;
   /**
-   * Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event
+   * Enrollments that left early in it: an unsubscribe from the automation or an exit event. A
+   * skipped send (no address, an opt-out from the Channel, a suppression) moves on instead.
    */
   exited: number;
   /**
@@ -395,6 +396,11 @@ export type AutomationReport = {
    * What the automation's enrollments did over the chosen period and the period before it
    */
   results: AutomationResults;
+  /**
+   * The send steps' messages by step position, in step order: one entry per position any of the
+   * automation's messages was sent from, across its versions
+   */
+  steps: Array<AutomationStepFigures>;
 };
 
 /**
@@ -469,7 +475,8 @@ export type AutomationResultCounts = {
    */
   goalReached: number;
   /**
-   * Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event
+   * Enrollments that left early in it: an unsubscribe from the automation or an exit event. A
+   * skipped send (no address, an opt-out from the Channel, a suppression) moves on instead.
    */
   exited: number;
   /**
@@ -518,7 +525,8 @@ export type AutomationResultsPoint = {
    */
   goalReached: number;
   /**
-   * Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event
+   * Enrollments that left early in it: an unsubscribe from the automation or an exit event. A
+   * skipped send (no address, an opt-out from the Channel, a suppression) moves on instead.
    */
   exited: number;
   /**
@@ -601,6 +609,31 @@ export type AutomationStep = {
    * Whether a signing secret is stored (HTTP steps, read only)
    */
   hasSecret?: boolean;
+  /**
+   * The Integration a send step sends through (email steps), of the step's Channel; null or
+   * omitted is that Channel's default. Each send step names its own, so one automation may send
+   * through several (ADR 0081).
+   */
+  integrationId?: EntityId | null;
+};
+
+/**
+ * The messages of the send step at one position
+ */
+export type AutomationStepFigures = {
+  /**
+   * The step's position, 0 for the first step
+   */
+  step: number;
+  /**
+   * Messages the provider accepted
+   */
+  sent: number;
+  /**
+   * Messages skipped: the contact had no address on the step's Channel, had opted out of it, or
+   * was suppressed. The enrollment moved on to the next step.
+   */
+  skipped: number;
 };
 
 /**
@@ -641,10 +674,6 @@ export type AutomationVersion = {
    * when there is none
    */
   goalEvent: string | null;
-  /**
-   * Sending integration of the email steps; null means the workspace default
-   */
-  integrationId?: EntityId | null;
   /**
    * The ordered, linear steps
    */
@@ -1835,10 +1864,6 @@ export type CreateAutomationInput = {
    */
   goalEvent?: string | null;
   steps?: Array<AutomationStep>;
-  /**
-   * Sending integration of the email steps; null/omitted means the workspace default
-   */
-  integrationId?: EntityId | null;
 };
 
 /**
@@ -4398,8 +4423,8 @@ export type UnsubscribeResource = {
 };
 
 /**
- * Request body for updating an automation. The name changes at once; the trigger, steps and
- * integration write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * Request body for updating an automation. The name changes at once; the trigger, exit and
+ * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
  * version's, and only publishing makes the draft live.
  */
 export type UpdateAutomationInput = {
@@ -4414,10 +4439,6 @@ export type UpdateAutomationInput = {
    */
   goalEvent?: string | null;
   steps?: Array<AutomationStep>;
-  /**
-   * Sending integration of the email steps; null means the workspace default, omitted keeps it
-   */
-  integrationId?: EntityId | null;
 };
 
 /**

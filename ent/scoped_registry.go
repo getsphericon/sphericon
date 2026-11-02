@@ -414,9 +414,6 @@ func ScopedEntities() []ScopedEntity {
 				if src.GoalEvent != nil {
 					b.SetGoalEvent(*src.GoalEvent)
 				}
-				if src.IntegrationID != nil {
-					b.SetIntegrationID(remap("Integration", *src.IntegrationID))
-				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -434,12 +431,6 @@ func ScopedEntities() []ScopedEntity {
 					Name: "runs", Target: "AutomationRun",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.AutomationVersion().UpdateOneID(id).AddRunIDs(target).Exec(ctx)
-					},
-				},
-				{
-					Name: "integration", Target: "Integration",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.AutomationVersion().UpdateOneID(id).SetIntegrationID(target).Exec(ctx)
 					},
 				},
 			},

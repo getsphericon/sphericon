@@ -1529,7 +1529,8 @@ type AutomationPeriodResults struct {
 	Completed int32 `json:"completed"`
 	// Enrollments that ended in it because their goal event was recorded.
 	GoalReached int32 `json:"goalReached"`
-	// Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event.
+	// Enrollments that left early in it: an unsubscribe from the automation or an exit event. A skipped
+	// send (no address, an opt-out from the Channel, a suppression) moves on instead.
 	Exited int32 `json:"exited"`
 	// Enrollments that ended in it on a step that failed.
 	Failed int32 `json:"failed"`
@@ -1659,6 +1660,9 @@ type AutomationReport struct {
 	Links []LinkClicks `json:"links"`
 	// What the automation's enrollments did over the chosen period and the period before it.
 	Results AutomationResults `json:"results"`
+	// The send steps' messages by step position, in step order: one entry per position any of the
+	// automation's messages was sent from, across its versions.
+	Steps []AutomationStepFigures `json:"steps"`
 }
 
 // GetOpens returns the value of Opens.
@@ -1706,6 +1710,11 @@ func (s *AutomationReport) GetResults() AutomationResults {
 	return s.Results
 }
 
+// GetSteps returns the value of Steps.
+func (s *AutomationReport) GetSteps() []AutomationStepFigures {
+	return s.Steps
+}
+
 // SetOpens sets the value of Opens.
 func (s *AutomationReport) SetOpens(val int32) {
 	s.Opens = val
@@ -1749,6 +1758,11 @@ func (s *AutomationReport) SetLinks(val []LinkClicks) {
 // SetResults sets the value of Results.
 func (s *AutomationReport) SetResults(val AutomationResults) {
 	s.Results = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *AutomationReport) SetSteps(val []AutomationStepFigures) {
+	s.Steps = val
 }
 
 func (*AutomationReport) automationsReportRes() {}
@@ -1986,7 +2000,8 @@ type AutomationResultsPoint struct {
 	Completed int32 `json:"completed"`
 	// Enrollments that ended in it because their goal event was recorded.
 	GoalReached int32 `json:"goalReached"`
-	// Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event.
+	// Enrollments that left early in it: an unsubscribe from the automation or an exit event. A skipped
+	// send (no address, an opt-out from the Channel, a suppression) moves on instead.
 	Exited int32 `json:"exited"`
 	// Enrollments that ended in it on a step that failed.
 	Failed int32 `json:"failed"`
@@ -2135,6 +2150,10 @@ type AutomationStep struct {
 	ClearSecret OptBool `json:"clearSecret"`
 	// Whether a signing secret is stored (HTTP steps, read only).
 	HasSecret OptBool `json:"hasSecret"`
+	// The Integration a send step sends through (email steps), of the step's Channel; null or omitted is
+	// that Channel's default. Each send step names its own, so one automation may send through several
+	// (ADR 0081).
+	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetType returns the value of Type.
@@ -2202,6 +2221,11 @@ func (s *AutomationStep) GetHasSecret() OptBool {
 	return s.HasSecret
 }
 
+// GetIntegrationId returns the value of IntegrationId.
+func (s *AutomationStep) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
 // SetType sets the value of Type.
 func (s *AutomationStep) SetType(val AutomationStepType) {
 	s.Type = val
@@ -2265,6 +2289,53 @@ func (s *AutomationStep) SetClearSecret(val OptBool) {
 // SetHasSecret sets the value of HasSecret.
 func (s *AutomationStep) SetHasSecret(val OptBool) {
 	s.HasSecret = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *AutomationStep) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+// The messages of the send step at one position.
+// Ref: #/components/schemas/AutomationStepFigures
+type AutomationStepFigures struct {
+	// The step's position, 0 for the first step.
+	Step int32 `json:"step"`
+	// Messages the provider accepted.
+	Sent int32 `json:"sent"`
+	// Messages skipped: the contact had no address on the step's Channel, had opted out of it, or was
+	// suppressed. The enrollment moved on to the next step.
+	Skipped int32 `json:"skipped"`
+}
+
+// GetStep returns the value of Step.
+func (s *AutomationStepFigures) GetStep() int32 {
+	return s.Step
+}
+
+// GetSent returns the value of Sent.
+func (s *AutomationStepFigures) GetSent() int32 {
+	return s.Sent
+}
+
+// GetSkipped returns the value of Skipped.
+func (s *AutomationStepFigures) GetSkipped() int32 {
+	return s.Skipped
+}
+
+// SetStep sets the value of Step.
+func (s *AutomationStepFigures) SetStep(val int32) {
+	s.Step = val
+}
+
+// SetSent sets the value of Sent.
+func (s *AutomationStepFigures) SetSent(val int32) {
+	s.Sent = val
+}
+
+// SetSkipped sets the value of Skipped.
+func (s *AutomationStepFigures) SetSkipped(val int32) {
+	s.Skipped = val
 }
 
 // Kind of automation step.
@@ -2344,8 +2415,6 @@ type AutomationVersion struct {
 	// Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null when
 	// there is none.
 	GoalEvent NilString `json:"goalEvent"`
-	// Sending integration of the email steps; null means the workspace default.
-	IntegrationId OptNilEntityId `json:"integrationId"`
 	// The ordered, linear steps.
 	Steps []AutomationStep `json:"steps"`
 }
@@ -2368,11 +2437,6 @@ func (s *AutomationVersion) GetExitEvents() []string {
 // GetGoalEvent returns the value of GoalEvent.
 func (s *AutomationVersion) GetGoalEvent() NilString {
 	return s.GoalEvent
-}
-
-// GetIntegrationId returns the value of IntegrationId.
-func (s *AutomationVersion) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
 }
 
 // GetSteps returns the value of Steps.
@@ -2398,11 +2462,6 @@ func (s *AutomationVersion) SetExitEvents(val []string) {
 // SetGoalEvent sets the value of GoalEvent.
 func (s *AutomationVersion) SetGoalEvent(val NilString) {
 	s.GoalEvent = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *AutomationVersion) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
 }
 
 // SetSteps sets the value of Steps.
@@ -7196,8 +7255,6 @@ type CreateAutomationInput struct {
 	// exit event. Null or omitted is none.
 	GoalEvent OptNilString     `json:"goalEvent"`
 	Steps     []AutomationStep `json:"steps"`
-	// Sending integration of the email steps; null/omitted means the workspace default.
-	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetName returns the value of Name.
@@ -7225,11 +7282,6 @@ func (s *CreateAutomationInput) GetSteps() []AutomationStep {
 	return s.Steps
 }
 
-// GetIntegrationId returns the value of IntegrationId.
-func (s *CreateAutomationInput) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
-}
-
 // SetName sets the value of Name.
 func (s *CreateAutomationInput) SetName(val string) {
 	s.Name = val
@@ -7253,11 +7305,6 @@ func (s *CreateAutomationInput) SetGoalEvent(val OptNilString) {
 // SetSteps sets the value of Steps.
 func (s *CreateAutomationInput) SetSteps(val []AutomationStep) {
 	s.Steps = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *CreateAutomationInput) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
 }
 
 // Request body for creating a broadcast.
@@ -18799,8 +18846,8 @@ type UnsubscribesCreateUnprocessableEntity ProblemDetails
 
 func (*UnsubscribesCreateUnprocessableEntity) unsubscribesCreateRes() {}
 
-// Request body for updating an automation. The name changes at once; the trigger, steps and
-// integration write the draft (ADR 0065): omitted fields keep the draft's, else the live version's,
+// Request body for updating an automation. The name changes at once; the trigger, exit and goal events
+// and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live version's,
 // and only publishing makes the draft live.
 // Ref: #/components/schemas/UpdateAutomationInput
 type UpdateAutomationInput struct {
@@ -18811,8 +18858,6 @@ type UpdateAutomationInput struct {
 	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
 	GoalEvent OptNilString     `json:"goalEvent"`
 	Steps     []AutomationStep `json:"steps"`
-	// Sending integration of the email steps; null means the workspace default, omitted keeps it.
-	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetName returns the value of Name.
@@ -18840,11 +18885,6 @@ func (s *UpdateAutomationInput) GetSteps() []AutomationStep {
 	return s.Steps
 }
 
-// GetIntegrationId returns the value of IntegrationId.
-func (s *UpdateAutomationInput) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
-}
-
 // SetName sets the value of Name.
 func (s *UpdateAutomationInput) SetName(val OptString) {
 	s.Name = val
@@ -18868,11 +18908,6 @@ func (s *UpdateAutomationInput) SetGoalEvent(val OptNilString) {
 // SetSteps sets the value of Steps.
 func (s *UpdateAutomationInput) SetSteps(val []AutomationStep) {
 	s.Steps = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *UpdateAutomationInput) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
 }
 
 // Request body for updating a draft broadcast: an omitted field keeps its value, null clears it.

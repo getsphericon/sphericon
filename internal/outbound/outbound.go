@@ -305,7 +305,8 @@ type Request struct {
 
 	// Destination is where the message goes on its Channel (on email the address). Contact, when
 	// the destination resolves to one, supplies merge tags and attribution; ContactID alone
-	// attributes only.
+	// attributes only. A send to a Contact may leave it empty when the Contact has no Destination
+	// on the Channel: the send is then Skipped with eligibility.ReasonNoDestination.
 	Destination string
 	Contact     *ent.Contact
 	ContactID   int64
@@ -349,7 +350,7 @@ func (r Request) validate() error {
 		return errors.New("outbound: idempotency key required")
 	case r.Content == nil:
 		return errors.New("outbound: content required")
-	case suppression.NormalizeDestination(r.Destination) == "":
+	case suppression.NormalizeDestination(r.Destination) == "" && r.Contact == nil:
 		return errors.New("outbound: destination required")
 	}
 	return nil
@@ -409,6 +410,12 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	}
 	if replay != nil {
 		return *replay, nil
+	}
+
+	// A Contact with no Destination on the Channel has nothing to send to: a Skipped, recorded on
+	// the claimed message like an opt-out, after the holds as eligibility is (ADR 0079, 0081).
+	if dest == "" {
+		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, eligibility.ReasonNoDestination)
 	}
 
 	// Send-eligibility on the Channel, per message at send time, fail-closed: if the check

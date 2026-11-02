@@ -4783,18 +4783,6 @@ func (x *AutomationVersionScopedCreate) SetNillableGoalEvent(v *string) *Automat
 	return x
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (x *AutomationVersionScopedCreate) SetIntegrationID(v int64) *AutomationVersionScopedCreate {
-	x.b.SetIntegrationID(v)
-	return x
-}
-
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (x *AutomationVersionScopedCreate) SetNillableIntegrationID(v *int64) *AutomationVersionScopedCreate {
-	x.b.SetNillableIntegrationID(v)
-	return x
-}
-
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedCreate) SetAutomation(v *Automation) *AutomationVersionScopedCreate {
 	x.b.SetAutomation(v)
@@ -4813,12 +4801,6 @@ func (x *AutomationVersionScopedCreate) AddRuns(v ...*AutomationRun) *Automation
 	return x
 }
 
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (x *AutomationVersionScopedCreate) SetIntegration(v *Integration) *AutomationVersionScopedCreate {
-	x.b.SetIntegration(v)
-	return x
-}
-
 func (x *AutomationVersionScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -4827,9 +4809,6 @@ func (x *AutomationVersionScopedCreate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
-	}
-	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
-		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }
@@ -4965,18 +4944,6 @@ func (u *AutomationVersionScopedUpsert) UpdateGoalEvent() *AutomationVersionScop
 // ClearGoalEvent clears the value of the "goal_event" field.
 func (u *AutomationVersionScopedUpsert) ClearGoalEvent() *AutomationVersionScopedUpsert {
 	u.u.SetNull(automationversion.FieldGoalEvent)
-	return u
-}
-
-// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
-func (u *AutomationVersionScopedUpsert) UpdateIntegrationID() *AutomationVersionScopedUpsert {
-	u.u.SetExcluded(automationversion.FieldIntegrationID)
-	return u
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (u *AutomationVersionScopedUpsert) ClearIntegrationID() *AutomationVersionScopedUpsert {
-	u.u.SetNull(automationversion.FieldIntegrationID)
 	return u
 }
 
@@ -5198,24 +5165,6 @@ func (x *AutomationVersionScopedUpdateOne) ClearGoalEvent() *AutomationVersionSc
 	return x
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (x *AutomationVersionScopedUpdateOne) SetIntegrationID(v int64) *AutomationVersionScopedUpdateOne {
-	x.b.SetIntegrationID(v)
-	return x
-}
-
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdateOne) SetNillableIntegrationID(v *int64) *AutomationVersionScopedUpdateOne {
-	x.b.SetNillableIntegrationID(v)
-	return x
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (x *AutomationVersionScopedUpdateOne) ClearIntegrationID() *AutomationVersionScopedUpdateOne {
-	x.b.ClearIntegrationID()
-	return x
-}
-
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdateOne) SetAutomation(v *Automation) *AutomationVersionScopedUpdateOne {
 	x.b.SetAutomation(v)
@@ -5258,18 +5207,6 @@ func (x *AutomationVersionScopedUpdateOne) RemoveRuns(v ...*AutomationRun) *Auto
 	return x
 }
 
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (x *AutomationVersionScopedUpdateOne) SetIntegration(v *Integration) *AutomationVersionScopedUpdateOne {
-	x.b.SetIntegration(v)
-	return x
-}
-
-// ClearIntegration clears the "integration" edge to the Integration entity.
-func (x *AutomationVersionScopedUpdateOne) ClearIntegration() *AutomationVersionScopedUpdateOne {
-	x.b.ClearIntegration()
-	return x
-}
-
 func (x *AutomationVersionScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -5278,9 +5215,6 @@ func (x *AutomationVersionScopedUpdateOne) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
-	}
-	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
-		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }
@@ -5407,24 +5341,6 @@ func (x *AutomationVersionScopedUpdate) ClearGoalEvent() *AutomationVersionScope
 	return x
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (x *AutomationVersionScopedUpdate) SetIntegrationID(v int64) *AutomationVersionScopedUpdate {
-	x.b.SetIntegrationID(v)
-	return x
-}
-
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdate) SetNillableIntegrationID(v *int64) *AutomationVersionScopedUpdate {
-	x.b.SetNillableIntegrationID(v)
-	return x
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (x *AutomationVersionScopedUpdate) ClearIntegrationID() *AutomationVersionScopedUpdate {
-	x.b.ClearIntegrationID()
-	return x
-}
-
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdate) SetAutomation(v *Automation) *AutomationVersionScopedUpdate {
 	x.b.SetAutomation(v)
@@ -5467,18 +5383,6 @@ func (x *AutomationVersionScopedUpdate) RemoveRuns(v ...*AutomationRun) *Automat
 	return x
 }
 
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (x *AutomationVersionScopedUpdate) SetIntegration(v *Integration) *AutomationVersionScopedUpdate {
-	x.b.SetIntegration(v)
-	return x
-}
-
-// ClearIntegration clears the "integration" edge to the Integration entity.
-func (x *AutomationVersionScopedUpdate) ClearIntegration() *AutomationVersionScopedUpdate {
-	x.b.ClearIntegration()
-	return x
-}
-
 func (x *AutomationVersionScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -5487,9 +5391,6 @@ func (x *AutomationVersionScopedUpdate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
-	}
-	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
-		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }

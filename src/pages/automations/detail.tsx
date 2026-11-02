@@ -26,10 +26,10 @@ import { withPage } from '../../searchSchemas.ts'
 import { AutomationReport } from './AutomationReport.tsx'
 import { automationDraftActions } from './draftActions.ts'
 
-// The Integration a version sends through, by name (its id until the name loads).
+// The Integration a send step sends through, by name (its id until the name loads).
 function IntegrationName({ workspaceId, id }: { workspaceId: string; id: string }) {
   const query = useQuery(siteIntegrationsGetOptions({ path: { workspaceId, id } }))
-  return <Text size="sm">{query.data?.name ?? id}</Text>
+  return query.data?.name ?? id
 }
 
 // A step by its kind, with the subject of an email or the Tag of a tag step.
@@ -45,8 +45,8 @@ function stepLabel(t: TFunction, step: SiteAutomationStep): string {
   return detail ? `${kind}: ${detail}` : kind
 }
 
-// What the live version does: its number, its Trigger, its exit and goal events, its Integration
-// and its steps in order. The editor shows the draft when there is one, so this is where the live
+// What the live version does: its number, its Trigger, its exit and goal events and its steps in
+// order, a send step with the Integration it names (none: its Channel's default). The editor shows the draft when there is one, so this is where the live
 // version is read (ADR 0065).
 function AutomationVersionSummary({
   workspaceId,
@@ -89,21 +89,17 @@ function AutomationVersionSummary({
       </Group>
       <Group gap="xs">
         <Text size="sm" c="dimmed">
-          {t(($) => $.automations.integrationLabel)}
-        </Text>
-        {version.integrationId ? (
-          <IntegrationName workspaceId={workspaceId} id={version.integrationId} />
-        ) : (
-          <Text size="sm">{t(($) => $.automations.integrationDefault)}</Text>
-        )}
-      </Group>
-      <Group gap="xs">
-        <Text size="sm" c="dimmed">
           {t(($) => $.automations.stepsLabel)}
         </Text>
         {version.steps.map((step, index) => (
           <Badge key={index} variant="light">
             {stepLabel(t, step)}
+            {step.integrationId ? (
+              <>
+                {' · '}
+                <IntegrationName workspaceId={workspaceId} id={step.integrationId} />
+              </>
+            ) : null}
           </Badge>
         ))}
       </Group>

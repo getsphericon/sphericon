@@ -9,8 +9,9 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
-// AutomationVersion is one copy of an Automation's definition: its Trigger, exit and goal events,
-// Integration and steps (ADR 0049, ADR 0065, GLOSSARY: Automation version). The Automation points at its live version
+// AutomationVersion is one copy of an Automation's definition: its Trigger, exit and goal events
+// and steps (ADR 0049, ADR 0065, GLOSSARY: Automation version). Each send step names its own
+// Integration inside the steps (ADR 0081). The Automation points at its live version
 // and at its draft, the one version above live. An Enrollment begins on the live version and
 // stays on it; only the draft is rewritten in place, and nothing ever stands on it. The name,
 // status and archiving stay on the Automation.
@@ -36,8 +37,9 @@ func (AutomationVersion) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// JSON array of steps: [{"type":"email","subject":..,"body":<html>},
-		// {"type":"wait","seconds":N}]. Sensitive: HTTP steps carry sealed URL, header
+		// JSON array of steps: [{"type":"email","subject":..,"body":<html>,"integrationId":N},
+		// {"type":"wait","seconds":N}]. A send step's integrationId is the Integration it sends
+		// through, absent for its Channel's default (ADR 0081). Sensitive: HTTP steps carry sealed URL, header
 		// values and secret (ADR 0039). The version is not audited itself: the Automation's own
 		// entries say it was archived or restored.
 		field.String("steps").
@@ -54,22 +56,12 @@ func (AutomationVersion) Fields() []ent.Field {
 		field.String("goal_event").
 			Optional().
 			Nillable(),
-		// The email Integration the steps send through; nil is the Workspace default.
-		field.Int64("integration_id").
-			Optional().
-			Nillable(),
 	}
 }
 
 func (AutomationVersion) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("runs", AutomationRun.Type),
-		// An Integration is discarded, never deleted (ADR 0049), so the reference always
-		// resolves. Only Workspace erasure purges it, after the versions.
-		edge.To("integration", Integration.Type).
-			Field("integration_id").
-			Unique().
-			Annotations(entsql.OnDelete(entsql.Restrict)),
 	}
 }
 
@@ -77,6 +69,5 @@ func (AutomationVersion) Indexes() []ent.Index {
 	return []ent.Index{
 		// Trigger lookup: the live versions for a given event action.
 		index.Fields("workspace_id", "trigger_event"),
-		index.Fields("integration_id"),
 	}
 }

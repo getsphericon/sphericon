@@ -11546,7 +11546,8 @@ type SiteAutomationPeriodResults struct {
 	Completed int32 `json:"completed"`
 	// Enrollments that ended in it because their goal event was recorded.
 	GoalReached int32 `json:"goalReached"`
-	// Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event.
+	// Enrollments that left early in it: an unsubscribe from the automation or an exit event. A skipped
+	// send (no address, an opt-out from the Channel, a suppression) moves on instead.
 	Exited int32 `json:"exited"`
 	// Enrollments that ended in it on a step that failed.
 	Failed int32 `json:"failed"`
@@ -11676,6 +11677,9 @@ type SiteAutomationReport struct {
 	Links []SiteLinkClicks `json:"links"`
 	// What the automation's enrollments did over the chosen period and the period before it.
 	Results SiteAutomationResults `json:"results"`
+	// The send steps' messages by step position, in step order: one entry per position any of the
+	// automation's messages was sent from, across its versions.
+	Steps []SiteAutomationStepFigures `json:"steps"`
 }
 
 // GetOpens returns the value of Opens.
@@ -11723,6 +11727,11 @@ func (s *SiteAutomationReport) GetResults() SiteAutomationResults {
 	return s.Results
 }
 
+// GetSteps returns the value of Steps.
+func (s *SiteAutomationReport) GetSteps() []SiteAutomationStepFigures {
+	return s.Steps
+}
+
 // SetOpens sets the value of Opens.
 func (s *SiteAutomationReport) SetOpens(val int32) {
 	s.Opens = val
@@ -11766,6 +11775,11 @@ func (s *SiteAutomationReport) SetLinks(val []SiteLinkClicks) {
 // SetResults sets the value of Results.
 func (s *SiteAutomationReport) SetResults(val SiteAutomationResults) {
 	s.Results = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *SiteAutomationReport) SetSteps(val []SiteAutomationStepFigures) {
+	s.Steps = val
 }
 
 func (*SiteAutomationReport) siteAutomationReportsGetRes() {}
@@ -12078,7 +12092,8 @@ type SiteAutomationResultsPoint struct {
 	Completed int32 `json:"completed"`
 	// Enrollments that ended in it because their goal event was recorded.
 	GoalReached int32 `json:"goalReached"`
-	// Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event.
+	// Enrollments that left early in it: an unsubscribe from the automation or an exit event. A skipped
+	// send (no address, an opt-out from the Channel, a suppression) moves on instead.
 	Exited int32 `json:"exited"`
 	// Enrollments that ended in it on a step that failed.
 	Failed int32 `json:"failed"`
@@ -12227,6 +12242,10 @@ type SiteAutomationStep struct {
 	ClearSecret OptBool `json:"clearSecret"`
 	// Whether a signing secret is stored (HTTP steps, read only).
 	HasSecret OptBool `json:"hasSecret"`
+	// The Integration a send step sends through (email steps), of the step's Channel; null or omitted is
+	// that Channel's default. Each send step names its own, so one automation may send through several
+	// (ADR 0081).
+	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetType returns the value of Type.
@@ -12294,6 +12313,11 @@ func (s *SiteAutomationStep) GetHasSecret() OptBool {
 	return s.HasSecret
 }
 
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SiteAutomationStep) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
 // SetType sets the value of Type.
 func (s *SiteAutomationStep) SetType(val SiteAutomationStepType) {
 	s.Type = val
@@ -12357,6 +12381,53 @@ func (s *SiteAutomationStep) SetClearSecret(val OptBool) {
 // SetHasSecret sets the value of HasSecret.
 func (s *SiteAutomationStep) SetHasSecret(val OptBool) {
 	s.HasSecret = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SiteAutomationStep) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+// The messages of the send step at one position.
+// Ref: #/components/schemas/SiteAutomationStepFigures
+type SiteAutomationStepFigures struct {
+	// The step's position, 0 for the first step.
+	Step int32 `json:"step"`
+	// Messages the provider accepted.
+	Sent int32 `json:"sent"`
+	// Messages skipped: the contact had no address on the step's Channel, had opted out of it, or was
+	// suppressed. The enrollment moved on to the next step.
+	Skipped int32 `json:"skipped"`
+}
+
+// GetStep returns the value of Step.
+func (s *SiteAutomationStepFigures) GetStep() int32 {
+	return s.Step
+}
+
+// GetSent returns the value of Sent.
+func (s *SiteAutomationStepFigures) GetSent() int32 {
+	return s.Sent
+}
+
+// GetSkipped returns the value of Skipped.
+func (s *SiteAutomationStepFigures) GetSkipped() int32 {
+	return s.Skipped
+}
+
+// SetStep sets the value of Step.
+func (s *SiteAutomationStepFigures) SetStep(val int32) {
+	s.Step = val
+}
+
+// SetSent sets the value of Sent.
+func (s *SiteAutomationStepFigures) SetSent(val int32) {
+	s.Sent = val
+}
+
+// SetSkipped sets the value of Skipped.
+func (s *SiteAutomationStepFigures) SetSkipped(val int32) {
+	s.Skipped = val
 }
 
 // Kind of automation step.
@@ -12436,8 +12507,6 @@ type SiteAutomationVersion struct {
 	// Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null when
 	// there is none.
 	GoalEvent NilString `json:"goalEvent"`
-	// Sending integration of the email steps; null means the workspace default.
-	IntegrationId OptNilEntityId `json:"integrationId"`
 	// The ordered, linear steps.
 	Steps []SiteAutomationStep `json:"steps"`
 }
@@ -12460,11 +12529,6 @@ func (s *SiteAutomationVersion) GetExitEvents() []string {
 // GetGoalEvent returns the value of GoalEvent.
 func (s *SiteAutomationVersion) GetGoalEvent() NilString {
 	return s.GoalEvent
-}
-
-// GetIntegrationId returns the value of IntegrationId.
-func (s *SiteAutomationVersion) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
 }
 
 // GetSteps returns the value of Steps.
@@ -12490,11 +12554,6 @@ func (s *SiteAutomationVersion) SetExitEvents(val []string) {
 // SetGoalEvent sets the value of GoalEvent.
 func (s *SiteAutomationVersion) SetGoalEvent(val NilString) {
 	s.GoalEvent = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *SiteAutomationVersion) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
 }
 
 // SetSteps sets the value of Steps.
@@ -15992,8 +16051,6 @@ type SiteCreateAutomationInput struct {
 	// exit event. Null or omitted is none.
 	GoalEvent OptNilString         `json:"goalEvent"`
 	Steps     []SiteAutomationStep `json:"steps"`
-	// Sending integration of the email steps; null/omitted means the workspace default.
-	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetName returns the value of Name.
@@ -16021,11 +16078,6 @@ func (s *SiteCreateAutomationInput) GetSteps() []SiteAutomationStep {
 	return s.Steps
 }
 
-// GetIntegrationId returns the value of IntegrationId.
-func (s *SiteCreateAutomationInput) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
-}
-
 // SetName sets the value of Name.
 func (s *SiteCreateAutomationInput) SetName(val string) {
 	s.Name = val
@@ -16049,11 +16101,6 @@ func (s *SiteCreateAutomationInput) SetGoalEvent(val OptNilString) {
 // SetSteps sets the value of Steps.
 func (s *SiteCreateAutomationInput) SetSteps(val []SiteAutomationStep) {
 	s.Steps = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *SiteCreateAutomationInput) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
 }
 
 // Site request body for creating a contact: the attributes /api takes, and its tags. The app's contact
@@ -26834,9 +26881,9 @@ type SiteTransactionalEmailsListUnprocessableEntity ProblemDetails
 
 func (*SiteTransactionalEmailsListUnprocessableEntity) siteTransactionalEmailsListRes() {}
 
-// Site request body for updating an automation. The name changes at once; the trigger, steps and
-// integration write the draft (ADR 0065): omitted fields keep the draft's, else the live version's,
-// and publishing makes the draft live.
+// Site request body for updating an automation. The name changes at once; the trigger, exit and goal
+// events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
+// version's, and publishing makes the draft live.
 // Ref: #/components/schemas/SiteUpdateAutomationInput
 type SiteUpdateAutomationInput struct {
 	Name         OptString `json:"name"`
@@ -26846,8 +26893,6 @@ type SiteUpdateAutomationInput struct {
 	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
 	GoalEvent OptNilString         `json:"goalEvent"`
 	Steps     []SiteAutomationStep `json:"steps"`
-	// Sending integration of the email steps; null means the workspace default, omitted keeps it.
-	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetName returns the value of Name.
@@ -26875,11 +26920,6 @@ func (s *SiteUpdateAutomationInput) GetSteps() []SiteAutomationStep {
 	return s.Steps
 }
 
-// GetIntegrationId returns the value of IntegrationId.
-func (s *SiteUpdateAutomationInput) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
-}
-
 // SetName sets the value of Name.
 func (s *SiteUpdateAutomationInput) SetName(val OptString) {
 	s.Name = val
@@ -26903,11 +26943,6 @@ func (s *SiteUpdateAutomationInput) SetGoalEvent(val OptNilString) {
 // SetSteps sets the value of Steps.
 func (s *SiteUpdateAutomationInput) SetSteps(val []SiteAutomationStep) {
 	s.Steps = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *SiteUpdateAutomationInput) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
 }
 
 // Site request body for updating a contact: the attributes /api takes, and its tag set. The app's

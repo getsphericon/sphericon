@@ -348,6 +348,12 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) si
 	siteapiSiteAutomationReport.Revenue = c.MessageRevenueToResource(source.Revenue)
 	siteapiSiteAutomationReport.Links = c.LinkClicksToResource(source.Links)
 	siteapiSiteAutomationReport.Results = c.AutomationResultsToResource(source.Results)
+	if source.Steps != nil {
+		siteapiSiteAutomationReport.Steps = make([]site.SiteAutomationStepFigures, len(source.Steps))
+		for i := 0; i < len(source.Steps); i++ {
+			siteapiSiteAutomationReport.Steps[i] = c.automationsStepFiguresToSiteapiSiteAutomationStepFigures(source.Steps[i])
+		}
+	}
 	return siteapiSiteAutomationReport
 }
 func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) site.SiteAutomationResultsPoint {
@@ -406,6 +412,7 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) si
 	// siteapiSiteAutomationStep.Secret: ignore
 	// siteapiSiteAutomationStep.ClearSecret: ignore
 	siteapiSiteAutomationStep.HasSecret = optBool(source.HasSecret)
+	siteapiSiteAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
 	return siteapiSiteAutomationStep
 }
 func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) site.SiteAutomationStepType {
@@ -463,7 +470,6 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 			}
 		}
 		siteapiSiteAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
-		siteapiSiteAutomationVersion.IntegrationId = optNilEntityID((*source).IntegrationID)
 		siteapiSiteAutomationVersion.Steps = automationSteps(c, (*source).Steps)
 	}
 	return siteapiSiteAutomationVersion
@@ -2436,6 +2442,13 @@ func (c *ConverterImpl) attentionItemToSiteapiSiteAttentionItem(source attention
 	siteapiSiteAttentionItem.Abuse = optAbuseWarning(c, source.Abuse)
 	siteapiSiteAttentionItem.EstimatedCompletionAt = optNilTimestamp(source.EstimatedCompletionAt)
 	return siteapiSiteAttentionItem
+}
+func (c *ConverterImpl) automationsStepFiguresToSiteapiSiteAutomationStepFigures(source automations.StepFigures) site.SiteAutomationStepFigures {
+	var siteapiSiteAutomationStepFigures site.SiteAutomationStepFigures
+	siteapiSiteAutomationStepFigures.Step = count(source.Step)
+	siteapiSiteAutomationStepFigures.Sent = count(source.Sent)
+	siteapiSiteAutomationStepFigures.Skipped = count(source.Skipped)
+	return siteapiSiteAutomationStepFigures
 }
 func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclicks.Clicks) site.SiteLinkClicks {
 	var siteapiSiteLinkClicks site.SiteLinkClicks

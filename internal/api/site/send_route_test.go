@@ -14,16 +14,19 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// An edit may name a disabled Integration; publishing the Automation arms its email step, so it is
-// a 409 while the Integration cannot send.
-func TestSiteAutomationPublishIsAConflictWhileItsIntegrationCannotSend(t *testing.T) {
+// An edit's step may name a disabled Integration; publishing the Automation arms every send step,
+// so it is a 409 while any step's Integration cannot send, though the other step's can.
+func TestSiteAutomationPublishIsAConflictWhileAStepsIntegrationCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	id := idStr(fixtures.AutomationHoldDemoID)
 	edited, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
-		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeSesID)),
+		Steps: []siteapi.SiteAutomationStep{
+			siteEmailStepVia(siteapi.OptNilEntityId{}),
+			siteEmailStepVia(siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeSesID))),
+		},
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
 	_, ok := edited.(*siteapi.SiteAutomationResource)

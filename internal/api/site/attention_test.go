@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -387,13 +388,15 @@ func cannotSendOf(items []siteapi.SiteAttentionItem, id int64) (siteapi.SiteAtte
 }
 
 // Fixtures: the Hold demo is active and its live version is one email step on the Workspace
-// default; this test moves it to Integration A, then archives A.
-func TestAnActiveAutomationWhoseIntegrationIsArchivedCannotSend(t *testing.T) {
+// default; this test adds a second email step through Integration A, then archives A: one held
+// step is enough.
+func TestAnActiveAutomationWithAStepWhoseIntegrationIsArchivedCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	member := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	require.NoError(t, acme.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
-		SetIntegrationID(fixtures.IntegrationAcmeGenericAID).Exec(t.Context()))
+		SetSteps(fmt.Sprintf(`[{"type":"email","subject":"Hi","body":"<p>Hi</p>"},{"type":"email","subject":"Hi","body":"<p>Hi</p>","integrationId":%d}]`, fixtures.IntegrationAcmeGenericAID)).
+		Exec(t.Context()))
 	_, before := cannotSendOf(attentionOf(t, member, fixtures.AcmePublicID), fixtures.AutomationHoldDemoID)
 	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeGenericAID).
 		SetDiscardedAt(time.Now()).Exec(t.Context()))

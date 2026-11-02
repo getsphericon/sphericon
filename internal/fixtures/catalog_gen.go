@@ -105,6 +105,12 @@ const (
 	AutomationJobsEditableName = "Jobs editable"
 	// AutomationJobsEditableVersionID is from fixtures/automation_versions.
 	AutomationJobsEditableVersionID = 5564
+	// AutomationJobsEmailsThenTagID is from fixtures/automations.
+	AutomationJobsEmailsThenTagID = 5568
+	// AutomationJobsEmailsThenTagName is from fixtures/automations.
+	AutomationJobsEmailsThenTagName = "Jobs emails then tag"
+	// AutomationJobsEmailsThenTagVersionID is from fixtures/automation_versions.
+	AutomationJobsEmailsThenTagVersionID = 5568
 	// AutomationJobsEmptyVersionID is from fixtures/automation_versions.
 	AutomationJobsEmptyVersionID = 55633
 	// AutomationJobsGreetingID is from fixtures/automations.

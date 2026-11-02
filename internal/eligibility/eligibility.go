@@ -46,6 +46,10 @@ const (
 	ReasonUnsubscribedEverything = "unsubscribed_everything"
 	ReasonUnsubscribedSource     = "unsubscribed_source"
 	ReasonUnconfirmed            = "unconfirmed"
+	// ReasonNoDestination: the Contact has no Destination on the Channel (no email address, no
+	// Binding), so there is nothing to send to. The Outbound send records it as a Skipped like an
+	// opt-out (ADR 0081).
+	ReasonNoDestination = "no_destination"
 )
 
 // Decision is the outcome of a single eligibility Check.

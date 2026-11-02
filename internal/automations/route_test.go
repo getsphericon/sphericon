@@ -12,19 +12,22 @@ import (
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// A draft may name a disabled Integration, but Publish arms the email step, so it is refused while
-// the Send route cannot send: the live version and the status stay as they were.
-func TestPublishIsRefusedWhileTheDraftsIntegrationCannotSend(t *testing.T) {
+// A draft's step may name a disabled Integration, but Publish arms every send step, so it is
+// refused while the Send route of any of them cannot send, though the other steps' routes can: the
+// live version and the status stay as they were.
+func TestPublishIsRefusedWhileAnyStepsIntegrationCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 
-	edited, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeSesID)})
+	ses := int64(fixtures.IntegrationAcmeSesID)
+	edited, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+		Steps: &[]automationsteps.Step{emailVia(nil), {Type: automationsteps.Wait, Seconds: 60}, emailVia(&ses)},
+	})
 	require.NoError(t, err, "a draft may name a disabled Integration")
 	_, draft := automations.LiveAndDraft(edited)
 	require.NotNil(t, draft)
@@ -46,7 +49,8 @@ func TestResumingAnAutomationIsRefusedOnceItsIntegrationCannotSend(t *testing.T)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
-	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeMailgunID)})
+	mailgun := int64(fixtures.IntegrationAcmeMailgunID)
+	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationsteps.Step{emailVia(&mailgun)}})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, fixtures.AutomationHoldDemoID)
 	require.NoError(t, err, "the Integration can send when it is published")
@@ -61,16 +65,15 @@ func TestResumingAnAutomationIsRefusedOnceItsIntegrationCannotSend(t *testing.T)
 	assert.Equal(t, automation.StatusInactive, status)
 }
 
-// An Automation with no email step sends through no Integration, so a route that cannot send does
-// not stop its Publish.
-func TestPublishWithoutAnEmailStepDoesNotAskTheRoute(t *testing.T) {
+// An Automation with no send step sends through no Integration, so no route is asked and nothing
+// stops its Publish.
+func TestPublishWithoutASendStepDoesNotAskTheRoute(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
-		IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeSesID),
-		Steps:         &[]automationsteps.Step{{Type: automationsteps.Wait, Seconds: 60}},
+		Steps: &[]automationsteps.Step{{Type: automationsteps.Wait, Seconds: 60}},
 	})
 	require.NoError(t, err)
 

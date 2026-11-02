@@ -1738,9 +1738,10 @@ export const siteAutomationsDeactivate = <ThrowOnError extends boolean = false>(
 
 /**
  * Publish an automation: the draft becomes live and the automation active, enrolling contacts;
- * with no draft, the live version is resumed. 422 with neither. 409 when the version going live
- * has an email step and the integration it sends through cannot send (disabled or archived, or no
- * default): a draft may name such an integration, only publishing it is refused.
+ * with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version
+ * going live sends through an integration that cannot send (disabled, archived, of another
+ * channel, or no default for the step's channel): a draft may name such an integration, only
+ * publishing it is refused.
  */
 export const siteAutomationsPublish = <ThrowOnError extends boolean = false>(options: Options<SiteAutomationsPublishData, ThrowOnError>): RequestResult<SiteAutomationsPublishResponses, SiteAutomationsPublishErrors, ThrowOnError> => (options.client ?? client).post<SiteAutomationsPublishResponses, SiteAutomationsPublishErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
