@@ -1214,7 +1214,8 @@ export type ConditionLeaf = {
   kind: 'rule';
   /**
    * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
-   * time_zone, country, locale, city), "tag", "custom:<key>" for a custom field of the workspace,
+   * time_zone, country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a Visitor; the value is
+   * ignored), "custom:<key>" for a custom field of the workspace,
    * or "trigger:<key>" (a property of the Event that fired a rule: valid only in a rule, refused in
    * a segment, takes the text operators, and is false when the Event lacks the key or holds a value
    * that is not text; a number property is compared by a number leaf)
@@ -1289,7 +1290,7 @@ export type ConditionNumberOperator = typeof ConditionNumberOperator[keyof typeo
 
 /**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag field takes has and doesNotHave; a custom field takes the operators of its type,
+ * notNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,
  * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
  * number leaf, a datetime one tested by the date leaves).
  */
@@ -1306,7 +1307,7 @@ export const ConditionOperator = {
 
 /**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag field takes has and doesNotHave; a custom field takes the operators of its type,
+ * notNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,
  * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
  * number leaf, a datetime one tested by the date leaves).
  */

@@ -36,6 +36,13 @@ export const textOperators: Operator[] = [
   SiteConditionOperator.NOT_NULL,
 ].map((operator) => labelled(operator))
 
+// The Telegram field: a Contact has a chat bound or does not.
+export const telegramField = 'telegram'
+export const haveOperators: Operator[] = [
+  SiteConditionOperator.HAS,
+  SiteConditionOperator.DOES_NOT_HAVE,
+].map((operator) => labelled(operator))
+
 // A number leaf compares a number custom field or an Event property with a number.
 const numberOperators: Operator[] = [
   { name: SiteConditionNumberOperator.GT, label: 'greater than' },

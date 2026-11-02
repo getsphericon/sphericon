@@ -224,3 +224,30 @@ test('a number custom field shows a comparison with its number', async () => {
   await expect.element(screen.getByTestId('operators')).toHaveValue('greater than or equal to')
   await expect.element(screen.getByTestId('value-editor')).toHaveValue('30')
 })
+
+test('the Telegram field offers has and does not have, and round-trips with no value', async () => {
+  serve()
+  const onChange = vi.fn<(draft: ConditionDraft) => void>()
+  const value: SiteConditionGroup = {
+    kind: 'group',
+    combinator: 'and',
+    rules: [{ kind: 'rule', field: 'telegram', operator: 'has', value: '' }],
+  }
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder workspaceId="TestWs01" initialValue={value} onChange={onChange} />,
+  )
+
+  await expect.element(screen.getByTestId('fields')).toHaveValue('Telegram')
+  await expect.element(screen.getByTestId('operators')).toHaveValue('has')
+  await expect.element(screen.getByTestId('value-editor')).not.toBeInTheDocument()
+
+  await screen.getByTestId('operators').click()
+  await expect.element(screen.getByRole('option', { name: 'has', exact: true })).toBeVisible()
+  await screen.getByRole('option', { name: 'does not have' }).click()
+
+  await expect
+    .poll(() => onChange.mock.calls.at(-1)?.[0])
+    .toMatchObject({
+      rules: [{ kind: 'rule', field: 'telegram', operator: 'doesNotHave', value: '' }],
+    })
+})

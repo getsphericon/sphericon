@@ -245,6 +245,30 @@ func TestSendBroadcastToRuleSegment(t *testing.T) {
 	assert.Equal(t, len(fs.sent), figuresOf(t, env, fixtures.BroadcastProSegmentID).Recipients)
 }
 
+// A Broadcast whose Segment is "does not have Telegram" emails exactly the Contacts with no chat
+// bound: Liam (own Binding) and Emma (through her phone Visitor) are left out.
+func TestSendBroadcastToContactsWithoutTelegram(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).
+		SetCondition(`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"doesNotHave"}]}`).
+		ExecX(ctx)
+
+	fs := &fakeSender{}
+	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs)), fixtures.BroadcastProSegmentID))
+
+	got := make([]string, len(fs.sent))
+	for i, m := range fs.sent {
+		got[i] = m.To
+	}
+	liam := env.DB.Contact.GetX(ctx, fixtures.ContactLiamID)
+	emma := env.DB.Contact.GetX(ctx, 101)
+	noah := env.DB.Contact.GetX(ctx, fixtures.ContactNoahID)
+	assert.Contains(t, got, *noah.Email, "a Contact with no chat is in the audience")
+	assert.NotContains(t, got, *liam.Email, "a Contact bound in person is left out")
+	assert.NotContains(t, got, *emma.Email, "a Contact bound through its Visitor is left out")
+}
+
 // A send failure marks the recipient rows failed, finalizes the broadcast with
 // failed_count == audience (and sent_count 0), and publishes no email.sent event.
 func TestSendBroadcastMarksFailedOnSendError(t *testing.T) {
