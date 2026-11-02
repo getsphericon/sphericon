@@ -311,6 +311,14 @@ only caller of their writes (`forbidigo`).
   (per-workspace providers: smtp/ses). Both providers share `messaging.BuildMIME`
   (wneessen/go-mail) — smtp sends the `*mail.Msg` directly, ses serializes it to raw
   bytes for SES v2 `SendEmail` (raw content).
+- **Automation HTTP Steps**: `stepping.Module.ExecuteHTTP` selects the Enrollment's pinned Step,
+  checks its lifecycle and position, opens and renders its stored call, and executes it through
+  the protected HTTP adapter under the Enrollment's exit fence. Success advances and queues the
+  next Step in one transaction; final failure records the Enrollment's failure. Ordinary attempt
+  data (`httpcall.Attempt`) produces mutually exclusive retry, cancellation or wait decisions;
+  the River worker only establishes Workspace scope and translates those decisions. A rate-limit
+  wait spends no ordinary attempt. The stable external request identity is preserved, but a call
+  accepted before a failed advancement may be repeated.
 - **Rule HTTP Actions**: `rules.Module.ExecuteHTTP` selects the pending Action of a Firing,
   opens its secrets, renders its Contact and Event, executes the protected call and records the
   result. It receives ordinary attempt and timing data (`httpcall.Attempt`) and the existing

@@ -98,7 +98,7 @@ func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outb
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: ruleMod})
 	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: ruleMod, runners: RuleActionRunners(mod, bus)})
 	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, ruleMod, webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow), time.Now))
-	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, automations.FenceOn(entClient), cipher, stepper, webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow), time.Now))
+	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, cipher, stepper, webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow), time.Now))
 	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow), time.Now, bus, systemSender))
 	river.AddWorker(workers, NewWelcomeWorker(systemSender))
 	river.AddWorker(workers, NewAuthMailWorker(systemSender, appURL))

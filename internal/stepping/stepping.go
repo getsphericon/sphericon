@@ -234,7 +234,7 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 
 	case automationsteps.HTTP:
 		// The call runs on its own queue (ADR 0039); the job queued here makes it and moves
-		// the Enrollment on through FinishHTTPStep.
+		// the Enrollment on through ExecuteHTTP.
 		return m.enqueue(ctx, s, RunHTTPStepArgs{RunID: run.ID, Step: step}, nil)
 
 	case automationsteps.Email:
@@ -243,19 +243,6 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 	default:
 		return m.fail(ctx, s, run.ID, fmt.Errorf("unknown step type %q", st.Type))
 	}
-}
-
-// FinishHTTPStep moves the Enrollment past its HTTP step and queues the step after it, in one
-// transaction. Nothing happens when the Enrollment no longer stands on step: an exit won while
-// the call was in flight, or an earlier attempt of the call already moved it.
-func (m *Module) FinishHTTPStep(ctx context.Context, s *ent.Scoped, runID int64, step int) error {
-	return m.advance(ctx, s, runID, step, move{})
-}
-
-// FailHTTPStep ends the Enrollment `failed` with the record of the call that could not
-// succeed. An Enrollment that already left `active` (an exit won) or is gone stays as it is.
-func (m *Module) FailHTTPStep(ctx context.Context, s *ent.Scoped, runID int64, f automations.Failure) error {
-	return quiet(automations.Fail(ctx, s, runID, m.now(), f))
 }
 
 func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, v *ent.AutomationVersion, step int, st automationsteps.Step) error {
