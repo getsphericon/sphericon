@@ -1275,6 +1275,20 @@ person sends) and never lifts an `everything` Unsubscribe or a Suppression; retu
 form takes the email confirmation link.
 _Avoid_: Submission, lead, conversion (that is a figure)
 
+**Display rules**:
+What decides when, where and to whom an On-site form shows: its triggers (on load, a delay, a scroll
+depth, exit intent on a desktop, pages seen, an Event the tracker records on the page, or only a
+click or a call from the site), its page rules (URL, device, new or returning Visitor, the UTM and
+referrer the visit began with), its audience (everyone, anonymous Visitors, known ones, in or not in
+a Segment, whose Condition is copied when the form is published) and its schedule. The browser
+applies the triggers and page rules; the server decides the audience.
+_Avoid_: Targeting rules, conditions (a Condition is the Segment grammar), triggers (only one part)
+
+**Teaser**:
+A small tab of a popup or slide-in On-site form that opens it on a click: shown before the form,
+after it is closed, or both. On a phone a popup opens from its teaser by default.
+_Avoid_: Launcher, tab, minimized form
+
 **Format** (of an On-site form):
 How an On-site form sits on the page: `popup` (a modal over the page), `slide-in` (a box in a
 corner), `bar` (a strip at the top or the bottom) or `embedded` (inside the page, in a Placement).
