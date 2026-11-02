@@ -36,7 +36,8 @@ _Avoid_: Profile, tracking profile, lead, subscriber, user, recipient
 
 **Contact source**:
 How a Contact first came to exist in the Workspace: created by hand (`manual`), through the
-external API, a batch import included (`api`), or identified by the tracker (`tracker`). An
+external API, a batch import included (`api`), identified by the tracker (`tracker`), or by a
+**Form submit** (`onsite_form`). An
 Integration's ingest hook never creates a Contact. Set once at creation and never changed, even when the same person later arrives through another door. A Contact that
 predates the field has no source. Not a **Sending source** (the unsubscribe scope).
 _Avoid_: Origin, channel, acquisition source
@@ -89,7 +90,8 @@ _Avoid_: Activity, log entry, signal
 
 **System event**:
 An Event that sphericon itself records — delivery, engagement, consent, the Contact lifecycle, a
-change to a Contact's Tags or Custom fields and an Enrollment's progress through an Automation —
+change to a Contact's Tags or Custom fields, an Enrollment's progress through an Automation and what
+a visitor did with an On-site form (`onsite_form.shown`, `.closed`, `.submitted`, `.clicked`) —
 never a customer: its action is reserved, and a customer's Event may not carry it. People see a
 System event by its name, worded as what the Contact did ("Opened an email"); the API, webhooks and
 conditions know it by its action (`email.opened`). A customer's own Event is shown by its action,
@@ -1258,6 +1260,15 @@ content. The content is a linear run of steps, an optional success step and, on 
 slide-in, a teaser; one design serves every device, with per-device overrides.
 _Avoid_: On-site message, site message (a message shown to a known Contact by an Automation, not
 built), campaign, widget, popup (as the umbrella term)
+
+**Form submit**:
+A visitor sending an On-site form: one `onsite_form.submitted` Event per filling, at the step that
+names the person (or at the last step of a form that names no one). Unlike Identify it is typed by
+anyone, so it binds only an anonymous Visitor to the Contact it names, never moves a Visitor that
+belongs to another Contact, and only fills a known Contact's empty attributes. It acts on nothing
+else: Tags, enrollments and calls are a Rule's, reacting to its Event. There is no submission record
+besides that Event.
+_Avoid_: Submission, lead, conversion (that is a figure)
 
 **Format** (of an On-site form):
 How an On-site form sits on the page: `popup` (a modal over the page), `slide-in` (a box in a
