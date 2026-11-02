@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -80,6 +81,14 @@ func Pending() predicate.BroadcastRecipient {
 			)),
 		))
 	}
+}
+
+// PendingOfSending counts the recipients the Workspace's sending Broadcasts, held ones aside, still
+// have to send: what they draw from the Send cap bucket before a Broadcast that has yet to start.
+func PendingOfSending(ctx context.Context, s *ent.Scoped) (int, error) {
+	return s.BroadcastRecipient().Query().
+		Where(Pending(), broadcastrecipient.HasBroadcastWith(broadcast.StatusEQ(broadcast.StatusSending), broadcast.HoldReasonIsNil())).
+		Count(ctx)
 }
 
 // StatsOf reads the figures of the given Broadcasts in two grouped queries, whatever their

@@ -45,6 +45,17 @@ account without a shop.
   period (Broadcast, Automation, Transactional) and their delivery stamps. The open and click rates
   stay the Broadcast cohort's, labelled as such: only a Broadcast recipient carries its own open and
   click.
+- **A scheduled Broadcast the Send cap will slow is an item, judged by the bucket** (#939). A
+  `scheduled` Broadcast, not held, that starts within the next 24 hours is a degraded item when the
+  Workspace's Send cap bucket, read as the send path reads it (`providerlimit.SendCapDrain`, never
+  the sends of the last 24 hours) and as it will be at the Broadcast's start, cannot let it out in
+  full then. Broadcasts draw from one bucket, so each is judged, in the order they start, by its
+  audience, those of every one before it and the recipients sending Broadcasts have left, all taken
+  at its start (the refill between their
+  starts is left out, so the read errs towards an item). The item carries its own audience
+  (`count`) and its start plus the wait (`estimatedCompletionAt`), what the Broadcast's progress
+  shows once it sends. The audience is an estimate: the Contacts its plan would take now (the
+  Condition copied when it left draft, eligibility), counted by the same query as the plan.
 
 ## Not decided here
 
@@ -52,5 +63,4 @@ account without a shop.
 - Per-Sending-domain Complaint and Bounce rates on the overview without the `staff` license
   (ADR 0011 puts them on the dashboard; the warning limits are the detector's configuration).
 - A DMARC lookup, which a "not bulk-ready" item would need.
-- An item for an active Automation that cannot send, and one for a scheduled Broadcast larger than
-  what is left of the Send cap.
+- An item for an active Automation that cannot send.

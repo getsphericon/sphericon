@@ -19,6 +19,7 @@ import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/ind
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
+import { formatDateTime } from '../../utils/datetime.ts'
 import { OverviewPage } from './overview.tsx'
 
 const finished = {
@@ -237,6 +238,37 @@ test('a held broadcast says what lifts the hold', async () => {
   await expect
     .element(screen.getByRole('link', { name: 'Open the broadcast' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/12/report')
+})
+
+test('a broadcast the sending limit will slow says when it is expected to finish', async () => {
+  const finish = '2026-11-02T21:00:00Z'
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          {
+            kind: 'scheduledBroadcastOverSendCap',
+            severity: 'degraded',
+            subject: { id: '14', name: 'Black Friday' },
+            count: 1500,
+            estimatedCompletionAt: finish,
+          },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByText(/will slow Black Friday \(about 1,500 contacts\)/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByText(new RegExp(`expected to finish by ${formatDateTime(finish)}`)))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open the broadcast' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/14/report')
 })
 
 test('an unfinished checklist is shown with its steps', async () => {

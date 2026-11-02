@@ -296,3 +296,10 @@
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
   signup_survey_due_at: '2026-01-01 00:00:00'
+- id: 5610 # fixture: CaptonOwnerCleo
+  name: Cleo
+  email: cleo@capton.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'

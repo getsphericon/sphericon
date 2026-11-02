@@ -13,6 +13,7 @@ import type {
   SiteAttentionKind,
   SiteAttentionSeverity,
 } from '../../generated/site/types.gen.ts'
+import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { Route as automationRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as broadcastReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as emailsRoute } from '../../routes/workspaces/$workspaceId/settings/emails.tsx'
@@ -29,7 +30,10 @@ const SEVERITY_ICON = {
 
 const nameOf = (item: SiteAttentionItem) => item.subject?.name ?? ''
 
-// MESSAGE is each kind of item as a sentence about its object.
+type FormatDateTime = ReturnType<typeof useDateFormat>['formatDateTime']
+
+// MESSAGE is each kind of item as a sentence about its object; an instant it names is shown in the
+// User time zone.
 const MESSAGE = {
   sendingDomainVerificationLost: (t, item) =>
     t(($) => $.overview.attention.kinds.sendingDomainVerificationLost, { name: nameOf(item) }),
@@ -49,6 +53,12 @@ const MESSAGE = {
     })
   },
   sendCapSpent: (t) => t(($) => $.overview.attention.kinds.sendCapSpent),
+  scheduledBroadcastOverSendCap: (t, item, formatDateTime) =>
+    t(($) => $.overview.attention.kinds.scheduledBroadcastOverSendCap, {
+      name: nameOf(item),
+      count: item.count,
+      finish: item.estimatedCompletionAt ? formatDateTime(item.estimatedCompletionAt) : '',
+    }),
   providerLimitSpent: (t, item) =>
     t(($) => $.overview.attention.kinds.providerLimitSpent, { name: nameOf(item) }),
   integrationProviderProbation: (t, item) =>
@@ -66,7 +76,10 @@ const MESSAGE = {
     t(($) => $.overview.attention.kinds.webhookDisabled, { name: nameOf(item) }),
   sendingDomainNotBulkReady: (t, item) =>
     t(($) => $.overview.attention.kinds.sendingDomainNotBulkReady, { name: nameOf(item) }),
-} as const satisfies Record<SiteAttentionKind, (t: TFunction, item: SiteAttentionItem) => string>
+} as const satisfies Record<
+  SiteAttentionKind,
+  (t: TFunction, item: SiteAttentionItem, formatDateTime: FormatDateTime) => string
+>
 
 interface ActionProps {
   workspaceId: string
@@ -125,6 +138,7 @@ const ACTION = {
   broadcastHeld: BroadcastAction,
   deliverabilityWarning: SuppressionsAction,
   sendCapSpent: null,
+  scheduledBroadcastOverSendCap: BroadcastAction,
   providerLimitSpent: EmailsAction,
   integrationProviderProbation: EmailsAction,
   integrationProviderSandbox: EmailsAction,
@@ -144,6 +158,7 @@ function ItemAction({ item, workspaceId }: { item: SiteAttentionItem; workspaceI
 // nothing does: the block is never an "all good" box.
 function AttentionItems({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
+  const { formatDateTime } = useDateFormat()
   const items = useSuspenseQuery(siteAttentionGetOptions({ path: { workspaceId } })).data.items
   if (items.length === 0) {
     return null
@@ -166,7 +181,7 @@ function AttentionItems({ workspaceId }: { workspaceId: string }) {
                 <Icon size={16} />
               </ThemeIcon>
               <Stack gap={2}>
-                <Text size="sm">{MESSAGE[item.kind](t, item)}</Text>
+                <Text size="sm">{MESSAGE[item.kind](t, item, formatDateTime)}</Text>
                 <ItemAction item={item} workspaceId={workspaceId} />
               </Stack>
             </Group>

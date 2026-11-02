@@ -109,3 +109,11 @@
   workspace_id: 20
   created_at: '{{hoursAgo 288}}'
   updated_at: '{{hoursAgo 96}}'
+
+# Capton (workspace 63): the three Contacts who live in Capton, the audience of both its Broadcasts.
+- id: 20010 # fixture: SegmentCapton
+  name: Lives in Capton
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"city","operator":"eq","value":"Capton"}]}'
+  workspace_id: 63
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

@@ -724,6 +724,7 @@ export const zSiteAttentionKind = z.enum([
   'deliverabilityWarning',
   'sendCapSpent',
   'providerLimitSpent',
+  'scheduledBroadcastOverSendCap',
   'integrationProviderProbation',
   'integrationProviderSandbox',
   'enrollmentsFailed',
@@ -2622,7 +2623,8 @@ export const zSiteAttentionItem = z.object({
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   since: z.exactOptional(zTimestamp.nullable()),
   holdReason: z.exactOptional(zBroadcastHoldReason.nullable()),
-  abuse: z.exactOptional(zSiteAbuseWarning.nullable())
+  abuse: z.exactOptional(zSiteAbuseWarning.nullable()),
+  estimatedCompletionAt: z.exactOptional(zTimestamp.nullable())
 });
 
 /**

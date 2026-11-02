@@ -1975,3 +1975,23 @@
     created_at: '2026-01-02 00:00:00',
     updated_at: '2026-01-02 00:00:00',
   }
+
+# Capton (workspace 63): the recipients of its sending Broadcast 21102, all pending (no message yet).
+- id: 21200
+  broadcast_id: 21102
+  contact_id: 20200
+  workspace_id: 63
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 21201
+  broadcast_id: 21102
+  contact_id: 20201
+  workspace_id: 63
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 21202
+  broadcast_id: 21102
+  contact_id: 20202
+  workspace_id: 63
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

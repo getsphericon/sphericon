@@ -194,3 +194,11 @@
   collect_key: omck_test_wonka_collect_key
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Capton: two Broadcasts scheduled within the next day to one Segment of three Contacts, for the Send
+# cap item of Needs attention (#939). It has no Send cap until a test sets one, and its bucket is full.
+- id: 63 # fixture: Capton
+  name: Capton
+  public_id: CaptnW63
+  collect_key: omck_test_capton_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

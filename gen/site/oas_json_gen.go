@@ -13398,9 +13398,15 @@ func (s *SiteAttentionItem) encodeFields(e *jx.Encoder) {
 			s.Abuse.Encode(e)
 		}
 	}
+	{
+		if s.EstimatedCompletionAt.Set {
+			e.FieldStart("estimatedCompletionAt")
+			s.EstimatedCompletionAt.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteAttentionItem = [7]string{
+var jsonFieldsNameOfSiteAttentionItem = [8]string{
 	0: "kind",
 	1: "severity",
 	2: "subject",
@@ -13408,6 +13414,7 @@ var jsonFieldsNameOfSiteAttentionItem = [7]string{
 	4: "since",
 	5: "holdReason",
 	6: "abuse",
+	7: "estimatedCompletionAt",
 }
 
 // Decode decodes SiteAttentionItem from json.
@@ -13490,6 +13497,16 @@ func (s *SiteAttentionItem) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"abuse\"")
+			}
+		case "estimatedCompletionAt":
+			if err := func() error {
+				s.EstimatedCompletionAt.Reset()
+				if err := s.EstimatedCompletionAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"estimatedCompletionAt\"")
 			}
 		default:
 			return d.Skip()
@@ -13575,6 +13592,8 @@ func (s *SiteAttentionKind) Decode(d *jx.Decoder) error {
 		*s = SiteAttentionKindSendCapSpent
 	case SiteAttentionKindProviderLimitSpent:
 		*s = SiteAttentionKindProviderLimitSpent
+	case SiteAttentionKindScheduledBroadcastOverSendCap:
+		*s = SiteAttentionKindScheduledBroadcastOverSendCap
 	case SiteAttentionKindIntegrationProviderProbation:
 		*s = SiteAttentionKindIntegrationProviderProbation
 	case SiteAttentionKindIntegrationProviderSandbox:

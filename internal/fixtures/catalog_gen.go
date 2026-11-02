@@ -277,6 +277,24 @@ const (
 	BroadcastAuthoredName = "Product update announcement"
 	// BroadcastAuthoredSubject is from fixtures/broadcasts.
 	BroadcastAuthoredSubject = "What is new at CodeBasics"
+	// BroadcastCaptonLaterID is from fixtures/broadcasts.
+	BroadcastCaptonLaterID = 21101
+	// BroadcastCaptonLaterName is from fixtures/broadcasts.
+	BroadcastCaptonLaterName = "Capton evening sale"
+	// BroadcastCaptonLaterSubject is from fixtures/broadcasts.
+	BroadcastCaptonLaterSubject = "Evening sale"
+	// BroadcastCaptonSendingID is from fixtures/broadcasts.
+	BroadcastCaptonSendingID = 21102
+	// BroadcastCaptonSendingName is from fixtures/broadcasts.
+	BroadcastCaptonSendingName = "Capton clearance"
+	// BroadcastCaptonSendingSubject is from fixtures/broadcasts.
+	BroadcastCaptonSendingSubject = "Clearance"
+	// BroadcastCaptonSoonerID is from fixtures/broadcasts.
+	BroadcastCaptonSoonerID = 21100
+	// BroadcastCaptonSoonerName is from fixtures/broadcasts.
+	BroadcastCaptonSoonerName = "Capton morning sale"
+	// BroadcastCaptonSoonerSubject is from fixtures/broadcasts.
+	BroadcastCaptonSoonerSubject = "Morning sale"
 	// BroadcastDraftFromLostDomainID is from fixtures/broadcasts.
 	BroadcastDraftFromLostDomainID = 111
 	// BroadcastDraftFromLostDomainName is from fixtures/broadcasts.
@@ -415,6 +433,24 @@ const (
 	BroadcastSentViaArchivedIntegrationName = "Spring digest"
 	// BroadcastSentViaArchivedIntegrationSubject is from fixtures/broadcasts.
 	BroadcastSentViaArchivedIntegrationSubject = "Your spring digest"
+	// CaptonCleoMembershipID is from fixtures/memberships.
+	CaptonCleoMembershipID = 5710
+	// CaptonCollectKey is from fixtures/workspaces.
+	CaptonCollectKey = "omck_test_capton_collect_key"
+	// CaptonID is from fixtures/workspaces.
+	CaptonID = 63
+	// CaptonName is from fixtures/workspaces.
+	CaptonName = "Capton"
+	// CaptonOwnerCleoEmail is from fixtures/users.
+	CaptonOwnerCleoEmail = "cleo@capton.test"
+	// CaptonOwnerCleoID is from fixtures/users.
+	CaptonOwnerCleoID = 5610
+	// CaptonOwnerCleoName is from fixtures/users.
+	CaptonOwnerCleoName = "Cleo"
+	// CaptonOwnerCleoPassword is from fixtures/users.
+	CaptonOwnerCleoPassword = "password"
+	// CaptonPublicID is from fixtures/workspaces.
+	CaptonPublicID = "CaptnW63"
 	// CapturedMessageAcmeArchivedInboxID is from fixtures/captured_messages.
 	CapturedMessageAcmeArchivedInboxID = 4
 	// CapturedMessageAcmeArchivedInboxSubject is from fixtures/captured_messages.
@@ -1769,6 +1805,10 @@ const (
 	SegmentBlackFridayID = 102
 	// SegmentBlackFridayName is from fixtures/segments.
 	SegmentBlackFridayName = "Black Friday 2026 audience"
+	// SegmentCaptonID is from fixtures/segments.
+	SegmentCaptonID = 20010
+	// SegmentCaptonName is from fixtures/segments.
+	SegmentCaptonName = "Lives in Capton"
 	// SegmentGlobexID is from fixtures/segments.
 	SegmentGlobexID = 900
 	// SegmentGlobexName is from fixtures/segments.

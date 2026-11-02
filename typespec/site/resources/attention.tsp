@@ -24,6 +24,11 @@ enum SiteAttentionKind {
   /** An Integration sent its Provider limit over the last 24 hours */
   providerLimitSpent,
 
+  /** A Broadcast scheduled within the next 24 hours that the Workspace's Send cap will not let out
+   * in full when it starts, together with the Broadcasts scheduled before it: it is deferred (ADR 0067)
+   * and finishes at `estimatedCompletionAt`. `count` is its estimated audience. */
+  scheduledBroadcastOverSendCap,
+
   /** The provider has the Integration's account under review; it still sends */
   integrationProviderProbation,
 
@@ -73,7 +78,8 @@ model SiteAttentionItem {
   /** The object the item is about; absent for the Workspace's own Send cap and a deliverability warning */
   subject?: SiteAttentionSubject | null;
 
-  /** How many failures the item stands for: failed runs of an Automation, 1 for every other kind */
+  /** How many the item stands for: failed runs of an Automation, the estimated audience of a
+   * `scheduledBroadcastOverSendCap` Broadcast, 1 for every other kind */
   count: int32;
 
   /** When the problem began, when that is known */
@@ -85,6 +91,11 @@ model SiteAttentionItem {
 
   /** The rate behind a deliverability warning */
   abuse?: SiteAbuseWarning | null;
+
+  /** When the Send cap is expected to have let the Broadcast out, set on a
+   * `scheduledBroadcastOverSendCap` item only: the same estimate as the Broadcast's progress once
+   * it is sending */
+  estimatedCompletionAt?: Timestamp | null;
 }
 
 /** What in the Workspace needs a member's action now, most urgent first and, within a severity,

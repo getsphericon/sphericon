@@ -1819,7 +1819,8 @@ export type SiteAttentionItem = {
    */
   subject?: SiteAttentionSubject | null;
   /**
-   * How many failures the item stands for: failed runs of an Automation, 1 for every other kind
+   * How many the item stands for: failed runs of an Automation, the estimated audience of a
+   * `scheduledBroadcastOverSendCap` Broadcast, 1 for every other kind
    */
   count: number;
   /**
@@ -1835,6 +1836,12 @@ export type SiteAttentionItem = {
    * The rate behind a deliverability warning
    */
   abuse?: SiteAbuseWarning | null;
+  /**
+   * When the Send cap is expected to have let the Broadcast out, set on a
+   * `scheduledBroadcastOverSendCap` item only: the same estimate as the Broadcast's progress once
+   * it is sending
+   */
+  estimatedCompletionAt?: Timestamp | null;
 };
 
 /**
@@ -1847,6 +1854,7 @@ export const SiteAttentionKind = {
   DELIVERABILITY_WARNING: 'deliverabilityWarning',
   SEND_CAP_SPENT: 'sendCapSpent',
   PROVIDER_LIMIT_SPENT: 'providerLimitSpent',
+  SCHEDULED_BROADCAST_OVER_SEND_CAP: 'scheduledBroadcastOverSendCap',
   INTEGRATION_PROVIDER_PROBATION: 'integrationProviderProbation',
   INTEGRATION_PROVIDER_SANDBOX: 'integrationProviderSandbox',
   ENROLLMENTS_FAILED: 'enrollmentsFailed',
