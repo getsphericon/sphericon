@@ -98,7 +98,7 @@ SHA-256) template funcs. The generator lifts the quoted literal into `<Name>Pass
 authenticate as that identity; the full token is
 `credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret)`. Use them
 only on annotated anchor rows, not dev tokens. The test values are plain constants in the
-generated file; gitleaks needs no allowlist for them.
+generated file; `.betterleaks.toml` exempts their throwaway passwords from the generic rules.
 
 Anchor tenancy rows: Acme (owner `OwnerJohn`, member `MemberMary`), a second tenant
 `Globex` (owner `OwnerJane`, membership `GlobexOwnerMembership`), and `OutsiderOscar`

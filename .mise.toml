@@ -1,10 +1,10 @@
 [tools]
 air = "latest"
 ast-grep = "latest"
+betterleaks = "latest"
 caddy = "latest"
 cloudflared = "latest"
 coredns = "latest"
-gitleaks = "latest"
 go = "1.27.3"
 golangci-lint = "2"
 hk = "latest"

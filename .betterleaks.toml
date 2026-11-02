@@ -1,0 +1,91 @@
+title = "sphericon betterleaks config"
+
+[extend]
+useDefault = true
+
+# Known non-secrets. Keep these narrow (path + rule): a blanket path ignore would
+# hide a real leak that later lands in the same file.
+
+[[allowlists]]
+description = "Throwaway DKIM keys and fixture payloads in committed test data"
+paths = ['''^fixtures/''']
+
+[[allowlists]]
+description = "Hashes / generated code / committed dev+test env samples (incl. the removed .env.docker.sample and migrations/atlas.sum, still in history) that trip generic-api-key"
+targetRules = ["generic-api-key"]
+paths = [
+  '''^migrations/atlas\.sum$''',
+  '''^gen/''',
+  '''^internal/fixtures/catalog_gen\.go$''',
+  '''^\.env\.test$''',
+  '''^\.mise\.toml$''',
+  '''^\.env\.docker\.sample$''',
+  # The built-in Presets' own tests carry throwaway secrets and their signatures.
+  '''^internal/preset/builtin/(generic|postmark|mailgun)\.yaml$''',
+]
+
+[[allowlists]]
+description = "Standard Webhooks spec test vector used in internal/webhook tests"
+regexes = ['''whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw''']
+
+[[allowlists]]
+description = "Throwaway passwords and credential URLs in Go and frontend tests"
+targetRules = ["generic-password", "generic-credential-uri"]
+paths = [
+  '''(^|/)[^/]+_test\.go$''',
+  '''^src/.*\.test\.tsx?$''',
+  '''^e2e/joindomain\.go$''',
+  '''^internal/fixtures/catalog_gen\.go$''',
+]
+
+[[allowlists]]
+description = "Password field names, translation keys and audit labels, including their history"
+targetRules = ["generic-password"]
+condition = "AND"
+paths = [
+  '''^internal/(validation/fields|api/site/fields|accounts/accounts)\.go$''',
+  '''^internal/i18n/locales/en\.json$''',
+  '''^locales/(en|ru|es)/translation\.json$''',
+  '''^types/resources\.d\.ts$''',
+]
+regexes = [
+  '''(?i)^(password|newPassword|new password|current password|confirm password|confirm with your password instead of a link|changed|errors\.[a-z_]+|fields\.[a-z_]+|contraseña|пароль)$''',
+]
+
+[[allowlists]]
+description = "Placeholder user credentials in operator documentation"
+targetRules = ["generic-credential-uri"]
+condition = "AND"
+paths = [
+  '''^config/config\.go$''',
+  '''^docs/(configuration|self-hosting|guide/(quickstart|deliverability))\.md$''',
+  '''^README\.md$''',
+  '''^internal/preset/builtin/postmark\.yaml$''',
+]
+regexTarget = "match"
+regexes = ['''(postgres|https?)://user:(pass|password|secret)@(host|db)([:/]|$)''']
+
+[[allowlists]]
+description = "Local database connection URLs in retired dev and CI configuration"
+targetRules = ["generic-credential-uri"]
+condition = "AND"
+paths = [
+  '''^\.env\.(sample|test|docker\.sample)$''',
+  '''^(Makefile|docker-compose\.yml|drizzle\.config\.ts)$''',
+  '''^plugins/(drizzle|job-queue)\.ts$''',
+  '''^\.github/workflows/ci\.yml$''',
+  '''^docs/self-hosting\.md$''',
+]
+regexTarget = "match"
+regexes = ['''postgres(?:ql)?://postgres:postgres@(localhost|db):5432/''']
+
+[[allowlists]]
+description = "Throwaway Postgres password in retired dev and CI configuration"
+targetRules = ["generic-password"]
+condition = "AND"
+paths = [
+  '''^(application|docker-compose)\.yml$''',
+  '''^\.github/workflows/ci\.yml$''',
+  '''^docs/self-hosting\.md$''',
+]
+regexes = ['''^postgres$''']

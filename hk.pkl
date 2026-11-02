@@ -4,9 +4,9 @@ import "package://github.com/jdx/hk/releases/download/v2.10.0/hk@2.10.0#/Builtin
 // Local git hooks. Slow whole-project checks (tsc, i18n drift, go test) stay in
 // `mise run check` / CI; hooks only run what is fast on staged files.
 local linters = new Mapping {
-    // Staged content only (the builtin scans the whole directory, ignored files included).
-    ["gitleaks"] {
-        check = "gitleaks git --staged --redact --no-banner"
+    // Scan staged content only. The full history is checked by `mise run check:security`.
+    ["betterleaks"] {
+        check = "betterleaks git --staged --redact --no-banner"
         exclusive = true
     }
     // Project runs oxlint/oxfmt through pnpm (not on PATH).
