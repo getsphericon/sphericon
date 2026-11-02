@@ -280,7 +280,8 @@ func (m *Module) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ tim
 		key := lo.FromPtr(integrationID)
 		hold, asked := holdOf[key]
 		if !asked {
-			if hold, err = m.out.Preflight(ctx, s, "", integrationID); err != nil {
+			// An email step's content carries no From: it sends from the Integration's sender.
+			if hold, err = m.out.Preflight(ctx, s, outbound.EmailContent{}, integrationID); err != nil {
 				return nil, err
 			}
 			holdOf[key] = hold

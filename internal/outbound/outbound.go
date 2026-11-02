@@ -107,8 +107,9 @@ const (
 	HoldProviderStopped = "provider_stopped"
 )
 
-// SourceHolds are the reasons above: the holds a member fixes on the object that sends (its
-// Integration, its Sending domain), where a Workspace-level hold is the Workspace's own.
+// SourceHolds are the reasons above and email's HoldUnverifiedDomain: the holds a member fixes on
+// the object that sends (its Integration, its Sending domain), where a Workspace-level hold is the
+// Workspace's own.
 var SourceHolds = []string{HoldNoIntegration, HoldUnverifiedDomain, HoldProviderStopped}
 
 // Reasons a Test send from the System sender is Refused (ADR 0041).
