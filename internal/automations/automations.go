@@ -1,7 +1,7 @@
 // Package automations is the one place an Automation's definition is stored,
 // validated and its lifecycle changed (ADR 0016). /site and /api handlers stay thin
-// adapters over it; the step executor (internal/jobs) decodes the same Step format,
-// so the storage JSON has a single definition. The definition (Trigger, exit and goal events,
+// adapters over it. internal/automationsteps owns the stored Step format and its reader,
+// shared by authoring, live-use checks and execution. The definition (Trigger, exit and goal events,
 // Integration and steps) lives in versions (ADR 0049): an edit writes the draft, Publish makes
 // it live (ADR 0065).
 package automations
@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/drafts"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -33,44 +34,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
-
-// StepType is the kind of a Step.
-type StepType string
-
-// Step kinds.
-const (
-	StepEmail     StepType = "email"
-	StepWait      StepType = "wait"
-	StepApplyTag  StepType = "apply_tag"
-	StepRemoveTag StepType = "remove_tag"
-	StepHTTP      StepType = "http"
-)
-
-// Step is one node of an Automation's linear sequence, in the executor's on-disk
-// JSON form. Email steps carry Subject and Body (HTML), wait steps Seconds, tag
-// steps Tag (the Tag name).
-type Step struct {
-	Type    StepType `json:"type"`
-	Subject string   `json:"subject,omitempty"`
-	Body    string   `json:"body,omitempty"`
-	// Doc is the editor's JSON document an email step's Body was built from, and EditorVersion
-	// the editor that rendered it (ADR 0040). A step written as HTML has neither. A step being
-	// saved carries a Doc or a Body, not both: the save renders the Doc to the Body.
-	Doc           json.RawMessage `json:"doc,omitempty"`
-	EditorVersion string          `json:"editorVersion,omitempty"`
-	Seconds       int             `json:"seconds,omitempty"`
-	Tag           string          `json:"tag,omitempty"`
-
-	// HTTP steps (ADR 0039) hold ID, URL, Headers, Body (a Liquid JSON template) and
-	// Secret. Stored, URL, header values and Secret are ciphertext, sealed per field;
-	// in a step being saved, an empty one keeps the stored value of the step with the
-	// same ID, and ClearSecret drops the signing secret.
-	ID          string   `json:"id,omitempty"`
-	URL         string   `json:"url,omitempty"`
-	Headers     []Header `json:"headers,omitempty"`
-	Secret      string   `json:"secret,omitempty"`
-	ClearSecret bool     `json:"-"`
-}
 
 // Domain errors. Callers match with errors.Is.
 var (
@@ -105,33 +68,21 @@ var (
 	errBodyAndDoc = errors.New("automations: a step writes a body or a doc, not both")
 )
 
-// Decode parses a stored definition. An empty definition has no steps.
-func Decode(definition string) ([]Step, error) {
-	if definition == "" {
-		return nil, nil
-	}
-	var steps []Step
-	if err := json.Unmarshal([]byte(definition), &steps); err != nil {
-		return nil, err
-	}
-	return steps, nil
-}
-
 // Encode serializes steps into the stored definition, dropping the fields that do
 // not belong to each step's type, trimming tag names and sanitizing an email step's body.
-func Encode(steps []Step) (string, error) {
-	stored := make([]Step, 0, len(steps))
+func Encode(steps []automationsteps.Step) (string, error) {
+	stored := make([]automationsteps.Step, 0, len(steps))
 	for i := range steps {
 		s := &steps[i]
 		switch s.Type {
-		case StepWait:
-			stored = append(stored, Step{Type: StepWait, Seconds: s.Seconds})
-		case StepApplyTag, StepRemoveTag:
-			stored = append(stored, Step{Type: s.Type, Tag: strings.TrimSpace(s.Tag)})
-		case StepHTTP:
-			stored = append(stored, Step{Type: StepHTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret})
+		case automationsteps.Wait:
+			stored = append(stored, automationsteps.Step{Type: automationsteps.Wait, Seconds: s.Seconds})
+		case automationsteps.ApplyTag, automationsteps.RemoveTag:
+			stored = append(stored, automationsteps.Step{Type: s.Type, Tag: strings.TrimSpace(s.Tag)})
+		case automationsteps.HTTP:
+			stored = append(stored, automationsteps.Step{Type: automationsteps.HTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret})
 		default:
-			email := Step{Type: StepEmail, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
+			email := automationsteps.Step{Type: automationsteps.Email, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
 			if len(s.Doc) > 0 {
 				email.Doc, email.EditorVersion = s.Doc, s.EditorVersion
 			}
@@ -142,20 +93,20 @@ func Encode(steps []Step) (string, error) {
 	return string(b), err
 }
 
-func validate(steps []Step) error {
+func validate(steps []automationsteps.Step) error {
 	for i := range steps {
 		s := &steps[i]
 		switch s.Type {
-		case StepEmail:
+		case automationsteps.Email:
 			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
 				return ErrInvalidStep.With(err.Error())
 			}
-		case StepHTTP:
-		case StepWait:
+		case automationsteps.HTTP:
+		case automationsteps.Wait:
 			if s.Seconds < 0 {
 				return ErrInvalidStep
 			}
-		case StepApplyTag, StepRemoveTag:
+		case automationsteps.ApplyTag, automationsteps.RemoveTag:
 			if strings.TrimSpace(s.Tag) == "" {
 				return ErrInvalidStep
 			}
@@ -203,12 +154,12 @@ func (m *Module) WithClock(now func() time.Time) *Module {
 // the Template rules): a step with a document and a body is refused, and a document that cannot
 // be rendered refuses the whole save, naming the step (1-based). A step with no document is
 // left as it is, so a body-only write stores no document.
-func (m *Module) build(ctx context.Context, steps []Step) ([]Step, error) {
-	out := make([]Step, len(steps))
+func (m *Module) build(ctx context.Context, steps []automationsteps.Step) ([]automationsteps.Step, error) {
+	out := make([]automationsteps.Step, len(steps))
 	copy(out, steps)
 	for i := range out {
 		s := out[i]
-		if s.Type != StepEmail || len(s.Doc) == 0 {
+		if s.Type != automationsteps.Email || len(s.Doc) == 0 {
 			continue
 		}
 		var body *string
@@ -318,7 +269,7 @@ type CreateInput struct {
 	// nil is none.
 	ExitEvents []string
 	GoalEvent  *string
-	Steps      []Step
+	Steps      []automationsteps.Step
 	// IntegrationID is the email Integration the steps send through; nil is the Workspace default.
 	IntegrationID *int64
 }
@@ -332,7 +283,7 @@ type UpdateInput struct {
 	ExitEvents *[]string
 	// GoalEvent sets the goal event, and a clear removes it.
 	GoalEvent patch.Field[string]
-	Steps     *[]Step
+	Steps     *[]automationsteps.Step
 	// IntegrationID moves the Automation to that Integration, and a clear goes back to the
 	// Workspace default.
 	IntegrationID patch.Field[int64]
@@ -380,12 +331,12 @@ func namesTag(v *ent.AutomationVersion, name string) (bool, error) {
 	if v == nil {
 		return false, nil
 	}
-	steps, err := Decode(v.Steps)
+	steps, err := automationsteps.Decode(v.Steps)
 	if err != nil {
 		return false, err
 	}
-	return slices.ContainsFunc(steps, func(st Step) bool {
-		return (st.Type == StepApplyTag || st.Type == StepRemoveTag) && strings.TrimSpace(st.Tag) == name
+	return slices.ContainsFunc(steps, func(st automationsteps.Step) bool {
+		return (st.Type == automationsteps.ApplyTag || st.Type == automationsteps.RemoveTag) && strings.TrimSpace(st.Tag) == name
 	}), nil
 }
 
@@ -467,7 +418,7 @@ type edit struct {
 	exits         *[]string
 	goal          patch.Field[string]
 	integrationID patch.Field[int64]
-	steps         *[]Step
+	steps         *[]automationsteps.Step
 }
 
 // definition is the content of an Automation version as stored: its Trigger, the events that end
@@ -494,10 +445,10 @@ func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.Aut
 // by ID keeps the secrets it does not resend.
 func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit) (definition, error) {
 	def := definition{exits: []string{}, steps: "[]"}
-	var stored []Step
+	var stored []automationsteps.Step
 	if base != nil {
 		var err error
-		if stored, err = Decode(base.Steps); err != nil {
+		if stored, err = automationsteps.Decode(base.Steps); err != nil {
 			return definition{}, err
 		}
 		if def, err = canonical(base); err != nil {
@@ -540,7 +491,7 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 // canonical is the definition a version holds, its steps in the form Encode writes them, so that
 // an unchanged edit compares equal whatever wrote the stored JSON.
 func canonical(v *ent.AutomationVersion) (definition, error) {
-	stored, err := Decode(v.Steps)
+	stored, err := automationsteps.Decode(v.Steps)
 	if err != nil {
 		return definition{}, err
 	}
@@ -603,7 +554,7 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	if err := checkIntegration(ctx, ts, version.IntegrationID); err != nil {
 		return err
 	}
-	sends, err := sendsEmail(version)
+	sends, err := automationsteps.SendsEmail(version.Steps)
 	if err != nil || !sends {
 		return err
 	}
@@ -612,16 +563,6 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 		return err
 	}
 	return route.Armable()
-}
-
-// sendsEmail reports whether the version has an email step: one that has none sends through no
-// Integration, so its Send route is not asked.
-func sendsEmail(version *ent.AutomationVersion) (bool, error) {
-	steps, err := Decode(version.Steps)
-	if err != nil {
-		return false, err
-	}
-	return slices.ContainsFunc(steps, func(s Step) bool { return s.Type == StepEmail }), nil
 }
 
 // EmailSenders returns the Workspace's active, kept Automations whose live version has an email
@@ -638,7 +579,7 @@ func EmailSenders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error)
 	}
 	senders := active[:0]
 	for _, a := range active {
-		sends, err := sendsEmail(a.Edges.LiveVersion)
+		sends, err := automationsteps.SendsEmail(a.Edges.LiveVersion.Steps)
 		if err != nil {
 			return nil, err
 		}

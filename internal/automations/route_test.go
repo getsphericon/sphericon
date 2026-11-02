@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/patch"
@@ -69,7 +70,7 @@ func TestPublishWithoutAnEmailStepDoesNotAskTheRoute(t *testing.T) {
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
 		IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeSesID),
-		Steps:         &[]automations.Step{{Type: automations.StepWait, Seconds: 60}},
+		Steps:         &[]automationsteps.Step{{Type: automationsteps.Wait, Seconds: 60}},
 	})
 	require.NoError(t, err)
 

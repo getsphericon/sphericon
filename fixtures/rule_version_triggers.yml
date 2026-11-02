@@ -126,3 +126,17 @@
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
+
+# Published HTTP Rule and the version pinned by its older pending Firing.
+- id: 140
+  version_id: 140
+  action: execute_http
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 141
+  version_id: 141
+  action: execute_http
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 2}}'

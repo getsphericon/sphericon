@@ -22,6 +22,7 @@ import (
 	external "github.com/getsphericon/sphericon/gen/external"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
+	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	emaildoc "github.com/getsphericon/sphericon/internal/emaildoc"
@@ -215,18 +216,18 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) ex
 	externalapiAutomationStep.HasSecret = optBool(source.HasSecret)
 	return externalapiAutomationStep
 }
-func (c *ConverterImpl) AutomationStepTypeToResource(source automations.StepType) external.AutomationStepType {
+func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) external.AutomationStepType {
 	var externalapiAutomationStepType external.AutomationStepType
 	switch source {
-	case automations.StepApplyTag:
+	case automationsteps.ApplyTag:
 		externalapiAutomationStepType = external.AutomationStepTypeApplyTag
-	case automations.StepEmail:
+	case automationsteps.Email:
 		externalapiAutomationStepType = external.AutomationStepTypeEmail
-	case automations.StepHTTP:
+	case automationsteps.HTTP:
 		externalapiAutomationStepType = external.AutomationStepTypeHTTP
-	case automations.StepRemoveTag:
+	case automationsteps.RemoveTag:
 		externalapiAutomationStepType = external.AutomationStepTypeRemoveTag
-	case automations.StepWait:
+	case automationsteps.Wait:
 		externalapiAutomationStepType = external.AutomationStepTypeWait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))

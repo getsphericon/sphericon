@@ -20,7 +20,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/stepping"
@@ -101,11 +103,11 @@ func newHTTPStepHarness(t *testing.T, body string, signed bool) *httpStepHarness
 	e := newRiverEnv(t)
 	h := &httpStepHarness{riverEnv: e, rcv: newHookReceiver(t), clock: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)}
 	// The fixture step keeps its sealed header and secret: an empty value means "as stored".
-	step := automations.Step{
-		Type: automations.StepHTTP, ID: "01J00000000000000000000001", URL: h.rcv.srv.URL, Body: body,
-		Headers: []automations.Header{{Name: "Authorization"}}, ClearSecret: !signed,
+	step := automationsteps.Step{
+		Type: automationsteps.HTTP, ID: "01J00000000000000000000001", URL: h.rcv.srv.URL, Body: body,
+		Headers: []httpcall.Header{{Name: "Authorization"}}, ClearSecret: !signed,
 	}
-	steps := []automations.Step{step, {Type: automations.StepApplyTag, Tag: "notified"}}
+	steps := []automationsteps.Step{step, {Type: automationsteps.ApplyTag, Tag: "notified"}}
 	mod := automations.New(e.cipher, e.Bus, testhelper.Renderer(), e.OutboundModule())
 	acme := e.DB.Scoped(fixtures.AcmeID)
 	_, err := mod.Update(context.Background(), acme, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
@@ -154,7 +156,7 @@ func (h *httpStepHarness) stepper() *stepping.Module {
 }
 
 func (h *httpStepHarness) worker(allow webhook.Allowlist) *jobs.RunHTTPStepWorker {
-	return jobs.NewRunHTTPStepWorker(h.DB, noFence, h.cipher, h.stepper(), webhook.NewClientAllowing(2*time.Second, allow), func() time.Time { return h.clock })
+	return jobs.NewRunHTTPStepWorker(h.DB, h.cipher, h.stepper(), webhook.NewClientAllowing(2*time.Second, allow), func() time.Time { return h.clock })
 }
 
 // attempt works the HTTP step as river's attempt-th try; the last one is the job's MaxAttempts.
@@ -225,6 +227,22 @@ func TestHTTPStepWithoutASecretIsUnsigned(t *testing.T) {
 	assert.Equal(t, 1, h.run(runID).step)
 }
 
+func TestHTTPStepDeliveredAgainAfterSuccessMakesNoNewCallOrNextJob(t *testing.T) {
+	h := newHTTPStepHarness(t, `{"ok":true}`, true)
+	runID := h.enroll(t, fixtures.ContactAliceID)
+	w := h.worker(h.rcv.allow)
+	require.NoError(t, h.attempt(w, runID, 1))
+
+	require.NoError(t, h.attempt(w, runID, 2))
+
+	calls := h.rcv.received()
+	assert.Len(t, calls, 1)
+	r := h.run(runID)
+	assert.Equal(t, 1, r.step)
+	queued := queuedSteps(t, h.TestEnv)
+	assert.Equal(t, []map[string]any{stepJob(runID, 1)}, queued)
+}
+
 func TestHTTPStepFailsTheEnrollmentWhenRetriesAreSpent(t *testing.T) {
 	h := newHTTPStepHarness(t, `{"ok":true}`, true)
 	runID := h.enroll(t, fixtures.ContactAliceID)
@@ -243,6 +261,12 @@ func TestHTTPStepFailsTheEnrollmentWhenRetriesAreSpent(t *testing.T) {
 	assert.Equal(t, http.StatusServiceUnavailable, *r.httpStatus)
 	assert.Equal(t, strings.Repeat("x", webhook.ExcerptBytes), *r.excerpt)
 	assert.Empty(t, queuedSteps(t, h.TestEnv), "a failed Enrollment queues no next step")
+	calls := h.rcv.received()
+	require.Len(t, calls, 2)
+	firstID := calls[0].header.Get(standardwebhooks.HeaderWebhookID)
+	retryID := calls[1].header.Get(standardwebhooks.HeaderWebhookID)
+	assert.Equal(t, fmt.Sprintf("automation_%d_0", runID), firstID)
+	assert.Equal(t, firstID, retryID, "an ordinary retry retains the external request identity")
 }
 
 func TestHTTPStepAnsweredWithAClientErrorFailsAtOnce(t *testing.T) {

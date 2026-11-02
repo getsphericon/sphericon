@@ -2,11 +2,11 @@
 // Rule's Trigger events is recorded for a Contact and its Condition holds, its Actions run at
 // once, in order. The module writes and validates Rules, evaluates an Event against the active
 // ones (Evaluate, the entry both the evaluation job and the tests call, no queue needed) and runs
-// a Firing's Actions (RunActions).
+// a Firing's Actions (RunActions), including its pending HTTP Actions (ExecuteHTTP).
 //
-// It takes a *ent.Scoped on every call and holds no client. It imports none of the modules the
-// Actions call: an Action is a Runner supplied by the caller (internal/jobs), so adding an
-// Action kind is a new Runner and a new type name here, nothing in the evaluation.
+// It takes a *ent.Scoped on every call and holds no database client. Tag and Enrollment Actions
+// are Runners supplied by the caller (internal/jobs); a pending HTTP Action is executed through
+// the module, with the queue adapter supplying the protected transport and attempt information.
 package rules
 
 import (
@@ -940,9 +940,9 @@ func FiringActions(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring) ([]Act
 	return actions, nil
 }
 
-// PendingHTTP is the http Action at index of the Firing, and whether it still waits for its call:
+// pendingHTTP is the http Action at index of the Firing, and whether it still waits for its call:
 // a result already recorded, or an Action that is not an http one, leaves nothing to do.
-func PendingHTTP(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring, index int) (Action, bool, error) {
+func pendingHTTP(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring, index int) (Action, bool, error) {
 	actions, err := FiringActions(ctx, s, f)
 	if err != nil {
 		return Action{}, false, err
@@ -951,7 +951,7 @@ func PendingHTTP(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring, index in
 	if err != nil {
 		return Action{}, false, fmt.Errorf("firing %d results: %w", f.ID, err)
 	}
-	if index >= len(actions) || index >= len(results) || results[index].Status != Pending || actions[index].Type != ActionHTTP {
+	if index < 0 || index >= len(actions) || index >= len(results) || results[index].Status != Pending || actions[index].Type != ActionHTTP {
 		return Action{}, false, nil
 	}
 	return actions[index], true, nil

@@ -11,35 +11,19 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestDecodeReadsTheStoredDefinition(t *testing.T) {
-	steps, err := automations.Decode(`[{"type":"email","subject":"Hi","body":"<p></p>"},{"type":"wait","seconds":60},{"type":"apply_tag","tag":"vip"}]`)
-	require.NoError(t, err)
-	assert.Equal(t, []automations.Step{
-		{Type: automations.StepEmail, Subject: "Hi", Body: "<p></p>"},
-		{Type: automations.StepWait, Seconds: 60},
-		{Type: automations.StepApplyTag, Tag: "vip"},
-	}, steps)
-
-	none, err := automations.Decode("")
-	require.NoError(t, err)
-	assert.Empty(t, none, "an empty definition has no steps")
-
-	_, err = automations.Decode("{not json")
-	require.Error(t, err)
-}
-
 func TestEncodeKeepsOnlyTheFieldsOfEachStepType(t *testing.T) {
-	def, err := automations.Encode([]automations.Step{
-		{Type: automations.StepEmail, Subject: "Hi", Body: "b", Seconds: 9, Tag: "stray"},
-		{Type: automations.StepWait, Seconds: 30, Subject: "stray"},
-		{Type: automations.StepApplyTag, Tag: "  vip ", Body: "stray"},
-		{Type: automations.StepRemoveTag, Tag: "old"},
+	def, err := automations.Encode([]automationsteps.Step{
+		{Type: automationsteps.Email, Subject: "Hi", Body: "b", Seconds: 9, Tag: "stray"},
+		{Type: automationsteps.Wait, Seconds: 30, Subject: "stray"},
+		{Type: automationsteps.ApplyTag, Tag: "  vip ", Body: "stray"},
+		{Type: automationsteps.RemoveTag, Tag: "old"},
 		{Subject: "untyped steps are emails"},
 	})
 	require.NoError(t, err)
@@ -57,8 +41,8 @@ func TestEncodeKeepsOnlyTheFieldsOfEachStepType(t *testing.T) {
 }
 
 func TestEncodeSanitizesAnEmailStepBody(t *testing.T) {
-	def, err := automations.Encode([]automations.Step{
-		{Type: automations.StepEmail, Subject: "Hi", Body: `<p onclick="x()">Hi {{ first_name }}</p><script>alert(1)</script>`},
+	def, err := automations.Encode([]automationsteps.Step{
+		{Type: automationsteps.Email, Subject: "Hi", Body: `<p onclick="x()">Hi {{ first_name }}</p><script>alert(1)</script>`},
 	})
 	require.NoError(t, err)
 	assert.JSONEq(t, `[{"type":"email","subject":"Hi","body":"<p>Hi {{ first_name }}</p>"}]`, def)
@@ -71,12 +55,12 @@ func TestCreateStoresAnInactiveAutomationWithEncodedSteps(t *testing.T) {
 
 	a, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
 		Name: "Onboarding", TriggerEvent: "signup",
-		Steps: []automations.Step{{Type: automations.StepApplyTag, Tag: " new "}, {Type: automations.StepWait, Seconds: 5}},
+		Steps: []automationsteps.Step{{Type: automationsteps.ApplyTag, Tag: " new "}, {Type: automationsteps.Wait, Seconds: 5}},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, automation.StatusInactive, a.Status)
 	assert.EqualValues(t, fixtures.AcmeID, a.WorkspaceID)
-	assert.Equal(t, []automations.Step{{Type: automations.StepApplyTag, Tag: "new"}, {Type: automations.StepWait, Seconds: 5}}, draftSteps(t, a))
+	assert.Equal(t, []automationsteps.Step{{Type: automationsteps.ApplyTag, Tag: "new"}, {Type: automationsteps.Wait, Seconds: 5}}, draftSteps(t, a))
 	live, draft := automations.LiveAndDraft(a)
 	assert.Nil(t, live, "nothing is live until it is published")
 	assert.Equal(t, "signup", draft.TriggerEvent)
@@ -100,11 +84,11 @@ func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 	ctx := context.Background()
 	before := automationNames(t, env)
 
-	for name, steps := range map[string][]automations.Step{
+	for name, steps := range map[string][]automationsteps.Step{
 		"unknown type":        {{Type: "sms"}},
-		"negative wait":       {{Type: automations.StepWait, Seconds: -1}},
-		"apply_tag blank tag": {{Type: automations.StepApplyTag, Tag: "  "}},
-		"remove_tag no tag":   {{Type: automations.StepRemoveTag}},
+		"negative wait":       {{Type: automationsteps.Wait, Seconds: -1}},
+		"apply_tag blank tag": {{Type: automationsteps.ApplyTag, Tag: "  "}},
+		"remove_tag no tag":   {{Type: automationsteps.RemoveTag}},
 	} {
 		_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "x", TriggerEvent: "y", Steps: steps})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, name)
@@ -146,9 +130,9 @@ func TestUpdateChangesOnlyWhatIsGivenAndKeepsTheStatus(t *testing.T) {
 	assert.Equal(t, draftSteps(t, before), draftSteps(t, renamed), "steps untouched when not given")
 	assert.Equal(t, before.Status, renamed.Status)
 
-	resteps, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Steps: &[]automations.Step{{Type: automations.StepWait, Seconds: 1}}})
+	resteps, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Steps: &[]automationsteps.Step{{Type: automationsteps.Wait, Seconds: 1}}})
 	require.NoError(t, err)
-	assert.Equal(t, []automations.Step{{Type: automations.StepWait, Seconds: 1}}, draftSteps(t, resteps))
+	assert.Equal(t, []automationsteps.Step{{Type: automationsteps.Wait, Seconds: 1}}, draftSteps(t, resteps))
 }
 
 func TestPublishAndDeactivateFlipTheStatus(t *testing.T) {
@@ -247,7 +231,7 @@ func TestUsingTagCountsTheLiveVersionAndTheDraftOfKeptAutomations(t *testing.T) 
 	live := using()
 	assert.Equal(t, []string{fixtures.AutomationTagOnEngagementName}, live, "its live version removes the Tag")
 
-	tagging := []automations.Step{{Type: automations.StepApplyTag, Tag: fixtures.TagVipName}}
+	tagging := []automationsteps.Step{{Type: automationsteps.ApplyTag, Tag: fixtures.TagVipName}}
 	_, err := m.Update(ctx, acme, fixtures.AutomationWinBackID, automations.UpdateInput{Steps: &tagging})
 	require.NoError(t, err)
 	drafted := using()

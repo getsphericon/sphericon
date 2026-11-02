@@ -3,7 +3,6 @@ import { DateInput } from '@mantine/dates'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import * as z from 'zod'
 
 import { CountryFlag } from '../../components/CountryFlag.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
@@ -13,12 +12,15 @@ import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { countryOptions } from '../../utils/countries.ts'
-import { tagsCodec } from './tags.ts'
 
 const timeZones = Intl.supportedValuesOf('timeZone')
 
 // What the form submits: the create input, with the tags always given.
 export type ContactPayload = Omit<SiteCreateContactInput, 'tags'> & { tags: string[] }
+export type ContactValues = Record<
+  Exclude<keyof ContactPayload, 'tags' | 'subjectId' | 'customFields'>,
+  string
+> & { tags: string[] }
 
 // Identity is multi-key: subject_id / email / phone are alias keys, any of which may be
 // absent (ADR 0002); blank inputs are normalized away by the contact form schema. The subject
@@ -28,11 +30,11 @@ export function ContactForm({
   isPending,
   onSubmit,
   onCancel,
-}: ResourceFormProps<ContactPayload>) {
+}: ResourceFormProps<ContactPayload, ContactValues>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
   // A stored zone the browser's list lacks (UTC, an alias) stays selectable.
-  const timeZone = form.values.timeZone ?? ''
+  const timeZone = form.values.timeZone
   const zones =
     timeZone === '' || timeZones.includes(timeZone) ? timeZones : [...timeZones, timeZone]
   const tagsQuery = useQuery(siteTagsListOptions({ path: { workspaceId } }))
@@ -40,11 +42,6 @@ export function ContactForm({
     () => tagsQuery.data?.items.map((tag) => tag.name) ?? [],
     [tagsQuery.data],
   )
-  // The form holds the tags as JSON text (see the contact resource).
-  const tags = useMemo(() => {
-    const parsed = tagsCodec.safeParse(form.values.tags)
-    return parsed.success ? parsed.data : []
-  }, [form.values.tags])
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
@@ -90,8 +87,9 @@ export function ContactForm({
         <TagsInput
           label={t(($) => $.table.tags)}
           data={knownTags}
-          value={tags}
-          onChange={(next) => form.setFieldValue('tags', z.encode(tagsCodec, next))}
+          value={form.values.tags}
+          onChange={(next) => form.setFieldValue('tags', next)}
+          error={form.errors.tags}
         />
 
         <Group justify="flex-end">

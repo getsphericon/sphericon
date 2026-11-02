@@ -1,8 +1,7 @@
 import { Alert, Button, Group, Select, Stack, TextInput } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import * as z from 'zod'
 
 import { MessageEditor } from '../../components/MessageEditor.tsx'
 import { AnchorLink, ButtonLink } from '../../components/RouterLink.tsx'
@@ -18,14 +17,25 @@ import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/b
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as emailsRoute } from '../../routes/workspaces/$workspaceId/settings/emails.tsx'
 import { joinEmail, splitEmail } from '../../utils/emailAddress.ts'
-import { docCodec } from '../../utils/messageDoc.ts'
+import type { MessageDoc } from '../../utils/messageDoc.ts'
 import { SendCapWarning } from './SendCapWarning.tsx'
+
+export interface BroadcastValues {
+  name: string
+  subject: string
+  fromName: string
+  fromEmail: string
+  segmentId: string
+  integrationId: string
+  body: string
+  doc: MessageDoc | null
+}
 
 export function BroadcastForm({
   form,
   isPending,
   onSubmit,
-}: ResourceFormProps<CreateBroadcastInput>) {
+}: ResourceFormProps<CreateBroadcastInput, BroadcastValues>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
 
@@ -57,7 +67,7 @@ export function BroadcastForm({
   const verifiedDomains = (domainsQuery.data?.items ?? [])
     .filter((d) => d.verified)
     .map((d) => d.domain)
-  const { local: fromLocal, domain: savedDomain } = splitEmail(form.values.fromEmail ?? '')
+  const { local: fromLocal, domain: savedDomain } = splitEmail(form.values.fromEmail)
   const [chosenDomain, setChosenDomain] = useState('')
   const fromDomain = savedDomain || chosenDomain || (verifiedDomains[0] ?? '')
   const domainOptions = [
@@ -82,12 +92,6 @@ export function BroadcastForm({
   )
   const templates = templatesQuery.data?.items ?? []
 
-  // The form holds the document as JSON text; a blank or unreadable text is no document.
-  const docText = form.values.doc
-  const doc = useMemo(() => {
-    const parsed = docCodec.safeParse(docText)
-    return parsed.success ? parsed.data : null
-  }, [docText])
   // The editor reads its content once when it mounts, so a copied Template remounts it.
   const [editorKey, setEditorKey] = useState(0)
 
@@ -102,7 +106,7 @@ export function BroadcastForm({
       form.setFieldValue('subject', tpl.subject)
     }
     form.setFieldValue('body', tpl.body)
-    form.setFieldValue('doc', tpl.doc ? z.encode(docCodec, tpl.doc) : '')
+    form.setFieldValue('doc', tpl.doc ?? null)
     setEditorKey((key) => key + 1)
   }
 
@@ -198,13 +202,13 @@ export function BroadcastForm({
 
         <MessageEditor
           key={editorKey}
-          doc={doc}
-          body={form.values.body ?? ''}
+          doc={form.values.doc}
+          body={form.values.body}
           onChange={(edit) => {
             if ('doc' in edit) {
-              form.setFieldValue('doc', z.encode(docCodec, edit.doc))
+              form.setFieldValue('doc', edit.doc)
             } else {
-              form.setFieldValue('doc', '')
+              form.setFieldValue('doc', null)
               form.setFieldValue('body', edit.body)
             }
           }}

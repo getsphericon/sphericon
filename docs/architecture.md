@@ -291,6 +291,13 @@ only caller of their writes (`forbidigo`).
   `internal/liveuse` finds the live work (today the active email Automations) for the modules that
   cannot import `internal/automations`. Both are leaves that hold no raw `*ent.Client`: `liveuse`
   takes a `*ent.Scoped`, `inuse` only maps rows to users.
+- **Stored Automation Steps:** `internal/automationsteps` owns the stored Step model, its kinds,
+  decoding and whether a definition sends email. Publish, Needs attention and live-use checks
+  share that interpretation: an empty stored string means no Steps; damaged JSON returns an error,
+  so a removal cannot treat an unreadable definition as unused. The reader chooses the version:
+  dependencies use live, an Enrollment uses its pinned version. `internal/automations` keeps
+  preparation for writing (normalization, HTML sanitization, validation and secret sealing), masked
+  API views and the version lifecycle. The shared reader neither queries nor executes Steps.
 - **Owner notices**: a module that tells the Owners of a Workspace something (Join domains, Sending domains,
   webhooks, suspension, the abuse detector) takes an `ownernotice.Notify` (`internal/ownernotice`, a leaf, so
   that modules `accounts` imports can share it) and calls `Tell` or `TellBestEffort`; `accounts.OwnerNotifier`
@@ -304,6 +311,22 @@ only caller of their writes (`forbidigo`).
   (per-workspace providers: smtp/ses). Both providers share `messaging.BuildMIME`
   (wneessen/go-mail) — smtp sends the `*mail.Msg` directly, ses serializes it to raw
   bytes for SES v2 `SendEmail` (raw content).
+- **Automation HTTP Steps**: `stepping.Module.ExecuteHTTP` selects the Enrollment's pinned Step,
+  checks its lifecycle and position, opens and renders its stored call, and executes it through
+  the protected HTTP adapter under the Enrollment's exit fence. Success advances and queues the
+  next Step in one transaction; final failure records the Enrollment's failure. Ordinary attempt
+  data (`httpcall.Attempt`) produces mutually exclusive retry, cancellation or wait decisions;
+  the River worker only establishes Workspace scope and translates those decisions. A rate-limit
+  wait spends no ordinary attempt. The stable external request identity is preserved, but a call
+  accepted before a failed advancement may be repeated.
+- **Rule HTTP Actions**: `rules.Module.ExecuteHTTP` selects the pending Action of a Firing,
+  opens its secrets, renders its Contact and Event, executes the protected call and records the
+  result. It receives ordinary attempt and timing data (`httpcall.Attempt`) and the existing
+  protected HTTP adapter, returning a retry or wait decision without River types. The River
+  worker loads the Firing to establish Workspace scope and translates that decision. A final
+  failure belongs to the Action's result; it does not cancel the Firing's other Actions or adopt
+  Enrollment lifecycle rules. The call retains its stable request identity and existing delivery
+  guarantees: a request accepted before a failed result write may be repeated.
 - `internal/emaildoc` (ADR 0040) turns an editor document into email HTML inside the binary: the editor's own
   export code, bundled by `packages/emaildoc` (`mise run build:emaildoc`; rerun it after any change to the pinned
   `@react-email/editor`, then `go test ./internal/emaildoc -update` to accept the new golden HTML) and run in goja,
@@ -311,3 +334,15 @@ only caller of their writes (`forbidigo`).
   bundle dependencies in `packages/emaildoc/package.json` are pinned exactly.
 - The tracker snippet (`/t.js`) is the `@sphericon/analytics` IIFE bundle, built and embedded:
   `mise run build:tracker` copies `packages/analytics/dist/t.js` into `internal/server/assets/`.
+
+## Frontend resource forms
+
+`src/resources` owns resource form hydration, request conversion and the create/edit lifecycle.
+Editors hold typed values, including collections, Condition drafts and message documents, and pass
+them directly to the form. `resourceFormSchema` combines explicit empty editor values with the
+generated request schema: omitted updates stay absent, nullable clears stay null, and empty
+collections remain supplied. Scalar blanks follow the contract's clearing behavior; a null empty
+editor value can omit a nonnullable field, such as a document when editing HTML source. Generated
+schemas validate the resulting request, including incomplete drafts. `defineResource` preserves
+unfinished edits across refetches, reloads on an intentional resource revision change and resets
+stateful editors to the normalized saved resource after a successful save.

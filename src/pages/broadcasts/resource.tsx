@@ -1,5 +1,3 @@
-import * as z from 'zod'
-
 import {
   siteBroadcastsCreateMutation,
   siteBroadcastsGetOptions,
@@ -9,25 +7,23 @@ import { zCreateBroadcastInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
-import { docCodec } from '../../utils/messageDoc.ts'
 import { BroadcastForm } from './BroadcastForm.tsx'
+import type { BroadcastValues } from './BroadcastForm.tsx'
 import { DeliveryBlock } from './DeliveryBlock.tsx'
 
-// The name is required on both create and update; a blank Segment or Integration is the whole
-// list or the Workspace default. The document is held as JSON text; a blank one is absent,
-// so a source-only save writes a body.
-const broadcastSchema = resourceFormSchema(
-  zCreateBroadcastInput
-    .pick({
-      subject: true,
-      fromName: true,
-      fromEmail: true,
-      segmentId: true,
-      integrationId: true,
-      body: true,
-    })
-    .extend({ name: z.string().min(1), doc: z.exactOptional(docCodec) }),
-)
+// A blank Segment or Integration is the whole list or the Workspace default.
+const blankBroadcast: BroadcastValues = {
+  name: '',
+  subject: '',
+  fromName: '',
+  fromEmail: '',
+  segmentId: '',
+  integrationId: '',
+  body: '',
+  doc: null,
+}
+
+const broadcastSchema = resourceFormSchema(zCreateBroadcastInput, blankBroadcast)
 
 const broadcastResource = defineResource({
   schema: broadcastSchema,

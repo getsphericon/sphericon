@@ -12,14 +12,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 const slackBody = `{"text": "New signup: {{ first_name }} {{ last_name }}", "email": "{{ email }}"}`
 
-func httpStep(url string) automations.Step {
-	return automations.Step{Type: automations.StepHTTP, URL: url, Body: slackBody}
+func httpStep(url string) automationsteps.Step {
+	return automationsteps.Step{Type: automationsteps.HTTP, URL: url, Body: slackBody}
 }
 
 func TestDryRunEscapesAHostileContactNameAndKeepsTheStructure(t *testing.T) {
@@ -69,10 +71,10 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 
-	headers := func(n int) []automations.Header {
-		out := make([]automations.Header, n)
+	headers := func(n int) []httpcall.Header {
+		out := make([]httpcall.Header, n)
 		for i := range out {
-			out[i] = automations.Header{Name: "X-H" + strings.Repeat("a", i), Value: "v"}
+			out[i] = httpcall.Header{Name: "X-H" + strings.Repeat("a", i), Value: "v"}
 		}
 		return out
 	}
@@ -83,12 +85,12 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	bigBody.Body = `{"a":"` + strings.Repeat("a", 64<<10) + `"}`
 	notHTTP := httpStep("ftp://hooks.example.com/x")
 	noURL := httpStep("")
-	tooMany := make([]automations.Step, 11)
+	tooMany := make([]automationsteps.Step, 11)
 	for i := range tooMany {
 		tooMany[i] = httpStep("https://hooks.example.com/x")
 	}
 
-	for name, steps := range map[string][]automations.Step{
+	for name, steps := range map[string][]automationsteps.Step{
 		"invalid json":      {invalidJSON},
 		"url over 2 KiB":    {longURL},
 		"body over 64 KiB":  {bigBody},
@@ -102,11 +104,11 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 
 	five := httpStep("https://hooks.example.com/x")
 	five.Headers = headers(5)
-	ten := make([]automations.Step, 10)
+	ten := make([]automationsteps.Step, 10)
 	for i := range ten {
 		ten[i] = httpStep("https://hooks.example.com/x")
 	}
-	for name, steps := range map[string][]automations.Step{"five headers": {five}, "ten steps": ten} {
+	for name, steps := range map[string][]automationsteps.Step{"five headers": {five}, "ten steps": ten} {
 		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, TriggerEvent: "signup", Steps: steps})
 		assert.NoError(t, err, name)
 	}
@@ -137,10 +139,10 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	ctx := context.Background()
 
 	step := httpStep("https://hooks.slack.com/services/T000/SECRETPATH")
-	step.Headers = []automations.Header{{Name: "Authorization", Value: "Bearer hunter2"}}
+	step.Headers = []httpcall.Header{{Name: "Authorization", Value: "Bearer hunter2"}}
 	step.Secret = "whsec_topsecret"
 	created, err := m.Create(ctx, acme, automations.CreateInput{
-		Name: "Notify", TriggerEvent: "signup", Steps: []automations.Step{{Type: automations.StepWait, Seconds: 1}, step},
+		Name: "Notify", TriggerEvent: "signup", Steps: []automationsteps.Step{{Type: automationsteps.Wait, Seconds: 1}, step},
 	})
 	require.NoError(t, err)
 	for _, secret := range []string{"SECRETPATH", "hunter2", "whsec_topsecret"} {
@@ -151,11 +153,11 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	require.NotEmpty(t, stored[1].ID, "a new HTTP step gets an id")
 
 	// An edit that resends only the id, with a new body, keeps URL, headers and secret.
-	edit := automations.Step{
-		Type: automations.StepHTTP, ID: stored[1].ID, Body: `{"edited":true}`,
-		Headers: []automations.Header{{Name: "Authorization"}},
+	edit := automationsteps.Step{
+		Type: automationsteps.HTTP, ID: stored[1].ID, Body: `{"edited":true}`,
+		Headers: []httpcall.Header{{Name: "Authorization"}},
 	}
-	updated, err := m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automations.Step{edit}})
+	updated, err := m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automationsteps.Step{edit}})
 	require.NoError(t, err)
 	after := draftSteps(t, updated)
 	assert.Equal(t, stored[1].URL, after[0].URL, "the stored ciphertext is copied, not re-sealed")
@@ -170,11 +172,11 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	assert.Equal(t, "whsec_topsecret", opened.Secret)
 
 	// A new URL, header and a cleared secret replace what was stored.
-	replace := automations.Step{
-		Type: automations.StepHTTP, ID: stored[1].ID, URL: "https://hooks.zapier.com/a", Body: slackBody,
-		Headers: []automations.Header{{Name: "X-Key", Value: "k"}}, ClearSecret: true,
+	replace := automationsteps.Step{
+		Type: automationsteps.HTTP, ID: stored[1].ID, URL: "https://hooks.zapier.com/a", Body: slackBody,
+		Headers: []httpcall.Header{{Name: "X-Key", Value: "k"}}, ClearSecret: true,
 	}
-	updated, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automations.Step{replace}})
+	updated, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automationsteps.Step{replace}})
 	require.NoError(t, err)
 	after = draftSteps(t, updated)
 	opened, err = automations.OpenHTTP(env.Cipher, after[0])
@@ -184,7 +186,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	assert.Empty(t, opened.Secret)
 
 	// A header with no stored value to keep is refused.
-	bad := automations.Step{Type: automations.StepHTTP, ID: stored[1].ID, Body: slackBody, Headers: []automations.Header{{Name: "Nope"}}}
-	_, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automations.Step{bad}})
+	bad := automationsteps.Step{Type: automationsteps.HTTP, ID: stored[1].ID, Body: slackBody, Headers: []httpcall.Header{{Name: "Nope"}}}
+	_, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automationsteps.Step{bad}})
 	assert.ErrorIs(t, err, automations.ErrInvalidStep)
 }

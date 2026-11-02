@@ -1,6 +1,4 @@
-import * as z from 'zod'
-
-import { conditionCodec, emptyGroup } from '../../components/conditions/condition.ts'
+import { emptyGroup } from '../../components/conditions/condition.ts'
 import {
   siteSegmentsCreateMutation,
   siteSegmentsGetOptions,
@@ -11,16 +9,17 @@ import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { SegmentForm } from './SegmentForm.tsx'
+import type { SegmentValues } from './SegmentForm.tsx'
 
 // A Segment is always a Condition: a stored segment without a condition loads as the empty
 // Condition (matches all contacts); the contract has no null condition.
 
-const segmentSchema = resourceFormSchema(
-  z.object({
-    name: zSiteCreateSegmentInput.shape.name,
-    condition: conditionCodec.default(emptyGroup),
-  }),
-)
+const blankSegment: SegmentValues = {
+  name: '',
+  condition: emptyGroup,
+}
+
+const segmentSchema = resourceFormSchema(zSiteCreateSegmentInput, blankSegment)
 
 const segmentResource = defineResource({
   schema: segmentSchema,

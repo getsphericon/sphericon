@@ -27,6 +27,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
@@ -403,7 +404,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) externalapi.AutomationStatus
 	// goverter:enum:transform value
-	AutomationStepTypeToResource(source automations.StepType) externalapi.AutomationStepType
+	AutomationStepTypeToResource(source automationsteps.Kind) externalapi.AutomationStepType
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) externalapi.BroadcastStatus
 	// goverter:enum:transform value

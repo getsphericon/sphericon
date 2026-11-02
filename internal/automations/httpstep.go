@@ -8,6 +8,7 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -32,11 +33,6 @@ var (
 	// ErrInvalidBody: the body did not render to valid JSON within the size limit.
 	ErrInvalidBody = httpcall.ErrInvalidBody
 )
-
-// Header is one request header of an HTTP step. In a stored step Value is
-// ciphertext. In a saved step, an empty Value keeps the stored value of the header
-// with the same name.
-type Header = httpcall.Header
 
 // OpenedHTTP is an HTTP step's secrets in the clear, for the executor.
 type OpenedHTTP = httpcall.Opened
@@ -81,11 +77,11 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, contactID int64, bod
 
 // OpenHTTP decrypts a stored HTTP step's URL, header values and secret with the cipher that sealed
 // them.
-func OpenHTTP(cipher *secrets.Cipher, s Step) (OpenedHTTP, error) {
+func OpenHTTP(cipher *secrets.Cipher, s automationsteps.Step) (OpenedHTTP, error) {
 	return httpcall.Open(cipher, spec(s))
 }
 
-func spec(s Step) httpcall.Spec {
+func spec(s automationsteps.Step) httpcall.Spec {
 	return httpcall.Spec{URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret, ClearSecret: s.ClearSecret}
 }
 
@@ -97,18 +93,18 @@ func invalid(format string, a ...any) error {
 // URL, header values and secret encrypted per field. What the author did not resend
 // (an empty URL, header value or secret) is copied, as stored ciphertext, from the
 // stored step with the same id.
-func (m *Module) sealSteps(steps, stored []Step) ([]Step, error) {
-	prev := map[string]Step{}
+func (m *Module) sealSteps(steps, stored []automationsteps.Step) ([]automationsteps.Step, error) {
+	prev := map[string]automationsteps.Step{}
 	for i := range stored {
-		if stored[i].Type == StepHTTP {
+		if stored[i].Type == automationsteps.HTTP {
 			prev[stored[i].ID] = stored[i]
 		}
 	}
-	out := make([]Step, len(steps))
+	out := make([]automationsteps.Step, len(steps))
 	seen := map[string]bool{}
 	for i := range steps {
 		s := steps[i]
-		if s.Type != StepHTTP {
+		if s.Type != automationsteps.HTTP {
 			out[i] = s
 			continue
 		}
@@ -129,10 +125,10 @@ func (m *Module) sealSteps(steps, stored []Step) ([]Step, error) {
 	return out, nil
 }
 
-func (m *Module) sealHTTP(s, prev Step, known bool) (Step, error) {
-	out := Step{Type: StepHTTP, ID: s.ID}
+func (m *Module) sealHTTP(s, prev automationsteps.Step, known bool) (automationsteps.Step, error) {
+	out := automationsteps.Step{Type: automationsteps.HTTP, ID: s.ID}
 	if !known {
-		prev = Step{}
+		prev = automationsteps.Step{}
 		out.ID = ulid.Make().String()
 	}
 	sealed, err := httpcall.Seal(m.cipher, spec(s), spec(prev), "http step")

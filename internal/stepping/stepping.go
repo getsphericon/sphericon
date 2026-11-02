@@ -17,6 +17,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -199,7 +200,7 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 	if err != nil {
 		return fmt.Errorf("load version %d of run %d: %w", run.VersionID, run.ID, err)
 	}
-	steps, err := automations.Decode(version.Steps)
+	steps, err := automationsteps.Decode(version.Steps)
 	if err != nil {
 		return m.fail(ctx, s, run.ID, fmt.Errorf("automation %d version %d steps: %w", a.ID, version.Version, err))
 	}
@@ -212,11 +213,11 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 	}
 
 	switch st := steps[step]; st.Type {
-	case automations.StepWait:
+	case automationsteps.Wait:
 		resume := m.now().Add(time.Duration(st.Seconds) * time.Second)
 		return m.advance(ctx, s, run.ID, step, move{resumeAt: &resume})
 
-	case automations.StepApplyTag, automations.StepRemoveTag:
+	case automationsteps.ApplyTag, automationsteps.RemoveTag:
 		// A tag step changes the Contact's Tags and moves straight on; it sends nothing. It
 		// writes the Contact's row, so it locks the Contact before it moves the Enrollment, in
 		// the order an exit takes them (automations.LockContact, #811). The move comes before
@@ -224,19 +225,19 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 		// The change is the `system` actor's (ADR 0022): a Tag the step creates is audited.
 		return m.advance(ctx, s, run.ID, step, move{contactID: run.ContactID, with: func(ts *ent.Scoped, pub events.Publisher) error {
 			sys := m.out.AsSystem(ts)
-			if st.Type == automations.StepApplyTag {
+			if st.Type == automationsteps.ApplyTag {
 				_, err := tags.ApplyIn(ctx, sys, pub, run.ContactID, st.Tag)
 				return err
 			}
 			return tags.RemoveIn(ctx, sys, pub, run.ContactID, st.Tag)
 		}})
 
-	case automations.StepHTTP:
+	case automationsteps.HTTP:
 		// The call runs on its own queue (ADR 0039); the job queued here makes it and moves
-		// the Enrollment on through FinishHTTPStep.
+		// the Enrollment on through ExecuteHTTP.
 		return m.enqueue(ctx, s, RunHTTPStepArgs{RunID: run.ID, Step: step}, nil)
 
-	case automations.StepEmail:
+	case automationsteps.Email:
 		return m.email(ctx, s, a, run, version, step, st)
 
 	default:
@@ -244,20 +245,7 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 	}
 }
 
-// FinishHTTPStep moves the Enrollment past its HTTP step and queues the step after it, in one
-// transaction. Nothing happens when the Enrollment no longer stands on step: an exit won while
-// the call was in flight, or an earlier attempt of the call already moved it.
-func (m *Module) FinishHTTPStep(ctx context.Context, s *ent.Scoped, runID int64, step int) error {
-	return m.advance(ctx, s, runID, step, move{})
-}
-
-// FailHTTPStep ends the Enrollment `failed` with the record of the call that could not
-// succeed. An Enrollment that already left `active` (an exit won) or is gone stays as it is.
-func (m *Module) FailHTTPStep(ctx context.Context, s *ent.Scoped, runID int64, f automations.Failure) error {
-	return quiet(automations.Fail(ctx, s, runID, m.now(), f))
-}
-
-func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, v *ent.AutomationVersion, step int, st automations.Step) error {
+func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, v *ent.AutomationVersion, step int, st automationsteps.Step) error {
 	c, err := s.Contact().Get(ctx, run.ContactID)
 	if err != nil {
 		return err

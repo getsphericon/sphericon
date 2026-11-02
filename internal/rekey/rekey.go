@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
@@ -209,7 +210,7 @@ func (m *Module) sweeps() []sweep {
 // sealSteps rewraps the sealed fields of an Automation version's HTTP steps: the URL, the header
 // values and the signing secret, each sealed on its own (ADR 0039).
 func (m *Module) sealSteps(stored string) (sealed string, changed bool, err error) {
-	steps, err := automations.Decode(stored)
+	steps, err := automationsteps.Decode(stored)
 	if err != nil {
 		return "", false, err
 	}
@@ -222,7 +223,7 @@ func (m *Module) sealSteps(stored string) (sealed string, changed bool, err erro
 		return nil
 	}
 	for i := range steps {
-		if steps[i].Type != automations.StepHTTP {
+		if steps[i].Type != automationsteps.HTTP {
 			continue
 		}
 		fields := []*string{&steps[i].URL, &steps[i].Secret}

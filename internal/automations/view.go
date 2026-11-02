@@ -1,12 +1,16 @@
 package automations
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/getsphericon/sphericon/internal/automationsteps"
+)
 
 // StepView is a stored Step as the API shows it: only the fields of its kind are set, so a field
 // another kind carries is absent rather than empty. An HTTP step is masked: its URL, header values
 // and signing secret never leave the server, only the header names and whether a secret is set.
 type StepView struct {
-	Type          StepType
+	Type          automationsteps.Kind
 	Subject, Body *string
 	// Doc is an email step's editor document, and EditorVersion the editor that rendered it; a
 	// step written as HTML has neither.
@@ -28,7 +32,7 @@ type HeaderName struct {
 // Views decodes a stored definition into the views of its steps. A definition that does not
 // decode shows no steps rather than an error.
 func Views(definition string) []StepView {
-	stored, err := Decode(definition)
+	stored, err := automationsteps.Decode(definition)
 	if err != nil {
 		return nil
 	}
@@ -39,14 +43,14 @@ func Views(definition string) []StepView {
 	return views
 }
 
-func viewOf(s *Step) StepView {
+func viewOf(s *automationsteps.Step) StepView {
 	v := StepView{Type: s.Type}
 	switch s.Type {
-	case StepWait:
+	case automationsteps.Wait:
 		v.Seconds = &s.Seconds
-	case StepApplyTag, StepRemoveTag:
+	case automationsteps.ApplyTag, automationsteps.RemoveTag:
 		v.Tag = &s.Tag
-	case StepHTTP:
+	case automationsteps.HTTP:
 		v.ID = &s.ID
 		v.Body = &s.Body
 		v.HasSecret = new(s.Secret != "")
@@ -54,7 +58,7 @@ func viewOf(s *Step) StepView {
 		for i, h := range s.Headers {
 			v.Headers[i] = HeaderName{Name: h.Name}
 		}
-	case StepEmail:
+	case automationsteps.Email:
 		v.Subject = &s.Subject
 		v.Body = &s.Body
 		if len(s.Doc) > 0 {

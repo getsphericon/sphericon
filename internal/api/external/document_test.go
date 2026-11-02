@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -244,7 +244,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AutomationsUpdateUnprocessableEntity{}, invalid)
-	stored, err := automations.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
+	stored, err := automationsteps.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
 	require.NoError(t, err)
 	assert.Contains(t, stored[0].Body, "Second")
 }

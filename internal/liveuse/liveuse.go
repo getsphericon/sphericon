@@ -5,12 +5,11 @@ package liveuse
 
 import (
 	"context"
-	"encoding/json"
-	"slices"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/inuse"
 )
 
@@ -35,17 +34,11 @@ func EmailAutomations(ctx context.Context, s *ent.Scoped, where ...predicate.Aut
 	}
 	var users []inuse.User
 	for _, a := range autos {
-		var steps []struct {
-			Type string `json:"type"`
-		}
-		if err := json.Unmarshal([]byte(a.Edges.LiveVersion.Steps), &steps); err != nil {
+		sends, err := automationsteps.SendsEmail(a.Edges.LiveVersion.Steps)
+		if err != nil {
 			return nil, err
 		}
-		if slices.ContainsFunc(steps, func(st struct {
-			Type string `json:"type"`
-		}) bool {
-			return st.Type == "email"
-		}) {
+		if sends {
 			users = append(users, inuse.User{Kind: inuse.Automation, ID: a.ID, Name: a.Name})
 		}
 	}

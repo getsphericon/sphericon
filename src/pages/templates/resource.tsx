@@ -1,5 +1,3 @@
-import * as z from 'zod'
-
 import {
   siteTemplatesCreateMutation,
   siteTemplatesGetOptions,
@@ -9,15 +7,18 @@ import { zCreateTemplateInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as templatesEditRoute } from '../../routes/workspaces/$workspaceId/templates/$templateId/edit.tsx'
-import { docCodec } from '../../utils/messageDoc.ts'
 import { TemplateForm } from './TemplateForm.tsx'
+import type { TemplateValues } from './TemplateForm.tsx'
 
-// The document is held as JSON text; a blank one is absent, so a source-only save writes a body.
-const templateSchema = resourceFormSchema(
-  zCreateTemplateInput
-    .pick({ name: true, subject: true, body: true })
-    .extend({ doc: z.exactOptional(docCodec) }),
-)
+// An absent document keeps source-only content in the body editor.
+const blankTemplate: TemplateValues = {
+  name: '',
+  subject: '',
+  body: '',
+  doc: null,
+}
+
+const templateSchema = resourceFormSchema(zCreateTemplateInput, blankTemplate)
 
 const templateResource = defineResource({
   schema: templateSchema,

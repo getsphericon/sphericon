@@ -148,7 +148,12 @@ func TestAnHTTPActionRetriesAServerErrorWithoutRecordingIt(t *testing.T) {
 	assert.Equal(t, rules.Pending, resultsOf(t, h.reload())[0].Status)
 
 	require.NoError(t, h.attempt(w, 2))
-	assert.Len(t, h.rcv.received(), 2)
+	calls := h.rcv.received()
+	require.Len(t, calls, 2)
+	firstID := calls[0].header.Get(standardwebhooks.HeaderWebhookID)
+	retryID := calls[1].header.Get(standardwebhooks.HeaderWebhookID)
+	assert.NotEmpty(t, firstID)
+	assert.Equal(t, firstID, retryID, "a receiver recognizes retries of the same Action")
 	f := h.reload()
 	assert.Equal(t, rules.Succeeded, resultsOf(t, f)[0].Status)
 	assert.NotNil(t, f.CompletedAt)

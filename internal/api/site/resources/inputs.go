@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
@@ -116,8 +117,8 @@ type Inputs interface {
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
-	AutomationStep(source siteapi.SiteAutomationStep) automations.Step
-	AutomationSteps(source []siteapi.SiteAutomationStep) []automations.Step
+	AutomationStep(source siteapi.SiteAutomationStep) automationsteps.Step
+	AutomationSteps(source []siteapi.SiteAutomationStep) []automationsteps.Step
 	AutomationCreate(source *siteapi.SiteCreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *siteapi.SiteUpdateAutomationInput) automations.UpdateInput
 
@@ -171,7 +172,7 @@ type Inputs interface {
 	// goverter:enum:transform value
 	BroadcastsOrder(source siteapi.SiteBroadcastsOrder) broadcasts.Order
 	// goverter:enum:transform value
-	AutomationStepType(source siteapi.SiteAutomationStepType) automations.StepType
+	AutomationStepType(source siteapi.SiteAutomationStepType) automationsteps.Kind
 	// goverter:enum:transform value
 	InvitableRole(source siteapi.SiteInvitableRole) invitation.Role
 	// goverter:enum:transform value
@@ -250,7 +251,7 @@ func signupSourcePtrIn(c Inputs, o siteapi.OptSiteSignupSource) *signupsurveyres
 }
 
 // automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.
-func automationStepsPtrIn(c Inputs, steps []siteapi.SiteAutomationStep) *[]automations.Step {
+func automationStepsPtrIn(c Inputs, steps []siteapi.SiteAutomationStep) *[]automationsteps.Step {
 	if steps == nil {
 		return nil
 	}

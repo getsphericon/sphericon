@@ -4,7 +4,7 @@ import * as z from 'zod'
 // The form useSchemaForm returns. @mantine/form's own form type is not importable (its .d.mts
 // re-exports a missing file), so it is derived from the hook; the members typed by the
 // validation rules are left out, they are the hook's business.
-export type SchemaForm<TValues extends Record<string, unknown>, TOutput> = Omit<
+export type SchemaForm<TValues extends object, TOutput> = Omit<
   ReturnType<typeof useForm<TValues, TOutput>>,
   'validate' | 'validateField' | 'isValid'
 >
@@ -12,7 +12,7 @@ export type SchemaForm<TValues extends Record<string, unknown>, TOutput> = Omit<
 // useSchemaForm is a form validated by a zod schema built from the generated (TypeSpec) ones, so
 // the contract is the one source of its rules; a submit hands over the schema's output. The
 // messages come from the zod error map in src/i18n.ts.
-export function useSchemaForm<TValues extends Record<string, unknown>, TOutput>(
+export function useSchemaForm<TValues extends object, TOutput>(
   schema: z.ZodType<TOutput, TValues>,
   initialValues: TValues,
 ): SchemaForm<TValues, TOutput> {

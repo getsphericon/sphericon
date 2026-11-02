@@ -17,7 +17,7 @@ import {
 import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as segmentsCreateRoute } from '../../routes/workspaces/$workspaceId/segments/new.tsx'
-import { page } from '../../test/payloads.ts'
+import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -164,6 +164,74 @@ test('editing shows an error alert when the segment cannot be loaded', async () 
 
   await expect.element(screen.getByText('Failed to load segments')).toBeVisible()
   await expect.element(screen.getByText('segment not found')).toBeVisible()
+})
+
+test('a successful save reloads the Condition editor from the saved definition', async () => {
+  serveCatalogue()
+  worker.use(
+    handleSiteSegmentsGet({
+      body: { id: '7', name: 'Mail users', condition: RULE, ...TIMESTAMPS },
+    }),
+    handleSiteSegmentsUpdate({
+      body: {
+        id: '7',
+        name: 'Everyone',
+        condition: { kind: 'group', combinator: 'and', rules: [] },
+        ...TIMESTAMPS,
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<SegmentEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByTestId('value-editor')).toHaveValue('@x')
+  await screen.getByLabelText('Name', { exact: false }).fill('Everyone')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText('Segment updated')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('value-editor')).not.toBeInTheDocument()
+})
+
+test('an unfinished Condition is refused, then saves its completed structured edit', async () => {
+  const bodies: unknown[] = []
+  const condition: SiteConditionGroup = {
+    kind: 'group',
+    combinator: 'and',
+    rules: [{ kind: 'event', action: 'purchased', operator: 'atLeast', times: 2, withinDays: 7 }],
+  }
+  serveCatalogue()
+  worker.use(
+    handleSiteEventsActions({ body: { actions: ['purchased'] } }),
+    handleSiteSegmentsGet({ body: { id: '7', name: 'Buyers', condition, ...TIMESTAMPS } }),
+    handleSiteSegmentsUpdate(async ({ request }) => {
+      const body: unknown = await request.json()
+      bodies.push(body)
+      return HttpResponse.json({ id: '7', name: 'Buyers', condition, ...TIMESTAMPS })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<SegmentEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByLabelText('Times')).toHaveValue('2')
+  await screen.getByLabelText('Times').fill('')
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await expect.element(screen.getByText('This field is required')).toBeInTheDocument()
+  expect(bodies).toEqual([])
+
+  await screen.getByLabelText('Times').fill('3')
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        name: 'Buyers',
+        condition: {
+          kind: 'group',
+          combinator: 'and',
+          rules: [
+            { kind: 'event', action: 'purchased', operator: 'atLeast', times: 3, withinDays: 7 },
+          ],
+        },
+      },
+    ])
 })
 
 test('editing shows no form while the segment loads, then the loaded values', async () => {

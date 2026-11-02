@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { HttpResponse } from 'msw'
 import { beforeEach, expect, test, vi } from 'vitest'
+import { userEvent } from 'vitest/browser'
 
 import {
   siteContactsGetOptions,
@@ -235,6 +236,26 @@ test('editing shows an error alert when the contact cannot be loaded', async () 
 
   await expect.element(screen.getByText('Failed to load contacts')).toBeVisible()
   await expect.element(screen.getByText('contact not found')).toBeVisible()
+})
+
+test('clearing the last Tag submits an empty collection and shows the normalized saved contact', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteContactsGet({ body: { ...LOADED_CONTACT, ...TIMESTAMPS } }),
+    handleSiteContactsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({ ...LOADED_CONTACT, firstName: 'Grace', tags: [] })
+    }),
+  )
+  const { screen } = await renderWithRouter(<ContactEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByLabelText('First name')).toHaveValue('Ada')
+  await screen.getByRole('combobox', { name: 'Tags' }).click()
+  await userEvent.keyboard('{Backspace}')
+  await screen.getByLabelText('First name').fill(' grace ')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => bodies).toMatchObject([{ firstName: 'grace', tags: [] }])
+  await expect.element(screen.getByLabelText('First name')).toHaveValue('Grace')
 })
 
 test('editing shows no form while the contact loads, then the loaded values', async () => {
