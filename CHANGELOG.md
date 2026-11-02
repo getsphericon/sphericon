@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.5.0](https://github.com/getsphericon/sphericon/compare/v0.4.0...v0.5.0) (2026-11-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **holds:** the OpenAPI schema BroadcastHoldReason of /site and /api is renamed HoldReason; its values are unchanged. Upgrade: nothing to do on the instance; a client generated from the OpenAPI document picks up the new name when it is regenerated.
+* **contacts:** the external API's contact upsert replaces a core attribute it is given (first and last name, time zone, country, locale, birthday, city, avatar) instead of filling it only while the contact has none, and null clears it; a custom field may no longer take the key of one of them. Upgrade: nothing to run; an integration that relied on the upsert never overwriting these attributes stops sending them for contacts that already have them.
+
+### Features
+
+* **attention:** a scheduled Broadcast the Send cap will slow needs attention ([#980](https://github.com/getsphericon/sphericon/issues/980)) ([117fd97](https://github.com/getsphericon/sphericon/commit/117fd97f612f7df0b2e3c34dac4032ff53afe86a)), closes [#939](https://github.com/getsphericon/sphericon/issues/939)
+* **attention:** an active Automation that cannot send needs attention ([#984](https://github.com/getsphericon/sphericon/issues/984)) ([4ec87be](https://github.com/getsphericon/sphericon/commit/4ec87bee1ec741bb2cbb0f366b8e99b33b838540))
+* **audit:** show audit actions by their words, the code on hover ([#946](https://github.com/getsphericon/sphericon/issues/946)) ([426fef0](https://github.com/getsphericon/sphericon/commit/426fef05ff5285a97afeebd66d89daa04e071a32))
+* **audit:** the audit action is a contract enum ([#961](https://github.com/getsphericon/sphericon/issues/961)) ([be577a2](https://github.com/getsphericon/sphericon/commit/be577a229b64f6557df8cecdd833658b70ee6a17))
+* **broadcasts:** store when a Broadcast failed, and make its hold reason a contract enum ([#945](https://github.com/getsphericon/sphericon/issues/945)) ([250e2c3](https://github.com/getsphericon/sphericon/commit/250e2c321d74005757b30f12315f7cbf637d604b))
+* **contacts:** country is a core attribute of a Contact ([214324a](https://github.com/getsphericon/sphericon/commit/214324af901161826fd9bfabbafd92dbadff4c9a))
+* **contacts:** filter the list by Tag and country, and open a Tag's contacts from the Tags page ([5fc5817](https://github.com/getsphericon/sphericon/commit/5fc5817001b771c927070e08b165dcd2b7c6a8fb))
+* **contacts:** locale, birthday, city and avatar are core attributes that Identify writes ([a64293e](https://github.com/getsphericon/sphericon/commit/a64293e0e1a884d1c30b43b6aec67438a824d5ff))
+* **contacts:** one list of a Contact's attributes and custom fields on its page ([95f438f](https://github.com/getsphericon/sphericon/commit/95f438f3c4164974c58c0f0ec6a2776c40da22b4))
+* **contacts:** show a Contact's attributes as label-value tables, not a grid of cards ([466f19d](https://github.com/getsphericon/sphericon/commit/466f19d60e71f0b3de39f25bd9233422b6471f2e))
+* **contacts:** the list shows a Contact's name with its email under it, and its tags ([8c52706](https://github.com/getsphericon/sphericon/commit/8c527062de23ff9e7ac04a2f733f1a4b7e7532a7))
+* **contacts:** the list shows when a Contact was added and the flag of its country ([dcf4723](https://github.com/getsphericon/sphericon/commit/dcf472318d4828aff11f2291bb12ea6ac72d8f61))
+* **events:** record Tag, Custom field and Enrollment changes as System events ([#910](https://github.com/getsphericon/sphericon/issues/910)) ([a2b10e9](https://github.com/getsphericon/sphericon/commit/a2b10e9c21f86ec57473c38007089d9c3149cac7))
+* **overview:** compare each period figure with the previous period ([#982](https://github.com/getsphericon/sphericon/issues/982)) ([ad08585](https://github.com/getsphericon/sphericon/commit/ad085852ad3024daad091bb102742847c75298e2))
+* **overview:** lead the Workspace overview with what needs attention ([#915](https://github.com/getsphericon/sphericon/issues/915)) ([bd73765](https://github.com/getsphericon/sphericon/commit/bd73765a8fa757835d780cbbb4905aa1bbd46adb))
+* **sending-domains:** look up the published DMARC record and flag a domain that is not bulk-ready ([#979](https://github.com/getsphericon/sphericon/issues/979)) ([c546c19](https://github.com/getsphericon/sphericon/commit/c546c194ba80d7a6124034f563c7082880b9dac7)), closes [#937](https://github.com/getsphericon/sphericon/issues/937)
+
+
+### Bug Fixes
+
+* **analytics:** keep the report and the window when they change; no repeated error text ([#911](https://github.com/getsphericon/sphericon/issues/911)) ([e8f113a](https://github.com/getsphericon/sphericon/commit/e8f113a55c7941bcd2e9fb9e5a6f93698c4d2107))
+* **automations:** a tag step and an Erasure lock the Contact before its Enrollment, as an exit does ([#947](https://github.com/getsphericon/sphericon/issues/947)) ([387a084](https://github.com/getsphericon/sphericon/commit/387a0847725ca234af499f5111630898c1c36e49))
+* **outbound:** the no_integration hold detail names no Channel ([91c1f19](https://github.com/getsphericon/sphericon/commit/91c1f19b7a73cc92bbe73f34904420ef40006823)), closes [#963](https://github.com/getsphericon/sphericon/issues/963)
+* **web:** an empty state shows an icon in a circle, not a bare line of text ([#912](https://github.com/getsphericon/sphericon/issues/912)) ([9484bd7](https://github.com/getsphericon/sphericon/commit/9484bd71f66e02acc636112b01ba400d945be7d0))
+
+
+### Code Refactoring
+
+* **holds:** a hold reason is HoldReason, not a Broadcast's ([#985](https://github.com/getsphericon/sphericon/issues/985)) ([e15514b](https://github.com/getsphericon/sphericon/commit/e15514bd40dfe8f1c539afc639974acffc5f8a78))
+
 ## [0.4.0](https://github.com/getsphericon/sphericon/compare/v0.3.5...v0.4.0) (2026-11-01)
 
 
