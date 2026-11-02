@@ -11037,7 +11037,8 @@ func (s *Server) handleExportMessagesRequest(args [0]string, argsEscaped bool, w
 //
 // Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 // not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-// email automation through the default, uses it (`usedBy` names them).
+// email automation through the default, uses it (`usedBy` names them). A Telegram integration's
+// webhook is removed, best effort.
 //
 // POST /integrations/{id}/archive
 func (s *Server) handleIntegrationsArchiveRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -11794,7 +11795,8 @@ func (s *Server) handleIntegrationsListRequest(args [0]string, argsEscaped bool,
 // handleIntegrationsRegenerateKeyRequest handles Integrations_regenerateKey operation.
 //
 // Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
-// pasted into the provider. Needs a person: hidden from MCP.
+// pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
+// is a 422). Needs a person: hidden from MCP.
 //
 // POST /integrations/{id}/regenerate-key
 func (s *Server) handleIntegrationsRegenerateKeyRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -11981,7 +11983,8 @@ func (s *Server) handleIntegrationsRegenerateKeyRequest(args [1]string, argsEsca
 
 // handleIntegrationsUnarchiveRequest handles Integrations_unarchive operation.
 //
-// Restore an archived integration to the list. It is not the default; promote it with an update.
+// Restore an archived integration to the list. It is not the default; promote it with an update. An
+// enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422.
 //
 // POST /integrations/{id}/unarchive
 func (s *Server) handleIntegrationsUnarchiveRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

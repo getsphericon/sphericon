@@ -52,6 +52,9 @@ model UpdateCustomFieldInput {
 enum IntegrationChannel {
   email,
   sms,
+
+  /** A Workspace's own Telegram bot */
+  telegram,
 }
 
 /** Concrete sending provider */
@@ -61,6 +64,9 @@ enum IntegrationProvider {
 
   /** The Test inbox: sends nothing outside and keeps each message as a Captured message */
   inbox,
+
+  /** A Telegram bot, through the Bot API */
+  telegram,
 }
 
 /** Where an effective Provider limit comes from */

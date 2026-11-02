@@ -9,6 +9,7 @@ import (
 	"github.com/go-faster/jx"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -30,8 +31,11 @@ const SecretMask = "********"
 func (m *Module) Presets() *preset.Registry { return m.presets }
 
 // HookURL is where the provider posts this Integration's callbacks.
-func (m *Module) HookURL(row *ent.Integration) string {
-	return strings.TrimRight(m.appURL, "/") + "/hooks/" + row.IngestKey
+func (m *Module) HookURL(row *ent.Integration) string { return m.hookURL(row.IngestKey) }
+
+// hookURL is the hook URL of an ingest key.
+func (m *Module) hookURL(key string) string {
+	return strings.TrimRight(m.appURL, "/") + "/hooks/" + key
 }
 
 // RawOf renders params as the opaque object of a response.
@@ -258,10 +262,26 @@ func samePreset(a, b *string) bool {
 // RegenerateKey gives the Integration a new hook key: the old hook URL stops working at
 // once. The write is audited like any other edit of the Integration; the key itself never
 // reaches the entry.
+//
+// A Telegram Integration that holds its bot's webhook points it at the new URL first; Telegram's
+// refusal refuses the regeneration and the old key stays.
 func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
 	key, err := credentials.GenerateIngestKey()
 	if err != nil {
 		return nil, err
+	}
+	current, err := s.Integration().Get(ctx, id)
+	if err != nil {
+		return nil, missing(err)
+	}
+	if current.Provider == integration.ProviderTelegram && holdsWebhook(current.Enabled, current.DiscardedAt) {
+		cfg, err := m.telegramConfigOf(current)
+		if err != nil {
+			return nil, err
+		}
+		if err := m.reconnect(ctx, current, cfg.Token, key); err != nil {
+			return nil, err
+		}
 	}
 	var row *ent.Integration
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {

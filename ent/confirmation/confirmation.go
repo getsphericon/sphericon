@@ -92,7 +92,8 @@ const DefaultChannel = ChannelEmail
 
 // Channel values.
 const (
-	ChannelEmail Channel = "email"
+	ChannelEmail    Channel = "email"
+	ChannelTelegram Channel = "telegram"
 )
 
 func (c Channel) String() string {
@@ -102,7 +103,7 @@ func (c Channel) String() string {
 // ChannelValidator is a validator for the "channel" field enum values. It is called by the builders before save.
 func ChannelValidator(c Channel) error {
 	switch c {
-	case ChannelEmail:
+	case ChannelEmail, ChannelTelegram:
 		return nil
 	default:
 		return fmt.Errorf("confirmation: invalid enum value for channel field: %q", c)

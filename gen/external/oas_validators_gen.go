@@ -5125,6 +5125,8 @@ func (s IntegrationChannel) Validate() error {
 		return nil
 	case "sms":
 		return nil
+	case "telegram":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -5193,6 +5195,11 @@ func (s IntegrationConfigInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case TelegramConfigInputIntegrationConfigInputSum:
+		if err := s.TelegramConfigInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -5215,6 +5222,11 @@ func (s IntegrationConfigSum) Validate() error {
 			return err
 		}
 		return nil
+	case TelegramConfigIntegrationConfigSum:
+		if err := s.TelegramConfig.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -5227,6 +5239,8 @@ func (s IntegrationProvider) Validate() error {
 	case "ses":
 		return nil
 	case "inbox":
+		return nil
+	case "telegram":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -5508,6 +5522,14 @@ func (s *IntegrationsRegenerateKeyUnauthorized) Validate() error {
 	return nil
 }
 
+func (s *IntegrationsRegenerateKeyUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *IntegrationsUnarchiveBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5541,6 +5563,14 @@ func (s *IntegrationsUnarchiveNotFound) Validate() error {
 }
 
 func (s *IntegrationsUnarchiveUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *IntegrationsUnarchiveUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -8353,6 +8383,70 @@ func (s *TagsRemoveUnauthorized) Validate() error {
 		return err
 	}
 	return nil
+}
+
+func (s *TelegramConfig) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *TelegramConfigInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s TelegramConfigInputKind) Validate() error {
+	switch s {
+	case "telegram":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s TelegramConfigKind) Validate() error {
+	switch s {
+	case "telegram":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *TemplatesCreateBadRequest) Validate() error {

@@ -1662,12 +1662,17 @@
     "integrations": {
       "advanced": "Advanced settings",
       "back": "Back",
+      "channels": {
+        "email": "Email",
+        "sms": "SMS",
+        "telegram": "Telegram"
+      },
       "create": "Connect provider",
       "createError": "Failed to save provider",
       "default": "Default",
       "defaultChanged": "Default provider changed",
       "defaultError": "Failed to change the default provider",
-      "description": "Connect an email provider so this workspace can send mail.",
+      "description": "Connect the providers this workspace sends through: an email provider for mail, a Telegram bot for Telegram. Each channel has its own default.",
       "empty": "No providers connected yet",
       "emptyArchived": "No archived providers",
       "fields": {
@@ -1681,6 +1686,8 @@
         "port": "Port",
         "region": "AWS region",
         "secretAccessKey": "Secret access key",
+        "token": "Bot token",
+        "tokenHint": "The token @BotFather gave you for the bot.",
         "username": "Username"
       },
       "inbound": {
@@ -1703,6 +1710,8 @@
         "saveError": "Failed to save the inbound settings",
         "secretKeep": "Stored. Leave blank to keep it.",
         "secretRotates": "A new value starts a rotation: the old one stays accepted until you retire it.",
+        "telegramDescription": "Telegram posts the bot's updates here. sphericon set the bot's webhook to this URL and checks its secret itself.",
+        "telegramRegenerateConfirm": "The current hook URL stops working at once, and the bot's webhook moves to the new one.",
         "title": "Inbound callbacks: {{name}}"
       },
       "inboxExplanation": "The Test inbox keeps every message it is given and delivers none. Read them on the Captured messages page. A workspace has one.",
@@ -1762,12 +1771,18 @@
         "sesCompatible": "SES-compatible service",
         "sesCompatibleHint": "Any provider with the SES API, such as Yandex Cloud Postbox. Needs its endpoint URL.",
         "sesHint": "AWS SES. Needs a region and an access key.",
-        "smtpHint": "Any SMTP server."
+        "smtpHint": "Any SMTP server.",
+        "telegram": "Telegram bot",
+        "telegramHint": "Your own bot from @BotFather, to message the people who start it."
       },
       "removeError": "Failed to remove provider",
       "restored": "Provider restored",
       "restoreError": "Failed to restore the provider",
       "saved": "Provider saved",
+      "telegramWarning": {
+        "body": "If the bot already sends its updates to another tool, that tool stops receiving them. Use a bot dedicated to sphericon.",
+        "title": "Connecting replaces the bot's webhook"
+      },
       "title": "Providers"
     },
     "loadErrorTitle": "Failed to load workspace",

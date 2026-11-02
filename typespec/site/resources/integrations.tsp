@@ -9,6 +9,9 @@ namespace Sphericon;
 enum SiteIntegrationChannel {
   email,
   sms,
+
+  /** A Workspace's own Telegram bot */
+  telegram,
 }
 
 /** Concrete sending provider */
@@ -18,6 +21,9 @@ enum SiteIntegrationProvider {
 
   /** The Test inbox: sends nothing outside and keeps each message as a Captured message */
   inbox,
+
+  /** A Telegram bot, through the Bot API */
+  telegram,
 }
 
 /** Where an effective Provider limit comes from */
@@ -102,12 +108,24 @@ model SiteInboxConfig {
   kind: "inbox";
 }
 
+/** A Telegram bot without its token: who it is, as Telegram said when it was connected */
+model SiteTelegramConfig {
+  kind: "telegram";
+
+  /** The bot's numeric Telegram id */
+  botId: int64;
+
+  /** The bot's @username, without the @ */
+  username: string;
+}
+
 /** Provider config returned to the UI, discriminated by `kind`. Secrets are omitted. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union SiteIntegrationConfig {
   smtp: SiteSmtpConfig,
   ses: SiteSesConfig,
   inbox: SiteInboxConfig,
+  telegram: SiteTelegramConfig,
 }
 
 // The input config (carries secrets; write-only) is common/integrations.tsp.
@@ -162,7 +180,7 @@ model SiteIntegrationResource {
   /** Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is) */
   hookUrl: string;
 
-  /** When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks. */
+  /** When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks (a Telegram bot's webhook is removed, so Telegram sends it none). */
   archivedAt?: Timestamp | null;
 
   /** Creation timestamp */
@@ -243,7 +261,7 @@ namespace SiteIntegrations {
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only. */
+  /** Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only. */
   @action("regenerate-key")
   @post
   @autoRoute
@@ -252,9 +270,10 @@ namespace SiteIntegrations {
     | SiteIntegrationResource
     | BadRequestProblem
     | ForbiddenProblem
-    | NotFoundProblem;
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
 
-  /** Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. Owners and admins only. */
+  /** Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. A Telegram integration's webhook is removed, best effort. Owners and admins only. */
   @action("archive")
   @post
   @autoRoute
@@ -266,7 +285,7 @@ namespace SiteIntegrations {
     | NotFoundProblem
     | InUseProblem;
 
-  /** Restore an archived integration to the list. It is not the default; promote it with an update. Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only. */
+  /** Restore an archived integration to the list. It is not the default; promote it with an update. Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins only. */
   @action("unarchive")
   @post
   @autoRoute
@@ -276,7 +295,8 @@ namespace SiteIntegrations {
     | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
-    | ConflictProblem;
+    | ConflictProblem
+    | UnprocessableEntityProblem;
 }
 
 // A Preset's params are dynamic by nature, so the contract carries the Preset's JSON Schema

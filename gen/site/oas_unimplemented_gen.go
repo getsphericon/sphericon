@@ -848,7 +848,8 @@ func (UnimplementedHandler) SiteInstanceGetRelease(ctx context.Context) (r SiteI
 //
 // Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 // not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-// email automation through the default, uses it. Owners and admins only.
+// email automation through the default, uses it. A Telegram integration's webhook is removed, best
+// effort. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/archive
 func (UnimplementedHandler) SiteIntegrationsArchive(ctx context.Context, params SiteIntegrationsArchiveParams) (r SiteIntegrationsArchiveRes, _ error) {
@@ -885,7 +886,8 @@ func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params Sit
 
 // SiteIntegrationsRegenerateKey implements SiteIntegrations_regenerateKey operation.
 //
-// Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.
+// Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
+// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (r SiteIntegrationsRegenerateKeyRes, _ error) {
@@ -895,7 +897,9 @@ func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, p
 // SiteIntegrationsUnarchive implements SiteIntegrations_unarchive operation.
 //
 // Restore an archived integration to the list. It is not the default; promote it with an update.
-// Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.
+// Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram
+// integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins
+// only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/unarchive
 func (UnimplementedHandler) SiteIntegrationsUnarchive(ctx context.Context, params SiteIntegrationsUnarchiveParams) (r SiteIntegrationsUnarchiveRes, _ error) {

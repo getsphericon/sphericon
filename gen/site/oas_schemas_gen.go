@@ -2260,7 +2260,8 @@ func (s *CreateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 
 // Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox
 // (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused
-// with 409.
+// with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save;
+// a refusal is a 422.
 // Ref: #/components/schemas/CreateIntegrationInput
 type CreateIntegrationInput struct {
 	Name      string  `json:"name"`
@@ -2273,9 +2274,12 @@ type CreateIntegrationInput struct {
 	// except on an SES Integration with an `endpoint`, which requires it.
 	MaxPerDay OptNilMaxPerDay        `json:"maxPerDay"`
 	Config    IntegrationConfigInput `json:"config"`
-	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with.
+	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A
+	// Telegram integration takes none: it always reads its bot's updates with the built-in `telegram`
+	// Preset.
 	Preset OptNilString `json:"preset"`
-	// The Preset's params, validated against its `paramsSchema`: read the schema first.
+	// The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram
+	// integration takes none.
 	Params OptJsonObject `json:"params"`
 }
 
@@ -3028,10 +3032,11 @@ func (s *IntegrationConfigInput) SetOneOf(val IntegrationConfigInputSum) {
 // IntegrationConfigInputSum represents sum type.
 type IntegrationConfigInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type             IntegrationConfigInputSumType
-	SmtpConfigInput  SmtpConfigInput
-	SesConfigInput   SesConfigInput
-	InboxConfigInput InboxConfigInput
+	Type                IntegrationConfigInputSumType
+	SmtpConfigInput     SmtpConfigInput
+	SesConfigInput      SesConfigInput
+	InboxConfigInput    InboxConfigInput
+	TelegramConfigInput TelegramConfigInput
 }
 
 // IntegrationConfigInputSumType is oneOf type of IntegrationConfigInputSum.
@@ -3039,9 +3044,10 @@ type IntegrationConfigInputSumType string
 
 // Possible values for IntegrationConfigInputSumType.
 const (
-	SmtpConfigInputIntegrationConfigInputSum  IntegrationConfigInputSumType = "smtp"
-	SesConfigInputIntegrationConfigInputSum   IntegrationConfigInputSumType = "ses"
-	InboxConfigInputIntegrationConfigInputSum IntegrationConfigInputSumType = "inbox"
+	SmtpConfigInputIntegrationConfigInputSum     IntegrationConfigInputSumType = "smtp"
+	SesConfigInputIntegrationConfigInputSum      IntegrationConfigInputSumType = "ses"
+	InboxConfigInputIntegrationConfigInputSum    IntegrationConfigInputSumType = "inbox"
+	TelegramConfigInputIntegrationConfigInputSum IntegrationConfigInputSumType = "telegram"
 )
 
 // IsSmtpConfigInput reports whether IntegrationConfigInputSum is SmtpConfigInput.
@@ -3057,6 +3063,11 @@ func (s IntegrationConfigInputSum) IsSesConfigInput() bool {
 // IsInboxConfigInput reports whether IntegrationConfigInputSum is InboxConfigInput.
 func (s IntegrationConfigInputSum) IsInboxConfigInput() bool {
 	return s.Type == InboxConfigInputIntegrationConfigInputSum
+}
+
+// IsTelegramConfigInput reports whether IntegrationConfigInputSum is TelegramConfigInput.
+func (s IntegrationConfigInputSum) IsTelegramConfigInput() bool {
+	return s.Type == TelegramConfigInputIntegrationConfigInputSum
 }
 
 // SetSmtpConfigInput sets IntegrationConfigInputSum to SmtpConfigInput.
@@ -3119,6 +3130,27 @@ func (s IntegrationConfigInputSum) GetInboxConfigInput() (v InboxConfigInput, ok
 func NewInboxConfigInputIntegrationConfigInputSum(v InboxConfigInput) IntegrationConfigInputSum {
 	var s IntegrationConfigInputSum
 	s.SetInboxConfigInput(v)
+	return s
+}
+
+// SetTelegramConfigInput sets IntegrationConfigInputSum to TelegramConfigInput.
+func (s *IntegrationConfigInputSum) SetTelegramConfigInput(v TelegramConfigInput) {
+	s.Type = TelegramConfigInputIntegrationConfigInputSum
+	s.TelegramConfigInput = v
+}
+
+// GetTelegramConfigInput returns TelegramConfigInput and true boolean if IntegrationConfigInputSum is TelegramConfigInput.
+func (s IntegrationConfigInputSum) GetTelegramConfigInput() (v TelegramConfigInput, ok bool) {
+	if !s.IsTelegramConfigInput() {
+		return v, false
+	}
+	return s.TelegramConfigInput, true
+}
+
+// NewTelegramConfigInputIntegrationConfigInputSum returns new IntegrationConfigInputSum from TelegramConfigInput.
+func NewTelegramConfigInputIntegrationConfigInputSum(v TelegramConfigInput) IntegrationConfigInputSum {
+	var s IntegrationConfigInputSum
+	s.SetTelegramConfigInput(v)
 	return s
 }
 
@@ -17768,8 +17800,9 @@ func (*SiteInstanceRelease) siteInstanceGetReleaseRes() {}
 type SiteIntegrationChannel string
 
 const (
-	SiteIntegrationChannelEmail SiteIntegrationChannel = "email"
-	SiteIntegrationChannelSMS   SiteIntegrationChannel = "sms"
+	SiteIntegrationChannelEmail    SiteIntegrationChannel = "email"
+	SiteIntegrationChannelSMS      SiteIntegrationChannel = "sms"
+	SiteIntegrationChannelTelegram SiteIntegrationChannel = "telegram"
 )
 
 // AllValues returns all SiteIntegrationChannel values.
@@ -17777,6 +17810,7 @@ func (SiteIntegrationChannel) AllValues() []SiteIntegrationChannel {
 	return []SiteIntegrationChannel{
 		SiteIntegrationChannelEmail,
 		SiteIntegrationChannelSMS,
+		SiteIntegrationChannelTelegram,
 	}
 }
 
@@ -17786,6 +17820,8 @@ func (s SiteIntegrationChannel) MarshalText() ([]byte, error) {
 	case SiteIntegrationChannelEmail:
 		return []byte(s), nil
 	case SiteIntegrationChannelSMS:
+		return []byte(s), nil
+	case SiteIntegrationChannelTelegram:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -17800,6 +17836,9 @@ func (s *SiteIntegrationChannel) UnmarshalText(data []byte) error {
 		return nil
 	case SiteIntegrationChannelSMS:
 		*s = SiteIntegrationChannelSMS
+		return nil
+	case SiteIntegrationChannelTelegram:
+		*s = SiteIntegrationChannelTelegram
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -17825,10 +17864,11 @@ func (s *SiteIntegrationConfig) SetOneOf(val SiteIntegrationConfigSum) {
 // SiteIntegrationConfigSum represents sum type.
 type SiteIntegrationConfigSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type            SiteIntegrationConfigSumType
-	SiteSmtpConfig  SiteSmtpConfig
-	SiteSesConfig   SiteSesConfig
-	SiteInboxConfig SiteInboxConfig
+	Type               SiteIntegrationConfigSumType
+	SiteSmtpConfig     SiteSmtpConfig
+	SiteSesConfig      SiteSesConfig
+	SiteInboxConfig    SiteInboxConfig
+	SiteTelegramConfig SiteTelegramConfig
 }
 
 // SiteIntegrationConfigSumType is oneOf type of SiteIntegrationConfigSum.
@@ -17836,9 +17876,10 @@ type SiteIntegrationConfigSumType string
 
 // Possible values for SiteIntegrationConfigSumType.
 const (
-	SiteSmtpConfigSiteIntegrationConfigSum  SiteIntegrationConfigSumType = "smtp"
-	SiteSesConfigSiteIntegrationConfigSum   SiteIntegrationConfigSumType = "ses"
-	SiteInboxConfigSiteIntegrationConfigSum SiteIntegrationConfigSumType = "inbox"
+	SiteSmtpConfigSiteIntegrationConfigSum     SiteIntegrationConfigSumType = "smtp"
+	SiteSesConfigSiteIntegrationConfigSum      SiteIntegrationConfigSumType = "ses"
+	SiteInboxConfigSiteIntegrationConfigSum    SiteIntegrationConfigSumType = "inbox"
+	SiteTelegramConfigSiteIntegrationConfigSum SiteIntegrationConfigSumType = "telegram"
 )
 
 // IsSiteSmtpConfig reports whether SiteIntegrationConfigSum is SiteSmtpConfig.
@@ -17854,6 +17895,11 @@ func (s SiteIntegrationConfigSum) IsSiteSesConfig() bool {
 // IsSiteInboxConfig reports whether SiteIntegrationConfigSum is SiteInboxConfig.
 func (s SiteIntegrationConfigSum) IsSiteInboxConfig() bool {
 	return s.Type == SiteInboxConfigSiteIntegrationConfigSum
+}
+
+// IsSiteTelegramConfig reports whether SiteIntegrationConfigSum is SiteTelegramConfig.
+func (s SiteIntegrationConfigSum) IsSiteTelegramConfig() bool {
+	return s.Type == SiteTelegramConfigSiteIntegrationConfigSum
 }
 
 // SetSiteSmtpConfig sets SiteIntegrationConfigSum to SiteSmtpConfig.
@@ -17919,14 +17965,36 @@ func NewSiteInboxConfigSiteIntegrationConfigSum(v SiteInboxConfig) SiteIntegrati
 	return s
 }
 
+// SetSiteTelegramConfig sets SiteIntegrationConfigSum to SiteTelegramConfig.
+func (s *SiteIntegrationConfigSum) SetSiteTelegramConfig(v SiteTelegramConfig) {
+	s.Type = SiteTelegramConfigSiteIntegrationConfigSum
+	s.SiteTelegramConfig = v
+}
+
+// GetSiteTelegramConfig returns SiteTelegramConfig and true boolean if SiteIntegrationConfigSum is SiteTelegramConfig.
+func (s SiteIntegrationConfigSum) GetSiteTelegramConfig() (v SiteTelegramConfig, ok bool) {
+	if !s.IsSiteTelegramConfig() {
+		return v, false
+	}
+	return s.SiteTelegramConfig, true
+}
+
+// NewSiteTelegramConfigSiteIntegrationConfigSum returns new SiteIntegrationConfigSum from SiteTelegramConfig.
+func NewSiteTelegramConfigSiteIntegrationConfigSum(v SiteTelegramConfig) SiteIntegrationConfigSum {
+	var s SiteIntegrationConfigSum
+	s.SetSiteTelegramConfig(v)
+	return s
+}
+
 // Concrete sending provider.
 // Ref: #/components/schemas/SiteIntegrationProvider
 type SiteIntegrationProvider string
 
 const (
-	SiteIntegrationProviderSMTP  SiteIntegrationProvider = "smtp"
-	SiteIntegrationProviderSes   SiteIntegrationProvider = "ses"
-	SiteIntegrationProviderInbox SiteIntegrationProvider = "inbox"
+	SiteIntegrationProviderSMTP     SiteIntegrationProvider = "smtp"
+	SiteIntegrationProviderSes      SiteIntegrationProvider = "ses"
+	SiteIntegrationProviderInbox    SiteIntegrationProvider = "inbox"
+	SiteIntegrationProviderTelegram SiteIntegrationProvider = "telegram"
 )
 
 // AllValues returns all SiteIntegrationProvider values.
@@ -17935,6 +18003,7 @@ func (SiteIntegrationProvider) AllValues() []SiteIntegrationProvider {
 		SiteIntegrationProviderSMTP,
 		SiteIntegrationProviderSes,
 		SiteIntegrationProviderInbox,
+		SiteIntegrationProviderTelegram,
 	}
 }
 
@@ -17946,6 +18015,8 @@ func (s SiteIntegrationProvider) MarshalText() ([]byte, error) {
 	case SiteIntegrationProviderSes:
 		return []byte(s), nil
 	case SiteIntegrationProviderInbox:
+		return []byte(s), nil
+	case SiteIntegrationProviderTelegram:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -17963,6 +18034,9 @@ func (s *SiteIntegrationProvider) UnmarshalText(data []byte) error {
 		return nil
 	case SiteIntegrationProviderInbox:
 		*s = SiteIntegrationProviderInbox
+		return nil
+	case SiteIntegrationProviderTelegram:
+		*s = SiteIntegrationProviderTelegram
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -18004,7 +18078,8 @@ type SiteIntegrationResource struct {
 	// an address, not the authentication (the Preset's signature or secret is).
 	HookUrl string `json:"hookUrl"`
 	// When the integration was archived; null while it is kept. An archived integration is never the
-	// default and takes no new work, but its hook still reads the provider's callbacks.
+	// default and takes no new work, but its hook still reads the provider's callbacks (a Telegram bot's
+	// webhook is removed, so Telegram sends it none).
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
@@ -18253,6 +18328,10 @@ type SiteIntegrationsRegenerateKeyNotFound ProblemDetails
 
 func (*SiteIntegrationsRegenerateKeyNotFound) siteIntegrationsRegenerateKeyRes() {}
 
+type SiteIntegrationsRegenerateKeyUnprocessableEntity ProblemDetails
+
+func (*SiteIntegrationsRegenerateKeyUnprocessableEntity) siteIntegrationsRegenerateKeyRes() {}
+
 type SiteIntegrationsUnarchiveBadRequest ProblemDetails
 
 func (*SiteIntegrationsUnarchiveBadRequest) siteIntegrationsUnarchiveRes() {}
@@ -18268,6 +18347,10 @@ func (*SiteIntegrationsUnarchiveForbidden) siteIntegrationsUnarchiveRes() {}
 type SiteIntegrationsUnarchiveNotFound ProblemDetails
 
 func (*SiteIntegrationsUnarchiveNotFound) siteIntegrationsUnarchiveRes() {}
+
+type SiteIntegrationsUnarchiveUnprocessableEntity ProblemDetails
+
+func (*SiteIntegrationsUnarchiveUnprocessableEntity) siteIntegrationsUnarchiveRes() {}
 
 type SiteIntegrationsUpdateBadRequest ProblemDetails
 
@@ -24918,18 +25001,20 @@ func (s *SiteSoleOwnedWorkspace) SetName(val string) {
 	s.Name = val
 }
 
-// The channel a suppression applies to (email today; sms reserved).
+// The channel a suppression applies to.
 // Ref: #/components/schemas/SiteSuppressionChannel
 type SiteSuppressionChannel string
 
 const (
-	SiteSuppressionChannelEmail SiteSuppressionChannel = "email"
+	SiteSuppressionChannelEmail    SiteSuppressionChannel = "email"
+	SiteSuppressionChannelTelegram SiteSuppressionChannel = "telegram"
 )
 
 // AllValues returns all SiteSuppressionChannel values.
 func (SiteSuppressionChannel) AllValues() []SiteSuppressionChannel {
 	return []SiteSuppressionChannel{
 		SiteSuppressionChannelEmail,
+		SiteSuppressionChannelTelegram,
 	}
 }
 
@@ -24937,6 +25022,8 @@ func (SiteSuppressionChannel) AllValues() []SiteSuppressionChannel {
 func (s SiteSuppressionChannel) MarshalText() ([]byte, error) {
 	switch s {
 	case SiteSuppressionChannelEmail:
+		return []byte(s), nil
+	case SiteSuppressionChannelTelegram:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -24948,6 +25035,9 @@ func (s *SiteSuppressionChannel) UnmarshalText(data []byte) error {
 	switch SiteSuppressionChannel(data) {
 	case SiteSuppressionChannelEmail:
 		*s = SiteSuppressionChannelEmail
+		return nil
+	case SiteSuppressionChannelTelegram:
+		*s = SiteSuppressionChannelTelegram
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -25443,6 +25533,80 @@ func (*SiteTagsRemoveNoContent) siteTagsRemoveRes() {}
 type SiteTagsRemoveNotFound ProblemDetails
 
 func (*SiteTagsRemoveNotFound) siteTagsRemoveRes() {}
+
+// A Telegram bot without its token: who it is, as Telegram said when it was connected.
+// Ref: #/components/schemas/SiteTelegramConfig
+type SiteTelegramConfig struct {
+	Kind SiteTelegramConfigKind `json:"kind"`
+	// The bot's numeric Telegram id.
+	BotId int64 `json:"botId"`
+	// The bot's.
+	Username string `json:"username"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteTelegramConfig) GetKind() SiteTelegramConfigKind {
+	return s.Kind
+}
+
+// GetBotId returns the value of BotId.
+func (s *SiteTelegramConfig) GetBotId() int64 {
+	return s.BotId
+}
+
+// GetUsername returns the value of Username.
+func (s *SiteTelegramConfig) GetUsername() string {
+	return s.Username
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteTelegramConfig) SetKind(val SiteTelegramConfigKind) {
+	s.Kind = val
+}
+
+// SetBotId sets the value of BotId.
+func (s *SiteTelegramConfig) SetBotId(val int64) {
+	s.BotId = val
+}
+
+// SetUsername sets the value of Username.
+func (s *SiteTelegramConfig) SetUsername(val string) {
+	s.Username = val
+}
+
+type SiteTelegramConfigKind string
+
+const (
+	SiteTelegramConfigKindTelegram SiteTelegramConfigKind = "telegram"
+)
+
+// AllValues returns all SiteTelegramConfigKind values.
+func (SiteTelegramConfigKind) AllValues() []SiteTelegramConfigKind {
+	return []SiteTelegramConfigKind{
+		SiteTelegramConfigKindTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteTelegramConfigKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteTelegramConfigKindTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteTelegramConfigKind) UnmarshalText(data []byte) error {
+	switch SiteTelegramConfigKind(data) {
+	case SiteTelegramConfigKindTelegram:
+		*s = SiteTelegramConfigKindTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 type SiteTemplatesCreateBadRequest ProblemDetails
 
@@ -28212,6 +28376,70 @@ func (s *SmtpConfigInputKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with
+// Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had:
+// use a bot dedicated to sphericon.
+// Ref: #/components/schemas/TelegramConfigInput
+type TelegramConfigInput struct {
+	Kind TelegramConfigInputKind `json:"kind"`
+	// The bot token.
+	Token string `json:"token"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TelegramConfigInput) GetKind() TelegramConfigInputKind {
+	return s.Kind
+}
+
+// GetToken returns the value of Token.
+func (s *TelegramConfigInput) GetToken() string {
+	return s.Token
+}
+
+// SetKind sets the value of Kind.
+func (s *TelegramConfigInput) SetKind(val TelegramConfigInputKind) {
+	s.Kind = val
+}
+
+// SetToken sets the value of Token.
+func (s *TelegramConfigInput) SetToken(val string) {
+	s.Token = val
+}
+
+type TelegramConfigInputKind string
+
+const (
+	TelegramConfigInputKindTelegram TelegramConfigInputKind = "telegram"
+)
+
+// AllValues returns all TelegramConfigInputKind values.
+func (TelegramConfigInputKind) AllValues() []TelegramConfigInputKind {
+	return []TelegramConfigInputKind{
+		TelegramConfigInputKindTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelegramConfigInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TelegramConfigInputKindTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelegramConfigInputKind) UnmarshalText(data []byte) error {
+	switch TelegramConfigInputKind(data) {
+	case TelegramConfigInputKindTelegram:
+		*s = TelegramConfigInputKindTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Request body for a test send.
 // Ref: #/components/schemas/TestSendBroadcastInput
 type TestSendBroadcastInput struct {
@@ -28370,10 +28598,10 @@ type UpdateIntegrationInput struct {
 	MaxPerDay OptNilMaxPerDay           `json:"maxPerDay"`
 	Config    OptIntegrationConfigInput `json:"config"`
 	// Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no
-	// secret carries over.
+	// secret carries over. A Telegram integration's Preset is fixed.
 	Preset OptNilString `json:"preset"`
 	// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
-	// rotates it (the old one stays valid until retired).
+	// rotates it (the old one stays valid until retired). A Telegram integration takes none.
 	Params OptJsonObject `json:"params"`
 	// Stop accepting the retiring value of every rotating secret.
 	RetireSecrets OptBool `json:"retireSecrets"`

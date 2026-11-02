@@ -8206,6 +8206,18 @@ func encodeIntegrationsRegenerateKeyResponse(response IntegrationsRegenerateKeyR
 
 		return nil
 
+	case *IntegrationsRegenerateKeyUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *ProblemDetailsHeaders:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
@@ -8341,6 +8353,18 @@ func encodeIntegrationsUnarchiveResponse(response IntegrationsUnarchiveRes, w ht
 	case *IntegrationsUnarchiveConflict:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(409)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *IntegrationsUnarchiveUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

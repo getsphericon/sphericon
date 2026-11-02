@@ -690,7 +690,7 @@ export type CreateContactInput = {
 };
 
 /**
- * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409.
+ * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422
  */
 export type CreateIntegrationInput = {
   name: string;
@@ -706,11 +706,11 @@ export type CreateIntegrationInput = {
   maxPerDay?: MaxPerDay | null;
   config: IntegrationConfigInput;
   /**
-   * Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with
+   * Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A Telegram integration takes none: it always reads its bot's updates with the built-in `telegram` Preset
    */
   preset?: string | null;
   /**
-   * The Preset's params, validated against its `paramsSchema`: read the schema first
+   * The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram integration takes none
    */
   params?: JsonObject;
 };
@@ -932,7 +932,9 @@ export type IntegrationConfigInput = ({
   kind: 'ses';
 } & SesConfigInput) | ({
   kind: 'inbox';
-} & InboxConfigInput);
+} & InboxConfigInput) | ({
+  kind: 'telegram';
+} & TelegramConfigInput);
 
 /**
  * A JSON object whose members the contract leaves open: custom field values, event properties,
@@ -3995,7 +3997,11 @@ export type SiteInstanceRelease = {
 /**
  * Delivery channel an integration belongs to
  */
-export const SiteIntegrationChannel = { EMAIL: 'email', SMS: 'sms' } as const;
+export const SiteIntegrationChannel = {
+  EMAIL: 'email',
+  SMS: 'sms',
+  TELEGRAM: 'telegram'
+} as const;
 
 /**
  * Delivery channel an integration belongs to
@@ -4011,7 +4017,9 @@ export type SiteIntegrationConfig = ({
   kind: 'ses';
 } & SiteSesConfig) | ({
   kind: 'inbox';
-} & SiteInboxConfig);
+} & SiteInboxConfig) | ({
+  kind: 'telegram';
+} & SiteTelegramConfig);
 
 /**
  * Concrete sending provider
@@ -4019,7 +4027,8 @@ export type SiteIntegrationConfig = ({
 export const SiteIntegrationProvider = {
   SMTP: 'smtp',
   SES: 'ses',
-  INBOX: 'inbox'
+  INBOX: 'inbox',
+  TELEGRAM: 'telegram'
 } as const;
 
 /**
@@ -4088,7 +4097,7 @@ export type SiteIntegrationResource = {
    */
   hookUrl: string;
   /**
-   * When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks.
+   * When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks (a Telegram bot's webhook is removed, so Telegram sends it none).
    */
   archivedAt?: Timestamp | null;
   /**
@@ -5939,12 +5948,12 @@ export type SiteSoleOwnedWorkspace = {
 };
 
 /**
- * The channel a suppression applies to (email today; sms reserved)
+ * The channel a suppression applies to
  */
-export const SiteSuppressionChannel = { EMAIL: 'email' } as const;
+export const SiteSuppressionChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
 
 /**
- * The channel a suppression applies to (email today; sms reserved)
+ * The channel a suppression applies to
  */
 export type SiteSuppressionChannel = typeof SiteSuppressionChannel[keyof typeof SiteSuppressionChannel];
 
@@ -6014,6 +6023,21 @@ export type SiteTagResource = {
    * Creation timestamp
    */
   createdAt: Timestamp;
+};
+
+/**
+ * A Telegram bot without its token: who it is, as Telegram said when it was connected
+ */
+export type SiteTelegramConfig = {
+  kind: 'telegram';
+  /**
+   * The bot's numeric Telegram id
+   */
+  botId: number;
+  /**
+   * The bot's
+   */
+  username: string;
 };
 
 /**
@@ -6742,6 +6766,17 @@ export type SmtpConfigInput = {
 };
 
 /**
+ * A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had: use a bot dedicated to sphericon
+ */
+export type TelegramConfigInput = {
+  kind: 'telegram';
+  /**
+   * The bot token
+   */
+  token: string;
+};
+
+/**
  * Request body for a test send
  */
 export type TestSendBroadcastInput = {
@@ -6897,11 +6932,11 @@ export type UpdateIntegrationInput = {
   maxPerDay?: MaxPerDay | null;
   config?: IntegrationConfigInput;
   /**
-   * Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over
+   * Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over. A Telegram integration's Preset is fixed
    */
   preset?: string | null;
   /**
-   * The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)
+   * The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired). A Telegram integration takes none
    */
   params?: JsonObject;
   /**
@@ -12355,6 +12390,10 @@ export type SiteIntegrationsRegenerateKeyErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteIntegrationsRegenerateKeyError = SiteIntegrationsRegenerateKeyErrors[keyof SiteIntegrationsRegenerateKeyErrors];
@@ -12402,6 +12441,10 @@ export type SiteIntegrationsUnarchiveErrors = {
    * RFC 7807 conflict response
    */
   409: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteIntegrationsUnarchiveError = SiteIntegrationsUnarchiveErrors[keyof SiteIntegrationsUnarchiveErrors];

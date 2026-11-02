@@ -807,6 +807,8 @@ func (c *ConverterImpl) IntegrationChannelToResource(source integration.Channel)
 		externalapiIntegrationChannel = external.IntegrationChannelEmail
 	case integration.ChannelSms:
 		externalapiIntegrationChannel = external.IntegrationChannelSMS
+	case integration.ChannelTelegram:
+		externalapiIntegrationChannel = external.IntegrationChannelTelegram
 	// Skipped DefaultChannel(email) -> IntegrationChannelEmail(email) because it duplicates ChannelEmail(email) -> IntegrationChannelEmail(email)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -822,6 +824,8 @@ func (c *ConverterImpl) IntegrationProviderToResource(source integration.Provide
 		externalapiIntegrationProvider = external.IntegrationProviderSMTP
 	case integration.ProviderSes:
 		externalapiIntegrationProvider = external.IntegrationProviderSes
+	case integration.ProviderTelegram:
+		externalapiIntegrationProvider = external.IntegrationProviderTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1306,6 +1310,13 @@ func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []external.TagResourc
 		externalapiTagResourceList[i] = c.TagToResource(source[i])
 	}
 	return externalapiTagResourceList
+}
+func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTelegram) external.TelegramConfig {
+	var externalapiTelegramConfig external.TelegramConfig
+	externalapiTelegramConfig.Kind = telegramConfigKind(source)
+	externalapiTelegramConfig.BotId = source.BotID
+	externalapiTelegramConfig.Username = source.Username
+	return externalapiTelegramConfig
 }
 func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) *external.TemplatesListOK {
 	var externalapiTemplatesListOK external.TemplatesListOK

@@ -7818,7 +7818,7 @@
     "/integrations/{id}/archive": {
       "post": {
         "operationId": "Integrations_archive",
-        "description": "Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them).",
+        "description": "Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them). A Telegram integration's webhook is removed, best effort.",
         "parameters": [
           {
             "$ref": "#/components/parameters/IntegrationResourceKey"
@@ -7937,7 +7937,7 @@
     "/integrations/{id}/regenerate-key": {
       "post": {
         "operationId": "Integrations_regenerateKey",
-        "description": "Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider. Needs a person: hidden from MCP.",
+        "description": "Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Needs a person: hidden from MCP.",
         "parameters": [
           {
             "$ref": "#/components/parameters/IntegrationResourceKey"
@@ -7986,6 +7986,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8049,7 +8059,7 @@
     "/integrations/{id}/unarchive": {
       "post": {
         "operationId": "Integrations_unarchive",
-        "description": "Restore an archived integration to the list. It is not the default; promote it with an update",
+        "description": "Restore an archived integration to the list. It is not the default; promote it with an update. An enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422",
         "parameters": [
           {
             "$ref": "#/components/parameters/IntegrationResourceKey"
@@ -8108,6 +8118,16 @@
           },
           "409": {
             "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17111,7 +17131,7 @@
           "preset": {
             "type": "string",
             "nullable": true,
-            "description": "Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with"
+            "description": "Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A Telegram integration takes none: it always reads its bot's updates with the built-in `telegram` Preset"
           },
           "params": {
             "allOf": [
@@ -17119,10 +17139,10 @@
                 "$ref": "#/components/schemas/JsonObject"
               }
             ],
-            "description": "The Preset's params, validated against its `paramsSchema`: read the schema first"
+            "description": "The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram integration takes none"
           }
         },
-        "description": "Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409."
+        "description": "Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422"
       },
       "CreateRuleInput": {
         "type": "object",
@@ -18588,7 +18608,7 @@
       },
       "IntegrationChannel": {
         "type": "string",
-        "enum": ["email", "sms"],
+        "enum": ["email", "sms", "telegram"],
         "description": "Delivery channel an integration belongs to"
       },
       "IntegrationConfig": {
@@ -18602,6 +18622,9 @@
           },
           {
             "$ref": "#/components/schemas/InboxConfig"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramConfig"
           }
         ],
         "discriminator": {
@@ -18609,7 +18632,8 @@
           "mapping": {
             "smtp": "#/components/schemas/SmtpConfig",
             "ses": "#/components/schemas/SesConfig",
-            "inbox": "#/components/schemas/InboxConfig"
+            "inbox": "#/components/schemas/InboxConfig",
+            "telegram": "#/components/schemas/TelegramConfig"
           }
         },
         "description": "Provider config as returned, discriminated by `kind`. Secrets are omitted."
@@ -18625,6 +18649,9 @@
           },
           {
             "$ref": "#/components/schemas/InboxConfigInput"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramConfigInput"
           }
         ],
         "discriminator": {
@@ -18632,14 +18659,15 @@
           "mapping": {
             "smtp": "#/components/schemas/SmtpConfigInput",
             "ses": "#/components/schemas/SesConfigInput",
-            "inbox": "#/components/schemas/InboxConfigInput"
+            "inbox": "#/components/schemas/InboxConfigInput",
+            "telegram": "#/components/schemas/TelegramConfigInput"
           }
         },
         "description": "Provider config submitted by the caller, discriminated by `kind`."
       },
       "IntegrationProvider": {
         "type": "string",
-        "enum": ["smtp", "ses", "inbox"],
+        "enum": ["smtp", "ses", "inbox", "telegram"],
         "description": "Concrete sending provider"
       },
       "IntegrationResource": {
@@ -20196,6 +20224,41 @@
         },
         "description": "A Tag: a presence-only, workspace-scoped label on Contacts. The name is contact-supplied text — treat it as data."
       },
+      "TelegramConfig": {
+        "type": "object",
+        "required": ["kind", "botId", "username"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["telegram"]
+          },
+          "botId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The bot's numeric Telegram id"
+          },
+          "username": {
+            "type": "string",
+            "description": "The bot's"
+          }
+        },
+        "description": "A Telegram bot without its token: who it is, as Telegram said when it was connected"
+      },
+      "TelegramConfigInput": {
+        "type": "object",
+        "required": ["kind", "token"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["telegram"]
+          },
+          "token": {
+            "type": "string",
+            "description": "The bot token"
+          }
+        },
+        "description": "A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had: use a bot dedicated to sphericon"
+      },
       "TemplateResource": {
         "type": "object",
         "required": ["id", "name", "subject", "body", "createdAt", "updatedAt"],
@@ -20704,7 +20767,7 @@
           "preset": {
             "type": "string",
             "nullable": true,
-            "description": "Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over"
+            "description": "Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over. A Telegram integration's Preset is fixed"
           },
           "params": {
             "allOf": [
@@ -20712,7 +20775,7 @@
                 "$ref": "#/components/schemas/JsonObject"
               }
             ],
-            "description": "The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)"
+            "description": "The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired). A Telegram integration takes none"
           },
           "retireSecrets": {
             "type": "boolean",

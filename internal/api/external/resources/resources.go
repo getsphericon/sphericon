@@ -245,6 +245,9 @@ type Converter interface {
 	SmtpConfigToResource(source integrations.RedactedSMTP) externalapi.SmtpConfig
 	// goverter:map . Kind | sesConfigKind
 	SesConfigToResource(source integrations.RedactedSES) externalapi.SesConfig
+	// goverter:map . Kind | telegramConfigKind
+	// goverter:map BotID BotId
+	TelegramConfigToResource(source integrations.RedactedTelegram) externalapi.TelegramConfig
 	// goverter:map Sent24h SentLast24h
 	ProviderLimitToStatus(source providerlimit.Status) externalapi.ProviderLimitStatus
 	// goverter:map Sent24h SentLast24h
@@ -674,6 +677,10 @@ func smtpConfigKind(integrations.RedactedSMTP) externalapi.SmtpConfigKind {
 
 func sesConfigKind(integrations.RedactedSES) externalapi.SesConfigKind {
 	return externalapi.SesConfigKindSes
+}
+
+func telegramConfigKind(integrations.RedactedTelegram) externalapi.TelegramConfigKind {
+	return externalapi.TelegramConfigKindTelegram
 }
 
 // sendingDomainVerified derives the verified flag from the verified and lost moments.

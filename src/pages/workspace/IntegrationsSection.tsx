@@ -19,7 +19,13 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
-import { IconBrandAws, IconMailOpened, IconPlugConnected, IconServer } from '@tabler/icons-react'
+import {
+  IconBrandAws,
+  IconBrandTelegram,
+  IconMailOpened,
+  IconPlugConnected,
+  IconServer,
+} from '@tabler/icons-react'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
@@ -38,6 +44,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   IntegrationConfigInput,
+  SiteIntegrationChannel,
   SiteIntegrationProvider,
   SiteIntegrationResource,
   SiteWorkspaceResource,
@@ -63,10 +70,23 @@ type ProviderKind = SiteIntegrationProvider
 
 // What the first step offers: SES-compatible services speak the SES API at an endpoint of their own.
 // contract-copy: the first step's tiles, a UI choice that adds sesCompatible to the provider enum
-type Tile = 'ses' | 'sesCompatible' | 'smtp' | 'inbox'
+type Tile = 'ses' | 'sesCompatible' | 'smtp' | 'inbox' | 'telegram'
 
 // contract-copy: the same tiles in display order
-const TILES: Tile[] = ['ses', 'sesCompatible', 'smtp', 'inbox']
+const TILES: Tile[] = ['ses', 'sesCompatible', 'smtp', 'inbox', 'telegram']
+
+// The provider a tile connects.
+function providerOf(tile: Tile): ProviderKind {
+  return tile === 'sesCompatible' ? 'ses' : tile
+}
+
+// The Channel a tile's provider sends on: a Telegram bot on telegram, every other on email.
+function channelOf(tile: Tile | null): SiteIntegrationChannel {
+  return tile === 'telegram' ? 'telegram' : 'email'
+}
+
+// contract-copy: the Channels in the order the list groups them
+const CHANNELS: SiteIntegrationChannel[] = ['email', 'telegram', 'sms']
 
 // Flat form state; the provider-specific config object is assembled on submit
 // from whichever fields the selected provider uses.
@@ -84,6 +104,7 @@ interface IntegrationFormValues extends ProviderLimitValues {
   endpoint: string
   from: string
   fromName: string
+  token: string
 }
 
 const INITIAL_VALUES: IntegrationFormValues = {
@@ -100,11 +121,15 @@ const INITIAL_VALUES: IntegrationFormValues = {
   endpoint: '',
   from: '',
   fromName: '',
+  token: '',
   ...NO_LIMITS,
 }
 
 // A provider left unnamed is called after where it sends from.
 function defaultName(values: IntegrationFormValues): string {
+  if (values.provider === 'telegram') {
+    return 'Telegram bot'
+  }
   if (values.provider === 'smtp') {
     return values.host.trim()
   }
@@ -113,6 +138,9 @@ function defaultName(values: IntegrationFormValues): string {
 }
 
 function buildConfig(values: IntegrationFormValues): IntegrationConfigInput {
+  if (values.provider === 'telegram') {
+    return { kind: 'telegram', token: values.token.trim() }
+  }
   if (values.provider === 'ses') {
     return {
       kind: 'ses',
@@ -164,6 +192,17 @@ function IntegrationsList({
   const { t } = useTranslation()
   const records = useSuspenseQuery(integrationsOptions(workspaceId, archived)).data
   const warnings = useProviderLimitWarnings()
+  const channelLabels: Record<SiteIntegrationChannel, string> = {
+    email: t(($) => $.settings.integrations.channels.email),
+    sms: t(($) => $.settings.integrations.channels.sms),
+    telegram: t(($) => $.settings.integrations.channels.telegram),
+  }
+  // One list per Channel that has a provider, each with its own default; none yet is one empty list.
+  const present = CHANNELS.filter((channel) => records.some((r) => r.channel === channel))
+  const groups = (present.length === 0 ? (['email'] as const) : present).map((channel) => ({
+    channel,
+    rows: records.filter((r) => r.channel === channel),
+  }))
   // One alert per kind of warning, naming every provider it applies to, so a Workspace with
   // several providers gets at most one block per kind. An archived provider sends nothing, so its
   // limits are nothing to warn about.
@@ -184,75 +223,90 @@ function IntegrationsList({
         </Alert>
       ))}
 
-      <DataTable
-        minHeight={records.length === 0 ? 200 : 0}
-        withTableBorder
-        records={records}
-        idAccessor="id"
-        columns={[
-          { accessor: 'name' },
-          { accessor: 'provider', title: t(($) => $.settings.integrations.providerLabel) },
-          {
-            accessor: 'isDefault',
-            title: t(($) => $.settings.integrations.default),
-            render: (record) => (record.isDefault ? t(($) => $.settings.integrations.default) : ''),
-          },
-          {
-            accessor: 'providerLimit',
-            title: t(($) => $.settings.integrations.providerLimit.title),
-            render: (record) => (
-              <ProviderLimitStatus status={record.providerLimit} withWarnings={!archived} />
-            ),
-          },
-          {
-            accessor: 'actions',
-            title: '',
-            render: (record) => (
-              <Group gap="xs" wrap="nowrap" justify="flex-end">
-                <ChangeHistoryLink
-                  workspaceId={workspaceId}
-                  targetType={AUDIT_TARGET_INTEGRATION}
-                  targetId={record.id}
-                />
-                {canManage && archived ? (
-                  <RowActionsMenu>
-                    <Menu.Item onClick={() => onRestore(record.id)}>
-                      {t(($) => $.actions.unarchive)}
-                    </Menu.Item>
-                  </RowActionsMenu>
-                ) : null}
-                {canManage && !archived ? (
-                  <RowActionsMenu>
-                    {record.isDefault ? null : (
-                      <Menu.Item onClick={() => onMakeDefault(record.id)}>
-                        {t(($) => $.settings.integrations.makeDefault)}
-                      </Menu.Item>
-                    )}
-                    <Menu.Item onClick={() => onEditLimits(record)}>
-                      {t(($) => $.settings.integrations.providerLimit.edit)}
-                    </Menu.Item>
-                    <Menu.Item onClick={() => onInbound(record)}>
-                      {t(($) => $.settings.integrations.inbound.open)}
-                    </Menu.Item>
-                    <Menu.Item color="red" onClick={() => onRemove(record.id)}>
-                      {t(($) => $.actions.remove)}
-                    </Menu.Item>
-                  </RowActionsMenu>
-                ) : null}
-              </Group>
-            ),
-          },
-        ]}
-        emptyState={
-          <EmptyState
-            title={
-              archived
-                ? t(($) => $.settings.integrations.emptyArchived)
-                : t(($) => $.settings.integrations.empty)
+      {groups.map(({ channel, rows }) => (
+        <Stack key={channel} gap="xs" mb="md">
+          {groups.length > 1 || channel !== 'email' ? (
+            <Title order={5}>{channelLabels[channel]}</Title>
+          ) : null}
+          <DataTable
+            minHeight={rows.length === 0 ? 200 : 0}
+            withTableBorder
+            records={rows}
+            idAccessor="id"
+            columns={[
+              { accessor: 'name' },
+              {
+                accessor: 'provider',
+                title: t(($) => $.settings.integrations.providerLabel),
+                render: (record) =>
+                  record.config.kind === 'telegram'
+                    ? `@${record.config.username}`
+                    : record.provider,
+              },
+              {
+                accessor: 'isDefault',
+                title: t(($) => $.settings.integrations.default),
+                render: (record) =>
+                  record.isDefault ? t(($) => $.settings.integrations.default) : '',
+              },
+              {
+                accessor: 'providerLimit',
+                title: t(($) => $.settings.integrations.providerLimit.title),
+                render: (record) => (
+                  <ProviderLimitStatus status={record.providerLimit} withWarnings={!archived} />
+                ),
+              },
+              {
+                accessor: 'actions',
+                title: '',
+                render: (record) => (
+                  <Group gap="xs" wrap="nowrap" justify="flex-end">
+                    <ChangeHistoryLink
+                      workspaceId={workspaceId}
+                      targetType={AUDIT_TARGET_INTEGRATION}
+                      targetId={record.id}
+                    />
+                    {canManage && archived ? (
+                      <RowActionsMenu>
+                        <Menu.Item onClick={() => onRestore(record.id)}>
+                          {t(($) => $.actions.unarchive)}
+                        </Menu.Item>
+                      </RowActionsMenu>
+                    ) : null}
+                    {canManage && !archived ? (
+                      <RowActionsMenu>
+                        {record.isDefault ? null : (
+                          <Menu.Item onClick={() => onMakeDefault(record.id)}>
+                            {t(($) => $.settings.integrations.makeDefault)}
+                          </Menu.Item>
+                        )}
+                        <Menu.Item onClick={() => onEditLimits(record)}>
+                          {t(($) => $.settings.integrations.providerLimit.edit)}
+                        </Menu.Item>
+                        <Menu.Item onClick={() => onInbound(record)}>
+                          {t(($) => $.settings.integrations.inbound.open)}
+                        </Menu.Item>
+                        <Menu.Item color="red" onClick={() => onRemove(record.id)}>
+                          {t(($) => $.actions.remove)}
+                        </Menu.Item>
+                      </RowActionsMenu>
+                    ) : null}
+                  </Group>
+                ),
+              },
+            ]}
+            emptyState={
+              <EmptyState
+                title={
+                  archived
+                    ? t(($) => $.settings.integrations.emptyArchived)
+                    : t(($) => $.settings.integrations.empty)
+                }
+              />
             }
           />
-        }
-      />
+        </Stack>
+      ))}
     </>
   )
 }
@@ -332,7 +386,13 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
       hint: t(($) => $.settings.integrations.providers.smtpHint),
       icon: <IconServer size={22} />,
     },
+    telegram: {
+      title: t(($) => $.settings.integrations.providers.telegram),
+      hint: t(($) => $.settings.integrations.providers.telegramHint),
+      icon: <IconBrandTelegram size={22} />,
+    },
   }
+  const isTelegram = form.values.provider === 'telegram'
   const isSes = form.values.provider === 'ses'
   const compatible = tile === 'sesCompatible'
   // An SES-compatible service needs its Provider limit (ADR 0067), so there the fields are required
@@ -344,8 +404,8 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
       required={compatible}
     />
   )
-  // The first provider of a Workspace is its default; later ones ask.
-  const hasActive = (integrationsQuery.data ?? []).length > 0
+  // The first provider of a Channel is its default; later ones ask.
+  const hasActive = (integrationsQuery.data ?? []).some((r) => r.channel === channelOf(tile))
 
   return (
     <Box>
@@ -426,6 +486,24 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
               )}
             >
               <Stack>
+                {isTelegram ? (
+                  <>
+                    <Alert
+                      color="yellow"
+                      variant="light"
+                      title={t(($) => $.settings.integrations.telegramWarning.title)}
+                    >
+                      {t(($) => $.settings.integrations.telegramWarning.body)}
+                    </Alert>
+                    <TextInput
+                      label={t(($) => $.settings.integrations.fields.token)}
+                      description={t(($) => $.settings.integrations.fields.tokenHint)}
+                      type="password"
+                      required
+                      {...form.getInputProps('token')}
+                    />
+                  </>
+                ) : null}
                 {compatible ? (
                   <TextInput
                     label={t(($) => $.settings.integrations.fields.endpoint)}
@@ -435,7 +513,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                     {...form.getInputProps('endpoint')}
                   />
                 ) : null}
-                {isSes ? (
+                {isTelegram ? null : isSes ? (
                   <Group grow>
                     <TextInput
                       label={t(($) => $.settings.integrations.fields.region)}
@@ -482,11 +560,13 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                   </>
                 )}
 
-                <TextInput
-                  label={t(($) => $.settings.integrations.fields.from)}
-                  required
-                  {...form.getInputProps('from')}
-                />
+                {isTelegram ? null : (
+                  <TextInput
+                    label={t(($) => $.settings.integrations.fields.from)}
+                    required
+                    {...form.getInputProps('from')}
+                  />
+                )}
 
                 {compatible ? (
                   <>
@@ -510,10 +590,12 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                         placeholder={defaultName(form.values)}
                         {...form.getInputProps('name')}
                       />
-                      <TextInput
-                        label={t(($) => $.settings.integrations.fields.fromName)}
-                        {...form.getInputProps('fromName')}
-                      />
+                      {isTelegram ? null : (
+                        <TextInput
+                          label={t(($) => $.settings.integrations.fields.fromName)}
+                          {...form.getInputProps('fromName')}
+                        />
+                      )}
                     </Group>
                     {compatible ? null : limitFields}
                     {hasActive ? (
@@ -542,7 +624,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                   key={kind}
                   aria-label={providerLabels[kind].title}
                   onClick={() => {
-                    form.setFieldValue('provider', kind === 'smtp' ? 'smtp' : 'ses')
+                    form.setFieldValue('provider', providerOf(kind))
                     form.setFieldValue('endpoint', '')
                     setTile(kind)
                   }}

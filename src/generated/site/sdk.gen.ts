@@ -2626,7 +2626,7 @@ export const siteIntegrationsUpdate = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
- * Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. Owners and admins only.
+ * Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. A Telegram integration's webhook is removed, best effort. Owners and admins only.
  */
 export const siteIntegrationsArchive = <ThrowOnError extends boolean = false>(options: Options<SiteIntegrationsArchiveData, ThrowOnError>): RequestResult<SiteIntegrationsArchiveResponses, SiteIntegrationsArchiveErrors, ThrowOnError> => (options.client ?? client).post<SiteIntegrationsArchiveResponses, SiteIntegrationsArchiveErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -2644,7 +2644,7 @@ export const siteIntegrationsArchive = <ThrowOnError extends boolean = false>(op
 });
 
 /**
- * Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.
+ * Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
  */
 export const siteIntegrationsRegenerateKey = <ThrowOnError extends boolean = false>(options: Options<SiteIntegrationsRegenerateKeyData, ThrowOnError>): RequestResult<SiteIntegrationsRegenerateKeyResponses, SiteIntegrationsRegenerateKeyErrors, ThrowOnError> => (options.client ?? client).post<SiteIntegrationsRegenerateKeyResponses, SiteIntegrationsRegenerateKeyErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -2662,7 +2662,7 @@ export const siteIntegrationsRegenerateKey = <ThrowOnError extends boolean = fal
 });
 
 /**
- * Restore an archived integration to the list. It is not the default; promote it with an update. Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.
+ * Restore an archived integration to the list. It is not the default; promote it with an update. Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins only.
  */
 export const siteIntegrationsUnarchive = <ThrowOnError extends boolean = false>(options: Options<SiteIntegrationsUnarchiveData, ThrowOnError>): RequestResult<SiteIntegrationsUnarchiveResponses, SiteIntegrationsUnarchiveErrors, ThrowOnError> => (options.client ?? client).post<SiteIntegrationsUnarchiveResponses, SiteIntegrationsUnarchiveErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

@@ -621,7 +621,8 @@ type Invoker interface {
 	//
 	// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 	// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-	// email automation through the default, uses it. Owners and admins only.
+	// email automation through the default, uses it. A Telegram integration's webhook is removed, best
+	// effort. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/archive
 	SiteIntegrationsArchive(ctx context.Context, params SiteIntegrationsArchiveParams) (SiteIntegrationsArchiveRes, error)
@@ -646,14 +647,17 @@ type Invoker interface {
 	SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (SiteIntegrationsListRes, error)
 	// SiteIntegrationsRegenerateKey invokes SiteIntegrations_regenerateKey operation.
 	//
-	// Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.
+	// Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
+	// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 	SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error)
 	// SiteIntegrationsUnarchive invokes SiteIntegrations_unarchive operation.
 	//
 	// Restore an archived integration to the list. It is not the default; promote it with an update.
-	// Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.
+	// Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram
+	// integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins
+	// only.
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/unarchive
 	SiteIntegrationsUnarchive(ctx context.Context, params SiteIntegrationsUnarchiveParams) (SiteIntegrationsUnarchiveRes, error)
@@ -13655,7 +13659,8 @@ func (c *Client) sendSiteInstanceGetRelease(ctx context.Context) (res SiteInstan
 //
 // Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 // not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-// email automation through the default, uses it. Owners and admins only.
+// email automation through the default, uses it. A Telegram integration's webhook is removed, best
+// effort. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/archive
 func (c *Client) SiteIntegrationsArchive(ctx context.Context, params SiteIntegrationsArchiveParams) (SiteIntegrationsArchiveRes, error) {
@@ -14263,7 +14268,8 @@ func (c *Client) sendSiteIntegrationsList(ctx context.Context, params SiteIntegr
 
 // SiteIntegrationsRegenerateKey invokes SiteIntegrations_regenerateKey operation.
 //
-// Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.
+// Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
+// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 func (c *Client) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error) {
@@ -14421,7 +14427,9 @@ func (c *Client) sendSiteIntegrationsRegenerateKey(ctx context.Context, params S
 // SiteIntegrationsUnarchive invokes SiteIntegrations_unarchive operation.
 //
 // Restore an archived integration to the list. It is not the default; promote it with an update.
-// Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.
+// Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram
+// integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins
+// only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/unarchive
 func (c *Client) SiteIntegrationsUnarchive(ctx context.Context, params SiteIntegrationsUnarchiveParams) (SiteIntegrationsUnarchiveRes, error) {

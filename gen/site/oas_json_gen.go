@@ -4692,6 +4692,16 @@ func (s IntegrationConfigInputSum) encodeFields(e *jx.Encoder) {
 	case InboxConfigInputIntegrationConfigInputSum:
 		e.FieldStart("kind")
 		e.Str("inbox")
+	case TelegramConfigInputIntegrationConfigInputSum:
+		e.FieldStart("kind")
+		e.Str("telegram")
+		{
+			s := s.TelegramConfigInput
+			{
+				e.FieldStart("token")
+				e.Str(s.Token)
+			}
+		}
 	}
 }
 
@@ -4727,6 +4737,9 @@ func (s *IntegrationConfigInputSum) Decode(d *jx.Decoder) error {
 				case "inbox":
 					s.Type = InboxConfigInputIntegrationConfigInputSum
 					found = true
+				case "telegram":
+					s.Type = TelegramConfigInputIntegrationConfigInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -4751,6 +4764,10 @@ func (s *IntegrationConfigInputSum) Decode(d *jx.Decoder) error {
 		}
 	case InboxConfigInputIntegrationConfigInputSum:
 		if err := s.InboxConfigInput.Decode(d); err != nil {
+			return err
+		}
+	case TelegramConfigInputIntegrationConfigInputSum:
+		if err := s.TelegramConfigInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -34540,6 +34557,8 @@ func (s *SiteIntegrationChannel) Decode(d *jx.Decoder) error {
 		*s = SiteIntegrationChannelEmail
 	case SiteIntegrationChannelSMS:
 		*s = SiteIntegrationChannelSMS
+	case SiteIntegrationChannelTelegram:
+		*s = SiteIntegrationChannelTelegram
 	default:
 		*s = SiteIntegrationChannel(v)
 	}
@@ -34684,6 +34703,20 @@ func (s SiteIntegrationConfigSum) encodeFields(e *jx.Encoder) {
 	case SiteInboxConfigSiteIntegrationConfigSum:
 		e.FieldStart("kind")
 		e.Str("inbox")
+	case SiteTelegramConfigSiteIntegrationConfigSum:
+		e.FieldStart("kind")
+		e.Str("telegram")
+		{
+			s := s.SiteTelegramConfig
+			{
+				e.FieldStart("botId")
+				e.Int64(s.BotId)
+			}
+			{
+				e.FieldStart("username")
+				e.Str(s.Username)
+			}
+		}
 	}
 }
 
@@ -34719,6 +34752,9 @@ func (s *SiteIntegrationConfigSum) Decode(d *jx.Decoder) error {
 				case "inbox":
 					s.Type = SiteInboxConfigSiteIntegrationConfigSum
 					found = true
+				case "telegram":
+					s.Type = SiteTelegramConfigSiteIntegrationConfigSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -34743,6 +34779,10 @@ func (s *SiteIntegrationConfigSum) Decode(d *jx.Decoder) error {
 		}
 	case SiteInboxConfigSiteIntegrationConfigSum:
 		if err := s.SiteInboxConfig.Decode(d); err != nil {
+			return err
+		}
+	case SiteTelegramConfigSiteIntegrationConfigSum:
+		if err := s.SiteTelegramConfig.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -34786,6 +34826,8 @@ func (s *SiteIntegrationProvider) Decode(d *jx.Decoder) error {
 		*s = SiteIntegrationProviderSes
 	case SiteIntegrationProviderInbox:
 		*s = SiteIntegrationProviderInbox
+	case SiteIntegrationProviderTelegram:
+		*s = SiteIntegrationProviderTelegram
 	default:
 		*s = SiteIntegrationProvider(v)
 	}
@@ -35786,6 +35828,44 @@ func (s *SiteIntegrationsRegenerateKeyNotFound) UnmarshalJSON(data []byte) error
 	return s.Decode(d)
 }
 
+// Encode encodes SiteIntegrationsRegenerateKeyUnprocessableEntity as json.
+func (s *SiteIntegrationsRegenerateKeyUnprocessableEntity) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteIntegrationsRegenerateKeyUnprocessableEntity from json.
+func (s *SiteIntegrationsRegenerateKeyUnprocessableEntity) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteIntegrationsRegenerateKeyUnprocessableEntity to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteIntegrationsRegenerateKeyUnprocessableEntity(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteIntegrationsRegenerateKeyUnprocessableEntity) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteIntegrationsRegenerateKeyUnprocessableEntity) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteIntegrationsUnarchiveBadRequest as json.
 func (s *SiteIntegrationsUnarchiveBadRequest) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
@@ -35934,6 +36014,44 @@ func (s *SiteIntegrationsUnarchiveNotFound) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteIntegrationsUnarchiveNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteIntegrationsUnarchiveUnprocessableEntity as json.
+func (s *SiteIntegrationsUnarchiveUnprocessableEntity) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteIntegrationsUnarchiveUnprocessableEntity from json.
+func (s *SiteIntegrationsUnarchiveUnprocessableEntity) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteIntegrationsUnarchiveUnprocessableEntity to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteIntegrationsUnarchiveUnprocessableEntity(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteIntegrationsUnarchiveUnprocessableEntity) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteIntegrationsUnarchiveUnprocessableEntity) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -56562,6 +56680,8 @@ func (s *SiteSuppressionChannel) Decode(d *jx.Decoder) error {
 	switch SiteSuppressionChannel(v) {
 	case SiteSuppressionChannelEmail:
 		*s = SiteSuppressionChannelEmail
+	case SiteSuppressionChannelTelegram:
+		*s = SiteSuppressionChannelTelegram
 	default:
 		*s = SiteSuppressionChannel(v)
 	}
@@ -58330,6 +58450,172 @@ func (s *SiteTagsRemoveNotFound) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteTagsRemoveNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteTelegramConfig) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteTelegramConfig) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("botId")
+		e.Int64(s.BotId)
+	}
+	{
+		e.FieldStart("username")
+		e.Str(s.Username)
+	}
+}
+
+var jsonFieldsNameOfSiteTelegramConfig = [3]string{
+	0: "kind",
+	1: "botId",
+	2: "username",
+}
+
+// Decode decodes SiteTelegramConfig from json.
+func (s *SiteTelegramConfig) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteTelegramConfig to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "botId":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int64()
+				s.BotId = int64(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"botId\"")
+			}
+		case "username":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Username = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"username\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteTelegramConfig")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteTelegramConfig) {
+					name = jsonFieldsNameOfSiteTelegramConfig[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteTelegramConfig) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteTelegramConfig) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteTelegramConfigKind as json.
+func (s SiteTelegramConfigKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteTelegramConfigKind from json.
+func (s *SiteTelegramConfigKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteTelegramConfigKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteTelegramConfigKind(v) {
+	case SiteTelegramConfigKindTelegram:
+		*s = SiteTelegramConfigKindTelegram
+	default:
+		*s = SiteTelegramConfigKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteTelegramConfigKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteTelegramConfigKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -67206,6 +67492,155 @@ func (s SmtpConfigInputKind) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SmtpConfigInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *TelegramConfigInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *TelegramConfigInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("token")
+		e.Str(s.Token)
+	}
+}
+
+var jsonFieldsNameOfTelegramConfigInput = [2]string{
+	0: "kind",
+	1: "token",
+}
+
+// Decode decodes TelegramConfigInput from json.
+func (s *TelegramConfigInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TelegramConfigInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "token":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Token = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"token\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode TelegramConfigInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfTelegramConfigInput) {
+					name = jsonFieldsNameOfTelegramConfigInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *TelegramConfigInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TelegramConfigInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes TelegramConfigInputKind as json.
+func (s TelegramConfigInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes TelegramConfigInputKind from json.
+func (s *TelegramConfigInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TelegramConfigInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch TelegramConfigInputKind(v) {
+	case TelegramConfigInputKindTelegram:
+		*s = TelegramConfigInputKindTelegram
+	default:
+		*s = TelegramConfigInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s TelegramConfigInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TelegramConfigInputKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

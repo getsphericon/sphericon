@@ -622,6 +622,14 @@ Integrations. It holds encrypted credentials where the provider has any, and the
 default per (workspace, channel). Broadcasts and Automations send _through_ an Integration (the
 workspace default when unspecified), by its Send route. Sending is one half of a loop: bounces and complaints come
 back via the Integration's Ingest hook and land in Suppression.
+A **Telegram** Integration is the Workspace's own bot on the `telegram` Channel: its credential is
+the bot token, and it keeps the bot's id and @username as Telegram reported them. Saving it
+connects the bot before the save commits: Telegram must accept the token, an edit may only give a
+new token of the same bot, and the bot's webhook is pointed at the Integration's Ingest hook with
+a secret sphericon generates (replacing any webhook the bot had), read with the built-in
+`telegram` Preset, which no other Integration takes. Its Provider limit is 30 a second, from
+Telegram's side. While it is enabled and not archived it holds the bot's webhook: regenerating
+its hook key moves the webhook, and disabling or archiving it removes the webhook.
 _Avoid_: Provider (alone), ESP, sender, connector
 
 **Test inbox**:

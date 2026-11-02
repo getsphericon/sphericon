@@ -157,8 +157,9 @@ const DefaultChannel = ChannelEmail
 
 // Channel values.
 const (
-	ChannelEmail Channel = "email"
-	ChannelSms   Channel = "sms"
+	ChannelEmail    Channel = "email"
+	ChannelSms      Channel = "sms"
+	ChannelTelegram Channel = "telegram"
 )
 
 func (c Channel) String() string {
@@ -168,7 +169,7 @@ func (c Channel) String() string {
 // ChannelValidator is a validator for the "channel" field enum values. It is called by the builders before save.
 func ChannelValidator(c Channel) error {
 	switch c {
-	case ChannelEmail, ChannelSms:
+	case ChannelEmail, ChannelSms, ChannelTelegram:
 		return nil
 	default:
 		return fmt.Errorf("integration: invalid enum value for channel field: %q", c)
@@ -180,9 +181,10 @@ type Provider string
 
 // Provider values.
 const (
-	ProviderSMTP  Provider = "smtp"
-	ProviderSes   Provider = "ses"
-	ProviderInbox Provider = "inbox"
+	ProviderSMTP     Provider = "smtp"
+	ProviderSes      Provider = "ses"
+	ProviderInbox    Provider = "inbox"
+	ProviderTelegram Provider = "telegram"
 )
 
 func (pr Provider) String() string {
@@ -192,7 +194,7 @@ func (pr Provider) String() string {
 // ProviderValidator is a validator for the "provider" field enum values. It is called by the builders before save.
 func ProviderValidator(pr Provider) error {
 	switch pr {
-	case ProviderSMTP, ProviderSes, ProviderInbox:
+	case ProviderSMTP, ProviderSes, ProviderInbox, ProviderTelegram:
 		return nil
 	default:
 		return fmt.Errorf("integration: invalid enum value for provider field: %q", pr)

@@ -15122,7 +15122,8 @@ func (s *Server) handleSiteInstanceGetReleaseRequest(args [0]string, argsEscaped
 //
 // Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 // not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-// email automation through the default, uses it. Owners and admins only.
+// email automation through the default, uses it. A Telegram integration's webhook is removed, best
+// effort. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/archive
 func (s *Server) handleSiteIntegrationsArchiveRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -15898,7 +15899,8 @@ func (s *Server) handleSiteIntegrationsListRequest(args [1]string, argsEscaped b
 
 // handleSiteIntegrationsRegenerateKeyRequest handles SiteIntegrations_regenerateKey operation.
 //
-// Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.
+// Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
+// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 func (s *Server) handleSiteIntegrationsRegenerateKeyRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -16090,7 +16092,9 @@ func (s *Server) handleSiteIntegrationsRegenerateKeyRequest(args [2]string, args
 // handleSiteIntegrationsUnarchiveRequest handles SiteIntegrations_unarchive operation.
 //
 // Restore an archived integration to the list. It is not the default; promote it with an update.
-// Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.
+// Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram
+// integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins
+// only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/unarchive
 func (s *Server) handleSiteIntegrationsUnarchiveRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

@@ -3026,7 +3026,7 @@ export const siteIntegrationsUpdateMutation = (options?: Partial<Options<SiteInt
 export const siteIntegrationsArchiveMutationKey = (options?: Partial<Options<SiteIntegrationsArchiveData>>) => createMutationKey('siteIntegrationsArchive', options, ['Site Integrations']);
 
 /**
- * Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. Owners and admins only.
+ * Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. A Telegram integration's webhook is removed, best effort. Owners and admins only.
  */
 export const siteIntegrationsArchiveMutation = (options?: Partial<Options<SiteIntegrationsArchiveData>>): UseMutationOptions<SiteIntegrationsArchiveResponse, SiteIntegrationsArchiveError, Options<SiteIntegrationsArchiveData>> => {
   const mutationOptions: UseMutationOptions<SiteIntegrationsArchiveResponse, SiteIntegrationsArchiveError, Options<SiteIntegrationsArchiveData>> = {
@@ -3046,7 +3046,7 @@ export const siteIntegrationsArchiveMutation = (options?: Partial<Options<SiteIn
 export const siteIntegrationsRegenerateKeyMutationKey = (options?: Partial<Options<SiteIntegrationsRegenerateKeyData>>) => createMutationKey('siteIntegrationsRegenerateKey', options, ['Site Integrations']);
 
 /**
- * Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.
+ * Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
  */
 export const siteIntegrationsRegenerateKeyMutation = (options?: Partial<Options<SiteIntegrationsRegenerateKeyData>>): UseMutationOptions<SiteIntegrationsRegenerateKeyResponse, SiteIntegrationsRegenerateKeyError, Options<SiteIntegrationsRegenerateKeyData>> => {
   const mutationOptions: UseMutationOptions<SiteIntegrationsRegenerateKeyResponse, SiteIntegrationsRegenerateKeyError, Options<SiteIntegrationsRegenerateKeyData>> = {
@@ -3066,7 +3066,7 @@ export const siteIntegrationsRegenerateKeyMutation = (options?: Partial<Options<
 export const siteIntegrationsUnarchiveMutationKey = (options?: Partial<Options<SiteIntegrationsUnarchiveData>>) => createMutationKey('siteIntegrationsUnarchive', options, ['Site Integrations']);
 
 /**
- * Restore an archived integration to the list. It is not the default; promote it with an update. Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.
+ * Restore an archived integration to the list. It is not the default; promote it with an update. Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins only.
  */
 export const siteIntegrationsUnarchiveMutation = (options?: Partial<Options<SiteIntegrationsUnarchiveData>>): UseMutationOptions<SiteIntegrationsUnarchiveResponse, SiteIntegrationsUnarchiveError, Options<SiteIntegrationsUnarchiveData>> => {
   const mutationOptions: UseMutationOptions<SiteIntegrationsUnarchiveResponse, SiteIntegrationsUnarchiveError, Options<SiteIntegrationsUnarchiveData>> = {

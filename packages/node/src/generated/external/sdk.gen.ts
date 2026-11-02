@@ -708,7 +708,7 @@ export const integrationsUpdate = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them).
+ * Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them). A Telegram integration's webhook is removed, best effort.
  */
 export const integrationsArchive = <ThrowOnError extends boolean = false>(options: Options<IntegrationsArchiveData, ThrowOnError>): RequestResult<IntegrationsArchiveResponses, IntegrationsArchiveErrors, ThrowOnError> => (options.client ?? client).post<IntegrationsArchiveResponses, IntegrationsArchiveErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -717,7 +717,7 @@ export const integrationsArchive = <ThrowOnError extends boolean = false>(option
 });
 
 /**
- * Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider. Needs a person: hidden from MCP.
+ * Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Needs a person: hidden from MCP.
  */
 export const integrationsRegenerateKey = <ThrowOnError extends boolean = false>(options: Options<IntegrationsRegenerateKeyData, ThrowOnError>): RequestResult<IntegrationsRegenerateKeyResponses, IntegrationsRegenerateKeyErrors, ThrowOnError> => (options.client ?? client).post<IntegrationsRegenerateKeyResponses, IntegrationsRegenerateKeyErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -726,7 +726,7 @@ export const integrationsRegenerateKey = <ThrowOnError extends boolean = false>(
 });
 
 /**
- * Restore an archived integration to the list. It is not the default; promote it with an update
+ * Restore an archived integration to the list. It is not the default; promote it with an update. An enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422
  */
 export const integrationsUnarchive = <ThrowOnError extends boolean = false>(options: Options<IntegrationsUnarchiveData, ThrowOnError>): RequestResult<IntegrationsUnarchiveResponses, IntegrationsUnarchiveErrors, ThrowOnError> => (options.client ?? client).post<IntegrationsUnarchiveResponses, IntegrationsUnarchiveErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],

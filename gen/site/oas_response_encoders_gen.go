@@ -4872,6 +4872,18 @@ func encodeSiteIntegrationsRegenerateKeyResponse(response SiteIntegrationsRegene
 
 		return nil
 
+	case *SiteIntegrationsRegenerateKeyUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
@@ -4930,6 +4942,18 @@ func encodeSiteIntegrationsUnarchiveResponse(response SiteIntegrationsUnarchiveR
 	case *SiteIntegrationsUnarchiveConflict:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(409)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteIntegrationsUnarchiveUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

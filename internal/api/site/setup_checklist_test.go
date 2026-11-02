@@ -102,3 +102,21 @@ func TestAChecklistNeverCompleteHasNoMoment(t *testing.T) {
 
 	assert.False(t, got.CompletedAt.Set)
 }
+
+func TestSiteSetupChecklistAsksForAnEmailProviderNotATelegramBot(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerSallyEmail)
+	ctx := context.Background()
+	token := env.Telegram.AddBot(7000000003, "hooli_bot")
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{Name: "Bot", Config: telegramInput(token)},
+		siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.HooliPublicID})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteIntegrationResource{}, created)
+
+	res, err := c.SiteSetupChecklistGet(ctx, siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.HooliPublicID})
+	require.NoError(t, err)
+
+	got, ok := res.(*siteapi.SiteSetupProgress)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, todo, got.Steps.Integration)
+}

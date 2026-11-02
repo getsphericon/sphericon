@@ -70,7 +70,9 @@ function InboundForm({
   integration: SiteIntegrationResource
 }) {
   const { t } = useTranslation()
-  const presetsQuery = useQuery(sitePresetsListOptions())
+  // A Telegram bot's Preset is fixed and its webhook is set by sphericon: nothing here to choose.
+  const telegram = integration.provider === 'telegram'
+  const presetsQuery = useQuery({ ...sitePresetsListOptions(), enabled: !telegram })
   const presets = presetsQuery.data ?? []
 
   const [preset, setPreset] = useState<string | null>(integration.preset)
@@ -116,7 +118,13 @@ function InboundForm({
   const onRegenerate = () => {
     modals.openConfirmModal({
       title: t(($) => $.settings.integrations.inbound.regenerateConfirmTitle),
-      children: <Text>{t(($) => $.settings.integrations.inbound.regenerateConfirm)}</Text>,
+      children: (
+        <Text>
+          {telegram
+            ? t(($) => $.settings.integrations.inbound.telegramRegenerateConfirm)
+            : t(($) => $.settings.integrations.inbound.regenerateConfirm)}
+        </Text>
+      ),
       labels: {
         cancel: t(($) => $.actions.cancel),
         confirm: t(($) => $.settings.integrations.inbound.regenerate),
@@ -129,7 +137,9 @@ function InboundForm({
   return (
     <Stack>
       <Text c="dimmed" size="sm">
-        {t(($) => $.settings.integrations.inbound.description)}
+        {telegram
+          ? t(($) => $.settings.integrations.inbound.telegramDescription)
+          : t(($) => $.settings.integrations.inbound.description)}
       </Text>
 
       <Stack gap={4}>
@@ -157,15 +167,17 @@ function InboundForm({
         </Group>
       </Stack>
 
-      <Select
-        label={t(($) => $.settings.integrations.inbound.preset)}
-        placeholder={t(($) => $.settings.integrations.inbound.noPreset)}
-        data={presets.map((p) => ({ value: p.name, label: p.name }))}
-        description={selected?.description}
-        clearable
-        value={preset}
-        onChange={onPresetChange}
-      />
+      {telegram ? null : (
+        <Select
+          label={t(($) => $.settings.integrations.inbound.preset)}
+          placeholder={t(($) => $.settings.integrations.inbound.noPreset)}
+          data={presets.map((p) => ({ value: p.name, label: p.name }))}
+          description={selected?.description}
+          clearable
+          value={preset}
+          onChange={onPresetChange}
+        />
+      )}
 
       {selected ? (
         <Form
@@ -219,7 +231,7 @@ function InboundForm({
         </Alert>
       ) : null}
 
-      {preset === null ? (
+      {preset === null && !telegram ? (
         <Group justify="flex-end">
           <Button loading={saveMutation.isPending} onClick={() => save()}>
             {t(($) => $.settings.integrations.inbound.save)}

@@ -572,7 +572,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "provenance", Type: field.TypeEnum, Enums: []string{"double_opt_in", "grandfathered", "imported"}},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
@@ -1059,8 +1059,8 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "sms"}, Default: "email"},
-		{Name: "provider", Type: field.TypeEnum, Enums: []string{"smtp", "ses", "inbox"}},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "sms", "telegram"}, Default: "email"},
+		{Name: "provider", Type: field.TypeEnum, Enums: []string{"smtp", "ses", "inbox", "telegram"}},
 		{Name: "config_encrypted", Type: field.TypeString},
 		{Name: "preset", Type: field.TypeString, Nullable: true},
 		{Name: "params_encrypted", Type: field.TypeString, Nullable: true},
@@ -1564,7 +1564,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"broadcast", "automation", "transactional"}},
 		{Name: "idempotency_key", Type: field.TypeString},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString, Nullable: true},
 		{Name: "sending_source", Type: field.TypeString, Nullable: true},
 		{Name: "sending_domain", Type: field.TypeString, Nullable: true},
@@ -2338,7 +2338,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "reason", Type: field.TypeEnum, Enums: []string{"bounce", "complaint", "manual"}, Default: "manual"},
 		{Name: "lifted_at", Type: field.TypeTime, Nullable: true},
@@ -2492,7 +2492,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "sending_source", Type: field.TypeString},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
@@ -2931,7 +2931,7 @@ func init() {
 		Table: "confirmations",
 	}
 	ConfirmationsTable.Annotation.Checks = map[string]string{
-		"confirmations_channel_check":    "channel IN ('email')",
+		"confirmations_channel_check":    "channel IN ('email', 'telegram')",
 		"confirmations_provenance_check": "provenance IN ('double_opt_in', 'grandfathered', 'imported')",
 	}
 	ConsentRecordsTable.ForeignKeys[0].RefTable = LegalDocumentVersionsTable
@@ -2998,8 +2998,8 @@ func init() {
 		Table: "integrations",
 	}
 	IntegrationsTable.Annotation.Checks = map[string]string{
-		"integrations_channel_check":              "channel IN ('email', 'sms')",
-		"integrations_provider_check":             "provider IN ('smtp', 'ses', 'inbox')",
+		"integrations_channel_check":              "channel IN ('email', 'sms', 'telegram')",
+		"integrations_provider_check":             "provider IN ('smtp', 'ses', 'inbox', 'telegram')",
 		"integrations_provider_enforcement_check": "provider_enforcement IN ('probation', 'shutdown')",
 	}
 	InvitationsTable.ForeignKeys[0].RefTable = UsersTable
@@ -3074,7 +3074,7 @@ func init() {
 		Table: "outbound_messages",
 	}
 	OutboundMessagesTable.Annotation.Checks = map[string]string{
-		"outbound_messages_channel_check": "channel IN ('email')",
+		"outbound_messages_channel_check": "channel IN ('email', 'telegram')",
 		"outbound_messages_kind_check":    "kind IN ('broadcast', 'automation', 'transactional')",
 		"outbound_messages_status_check":  "status IN ('pending', 'sent', 'skipped', 'failed')",
 	}
@@ -3174,7 +3174,7 @@ func init() {
 		Table: "suppressions",
 	}
 	SuppressionsTable.Annotation.Checks = map[string]string{
-		"suppressions_channel_check": "channel IN ('email')",
+		"suppressions_channel_check": "channel IN ('email', 'telegram')",
 		"suppressions_reason_check":  "reason IN ('bounce', 'complaint', 'manual')",
 	}
 	TagsTable.ForeignKeys[0].RefTable = WorkspacesTable
@@ -3203,7 +3203,7 @@ func init() {
 		Table: "unsubscribes",
 	}
 	UnsubscribesTable.Annotation.Checks = map[string]string{
-		"unsubscribes_channel_check": "channel IN ('email')",
+		"unsubscribes_channel_check": "channel IN ('email', 'telegram')",
 	}
 	UsagesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	UsagesTable.Annotation = &entsql.Annotation{

@@ -1150,6 +1150,8 @@ func (c *ConverterImpl) IntegrationChannelToResource(source integration.Channel)
 		siteapiSiteIntegrationChannel = site.SiteIntegrationChannelEmail
 	case integration.ChannelSms:
 		siteapiSiteIntegrationChannel = site.SiteIntegrationChannelSMS
+	case integration.ChannelTelegram:
+		siteapiSiteIntegrationChannel = site.SiteIntegrationChannelTelegram
 	// Skipped DefaultChannel(email) -> SiteIntegrationChannelEmail(email) because it duplicates ChannelEmail(email) -> SiteIntegrationChannelEmail(email)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -1165,6 +1167,8 @@ func (c *ConverterImpl) IntegrationProviderToResource(source integration.Provide
 		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderSMTP
 	case integration.ProviderSes:
 		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderSes
+	case integration.ProviderTelegram:
+		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1958,6 +1962,8 @@ func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel)
 	switch source {
 	case suppression.ChannelEmail:
 		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelEmail
+	case suppression.ChannelTelegram:
+		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelTelegram
 	// Skipped DefaultChannel(email) -> SiteSuppressionChannelEmail(email) because it duplicates ChannelEmail(email) -> SiteSuppressionChannelEmail(email)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -2064,6 +2070,13 @@ func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []site.SiteTagResourc
 		siteapiSiteTagResourceList[i] = c.TagToResource(source[i])
 	}
 	return siteapiSiteTagResourceList
+}
+func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTelegram) site.SiteTelegramConfig {
+	var siteapiSiteTelegramConfig site.SiteTelegramConfig
+	siteapiSiteTelegramConfig.Kind = telegramConfigKind(source)
+	siteapiSiteTelegramConfig.BotId = source.BotID
+	siteapiSiteTelegramConfig.Username = source.Username
+	return siteapiSiteTelegramConfig
 }
 func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) *site.SiteTemplatesListOK {
 	var siteapiSiteTemplatesListOK site.SiteTemplatesListOK

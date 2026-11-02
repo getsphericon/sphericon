@@ -1235,7 +1235,11 @@ export const zSiteInstanceRelease = z.object({
 /**
  * Delivery channel an integration belongs to
  */
-export const zSiteIntegrationChannel = z.enum(['email', 'sms']);
+export const zSiteIntegrationChannel = z.enum([
+  'email',
+  'sms',
+  'telegram'
+]);
 
 /**
  * Concrete sending provider
@@ -1243,7 +1247,8 @@ export const zSiteIntegrationChannel = z.enum(['email', 'sms']);
 export const zSiteIntegrationProvider = z.enum([
   'smtp',
   'ses',
-  'inbox'
+  'inbox',
+  'telegram'
 ]);
 
 /**
@@ -2117,18 +2122,9 @@ export const zSiteSmtpConfig = z.object({
 });
 
 /**
- * Provider config returned to the UI, discriminated by `kind`. Secrets are omitted.
+ * The channel a suppression applies to
  */
-export const zSiteIntegrationConfig = z.discriminatedUnion('kind', [
-  zSiteSmtpConfig.extend({ kind: z.literal('smtp') }),
-  zSiteSesConfig.extend({ kind: z.literal('ses') }),
-  zSiteInboxConfig.extend({ kind: z.literal('inbox') })
-]);
-
-/**
- * The channel a suppression applies to (email today; sms reserved)
- */
-export const zSiteSuppressionChannel = z.enum(['email']);
+export const zSiteSuppressionChannel = z.enum(['email', 'telegram']);
 
 /**
  * Site request body for manually suppressing a destination
@@ -2146,6 +2142,25 @@ export const zSiteSuppressionReason = z.enum([
   'bounce',
   'complaint',
   'manual'
+]);
+
+/**
+ * A Telegram bot without its token: who it is, as Telegram said when it was connected
+ */
+export const zSiteTelegramConfig = z.object({
+  kind: z.enum(['telegram']),
+  botId: z.string().regex(/^[0-9]+$/),
+  username: z.string()
+});
+
+/**
+ * Provider config returned to the UI, discriminated by `kind`. Secrets are omitted.
+ */
+export const zSiteIntegrationConfig = z.discriminatedUnion('kind', [
+  zSiteSmtpConfig.extend({ kind: z.literal('smtp') }),
+  zSiteSesConfig.extend({ kind: z.literal('ses') }),
+  zSiteInboxConfig.extend({ kind: z.literal('inbox') }),
+  zSiteTelegramConfig.extend({ kind: z.literal('telegram') })
 ]);
 
 /**
@@ -2303,16 +2318,25 @@ export const zSmtpConfigInput = z.object({
 });
 
 /**
+ * A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had: use a bot dedicated to sphericon
+ */
+export const zTelegramConfigInput = z.object({
+  kind: z.enum(['telegram']),
+  token: z.string()
+});
+
+/**
  * Provider config submitted by the caller, discriminated by `kind`.
  */
 export const zIntegrationConfigInput = z.discriminatedUnion('kind', [
   zSmtpConfigInput.extend({ kind: z.literal('smtp') }),
   zSesConfigInput.extend({ kind: z.literal('ses') }),
-  zInboxConfigInput.extend({ kind: z.literal('inbox') })
+  zInboxConfigInput.extend({ kind: z.literal('inbox') }),
+  zTelegramConfigInput.extend({ kind: z.literal('telegram') })
 ]);
 
 /**
- * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409.
+ * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422
  */
 export const zCreateIntegrationInput = z.object({
   name: z.string(),

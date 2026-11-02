@@ -331,6 +331,8 @@ func integrationConfigIn(in siteapi.IntegrationConfigInput) (integrations.Config
 		}}, nil
 	case siteapi.InboxConfigInputIntegrationConfigInputSum:
 		return integrations.ConfigInput{Inbox: &integrations.InboxConfig{}}, nil
+	case siteapi.TelegramConfigInputIntegrationConfigInputSum:
+		return integrations.ConfigInput{Telegram: &integrations.TelegramConfig{Token: in.OneOf.TelegramConfigInput.Token}}, nil
 	}
 	return integrations.ConfigInput{}, errUnknownProvider
 }

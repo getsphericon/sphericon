@@ -109,11 +109,9 @@ func (h *Handlers) IntegrationsRegenerateKey(ctx context.Context, params externa
 // PresetsList returns the Presets the Instance offers with the params schema of each:
 // how an agent learns what an Integration's `params` takes.
 func (h *Handlers) PresetsList(_ context.Context) (externalapi.PresetsListRes, error) {
-	reg := h.integrations.Presets()
-	names := reg.Names()
-	items := make([]externalapi.PresetResource, 0, len(names))
-	for _, name := range names {
-		p, _ := reg.Get(name)
+	choosable := h.integrations.Choosable()
+	items := make([]externalapi.PresetResource, 0, len(choosable))
+	for _, p := range choosable {
 		items = append(items, externalapi.PresetResource{
 			Name: p.Name(), Description: p.Description(),
 			ParamsSchema: externalapi.JsonObject(integrations.RawOf(p.ParamsSchema())),
@@ -188,6 +186,8 @@ func (h *Handlers) integrationResource(row *ent.Integration, limit providerlimit
 		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewSesConfigIntegrationConfigSum(mapper.SesConfigToResource(*cfg.SES))}
 	case cfg.Inbox != nil:
 		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewInboxConfigIntegrationConfigSum(externalapi.InboxConfig{Kind: externalapi.InboxConfigKindInbox})}
+	case cfg.Telegram != nil:
+		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewTelegramConfigIntegrationConfigSum(mapper.TelegramConfigToResource(*cfg.Telegram))}
 	}
 	return res, nil
 }

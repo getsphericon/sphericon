@@ -418,7 +418,8 @@ type Invoker interface {
 	//
 	// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 	// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-	// email automation through the default, uses it (`usedBy` names them).
+	// email automation through the default, uses it (`usedBy` names them). A Telegram integration's
+	// webhook is removed, best effort.
 	//
 	// POST /integrations/{id}/archive
 	IntegrationsArchive(ctx context.Context, params IntegrationsArchiveParams) (IntegrationsArchiveRes, error)
@@ -443,13 +444,15 @@ type Invoker interface {
 	// IntegrationsRegenerateKey invokes Integrations_regenerateKey operation.
 	//
 	// Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
-	// pasted into the provider. Needs a person: hidden from MCP.
+	// pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
+	// is a 422). Needs a person: hidden from MCP.
 	//
 	// POST /integrations/{id}/regenerate-key
 	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error)
 	// IntegrationsUnarchive invokes Integrations_unarchive operation.
 	//
-	// Restore an archived integration to the list. It is not the default; promote it with an update.
+	// Restore an archived integration to the list. It is not the default; promote it with an update. An
+	// enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422.
 	//
 	// POST /integrations/{id}/unarchive
 	IntegrationsUnarchive(ctx context.Context, params IntegrationsUnarchiveParams) (IntegrationsUnarchiveRes, error)
@@ -8883,7 +8886,8 @@ func (c *Client) sendExportMessages(ctx context.Context, params ExportMessagesPa
 //
 // Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 // not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-// email automation through the default, uses it (`usedBy` names them).
+// email automation through the default, uses it (`usedBy` names them). A Telegram integration's
+// webhook is removed, best effort.
 //
 // POST /integrations/{id}/archive
 func (c *Client) IntegrationsArchive(ctx context.Context, params IntegrationsArchiveParams) (IntegrationsArchiveRes, error) {
@@ -9437,7 +9441,8 @@ func (c *Client) sendIntegrationsList(ctx context.Context, params IntegrationsLi
 // IntegrationsRegenerateKey invokes Integrations_regenerateKey operation.
 //
 // Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
-// pasted into the provider. Needs a person: hidden from MCP.
+// pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
+// is a 422). Needs a person: hidden from MCP.
 //
 // POST /integrations/{id}/regenerate-key
 func (c *Client) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error) {
@@ -9572,7 +9577,8 @@ func (c *Client) sendIntegrationsRegenerateKey(ctx context.Context, params Integ
 
 // IntegrationsUnarchive invokes Integrations_unarchive operation.
 //
-// Restore an archived integration to the list. It is not the default; promote it with an update.
+// Restore an archived integration to the list. It is not the default; promote it with an update. An
+// enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422.
 //
 // POST /integrations/{id}/unarchive
 func (c *Client) IntegrationsUnarchive(ctx context.Context, params IntegrationsUnarchiveParams) (IntegrationsUnarchiveRes, error) {

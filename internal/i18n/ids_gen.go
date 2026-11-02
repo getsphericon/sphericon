@@ -147,8 +147,16 @@ var (
 	ErrorsIntegrationKindMismatch               = ID{key: "errors.integration_kind_mismatch"}
 	ErrorsIntegrationNotFound                   = ID{key: "errors.integration_not_found"}
 	ErrorsIntegrationOneInbox                   = ID{key: "errors.integration_one_inbox"}
+	ErrorsIntegrationPresetTelegramOnly         = ID{key: "errors.integration_preset_telegram_only"}
 	ErrorsIntegrationProviderLimitRequired      = ID{key: "errors.integration_provider_limit_required"}
 	ErrorsIntegrationSecretRequired             = ID{key: "errors.integration_secret_required"}
+	ErrorsIntegrationTelegramOtherBot           = ID{key: "errors.integration_telegram_other_bot"}
+	ErrorsIntegrationTelegramPresetFixed        = ID{key: "errors.integration_telegram_preset_fixed"}
+	ErrorsIntegrationTelegramRefused            = ID{key: "errors.integration_telegram_refused"}
+	ErrorsIntegrationTelegramTokenFormat        = ID{key: "errors.integration_telegram_token_format"}
+	ErrorsIntegrationTelegramTokenRefused       = ID{key: "errors.integration_telegram_token_refused"}
+	ErrorsIntegrationTelegramUnreachable        = ID{key: "errors.integration_telegram_unreachable"}
+	ErrorsIntegrationTelegramWebhookRefused     = ID{key: "errors.integration_telegram_webhook_refused"}
 	ErrorsInvalidCredentials                    = ID{key: "errors.invalid_credentials"}
 	ErrorsInvitationLinkNotFound                = ID{key: "errors.invitation_link_not_found"}
 	ErrorsInvitationNotFound                    = ID{key: "errors.invitation_not_found"}

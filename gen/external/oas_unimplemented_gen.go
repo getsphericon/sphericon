@@ -576,7 +576,8 @@ func (UnimplementedHandler) ExportMessages(ctx context.Context, params ExportMes
 //
 // Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 // not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-// email automation through the default, uses it (`usedBy` names them).
+// email automation through the default, uses it (`usedBy` names them). A Telegram integration's
+// webhook is removed, best effort.
 //
 // POST /integrations/{id}/archive
 func (UnimplementedHandler) IntegrationsArchive(ctx context.Context, params IntegrationsArchiveParams) (r IntegrationsArchiveRes, _ error) {
@@ -613,7 +614,8 @@ func (UnimplementedHandler) IntegrationsList(ctx context.Context, params Integra
 // IntegrationsRegenerateKey implements Integrations_regenerateKey operation.
 //
 // Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
-// pasted into the provider. Needs a person: hidden from MCP.
+// pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
+// is a 422). Needs a person: hidden from MCP.
 //
 // POST /integrations/{id}/regenerate-key
 func (UnimplementedHandler) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (r IntegrationsRegenerateKeyRes, _ error) {
@@ -622,7 +624,8 @@ func (UnimplementedHandler) IntegrationsRegenerateKey(ctx context.Context, param
 
 // IntegrationsUnarchive implements Integrations_unarchive operation.
 //
-// Restore an archived integration to the list. It is not the default; promote it with an update.
+// Restore an archived integration to the list. It is not the default; promote it with an update. An
+// enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422.
 //
 // POST /integrations/{id}/unarchive
 func (UnimplementedHandler) IntegrationsUnarchive(ctx context.Context, params IntegrationsUnarchiveParams) (r IntegrationsUnarchiveRes, _ error) {

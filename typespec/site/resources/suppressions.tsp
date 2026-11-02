@@ -13,9 +13,10 @@ enum SiteSuppressionReason {
   manual,
 }
 
-/** The channel a suppression applies to (email today; sms reserved) */
+/** The channel a suppression applies to */
 enum SiteSuppressionChannel {
   email,
+  telegram,
 }
 
 /** A suppressed destination: the send path skips it on every surface */
