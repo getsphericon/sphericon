@@ -289,7 +289,7 @@ a mutable flag. Required on SMS and WhatsApp always, and on email only when the 
 **require-confirmed-opt-in** policy is on (default off = single opt-in); then Send-eligibility adds
 the one positive layer (see Send-eligibility). Carries **provenance** — `double_opt_in` (clicked a
 confirmation link), `grandfathered` (existing contacts at policy-enablement), `imported`
-(asserted through the API or an import from the customer's server, or by a sphericon on-site form,
+(asserted through the API or an import from the customer's server, or by an **On-site form**,
 with the consent wording, its source and the brand, by a customer who collected it, possibly through a verification service of their own) or `keyword` (a
 START sent on the Channel); the strongest provenance wins on dedup. sphericon runs no SMS
 confirmation flow of its own. Confirmed via a signed link whose endpoint
@@ -473,21 +473,22 @@ _Avoid_: Revision, snapshot
 
 **Versioned definition**:
 An object whose definition is kept in versions, a **live version** and a **draft**, and changes only
-by **Publish**; its name, status and archiving stay on the object. Today the Automation and the Rule.
-They share one lifecycle: an edit writes the draft, Publish makes it live, **Revert** drops it,
-Deactivate stops the object, and Archive makes it inactive too, so restoring it never re-arms a send.
+by **Publish**; its name, status and archiving stay on the object. Today the Automation, the Rule
+and the On-site form. They share one lifecycle: an edit writes the draft, Publish makes it live,
+**Revert** drops it, Deactivate stops the object, and Archive makes it inactive too, so restoring it
+never re-arms a send or brings a form back onto a site.
 A Broadcast is not one: a scheduled Broadcast holds a copy of its Condition instead.
 _Avoid_: Versioned entity, revisioned object, publishable
 
 **Publish**:
-The send-class act that makes the draft of an Automation or a Rule its live version and makes it
-active; with no draft, it makes the live version active again. The only way the definition of a
-live Automation or Rule changes.
+The send-class act that makes the draft of an Automation, a Rule or an On-site form its live
+version and makes it active; with no draft, it makes the live version active again. The only way
+the definition of a live Automation, Rule or On-site form changes.
 _Avoid_: Activate, launch, go live, deploy
 
 **Revert**:
-Dropping the draft of an Automation or a Rule, so that its live version is again the latest. It
-changes nothing that sends.
+Dropping the draft of an Automation, a Rule or an On-site form, so that its live version is again
+the latest. It changes nothing that sends or shows.
 _Avoid_: Discard (that is the soft-delete mechanism), reset, undo
 
 **Trigger**:
@@ -1244,6 +1245,38 @@ event. Every release between two Majors only adds. An Upgrade may skip any relea
 but passes through the last release of each Major it crosses; before 1.0 each `0.MINOR` is a Major.
 _Avoid_: Breaking release
 
+### On-site forms
+
+**On-site form**:
+A popup, slide-in, bar or embedded form that the first-party tracker shows on the customer's site to
+the visitors its display rules pick: everyone, anonymous Visitors only, or a Segment. It captures
+Contacts and their consent and shows notices; one with no field is still an On-site form. It is a
+**Versioned definition**: its live version holds the content, the display rules, the audience, the
+frequency, the Placement and the schedule; the name, the Format and the status stay on the form.
+Not a Channel and not a send: it never makes an Outbound message, and what it shows is not Message
+content. The content is a linear run of steps, an optional success step and, on a popup or a
+slide-in, a teaser; one design serves every device, with per-device overrides.
+_Avoid_: On-site message, site message (a message shown to a known Contact by an Automation, not
+built), campaign, widget, popup (as the umbrella term)
+
+**Format** (of an On-site form):
+How an On-site form sits on the page: `popup` (a modal over the page), `slide-in` (a box in a
+corner), `bar` (a strip at the top or the bottom) or `embedded` (inside the page, in a Placement).
+Chosen when the form is created and never changed; a form in another Format is made by
+**Duplicate**.
+_Avoid_: Type, layout, kind
+
+**Placement**:
+The name the customer's site gives an element it reserves for an embedded On-site form; the form
+names the Placement it fills. A name only, not a record: changing which form fills it never
+changes the site.
+_Avoid_: Slot, container, zone, anchor
+
+**Duplicate** (an On-site form):
+Making a new, inactive On-site form from the live version or the draft of another, possibly in
+another Format; what the new Format cannot hold (a teaser, for an embedded form) is left out.
+_Avoid_: Clone, copy
+
 ## Channels & future surfaces
 
 The identity spine — **Contact + Visitor + Event** — is channel-agnostic and is the stable point
@@ -1255,11 +1288,11 @@ push are being designed.
 Deferred, additive surfaces — **not modelled until their shape is real**, and none should reshape
 the core now:
 
-- **On-site popup / banner / form** — a capture-and-display surface shown by the tracker on the
-  customer's site (pop-ups, slide-ins, sticky bars, embedded forms). sphericon builds it (ADR 0084),
-  designed as an effort of its own; it feeds Identify, Confirmations on every Channel and the web
-  push permission prompt. Until it exists, the tracker offers the calls a site's own button needs
-  (subscribe to web push, a Telegram start link).
+- **On-site form** — being designed (ADR 0084, ADR 0085; see "On-site forms" above); it feeds
+  Identify, Confirmations on every Channel and the web push permission prompt. Until it exists, the
+  tracker offers the calls a site's own button needs (subscribe to web push, a Telegram start link).
+  A message shown on the site to a known Contact as an Automation or Broadcast step (a site message)
+  is not built.
 - **On-site chatbot** — a separate, two-way conversational context; shares only the identity
   spine. Explicitly out of the send/eligibility/sequence model.
 
