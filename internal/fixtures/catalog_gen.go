@@ -729,6 +729,12 @@ const (
 	EventBystanderSentEmail = "ben@initech.test"
 	// EventBystanderSentID is from fixtures/events.
 	EventBystanderSentID = 971
+	// EventComplainedKeptSubjectAction is from fixtures/events.
+	EventComplainedKeptSubjectAction = "email.complained"
+	// EventComplainedKeptSubjectEmail is from fixtures/events.
+	EventComplainedKeptSubjectEmail = "liam.python@codebasics.dev"
+	// EventComplainedKeptSubjectID is from fixtures/events.
+	EventComplainedKeptSubjectID = 20437
 	// EventErasableAnonymousAction is from fixtures/events.
 	EventErasableAnonymousAction = "pricing_viewed"
 	// EventErasableAnonymousID is from fixtures/events.

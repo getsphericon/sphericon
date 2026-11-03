@@ -34,6 +34,12 @@ func TestSiteEventsListNamesTheEmailAnEventIsAbout(t *testing.T) {
 	assert.True(t, has)
 	assert.Equal(t, "Welcome to Hexlet", subject)
 
+	complained, found := byID[siteapi.EntityId(fixtures.EventComplainedKeptSubjectID)]
+	require.True(t, found, "the complaint is on the page")
+	subject, has = complained.EmailSubject.Get()
+	assert.True(t, has)
+	assert.Equal(t, "Welcome to Hexlet", subject)
+
 	bounced, found := byID[siteapi.EntityId(fixtures.EventBouncedNoSubjectID)]
 	require.True(t, found, "the bounced Event is on the page")
 	_, has = bounced.EmailSubject.Get()

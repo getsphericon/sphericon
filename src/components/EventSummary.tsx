@@ -71,19 +71,14 @@ export function EventSummary({ workspaceId, event }: Row) {
           suffix={t(($) => $.eventRows.asSpam)}
         />
       )
-    case 'email.bounced':
-      return (
-        <EmailEvent
-          {...row}
-          prefix={
-            text(event.properties, 'bounceKind') === 'hard'
-              ? t(($) => $.eventRows.bouncedHard)
-              : text(event.properties, 'bounceKind') === 'soft'
-                ? t(($) => $.eventRows.bouncedSoft)
-                : t(($) => $.eventRows.bounced)
-          }
-        />
-      )
+    case 'email.bounced': {
+      const byKind: Record<string, string> = {
+        hard: t(($) => $.eventRows.bouncedHard),
+        soft: t(($) => $.eventRows.bouncedSoft),
+      }
+      const kind = text(event.properties, 'bounceKind') ?? ''
+      return <EmailEvent {...row} prefix={byKind[kind] ?? t(($) => $.eventRows.bounced)} />
+    }
     case 'email.clicked':
       return <ClickedLink {...row} />
     default:
@@ -98,6 +93,11 @@ function text(properties: JsonObject | null | undefined, key: string): string | 
     return undefined
   }
   return typeof value === 'string' ? value : JSON.stringify(value)
+}
+
+// subjectOf is the subject of the email an Event is about, undefined when its message kept none.
+function subjectOf(event: SiteEventResource): string | undefined {
+  return event.emailSubject === null || event.emailSubject === '' ? undefined : event.emailSubject
 }
 
 // Verb is the row's verb, its action's code on hover as EventActionName's.
@@ -231,8 +231,8 @@ function EmailEvent({
   prefix,
   suffix,
 }: Row & { prefix: string; suffix?: string }) {
-  const subject = event.emailSubject ?? undefined
-  if (subject === undefined || subject === '') {
+  const subject = subjectOf(event)
+  if (subject === undefined) {
     return <EventActionName action={event.action} />
   }
   return (
@@ -248,9 +248,9 @@ function EmailEvent({
 // whole one on hover, then the email it was in.
 function ClickedLink({ workspaceId, event }: Row) {
   const { t } = useTranslation()
-  const subject = event.emailSubject ?? undefined
+  const subject = subjectOf(event)
   const url = text(event.properties, 'url')
-  if (subject === undefined || subject === '' || url === undefined) {
+  if (subject === undefined || url === undefined) {
     return <EventActionName action={event.action} />
   }
   return (

@@ -5430,6 +5430,14 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
+- id: 20437 # fixture: EventComplainedKeptSubject
+  contact_id: 100
+  email: liam.python@codebasics.dev
+  action: email.complained
+  properties: '{"outboundMessageId":100}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
 - id: 20436 # fixture: EventBouncedNoSubject
   contact_id: 101
   email: emma.sql@codebasics.dev
