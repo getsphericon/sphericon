@@ -51,7 +51,7 @@ func TestBroadcastAndAutomationSendsKeepTheirRenderedSubject(t *testing.T) {
 	stepReq := outbound.AutomationStep(automation, run, 0, nil, contact,
 		outbound.EmailContent{Subject: "Hi {{ first_name }}, from a step", Body: htmlBody})
 
-	for name, req := range map[string]outbound.Request{"broadcast": broadcastReq, "automation": stepReq} {
+	for name, req := range map[string]outbound.Request{"a recipient": broadcastReq, "a step": stepReq} {
 		t.Run(name, func(t *testing.T) {
 			before := len(env.CustomerMail.Messages())
 			res, err := newModule(env).Send(ctx, s, req)
