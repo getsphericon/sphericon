@@ -60,7 +60,7 @@ func TestPaceHoldsABroadcastWhoseRouteCannotSend(t *testing.T) {
 	d := newDelivery(t)
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetIntegrationID(fixtures.IntegrationAcmeSesID).ExecX(d.t.Context())
 
-	times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, 3, fixedNow)
+	times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, make([]int64, 3), fixedNow)
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)

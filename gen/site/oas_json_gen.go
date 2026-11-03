@@ -6786,6 +6786,39 @@ func (s *OptBool) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes BroadcastChannel as json.
+func (o OptBroadcastChannel) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes BroadcastChannel from json.
+func (o *OptBroadcastChannel) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptBroadcastChannel to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptBroadcastChannel) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptBroadcastChannel) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes BroadcastContentInput as json.
 func (o OptBroadcastContentInput) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -47066,10 +47099,24 @@ func (s *SitePreviewSegmentInput) encodeFields(e *jx.Encoder) {
 			s.Condition.Encode(e)
 		}
 	}
+	{
+		if s.Channel.Set {
+			e.FieldStart("channel")
+			s.Channel.Encode(e)
+		}
+	}
+	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSitePreviewSegmentInput = [1]string{
+var jsonFieldsNameOfSitePreviewSegmentInput = [3]string{
 	0: "condition",
+	1: "channel",
+	2: "integrationId",
 }
 
 // Decode decodes SitePreviewSegmentInput from json.
@@ -47089,6 +47136,26 @@ func (s *SitePreviewSegmentInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"condition\"")
+			}
+		case "channel":
+			if err := func() error {
+				s.Channel.Reset()
+				if err := s.Channel.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"channel\"")
+			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		default:
 			return d.Skip()
@@ -47127,10 +47194,17 @@ func (s *SitePreviewSegmentResult) encodeFields(e *jx.Encoder) {
 		e.FieldStart("count")
 		e.Int32(s.Count)
 	}
+	{
+		if s.Recipients.Set {
+			e.FieldStart("recipients")
+			s.Recipients.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSitePreviewSegmentResult = [1]string{
+var jsonFieldsNameOfSitePreviewSegmentResult = [2]string{
 	0: "count",
+	1: "recipients",
 }
 
 // Decode decodes SitePreviewSegmentResult from json.
@@ -47153,6 +47227,16 @@ func (s *SitePreviewSegmentResult) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"count\"")
+			}
+		case "recipients":
+			if err := func() error {
+				s.Recipients.Reset()
+				if err := s.Recipients.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"recipients\"")
 			}
 		default:
 			return d.Skip()

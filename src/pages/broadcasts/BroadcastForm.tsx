@@ -177,6 +177,7 @@ function TelegramBroadcastForm({
           workspaceId={workspaceId}
           segmentId={form.values.segmentId}
           segments={segmentsQuery.data?.items}
+          reach={{ channel: 'telegram', integrationId: form.values.integrationId }}
         />
         <TelegramContentEditor
           value={{

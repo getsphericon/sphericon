@@ -133,6 +133,46 @@ func TestATelegramForbiddenThatIsNeitherBlockNorDeactivationFailsTheMessage(t *t
 	assert.Equal(t, 1, env.DB.Binding.Query().Where(binding.Destination("555141")).CountX(ctx), "the Binding stays")
 }
 
+// A 403 that is neither block nor deactivation concerns that chat only: the Contact's other chat
+// still gets the message, which is then Sent. Only when no chat took it does it fail, with Telegram's
+// description. No Binding goes either way.
+func TestATelegramForbiddenChatDoesNotKeepTheContactsOtherChatFromTheMessage(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	bot := env.ConnectTelegram(t, 7316, "acme_chat_forbidden_bot")
+	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
+	env.BindTelegram(t, bot, fixtures.ContactBobID, 555151, 555151)
+	env.BindTelegram(t, bot, fixtures.ContactBobID, 555152, 555152)
+	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
+	env.Telegram.FailChat(telegramtest.SendMessage, 555151, telegramtest.CantInitiate)
+
+	require.NoError(t, stepOnce(t, env, stepperWith(env, env.OutboundModule()), runID))
+
+	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
+	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
+	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramSent, map[string]any{"destination": "555152"}))
+	assert.Equal(t, 2, env.DB.Binding.Query().Where(binding.ContactID(fixtures.ContactBobID)).CountX(ctx), "no Binding goes")
+}
+
+func TestATelegramMessageFailsWhenEveryChatForbidsIt(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	bot := env.ConnectTelegram(t, 7317, "acme_all_forbidden_bot")
+	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
+	env.BindTelegram(t, bot, fixtures.ContactBobID, 555161, 555161)
+	env.BindTelegram(t, bot, fixtures.ContactBobID, 555162, 555162)
+	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
+	env.Telegram.Fail(telegramtest.SendMessage, telegramtest.CantInitiate)
+
+	err := stepOnce(t, env, stepperWith(env, env.OutboundModule()), runID)
+
+	require.ErrorContains(t, err, "can't initiate conversation")
+	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
+	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
+	assert.Contains(t, *msg.Reason, "can't initiate conversation")
+	assert.Len(t, env.Telegram.RequestsOf(telegramtest.SendMessage), 2, "each chat was tried")
+}
+
 // A deactivated user and a missing chat remove the Binding and record telegram.unbound; the other
 // Binding of the Contact still gets the message, and with none left the step is Skipped
 // no_destination and the sequence goes on.

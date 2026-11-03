@@ -123,13 +123,45 @@ func TestATelegramBroadcastPacesAtALoweredProviderLimit(t *testing.T) {
 
 	ids, err := del.Plan(ctx, s, id)
 	require.NoError(t, err)
-	times, err := del.Pace(ctx, s, id, len(ids), start)
+	times, err := del.Pace(ctx, s, id, ids, start)
 	require.NoError(t, err)
 
 	require.Len(t, times, 3)
 	assert.Equal(t, 500*time.Millisecond, times[1].Sub(times[0]), "two a second is 500ms apart")
 	assert.Equal(t, 500*time.Millisecond, times[2].Sub(times[1]))
 	assert.True(t, env.DB.Broadcast.GetX(ctx, id).LastScheduledAt.Equal(times[2].Truncate(time.Microsecond)), "the progress estimate reads the last scheduled send")
+}
+
+// The pacer spaces sends by the calls they make: a Contact with two chats takes two steps, so the
+// next Contact starts one second after it at two calls a second, and the bucket never goes negative.
+func TestATelegramBroadcastPaceReservesOneStepPerChatOfARecipient(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	bot := env.ConnectTelegram(t, 7407, "acme_two_chats_bot")
+	env.BindTelegram(t, bot, fixtures.ContactAliceID, 600081, 81)
+	env.BindTelegram(t, bot, fixtures.ContactAliceID, 600082, 82)
+	env.BindTelegram(t, bot, fixtures.ContactBobID, 600083, 83)
+	env.DB.Integration.UpdateOneID(int64(bot.Integration.ID)).SetMaxPerSecond(2).ExecX(ctx)
+	id := telegramBroadcast(t, env, bot, "Two chats")
+	del := broadcasts.NewDelivery(env.OutboundModule())
+	s := env.DB.Scoped(fixtures.AcmeID)
+	start := time.Now()
+
+	ids, err := del.Plan(ctx, s, id)
+	require.NoError(t, err)
+	require.Len(t, ids, 2)
+	times, err := del.Pace(ctx, s, id, ids, start)
+	require.NoError(t, err)
+
+	require.Len(t, times, 2)
+	at := map[int64]time.Duration{}
+	for i, rid := range ids {
+		at[env.DB.BroadcastRecipient.GetX(ctx, rid).ContactID] = times[i].Sub(start)
+	}
+	// Whoever goes first starts at once and the other waits one 500ms step per call the first makes:
+	// Alice makes two (two chats), Bob one.
+	got := [2]time.Duration{at[fixtures.ContactAliceID], at[fixtures.ContactBobID]}
+	assert.Contains(t, [][2]time.Duration{{0, time.Second}, {500 * time.Millisecond, 0}}, got)
 }
 
 func TestATelegramBroadcastToASegmentFreezesOnlyItsBoundContacts(t *testing.T) {

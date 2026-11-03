@@ -5093,6 +5093,15 @@ export type SitePreviewSegmentInput = {
    * Condition; absent means all contacts
    */
   condition?: SiteConditionGroup;
+  /**
+   * The Channel of a Broadcast the audience is asked for. When given, the result also counts the
+   * recipients the Broadcast would take: the matching contacts it could send to now.
+   */
+  channel?: BroadcastChannel;
+  /**
+   * The Integration the Broadcast routes through; null or absent is the Channel's default. Only read with a channel
+   */
+  integrationId?: EntityId | null;
 };
 
 /**
@@ -5103,6 +5112,12 @@ export type SitePreviewSegmentResult = {
    * Number of active contacts matching the condition
    */
   count: number;
+  /**
+   * Number of matching contacts a Broadcast on the asked Channel would take: on email those with a
+   * mailable address, on Telegram those with an eligible Binding on the routed Integration. Absent
+   * unless a channel was given.
+   */
+  recipients?: number;
 };
 
 /**

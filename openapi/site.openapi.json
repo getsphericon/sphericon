@@ -21602,6 +21602,24 @@
               }
             ],
             "description": "Condition; absent means all contacts"
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BroadcastChannel"
+              }
+            ],
+            "description": "The Channel of a Broadcast the audience is asked for. When given, the result also counts the\nrecipients the Broadcast would take: the matching contacts it could send to now."
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Integration the Broadcast routes through; null or absent is the Channel's default. Only read with a channel"
           }
         },
         "description": "Request body for previewing a condition's segment"
@@ -21614,6 +21632,11 @@
             "type": "integer",
             "format": "int32",
             "description": "Number of active contacts matching the condition"
+          },
+          "recipients": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of matching contacts a Broadcast on the asked Channel would take: on email those with a\nmailable address, on Telegram those with an eligible Binding on the routed Integration. Absent\nunless a channel was given."
           }
         },
         "description": "Result of a segment preview: how many deliverable contacts match"

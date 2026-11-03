@@ -6,7 +6,9 @@ import (
 	"github.com/samber/lo"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -106,7 +108,17 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SitePreviewSegmentResult{Count: narrow.Int32(count)}, nil
+	res := &siteapi.SitePreviewSegmentResult{Count: narrow.Int32(count)}
+	// A Broadcast form asks for the recipients its Channel would take: the audience of its plan,
+	// not the Segment's whole match.
+	if channel, ok := req.Channel.Get(); ok {
+		recipients, err := broadcasts.RecipientsOf(ctx, ws, inputs.BroadcastChannel(channel), convert.Int64Ptr(req.IntegrationId), lo.FromPtr(def))
+		if err != nil {
+			return nil, err
+		}
+		res.Recipients = siteapi.NewOptInt32(narrow.Int32(recipients))
+	}
+	return res, nil
 }
 
 // SiteSegmentContactsList lists the Contacts a Segment matches right now: its rule alone,
