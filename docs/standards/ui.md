@@ -18,10 +18,12 @@ costly it is to recreate them, and whether something must be done first.
 - **One click, no confirmation:** low risk, easy to recreate, nothing depends on it, no
   prerequisite. The row leaves the list and no message follows.
 - **Simple confirmation:** one or several resources that are not quickly recreated but unlikely to
-  break anything running. A modal; the toast after it reports the result. This is
+  break anything running. A modal that names the consequence (required, no default text); the toast
+  after it reports the result. This is
   `useConfirmation` (`src/hooks/useConfirmation.tsx`) and, with the request, `useDeleteResource`.
 - **Additional confirmation:** serious, irreversible or cascading: the person types the resource's
-  name before the button enables. This is `DeleteWorkspaceControl`.
+  name before the button enables. This is `DeleteWorkspaceControl` and `useConfirmation` with
+  `typedName`, both rendering `TypedConfirmation`.
 
 The modal says what the deletion does and what to do first (a deactivation, a copy), in its own
 words rather than the default text. How a row is removed (physically or archived) is rule 9 of
