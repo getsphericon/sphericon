@@ -171,6 +171,7 @@ func (m *Module) steps() []step {
 		cancelRuleWork,
 		purgeOutbox,
 		purgeWebhookDeliveries,
+		eraseTelegram,
 		eraseEvents,
 		eraseVisitors,
 		eraseConfirmations,
