@@ -99,6 +99,15 @@ jobs:
       MISE_DISABLE_TOOLS: ''
 
     steps:
+      # The job is the heaviest on disk (mise toolchains, module and build caches, SCIP indexes) and
+      # twice ran the runner out of space ("No space left on device") while restoring the Go cache.
+      # The preinstalled SDKs below are not used by any job.
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
