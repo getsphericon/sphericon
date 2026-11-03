@@ -337,7 +337,7 @@ func (e *Broadcast) auditFields() map[string]any {
 		"text":               derefAudit(e.Text),
 		"image_url":          derefAudit(e.ImageURL),
 		"buttons":            e.Buttons,
-		"link_preview":       derefAudit(e.LinkPreview),
+		"link_preview":       e.LinkPreview,
 		"unsubscribe_button": derefAudit(e.UnsubscribeButton),
 		"body":               derefAudit(e.Body),
 		"doc":                e.Doc,

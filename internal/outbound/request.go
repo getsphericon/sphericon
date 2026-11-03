@@ -37,7 +37,7 @@ func BroadcastContent(b *ent.Broadcast) (Content, error) {
 			Text:              lo.FromPtr(b.Text),
 			ImageURL:          lo.FromPtr(b.ImageURL),
 			Buttons:           b.Buttons,
-			NoLinkPreview:     b.LinkPreview != nil && !*b.LinkPreview,
+			NoLinkPreview:     !b.LinkPreview,
 			UnsubscribeButton: lo.FromPtr(b.UnsubscribeButton),
 		}, nil
 	default:

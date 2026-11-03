@@ -77,9 +77,9 @@ func (Broadcast) Fields() []ent.Field {
 			Nillable(),
 		field.JSON("buttons", []telegramrender.Button{}).
 			Optional(),
+		// Only a Telegram Broadcast reads it; an email Broadcast keeps the default.
 		field.Bool("link_preview").
-			Optional().
-			Nillable(),
+			Default(true),
 		field.String("unsubscribe_button").
 			Optional().
 			Nillable(),
@@ -196,7 +196,7 @@ type channelContent struct {
 // added to the channel enum adds its entry here.
 var broadcastContents = []channelContent{
 	{channel: "email", required: []string{"subject", "body"}, optional: []string{"from_name", "from_email", "doc", "editor_version"}},
-	{channel: "telegram", required: []string{"text", "buttons", "link_preview"}, optional: []string{"image_url", "unsubscribe_button"}},
+	{channel: "telegram", required: []string{"text", "buttons"}, optional: []string{"image_url", "unsubscribe_button"}},
 }
 
 // contentCheck is the CHECK that a row holds exactly its Channel's content: one arm per Channel,

@@ -432,6 +432,10 @@ func (_c *BroadcastCreate) defaults() {
 		v := broadcast.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.LinkPreview(); !ok {
+		v := broadcast.DefaultLinkPreview
+		_c.mutation.SetLinkPreview(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := broadcast.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -464,6 +468,9 @@ func (_c *BroadcastCreate) check() error {
 		if err := broadcast.ChannelValidator(v); err != nil {
 			return &ValidationError{Name: "channel", err: fmt.Errorf(`ent: validator failed for field "Broadcast.channel": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.LinkPreview(); !ok {
+		return &ValidationError{Name: "link_preview", err: errors.New(`ent: missing required field "Broadcast.link_preview"`)}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Broadcast.status"`)}
@@ -560,7 +567,7 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.LinkPreview(); ok {
 		_spec.SetField(broadcast.FieldLinkPreview, field.TypeBool, value)
-		_node.LinkPreview = &value
+		_node.LinkPreview = value
 	}
 	if value, ok := _c.mutation.UnsubscribeButton(); ok {
 		_spec.SetField(broadcast.FieldUnsubscribeButton, field.TypeString, value)
@@ -896,12 +903,6 @@ func (u *BroadcastUpsert) SetLinkPreview(v bool) *BroadcastUpsert {
 // UpdateLinkPreview sets the "link_preview" field to the value that was provided on create.
 func (u *BroadcastUpsert) UpdateLinkPreview() *BroadcastUpsert {
 	u.SetExcluded(broadcast.FieldLinkPreview)
-	return u
-}
-
-// ClearLinkPreview clears the value of the "link_preview" field.
-func (u *BroadcastUpsert) ClearLinkPreview() *BroadcastUpsert {
-	u.SetNull(broadcast.FieldLinkPreview)
 	return u
 }
 
@@ -1387,13 +1388,6 @@ func (u *BroadcastUpsertOne) SetLinkPreview(v bool) *BroadcastUpsertOne {
 func (u *BroadcastUpsertOne) UpdateLinkPreview() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.UpdateLinkPreview()
-	})
-}
-
-// ClearLinkPreview clears the value of the "link_preview" field.
-func (u *BroadcastUpsertOne) ClearLinkPreview() *BroadcastUpsertOne {
-	return u.Update(func(s *BroadcastUpsert) {
-		s.ClearLinkPreview()
 	})
 }
 
@@ -2083,13 +2077,6 @@ func (u *BroadcastUpsertBulk) SetLinkPreview(v bool) *BroadcastUpsertBulk {
 func (u *BroadcastUpsertBulk) UpdateLinkPreview() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.UpdateLinkPreview()
-	})
-}
-
-// ClearLinkPreview clears the value of the "link_preview" field.
-func (u *BroadcastUpsertBulk) ClearLinkPreview() *BroadcastUpsertBulk {
-	return u.Update(func(s *BroadcastUpsert) {
-		s.ClearLinkPreview()
 	})
 }
 

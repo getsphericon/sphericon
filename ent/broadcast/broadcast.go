@@ -158,6 +158,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// DefaultLinkPreview holds the default value on creation for the "link_preview" field.
+	DefaultLinkPreview bool
 )
 
 // Channel defines the type for the "channel" enum field.

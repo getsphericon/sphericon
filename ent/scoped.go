@@ -7955,12 +7955,6 @@ func (u *BroadcastScopedUpsert) UpdateLinkPreview() *BroadcastScopedUpsert {
 	return u
 }
 
-// ClearLinkPreview clears the value of the "link_preview" field.
-func (u *BroadcastScopedUpsert) ClearLinkPreview() *BroadcastScopedUpsert {
-	u.u.SetNull(broadcast.FieldLinkPreview)
-	return u
-}
-
 // SetUnsubscribeButton sets the "unsubscribe_button" field.
 func (u *BroadcastScopedUpsert) SetUnsubscribeButton(v string) *BroadcastScopedUpsert {
 	u.u.Set(broadcast.FieldUnsubscribeButton, v)
@@ -8511,12 +8505,6 @@ func (x *BroadcastScopedUpdateOne) SetNillableLinkPreview(v *bool) *BroadcastSco
 	return x
 }
 
-// ClearLinkPreview clears the value of the "link_preview" field.
-func (x *BroadcastScopedUpdateOne) ClearLinkPreview() *BroadcastScopedUpdateOne {
-	x.b.ClearLinkPreview()
-	return x
-}
-
 // SetUnsubscribeButton sets the "unsubscribe_button" field.
 func (x *BroadcastScopedUpdateOne) SetUnsubscribeButton(v string) *BroadcastScopedUpdateOne {
 	x.b.SetUnsubscribeButton(v)
@@ -9033,12 +9021,6 @@ func (x *BroadcastScopedUpdate) SetLinkPreview(v bool) *BroadcastScopedUpdate {
 // SetNillableLinkPreview sets the "link_preview" field if the given value is not nil.
 func (x *BroadcastScopedUpdate) SetNillableLinkPreview(v *bool) *BroadcastScopedUpdate {
 	x.b.SetNillableLinkPreview(v)
-	return x
-}
-
-// ClearLinkPreview clears the value of the "link_preview" field.
-func (x *BroadcastScopedUpdate) ClearLinkPreview() *BroadcastScopedUpdate {
-	x.b.ClearLinkPreview()
 	return x
 }
 

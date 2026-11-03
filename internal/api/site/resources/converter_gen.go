@@ -2159,9 +2159,7 @@ func (c *ConverterImpl) TelegramBroadcastContentToResource(source *ent.Broadcast
 				siteapiTelegramBroadcastContent.Buttons[i] = c.TelegramButtonToResource((*source).Buttons[i])
 			}
 		}
-		if (*source).LinkPreview != nil {
-			siteapiTelegramBroadcastContent.LinkPreview = *(*source).LinkPreview
-		}
+		siteapiTelegramBroadcastContent.LinkPreview = (*source).LinkPreview
 		siteapiTelegramBroadcastContent.UnsubscribeButton = optNilString((*source).UnsubscribeButton)
 	}
 	return siteapiTelegramBroadcastContent

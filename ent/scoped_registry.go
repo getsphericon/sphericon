@@ -598,9 +598,7 @@ func ScopedEntities() []ScopedEntity {
 				if !reflect.ValueOf(src.Buttons).IsZero() {
 					b.SetButtons(src.Buttons)
 				}
-				if src.LinkPreview != nil {
-					b.SetLinkPreview(*src.LinkPreview)
-				}
+				b.SetLinkPreview(src.LinkPreview)
 				if src.UnsubscribeButton != nil {
 					b.SetUnsubscribeButton(*src.UnsubscribeButton)
 				}

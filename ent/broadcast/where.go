@@ -791,16 +791,6 @@ func LinkPreviewNEQ(v bool) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldNEQ(FieldLinkPreview, v))
 }
 
-// LinkPreviewIsNil applies the IsNil predicate on the "link_preview" field.
-func LinkPreviewIsNil() predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldIsNull(FieldLinkPreview))
-}
-
-// LinkPreviewNotNil applies the NotNil predicate on the "link_preview" field.
-func LinkPreviewNotNil() predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldNotNull(FieldLinkPreview))
-}
-
 // UnsubscribeButtonEQ applies the EQ predicate on the "unsubscribe_button" field.
 func UnsubscribeButtonEQ(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldUnsubscribeButton, v))

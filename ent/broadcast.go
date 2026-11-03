@@ -49,7 +49,7 @@ type Broadcast struct {
 	// Buttons holds the value of the "buttons" field.
 	Buttons []telegramrender.Button `json:"buttons,omitempty"`
 	// LinkPreview holds the value of the "link_preview" field.
-	LinkPreview *bool `json:"link_preview,omitempty"`
+	LinkPreview bool `json:"link_preview,omitempty"`
 	// UnsubscribeButton holds the value of the "unsubscribe_button" field.
 	UnsubscribeButton *string `json:"unsubscribe_button,omitempty"`
 	// Body holds the value of the "body" field.
@@ -259,8 +259,7 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field link_preview", values[i])
 			} else if value.Valid {
-				_m.LinkPreview = new(bool)
-				*_m.LinkPreview = value.Bool
+				_m.LinkPreview = value.Bool
 			}
 		case broadcast.FieldUnsubscribeButton:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -457,10 +456,8 @@ func (_m *Broadcast) String() string {
 	builder.WriteString("buttons=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Buttons))
 	builder.WriteString(", ")
-	if v := _m.LinkPreview; v != nil {
-		builder.WriteString("link_preview=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
+	builder.WriteString("link_preview=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LinkPreview))
 	builder.WriteString(", ")
 	if v := _m.UnsubscribeButton; v != nil {
 		builder.WriteString("unsubscribe_button=")

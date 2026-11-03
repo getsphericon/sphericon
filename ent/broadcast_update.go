@@ -223,12 +223,6 @@ func (_u *BroadcastUpdate) SetNillableLinkPreview(v *bool) *BroadcastUpdate {
 	return _u
 }
 
-// ClearLinkPreview clears the value of the "link_preview" field.
-func (_u *BroadcastUpdate) ClearLinkPreview() *BroadcastUpdate {
-	_u.mutation.ClearLinkPreview()
-	return _u
-}
-
 // SetUnsubscribeButton sets the "unsubscribe_button" field.
 func (_u *BroadcastUpdate) SetUnsubscribeButton(v string) *BroadcastUpdate {
 	_u.mutation.SetUnsubscribeButton(v)
@@ -688,9 +682,6 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.LinkPreview(); ok {
 		_spec.SetField(broadcast.FieldLinkPreview, field.TypeBool, value)
 	}
-	if _u.mutation.LinkPreviewCleared() {
-		_spec.ClearField(broadcast.FieldLinkPreview, field.TypeBool)
-	}
 	if value, ok := _u.mutation.UnsubscribeButton(); ok {
 		_spec.SetField(broadcast.FieldUnsubscribeButton, field.TypeString, value)
 	}
@@ -1096,12 +1087,6 @@ func (_u *BroadcastUpdateOne) SetNillableLinkPreview(v *bool) *BroadcastUpdateOn
 	if v != nil {
 		_u.SetLinkPreview(*v)
 	}
-	return _u
-}
-
-// ClearLinkPreview clears the value of the "link_preview" field.
-func (_u *BroadcastUpdateOne) ClearLinkPreview() *BroadcastUpdateOne {
-	_u.mutation.ClearLinkPreview()
 	return _u
 }
 
@@ -1593,9 +1578,6 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	}
 	if value, ok := _u.mutation.LinkPreview(); ok {
 		_spec.SetField(broadcast.FieldLinkPreview, field.TypeBool, value)
-	}
-	if _u.mutation.LinkPreviewCleared() {
-		_spec.ClearField(broadcast.FieldLinkPreview, field.TypeBool)
 	}
 	if value, ok := _u.mutation.UnsubscribeButton(); ok {
 		_spec.SetField(broadcast.FieldUnsubscribeButton, field.TypeString, value)

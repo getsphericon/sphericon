@@ -203,8 +203,11 @@ func codesOf(tb testing.TB, v any) []string {
 func (a *Agent) SaveBroadcast(d Draft) externalapi.EntityId {
 	a.w.t.Helper()
 	out := a.mustCall("broadcasts_create", map[string]any{
-		"name": "e2e agent draft " + uniq(), "subject": d.Subject, "doc": d.Doc,
-		"fromName": a.w.FromName, "fromEmail": a.w.FromEmail,
+		"name": "e2e agent draft " + uniq(),
+		"content": map[string]any{
+			"channel": "email", "subject": d.Subject, "doc": d.Doc,
+			"fromName": a.w.FromName, "fromEmail": a.w.FromEmail,
+		},
 	})
 	require.Equal(a.w.t, "draft", out["status"])
 	id, err := strconv.ParseInt(jsonID(out["id"]), 10, 64)

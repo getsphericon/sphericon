@@ -307,6 +307,10 @@ func init() {
 	broadcastDescName := broadcastFields[1].Descriptor()
 	// broadcast.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	broadcast.NameValidator = broadcastDescName.Validators[0].(func(string) error)
+	// broadcastDescLinkPreview is the schema descriptor for link_preview field.
+	broadcastDescLinkPreview := broadcastFields[9].Descriptor()
+	// broadcast.DefaultLinkPreview holds the default value on creation for the link_preview field.
+	broadcast.DefaultLinkPreview = broadcastDescLinkPreview.Default.(bool)
 	broadcastrecipientMixin := schema.BroadcastRecipient{}.Mixin()
 	broadcastrecipientMixinFields0 := broadcastrecipientMixin[0].Fields()
 	_ = broadcastrecipientMixinFields0

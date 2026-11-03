@@ -1394,9 +1394,7 @@ func (c *ConverterImpl) TelegramBroadcastContentToResource(source *ent.Broadcast
 				externalapiTelegramBroadcastContent.Buttons[i] = c.TelegramButtonToResource((*source).Buttons[i])
 			}
 		}
-		if (*source).LinkPreview != nil {
-			externalapiTelegramBroadcastContent.LinkPreview = *(*source).LinkPreview
-		}
+		externalapiTelegramBroadcastContent.LinkPreview = (*source).LinkPreview
 		externalapiTelegramBroadcastContent.UnsubscribeButton = optNilString((*source).UnsubscribeButton)
 	}
 	return externalapiTelegramBroadcastContent

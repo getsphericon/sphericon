@@ -9986,7 +9986,7 @@ func (m *BroadcastMutation) LinkPreview() (r bool, exists bool) {
 // OldLinkPreview returns the old "link_preview" field's value of the Broadcast entity.
 // If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastMutation) OldLinkPreview(ctx context.Context) (v *bool, err error) {
+func (m *BroadcastMutation) OldLinkPreview(ctx context.Context) (v bool, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLinkPreview is only allowed on UpdateOne operations")
 	}
@@ -10000,22 +10000,9 @@ func (m *BroadcastMutation) OldLinkPreview(ctx context.Context) (v *bool, err er
 	return oldValue.LinkPreview, nil
 }
 
-// ClearLinkPreview clears the value of the "link_preview" field.
-func (m *BroadcastMutation) ClearLinkPreview() {
-	m.link_preview = nil
-	m.clearedFields[broadcast.FieldLinkPreview] = struct{}{}
-}
-
-// LinkPreviewCleared returns if the "link_preview" field was cleared in this mutation.
-func (m *BroadcastMutation) LinkPreviewCleared() bool {
-	_, ok := m.clearedFields[broadcast.FieldLinkPreview]
-	return ok
-}
-
 // ResetLinkPreview resets all changes to the "link_preview" field.
 func (m *BroadcastMutation) ResetLinkPreview() {
 	m.link_preview = nil
-	delete(m.clearedFields, broadcast.FieldLinkPreview)
 }
 
 // SetUnsubscribeButton sets the "unsubscribe_button" field.
@@ -11272,9 +11259,6 @@ func (m *BroadcastMutation) ClearedFields() []string {
 	if m.FieldCleared(broadcast.FieldButtons) {
 		fields = append(fields, broadcast.FieldButtons)
 	}
-	if m.FieldCleared(broadcast.FieldLinkPreview) {
-		fields = append(fields, broadcast.FieldLinkPreview)
-	}
 	if m.FieldCleared(broadcast.FieldUnsubscribeButton) {
 		fields = append(fields, broadcast.FieldUnsubscribeButton)
 	}
@@ -11345,9 +11329,6 @@ func (m *BroadcastMutation) ClearField(name string) error {
 		return nil
 	case broadcast.FieldButtons:
 		m.ClearButtons()
-		return nil
-	case broadcast.FieldLinkPreview:
-		m.ClearLinkPreview()
 		return nil
 	case broadcast.FieldUnsubscribeButton:
 		m.ClearUnsubscribeButton()
