@@ -157,7 +157,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   Inject faults with ent hooks/interceptors, never DDL or triggers.
 - **Tests never clean up by hand, and never reset state at their start.** A test that needs a real
   commit (the outbox router, concurrent workers, a whole app) takes a database of its own from
-  `testhelper.RealDB`, `RealDBURL` or `EmptyDBURL` (pgtestdb), dropped when the test ends; every
+  `testhelper.RealDB`, `RealDBURL` or `EmptyDBURL` (a clone of the process's baseline database, or an empty one), dropped when the test ends; every
   other test rides the transaction `dbcleaner` hands out, which rolls back. A `t.Cleanup` that
   deletes rows, a purge or a reset at the top of a test means a test is committing outside its
   transaction: fix that test.

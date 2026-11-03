@@ -615,16 +615,6 @@ func (c injectClient) Do(r *http.Request) (*http.Response, error) {
 	return rec.Result(), nil
 }
 
-// migrateBaseline brings an empty database to the fixture state every test starts from:
-// the schema, then the committed fixtures. A pgtestdb template gets it once per change of
-// either (RealDB).
-func migrateBaseline(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projectRoot string) error {
-	if err := migrateSchema(ctx, sqlDB); err != nil {
-		return err
-	}
-	return loadFixtures(ctx, sqlDB, cfg, projectRoot)
-}
-
 // migrateSchema applies the embedded migrations to an empty database: the same files, the same
 // way (goose), that production gets, so the app schema, river's tables and the domain-event
 // outbox all come from them. The worker databases are cloned from a template that has just
@@ -635,7 +625,8 @@ func migrateSchema(ctx context.Context, sqlDB *sql.DB) error {
 }
 
 // loadFixtures replaces the contents of every fixture table with the committed rows. It
-// runs at the start of every test process, never once into a template: fixtures use
+// runs at the start of every test process, on the process's two databases (the one Setup's
+// transactions ride and the baseline RealDB clones), never once into a template: fixtures use
 // templating for relative dates, which must be relative to now, not to when a template was
 // built.
 func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projectRoot string) error {

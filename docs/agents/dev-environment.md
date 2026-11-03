@@ -52,11 +52,10 @@ refuses to drop anything when it cannot enumerate or read a live worktree, inclu
 commit from before `DB_NAMES` (rebase it onto main), and never touches the primary's daemon.
 It also empties the Go build cache once it outgrows `GO_CACHE_LIMIT_GB` (40 by default): the
 cache keys carry each worktree's path, so every worktree compiles everything again into it.
-The `testdb_tpl_*` databases are pgtestdb's template and per-test databases (the
-`testhelper.RealDB` family, below), owned by a test that may be running in any checkout: pgtestdb
-drops each instance when its test ends, so gc drops only the leftovers of a killed run: an
-instance after a day (a plain `DROP DATABASE`, refused while anything is connected) and a template
-after a week (pgtestdb rebuilds it).
+The `testdb_tpl_*` databases are what pgtestdb left behind: `testhelper.RealDB` no longer uses it,
+but the server still holds its leftovers, owned by no checkout. gc drops an instance after a day (a
+plain `DROP DATABASE`, refused while anything is connected) and a template after a week. Delete
+that step of the gc task once none is left.
 `mise run worktrees:prune -- --apply` first removes the worktrees whose branch is already in
 `origin/main`. A worktree from before this setup still runs its own `db` daemon: it retires with
 its next rebase onto main plus `mise daemons stop`. Several tasks in one command need `:::` between
@@ -70,6 +69,14 @@ fixtures are loaded into the worker at the start of every process, because they 
 dates. `DATABASE_URL` is rewritten to that database for the process, so a test that loads the
 config reaches it too. `worktrees:gc` keeps these with their checkout. The end-to-end suite keeps
 one database and `-p 1`.
+
+A test that needs a real commit (`testhelper.RealDB`, `RealDBURL`) takes a clone, not the worker's
+transaction: the process leases a second worker from the same template (`<test db>_w<j>`), loads the
+fixtures into it at the same moment as into the first, and never connects to it again, so each
+test is `CREATE DATABASE <test db>_w<j>_c<n> TEMPLATE <test db>_w<j>` (tens to a few hundred
+milliseconds) and a drop when it ends. Both databases hold the fixtures with the same relative
+dates. The clones a killed run left are dropped by the next process that leases that worker, and gc
+keeps them with their checkout. `EmptyDBURL` is a scratch database with no schema.
 
 **Heavy tasks queue machine-wide.** The CPU-heavy commands (`go test`, `golangci-lint`, `tsc`,
 `knip`, vitest, ent/ogen/goverter generation) run through [`heavy`](https://github.com/mokevnin/heavy)

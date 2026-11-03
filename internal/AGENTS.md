@@ -14,13 +14,20 @@ or a surface gets no wiring of its own in the harness: add its provider to `inte
 and read it from the container in `Setup`. A difference a test needs (no System sender, a volume
 floor) is configuration, set on the test's config.
 
-A test that needs a **real commit** (code that opens its own connection, the outbox router, concurrent
-workers, a whole `app.App`) cannot ride a transaction. It takes a database of its own instead:
-`testhelper.RealDB(t)` (a `*sql.DB`), `RealDBURL(t)` (a URL, e.g. `t.Setenv("DATABASE_URL", ...)` for
-an app) or `EmptyDBURL(t)` (no schema, to migrate a fresh instance). pgtestdb clones it from a
-template built once per schema or fixture change and drops it when the test ends, so no test
-cleans up by hand or resets state at its start. The test role is a superuser (the fixture
-loader disables foreign-key triggers), as on the shared test database.
+**Ride the transaction unless the test cannot.** A transaction costs the same however much the
+test writes, so `Setup` is the default, for a test of a hook, a refusal, a reader of the database,
+a worker called directly. A test that needs a **real commit** (code that opens its own connection,
+the outbox router, concurrent workers, a lock one transaction holds against another, a statement
+that fails and must not abort the rest, a whole `app.App`, a river runtime) cannot ride one. It takes
+a database of its own instead: `testhelper.RealDB(t)` (a `*sql.DB`), `RealDBURL(t)` (a URL, e.g.
+`t.Setenv("DATABASE_URL", ...)` for an app) or `EmptyDBURL(t)` (no schema, to migrate a fresh
+instance). `RealDB` is a clone of a second database the process leases and loads with the fixtures
+at the same moment as `Setup`'s, so both see the same rows with the same relative dates; the clone
+is dropped when the test ends, so no test cleans up by hand or resets state at its start. A test
+whose only reason is `rivertest`, which hands a worker a `*sql.Tx`, does not need one: the txdb
+connection serves it as long as the worker does not touch the database through another handle while
+the `tx` is open (the pool has one connection). The test role is a superuser (the fixture loader
+disables foreign-key triggers), as on the shared test database.
 
 **A document is saved through a fake export.** A runtime of the editor's code takes seconds to
 start (more on a busy machine), so `testhelper.Renderer()`, the renderer of `Setup` and of a module a

@@ -5,35 +5,193 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"testing"
 
-	"github.com/peterldowns/pgtestdb"
+	"github.com/jackc/pgx/v5"
+	"github.com/mokevnin/dbcleaner"
+	dbcleanerpg "github.com/mokevnin/dbcleaner/postgres"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 // RealDB is a database of the test's own on the test server, at the fixture state and
 // NOT inside a transaction: whatever the test commits is committed, and a second
 // connection sees it. For code that needs a real commit (the outbox router, concurrent
-// workers, a whole app). pgtestdb clones it from a template and drops it when the test
-// ends, so nothing is cleaned up by hand. The ordinary tests ride go-txdb (Setup).
+// workers, a whole app). It is cloned from this process's baseline (see baselineDB) and
+// dropped when the test ends, so nothing is cleaned up by hand. The ordinary tests ride
+// go-txdb (Setup).
 func RealDB(t *testing.T) *sql.DB {
 	t.Helper()
-	return pgtestdb.New(t, serverConfig(t), baselineMigrator{})
+	sqlDB, err := sql.Open("pgx", RealDBURL(t))
+	require.NoError(t, err)
+	t.Cleanup(func() { cleanup.Close(sqlDB, "RealDB") })
+	return sqlDB
 }
 
 // RealDBURL is RealDB for code that opens its own connection (an app, a pool under
 // test): the URL of the test's own database at the fixture state, dropped with the test.
 func RealDBURL(t *testing.T) string {
 	t.Helper()
-	return pgtestdb.Custom(t, serverConfig(t), baselineMigrator{}).URL()
+	base := baselineDB(t)
+	name := fmt.Sprintf("%s_c%d", base.name, cloneSeq.Add(1))
+	ctx := context.WithoutCancel(t.Context())
+
+	// The test's own connection to the shared test database, closed with it: a pool that outlived
+	// the test would be a goroutine the packages that verify none are left (goleak) refuse.
+	admin, err := sql.Open("pgx", base.shared)
+	require.NoError(t, err)
+	t.Cleanup(func() { cleanup.Close(admin, "RealDB admin") })
+
+	// A database cannot be cloned while another clone of the same template is being made.
+	cloneMu.Lock()
+	// raw sql: CREATE DATABASE ... TEMPLATE is server DDL; ent models tables, not databases.
+	_, err = admin.ExecContext(ctx, "CREATE DATABASE "+pgx.Identifier{name}.Sanitize()+" TEMPLATE "+pgx.Identifier{base.name}.Sanitize())
+	cloneMu.Unlock()
+	require.NoError(t, err, "clone the baseline database")
+	t.Cleanup(func() {
+		// raw sql: DROP DATABASE is server DDL; ent models tables, not databases.
+		_, err := admin.ExecContext(ctx, "DROP DATABASE IF EXISTS "+pgx.Identifier{name}.Sanitize()+" WITH (FORCE)")
+		require.NoError(t, err, "drop the clone %s", name)
+	})
+	return withDatabase(t, base.url, name)
+}
+
+// EmptyDBURL is the URL of a test's own database with no schema at all, for code that
+// migrates a fresh instance (RealDB starts at the fixture state). It is dropped with the test.
+func EmptyDBURL(t *testing.T) string {
+	t.Helper()
+	dsn, err := sharedDatabaseURL()
+	require.NoError(t, err)
+	return dbcleanerpg.ScratchDatabase(t, dsn)
+}
+
+var (
+	baselineOnce sync.Once
+	baseline     baselineHandle
+	cloneMu      sync.Mutex
+	cloneSeq     atomic.Int64
+)
+
+// baselineHandle is this process's baseline database: the one every RealDB is cloned from.
+type baselineHandle struct {
+	name   string // the database's name
+	url    string // its URL
+	shared string // the URL of the shared test database, where the clones are created and dropped
+	err    error
+}
+
+// baselineDB leases, on the first call of the process, a database of its own (a dbcleaner
+// worker, like the one Setup's transactions run on, built from the same schema template) and
+// loads the fixtures into it NOW, so their relative dates count from this process's start and
+// not from when a template was built. Nothing connects to it afterwards: it is only the source
+// the clones are made from, which is why a clone costs tens of milliseconds and not the half
+// second the fixtures take to load. The server releases the lease when the process ends, however
+// it ends; the clones a crashed process left behind are dropped by the next one that leases the
+// same worker.
+func baselineDB(t *testing.T) baselineHandle {
+	t.Helper()
+	baselineOnce.Do(func() { baseline = openBaseline() })
+	require.NoError(t, baseline.err, "open the baseline database")
+	return baseline
+}
+
+func openBaseline() baselineHandle {
+	ctx := context.Background()
+	shared, err := sharedDatabaseURL()
+	if err != nil {
+		return baselineHandle{err: err}
+	}
+	cfg, err := config.Load("test")
+	if err != nil {
+		return baselineHandle{err: err}
+	}
+	version, err := schemaHash()
+	if err != nil {
+		return baselineHandle{err: err}
+	}
+	// The Null strategy: nothing is undone between tests, a test only ever gets a clone.
+	leased := dbcleaner.New(shared,
+		dbcleaner.WithTemplate(version, func(ctx context.Context, sqlDB *sql.DB, _ string) error {
+			return migrateSchema(ctx, sqlDB)
+		}),
+		dbcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
+			return loadFixtures(ctx, sqlDB, cfg, projectRoot())
+		}),
+		dbcleaner.WithStrategy(dbcleaner.Null()),
+	)
+	dsn, err := leased.URL(ctx)
+	if err != nil {
+		return baselineHandle{err: err}
+	}
+	u, err := url.Parse(dsn)
+	if err != nil {
+		return baselineHandle{err: err}
+	}
+	name := u.Path[1:]
+
+	admin, err := sql.Open("pgx", shared)
+	if err != nil {
+		return baselineHandle{err: err}
+	}
+	defer cleanup.Close(admin, "baseline admin")
+	if err := dropClones(ctx, admin, name); err != nil {
+		return baselineHandle{err: err}
+	}
+	return baselineHandle{name: name, url: dsn, shared: shared}
+}
+
+// dropClones drops what an earlier process left of the baseline's clones. Only the process that
+// leases the baseline's worker is here, so none of them is in use.
+func dropClones(ctx context.Context, admin *sql.DB, base string) error {
+	stale, err := cloneNames(ctx, admin, base)
+	if err != nil {
+		return err
+	}
+	for _, name := range stale {
+		// raw sql: DROP DATABASE is server DDL; ent models tables, not databases.
+		if _, err := admin.ExecContext(ctx, "DROP DATABASE IF EXISTS "+pgx.Identifier{name}.Sanitize()+" WITH (FORCE)"); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// cloneNames lists the databases that are clones of base.
+func cloneNames(ctx context.Context, admin *sql.DB, base string) ([]string, error) {
+	// raw sql: pg_database is a server catalog; ent has no entity for it.
+	rows, err := admin.QueryContext(ctx, `SELECT datname FROM pg_database WHERE datname LIKE $1`, base+`\_c%`)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	return names, rows.Err()
+}
+
+// withDatabase is dsn pointed at the database name.
+func withDatabase(t *testing.T, dsn, name string) string {
+	t.Helper()
+	u, err := url.Parse(dsn)
+	require.NoError(t, err)
+	u.Path = "/" + name
+	return u.String()
 }
 
 // LockWaiters counts the connections to db's database that wait for a lock another transaction
@@ -59,13 +217,6 @@ func Listeners(ctx context.Context, db *sql.DB) (int, error) {
 	return n, err
 }
 
-// EmptyDBURL is the URL of a test's own database with no schema at all, for code that
-// migrates a fresh instance (RealDB starts at the fixture state).
-func EmptyDBURL(t *testing.T) string {
-	t.Helper()
-	return pgtestdb.Custom(t, serverConfig(t), emptyMigrator{}).URL()
-}
-
 // sharedDatabaseURL is the test database every process and every checkout run shares, as
 // DATABASE_URL names it before initBaseline points the process at its own leased database.
 // It is read once, so it never depends on whether a test in the process has called Setup yet.
@@ -76,62 +227,6 @@ var sharedDatabaseURL = sync.OnceValues(func() (string, error) {
 	}
 	return cfg.DatabaseURL, nil
 })
-
-// serverConfig points pgtestdb at the shared test database. It must not be the process's
-// own database (the `_w<i>` one DATABASE_URL names once Setup has run): pgtestdb serializes
-// the creation of a template with a Postgres advisory lock, and advisory locks are scoped to
-// one database, so processes connected to different databases never excluded each other, and
-// one dropped the template another was still building or cloning.
-func serverConfig(t *testing.T) pgtestdb.Config {
-	t.Helper()
-	dsn, err := sharedDatabaseURL()
-	require.NoError(t, err)
-	u, err := url.Parse(dsn)
-	require.NoError(t, err)
-	password, _ := u.User.Password()
-	return pgtestdb.Config{
-		DriverName: "pgx",
-		Host:       u.Hostname(),
-		Port:       u.Port(),
-		User:       u.User.Username(),
-		Password:   password,
-		Database:   u.Path[1:],
-		Options:    u.RawQuery,
-		// The fixture loader disables foreign-key triggers, which takes a superuser, as
-		// it does on the shared test database.
-		TestRole: &pgtestdb.Role{
-			Username:     "sphericon_pgtestdb",
-			Password:     pgtestdb.DefaultRolePassword,
-			Capabilities: "SUPERUSER",
-		},
-		ForceTerminateConnections: true,
-	}
-}
-
-// baselineMigrator builds the template: the same state initBaseline gives each test
-// process. Its hash covers every input of that state, so a schema or fixture change
-// builds a new template and the old one is never reused.
-type baselineMigrator struct{}
-
-func (baselineMigrator) Hash() (string, error) {
-	return hashTrees(projectRoot(), "migrations", "fixtures")
-}
-
-func (baselineMigrator) Migrate(ctx context.Context, sqlDB *sql.DB, conf pgtestdb.Config) error {
-	cfg, err := config.Load("test")
-	if err != nil {
-		return err
-	}
-	cfg.DatabaseURL = conf.URL()
-	return migrateBaseline(ctx, sqlDB, cfg, projectRoot())
-}
-
-// emptyMigrator leaves the template empty.
-type emptyMigrator struct{}
-
-func (emptyMigrator) Hash() (string, error) { return "empty", nil }
-
-func (emptyMigrator) Migrate(context.Context, *sql.DB, pgtestdb.Config) error { return nil }
 
 func projectRoot() string {
 	_, file, _, ok := runtime.Caller(0)
