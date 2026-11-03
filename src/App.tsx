@@ -8,7 +8,6 @@ import { I18nextProvider } from 'react-i18next'
 
 import { NotificationsProvider } from './components/NotificationsProvider.tsx'
 import { RegionalDates } from './components/RegionalDates.tsx'
-import { RegionalNumbers } from './components/RegionalNumbers.tsx'
 import { editorCssVariablesResolver } from './editorCssVariables.ts'
 import { i18n } from './i18n.ts'
 import type { AppRouter } from './router.ts'
@@ -29,7 +28,6 @@ export function App({ queryClient, router }: { queryClient: QueryClient; router:
           defaultColorScheme="auto"
           cssVariablesResolver={editorCssVariablesResolver}
         >
-          <RegionalNumbers />
           <RegionalDates>
             <ModalsProvider>
               <NotificationsProvider>

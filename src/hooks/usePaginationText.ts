@@ -1,4 +1,5 @@
 import type { DataTableProps } from 'mantine-datatable'
+import { useCallback } from 'react'
 
 import { useFormat } from './useFormat.ts'
 
@@ -8,6 +9,9 @@ type PaginationText = NonNullable<DataTableProps['paginationText']>
 // table prints its own range, which is plain digits unless it is given this.
 export function usePaginationText(): PaginationText {
   const { formatNumber } = useFormat()
-  return ({ from, to, totalRecords }) =>
-    `${formatNumber(from)}-${formatNumber(to)}/${formatNumber(totalRecords)}`
+  return useCallback(
+    ({ from, to, totalRecords }) =>
+      `${formatNumber(from)}-${formatNumber(to)}/${formatNumber(totalRecords)}`,
+    [formatNumber],
+  )
 }

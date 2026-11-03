@@ -56,7 +56,11 @@ let regionalFormat: string | undefined
 // i18next 26 has no `interpolation.format`: a formatter is added to the service after init, and
 // it replaces the built-in `number` of the same name. The options after the name
 // (`{{value, number(minimumFractionDigits: 2)}}`) reach `Intl.NumberFormat` as they did.
-i18n.services.formatter?.add('number', (value: number, lng: string | undefined, options: object) =>
+const formatter = i18n.services.formatter
+if (!formatter) {
+  throw new Error('i18next has no formatter after init: the number format would not apply')
+}
+formatter.add('number', (value: number, lng: string | undefined, options: object) =>
   new Intl.NumberFormat(regionalFormat ?? lng, options).format(value),
 )
 

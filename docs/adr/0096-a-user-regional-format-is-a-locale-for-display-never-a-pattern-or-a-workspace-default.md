@@ -34,7 +34,9 @@ and 24-hour time. A User could say where they are (ADR 0068) but not how they wr
   form is still picked by the UI language's rules. i18next 26 has no `interpolation.format`, so the
   built-in `number` formatter is replaced after init by one that formats in the Regional format
   (`setRegionalFormat` in `src/i18n.ts`), and `<RegionalNumbers>`, mounted once, feeds it from the
-  cached profile and re-renders the strings on screen when it changes. An identifier (a version, an
+  cached profile and re-renders the strings on screen when it changes; it is mounted at the root
+  and pinned to the Instance's language under `/console`. No `useTranslation` wrapper is needed,
+  and `src/locales.test.ts` fails a bare `{{count}}`. An identifier (a version, an
   id, an IP address) is not a quantity and is printed as it is. A figure that is not in a string
   goes through `useFormat().formatNumber`, and a table's range through `usePaginationText()`.
 - **Unaffected:** public pages and the Staff console (no User preference to read), mail to the User

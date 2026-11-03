@@ -21,12 +21,12 @@ const me: SiteUserResource = {
   createdAt: '2026-01-01T00:00:00Z',
 }
 
-function Harness({ count }: { count: number }) {
+function Harness({ count, instance = false }: { count: number; instance?: boolean }) {
   const queryClient = useQueryClient()
   const { t } = useTranslation()
   return (
     <>
-      <RegionalNumbers />
+      <RegionalNumbers instance={instance} />
       <output>{t(($) => $.segments.previewCount, { count })}</output>
       <button
         type="button"
@@ -61,4 +61,14 @@ test('the plural form still follows the UI language', async () => {
   await screen.getByRole('button', { name: LOAD }).click()
 
   await expect.element(screen.getByRole('status')).toHaveTextContent('1 matching contact')
+})
+
+// The Staff console has no User preference: pinned to the Instance, the numbers stay in its
+// language even with a Regional format in the cache.
+test('a pinned page keeps the Instance language', async () => {
+  const screen = await renderWithProviders(<Harness count={1_234_567} instance />)
+
+  await screen.getByRole('button', { name: LOAD }).click()
+
+  await expect.element(screen.getByRole('status')).toHaveTextContent('1,234,567 matching contacts')
 })
