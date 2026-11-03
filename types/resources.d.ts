@@ -2278,9 +2278,11 @@ export default interface Resources {
       "locale": "Locale",
       "localeHint": "A language tag, such as de or pt-BR",
       "phone": "Phone",
+      "refresh": "Refresh",
       "subjectId": "Subject ID",
       "tags": "Tags",
-      "timeZone": "Time zone"
+      "timeZone": "Time zone",
+      "updated": "Updated"
     },
     "tags": {
       "createdAtLabel": "Created",

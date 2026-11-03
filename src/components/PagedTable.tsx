@@ -1,13 +1,16 @@
-import { EmptyState, Stack } from '@mantine/core'
+import { ActionIcon, EmptyState, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { IconRefresh } from '@tabler/icons-react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { QueryKey, UseQueryOptions } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import type { DataTableColumn } from 'mantine-datatable'
 import { useDeferredValue, ViewTransition } from 'react'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
 import { ApiErrorAlert } from './ApiErrorAlert.tsx'
+import { RelativeTime } from './RelativeTime.tsx'
 import { TableSkeleton } from './Skeletons.tsx'
 
 interface Page {
@@ -50,14 +53,41 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
   page = 1,
   onPageChange,
 }: PagedTableProps<TPage, TError, TKey>) {
+  const { t } = useTranslation()
   const list = useQuery({ ...options({ page, pageSize }), placeholderData: keepPreviousData })
   // A deferred render is a React transition, which is what lets the ViewTransition below
   // cross-fade the old rows into the new ones when they arrive.
   const data = useDeferredValue(list.data)
   const totalItems = data?.totalItems ?? 0
+  // The time of the last successful fetch: a failed refresh leaves it, and a placeholder page
+  // shown while another loads has none (0), so the time then waits for the page's own fetch.
+  const refreshedAt = list.dataUpdatedAt > 0 ? new Date(list.dataUpdatedAt).toISOString() : null
 
   return (
     <Stack>
+      <Group justify="flex-end" gap="xs">
+        {/* Announced politely each time it changes, so a screen reader hears that the refresh
+            landed without the focus moving. */}
+        <Text component="output" size="sm" c="dimmed" aria-live="polite">
+          {refreshedAt ? (
+            <>
+              {t(($) => $.table.updated)} <RelativeTime value={refreshedAt} />
+            </>
+          ) : null}
+        </Text>
+        <Tooltip label={t(($) => $.table.refresh)} withArrow>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            aria-label={t(($) => $.table.refresh)}
+            loading={list.isFetching}
+            onClick={() => void list.refetch()}
+          >
+            <IconRefresh size={16} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
+
       {list.isError ? <ApiErrorAlert error={list.error} title={loadErrorTitle} /> : null}
 
       {/* While the first page loads only the skeleton shows: an empty table would flash its

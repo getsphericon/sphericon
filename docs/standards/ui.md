@@ -74,10 +74,9 @@ focus. A few submit buttons are disabled in place of validation (`signup-survey.
   applies to those rows. A bulk delete confirms with the number of resources (rule above).
 - Errors of an action are a toast (`useNotify`); an error loading the list is the `ApiErrorAlert`
   `PagedTable` shows above the table.
-
-**Target (#1000):** a refresh button in the header with the time of the last refresh (the rows stay visible
-while it runs, which `keepPreviousData` already gives). Lists fed from outside (events, messages)
-come first.
+- `PagedTable` has a refresh button above the table and the time of the last successful refresh
+  beside it, in a polite live region. The rows stay on screen while it runs, and a failed refresh
+  leaves the previous time. No list adds its own refresh.
 
 ## Empty states
 
