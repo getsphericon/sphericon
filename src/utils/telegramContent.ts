@@ -1,11 +1,15 @@
 import type { TelegramButton } from '../generated/site/types.gen.ts'
 
 // The most characters Telegram takes in a text message, and in the caption of a photo.
+// contract-copy: Telegram's own limits, which the editor counts live; the API refuses a longer text
 const TELEGRAM_TEXT_LIMIT = 4096
+// contract-copy: Telegram's own limit, counted live in the editor; the API refuses a longer caption
 const TELEGRAM_CAPTION_LIMIT = 1024
 // The longest label an unsubscribe button takes; the API refuses a longer one.
+// contract-copy: the contract caps `unsubscribeButton` at 64; the editor stops the input before the API refuses it
 export const TELEGRAM_UNSUBSCRIBE_LIMIT = 64
 // The most link buttons a message carries.
+// contract-copy: the contract caps `buttons` at 8; the editor stops adding before the API refuses it
 export const TELEGRAM_MAX_BUTTONS = 8
 
 // Telegram's message content (ADR 0078) as the editor holds it. The Automation step and the

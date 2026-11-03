@@ -26,7 +26,7 @@ const MaxText = 4096
 const MaxCaption = 1024
 
 // MaxButtons is the most link buttons a message carries, one per row.
-// contract-copy: the contract caps `buttons` at 8 too (); the domain refuses it for callers that skip the API
+// contract-copy: the contract caps `buttons` at 8 too; the domain refuses it for callers that skip the API
 const MaxButtons = 8
 
 // MaxUnsubscribeButton is the longest label of an unsubscribe button, in characters.
