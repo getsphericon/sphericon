@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/binding"
@@ -90,12 +91,18 @@ func telegramContentOf(content Content) (TelegramContent, error) {
 
 // render renders the text for one recipient. A text that does not render, renders to nothing or is
 // over the limit once rendered is the message's own failure, the same on every attempt.
-func (telegramChannel) render(_ context.Context, _ *ent.Scoped, req Request, _ int64, _ string, _ *ent.Workspace) (any, error) {
+func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, _ string, _ *ent.Workspace) (any, error) {
 	content, err := telegramContentOf(req.Content)
 	if err != nil {
 		return nil, err
 	}
-	text, err := telegramrender.Render(content.Text, Bindings(req.Contact, req.Variables))
+	bindings := Bindings(req.Contact, req.Variables)
+	start, err := c.m.startLinkBinding(ctx, s, req, messageID, content.Text)
+	if err != nil {
+		return nil, err
+	}
+	maps.Copy(bindings, start)
+	text, err := telegramrender.Render(content.Text, bindings)
 	if err != nil {
 		return nil, contentError{err}
 	}
