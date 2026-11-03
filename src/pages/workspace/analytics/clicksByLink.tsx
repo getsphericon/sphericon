@@ -6,6 +6,7 @@ import { AnchorLink } from '../../../components/RouterLink.tsx'
 import { siteAnalyticsClicksByLinkOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsLinkOwner } from '../../../generated/site/types.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
+import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as clicksByLinkRoute } from '../../../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
 import { Route as automationRoute } from '../../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as broadcastReportRoute } from '../../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
@@ -44,6 +45,7 @@ export function ClicksByLinkPage() {
 
 function ClicksByLinkReport() {
   const { t } = useTranslation()
+  const { formatNumber } = useFormat()
   const { workspaceId } = clicksByLinkRoute.useParams()
   const range = useAnalyticsRange()
 
@@ -84,7 +86,7 @@ function ClicksByLinkReport() {
                         {link.url}
                       </Text>
                     </Table.Td>
-                    <Table.Td>{link.clicks}</Table.Td>
+                    <Table.Td>{formatNumber(link.clicks)}</Table.Td>
                     <Table.Td>
                       <Stack gap={2}>
                         {link.owners.map((owner) => (

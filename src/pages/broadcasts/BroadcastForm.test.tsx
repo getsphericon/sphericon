@@ -277,7 +277,7 @@ test('a Telegram broadcast is written as a text and saved under its Channel', as
   await screen.getByRole('combobox', { name: 'Send through' }).click()
   await screen.getByRole('option', { name: 'News bot' }).click()
   await screen.getByLabelText('Message').fill('Hello <b>{{ first_name }}</b>')
-  await expect.element(screen.getByText('29 / 4096')).toBeInTheDocument()
+  await expect.element(screen.getByText('29 / 4,096')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
@@ -304,7 +304,7 @@ test('a text past the Telegram limit is flagged while it is written', async () =
   await screen.getByRole('button', { name: 'Continue' }).click()
   await screen.getByLabelText('Message').fill('a'.repeat(4097))
 
-  await expect.element(screen.getByText('4097 / 4096')).toBeInTheDocument()
+  await expect.element(screen.getByText('4,097 / 4,096')).toBeInTheDocument()
   await expect.element(screen.getByText(/cannot go out until it is shorter/)).toBeInTheDocument()
 })
 
@@ -320,7 +320,7 @@ test('a Telegram broadcast carries an image, buttons, no preview and an unsubscr
   await screen.getByLabelText(/^Name/).fill('News')
   await screen.getByLabelText('Message').fill('Hello')
   await screen.getByLabelText('Image URL').fill('https://example.com/a.png')
-  await expect.element(screen.getByText('5 / 1024')).toBeInTheDocument()
+  await expect.element(screen.getByText('5 / 1,024')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Add a button' }).click()
   await screen.getByRole('textbox', { name: 'Button 1 label' }).fill('Open')
   await screen.getByRole('textbox', { name: 'Button 1 URL' }).fill('https://example.com/b')

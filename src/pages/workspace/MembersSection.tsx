@@ -72,7 +72,7 @@ function MembersTabs({
   onRemove: (id: string) => void
   onRevoke: (id: string) => void
 }) {
-  const { formatDate } = useFormat()
+  const { formatDate, formatNumber } = useFormat()
   const { t } = useTranslation()
   const [{ data: me }, { data: members }, { data: invites }] = useSuspenseQueries({
     queries: [
@@ -88,7 +88,9 @@ function MembersTabs({
         <Tabs.Tab value="members">{t(($) => $.settings.members.membersTitle)}</Tabs.Tab>
         <Tabs.Tab
           value="invitations"
-          rightSection={invites.length > 0 ? <Badge size="sm">{invites.length}</Badge> : null}
+          rightSection={
+            invites.length > 0 ? <Badge size="sm">{formatNumber(invites.length)}</Badge> : null
+          }
         >
           {t(($) => $.settings.members.invitationsTitle)}
         </Tabs.Tab>

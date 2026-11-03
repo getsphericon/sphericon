@@ -19,6 +19,7 @@ import {
   siteTrackingDomainsListOptions,
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
+import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { DOCS_URL, SDK_SOURCE_URL } from '../../../utils/docs.ts'
@@ -30,6 +31,7 @@ import { TrackingDomainSection } from './TrackingDomainSection.tsx'
 // into the workspace (see App.tsx) — every event here comes from their own site.
 function InstallStatus({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
+  const { formatNumber } = useFormat()
   const statusQuery = useQuery({
     ...siteEventsListOptions({
       path: { workspaceId },
@@ -46,7 +48,7 @@ function InstallStatus({ workspaceId }: { workspaceId: string }) {
       <Text fw={600}>{t(($) => $.settings.installStatusTitle)}:</Text>
       {received ? (
         <Badge color="teal" variant="light">
-          {t(($) => $.settings.installStatusReceived)} ({totalItems})
+          {t(($) => $.settings.installStatusReceived)} ({formatNumber(totalItems)})
         </Badge>
       ) : (
         <Badge color="gray" variant="light">

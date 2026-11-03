@@ -84,9 +84,9 @@ test('a Telegram step round-trips: its bot and text load, an edit saves them bac
   await screen.getByRole('option', { name: 'Acme bot' }).click()
   const text = screen.getByRole('textbox', { name: 'Message' })
   await expect.element(text).toHaveValue('Hi <b>there</b>')
-  await expect.element(screen.getByText('15 / 4096')).toBeVisible()
+  await expect.element(screen.getByText('15 / 4,096')).toBeVisible()
   await text.fill('Welcome')
-  await expect.element(screen.getByText('7 / 4096')).toBeVisible()
+  await expect.element(screen.getByText('7 / 4,096')).toBeVisible()
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
@@ -108,7 +108,7 @@ test('a Telegram text over the limit is flagged by the counter', async () => {
 
   await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
   await page.elementLocator(flowNode(1)).click()
-  await expect.element(screen.getByText('4100 / 4096')).toBeVisible()
+  await expect.element(screen.getByText('4,100 / 4,096')).toBeVisible()
   await expect.element(screen.getByText(/it cannot go out until it is shorter/)).toBeVisible()
 })
 
@@ -132,10 +132,10 @@ test('adding an image switches the counter to the caption limit, and buttons and
 
   await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
   await page.elementLocator(flowNode(1)).click()
-  await expect.element(screen.getByText('22 / 4096')).toBeVisible()
+  await expect.element(screen.getByText('22 / 4,096')).toBeVisible()
 
   await screen.getByRole('textbox', { name: 'Image URL' }).fill('https://cdn.example.com/a.png')
-  await expect.element(screen.getByText('22 / 1024')).toBeVisible()
+  await expect.element(screen.getByText('22 / 1,024')).toBeVisible()
   const previewSwitch = screen.getByRole('switch', { name: 'Show a preview of links in the text' })
   await previewSwitch.click()
   await expect.element(previewSwitch).not.toBeChecked()

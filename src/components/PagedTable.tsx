@@ -8,6 +8,7 @@ import { useDeferredValue, ViewTransition } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { usePaginationText } from '../hooks/usePaginationText.ts'
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
 import { ApiErrorAlert } from './ApiErrorAlert.tsx'
 import { RelativeTime } from './RelativeTime.tsx'
@@ -61,6 +62,7 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
   onPageChange,
 }: PagedTableProps<TPage, TError, TKey>) {
   const { t } = useTranslation()
+  const paginationText = usePaginationText()
   const refreshLabel = t(($) => $.table.refresh)
   const list = useQuery({ ...options({ page, pageSize }), placeholderData: keepPreviousData })
   // A deferred render is a React transition, which is what lets the ViewTransition below
@@ -118,6 +120,7 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
             records={data?.items ?? []}
             columns={columns}
             totalRecords={totalItems}
+            paginationText={paginationText}
             recordsPerPage={pageSize}
             page={page}
             onPageChange={onPageChange}

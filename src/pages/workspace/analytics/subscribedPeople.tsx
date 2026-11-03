@@ -84,8 +84,8 @@ function SubscribedPeopleReport() {
                 {changedDays.toReversed().map((p) => (
                   <Table.Tr key={p.date}>
                     <Table.Td>{p.date}</Table.Td>
-                    <Table.Td>{p.subscribed}</Table.Td>
-                    <Table.Td>{p.unsubscribed}</Table.Td>
+                    <Table.Td>{formatNumber(p.subscribed)}</Table.Td>
+                    <Table.Td>{formatNumber(p.unsubscribed)}</Table.Td>
                     <Table.Td>
                       <Text c={p.net < 0 ? 'red' : 'inherit'}>{signed(p.net)}</Text>
                     </Table.Td>

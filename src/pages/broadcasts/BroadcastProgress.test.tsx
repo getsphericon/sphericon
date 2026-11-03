@@ -18,7 +18,7 @@ test('shows how many were sent and about how long remains', async () => {
     />,
   )
 
-  await expect.element(screen.getByText('Sent 1200 of 2000')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sent 1,200 of 2,000')).toBeInTheDocument()
   await expect.element(screen.getByText('about 3 hours remaining')).toBeInTheDocument()
   await expect
     .element(screen.getByText('Paced by the Provider limit of its Integration'))
