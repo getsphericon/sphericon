@@ -369,7 +369,7 @@ export default interface Resources {
       },
       "goalEventHint": "This event ends a contact's enrollment as having reached the goal. Leave empty for none.",
       "goalEventLabel": "Goal event",
-      "httpBodyHint": "JSON. It sees the contact's fields and event.action and event.properties of the event that started the enrollment. Merge tags like {{first_name}} are escaped for you, so write them inside quotes: the body must be valid JSON when they are empty.",
+      "httpBodyHint": "JSON. It sees the contact's fields and event.action and event.properties of the event that started the enrollment. Merge tags like {{mergeTag}} are escaped for you, so write them inside quotes: the body must be valid JSON when they are empty.",
       "httpBodyLabel": "JSON body",
       "httpDryRun": "Dry run",
       "httpDryRunContactLabel": "Render for contact",
