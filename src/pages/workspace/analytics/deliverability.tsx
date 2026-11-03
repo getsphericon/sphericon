@@ -23,15 +23,13 @@ export function DeliverabilityPage() {
 
 function DeliverabilityReport() {
   const { t } = useTranslation()
-  const { formatPercent } = useFormat()
+  const { formatRate } = useFormat()
   const { workspaceId } = deliverabilityRoute.useParams()
   const range = useAnalyticsRange()
 
   const domains = useSuspenseQuery(
     siteAnalyticsDeliverabilityOptions({ path: { workspaceId }, query: { range } }),
   ).data.domains
-  // A rate over nothing is undefined, and is shown as such, never as 0%.
-  const rate = (value: number | null) => (value === null ? '–' : formatPercent(value))
 
   if (domains.length === 0) {
     return <EmptyState title={t(($) => $.analytics.deliverability.empty)} />
@@ -77,13 +75,13 @@ function DeliverabilityReport() {
             accessor: 'complaintRate',
             title: t(($) => $.analytics.deliverability.complaintRate),
             textAlign: 'right',
-            render: (record) => rate(record.complaintRate.rate),
+            render: (record) => formatRate(record.complaintRate.rate),
           },
           {
             accessor: 'bounceRate',
             title: t(($) => $.analytics.deliverability.bounceRate),
             textAlign: 'right',
-            render: (record) => rate(record.bounceRate.rate),
+            render: (record) => formatRate(record.bounceRate.rate),
           },
         ]}
       />

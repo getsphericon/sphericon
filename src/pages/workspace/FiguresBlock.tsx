@@ -32,7 +32,7 @@ const sentIn = (sending: SiteAnalyticsSending) =>
 // period under it, with the change since; the number of the subscribed is a snapshot and has none.
 function Figures({ workspaceId, range, periodControl }: FiguresProps) {
   const { t } = useTranslation()
-  const { formatChange, formatPointChange, formatPercent } = useFormat()
+  const { formatChange, formatPointChange, formatRate } = useFormat()
   const overview = useSuspenseQuery(
     siteAnalyticsOverviewOptions({ path: { workspaceId }, query: { range } }),
   ).data
@@ -42,8 +42,6 @@ function Figures({ workspaceId, range, periodControl }: FiguresProps) {
     return null
   }
 
-  // A rate over nothing is undefined, and is shown as such, never as 0%.
-  const rate = (value: number | null) => (value === null ? '–' : formatPercent(value))
   const label = t(($) => $.overview.previous[range])
   // compared is the line under a count: its value in the previous period and the change since.
   const compared = (now: number, before: number) => ({
@@ -123,9 +121,9 @@ function Figures({ workspaceId, range, periodControl }: FiguresProps) {
                   <Text key={d.sendingDomainId} size="sm">
                     {t(($) => $.overview.sending.domainRates, {
                       domain: d.domain,
-                      complaintRate: rate(d.complaintRate.rate),
+                      complaintRate: formatRate(d.complaintRate.rate),
                       delivered: d.complaintRate.denominator,
-                      bounceRate: rate(d.bounceRate.rate),
+                      bounceRate: formatRate(d.bounceRate.rate),
                       sent: d.bounceRate.denominator,
                     })}
                   </Text>

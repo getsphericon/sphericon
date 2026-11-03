@@ -104,12 +104,21 @@ func TestReportListsOnlyDomainsWithTrafficArchivedOnesIncluded(t *testing.T) {
 	assert.True(t, mail, "the fixture traffic of the last 7 days")
 }
 
-func TestEveryRoleReadsTheDeliverabilityReport(t *testing.T) {
+// Every member reads both the report and the overview's rates, as with the rest of analytics.
+func TestEveryRoleReadsTheDeliverabilityReportAndTheOverviewRates(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	for _, email := range []string{fixtures.OwnerJohnEmail, fixtures.AdminAliceEmail, fixtures.MemberMaryEmail} {
 		report := deliverabilityReport(t, env, email, siteapi.SiteAnalyticsRange7d)
 		assert.NotEmpty(t, report.Domains, email)
+
+		res, err := env.SiteActor(t, email).SiteAnalyticsOverview(context.Background(),
+			siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.AcmePublicID})
+		require.NoError(t, err, email)
+		overview, ok := res.(*siteapi.SiteAnalyticsOverview)
+		require.Truef(t, ok, "%s got %T", email, res)
+		_, listed := ratesOf(overview.Deliverability.Domains, fixtures.SendingDomainLaunchDomain)
+		assert.True(t, listed, email)
 	}
 }
 
