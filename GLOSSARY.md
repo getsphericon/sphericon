@@ -69,8 +69,16 @@ _Avoid_: Label, list, group, category
 **Visitor**:
 An anonymous device/browser identity — a `visitor_id` cookie, unique per workspace. Resolves
 to a Contact once Identify establishes who it is; before that it may belong to no Contact. One
-Contact owns many Visitors (the same person across devices).
+Contact owns many Visitors (the same person across devices). The tracker makes one only once it
+has **Storage consent**.
 _Avoid_: Tracking visitor, session, device, anonymous user
+
+**Storage consent**:
+Whether the tracker may store and send what it keeps in a visitor's browser: `granted`, `pending`
+(waiting for the site's consent banner) or `denied`. Until it is granted the tracker keeps no
+Visitor, records no Event and remembers only what the visitor asked it to, for the session; On-site
+forms still show. Set by the site, or by the Workspace's choice to wait for consent.
+_Avoid_: Cookie consent, tracking consent, opt-in (that is a Confirmation)
 
 **Identify** (identity resolution):
 The act of binding a Visitor to a Contact and asserting that Contact's alias keys
@@ -1284,6 +1292,12 @@ referrer the visit began with), its audience (everyone, anonymous Visitors, know
 a Segment, whose Condition is copied when the form is published) and its schedule. The browser
 applies the triggers and page rules; the server decides the audience.
 _Avoid_: Targeting rules, conditions (a Condition is the Segment grammar), triggers (only one part)
+
+**Form priority**:
+Which of several qualifying On-site forms shows: `high`, `normal` or `low`, the most recently
+published winning a tie. One overlay (a popup or a slide-in) at most per page view, one form per
+Placement.
+_Avoid_: Weight, rank, order
 
 **Teaser**:
 A small tab of a popup or slide-in On-site form that opens it on a click: shown before the form,
