@@ -133,6 +133,8 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 		WorkspaceID: ws.ID,
 		ContactID:   req.contactID(),
 		BroadcastID: req.Ref.BroadcastID,
+		// The link names this message, so the unsubscribe Event is about it.
+		OutboundMessageID: messageID,
 	}
 	if req.Track {
 		// Click/open tracking is layered on after rendering so re-parsing the HTML

@@ -65,14 +65,17 @@ func (t *Tracker) OnHost(host string) *Tracker {
 // (for per-broadcast attribution); Source is the sending-source string the opt-out
 // is scoped to ("broadcasts" / "automation:<id>" / "everything"). Channel is the Channel the
 // opt-out is recorded on: a link in a Telegram message unsubscribes on Telegram only (ADR 0077),
-// and Destination is that Channel's (the email address, the Telegram user id).
+// and Destination is that Channel's (the email address, the Telegram user id). OutboundMessageID is
+// the message the link sits in, 0 for a link that came from none (a message sent before the link
+// named it, or an opt-out made without one): the email.unsubscribed Event is about that message.
 type UnsubTarget struct {
-	Channel     messaging.Channel
-	Source      string
-	Destination string
-	WorkspaceID int64
-	ContactID   int64
-	BroadcastID int64
+	Channel           messaging.Channel
+	Source            string
+	Destination       string
+	WorkspaceID       int64
+	ContactID         int64
+	BroadcastID       int64
+	OutboundMessageID int64
 }
 
 // The tokens' claims are typed: int64 ids travel as JSON strings (`,string`) so
@@ -101,6 +104,8 @@ type unsubClaims struct {
 	WorkspaceID int64  `json:"ws,string"`
 	ContactID   int64  `json:"cid,string"`
 	BroadcastID int64  `json:"bid,string"`
+	// MessageID is absent from a link minted before the link named its message.
+	MessageID int64 `json:"mid,string,omitempty"`
 }
 
 type confirmClaims struct {
@@ -178,6 +183,7 @@ func (t *Tracker) unsubToken(target UnsubTarget) (string, error) {
 		WorkspaceID: target.WorkspaceID,
 		ContactID:   target.ContactID,
 		BroadcastID: target.BroadcastID,
+		MessageID:   target.OutboundMessageID,
 	})
 }
 
@@ -204,7 +210,11 @@ func (t *Tracker) DecodeUnsub(token string) (UnsubTarget, error) {
 	if c.WorkspaceID == 0 {
 		return UnsubTarget{}, ErrLinkInvalid.With("missing ws claim")
 	}
-	return UnsubTarget{Channel: messaging.Channel(c.Channel), Source: c.Source, Destination: c.Destination, WorkspaceID: c.WorkspaceID, ContactID: c.ContactID, BroadcastID: c.BroadcastID}, nil
+	return UnsubTarget{
+		Channel: messaging.Channel(c.Channel), Source: c.Source, Destination: c.Destination,
+		WorkspaceID: c.WorkspaceID, ContactID: c.ContactID, BroadcastID: c.BroadcastID,
+		OutboundMessageID: c.MessageID,
+	}, nil
 }
 
 // ConfirmTarget is the payload a double-opt-in confirmation link carries (ADR
