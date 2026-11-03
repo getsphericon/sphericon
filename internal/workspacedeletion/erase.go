@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
@@ -221,6 +222,7 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).OrderMovement, ordermovement.IDIn),
 	stepOf((*ent.Scoped).Order, order.IDIn),
 	stepOf((*ent.Scoped).CapturedMessage, capturedmessage.IDIn),
+	stepOf((*ent.Scoped).TrackedLink, trackedlink.IDIn),
 	stepOf((*ent.Scoped).OutboundMessage, outboundmessage.IDIn),
 	stepOf((*ent.Scoped).BroadcastRecipient, broadcastrecipient.IDIn),
 	stepOf((*ent.Scoped).RuleFiring, rulefiring.IDIn),

@@ -144,3 +144,26 @@ func make8(b telegramrender.Button) []telegramrender.Button {
 	}
 	return out
 }
+
+func TestRewriteLinksReplacesOnlyTheHrefsOfAnchors(t *testing.T) {
+	short := func(href string) (string, error) { return "https://s.test/c/" + strings.ToUpper(href[8:9]), nil }
+	rendered, err := telegramrender.Render(`<b>x</b> <a href="https://a.test/?q=1&r=2">one</a> &amp; <a href="https://b.test/">two <i>i</i></a>`, nil)
+	require.NoError(t, err)
+
+	got, err := telegramrender.RewriteLinks(rendered, short)
+
+	require.NoError(t, err)
+	assert.Equal(t, `<b>x</b> <a href="https://s.test/c/A">one</a> &amp; <a href="https://s.test/c/B">two <i>i</i></a>`, got)
+}
+
+func TestRewriteLinksWithTheIdentityChangesNothingAndStaysInTheSubset(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		rendered, err := telegramrender.Render(rapid.String().Draw(t, "markup")+`<a href="https://a.test/?x=1&y=2">l</a>`, nil)
+		require.NoError(t, err)
+
+		got, err := telegramrender.RewriteLinks(rendered, func(href string) (string, error) { return href, nil })
+
+		require.NoError(t, err)
+		assert.Equal(t, rendered, got)
+	})
+}

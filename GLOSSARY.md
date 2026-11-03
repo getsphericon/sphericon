@@ -675,14 +675,25 @@ _Avoid_: Inbox message, email log
 **Tracking domain**:
 A hostname of the Workspace's own choosing (e.g. `t.example.com`), a CNAME to the Instance's edge,
 on which the Workspace's tracking is served instead of the Instance's host once it serves: the links
-in its mail (open, click, unsubscribe, confirm) and the first-party tracker, for its own collect key
-only. A Workspace uses at most one; it belongs to the Workspace, not to a Sending domain, so a
+in its mail (open, click, unsubscribe, confirm), the short tracked links of its Telegram messages and
+the first-party tracker, for its own collect key only. A Workspace uses at most one; it belongs to the Workspace, not to a Sending domain, so a
 Workspace that sends no mail can have one. Another host is another Tracking domain: a replacement
 takes over only once it serves, and the one it replaces, or one removed, is **retired**: it serves
 no new mail or snippet but keeps serving the links already sent and the snippet already installed
 on it, and no other Workspace can take its host, until its CNAME no longer points at the
 Instance's edge or the Owner forgets it.
 _Avoid_: Click domain, link domain, custom domain (unqualified)
+
+**Short tracked link**:
+The link `https://<Tracking domain or Instance host>/c/<token>` that stands, in a Telegram message, for
+one URL of one Outbound message: every `<a href>` of the text and every link button's URL is rewritten
+into one when the message is rendered, never through a third-party shortener. The token is a short random
+value stored with the Outbound message and the URL it redirects to, so a retried message reuses its tokens;
+an unknown token answers 404. Following one records `telegram.clicked` (a request from Telegram's
+link-preview fetcher is **Machine engagement**) and redirects. The message's own unsubscribe link is not
+wrapped, and email keeps its signed click links. A click on any Channel is what **Attribution window**
+credits an Order to.
+_Avoid_: Redirect link, shortener, vanity link
 
 **Sending domain**:
 A workspace-scoped, DNS-verified domain that a Contact's mail may be sent _from_ — the

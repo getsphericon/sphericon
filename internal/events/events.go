@@ -70,6 +70,8 @@ const (
 	// NameTelegramSent is a message a bot's Telegram accepted for a Contact. Telegram reports
 	// nothing after that, so no delivered or read Event follows.
 	NameTelegramSent = "telegram.sent"
+	// NameTelegramClicked is a click on a short tracked link of a Telegram message (ADR 0083).
+	NameTelegramClicked = "telegram.clicked"
 	// NameTelegramUnsubscribed is a Contact stopping all of the Workspace's Telegram marketing in
 	// Telegram: a STOP keyword, the unsubscribe button, or blocking the bot (ADR 0077).
 	NameTelegramUnsubscribed = "telegram.unsubscribed"
@@ -255,6 +257,7 @@ var registry = map[string]func() DomainEvent{
 	NameTelegramUnbound:       func() DomainEvent { return &BindingChange{} },
 	NameTelegramReceived:      func() DomainEvent { return &TelegramReceived{} },
 	NameTelegramSent:          func() DomainEvent { return &TelegramSent{} },
+	NameTelegramClicked:       func() DomainEvent { return &TelegramClicked{} },
 	NameTelegramUnsubscribed:  func() DomainEvent { return &TelegramUnsubscribed{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },

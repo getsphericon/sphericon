@@ -71,6 +71,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -200,6 +201,7 @@ func checkColumn(t, c string) error {
 			starttoken.Table:           starttoken.ValidColumn,
 			suppression.Table:          suppression.ValidColumn,
 			tag.Table:                  tag.ValidColumn,
+			trackedlink.Table:          trackedlink.ValidColumn,
 			trackingdomain.Table:       trackingdomain.ValidColumn,
 			trackinghostchange.Table:   trackinghostchange.ValidColumn,
 			unsubscribe.Table:          unsubscribe.ValidColumn,

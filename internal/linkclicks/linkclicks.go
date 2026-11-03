@@ -1,6 +1,6 @@
-// Package linkclicks counts the clicks of the emails of one Broadcast or Automation, or of the
+// Package linkclicks counts the clicks of the messages of one Broadcast or Automation, or of the
 // whole Workspace, by link. It is a leaf the per-owner reports and the Clicks by link report share:
-// the count reads the `email.clicked` Events, machine clicks left out (ADR 0053), and takes a
+// the count reads the click Events of every Channel (`email.clicked`, `telegram.clicked`), machine clicks left out (ADR 0053), and takes a
 // scoped client like every Workspace read.
 package linkclicks
 
@@ -104,7 +104,7 @@ func Total(links []Clicks) int {
 
 // clicks is the human click Events inside the span that owner narrows to.
 func clicks(s *ent.Scoped, in Between, owner predicate.Event) *ent.EventQuery {
-	q := s.Event().Query().Where(event.ActionEQ(events.NameEmailClicked), events.HumanOnly(), owner)
+	q := s.Event().Query().Where(event.ActionIn(events.ClickActions...), events.HumanOnly(), owner)
 	if in != (Between{}) {
 		q.Where(event.OccurredAtGTE(in.Since), event.OccurredAtLT(in.Until))
 	}

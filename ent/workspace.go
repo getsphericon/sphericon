@@ -147,6 +147,8 @@ type WorkspaceEdges struct {
 	Confirmations []*Confirmation `json:"confirmations,omitempty"`
 	// OutboundMessages holds the value of the outbound_messages edge.
 	OutboundMessages []*OutboundMessage `json:"outbound_messages,omitempty"`
+	// TrackedLinks holds the value of the tracked_links edge.
+	TrackedLinks []*TrackedLink `json:"tracked_links,omitempty"`
 	// CapturedMessages holds the value of the captured_messages edge.
 	CapturedMessages []*CapturedMessage `json:"captured_messages,omitempty"`
 	// Memberships holds the value of the memberships edge.
@@ -161,7 +163,7 @@ type WorkspaceEdges struct {
 	Usages []*Usage `json:"usages,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [41]bool
+	loadedTypes [42]bool
 }
 
 // ContactsOrErr returns the Contacts value or an error if the edge
@@ -479,10 +481,19 @@ func (e WorkspaceEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
 	return nil, &NotLoadedError{edge: "outbound_messages"}
 }
 
+// TrackedLinksOrErr returns the TrackedLinks value or an error if the edge
+// was not loaded in eager-loading.
+func (e WorkspaceEdges) TrackedLinksOrErr() ([]*TrackedLink, error) {
+	if e.loadedTypes[35] {
+		return e.TrackedLinks, nil
+	}
+	return nil, &NotLoadedError{edge: "tracked_links"}
+}
+
 // CapturedMessagesOrErr returns the CapturedMessages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) CapturedMessagesOrErr() ([]*CapturedMessage, error) {
-	if e.loadedTypes[35] {
+	if e.loadedTypes[36] {
 		return e.CapturedMessages, nil
 	}
 	return nil, &NotLoadedError{edge: "captured_messages"}
@@ -491,7 +502,7 @@ func (e WorkspaceEdges) CapturedMessagesOrErr() ([]*CapturedMessage, error) {
 // MembershipsOrErr returns the Memberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) MembershipsOrErr() ([]*Membership, error) {
-	if e.loadedTypes[36] {
+	if e.loadedTypes[37] {
 		return e.Memberships, nil
 	}
 	return nil, &NotLoadedError{edge: "memberships"}
@@ -500,7 +511,7 @@ func (e WorkspaceEdges) MembershipsOrErr() ([]*Membership, error) {
 // InvitationsOrErr returns the Invitations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) InvitationsOrErr() ([]*Invitation, error) {
-	if e.loadedTypes[37] {
+	if e.loadedTypes[38] {
 		return e.Invitations, nil
 	}
 	return nil, &NotLoadedError{edge: "invitations"}
@@ -509,7 +520,7 @@ func (e WorkspaceEdges) InvitationsOrErr() ([]*Invitation, error) {
 // AuditEntriesOrErr returns the AuditEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AuditEntriesOrErr() ([]*AuditEntry, error) {
-	if e.loadedTypes[38] {
+	if e.loadedTypes[39] {
 		return e.AuditEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "audit_entries"}
@@ -518,7 +529,7 @@ func (e WorkspaceEdges) AuditEntriesOrErr() ([]*AuditEntry, error) {
 // ErasuresOrErr returns the Erasures value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) ErasuresOrErr() ([]*Erasure, error) {
-	if e.loadedTypes[39] {
+	if e.loadedTypes[40] {
 		return e.Erasures, nil
 	}
 	return nil, &NotLoadedError{edge: "erasures"}
@@ -527,7 +538,7 @@ func (e WorkspaceEdges) ErasuresOrErr() ([]*Erasure, error) {
 // UsagesOrErr returns the Usages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) UsagesOrErr() ([]*Usage, error) {
-	if e.loadedTypes[40] {
+	if e.loadedTypes[41] {
 		return e.Usages, nil
 	}
 	return nil, &NotLoadedError{edge: "usages"}
@@ -924,6 +935,11 @@ func (_m *Workspace) QueryConfirmations() *ConfirmationQuery {
 // QueryOutboundMessages queries the "outbound_messages" edge of the Workspace entity.
 func (_m *Workspace) QueryOutboundMessages() *OutboundMessageQuery {
 	return NewWorkspaceClient(_m.config).QueryOutboundMessages(_m)
+}
+
+// QueryTrackedLinks queries the "tracked_links" edge of the Workspace entity.
+func (_m *Workspace) QueryTrackedLinks() *TrackedLinkQuery {
+	return NewWorkspaceClient(_m.config).QueryTrackedLinks(_m)
 }
 
 // QueryCapturedMessages queries the "captured_messages" edge of the Workspace entity.

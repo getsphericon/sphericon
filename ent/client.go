@@ -74,6 +74,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -211,6 +212,8 @@ type Client struct {
 	Suppression *SuppressionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
+	// TrackedLink is the client for interacting with the TrackedLink builders.
+	TrackedLink *TrackedLinkClient
 	// TrackingDomain is the client for interacting with the TrackingDomain builders.
 	TrackingDomain *TrackingDomainClient
 	// TrackingHostChange is the client for interacting with the TrackingHostChange builders.
@@ -301,6 +304,7 @@ func (c *Client) init() {
 	c.StartToken = NewStartTokenClient(c.config)
 	c.Suppression = NewSuppressionClient(c.config)
 	c.Tag = NewTagClient(c.config)
+	c.TrackedLink = NewTrackedLinkClient(c.config)
 	c.TrackingDomain = NewTrackingDomainClient(c.config)
 	c.TrackingHostChange = NewTrackingHostChangeClient(c.config)
 	c.Unsubscribe = NewUnsubscribeClient(c.config)
@@ -462,6 +466,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		StartToken:           NewStartTokenClient(cfg),
 		Suppression:          NewSuppressionClient(cfg),
 		Tag:                  NewTagClient(cfg),
+		TrackedLink:          NewTrackedLinkClient(cfg),
 		TrackingDomain:       NewTrackingDomainClient(cfg),
 		TrackingHostChange:   NewTrackingHostChangeClient(cfg),
 		Unsubscribe:          NewUnsubscribeClient(cfg),
@@ -550,6 +555,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		StartToken:           NewStartTokenClient(cfg),
 		Suppression:          NewSuppressionClient(cfg),
 		Tag:                  NewTagClient(cfg),
+		TrackedLink:          NewTrackedLinkClient(cfg),
 		TrackingDomain:       NewTrackingDomainClient(cfg),
 		TrackingHostChange:   NewTrackingHostChangeClient(cfg),
 		Unsubscribe:          NewUnsubscribeClient(cfg),
@@ -601,9 +607,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
 		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendCapLimiter,
 		c.SendingDomain, c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse,
-		c.StaffMember, c.StartToken, c.Suppression, c.Tag, c.TrackingDomain,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.StaffMember, c.StartToken, c.Suppression, c.Tag, c.TrackedLink,
+		c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
+		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -625,9 +631,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
 		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendCapLimiter,
 		c.SendingDomain, c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse,
-		c.StaffMember, c.StartToken, c.Suppression, c.Tag, c.TrackingDomain,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.StaffMember, c.StartToken, c.Suppression, c.Tag, c.TrackedLink,
+		c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
+		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -754,6 +760,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Suppression.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
+	case *TrackedLinkMutation:
+		return c.TrackedLink.mutate(ctx, m)
 	case *TrackingDomainMutation:
 		return c.TrackingDomain.mutate(ctx, m)
 	case *TrackingHostChangeMutation:
@@ -6752,6 +6760,22 @@ func (c *OutboundMessageClient) QueryWorkspace(_m *OutboundMessage) *WorkspaceQu
 	return query
 }
 
+// QueryTrackedLinks queries the tracked_links edge of a OutboundMessage.
+func (c *OutboundMessageClient) QueryTrackedLinks(_m *OutboundMessage) *TrackedLinkQuery {
+	query := (&TrackedLinkClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
+			sqlgraph.To(trackedlink.Table, trackedlink.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, outboundmessage.TrackedLinksTable, outboundmessage.TrackedLinksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryBroadcast queries the broadcast edge of a OutboundMessage.
 func (c *OutboundMessageClient) QueryBroadcast(_m *OutboundMessage) *BroadcastQuery {
 	query := (&BroadcastClient{config: c.config}).Query()
@@ -10641,6 +10665,171 @@ func (c *TagClient) mutate(ctx context.Context, m *TagMutation) (Value, error) {
 	}
 }
 
+// TrackedLinkClient is a client for the TrackedLink schema.
+type TrackedLinkClient struct {
+	config
+}
+
+// NewTrackedLinkClient returns a client for the TrackedLink from the given config.
+func NewTrackedLinkClient(c config) *TrackedLinkClient {
+	return &TrackedLinkClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `trackedlink.Hooks(f(g(h())))`.
+func (c *TrackedLinkClient) Use(hooks ...Hook) {
+	c.hooks.TrackedLink = append(c.hooks.TrackedLink, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `trackedlink.Intercept(f(g(h())))`.
+func (c *TrackedLinkClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TrackedLink = append(c.inters.TrackedLink, interceptors...)
+}
+
+// Create returns a builder for creating a TrackedLink entity.
+func (c *TrackedLinkClient) Create() *TrackedLinkCreate {
+	mutation := newTrackedLinkMutation(c.config, OpCreate)
+	return &TrackedLinkCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TrackedLink entities.
+func (c *TrackedLinkClient) CreateBulk(builders ...*TrackedLinkCreate) *TrackedLinkCreateBulk {
+	return &TrackedLinkCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TrackedLinkClient) MapCreateBulk(slice any, setFunc func(*TrackedLinkCreate, int)) *TrackedLinkCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TrackedLinkCreateBulk{err: fmt.Errorf("calling to TrackedLinkClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TrackedLinkCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TrackedLinkCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TrackedLink.
+func (c *TrackedLinkClient) Update() *TrackedLinkUpdate {
+	mutation := newTrackedLinkMutation(c.config, OpUpdate)
+	return &TrackedLinkUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TrackedLinkClient) UpdateOne(_m *TrackedLink) *TrackedLinkUpdateOne {
+	mutation := newTrackedLinkMutation(c.config, OpUpdateOne, withTrackedLink(_m))
+	return &TrackedLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TrackedLinkClient) UpdateOneID(id int64) *TrackedLinkUpdateOne {
+	mutation := newTrackedLinkMutation(c.config, OpUpdateOne, withTrackedLinkID(id))
+	return &TrackedLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TrackedLink.
+func (c *TrackedLinkClient) Delete() *TrackedLinkDelete {
+	mutation := newTrackedLinkMutation(c.config, OpDelete)
+	return &TrackedLinkDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TrackedLinkClient) DeleteOne(_m *TrackedLink) *TrackedLinkDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TrackedLinkClient) DeleteOneID(id int64) *TrackedLinkDeleteOne {
+	builder := c.Delete().Where(trackedlink.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TrackedLinkDeleteOne{builder}
+}
+
+// Query returns a query builder for TrackedLink.
+func (c *TrackedLinkClient) Query() *TrackedLinkQuery {
+	return &TrackedLinkQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTrackedLink},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TrackedLink entity by its id.
+func (c *TrackedLinkClient) Get(ctx context.Context, id int64) (*TrackedLink, error) {
+	return c.Query().Where(trackedlink.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TrackedLinkClient) GetX(ctx context.Context, id int64) *TrackedLink {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a TrackedLink.
+func (c *TrackedLinkClient) QueryWorkspace(_m *TrackedLink) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(trackedlink.Table, trackedlink.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, trackedlink.WorkspaceTable, trackedlink.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOutboundMessage queries the outbound_message edge of a TrackedLink.
+func (c *TrackedLinkClient) QueryOutboundMessage(_m *TrackedLink) *OutboundMessageQuery {
+	query := (&OutboundMessageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(trackedlink.Table, trackedlink.FieldID, id),
+			sqlgraph.To(outboundmessage.Table, outboundmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, trackedlink.OutboundMessageTable, trackedlink.OutboundMessageColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TrackedLinkClient) Hooks() []Hook {
+	return c.hooks.TrackedLink
+}
+
+// Interceptors returns the client interceptors.
+func (c *TrackedLinkClient) Interceptors() []Interceptor {
+	return c.inters.TrackedLink
+}
+
+func (c *TrackedLinkClient) mutate(ctx context.Context, m *TrackedLinkMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TrackedLinkCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TrackedLinkUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TrackedLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TrackedLinkDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TrackedLink mutation op: %q", m.Op())
+	}
+}
+
 // TrackingDomainClient is a client for the TrackingDomain schema.
 type TrackingDomainClient struct {
 	config
@@ -12778,6 +12967,22 @@ func (c *WorkspaceClient) QueryOutboundMessages(_m *Workspace) *OutboundMessageQ
 	return query
 }
 
+// QueryTrackedLinks queries the tracked_links edge of a Workspace.
+func (c *WorkspaceClient) QueryTrackedLinks(_m *Workspace) *TrackedLinkQuery {
+	query := (&TrackedLinkClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(trackedlink.Table, trackedlink.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.TrackedLinksTable, workspace.TrackedLinksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryCapturedMessages queries the captured_messages edge of a Workspace.
 func (c *WorkspaceClient) QueryCapturedMessages(_m *Workspace) *CapturedMessageQuery {
 	query := (&CapturedMessageClient{config: c.config}).Query()
@@ -12912,7 +13117,7 @@ type (
 		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
 		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
 		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
-		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
+		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
 		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
 		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
@@ -12927,7 +13132,7 @@ type (
 		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
 		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
 		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
-		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
+		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
 		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
 		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}

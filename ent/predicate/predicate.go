@@ -183,6 +183,9 @@ type Suppression func(*sql.Selector)
 // Tag is the predicate function for tag builders.
 type Tag func(*sql.Selector)
 
+// TrackedLink is the predicate function for trackedlink builders.
+type TrackedLink func(*sql.Selector)
+
 // TrackingDomain is the predicate function for trackingdomain builders.
 type TrackingDomain func(*sql.Selector)
 

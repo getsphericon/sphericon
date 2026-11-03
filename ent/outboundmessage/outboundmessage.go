@@ -71,6 +71,8 @@ const (
 	FieldAppOrigin = "app_origin"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
+	// EdgeTrackedLinks holds the string denoting the tracked_links edge name in mutations.
+	EdgeTrackedLinks = "tracked_links"
 	// EdgeBroadcast holds the string denoting the broadcast edge name in mutations.
 	EdgeBroadcast = "broadcast"
 	// EdgeAutomation holds the string denoting the automation edge name in mutations.
@@ -94,6 +96,13 @@ const (
 	WorkspaceInverseTable = "workspaces"
 	// WorkspaceColumn is the table column denoting the workspace relation/edge.
 	WorkspaceColumn = "workspace_id"
+	// TrackedLinksTable is the table that holds the tracked_links relation/edge.
+	TrackedLinksTable = "tracked_links"
+	// TrackedLinksInverseTable is the table name for the TrackedLink entity.
+	// It exists in this package in order to avoid circular dependency with the "trackedlink" package.
+	TrackedLinksInverseTable = "tracked_links"
+	// TrackedLinksColumn is the table column denoting the tracked_links relation/edge.
+	TrackedLinksColumn = "outbound_message_id"
 	// BroadcastTable is the table that holds the broadcast relation/edge.
 	BroadcastTable = "outbound_messages"
 	// BroadcastInverseTable is the table name for the Broadcast entity.
@@ -430,6 +439,20 @@ func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// ByTrackedLinksCount orders the results by tracked_links count.
+func ByTrackedLinksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTrackedLinksStep(), opts...)
+	}
+}
+
+// ByTrackedLinks orders the results by tracked_links terms.
+func ByTrackedLinks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTrackedLinksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByBroadcastField orders the results by broadcast field.
 func ByBroadcastField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -483,6 +506,13 @@ func newWorkspaceStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(WorkspaceInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
+	)
+}
+func newTrackedLinksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TrackedLinksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TrackedLinksTable, TrackedLinksColumn),
 	)
 }
 func newBroadcastStep() *sqlgraph.Step {

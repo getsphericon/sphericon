@@ -134,9 +134,10 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 	// Public tracking snippet (no auth) — embedded IIFE bundle.
 	mux.Handle("/t.js", trackerHandler())
 
-	// Public email engagement endpoints (open pixel, click redirect, unsubscribe).
+	// Public engagement endpoints (open pixel, click redirect, unsubscribe, a short tracked link).
 	trackingH := trackingHandler(client, bus, site.Tracker, limiter, detector, cfg.AppURL)
 	mux.Handle("/e/", trackingH)
+	mux.Handle("/c/", trackingH)
 
 	// Inbound provider callbacks (ADR 0037): POST /hooks/{key}, the key of one
 	// Integration, read with that Integration's Preset.

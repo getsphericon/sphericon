@@ -49,6 +49,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
@@ -695,6 +696,22 @@ func (s *Scoped) verifyTag(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Tag: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyTrackedLink fails with ErrNotInWorkspace unless every id is a TrackedLink of the Workspace.
+func (s *Scoped) verifyTrackedLink(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.TrackedLink.Query().Where(trackedlink.IDIn(ids...), trackedlink.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("TrackedLink: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -23888,6 +23905,18 @@ func (x *OutboundMessageScopedCreate) SetNillableAppOrigin(v *string) *OutboundM
 	return x
 }
 
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by IDs.
+func (x *OutboundMessageScopedCreate) AddTrackedLinkIDs(ids ...int64) *OutboundMessageScopedCreate {
+	x.b.AddTrackedLinkIDs(ids...)
+	return x
+}
+
+// AddTrackedLinks adds the "tracked_links" edges to the TrackedLink entity.
+func (x *OutboundMessageScopedCreate) AddTrackedLinks(v ...*TrackedLink) *OutboundMessageScopedCreate {
+	x.b.AddTrackedLinks(v...)
+	return x
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (x *OutboundMessageScopedCreate) SetBroadcast(v *Broadcast) *OutboundMessageScopedCreate {
 	x.b.SetBroadcast(v)
@@ -23933,6 +23962,9 @@ func (x *OutboundMessageScopedCreate) SetTemplate(v *EmailTemplate) *OutboundMes
 func (x *OutboundMessageScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyTrackedLink(ctx, m.TrackedLinksIDs()); err != nil {
+		return fmt.Errorf("tracked_links: %w", err)
+	}
 	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
 		return fmt.Errorf("broadcast: %w", err)
 	}
@@ -24861,6 +24893,36 @@ func (x *OutboundMessageScopedUpdateOne) ClearTemplateID() *OutboundMessageScope
 	return x
 }
 
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by IDs.
+func (x *OutboundMessageScopedUpdateOne) AddTrackedLinkIDs(ids ...int64) *OutboundMessageScopedUpdateOne {
+	x.b.AddTrackedLinkIDs(ids...)
+	return x
+}
+
+// AddTrackedLinks adds the "tracked_links" edges to the TrackedLink entity.
+func (x *OutboundMessageScopedUpdateOne) AddTrackedLinks(v ...*TrackedLink) *OutboundMessageScopedUpdateOne {
+	x.b.AddTrackedLinks(v...)
+	return x
+}
+
+// ClearTrackedLinks clears the "tracked_links" edges to the TrackedLink entity.
+func (x *OutboundMessageScopedUpdateOne) ClearTrackedLinks() *OutboundMessageScopedUpdateOne {
+	x.b.ClearTrackedLinks()
+	return x
+}
+
+// RemoveTrackedLinkIDs removes the "tracked_links" edge to TrackedLink entities by IDs.
+func (x *OutboundMessageScopedUpdateOne) RemoveTrackedLinkIDs(ids ...int64) *OutboundMessageScopedUpdateOne {
+	x.b.RemoveTrackedLinkIDs(ids...)
+	return x
+}
+
+// RemoveTrackedLinks removes "tracked_links" edges to TrackedLink entities.
+func (x *OutboundMessageScopedUpdateOne) RemoveTrackedLinks(v ...*TrackedLink) *OutboundMessageScopedUpdateOne {
+	x.b.RemoveTrackedLinks(v...)
+	return x
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (x *OutboundMessageScopedUpdateOne) SetBroadcast(v *Broadcast) *OutboundMessageScopedUpdateOne {
 	x.b.SetBroadcast(v)
@@ -24948,6 +25010,9 @@ func (x *OutboundMessageScopedUpdateOne) ClearTemplate() *OutboundMessageScopedU
 func (x *OutboundMessageScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyTrackedLink(ctx, m.TrackedLinksIDs()); err != nil {
+		return fmt.Errorf("tracked_links: %w", err)
+	}
 	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
 		return fmt.Errorf("broadcast: %w", err)
 	}
@@ -25388,6 +25453,36 @@ func (x *OutboundMessageScopedUpdate) ClearTemplateID() *OutboundMessageScopedUp
 	return x
 }
 
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by IDs.
+func (x *OutboundMessageScopedUpdate) AddTrackedLinkIDs(ids ...int64) *OutboundMessageScopedUpdate {
+	x.b.AddTrackedLinkIDs(ids...)
+	return x
+}
+
+// AddTrackedLinks adds the "tracked_links" edges to the TrackedLink entity.
+func (x *OutboundMessageScopedUpdate) AddTrackedLinks(v ...*TrackedLink) *OutboundMessageScopedUpdate {
+	x.b.AddTrackedLinks(v...)
+	return x
+}
+
+// ClearTrackedLinks clears the "tracked_links" edges to the TrackedLink entity.
+func (x *OutboundMessageScopedUpdate) ClearTrackedLinks() *OutboundMessageScopedUpdate {
+	x.b.ClearTrackedLinks()
+	return x
+}
+
+// RemoveTrackedLinkIDs removes the "tracked_links" edge to TrackedLink entities by IDs.
+func (x *OutboundMessageScopedUpdate) RemoveTrackedLinkIDs(ids ...int64) *OutboundMessageScopedUpdate {
+	x.b.RemoveTrackedLinkIDs(ids...)
+	return x
+}
+
+// RemoveTrackedLinks removes "tracked_links" edges to TrackedLink entities.
+func (x *OutboundMessageScopedUpdate) RemoveTrackedLinks(v ...*TrackedLink) *OutboundMessageScopedUpdate {
+	x.b.RemoveTrackedLinks(v...)
+	return x
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (x *OutboundMessageScopedUpdate) SetBroadcast(v *Broadcast) *OutboundMessageScopedUpdate {
 	x.b.SetBroadcast(v)
@@ -25475,6 +25570,9 @@ func (x *OutboundMessageScopedUpdate) ClearTemplate() *OutboundMessageScopedUpda
 func (x *OutboundMessageScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyTrackedLink(ctx, m.TrackedLinksIDs()); err != nil {
+		return fmt.Errorf("tracked_links: %w", err)
+	}
 	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
 		return fmt.Errorf("broadcast: %w", err)
 	}
@@ -34016,6 +34114,454 @@ func (x *TagScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *TagScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// TrackedLinkScoped reaches TrackedLink entities of one Workspace.
+type TrackedLinkScoped struct{ s *Scoped }
+
+// TrackedLink returns the TrackedLink entities of the Workspace.
+func (s *Scoped) TrackedLink() *TrackedLinkScoped { return &TrackedLinkScoped{s: s} }
+
+// Query returns a TrackedLink query already confined to the Workspace.
+func (t *TrackedLinkScoped) Query() *TrackedLinkQuery {
+	return t.s.c.TrackedLink.Query().Where(trackedlink.WorkspaceID(t.s.ws))
+}
+
+// Get returns the TrackedLink with the id; a row of another Workspace is not found.
+func (t *TrackedLinkScoped) Get(ctx context.Context, id int64) (*TrackedLink, error) {
+	return t.Query().Where(trackedlink.ID(id)).Only(ctx)
+}
+
+// TrackedLinkScopedDeleteOne wraps TrackedLinkDeleteOne.
+type TrackedLinkScopedDeleteOne struct {
+	s *Scoped
+	b *TrackedLinkDeleteOne
+}
+
+// DeleteOneID deletes the TrackedLink with the id; a row of another Workspace is not found.
+func (t *TrackedLinkScoped) DeleteOneID(id int64) *TrackedLinkScopedDeleteOne {
+	return &TrackedLinkScopedDeleteOne{s: t.s, b: t.s.c.TrackedLink.DeleteOneID(id).Where(trackedlink.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *TrackedLinkScopedDeleteOne) Where(ps ...predicate.TrackedLink) *TrackedLinkScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *TrackedLinkScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// TrackedLinkScopedDelete wraps TrackedLinkDelete.
+type TrackedLinkScopedDelete struct {
+	s *Scoped
+	b *TrackedLinkDelete
+}
+
+// Delete deletes the TrackedLink entities of the Workspace that match the predicates.
+func (t *TrackedLinkScoped) Delete() *TrackedLinkScopedDelete {
+	return &TrackedLinkScopedDelete{s: t.s, b: t.s.c.TrackedLink.Delete().Where(trackedlink.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *TrackedLinkScopedDelete) Where(ps ...predicate.TrackedLink) *TrackedLinkScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *TrackedLinkScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// TrackedLinkScopedCreate wraps TrackedLinkCreate. It has no way to name a Workspace.
+type TrackedLinkScopedCreate struct {
+	s *Scoped
+	b *TrackedLinkCreate
+}
+
+// Create starts a TrackedLink in the Workspace.
+func (t *TrackedLinkScoped) Create() *TrackedLinkScopedCreate {
+	return &TrackedLinkScopedCreate{s: t.s, b: t.s.c.TrackedLink.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *TrackedLinkScopedCreate) SetCreatedAt(v time.Time) *TrackedLinkScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *TrackedLinkScopedCreate) SetNillableCreatedAt(v *time.Time) *TrackedLinkScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *TrackedLinkScopedCreate) SetUpdatedAt(v time.Time) *TrackedLinkScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *TrackedLinkScopedCreate) SetNillableUpdatedAt(v *time.Time) *TrackedLinkScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetOutboundMessageID sets the "outbound_message_id" field.
+func (x *TrackedLinkScopedCreate) SetOutboundMessageID(v int64) *TrackedLinkScopedCreate {
+	x.b.SetOutboundMessageID(v)
+	return x
+}
+
+// SetToken sets the "token" field.
+func (x *TrackedLinkScopedCreate) SetToken(v string) *TrackedLinkScopedCreate {
+	x.b.SetToken(v)
+	return x
+}
+
+// SetURL sets the "url" field.
+func (x *TrackedLinkScopedCreate) SetURL(v string) *TrackedLinkScopedCreate {
+	x.b.SetURL(v)
+	return x
+}
+
+// SetOutboundMessage sets the "outbound_message" edge to the OutboundMessage entity.
+func (x *TrackedLinkScopedCreate) SetOutboundMessage(v *OutboundMessage) *TrackedLinkScopedCreate {
+	x.b.SetOutboundMessage(v)
+	return x
+}
+
+func (x *TrackedLinkScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessageIDs()); err != nil {
+		return fmt.Errorf("outbound_message: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the TrackedLink.
+func (x *TrackedLinkScopedCreate) Save(ctx context.Context) (*TrackedLink, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *TrackedLinkScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// TrackedLinkScopedCreateBulk creates several TrackedLink entities of one Workspace at once.
+type TrackedLinkScopedCreateBulk struct {
+	s  *Scoped
+	xs []*TrackedLinkScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *TrackedLinkScoped) CreateBulk(xs ...*TrackedLinkScopedCreate) *TrackedLinkScopedCreateBulk {
+	return &TrackedLinkScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *TrackedLinkScopedCreateBulk) raw(ctx context.Context) (*TrackedLinkCreateBulk, error) {
+	builders := make([]*TrackedLinkCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("TrackedLink: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.TrackedLink.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the TrackedLink entities.
+func (b *TrackedLinkScopedCreateBulk) Save(ctx context.Context) ([]*TrackedLink, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *TrackedLinkScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// TrackedLinkScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type TrackedLinkScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *TrackedLinkScopedUpsert) SetUpdatedAt(v time.Time) *TrackedLinkScopedUpsert {
+	u.u.Set(trackedlink.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *TrackedLinkScopedUpsert) UpdateUpdatedAt() *TrackedLinkScopedUpsert {
+	u.u.SetExcluded(trackedlink.FieldUpdatedAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *TrackedLinkScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(trackedlink.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// TrackedLinkScopedUpsertOne is the "upsert" of one TrackedLink.
+type TrackedLinkScopedUpsertOne struct {
+	x *TrackedLinkScopedCreate
+	u *TrackedLinkUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *TrackedLinkScopedCreate) OnConflictColumns(columns ...string) *TrackedLinkScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *TrackedLinkScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *TrackedLinkScopedUpsertOne {
+	return &TrackedLinkScopedUpsertOne{x: x, u: x.b.OnConflict((&TrackedLinkScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *TrackedLinkScopedUpsertOne) UpdateNewValues() *TrackedLinkScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *TrackedLinkScopedUpsertOne) Ignore() *TrackedLinkScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *TrackedLinkScopedUpsertOne) DoNothing() *TrackedLinkScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *TrackedLinkScopedUpsertOne) Update(set func(*TrackedLinkScopedUpsert)) *TrackedLinkScopedUpsertOne {
+	u.u.Update(func(s *TrackedLinkUpsert) { set(&TrackedLinkScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *TrackedLinkScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *TrackedLinkScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// TrackedLinkScopedUpsertBulk is the "upsert" of several TrackedLink entities.
+type TrackedLinkScopedUpsertBulk struct {
+	b       *TrackedLinkScopedCreateBulk
+	t       *TrackedLinkScoped
+	columns []string
+	opts    []func(*TrackedLinkUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *TrackedLinkScopedCreateBulk) OnConflictColumns(columns ...string) *TrackedLinkScopedUpsertBulk {
+	return &TrackedLinkScopedUpsertBulk{b: b, t: &TrackedLinkScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *TrackedLinkScopedUpsertBulk) UpdateNewValues() *TrackedLinkScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *TrackedLinkUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *TrackedLinkScopedUpsertBulk) Ignore() *TrackedLinkScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *TrackedLinkUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *TrackedLinkScopedUpsertBulk) DoNothing() *TrackedLinkScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *TrackedLinkUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *TrackedLinkScopedUpsertBulk) Update(set func(*TrackedLinkScopedUpsert)) *TrackedLinkScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *TrackedLinkUpsertBulk) {
+		r.Update(func(s *TrackedLinkUpsert) { set(&TrackedLinkScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *TrackedLinkScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// TrackedLinkScopedUpdateOne wraps TrackedLinkUpdateOne. It has no way to move the row to another Workspace.
+type TrackedLinkScopedUpdateOne struct {
+	s *Scoped
+	b *TrackedLinkUpdateOne
+}
+
+// UpdateOneID updates the TrackedLink with the id; a row of another Workspace is not found.
+func (t *TrackedLinkScoped) UpdateOneID(id int64) *TrackedLinkScopedUpdateOne {
+	return &TrackedLinkScopedUpdateOne{s: t.s, b: t.s.c.TrackedLink.UpdateOneID(id).Where(trackedlink.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *TrackedLinkScopedUpdateOne) Where(ps ...predicate.TrackedLink) *TrackedLinkScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *TrackedLinkScopedUpdateOne) SetUpdatedAt(v time.Time) *TrackedLinkScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+func (x *TrackedLinkScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessageIDs()); err != nil {
+		return fmt.Errorf("outbound_message: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the TrackedLink.
+func (x *TrackedLinkScopedUpdateOne) Save(ctx context.Context) (*TrackedLink, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *TrackedLinkScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// TrackedLinkScopedUpdate wraps TrackedLinkUpdate: a conditional bulk update of one Workspace.
+type TrackedLinkScopedUpdate struct {
+	s *Scoped
+	b *TrackedLinkUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the TrackedLink entities of the Workspace that match the predicates.
+func (t *TrackedLinkScoped) Update() *TrackedLinkScopedUpdate {
+	return &TrackedLinkScopedUpdate{s: t.s, b: t.s.c.TrackedLink.Update().Where(trackedlink.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *TrackedLinkScopedUpdate) Where(ps ...predicate.TrackedLink) *TrackedLinkScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *TrackedLinkScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *TrackedLinkScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(trackedlink.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *TrackedLinkScopedUpdate) SetUpdatedAt(v time.Time) *TrackedLinkScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+func (x *TrackedLinkScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessageIDs()); err != nil {
+		return fmt.Errorf("outbound_message: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *TrackedLinkScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *TrackedLinkScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

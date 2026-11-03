@@ -128,6 +128,9 @@ func (OutboundMessage) Fields() []ent.Field {
 
 func (OutboundMessage) Edges() []ent.Edge {
 	return []ent.Edge{
+		// The short links of its text and buttons (ADR 0083) die with it.
+		edge.To("tracked_links", TrackedLink.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("broadcast", Broadcast.Type).Field("broadcast_id").Unique().
 			Annotations(entsql.OnDelete(entsql.Restrict)),
 		edge.To("automation", Automation.Type).Field("automation_id").Unique().

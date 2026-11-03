@@ -162,9 +162,9 @@ func TestATelegramStepWithAnImageSendsAPhotoWithTheCaptionAndButtons(t *testing.
 	assert.Equal(t, "https://cdn.example.com/a.png", photos[0].String("photo"))
 	assert.Equal(t, "Look <b>here</b>", photos[0].String("caption"))
 	assert.Equal(t, "HTML", photos[0].String("parse_mode"))
-	assert.JSONEq(t,
-		`{"inline_keyboard":[[{"text":"Open","url":"https://example.com/a"}],[{"text":"More","url":"https://example.com/b"}]]}`,
-		photos[0].String("reply_markup"))
+	assert.Regexp(t,
+		`^\{"inline_keyboard":\[\[\{"text":"Open","url":"https?://[^"/]+/c/[A-Za-z0-9_-]+"\}\],\[\{"text":"More","url":"https?://[^"/]+/c/[A-Za-z0-9_-]+"\}\]\]\}$`,
+		photos[0].String("reply_markup"), "the link buttons are short links (ADR 0083)")
 }
 
 func TestTurningTheLinkPreviewOffSetsTheOption(t *testing.T) {

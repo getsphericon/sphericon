@@ -2275,6 +2275,29 @@ func HasOutboundMessagesWith(preds ...predicate.OutboundMessage) predicate.Works
 	})
 }
 
+// HasTrackedLinks applies the HasEdge predicate on the "tracked_links" edge.
+func HasTrackedLinks() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, TrackedLinksTable, TrackedLinksColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTrackedLinksWith applies the HasEdge predicate on the "tracked_links" edge with a given conditions (other predicates).
+func HasTrackedLinksWith(preds ...predicate.TrackedLink) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newTrackedLinksStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasCapturedMessages applies the HasEdge predicate on the "captured_messages" edge.
 func HasCapturedMessages() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

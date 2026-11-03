@@ -717,6 +717,18 @@ func (f TagFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TagMutation", m)
 }
 
+// The TrackedLinkFunc type is an adapter to allow the use of ordinary
+// function as TrackedLink mutator.
+type TrackedLinkFunc func(context.Context, *ent.TrackedLinkMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TrackedLinkFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TrackedLinkMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TrackedLinkMutation", m)
+}
+
 // The TrackingDomainFunc type is an adapter to allow the use of ordinary
 // function as TrackingDomain mutator.
 type TrackingDomainFunc func(context.Context, *ent.TrackingDomainMutation) (ent.Value, error)

@@ -23,6 +23,7 @@ export function useEventActionLabel() {
       'automation.goal_reached': t(($) => $.eventActions.automationGoalReached),
       'automation.exited': t(($) => $.eventActions.automationExited),
       'telegram.bound': t(($) => $.eventActions.telegramBound),
+      'telegram.clicked': t(($) => $.eventActions.telegramClicked),
       'telegram.received': t(($) => $.eventActions.telegramReceived),
       'telegram.unbound': t(($) => $.eventActions.telegramUnbound),
       'telegram.unsubscribed': t(($) => $.eventActions.telegramUnsubscribed),

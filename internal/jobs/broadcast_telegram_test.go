@@ -190,9 +190,9 @@ func TestATelegramBroadcastSendsItsImageButtonsAndUnsubscribeButton(t *testing.T
 	require.Len(t, photos, 1)
 	assert.Equal(t, "https://cdn.example.com/a.png", photos[0].String("photo"))
 	assert.Equal(t, "Look <b>here</b>", photos[0].String("caption"))
-	assert.JSONEq(t,
-		`{"inline_keyboard":[[{"text":"Open","url":"https://example.com/a"}],[{"text":"Stop news","callback_data":"unsubscribe"}]]}`,
-		photos[0].String("reply_markup"))
+	assert.Regexp(t,
+		`^\{"inline_keyboard":\[\[\{"text":"Open","url":"https?://[^"/]+/c/[A-Za-z0-9_-]+"\}\],\[\{"callback_data":"unsubscribe","text":"Stop news"\}\]\]\}$`,
+		photos[0].String("reply_markup"), "the link button is a short link (ADR 0083)")
 	sends := env.Telegram.RequestsOf(telegramtest.SendMessage)
 	require.Len(t, sends, 1)
 	assert.JSONEq(t, `{"is_disabled":true}`, sends[0].String("link_preview_options"))

@@ -141,6 +141,19 @@ func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request,
 	for i, b := range content.Buttons {
 		buttons[i] = messaging.TelegramButton{Label: b.Label, URL: b.URL}
 	}
+	// Every link of the text and every button URL becomes a short tracked link (ADR 0083). It runs
+	// last, so the lengths above are those of what the person reads: a link's href counts for none.
+	unsub, _ := vars[unsubscribeURLTag].(string)
+	links, err := c.m.shortLinksFor(ctx, s, messageID, unsub)
+	if err != nil {
+		return nil, err
+	}
+	if text, err = links.text(ctx, text); err != nil {
+		return nil, err
+	}
+	if buttons, err = links.buttons(ctx, buttons); err != nil {
+		return nil, err
+	}
 	return telegramMessage{text: text, imageURL: content.ImageURL, buttons: buttons, noLinkPreview: content.NoLinkPreview, unsubscribeButton: content.UnsubscribeButton}, nil
 }
 

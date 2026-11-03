@@ -61,6 +61,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -1414,6 +1415,29 @@ func init() {
 	tagDescName := tagFields[1].Descriptor()
 	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tag.NameValidator = tagDescName.Validators[0].(func(string) error)
+	trackedlinkMixin := schema.TrackedLink{}.Mixin()
+	trackedlinkMixinFields0 := trackedlinkMixin[0].Fields()
+	_ = trackedlinkMixinFields0
+	trackedlinkFields := schema.TrackedLink{}.Fields()
+	_ = trackedlinkFields
+	// trackedlinkDescCreatedAt is the schema descriptor for created_at field.
+	trackedlinkDescCreatedAt := trackedlinkMixinFields0[0].Descriptor()
+	// trackedlink.DefaultCreatedAt holds the default value on creation for the created_at field.
+	trackedlink.DefaultCreatedAt = trackedlinkDescCreatedAt.Default.(func() time.Time)
+	// trackedlinkDescUpdatedAt is the schema descriptor for updated_at field.
+	trackedlinkDescUpdatedAt := trackedlinkMixinFields0[1].Descriptor()
+	// trackedlink.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	trackedlink.DefaultUpdatedAt = trackedlinkDescUpdatedAt.Default.(func() time.Time)
+	// trackedlink.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	trackedlink.UpdateDefaultUpdatedAt = trackedlinkDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// trackedlinkDescToken is the schema descriptor for token field.
+	trackedlinkDescToken := trackedlinkFields[2].Descriptor()
+	// trackedlink.TokenValidator is a validator for the "token" field. It is called by the builders before save.
+	trackedlink.TokenValidator = trackedlinkDescToken.Validators[0].(func(string) error)
+	// trackedlinkDescURL is the schema descriptor for url field.
+	trackedlinkDescURL := trackedlinkFields[3].Descriptor()
+	// trackedlink.URLValidator is a validator for the "url" field. It is called by the builders before save.
+	trackedlink.URLValidator = trackedlinkDescURL.Validators[0].(func(string) error)
 	trackingdomainMixin := schema.TrackingDomain{}.Mixin()
 	trackingdomainMixinFields0 := trackingdomainMixin[0].Fields()
 	_ = trackingdomainMixinFields0

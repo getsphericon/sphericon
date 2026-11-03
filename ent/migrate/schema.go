@@ -2545,6 +2545,43 @@ var (
 			},
 		},
 	}
+	// TrackedLinksColumns holds the columns for the "tracked_links" table.
+	TrackedLinksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "token", Type: field.TypeString, Unique: true},
+		{Name: "url", Type: field.TypeString, Size: 2147483647},
+		{Name: "outbound_message_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// TrackedLinksTable holds the schema information for the "tracked_links" table.
+	TrackedLinksTable = &schema.Table{
+		Name:       "tracked_links",
+		Columns:    TrackedLinksColumns,
+		PrimaryKey: []*schema.Column{TrackedLinksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tracked_links_outbound_messages_tracked_links",
+				Columns:    []*schema.Column{TrackedLinksColumns[5]},
+				RefColumns: []*schema.Column{OutboundMessagesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "tracked_links_workspaces_tracked_links",
+				Columns:    []*schema.Column{TrackedLinksColumns[6]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tracked_links_outbound_message_id",
+				Unique:  false,
+				Columns: []*schema.Column{TrackedLinksColumns[5]},
+			},
+		},
+	}
 	// TrackingDomainsColumns holds the columns for the "tracking_domains" table.
 	TrackingDomainsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2967,6 +3004,7 @@ var (
 		StartTokensTable,
 		SuppressionsTable,
 		TagsTable,
+		TrackedLinksTable,
 		TrackingDomainsTable,
 		TrackingHostChangesTable,
 		UnsubscribesTable,
@@ -3335,6 +3373,11 @@ func init() {
 	TagsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	TagsTable.Annotation = &entsql.Annotation{
 		Table: "tags",
+	}
+	TrackedLinksTable.ForeignKeys[0].RefTable = OutboundMessagesTable
+	TrackedLinksTable.ForeignKeys[1].RefTable = WorkspacesTable
+	TrackedLinksTable.Annotation = &entsql.Annotation{
+		Table: "tracked_links",
 	}
 	TrackingDomainsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	TrackingDomainsTable.Annotation = &entsql.Annotation{

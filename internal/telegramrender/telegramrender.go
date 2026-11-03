@@ -7,6 +7,7 @@ package telegramrender
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"strings"
 	"unicode/utf16"
@@ -245,3 +246,39 @@ func VisibleLength(markup string) int {
 // WrittenLength is the length of text as written, in UTF-16 code units, the way an editor counts
 // it. A text longer than MaxText is refused where a send is armed.
 func WrittenLength(text string) int { return len(utf16.Encode([]rune(text))) }
+
+// RewriteLinks returns the sanitized markup with the href of every `a` replaced by what rewrite
+// returns for it, and the rest untouched: the Outbound send turns the links into short tracked ones
+// (ADR 0083). It is for the output of Render, whose anchors are all `<a href="…">`.
+func RewriteLinks(markup string, rewrite func(href string) (string, error)) (string, error) {
+	z := html.NewTokenizer(strings.NewReader(markup))
+	var b strings.Builder
+	for {
+		switch z.Next() {
+		case html.ErrorToken:
+			if errors.Is(z.Err(), io.EOF) {
+				return b.String(), nil
+			}
+			return "", z.Err()
+		case html.StartTagToken:
+			tok := z.Token()
+			if tok.Data != "a" {
+				b.Write(z.Raw())
+				continue
+			}
+			var href string
+			for _, a := range tok.Attr {
+				if a.Key == "href" {
+					href = a.Val
+				}
+			}
+			href, err := rewrite(href)
+			if err != nil {
+				return "", err
+			}
+			b.WriteString(`<a href="` + escapeAttr(href) + `">`)
+		default:
+			b.Write(z.Raw())
+		}
+	}
+}

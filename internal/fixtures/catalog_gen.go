@@ -2247,6 +2247,14 @@ const (
 	TokenGlobexName = "Globex token"
 	// TokenGlobexPrefix is from fixtures/api_tokens.
 	TokenGlobexPrefix = "globextok001"
+	// TrackedLinkAcmeID is from fixtures/tracked_links.
+	TrackedLinkAcmeID = 1
+	// TrackedLinkAcmeURL is from fixtures/tracked_links.
+	TrackedLinkAcmeURL = "https://example.com/acme"
+	// TrackedLinkGlobexID is from fixtures/tracked_links.
+	TrackedLinkGlobexID = 900
+	// TrackedLinkGlobexURL is from fixtures/tracked_links.
+	TrackedLinkGlobexURL = "https://example.com/globex"
 	// TrackingDomainAcmeHost is from fixtures/tracking_domains.
 	TrackingDomainAcmeHost = "t.acme.com"
 	// TrackingDomainAcmeID is from fixtures/tracking_domains.

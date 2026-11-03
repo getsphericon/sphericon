@@ -47,6 +47,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
@@ -932,6 +933,21 @@ func (_c *WorkspaceCreate) AddOutboundMessages(v ...*OutboundMessage) *Workspace
 		ids[i] = v[i].ID
 	}
 	return _c.AddOutboundMessageIDs(ids...)
+}
+
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by IDs.
+func (_c *WorkspaceCreate) AddTrackedLinkIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddTrackedLinkIDs(ids...)
+	return _c
+}
+
+// AddTrackedLinks adds the "tracked_links" edges to the TrackedLink entity.
+func (_c *WorkspaceCreate) AddTrackedLinks(v ...*TrackedLink) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddTrackedLinkIDs(ids...)
 }
 
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
@@ -1855,6 +1871,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.TrackedLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackedLinksTable,
+			Columns: []string{workspace.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

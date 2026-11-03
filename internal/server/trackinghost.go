@@ -88,9 +88,10 @@ func isTrackerPath(p string) bool {
 	return p == "/t.js" || isCollectPath(p)
 }
 
-// isLinkPath is the link surface of /e/: open, click, unsubscribe and confirm.
+// isLinkPath is the link surface: /e/ open, click, unsubscribe and confirm, and /c/, the short
+// tracked link of a Telegram message.
 func isLinkPath(p string) bool {
-	for _, prefix := range []string{"/e/o/", "/e/c/", "/e/u/", "/e/confirm/"} {
+	for _, prefix := range []string{"/e/o/", "/e/c/", "/e/u/", "/e/confirm/", "/c/"} {
 		if strings.HasPrefix(p, prefix) {
 			return true
 		}

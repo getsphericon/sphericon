@@ -137,6 +137,8 @@ const (
 	EdgeConfirmations = "confirmations"
 	// EdgeOutboundMessages holds the string denoting the outbound_messages edge name in mutations.
 	EdgeOutboundMessages = "outbound_messages"
+	// EdgeTrackedLinks holds the string denoting the tracked_links edge name in mutations.
+	EdgeTrackedLinks = "tracked_links"
 	// EdgeCapturedMessages holds the string denoting the captured_messages edge name in mutations.
 	EdgeCapturedMessages = "captured_messages"
 	// EdgeMemberships holds the string denoting the memberships edge name in mutations.
@@ -396,6 +398,13 @@ const (
 	OutboundMessagesInverseTable = "outbound_messages"
 	// OutboundMessagesColumn is the table column denoting the outbound_messages relation/edge.
 	OutboundMessagesColumn = "workspace_id"
+	// TrackedLinksTable is the table that holds the tracked_links relation/edge.
+	TrackedLinksTable = "tracked_links"
+	// TrackedLinksInverseTable is the table name for the TrackedLink entity.
+	// It exists in this package in order to avoid circular dependency with the "trackedlink" package.
+	TrackedLinksInverseTable = "tracked_links"
+	// TrackedLinksColumn is the table column denoting the tracked_links relation/edge.
+	TrackedLinksColumn = "workspace_id"
 	// CapturedMessagesTable is the table that holds the captured_messages relation/edge.
 	CapturedMessagesTable = "captured_messages"
 	// CapturedMessagesInverseTable is the table name for the CapturedMessage entity.
@@ -1168,6 +1177,20 @@ func ByOutboundMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption 
 	}
 }
 
+// ByTrackedLinksCount orders the results by tracked_links count.
+func ByTrackedLinksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTrackedLinksStep(), opts...)
+	}
+}
+
+// ByTrackedLinks orders the results by tracked_links terms.
+func ByTrackedLinks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTrackedLinksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByCapturedMessagesCount orders the results by captured_messages count.
 func ByCapturedMessagesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1494,6 +1517,13 @@ func newOutboundMessagesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(OutboundMessagesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, OutboundMessagesTable, OutboundMessagesColumn),
+	)
+}
+func newTrackedLinksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TrackedLinksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TrackedLinksTable, TrackedLinksColumn),
 	)
 }
 func newCapturedMessagesStep() *sqlgraph.Step {

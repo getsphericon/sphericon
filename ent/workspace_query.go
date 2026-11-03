@@ -50,6 +50,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
@@ -100,6 +101,7 @@ type WorkspaceQuery struct {
 	withUnsubscribes        *UnsubscribeQuery
 	withConfirmations       *ConfirmationQuery
 	withOutboundMessages    *OutboundMessageQuery
+	withTrackedLinks        *TrackedLinkQuery
 	withCapturedMessages    *CapturedMessageQuery
 	withMemberships         *MembershipQuery
 	withInvitations         *InvitationQuery
@@ -913,6 +915,28 @@ func (_q *WorkspaceQuery) QueryOutboundMessages() *OutboundMessageQuery {
 	return query
 }
 
+// QueryTrackedLinks chains the current query on the "tracked_links" edge.
+func (_q *WorkspaceQuery) QueryTrackedLinks() *TrackedLinkQuery {
+	query := (&TrackedLinkClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(trackedlink.Table, trackedlink.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.TrackedLinksTable, workspace.TrackedLinksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryCapturedMessages chains the current query on the "captured_messages" edge.
 func (_q *WorkspaceQuery) QueryCapturedMessages() *CapturedMessageQuery {
 	query := (&CapturedMessageClient{config: _q.config}).Query()
@@ -1272,6 +1296,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withUnsubscribes:        _q.withUnsubscribes.Clone(),
 		withConfirmations:       _q.withConfirmations.Clone(),
 		withOutboundMessages:    _q.withOutboundMessages.Clone(),
+		withTrackedLinks:        _q.withTrackedLinks.Clone(),
 		withCapturedMessages:    _q.withCapturedMessages.Clone(),
 		withMemberships:         _q.withMemberships.Clone(),
 		withInvitations:         _q.withInvitations.Clone(),
@@ -1670,6 +1695,17 @@ func (_q *WorkspaceQuery) WithOutboundMessages(opts ...func(*OutboundMessageQuer
 	return _q
 }
 
+// WithTrackedLinks tells the query-builder to eager-load the nodes that are connected to
+// the "tracked_links" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithTrackedLinks(opts ...func(*TrackedLinkQuery)) *WorkspaceQuery {
+	query := (&TrackedLinkClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withTrackedLinks = query
+	return _q
+}
+
 // WithCapturedMessages tells the query-builder to eager-load the nodes that are connected to
 // the "captured_messages" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *WorkspaceQuery) WithCapturedMessages(opts ...func(*CapturedMessageQuery)) *WorkspaceQuery {
@@ -1814,7 +1850,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [41]bool{
+		loadedTypes = [42]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -1850,6 +1886,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withUnsubscribes != nil,
 			_q.withConfirmations != nil,
 			_q.withOutboundMessages != nil,
+			_q.withTrackedLinks != nil,
 			_q.withCapturedMessages != nil,
 			_q.withMemberships != nil,
 			_q.withInvitations != nil,
@@ -2127,6 +2164,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadOutboundMessages(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.OutboundMessages = []*OutboundMessage{} },
 			func(n *Workspace, e *OutboundMessage) { n.Edges.OutboundMessages = append(n.Edges.OutboundMessages, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withTrackedLinks; query != nil {
+		if err := _q.loadTrackedLinks(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.TrackedLinks = []*TrackedLink{} },
+			func(n *Workspace, e *TrackedLink) { n.Edges.TrackedLinks = append(n.Edges.TrackedLinks, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -3210,6 +3254,36 @@ func (_q *WorkspaceQuery) loadOutboundMessages(ctx context.Context, query *Outbo
 	}
 	query.Where(predicate.OutboundMessage(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.OutboundMessagesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadTrackedLinks(ctx context.Context, query *TrackedLinkQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *TrackedLink)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(trackedlink.FieldWorkspaceID)
+	}
+	query.Where(predicate.TrackedLink(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.TrackedLinksColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

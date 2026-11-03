@@ -73,6 +73,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -155,6 +156,7 @@ const (
 	TypeStartToken           = "StartToken"
 	TypeSuppression          = "Suppression"
 	TypeTag                  = "Tag"
+	TypeTrackedLink          = "TrackedLink"
 	TypeTrackingDomain       = "TrackingDomain"
 	TypeTrackingHostChange   = "TrackingHostChange"
 	TypeUnsubscribe          = "Unsubscribe"
@@ -36304,6 +36306,9 @@ type OutboundMessageMutation struct {
 	clearedFields              map[string]struct{}
 	workspace                  *int64
 	clearedworkspace           bool
+	tracked_links              map[int64]struct{}
+	removedtracked_links       map[int64]struct{}
+	clearedtracked_links       bool
 	broadcast                  *int64
 	clearedbroadcast           bool
 	automation                 *int64
@@ -37681,6 +37686,60 @@ func (m *OutboundMessageMutation) ResetWorkspace() {
 	m.clearedworkspace = false
 }
 
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by ids.
+func (m *OutboundMessageMutation) AddTrackedLinkIDs(ids ...int64) {
+	if m.tracked_links == nil {
+		m.tracked_links = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.tracked_links[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTrackedLinks clears the "tracked_links" edge to the TrackedLink entity.
+func (m *OutboundMessageMutation) ClearTrackedLinks() {
+	m.clearedtracked_links = true
+}
+
+// TrackedLinksCleared reports if the "tracked_links" edge to the TrackedLink entity was cleared.
+func (m *OutboundMessageMutation) TrackedLinksCleared() bool {
+	return m.clearedtracked_links
+}
+
+// RemoveTrackedLinkIDs removes the "tracked_links" edge to the TrackedLink entity by IDs.
+func (m *OutboundMessageMutation) RemoveTrackedLinkIDs(ids ...int64) {
+	if m.removedtracked_links == nil {
+		m.removedtracked_links = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.tracked_links, ids[i])
+		m.removedtracked_links[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTrackedLinks returns the removed IDs of the "tracked_links" edge to the TrackedLink entity.
+func (m *OutboundMessageMutation) RemovedTrackedLinksIDs() (ids []int64) {
+	for id := range m.removedtracked_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TrackedLinksIDs returns the "tracked_links" edge IDs in the mutation.
+func (m *OutboundMessageMutation) TrackedLinksIDs() (ids []int64) {
+	for id := range m.tracked_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTrackedLinks resets all changes to the "tracked_links" edge.
+func (m *OutboundMessageMutation) ResetTrackedLinks() {
+	m.tracked_links = nil
+	m.clearedtracked_links = false
+	m.removedtracked_links = nil
+}
+
 // ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
 func (m *OutboundMessageMutation) ClearBroadcast() {
 	m.clearedbroadcast = true
@@ -38571,9 +38630,12 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OutboundMessageMutation) AddedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.workspace != nil {
 		edges = append(edges, outboundmessage.EdgeWorkspace)
+	}
+	if m.tracked_links != nil {
+		edges = append(edges, outboundmessage.EdgeTrackedLinks)
 	}
 	if m.broadcast != nil {
 		edges = append(edges, outboundmessage.EdgeBroadcast)
@@ -38607,6 +38669,12 @@ func (m *OutboundMessageMutation) AddedIDs(name string) []ent.Value {
 		if id := m.workspace; id != nil {
 			return []ent.Value{*id}
 		}
+	case outboundmessage.EdgeTrackedLinks:
+		ids := make([]ent.Value, 0, len(m.tracked_links))
+		for id := range m.tracked_links {
+			ids = append(ids, id)
+		}
+		return ids
 	case outboundmessage.EdgeBroadcast:
 		if id := m.broadcast; id != nil {
 			return []ent.Value{*id}
@@ -38641,21 +38709,35 @@ func (m *OutboundMessageMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OutboundMessageMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
+	if m.removedtracked_links != nil {
+		edges = append(edges, outboundmessage.EdgeTrackedLinks)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *OutboundMessageMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case outboundmessage.EdgeTrackedLinks:
+		ids := make([]ent.Value, 0, len(m.removedtracked_links))
+		for id := range m.removedtracked_links {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OutboundMessageMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.clearedworkspace {
 		edges = append(edges, outboundmessage.EdgeWorkspace)
+	}
+	if m.clearedtracked_links {
+		edges = append(edges, outboundmessage.EdgeTrackedLinks)
 	}
 	if m.clearedbroadcast {
 		edges = append(edges, outboundmessage.EdgeBroadcast)
@@ -38687,6 +38769,8 @@ func (m *OutboundMessageMutation) EdgeCleared(name string) bool {
 	switch name {
 	case outboundmessage.EdgeWorkspace:
 		return m.clearedworkspace
+	case outboundmessage.EdgeTrackedLinks:
+		return m.clearedtracked_links
 	case outboundmessage.EdgeBroadcast:
 		return m.clearedbroadcast
 	case outboundmessage.EdgeAutomation:
@@ -38743,6 +38827,9 @@ func (m *OutboundMessageMutation) ResetEdge(name string) error {
 	switch name {
 	case outboundmessage.EdgeWorkspace:
 		m.ResetWorkspace()
+		return nil
+	case outboundmessage.EdgeTrackedLinks:
+		m.ResetTrackedLinks()
 		return nil
 	case outboundmessage.EdgeBroadcast:
 		m.ResetBroadcast()
@@ -57718,6 +57805,711 @@ func (m *TagMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Tag edge %s", name)
 }
 
+// TrackedLinkMutation represents an operation that mutates the TrackedLink nodes in the graph.
+type TrackedLinkMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *int64
+	created_at              *time.Time
+	updated_at              *time.Time
+	token                   *string
+	url                     *string
+	clearedFields           map[string]struct{}
+	workspace               *int64
+	clearedworkspace        bool
+	outbound_message        *int64
+	clearedoutbound_message bool
+	done                    bool
+	oldValue                func(context.Context) (*TrackedLink, error)
+	predicates              []predicate.TrackedLink
+}
+
+var _ ent.Mutation = (*TrackedLinkMutation)(nil)
+
+// trackedlinkOption allows management of the mutation configuration using functional options.
+type trackedlinkOption func(*TrackedLinkMutation)
+
+// newTrackedLinkMutation creates new mutation for the TrackedLink entity.
+func newTrackedLinkMutation(c config, op Op, opts ...trackedlinkOption) *TrackedLinkMutation {
+	m := &TrackedLinkMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTrackedLink,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTrackedLinkID sets the ID field of the mutation.
+func withTrackedLinkID(id int64) trackedlinkOption {
+	return func(m *TrackedLinkMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *TrackedLink
+		)
+		m.oldValue = func(ctx context.Context) (*TrackedLink, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().TrackedLink.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTrackedLink sets the old TrackedLink of the mutation.
+func withTrackedLink(node *TrackedLink) trackedlinkOption {
+	return func(m *TrackedLinkMutation) {
+		m.oldValue = func(context.Context) (*TrackedLink, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TrackedLinkMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TrackedLinkMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of TrackedLink entities.
+func (m *TrackedLinkMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *TrackedLinkMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *TrackedLinkMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().TrackedLink.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *TrackedLinkMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *TrackedLinkMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the TrackedLink entity.
+// If the TrackedLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackedLinkMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *TrackedLinkMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *TrackedLinkMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *TrackedLinkMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the TrackedLink entity.
+// If the TrackedLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackedLinkMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *TrackedLinkMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *TrackedLinkMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *TrackedLinkMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the TrackedLink entity.
+// If the TrackedLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackedLinkMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *TrackedLinkMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetOutboundMessageID sets the "outbound_message_id" field.
+func (m *TrackedLinkMutation) SetOutboundMessageID(i int64) {
+	m.outbound_message = &i
+}
+
+// OutboundMessageID returns the value of the "outbound_message_id" field in the mutation.
+func (m *TrackedLinkMutation) OutboundMessageID() (r int64, exists bool) {
+	v := m.outbound_message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutboundMessageID returns the old "outbound_message_id" field's value of the TrackedLink entity.
+// If the TrackedLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackedLinkMutation) OldOutboundMessageID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutboundMessageID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutboundMessageID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutboundMessageID: %w", err)
+	}
+	return oldValue.OutboundMessageID, nil
+}
+
+// ResetOutboundMessageID resets all changes to the "outbound_message_id" field.
+func (m *TrackedLinkMutation) ResetOutboundMessageID() {
+	m.outbound_message = nil
+}
+
+// SetToken sets the "token" field.
+func (m *TrackedLinkMutation) SetToken(s string) {
+	m.token = &s
+}
+
+// Token returns the value of the "token" field in the mutation.
+func (m *TrackedLinkMutation) Token() (r string, exists bool) {
+	v := m.token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldToken returns the old "token" field's value of the TrackedLink entity.
+// If the TrackedLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackedLinkMutation) OldToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldToken: %w", err)
+	}
+	return oldValue.Token, nil
+}
+
+// ResetToken resets all changes to the "token" field.
+func (m *TrackedLinkMutation) ResetToken() {
+	m.token = nil
+}
+
+// SetURL sets the "url" field.
+func (m *TrackedLinkMutation) SetURL(s string) {
+	m.url = &s
+}
+
+// URL returns the value of the "url" field in the mutation.
+func (m *TrackedLinkMutation) URL() (r string, exists bool) {
+	v := m.url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldURL returns the old "url" field's value of the TrackedLink entity.
+// If the TrackedLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TrackedLinkMutation) OldURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldURL: %w", err)
+	}
+	return oldValue.URL, nil
+}
+
+// ResetURL resets all changes to the "url" field.
+func (m *TrackedLinkMutation) ResetURL() {
+	m.url = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *TrackedLinkMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[trackedlink.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *TrackedLinkMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *TrackedLinkMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *TrackedLinkMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearOutboundMessage clears the "outbound_message" edge to the OutboundMessage entity.
+func (m *TrackedLinkMutation) ClearOutboundMessage() {
+	m.clearedoutbound_message = true
+	m.clearedFields[trackedlink.FieldOutboundMessageID] = struct{}{}
+}
+
+// OutboundMessageCleared reports if the "outbound_message" edge to the OutboundMessage entity was cleared.
+func (m *TrackedLinkMutation) OutboundMessageCleared() bool {
+	return m.clearedoutbound_message
+}
+
+// OutboundMessageIDs returns the "outbound_message" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OutboundMessageID instead. It exists only for internal usage by the builders.
+func (m *TrackedLinkMutation) OutboundMessageIDs() (ids []int64) {
+	if id := m.outbound_message; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOutboundMessage resets all changes to the "outbound_message" edge.
+func (m *TrackedLinkMutation) ResetOutboundMessage() {
+	m.outbound_message = nil
+	m.clearedoutbound_message = false
+}
+
+// Where appends a list predicates to the TrackedLinkMutation builder.
+func (m *TrackedLinkMutation) Where(ps ...predicate.TrackedLink) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the TrackedLinkMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TrackedLinkMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.TrackedLink, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *TrackedLinkMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TrackedLinkMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (TrackedLink).
+func (m *TrackedLinkMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *TrackedLinkMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.created_at != nil {
+		fields = append(fields, trackedlink.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, trackedlink.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, trackedlink.FieldWorkspaceID)
+	}
+	if m.outbound_message != nil {
+		fields = append(fields, trackedlink.FieldOutboundMessageID)
+	}
+	if m.token != nil {
+		fields = append(fields, trackedlink.FieldToken)
+	}
+	if m.url != nil {
+		fields = append(fields, trackedlink.FieldURL)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *TrackedLinkMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case trackedlink.FieldCreatedAt:
+		return m.CreatedAt()
+	case trackedlink.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case trackedlink.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case trackedlink.FieldOutboundMessageID:
+		return m.OutboundMessageID()
+	case trackedlink.FieldToken:
+		return m.Token()
+	case trackedlink.FieldURL:
+		return m.URL()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *TrackedLinkMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case trackedlink.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case trackedlink.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case trackedlink.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case trackedlink.FieldOutboundMessageID:
+		return m.OldOutboundMessageID(ctx)
+	case trackedlink.FieldToken:
+		return m.OldToken(ctx)
+	case trackedlink.FieldURL:
+		return m.OldURL(ctx)
+	}
+	return nil, fmt.Errorf("unknown TrackedLink field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TrackedLinkMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case trackedlink.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case trackedlink.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case trackedlink.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case trackedlink.FieldOutboundMessageID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutboundMessageID(v)
+		return nil
+	case trackedlink.FieldToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetToken(v)
+		return nil
+	case trackedlink.FieldURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetURL(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TrackedLink field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *TrackedLinkMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *TrackedLinkMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TrackedLinkMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown TrackedLink numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *TrackedLinkMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *TrackedLinkMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TrackedLinkMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown TrackedLink nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *TrackedLinkMutation) ResetField(name string) error {
+	switch name {
+	case trackedlink.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case trackedlink.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case trackedlink.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case trackedlink.FieldOutboundMessageID:
+		m.ResetOutboundMessageID()
+		return nil
+	case trackedlink.FieldToken:
+		m.ResetToken()
+		return nil
+	case trackedlink.FieldURL:
+		m.ResetURL()
+		return nil
+	}
+	return fmt.Errorf("unknown TrackedLink field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *TrackedLinkMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.workspace != nil {
+		edges = append(edges, trackedlink.EdgeWorkspace)
+	}
+	if m.outbound_message != nil {
+		edges = append(edges, trackedlink.EdgeOutboundMessage)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *TrackedLinkMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case trackedlink.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case trackedlink.EdgeOutboundMessage:
+		if id := m.outbound_message; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *TrackedLinkMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *TrackedLinkMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *TrackedLinkMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedworkspace {
+		edges = append(edges, trackedlink.EdgeWorkspace)
+	}
+	if m.clearedoutbound_message {
+		edges = append(edges, trackedlink.EdgeOutboundMessage)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *TrackedLinkMutation) EdgeCleared(name string) bool {
+	switch name {
+	case trackedlink.EdgeWorkspace:
+		return m.clearedworkspace
+	case trackedlink.EdgeOutboundMessage:
+		return m.clearedoutbound_message
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *TrackedLinkMutation) ClearEdge(name string) error {
+	switch name {
+	case trackedlink.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case trackedlink.EdgeOutboundMessage:
+		m.ClearOutboundMessage()
+		return nil
+	}
+	return fmt.Errorf("unknown TrackedLink unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *TrackedLinkMutation) ResetEdge(name string) error {
+	switch name {
+	case trackedlink.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case trackedlink.EdgeOutboundMessage:
+		m.ResetOutboundMessage()
+		return nil
+	}
+	return fmt.Errorf("unknown TrackedLink edge %s", name)
+}
+
 // TrackingDomainMutation represents an operation that mutates the TrackingDomain nodes in the graph.
 type TrackingDomainMutation struct {
 	config
@@ -66180,6 +66972,9 @@ type WorkspaceMutation struct {
 	outbound_messages            map[int64]struct{}
 	removedoutbound_messages     map[int64]struct{}
 	clearedoutbound_messages     bool
+	tracked_links                map[int64]struct{}
+	removedtracked_links         map[int64]struct{}
+	clearedtracked_links         bool
 	captured_messages            map[int64]struct{}
 	removedcaptured_messages     map[int64]struct{}
 	clearedcaptured_messages     bool
@@ -69423,6 +70218,60 @@ func (m *WorkspaceMutation) ResetOutboundMessages() {
 	m.removedoutbound_messages = nil
 }
 
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by ids.
+func (m *WorkspaceMutation) AddTrackedLinkIDs(ids ...int64) {
+	if m.tracked_links == nil {
+		m.tracked_links = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.tracked_links[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTrackedLinks clears the "tracked_links" edge to the TrackedLink entity.
+func (m *WorkspaceMutation) ClearTrackedLinks() {
+	m.clearedtracked_links = true
+}
+
+// TrackedLinksCleared reports if the "tracked_links" edge to the TrackedLink entity was cleared.
+func (m *WorkspaceMutation) TrackedLinksCleared() bool {
+	return m.clearedtracked_links
+}
+
+// RemoveTrackedLinkIDs removes the "tracked_links" edge to the TrackedLink entity by IDs.
+func (m *WorkspaceMutation) RemoveTrackedLinkIDs(ids ...int64) {
+	if m.removedtracked_links == nil {
+		m.removedtracked_links = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.tracked_links, ids[i])
+		m.removedtracked_links[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTrackedLinks returns the removed IDs of the "tracked_links" edge to the TrackedLink entity.
+func (m *WorkspaceMutation) RemovedTrackedLinksIDs() (ids []int64) {
+	for id := range m.removedtracked_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TrackedLinksIDs returns the "tracked_links" edge IDs in the mutation.
+func (m *WorkspaceMutation) TrackedLinksIDs() (ids []int64) {
+	for id := range m.tracked_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTrackedLinks resets all changes to the "tracked_links" edge.
+func (m *WorkspaceMutation) ResetTrackedLinks() {
+	m.tracked_links = nil
+	m.clearedtracked_links = false
+	m.removedtracked_links = nil
+}
+
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by ids.
 func (m *WorkspaceMutation) AddCapturedMessageIDs(ids ...int64) {
 	if m.captured_messages == nil {
@@ -70455,7 +71304,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 41)
+	edges := make([]string, 0, 42)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -70560,6 +71409,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.outbound_messages != nil {
 		edges = append(edges, workspace.EdgeOutboundMessages)
+	}
+	if m.tracked_links != nil {
+		edges = append(edges, workspace.EdgeTrackedLinks)
 	}
 	if m.captured_messages != nil {
 		edges = append(edges, workspace.EdgeCapturedMessages)
@@ -70796,6 +71648,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeTrackedLinks:
+		ids := make([]ent.Value, 0, len(m.tracked_links))
+		for id := range m.tracked_links {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeCapturedMessages:
 		ids := make([]ent.Value, 0, len(m.captured_messages))
 		for id := range m.captured_messages {
@@ -70838,7 +71696,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 41)
+	edges := make([]string, 0, 42)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -70943,6 +71801,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedoutbound_messages != nil {
 		edges = append(edges, workspace.EdgeOutboundMessages)
+	}
+	if m.removedtracked_links != nil {
+		edges = append(edges, workspace.EdgeTrackedLinks)
 	}
 	if m.removedcaptured_messages != nil {
 		edges = append(edges, workspace.EdgeCapturedMessages)
@@ -71179,6 +72040,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeTrackedLinks:
+		ids := make([]ent.Value, 0, len(m.removedtracked_links))
+		for id := range m.removedtracked_links {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeCapturedMessages:
 		ids := make([]ent.Value, 0, len(m.removedcaptured_messages))
 		for id := range m.removedcaptured_messages {
@@ -71221,7 +72088,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 41)
+	edges := make([]string, 0, 42)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -71327,6 +72194,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	if m.clearedoutbound_messages {
 		edges = append(edges, workspace.EdgeOutboundMessages)
 	}
+	if m.clearedtracked_links {
+		edges = append(edges, workspace.EdgeTrackedLinks)
+	}
 	if m.clearedcaptured_messages {
 		edges = append(edges, workspace.EdgeCapturedMessages)
 	}
@@ -71422,6 +72292,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedconfirmations
 	case workspace.EdgeOutboundMessages:
 		return m.clearedoutbound_messages
+	case workspace.EdgeTrackedLinks:
+		return m.clearedtracked_links
 	case workspace.EdgeCapturedMessages:
 		return m.clearedcaptured_messages
 	case workspace.EdgeMemberships:
@@ -71554,6 +72426,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeOutboundMessages:
 		m.ResetOutboundMessages()
+		return nil
+	case workspace.EdgeTrackedLinks:
+		m.ResetTrackedLinks()
 		return nil
 	case workspace.EdgeCapturedMessages:
 		m.ResetCapturedMessages()

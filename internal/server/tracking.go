@@ -9,6 +9,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/clientip"
 	"github.com/getsphericon/sphericon/internal/consent"
@@ -34,6 +36,8 @@ var pixelGIF = []byte{
 //	GET  /e/u/{token}       — unsubscribe confirm: render the SPA page, record nothing
 //	POST /e/u/{token}       — unsubscribe perform: opt the destination out of the scope
 //	GET  /e/confirm/{token} — double opt-in confirm: render the SPA page, record nothing
+//	GET  /c/{token}         — short tracked link of a Telegram message (ADR 0083): record the
+//	                          click, 302 to the URL stored with the token; unknown token: 404
 //
 // GET on the unsubscribe and confirm links is safe (ADR 0012 / RFC 8058, ADR 0013):
 // it only redirects to the confirmation page, so link scanners and security proxies
@@ -82,6 +86,26 @@ func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Trac
 			recordClick(r.Context(), client, bus, mid, dest, isMachine(r, detector))
 		}
 		http.Redirect(w, r, dest, http.StatusFound)
+	})
+
+	mux.HandleFunc("GET /c/{token}", func(w http.ResponseWriter, r *http.Request) {
+		link, err := client.TrackedLink.Query().Where(trackedlink.Token(r.PathValue("token"))).Only(r.Context())
+		switch {
+		case ent.IsNotFound(err):
+			http.NotFound(w, r)
+			return
+		case err != nil:
+			logging.FromContext(r.Context()).Error("tracking: short link lookup failed", "err", err)
+			http.Error(w, "lookup failed", http.StatusInternalServerError)
+			return
+		case !workspaceOnHost(r, link.WorkspaceID):
+			http.NotFound(w, r)
+			return
+		}
+		if limiter.RecordsTracking(r) {
+			recordClick(r.Context(), client, bus, link.OutboundMessageID, link.URL, isMachine(r, detector))
+		}
+		http.Redirect(w, r, link.URL, http.StatusFound)
 	})
 
 	mux.HandleFunc("GET /e/u/{token}", func(w http.ResponseWriter, r *http.Request) {
@@ -260,6 +284,23 @@ func isMachine(r *http.Request, detector *machine.Detector) bool {
 	return detector.IsMachine(r.Context(), clientip.UserAgentFromContext(r.Context()), clientip.FromContext(r.Context()))
 }
 
+// click is the Event of a click on dest in the message: the Channel's own, with the same facts.
+func (e engaged) click(dest string, software bool) events.DomainEvent {
+	if e.msg.Channel != outboundmessage.ChannelTelegram {
+		return e.engagement(events.NameEmailClicked, dest, software)
+	}
+	var contactID int64
+	if e.contact != nil {
+		contactID = e.contact.ID
+	}
+	return &events.TelegramClicked{
+		WorkspaceID: e.msg.WorkspaceID, ContactID: contactID, Email: e.email,
+		IntegrationID: lo.FromPtr(e.msg.IntegrationID), URL: dest,
+		BroadcastID: lo.FromPtr(e.msg.BroadcastID), AutomationID: lo.FromPtr(e.msg.AutomationID),
+		OutboundMessageID: e.msg.ID, Machine: software,
+	}
+}
+
 func recordOpen(ctx context.Context, client *ent.Client, bus *events.Bus, messageID int64, software bool) {
 	e, ok := loadEngaged(ctx, client, messageID)
 	if !ok {
@@ -289,7 +330,7 @@ func recordClick(ctx context.Context, client *ent.Client, bus *events.Bus, messa
 				return err
 			}
 		}
-		return pub.Publish(ctx, e.engagement(events.NameEmailClicked, dest, software))
+		return pub.Publish(ctx, e.click(dest, software))
 	})
 	if err != nil {
 		logging.FromContext(ctx).Error("tracking: record click failed", "message_id", messageID, "err", err)

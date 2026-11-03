@@ -163,7 +163,7 @@ func (t *Tracker) DecodeClick(token string) (messageID int64, destination string
 	if c.MessageID == 0 {
 		return 0, "", errors.New("tracking: missing mid claim")
 	}
-	if !trackable(c.Destination) {
+	if !Trackable(c.Destination) {
 		return 0, "", errors.New("tracking: missing or invalid dest claim")
 	}
 	return c.MessageID, c.Destination, nil
@@ -269,6 +269,12 @@ func (t *Tracker) ClickURL(messageID int64, dest string) (string, error) {
 	return t.baseURL + "/e/c/" + token, nil
 }
 
+// ShortURL is the short tracked link of a Telegram message's link or button (ADR 0083): the token
+// names the URL stored with the Outbound message, so nothing of the destination travels in it.
+func (t *Tracker) ShortURL(token string) string {
+	return t.baseURL + "/c/" + token
+}
+
 // UnsubscribeURL is the public link that records the scoped opt-out in target.
 func (t *Tracker) UnsubscribeURL(target UnsubTarget) (string, error) {
 	token, err := t.unsubToken(target)
@@ -357,7 +363,7 @@ func (t *Tracker) rewriteLinks(body string, messageID int64) (string, error) {
 		tok := z.Token()
 		if tt == html.StartTagToken && tok.Data == "a" {
 			for i, a := range tok.Attr {
-				if a.Key == "href" && trackable(a.Val) {
+				if a.Key == "href" && Trackable(a.Val) {
 					link, err := t.ClickURL(messageID, a.Val)
 					if err != nil {
 						return "", err
@@ -370,8 +376,8 @@ func (t *Tracker) rewriteLinks(body string, messageID int64) (string, error) {
 	}
 }
 
-// trackable reports whether a link should be routed through the click tracker.
+// Trackable reports whether a link should be routed through the click tracker.
 // Only absolute http(s) links are wrapped; mailto/tel/anchors are left alone.
-func trackable(href string) bool {
+func Trackable(href string) bool {
 	return strings.HasPrefix(href, "http://") || strings.HasPrefix(href, "https://")
 }
