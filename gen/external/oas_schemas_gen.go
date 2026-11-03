@@ -146,6 +146,7 @@ const (
 	ApiTokenScopeWebhooksRegenerate    ApiTokenScope = "webhooks:regenerate"
 	ApiTokenScopeWebhooksTest          ApiTokenScope = "webhooks:test"
 	ApiTokenScopeCustomFieldsRead      ApiTokenScope = "custom_fields:read"
+	ApiTokenScopeCustomFieldsWrite     ApiTokenScope = "custom_fields:write"
 	ApiTokenScopeSendingDomainsRead    ApiTokenScope = "sending_domains:read"
 	ApiTokenScopeTrackingDomainsRead   ApiTokenScope = "tracking_domains:read"
 	ApiTokenScopeIntegrationsRead      ApiTokenScope = "integrations:read"
@@ -188,6 +189,7 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeWebhooksRegenerate,
 		ApiTokenScopeWebhooksTest,
 		ApiTokenScopeCustomFieldsRead,
+		ApiTokenScopeCustomFieldsWrite,
 		ApiTokenScopeSendingDomainsRead,
 		ApiTokenScopeTrackingDomainsRead,
 		ApiTokenScopeIntegrationsRead,
@@ -250,6 +252,8 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeWebhooksTest:
 		return []byte(s), nil
 	case ApiTokenScopeCustomFieldsRead:
+		return []byte(s), nil
+	case ApiTokenScopeCustomFieldsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeSendingDomainsRead:
 		return []byte(s), nil
@@ -352,6 +356,9 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeCustomFieldsRead:
 		*s = ApiTokenScopeCustomFieldsRead
+		return nil
+	case ApiTokenScopeCustomFieldsWrite:
+		*s = ApiTokenScopeCustomFieldsWrite
 		return nil
 	case ApiTokenScopeSendingDomainsRead:
 		*s = ApiTokenScopeSendingDomainsRead
@@ -7578,7 +7585,11 @@ type CreateContactInput struct {
 	City OptNilString `json:"city"`
 	// Https URL of the contact's photo.
 	Avatar OptNilImageUrl `json:"avatar"`
-	// Typed custom field values keyed by the field's machine key.
+	// Typed custom field values keyed by the field's machine key. A new key's first value sets the field's
+	// type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or
+	// `2026-01-15`, the last two read in the Workspace time zone) or text. Send a date without time as a
+	// `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes as UTC and lands on the previous day
+	// east of UTC.
 	CustomFields OptNilJsonObject `json:"customFields"`
 }
 
@@ -8096,7 +8107,7 @@ type CustomFieldResource struct {
 	Key string `json:"key"`
 	// Display name.
 	Name string `json:"name"`
-	// Inferred value type.
+	// Value type: inferred from the first value, changed by an owner or admin.
 	Type CustomFieldType `json:"type"`
 	// The operators a rule leaf on this field takes, by its type.
 	RuleOperators []ConditionOperator `json:"ruleOperators"`
@@ -8175,6 +8186,8 @@ func (s *CustomFieldResource) SetCreatedAt(val Timestamp) {
 func (s *CustomFieldResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
+
+func (*CustomFieldResource) customFieldsUpdateRes() {}
 
 // A Custom field's value type.
 // Ref: #/components/schemas/CustomFieldType
@@ -8306,6 +8319,26 @@ func (*CustomFieldsListOK) customFieldsListRes() {}
 type CustomFieldsListUnauthorized ProblemDetails
 
 func (*CustomFieldsListUnauthorized) customFieldsListRes() {}
+
+type CustomFieldsUpdateBadRequest ProblemDetails
+
+func (*CustomFieldsUpdateBadRequest) customFieldsUpdateRes() {}
+
+type CustomFieldsUpdateForbidden ProblemDetails
+
+func (*CustomFieldsUpdateForbidden) customFieldsUpdateRes() {}
+
+type CustomFieldsUpdateNotFound ProblemDetails
+
+func (*CustomFieldsUpdateNotFound) customFieldsUpdateRes() {}
+
+type CustomFieldsUpdateUnauthorized ProblemDetails
+
+func (*CustomFieldsUpdateUnauthorized) customFieldsUpdateRes() {}
+
+type CustomFieldsUpdateUnprocessableEntity ProblemDetails
+
+func (*CustomFieldsUpdateUnprocessableEntity) customFieldsUpdateRes() {}
 
 // A DNS record the caller publishes to authenticate a Sending domain.
 // Ref: #/components/schemas/DnsRecord
@@ -10197,6 +10230,7 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 
 func (*InUseProblemDetails) automationsArchiveRes()    {}
 func (*InUseProblemDetails) automationsDeleteRes()     {}
+func (*InUseProblemDetails) customFieldsUpdateRes()    {}
 func (*InUseProblemDetails) integrationsArchiveRes()   {}
 func (*InUseProblemDetails) rulesDeleteRes()           {}
 func (*InUseProblemDetails) segmentsArchiveRes()       {}
@@ -12300,6 +12334,52 @@ func (o OptConsentChannel) Get() (v ConsentChannel, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptConsentChannel) Or(d ConsentChannel) ConsentChannel {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptCustomFieldType returns new OptCustomFieldType with value set to v.
+func NewOptCustomFieldType(v CustomFieldType) OptCustomFieldType {
+	return OptCustomFieldType{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptCustomFieldType is optional CustomFieldType.
+type OptCustomFieldType struct {
+	Value CustomFieldType
+	Set   bool
+}
+
+// IsSet returns true if OptCustomFieldType was set.
+func (o OptCustomFieldType) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptCustomFieldType) Reset() {
+	var v CustomFieldType
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptCustomFieldType) SetTo(v CustomFieldType) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptCustomFieldType) Get() (v CustomFieldType, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptCustomFieldType) Or(d CustomFieldType) CustomFieldType {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -14930,6 +15010,7 @@ func (*ProblemDetailsHeaders) contactsGetRes()               {}
 func (*ProblemDetailsHeaders) contactsListRes()              {}
 func (*ProblemDetailsHeaders) contactsUpdateRes()            {}
 func (*ProblemDetailsHeaders) customFieldsListRes()          {}
+func (*ProblemDetailsHeaders) customFieldsUpdateRes()        {}
 func (*ProblemDetailsHeaders) emailLintLintRes()             {}
 func (*ProblemDetailsHeaders) emailSchemaGetRes()            {}
 func (*ProblemDetailsHeaders) emailsSendRes()                {}
@@ -19586,7 +19667,11 @@ type UpdateContactInput struct {
 	City OptNilString `json:"city"`
 	// Https URL of the contact's photo.
 	Avatar OptNilImageUrl `json:"avatar"`
-	// Typed custom field values keyed by the field's machine key.
+	// Typed custom field values keyed by the field's machine key. A new key's first value sets the field's
+	// type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or
+	// `2026-01-15`, the last two read in the Workspace time zone) or text. Send a date without time as a
+	// `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes as UTC and lands on the previous day
+	// east of UTC.
 	CustomFields OptNilJsonObject `json:"customFields"`
 }
 
@@ -19708,6 +19793,35 @@ func (s *UpdateContactInput) SetAvatar(val OptNilImageUrl) {
 // SetCustomFields sets the value of CustomFields.
 func (s *UpdateContactInput) SetCustomFields(val OptNilJsonObject) {
 	s.CustomFields = val
+}
+
+// Request body for updating a custom field: its key never changes.
+// Ref: #/components/schemas/UpdateCustomFieldInput
+type UpdateCustomFieldInput struct {
+	// Display name.
+	Name OptString `json:"name"`
+	// Value type. Stored values are not rewritten: the leaves of the new type read them as they are.
+	Type OptCustomFieldType `json:"type"`
+}
+
+// GetName returns the value of Name.
+func (s *UpdateCustomFieldInput) GetName() OptString {
+	return s.Name
+}
+
+// GetType returns the value of Type.
+func (s *UpdateCustomFieldInput) GetType() OptCustomFieldType {
+	return s.Type
+}
+
+// SetName sets the value of Name.
+func (s *UpdateCustomFieldInput) SetName(val OptString) {
+	s.Name = val
+}
+
+// SetType sets the value of Type.
+func (s *UpdateCustomFieldInput) SetType(val OptCustomFieldType) {
+	s.Type = val
 }
 
 // Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep
@@ -20046,7 +20160,11 @@ type UpsertContactInput struct {
 	City OptNilString `json:"city"`
 	// Https URL of the contact's photo.
 	Avatar OptNilImageUrl `json:"avatar"`
-	// Typed custom field values keyed by the field's machine key, merged into the contact's.
+	// Typed custom field values keyed by the field's machine key, merged into the contact's. A new key's
+	// first value sets the field's type: a boolean, a number, a date (an ISO string:
+	// `2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace
+	// time zone) or text. Send a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that
+	// serializes as UTC and lands on the previous day east of UTC.
 	CustomFields OptNilJsonObject `json:"customFields"`
 }
 

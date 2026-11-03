@@ -15,6 +15,7 @@ import (
 	analytics "github.com/getsphericon/sphericon/internal/analytics"
 	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
+	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
@@ -93,67 +94,67 @@ func (c *InputsImpl) AutomationReportPeriod(source site.SiteAutomationReportsGet
 	}
 	return automationsReportPeriod
 }
-func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automations.Step {
-	var automationsStep automations.Step
-	automationsStep.Type = c.AutomationStepType(source.Type)
-	automationsStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
-	automationsStep.Subject = stringIn(source.Subject)
-	automationsStep.Body = stringIn(source.Body)
-	automationsStep.Doc = documentIn(source.Doc)
-	// automationsStep.EditorVersion: ignore
-	automationsStep.Seconds = int32In(source.Seconds)
-	automationsStep.Tag = stringIn(source.Tag)
-	automationsStep.Text = stringIn(source.Text)
-	automationsStep.UnsubscribeButton = stringIn(source.UnsubscribeButton)
-	automationsStep.ImageURL = stringIn(source.ImageUrl)
+func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automationsteps.Step {
+	var automationstepsStep automationsteps.Step
+	automationstepsStep.Type = c.AutomationStepType(source.Type)
+	automationstepsStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
+	automationstepsStep.Subject = stringIn(source.Subject)
+	automationstepsStep.Body = stringIn(source.Body)
+	automationstepsStep.Doc = documentIn(source.Doc)
+	// automationstepsStep.EditorVersion: ignore
+	automationstepsStep.Seconds = int32In(source.Seconds)
+	automationstepsStep.Tag = stringIn(source.Tag)
+	automationstepsStep.Text = stringIn(source.Text)
+	automationstepsStep.UnsubscribeButton = stringIn(source.UnsubscribeButton)
+	automationstepsStep.ImageURL = stringIn(source.ImageUrl)
 	if source.Buttons != nil {
-		automationsStep.Buttons = make([]telegramrender.Button, len(source.Buttons))
+		automationstepsStep.Buttons = make([]telegramrender.Button, len(source.Buttons))
 		for i := 0; i < len(source.Buttons); i++ {
-			automationsStep.Buttons[i] = c.TelegramButton(source.Buttons[i])
+			automationstepsStep.Buttons[i] = c.TelegramButton(source.Buttons[i])
 		}
 	}
-	automationsStep.LinkPreview = boolPtrIn(source.LinkPreview)
-	automationsStep.ID = stringIn(source.ID)
-	automationsStep.URL = stringIn(source.URL)
+	automationstepsStep.LinkPreview = boolPtrIn(source.LinkPreview)
+	automationstepsStep.ID = stringIn(source.ID)
+	automationstepsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		automationsStep.Headers = make([]httpcall.Header, len(source.Headers))
+		automationstepsStep.Headers = make([]httpcall.Header, len(source.Headers))
 		for j := 0; j < len(source.Headers); j++ {
-			automationsStep.Headers[j] = c.siteapiSiteAutomationHttpHeaderToHttpcallHeader(source.Headers[j])
+			automationstepsStep.Headers[j] = c.siteapiSiteAutomationHttpHeaderToHttpcallHeader(source.Headers[j])
 		}
 	}
-	automationsStep.Secret = stringIn(source.Secret)
-	automationsStep.ClearSecret = boolIn(source.ClearSecret)
-	return automationsStep
+	automationstepsStep.Secret = stringIn(source.Secret)
+	automationstepsStep.ClearSecret = boolIn(source.ClearSecret)
+	return automationstepsStep
 }
-func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) automations.StepType {
-	var automationsStepType automations.StepType
+func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) automationsteps.Kind {
+	var automationstepsKind automationsteps.Kind
 	switch source {
 	case site.SiteAutomationStepTypeApplyTag:
-		automationsStepType = automations.StepApplyTag
+		automationstepsKind = automationsteps.ApplyTag
 	case site.SiteAutomationStepTypeEmail:
-		automationsStepType = automations.StepEmail
+		automationstepsKind = automationsteps.Email
 	case site.SiteAutomationStepTypeHTTP:
-		automationsStepType = automations.StepHTTP
+		automationstepsKind = automationsteps.HTTP
 	case site.SiteAutomationStepTypeRemoveTag:
-		automationsStepType = automations.StepRemoveTag
+		automationstepsKind = automationsteps.RemoveTag
 	case site.SiteAutomationStepTypeTelegram:
-		automationsStepType = automations.StepTelegram
+		automationstepsKind = automationsteps.Telegram
 	case site.SiteAutomationStepTypeWait:
-		automationsStepType = automations.StepWait
+		automationstepsKind = automationsteps.Wait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return automationsStepType
+	return automationstepsKind
 }
-func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStep) []automations.Step {
-	var automationsStepList []automations.Step
+func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStep) []automationsteps.Step {
+	var automationstepsStepList []automationsteps.Step
 	if source != nil {
-		automationsStepList = make([]automations.Step, len(source))
+		automationstepsStepList = make([]automationsteps.Step, len(source))
 		for i := 0; i < len(source); i++ {
-			automationsStepList[i] = c.AutomationStep(source[i])
+			automationstepsStepList[i] = c.AutomationStep(source[i])
 		}
 	}
-	return automationsStepList
+	return automationstepsStepList
 }
 func (c *InputsImpl) AutomationUpdate(source *site.SiteUpdateAutomationInput) automations.UpdateInput {
 	var automationsUpdateInput automations.UpdateInput
@@ -311,6 +312,14 @@ func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts
 		contactsUpdateInput.Tags = listPatch((*source).Tags)
 	}
 	return contactsUpdateInput
+}
+func (c *InputsImpl) CustomFieldUpdate(source *site.SiteUpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
+	var contactsCustomFieldUpdateInput contacts.CustomFieldUpdateInput
+	if source != nil {
+		contactsCustomFieldUpdateInput.Name = stringPatch((*source).Name)
+		contactsCustomFieldUpdateInput.Type = customFieldTypePatch((*source).Type)
+	}
+	return contactsCustomFieldUpdateInput
 }
 func (c *InputsImpl) EmailBroadcastContentIn(source site.EmailBroadcastContentInput) broadcasts.EmailContentInput {
 	var broadcastsEmailContentInput broadcasts.EmailContentInput
@@ -520,7 +529,7 @@ func (c *InputsImpl) SendingDomainCreate(source *site.CreateSendingDomainInput) 
 func (c *InputsImpl) SignUp(source *site.SiteSignUpInput) signup.Input {
 	var signupInput signup.Input
 	if source != nil {
-		signupInput.Name = (*source).Name
+		signupInput.Name = string((*source).Name)
 		signupInput.Email = string((*source).Email)
 		signupInput.Password = stringIn((*source).Password)
 		signupInput.SignupItems = c.SignupAnswers((*source).SignupItems)
@@ -744,6 +753,8 @@ func (c *InputsImpl) siteapiPersonalScopeToSiteapiPersonalScope(source site.Pers
 		siteapiPersonalScope = site.PersonalScopeContactsWrite
 	case site.PersonalScopeCustomFieldsRead:
 		siteapiPersonalScope = site.PersonalScopeCustomFieldsRead
+	case site.PersonalScopeCustomFieldsWrite:
+		siteapiPersonalScope = site.PersonalScopeCustomFieldsWrite
 	case site.PersonalScopeEmailsSend:
 		siteapiPersonalScope = site.PersonalScopeEmailsSend
 	case site.PersonalScopeEnrollmentsRead:

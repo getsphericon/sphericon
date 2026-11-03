@@ -1,10 +1,10 @@
+import * as z from 'zod'
+
 import {
   siteBroadcastsCreateMutation,
   siteBroadcastsGetOptions,
   siteBroadcastsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import * as z from 'zod'
-
 import type { CreateBroadcastInput } from '../../generated/site/types.gen.ts'
 import {
   zBroadcastChannel,

@@ -38,10 +38,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
-// maxUnsubscribeButton is the longest label of a Telegram step's unsubscribe button, in characters.
-// contract-copy: the unsubscribeButton limit of the step contract, which the editor and the API enforce too
-const maxUnsubscribeButton = 64
-
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrNotFound: no such Automation in this Workspace.
