@@ -4093,6 +4093,66 @@
         "x-required-permissions": []
       }
     },
+    "/workspaces/{workspaceId}/analytics/deliverability": {
+      "get": {
+        "operationId": "SiteAnalytics_deliverability",
+        "description": "Deliverability report: the Complaint and Bounce rates of each Sending domain over the range",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "description": "Window to report over (defaults to 7d)",
+            "schema": {
+              "$ref": "#/components/schemas/SiteAnalyticsRange"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAnalyticsDeliverability"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
+      }
+    },
     "/workspaces/{workspaceId}/analytics/events": {
       "get": {
         "operationId": "SiteAnalytics_events",
@@ -16749,6 +16809,25 @@
         },
         "description": "Current contact counts (point-in-time snapshot, not range-scoped)"
       },
+      "SiteAnalyticsDeliverability": {
+        "type": "object",
+        "required": ["windowHours", "domains"],
+        "properties": {
+          "windowHours": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Length of the window, in hours"
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteSendingDomainRates"
+            },
+            "description": "The domains with traffic in the window"
+          }
+        },
+        "description": "The Sending domains' deliverability over a window: one entry per domain that had sends or\ndeliveries in it, archived ones included (ADR 0049), oldest first. Numbers only: the core\nsets no limit on them."
+      },
       "SiteAnalyticsEmail": {
         "type": "object",
         "required": [
@@ -16933,7 +17012,14 @@
       },
       "SiteAnalyticsOverview": {
         "type": "object",
-        "required": ["contacts", "automations", "current", "previous", "timeseries"],
+        "required": [
+          "contacts",
+          "automations",
+          "current",
+          "previous",
+          "timeseries",
+          "deliverability"
+        ],
         "properties": {
           "contacts": {
             "$ref": "#/components/schemas/SiteAnalyticsContacts"
@@ -16963,6 +17049,14 @@
               "$ref": "#/components/schemas/SiteAnalyticsPoint"
             },
             "description": "Daily engagement series of the current period, oldest first, one point per day in the range"
+          },
+          "deliverability": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAnalyticsDeliverability"
+              }
+            ],
+            "description": "The Sending domains' rates over the trailing 24 hours; the range does not change them"
           }
         },
         "description": "Workspace analytics overview powering the dashboard: the snapshots, and the figures of the range\nwith those of the period just before it to compare with"
@@ -21724,6 +21818,29 @@
         ],
         "description": "A reason to look at an Integration's Provider limit"
       },
+      "SiteRate": {
+        "type": "object",
+        "required": ["numerator", "denominator", "rate"],
+        "properties": {
+          "numerator": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Events counted against the rate"
+          },
+          "denominator": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The population the rate is over"
+          },
+          "rate": {
+            "type": "number",
+            "format": "double",
+            "nullable": true,
+            "description": "numerator / denominator, null when the denominator is zero, never reported as 0"
+          }
+        },
+        "description": "A rate as the (numerator, denominator, rate) triple (ADR 0011). The core shows it as it is,\nwith no display floor: the rate is null only when the denominator is zero."
+      },
       "SiteRecoveryCodes": {
         "type": "object",
         "required": ["codes"],
@@ -22392,6 +22509,41 @@
           }
         },
         "description": "The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across\nall its Integrations, Transactional included. The platform sets it; the Workspace only reads it.\nSends beyond it wait for the 24-hour window to free up; Transactional mail is never delayed. It\nis not a Provider limit, which each Integration sets for its own provider account."
+      },
+      "SiteSendingDomainRates": {
+        "type": "object",
+        "required": ["sendingDomainId", "domain", "complaintRate", "bounceRate"],
+        "properties": {
+          "sendingDomainId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Sending domain id"
+          },
+          "domain": {
+            "type": "string",
+            "description": "The domain the rates are for"
+          },
+          "complaintRate": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteRate"
+              }
+            ],
+            "description": "Complaints over delivered mail; the rate is null when nothing was delivered in the window"
+          },
+          "bounceRate": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteRate"
+              }
+            ],
+            "description": "Hard bounces over sent"
+          }
+        },
+        "description": "The Complaint and Bounce rates of one Sending domain over a window"
       },
       "SiteSendingDomainResource": {
         "type": "object",

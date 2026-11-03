@@ -13,6 +13,7 @@ import (
 // acceptance pending may call it. An operation with no entry is refused to everyone.
 var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteAnalyticsClicksByLinkOperation:                 {workspace: true},
+	siteapi.SiteAnalyticsDeliverabilityOperation:               {workspace: true},
 	siteapi.SiteAnalyticsEventsOperation:                       {workspace: true},
 	siteapi.SiteAnalyticsNewPeopleOperation:                    {workspace: true},
 	siteapi.SiteAnalyticsOpensByHourOperation:                  {workspace: true},

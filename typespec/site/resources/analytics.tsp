@@ -135,6 +135,45 @@ model SiteAbuseWarning {
   rate: float64;
 }
 
+/** A rate as the (numerator, denominator, rate) triple (ADR 0011). The core shows it as it is,
+ * with no display floor: the rate is null only when the denominator is zero. */
+model SiteRate {
+  /** Events counted against the rate */
+  numerator: int32;
+
+  /** The population the rate is over */
+  denominator: int32;
+
+  /** numerator / denominator, null when the denominator is zero, never reported as 0 */
+  rate: float64 | null;
+}
+
+/** The Complaint and Bounce rates of one Sending domain over a window */
+model SiteSendingDomainRates {
+  /** Sending domain id */
+  sendingDomainId: EntityId;
+
+  /** The domain the rates are for */
+  domain: string;
+
+  /** Complaints over delivered mail; the rate is null when nothing was delivered in the window */
+  complaintRate: SiteRate;
+
+  /** Hard bounces over sent */
+  bounceRate: SiteRate;
+}
+
+/** The Sending domains' deliverability over a window: one entry per domain that had sends or
+ * deliveries in it, archived ones included (ADR 0049), oldest first. Numbers only: the core
+ * sets no limit on them. */
+model SiteAnalyticsDeliverability {
+  /** Length of the window, in hours */
+  windowHours: int32;
+
+  /** The domains with traffic in the window */
+  domains: SiteSendingDomainRates[];
+}
+
 /** The figures of one period of Report days */
 model SiteAnalyticsPeriod {
   ...SiteReportPeriod;
@@ -159,6 +198,9 @@ model SiteAnalyticsOverview {
 
   /** Daily engagement series of the current period, oldest first, one point per day in the range */
   timeseries: SiteAnalyticsPoint[];
+
+  /** The Sending domains' rates over the trailing 24 hours; the range does not change them */
+  deliverability: SiteAnalyticsDeliverability;
 }
 
 /**
@@ -442,6 +484,17 @@ namespace SiteAnalytics {
     /** Window to aggregate over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
   ): SiteAnalyticsOpensByHour | BadRequestProblem | NotFoundProblem;
+
+  /** Deliverability report: the Complaint and Bounce rates of each Sending domain over the range */
+  @get
+  @route("/deliverability")
+  @requiresPermissions(#[])
+  op deliverability(
+    @path workspaceId: WorkspaceId,
+
+    /** Window to report over (defaults to 7d) */
+    @query range?: SiteAnalyticsRange,
+  ): SiteAnalyticsDeliverability | BadRequestProblem | NotFoundProblem;
 
   /** Events in the range, grouped by action */
   @get

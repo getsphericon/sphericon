@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest'
 
 import { Route as clicksByLinkRoute } from '../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
+import { Route as deliverabilityRoute } from '../routes/workspaces/$workspaceId/analytics/deliverability.tsx'
 import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { Route as eventsRoute } from '../routes/workspaces/$workspaceId/analytics/events.tsx'
 import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
@@ -58,6 +59,7 @@ const ANALYTICS_SECTIONS = [
   ['Email metrics', emailMetricsRoute],
   ['Clicks by link', clicksByLinkRoute],
   ['Opens by hour', opensByHourRoute],
+  ['Deliverability', deliverabilityRoute],
   ['Events', eventsRoute],
   ['Recent activity', recentActivityRoute],
 ] as const

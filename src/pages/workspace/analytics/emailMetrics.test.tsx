@@ -45,6 +45,7 @@ const overview: SiteAnalyticsOverview = {
   current: period,
   previous: { ...period, from: '2026-09-02', to: '2026-10-01' },
   timeseries: [],
+  deliverability: { windowHours: 24, domains: [] },
 }
 
 test('shows the contacts count', async () => {

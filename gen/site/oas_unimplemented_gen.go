@@ -22,6 +22,15 @@ func (UnimplementedHandler) SiteAnalyticsClicksByLink(ctx context.Context, param
 	return r, ht.ErrNotImplemented
 }
 
+// SiteAnalyticsDeliverability implements SiteAnalytics_deliverability operation.
+//
+// Deliverability report: the Complaint and Bounce rates of each Sending domain over the range.
+//
+// GET /workspaces/{workspaceId}/analytics/deliverability
+func (UnimplementedHandler) SiteAnalyticsDeliverability(ctx context.Context, params SiteAnalyticsDeliverabilityParams) (r SiteAnalyticsDeliverabilityRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAnalyticsEvents implements SiteAnalytics_events operation.
 //
 // Events in the range, grouped by action.

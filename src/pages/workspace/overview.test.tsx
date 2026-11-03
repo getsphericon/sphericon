@@ -93,6 +93,7 @@ const overview: SiteAnalyticsOverview = {
   current: period,
   previous: { ...period, from: '2026-09-02', to: '2026-10-01' },
   timeseries: [],
+  deliverability: { windowHours: 24, domains: [] },
 }
 
 const broadcast = (b: Pick<SiteBroadcastResource, 'status'> & Partial<SiteBroadcastResource>) => ({
@@ -443,6 +444,66 @@ test('the period shows what was sent through every surface and the audience', as
   await expect
     .element(screen.getByRole('link', { name: 'Email metrics' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/analytics/email-metrics?range=30d')
+})
+
+test('the Sending card shows each domain with its rates over their denominators and links to the report', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: {
+        ...overview,
+        current: { ...period, sending: { ...noSends, broadcast: 2, delivered: 2 } },
+        deliverability: {
+          windowHours: 24,
+          domains: [
+            {
+              sendingDomainId: '1',
+              domain: 'mail.acme.com',
+              complaintRate: { numerator: 1, denominator: 2, rate: 0.5 },
+              bounceRate: { numerator: 0, denominator: 2, rate: 0 },
+            },
+            {
+              sendingDomainId: '2',
+              domain: 'news.acme.com',
+              complaintRate: { numerator: 0, denominator: 0, rate: null },
+              bounceRate: { numerator: 1, denominator: 1, rate: 1 },
+            },
+          ],
+        },
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(
+      screen.getByText(
+        'mail.acme.com: Complaint rate 50% of 2 delivered · Bounce rate 0% of 2 sent',
+      ),
+    )
+    .toBeInTheDocument()
+  await expect
+    .element(
+      screen.getByText(
+        'news.acme.com: Complaint rate – of 0 delivered · Bounce rate 100% of 1 sent',
+      ),
+    )
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Deliverability' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/analytics/deliverability?range=30d')
+})
+
+test('the Sending card has no deliverability lines for a Workspace whose domains had no traffic', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: { ...overview, current: { ...period, sending: { ...noSends, broadcast: 2 } } },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Sending domains, last 24 hours')).not.toBeInTheDocument()
 })
 
 test('the contact step offers every way to add one and no single page', async () => {

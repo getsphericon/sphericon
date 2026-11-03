@@ -1562,6 +1562,22 @@ export type SiteAnalyticsContacts = {
 };
 
 /**
+ * The Sending domains' deliverability over a window: one entry per domain that had sends or
+ * deliveries in it, archived ones included (ADR 0049), oldest first. Numbers only: the core
+ * sets no limit on them.
+ */
+export type SiteAnalyticsDeliverability = {
+  /**
+   * Length of the window, in hours
+   */
+  windowHours: number;
+  /**
+   * The domains with traffic in the window
+   */
+  domains: Array<SiteSendingDomainRates>;
+};
+
+/**
  * Email engagement for the Broadcast and Automation messages sent in the selected range
  * (the send cohort; a Transactional message is not in it), from delivery logs. Each message
  * counts once, not each person. Opens/clicks are the first human open/click stamped on the
@@ -1715,6 +1731,10 @@ export type SiteAnalyticsOverview = {
    * Daily engagement series of the current period, oldest first, one point per day in the range
    */
   timeseries: Array<SiteAnalyticsPoint>;
+  /**
+   * The Sending domains' rates over the trailing 24 hours; the range does not change them
+   */
+  deliverability: SiteAnalyticsDeliverability;
 };
 
 /**
@@ -5196,6 +5216,25 @@ export const SiteProviderLimitWarning = {
 export type SiteProviderLimitWarning = typeof SiteProviderLimitWarning[keyof typeof SiteProviderLimitWarning];
 
 /**
+ * A rate as the (numerator, denominator, rate) triple (ADR 0011). The core shows it as it is,
+ * with no display floor: the rate is null only when the denominator is zero.
+ */
+export type SiteRate = {
+  /**
+   * Events counted against the rate
+   */
+  numerator: number;
+  /**
+   * The population the rate is over
+   */
+  denominator: number;
+  /**
+   * numerator / denominator, null when the denominator is zero, never reported as 0
+   */
+  rate: number | null;
+};
+
+/**
  * A fresh set of Recovery codes. They are shown only in this response.
  */
 export type SiteRecoveryCodes = {
@@ -5712,6 +5751,28 @@ export type SiteSendCap = {
    * Messages the Workspace sent over the last 24 hours
    */
   sentLast24h: number;
+};
+
+/**
+ * The Complaint and Bounce rates of one Sending domain over a window
+ */
+export type SiteSendingDomainRates = {
+  /**
+   * Sending domain id
+   */
+  sendingDomainId: EntityId;
+  /**
+   * The domain the rates are for
+   */
+  domain: string;
+  /**
+   * Complaints over delivered mail; the rate is null when nothing was delivered in the window
+   */
+  complaintRate: SiteRate;
+  /**
+   * Hard bounces over sent
+   */
+  bounceRate: SiteRate;
 };
 
 /**
@@ -9517,6 +9578,42 @@ export type SiteAnalyticsClicksByLinkResponses = {
 };
 
 export type SiteAnalyticsClicksByLinkResponse = SiteAnalyticsClicksByLinkResponses[keyof SiteAnalyticsClicksByLinkResponses];
+
+export type SiteAnalyticsDeliverabilityData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Window to report over (defaults to 7d)
+     */
+    range?: SiteAnalyticsRange;
+  };
+  url: '/workspaces/{workspaceId}/analytics/deliverability';
+};
+
+export type SiteAnalyticsDeliverabilityErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAnalyticsDeliverabilityError = SiteAnalyticsDeliverabilityErrors[keyof SiteAnalyticsDeliverabilityErrors];
+
+export type SiteAnalyticsDeliverabilityResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAnalyticsDeliverability;
+};
+
+export type SiteAnalyticsDeliverabilityResponse = SiteAnalyticsDeliverabilityResponses[keyof SiteAnalyticsDeliverabilityResponses];
 
 export type SiteAnalyticsEventsData = {
   body?: never;

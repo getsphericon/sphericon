@@ -40,6 +40,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 
 	"github.com/go-faster/jx"
@@ -78,6 +79,7 @@ import (
 // goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
+// goverter:extend nilFloat64
 // goverter:extend optNilString
 // goverter:extend optNilContactSource
 // goverter:extend optNilHoldReason
@@ -214,6 +216,14 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	// goverter:map Series Timeseries
 	AnalyticsOverviewToResource(source *analytics.Overview) *siteapi.SiteAnalyticsOverview
+	// goverter:map Window WindowHours | windowHours
+	// goverter:useEmptyOnNil:slice
+	AnalyticsDeliverabilityToResource(source analytics.Deliverability) siteapi.SiteAnalyticsDeliverability
+	// goverter:map SendingDomainID SendingDomainId
+	// goverter:map Complaint ComplaintRate
+	// goverter:map Bounce BounceRate
+	AnalyticsDomainRatesToResource(source analytics.DomainRates) siteapi.SiteSendingDomainRates
+	AnalyticsRateToResource(source reputation.Rate) siteapi.SiteRate
 	AnalyticsContactsToResource(source analytics.Contacts) siteapi.SiteAnalyticsContacts
 	AnalyticsPeriodToResource(source analytics.Period) siteapi.SiteAnalyticsPeriod
 	// goverter:map Sent SentCount
@@ -1172,4 +1182,10 @@ func optAbuseWarning(c Converter, v *abusewatch.Warning) siteapi.OptNilSiteAbuse
 // optMessageRevenue is the revenue of a message, present wherever the module read it.
 func optMessageRevenue(c Converter, r orders.Revenue) siteapi.OptSiteMessageRevenue {
 	return siteapi.NewOptSiteMessageRevenue(c.MessageRevenueToResource(r))
+}
+
+func windowHours(d time.Duration) int32 { return narrow.Int32(d / time.Hour) }
+
+func nilFloat64(v *float64) siteapi.NilFloat64 {
+	return convert.Nil[siteapi.NilFloat64](v)
 }

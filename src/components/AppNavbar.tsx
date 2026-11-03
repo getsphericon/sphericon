@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next'
 
 import { zSiteAnalyticsRange } from '../generated/site/zod.gen.ts'
 import { Route as clicksByLinkRoute } from '../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
+import { Route as deliverabilityRoute } from '../routes/workspaces/$workspaceId/analytics/deliverability.tsx'
 import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { Route as eventsRoute } from '../routes/workspaces/$workspaceId/analytics/events.tsx'
 import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
@@ -140,6 +141,7 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
     { route: emailMetricsRoute, label: t(($) => $.analytics.nav.emailMetrics) },
     { route: clicksByLinkRoute, label: t(($) => $.analytics.nav.clicksByLink) },
     { route: opensByHourRoute, label: t(($) => $.analytics.nav.opensByHour) },
+    { route: deliverabilityRoute, label: t(($) => $.analytics.nav.deliverability) },
     { route: eventsRoute, label: t(($) => $.analytics.nav.events) },
     { route: recentActivityRoute, label: t(($) => $.analytics.nav.recentActivity) },
   ]

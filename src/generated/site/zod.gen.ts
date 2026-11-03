@@ -731,18 +731,6 @@ export const zSiteAnalyticsPeriod = z.object({
 });
 
 /**
- * Workspace analytics overview powering the dashboard: the snapshots, and the figures of the range
- * with those of the period just before it to compare with
- */
-export const zSiteAnalyticsOverview = z.object({
-  contacts: zSiteAnalyticsContacts,
-  automations: zSiteAnalyticsAutomations,
-  current: zSiteAnalyticsPeriod,
-  previous: zSiteAnalyticsPeriod,
-  timeseries: z.array(zSiteAnalyticsPoint)
-});
-
-/**
  * One Report day of the Subscribed people report, zero-filled across the range
  */
 export const zSiteAnalyticsSubscribedPoint = z.object({
@@ -1728,6 +1716,16 @@ export const zSiteProviderLimitStatus = z.object({
 });
 
 /**
+ * A rate as the (numerator, denominator, rate) triple (ADR 0011). The core shows it as it is,
+ * with no display floor: the rate is null only when the denominator is zero.
+ */
+export const zSiteRate = z.object({
+  numerator: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  denominator: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  rate: z.number().nullable()
+});
+
+/**
  * A fresh set of Recovery codes. They are shown only in this response.
  */
 export const zSiteRecoveryCodes = z.object({
@@ -1931,6 +1929,39 @@ export const zSiteSecondFactorStatus = z.object({
 export const zSiteSendCap = z.object({
   perDay: zMaxPerDay,
   sentLast24h: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * The Complaint and Bounce rates of one Sending domain over a window
+ */
+export const zSiteSendingDomainRates = z.object({
+  sendingDomainId: zEntityId,
+  domain: z.string(),
+  complaintRate: zSiteRate,
+  bounceRate: zSiteRate
+});
+
+/**
+ * The Sending domains' deliverability over a window: one entry per domain that had sends or
+ * deliveries in it, archived ones included (ADR 0049), oldest first. Numbers only: the core
+ * sets no limit on them.
+ */
+export const zSiteAnalyticsDeliverability = z.object({
+  windowHours: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  domains: z.array(zSiteSendingDomainRates)
+});
+
+/**
+ * Workspace analytics overview powering the dashboard: the snapshots, and the figures of the range
+ * with those of the period just before it to compare with
+ */
+export const zSiteAnalyticsOverview = z.object({
+  contacts: zSiteAnalyticsContacts,
+  automations: zSiteAnalyticsAutomations,
+  current: zSiteAnalyticsPeriod,
+  previous: zSiteAnalyticsPeriod,
+  timeseries: z.array(zSiteAnalyticsPoint),
+  deliverability: zSiteAnalyticsDeliverability
 });
 
 /**
@@ -4580,6 +4611,19 @@ export const zSiteAnalyticsClicksByLinkQuery = z.object({
  * The request has succeeded.
  */
 export const zSiteAnalyticsClicksByLinkResponse = zSiteAnalyticsClicksByLink;
+
+export const zSiteAnalyticsDeliverabilityPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAnalyticsDeliverabilityQuery = z.object({
+  range: z.exactOptional(zSiteAnalyticsRange)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAnalyticsDeliverabilityResponse = zSiteAnalyticsDeliverability;
 
 export const zSiteAnalyticsEventsPath = z.object({
   workspaceId: zWorkspaceId
