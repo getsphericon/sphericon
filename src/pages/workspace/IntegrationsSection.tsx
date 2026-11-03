@@ -470,7 +470,8 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                 </Button>
               </Group>
             </Stack>
-          ) : tile !== null ? (
+          ) : null}
+          {tile !== null && tile !== 'inbox' ? (
             <form
               onSubmit={form.onSubmit((values) =>
                 createMutation.mutate({
@@ -513,7 +514,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                     {...form.getInputProps('endpoint')}
                   />
                 ) : null}
-                {isTelegram ? null : isSes ? (
+                {!isTelegram && isSes ? (
                   <Group grow>
                     <TextInput
                       label={t(($) => $.settings.integrations.fields.region)}
@@ -532,7 +533,8 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                       {...form.getInputProps('secretAccessKey')}
                     />
                   </Group>
-                ) : (
+                ) : null}
+                {!isTelegram && !isSes ? (
                   <>
                     <Group grow>
                       <TextInput
@@ -558,7 +560,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                       />
                     </Group>
                   </>
-                )}
+                ) : null}
 
                 {isTelegram ? null : (
                   <TextInput
@@ -617,7 +619,8 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                 </Group>
               </Stack>
             </form>
-          ) : (
+          ) : null}
+          {tile === null ? (
             <Stack>
               {TILES.map((kind) => (
                 <UnstyledButton
@@ -645,7 +648,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                 </UnstyledButton>
               ))}
             </Stack>
-          )}
+          ) : null}
         </Modal>
       ) : null}
       <ProviderLimitModal

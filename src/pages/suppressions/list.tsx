@@ -95,12 +95,18 @@ function SuppressionsTable({
         {
           accessor: 'actions',
           title: '',
-          render: (record) =>
-            record.liftedAt ? (
-              <Badge variant="light" color="gray">
-                {t(($) => $.suppressions.liftedBadge)}
-              </Badge>
-            ) : canManage ? (
+          render: (record) => {
+            if (record.liftedAt) {
+              return (
+                <Badge variant="light" color="gray">
+                  {t(($) => $.suppressions.liftedBadge)}
+                </Badge>
+              )
+            }
+            if (!canManage) {
+              return null
+            }
+            return (
               <Group justify="flex-end">
                 <RowActionsMenu>
                   <Menu.Item onClick={() => onLift(record.id)}>
@@ -108,7 +114,8 @@ function SuppressionsTable({
                   </Menu.Item>
                 </RowActionsMenu>
               </Group>
-            ) : null,
+            )
+          },
         },
       ]}
       emptyState={<EmptyState title={t(($) => $.suppressions.empty)} />}

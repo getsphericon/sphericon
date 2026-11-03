@@ -99,16 +99,17 @@ export function RevenueSettingsSection({ workspace }: { workspace: SiteWorkspace
     siteWorkspacesGetRevenueSettingsOptions({ path: { workspaceId: workspace.id } }),
   )
 
+  let body = <Skeleton height={140} maw={420} />
+  if (query.isError) {
+    body = <Alert color="red" title={t(($) => $.settings.revenue.loadError)} />
+  } else if (query.data) {
+    body = <RevenueSettingsForm workspace={workspace} settings={query.data} />
+  }
+
   return (
     <Stack gap="xs">
       <Title order={4}>{t(($) => $.settings.revenue.title)}</Title>
-      {query.isError ? (
-        <Alert color="red" title={t(($) => $.settings.revenue.loadError)} />
-      ) : query.data ? (
-        <RevenueSettingsForm workspace={workspace} settings={query.data} />
-      ) : (
-        <Skeleton height={140} maw={420} />
-      )}
+      {body}
     </Stack>
   )
 }

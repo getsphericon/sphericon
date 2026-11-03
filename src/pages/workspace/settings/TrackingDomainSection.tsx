@@ -259,11 +259,13 @@ function TrackingDomains({ workspaceId, canManage }: { workspaceId: string; canM
             <CnameRecord domain={current} />
           </Stack>
         </Card>
-      ) : canManage ? (
+      ) : null}
+      {!current && canManage ? (
         <HostForm workspaceId={workspaceId} submitLabel={t(($) => $.settings.trackingDomain.set)} />
-      ) : (
+      ) : null}
+      {!current && !canManage ? (
         <Text size="sm">{t(($) => $.settings.trackingDomain.empty)}</Text>
-      )}
+      ) : null}
 
       {replacement ? (
         <Card withBorder padding="sm">

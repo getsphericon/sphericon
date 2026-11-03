@@ -83,12 +83,18 @@ function ApiKeysTable({
         {
           accessor: 'actions',
           title: '',
-          render: (record) =>
-            record.revokedAt ? (
-              <Badge color="red" variant="light">
-                {t(($) => $.settings.tokens.revoked)}
-              </Badge>
-            ) : canManage ? (
+          render: (record) => {
+            if (record.revokedAt) {
+              return (
+                <Badge color="red" variant="light">
+                  {t(($) => $.settings.tokens.revoked)}
+                </Badge>
+              )
+            }
+            if (!canManage) {
+              return null
+            }
+            return (
               <Group justify="flex-end">
                 <RowActionsMenu>
                   <Menu.Item onClick={() => onRename(record)}>
@@ -99,7 +105,8 @@ function ApiKeysTable({
                   </Menu.Item>
                 </RowActionsMenu>
               </Group>
-            ) : null,
+            )
+          },
         },
       ]}
       emptyState={<EmptyState title={t(($) => $.settings.tokens.empty)} />}

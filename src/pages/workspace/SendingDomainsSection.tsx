@@ -1,7 +1,6 @@
 import {
   Box,
   EmptyState,
-  Badge,
   Button,
   Group,
   Menu,
@@ -31,6 +30,7 @@ import {
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { useVerifySendingDomain } from '../../hooks/useVerifySendingDomain.ts'
 import { SendingDomainRecordsModal } from './SendingDomainRecordsModal.tsx'
+import { SendingDomainStatus } from './SendingDomainStatus.tsx'
 
 interface DomainFormValues {
   domain: string
@@ -99,35 +99,28 @@ function SendingDomainsTable({
           {
             accessor: 'verified',
             title: t(($) => $.settings.sendingDomains.statusColumn),
-            render: (record) =>
-              record.verified ? (
-                <Badge color="teal" variant="light">
-                  {t(($) => $.settings.sendingDomains.verified)}
-                </Badge>
-              ) : record.verificationLostAt ? (
-                <Badge color="red" variant="light">
-                  {t(($) => $.settings.sendingDomains.lost)}
-                </Badge>
-              ) : (
-                <Badge color="gray" variant="light">
-                  {t(($) => $.settings.sendingDomains.pending)}
-                </Badge>
-              ),
+            render: (record) => <SendingDomainStatus record={record} />,
           },
           {
             accessor: 'actions',
             title: '',
             textAlign: 'right',
-            render: (record) =>
-              canEdit && archived ? (
-                <Group justify="flex-end">
-                  <RowActionsMenu>
-                    <Menu.Item disabled={restoring} onClick={() => onRestore(record.id)}>
-                      {t(($) => $.actions.unarchive)}
-                    </Menu.Item>
-                  </RowActionsMenu>
-                </Group>
-              ) : canEdit ? (
+            render: (record) => {
+              if (!canEdit) {
+                return null
+              }
+              if (archived) {
+                return (
+                  <Group justify="flex-end">
+                    <RowActionsMenu>
+                      <Menu.Item disabled={restoring} onClick={() => onRestore(record.id)}>
+                        {t(($) => $.actions.unarchive)}
+                      </Menu.Item>
+                    </RowActionsMenu>
+                  </Group>
+                )
+              }
+              return (
                 // A click in the cell must not toggle the row's expansion.
                 <Group justify="flex-end" onClick={(event) => event.stopPropagation()}>
                   <RowActionsMenu>
@@ -142,7 +135,8 @@ function SendingDomainsTable({
                     </Menu.Item>
                   </RowActionsMenu>
                 </Group>
-              ) : null,
+              )
+            },
           },
         ]}
       />
