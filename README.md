@@ -16,17 +16,20 @@
 
 Sphericon helps a business know its audience and talk to it at the right moment: it collects who
 your contacts are and what they do on your site or in your product, groups them into segments,
-and sends them email. Everything lives in your own workspace on your own infrastructure, so the
+and messages them by email and Telegram. Everything lives in your own workspace on your own infrastructure, so the
 customer data stays yours. It is a self-hostable alternative to tools like Drip, without the
 lock-in.
 
 ## Features
 
 - **Contacts and events** — one profile per person, built from imports, the API and the
-  tracking snippet on your site.
+  tracking snippet on your site, with typed custom fields (text, number, date and more).
 - **Segments and tags** — audiences defined by rules over contacts, tags and events.
-- **Broadcasts** — one-off email to a segment, with per-broadcast stats.
-- **Automations** — sequences triggered by what a contact does, with waits and emails.
+- **Channels** — email and Telegram, each through its own integration, with consent and
+  sending limits honored per channel.
+- **Broadcasts** — one-off messages to a segment, with per-broadcast stats.
+- **Automations** — sequences triggered by what a contact does, with waits, messages, conditions
+  and HTTP calls to your own services.
 - **Transactional email** — send single messages through the API.
 - **Deliverability built in** — unsubscribes, bounces and spam complaints are honored
   automatically, mail is signed with your own DKIM key and sent with one-click unsubscribe,
@@ -35,8 +38,9 @@ lock-in.
   scoped tokens, and webhooks for what happens next.
 - **Agent-ready** — an MCP server lets an AI agent
   draft campaigns; sending stays opt-in per token.
-- **Privacy tools** — GDPR export and erasure.
-- **Multi-user workspaces** — owners, admins and members, with two-factor sign-in.
+- **Privacy tools** — GDPR export and erasure, plus an audit log of who changed what.
+- **Multi-user workspaces** — owners, admins and members, with two-factor sign-in and an overview
+  that leads with what needs your attention.
 
 ## Getting started
 
