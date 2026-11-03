@@ -42,8 +42,11 @@ export function TagsListPage() {
         }
         options={(query) => siteTagsListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.alerts.tagLoadErrorTitle)}
-        noRecordsText={t(($) => $.tags.noRecords)}
-        emptyState={t(($) => $.tags.emptyState)}
+        collection={t(($) => $.nav.tags)}
+        empty={{
+          title: t(($) => $.tags.noRecords),
+          description: t(($) => $.tags.emptyState),
+        }}
         // A Tag opens the list of the contacts that carry it.
         onRowClick={(record) =>
           void navigate({

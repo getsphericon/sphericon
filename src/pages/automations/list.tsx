@@ -96,8 +96,15 @@ export function AutomationsListPage() {
           siteAutomationsListOptions({ path: { workspaceId }, query: { ...query, archived } })
         }
         loadErrorTitle={t(($) => $.alerts.automationLoadErrorTitle)}
-        noRecordsText={t(($) => $.automations.noRecords)}
-        emptyState={t(($) => $.automations.emptyState)}
+        collection={t(($) => $.nav.automations)}
+        empty={{
+          title: t(($) => $.automations.noRecords),
+          action: (
+            <Button variant="default" onClick={openCreate}>
+              {t(($) => $.automations.addAutomation)}
+            </Button>
+          ),
+        }}
         onRowClick={(record) =>
           void navigate({
             to: automationsDetailRoute.to,

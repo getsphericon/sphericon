@@ -31,9 +31,16 @@ interface PagedTableProps<TPage extends Page, TError extends ApiErrorLike, TKey 
   columns: DataTableColumn<TPage['items'][number]>[]
   pageSize?: number
   loadErrorTitle: string
-  noRecordsText: string
-  // The EmptyState description shown while the list is empty, under the noRecordsText title.
-  emptyState?: ReactNode
+  // The collection's name; the toolbar shows it with the total ("Contacts (0)").
+  collection: string
+  // What the table shows when it has no rows: a heading naming the state, a description only when
+  // it says why or what to do, and one action. An empty list invites the create action; zero
+  // results from a filter offer to clear it (docs/standards/ui.md, "Empty states").
+  empty: {
+    title: string
+    description?: string
+    action?: ReactNode
+  }
   // Opens the clicked row; the rows then highlight on hover.
   onRowClick?: (record: TPage['items'][number]) => void
 }
@@ -47,8 +54,8 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
   columns,
   pageSize = 10,
   loadErrorTitle,
-  noRecordsText,
-  emptyState,
+  collection,
+  empty,
   onRowClick,
   page = 1,
   onPageChange,
@@ -66,27 +73,32 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
 
   return (
     <Stack>
-      <Group justify="flex-end" gap="xs">
-        {/* Announced politely each time it changes, so a screen reader hears that the refresh
-            landed without the focus moving. */}
-        <Text component="output" size="sm" c="dimmed" aria-live="polite">
-          {refreshedAt ? (
-            <>
-              {t(($) => $.table.updated)} <RelativeTime value={refreshedAt} />
-            </>
-          ) : null}
+      <Group justify="space-between" gap="xs">
+        <Text fw={600}>
+          {t(($) => $.table.collection, { name: collection, total: totalItems })}
         </Text>
-        <Tooltip label={refreshLabel} withArrow>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            aria-label={refreshLabel}
-            loading={list.isFetching}
-            onClick={() => void list.refetch()}
-          >
-            <IconRefresh size={16} />
-          </ActionIcon>
-        </Tooltip>
+        <Group gap="xs">
+          {/* Announced politely each time it changes, so a screen reader hears that the refresh
+            landed without the focus moving. */}
+          <Text component="output" size="sm" c="dimmed" aria-live="polite">
+            {refreshedAt ? (
+              <>
+                {t(($) => $.table.updated)} <RelativeTime value={refreshedAt} />
+              </>
+            ) : null}
+          </Text>
+          <Tooltip label={refreshLabel} withArrow>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              aria-label={refreshLabel}
+              loading={list.isFetching}
+              onClick={() => void list.refetch()}
+            >
+              <IconRefresh size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
       </Group>
 
       {list.isError ? <ApiErrorAlert error={list.error} title={loadErrorTitle} /> : null}
@@ -110,7 +122,11 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
             page={page}
             onPageChange={onPageChange}
             fetching={list.isFetching}
-            emptyState={<EmptyState title={noRecordsText} description={emptyState} />}
+            emptyState={
+              <EmptyState title={empty.title} description={empty.description}>
+                {empty.action ? <EmptyState.Actions>{empty.action}</EmptyState.Actions> : null}
+              </EmptyState>
+            }
           />
         </ViewTransition>
       )}

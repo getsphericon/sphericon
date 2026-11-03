@@ -76,7 +76,11 @@ test('shows the empty state when there are no contacts', async () => {
 
   const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
 
-  await expect.element(screen.getByText('Create your first contact.')).toBeInTheDocument()
+  await expect.element(screen.getByText('No contacts yet')).toBeInTheDocument()
+  // One create action in the empty state, the same label as the header's button.
+  await expect
+    .element(screen.getByRole('button', { name: 'Add contact' }).nth(1))
+    .toBeInTheDocument()
 })
 
 test('shows an error alert when the list fails to load', async () => {
@@ -94,7 +98,7 @@ test('Add contact opens the create form in a modal', async () => {
   )
 
   const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
-  await screen.getByRole('button', { name: 'Add contact' }).click()
+  await screen.getByRole('button', { name: 'Add contact' }).first().click()
 
   await expect.element(screen.getByRole('dialog')).toBeVisible()
   await expect.element(screen.getByLabelText('Email')).toBeVisible()
@@ -302,7 +306,7 @@ test('picking a tag puts it in the URL search and keeps the email search', async
     .toContainEqual({ email: 'ali', tag: 'vip', page: undefined })
 })
 
-test('a filter that matches nothing does not invite to create the first contact', async () => {
+test('a filter that matches nothing offers to clear it, not to create the first contact', async () => {
   worker.use(handleSiteContactsList({ body: page([], 0) }))
 
   const { screen } = await renderWithRouter(<ContactsListPage />, {
@@ -311,5 +315,21 @@ test('a filter that matches nothing does not invite to create the first contact'
   })
 
   await expect.element(screen.getByText('No contacts match')).toBeInTheDocument()
-  await expect.element(screen.getByText('Create your first contact.')).not.toBeInTheDocument()
+  await expect.element(screen.getByText('No contacts yet')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Add contact' }).elements()).toHaveLength(1)
+  await expect.element(screen.getByRole('button', { name: 'Clear filter' })).toBeInTheDocument()
+})
+
+test('Clear filter in the zero-results state takes every filter out of the URL search', async () => {
+  worker.use(handleSiteContactsList({ body: page([], 0) }))
+
+  const { screen, navigate } = await renderWithRouter(<ContactsListPage />, {
+    ...LIST_ROUTE,
+    initialPath: `${LIST_ROUTE.initialPath}?tag=vip&country=DE`,
+  })
+  await screen.getByRole('button', { name: 'Clear filter' }).click()
+
+  await expect
+    .poll(() => searches(navigate, { tag: 'vip', country: 'DE', page: 2 }))
+    .toContainEqual({ email: undefined, tag: undefined, country: undefined, page: undefined })
 })

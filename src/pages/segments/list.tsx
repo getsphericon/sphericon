@@ -65,8 +65,15 @@ export function SegmentsListPage() {
           siteSegmentsListOptions({ path: { workspaceId }, query: { ...query, archived } })
         }
         loadErrorTitle={t(($) => $.alerts.segmentLoadErrorTitle)}
-        noRecordsText={t(($) => $.segments.noRecords)}
-        emptyState={t(($) => $.segments.emptyState)}
+        collection={t(($) => $.nav.segments)}
+        empty={{
+          title: t(($) => $.segments.noRecords),
+          action: (
+            <ButtonLink variant="default" to={segmentsCreateRoute.to} params={{ workspaceId }}>
+              {t(($) => $.segments.addSegment)}
+            </ButtonLink>
+          ),
+        }}
         onRowClick={(record) =>
           void navigate({
             to: segmentsDetailRoute.to,

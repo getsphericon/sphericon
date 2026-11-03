@@ -44,8 +44,15 @@ export function TemplatesListPage() {
         }
         options={(query) => siteTemplatesListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.alerts.templateLoadErrorTitle)}
-        noRecordsText={t(($) => $.templates.noRecords)}
-        emptyState={t(($) => $.templates.emptyState)}
+        collection={t(($) => $.nav.templates)}
+        empty={{
+          title: t(($) => $.templates.noRecords),
+          action: (
+            <ButtonLink variant="default" to={templatesCreateRoute.to} params={{ workspaceId }}>
+              {t(($) => $.templates.addTemplate)}
+            </ButtonLink>
+          ),
+        }}
         columns={[
           { accessor: 'name', title: t(($) => $.templates.nameLabel) },
           { accessor: 'subject', title: t(($) => $.templates.subjectLabel) },

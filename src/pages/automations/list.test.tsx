@@ -75,7 +75,11 @@ test('shows the empty state when there are no automations', async () => {
 
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
 
-  await expect.element(screen.getByText('Create your first automation.')).toBeInTheDocument()
+  await expect.element(screen.getByText('No automations yet')).toBeInTheDocument()
+  // One create action in the empty state, the same label as the header's button.
+  await expect
+    .element(screen.getByRole('button', { name: 'New automation' }).nth(1))
+    .toBeInTheDocument()
 })
 
 test('shows an error alert when the list fails to load', async () => {
@@ -94,7 +98,7 @@ test('New automation opens the create modal and Edit links to the edit page', as
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Welcome flow')).toBeInTheDocument()
 
-  await screen.getByRole('button', { name: 'New automation' }).click()
+  await screen.getByRole('button', { name: 'New automation' }).first().click()
   await expect.element(screen.getByRole('dialog')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Cancel' }).click()
   await screen.getByRole('button', { name: 'More actions' }).first().click()

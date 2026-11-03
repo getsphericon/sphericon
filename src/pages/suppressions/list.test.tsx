@@ -85,7 +85,7 @@ test('adds a suppression', async () => {
   )
   const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
 
-  await screen.getByRole('button', { name: 'Suppress' }).click()
+  await screen.getByRole('button', { name: 'Suppress' }).first().click()
   const dialog = screen.getByRole('dialog')
   await dialog.getByLabelText(/^Email address/).fill('blocked@example.com')
   await dialog.getByRole('button', { name: 'Suppress' }).click()
@@ -108,7 +108,7 @@ test('adds a Telegram suppression by the user id', async () => {
   )
   const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
 
-  await screen.getByRole('button', { name: 'Suppress' }).click()
+  await screen.getByRole('button', { name: 'Suppress' }).first().click()
   const dialog = screen.getByRole('dialog')
   await dialog.getByLabelText('Channel').selectOptions('telegram')
   await dialog.getByLabelText(/^Telegram user id/).fill('123456789')
@@ -196,10 +196,20 @@ test('reports a create failure', async () => {
   )
   const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
 
-  await screen.getByRole('button', { name: 'Suppress' }).click()
+  await screen.getByRole('button', { name: 'Suppress' }).first().click()
   const dialog = screen.getByRole('dialog')
   await dialog.getByLabelText(/^Email address/).fill('x@example.com')
   await dialog.getByRole('button', { name: 'Suppress' }).click()
 
   await expect.element(screen.getByText('Failed to suppress address')).toBeInTheDocument()
+})
+
+test('an empty list shows its heading, the count and the one action', async () => {
+  worker.use(list([]))
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByText('Suppression list (0)')).toBeInTheDocument()
+  await expect.element(screen.getByText('No suppressed addresses')).toBeInTheDocument()
+  // The empty state's action has the label of the header's create button.
+  await expect.element(screen.getByRole('button', { name: 'Suppress' }).nth(1)).toBeInTheDocument()
 })

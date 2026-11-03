@@ -169,7 +169,6 @@ function AutomationDetail() {
 
       <AutomationReport workspaceId={workspaceId} automationId={automationId} />
 
-      <Title order={5}>{t(($) => $.automations.enrollmentsTitle)}</Title>
       <PagedTable
         page={page}
         onPageChange={(next) =>
@@ -179,7 +178,8 @@ function AutomationDetail() {
           siteEnrollmentsListOptions({ path: { workspaceId, automationId }, query })
         }
         loadErrorTitle={t(($) => $.alerts.loadErrorTitle)}
-        noRecordsText={t(($) => $.automations.noEnrollments)}
+        collection={t(($) => $.automations.enrollmentsTitle)}
+        empty={{ title: t(($) => $.automations.noEnrollments) }}
         columns={[
           { accessor: 'contactId', title: t(($) => $.automations.failedEnrollmentContact) },
           {
