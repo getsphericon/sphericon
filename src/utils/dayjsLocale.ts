@@ -37,6 +37,9 @@ const LOADERS: Record<string, () => Promise<unknown>> = {
   'zh-tw': async () => import('dayjs/locale/zh-tw.js'),
 }
 
+// Every dayjs locale name that has a loader.
+export const DAYJS_LOCALE_NAMES = Object.keys(LOADERS)
+
 // The name of the dayjs locale a Regional format reads its dates from: the tag itself when dayjs
 // has data for it (`en-GB` is `en-gb`), else its language's (`de-DE` is `de`), else English.
 export function dayjsLocaleName(regionalFormat: string | undefined): string {
