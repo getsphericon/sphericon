@@ -1364,6 +1364,13 @@ Chosen when the form is created and never changed; a form in another Format is m
 **Duplicate**.
 _Avoid_: Type, layout, kind
 
+**Form block**:
+One piece of an On-site form's content: a heading, a text, an image, an email field, an SMS or
+WhatsApp opt-in (a prefilled START link, a QR code on a desktop), a web push button, a button
+(next, submit, close, go to a URL) or two columns of blocks. A block may hide itself on a phone or
+change some of its properties there. The author sees a block exactly as the site will.
+_Avoid_: Element, widget, component
+
 **Form host**:
 The Instance's own hostname that the tracker loads On-site forms from: their display code, the
 Workspace's live forms and which of them a Visitor's audience admits. Kept apart from the Tracking
