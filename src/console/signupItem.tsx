@@ -38,8 +38,8 @@ import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { trimmed, useSchemaForm } from '../resources/schemaForm.ts'
 import { Route as consoleSignupItemRoute } from '../routes/console/_authed/signup-items.$itemId.tsx'
 import { Route as legalDocumentRoute } from '../routes/legal.$key.tsx'
-import { formatDateTime } from '../utils/datetime.ts'
 import { publishStopsUsers } from '../utils/signupItems.ts'
+import { formatDateTime } from './format.ts'
 
 const titleSchema = z.object({ title: trimmed(zSignupItemTitle) })
 const publishSchema = z.object({ label: trimmed(zLegalDocumentLabel) })

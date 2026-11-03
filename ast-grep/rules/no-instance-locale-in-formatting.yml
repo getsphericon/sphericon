@@ -1,0 +1,25 @@
+id: no-instance-locale-in-formatting
+language: Tsx
+severity: error
+message: Format dates, times and numbers through `useFormat`, which follows the User's Regional format; do not read the Instance's language here.
+note: >-
+  A signed-in page writes dates, times and numbers in the User's Regional format (#1010), which
+  `useFormat` supplies (the Instance's language while there is none). A formatting helper takes the
+  locale as an argument. The Staff console, which has no User preference, formats through
+  `src/console/format.ts`.
+rule:
+  pattern: resolveLocale($$$)
+files:
+  - src/**/*.ts
+  - src/**/*.tsx
+ignores:
+  - src/generated/**
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  # The Instance's language itself: the i18n setup, the hook that falls back to it and the Staff
+  # console, which keeps it.
+  - src/i18n.ts
+  - src/hooks/useFormat.ts
+  - src/console/**
+  # The profile names the Regional format options in the language of the UI.
+  - src/pages/account/profile.tsx

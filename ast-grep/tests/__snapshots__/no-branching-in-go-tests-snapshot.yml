@@ -2,7 +2,10 @@ id: no-branching-in-go-tests
 snapshots:
   "func TestBranches(t *testing.T) {\n\tif x {\n\t\tt.Fatal(\"no\")\n\t}\n}\n":
     labels:
-      - source: "if x {\n\t\tt.Fatal(\"no\")\n\t}"
+      - source: |-
+          if x {
+          		t.Fatal("no")
+          	}
         style: primary
         start: 35
         end: 60
@@ -10,13 +13,21 @@ snapshots:
         style: secondary
         start: 5
         end: 17
-      - source: "func TestBranches(t *testing.T) {\n\tif x {\n\t\tt.Fatal(\"no\")\n\t}\n}"
+      - source: |-
+          func TestBranches(t *testing.T) {
+          	if x {
+          		t.Fatal("no")
+          	}
+          }
         style: secondary
         start: 0
         end: 62
   "func TestSubtestBranches(t *testing.T) {\n\tt.Run(\"a\", func(t *testing.T) {\n\t\tif x {\n\t\t\tt.Fatal(\"no\")\n\t\t}\n\t})\n}\n":
     labels:
-      - source: "if x {\n\t\t\tt.Fatal(\"no\")\n\t\t}"
+      - source: |-
+          if x {
+          			t.Fatal("no")
+          		}
         style: primary
         start: 76
         end: 103
@@ -28,13 +39,21 @@ snapshots:
         style: secondary
         start: 57
         end: 71
-      - source: "func(t *testing.T) {\n\t\tif x {\n\t\t\tt.Fatal(\"no\")\n\t\t}\n\t}"
+      - source: |-
+          func(t *testing.T) {
+          		if x {
+          			t.Fatal("no")
+          		}
+          	}
         style: secondary
         start: 53
         end: 106
   "func TestSwitches(t *testing.T) {\n\tswitch x {\n\tcase 1:\n\t}\n}\n":
     labels:
-      - source: "switch x {\n\tcase 1:\n\t}"
+      - source: |-
+          switch x {
+          	case 1:
+          	}
         style: primary
         start: 35
         end: 57
@@ -42,7 +61,12 @@ snapshots:
         style: secondary
         start: 5
         end: 17
-      - source: "func TestSwitches(t *testing.T) {\n\tswitch x {\n\tcase 1:\n\t}\n}"
+      - source: |-
+          func TestSwitches(t *testing.T) {
+          	switch x {
+          	case 1:
+          	}
+          }
         style: secondary
         start: 0
         end: 59

@@ -1,5 +1,3 @@
-import { resolveLocale } from '../../i18n.ts'
-
 const UNITS = [
   { unit: 'days', seconds: 86_400 },
   { unit: 'hours', seconds: 3_600 },
@@ -10,7 +8,7 @@ const UNITS = [
 // A duration in whole seconds as its largest unit and the one below it, in the locale's narrow
 // units: "1d 3h", "5h 20m", "45s". A unit below those two is dropped, and Intl.DurationFormat leaves
 // out a zero one; a duration of nothing is zero seconds, not an empty string.
-export function formatDuration(totalSeconds: number): string {
+export function formatDuration(totalSeconds: number, locale: string): string {
   const seconds = Math.max(0, Math.round(totalSeconds))
   // Under a second there is no unit to lead with: it is shown as zero seconds.
   const found = UNITS.findIndex((u) => seconds >= u.seconds)
@@ -22,7 +20,7 @@ export function formatDuration(totalSeconds: number): string {
     rest -= count * size
     duration[unit] = count
   }
-  return new Intl.DurationFormat(resolveLocale(), {
+  return new Intl.DurationFormat(locale, {
     style: 'narrow',
     secondsDisplay: seconds === 0 ? 'always' : 'auto',
   }).format(duration)

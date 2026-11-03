@@ -32,7 +32,7 @@ import {
 import type { SiteContactResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useContactExport } from '../../hooks/useContactExport.ts'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
@@ -40,7 +40,6 @@ import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/con
 import { withPage } from '../../searchSchemas.ts'
 import { contactFullName, contactName } from '../../utils/contactName.ts'
 import { countryName } from '../../utils/countries.ts'
-import { formatLongDate } from '../../utils/datetime.ts'
 import { can } from '../../utils/permissions.ts'
 import { TelegramSection } from './TelegramSection.tsx'
 
@@ -224,7 +223,7 @@ function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contac
 // Everything known about the Contact in one list: its core attributes, then its custom fields,
 // then when it was created and last changed.
 function ContactDetails({ contact }: { contact: SiteContactResource }) {
-  const { formatDateTime } = useDateFormat()
+  const { formatDateTime, formatLongDate } = useFormat()
   const { t } = useTranslation()
   const customFields = Object.entries(contact.customFields ?? {}).map(([key, value]) => ({
     label: key,

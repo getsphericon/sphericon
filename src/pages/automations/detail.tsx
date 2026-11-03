@@ -17,7 +17,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { SiteAutomationStepType } from '../../generated/site/types.gen.ts'
 import type { SiteAutomationStep, SiteAutomationVersion } from '../../generated/site/types.gen.ts'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
@@ -121,7 +121,7 @@ export function AutomationDetailPage() {
 }
 
 function AutomationDetail() {
-  const { formatDateTime } = useDateFormat()
+  const { formatDateTime } = useFormat()
   const { page } = automationsDetailRoute.useSearch()
   const pageNavigate = automationsDetailRoute.useNavigate()
   const { t } = useTranslation()

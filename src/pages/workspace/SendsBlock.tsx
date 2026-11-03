@@ -11,12 +11,11 @@ import {
   siteBroadcastsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastResource } from '../../generated/site/types.gen.ts'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as broadcastReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
-import { formatPercent } from '../../utils/percent.ts'
 
 const LIMIT = 5
 
@@ -88,7 +87,7 @@ function BroadcastColumn({
 // snapshot does not depend on the page's period, so it is read for the default one, once.
 function SendsLists({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const { formatDateTime } = useDateFormat()
+  const { formatDateTime, formatPercent } = useFormat()
   const [upcoming, sent, overview] = useSuspenseQueries({
     queries: [
       siteBroadcastsListOptions({

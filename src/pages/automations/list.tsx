@@ -17,6 +17,7 @@ import {
   siteAutomationsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
@@ -27,6 +28,7 @@ import { AutomationCreateModal } from './create.tsx'
 
 export function AutomationsListPage() {
   const { t } = useTranslation()
+  const { locale } = useFormat()
   const { workspaceId } = automationsRoute.useParams()
   const navigate = useNavigate()
 
@@ -127,12 +129,12 @@ export function AutomationsListPage() {
           {
             accessor: 'orders',
             title: t(($) => $.messageRevenue.orders),
-            render: (record) => messageRevenueCells(record.revenue).orders,
+            render: (record) => messageRevenueCells(record.revenue, locale).orders,
           },
           {
             accessor: 'revenue',
             title: t(($) => $.messageRevenue.revenue),
-            render: (record) => messageRevenueCells(record.revenue).revenue,
+            render: (record) => messageRevenueCells(record.revenue, locale).revenue,
           },
           {
             accessor: 'actions',

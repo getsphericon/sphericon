@@ -6,7 +6,7 @@ import { LegalMarkdown } from '../../components/LegalMarkdown.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import { siteLegalDocumentsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as legalDocumentRoute } from '../../routes/legal.$key.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 
@@ -32,7 +32,7 @@ export function LegalDocumentPage() {
 }
 
 function LegalDocument() {
-  const { formatDate } = useDateFormat()
+  const { formatDate } = useFormat()
   const { t } = useTranslation()
   const { key } = legalDocumentRoute.useParams()
   const legal = useSuspenseQuery({

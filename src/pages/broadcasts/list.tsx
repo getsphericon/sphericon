@@ -14,6 +14,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { zBroadcastChannel } from '../../generated/site/zod.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
@@ -26,6 +27,7 @@ import { BroadcastStatusBadge } from './BroadcastStatusBadge.tsx'
 
 export function BroadcastsListPage() {
   const { t } = useTranslation()
+  const { locale } = useFormat()
   const { workspaceId } = broadcastsRoute.useParams()
   const navigate = useNavigate()
 
@@ -147,12 +149,12 @@ export function BroadcastsListPage() {
           {
             accessor: 'orders',
             title: t(($) => $.messageRevenue.orders),
-            render: (record) => messageRevenueCells(record.stats.revenue).orders,
+            render: (record) => messageRevenueCells(record.stats.revenue, locale).orders,
           },
           {
             accessor: 'revenue',
             title: t(($) => $.messageRevenue.revenue),
-            render: (record) => messageRevenueCells(record.stats.revenue).revenue,
+            render: (record) => messageRevenueCells(record.stats.revenue, locale).revenue,
           },
           {
             accessor: 'actions',

@@ -9,14 +9,14 @@ import {
   siteTagsDeleteMutation,
   siteTagsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { Route as tagsRoute } from '../../routes/workspaces/$workspaceId/tags/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
 
 export function TagsListPage() {
-  const { formatDateTime } = useDateFormat()
+  const { formatDateTime } = useFormat()
   const { page } = tagsRoute.useSearch()
   const pageNavigate = tagsRoute.useNavigate()
   const { t } = useTranslation()

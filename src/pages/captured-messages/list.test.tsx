@@ -49,7 +49,9 @@ test('lists captured messages with recipient, subject, surface and time', async 
   await expect.element(screen.getByText('alice@example.com')).toBeInTheDocument()
   await expect.element(screen.getByText('March news')).toBeInTheDocument()
   await expect.element(screen.getByText('Broadcast', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByText(formatDateTime(WELCOME.createdAt))).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(formatDateTime(WELCOME.createdAt, 'en')))
+    .toBeInTheDocument()
   await expect.element(screen.getByText('From not verified')).toBeInTheDocument()
 })
 

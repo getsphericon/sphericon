@@ -11,18 +11,13 @@ import type {
   SiteAnalyticsRange,
   SiteAnalyticsRevenuePeriod,
 } from '../../generated/site/types.gen.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as settingsRoute } from '../../routes/workspaces/$workspaceId/settings/index.tsx'
-import { formatChange, formatPointChange } from '../../utils/change.ts'
-import { formatMoney } from '../../utils/money.ts'
-import { formatPercent } from '../../utils/percent.ts'
 
 // creditedShare is the part of a period's revenue credited to messages, or null when the period had
 // no revenue to share out.
 const creditedShare = (period: SiteAnalyticsRevenuePeriod) =>
   period.total > 0 ? period.credited / period.total : null
-
-// formatShare is a credited share as a percentage, or a dash for a period with no revenue.
-const formatShare = (share: number | null) => (share === null ? '–' : formatPercent(share))
 
 // RevenueCard is the period's revenue once the Workspace has sent its first Order, and nothing
 // before: a Workspace that sends no Orders never sees the block. A Reporting currency chosen before
@@ -30,6 +25,9 @@ const formatShare = (share: number | null) => (share === null ? '–' : formatPe
 // Each figure has the previous period under it, with the change since.
 function RevenueCard({ workspaceId, range }: { workspaceId: string; range: SiteAnalyticsRange }) {
   const { t } = useTranslation()
+  const { formatChange, formatMoney, formatPercent, formatPointChange } = useFormat()
+  // formatShare is a credited share as a percentage, or a dash for a period with no revenue.
+  const formatShare = (share: number | null) => (share === null ? '–' : formatPercent(share))
   const revenue = useSuspenseQuery(
     siteAnalyticsRevenueOptions({ path: { workspaceId }, query: { range } }),
   ).data

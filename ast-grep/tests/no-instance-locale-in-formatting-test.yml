@@ -1,0 +1,15 @@
+id: no-instance-locale-in-formatting
+valid:
+  - |-
+    new Intl.NumberFormat(locale).format(value)
+  - |-
+    const { formatPercent } = useFormat()
+  - |-
+    const resolved = resolveLocaleName(tag)
+invalid:
+  - |-
+    new Intl.NumberFormat(resolveLocale()).format(value)
+  - |-
+    const locale = resolveLocale()
+  - |-
+    formatMoney(amount, currency, resolveLocale())

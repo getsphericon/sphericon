@@ -318,15 +318,13 @@ var ErrUnknownZone = validation.RefuseField("timezone", "accounts: unknown time 
 // ErrMalformedRegionalFormat refuses a Regional format that is not a well-formed BCP 47 tag.
 var ErrMalformedRegionalFormat = validation.RefuseField("regionalFormat", "accounts: malformed regional format", i18n.ErrorsRegionalFormatMalformed)
 
-// maxRegionalFormatLength is the length of the longest tag the contract takes (RegionalFormat).
-const maxRegionalFormatLength = 35
-
 // canonicalRegionalFormat is the Regional format tag in its canonical spelling (`de-de` is
 // `de-DE`), or ErrMalformedRegionalFormat when it is not a well-formed BCP 47 tag. The tag is not
-// checked against a list of regions: the app's own list is a convenience, not a rule.
+// checked against a list of regions: the app's own list is a convenience, not a rule. Its length
+// is the contract's (RegionalFormat), which the request validation holds.
 func canonicalRegionalFormat(typed string) (string, error) {
 	tag := strings.TrimSpace(typed)
-	if tag == "" || len(tag) > maxRegionalFormatLength {
+	if tag == "" {
 		return "", ErrMalformedRegionalFormat
 	}
 	parsed, err := language.Parse(tag)

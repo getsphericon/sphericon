@@ -43,7 +43,7 @@ test('lists transactional emails with status, error and sent time', async () => 
   await expect.element(screen.getByText('Sent', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Failed', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('mailbox full')).toBeInTheDocument()
-  await expect.element(screen.getByText(formatDateTime(SENT.createdAt))).toBeInTheDocument()
+  await expect.element(screen.getByText(formatDateTime(SENT.createdAt, 'en'))).toBeInTheDocument()
 })
 
 test('says a message sent through a Test inbox was captured, not delivered', async () => {

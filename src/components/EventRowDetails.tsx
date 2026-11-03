@@ -2,7 +2,7 @@ import { Code, Group, Stack, Text } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import type { SiteEventResource } from '../generated/site/types.gen.ts'
-import { useDateFormat } from '../hooks/useDateFormat.ts'
+import { useFormat } from '../hooks/useFormat.ts'
 
 // Expanded-row body for tracking-event tables. `detailed` adds the heading and the
 // created-at row used by the workspace activity feed.
@@ -13,7 +13,7 @@ export function EventRowDetails({
   record: SiteEventResource
   detailed?: boolean
 }) {
-  const { formatDateTime } = useDateFormat()
+  const { formatDateTime } = useFormat()
   const { t } = useTranslation()
   return (
     <Stack p="md" gap="xs">

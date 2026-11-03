@@ -12,8 +12,8 @@ import {
 import { StaffInstanceTelemetryLock } from '../generated/staff/types.gen.ts'
 import type { StaffInstanceState } from '../generated/staff/types.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
-import { formatLongDate } from '../utils/datetime.ts'
 import { DefaultSendCapCard, NoDefaultSendCapAlert } from './DefaultSendCapCard.tsx'
+import { formatLongDate } from './format.ts'
 import { InstanceAuditLogCard } from './InstanceAuditLogCard.tsx'
 import { TelemetryReportActions } from './TelemetryReportActions.tsx'
 

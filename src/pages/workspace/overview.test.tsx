@@ -323,7 +323,7 @@ test('a broadcast the sending limit will slow says when it is expected to finish
     .element(screen.getByText(/will slow Black Friday \(about 1,500 contacts\)/))
     .toBeInTheDocument()
   await expect
-    .element(screen.getByText(new RegExp(`expected to finish by ${formatDateTime(finish)}`)))
+    .element(screen.getByText(new RegExp(`expected to finish by ${formatDateTime(finish, 'en')}`)))
     .toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Open the broadcast' }))

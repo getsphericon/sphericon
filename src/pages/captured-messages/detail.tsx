@@ -9,7 +9,7 @@ import {
   siteCapturedMessagesDeleteMutation,
   siteCapturedMessagesGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as capturedMessageRoute } from '../../routes/workspaces/$workspaceId/captured-messages/$messageId/index.tsx'
 import { Route as capturedMessagesRoute } from '../../routes/workspaces/$workspaceId/captured-messages/index.tsx'
@@ -27,7 +27,7 @@ export function CapturedMessagePage() {
 }
 
 function CapturedMessage() {
-  const { formatDateTime } = useDateFormat()
+  const { formatDateTime } = useFormat()
   const { t } = useTranslation()
   const { workspaceId, messageId } = capturedMessageRoute.useParams()
   const navigate = capturedMessageRoute.useNavigate()

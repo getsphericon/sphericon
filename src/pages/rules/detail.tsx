@@ -18,7 +18,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { SiteRuleActionStatus } from '../../generated/site/types.gen.ts'
 import type { SiteRuleVersion } from '../../generated/site/types.gen.ts'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
@@ -67,7 +67,7 @@ function RuleVersionSummary({ version }: { version: SiteRuleVersion }) {
 // The Rule with its live version and its Firings: each Event that fired it, the Contact and what
 // every Action did. Its draft is published or reverted here (ADR 0065).
 export function RuleDetailPage() {
-  const { formatDateTime } = useDateFormat()
+  const { formatDateTime } = useFormat()
   const { page } = rulesDetailRoute.useSearch()
   const pageNavigate = rulesDetailRoute.useNavigate()
   const { t } = useTranslation()

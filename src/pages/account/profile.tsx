@@ -31,19 +31,25 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { useActionModal } from '../../hooks/useActionModal.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { resolveLocale } from '../../i18n.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { browserTimeZone, TIME_ZONES } from '../../utils/datetime.ts'
+import { regionalFormatOptions } from '../../utils/regionalFormats.ts'
 import { DeleteUserSection } from './DeleteUserForm.tsx'
 import { OptionalConsentsSection } from './OptionalConsentsSection.tsx'
 
 // ProfileForm is split out so the Mantine form seeds its initial values from the
 // loaded user without an effect — the parent only renders it once data is ready. An empty time
-// zone follows the browser (ADR 0068).
+// zone follows the browser (ADR 0068), and an empty Regional format follows the Instance's language.
 function ProfileForm({ user }: { user: SiteUserResource }) {
   const { t } = useTranslation()
 
-  const form = useForm<Required<Pick<SiteUpdateMeInput, 'name' | 'timezone'>>>({
-    initialValues: { name: user.name, timezone: user.timezone },
+  const form = useForm<Required<Pick<SiteUpdateMeInput, 'name' | 'timezone' | 'regionalFormat'>>>({
+    initialValues: {
+      name: user.name,
+      timezone: user.timezone,
+      regionalFormat: user.regionalFormat,
+    },
   })
 
   const updateMutation = useResourceMutation({
@@ -55,7 +61,13 @@ function ProfileForm({ user }: { user: SiteUserResource }) {
   return (
     <form
       onSubmit={form.onSubmit((values) =>
-        updateMutation.mutate({ body: { name: values.name.trim(), timezone: values.timezone } }),
+        updateMutation.mutate({
+          body: {
+            name: values.name.trim(),
+            timezone: values.timezone,
+            regionalFormat: values.regionalFormat,
+          },
+        }),
       )}
     >
       <Stack maw={420}>
@@ -81,6 +93,15 @@ function ProfileForm({ user }: { user: SiteUserResource }) {
           searchable
           clearable
           {...form.getInputProps('timezone')}
+        />
+        <Select
+          label={t(($) => $.profile.regionalFormatLabel)}
+          description={t(($) => $.profile.regionalFormatDescription)}
+          placeholder={t(($) => $.profile.regionalFormatDefault)}
+          data={regionalFormatOptions(resolveLocale(), user.regionalFormat)}
+          searchable
+          clearable
+          {...form.getInputProps('regionalFormat')}
         />
         <Group justify="flex-end">
           <Button type="submit" loading={updateMutation.isPending}>

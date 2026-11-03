@@ -8,7 +8,7 @@ import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../components/Skeletons.tsx'
 import { staffInstanceListAuditEntriesOptions } from '../generated/staff/@tanstack/react-query.gen.ts'
 import type { StaffInstanceAuditEntryResource } from '../generated/staff/types.gen.ts'
-import { formatDateTime } from '../utils/datetime.ts'
+import { formatDateTime } from './format.ts'
 
 const PAGE_SIZE = 25
 

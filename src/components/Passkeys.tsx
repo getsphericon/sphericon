@@ -17,7 +17,7 @@ import {
 import type { SitePasskey } from '../generated/site/types.gen.ts'
 import { zPasskeyName } from '../generated/site/zod.gen.ts'
 import { useActionModal } from '../hooks/useActionModal.tsx'
-import { useDateFormat } from '../hooks/useDateFormat.ts'
+import { useFormat } from '../hooks/useFormat.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { IdentityProof } from './IdentityProof.tsx'
 import { QueryBoundary } from './QueryBoundary.tsx'
@@ -254,7 +254,7 @@ interface PasskeyRowProps {
 // the User's other sessions (ADR 0052).
 function PasskeyRow({ passkey, passwordless, needsProvider, returnTo }: PasskeyRowProps) {
   const { t } = useTranslation()
-  const { formatDate } = useDateFormat()
+  const { formatDate } = useFormat()
   const rename = useActionModal(
     t(($) => $.security.passkeys.renameButton),
     (close) => <RenamePasskeyForm passkey={passkey} onClose={close} />,
