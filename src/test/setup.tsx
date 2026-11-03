@@ -10,6 +10,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
 import { afterEach, beforeAll, beforeEach } from 'vitest'
 import { cleanup } from 'vitest-browser-react'
+import { userEvent } from 'vitest/browser'
 
 import { client } from '../generated/site/client.gen.ts'
 import {
@@ -122,6 +123,9 @@ beforeEach(() => {
 const FLUSH_PATH = '/__flush'
 afterEach(async () => {
   await cleanup()
+  // Playwright's pointer stays where the last test left it. A hover (a tooltip's) would then
+  // open on whatever the next test renders under it, so the pointer goes back to the corner.
+  await userEvent.unhover(document.body)
   await settled()
   worker.use(http.get(FLUSH_PATH, () => new HttpResponse(null)))
   await fetch(FLUSH_PATH)
