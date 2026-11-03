@@ -57,11 +57,14 @@ test('the refresh button fetches the current page again and the rows stay on scr
   const list = source()
   const screen = await renderTable(list)
   await expect.element(screen.getByText('row-1')).toBeInTheDocument()
+  const before = screen.getByRole('time').element().getAttribute('datetime')
 
   await screen.getByRole('button', { name: 'Refresh' }).click()
 
   await expect.element(screen.getByText('row-2')).toBeInTheDocument()
   expect(list.calls()).toBe(2)
+  // The time moves on after a success, where a failure leaves it (the test below).
+  expect(screen.getByRole('time').element().getAttribute('datetime')).not.toBe(before)
 })
 
 test('the time of the last refresh sits in a polite live region', async () => {

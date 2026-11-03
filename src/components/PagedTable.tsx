@@ -54,6 +54,7 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
   onPageChange,
 }: PagedTableProps<TPage, TError, TKey>) {
   const { t } = useTranslation()
+  const refreshLabel = t(($) => $.table.refresh)
   const list = useQuery({ ...options({ page, pageSize }), placeholderData: keepPreviousData })
   // A deferred render is a React transition, which is what lets the ViewTransition below
   // cross-fade the old rows into the new ones when they arrive.
@@ -75,11 +76,11 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
             </>
           ) : null}
         </Text>
-        <Tooltip label={t(($) => $.table.refresh)} withArrow>
+        <Tooltip label={refreshLabel} withArrow>
           <ActionIcon
             variant="subtle"
             color="gray"
-            aria-label={t(($) => $.table.refresh)}
+            aria-label={refreshLabel}
             loading={list.isFetching}
             onClick={() => void list.refetch()}
           >
