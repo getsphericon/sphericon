@@ -1007,13 +1007,15 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 type BroadcastChannel string
 
 const (
-	BroadcastChannelEmail BroadcastChannel = "email"
+	BroadcastChannelEmail    BroadcastChannel = "email"
+	BroadcastChannelTelegram BroadcastChannel = "telegram"
 )
 
 // AllValues returns all BroadcastChannel values.
 func (BroadcastChannel) AllValues() []BroadcastChannel {
 	return []BroadcastChannel{
 		BroadcastChannelEmail,
+		BroadcastChannelTelegram,
 	}
 }
 
@@ -1021,6 +1023,8 @@ func (BroadcastChannel) AllValues() []BroadcastChannel {
 func (s BroadcastChannel) MarshalText() ([]byte, error) {
 	switch s {
 	case BroadcastChannelEmail:
+		return []byte(s), nil
+	case BroadcastChannelTelegram:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -1032,6 +1036,9 @@ func (s *BroadcastChannel) UnmarshalText(data []byte) error {
 	switch BroadcastChannel(data) {
 	case BroadcastChannelEmail:
 		*s = BroadcastChannelEmail
+		return nil
+	case BroadcastChannelTelegram:
+		*s = BroadcastChannelTelegram
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -1073,8 +1080,9 @@ func (s *BroadcastContentInput) SetOneOf(val BroadcastContentInputSum) {
 // BroadcastContentInputSum represents sum type.
 type BroadcastContentInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type                       BroadcastContentInputSumType
-	EmailBroadcastContentInput EmailBroadcastContentInput
+	Type                          BroadcastContentInputSumType
+	EmailBroadcastContentInput    EmailBroadcastContentInput
+	TelegramBroadcastContentInput TelegramBroadcastContentInput
 }
 
 // BroadcastContentInputSumType is oneOf type of BroadcastContentInputSum.
@@ -1082,12 +1090,18 @@ type BroadcastContentInputSumType string
 
 // Possible values for BroadcastContentInputSumType.
 const (
-	EmailBroadcastContentInputBroadcastContentInputSum BroadcastContentInputSumType = "email"
+	EmailBroadcastContentInputBroadcastContentInputSum    BroadcastContentInputSumType = "email"
+	TelegramBroadcastContentInputBroadcastContentInputSum BroadcastContentInputSumType = "telegram"
 )
 
 // IsEmailBroadcastContentInput reports whether BroadcastContentInputSum is EmailBroadcastContentInput.
 func (s BroadcastContentInputSum) IsEmailBroadcastContentInput() bool {
 	return s.Type == EmailBroadcastContentInputBroadcastContentInputSum
+}
+
+// IsTelegramBroadcastContentInput reports whether BroadcastContentInputSum is TelegramBroadcastContentInput.
+func (s BroadcastContentInputSum) IsTelegramBroadcastContentInput() bool {
+	return s.Type == TelegramBroadcastContentInputBroadcastContentInputSum
 }
 
 // SetEmailBroadcastContentInput sets BroadcastContentInputSum to EmailBroadcastContentInput.
@@ -1111,11 +1125,33 @@ func NewEmailBroadcastContentInputBroadcastContentInputSum(v EmailBroadcastConte
 	return s
 }
 
+// SetTelegramBroadcastContentInput sets BroadcastContentInputSum to TelegramBroadcastContentInput.
+func (s *BroadcastContentInputSum) SetTelegramBroadcastContentInput(v TelegramBroadcastContentInput) {
+	s.Type = TelegramBroadcastContentInputBroadcastContentInputSum
+	s.TelegramBroadcastContentInput = v
+}
+
+// GetTelegramBroadcastContentInput returns TelegramBroadcastContentInput and true boolean if BroadcastContentInputSum is TelegramBroadcastContentInput.
+func (s BroadcastContentInputSum) GetTelegramBroadcastContentInput() (v TelegramBroadcastContentInput, ok bool) {
+	if !s.IsTelegramBroadcastContentInput() {
+		return v, false
+	}
+	return s.TelegramBroadcastContentInput, true
+}
+
+// NewTelegramBroadcastContentInputBroadcastContentInputSum returns new BroadcastContentInputSum from TelegramBroadcastContentInput.
+func NewTelegramBroadcastContentInputBroadcastContentInputSum(v TelegramBroadcastContentInput) BroadcastContentInputSum {
+	var s BroadcastContentInputSum
+	s.SetTelegramBroadcastContentInput(v)
+	return s
+}
+
 // BroadcastContentSum represents sum type.
 type BroadcastContentSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type                  BroadcastContentSumType
-	EmailBroadcastContent EmailBroadcastContent
+	Type                     BroadcastContentSumType
+	EmailBroadcastContent    EmailBroadcastContent
+	TelegramBroadcastContent TelegramBroadcastContent
 }
 
 // BroadcastContentSumType is oneOf type of BroadcastContentSum.
@@ -1123,12 +1159,18 @@ type BroadcastContentSumType string
 
 // Possible values for BroadcastContentSumType.
 const (
-	EmailBroadcastContentBroadcastContentSum BroadcastContentSumType = "email"
+	EmailBroadcastContentBroadcastContentSum    BroadcastContentSumType = "email"
+	TelegramBroadcastContentBroadcastContentSum BroadcastContentSumType = "telegram"
 )
 
 // IsEmailBroadcastContent reports whether BroadcastContentSum is EmailBroadcastContent.
 func (s BroadcastContentSum) IsEmailBroadcastContent() bool {
 	return s.Type == EmailBroadcastContentBroadcastContentSum
+}
+
+// IsTelegramBroadcastContent reports whether BroadcastContentSum is TelegramBroadcastContent.
+func (s BroadcastContentSum) IsTelegramBroadcastContent() bool {
+	return s.Type == TelegramBroadcastContentBroadcastContentSum
 }
 
 // SetEmailBroadcastContent sets BroadcastContentSum to EmailBroadcastContent.
@@ -1149,6 +1191,27 @@ func (s BroadcastContentSum) GetEmailBroadcastContent() (v EmailBroadcastContent
 func NewEmailBroadcastContentBroadcastContentSum(v EmailBroadcastContent) BroadcastContentSum {
 	var s BroadcastContentSum
 	s.SetEmailBroadcastContent(v)
+	return s
+}
+
+// SetTelegramBroadcastContent sets BroadcastContentSum to TelegramBroadcastContent.
+func (s *BroadcastContentSum) SetTelegramBroadcastContent(v TelegramBroadcastContent) {
+	s.Type = TelegramBroadcastContentBroadcastContentSum
+	s.TelegramBroadcastContent = v
+}
+
+// GetTelegramBroadcastContent returns TelegramBroadcastContent and true boolean if BroadcastContentSum is TelegramBroadcastContent.
+func (s BroadcastContentSum) GetTelegramBroadcastContent() (v TelegramBroadcastContent, ok bool) {
+	if !s.IsTelegramBroadcastContent() {
+		return v, false
+	}
+	return s.TelegramBroadcastContent, true
+}
+
+// NewTelegramBroadcastContentBroadcastContentSum returns new BroadcastContentSum from TelegramBroadcastContent.
+func NewTelegramBroadcastContentBroadcastContentSum(v TelegramBroadcastContent) BroadcastContentSum {
+	var s BroadcastContentSum
+	s.SetTelegramBroadcastContent(v)
 	return s
 }
 
@@ -3756,6 +3819,51 @@ func (o NilEntityId) Get() (v EntityId, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilEntityId) Or(d EntityId) EntityId {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilFloat32 returns new NilFloat32 with value set to v.
+func NewNilFloat32(v float32) NilFloat32 {
+	return NilFloat32{
+		Value: v,
+	}
+}
+
+// NilFloat32 is nullable float32.
+type NilFloat32 struct {
+	Value float32
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilFloat32) SetTo(v float32) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilFloat32) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilFloat32) SetToNull() {
+	o.Null = true
+	var v float32
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilFloat32) Get() (v float32, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilFloat32) Or(d float32) float32 {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -13455,37 +13563,49 @@ func (*SiteBroadcastResource) siteBroadcastsSendRes()      {}
 func (*SiteBroadcastResource) siteBroadcastsUnarchiveRes() {}
 func (*SiteBroadcastResource) siteBroadcastsUpdateRes()    {}
 
-// Denormalized delivery counters for a broadcast.
+// Delivery figures of a broadcast, derived from its recipients and their messages, per Channel (ADR
+// 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and unsubscribed. A
+// figure the broadcast's Channel does not report is null, never zero: Telegram reports no delivered,
+// opened, bounced or complained count and so no delivery or open rate.
 // Ref: #/components/schemas/SiteBroadcastStats
 type SiteBroadcastStats struct {
 	// Number of recipients the broadcast targets.
 	RecipientsTotal int32 `json:"recipientsTotal"`
 	// Messages successfully handed to the provider.
 	SentCount int32 `json:"sentCount"`
-	// Recipients that opened the email.
-	OpenedCount int32 `json:"openedCount"`
+	// Recipients skipped at send time: no destination any more, or an opt-out that landed after planning.
+	SkippedCount int32 `json:"skippedCount"`
+	// Messages that failed to send.
+	FailedCount int32 `json:"failedCount"`
+	// Recipients whose send has not ended yet.
+	PendingCount int32 `json:"pendingCount"`
+	// Recipients that opened the email; null on a Channel that cannot tell.
+	OpenedCount NilInt32 `json:"openedCount"`
 	// Recipients that clicked a link.
 	ClickedCount int32 `json:"clickedCount"`
 	// Recipients that unsubscribed via this broadcast.
 	UnsubscribedCount int32 `json:"unsubscribedCount"`
-	// Messages that failed to send.
-	FailedCount int32 `json:"failedCount"`
-	// Messages the provider reported delivered, read from the delivery result stamped on each message.
-	DeliveredCount int32 `json:"deliveredCount"`
-	// Messages the provider reported bounced, read from the delivery result stamped on each message.
-	BouncedCount int32 `json:"bouncedCount"`
-	// Messages a recipient complained about, read from the delivery result stamped on each message.
-	ComplainedCount int32 `json:"complainedCount"`
-	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too.
-	CapturedCount int32 `json:"capturedCount"`
-	// Messages handed to the provider ÷ recipients targeted (0–1).
-	DeliveryRate float32 `json:"deliveryRate"`
-	// Unique opens ÷ messages sent (0–1).
-	OpenRate float32 `json:"openRate"`
+	// Messages the provider reported delivered, read from the delivery result stamped on each message;
+	// null on a Channel whose provider reports none.
+	DeliveredCount NilInt32 `json:"deliveredCount"`
+	// Messages the provider reported bounced, read from the delivery result stamped on each message; null
+	// on a Channel whose provider reports none.
+	BouncedCount NilInt32 `json:"bouncedCount"`
+	// Messages a recipient complained about, read from the delivery result stamped on each message; null
+	// on a Channel whose provider reports none.
+	ComplainedCount NilInt32 `json:"complainedCount"`
+	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too. Null
+	// off email.
+	CapturedCount NilInt32 `json:"capturedCount"`
+	// Messages handed to the provider ÷ recipients targeted (0–1); null on a Channel that reports no
+	// delivery.
+	DeliveryRate NilFloat32 `json:"deliveryRate"`
+	// Unique opens ÷ messages sent (0–1); null on a Channel that reports no opens.
+	OpenRate NilFloat32 `json:"openRate"`
 	// Unique clicks ÷ messages sent (0–1).
 	ClickRate float32 `json:"clickRate"`
-	// Unique clicks ÷ unique opens (0–1).
-	ClickToOpenRate float32 `json:"clickToOpenRate"`
+	// Unique clicks ÷ unique opens (0–1); null on a Channel that reports no opens.
+	ClickToOpenRate NilFloat32 `json:"clickToOpenRate"`
 	// Unsubscribes ÷ messages sent (0–1).
 	UnsubscribeRate float32 `json:"unsubscribeRate"`
 	// Send failures ÷ recipients targeted (0–1).
@@ -13504,8 +13624,23 @@ func (s *SiteBroadcastStats) GetSentCount() int32 {
 	return s.SentCount
 }
 
+// GetSkippedCount returns the value of SkippedCount.
+func (s *SiteBroadcastStats) GetSkippedCount() int32 {
+	return s.SkippedCount
+}
+
+// GetFailedCount returns the value of FailedCount.
+func (s *SiteBroadcastStats) GetFailedCount() int32 {
+	return s.FailedCount
+}
+
+// GetPendingCount returns the value of PendingCount.
+func (s *SiteBroadcastStats) GetPendingCount() int32 {
+	return s.PendingCount
+}
+
 // GetOpenedCount returns the value of OpenedCount.
-func (s *SiteBroadcastStats) GetOpenedCount() int32 {
+func (s *SiteBroadcastStats) GetOpenedCount() NilInt32 {
 	return s.OpenedCount
 }
 
@@ -13519,38 +13654,33 @@ func (s *SiteBroadcastStats) GetUnsubscribedCount() int32 {
 	return s.UnsubscribedCount
 }
 
-// GetFailedCount returns the value of FailedCount.
-func (s *SiteBroadcastStats) GetFailedCount() int32 {
-	return s.FailedCount
-}
-
 // GetDeliveredCount returns the value of DeliveredCount.
-func (s *SiteBroadcastStats) GetDeliveredCount() int32 {
+func (s *SiteBroadcastStats) GetDeliveredCount() NilInt32 {
 	return s.DeliveredCount
 }
 
 // GetBouncedCount returns the value of BouncedCount.
-func (s *SiteBroadcastStats) GetBouncedCount() int32 {
+func (s *SiteBroadcastStats) GetBouncedCount() NilInt32 {
 	return s.BouncedCount
 }
 
 // GetComplainedCount returns the value of ComplainedCount.
-func (s *SiteBroadcastStats) GetComplainedCount() int32 {
+func (s *SiteBroadcastStats) GetComplainedCount() NilInt32 {
 	return s.ComplainedCount
 }
 
 // GetCapturedCount returns the value of CapturedCount.
-func (s *SiteBroadcastStats) GetCapturedCount() int32 {
+func (s *SiteBroadcastStats) GetCapturedCount() NilInt32 {
 	return s.CapturedCount
 }
 
 // GetDeliveryRate returns the value of DeliveryRate.
-func (s *SiteBroadcastStats) GetDeliveryRate() float32 {
+func (s *SiteBroadcastStats) GetDeliveryRate() NilFloat32 {
 	return s.DeliveryRate
 }
 
 // GetOpenRate returns the value of OpenRate.
-func (s *SiteBroadcastStats) GetOpenRate() float32 {
+func (s *SiteBroadcastStats) GetOpenRate() NilFloat32 {
 	return s.OpenRate
 }
 
@@ -13560,7 +13690,7 @@ func (s *SiteBroadcastStats) GetClickRate() float32 {
 }
 
 // GetClickToOpenRate returns the value of ClickToOpenRate.
-func (s *SiteBroadcastStats) GetClickToOpenRate() float32 {
+func (s *SiteBroadcastStats) GetClickToOpenRate() NilFloat32 {
 	return s.ClickToOpenRate
 }
 
@@ -13589,8 +13719,23 @@ func (s *SiteBroadcastStats) SetSentCount(val int32) {
 	s.SentCount = val
 }
 
+// SetSkippedCount sets the value of SkippedCount.
+func (s *SiteBroadcastStats) SetSkippedCount(val int32) {
+	s.SkippedCount = val
+}
+
+// SetFailedCount sets the value of FailedCount.
+func (s *SiteBroadcastStats) SetFailedCount(val int32) {
+	s.FailedCount = val
+}
+
+// SetPendingCount sets the value of PendingCount.
+func (s *SiteBroadcastStats) SetPendingCount(val int32) {
+	s.PendingCount = val
+}
+
 // SetOpenedCount sets the value of OpenedCount.
-func (s *SiteBroadcastStats) SetOpenedCount(val int32) {
+func (s *SiteBroadcastStats) SetOpenedCount(val NilInt32) {
 	s.OpenedCount = val
 }
 
@@ -13604,38 +13749,33 @@ func (s *SiteBroadcastStats) SetUnsubscribedCount(val int32) {
 	s.UnsubscribedCount = val
 }
 
-// SetFailedCount sets the value of FailedCount.
-func (s *SiteBroadcastStats) SetFailedCount(val int32) {
-	s.FailedCount = val
-}
-
 // SetDeliveredCount sets the value of DeliveredCount.
-func (s *SiteBroadcastStats) SetDeliveredCount(val int32) {
+func (s *SiteBroadcastStats) SetDeliveredCount(val NilInt32) {
 	s.DeliveredCount = val
 }
 
 // SetBouncedCount sets the value of BouncedCount.
-func (s *SiteBroadcastStats) SetBouncedCount(val int32) {
+func (s *SiteBroadcastStats) SetBouncedCount(val NilInt32) {
 	s.BouncedCount = val
 }
 
 // SetComplainedCount sets the value of ComplainedCount.
-func (s *SiteBroadcastStats) SetComplainedCount(val int32) {
+func (s *SiteBroadcastStats) SetComplainedCount(val NilInt32) {
 	s.ComplainedCount = val
 }
 
 // SetCapturedCount sets the value of CapturedCount.
-func (s *SiteBroadcastStats) SetCapturedCount(val int32) {
+func (s *SiteBroadcastStats) SetCapturedCount(val NilInt32) {
 	s.CapturedCount = val
 }
 
 // SetDeliveryRate sets the value of DeliveryRate.
-func (s *SiteBroadcastStats) SetDeliveryRate(val float32) {
+func (s *SiteBroadcastStats) SetDeliveryRate(val NilFloat32) {
 	s.DeliveryRate = val
 }
 
 // SetOpenRate sets the value of OpenRate.
-func (s *SiteBroadcastStats) SetOpenRate(val float32) {
+func (s *SiteBroadcastStats) SetOpenRate(val NilFloat32) {
 	s.OpenRate = val
 }
 
@@ -13645,7 +13785,7 @@ func (s *SiteBroadcastStats) SetClickRate(val float32) {
 }
 
 // SetClickToOpenRate sets the value of ClickToOpenRate.
-func (s *SiteBroadcastStats) SetClickToOpenRate(val float32) {
+func (s *SiteBroadcastStats) SetClickToOpenRate(val NilFloat32) {
 	s.ClickToOpenRate = val
 }
 
@@ -28988,6 +29128,236 @@ func (s *SmtpConfigInputKind) UnmarshalText(data []byte) error {
 	switch SmtpConfigInputKind(data) {
 	case SmtpConfigInputKindSMTP:
 		*s = SmtpConfigInputKindSMTP
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Telegram's content of a Broadcast as stored.
+// Ref: #/components/schemas/TelegramBroadcastContent
+type TelegramBroadcastContent struct {
+	// The Channel the content is for.
+	Channel TelegramBroadcastContentChannel `json:"channel"`
+	// The message text in Telegram's HTML subset, with Liquid merge tags.
+	Text string `json:"text"`
+	// The https image sent with the message, its caption being the text; null for a text message.
+	ImageUrl OptNilString `json:"imageUrl"`
+	// The link buttons under the message, one per row, in order.
+	Buttons []TelegramButton `json:"buttons"`
+	// Whether a link in the text unfolds a preview.
+	LinkPreview bool `json:"linkPreview"`
+	// The label of the unsubscribe button under the message; null for none.
+	UnsubscribeButton OptNilString `json:"unsubscribeButton"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *TelegramBroadcastContent) GetChannel() TelegramBroadcastContentChannel {
+	return s.Channel
+}
+
+// GetText returns the value of Text.
+func (s *TelegramBroadcastContent) GetText() string {
+	return s.Text
+}
+
+// GetImageUrl returns the value of ImageUrl.
+func (s *TelegramBroadcastContent) GetImageUrl() OptNilString {
+	return s.ImageUrl
+}
+
+// GetButtons returns the value of Buttons.
+func (s *TelegramBroadcastContent) GetButtons() []TelegramButton {
+	return s.Buttons
+}
+
+// GetLinkPreview returns the value of LinkPreview.
+func (s *TelegramBroadcastContent) GetLinkPreview() bool {
+	return s.LinkPreview
+}
+
+// GetUnsubscribeButton returns the value of UnsubscribeButton.
+func (s *TelegramBroadcastContent) GetUnsubscribeButton() OptNilString {
+	return s.UnsubscribeButton
+}
+
+// SetChannel sets the value of Channel.
+func (s *TelegramBroadcastContent) SetChannel(val TelegramBroadcastContentChannel) {
+	s.Channel = val
+}
+
+// SetText sets the value of Text.
+func (s *TelegramBroadcastContent) SetText(val string) {
+	s.Text = val
+}
+
+// SetImageUrl sets the value of ImageUrl.
+func (s *TelegramBroadcastContent) SetImageUrl(val OptNilString) {
+	s.ImageUrl = val
+}
+
+// SetButtons sets the value of Buttons.
+func (s *TelegramBroadcastContent) SetButtons(val []TelegramButton) {
+	s.Buttons = val
+}
+
+// SetLinkPreview sets the value of LinkPreview.
+func (s *TelegramBroadcastContent) SetLinkPreview(val bool) {
+	s.LinkPreview = val
+}
+
+// SetUnsubscribeButton sets the value of UnsubscribeButton.
+func (s *TelegramBroadcastContent) SetUnsubscribeButton(val OptNilString) {
+	s.UnsubscribeButton = val
+}
+
+// The Channel the content is for.
+type TelegramBroadcastContentChannel string
+
+const (
+	TelegramBroadcastContentChannelTelegram TelegramBroadcastContentChannel = "telegram"
+)
+
+// AllValues returns all TelegramBroadcastContentChannel values.
+func (TelegramBroadcastContentChannel) AllValues() []TelegramBroadcastContentChannel {
+	return []TelegramBroadcastContentChannel{
+		TelegramBroadcastContentChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelegramBroadcastContentChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case TelegramBroadcastContentChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelegramBroadcastContentChannel) UnmarshalText(data []byte) error {
+	switch TelegramBroadcastContentChannel(data) {
+	case TelegramBroadcastContentChannelTelegram:
+		*s = TelegramBroadcastContentChannelTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Telegram's content of a Broadcast (ADR 0078), the same Message content as a Telegram step. On create
+// an omitted field takes its default (an empty text, no image, no buttons, the link preview on, no
+// unsubscribe button); on update an omitted field keeps its value.
+// Ref: #/components/schemas/TelegramBroadcastContentInput
+type TelegramBroadcastContentInput struct {
+	// The Channel the content is for: the Broadcast's own, which an update cannot change.
+	Channel TelegramBroadcastContentInputChannel `json:"channel"`
+	// The message text in Telegram's HTML subset (b, i, u, s, a, code, pre, tg-spoiler, blockquote) with
+	// Liquid merge tags, at most 4096 characters as written (Schedule refuses a longer one). Nothing is
+	// appended to it.
+	Text OptString `json:"text"`
+	// An https image sent with the message; the text becomes its caption, of at most 1024 characters as
+	// written. An empty string removes the image.
+	ImageUrl OptString `json:"imageUrl"`
+	// Up to 8 link buttons under the message, one per row, in order. An empty list removes them.
+	Buttons []TelegramButton `json:"buttons"`
+	// Whether a link in the text unfolds a preview. On when omitted; no effect with an image.
+	LinkPreview OptBool `json:"linkPreview"`
+	// The label of an unsubscribe button under the message, up to 64 characters. Pressing it is the
+	// person's Channel-wide Telegram opt-out. An empty string removes the button.
+	UnsubscribeButton OptString `json:"unsubscribeButton"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *TelegramBroadcastContentInput) GetChannel() TelegramBroadcastContentInputChannel {
+	return s.Channel
+}
+
+// GetText returns the value of Text.
+func (s *TelegramBroadcastContentInput) GetText() OptString {
+	return s.Text
+}
+
+// GetImageUrl returns the value of ImageUrl.
+func (s *TelegramBroadcastContentInput) GetImageUrl() OptString {
+	return s.ImageUrl
+}
+
+// GetButtons returns the value of Buttons.
+func (s *TelegramBroadcastContentInput) GetButtons() []TelegramButton {
+	return s.Buttons
+}
+
+// GetLinkPreview returns the value of LinkPreview.
+func (s *TelegramBroadcastContentInput) GetLinkPreview() OptBool {
+	return s.LinkPreview
+}
+
+// GetUnsubscribeButton returns the value of UnsubscribeButton.
+func (s *TelegramBroadcastContentInput) GetUnsubscribeButton() OptString {
+	return s.UnsubscribeButton
+}
+
+// SetChannel sets the value of Channel.
+func (s *TelegramBroadcastContentInput) SetChannel(val TelegramBroadcastContentInputChannel) {
+	s.Channel = val
+}
+
+// SetText sets the value of Text.
+func (s *TelegramBroadcastContentInput) SetText(val OptString) {
+	s.Text = val
+}
+
+// SetImageUrl sets the value of ImageUrl.
+func (s *TelegramBroadcastContentInput) SetImageUrl(val OptString) {
+	s.ImageUrl = val
+}
+
+// SetButtons sets the value of Buttons.
+func (s *TelegramBroadcastContentInput) SetButtons(val []TelegramButton) {
+	s.Buttons = val
+}
+
+// SetLinkPreview sets the value of LinkPreview.
+func (s *TelegramBroadcastContentInput) SetLinkPreview(val OptBool) {
+	s.LinkPreview = val
+}
+
+// SetUnsubscribeButton sets the value of UnsubscribeButton.
+func (s *TelegramBroadcastContentInput) SetUnsubscribeButton(val OptString) {
+	s.UnsubscribeButton = val
+}
+
+// The Channel the content is for: the Broadcast's own, which an update cannot change.
+type TelegramBroadcastContentInputChannel string
+
+const (
+	TelegramBroadcastContentInputChannelTelegram TelegramBroadcastContentInputChannel = "telegram"
+)
+
+// AllValues returns all TelegramBroadcastContentInputChannel values.
+func (TelegramBroadcastContentInputChannel) AllValues() []TelegramBroadcastContentInputChannel {
+	return []TelegramBroadcastContentInputChannel{
+		TelegramBroadcastContentInputChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelegramBroadcastContentInputChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case TelegramBroadcastContentInputChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelegramBroadcastContentInputChannel) UnmarshalText(data []byte) error {
+	switch TelegramBroadcastContentInputChannel(data) {
+	case TelegramBroadcastContentInputChannelTelegram:
+		*s = TelegramBroadcastContentInputChannelTelegram
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

@@ -122,7 +122,9 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend durationSeconds
 // goverter:extend eventAction
 // goverter:extend broadcastContent
+// goverter:extend nilFloat32
 // goverter:extend emailContentChannel
+// goverter:extend telegramContentChannel
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	// goverter:useEmptyOnNil:slice
@@ -133,23 +135,27 @@ type Converter interface {
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
 	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.
 	EmailBroadcastContentToResource(source *ent.Broadcast) externalapi.EmailBroadcastContent
+	// The Telegram content of a Telegram Broadcast, the arm of its content that broadcastContent wraps.
+	TelegramBroadcastContentToResource(source *ent.Broadcast) externalapi.TelegramBroadcastContent
 	// goverter:useEmptyOnNil:slice
 	BroadcastsToResources(source []*ent.Broadcast) []externalapi.BroadcastResource
 
-	// The figures are the report's Stats; the rates are Stats methods.
-	// goverter:map Stats.Recipients RecipientsTotal
-	// goverter:map Stats.Sent SentCount
-	// goverter:map Stats.Skipped SkippedCount
-	// goverter:map Stats.Failed FailedCount
-	// goverter:map Stats.Opened OpenedCount
-	// goverter:map Stats.Clicked ClickedCount
-	// goverter:map Stats.Unsubscribed UnsubscribedCount
-	// goverter:map Stats.Delivered DeliveredCount
-	// goverter:map Stats.Bounced BouncedCount
-	// goverter:map Stats.Complained ComplainedCount
-	// goverter:map Stats.Captured CapturedCount
-	// goverter:map Stats.OpenRate OpenRate
-	// goverter:map Stats.ClickRate ClickRate
+	// The figures are the report's Figures, as the Broadcast's Channel reports them: one it does not
+	// report is null.
+	// goverter:map Figures.Recipients RecipientsTotal
+	// goverter:map Figures.Sent SentCount
+	// goverter:map Figures.Skipped SkippedCount
+	// goverter:map Figures.Pending PendingCount
+	// goverter:map Figures.Failed FailedCount
+	// goverter:map Figures.Opened OpenedCount
+	// goverter:map Figures.Clicked ClickedCount
+	// goverter:map Figures.Unsubscribed UnsubscribedCount
+	// goverter:map Figures.Delivered DeliveredCount
+	// goverter:map Figures.Bounced BouncedCount
+	// goverter:map Figures.Complained ComplainedCount
+	// goverter:map Figures.Captured CapturedCount
+	// goverter:map Figures.OpenRate OpenRate
+	// goverter:map Figures.ClickRate ClickRate
 	BroadcastReportToResource(source broadcasts.Report) externalapi.BroadcastReport
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:autoMap Credited
@@ -554,6 +560,11 @@ func optNilInt32(v *int) externalapi.OptNilInt32 {
 
 // jsonObject renders a stored JSON object (custom fields, event properties): absent when it has
 // no keys.
+// nilFloat32 renders a figure a Channel may not report: null when it does not.
+func nilFloat32(v *float32) externalapi.NilFloat32 {
+	return convert.Nil[externalapi.NilFloat32](v)
+}
+
 func jsonObject(m map[string]any) externalapi.OptNilJsonObject {
 	return convert.OptObject[externalapi.OptNilJsonObject](convert.RawObject[externalapi.JsonObject](m))
 }
@@ -561,10 +572,19 @@ func jsonObject(m map[string]any) externalapi.OptNilJsonObject {
 // broadcastContent is a Broadcast's content in the arm of its Channel: a oneOf is beyond
 // goverter, so only the switch is written here.
 func broadcastContent(c Converter, b *ent.Broadcast) externalapi.BroadcastContent {
-	if b.Channel == broadcast.ChannelEmail {
+	switch b.Channel {
+	case broadcast.ChannelEmail:
 		return externalapi.BroadcastContent{OneOf: externalapi.NewEmailBroadcastContentBroadcastContentSum(c.EmailBroadcastContentToResource(b))}
+	case broadcast.ChannelTelegram:
+		return externalapi.BroadcastContent{OneOf: externalapi.NewTelegramBroadcastContentBroadcastContentSum(c.TelegramBroadcastContentToResource(b))}
+	default:
+		return externalapi.BroadcastContent{}
 	}
-	return externalapi.BroadcastContent{}
+}
+
+// telegramContentChannel is the discriminator of Telegram's content arm.
+func telegramContentChannel(broadcast.Channel) externalapi.TelegramBroadcastContentChannel {
+	return externalapi.TelegramBroadcastContentChannelTelegram
 }
 
 // emailContentChannel is the discriminator of email's content arm.

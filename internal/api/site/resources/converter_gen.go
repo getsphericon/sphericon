@@ -595,6 +595,8 @@ func (c *ConverterImpl) BroadcastChannelToResource(source broadcast.Channel) sit
 	switch source {
 	case broadcast.ChannelEmail:
 		siteapiBroadcastChannel = site.BroadcastChannelEmail
+	case broadcast.ChannelTelegram:
+		siteapiBroadcastChannel = site.BroadcastChannelTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -634,24 +636,26 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 	}
 	return siteapiContactExportBroadcastRecipient
 }
-func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Stats) site.SiteBroadcastStats {
+func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Figures) site.SiteBroadcastStats {
 	var siteapiSiteBroadcastStats site.SiteBroadcastStats
 	siteapiSiteBroadcastStats.RecipientsTotal = count(source.Recipients)
 	siteapiSiteBroadcastStats.SentCount = count(source.Sent)
-	siteapiSiteBroadcastStats.OpenedCount = count(source.Opened)
+	siteapiSiteBroadcastStats.SkippedCount = count(source.Skipped)
+	siteapiSiteBroadcastStats.FailedCount = count(source.Failed)
+	siteapiSiteBroadcastStats.PendingCount = count(source.Pending)
+	siteapiSiteBroadcastStats.OpenedCount = nilInt32(source.Opened)
 	siteapiSiteBroadcastStats.ClickedCount = count(source.Clicked)
 	siteapiSiteBroadcastStats.UnsubscribedCount = count(source.Unsubscribed)
-	siteapiSiteBroadcastStats.FailedCount = count(source.Failed)
-	siteapiSiteBroadcastStats.DeliveredCount = count(source.Delivered)
-	siteapiSiteBroadcastStats.BouncedCount = count(source.Bounced)
-	siteapiSiteBroadcastStats.ComplainedCount = count(source.Complained)
-	siteapiSiteBroadcastStats.CapturedCount = count(source.Captured)
-	siteapiSiteBroadcastStats.DeliveryRate = source.DeliveryRate()
-	siteapiSiteBroadcastStats.OpenRate = source.OpenRate()
-	siteapiSiteBroadcastStats.ClickRate = source.ClickRate()
-	siteapiSiteBroadcastStats.ClickToOpenRate = source.ClickToOpenRate()
-	siteapiSiteBroadcastStats.UnsubscribeRate = source.UnsubscribeRate()
-	siteapiSiteBroadcastStats.FailureRate = source.FailureRate()
+	siteapiSiteBroadcastStats.DeliveredCount = nilInt32(source.Delivered)
+	siteapiSiteBroadcastStats.BouncedCount = nilInt32(source.Bounced)
+	siteapiSiteBroadcastStats.ComplainedCount = nilInt32(source.Complained)
+	siteapiSiteBroadcastStats.CapturedCount = nilInt32(source.Captured)
+	siteapiSiteBroadcastStats.DeliveryRate = nilFloat32(source.DeliveryRate)
+	siteapiSiteBroadcastStats.OpenRate = nilFloat32(source.OpenRate)
+	siteapiSiteBroadcastStats.ClickRate = source.ClickRate
+	siteapiSiteBroadcastStats.ClickToOpenRate = nilFloat32(source.ClickToOpenRate)
+	siteapiSiteBroadcastStats.UnsubscribeRate = source.UnsubscribeRate
+	siteapiSiteBroadcastStats.FailureRate = source.FailureRate
 	siteapiSiteBroadcastStats.Revenue = c.MessageRevenueToResource(source.Revenue)
 	return siteapiSiteBroadcastStats
 }
@@ -2140,6 +2144,27 @@ func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []site.SiteTagResourc
 		siteapiSiteTagResourceList[i] = c.TagToResource(source[i])
 	}
 	return siteapiSiteTagResourceList
+}
+func (c *ConverterImpl) TelegramBroadcastContentToResource(source *ent.Broadcast) site.TelegramBroadcastContent {
+	var siteapiTelegramBroadcastContent site.TelegramBroadcastContent
+	if source != nil {
+		siteapiTelegramBroadcastContent.Channel = telegramContentChannel((*source).Channel)
+		if (*source).Text != nil {
+			siteapiTelegramBroadcastContent.Text = *(*source).Text
+		}
+		siteapiTelegramBroadcastContent.ImageUrl = optNilString((*source).ImageURL)
+		if (*source).Buttons != nil {
+			siteapiTelegramBroadcastContent.Buttons = make([]site.TelegramButton, len((*source).Buttons))
+			for i := 0; i < len((*source).Buttons); i++ {
+				siteapiTelegramBroadcastContent.Buttons[i] = c.TelegramButtonToResource((*source).Buttons[i])
+			}
+		}
+		if (*source).LinkPreview != nil {
+			siteapiTelegramBroadcastContent.LinkPreview = *(*source).LinkPreview
+		}
+		siteapiTelegramBroadcastContent.UnsubscribeButton = optNilString((*source).UnsubscribeButton)
+	}
+	return siteapiTelegramBroadcastContent
 }
 func (c *ConverterImpl) TelegramButtonToResource(source telegramrender.Button) site.TelegramButton {
 	var siteapiTelegramButton site.TelegramButton

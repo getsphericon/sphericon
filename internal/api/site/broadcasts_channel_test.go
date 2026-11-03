@@ -89,23 +89,21 @@ func TestSiteBroadcastRefusesAnIntegrationOfAnotherChannel(t *testing.T) {
 	assert.Equal(t, before.IntegrationID, after.IntegrationID, "a refused update changes nothing")
 }
 
-// The Channel is fixed at creation: an update whose content names another Channel is refused,
-// and the Broadcast keeps its Channel and content.
+// The Channel is fixed at creation: an update whose content is of another Channel is refused, and
+// the Broadcast keeps its Channel and content.
 func TestSiteBroadcastUpdateCannotChangeTheChannel(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	c := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.EditBody(func(body map[string]any) {
-		body["content"].(map[string]any)["channel"] = "telegram"
-	}))
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
 	got, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Elsewhere")}),
+		Content: testhelper.SiteTelegramEdit("Elsewhere"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateBadRequest{}, got)
+	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, got)
 	assert.Equal(t, before.Channel, after.Channel)
 	assert.Equal(t, before.Subject, after.Subject)
 }

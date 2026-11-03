@@ -588,6 +588,21 @@ func ScopedEntities() []ScopedEntity {
 				if src.FromEmail != nil {
 					b.SetFromEmail(*src.FromEmail)
 				}
+				if src.Text != nil {
+					b.SetText(*src.Text)
+				}
+				if src.ImageURL != nil {
+					b.SetImageURL(*src.ImageURL)
+				}
+				if !reflect.ValueOf(src.Buttons).IsZero() {
+					b.SetButtons(src.Buttons)
+				}
+				if src.LinkPreview != nil {
+					b.SetLinkPreview(*src.LinkPreview)
+				}
+				if src.UnsubscribeButton != nil {
+					b.SetUnsubscribeButton(*src.UnsubscribeButton)
+				}
 				if src.Body != nil {
 					b.SetBody(*src.Body)
 				}

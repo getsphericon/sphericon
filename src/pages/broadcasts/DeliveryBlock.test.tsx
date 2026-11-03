@@ -26,6 +26,8 @@ const draft: SiteBroadcastResource = {
   stats: {
     recipientsTotal: 0,
     sentCount: 0,
+    skippedCount: 0,
+    pendingCount: 0,
     openedCount: 0,
     clickedCount: 0,
     unsubscribedCount: 0,
@@ -114,4 +116,29 @@ test('a rejected test send shows the error toast', async () => {
   await screen.getByRole('button', { name: 'Send test' }).click()
 
   await expect.element(screen.getByText(SEND_FAILED)).toBeInTheDocument()
+})
+
+// Telegram has no Test send (ADR 0080): the action is not offered, and scheduling is.
+test('a Telegram broadcast offers no test send and can be scheduled', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteBroadcastsSchedule(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(draft)
+    }),
+  )
+  const telegram: SiteBroadcastResource = {
+    ...draft,
+    channel: 'telegram',
+    content: { channel: 'telegram', text: 'Hello', buttons: [], linkPreview: true },
+  }
+  const { screen } = await renderWithRouter(<DeliveryBlock broadcast={telegram} />, MOUNT)
+
+  await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
+  await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+
+  await expect.element(screen.getByText('Broadcast scheduled')).toBeInTheDocument()
+  expect(bodies).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString() }])
+  expect(screen.getByLabelText('Send a test to').elements()).toHaveLength(0)
+  expect(screen.getByRole('button', { name: 'Send test' }).elements()).toHaveLength(0)
 })

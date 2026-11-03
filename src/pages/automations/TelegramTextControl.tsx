@@ -2,9 +2,9 @@ import { useJsonForms } from '@workflowbuilder/sdk'
 import type { ControlProps } from '@workflowbuilder/sdk'
 
 import { TelegramContentEditor } from '../../components/telegram/TelegramContentEditor.tsx'
+import { TelegramUnsubscribeControl } from '../../components/telegram/TelegramUnsubscribeControl.tsx'
 import { EVENT_ACTION_TAG } from '../../utils/mergeTags.ts'
-import { buttonsCodec } from './telegramButtons.ts'
-import { TelegramUnsubscribeControl } from './TelegramUnsubscribeControl.tsx'
+import { buttonsCodec } from '../../utils/telegramButtons.ts'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null

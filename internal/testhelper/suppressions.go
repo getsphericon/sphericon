@@ -3,6 +3,7 @@ package testhelper
 import (
 	"context"
 
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 )
@@ -24,6 +25,16 @@ func (env *TestEnv) SuppressDestination(ctx context.Context, destination string)
 func (env *TestEnv) UnsubscribeFromBroadcasts(ctx context.Context, destination string) {
 	err := env.DB.Scoped(fixtures.AcmeID).Unsubscribe().UpdateOneID(fixtures.UnsubscribeAutomationLeoID).
 		SetDestination(destination).SetSendingSource(eligibility.SourceBroadcasts).Exec(ctx)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// UnsubscribeTelegramFromBroadcasts is UnsubscribeFromBroadcasts for a Telegram user id: the
+// person's stop, which silences every bot of the Workspace for them.
+func (env *TestEnv) UnsubscribeTelegramFromBroadcasts(ctx context.Context, userID string) {
+	err := env.DB.Scoped(fixtures.AcmeID).Unsubscribe().UpdateOneID(fixtures.UnsubscribeAutomationLeoID).
+		SetChannel(unsubscribe.ChannelTelegram).SetDestination(userID).SetSendingSource(eligibility.SourceBroadcasts).Exec(ctx)
 	if err != nil {
 		panic(err)
 	}

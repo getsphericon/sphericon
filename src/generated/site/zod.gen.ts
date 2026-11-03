@@ -157,7 +157,7 @@ export const zAuditAction = z.enum([
 /**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
  */
-export const zBroadcastChannel = z.enum(['email']);
+export const zBroadcastChannel = z.enum(['email', 'telegram']);
 
 /**
  * How the contact first came to exist
@@ -228,11 +228,6 @@ export const zEmailBroadcastContent = z.object({
 });
 
 /**
- * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
- */
-export const zBroadcastContent = zEmailBroadcastContent;
-
-/**
  * Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on
  * update an omitted field keeps its value and null clears it.
  */
@@ -246,11 +241,6 @@ export const zEmailBroadcastContentInput = z.object({
 });
 
 /**
- * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
- */
-export const zBroadcastContentInput = zEmailBroadcastContentInput;
-
-/**
  * A primary key, written as a decimal string so JavaScript never rounds it. The format
  * makes the Go servers parse it into an int64: a malformed id is refused as a 400 before
  * a handler runs. The pattern says the same in the contract, so a client (or a fuzzer) can
@@ -258,16 +248,6 @@ export const zBroadcastContentInput = zEmailBroadcastContentInput;
  * reaches, so every id the schema admits fits an int64.
  */
 export const zEntityId = z.string().regex(/^[0-9]+$/);
-
-/**
- * Request body for creating a broadcast
- */
-export const zCreateBroadcastInput = z.object({
-  name: z.string(),
-  content: zBroadcastContentInput,
-  segmentId: z.exactOptional(zEntityId.nullable()),
-  integrationId: z.exactOptional(zEntityId.nullable())
-});
 
 /**
  * Scopes an OAuth client may be granted without any extra opt-in: the external
@@ -1399,23 +1379,28 @@ export const zSiteAutomationReport = z.object({
 });
 
 /**
- * Denormalized delivery counters for a broadcast
+ * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
+ * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
+ * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
+ * reports no delivered, opened, bounced or complained count and so no delivery or open rate.
  */
 export const zSiteBroadcastStats = z.object({
   recipientsTotal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   sentCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skippedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  failedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pendingCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
   clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  failedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  capturedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  deliveryRate: z.number(),
-  openRate: z.number(),
+  deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  capturedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  deliveryRate: z.number().nullable(),
+  openRate: z.number().nullable(),
   clickRate: z.number(),
-  clickToOpenRate: z.number(),
+  clickToOpenRate: z.number().nullable(),
   unsubscribeRate: z.number(),
   failureRate: z.number(),
   revenue: zSiteMessageRevenue
@@ -2395,6 +2380,58 @@ export const zSiteUpdateAutomationInput = z.object({
   exitEvents: z.exactOptional(z.array(z.string())),
   goalEvent: z.exactOptional(z.string().nullable()),
   steps: z.exactOptional(z.array(zSiteAutomationStep))
+});
+
+/**
+ * Telegram's content of a Broadcast as stored
+ */
+export const zTelegramBroadcastContent = z.object({
+  channel: z.enum(['telegram']),
+  text: z.string(),
+  imageUrl: z.exactOptional(z.string().nullable()),
+  buttons: z.array(zTelegramButton),
+  linkPreview: z.boolean(),
+  unsubscribeButton: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
+ */
+export const zBroadcastContent = z.discriminatedUnion('channel', [
+  zEmailBroadcastContent.extend({ channel: z.literal('email') }),
+  zTelegramBroadcastContent.extend({ channel: z.literal('telegram') })
+]);
+
+/**
+ * Telegram's content of a Broadcast (ADR 0078), the same Message content as a Telegram step. On
+ * create an omitted field takes its default (an empty text, no image, no buttons, the link preview
+ * on, no unsubscribe button); on update an omitted field keeps its value.
+ */
+export const zTelegramBroadcastContentInput = z.object({
+  channel: z.enum(['telegram']),
+  text: z.exactOptional(z.string()),
+  imageUrl: z.exactOptional(z.string()),
+  buttons: z.exactOptional(z.array(zTelegramButton).max(8)),
+  linkPreview: z.exactOptional(z.boolean()),
+  unsubscribeButton: z.exactOptional(z.string().max(64))
+});
+
+/**
+ * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
+ */
+export const zBroadcastContentInput = z.discriminatedUnion('channel', [
+  zEmailBroadcastContentInput.extend({ channel: z.literal('email') }),
+  zTelegramBroadcastContentInput.extend({ channel: z.literal('telegram') })
+]);
+
+/**
+ * Request body for creating a broadcast
+ */
+export const zCreateBroadcastInput = z.object({
+  name: z.string(),
+  content: zBroadcastContentInput,
+  segmentId: z.exactOptional(zEntityId.nullable()),
+  integrationId: z.exactOptional(zEntityId.nullable())
 });
 
 /**

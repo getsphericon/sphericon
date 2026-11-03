@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // recipientInsertChunk bounds a single CreateBulk so a very large audience is planned in
@@ -220,10 +221,14 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 // renderable is the Channel's own check that content renders at all, before anything is sent: on
 // email a subject and body that Liquid and the HTML parser take.
 func renderable(content outbound.Content) error {
-	if c, ok := content.(outbound.EmailContent); ok {
+	switch c := content.(type) {
+	case outbound.EmailContent:
 		return emailrender.Lint(c.Subject, c.Body, nil).Error
+	case outbound.TelegramContent:
+		return telegramrender.Check(c.Text)
+	default:
+		return fmt.Errorf("broadcasts: no render check for %T", content)
 	}
-	return fmt.Errorf("broadcasts: no render check for %T", content)
 }
 
 // ErrNoAudience marks a Broadcast whose audience cannot be resolved: a Segment Broadcast without
@@ -231,12 +236,24 @@ func renderable(content outbound.Content) error {
 var ErrNoAudience = errors.New("broadcasts: the audience of the broadcast cannot be resolved")
 
 // destinationOf is the Destination the Broadcast b reaches its audience at, by its Channel (ADR
-// 0080): on email the Contact's address.
-func destinationOf(b *ent.Broadcast) (eligibility.Destination, error) {
-	if b.Channel == broadcast.ChannelEmail {
+// 0080): on email the Contact's address, on Telegram its Bindings on the Integration the Broadcast
+// routes through, the one it names or the Channel's default. A route with none reaches nobody.
+func destinationOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (eligibility.Destination, error) {
+	switch b.Channel {
+	case broadcast.ChannelEmail:
 		return eligibility.EmailDestination(), nil
+	case broadcast.ChannelTelegram:
+		integ, err := messaging.Integration(ctx, s, messaging.ChannelTelegram, b.IntegrationID)
+		if errors.Is(err, messaging.ErrNoProvider) {
+			return eligibility.BindingDestination(eligibility.ChannelTelegram, 0), nil
+		}
+		if err != nil {
+			return nil, fmt.Errorf("broadcasts: broadcast %d integration: %w", b.ID, err)
+		}
+		return eligibility.BindingDestination(eligibility.ChannelTelegram, integ.ID), nil
+	default:
+		return nil, fmt.Errorf("broadcasts: broadcast %d is on channel %q, which has no destination", b.ID, b.Channel)
 	}
-	return nil, fmt.Errorf("broadcasts: broadcast %d is on channel %q, which has no destination", b.ID, b.Channel)
 }
 
 // audienceOf is the Contacts the plan of the Broadcast b, which has left draft, takes: the
@@ -244,10 +261,10 @@ func destinationOf(b *ent.Broadcast) (eligibility.Destination, error) {
 // 0065; a Broadcast to all contacts is not narrowed) and by its Channel's Destination: they have
 // one, and it is eligible. Eligibility is derived (ADR 0001): suppressed destinations and ones
 // unsubscribed from the "broadcasts" source (or from everything) are excluded at the query level.
-// A Contact without a Destination is left out, so no row is created that could never send and
+// A Contact without a Destination (on Telegram, an eligible Binding on the routed Integration) is left out, so no row is created that could never send and
 // would block finalization forever.
 func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (*ent.ContactQuery, error) {
-	dest, err := destinationOf(b)
+	dest, err := destinationOf(ctx, s, b)
 	if err != nil {
 		return nil, err
 	}

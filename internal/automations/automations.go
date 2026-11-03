@@ -14,7 +14,6 @@ import (
 	"slices"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/samber/lo"
 
@@ -122,8 +121,8 @@ func validate(steps []automationsteps.Step) error {
 			if err := telegramrender.Check(s.Text); err != nil {
 				return ErrInvalidStep.With(err.Error())
 			}
-			if n := utf8.RuneCountInString(strings.TrimSpace(s.UnsubscribeButton)); n > maxUnsubscribeButton {
-				return ErrInvalidStep.With(fmt.Sprintf("the unsubscribe button's label is %d characters long, up to %d", n, maxUnsubscribeButton))
+			if err := telegramrender.CheckUnsubscribeButton(s.UnsubscribeButton); err != nil {
+				return ErrInvalidStep.With(err.Error())
 			}
 			if err := telegramrender.CheckImage(s.ImageURL); err != nil {
 				return ErrInvalidStep.With(err.Error())
@@ -627,9 +626,8 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 		if st.Step.Type != automationsteps.Telegram {
 			continue
 		}
-		limit := telegramrender.Limit(st.Step.ImageURL != "")
-		if n := telegramrender.WrittenLength(st.Step.Text); n > limit {
-			return ErrInvalidStep.With(fmt.Sprintf("step %d: the text is %d characters long, Telegram takes %d", st.Index+1, n, limit))
+		if err := telegramrender.CheckWritten(st.Step.Text, st.Step.ImageURL != ""); err != nil {
+			return ErrInvalidStep.With(fmt.Sprintf("step %d: %s", st.Index+1, err))
 		}
 	}
 	type routeKey struct {

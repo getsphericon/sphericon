@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/index"
 
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // Broadcast is a workspace-scoped one-off send on one Channel, fixed when it is created (ADR
@@ -51,7 +52,7 @@ func (Broadcast) Fields() []ent.Field {
 		// Broadcast is never converted to another Channel (ADR 0080). Every write sets it; the
 		// column default only fills the rows that predate it.
 		field.Enum("channel").
-			Values("email").
+			Values("email", "telegram").
 			Immutable().
 			Annotations(entsql.Default("email")),
 		// Email's content: set on an email Broadcast, unset on any other (broadcastContents).
@@ -62,6 +63,24 @@ func (Broadcast) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.String("from_email").
+			Optional().
+			Nillable(),
+		// Telegram's content, the same Message content as a Telegram step (ADR 0078), set on a
+		// Telegram Broadcast and unset on any other (broadcastContents): the text in Telegram's HTML
+		// subset with Liquid merge tags, an optional image (the text is then its caption), the link
+		// buttons, whether a link unfolds a preview and the label of an optional unsubscribe button.
+		field.String("text").
+			Optional().
+			Nillable(),
+		field.String("image_url").
+			Optional().
+			Nillable(),
+		field.JSON("buttons", []telegramrender.Button{}).
+			Optional(),
+		field.Bool("link_preview").
+			Optional().
+			Nillable(),
+		field.String("unsubscribe_button").
 			Optional().
 			Nillable(),
 		// Email-ready HTML with Liquid merge tags (ADR 0040).
@@ -177,6 +196,7 @@ type channelContent struct {
 // added to the channel enum adds its entry here.
 var broadcastContents = []channelContent{
 	{channel: "email", required: []string{"subject", "body"}, optional: []string{"from_name", "from_email", "doc", "editor_version"}},
+	{channel: "telegram", required: []string{"text", "buttons", "link_preview"}, optional: []string{"image_url", "unsubscribe_button"}},
 }
 
 // contentCheck is the CHECK that a row holds exactly its Channel's content: one arm per Channel,

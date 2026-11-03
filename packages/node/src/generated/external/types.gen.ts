@@ -755,7 +755,7 @@ export type BrandKitResource = {
 /**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
  */
-export const BroadcastChannel = { EMAIL: 'email' } as const;
+export const BroadcastChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
 
 /**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
@@ -765,15 +765,25 @@ export type BroadcastChannel = typeof BroadcastChannel[keyof typeof BroadcastCha
 /**
  * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
  */
-export type BroadcastContent = EmailBroadcastContent;
+export type BroadcastContent = ({
+  channel: 'email';
+} & EmailBroadcastContent) | ({
+  channel: 'telegram';
+} & TelegramBroadcastContent);
 
 /**
  * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
  */
-export type BroadcastContentInput = EmailBroadcastContentInput;
+export type BroadcastContentInput = ({
+  channel: 'email';
+} & EmailBroadcastContentInput) | ({
+  channel: 'telegram';
+} & TelegramBroadcastContentInput);
 
 /**
- * Delivery report of a broadcast
+ * Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does
+ * not report is null, never zero: Telegram reports no delivered, opened, bounced or complained
+ * count and so no open rate.
  */
 export type BroadcastReport = {
   /**
@@ -789,11 +799,11 @@ export type BroadcastReport = {
    */
   recipientsTotal: number;
   /**
-   * Messages handed to the email provider
+   * Messages handed to the provider
    */
   sentCount: number;
   /**
-   * Recipients skipped at send time (unsubscribed or suppressed after planning)
+   * Recipients skipped at send time (no destination any more, unsubscribed or suppressed after planning)
    */
   skippedCount: number;
   /**
@@ -801,9 +811,13 @@ export type BroadcastReport = {
    */
   failedCount: number;
   /**
-   * Recipients that opened the email
+   * Recipients whose send has not ended yet
    */
-  openedCount: number;
+  pendingCount: number;
+  /**
+   * Recipients that opened the email; null on a Channel that cannot tell
+   */
+  openedCount: number | null;
   /**
    * Recipients that clicked a link
    */
@@ -813,25 +827,25 @@ export type BroadcastReport = {
    */
   unsubscribedCount: number;
   /**
-   * Messages the provider reported delivered, read from the delivery result stamped on each message
+   * Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none
    */
-  deliveredCount: number;
+  deliveredCount: number | null;
   /**
-   * Messages the provider reported bounced, read from the delivery result stamped on each message
+   * Messages the provider reported bounced, read from the delivery result stamped on each message; null on a Channel whose provider reports none
    */
-  bouncedCount: number;
+  bouncedCount: number | null;
   /**
-   * Messages a recipient complained about, read from the delivery result stamped on each message
+   * Messages a recipient complained about, read from the delivery result stamped on each message; null on a Channel whose provider reports none
    */
-  complainedCount: number;
+  complainedCount: number | null;
   /**
-   * Messages that went through a Test inbox: captured, not delivered; they count as delivered too
+   * Messages that went through a Test inbox: captured, not delivered; they count as delivered too. Null off email.
    */
-  capturedCount: number;
+  capturedCount: number | null;
   /**
-   * Unique opens ÷ messages sent (0-1)
+   * Unique opens ÷ messages sent (0-1); null on a Channel that reports no opens
    */
-  openRate: number;
+  openRate: number | null;
   /**
    * Unique clicks ÷ messages sent (0-1)
    */
@@ -4245,6 +4259,68 @@ export type TagResource = {
    * Creation timestamp
    */
   createdAt: Timestamp;
+};
+
+/**
+ * Telegram's content of a Broadcast as stored
+ */
+export type TelegramBroadcastContent = {
+  /**
+   * The Channel the content is for
+   */
+  channel: 'telegram';
+  /**
+   * The message text in Telegram's HTML subset, with Liquid merge tags
+   */
+  text: string;
+  /**
+   * The https image sent with the message, its caption being the text; null for a text message
+   */
+  imageUrl?: string | null;
+  /**
+   * The link buttons under the message, one per row, in order
+   */
+  buttons: Array<TelegramButton>;
+  /**
+   * Whether a link in the text unfolds a preview
+   */
+  linkPreview: boolean;
+  /**
+   * The label of the unsubscribe button under the message; null for none
+   */
+  unsubscribeButton?: string | null;
+};
+
+/**
+ * Telegram's content of a Broadcast (ADR 0078), the same Message content as a Telegram step. On
+ * create an omitted field takes its default (an empty text, no image, no buttons, the link preview
+ * on, no unsubscribe button); on update an omitted field keeps its value.
+ */
+export type TelegramBroadcastContentInput = {
+  /**
+   * The Channel the content is for: the Broadcast's own, which an update cannot change
+   */
+  channel: 'telegram';
+  /**
+   * The message text in Telegram's HTML subset (b, i, u, s, a, code, pre, tg-spoiler, blockquote) with Liquid merge tags, at most 4096 characters as written (Schedule refuses a longer one). Nothing is appended to it.
+   */
+  text?: string;
+  /**
+   * An https image sent with the message; the text becomes its caption, of at most 1024 characters as written. An empty string removes the image.
+   */
+  imageUrl?: string;
+  /**
+   * Up to 8 link buttons under the message, one per row, in order. An empty list removes them.
+   */
+  buttons?: Array<TelegramButton>;
+  /**
+   * Whether a link in the text unfolds a preview. On when omitted; no effect with an image.
+   */
+  linkPreview?: boolean;
+  /**
+   * The label of an unsubscribe button under the message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out. An empty string removes the button.
+   */
+  unsubscribeButton?: string;
 };
 
 /**

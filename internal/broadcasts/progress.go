@@ -37,7 +37,7 @@ type Detail struct {
 
 // Detail reads a Broadcast's figures and, when it is sending, its Progress.
 func (m *Module) Detail(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (Detail, error) {
-	figures, err := StatsOf(ctx, s, b.ID)
+	figures, err := StatsFor(ctx, s, b)
 	if err != nil {
 		return Detail{}, err
 	}

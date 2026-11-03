@@ -2318,7 +2318,9 @@ export const siteBroadcastsSendMutation = (options?: Partial<Options<SiteBroadca
 export const siteBroadcastsTestSendMutationKey = (options?: Partial<Options<SiteBroadcastsTestSendData>>) => createMutationKey('siteBroadcastsTestSend', options, ['Site Broadcasts']);
 
 /**
- * Send a one-off rendered preview to a single address. While the Workspace has no verified
+ * Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram
+ * has no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram
+ * broadcast is a 422. While the Workspace has no verified
  * Sending domain it goes from the System sender and only to the asking User's own address
  * (ADR 0041): another address is refused with 422, the System sender's caps answer 429.
  */

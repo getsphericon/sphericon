@@ -342,7 +342,10 @@ stats; opens and clicks are also the `email.opened` / `email.clicked` Events, wh
 source of truth, so the rollup is a convenience view. Delivery figures (delivered, bounced, complained) are read from
 the Outbound message's delivery result, never counted from Events. A Broadcast's figures (recipients, sent,
 skipped, failed, pending, opened, clicked, unsubscribed) are derived from its recipients and
-their messages and never stored, so they are live while it sends. Contrast Segment, which is a
+their messages and never stored, so they are live while it sends. Each Channel reports its own: a
+Telegram Broadcast has no opened, delivered, bounced or complained count and no open or delivery
+rate, and shows them as absent, never as zero. A Contact with several Bindings on the Broadcast's
+bot is one Recipient and one Outbound message, sent to each of its chats. Contrast Segment, which is a
 live query and never materialized.
 _Avoid_: Send log, delivery row
 
@@ -593,7 +596,7 @@ What one message on one Channel says, its shape fixed by the Channel and never s
 Channels: on email a subject plus a body of email-ready HTML; on SMS a text; on Telegram a
 formatted text with an optional image and link buttons; on web and mobile push a title, a text, a
 link and an optional image; on WhatsApp a WhatsApp template reference. Every Channel uses the same
-Liquid merge tags, and images are linked by URL. A Telegram text is Telegram's HTML subset (`b strong i em u ins s strike del a code pre tg-spoiler blockquote`, `a` with an http(s) `href` only): merge-tag values are HTML-escaped, then the whole text is sanitized to the subset and balanced, and its length is checked as written (Publish refuses it) and as rendered (`content_too_long` fails that one message): 4096 characters, or 1024 when the message has an image, where the text is the image's caption. A Telegram message may also carry an `https` image (sent by `sendPhoto`), up to 8 link buttons (one per row, an inline keyboard) and a link-preview switch (on by default). `{{ unsubscribe_url }}` is a merge tag on Telegram: it renders a source-scoped unsubscribe link whose token names the Channel, so it opts the chat's Telegram user id out of that source on Telegram only and leaves email untouched. One shared editor edits it, in the Automation step and the Broadcast. On email, A body written in the editor is built from the editor's document, which is kept with it; a
+Liquid merge tags, and images are linked by URL. A Telegram text is Telegram's HTML subset (`b strong i em u ins s strike del a code pre tg-spoiler blockquote`, `a` with an http(s) `href` only): merge-tag values are HTML-escaped, then the whole text is sanitized to the subset and balanced, and its length is checked as written (Publish of an Automation and Schedule of a Broadcast refuse it, by the same rule) and as rendered (`content_too_long` fails that one message): 4096 characters, or 1024 when the message has an image, where the text is the image's caption. A Telegram message may also carry an `https` image (sent by `sendPhoto`), up to 8 link buttons (one per row, an inline keyboard) and a link-preview switch (on by default). `{{ unsubscribe_url }}` is a merge tag on Telegram: it renders a source-scoped unsubscribe link whose token names the Channel, so it opts the chat's Telegram user id out of that source on Telegram only and leaves email untouched. A Telegram Broadcast holds the same Message content as a Telegram step (text, image, link buttons, link preview, unsubscribe button): its columns are the step's fields. One shared editor edits it, in the Automation step and the Broadcast. On email, A body written in the editor is built from the editor's document, which is kept with it; a
 body that arrived as HTML (from the API) has no document and opens as source. On email a Template is the saved,
 named instance of it; a Broadcast and each email Automation send step each hold their own
 copy; a Transactional send renders a _referenced_ Template's content with per-call variables.

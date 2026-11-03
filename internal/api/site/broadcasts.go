@@ -19,12 +19,12 @@ import (
 // withStats maps a Broadcast and attaches its delivery figures, which are derived from its
 // recipients and their Outbound messages rather than stored on it.
 func withStats(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.SiteBroadcastResource, error) {
-	figures, err := broadcasts.StatsOf(ctx, s, b.ID)
+	figures, err := broadcasts.StatsFor(ctx, s, b)
 	if err != nil {
 		return siteapi.SiteBroadcastResource{}, err
 	}
 	res := mapper.BroadcastToResource(b)
-	res.Stats = mapper.BroadcastStatsToResource(figures[b.ID])
+	res.Stats = mapper.BroadcastStatsToResource(figures[b.ID].Figures())
 	return res, nil
 }
 
@@ -37,7 +37,7 @@ func (h *Handlers) broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.
 		return siteapi.SiteBroadcastResource{}, err
 	}
 	res := mapper.BroadcastToResource(b)
-	res.Stats = mapper.BroadcastStatsToResource(d.Stats)
+	res.Stats = mapper.BroadcastStatsToResource(d.Stats.Figures())
 	if d.Progress != nil {
 		res.Progress = siteapi.NewOptNilSiteBroadcastProgress(mapper.BroadcastProgressToResource(*d.Progress))
 	}
@@ -55,13 +55,13 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 
 	// The figures of the whole page are two grouped queries. No progress here: it costs a
 	// query per sending row and the list does not show it.
-	figures, err := broadcasts.StatsOf(ctx, ws, lo.Map(page.Items, func(b *ent.Broadcast, _ int) int64 { return b.ID })...)
+	figures, err := broadcasts.StatsFor(ctx, ws, page.Items...)
 	if err != nil {
 		return nil, err
 	}
 	return mapper.BroadcastsListPage(pagination.Map(page, func(b *ent.Broadcast) siteapi.SiteBroadcastResource {
 		res := mapper.BroadcastToResource(b)
-		res.Stats = mapper.BroadcastStatsToResource(figures[b.ID])
+		res.Stats = mapper.BroadcastStatsToResource(figures[b.ID].Figures())
 		return res
 	})), nil
 }

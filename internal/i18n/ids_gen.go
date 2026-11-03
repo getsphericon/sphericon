@@ -105,12 +105,14 @@ var (
 	ErrorsBroadcastIntegrationNotFound          = ID{key: "errors.broadcast_integration_not_found"}
 	ErrorsBroadcastIntegrationOtherChannel      = ID{key: "errors.broadcast_integration_other_channel"}
 	ErrorsBroadcastNoChannel                    = ID{key: "errors.broadcast_no_channel"}
+	ErrorsBroadcastNoTestSend                   = ID{key: "errors.broadcast_no_test_send"}
 	ErrorsBroadcastNotArchivable                = ID{key: "errors.broadcast_not_archivable"}
 	ErrorsBroadcastNotDraft                     = ID{key: "errors.broadcast_not_draft"}
 	ErrorsBroadcastNotFound                     = ID{key: "errors.broadcast_not_found"}
 	ErrorsBroadcastNotScheduled                 = ID{key: "errors.broadcast_not_scheduled"}
 	ErrorsBroadcastNotSendable                  = ID{key: "errors.broadcast_not_sendable"}
 	ErrorsBroadcastSegmentNotFound              = ID{key: "errors.broadcast_segment_not_found"}
+	ErrorsBroadcastTextTooLong                  = ID{key: "errors.broadcast_text_too_long"}
 	ErrorsCapturedMessageNotFound               = ID{key: "errors.captured_message_not_found"}
 	ErrorsCheckFields                           = ID{key: "errors.check_fields"}
 	ErrorsConfirmLinkBad                        = ID{key: "errors.confirm_link_bad"}

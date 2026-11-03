@@ -62,7 +62,11 @@ model SetBroadcastSegmentInput {
   segmentId: EntityId | null;
 }
 
-/** Delivery report of a broadcast */
+/**
+ * Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does
+ * not report is null, never zero: Telegram reports no delivered, opened, bounced or complained
+ * count and so no open rate.
+ */
 model BroadcastReport {
   /** Lifecycle status */
   status: BroadcastStatus;
@@ -73,17 +77,20 @@ model BroadcastReport {
   /** Recipients the broadcast targets */
   recipientsTotal: int32;
 
-  /** Messages handed to the email provider */
+  /** Messages handed to the provider */
   sentCount: int32;
 
-  /** Recipients skipped at send time (unsubscribed or suppressed after planning) */
+  /** Recipients skipped at send time (no destination any more, unsubscribed or suppressed after planning) */
   skippedCount: int32;
 
   /** Messages that failed to send */
   failedCount: int32;
 
-  /** Recipients that opened the email */
-  openedCount: int32;
+  /** Recipients whose send has not ended yet */
+  pendingCount: int32;
+
+  /** Recipients that opened the email; null on a Channel that cannot tell */
+  openedCount: int32 | null;
 
   /** Recipients that clicked a link */
   clickedCount: int32;
@@ -91,20 +98,20 @@ model BroadcastReport {
   /** Recipients that unsubscribed via this broadcast */
   unsubscribedCount: int32;
 
-  /** Messages the provider reported delivered, read from the delivery result stamped on each message */
-  deliveredCount: int32;
+  /** Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
+  deliveredCount: int32 | null;
 
-  /** Messages the provider reported bounced, read from the delivery result stamped on each message */
-  bouncedCount: int32;
+  /** Messages the provider reported bounced, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
+  bouncedCount: int32 | null;
 
-  /** Messages a recipient complained about, read from the delivery result stamped on each message */
-  complainedCount: int32;
+  /** Messages a recipient complained about, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
+  complainedCount: int32 | null;
 
-  /** Messages that went through a Test inbox: captured, not delivered; they count as delivered too */
-  capturedCount: int32;
+  /** Messages that went through a Test inbox: captured, not delivered; they count as delivered too. Null off email. */
+  capturedCount: int32 | null;
 
-  /** Unique opens ÷ messages sent (0-1) */
-  openRate: float32;
+  /** Unique opens ÷ messages sent (0-1); null on a Channel that reports no opens */
+  openRate: float32 | null;
 
   /** Unique clicks ÷ messages sent (0-1) */
   clickRate: float32;
@@ -174,7 +181,7 @@ interface Broadcasts
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Send a rendered preview with sample merge data to a single address. Never sends to the audience. */
+  /** Send a rendered preview with sample merge data to a single address. Never sends to the audience. Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a 422. */
   @action("test-send")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.broadcastsWrite])

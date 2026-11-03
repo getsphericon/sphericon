@@ -10,6 +10,7 @@ import {
   zBroadcastChannel,
   zCreateBroadcastInput,
   zEmailBroadcastContentInput,
+  zTelegramBroadcastContentInput,
 } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import type { ResourceFormSchema, ResourceValues } from '../../resources/resourceFormSchema.ts'
@@ -30,6 +31,11 @@ const blankBroadcast: BroadcastValues = {
   integrationId: '',
   body: '',
   doc: null,
+  text: '',
+  imageUrl: '',
+  buttons: [],
+  linkPreview: true,
+  unsubscribeButton: '',
 }
 
 // The form edits a Broadcast flat: its name, Segment and Integration beside its Channel's content
@@ -44,6 +50,13 @@ const flatSchema = resourceFormSchema(
       body: true,
       doc: true,
     }).shape,
+    ...zTelegramBroadcastContentInput.pick({
+      text: true,
+      imageUrl: true,
+      buttons: true,
+      linkPreview: true,
+      unsubscribeButton: true,
+    }).shape,
   }),
   blankBroadcast,
 )
@@ -52,12 +65,35 @@ type FlatBroadcast = z.output<typeof flatSchema.create>
 
 // The request body nests the content under its Channel (ADR 0078). A message written in the
 // editor is its document and the server builds the body; sending both is a 422.
-function toBody({ name, segmentId, integrationId, channel, doc, body, ...email }: FlatBroadcast) {
+function toBody({
+  name,
+  segmentId,
+  integrationId,
+  channel,
+  doc,
+  body,
+  text,
+  imageUrl,
+  buttons,
+  linkPreview,
+  unsubscribeButton,
+  ...email
+}: FlatBroadcast) {
   return {
     name,
     ...(segmentId !== undefined && { segmentId }),
     ...(integrationId !== undefined && { integrationId }),
-    content: { channel, ...email, ...(doc ? { doc } : body !== undefined && { body }) },
+    content:
+      channel === 'telegram'
+        ? {
+            channel,
+            ...(text !== undefined && { text }),
+            ...(imageUrl !== undefined && { imageUrl }),
+            ...(buttons !== undefined && { buttons }),
+            ...(linkPreview !== undefined && { linkPreview }),
+            ...(unsubscribeButton !== undefined && { unsubscribeButton }),
+          }
+        : { channel, ...email, ...(doc ? { doc } : body !== undefined && { body }) },
   } satisfies CreateBroadcastInput
 }
 

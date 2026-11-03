@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // BroadcastUpdate is the builder for updating Broadcast entities.
@@ -147,6 +148,104 @@ func (_u *BroadcastUpdate) SetNillableFromEmail(v *string) *BroadcastUpdate {
 // ClearFromEmail clears the value of the "from_email" field.
 func (_u *BroadcastUpdate) ClearFromEmail() *BroadcastUpdate {
 	_u.mutation.ClearFromEmail()
+	return _u
+}
+
+// SetText sets the "text" field.
+func (_u *BroadcastUpdate) SetText(v string) *BroadcastUpdate {
+	_u.mutation.SetText(v)
+	return _u
+}
+
+// SetNillableText sets the "text" field if the given value is not nil.
+func (_u *BroadcastUpdate) SetNillableText(v *string) *BroadcastUpdate {
+	if v != nil {
+		_u.SetText(*v)
+	}
+	return _u
+}
+
+// ClearText clears the value of the "text" field.
+func (_u *BroadcastUpdate) ClearText() *BroadcastUpdate {
+	_u.mutation.ClearText()
+	return _u
+}
+
+// SetImageURL sets the "image_url" field.
+func (_u *BroadcastUpdate) SetImageURL(v string) *BroadcastUpdate {
+	_u.mutation.SetImageURL(v)
+	return _u
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (_u *BroadcastUpdate) SetNillableImageURL(v *string) *BroadcastUpdate {
+	if v != nil {
+		_u.SetImageURL(*v)
+	}
+	return _u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (_u *BroadcastUpdate) ClearImageURL() *BroadcastUpdate {
+	_u.mutation.ClearImageURL()
+	return _u
+}
+
+// SetButtons sets the "buttons" field.
+func (_u *BroadcastUpdate) SetButtons(v []telegramrender.Button) *BroadcastUpdate {
+	_u.mutation.SetButtons(v)
+	return _u
+}
+
+// AppendButtons appends value to the "buttons" field.
+func (_u *BroadcastUpdate) AppendButtons(v []telegramrender.Button) *BroadcastUpdate {
+	_u.mutation.AppendButtons(v)
+	return _u
+}
+
+// ClearButtons clears the value of the "buttons" field.
+func (_u *BroadcastUpdate) ClearButtons() *BroadcastUpdate {
+	_u.mutation.ClearButtons()
+	return _u
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (_u *BroadcastUpdate) SetLinkPreview(v bool) *BroadcastUpdate {
+	_u.mutation.SetLinkPreview(v)
+	return _u
+}
+
+// SetNillableLinkPreview sets the "link_preview" field if the given value is not nil.
+func (_u *BroadcastUpdate) SetNillableLinkPreview(v *bool) *BroadcastUpdate {
+	if v != nil {
+		_u.SetLinkPreview(*v)
+	}
+	return _u
+}
+
+// ClearLinkPreview clears the value of the "link_preview" field.
+func (_u *BroadcastUpdate) ClearLinkPreview() *BroadcastUpdate {
+	_u.mutation.ClearLinkPreview()
+	return _u
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (_u *BroadcastUpdate) SetUnsubscribeButton(v string) *BroadcastUpdate {
+	_u.mutation.SetUnsubscribeButton(v)
+	return _u
+}
+
+// SetNillableUnsubscribeButton sets the "unsubscribe_button" field if the given value is not nil.
+func (_u *BroadcastUpdate) SetNillableUnsubscribeButton(v *string) *BroadcastUpdate {
+	if v != nil {
+		_u.SetUnsubscribeButton(*v)
+	}
+	return _u
+}
+
+// ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
+func (_u *BroadcastUpdate) ClearUnsubscribeButton() *BroadcastUpdate {
+	_u.mutation.ClearUnsubscribeButton()
 	return _u
 }
 
@@ -563,6 +662,41 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.FromEmailCleared() {
 		_spec.ClearField(broadcast.FieldFromEmail, field.TypeString)
 	}
+	if value, ok := _u.mutation.Text(); ok {
+		_spec.SetField(broadcast.FieldText, field.TypeString, value)
+	}
+	if _u.mutation.TextCleared() {
+		_spec.ClearField(broadcast.FieldText, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImageURL(); ok {
+		_spec.SetField(broadcast.FieldImageURL, field.TypeString, value)
+	}
+	if _u.mutation.ImageURLCleared() {
+		_spec.ClearField(broadcast.FieldImageURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.Buttons(); ok {
+		_spec.SetField(broadcast.FieldButtons, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedButtons(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, broadcast.FieldButtons, value)
+		})
+	}
+	if _u.mutation.ButtonsCleared() {
+		_spec.ClearField(broadcast.FieldButtons, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.LinkPreview(); ok {
+		_spec.SetField(broadcast.FieldLinkPreview, field.TypeBool, value)
+	}
+	if _u.mutation.LinkPreviewCleared() {
+		_spec.ClearField(broadcast.FieldLinkPreview, field.TypeBool)
+	}
+	if value, ok := _u.mutation.UnsubscribeButton(); ok {
+		_spec.SetField(broadcast.FieldUnsubscribeButton, field.TypeString, value)
+	}
+	if _u.mutation.UnsubscribeButtonCleared() {
+		_spec.ClearField(broadcast.FieldUnsubscribeButton, field.TypeString)
+	}
 	if value, ok := _u.mutation.Body(); ok {
 		_spec.SetField(broadcast.FieldBody, field.TypeString, value)
 	}
@@ -890,6 +1024,104 @@ func (_u *BroadcastUpdateOne) SetNillableFromEmail(v *string) *BroadcastUpdateOn
 // ClearFromEmail clears the value of the "from_email" field.
 func (_u *BroadcastUpdateOne) ClearFromEmail() *BroadcastUpdateOne {
 	_u.mutation.ClearFromEmail()
+	return _u
+}
+
+// SetText sets the "text" field.
+func (_u *BroadcastUpdateOne) SetText(v string) *BroadcastUpdateOne {
+	_u.mutation.SetText(v)
+	return _u
+}
+
+// SetNillableText sets the "text" field if the given value is not nil.
+func (_u *BroadcastUpdateOne) SetNillableText(v *string) *BroadcastUpdateOne {
+	if v != nil {
+		_u.SetText(*v)
+	}
+	return _u
+}
+
+// ClearText clears the value of the "text" field.
+func (_u *BroadcastUpdateOne) ClearText() *BroadcastUpdateOne {
+	_u.mutation.ClearText()
+	return _u
+}
+
+// SetImageURL sets the "image_url" field.
+func (_u *BroadcastUpdateOne) SetImageURL(v string) *BroadcastUpdateOne {
+	_u.mutation.SetImageURL(v)
+	return _u
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (_u *BroadcastUpdateOne) SetNillableImageURL(v *string) *BroadcastUpdateOne {
+	if v != nil {
+		_u.SetImageURL(*v)
+	}
+	return _u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (_u *BroadcastUpdateOne) ClearImageURL() *BroadcastUpdateOne {
+	_u.mutation.ClearImageURL()
+	return _u
+}
+
+// SetButtons sets the "buttons" field.
+func (_u *BroadcastUpdateOne) SetButtons(v []telegramrender.Button) *BroadcastUpdateOne {
+	_u.mutation.SetButtons(v)
+	return _u
+}
+
+// AppendButtons appends value to the "buttons" field.
+func (_u *BroadcastUpdateOne) AppendButtons(v []telegramrender.Button) *BroadcastUpdateOne {
+	_u.mutation.AppendButtons(v)
+	return _u
+}
+
+// ClearButtons clears the value of the "buttons" field.
+func (_u *BroadcastUpdateOne) ClearButtons() *BroadcastUpdateOne {
+	_u.mutation.ClearButtons()
+	return _u
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (_u *BroadcastUpdateOne) SetLinkPreview(v bool) *BroadcastUpdateOne {
+	_u.mutation.SetLinkPreview(v)
+	return _u
+}
+
+// SetNillableLinkPreview sets the "link_preview" field if the given value is not nil.
+func (_u *BroadcastUpdateOne) SetNillableLinkPreview(v *bool) *BroadcastUpdateOne {
+	if v != nil {
+		_u.SetLinkPreview(*v)
+	}
+	return _u
+}
+
+// ClearLinkPreview clears the value of the "link_preview" field.
+func (_u *BroadcastUpdateOne) ClearLinkPreview() *BroadcastUpdateOne {
+	_u.mutation.ClearLinkPreview()
+	return _u
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (_u *BroadcastUpdateOne) SetUnsubscribeButton(v string) *BroadcastUpdateOne {
+	_u.mutation.SetUnsubscribeButton(v)
+	return _u
+}
+
+// SetNillableUnsubscribeButton sets the "unsubscribe_button" field if the given value is not nil.
+func (_u *BroadcastUpdateOne) SetNillableUnsubscribeButton(v *string) *BroadcastUpdateOne {
+	if v != nil {
+		_u.SetUnsubscribeButton(*v)
+	}
+	return _u
+}
+
+// ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
+func (_u *BroadcastUpdateOne) ClearUnsubscribeButton() *BroadcastUpdateOne {
+	_u.mutation.ClearUnsubscribeButton()
 	return _u
 }
 
@@ -1335,6 +1567,41 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	}
 	if _u.mutation.FromEmailCleared() {
 		_spec.ClearField(broadcast.FieldFromEmail, field.TypeString)
+	}
+	if value, ok := _u.mutation.Text(); ok {
+		_spec.SetField(broadcast.FieldText, field.TypeString, value)
+	}
+	if _u.mutation.TextCleared() {
+		_spec.ClearField(broadcast.FieldText, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImageURL(); ok {
+		_spec.SetField(broadcast.FieldImageURL, field.TypeString, value)
+	}
+	if _u.mutation.ImageURLCleared() {
+		_spec.ClearField(broadcast.FieldImageURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.Buttons(); ok {
+		_spec.SetField(broadcast.FieldButtons, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedButtons(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, broadcast.FieldButtons, value)
+		})
+	}
+	if _u.mutation.ButtonsCleared() {
+		_spec.ClearField(broadcast.FieldButtons, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.LinkPreview(); ok {
+		_spec.SetField(broadcast.FieldLinkPreview, field.TypeBool, value)
+	}
+	if _u.mutation.LinkPreviewCleared() {
+		_spec.ClearField(broadcast.FieldLinkPreview, field.TypeBool)
+	}
+	if value, ok := _u.mutation.UnsubscribeButton(); ok {
+		_spec.SetField(broadcast.FieldUnsubscribeButton, field.TypeString, value)
+	}
+	if _u.mutation.UnsubscribeButtonCleared() {
+		_spec.ClearField(broadcast.FieldUnsubscribeButton, field.TypeString)
 	}
 	if value, ok := _u.mutation.Body(); ok {
 		_spec.SetField(broadcast.FieldBody, field.TypeString, value)

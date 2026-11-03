@@ -141,7 +141,7 @@ export function BroadcastsListPage() {
           {
             accessor: 'opened',
             title: t(($) => $.broadcasts.openedLabel),
-            render: (record) => record.stats.openedCount,
+            render: (record) => record.stats.openedCount ?? '–',
           },
           {
             accessor: 'orders',

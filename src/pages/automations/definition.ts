@@ -10,6 +10,7 @@ import type {
 import { zSiteAutomationHttpHeader } from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
+import { buttonsCodec } from '../../utils/telegramButtons.ts'
 import { completeButtons } from '../../utils/telegramContent.ts'
 import {
   APPLY_TAG_NODE_TYPE,
@@ -26,7 +27,6 @@ import {
   WAIT_NODE_ICON,
   WAIT_NODE_TYPE,
 } from './nodes.ts'
-import { buttonsCodec } from './telegramButtons.ts'
 
 // A step is the generated contract type (typed in TypeSpec; no hand-rolled
 // parse/serialize — the API carries steps as structured data, not a JSON string).

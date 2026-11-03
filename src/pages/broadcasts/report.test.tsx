@@ -21,6 +21,8 @@ const REPORT_ROUTE = routeMount(broadcastsReportRoute, {
 const STATS = {
   recipientsTotal: 200,
   sentCount: 190,
+  skippedCount: 4,
+  pendingCount: 0,
   openedCount: 80,
   clickedCount: 20,
   unsubscribedCount: 3,
@@ -107,6 +109,29 @@ test('shows the hold alert when the broadcast is on hold', async () => {
 
   await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
   await expect.element(screen.getByText(/No email integration can send it/)).toBeInTheDocument()
+})
+
+// A bot whose token Telegram refused holds a Telegram broadcast; the report says how to lift it.
+test('shows the provider_refused hold of a Telegram broadcast', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({
+        ...BROADCAST,
+        channel: 'telegram',
+        content: { channel: 'telegram', text: 'Hi', buttons: [], linkPreview: true },
+        status: 'sending',
+        holdReason: 'provider_refused',
+      }),
+    ),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/refused the integration's credentials.*Save the integration again/))
+    .toBeInTheDocument()
 })
 
 test('shows an error alert when the broadcast fails to load', async () => {
@@ -229,4 +254,46 @@ test('says a broadcast without a segment goes to all contacts', async () => {
 
   await expect.element(screen.getByText('Audience: all contacts')).toBeInTheDocument()
   await expect.element(screen.getByText(/editing the segment since/)).not.toBeInTheDocument()
+})
+
+// Telegram reports no opens and no delivery results: those cards are not shown, not shown as zero.
+test('a Telegram broadcast shows its figures without open or delivery ones', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({
+        ...BROADCAST,
+        channel: 'telegram',
+        content: { channel: 'telegram', text: 'Hello' },
+        stats: {
+          ...STATS,
+          openedCount: null,
+          deliveredCount: null,
+          bouncedCount: null,
+          complainedCount: null,
+          capturedCount: null,
+          deliveryRate: null,
+          openRate: null,
+          clickToOpenRate: null,
+        },
+      }),
+    ),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Skipped', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Pending', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Clicked', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Unsubscribed', { exact: true })).toBeInTheDocument()
+  for (const absent of [
+    'Opened',
+    'Delivered',
+    'Bounced',
+    'Complained',
+    'Open rate',
+    'Delivery rate',
+  ]) {
+    expect(screen.getByText(absent, { exact: true }).elements()).toHaveLength(0)
+  }
 })

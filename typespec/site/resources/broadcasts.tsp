@@ -29,7 +29,12 @@ model SiteMessageRevenue {
   amount: int64;
 }
 
-/** Denormalized delivery counters for a broadcast */
+/**
+ * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
+ * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
+ * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
+ * reports no delivered, opened, bounced or complained count and so no delivery or open rate.
+ */
 model SiteBroadcastStats {
   /** Number of recipients the broadcast targets */
   recipientsTotal: int32;
@@ -37,8 +42,17 @@ model SiteBroadcastStats {
   /** Messages successfully handed to the provider */
   sentCount: int32;
 
-  /** Recipients that opened the email */
-  openedCount: int32;
+  /** Recipients skipped at send time: no destination any more, or an opt-out that landed after planning */
+  skippedCount: int32;
+
+  /** Messages that failed to send */
+  failedCount: int32;
+
+  /** Recipients whose send has not ended yet */
+  pendingCount: int32;
+
+  /** Recipients that opened the email; null on a Channel that cannot tell */
+  openedCount: int32 | null;
 
   /** Recipients that clicked a link */
   clickedCount: int32;
@@ -46,32 +60,29 @@ model SiteBroadcastStats {
   /** Recipients that unsubscribed via this broadcast */
   unsubscribedCount: int32;
 
-  /** Messages that failed to send */
-  failedCount: int32;
+  /** Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
+  deliveredCount: int32 | null;
 
-  /** Messages the provider reported delivered, read from the delivery result stamped on each message */
-  deliveredCount: int32;
+  /** Messages the provider reported bounced, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
+  bouncedCount: int32 | null;
 
-  /** Messages the provider reported bounced, read from the delivery result stamped on each message */
-  bouncedCount: int32;
+  /** Messages a recipient complained about, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
+  complainedCount: int32 | null;
 
-  /** Messages a recipient complained about, read from the delivery result stamped on each message */
-  complainedCount: int32;
+  /** Messages that went through a Test inbox: captured, not delivered; they count as delivered too. Null off email. */
+  capturedCount: int32 | null;
 
-  /** Messages that went through a Test inbox: captured, not delivered; they count as delivered too */
-  capturedCount: int32;
+  /** Messages handed to the provider ÷ recipients targeted (0–1); null on a Channel that reports no delivery */
+  deliveryRate: float32 | null;
 
-  /** Messages handed to the provider ÷ recipients targeted (0–1) */
-  deliveryRate: float32;
-
-  /** Unique opens ÷ messages sent (0–1) */
-  openRate: float32;
+  /** Unique opens ÷ messages sent (0–1); null on a Channel that reports no opens */
+  openRate: float32 | null;
 
   /** Unique clicks ÷ messages sent (0–1) */
   clickRate: float32;
 
-  /** Unique clicks ÷ unique opens (0–1) */
-  clickToOpenRate: float32;
+  /** Unique clicks ÷ unique opens (0–1); null on a Channel that reports no opens */
+  clickToOpenRate: float32 | null;
 
   /** Unsubscribes ÷ messages sent (0–1) */
   unsubscribeRate: float32;
@@ -281,7 +292,9 @@ interface SiteBroadcasts
     | UnprocessableEntityProblem;
 
   /**
-   * Send a one-off rendered preview to a single address. While the Workspace has no verified
+   * Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram
+   * has no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram
+   * broadcast is a 422. While the Workspace has no verified
    * Sending domain it goes from the System sender and only to the asking User's own address
    * (ADR 0041): another address is refused with 422, the System sender's caps answer 429.
    */

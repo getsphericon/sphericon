@@ -5,13 +5,19 @@ import { useTranslation } from 'react-i18next'
 
 import { MessageEditor } from '../../components/MessageEditor.tsx'
 import { AnchorLink, ButtonLink } from '../../components/RouterLink.tsx'
+import { TelegramContentEditor } from '../../components/telegram/TelegramContentEditor.tsx'
+import { TelegramUnsubscribeControl } from '../../components/telegram/TelegramUnsubscribeControl.tsx'
 import {
   siteIntegrationsListOptions,
   siteSegmentsListOptions,
   siteSendingDomainsListOptions,
   siteTemplatesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { BroadcastChannel, CreateBroadcastInput } from '../../generated/site/types.gen.ts'
+import type {
+  BroadcastChannel,
+  CreateBroadcastInput,
+  TelegramButton,
+} from '../../generated/site/types.gen.ts'
 import { zBroadcastChannel } from '../../generated/site/zod.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
@@ -32,8 +38,12 @@ export interface BroadcastValues {
   integrationId: string
   body: string
   doc: MessageDoc | null
+  text: string
+  imageUrl: string
+  buttons: TelegramButton[]
+  linkPreview: boolean
+  unsubscribeButton: string
 }
-
 
 // A new Broadcast asks for its Channel first (ADR 0080), then shows that Channel's editor; the
 // Channel is fixed from then on, so an existing Broadcast opens on its editor.
@@ -42,6 +52,9 @@ export function BroadcastForm(props: ResourceFormProps<CreateBroadcastInput, Bro
   const channel = zBroadcastChannel.safeParse(form.values.channel)
   if (!channel.success) {
     return <ChannelStep onChoose={(chosen) => form.setFieldValue('channel', chosen)} />
+  }
+  if (channel.data === 'telegram') {
+    return <TelegramBroadcastForm {...props} />
   }
   return <EmailBroadcastForm {...props} />
 }
@@ -100,6 +113,100 @@ function ChannelStep({ onChoose }: { onChoose: (channel: BroadcastChannel) => vo
         </Button>
       </Group>
     </Stack>
+  )
+}
+
+// The editor of a Telegram Broadcast: its Integration, Segment and message. Who it reaches is the
+// Segment's Contacts who have a Binding on the bot, so the note says that instead of email's.
+function TelegramBroadcastForm({
+  form,
+  isPending,
+  onSubmit,
+}: ResourceFormProps<CreateBroadcastInput, BroadcastValues>) {
+  const { t } = useTranslation()
+  const { workspaceId } = workspaceRoute.useParams()
+
+  const segmentsQuery = useQuery(
+    siteSegmentsListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
+  )
+  const segmentOptions = [
+    { value: '', label: t(($) => $.broadcasts.segmentAll) },
+    ...(segmentsQuery.data?.items ?? []).map((s) => ({ value: s.id, label: s.name })),
+  ]
+
+  // The bot the broadcast sends and paces through; blank is the Channel's default.
+  const integrationsQuery = useQuery(
+    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
+  )
+  const integrationOptions = [
+    { value: '', label: t(($) => $.broadcasts.integrationDefault) },
+    ...(integrationsQuery.data ?? [])
+      .filter((integration) => integration.channel === 'telegram')
+      .map((integration) => ({ value: integration.id, label: integration.name })),
+  ]
+
+  return (
+    <form onSubmit={form.onSubmit(onSubmit)}>
+      <Stack>
+        <Text size="sm">
+          {t(($) => $.broadcasts.channelShown, {
+            channel: t(($) => $.broadcasts.channels.telegram),
+          })}
+        </Text>
+        <TextInput
+          label={t(($) => $.broadcasts.nameLabel)}
+          required
+          {...form.getInputProps('name')}
+        />
+        <Select
+          label={t(($) => $.broadcasts.integrationLabel)}
+          data={integrationOptions}
+          allowDeselect={false}
+          {...form.getInputProps('integrationId')}
+        />
+        <Select
+          label={t(($) => $.broadcasts.segmentLabel)}
+          data={segmentOptions}
+          allowDeselect={false}
+          {...form.getInputProps('segmentId')}
+        />
+        <Alert color="blue" variant="light">
+          {t(($) => $.broadcasts.segmentNoteTelegram)}
+        </Alert>
+        <SendCapWarning
+          workspaceId={workspaceId}
+          segmentId={form.values.segmentId}
+          segments={segmentsQuery.data?.items}
+        />
+        <TelegramContentEditor
+          value={{
+            text: form.values.text,
+            imageUrl: form.values.imageUrl,
+            buttons: form.values.buttons,
+            linkPreview: form.values.linkPreview,
+          }}
+          onChange={(next) => {
+            form.setFieldValue('text', next.text)
+            form.setFieldValue('imageUrl', next.imageUrl)
+            form.setFieldValue('buttons', next.buttons)
+            form.setFieldValue('linkPreview', next.linkPreview)
+          }}
+        >
+          <TelegramUnsubscribeControl
+            label={form.values.unsubscribeButton}
+            onChange={(label) => form.setFieldValue('unsubscribeButton', label)}
+          />
+        </TelegramContentEditor>
+        <Group justify="flex-end">
+          <ButtonLink variant="default" to={broadcastsRoute.to} params={{ workspaceId }}>
+            {t(($) => $.actions.cancel)}
+          </ButtonLink>
+          <Button type="submit" loading={isPending}>
+            {t(($) => $.actions.save)}
+          </Button>
+        </Group>
+      </Stack>
+    </form>
   )
 }
 

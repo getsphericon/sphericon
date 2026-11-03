@@ -107,6 +107,7 @@ import (
 // goverter:extend transactionalStatus
 // goverter:extend transactionalError
 // goverter:extend nilInt32
+// goverter:extend nilFloat32
 // goverter:extend nilString
 // goverter:extend count
 // goverter:extend maxPerDay
@@ -131,6 +132,7 @@ import (
 // goverter:extend durationSeconds
 // goverter:extend broadcastContent
 // goverter:extend emailContentChannel
+// goverter:extend telegramContentChannel
 type Converter interface {
 	// The contact is read with its tags loaded (`WithTags`).
 	// goverter:map Edges.Tags Tags
@@ -270,10 +272,15 @@ type Converter interface {
 	BroadcastToResource(source *ent.Broadcast) siteapi.SiteBroadcastResource
 	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.
 	EmailBroadcastContentToResource(source *ent.Broadcast) siteapi.EmailBroadcastContent
+	// The Telegram content of a Telegram Broadcast, the arm of its content that broadcastContent wraps.
+	TelegramBroadcastContentToResource(source *ent.Broadcast) siteapi.TelegramBroadcastContent
 
-	// A Broadcast's delivery figures; the rates are Stats methods, ratios in [0,1].
+	// A Broadcast's delivery figures as its Channel reports them: a figure it does not report is
+	// null. The rates are ratios in [0,1].
 	// goverter:map Recipients RecipientsTotal
 	// goverter:map Sent SentCount
+	// goverter:map Skipped SkippedCount
+	// goverter:map Pending PendingCount
 	// goverter:map Opened OpenedCount
 	// goverter:map Clicked ClickedCount
 	// goverter:map Unsubscribed UnsubscribedCount
@@ -282,7 +289,7 @@ type Converter interface {
 	// goverter:map Bounced BouncedCount
 	// goverter:map Complained ComplainedCount
 	// goverter:map Captured CapturedCount
-	BroadcastStatsToResource(source broadcasts.Stats) siteapi.SiteBroadcastStats
+	BroadcastStatsToResource(source broadcasts.Figures) siteapi.SiteBroadcastStats
 
 	// goverter:map Processed ProcessedCount
 	// goverter:map Remaining RemainingCount
@@ -753,6 +760,11 @@ func broadcastLimit(c Converter, v providerlimit.Cause) siteapi.NilSiteBroadcast
 	return siteapi.NewNilSiteBroadcastLimit(c.BroadcastLimitToResource(v))
 }
 
+// nilFloat32 renders a figure a Channel may not report: null when it does not.
+func nilFloat32(v *float32) siteapi.NilFloat32 {
+	return convert.Nil[siteapi.NilFloat32](v)
+}
+
 func optNilInt32(v *int) siteapi.OptNilInt32 {
 	return convert.Opt[siteapi.OptNilInt32](convert.Int32Ptr(v))
 }
@@ -760,10 +772,19 @@ func optNilInt32(v *int) siteapi.OptNilInt32 {
 // broadcastContent is a Broadcast's content in the arm of its Channel: a oneOf is beyond
 // goverter, so only the switch is written here.
 func broadcastContent(c Converter, b *ent.Broadcast) siteapi.BroadcastContent {
-	if b.Channel == broadcast.ChannelEmail {
+	switch b.Channel {
+	case broadcast.ChannelEmail:
 		return siteapi.BroadcastContent{OneOf: siteapi.NewEmailBroadcastContentBroadcastContentSum(c.EmailBroadcastContentToResource(b))}
+	case broadcast.ChannelTelegram:
+		return siteapi.BroadcastContent{OneOf: siteapi.NewTelegramBroadcastContentBroadcastContentSum(c.TelegramBroadcastContentToResource(b))}
+	default:
+		return siteapi.BroadcastContent{}
 	}
-	return siteapi.BroadcastContent{}
+}
+
+// telegramContentChannel is the discriminator of Telegram's content arm.
+func telegramContentChannel(broadcast.Channel) siteapi.TelegramBroadcastContentChannel {
+	return siteapi.TelegramBroadcastContentChannelTelegram
 }
 
 // emailContentChannel is the discriminator of email's content arm.

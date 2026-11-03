@@ -333,6 +333,8 @@ func (c *ConverterImpl) BroadcastChannelToResource(source broadcast.Channel) ext
 	switch source {
 	case broadcast.ChannelEmail:
 		externalapiBroadcastChannel = external.BroadcastChannelEmail
+	case broadcast.ChannelTelegram:
+		externalapiBroadcastChannel = external.BroadcastChannelTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -354,19 +356,20 @@ func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) exte
 	var externalapiBroadcastReport external.BroadcastReport
 	externalapiBroadcastReport.Status = c.BroadcastStatusToResource(source.Status)
 	externalapiBroadcastReport.HoldReason = optNilHoldReason(c, source.HoldReason)
-	externalapiBroadcastReport.RecipientsTotal = count(source.Stats.Recipients)
-	externalapiBroadcastReport.SentCount = count(source.Stats.Sent)
-	externalapiBroadcastReport.SkippedCount = count(source.Stats.Skipped)
-	externalapiBroadcastReport.FailedCount = count(source.Stats.Failed)
-	externalapiBroadcastReport.OpenedCount = count(source.Stats.Opened)
-	externalapiBroadcastReport.ClickedCount = count(source.Stats.Clicked)
-	externalapiBroadcastReport.UnsubscribedCount = count(source.Stats.Unsubscribed)
-	externalapiBroadcastReport.DeliveredCount = count(source.Stats.Delivered)
-	externalapiBroadcastReport.BouncedCount = count(source.Stats.Bounced)
-	externalapiBroadcastReport.ComplainedCount = count(source.Stats.Complained)
-	externalapiBroadcastReport.CapturedCount = count(source.Stats.Captured)
-	externalapiBroadcastReport.OpenRate = source.Stats.OpenRate()
-	externalapiBroadcastReport.ClickRate = source.Stats.ClickRate()
+	externalapiBroadcastReport.RecipientsTotal = count(source.Figures.Recipients)
+	externalapiBroadcastReport.SentCount = count(source.Figures.Sent)
+	externalapiBroadcastReport.SkippedCount = count(source.Figures.Skipped)
+	externalapiBroadcastReport.FailedCount = count(source.Figures.Failed)
+	externalapiBroadcastReport.PendingCount = count(source.Figures.Pending)
+	externalapiBroadcastReport.OpenedCount = nilInt32(source.Figures.Opened)
+	externalapiBroadcastReport.ClickedCount = count(source.Figures.Clicked)
+	externalapiBroadcastReport.UnsubscribedCount = count(source.Figures.Unsubscribed)
+	externalapiBroadcastReport.DeliveredCount = nilInt32(source.Figures.Delivered)
+	externalapiBroadcastReport.BouncedCount = nilInt32(source.Figures.Bounced)
+	externalapiBroadcastReport.ComplainedCount = nilInt32(source.Figures.Complained)
+	externalapiBroadcastReport.CapturedCount = nilInt32(source.Figures.Captured)
+	externalapiBroadcastReport.OpenRate = nilFloat32(source.Figures.OpenRate)
+	externalapiBroadcastReport.ClickRate = source.Figures.ClickRate
 	return externalapiBroadcastReport
 }
 func (c *ConverterImpl) BroadcastStatusToResource(source broadcast.Status) external.BroadcastStatus {
@@ -1376,6 +1379,27 @@ func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []external.TagResourc
 		externalapiTagResourceList[i] = c.TagToResource(source[i])
 	}
 	return externalapiTagResourceList
+}
+func (c *ConverterImpl) TelegramBroadcastContentToResource(source *ent.Broadcast) external.TelegramBroadcastContent {
+	var externalapiTelegramBroadcastContent external.TelegramBroadcastContent
+	if source != nil {
+		externalapiTelegramBroadcastContent.Channel = telegramContentChannel((*source).Channel)
+		if (*source).Text != nil {
+			externalapiTelegramBroadcastContent.Text = *(*source).Text
+		}
+		externalapiTelegramBroadcastContent.ImageUrl = optNilString((*source).ImageURL)
+		if (*source).Buttons != nil {
+			externalapiTelegramBroadcastContent.Buttons = make([]external.TelegramButton, len((*source).Buttons))
+			for i := 0; i < len((*source).Buttons); i++ {
+				externalapiTelegramBroadcastContent.Buttons[i] = c.TelegramButtonToResource((*source).Buttons[i])
+			}
+		}
+		if (*source).LinkPreview != nil {
+			externalapiTelegramBroadcastContent.LinkPreview = *(*source).LinkPreview
+		}
+		externalapiTelegramBroadcastContent.UnsubscribeButton = optNilString((*source).UnsubscribeButton)
+	}
+	return externalapiTelegramBroadcastContent
 }
 func (c *ConverterImpl) TelegramButtonToResource(source telegramrender.Button) external.TelegramButton {
 	var externalapiTelegramButton external.TelegramButton

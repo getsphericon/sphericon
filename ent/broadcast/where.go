@@ -96,6 +96,26 @@ func FromEmail(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldFromEmail, v))
 }
 
+// Text applies equality check predicate on the "text" field. It's identical to TextEQ.
+func Text(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldText, v))
+}
+
+// ImageURL applies equality check predicate on the "image_url" field. It's identical to ImageURLEQ.
+func ImageURL(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldImageURL, v))
+}
+
+// LinkPreview applies equality check predicate on the "link_preview" field. It's identical to LinkPreviewEQ.
+func LinkPreview(v bool) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldLinkPreview, v))
+}
+
+// UnsubscribeButton applies equality check predicate on the "unsubscribe_button" field. It's identical to UnsubscribeButtonEQ.
+func UnsubscribeButton(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldUnsubscribeButton, v))
+}
+
 // Body applies equality check predicate on the "body" field. It's identical to BodyEQ.
 func Body(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldBody, v))
@@ -599,6 +619,261 @@ func FromEmailEqualFold(v string) predicate.Broadcast {
 // FromEmailContainsFold applies the ContainsFold predicate on the "from_email" field.
 func FromEmailContainsFold(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldContainsFold(FieldFromEmail, v))
+}
+
+// TextEQ applies the EQ predicate on the "text" field.
+func TextEQ(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldText, v))
+}
+
+// TextNEQ applies the NEQ predicate on the "text" field.
+func TextNEQ(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNEQ(FieldText, v))
+}
+
+// TextIn applies the In predicate on the "text" field.
+func TextIn(vs ...string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIn(FieldText, vs...))
+}
+
+// TextNotIn applies the NotIn predicate on the "text" field.
+func TextNotIn(vs ...string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotIn(FieldText, vs...))
+}
+
+// TextGT applies the GT predicate on the "text" field.
+func TextGT(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGT(FieldText, v))
+}
+
+// TextGTE applies the GTE predicate on the "text" field.
+func TextGTE(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGTE(FieldText, v))
+}
+
+// TextLT applies the LT predicate on the "text" field.
+func TextLT(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLT(FieldText, v))
+}
+
+// TextLTE applies the LTE predicate on the "text" field.
+func TextLTE(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLTE(FieldText, v))
+}
+
+// TextContains applies the Contains predicate on the "text" field.
+func TextContains(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldContains(FieldText, v))
+}
+
+// TextHasPrefix applies the HasPrefix predicate on the "text" field.
+func TextHasPrefix(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldHasPrefix(FieldText, v))
+}
+
+// TextHasSuffix applies the HasSuffix predicate on the "text" field.
+func TextHasSuffix(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldHasSuffix(FieldText, v))
+}
+
+// TextIsNil applies the IsNil predicate on the "text" field.
+func TextIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldText))
+}
+
+// TextNotNil applies the NotNil predicate on the "text" field.
+func TextNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldText))
+}
+
+// TextEqualFold applies the EqualFold predicate on the "text" field.
+func TextEqualFold(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEqualFold(FieldText, v))
+}
+
+// TextContainsFold applies the ContainsFold predicate on the "text" field.
+func TextContainsFold(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldContainsFold(FieldText, v))
+}
+
+// ImageURLEQ applies the EQ predicate on the "image_url" field.
+func ImageURLEQ(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldImageURL, v))
+}
+
+// ImageURLNEQ applies the NEQ predicate on the "image_url" field.
+func ImageURLNEQ(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNEQ(FieldImageURL, v))
+}
+
+// ImageURLIn applies the In predicate on the "image_url" field.
+func ImageURLIn(vs ...string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIn(FieldImageURL, vs...))
+}
+
+// ImageURLNotIn applies the NotIn predicate on the "image_url" field.
+func ImageURLNotIn(vs ...string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotIn(FieldImageURL, vs...))
+}
+
+// ImageURLGT applies the GT predicate on the "image_url" field.
+func ImageURLGT(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGT(FieldImageURL, v))
+}
+
+// ImageURLGTE applies the GTE predicate on the "image_url" field.
+func ImageURLGTE(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGTE(FieldImageURL, v))
+}
+
+// ImageURLLT applies the LT predicate on the "image_url" field.
+func ImageURLLT(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLT(FieldImageURL, v))
+}
+
+// ImageURLLTE applies the LTE predicate on the "image_url" field.
+func ImageURLLTE(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLTE(FieldImageURL, v))
+}
+
+// ImageURLContains applies the Contains predicate on the "image_url" field.
+func ImageURLContains(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldContains(FieldImageURL, v))
+}
+
+// ImageURLHasPrefix applies the HasPrefix predicate on the "image_url" field.
+func ImageURLHasPrefix(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldHasPrefix(FieldImageURL, v))
+}
+
+// ImageURLHasSuffix applies the HasSuffix predicate on the "image_url" field.
+func ImageURLHasSuffix(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldHasSuffix(FieldImageURL, v))
+}
+
+// ImageURLIsNil applies the IsNil predicate on the "image_url" field.
+func ImageURLIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldImageURL))
+}
+
+// ImageURLNotNil applies the NotNil predicate on the "image_url" field.
+func ImageURLNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldImageURL))
+}
+
+// ImageURLEqualFold applies the EqualFold predicate on the "image_url" field.
+func ImageURLEqualFold(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEqualFold(FieldImageURL, v))
+}
+
+// ImageURLContainsFold applies the ContainsFold predicate on the "image_url" field.
+func ImageURLContainsFold(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldContainsFold(FieldImageURL, v))
+}
+
+// ButtonsIsNil applies the IsNil predicate on the "buttons" field.
+func ButtonsIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldButtons))
+}
+
+// ButtonsNotNil applies the NotNil predicate on the "buttons" field.
+func ButtonsNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldButtons))
+}
+
+// LinkPreviewEQ applies the EQ predicate on the "link_preview" field.
+func LinkPreviewEQ(v bool) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldLinkPreview, v))
+}
+
+// LinkPreviewNEQ applies the NEQ predicate on the "link_preview" field.
+func LinkPreviewNEQ(v bool) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNEQ(FieldLinkPreview, v))
+}
+
+// LinkPreviewIsNil applies the IsNil predicate on the "link_preview" field.
+func LinkPreviewIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldLinkPreview))
+}
+
+// LinkPreviewNotNil applies the NotNil predicate on the "link_preview" field.
+func LinkPreviewNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldLinkPreview))
+}
+
+// UnsubscribeButtonEQ applies the EQ predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonEQ(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldUnsubscribeButton, v))
+}
+
+// UnsubscribeButtonNEQ applies the NEQ predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonNEQ(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNEQ(FieldUnsubscribeButton, v))
+}
+
+// UnsubscribeButtonIn applies the In predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonIn(vs ...string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIn(FieldUnsubscribeButton, vs...))
+}
+
+// UnsubscribeButtonNotIn applies the NotIn predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonNotIn(vs ...string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotIn(FieldUnsubscribeButton, vs...))
+}
+
+// UnsubscribeButtonGT applies the GT predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonGT(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGT(FieldUnsubscribeButton, v))
+}
+
+// UnsubscribeButtonGTE applies the GTE predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonGTE(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGTE(FieldUnsubscribeButton, v))
+}
+
+// UnsubscribeButtonLT applies the LT predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonLT(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLT(FieldUnsubscribeButton, v))
+}
+
+// UnsubscribeButtonLTE applies the LTE predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonLTE(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLTE(FieldUnsubscribeButton, v))
+}
+
+// UnsubscribeButtonContains applies the Contains predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonContains(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldContains(FieldUnsubscribeButton, v))
+}
+
+// UnsubscribeButtonHasPrefix applies the HasPrefix predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonHasPrefix(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldHasPrefix(FieldUnsubscribeButton, v))
+}
+
+// UnsubscribeButtonHasSuffix applies the HasSuffix predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonHasSuffix(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldHasSuffix(FieldUnsubscribeButton, v))
+}
+
+// UnsubscribeButtonIsNil applies the IsNil predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldUnsubscribeButton))
+}
+
+// UnsubscribeButtonNotNil applies the NotNil predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldUnsubscribeButton))
+}
+
+// UnsubscribeButtonEqualFold applies the EqualFold predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonEqualFold(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEqualFold(FieldUnsubscribeButton, v))
+}
+
+// UnsubscribeButtonContainsFold applies the ContainsFold predicate on the "unsubscribe_button" field.
+func UnsubscribeButtonContainsFold(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldContainsFold(FieldUnsubscribeButton, v))
 }
 
 // BodyEQ applies the EQ predicate on the "body" field.

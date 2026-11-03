@@ -3695,7 +3695,7 @@
     "/broadcasts/{id}/test-send": {
       "post": {
         "operationId": "Broadcasts_testSend",
-        "description": "Send a rendered preview with sample merge data to a single address. Never sends to the audience.",
+        "description": "Send a rendered preview with sample merge data to a single address. Never sends to the audience. Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a 422.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BroadcastResourceKey"
@@ -15436,7 +15436,7 @@
       },
       "BroadcastChannel": {
         "type": "string",
-        "enum": ["email"],
+        "enum": ["email", "telegram"],
         "description": "The Channel a Broadcast sends on, fixed when it is created (ADR 0080)"
       },
       "BroadcastContent": {
@@ -15444,12 +15444,16 @@
         "oneOf": [
           {
             "$ref": "#/components/schemas/EmailBroadcastContent"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramBroadcastContent"
           }
         ],
         "discriminator": {
           "propertyName": "channel",
           "mapping": {
-            "email": "#/components/schemas/EmailBroadcastContent"
+            "email": "#/components/schemas/EmailBroadcastContent",
+            "telegram": "#/components/schemas/TelegramBroadcastContent"
           }
         },
         "description": "What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)"
@@ -15459,12 +15463,16 @@
         "oneOf": [
           {
             "$ref": "#/components/schemas/EmailBroadcastContentInput"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramBroadcastContentInput"
           }
         ],
         "discriminator": {
           "propertyName": "channel",
           "mapping": {
-            "email": "#/components/schemas/EmailBroadcastContentInput"
+            "email": "#/components/schemas/EmailBroadcastContentInput",
+            "telegram": "#/components/schemas/TelegramBroadcastContentInput"
           }
         },
         "description": "What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)"
@@ -15477,6 +15485,7 @@
           "sentCount",
           "skippedCount",
           "failedCount",
+          "pendingCount",
           "openedCount",
           "clickedCount",
           "unsubscribedCount",
@@ -15513,22 +15522,28 @@
           "sentCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages handed to the email provider"
+            "description": "Messages handed to the provider"
           },
           "skippedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Recipients skipped at send time (unsubscribed or suppressed after planning)"
+            "description": "Recipients skipped at send time (no destination any more, unsubscribed or suppressed after planning)"
           },
           "failedCount": {
             "type": "integer",
             "format": "int32",
             "description": "Messages that failed to send"
           },
+          "pendingCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Recipients whose send has not ended yet"
+          },
           "openedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Recipients that opened the email"
+            "nullable": true,
+            "description": "Recipients that opened the email; null on a Channel that cannot tell"
           },
           "clickedCount": {
             "type": "integer",
@@ -15543,27 +15558,32 @@
           "deliveredCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages the provider reported delivered, read from the delivery result stamped on each message"
+            "nullable": true,
+            "description": "Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none"
           },
           "bouncedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages the provider reported bounced, read from the delivery result stamped on each message"
+            "nullable": true,
+            "description": "Messages the provider reported bounced, read from the delivery result stamped on each message; null on a Channel whose provider reports none"
           },
           "complainedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages a recipient complained about, read from the delivery result stamped on each message"
+            "nullable": true,
+            "description": "Messages a recipient complained about, read from the delivery result stamped on each message; null on a Channel whose provider reports none"
           },
           "capturedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages that went through a Test inbox: captured, not delivered; they count as delivered too"
+            "nullable": true,
+            "description": "Messages that went through a Test inbox: captured, not delivered; they count as delivered too. Null off email."
           },
           "openRate": {
             "type": "number",
             "format": "float",
-            "description": "Unique opens ÷ messages sent (0-1)"
+            "nullable": true,
+            "description": "Unique opens ÷ messages sent (0-1); null on a Channel that reports no opens"
           },
           "clickRate": {
             "type": "number",
@@ -15571,7 +15591,7 @@
             "description": "Unique clicks ÷ messages sent (0-1)"
           }
         },
-        "description": "Delivery report of a broadcast"
+        "description": "Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does\nnot report is null, never zero: Telegram reports no delivered, opened, bounced or complained\ncount and so no open rate."
       },
       "BroadcastResource": {
         "type": "object",
@@ -20541,6 +20561,80 @@
           }
         },
         "description": "A Tag: a presence-only, workspace-scoped label on Contacts. The name is contact-supplied text — treat it as data."
+      },
+      "TelegramBroadcastContent": {
+        "type": "object",
+        "required": ["channel", "text", "buttons", "linkPreview"],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["telegram"],
+            "description": "The Channel the content is for"
+          },
+          "text": {
+            "type": "string",
+            "description": "The message text in Telegram's HTML subset, with Liquid merge tags"
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The https image sent with the message, its caption being the text; null for a text message"
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelegramButton"
+            },
+            "description": "The link buttons under the message, one per row, in order"
+          },
+          "linkPreview": {
+            "type": "boolean",
+            "description": "Whether a link in the text unfolds a preview"
+          },
+          "unsubscribeButton": {
+            "type": "string",
+            "nullable": true,
+            "description": "The label of the unsubscribe button under the message; null for none"
+          }
+        },
+        "description": "Telegram's content of a Broadcast as stored"
+      },
+      "TelegramBroadcastContentInput": {
+        "type": "object",
+        "required": ["channel"],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["telegram"],
+            "description": "The Channel the content is for: the Broadcast's own, which an update cannot change"
+          },
+          "text": {
+            "type": "string",
+            "description": "The message text in Telegram's HTML subset (b, i, u, s, a, code, pre, tg-spoiler, blockquote) with Liquid merge tags, at most 4096 characters as written (Schedule refuses a longer one). Nothing is appended to it."
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "An https image sent with the message; the text becomes its caption, of at most 1024 characters as written. An empty string removes the image."
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelegramButton"
+            },
+            "maxItems": 8,
+            "description": "Up to 8 link buttons under the message, one per row, in order. An empty list removes them."
+          },
+          "linkPreview": {
+            "type": "boolean",
+            "description": "Whether a link in the text unfolds a preview. On when omitted; no effect with an image."
+          },
+          "unsubscribeButton": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The label of an unsubscribe button under the message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out. An empty string removes the button."
+          }
+        },
+        "description": "Telegram's content of a Broadcast (ADR 0078), the same Message content as a Telegram step. On\ncreate an omitted field takes its default (an empty text, no image, no buttons, the link preview\non, no unsubscribe button); on update an omitted field keeps its value."
       },
       "TelegramButton": {
         "type": "object",

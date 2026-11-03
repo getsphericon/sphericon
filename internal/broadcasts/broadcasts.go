@@ -21,6 +21,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/riverqueue/river"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
@@ -35,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -95,14 +97,37 @@ func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id int64, when tim
 	return m.claim(ctx, s, id, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when, m.armable)
 }
 
-// armable refuses a claimed Broadcast whose Send route cannot send.
+// armable refuses a claimed Broadcast that cannot go out as written: its Send route cannot send, or
+// its content breaks its Channel's written-length rule.
 func (m *Module) armable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
 	channel := messaging.Channel(b.Channel)
 	route, err := m.out.Route(ctx, ts, channel, b.IntegrationID)
 	if err != nil {
 		return err
 	}
-	return route.Armable()
+	if err := route.Armable(); err != nil {
+		return err
+	}
+	return checkWritten(b)
+}
+
+// checkWritten is the Channel's written-length rule (ADR 0078), checked at Schedule on the content
+// as written: telegramrender.CheckWritten, the rule an Automation's Publish applies to a Telegram
+// step, so a text is over its limit (1024 with an image, 4096 without) on both or on neither. A
+// message with neither a text nor an image has nothing to send. What a text renders to may still be
+// longer or shorter; a message over the limit once rendered fails its own send.
+func checkWritten(b *ent.Broadcast) error {
+	if b.Channel != broadcast.ChannelTelegram {
+		return nil
+	}
+	text, hasImage := lo.FromPtr(b.Text), lo.FromPtr(b.ImageURL) != ""
+	if strings.TrimSpace(text) == "" && !hasImage {
+		return ErrTextTooLong.With("the message has no text and no image")
+	}
+	if err := telegramrender.CheckWritten(text, hasImage); err != nil {
+		return ErrTextTooLong.With(err.Error())
+	}
+	return nil
 }
 
 // Unschedule returns a scheduled Broadcast to draft and drops its schedule. The
@@ -173,6 +198,10 @@ var (
 	// ErrChannelFixed: an edit carries content of another Channel than the Broadcast's, which is
 	// fixed at creation: a Broadcast is never converted to another Channel (ADR 0080).
 	ErrChannelFixed = validation.Refuse("broadcasts: the channel of a broadcast cannot change", i18n.ErrorsBroadcastChannelFixed)
+	// ErrTextTooLong: the message of a Telegram Broadcast is empty or its text is over what Telegram takes,
+	// so it is not scheduled (ADR 0078). Not a field refusal: Schedule and Send take no content, so
+	// there is no request field to list it under; the editor counts the limit as the author types.
+	ErrTextTooLong = validation.Refuse("broadcasts: the text is too long for Telegram", i18n.ErrorsBroadcastTextTooLong)
 	// ErrIntegrationOtherChannel: the Integration is of another Channel than the Broadcast's, so
 	// it can never send it (ADR 0074).
 	ErrIntegrationOtherChannel = validation.Refuse("broadcasts: the integration is of another channel", i18n.ErrorsBroadcastIntegrationOtherChannel)
@@ -451,10 +480,10 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.B
 	return m.Get(ctx, s, id)
 }
 
-// Report is a Broadcast's delivery report: its status, why it is held and its Stats. The
-// rates are Stats methods, ratios in [0,1] where a zero denominator yields 0.
+// Report is a Broadcast's delivery report: its status, why it is held and its Figures, the Stats
+// as its Channel reports them. The rates are ratios in [0,1] where a zero denominator yields 0.
 type Report struct {
-	Stats
+	Figures
 
 	Status     broadcast.Status
 	HoldReason *holdreason.Reason
@@ -466,11 +495,11 @@ func (m *Module) Report(ctx context.Context, s *ent.Scoped, id int64) (Report, e
 	if err != nil {
 		return Report{}, err
 	}
-	figures, err := StatsOf(ctx, s, id)
+	figures, err := StatsFor(ctx, s, b)
 	if err != nil {
 		return Report{}, err
 	}
-	return Report{Status: b.Status, HoldReason: b.HoldReason, Stats: figures[id]}, nil
+	return Report{Status: b.Status, HoldReason: b.HoldReason, Figures: figures[id].Figures()}, nil
 }
 
 func draftOf(id int64) predicate.Broadcast {

@@ -230,6 +230,58 @@ test('editing a draft; a cleared sender name is sent as null and the Segment is 
   await expect.poll(() => fetches.detail).toBeGreaterThan(1)
 })
 
+test('editing a Telegram draft loads its message content and clears what is emptied', async () => {
+  const { bodies } = serve('draft')
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({
+        id: '7',
+        name: 'News',
+        channel: 'telegram',
+        status: 'draft',
+        content: {
+          channel: 'telegram',
+          text: 'Hi',
+          imageUrl: 'https://example.com/a.png',
+          buttons: [{ label: 'Open', url: 'https://example.com/b' }],
+          linkPreview: false,
+          unsubscribeButton: 'Stop',
+        },
+      }),
+    ),
+  )
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await expect.element(screen.getByLabelText('Image URL')).toHaveValue('https://example.com/a.png')
+  await expect.element(screen.getByRole('textbox', { name: 'Button 1 label' })).toHaveValue('Open')
+  await expect
+    .element(screen.getByRole('switch', { name: 'Show a preview of links in the text' }))
+    .not.toBeChecked()
+  await expect.element(screen.getByLabelText('Button label')).toHaveValue('Stop')
+
+  await screen.getByLabelText('Image URL').fill('')
+  await screen.getByRole('button', { name: 'Remove button 1' }).click()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        name: 'News',
+        segmentId: null,
+        integrationId: null,
+        content: {
+          channel: 'telegram',
+          text: 'Hi',
+          imageUrl: '',
+          buttons: [],
+          linkPreview: false,
+          unsubscribeButton: 'Stop',
+        },
+      },
+    ])
+})
+
 test('a draft can be sent now', async () => {
   serve('draft')
   const { screen, navigate } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)

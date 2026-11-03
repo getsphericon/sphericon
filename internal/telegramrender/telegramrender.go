@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strings"
 	"unicode/utf16"
+	"unicode/utf8"
 
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
@@ -27,12 +28,37 @@ const MaxCaption = 1024
 // contract-copy: the contract caps `buttons` at 8 too (); the domain refuses it for callers that skip the API
 const MaxButtons = 8
 
+// MaxUnsubscribeButton is the longest label of an unsubscribe button, in characters.
+// contract-copy: the contract caps `unsubscribeButton` at 64 too; the domain refuses it for callers that skip the API
+const MaxUnsubscribeButton = 64
+
 // Limit is the longest text a message may carry: a caption when it has an image, else a text.
 func Limit(hasImage bool) int {
 	if hasImage {
 		return MaxCaption
 	}
 	return MaxText
+}
+
+// TooLongError is a text that, as written, is over the limit of its message: Telegram refuses it.
+type TooLongError struct {
+	// Length is the text's length as written, in UTF-16 code units; Limit is what the message takes.
+	Length, Limit int
+}
+
+func (e *TooLongError) Error() string {
+	return fmt.Sprintf("the text is %d characters long, Telegram takes %d", e.Length, e.Limit)
+}
+
+// CheckWritten is the written-length rule of a message, the one an Automation's Publish and a
+// Broadcast's Schedule share: the text as written (merge tags unrendered) may be Limit(hasImage)
+// long, in the units an editor counts. What it renders to may still be longer or shorter; a message
+// over the limit once rendered fails its own send. The error is a *TooLongError.
+func CheckWritten(text string, hasImage bool) error {
+	if n, limit := WrittenLength(text), Limit(hasImage); n > limit {
+		return &TooLongError{Length: n, Limit: limit}
+	}
+	return nil
 }
 
 // Button is a link button under a message: a label and the URL it opens, shown as an inline URL
@@ -53,6 +79,15 @@ func CheckImage(imageURL string) error {
 	u, err := url.Parse(strings.TrimSpace(imageURL))
 	if err != nil || u.Host == "" || !strings.EqualFold(u.Scheme, "https") {
 		return fmt.Errorf("%w: the image must be an absolute https URL", ErrContent)
+	}
+	return nil
+}
+
+// CheckUnsubscribeButton refuses a label of an unsubscribe button longer than MaxUnsubscribeButton
+// characters. Blank means no button.
+func CheckUnsubscribeButton(label string) error {
+	if n := utf8.RuneCountInString(strings.TrimSpace(label)); n > MaxUnsubscribeButton {
+		return fmt.Errorf("%w: the unsubscribe button's label is %d characters long, up to %d", ErrContent, n, MaxUnsubscribeButton)
 	}
 	return nil
 }

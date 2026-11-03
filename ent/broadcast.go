@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // Broadcast is the model entity for the Broadcast schema.
@@ -41,6 +42,16 @@ type Broadcast struct {
 	FromName *string `json:"from_name,omitempty"`
 	// FromEmail holds the value of the "from_email" field.
 	FromEmail *string `json:"from_email,omitempty"`
+	// Text holds the value of the "text" field.
+	Text *string `json:"text,omitempty"`
+	// ImageURL holds the value of the "image_url" field.
+	ImageURL *string `json:"image_url,omitempty"`
+	// Buttons holds the value of the "buttons" field.
+	Buttons []telegramrender.Button `json:"buttons,omitempty"`
+	// LinkPreview holds the value of the "link_preview" field.
+	LinkPreview *bool `json:"link_preview,omitempty"`
+	// UnsubscribeButton holds the value of the "unsubscribe_button" field.
+	UnsubscribeButton *string `json:"unsubscribe_button,omitempty"`
 	// Body holds the value of the "body" field.
 	Body *string `json:"body,omitempty"`
 	// Doc holds the value of the "doc" field.
@@ -133,11 +144,13 @@ func (*Broadcast) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case broadcast.FieldDoc:
+		case broadcast.FieldButtons, broadcast.FieldDoc:
 			values[i] = new([]byte)
+		case broadcast.FieldLinkPreview:
+			values[i] = new(sql.NullBool)
 		case broadcast.FieldID, broadcast.FieldWorkspaceID, broadcast.FieldSegmentID, broadcast.FieldIntegrationID:
 			values[i] = new(sql.NullInt64)
-		case broadcast.FieldName, broadcast.FieldChannel, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldCondition, broadcast.FieldStatus, broadcast.FieldHoldReason:
+		case broadcast.FieldName, broadcast.FieldChannel, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldText, broadcast.FieldImageURL, broadcast.FieldUnsubscribeButton, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldCondition, broadcast.FieldStatus, broadcast.FieldHoldReason:
 			values[i] = new(sql.NullString)
 		case broadcast.FieldCreatedAt, broadcast.FieldUpdatedAt, broadcast.FieldDiscardedAt, broadcast.FieldScheduledAt, broadcast.FieldSentAt, broadcast.FieldFailedAt, broadcast.FieldLastScheduledAt:
 			values[i] = new(sql.NullTime)
@@ -219,6 +232,42 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.FromEmail = new(string)
 				*_m.FromEmail = value.String
+			}
+		case broadcast.FieldText:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field text", values[i])
+			} else if value.Valid {
+				_m.Text = new(string)
+				*_m.Text = value.String
+			}
+		case broadcast.FieldImageURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field image_url", values[i])
+			} else if value.Valid {
+				_m.ImageURL = new(string)
+				*_m.ImageURL = value.String
+			}
+		case broadcast.FieldButtons:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field buttons", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Buttons); err != nil {
+					return fmt.Errorf("unmarshal field buttons: %w", err)
+				}
+			}
+		case broadcast.FieldLinkPreview:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field link_preview", values[i])
+			} else if value.Valid {
+				_m.LinkPreview = new(bool)
+				*_m.LinkPreview = value.Bool
+			}
+		case broadcast.FieldUnsubscribeButton:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field unsubscribe_button", values[i])
+			} else if value.Valid {
+				_m.UnsubscribeButton = new(string)
+				*_m.UnsubscribeButton = value.String
 			}
 		case broadcast.FieldBody:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -392,6 +441,29 @@ func (_m *Broadcast) String() string {
 	builder.WriteString(", ")
 	if v := _m.FromEmail; v != nil {
 		builder.WriteString("from_email=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.Text; v != nil {
+		builder.WriteString("text=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ImageURL; v != nil {
+		builder.WriteString("image_url=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("buttons=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Buttons))
+	builder.WriteString(", ")
+	if v := _m.LinkPreview; v != nil {
+		builder.WriteString("link_preview=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.UnsubscribeButton; v != nil {
+		builder.WriteString("unsubscribe_button=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")

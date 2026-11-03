@@ -252,3 +252,90 @@ test('the Send cap warning does not stop the Broadcast from being saved', async 
 
   await expect.poll(() => bodies).toHaveLength(1)
 })
+
+const TELEGRAM_INTEGRATION = {
+  ...EMAIL_INTEGRATION,
+  id: '2',
+  name: 'News bot',
+  channel: 'telegram' as const,
+  provider: 'telegram' as const,
+  isDefault: false,
+  config: { kind: 'telegram' as const, botId: 7, username: 'news_bot' },
+}
+
+// A Workspace with an email and a Telegram Integration is offered both Channels; picking Telegram
+// shows the text editor with its counter, and the Broadcast is saved with a Telegram content.
+test('a Telegram broadcast is written as a text and saved under its Channel', async () => {
+  const bodies: unknown[] = []
+  serve([], bodies)
+  worker.use(handleSiteIntegrationsList({ body: [EMAIL_INTEGRATION, TELEGRAM_INTEGRATION] }))
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+
+  await screen.getByRole('radio', { name: 'Telegram' }).click()
+  await screen.getByRole('button', { name: 'Continue' }).click()
+  await screen.getByLabelText(/^Name/).fill('News')
+  await screen.getByRole('combobox', { name: 'Send through' }).click()
+  await screen.getByRole('option', { name: 'News bot' }).click()
+  await screen.getByLabelText('Message').fill('Hello <b>{{ first_name }}</b>')
+  await expect.element(screen.getByText('29 / 4096')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        name: 'News',
+        integrationId: '2',
+        content: { channel: 'telegram', text: 'Hello <b>{{ first_name }}</b>' },
+      },
+    ])
+})
+
+test('a text past the Telegram limit is flagged while it is written', async () => {
+  serve([])
+  worker.use(handleSiteIntegrationsList({ body: [TELEGRAM_INTEGRATION] }))
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+
+  await screen.getByRole('button', { name: 'Continue' }).click()
+  await screen.getByLabelText('Message').fill('a'.repeat(4097))
+
+  await expect.element(screen.getByText('4097 / 4096')).toBeInTheDocument()
+  await expect.element(screen.getByText(/cannot go out until it is shorter/)).toBeInTheDocument()
+})
+
+// The Telegram Broadcast has the same Message content as a step: an image (its caption has the
+// smaller limit), link buttons, the link preview and an unsubscribe button.
+test('a Telegram broadcast carries an image, buttons, no preview and an unsubscribe button', async () => {
+  const bodies: unknown[] = []
+  serve([], bodies)
+  worker.use(handleSiteIntegrationsList({ body: [TELEGRAM_INTEGRATION] }))
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+
+  await screen.getByRole('button', { name: 'Continue' }).click()
+  await screen.getByLabelText(/^Name/).fill('News')
+  await screen.getByLabelText('Message').fill('Hello')
+  await screen.getByLabelText('Image URL').fill('https://example.com/a.png')
+  await expect.element(screen.getByText('5 / 1024')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Add a button' }).click()
+  await screen.getByRole('textbox', { name: 'Button 1 label' }).fill('Open')
+  await screen.getByRole('textbox', { name: 'Button 1 URL' }).fill('https://example.com/b')
+  await screen.getByText('Show a preview of links in the text').click({ force: true })
+  await screen.getByText('Unsubscribe button', { exact: true }).click({ force: true })
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        name: 'News',
+        content: {
+          channel: 'telegram',
+          text: 'Hello',
+          imageUrl: 'https://example.com/a.png',
+          buttons: [{ label: 'Open', url: 'https://example.com/b' }],
+          linkPreview: false,
+          unsubscribeButton: 'Unsubscribe',
+        },
+      },
+    ])
+})

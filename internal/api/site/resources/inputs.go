@@ -59,6 +59,8 @@ import (
 // goverter:extend maxPerSecondPatch
 // goverter:extend maxPerDayPatch
 // goverter:extend listPatch
+// goverter:extend buttonsPtrIn
+// goverter:extend buttonsPatch
 // goverter:extend stringIn
 // goverter:extend stringPtrIn
 // goverter:extend nilStringPtrIn
@@ -103,6 +105,8 @@ type Inputs interface {
 	// The arms of a Broadcast's content, which broadcastContentIn and broadcastContentPatch pick.
 	EmailBroadcastContentIn(source siteapi.EmailBroadcastContentInput) broadcasts.EmailContentInput
 	EmailBroadcastContentPatch(source siteapi.EmailBroadcastContentInput) broadcasts.EmailContentPatch
+	TelegramBroadcastContentIn(source siteapi.TelegramBroadcastContentInput) broadcasts.TelegramContentInput
+	TelegramBroadcastContentPatch(source siteapi.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch
 	// The list's filter; the statuses go member by member (BroadcastStatuses).
 	// goverter:map Status Statuses
 	BroadcastsListFilter(source siteapi.SiteBroadcastsListParams) broadcasts.ListFilter
@@ -261,6 +265,23 @@ func listPtrIn(list []string) *[]string {
 	return &list
 }
 
+// buttonsPtrIn is the link buttons a Telegram Broadcast's update replaces: an omitted list (nil)
+// keeps the stored ones, an empty list removes them.
+func buttonsPtrIn(c Inputs, list []siteapi.TelegramButton) *[]telegramrender.Button {
+	if list == nil {
+		return nil
+	}
+	out := make([]telegramrender.Button, len(list))
+	for i, b := range list {
+		out[i] = c.TelegramButton(b)
+	}
+	return &out
+}
+
+func buttonsPatch(c Inputs, list []siteapi.TelegramButton) patch.Field[[]telegramrender.Button] {
+	return patch.FromPtr(buttonsPtrIn(c, list))
+}
+
 func timestampPtrIn(o siteapi.OptNilTimestamp) *time.Time {
 	v, ok := o.Get()
 	if !ok {
@@ -373,10 +394,14 @@ var errUnknownChannel = errors.New("unsupported channel")
 // broadcastContentIn maps a Broadcast's content union onto the module's input of its Channel; a
 // oneOf is beyond goverter, so only the switch is written here.
 func broadcastContentIn(c Inputs, in siteapi.BroadcastContentInput) (broadcasts.ContentInput, error) {
-	if in.OneOf.Type == siteapi.EmailBroadcastContentInputBroadcastContentInputSum {
+	switch in.OneOf.Type {
+	case siteapi.EmailBroadcastContentInputBroadcastContentInputSum:
 		return c.EmailBroadcastContentIn(in.OneOf.EmailBroadcastContentInput), nil
+	case siteapi.TelegramBroadcastContentInputBroadcastContentInputSum:
+		return c.TelegramBroadcastContentIn(in.OneOf.TelegramBroadcastContentInput), nil
+	default:
+		return nil, errUnknownChannel
 	}
-	return nil, errUnknownChannel
 }
 
 // broadcastContentPatch is the content of an update: absent keeps the content.
@@ -385,10 +410,14 @@ func broadcastContentPatch(c Inputs, o siteapi.OptBroadcastContentInput) (broadc
 	if !ok {
 		return nil, nil
 	}
-	if in.OneOf.Type == siteapi.EmailBroadcastContentInputBroadcastContentInputSum {
+	switch in.OneOf.Type {
+	case siteapi.EmailBroadcastContentInputBroadcastContentInputSum:
 		return c.EmailBroadcastContentPatch(in.OneOf.EmailBroadcastContentInput), nil
+	case siteapi.TelegramBroadcastContentInputBroadcastContentInputSum:
+		return c.TelegramBroadcastContentPatch(in.OneOf.TelegramBroadcastContentInput), nil
+	default:
+		return nil, errUnknownChannel
 	}
-	return nil, errUnknownChannel
 }
 
 // broadcastChannelPtrIn is the Channel a list is narrowed to: nil for every Channel.

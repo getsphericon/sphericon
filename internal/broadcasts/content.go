@@ -3,6 +3,9 @@ package broadcasts
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/samber/lo"
 
@@ -11,11 +14,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/patch"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // ContentInput is what a new Broadcast says, in the shape of its Channel (ADR 0078). Its Channel
 // is the Broadcast's, fixed from then on (ADR 0080). Each Channel a Broadcast is sent on has its
-// own input in this package; EmailContentInput is email's.
+// own input in this package: EmailContentInput is email's, TelegramContentInput Telegram's.
 type ContentInput interface {
 	Channel() messaging.Channel
 	// create checks the content and sets it on the new Broadcast q.
@@ -106,6 +110,96 @@ func (c EmailContentPatch) update(ctx context.Context, m *Module, s *ent.Scoped,
 		u.SetDoc(doc).SetEditorVersion(resolved.Authored.EditorVersion)
 	case resolved.Body != nil:
 		u.ClearDoc().ClearEditorVersion()
+	}
+	return nil
+}
+
+// TelegramContentInput is the Telegram content of a new Broadcast, the same Message content as a
+// Telegram step (ADR 0078). A field the write leaves out takes its default: an empty text, no image,
+// no buttons, the link preview on, no unsubscribe button.
+type TelegramContentInput struct {
+	Text              *string
+	ImageURL          *string
+	Buttons           *[]telegramrender.Button
+	LinkPreview       *bool
+	UnsubscribeButton *string
+}
+
+// Channel is Telegram.
+func (TelegramContentInput) Channel() messaging.Channel { return messaging.ChannelTelegram }
+
+// create stores the content. A text whose Liquid does not render, an image that is no https URL,
+// too many buttons or a button without a label or an http(s) URL are refused; the text's length is
+// checked at Schedule, not here, so a draft can be written past the limit and cut down.
+func (c TelegramContentInput) create(_ context.Context, _ *Module, _ *ent.Scoped, q *ent.BroadcastScopedCreate) error {
+	if err := checkTelegram(c.Text, c.ImageURL, c.Buttons, c.UnsubscribeButton); err != nil {
+		return err
+	}
+	q.SetText(lo.FromPtr(c.Text))
+	if image := strings.TrimSpace(lo.FromPtr(c.ImageURL)); image != "" {
+		q.SetImageURL(image)
+	}
+	q.SetButtons(lo.FromPtr(c.Buttons))
+	q.SetLinkPreview(lo.FromPtrOr(c.LinkPreview, true))
+	if label := strings.TrimSpace(lo.FromPtr(c.UnsubscribeButton)); label != "" {
+		q.SetUnsubscribeButton(label)
+	}
+	return nil
+}
+
+// TelegramContentPatch is an edit of a Telegram draft's content: a field that keeps leaves the
+// stored one. The text cannot be cleared; a blank image or unsubscribe label removes it, an empty
+// list of buttons removes them.
+type TelegramContentPatch struct {
+	Text              patch.Field[string]
+	ImageURL          patch.Field[string]
+	Buttons           patch.Field[[]telegramrender.Button]
+	LinkPreview       patch.Field[bool]
+	UnsubscribeButton patch.Field[string]
+}
+
+// Channel is Telegram.
+func (TelegramContentPatch) Channel() messaging.Channel { return messaging.ChannelTelegram }
+
+func (c TelegramContentPatch) update(_ context.Context, _ *Module, _ *ent.Scoped, _ *ent.Broadcast, u *ent.BroadcastScopedUpdate) error {
+	if err := checkTelegram(c.Text.Ptr(), c.ImageURL.Ptr(), c.Buttons.Ptr(), c.UnsubscribeButton.Ptr()); err != nil {
+		return err
+	}
+	patch.ApplySet(c.Text, u.SetText)
+	patch.Apply(blankToClear(c.ImageURL), func(v string) *ent.BroadcastScopedUpdate { return u.SetImageURL(strings.TrimSpace(v)) }, u.ClearImageURL)
+	patch.ApplySet(c.Buttons, u.SetButtons)
+	patch.ApplySet(c.LinkPreview, u.SetLinkPreview)
+	patch.Apply(blankToClear(c.UnsubscribeButton), func(v string) *ent.BroadcastScopedUpdate { return u.SetUnsubscribeButton(strings.TrimSpace(v)) }, u.ClearUnsubscribeButton)
+	return nil
+}
+
+// blankToClear turns a write of a blank text into a clear: an optional text column holds no blank.
+func blankToClear(f patch.Field[string]) patch.Field[string] {
+	if v, ok := f.Get(); ok && strings.TrimSpace(v) == "" {
+		return patch.Clear[string]()
+	}
+	return f
+}
+
+// checkTelegram refuses the parts of a Telegram message that are given and that sphericon or
+// Telegram would refuse, as email's content is refused: a text whose Liquid does not render, an
+// image that is no https URL, too many or malformed buttons, a label too long.
+func checkTelegram(text, image *string, buttons *[]telegramrender.Button, unsubscribe *string) error {
+	var errs []error
+	if text != nil {
+		errs = append(errs, telegramrender.Check(*text))
+	}
+	if image != nil {
+		errs = append(errs, telegramrender.CheckImage(*image))
+	}
+	if buttons != nil {
+		errs = append(errs, telegramrender.CheckButtons(*buttons))
+	}
+	if unsubscribe != nil {
+		errs = append(errs, telegramrender.CheckUnsubscribeButton(*unsubscribe))
+	}
+	if err := errors.Join(errs...); err != nil {
+		return fmt.Errorf("%w: %w", emailrender.ErrInvalidContent, err)
 	}
 	return nil
 }

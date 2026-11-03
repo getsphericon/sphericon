@@ -1,6 +1,6 @@
 import * as z from 'zod'
 
-import type { TelegramButton } from '../../generated/site/types.gen.ts'
+import type { TelegramButton } from '../generated/site/types.gen.ts'
 
 const buttons = z.array(z.object({ label: z.string(), url: z.string() }))
 

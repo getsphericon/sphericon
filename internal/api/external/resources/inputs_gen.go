@@ -149,6 +149,8 @@ func (c *InputsImpl) BroadcastChannel(source external.BroadcastChannel) broadcas
 	switch source {
 	case external.BroadcastChannelEmail:
 		broadcastChannel = broadcast.ChannelEmail
+	case external.BroadcastChannelTelegram:
+		broadcastChannel = broadcast.ChannelTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -441,6 +443,24 @@ func (c *InputsImpl) SuppressionChannel(source external.ConsentChannel) suppress
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return suppressionChannel
+}
+func (c *InputsImpl) TelegramBroadcastContentIn(source external.TelegramBroadcastContentInput) broadcasts.TelegramContentInput {
+	var broadcastsTelegramContentInput broadcasts.TelegramContentInput
+	broadcastsTelegramContentInput.Text = stringPtrIn(source.Text)
+	broadcastsTelegramContentInput.ImageURL = stringPtrIn(source.ImageUrl)
+	broadcastsTelegramContentInput.Buttons = buttonsPtrIn(c, source.Buttons)
+	broadcastsTelegramContentInput.LinkPreview = boolPtrIn(source.LinkPreview)
+	broadcastsTelegramContentInput.UnsubscribeButton = stringPtrIn(source.UnsubscribeButton)
+	return broadcastsTelegramContentInput
+}
+func (c *InputsImpl) TelegramBroadcastContentPatch(source external.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch {
+	var broadcastsTelegramContentPatch broadcasts.TelegramContentPatch
+	broadcastsTelegramContentPatch.Text = stringPatch(source.Text)
+	broadcastsTelegramContentPatch.ImageURL = stringPatch(source.ImageUrl)
+	broadcastsTelegramContentPatch.Buttons = buttonsPatch(c, source.Buttons)
+	broadcastsTelegramContentPatch.LinkPreview = boolPatch(source.LinkPreview)
+	broadcastsTelegramContentPatch.UnsubscribeButton = stringPatch(source.UnsubscribeButton)
+	return broadcastsTelegramContentPatch
 }
 func (c *InputsImpl) TelegramButton(source external.TelegramButton) telegramrender.Button {
 	var telegramrenderButton telegramrender.Button

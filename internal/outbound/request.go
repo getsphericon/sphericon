@@ -22,21 +22,32 @@ func broadcastRecipientKey(recipientID int64) string {
 }
 
 // BroadcastContent is the Message content of a Broadcast, in the shape of its Channel (ADR 0078,
-// 0080): on email its subject, body and From.
+// 0080): on email its subject, body and From, on Telegram its text, image, buttons, link preview and unsubscribe button.
 func BroadcastContent(b *ent.Broadcast) (Content, error) {
-	if b.Channel == broadcast.ChannelEmail {
+	switch b.Channel {
+	case broadcast.ChannelEmail:
 		return EmailContent{
 			Subject:   lo.FromPtr(b.Subject),
 			Body:      lo.FromPtr(b.Body),
 			FromEmail: lo.FromPtr(b.FromEmail),
 			FromName:  lo.FromPtr(b.FromName),
 		}, nil
+	case broadcast.ChannelTelegram:
+		return TelegramContent{
+			Text:              lo.FromPtr(b.Text),
+			ImageURL:          lo.FromPtr(b.ImageURL),
+			Buttons:           b.Buttons,
+			NoLinkPreview:     b.LinkPreview != nil && !*b.LinkPreview,
+			UnsubscribeButton: lo.FromPtr(b.UnsubscribeButton),
+		}, nil
+	default:
+		return nil, fmt.Errorf("outbound: broadcast %d is on channel %q, which has no content", b.ID, b.Channel)
 	}
-	return nil, fmt.Errorf("outbound: broadcast %d is on channel %q, which has no content", b.ID, b.Channel)
 }
 
 // BroadcastRecipient is the Request for one Broadcast recipient's message on the Broadcast's
-// Channel. On email the Contact must have an email address.
+// Channel. Its Destination is the Contact's on that Channel: on email the address, which a Contact
+// with none is Skipped for; a Channel of Bindings reads them after the claim.
 func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Contact) (Request, error) {
 	content, err := BroadcastContent(b)
 	if err != nil {
@@ -45,7 +56,7 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 	return Request{
 		Kind:          outboundmessage.KindBroadcast,
 		Key:           broadcastRecipientKey(rec.ID),
-		Destination:   *c.Email,
+		Destination:   contactDestination(content.Channel(), c),
 		Contact:       c,
 		Source:        eligibility.SourceBroadcasts,
 		Content:       content,

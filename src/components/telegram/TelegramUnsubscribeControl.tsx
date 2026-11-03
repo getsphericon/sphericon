@@ -1,7 +1,7 @@
 import { Stack, Switch, TextInput } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import { TELEGRAM_UNSUBSCRIBE_LIMIT } from './telegramFormat.ts'
+import { TELEGRAM_UNSUBSCRIBE_LIMIT } from '../../utils/telegramContent.ts'
 
 // TelegramUnsubscribeControl edits the label of a Telegram step's unsubscribe button: a switch adds
 // the button (its label starts as a default) and an input names it. The value is the label, '' for no

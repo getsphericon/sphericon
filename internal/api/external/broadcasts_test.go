@@ -188,7 +188,7 @@ func TestExternalBroadcastReport(t *testing.T) {
 	// The figures are the recipients' (fixtures: 11 sent, 5 opened, 2 clicked).
 	assert.EqualValues(t, 11, sr.RecipientsTotal)
 	assert.EqualValues(t, 11, sr.SentCount)
-	assert.EqualValues(t, 5, sr.OpenedCount)
+	assert.EqualValues(t, 5, sr.OpenedCount.Value)
 	assert.EqualValues(t, 2, sr.ClickedCount)
 }
 

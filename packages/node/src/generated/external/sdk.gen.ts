@@ -315,7 +315,7 @@ export const broadcastsSetSegment = <ThrowOnError extends boolean = false>(optio
 });
 
 /**
- * Send a rendered preview with sample merge data to a single address. Never sends to the audience.
+ * Send a rendered preview with sample merge data to a single address. Never sends to the audience. Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a 422.
  */
 export const broadcastsTestSend = <ThrowOnError extends boolean = false>(options: Options<BroadcastsTestSendData, ThrowOnError>): RequestResult<BroadcastsTestSendResponses, BroadcastsTestSendErrors, ThrowOnError> => (options.client ?? client).post<BroadcastsTestSendResponses, BroadcastsTestSendErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],

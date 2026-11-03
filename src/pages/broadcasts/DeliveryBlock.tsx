@@ -16,7 +16,8 @@ import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspa
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 
 // Send now, schedule and test send for a loaded Broadcast. Sending and scheduling are only
-// possible for drafts; test send works for any status.
+// possible for drafts; test send works for any status of an email Broadcast: Telegram has none, so
+// its action is not offered (ADR 0080).
 export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -91,28 +92,32 @@ export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource 
         </Button>
       </Group>
 
-      <Group align="flex-end">
-        <TextInput
-          type="email"
-          label={t(($) => $.broadcasts.testSendEmailLabel)}
-          value={testEmail}
-          onChange={(e) => setTestEmail(e.currentTarget.value)}
-        />
-        <Button
-          variant="default"
-          disabled={testEmail === ''}
-          loading={testSendMutation.isPending}
-          onClick={() => testSendMutation.mutate({ path, body: { email: testEmail } })}
-        >
-          {t(($) => $.broadcasts.testSendButton)}
-        </Button>
-      </Group>
-      {testSendMutation.data && (
-        <Text size="sm" c="dimmed">
-          {testSendMutation.data.captured
-            ? t(($) => $.broadcasts.testSendCaptured)
-            : t(($) => $.broadcasts.testSendFrom, { from: testSendMutation.data.from })}
-        </Text>
+      {broadcast.channel === 'email' && (
+        <>
+          <Group align="flex-end">
+            <TextInput
+              type="email"
+              label={t(($) => $.broadcasts.testSendEmailLabel)}
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.currentTarget.value)}
+            />
+            <Button
+              variant="default"
+              disabled={testEmail === ''}
+              loading={testSendMutation.isPending}
+              onClick={() => testSendMutation.mutate({ path, body: { email: testEmail } })}
+            >
+              {t(($) => $.broadcasts.testSendButton)}
+            </Button>
+          </Group>
+          {testSendMutation.data && (
+            <Text size="sm" c="dimmed">
+              {testSendMutation.data.captured
+                ? t(($) => $.broadcasts.testSendCaptured)
+                : t(($) => $.broadcasts.testSendFrom, { from: testSendMutation.data.from })}
+            </Text>
+          )}
+        </>
       )}
     </>
   )

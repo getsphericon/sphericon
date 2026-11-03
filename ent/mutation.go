@@ -84,6 +84,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 const (
@@ -9291,6 +9292,12 @@ type BroadcastMutation struct {
 	subject            *string
 	from_name          *string
 	from_email         *string
+	text               *string
+	image_url          *string
+	buttons            *[]telegramrender.Button
+	appendbuttons      []telegramrender.Button
+	link_preview       *bool
+	unsubscribe_button *string
 	body               *string
 	doc                *jsontext.Value
 	appenddoc          jsontext.Value
@@ -9795,6 +9802,267 @@ func (m *BroadcastMutation) FromEmailCleared() bool {
 func (m *BroadcastMutation) ResetFromEmail() {
 	m.from_email = nil
 	delete(m.clearedFields, broadcast.FieldFromEmail)
+}
+
+// SetText sets the "text" field.
+func (m *BroadcastMutation) SetText(s string) {
+	m.text = &s
+}
+
+// Text returns the value of the "text" field in the mutation.
+func (m *BroadcastMutation) Text() (r string, exists bool) {
+	v := m.text
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldText returns the old "text" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldText(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldText is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldText requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldText: %w", err)
+	}
+	return oldValue.Text, nil
+}
+
+// ClearText clears the value of the "text" field.
+func (m *BroadcastMutation) ClearText() {
+	m.text = nil
+	m.clearedFields[broadcast.FieldText] = struct{}{}
+}
+
+// TextCleared returns if the "text" field was cleared in this mutation.
+func (m *BroadcastMutation) TextCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldText]
+	return ok
+}
+
+// ResetText resets all changes to the "text" field.
+func (m *BroadcastMutation) ResetText() {
+	m.text = nil
+	delete(m.clearedFields, broadcast.FieldText)
+}
+
+// SetImageURL sets the "image_url" field.
+func (m *BroadcastMutation) SetImageURL(s string) {
+	m.image_url = &s
+}
+
+// ImageURL returns the value of the "image_url" field in the mutation.
+func (m *BroadcastMutation) ImageURL() (r string, exists bool) {
+	v := m.image_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldImageURL returns the old "image_url" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldImageURL(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldImageURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldImageURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldImageURL: %w", err)
+	}
+	return oldValue.ImageURL, nil
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (m *BroadcastMutation) ClearImageURL() {
+	m.image_url = nil
+	m.clearedFields[broadcast.FieldImageURL] = struct{}{}
+}
+
+// ImageURLCleared returns if the "image_url" field was cleared in this mutation.
+func (m *BroadcastMutation) ImageURLCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldImageURL]
+	return ok
+}
+
+// ResetImageURL resets all changes to the "image_url" field.
+func (m *BroadcastMutation) ResetImageURL() {
+	m.image_url = nil
+	delete(m.clearedFields, broadcast.FieldImageURL)
+}
+
+// SetButtons sets the "buttons" field.
+func (m *BroadcastMutation) SetButtons(t []telegramrender.Button) {
+	m.buttons = &t
+	m.appendbuttons = nil
+}
+
+// Buttons returns the value of the "buttons" field in the mutation.
+func (m *BroadcastMutation) Buttons() (r []telegramrender.Button, exists bool) {
+	v := m.buttons
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldButtons returns the old "buttons" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldButtons(ctx context.Context) (v []telegramrender.Button, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldButtons is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldButtons requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldButtons: %w", err)
+	}
+	return oldValue.Buttons, nil
+}
+
+// AppendButtons adds t to the "buttons" field.
+func (m *BroadcastMutation) AppendButtons(t []telegramrender.Button) {
+	m.appendbuttons = append(m.appendbuttons, t...)
+}
+
+// AppendedButtons returns the list of values that were appended to the "buttons" field in this mutation.
+func (m *BroadcastMutation) AppendedButtons() ([]telegramrender.Button, bool) {
+	if len(m.appendbuttons) == 0 {
+		return nil, false
+	}
+	return m.appendbuttons, true
+}
+
+// ClearButtons clears the value of the "buttons" field.
+func (m *BroadcastMutation) ClearButtons() {
+	m.buttons = nil
+	m.appendbuttons = nil
+	m.clearedFields[broadcast.FieldButtons] = struct{}{}
+}
+
+// ButtonsCleared returns if the "buttons" field was cleared in this mutation.
+func (m *BroadcastMutation) ButtonsCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldButtons]
+	return ok
+}
+
+// ResetButtons resets all changes to the "buttons" field.
+func (m *BroadcastMutation) ResetButtons() {
+	m.buttons = nil
+	m.appendbuttons = nil
+	delete(m.clearedFields, broadcast.FieldButtons)
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (m *BroadcastMutation) SetLinkPreview(b bool) {
+	m.link_preview = &b
+}
+
+// LinkPreview returns the value of the "link_preview" field in the mutation.
+func (m *BroadcastMutation) LinkPreview() (r bool, exists bool) {
+	v := m.link_preview
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLinkPreview returns the old "link_preview" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldLinkPreview(ctx context.Context) (v *bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLinkPreview is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLinkPreview requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLinkPreview: %w", err)
+	}
+	return oldValue.LinkPreview, nil
+}
+
+// ClearLinkPreview clears the value of the "link_preview" field.
+func (m *BroadcastMutation) ClearLinkPreview() {
+	m.link_preview = nil
+	m.clearedFields[broadcast.FieldLinkPreview] = struct{}{}
+}
+
+// LinkPreviewCleared returns if the "link_preview" field was cleared in this mutation.
+func (m *BroadcastMutation) LinkPreviewCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldLinkPreview]
+	return ok
+}
+
+// ResetLinkPreview resets all changes to the "link_preview" field.
+func (m *BroadcastMutation) ResetLinkPreview() {
+	m.link_preview = nil
+	delete(m.clearedFields, broadcast.FieldLinkPreview)
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (m *BroadcastMutation) SetUnsubscribeButton(s string) {
+	m.unsubscribe_button = &s
+}
+
+// UnsubscribeButton returns the value of the "unsubscribe_button" field in the mutation.
+func (m *BroadcastMutation) UnsubscribeButton() (r string, exists bool) {
+	v := m.unsubscribe_button
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnsubscribeButton returns the old "unsubscribe_button" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldUnsubscribeButton(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnsubscribeButton is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnsubscribeButton requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnsubscribeButton: %w", err)
+	}
+	return oldValue.UnsubscribeButton, nil
+}
+
+// ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
+func (m *BroadcastMutation) ClearUnsubscribeButton() {
+	m.unsubscribe_button = nil
+	m.clearedFields[broadcast.FieldUnsubscribeButton] = struct{}{}
+}
+
+// UnsubscribeButtonCleared returns if the "unsubscribe_button" field was cleared in this mutation.
+func (m *BroadcastMutation) UnsubscribeButtonCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldUnsubscribeButton]
+	return ok
+}
+
+// ResetUnsubscribeButton resets all changes to the "unsubscribe_button" field.
+func (m *BroadcastMutation) ResetUnsubscribeButton() {
+	m.unsubscribe_button = nil
+	delete(m.clearedFields, broadcast.FieldUnsubscribeButton)
 }
 
 // SetBody sets the "body" field.
@@ -10557,7 +10825,7 @@ func (m *BroadcastMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastMutation) Fields() []string {
-	fields := make([]string, 0, 21)
+	fields := make([]string, 0, 26)
 	if m.created_at != nil {
 		fields = append(fields, broadcast.FieldCreatedAt)
 	}
@@ -10584,6 +10852,21 @@ func (m *BroadcastMutation) Fields() []string {
 	}
 	if m.from_email != nil {
 		fields = append(fields, broadcast.FieldFromEmail)
+	}
+	if m.text != nil {
+		fields = append(fields, broadcast.FieldText)
+	}
+	if m.image_url != nil {
+		fields = append(fields, broadcast.FieldImageURL)
+	}
+	if m.buttons != nil {
+		fields = append(fields, broadcast.FieldButtons)
+	}
+	if m.link_preview != nil {
+		fields = append(fields, broadcast.FieldLinkPreview)
+	}
+	if m.unsubscribe_button != nil {
+		fields = append(fields, broadcast.FieldUnsubscribeButton)
 	}
 	if m.body != nil {
 		fields = append(fields, broadcast.FieldBody)
@@ -10647,6 +10930,16 @@ func (m *BroadcastMutation) Field(name string) (ent.Value, bool) {
 		return m.FromName()
 	case broadcast.FieldFromEmail:
 		return m.FromEmail()
+	case broadcast.FieldText:
+		return m.Text()
+	case broadcast.FieldImageURL:
+		return m.ImageURL()
+	case broadcast.FieldButtons:
+		return m.Buttons()
+	case broadcast.FieldLinkPreview:
+		return m.LinkPreview()
+	case broadcast.FieldUnsubscribeButton:
+		return m.UnsubscribeButton()
 	case broadcast.FieldBody:
 		return m.Body()
 	case broadcast.FieldDoc:
@@ -10698,6 +10991,16 @@ func (m *BroadcastMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldFromName(ctx)
 	case broadcast.FieldFromEmail:
 		return m.OldFromEmail(ctx)
+	case broadcast.FieldText:
+		return m.OldText(ctx)
+	case broadcast.FieldImageURL:
+		return m.OldImageURL(ctx)
+	case broadcast.FieldButtons:
+		return m.OldButtons(ctx)
+	case broadcast.FieldLinkPreview:
+		return m.OldLinkPreview(ctx)
+	case broadcast.FieldUnsubscribeButton:
+		return m.OldUnsubscribeButton(ctx)
 	case broadcast.FieldBody:
 		return m.OldBody(ctx)
 	case broadcast.FieldDoc:
@@ -10793,6 +11096,41 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFromEmail(v)
+		return nil
+	case broadcast.FieldText:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetText(v)
+		return nil
+	case broadcast.FieldImageURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetImageURL(v)
+		return nil
+	case broadcast.FieldButtons:
+		v, ok := value.([]telegramrender.Button)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetButtons(v)
+		return nil
+	case broadcast.FieldLinkPreview:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLinkPreview(v)
+		return nil
+	case broadcast.FieldUnsubscribeButton:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnsubscribeButton(v)
 		return nil
 	case broadcast.FieldBody:
 		v, ok := value.(string)
@@ -10923,6 +11261,21 @@ func (m *BroadcastMutation) ClearedFields() []string {
 	if m.FieldCleared(broadcast.FieldFromEmail) {
 		fields = append(fields, broadcast.FieldFromEmail)
 	}
+	if m.FieldCleared(broadcast.FieldText) {
+		fields = append(fields, broadcast.FieldText)
+	}
+	if m.FieldCleared(broadcast.FieldImageURL) {
+		fields = append(fields, broadcast.FieldImageURL)
+	}
+	if m.FieldCleared(broadcast.FieldButtons) {
+		fields = append(fields, broadcast.FieldButtons)
+	}
+	if m.FieldCleared(broadcast.FieldLinkPreview) {
+		fields = append(fields, broadcast.FieldLinkPreview)
+	}
+	if m.FieldCleared(broadcast.FieldUnsubscribeButton) {
+		fields = append(fields, broadcast.FieldUnsubscribeButton)
+	}
 	if m.FieldCleared(broadcast.FieldBody) {
 		fields = append(fields, broadcast.FieldBody)
 	}
@@ -10981,6 +11334,21 @@ func (m *BroadcastMutation) ClearField(name string) error {
 		return nil
 	case broadcast.FieldFromEmail:
 		m.ClearFromEmail()
+		return nil
+	case broadcast.FieldText:
+		m.ClearText()
+		return nil
+	case broadcast.FieldImageURL:
+		m.ClearImageURL()
+		return nil
+	case broadcast.FieldButtons:
+		m.ClearButtons()
+		return nil
+	case broadcast.FieldLinkPreview:
+		m.ClearLinkPreview()
+		return nil
+	case broadcast.FieldUnsubscribeButton:
+		m.ClearUnsubscribeButton()
 		return nil
 	case broadcast.FieldBody:
 		m.ClearBody()
@@ -11049,6 +11417,21 @@ func (m *BroadcastMutation) ResetField(name string) error {
 		return nil
 	case broadcast.FieldFromEmail:
 		m.ResetFromEmail()
+		return nil
+	case broadcast.FieldText:
+		m.ResetText()
+		return nil
+	case broadcast.FieldImageURL:
+		m.ResetImageURL()
+		return nil
+	case broadcast.FieldButtons:
+		m.ResetButtons()
+		return nil
+	case broadcast.FieldLinkPreview:
+		m.ResetLinkPreview()
+		return nil
+	case broadcast.FieldUnsubscribeButton:
+		m.ResetUnsubscribeButton()
 		return nil
 	case broadcast.FieldBody:
 		m.ResetBody()

@@ -19,6 +19,9 @@ import (
 // the timestamps on the recipient, so the figures cannot drift from what the rows say and are
 // live while the Broadcast is still sending.
 type Stats struct {
+	// Channel is the Channel of the Broadcast: it decides which figures are reported (the Reports
+	// methods). StatsOf leaves it empty; StatsFor sets it.
+	Channel broadcast.Channel
 	// Recipients counts the Broadcast's recipient rows.
 	Recipients int
 	// Sent, Skipped and Failed count the recipients whose message ended that way.
@@ -39,6 +42,53 @@ type Stats struct {
 	// currency (ADR 0064).
 	Revenue orders.Revenue
 }
+
+// Figures is the Stats as the Broadcast's Channel reports them (ADR 0080): every Channel reports
+// recipients, sent, skipped, failed, pending, clicked and unsubscribed; opened, delivered, bounced,
+// complained and captured, and the rates built on them, are nil on a Channel that does not report
+// them, never zero. Telegram has no delivery rate and no open rate.
+type Figures struct {
+	Recipients, Sent, Skipped, Failed, Pending, Clicked, Unsubscribed int
+
+	Opened, Delivered, Bounced, Complained, Captured *int
+
+	DeliveryRate, OpenRate, ClickToOpenRate *float32
+	ClickRate, UnsubscribeRate, FailureRate float32
+
+	Revenue orders.Revenue
+}
+
+// Figures reads the Stats as the Channel of the Broadcast reports them.
+func (st Stats) Figures() Figures {
+	f := Figures{
+		Recipients: st.Recipients, Sent: st.Sent, Skipped: st.Skipped, Failed: st.Failed, Pending: st.Pending,
+		Clicked: st.Clicked, Unsubscribed: st.Unsubscribed,
+		ClickRate: st.ClickRate(), UnsubscribeRate: st.UnsubscribeRate(), FailureRate: st.FailureRate(),
+		Revenue: st.Revenue,
+	}
+	if st.ReportsOpens() {
+		f.Opened, f.OpenRate, f.ClickToOpenRate = &st.Opened, new(st.OpenRate()), new(st.ClickToOpenRate())
+	}
+	if st.ReportsDelivery() {
+		f.Delivered, f.Bounced, f.Complained, f.DeliveryRate = &st.Delivered, &st.Bounced, &st.Complained, new(st.DeliveryRate())
+	}
+	if st.ReportsCaptured() {
+		f.Captured = &st.Captured
+	}
+	return f
+}
+
+// ReportsOpens says whether the Channel reports opens: email does, Telegram cannot tell. Without
+// them there is no open count, open rate or click-to-open rate.
+func (st Stats) ReportsOpens() bool { return st.Channel != broadcast.ChannelTelegram }
+
+// ReportsDelivery says whether the Channel's provider reports delivery results: email's does,
+// Telegram's gives only the acceptance (Sent). Without them there is no delivered, bounced or
+// complained count and no delivery rate.
+func (st Stats) ReportsDelivery() bool { return st.Channel != broadcast.ChannelTelegram }
+
+// ReportsCaptured says whether the Channel has a Test inbox that captures its messages: email.
+func (st Stats) ReportsCaptured() bool { return st.Channel != broadcast.ChannelTelegram }
 
 // Processed counts the recipients whose send has ended.
 func (st Stats) Processed() int { return st.Recipients - st.Pending }
@@ -89,6 +139,24 @@ func PendingOfSending(ctx context.Context, s *ent.Scoped) (int, error) {
 	return s.BroadcastRecipient().Query().
 		Where(Pending(), broadcastrecipient.HasBroadcastWith(broadcast.StatusEQ(broadcast.StatusSending), broadcast.HoldReasonIsNil())).
 		Count(ctx)
+}
+
+// StatsFor is StatsOf for the given Broadcasts, each figure set carrying its Broadcast's Channel.
+func StatsFor(ctx context.Context, s *ent.Scoped, bs ...*ent.Broadcast) (map[int64]Stats, error) {
+	ids := make([]int64, len(bs))
+	for i, b := range bs {
+		ids[i] = b.ID
+	}
+	out, err := StatsOf(ctx, s, ids...)
+	if err != nil {
+		return nil, err
+	}
+	for _, b := range bs {
+		st := out[b.ID]
+		st.Channel = b.Channel
+		out[b.ID] = st
+	}
+	return out, nil
 }
 
 // StatsOf reads the figures of the given Broadcasts in two grouped queries, whatever their
@@ -171,7 +239,8 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 	if err != nil {
 		return nil, err
 	}
-	for id, st := range out {
+	for id := range out {
+		st := out[id]
 		st.Pending = max(0, st.Recipients-st.Sent-st.Skipped-st.Failed)
 		st.Revenue = revenue.Of(id)
 		out[id] = st

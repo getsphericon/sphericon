@@ -55,6 +55,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 var (
@@ -7453,6 +7454,60 @@ func (x *BroadcastScopedCreate) SetNillableFromEmail(v *string) *BroadcastScoped
 	return x
 }
 
+// SetText sets the "text" field.
+func (x *BroadcastScopedCreate) SetText(v string) *BroadcastScopedCreate {
+	x.b.SetText(v)
+	return x
+}
+
+// SetNillableText sets the "text" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableText(v *string) *BroadcastScopedCreate {
+	x.b.SetNillableText(v)
+	return x
+}
+
+// SetImageURL sets the "image_url" field.
+func (x *BroadcastScopedCreate) SetImageURL(v string) *BroadcastScopedCreate {
+	x.b.SetImageURL(v)
+	return x
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableImageURL(v *string) *BroadcastScopedCreate {
+	x.b.SetNillableImageURL(v)
+	return x
+}
+
+// SetButtons sets the "buttons" field.
+func (x *BroadcastScopedCreate) SetButtons(v []telegramrender.Button) *BroadcastScopedCreate {
+	x.b.SetButtons(v)
+	return x
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (x *BroadcastScopedCreate) SetLinkPreview(v bool) *BroadcastScopedCreate {
+	x.b.SetLinkPreview(v)
+	return x
+}
+
+// SetNillableLinkPreview sets the "link_preview" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableLinkPreview(v *bool) *BroadcastScopedCreate {
+	x.b.SetNillableLinkPreview(v)
+	return x
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (x *BroadcastScopedCreate) SetUnsubscribeButton(v string) *BroadcastScopedCreate {
+	x.b.SetUnsubscribeButton(v)
+	return x
+}
+
+// SetNillableUnsubscribeButton sets the "unsubscribe_button" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableUnsubscribeButton(v *string) *BroadcastScopedCreate {
+	x.b.SetNillableUnsubscribeButton(v)
+	return x
+}
+
 // SetBody sets the "body" field.
 func (x *BroadcastScopedCreate) SetBody(v string) *BroadcastScopedCreate {
 	x.b.SetBody(v)
@@ -7814,6 +7869,96 @@ func (u *BroadcastScopedUpsert) UpdateFromEmail() *BroadcastScopedUpsert {
 // ClearFromEmail clears the value of the "from_email" field.
 func (u *BroadcastScopedUpsert) ClearFromEmail() *BroadcastScopedUpsert {
 	u.u.SetNull(broadcast.FieldFromEmail)
+	return u
+}
+
+// SetText sets the "text" field.
+func (u *BroadcastScopedUpsert) SetText(v string) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldText, v)
+	return u
+}
+
+// UpdateText sets the "text" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateText() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldText)
+	return u
+}
+
+// ClearText clears the value of the "text" field.
+func (u *BroadcastScopedUpsert) ClearText() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldText)
+	return u
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *BroadcastScopedUpsert) SetImageURL(v string) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldImageURL, v)
+	return u
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateImageURL() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldImageURL)
+	return u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *BroadcastScopedUpsert) ClearImageURL() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldImageURL)
+	return u
+}
+
+// SetButtons sets the "buttons" field.
+func (u *BroadcastScopedUpsert) SetButtons(v []telegramrender.Button) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldButtons, v)
+	return u
+}
+
+// UpdateButtons sets the "buttons" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateButtons() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldButtons)
+	return u
+}
+
+// ClearButtons clears the value of the "buttons" field.
+func (u *BroadcastScopedUpsert) ClearButtons() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldButtons)
+	return u
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (u *BroadcastScopedUpsert) SetLinkPreview(v bool) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldLinkPreview, v)
+	return u
+}
+
+// UpdateLinkPreview sets the "link_preview" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateLinkPreview() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldLinkPreview)
+	return u
+}
+
+// ClearLinkPreview clears the value of the "link_preview" field.
+func (u *BroadcastScopedUpsert) ClearLinkPreview() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldLinkPreview)
+	return u
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (u *BroadcastScopedUpsert) SetUnsubscribeButton(v string) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldUnsubscribeButton, v)
+	return u
+}
+
+// UpdateUnsubscribeButton sets the "unsubscribe_button" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateUnsubscribeButton() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldUnsubscribeButton)
+	return u
+}
+
+// ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
+func (u *BroadcastScopedUpsert) ClearUnsubscribeButton() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldUnsubscribeButton)
 	return u
 }
 
@@ -8283,6 +8428,96 @@ func (x *BroadcastScopedUpdateOne) ClearFromEmail() *BroadcastScopedUpdateOne {
 	return x
 }
 
+// SetText sets the "text" field.
+func (x *BroadcastScopedUpdateOne) SetText(v string) *BroadcastScopedUpdateOne {
+	x.b.SetText(v)
+	return x
+}
+
+// SetNillableText sets the "text" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableText(v *string) *BroadcastScopedUpdateOne {
+	x.b.SetNillableText(v)
+	return x
+}
+
+// ClearText clears the value of the "text" field.
+func (x *BroadcastScopedUpdateOne) ClearText() *BroadcastScopedUpdateOne {
+	x.b.ClearText()
+	return x
+}
+
+// SetImageURL sets the "image_url" field.
+func (x *BroadcastScopedUpdateOne) SetImageURL(v string) *BroadcastScopedUpdateOne {
+	x.b.SetImageURL(v)
+	return x
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableImageURL(v *string) *BroadcastScopedUpdateOne {
+	x.b.SetNillableImageURL(v)
+	return x
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (x *BroadcastScopedUpdateOne) ClearImageURL() *BroadcastScopedUpdateOne {
+	x.b.ClearImageURL()
+	return x
+}
+
+// SetButtons sets the "buttons" field.
+func (x *BroadcastScopedUpdateOne) SetButtons(v []telegramrender.Button) *BroadcastScopedUpdateOne {
+	x.b.SetButtons(v)
+	return x
+}
+
+// AppendButtons appends value to the "buttons" field.
+func (x *BroadcastScopedUpdateOne) AppendButtons(v []telegramrender.Button) *BroadcastScopedUpdateOne {
+	x.b.AppendButtons(v)
+	return x
+}
+
+// ClearButtons clears the value of the "buttons" field.
+func (x *BroadcastScopedUpdateOne) ClearButtons() *BroadcastScopedUpdateOne {
+	x.b.ClearButtons()
+	return x
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (x *BroadcastScopedUpdateOne) SetLinkPreview(v bool) *BroadcastScopedUpdateOne {
+	x.b.SetLinkPreview(v)
+	return x
+}
+
+// SetNillableLinkPreview sets the "link_preview" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableLinkPreview(v *bool) *BroadcastScopedUpdateOne {
+	x.b.SetNillableLinkPreview(v)
+	return x
+}
+
+// ClearLinkPreview clears the value of the "link_preview" field.
+func (x *BroadcastScopedUpdateOne) ClearLinkPreview() *BroadcastScopedUpdateOne {
+	x.b.ClearLinkPreview()
+	return x
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (x *BroadcastScopedUpdateOne) SetUnsubscribeButton(v string) *BroadcastScopedUpdateOne {
+	x.b.SetUnsubscribeButton(v)
+	return x
+}
+
+// SetNillableUnsubscribeButton sets the "unsubscribe_button" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableUnsubscribeButton(v *string) *BroadcastScopedUpdateOne {
+	x.b.SetNillableUnsubscribeButton(v)
+	return x
+}
+
+// ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
+func (x *BroadcastScopedUpdateOne) ClearUnsubscribeButton() *BroadcastScopedUpdateOne {
+	x.b.ClearUnsubscribeButton()
+	return x
+}
+
 // SetBody sets the "body" field.
 func (x *BroadcastScopedUpdateOne) SetBody(v string) *BroadcastScopedUpdateOne {
 	x.b.SetBody(v)
@@ -8715,6 +8950,96 @@ func (x *BroadcastScopedUpdate) SetNillableFromEmail(v *string) *BroadcastScoped
 // ClearFromEmail clears the value of the "from_email" field.
 func (x *BroadcastScopedUpdate) ClearFromEmail() *BroadcastScopedUpdate {
 	x.b.ClearFromEmail()
+	return x
+}
+
+// SetText sets the "text" field.
+func (x *BroadcastScopedUpdate) SetText(v string) *BroadcastScopedUpdate {
+	x.b.SetText(v)
+	return x
+}
+
+// SetNillableText sets the "text" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableText(v *string) *BroadcastScopedUpdate {
+	x.b.SetNillableText(v)
+	return x
+}
+
+// ClearText clears the value of the "text" field.
+func (x *BroadcastScopedUpdate) ClearText() *BroadcastScopedUpdate {
+	x.b.ClearText()
+	return x
+}
+
+// SetImageURL sets the "image_url" field.
+func (x *BroadcastScopedUpdate) SetImageURL(v string) *BroadcastScopedUpdate {
+	x.b.SetImageURL(v)
+	return x
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableImageURL(v *string) *BroadcastScopedUpdate {
+	x.b.SetNillableImageURL(v)
+	return x
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (x *BroadcastScopedUpdate) ClearImageURL() *BroadcastScopedUpdate {
+	x.b.ClearImageURL()
+	return x
+}
+
+// SetButtons sets the "buttons" field.
+func (x *BroadcastScopedUpdate) SetButtons(v []telegramrender.Button) *BroadcastScopedUpdate {
+	x.b.SetButtons(v)
+	return x
+}
+
+// AppendButtons appends value to the "buttons" field.
+func (x *BroadcastScopedUpdate) AppendButtons(v []telegramrender.Button) *BroadcastScopedUpdate {
+	x.b.AppendButtons(v)
+	return x
+}
+
+// ClearButtons clears the value of the "buttons" field.
+func (x *BroadcastScopedUpdate) ClearButtons() *BroadcastScopedUpdate {
+	x.b.ClearButtons()
+	return x
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (x *BroadcastScopedUpdate) SetLinkPreview(v bool) *BroadcastScopedUpdate {
+	x.b.SetLinkPreview(v)
+	return x
+}
+
+// SetNillableLinkPreview sets the "link_preview" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableLinkPreview(v *bool) *BroadcastScopedUpdate {
+	x.b.SetNillableLinkPreview(v)
+	return x
+}
+
+// ClearLinkPreview clears the value of the "link_preview" field.
+func (x *BroadcastScopedUpdate) ClearLinkPreview() *BroadcastScopedUpdate {
+	x.b.ClearLinkPreview()
+	return x
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (x *BroadcastScopedUpdate) SetUnsubscribeButton(v string) *BroadcastScopedUpdate {
+	x.b.SetUnsubscribeButton(v)
+	return x
+}
+
+// SetNillableUnsubscribeButton sets the "unsubscribe_button" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableUnsubscribeButton(v *string) *BroadcastScopedUpdate {
+	x.b.SetNillableUnsubscribeButton(v)
+	return x
+}
+
+// ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
+func (x *BroadcastScopedUpdate) ClearUnsubscribeButton() *BroadcastScopedUpdate {
+	x.b.ClearUnsubscribeButton()
 	return x
 }
 

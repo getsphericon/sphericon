@@ -182,6 +182,8 @@ type Handler interface {
 	// BroadcastsTestSend implements Broadcasts_testSend operation.
 	//
 	// Send a rendered preview with sample merge data to a single address. Never sends to the audience.
+	// Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a
+	// 422.
 	//
 	// POST /broadcasts/{id}/test-send
 	BroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error)

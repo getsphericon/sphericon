@@ -31,11 +31,13 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
+	entbinding "github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
@@ -136,6 +138,48 @@ func (emailDestination) channel() string { return ChannelEmail }
 
 func (emailDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate) {
 	s.Where(sql.And(sql.NotNull(s.C(contact.FieldEmail)), eligible(contactRef(s))))
+}
+
+// BindingDestination is the Destination of a Channel of Bindings (ADR 0075): the Contact is reached
+// at each Binding on the Integration, its own and its Visitors', and each one's Destination is
+// checked on its own, so a Contact with one eligible Binding is in the audience however many it
+// has. An Integration of 0 names none and reaches nobody.
+func BindingDestination(channel string, integrationID int64) Destination {
+	return bindingDestination{ch: channel, integration: integrationID}
+}
+
+type bindingDestination struct {
+	ch          string
+	integration int64
+}
+
+func (d bindingDestination) channel() string { return d.ch }
+
+func (d bindingDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate) {
+	b := sql.Table(entbinding.Table)
+	v := sql.Table(visitor.Table)
+	sub := sql.Select(b.C(entbinding.FieldID)).From(b)
+	ofVisitors := sql.Select(v.C(visitor.FieldID)).From(v)
+	// raw sql: the visitors of the outer Contact, a correlation ent predicates cannot name.
+	ofVisitors.Where(sql.P(func(w *sql.Builder) {
+		w.WriteString(v.C(visitor.FieldContactID)).WriteString(" = ").WriteString(s.C(contact.FieldID))
+	}))
+	r := ref{
+		workspace:   func(w *sql.Builder) { w.WriteString(b.C(entbinding.FieldWorkspaceID)) },
+		destination: func(w *sql.Builder) { w.WriteString(b.C(entbinding.FieldDestination)) },
+	}
+	sub.Where(sql.And(
+		sql.EQ(b.C(entbinding.FieldIntegrationID), d.integration),
+		sql.Or(
+			// raw sql: the Binding is the outer Contact's own, a correlation ent predicates cannot name.
+			sql.P(func(w *sql.Builder) {
+				w.WriteString(b.C(entbinding.FieldContactID)).WriteString(" = ").WriteString(s.C(contact.FieldID))
+			}),
+			sql.In(b.C(entbinding.FieldVisitorID), ofVisitors),
+		),
+		eligible(r),
+	))
+	s.Where(sql.Exists(sub))
 }
 
 // Audience narrows a Contact query to the Contacts reachable at dest on its Channel from

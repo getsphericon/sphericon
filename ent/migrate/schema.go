@@ -440,10 +440,15 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
 		{Name: "subject", Type: field.TypeString, Nullable: true},
 		{Name: "from_name", Type: field.TypeString, Nullable: true},
 		{Name: "from_email", Type: field.TypeString, Nullable: true},
+		{Name: "text", Type: field.TypeString, Nullable: true},
+		{Name: "image_url", Type: field.TypeString, Nullable: true},
+		{Name: "buttons", Type: field.TypeJSON, Nullable: true},
+		{Name: "link_preview", Type: field.TypeBool, Nullable: true},
+		{Name: "unsubscribe_button", Type: field.TypeString, Nullable: true},
 		{Name: "body", Type: field.TypeString, Nullable: true},
 		{Name: "doc", Type: field.TypeJSON, Nullable: true},
 		{Name: "editor_version", Type: field.TypeString, Nullable: true},
@@ -466,19 +471,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcasts_segments_segment",
-				Columns:    []*schema.Column{BroadcastsColumns[19]},
+				Columns:    []*schema.Column{BroadcastsColumns[24]},
 				RefColumns: []*schema.Column{SegmentsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_integrations_integration",
-				Columns:    []*schema.Column{BroadcastsColumns[20]},
+				Columns:    []*schema.Column{BroadcastsColumns[25]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_workspaces_broadcasts",
-				Columns:    []*schema.Column{BroadcastsColumns[21]},
+				Columns:    []*schema.Column{BroadcastsColumns[26]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -487,17 +492,17 @@ var (
 			{
 				Name:    "broadcast_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[21]},
+				Columns: []*schema.Column{BroadcastsColumns[26]},
 			},
 			{
 				Name:    "broadcast_segment_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[19]},
+				Columns: []*schema.Column{BroadcastsColumns[24]},
 			},
 			{
 				Name:    "broadcast_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[20]},
+				Columns: []*schema.Column{BroadcastsColumns[25]},
 			},
 		},
 	}
@@ -3042,8 +3047,8 @@ func init() {
 		Table: "broadcasts",
 	}
 	BroadcastsTable.Annotation.Checks = map[string]string{
-		"broadcasts_channel_check":      "channel IN ('email')",
-		"broadcasts_content_check":      "(channel = 'email' AND subject IS NOT NULL AND body IS NOT NULL)",
+		"broadcasts_channel_check":      "channel IN ('email', 'telegram')",
+		"broadcasts_content_check":      "(channel = 'email' AND subject IS NOT NULL AND body IS NOT NULL AND text IS NULL AND buttons IS NULL AND link_preview IS NULL AND image_url IS NULL AND unsubscribe_button IS NULL) OR (channel = 'telegram' AND text IS NOT NULL AND buttons IS NOT NULL AND link_preview IS NOT NULL AND subject IS NULL AND body IS NULL AND from_name IS NULL AND from_email IS NULL AND doc IS NULL AND editor_version IS NULL)",
 		"broadcasts_failed_at_check":    "status <> 'failed' OR failed_at IS NOT NULL",
 		"broadcasts_hold_reason_check":  "hold_reason IN ('workspace_suspended', 'workspace_pending_deletion', 'staff_hold', 'no_integration', 'unverified_domain', 'provider_stopped', 'provider_refused')",
 		"broadcasts_scheduled_at_check": "status <> 'scheduled' OR scheduled_at IS NOT NULL",

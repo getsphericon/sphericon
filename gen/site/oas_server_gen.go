@@ -406,9 +406,11 @@ type Handler interface {
 	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error)
 	// SiteBroadcastsTestSend implements SiteBroadcasts_testSend operation.
 	//
-	// Send a one-off rendered preview to a single address. While the Workspace has no verified Sending
-	// domain it goes from the System sender and only to the asking User's own address (ADR 0041): another
-	// address is refused with 422, the System sender's caps answer 429.
+	// Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram has
+	// no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram broadcast is a
+	// 422. While the Workspace has no verified Sending domain it goes from the System sender and only to
+	// the asking User's own address (ADR 0041): another address is refused with 422, the System sender's
+	// caps answer 429.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
 	SiteBroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)

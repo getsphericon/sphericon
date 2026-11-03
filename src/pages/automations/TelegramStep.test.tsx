@@ -109,7 +109,7 @@ test('a Telegram text over the limit is flagged by the counter', async () => {
   await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
   await page.elementLocator(flowNode(1)).click()
   await expect.element(screen.getByText('4100 / 4096')).toBeVisible()
-  await expect.element(screen.getByText(/publishing is refused until it is shorter/)).toBeVisible()
+  await expect.element(screen.getByText(/it cannot go out until it is shorter/)).toBeVisible()
 })
 
 test('adding an image switches the counter to the caption limit, and buttons and the preview switch round-trip', async () => {

@@ -491,7 +491,8 @@ export default interface Resources {
       "channelNoneLink": "Integrations",
       "channelShown": "Channel: {{channel}}",
       "channels": {
-        "email": "Email"
+        "email": "Email",
+        "telegram": "Telegram"
       },
       "createTitle": "New broadcast",
       "deliveryHint": "Send now, or schedule it for a future time. Only draft broadcasts can be sent.",
@@ -530,6 +531,7 @@ export default interface Resources {
       "segmentAll": "All contacts",
       "segmentLabel": "Segment",
       "segmentNote": "Unsubscribed contacts are always excluded.",
+      "segmentNoteTelegram": "It goes to the contacts with a Telegram chat bound to this bot who have not stopped Telegram messages. A contact with several chats gets one message in each and counts once.",
       "sendCapWarning": "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count}} day. You can still send or schedule it." | "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count}} days. You can still send or schedule it.",
       "sendCapWarningError": "Could not read the Send cap",
       "sendNow": "Send now",
@@ -546,8 +548,10 @@ export default interface Resources {
         "failureRate": "Failure rate",
         "openRate": "Open rate",
         "opened": "Opened",
+        "pending": "Pending",
         "recipients": "Recipients",
         "sent": "Sent",
+        "skipped": "Skipped",
         "unsubscribeRate": "Unsubscribe rate",
         "unsubscribed": "Unsubscribed"
       },
@@ -1361,6 +1365,7 @@ export default interface Resources {
         "scheduledFor": "Scheduled for {{date}}",
         "sending": "Sending: {{sent}} of {{total}}",
         "sentDetail": "Sent {{date}}: {{opened}} opened, {{clicked}} clicked",
+        "sentDetailNoOpens": "Sent {{date}}: {{clicked}} clicked",
         "title": "Sends",
         "upcomingEmpty": "Nothing is sending or scheduled.",
         "upcomingTitle": "Sending and scheduled"
@@ -2292,7 +2297,7 @@ export default interface Resources {
       "removeButton": "Remove button {{n}}",
       "textHint": "Telegram's HTML: b, i, u, s, a href, code, pre, tg-spoiler, blockquote. Merge tags are escaped.",
       "textLabel": "Message",
-      "tooLong": "Telegram takes up to {{limit}} characters in {{what}}: publishing is refused until it is shorter.",
+      "tooLong": "Telegram takes up to {{limit}} characters in {{what}}: it cannot go out until it is shorter.",
       "whatCaption": "a caption",
       "whatText": "a message"
     },
