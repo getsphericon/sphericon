@@ -578,7 +578,7 @@ fi
 
 ["check:arch"]
 description = "Package boundaries in easement.yml, Go and frontend: a surface never imports another surface, core imports neither a surface nor ee, only the packages of the raw-client list (core-raw) use *ent.Client, only the wiring imports samber/do, a route file never imports a page, shared UI never imports a page, the frontend never uses the global i18next instance nor dayjs outside src/utils/datetime.ts, every package a file imports is declared in its package.json (easement; `easement check --format json` for a machine-readable report)"
-run = ["easement check", "easement suggest --check"]
+run = ["easement check --jobs 2", "easement suggest --check --jobs 2"]
 
 ["check:upgrade"]
 description = "ADR 0033 in CI: a destructive migration needs a breaking PR title, a migration that locks a live table fails under any title, a breaking change needs an `Upgrade:` line in its `BREAKING CHANGE:` footer (cmd/upgradecheck runs Squawk over the added migrations; PR_TITLE, PR_BODY_FILE and BASE come from the pull request, default to the last commit against origin/main)"
