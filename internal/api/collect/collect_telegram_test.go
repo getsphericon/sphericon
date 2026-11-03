@@ -91,3 +91,53 @@ func TestAVisitorStartLinkIsRefusedWithoutAnEnabledDefaultBot(t *testing.T) {
 	assert.IsType(t, &collectapi.CollectTelegramStartLinksCreateUnprocessableEntity{}, res)
 	assert.Equal(t, before, env.DB.StartToken.Query().CountX(t.Context()), "no token is issued")
 }
+
+// A message from a chat bound through a Visitor is the Contact's once the Visitor is identified:
+// telegram.received is recorded for it.
+func TestAMessageFromAChatBoundThroughAnIdentifiedVisitorIsTheContactsMessage(t *testing.T) {
+	env := testhelper.Setup(t)
+	bot := env.ConnectTelegram(t, 7602, "acme_received_bot")
+	env.MakeDefaultTelegram(t, bot)
+	env.StartTelegram(t, bot, 3, 6003, startLink(t, env, "dev-received").URL)
+
+	env.PostTelegramUpdate(t, bot, `{"update_id":4,"message":{"message_id":4,"date":1767225600,"chat":{"id":6003,"type":"private"},"from":{"id":6003,"is_bot":false},"text":"before"}}`)
+	assert.Zero(t, env.OutboxCount(t, events.NameTelegramReceived, nil), "a Visitor with no Contact has none to record it for")
+
+	identify(t, env, "dev-received", "received.person@example.com")
+	env.PostTelegramUpdate(t, bot, `{"update_id":5,"message":{"message_id":5,"date":1767225600,"chat":{"id":6003,"type":"private"},"from":{"id":6003,"is_bot":false},"text":"after"}}`)
+
+	contact := env.DB.Contact.Query().Where(entcontact.WorkspaceID(fixtures.AcmeID), entcontact.Email("received.person@example.com")).OnlyX(t.Context())
+	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramReceived, map[string]any{"contactId": contact.ID}))
+}
+
+// A chat that moves from an identified Visitor to another owner is lost by the Contact the Visitor
+// was identified as: telegram.unbound is recorded for it.
+func TestAVisitorsChatMovingAwayIsAnnouncedAsUnboundToItsContact(t *testing.T) {
+	env := testhelper.Setup(t)
+	bot := env.ConnectTelegram(t, 7603, "acme_moved_bot")
+	env.MakeDefaultTelegram(t, bot)
+	env.StartTelegram(t, bot, 6, 6004, startLink(t, env, "dev-from").URL)
+	identify(t, env, "dev-from", "from.person@example.com")
+
+	env.StartTelegram(t, bot, 7, 6004, startLink(t, env, "dev-to").URL)
+
+	contact := env.DB.Contact.Query().Where(entcontact.WorkspaceID(fixtures.AcmeID), entcontact.Email("from.person@example.com")).OnlyX(t.Context())
+	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramUnbound, map[string]any{"contactId": contact.ID}))
+}
+
+// A chat bound through a Visitor that Identify resolved to a Contact, which then starts the bot
+// with a link issued for that Contact itself, loses and gains nothing: no telegram.unbound.
+func TestAChatStartedAgainAsTheContactItsVisitorBecameIsNotUnbound(t *testing.T) {
+	env := testhelper.Setup(t)
+	bot := env.ConnectTelegram(t, 7604, "acme_same_bot")
+	env.MakeDefaultTelegram(t, bot)
+	env.StartTelegram(t, bot, 8, 6005, startLink(t, env, "dev-same").URL)
+	identify(t, env, "dev-same", "same.person@example.com")
+	contact := env.DB.Contact.Query().Where(entcontact.WorkspaceID(fixtures.AcmeID), entcontact.Email("same.person@example.com")).OnlyX(t.Context())
+
+	env.BindTelegram(t, bot, contact.ID, 6005, 9)
+
+	assert.Zero(t, env.OutboxCount(t, events.NameTelegramUnbound, map[string]any{"contactId": contact.ID}))
+	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramBound, map[string]any{"contactId": contact.ID}), "announced once, by Identify")
+	assert.Equal(t, 1, env.DB.Binding.Query().Where(binding.Destination("6005")).CountX(t.Context()))
+}

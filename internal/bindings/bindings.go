@@ -286,6 +286,7 @@ func startToken(text string) (string, bool) {
 func bind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, now time.Time, tok *ent.StartToken, r Redemption) error {
 	existing, err := s.Binding().Query().
 		Where(binding.IntegrationID(bot.ID), binding.Destination(r.Destination)).
+		WithVisitor().
 		Only(ctx)
 	switch {
 	case ent.IsNotFound(err):
@@ -308,7 +309,13 @@ func bind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Int
 	case err != nil:
 		return fmt.Errorf("find binding: %w", err)
 	}
-	if sameOwner(existing, tok) {
+	same, err := sameContact(ctx, s, existing, tok)
+	if err != nil {
+		return err
+	}
+	if same {
+		// The chat stays with the Contact it reaches, whichever of its Visitors or itself the
+		// token names: nobody gains or loses it, so nothing is announced.
 		if existing.ChatID == r.ChatID {
 			return nil
 		}
@@ -326,7 +333,7 @@ func bind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Int
 	if err := move.Exec(ctx); err != nil {
 		return fmt.Errorf("move binding: %w", err)
 	}
-	if err := announce(ctx, s, pub, bot, events.NameTelegramUnbound, existing.ContactID, r.DedupKey+"/unbound"); err != nil {
+	if err := announce(ctx, s, pub, bot, events.NameTelegramUnbound, ownerOf(existing), r.DedupKey+"/unbound"); err != nil {
 		return err
 	}
 	return announce(ctx, s, pub, bot, events.NameTelegramBound, tok.ContactID, r.DedupKey+"/bound")
@@ -351,15 +358,40 @@ func Remove(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.I
 	if err := s.Binding().DeleteOneID(b.ID).Exec(ctx); err != nil {
 		return fmt.Errorf("delete binding: %w", err)
 	}
-	owner := b.ContactID
-	if owner == nil && b.Edges.Visitor != nil {
-		owner = b.Edges.Visitor.ContactID
-	}
-	return announce(ctx, s, pub, bot, events.NameTelegramUnbound, owner, dedup)
+	return announce(ctx, s, pub, bot, events.NameTelegramUnbound, ownerOf(b), dedup)
 }
 
-func sameOwner(b *ent.Binding, tok *ent.StartToken) bool {
-	return lo.FromPtr(b.ContactID) == lo.FromPtr(tok.ContactID) && lo.FromPtr(b.VisitorID) == lo.FromPtr(tok.VisitorID)
+// ownerOf is the Contact a Binding reaches: its own, or the one its Visitor was identified as. b
+// is read WithVisitor. A Binding of a Visitor with no Contact reaches nobody.
+func ownerOf(b *ent.Binding) *int64 {
+	if b.ContactID != nil {
+		return b.ContactID
+	}
+	if b.Edges.Visitor != nil {
+		return b.Edges.Visitor.ContactID
+	}
+	return nil
+}
+
+// sameContact reports whether the token's owner and the Binding's are one and the same: the same
+// Contact or Visitor, or a Visitor and the Contact it was identified as.
+func sameContact(ctx context.Context, s *ent.Scoped, b *ent.Binding, tok *ent.StartToken) (bool, error) {
+	if lo.FromPtr(b.ContactID) == lo.FromPtr(tok.ContactID) && lo.FromPtr(b.VisitorID) == lo.FromPtr(tok.VisitorID) {
+		return true, nil
+	}
+	have := ownerOf(b)
+	if have == nil {
+		return false, nil
+	}
+	want := tok.ContactID
+	if want == nil {
+		v, err := s.Visitor().Get(ctx, *tok.VisitorID)
+		if err != nil {
+			return false, fmt.Errorf("read visitor: %w", err)
+		}
+		want = v.ContactID
+	}
+	return want != nil && *want == *have, nil
 }
 
 // announce records the System event of a Contact gaining or losing the chat; a Visitor with no
@@ -387,12 +419,14 @@ type Message struct {
 }
 
 // Receive records telegram.received for the Contact the message's Destination is Bound to on bot,
+// its own or its Visitor's,
 // with the text cut at events.MaxReceivedText. A Destination that is unknown, or Bound to a Visitor
 // with no Contact, records nothing and creates no Contact. Run it inside the transaction s and pub
 // are bound to.
 func Receive(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, m Message) error {
 	b, err := s.Binding().Query().
-		Where(binding.IntegrationID(bot.ID), binding.Destination(m.Destination), binding.ContactIDNotNil()).
+		Where(binding.IntegrationID(bot.ID), binding.Destination(m.Destination)).
+		WithVisitor().
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil
@@ -400,7 +434,11 @@ func Receive(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.
 	if err != nil {
 		return fmt.Errorf("find binding: %w", err)
 	}
-	c, err := s.Contact().Get(ctx, *b.ContactID)
+	owner := ownerOf(b)
+	if owner == nil {
+		return nil
+	}
+	c, err := s.Contact().Get(ctx, *owner)
 	if err != nil {
 		return fmt.Errorf("read contact: %w", err)
 	}
