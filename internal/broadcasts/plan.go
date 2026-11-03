@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	entbinding "github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -75,7 +78,7 @@ func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Sched
 	if err != nil || len(ids) == 0 {
 		return err
 	}
-	times, err := d.Pace(ctx, s, id, len(ids), now)
+	times, err := d.Pace(ctx, s, id, ids, now)
 	if err != nil {
 		return err
 	}
@@ -293,25 +296,82 @@ func AudienceSize(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (int, er
 	return audience.Count(ctx)
 }
 
-// spread is the i-th send's time: i steps after start.
-func spread(start time.Time, step time.Duration, n int) []time.Time {
-	times := make([]time.Time, n)
-	for i := range times {
-		times[i] = start.Add(time.Duration(i) * step)
+// spread is each send's time: a send starts as many steps after start as the calls to the provider
+// the sends before it make, a step being one call's share of the limit.
+func spread(start time.Time, step time.Duration, calls []int) []time.Time {
+	times := make([]time.Time, len(calls))
+	before := 0
+	for i, n := range calls {
+		times[i] = start.Add(time.Duration(before) * step)
+		before += n
 	}
 	return times
 }
 
-// Pace spreads n recipient sends over time at the Provider limit of the Broadcast's Send route
-// (ADR 0023): the i-th send is scheduled i steps after the start, a step being one over the
-// effective rate, so the limiter is a guard and a Deferral the rare case. The start is now, or
+// callsPerRecipient is how many calls to the provider each of the recipients makes, in their
+// order: the Provider limit counts calls, not messages. On email it is one, on Telegram one per
+// Binding the Contact has on the routed Integration, its own and its Visitors'. A Binding that
+// turns out ineligible at send time still counts, so the estimate errs on the slow side. It is at
+// least one: a recipient with no Binding left makes none, but is still paced.
+func callsPerRecipient(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, route outbound.Route, recipientIDs []int64) ([]int, error) {
+	calls := make([]int, len(recipientIDs))
+	for i := range calls {
+		calls[i] = 1
+	}
+	if b.Channel != broadcast.ChannelTelegram || route.Integration == nil || len(recipientIDs) == 0 {
+		return calls, nil
+	}
+	contacts, err := s.BroadcastRecipient().Query().
+		Where(broadcastrecipient.IDIn(recipientIDs...)).
+		Select(broadcastrecipient.FieldContactID).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("broadcasts: recipients of broadcast %d: %w", b.ID, err)
+	}
+	contactOf := make(map[int64]int64, len(contacts))
+	owned := make([]int64, 0, len(contacts))
+	for _, r := range contacts {
+		contactOf[r.ID] = r.ContactID
+		owned = append(owned, r.ContactID)
+	}
+	bound := make(map[int64]int, len(owned))
+	for chunk := range slices.Chunk(owned, recipientInsertChunk) {
+		rows, err := s.Binding().Query().
+			Where(
+				entbinding.IntegrationID(route.Integration.ID),
+				entbinding.Or(entbinding.ContactIDIn(chunk...), entbinding.HasVisitorWith(visitor.ContactIDIn(chunk...))),
+			).
+			WithVisitor().
+			All(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("broadcasts: bindings of broadcast %d: %w", b.ID, err)
+		}
+		for _, row := range rows {
+			switch {
+			case row.ContactID != nil:
+				bound[*row.ContactID]++
+			case row.Edges.Visitor != nil && row.Edges.Visitor.ContactID != nil:
+				bound[*row.Edges.Visitor.ContactID]++
+			}
+		}
+	}
+	for i, id := range recipientIDs {
+		calls[i] = max(1, bound[contactOf[id]])
+	}
+	return calls, nil
+}
+
+// Pace spreads the sends to the recipients over time at the Provider limit of the Broadcast's Send
+// route (ADR 0023): a send is scheduled one step after the one before it per call that one makes
+// to the provider (a Telegram Contact with several chats makes one per chat), a step being one over
+// the effective rate, so the limiter is a guard and a Deferral the rare case. The start is now, or
 // the Broadcast's scheduled time when that is later. It records the last scheduled time on the
 // Broadcast, from which the progress estimate is derived, and returns nil (every send at once)
 // when nothing limits the route. A route that cannot send is not paced: the Broadcast is held
 // (*HeldError, its reason recorded), as Send would hold each of its messages, so the pace and the
 // hold never disagree. Pacing decides only when a send runs: eligibility is still checked per
 // message at send time.
-func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, n int, now time.Time) ([]time.Time, error) {
+func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, recipientIDs []int64, now time.Time) ([]time.Time, error) {
 	b, err := s.Broadcast().Get(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("load broadcast %d: %w", id, err)
@@ -328,6 +388,7 @@ func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, n int, now
 		return nil, &HeldError{Reason: route.Hold}
 	}
 	step := route.Interval()
+	n := len(recipientIDs)
 	if step <= 0 || n == 0 {
 		return nil, s.Broadcast().UpdateOneID(b.ID).ClearLastScheduledAt().Exec(ctx)
 	}
@@ -335,6 +396,10 @@ func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, n int, now
 	if b.ScheduledAt != nil && b.ScheduledAt.After(start) {
 		start = *b.ScheduledAt
 	}
-	times := spread(start, step, n)
+	calls, err := callsPerRecipient(ctx, s, b, route, recipientIDs)
+	if err != nil {
+		return nil, err
+	}
+	times := spread(start, step, calls)
 	return times, s.Broadcast().UpdateOneID(b.ID).SetLastScheduledAt(times[n-1]).Exec(ctx)
 }

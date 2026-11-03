@@ -329,7 +329,7 @@ func TestAnotherWorkspacesLimitDoesNotPaceThisBroadcast(t *testing.T) {
 	d := newDelivery(t)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationGlobexID).SetMaxPerSecond(1).ExecX(d.t.Context())
 
-	times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, 50, fixedNow)
+	times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, make([]int64, 50), fixedNow)
 
 	require.NoError(t, err)
 	assert.Nil(t, times)
@@ -576,7 +576,7 @@ func TestPaceSpreadsEverySendOneStepApartFromTheStart(t *testing.T) {
 		d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetScheduledAt(start).ExecX(d.t.Context())
 		step := time.Second / time.Duration(perSecond)
 
-		times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, n, fixedNow)
+		times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, make([]int64, n), fixedNow)
 
 		require.NoError(rt, err)
 		require.Len(rt, times, n)
