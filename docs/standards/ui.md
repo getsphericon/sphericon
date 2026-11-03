@@ -51,11 +51,9 @@ a Webhook endpoint) takes the typed one.
   (Mantine `description`); the error says which requirement failed.
 - Messages: "Name is required." / "Enter a valid email address." / "Name is too long."
 
-**Target (#999):** forms validate on submit only. A form built by `useSchemaForm`
-(`src/resources/schemaForm.ts`, the one place a schema form is made) gains the blur and keystroke
-validation there, and the second argument of `form.onSubmit` is how the first invalid field gets
-focus. A few submit buttons are disabled in place of validation (`signup-survey.tsx`,
-`oauth/consent.tsx`, `account/acceptance.tsx` are the ones to look at).
+A form built by `useSchemaForm` (`src/resources/schemaForm.ts`, the one place a schema form is
+made) gets the blur and keystroke validation and the focus on the first invalid field from the hook;
+a form needs no code of its own for them.
 
 ## Lists and tables
 

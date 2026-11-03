@@ -1,5 +1,6 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
+import { userEvent } from 'vitest/browser'
 
 import {
   handleStaffSignupItemsCreate,
@@ -165,12 +166,13 @@ test('an item is checked against the contract before it is sent', async () => {
   )
   const { screen } = await renderWithRouter(<ConsoleSignupItemsPage />, LIST)
 
+  // Enter submits from the field: the error a blur shows moves the button away from a click.
   await screen.getByLabelText('Title').fill('   ')
-  await screen.getByRole('button', { name: 'Add item' }).click()
+  await userEvent.keyboard('{Enter}')
 
   await expect.poll(() => screen.getByText('This field is required').elements().length).toBe(3)
   await screen.getByLabelText('Key').fill('Not A Key')
-  await screen.getByRole('button', { name: 'Add item' }).click()
+  await userEvent.keyboard('{Enter}')
   await expect.element(screen.getByText(/match pattern/)).toBeInTheDocument()
   expect(sent).toBe(0)
 })
