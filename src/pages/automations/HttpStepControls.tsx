@@ -47,7 +47,7 @@ export function HttpBodyControl(props: ControlProps) {
     <Stack gap="xs">
       <Textarea
         label={label}
-        description={t(($) => $.automations.httpBodyHint)}
+        description={t(($) => $.automations.httpBodyHint, { mergeTag: '{{ first_name }}' })}
         autosize
         minRows={6}
         value={body}
