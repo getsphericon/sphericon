@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
 import { useVerifySendingDomain } from '../../hooks/useVerifySendingDomain.ts'
+import { SendingDomainStatus } from './SendingDomainStatus.tsx'
 
 // ReadOnlyValue is a value to copy, in a read-only box that wraps its lines (a DKIM key has no
 // spaces to break at, so a plain block would scroll sideways), selectable, with a copy button at
@@ -181,19 +182,7 @@ export function SendingDomainRecordsModal({
       {record ? (
         <Stack>
           <Group gap="xs">
-            {record.verified ? (
-              <Badge color="teal" variant="light">
-                {t(($) => $.settings.sendingDomains.verified)}
-              </Badge>
-            ) : record.verificationLostAt ? (
-              <Badge color="red" variant="light">
-                {t(($) => $.settings.sendingDomains.lost)}
-              </Badge>
-            ) : (
-              <Badge color="gray" variant="light">
-                {t(($) => $.settings.sendingDomains.pending)}
-              </Badge>
-            )}
+            <SendingDomainStatus record={record} />
           </Group>
           <Tabs defaultValue="records">
             <Tabs.List>

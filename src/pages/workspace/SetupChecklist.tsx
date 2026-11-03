@@ -144,16 +144,15 @@ export function SetupChecklist({
               </Grid.Col>
               <Grid.Col span={{ base: 12, md: 5 }}>
                 <Flex justify={{ base: 'flex-start', md: 'flex-end' }}>
-                  {status !== 'done' &&
-                    (to === null ? (
-                      step === 'contact' ? (
-                        <ContactActions workspaceId={workspaceId} />
-                      ) : (
-                        <SendActions workspaceId={workspaceId} />
-                      )
-                    ) : (
-                      <StepLink step={step} to={to} workspaceId={workspaceId} />
-                    ))}
+                  {status !== 'done' && to === null && step === 'contact' ? (
+                    <ContactActions workspaceId={workspaceId} />
+                  ) : null}
+                  {status !== 'done' && to === null && step !== 'contact' ? (
+                    <SendActions workspaceId={workspaceId} />
+                  ) : null}
+                  {status !== 'done' && to !== null ? (
+                    <StepLink step={step} to={to} workspaceId={workspaceId} />
+                  ) : null}
                 </Flex>
               </Grid.Col>
             </Grid>

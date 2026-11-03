@@ -48,14 +48,16 @@ export function ConfirmSubscription({
               {t(($) => $.confirmSubscription.expiredBody)}
             </Text>
           </Stack>
-        ) : mutation.isSuccess ? (
+        ) : null}
+        {!isExpired && mutation.isSuccess ? (
           <Stack align="center" gap="sm">
             <Title order={3}>{t(($) => $.confirmSubscription.doneTitle)}</Title>
             <Text c="dimmed" ta="center">
               {t(($) => $.confirmSubscription.doneBody)}
             </Text>
           </Stack>
-        ) : (
+        ) : null}
+        {!isExpired && !mutation.isSuccess ? (
           <Stack align="center" gap="md">
             <Title order={3}>{t(($) => $.confirmSubscription.title)}</Title>
             <Text c="dimmed" ta="center">
@@ -72,7 +74,7 @@ export function ConfirmSubscription({
               {t(($) => $.confirmSubscription.confirm)}
             </Button>
           </Stack>
-        )}
+        ) : null}
       </Card>
     </CenteredLayout>
   )
