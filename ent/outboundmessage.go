@@ -61,6 +61,10 @@ type OutboundMessage struct {
 	BouncedAt *time.Time `json:"bounced_at,omitempty"`
 	// ComplainedAt holds the value of the "complained_at" field.
 	ComplainedAt *time.Time `json:"complained_at,omitempty"`
+	// OpenedAt holds the value of the "opened_at" field.
+	OpenedAt *time.Time `json:"opened_at,omitempty"`
+	// ClickedAt holds the value of the "clicked_at" field.
+	ClickedAt *time.Time `json:"clicked_at,omitempty"`
 	// Captured holds the value of the "captured" field.
 	Captured bool `json:"captured,omitempty"`
 	// BroadcastID holds the value of the "broadcast_id" field.
@@ -220,7 +224,7 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldReason, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
 			values[i] = new(sql.NullString)
-		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt:
+		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -359,6 +363,20 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ComplainedAt = new(time.Time)
 				*_m.ComplainedAt = value.Time
+			}
+		case outboundmessage.FieldOpenedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field opened_at", values[i])
+			} else if value.Valid {
+				_m.OpenedAt = new(time.Time)
+				*_m.OpenedAt = value.Time
+			}
+		case outboundmessage.FieldClickedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field clicked_at", values[i])
+			} else if value.Valid {
+				_m.ClickedAt = new(time.Time)
+				*_m.ClickedAt = value.Time
 			}
 		case outboundmessage.FieldCaptured:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -579,6 +597,16 @@ func (_m *OutboundMessage) String() string {
 	builder.WriteString(", ")
 	if v := _m.ComplainedAt; v != nil {
 		builder.WriteString("complained_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.OpenedAt; v != nil {
+		builder.WriteString("opened_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.ClickedAt; v != nil {
+		builder.WriteString("clicked_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

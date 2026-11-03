@@ -222,6 +222,12 @@ model ContactExportOutboundMessage {
   /** When the provider first reported a spam complaint about the message */
   complainedAt?: Timestamp | null;
 
+  /** When the contact first opened the message (a person, not a mail client) */
+  openedAt?: Timestamp | null;
+
+  /** When the contact first clicked a link of the message (a person, not a mail client) */
+  clickedAt?: Timestamp | null;
+
   /** True when the message went through a Test inbox: captured, not delivered */
   captured: boolean;
 
@@ -241,19 +247,13 @@ model ContactExportOutboundMessage {
   createdAt: Timestamp;
 }
 
-/** The contact's engagement with one broadcast (how its send ended is in `outboundMessages`) */
+/** The contact's place in one broadcast's audience (how its send ended, and whether it was opened or clicked, is in `outboundMessages`) */
 model ContactExportBroadcastRecipient {
   /** Unique identifier */
   id: EntityId;
 
   /** The broadcast */
   broadcastId: EntityId;
-
-  /** When the contact opened it */
-  openedAt?: Timestamp | null;
-
-  /** When the contact clicked it */
-  clickedAt?: Timestamp | null;
 
   /** When the contact unsubscribed from it */
   unsubscribedAt?: Timestamp | null;

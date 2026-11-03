@@ -73,6 +73,12 @@ model ExportMessageRow {
   /** When the provider first reported a spam complaint about the message */
   complained_at: Timestamp | null;
 
+  /** When the recipient first opened the message (a person, not a mail client) */
+  opened_at: Timestamp | null;
+
+  /** When the recipient first clicked a link of the message (a person, not a mail client) */
+  clicked_at: Timestamp | null;
+
   /** True when the message went through a Test inbox: captured, not delivered */
   captured: boolean;
 

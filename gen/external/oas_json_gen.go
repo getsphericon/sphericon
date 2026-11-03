@@ -13658,18 +13658,6 @@ func (s *ContactExportBroadcastRecipient) encodeFields(e *jx.Encoder) {
 		s.BroadcastId.Encode(e)
 	}
 	{
-		if s.OpenedAt.Set {
-			e.FieldStart("openedAt")
-			s.OpenedAt.Encode(e)
-		}
-	}
-	{
-		if s.ClickedAt.Set {
-			e.FieldStart("clickedAt")
-			s.ClickedAt.Encode(e)
-		}
-	}
-	{
 		if s.UnsubscribedAt.Set {
 			e.FieldStart("unsubscribedAt")
 			s.UnsubscribedAt.Encode(e)
@@ -13681,13 +13669,11 @@ func (s *ContactExportBroadcastRecipient) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfContactExportBroadcastRecipient = [6]string{
+var jsonFieldsNameOfContactExportBroadcastRecipient = [4]string{
 	0: "id",
 	1: "broadcastId",
-	2: "openedAt",
-	3: "clickedAt",
-	4: "unsubscribedAt",
-	5: "createdAt",
+	2: "unsubscribedAt",
+	3: "createdAt",
 }
 
 // Decode decodes ContactExportBroadcastRecipient from json.
@@ -13719,26 +13705,6 @@ func (s *ContactExportBroadcastRecipient) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"broadcastId\"")
 			}
-		case "openedAt":
-			if err := func() error {
-				s.OpenedAt.Reset()
-				if err := s.OpenedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"openedAt\"")
-			}
-		case "clickedAt":
-			if err := func() error {
-				s.ClickedAt.Reset()
-				if err := s.ClickedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"clickedAt\"")
-			}
 		case "unsubscribedAt":
 			if err := func() error {
 				s.UnsubscribedAt.Reset()
@@ -13750,7 +13716,7 @@ func (s *ContactExportBroadcastRecipient) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"unsubscribedAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -13769,7 +13735,7 @@ func (s *ContactExportBroadcastRecipient) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00100011,
+		0b00001011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -14975,6 +14941,18 @@ func (s *ContactExportOutboundMessage) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.OpenedAt.Set {
+			e.FieldStart("openedAt")
+			s.OpenedAt.Encode(e)
+		}
+	}
+	{
+		if s.ClickedAt.Set {
+			e.FieldStart("clickedAt")
+			s.ClickedAt.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("captured")
 		e.Bool(s.Captured)
 	}
@@ -15008,7 +14986,7 @@ func (s *ContactExportOutboundMessage) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfContactExportOutboundMessage = [20]string{
+var jsonFieldsNameOfContactExportOutboundMessage = [22]string{
 	0:  "id",
 	1:  "kind",
 	2:  "channel",
@@ -15023,12 +15001,14 @@ var jsonFieldsNameOfContactExportOutboundMessage = [20]string{
 	11: "deliveredAt",
 	12: "bouncedAt",
 	13: "complainedAt",
-	14: "captured",
-	15: "broadcastId",
-	16: "automationId",
-	17: "automationStep",
-	18: "templateId",
-	19: "createdAt",
+	14: "openedAt",
+	15: "clickedAt",
+	16: "captured",
+	17: "broadcastId",
+	18: "automationId",
+	19: "automationStep",
+	20: "templateId",
+	21: "createdAt",
 }
 
 // Decode decodes ContactExportOutboundMessage from json.
@@ -15188,8 +15168,28 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"complainedAt\"")
 			}
+		case "openedAt":
+			if err := func() error {
+				s.OpenedAt.Reset()
+				if err := s.OpenedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"openedAt\"")
+			}
+		case "clickedAt":
+			if err := func() error {
+				s.ClickedAt.Reset()
+				if err := s.ClickedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"clickedAt\"")
+			}
 		case "captured":
-			requiredBitSet[1] |= 1 << 6
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				v, err := d.Bool()
 				s.Captured = bool(v)
@@ -15241,7 +15241,7 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"templateId\"")
 			}
 		case "createdAt":
-			requiredBitSet[2] |= 1 << 3
+			requiredBitSet[2] |= 1 << 5
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -15261,8 +15261,8 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b10001111,
-		0b01000010,
-		0b00001000,
+		0b00000010,
+		0b00100001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

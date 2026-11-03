@@ -57,9 +57,10 @@ model SiteAnalyticsSending {
 }
 
 /**
- * Email engagement for the Broadcast messages sent in the selected range (the send
- * cohort), from delivery logs. Opens/clicks are counted among that cohort, so
- * the counts reconcile and the rates stay in [0,1].
+ * Email engagement for the Broadcast and Automation messages sent in the selected range
+ * (the send cohort; a Transactional message is not in it), from delivery logs. Each message
+ * counts once, not each person. Opens/clicks are the first human open/click stamped on the
+ * message and are counted among that cohort, so the counts reconcile and the rates stay in [0,1].
  */
 model SiteAnalyticsEmail {
   /** Messages sent within the range */

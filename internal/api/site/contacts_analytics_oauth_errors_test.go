@@ -97,7 +97,9 @@ func TestSiteAnalyticsRangesAndEmptyWorkspace(t *testing.T) {
 		ov, ok := res.(*siteapi.SiteAnalyticsOverview)
 		require.Truef(t, ok, "got %T", res)
 		assert.Len(t, ov.Timeseries, tc.days, string(tc.r))
-		assert.Zero(t, ov.Current.Email.SentCount)
+		// Globex's one marketing message (a usage fixture, sent an hour ago) is in every cohort, unengaged.
+		assert.Equal(t, int32(1), ov.Current.Email.SentCount)
+		assert.Zero(t, ov.Current.Email.OpenedCount)
 		assert.Zero(t, ov.Current.Email.OpenRate)
 		assert.Zero(t, ov.Current.Email.ClickRate)
 		assert.Zero(t, ov.Current.Email.ClickToOpenRate)

@@ -173,8 +173,6 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 	var recipients []struct {
 		BroadcastID  int64 `json:"broadcast_id"`
 		Total        int   `json:"total"`
-		Opened       int   `json:"opened"`
-		Clicked      int   `json:"clicked"`
 		Unsubscribed int   `json:"unsubscribed"`
 	}
 	if err := s.BroadcastRecipient().Query().
@@ -182,8 +180,6 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 		GroupBy(broadcastrecipient.FieldBroadcastID).
 		Aggregate(
 			ent.As(ent.Count(), "total"),
-			aggregates.CountSet(broadcastrecipient.FieldOpenedAt, "opened"),
-			aggregates.CountSet(broadcastrecipient.FieldClickedAt, "clicked"),
 			aggregates.CountSet(broadcastrecipient.FieldUnsubscribedAt, "unsubscribed"),
 		).
 		Scan(ctx, &recipients); err != nil {
@@ -191,7 +187,7 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 	}
 	for _, r := range recipients {
 		st := out[r.BroadcastID]
-		st.Recipients, st.Opened, st.Clicked, st.Unsubscribed = r.Total, r.Opened, r.Clicked, r.Unsubscribed
+		st.Recipients, st.Unsubscribed = r.Total, r.Unsubscribed
 		out[r.BroadcastID] = st
 	}
 
@@ -202,6 +198,8 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 		Delivered   int                    `json:"delivered"`
 		Bounced     int                    `json:"bounced"`
 		Complained  int                    `json:"complained"`
+		Opened      int                    `json:"opened"`
+		Clicked     int                    `json:"clicked"`
 		Captured    int                    `json:"captured"`
 	}
 	if err := s.OutboundMessage().Query().
@@ -212,6 +210,8 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 			aggregates.CountSet(outboundmessage.FieldDeliveredAt, "delivered"),
 			aggregates.CountSet(outboundmessage.FieldBouncedAt, "bounced"),
 			aggregates.CountSet(outboundmessage.FieldComplainedAt, "complained"),
+			aggregates.CountSet(outboundmessage.FieldOpenedAt, "opened"),
+			aggregates.CountSet(outboundmessage.FieldClickedAt, "clicked"),
 			aggregates.CountTrue(outboundmessage.FieldCaptured, "captured"),
 		).
 		Scan(ctx, &messages); err != nil {
@@ -222,6 +222,8 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 		st.Delivered += m.Delivered
 		st.Bounced += m.Bounced
 		st.Complained += m.Complained
+		st.Opened += m.Opened
+		st.Clicked += m.Clicked
 		st.Captured += m.Captured
 		switch m.Status {
 		case outboundmessage.StatusSent:

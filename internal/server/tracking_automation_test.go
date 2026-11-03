@@ -3,6 +3,7 @@ package server_test
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,6 +49,36 @@ func TestAutomationOpensAndClicksAreEventsCarryingTheAutomation(t *testing.T) {
 		assert.EqualValues(t, fixtures.OutboundMessageAutomationTrackedID, e.OutboundMessageID)
 		assert.Zero(t, e.BroadcastID, "an Automation email belongs to no Broadcast")
 	}
+}
+
+// The first human open and click are stamped on the Automation's message (ADR 0053), once: a repeat
+// leaves the stamp as it was, and a machine hit stamps nothing.
+func TestAnAutomationMessageIsStampedOnceByAHumanHitAndNeverByAMachineOne(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	const id = fixtures.OutboundMessageAutomationTrackedID
+	stamps := func() (opened, clicked *time.Time) {
+		m := env.DB.OutboundMessage.GetX(ctx, id)
+		return m.OpenedAt, m.ClickedAt
+	}
+
+	hit(t, env, openPath(t, env, id), scannerUA, personAddr)
+	hit(t, env, clickPathTo(t, env, id, linkA), scannerUA, personAddr)
+	opened, clicked := stamps()
+	assert.Nil(t, opened, "a machine open stamps nothing")
+	assert.Nil(t, clicked, "a machine click stamps nothing")
+
+	hit(t, env, openPath(t, env, id), personUA, personAddr)
+	hit(t, env, clickPathTo(t, env, id, linkA), personUA, personAddr)
+	opened, clicked = stamps()
+	require.NotNil(t, opened, "a person's open stamps the message")
+	require.NotNil(t, clicked, "a person's click stamps the message")
+
+	hit(t, env, openPath(t, env, id), personUA, personAddr)
+	hit(t, env, clickPathTo(t, env, id, linkB), personUA, personAddr)
+	again, clickedAgain := stamps()
+	assert.True(t, opened.Equal(*again), "a second open leaves the stamp unchanged")
+	assert.True(t, clicked.Equal(*clickedAgain), "a second click leaves the stamp unchanged")
 }
 
 func TestAutomationReportShowsOpensClicksAndTheLinkTable(t *testing.T) {

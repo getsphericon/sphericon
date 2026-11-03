@@ -93,34 +93,6 @@ func (_c *BroadcastRecipientCreate) SetNillableDeferredUntil(v *time.Time) *Broa
 	return _c
 }
 
-// SetOpenedAt sets the "opened_at" field.
-func (_c *BroadcastRecipientCreate) SetOpenedAt(v time.Time) *BroadcastRecipientCreate {
-	_c.mutation.SetOpenedAt(v)
-	return _c
-}
-
-// SetNillableOpenedAt sets the "opened_at" field if the given value is not nil.
-func (_c *BroadcastRecipientCreate) SetNillableOpenedAt(v *time.Time) *BroadcastRecipientCreate {
-	if v != nil {
-		_c.SetOpenedAt(*v)
-	}
-	return _c
-}
-
-// SetClickedAt sets the "clicked_at" field.
-func (_c *BroadcastRecipientCreate) SetClickedAt(v time.Time) *BroadcastRecipientCreate {
-	_c.mutation.SetClickedAt(v)
-	return _c
-}
-
-// SetNillableClickedAt sets the "clicked_at" field if the given value is not nil.
-func (_c *BroadcastRecipientCreate) SetNillableClickedAt(v *time.Time) *BroadcastRecipientCreate {
-	if v != nil {
-		_c.SetClickedAt(*v)
-	}
-	return _c
-}
-
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (_c *BroadcastRecipientCreate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientCreate {
 	_c.mutation.SetUnsubscribedAt(v)
@@ -265,14 +237,6 @@ func (_c *BroadcastRecipientCreate) createSpec() (*BroadcastRecipient, *sqlgraph
 	if value, ok := _c.mutation.DeferredUntil(); ok {
 		_spec.SetField(broadcastrecipient.FieldDeferredUntil, field.TypeTime, value)
 		_node.DeferredUntil = &value
-	}
-	if value, ok := _c.mutation.OpenedAt(); ok {
-		_spec.SetField(broadcastrecipient.FieldOpenedAt, field.TypeTime, value)
-		_node.OpenedAt = &value
-	}
-	if value, ok := _c.mutation.ClickedAt(); ok {
-		_spec.SetField(broadcastrecipient.FieldClickedAt, field.TypeTime, value)
-		_node.ClickedAt = &value
 	}
 	if value, ok := _c.mutation.UnsubscribedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime, value)
@@ -453,42 +417,6 @@ func (u *BroadcastRecipientUpsert) ClearDeferredUntil() *BroadcastRecipientUpser
 	return u
 }
 
-// SetOpenedAt sets the "opened_at" field.
-func (u *BroadcastRecipientUpsert) SetOpenedAt(v time.Time) *BroadcastRecipientUpsert {
-	u.Set(broadcastrecipient.FieldOpenedAt, v)
-	return u
-}
-
-// UpdateOpenedAt sets the "opened_at" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsert) UpdateOpenedAt() *BroadcastRecipientUpsert {
-	u.SetExcluded(broadcastrecipient.FieldOpenedAt)
-	return u
-}
-
-// ClearOpenedAt clears the value of the "opened_at" field.
-func (u *BroadcastRecipientUpsert) ClearOpenedAt() *BroadcastRecipientUpsert {
-	u.SetNull(broadcastrecipient.FieldOpenedAt)
-	return u
-}
-
-// SetClickedAt sets the "clicked_at" field.
-func (u *BroadcastRecipientUpsert) SetClickedAt(v time.Time) *BroadcastRecipientUpsert {
-	u.Set(broadcastrecipient.FieldClickedAt, v)
-	return u
-}
-
-// UpdateClickedAt sets the "clicked_at" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsert) UpdateClickedAt() *BroadcastRecipientUpsert {
-	u.SetExcluded(broadcastrecipient.FieldClickedAt)
-	return u
-}
-
-// ClearClickedAt clears the value of the "clicked_at" field.
-func (u *BroadcastRecipientUpsert) ClearClickedAt() *BroadcastRecipientUpsert {
-	u.SetNull(broadcastrecipient.FieldClickedAt)
-	return u
-}
-
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (u *BroadcastRecipientUpsert) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpsert {
 	u.Set(broadcastrecipient.FieldUnsubscribedAt, v)
@@ -639,48 +567,6 @@ func (u *BroadcastRecipientUpsertOne) UpdateDeferredUntil() *BroadcastRecipientU
 func (u *BroadcastRecipientUpsertOne) ClearDeferredUntil() *BroadcastRecipientUpsertOne {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
 		s.ClearDeferredUntil()
-	})
-}
-
-// SetOpenedAt sets the "opened_at" field.
-func (u *BroadcastRecipientUpsertOne) SetOpenedAt(v time.Time) *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.SetOpenedAt(v)
-	})
-}
-
-// UpdateOpenedAt sets the "opened_at" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsertOne) UpdateOpenedAt() *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.UpdateOpenedAt()
-	})
-}
-
-// ClearOpenedAt clears the value of the "opened_at" field.
-func (u *BroadcastRecipientUpsertOne) ClearOpenedAt() *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.ClearOpenedAt()
-	})
-}
-
-// SetClickedAt sets the "clicked_at" field.
-func (u *BroadcastRecipientUpsertOne) SetClickedAt(v time.Time) *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.SetClickedAt(v)
-	})
-}
-
-// UpdateClickedAt sets the "clicked_at" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsertOne) UpdateClickedAt() *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.UpdateClickedAt()
-	})
-}
-
-// ClearClickedAt clears the value of the "clicked_at" field.
-func (u *BroadcastRecipientUpsertOne) ClearClickedAt() *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.ClearClickedAt()
 	})
 }
 
@@ -1003,48 +889,6 @@ func (u *BroadcastRecipientUpsertBulk) UpdateDeferredUntil() *BroadcastRecipient
 func (u *BroadcastRecipientUpsertBulk) ClearDeferredUntil() *BroadcastRecipientUpsertBulk {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
 		s.ClearDeferredUntil()
-	})
-}
-
-// SetOpenedAt sets the "opened_at" field.
-func (u *BroadcastRecipientUpsertBulk) SetOpenedAt(v time.Time) *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.SetOpenedAt(v)
-	})
-}
-
-// UpdateOpenedAt sets the "opened_at" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsertBulk) UpdateOpenedAt() *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.UpdateOpenedAt()
-	})
-}
-
-// ClearOpenedAt clears the value of the "opened_at" field.
-func (u *BroadcastRecipientUpsertBulk) ClearOpenedAt() *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.ClearOpenedAt()
-	})
-}
-
-// SetClickedAt sets the "clicked_at" field.
-func (u *BroadcastRecipientUpsertBulk) SetClickedAt(v time.Time) *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.SetClickedAt(v)
-	})
-}
-
-// UpdateClickedAt sets the "clicked_at" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsertBulk) UpdateClickedAt() *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.UpdateClickedAt()
-	})
-}
-
-// ClearClickedAt clears the value of the "clicked_at" field.
-func (u *BroadcastRecipientUpsertBulk) ClearClickedAt() *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.ClearClickedAt()
 	})
 }
 

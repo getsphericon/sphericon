@@ -11603,8 +11603,6 @@ type BroadcastRecipientMutation struct {
 	created_at       *time.Time
 	updated_at       *time.Time
 	deferred_until   *time.Time
-	opened_at        *time.Time
-	clicked_at       *time.Time
 	unsubscribed_at  *time.Time
 	clearedFields    map[string]struct{}
 	workspace        *int64
@@ -11964,104 +11962,6 @@ func (m *BroadcastRecipientMutation) ResetDeferredUntil() {
 	delete(m.clearedFields, broadcastrecipient.FieldDeferredUntil)
 }
 
-// SetOpenedAt sets the "opened_at" field.
-func (m *BroadcastRecipientMutation) SetOpenedAt(t time.Time) {
-	m.opened_at = &t
-}
-
-// OpenedAt returns the value of the "opened_at" field in the mutation.
-func (m *BroadcastRecipientMutation) OpenedAt() (r time.Time, exists bool) {
-	v := m.opened_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldOpenedAt returns the old "opened_at" field's value of the BroadcastRecipient entity.
-// If the BroadcastRecipient object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastRecipientMutation) OldOpenedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldOpenedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldOpenedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldOpenedAt: %w", err)
-	}
-	return oldValue.OpenedAt, nil
-}
-
-// ClearOpenedAt clears the value of the "opened_at" field.
-func (m *BroadcastRecipientMutation) ClearOpenedAt() {
-	m.opened_at = nil
-	m.clearedFields[broadcastrecipient.FieldOpenedAt] = struct{}{}
-}
-
-// OpenedAtCleared returns if the "opened_at" field was cleared in this mutation.
-func (m *BroadcastRecipientMutation) OpenedAtCleared() bool {
-	_, ok := m.clearedFields[broadcastrecipient.FieldOpenedAt]
-	return ok
-}
-
-// ResetOpenedAt resets all changes to the "opened_at" field.
-func (m *BroadcastRecipientMutation) ResetOpenedAt() {
-	m.opened_at = nil
-	delete(m.clearedFields, broadcastrecipient.FieldOpenedAt)
-}
-
-// SetClickedAt sets the "clicked_at" field.
-func (m *BroadcastRecipientMutation) SetClickedAt(t time.Time) {
-	m.clicked_at = &t
-}
-
-// ClickedAt returns the value of the "clicked_at" field in the mutation.
-func (m *BroadcastRecipientMutation) ClickedAt() (r time.Time, exists bool) {
-	v := m.clicked_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldClickedAt returns the old "clicked_at" field's value of the BroadcastRecipient entity.
-// If the BroadcastRecipient object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastRecipientMutation) OldClickedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldClickedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldClickedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldClickedAt: %w", err)
-	}
-	return oldValue.ClickedAt, nil
-}
-
-// ClearClickedAt clears the value of the "clicked_at" field.
-func (m *BroadcastRecipientMutation) ClearClickedAt() {
-	m.clicked_at = nil
-	m.clearedFields[broadcastrecipient.FieldClickedAt] = struct{}{}
-}
-
-// ClickedAtCleared returns if the "clicked_at" field was cleared in this mutation.
-func (m *BroadcastRecipientMutation) ClickedAtCleared() bool {
-	_, ok := m.clearedFields[broadcastrecipient.FieldClickedAt]
-	return ok
-}
-
-// ResetClickedAt resets all changes to the "clicked_at" field.
-func (m *BroadcastRecipientMutation) ResetClickedAt() {
-	m.clicked_at = nil
-	delete(m.clearedFields, broadcastrecipient.FieldClickedAt)
-}
-
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (m *BroadcastRecipientMutation) SetUnsubscribedAt(t time.Time) {
 	m.unsubscribed_at = &t
@@ -12226,7 +12126,7 @@ func (m *BroadcastRecipientMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastRecipientMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, broadcastrecipient.FieldCreatedAt)
 	}
@@ -12244,12 +12144,6 @@ func (m *BroadcastRecipientMutation) Fields() []string {
 	}
 	if m.deferred_until != nil {
 		fields = append(fields, broadcastrecipient.FieldDeferredUntil)
-	}
-	if m.opened_at != nil {
-		fields = append(fields, broadcastrecipient.FieldOpenedAt)
-	}
-	if m.clicked_at != nil {
-		fields = append(fields, broadcastrecipient.FieldClickedAt)
 	}
 	if m.unsubscribed_at != nil {
 		fields = append(fields, broadcastrecipient.FieldUnsubscribedAt)
@@ -12274,10 +12168,6 @@ func (m *BroadcastRecipientMutation) Field(name string) (ent.Value, bool) {
 		return m.ContactID()
 	case broadcastrecipient.FieldDeferredUntil:
 		return m.DeferredUntil()
-	case broadcastrecipient.FieldOpenedAt:
-		return m.OpenedAt()
-	case broadcastrecipient.FieldClickedAt:
-		return m.ClickedAt()
 	case broadcastrecipient.FieldUnsubscribedAt:
 		return m.UnsubscribedAt()
 	}
@@ -12301,10 +12191,6 @@ func (m *BroadcastRecipientMutation) OldField(ctx context.Context, name string) 
 		return m.OldContactID(ctx)
 	case broadcastrecipient.FieldDeferredUntil:
 		return m.OldDeferredUntil(ctx)
-	case broadcastrecipient.FieldOpenedAt:
-		return m.OldOpenedAt(ctx)
-	case broadcastrecipient.FieldClickedAt:
-		return m.OldClickedAt(ctx)
 	case broadcastrecipient.FieldUnsubscribedAt:
 		return m.OldUnsubscribedAt(ctx)
 	}
@@ -12358,20 +12244,6 @@ func (m *BroadcastRecipientMutation) SetField(name string, value ent.Value) erro
 		}
 		m.SetDeferredUntil(v)
 		return nil
-	case broadcastrecipient.FieldOpenedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetOpenedAt(v)
-		return nil
-	case broadcastrecipient.FieldClickedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetClickedAt(v)
-		return nil
 	case broadcastrecipient.FieldUnsubscribedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -12418,12 +12290,6 @@ func (m *BroadcastRecipientMutation) ClearedFields() []string {
 	if m.FieldCleared(broadcastrecipient.FieldDeferredUntil) {
 		fields = append(fields, broadcastrecipient.FieldDeferredUntil)
 	}
-	if m.FieldCleared(broadcastrecipient.FieldOpenedAt) {
-		fields = append(fields, broadcastrecipient.FieldOpenedAt)
-	}
-	if m.FieldCleared(broadcastrecipient.FieldClickedAt) {
-		fields = append(fields, broadcastrecipient.FieldClickedAt)
-	}
 	if m.FieldCleared(broadcastrecipient.FieldUnsubscribedAt) {
 		fields = append(fields, broadcastrecipient.FieldUnsubscribedAt)
 	}
@@ -12446,12 +12312,6 @@ func (m *BroadcastRecipientMutation) ClearField(name string) error {
 		return nil
 	case broadcastrecipient.FieldDeferredUntil:
 		m.ClearDeferredUntil()
-		return nil
-	case broadcastrecipient.FieldOpenedAt:
-		m.ClearOpenedAt()
-		return nil
-	case broadcastrecipient.FieldClickedAt:
-		m.ClearClickedAt()
 		return nil
 	case broadcastrecipient.FieldUnsubscribedAt:
 		m.ClearUnsubscribedAt()
@@ -12481,12 +12341,6 @@ func (m *BroadcastRecipientMutation) ResetField(name string) error {
 		return nil
 	case broadcastrecipient.FieldDeferredUntil:
 		m.ResetDeferredUntil()
-		return nil
-	case broadcastrecipient.FieldOpenedAt:
-		m.ResetOpenedAt()
-		return nil
-	case broadcastrecipient.FieldClickedAt:
-		m.ResetClickedAt()
 		return nil
 	case broadcastrecipient.FieldUnsubscribedAt:
 		m.ResetUnsubscribedAt()
@@ -36280,6 +36134,8 @@ type OutboundMessageMutation struct {
 	delivered_at               *time.Time
 	bounced_at                 *time.Time
 	complained_at              *time.Time
+	opened_at                  *time.Time
+	clicked_at                 *time.Time
 	captured                   *bool
 	automation_step            *int
 	addautomation_step         *int
@@ -37192,6 +37048,104 @@ func (m *OutboundMessageMutation) ResetComplainedAt() {
 	delete(m.clearedFields, outboundmessage.FieldComplainedAt)
 }
 
+// SetOpenedAt sets the "opened_at" field.
+func (m *OutboundMessageMutation) SetOpenedAt(t time.Time) {
+	m.opened_at = &t
+}
+
+// OpenedAt returns the value of the "opened_at" field in the mutation.
+func (m *OutboundMessageMutation) OpenedAt() (r time.Time, exists bool) {
+	v := m.opened_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOpenedAt returns the old "opened_at" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldOpenedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOpenedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOpenedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOpenedAt: %w", err)
+	}
+	return oldValue.OpenedAt, nil
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (m *OutboundMessageMutation) ClearOpenedAt() {
+	m.opened_at = nil
+	m.clearedFields[outboundmessage.FieldOpenedAt] = struct{}{}
+}
+
+// OpenedAtCleared returns if the "opened_at" field was cleared in this mutation.
+func (m *OutboundMessageMutation) OpenedAtCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldOpenedAt]
+	return ok
+}
+
+// ResetOpenedAt resets all changes to the "opened_at" field.
+func (m *OutboundMessageMutation) ResetOpenedAt() {
+	m.opened_at = nil
+	delete(m.clearedFields, outboundmessage.FieldOpenedAt)
+}
+
+// SetClickedAt sets the "clicked_at" field.
+func (m *OutboundMessageMutation) SetClickedAt(t time.Time) {
+	m.clicked_at = &t
+}
+
+// ClickedAt returns the value of the "clicked_at" field in the mutation.
+func (m *OutboundMessageMutation) ClickedAt() (r time.Time, exists bool) {
+	v := m.clicked_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClickedAt returns the old "clicked_at" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldClickedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClickedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClickedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClickedAt: %w", err)
+	}
+	return oldValue.ClickedAt, nil
+}
+
+// ClearClickedAt clears the value of the "clicked_at" field.
+func (m *OutboundMessageMutation) ClearClickedAt() {
+	m.clicked_at = nil
+	m.clearedFields[outboundmessage.FieldClickedAt] = struct{}{}
+}
+
+// ClickedAtCleared returns if the "clicked_at" field was cleared in this mutation.
+func (m *OutboundMessageMutation) ClickedAtCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldClickedAt]
+	return ok
+}
+
+// ResetClickedAt resets all changes to the "clicked_at" field.
+func (m *OutboundMessageMutation) ResetClickedAt() {
+	m.clicked_at = nil
+	delete(m.clearedFields, outboundmessage.FieldClickedAt)
+}
+
 // SetCaptured sets the "captured" field.
 func (m *OutboundMessageMutation) SetCaptured(b bool) {
 	m.captured = &b
@@ -37994,7 +37948,7 @@ func (m *OutboundMessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutboundMessageMutation) Fields() []string {
-	fields := make([]string, 0, 28)
+	fields := make([]string, 0, 30)
 	if m.created_at != nil {
 		fields = append(fields, outboundmessage.FieldCreatedAt)
 	}
@@ -38048,6 +38002,12 @@ func (m *OutboundMessageMutation) Fields() []string {
 	}
 	if m.complained_at != nil {
 		fields = append(fields, outboundmessage.FieldComplainedAt)
+	}
+	if m.opened_at != nil {
+		fields = append(fields, outboundmessage.FieldOpenedAt)
+	}
+	if m.clicked_at != nil {
+		fields = append(fields, outboundmessage.FieldClickedAt)
 	}
 	if m.captured != nil {
 		fields = append(fields, outboundmessage.FieldCaptured)
@@ -38123,6 +38083,10 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.BouncedAt()
 	case outboundmessage.FieldComplainedAt:
 		return m.ComplainedAt()
+	case outboundmessage.FieldOpenedAt:
+		return m.OpenedAt()
+	case outboundmessage.FieldClickedAt:
+		return m.ClickedAt()
 	case outboundmessage.FieldCaptured:
 		return m.Captured()
 	case outboundmessage.FieldBroadcastID:
@@ -38188,6 +38152,10 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldBouncedAt(ctx)
 	case outboundmessage.FieldComplainedAt:
 		return m.OldComplainedAt(ctx)
+	case outboundmessage.FieldOpenedAt:
+		return m.OldOpenedAt(ctx)
+	case outboundmessage.FieldClickedAt:
+		return m.OldClickedAt(ctx)
 	case outboundmessage.FieldCaptured:
 		return m.OldCaptured(ctx)
 	case outboundmessage.FieldBroadcastID:
@@ -38343,6 +38311,20 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetComplainedAt(v)
 		return nil
+	case outboundmessage.FieldOpenedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOpenedAt(v)
+		return nil
+	case outboundmessage.FieldClickedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClickedAt(v)
+		return nil
 	case outboundmessage.FieldCaptured:
 		v, ok := value.(bool)
 		if !ok {
@@ -38488,6 +38470,12 @@ func (m *OutboundMessageMutation) ClearedFields() []string {
 	if m.FieldCleared(outboundmessage.FieldComplainedAt) {
 		fields = append(fields, outboundmessage.FieldComplainedAt)
 	}
+	if m.FieldCleared(outboundmessage.FieldOpenedAt) {
+		fields = append(fields, outboundmessage.FieldOpenedAt)
+	}
+	if m.FieldCleared(outboundmessage.FieldClickedAt) {
+		fields = append(fields, outboundmessage.FieldClickedAt)
+	}
 	if m.FieldCleared(outboundmessage.FieldBroadcastID) {
 		fields = append(fields, outboundmessage.FieldBroadcastID)
 	}
@@ -38558,6 +38546,12 @@ func (m *OutboundMessageMutation) ClearField(name string) error {
 		return nil
 	case outboundmessage.FieldComplainedAt:
 		m.ClearComplainedAt()
+		return nil
+	case outboundmessage.FieldOpenedAt:
+		m.ClearOpenedAt()
+		return nil
+	case outboundmessage.FieldClickedAt:
+		m.ClearClickedAt()
 		return nil
 	case outboundmessage.FieldBroadcastID:
 		m.ClearBroadcastID()
@@ -38647,6 +38641,12 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 		return nil
 	case outboundmessage.FieldComplainedAt:
 		m.ResetComplainedAt()
+		return nil
+	case outboundmessage.FieldOpenedAt:
+		m.ResetOpenedAt()
+		return nil
+	case outboundmessage.FieldClickedAt:
+		m.ResetClickedAt()
 		return nil
 	case outboundmessage.FieldCaptured:
 		m.ResetCaptured()

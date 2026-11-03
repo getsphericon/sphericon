@@ -101,6 +101,11 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.Time("delivered_at").Optional().Nillable(),
 		field.Time("bounced_at").Optional().Nillable(),
 		field.Time("complained_at").Optional().Nillable(),
+		// The recipient's first human open and first human click of the message (ADR 0053),
+		// stamped once like the delivery results above, whatever surface sent it. A machine hit
+		// stamps nothing.
+		field.Time("opened_at").Optional().Nillable(),
+		field.Time("clicked_at").Optional().Nillable(),
 		// True when the sender the message went through said it delivers nowhere outside (a
 		// Test inbox, ADR 0058): the message was captured, not delivered. Stamped with the
 		// send from the sender's own capability, so it outlives the Integration's state and

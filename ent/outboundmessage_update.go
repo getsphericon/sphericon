@@ -300,6 +300,46 @@ func (_u *OutboundMessageUpdate) ClearComplainedAt() *OutboundMessageUpdate {
 	return _u
 }
 
+// SetOpenedAt sets the "opened_at" field.
+func (_u *OutboundMessageUpdate) SetOpenedAt(v time.Time) *OutboundMessageUpdate {
+	_u.mutation.SetOpenedAt(v)
+	return _u
+}
+
+// SetNillableOpenedAt sets the "opened_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableOpenedAt(v *time.Time) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetOpenedAt(*v)
+	}
+	return _u
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (_u *OutboundMessageUpdate) ClearOpenedAt() *OutboundMessageUpdate {
+	_u.mutation.ClearOpenedAt()
+	return _u
+}
+
+// SetClickedAt sets the "clicked_at" field.
+func (_u *OutboundMessageUpdate) SetClickedAt(v time.Time) *OutboundMessageUpdate {
+	_u.mutation.SetClickedAt(v)
+	return _u
+}
+
+// SetNillableClickedAt sets the "clicked_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableClickedAt(v *time.Time) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetClickedAt(*v)
+	}
+	return _u
+}
+
+// ClearClickedAt clears the value of the "clicked_at" field.
+func (_u *OutboundMessageUpdate) ClearClickedAt() *OutboundMessageUpdate {
+	_u.mutation.ClearClickedAt()
+	return _u
+}
+
 // SetCaptured sets the "captured" field.
 func (_u *OutboundMessageUpdate) SetCaptured(v bool) *OutboundMessageUpdate {
 	_u.mutation.SetCaptured(v)
@@ -747,6 +787,18 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.ComplainedAtCleared() {
 		_spec.ClearField(outboundmessage.FieldComplainedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.OpenedAt(); ok {
+		_spec.SetField(outboundmessage.FieldOpenedAt, field.TypeTime, value)
+	}
+	if _u.mutation.OpenedAtCleared() {
+		_spec.ClearField(outboundmessage.FieldOpenedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ClickedAt(); ok {
+		_spec.SetField(outboundmessage.FieldClickedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ClickedAtCleared() {
+		_spec.ClearField(outboundmessage.FieldClickedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Captured(); ok {
 		_spec.SetField(outboundmessage.FieldCaptured, field.TypeBool, value)
@@ -1330,6 +1382,46 @@ func (_u *OutboundMessageUpdateOne) ClearComplainedAt() *OutboundMessageUpdateOn
 	return _u
 }
 
+// SetOpenedAt sets the "opened_at" field.
+func (_u *OutboundMessageUpdateOne) SetOpenedAt(v time.Time) *OutboundMessageUpdateOne {
+	_u.mutation.SetOpenedAt(v)
+	return _u
+}
+
+// SetNillableOpenedAt sets the "opened_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableOpenedAt(v *time.Time) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetOpenedAt(*v)
+	}
+	return _u
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (_u *OutboundMessageUpdateOne) ClearOpenedAt() *OutboundMessageUpdateOne {
+	_u.mutation.ClearOpenedAt()
+	return _u
+}
+
+// SetClickedAt sets the "clicked_at" field.
+func (_u *OutboundMessageUpdateOne) SetClickedAt(v time.Time) *OutboundMessageUpdateOne {
+	_u.mutation.SetClickedAt(v)
+	return _u
+}
+
+// SetNillableClickedAt sets the "clicked_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableClickedAt(v *time.Time) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetClickedAt(*v)
+	}
+	return _u
+}
+
+// ClearClickedAt clears the value of the "clicked_at" field.
+func (_u *OutboundMessageUpdateOne) ClearClickedAt() *OutboundMessageUpdateOne {
+	_u.mutation.ClearClickedAt()
+	return _u
+}
+
 // SetCaptured sets the "captured" field.
 func (_u *OutboundMessageUpdateOne) SetCaptured(v bool) *OutboundMessageUpdateOne {
 	_u.mutation.SetCaptured(v)
@@ -1807,6 +1899,18 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.ComplainedAtCleared() {
 		_spec.ClearField(outboundmessage.FieldComplainedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.OpenedAt(); ok {
+		_spec.SetField(outboundmessage.FieldOpenedAt, field.TypeTime, value)
+	}
+	if _u.mutation.OpenedAtCleared() {
+		_spec.ClearField(outboundmessage.FieldOpenedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ClickedAt(); ok {
+		_spec.SetField(outboundmessage.FieldClickedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ClickedAtCleared() {
+		_spec.ClearField(outboundmessage.FieldClickedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Captured(); ok {
 		_spec.SetField(outboundmessage.FieldCaptured, field.TypeBool, value)

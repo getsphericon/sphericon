@@ -87,7 +87,8 @@ func TestSiteAnalyticsOverviewMapsTheModule(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 
 	assert.Len(t, ov.Timeseries, 7)
-	assert.Equal(t, int32(11), ov.Current.Email.SentCount)
+	// 11 Broadcast sends three days ago and 4 unengaged marketing messages of the last 30 hours.
+	assert.Equal(t, int32(15), ov.Current.Email.SentCount)
 	assert.Equal(t, int32(5), ov.Current.Email.OpenedCount)
 	assert.Equal(t, int32(2), ov.Current.Email.ClickedCount)
 	assert.Positive(t, ov.Contacts.Total)

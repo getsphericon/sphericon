@@ -130,6 +130,16 @@ func ComplainedAt(v time.Time) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldComplainedAt, v))
 }
 
+// OpenedAt applies equality check predicate on the "opened_at" field. It's identical to OpenedAtEQ.
+func OpenedAt(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldOpenedAt, v))
+}
+
+// ClickedAt applies equality check predicate on the "clicked_at" field. It's identical to ClickedAtEQ.
+func ClickedAt(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldClickedAt, v))
+}
+
 // Captured applies equality check predicate on the "captured" field. It's identical to CapturedEQ.
 func Captured(v bool) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldCaptured, v))
@@ -1048,6 +1058,106 @@ func ComplainedAtIsNil() predicate.OutboundMessage {
 // ComplainedAtNotNil applies the NotNil predicate on the "complained_at" field.
 func ComplainedAtNotNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotNull(FieldComplainedAt))
+}
+
+// OpenedAtEQ applies the EQ predicate on the "opened_at" field.
+func OpenedAtEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldOpenedAt, v))
+}
+
+// OpenedAtNEQ applies the NEQ predicate on the "opened_at" field.
+func OpenedAtNEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldOpenedAt, v))
+}
+
+// OpenedAtIn applies the In predicate on the "opened_at" field.
+func OpenedAtIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldOpenedAt, vs...))
+}
+
+// OpenedAtNotIn applies the NotIn predicate on the "opened_at" field.
+func OpenedAtNotIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldOpenedAt, vs...))
+}
+
+// OpenedAtGT applies the GT predicate on the "opened_at" field.
+func OpenedAtGT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldOpenedAt, v))
+}
+
+// OpenedAtGTE applies the GTE predicate on the "opened_at" field.
+func OpenedAtGTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldOpenedAt, v))
+}
+
+// OpenedAtLT applies the LT predicate on the "opened_at" field.
+func OpenedAtLT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldOpenedAt, v))
+}
+
+// OpenedAtLTE applies the LTE predicate on the "opened_at" field.
+func OpenedAtLTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldOpenedAt, v))
+}
+
+// OpenedAtIsNil applies the IsNil predicate on the "opened_at" field.
+func OpenedAtIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldOpenedAt))
+}
+
+// OpenedAtNotNil applies the NotNil predicate on the "opened_at" field.
+func OpenedAtNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldOpenedAt))
+}
+
+// ClickedAtEQ applies the EQ predicate on the "clicked_at" field.
+func ClickedAtEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldClickedAt, v))
+}
+
+// ClickedAtNEQ applies the NEQ predicate on the "clicked_at" field.
+func ClickedAtNEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldClickedAt, v))
+}
+
+// ClickedAtIn applies the In predicate on the "clicked_at" field.
+func ClickedAtIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldClickedAt, vs...))
+}
+
+// ClickedAtNotIn applies the NotIn predicate on the "clicked_at" field.
+func ClickedAtNotIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldClickedAt, vs...))
+}
+
+// ClickedAtGT applies the GT predicate on the "clicked_at" field.
+func ClickedAtGT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldClickedAt, v))
+}
+
+// ClickedAtGTE applies the GTE predicate on the "clicked_at" field.
+func ClickedAtGTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldClickedAt, v))
+}
+
+// ClickedAtLT applies the LT predicate on the "clicked_at" field.
+func ClickedAtLT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldClickedAt, v))
+}
+
+// ClickedAtLTE applies the LTE predicate on the "clicked_at" field.
+func ClickedAtLTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldClickedAt, v))
+}
+
+// ClickedAtIsNil applies the IsNil predicate on the "clicked_at" field.
+func ClickedAtIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldClickedAt))
+}
+
+// ClickedAtNotNil applies the NotNil predicate on the "clicked_at" field.
+func ClickedAtNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldClickedAt))
 }
 
 // CapturedEQ applies the EQ predicate on the "captured" field.

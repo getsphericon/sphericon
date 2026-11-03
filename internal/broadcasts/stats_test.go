@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
 // The figures of several Broadcasts come from their rows in one read; a Broadcast with no
@@ -88,10 +89,14 @@ func TestBroadcastSettlesOnlyWhenNoSendIsPending(t *testing.T) {
 func TestEngagementIsRecordedOnce(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
+	messageID := d.messageOf(id).ID
 
+	// An open and a click are stamps of the recipient's Outbound message (ADR 0053), read by the
+	// Broadcast's figures from there.
 	for name, record := range map[string]func() (bool, error){
-		"open":  func() (bool, error) { return broadcasts.RecordOpen(d.t.Context(), d.s, id) },
-		"click": func() (bool, error) { return broadcasts.RecordClick(d.t.Context(), d.s, id) },
+		"open":  func() (bool, error) { return outbound.StampOpened(d.t.Context(), d.s, messageID) },
+		"click": func() (bool, error) { return outbound.StampClicked(d.t.Context(), d.s, messageID) },
 		"unsubscribe": func() (bool, error) {
 			return broadcasts.RecordUnsubscribe(d.t.Context(), d.s, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
 		},
@@ -104,13 +109,13 @@ func TestEngagementIsRecordedOnce(t *testing.T) {
 		assert.False(t, again, name+" is not recorded twice")
 	}
 
-	assert.Equal(t, broadcasts.Stats{Recipients: 1, Pending: 1, Opened: 1, Clicked: 1, Unsubscribed: 1}, d.stats())
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1, Opened: 1, Clicked: 1, Unsubscribed: 1}, d.stats())
 }
 
-func TestEngagementOfAnUnknownRecipientIsNothing(t *testing.T) {
+func TestEngagementOfAnUnknownMessageIsNothing(t *testing.T) {
 	d := newDelivery(t)
 
-	recorded, err := broadcasts.RecordOpen(d.t.Context(), d.s, 424242)
+	recorded, err := outbound.StampOpened(d.t.Context(), d.s, 424242)
 	require.NoError(t, err)
 	assert.False(t, recorded)
 

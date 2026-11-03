@@ -4,6 +4,9 @@ status: accepted
 
 # The overview leads with what needs attention
 
+> **Amended by [[0053-delivery-and-engagement-events-cover-every-send]]:** the open and click rates
+> now cover the Broadcast and Automation messages, not only the Broadcast cohort.
+
 The Workspace overview showed the Setup checklist, a revenue block, two cards to create a Broadcast
 or an Automation and the things created last. What stops a Workspace's mail (a Sending domain that
 lost its record, a provider that stopped the account, a held Broadcast) was each on its own page, and

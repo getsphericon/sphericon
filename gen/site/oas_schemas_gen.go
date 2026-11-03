@@ -1215,17 +1215,14 @@ func NewTelegramBroadcastContentBroadcastContentSum(v TelegramBroadcastContent) 
 	return s
 }
 
-// The contact's engagement with one broadcast (how its send ended is in `outboundMessages`).
+// The contact's place in one broadcast's audience (how its send ended, and whether it was opened or
+// clicked, is in `outboundMessages`).
 // Ref: #/components/schemas/ContactExportBroadcastRecipient
 type ContactExportBroadcastRecipient struct {
 	// Unique identifier.
 	ID EntityId `json:"id"`
 	// The broadcast.
 	BroadcastId EntityId `json:"broadcastId"`
-	// When the contact opened it.
-	OpenedAt OptNilTimestamp `json:"openedAt"`
-	// When the contact clicked it.
-	ClickedAt OptNilTimestamp `json:"clickedAt"`
 	// When the contact unsubscribed from it.
 	UnsubscribedAt OptNilTimestamp `json:"unsubscribedAt"`
 	// Creation timestamp.
@@ -1240,16 +1237,6 @@ func (s *ContactExportBroadcastRecipient) GetID() EntityId {
 // GetBroadcastId returns the value of BroadcastId.
 func (s *ContactExportBroadcastRecipient) GetBroadcastId() EntityId {
 	return s.BroadcastId
-}
-
-// GetOpenedAt returns the value of OpenedAt.
-func (s *ContactExportBroadcastRecipient) GetOpenedAt() OptNilTimestamp {
-	return s.OpenedAt
-}
-
-// GetClickedAt returns the value of ClickedAt.
-func (s *ContactExportBroadcastRecipient) GetClickedAt() OptNilTimestamp {
-	return s.ClickedAt
 }
 
 // GetUnsubscribedAt returns the value of UnsubscribedAt.
@@ -1270,16 +1257,6 @@ func (s *ContactExportBroadcastRecipient) SetID(val EntityId) {
 // SetBroadcastId sets the value of BroadcastId.
 func (s *ContactExportBroadcastRecipient) SetBroadcastId(val EntityId) {
 	s.BroadcastId = val
-}
-
-// SetOpenedAt sets the value of OpenedAt.
-func (s *ContactExportBroadcastRecipient) SetOpenedAt(val OptNilTimestamp) {
-	s.OpenedAt = val
-}
-
-// SetClickedAt sets the value of ClickedAt.
-func (s *ContactExportBroadcastRecipient) SetClickedAt(val OptNilTimestamp) {
-	s.ClickedAt = val
 }
 
 // SetUnsubscribedAt sets the value of UnsubscribedAt.
@@ -1864,6 +1841,10 @@ type ContactExportOutboundMessage struct {
 	BouncedAt OptNilTimestamp `json:"bouncedAt"`
 	// When the provider first reported a spam complaint about the message.
 	ComplainedAt OptNilTimestamp `json:"complainedAt"`
+	// When the contact first opened the message (a person, not a mail client).
+	OpenedAt OptNilTimestamp `json:"openedAt"`
+	// When the contact first clicked a link of the message (a person, not a mail client).
+	ClickedAt OptNilTimestamp `json:"clickedAt"`
 	// True when the message went through a Test inbox: captured, not delivered.
 	Captured bool `json:"captured"`
 	// Broadcast that produced the message.
@@ -1946,6 +1927,16 @@ func (s *ContactExportOutboundMessage) GetBouncedAt() OptNilTimestamp {
 // GetComplainedAt returns the value of ComplainedAt.
 func (s *ContactExportOutboundMessage) GetComplainedAt() OptNilTimestamp {
 	return s.ComplainedAt
+}
+
+// GetOpenedAt returns the value of OpenedAt.
+func (s *ContactExportOutboundMessage) GetOpenedAt() OptNilTimestamp {
+	return s.OpenedAt
+}
+
+// GetClickedAt returns the value of ClickedAt.
+func (s *ContactExportOutboundMessage) GetClickedAt() OptNilTimestamp {
+	return s.ClickedAt
 }
 
 // GetCaptured returns the value of Captured.
@@ -2046,6 +2037,16 @@ func (s *ContactExportOutboundMessage) SetBouncedAt(val OptNilTimestamp) {
 // SetComplainedAt sets the value of ComplainedAt.
 func (s *ContactExportOutboundMessage) SetComplainedAt(val OptNilTimestamp) {
 	s.ComplainedAt = val
+}
+
+// SetOpenedAt sets the value of OpenedAt.
+func (s *ContactExportOutboundMessage) SetOpenedAt(val OptNilTimestamp) {
+	s.OpenedAt = val
+}
+
+// SetClickedAt sets the value of ClickedAt.
+func (s *ContactExportOutboundMessage) SetClickedAt(val OptNilTimestamp) {
+	s.ClickedAt = val
 }
 
 // SetCaptured sets the value of Captured.
@@ -9571,9 +9572,10 @@ func (s *SiteAnalyticsContacts) SetUnsubscribed(val int32) {
 	s.Unsubscribed = val
 }
 
-// Email engagement for the Broadcast messages sent in the selected range (the send cohort), from
-// delivery logs. Opens/clicks are counted among that cohort, so the counts reconcile and the rates
-// stay in [0,1].
+// Email engagement for the Broadcast and Automation messages sent in the selected range (the send
+// cohort; a Transactional message is not in it), from delivery logs. Each message counts once, not
+// each person. Opens/clicks are the first human open/click stamped on the message and are counted
+// among that cohort, so the counts reconcile and the rates stay in [0,1].
 // Ref: #/components/schemas/SiteAnalyticsEmail
 type SiteAnalyticsEmail struct {
 	// Messages sent within the range.

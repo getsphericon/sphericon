@@ -37,7 +37,7 @@ func (BroadcastRecipient) Fields() []ent.Field {
 		field.Int64("contact_id").
 			Optional(),
 		// No delivery state here (ADR 0015): this row is the frozen audience snapshot plus
-		// the engagement rollup. How its send ended is its Outbound message's (the message
+		// the unsubscribe rollup. How its send ended is its Outbound message's (the message
 		// carries this row's id), and it is pending until that message leaves pending.
 		// When a Deferral last put this recipient's job to sleep until (ADR 0023). A
 		// recipient whose job is still asleep is not queueing for a token, so the
@@ -46,14 +46,9 @@ func (BroadcastRecipient) Fields() []ent.Field {
 		field.Time("deferred_until").
 			Optional().
 			Nillable(),
-		field.Time("opened_at").
-			Optional().
-			Nillable(),
-		field.Time("clicked_at").
-			Optional().
-			Nillable(),
-		// When this recipient unsubscribed from the Broadcast's email: set once, like
-		// opened_at and clicked_at, so the Broadcast's unsubscribes are a count of these.
+		// When this recipient unsubscribed from the Broadcast's email: set once, so the
+		// Broadcast's unsubscribes are a count of these. Its opens and clicks are the
+		// Outbound message's stamps (ADR 0053).
 		field.Time("unsubscribed_at").
 			Optional().
 			Nillable(),
