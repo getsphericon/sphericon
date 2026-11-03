@@ -19,12 +19,15 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import validator from '@rjsf/validator-ajv8'
+import { useHistoryTravel } from 'ahooks'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import type { Device, FormDoc } from './doc.ts'
 import { SITE_PALETTE, loadDocs, resetDocs, saveDoc } from './doc.ts'
 import { resetFormState } from './runtime.ts'
+import { DOC_SCHEMA } from './schema.ts'
 import { Switcher } from './Switcher.tsx'
 import { VariantOutline } from './VariantOutline.tsx'
 import { VariantPuck } from './VariantPuck.tsx'
@@ -33,20 +36,25 @@ import { VariantTemplate } from './VariantTemplate.tsx'
 const VARIANTS = [
   { key: 'A', name: 'Puck drag-and-drop canvas' },
   { key: 'B', name: 'Fixed layout + form' },
-  { key: 'C', name: 'Block list + inspector' },
+  { key: 'C', name: 'Block list + inspector (RJSF, dnd-kit)' },
 ]
 
 export function Builder() {
   const [params] = useSearchParams()
   const variant = params.get('variant') ?? 'A'
-  const [docs, setDocs] = useState<FormDoc[]>(() => loadDocs())
-  const [docId, setDocId] = useState(docs[0].id)
+  // Undo/redo for every variant from ahooks (Puck keeps its own history as well).
+  const history = useHistoryTravel<FormDoc[]>(loadDocs())
+  const docs = history.value ?? []
+  const setDocs = (fn: (all: FormDoc[]) => FormDoc[]) => history.setValue(fn(docs))
+  const [docId, setDocId] = useState(docs[0]?.id ?? '')
   const [device, setDevice] = useState<Device>('desktop')
   const [themeOpen, setThemeOpen] = useState(false)
   const [saved, setSaved] = useState('')
   const doc = docs.find((d) => d.id === docId) ?? docs[0]
   const change = (next: FormDoc) => setDocs((all) => all.map((d) => (d.id === next.id ? next : d)))
   const theme = (patch: Partial<FormDoc['theme']>) => change({ ...doc, theme: { ...doc.theme, ...patch } })
+  // The same check the server would run at Publish, with the schemas the inspector draws from.
+  const errors = validator.validateFormData(doc, DOC_SCHEMA).errors.map((e) => `${e.property ?? ''} ${e.message ?? ''}`)
 
   return (
     <Container fluid p="md" pb={80}>
@@ -62,6 +70,13 @@ export function Builder() {
           />
           <SegmentedControl size="xs" value={device} onChange={(v) => setDevice(v)} data={['desktop', 'mobile']} />
           <Button size="xs" variant="light" onClick={() => setThemeOpen(true)}>Theme</Button>
+          <Button size="xs" variant="default" disabled={!history.backLength} onClick={() => history.back()}>Undo</Button>
+          <Button size="xs" variant="default" disabled={!history.forwardLength} onClick={() => history.forward()}>Redo</Button>
+          {errors.length ? (
+            <Text size="xs" c="red" title={errors.join('\n')}>{errors.length} schema errors</Text>
+          ) : (
+            <Text size="xs" c="green">valid against the document schema</Text>
+          )}
         </Group>
         <Group>
           <Button

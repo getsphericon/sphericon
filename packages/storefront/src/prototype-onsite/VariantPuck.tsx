@@ -1,16 +1,19 @@
 // PROTOTYPE (throwaway, ticket #958). Variant A: Puck's drag-and-drop canvas (MIT, React 19).
 // Puck stores {content: [{type, props}], root}; Columns use slot fields. It edits one step at a
-// time, mapped onto the shared document. Puck draws its canvas with OUR React render functions,
-// which are not the shipped renderer: the true render is shown beside it, so the gap is visible.
+// time, mapped onto the shared document. Every leaf block on Puck's canvas is drawn by the shipped
+// Preact renderer (renderBlock, in its own shadow root), so the canvas is what the site gets;
+// only Columns is Puck's own React layout, because its slots are React drop zones.
 import type { Config, Data } from '@puckeditor/core'
 import { Puck } from '@puckeditor/core'
 import '@puckeditor/core/puck.css'
 import { Group, Paper, SegmentedControl, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
-import type { Block, BlockType, Device, FormDoc } from './doc.ts'
+import type { Block, BlockType, Device, FormDoc, Theme } from './doc.ts'
+import { SITE_PALETTE } from './doc.ts'
 import { Preview } from './Preview.tsx'
+import { renderBlock } from './render.ts'
 
 const TO_PUCK: Record<BlockType, string> = {
   heading: 'Heading',
@@ -115,7 +118,33 @@ const config: Config = {
   },
 }
 
+// PROTOTYPE hack: Puck's render functions read the current theme and device from here.
+const live: { theme: Theme; device: Device } = { theme: SITE_PALETTE, device: 'desktop' }
+
+function Shipped({ type, p }: { type: string; p: Record<string, unknown> }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const { puck: _puck, editMode: _edit, ...props } = p
+  const key = JSON.stringify(props) + live.device + JSON.stringify(live.theme)
+  useEffect(() => {
+    if (!ref.current) {
+      return
+    }
+    const block = fromPuck([{ type, props: props as PuckItem['props'] }])[0]
+    return block ? renderBlock(block, live.theme, live.device, ref.current) : undefined
+  }, [key])
+  return <div ref={ref} />
+}
+
+for (const name of Object.keys(config.components)) {
+  const component = config.components[name]
+  if (name !== 'Columns' && component) {
+    component.render = (p: Record<string, unknown>) => <Shipped type={name} p={p} />
+  }
+}
+
 export function VariantPuck({ doc, onChange, device }: { doc: FormDoc; onChange: (d: FormDoc) => void; device: Device }) {
+  live.theme = doc.theme
+  live.device = device
   const [stepKey, setStepKey] = useState('0')
   const steps = [...doc.steps.map((_, i) => String(i)), ...(doc.success ? ['success'] : [])]
   const key = steps.includes(stepKey) ? stepKey : '0'
@@ -148,7 +177,7 @@ export function VariantPuck({ doc, onChange, device }: { doc: FormDoc; onChange:
           ]}
         />
       </Paper>
-      <Preview doc={doc} device={device} title="Shipped renderer (what the site gets; Puck's canvas above is a second renderer)" />
+      <Preview doc={doc} device={device} title="Whole form, same renderer as Puck's canvas above and the site" />
     </Stack>
   )
 }
