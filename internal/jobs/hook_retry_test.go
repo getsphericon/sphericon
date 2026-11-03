@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
@@ -95,8 +96,12 @@ func newHookRetryHarnessAt(t *testing.T, status int, retryAfter string, now time
 	h := &hookRetryHarness{t: t, env: env, clock: &riversharedtest.TimeStub{}, now: now}
 	h.clock.StubNow(h.now)
 	w := jobs.NewDeliverWebhookWorker(env.DB, env.cipher, webhook.NewClientAllowing(2*time.Second, allow), h.clock.Now, env.Bus, env.SystemMail)
-	h.worker = rivertest.NewWorker(t, riverdatabasesql.New(env.pool), &river.Config{Test: river.TestConfig{Time: h.clock}}, river.Worker[jobs.DeliverWebhookArgs](w))
-	h.tx, err = env.pool.BeginTx(ctx, nil)
+	// river's rows live in a database of their own: rivertest hands the job to the worker inside a
+	// transaction, which would hold the one connection the test's txdb has, and the worker reads
+	// and writes the endpoint through it.
+	queueDB := testhelper.RealDB(t)
+	h.worker = rivertest.NewWorker(t, riverdatabasesql.New(queueDB), &river.Config{Test: river.TestConfig{Time: h.clock}}, river.Worker[jobs.DeliverWebhookArgs](w))
+	h.tx, err = queueDB.BeginTx(ctx, nil)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = h.tx.Rollback() })
 	return h

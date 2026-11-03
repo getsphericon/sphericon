@@ -19,7 +19,7 @@ import (
 // Queue depth counts the jobs ready to run per queue; a job scheduled for later
 // is not ready, so its queue reports no sample.
 func TestQueueMetricsReportDepthAndOldestAge(t *testing.T) {
-	e := newRiverEnv(t)
+	e := newRiverEnvWithRealQueue(t)
 	metricstest.StartMetrics(t)
 	unregister, err := jobs.RegisterQueueMetrics(e.pool)
 	require.NoError(t, err)

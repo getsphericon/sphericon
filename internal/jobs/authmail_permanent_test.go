@@ -54,7 +54,7 @@ func failedAuthMail(t *testing.T, reply sesReply) *rivertype.JobRow {
 	_, sendErr := sesReplying(t, reply).Send(ctx, messaging.EmailMessage{To: "a@example.com", Subject: "s", Text: "x"})
 	require.Error(t, sendErr)
 
-	e := newRiverEnv(t)
+	e := newRiverEnvWithRealQueue(t)
 	e.SystemMail.SetErr(sendErr)
 	require.NoError(t, e.client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.Background())) })
