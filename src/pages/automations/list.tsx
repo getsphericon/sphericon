@@ -35,6 +35,7 @@ export function AutomationsListPage() {
     workspaceId,
     successMessage: t(($) => $.notifications.automationDeleted),
     errorTitle: t(($) => $.alerts.automationDeleteErrorTitle),
+    consequence: t(($) => $.confirmations.deleteAutomation),
   })
 
   const publishMutation = useResourceMutation({

@@ -34,6 +34,7 @@ export function BroadcastsListPage() {
     workspaceId,
     successMessage: t(($) => $.notifications.broadcastDeleted),
     errorTitle: t(($) => $.alerts.broadcastDeleteErrorTitle),
+    consequence: t(($) => $.confirmations.deleteBroadcast),
   })
 
   const archiveBroadcast = useResourceMutation({

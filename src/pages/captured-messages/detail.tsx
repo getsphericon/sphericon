@@ -9,7 +9,6 @@ import {
   siteCapturedMessagesDeleteMutation,
   siteCapturedMessagesGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as capturedMessageRoute } from '../../routes/workspaces/$workspaceId/captured-messages/$messageId/index.tsx'
@@ -32,7 +31,6 @@ function CapturedMessage() {
   const { t } = useTranslation()
   const { workspaceId, messageId } = capturedMessageRoute.useParams()
   const navigate = capturedMessageRoute.useNavigate()
-  const confirm = useConfirmation()
 
   const message = useSuspenseQuery(
     siteCapturedMessagesGetOptions({ path: { workspaceId, id: messageId } }),
@@ -56,11 +54,7 @@ function CapturedMessage() {
             color="red"
             variant="light"
             loading={deleteMessage.isPending}
-            onClick={() => {
-              confirm({
-                onConfirm: () => deleteMessage.mutate({ path: { workspaceId, id: message.id } }),
-              })
-            }}
+            onClick={() => deleteMessage.mutate({ path: { workspaceId, id: message.id } })}
           >
             {t(($) => $.actions.delete)}
           </Button>

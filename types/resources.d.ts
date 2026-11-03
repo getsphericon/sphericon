@@ -625,8 +625,13 @@ export default interface Resources {
       "title": "Confirm your subscription"
     },
     "confirmations": {
-      "deleteDescription": "This action cannot be undone.",
-      "deleteTitle": "Are you sure?"
+      "deleteAutomation": "The automation is deleted for good. One that already enrolled contacts or sent mail cannot be deleted: archive it instead.",
+      "deleteBroadcast": "The draft broadcast is deleted for good. A broadcast that was sent cannot be deleted: archive it instead.",
+      "deleteRule": "The rule is deleted for good. One that has already fired cannot be deleted: archive it instead.",
+      "deleteTag": "The tag is removed from the catalogue. A tag that a segment rule or an automation step uses cannot be deleted: change those first.",
+      "deleteTemplate": "The template is deleted for good. Make sure no broadcast or automation still sends it.",
+      "deleteTitle": "Are you sure?",
+      "typeToConfirm": "Type {{name}} to confirm"
     },
     "console": {
       "home": {
@@ -2051,6 +2056,7 @@ export default interface Resources {
         "create": "Add endpoint",
         "createError": "Failed to create webhook",
         "delete": "Delete",
+        "deleteConfirmDescription": "The endpoint stops receiving events at once and its signing secret is discarded. Update or stop the receiver first if it still depends on this endpoint.",
         "deleteConfirmTitle": "Delete this webhook endpoint?",
         "deleteError": "Failed to delete webhook",
         "disable": "Disable",

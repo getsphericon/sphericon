@@ -1,10 +1,10 @@
-import { Alert, Button, Group, Modal, Stack, TextInput } from '@mantine/core'
+import { Button, Modal, Stack } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { siteWorkspacesDeleteMutation } from '../generated/site/@tanstack/react-query.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
+import { TypedConfirmation } from './TypedConfirmation.tsx'
 
 // DeleteWorkspaceControl deletes a Workspace once its name is typed (ADR 0043): a button that
 // opens the confirmation, which warns what the deletion freezes. The server checks the typed name
@@ -20,7 +20,6 @@ export function DeleteWorkspaceControl({
 }) {
   const { t } = useTranslation()
   const [opened, { open, close }] = useDisclosure(false)
-  const [typed, setTyped] = useState('')
 
   const deleteMutation = useResourceMutation({
     mutation: siteWorkspacesDeleteMutation(),
@@ -35,35 +34,17 @@ export function DeleteWorkspaceControl({
         {label}
       </Button>
       <Modal opened={opened} onClose={close} title={t(($) => $.settings.danger.modalTitle)}>
-        <Stack>
-          <Alert color="red" variant="light">
-            {t(($) => $.settings.danger.warning)}
-          </Alert>
-          <TextInput
-            label={t(($) => $.settings.danger.confirmLabel, { name: workspace.name })}
-            value={typed}
-            onChange={(event) => setTyped(event.currentTarget.value)}
-            data-autofocus
-          />
-          <Group justify="flex-end">
-            <Button variant="default" onClick={close}>
-              {t(($) => $.actions.cancel)}
-            </Button>
-            <Button
-              color="red"
-              disabled={typed !== workspace.name}
-              loading={deleteMutation.isPending}
-              onClick={() =>
-                deleteMutation.mutate({
-                  path: { workspaceId: workspace.id },
-                  body: { name: typed },
-                })
-              }
-            >
-              {t(($) => $.settings.danger.confirmButton)}
-            </Button>
-          </Group>
-        </Stack>
+        <TypedConfirmation
+          warning={t(($) => $.settings.danger.warning)}
+          inputLabel={t(($) => $.settings.danger.confirmLabel, { name: workspace.name })}
+          name={workspace.name}
+          confirmLabel={t(($) => $.settings.danger.confirmButton)}
+          loading={deleteMutation.isPending}
+          onCancel={close}
+          onConfirm={(typed) =>
+            deleteMutation.mutate({ path: { workspaceId: workspace.id }, body: { name: typed } })
+          }
+        />
       </Modal>
     </Stack>
   )

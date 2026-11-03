@@ -27,9 +27,10 @@ The modal says what the deletion does and what to do first (a deactivation, a co
 words rather than the default text. How a row is removed (physically or archived) is rule 9 of
 `review-rules.md`, not a choice made here.
 
-**Target (#998):** every confirmation today is the same red "Delete" modal with the default text, whatever
-it deletes. A deletion that breaks something live (an API key in use, a Webhook endpoint a receiver
-depends on) takes the additional confirmation or at least names the consequence.
+`useConfirmation` and `useDeleteResource` take the consequence text as required input (there is no
+default) and `typedName` (the additional confirmation, the same `TypedConfirmation` component
+`DeleteWorkspaceControl` renders). A credential or endpoint something live depends on (an API key,
+a Webhook endpoint) takes the typed one.
 
 ## Forms and validation
 

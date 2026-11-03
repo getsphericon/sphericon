@@ -79,7 +79,7 @@ test('opens a link of the message in a new tab without an opener', async () => {
     .toBeInTheDocument()
 })
 
-test('deletes the message after a confirmation', async () => {
+test('deletes the message in one click', async () => {
   let deleted = false
   serve()
   worker.use(
@@ -91,7 +91,6 @@ test('deletes the message after a confirmation', async () => {
   const { screen } = await renderWithRouter(<CapturedMessagePage />, MESSAGE_ROUTE)
 
   await screen.getByRole('button', { name: 'Delete' }).click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => deleted).toBe(true)
 })

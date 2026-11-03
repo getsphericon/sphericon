@@ -50,7 +50,7 @@ function ApiKeysTable({
   workspaceId: string
   canManage: boolean
   onRename: (record: { id: string; name: string }) => void
-  onRevoke: (id: string) => void
+  onRevoke: (record: { id: string; name: string }) => void
 }) {
   const { formatDate } = useDateFormat()
   const { t } = useTranslation()
@@ -94,7 +94,7 @@ function ApiKeysTable({
                   <Menu.Item onClick={() => onRename(record)}>
                     {t(($) => $.settings.tokens.rename)}
                   </Menu.Item>
-                  <Menu.Item color="red" onClick={() => onRevoke(record.id)}>
+                  <Menu.Item color="red" onClick={() => onRevoke(record)}>
                     {t(($) => $.settings.tokens.revoke)}
                   </Menu.Item>
                 </RowActionsMenu>
@@ -159,10 +159,11 @@ export function ApiKeysSection({
     forbiddenMessage: t(($) => $.settings.tokens.forbidden),
   })
 
-  const onRevoke = (id: string) => {
+  const onRevoke = ({ id, name }: { id: string; name: string }) => {
     confirmRevoke({
       title: t(($) => $.settings.tokens.revokeConfirmTitle),
       description: t(($) => $.settings.tokens.revokeConfirmDescription),
+      typedName: name,
       onConfirm: () => deleteMutation.mutate({ path: { workspaceId, id } }),
     })
   }

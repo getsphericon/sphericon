@@ -54,6 +54,7 @@ export function RulesListPage() {
     workspaceId,
     successMessage: t(($) => $.notifications.ruleDeleted),
     errorTitle: t(($) => $.alerts.ruleDeleteErrorTitle),
+    consequence: t(($) => $.confirmations.deleteRule),
   })
   const { archived = false, page } = rulesRoute.useSearch()
   const routeNavigate = rulesRoute.useNavigate()

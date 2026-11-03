@@ -28,6 +28,7 @@ export function TagsListPage() {
     workspaceId,
     successMessage: t(($) => $.notifications.tagDeleted),
     errorTitle: t(($) => $.alerts.tagDeleteErrorTitle),
+    consequence: t(($) => $.confirmations.deleteTag),
   })
 
   return (
