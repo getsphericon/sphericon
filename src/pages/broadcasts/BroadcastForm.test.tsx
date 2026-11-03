@@ -286,7 +286,12 @@ test('a Telegram broadcast is written as a text and saved under its Channel', as
       {
         name: 'News',
         integrationId: '2',
-        content: { channel: 'telegram', text: 'Hello <b>{{ first_name }}</b>' },
+        content: {
+          channel: 'telegram',
+          text: 'Hello <b>{{ first_name }}</b>',
+          buttons: [],
+          linkPreview: true,
+        },
       },
     ])
 })
