@@ -130,3 +130,7 @@ or `AGENTS.md`.
     form (generated from the schema when the schema is dynamic), never in a raw JSON editor; only
     text or code by nature (a template, an HTTP body, HTML source) may be a text editor. The
     Instance's configuration (files, environment variables) is outside the rule.
+17. **A screen follows `docs/standards/ui.md`** (ADR 0091). How a delete is confirmed, when a form
+    validates, what an empty list says and how a table loads come from the document, not from the
+    nearest screen. A screen that departs from a rule says so in its pull request; a rule marked
+    target is followed by every new screen even where the old ones are not yet brought in line.
