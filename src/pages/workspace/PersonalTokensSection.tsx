@@ -58,7 +58,7 @@ function PersonalTokensTable({
   onRevoke,
 }: {
   workspaceId: string
-  onRevoke: (id: string) => void
+  onRevoke: (record: { id: string; name: string }) => void
 }) {
   const { formatDate } = useDateFormat()
   const { t } = useTranslation()
@@ -104,7 +104,7 @@ function PersonalTokensTable({
               size="xs"
               variant="subtle"
               color="red"
-              onClick={() => onRevoke(record.id)}
+              onClick={() => onRevoke(record)}
               aria-label={t(($) => $.settings.personalTokens.revokeLabel, { name: record.name })}
             >
               {t(($) => $.settings.personalTokens.revoke)}
@@ -156,10 +156,11 @@ export function PersonalTokensSection({ workspace }: { workspace: SiteWorkspaceR
     errorTitle: t(($) => $.settings.personalTokens.revokeError),
   })
 
-  const onRevoke = (id: string) => {
+  const onRevoke = ({ id, name }: { id: string; name: string }) => {
     confirmRevoke({
       title: t(($) => $.settings.personalTokens.revokeConfirmTitle),
       description: t(($) => $.settings.personalTokens.revokeConfirmDescription),
+      typedName: name,
       confirmLabel: t(($) => $.settings.personalTokens.revoke),
       onConfirm: () => revoke.mutate({ path: { workspaceId, id } }),
     })
