@@ -1,13 +1,13 @@
 // Opens the pull request for the work of this worktree, the way AGENTS.md describes it: rebase onto a
-// freshly fetched origin/main, the checks and the tests, the pull request body and title checks, then
-// push the branch and open (or reuse) the pull request. Nothing reaches main from here: it is merged
+// freshly fetched origin/main, the pull request body and title checks, then push the branch and open
+// (or reuse) the pull request. The full check and test suites are CI's job: the checks and tests that
+// cover the change are run before this, by hand. Nothing reaches main from here: it is merged
 // on GitHub once CI is green.
 //
 //   mise run land -- --door <one-way|two-way> --blast <word> [--ai <none|helped|wrote>]
-//     [--title <conventional commit>] [--skip-test] [<issue>...]
+//     [--title <conventional commit>] [<issue>...]
 //
-// A worktree lands from its own branch with a clean tree. --skip-test is for a change no Go or
-// frontend test reads (a doc, a workflow). Each <issue> is the ticket the work was for: the body says
+// A worktree lands from its own branch with a clean tree. Each <issue> is the ticket the work was for: the body says
 // `Closes #<n>` and GitHub closes it when the pull request is merged. The title defaults to the
 // subject of the branch's only commit; with several commits pass --title, because the repository
 // squashes with it and release-please reads it. --door and --blast fill the template's "Merge Danger".
@@ -46,21 +46,11 @@ function takeValue(args: string[], flag: string): string | undefined {
   return value
 }
 
-function takeFlag(args: string[], flag: string): boolean {
-  const at = args.indexOf(flag)
-  if (at === -1) {
-    return false
-  }
-  args.splice(at, 1)
-  return true
-}
-
 function isAi(value: string): value is Ai {
   return value in aiLines
 }
 
 const args = process.argv.slice(2)
-const skipTest = takeFlag(args, '--skip-test')
 const door = takeValue(args, '--door')
 const blast = takeValue(args, '--blast')
 const aiValue = takeValue(args, '--ai') ?? 'wrote'
@@ -103,9 +93,7 @@ if (title === undefined) {
   fail(`${subjects.length} commits: pass --title, the squashed commit takes it`)
 }
 
-const evidence = skipTest
-  ? '`mise run check` passed'
-  : '`mise run check` and `mise run test` passed'
+const evidence = 'the checks and tests that cover the change passed locally; CI runs the full suite'
 const body = [
   '## Issue',
   '',
@@ -117,7 +105,7 @@ const body = [
   '',
   '## Evidence',
   '',
-  `- **After:** ${evidence} on the rebased branch.`,
+  `- **After:** ${evidence}.`,
   '',
   '## Merge Danger',
   '',
@@ -131,10 +119,6 @@ const body = [
   '',
 ].join('\n')
 
-run('mise', ['run', 'check'])
-if (!skipTest) {
-  run('mise', ['run', 'test'])
-}
 // What CI runs on the title and the body, before the branch leaves the machine.
 run('mise', ['run', 'check:pr-title'], { PR_TITLE: title })
 run('mise', ['run', 'check:pr-body'], { PR_BODY: body, BASE: 'origin/main' })

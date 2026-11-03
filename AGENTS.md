@@ -19,8 +19,9 @@ maintainer rules further down (worktrees, `mise run land`, merging, closing tick
   needs a `Contract-Copy: <file>: <reason>` line in the body.
 - A commit written with an agent may end with `Co-Authored-By:` or `Assisted-by:` naming the tool;
   both are accepted. The CLA and any `Signed-off-by` are the human's, never the agent's.
-- Before you push: `mise run generate` after a TypeSpec or `ent/schema` change, then
-  `mise run check` and `mise run test`. The pull request title is a Conventional Commit.
+- Before you push: `mise run generate` after a TypeSpec or `ent/schema` change, then the checks and
+  tests that cover your change ("Run only what the change touches" below); CI runs the full suite on
+  the pull request. The pull request title is a Conventional Commit.
 - A generated file is never edited by hand: the list is `.gitattributes` (`linguist-generated`), see
   "Codegen pipeline".
 
@@ -77,6 +78,23 @@ mise run test -- ./internal/api/site -run TestSiteContactsRequireAuth
 
 Frontend tests: `mise run test:watch`. The TypeSpec contract decorators (`typespec/lib`, ADR 0069):
 `mise run test:typespec`.
+
+### Run only what the change touches
+
+The full `mise run check` and `mise run test` are CI's job, not the machine's: they are heavy, and
+several agents share one. Locally run the part that covers the change, and leave the rest to the
+pull request's CI.
+
+- Tests: the packages the change touches and the ones that import them
+  (`mise run test -- ./internal/foo/...`, or `-run <name>` for one test); on the frontend the
+  affected test files (`mise run test:frontend:logic`, or vitest on a path). No `./...`, no
+  `test:frontend`, `test:cover`, `test:race` or `test:e2e` unless the change is to the harness itself
+  or to something every package uses.
+- Checks: the task that fits the files changed, not `mise run check`: `check:fe` for `src/`,
+  `check:be` for Go, `check:ast`, `check:copies`, `check:generated`, `check:arch`, `check:i18n`,
+  `check:schema` when their inputs changed (the task list is in `mise/tasks.toml`).
+- Say in the report what was run and that the full suite is left to CI. A red CI check is fixed on
+  the branch; it is not a reason to run the whole suite locally first.
 
 Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are in `CODING_STANDARDS.md`.
 
@@ -148,9 +166,11 @@ The rest of this file is for maintainers and the agents they run: how work lands
   An agent pushes to `main` only when the user asks for it in that session ("push", "залей в main");
   otherwise it opens a pull request.
   `mise run land -- --door <one-way|two-way> --blast <word> [--ai <none|helped|wrote>] [--title <t>]
-  [--skip-test] [<issue>...]` does the pull request's first half in one go: rebase onto a freshly
-  fetched `origin/main`, `check`, `test`, the title and body checks CI will run, push of the worktree's
-  branch and `gh pr create` (an open pull request of the branch is updated instead). On a pull request
+  [<issue>...]` does the pull request's first half in one go: rebase onto a freshly fetched
+  `origin/main`, the title and body checks CI will run, push of the worktree's branch and
+  `gh pr create` (an open pull request of the branch is updated instead). It runs neither `check`
+  nor `test`: run the ones that cover the change first ("Run only what the change touches"), CI runs
+  the rest. On a pull request
   the ruleset enforces the CI checks and, for the paths in `CODEOWNERS`, the owner's review.
   `--no-verify` only moves a failure to CI, where the same checks are required.
 - **Land every change from its worktree, then clean up.** When the user says to land or finish
