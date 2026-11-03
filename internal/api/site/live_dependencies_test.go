@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -230,6 +231,7 @@ func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) 
 			env := testhelper.Setup(t)
 			s := env.DB.Scoped(fixtures.AcmeID)
 			ctx := t.Context()
+			stopMailgunSender(t, s)
 			err := s.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesVersionID).
 				SetSteps(tc.steps).Exec(ctx)
 			require.NoError(t, err)
@@ -246,4 +248,13 @@ func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) 
 			assert.NotNil(t, archived.DiscardedAt)
 		})
 	}
+}
+
+// stopMailgunSender stops the fixture Automation whose second email step sends through the
+// Mailgun Integration, for a test about who else uses it.
+func stopMailgunSender(t *testing.T, s *ent.Scoped) {
+	t.Helper()
+	err := s.Automation().UpdateOneID(fixtures.AutomationJobsEmailsThenTagID).
+		SetStatus(automation.StatusInactive).Exec(t.Context())
+	require.NoError(t, err)
 }

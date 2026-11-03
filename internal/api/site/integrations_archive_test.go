@@ -185,6 +185,7 @@ func TestAnEmptyStoredDefinitionAllowsPublishingAndRemovingItsUnusedIntegration(
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	stopMailgunSender(t, s)
 	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
 		SetSteps("").Exec(ctx)
 	require.NoError(t, err)
