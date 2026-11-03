@@ -111,3 +111,36 @@ func TestRenderAlwaysYieldsTheAllowedSubset(t *testing.T) {
 		require.Equal(t, out, again)
 	})
 }
+
+func TestLimitIsTheCaptionLimitWithAnImage(t *testing.T) {
+	assert.Equal(t, 1024, telegramrender.Limit(true))
+	assert.Equal(t, 4096, telegramrender.Limit(false))
+}
+
+func TestCheckImageTakesOnlyAbsoluteHTTPS(t *testing.T) {
+	for url, ok := range map[string]bool{
+		"": true, "https://cdn.example.com/a.png": true,
+		"http://cdn.example.com/a.png": false, "/a.png": false, "javascript:x": false,
+	} {
+		err := telegramrender.CheckImage(url)
+		assert.Equal(t, ok, err == nil, url)
+	}
+}
+
+func TestCheckButtonsRefusesTooManyBlankLabelsAndBadURLs(t *testing.T) {
+	good := telegramrender.Button{Label: "Go", URL: "https://example.com"}
+	require.NoError(t, telegramrender.CheckButtons([]telegramrender.Button{good}))
+	require.NoError(t, telegramrender.CheckButtons(make8(good)))
+	require.ErrorIs(t, telegramrender.CheckButtons(append(make8(good), good)), telegramrender.ErrContent)
+	require.ErrorIs(t, telegramrender.CheckButtons([]telegramrender.Button{{Label: " ", URL: good.URL}}), telegramrender.ErrContent)
+	require.ErrorIs(t, telegramrender.CheckButtons([]telegramrender.Button{{Label: "x", URL: "ftp://x.test"}}), telegramrender.ErrContent)
+	require.ErrorIs(t, telegramrender.CheckButtons([]telegramrender.Button{{Label: "x", URL: "nope"}}), telegramrender.ErrContent)
+}
+
+func make8(b telegramrender.Button) []telegramrender.Button {
+	out := make([]telegramrender.Button, telegramrender.MaxButtons)
+	for i := range out {
+		out[i] = b
+	}
+	return out
+}

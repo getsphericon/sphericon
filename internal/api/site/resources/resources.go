@@ -62,6 +62,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/signupitems"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
@@ -337,6 +338,7 @@ type Converter interface {
 	AutomationStepsToResources(source []automations.StepView) []siteapi.SiteAutomationStep
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) siteapi.SiteAutomationHttpHeader
+	TelegramButtonToResource(source telegramrender.Button) siteapi.TelegramButton
 
 	// The config is a oneOf the generator cannot express, and the params, hook URL and
 	// retiring secrets come from the integrations module (decryption, instance URL), and

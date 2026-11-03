@@ -1,65 +1,44 @@
-import { Group, Menu, Stack, Text, Textarea } from '@mantine/core'
+import { useJsonForms } from '@workflowbuilder/sdk'
 import type { ControlProps } from '@workflowbuilder/sdk'
-import { useRef } from 'react'
-import { useTranslation } from 'react-i18next'
 
-import { CONTACT_TAGS, EVENT_ACTION_TAG } from '../../utils/mergeTags.ts'
-import { TELEGRAM_TEXT_LIMIT } from './telegramFormat.ts'
+import { TelegramContentEditor } from '../../components/telegram/TelegramContentEditor.tsx'
+import { EVENT_ACTION_TAG } from '../../utils/mergeTags.ts'
+import { buttonsCodec } from './telegramButtons.ts'
+import { TelegramUnsubscribeControl } from './TelegramUnsubscribeControl.tsx'
 
-// The merge tags a Telegram step binds, as an email step's message does: the Contact's fields and
-// the Event the Enrollment began on.
-const TAGS = [...CONTACT_TAGS, EVENT_ACTION_TAG]
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
 
-// TelegramTextControl edits a Telegram step's text: Telegram's HTML subset with Liquid merge tags,
-// a picker that inserts a tag where the cursor is, and a counter of the characters as written.
+// The Automation step's use of the shared Telegram editor. The step's text is the control's own
+// property; its image, buttons (held as JSON text: the form holds only strings) and link-preview
+// switch and unsubscribe button are its siblings on the node, written back beside it. An Automation's message also binds
+// the Event its Enrollment began on.
 export function TelegramTextControl(props: ControlProps) {
-  const { data, label, path } = props
-  const { t } = useTranslation()
-  const field = useRef<HTMLTextAreaElement>(null)
-  const text = typeof data === 'string' ? data : ''
-  const over = text.length > TELEGRAM_TEXT_LIMIT
-
-  const insert = (tag: string) => {
-    const at = field.current?.selectionStart ?? text.length
-    const end = field.current?.selectionEnd ?? at
-    props.handleChange(path, `${text.slice(0, at)}{{ ${tag} }}${text.slice(end)}`)
-  }
+  const { data } = props
+  const { core } = useJsonForms()
+  const node: Record<string, unknown> = isRecord(core?.data) ? core.data : {}
 
   return (
-    <Stack gap="xs">
-      <Textarea
-        ref={field}
-        label={label}
-        description={t(($) => $.automations.telegramTextHint)}
-        autosize
-        minRows={4}
-        maxRows={10}
-        value={text}
-        error={over ? t(($) => $.automations.telegramTextTooLong) : undefined}
-        onChange={(e) => props.handleChange(path, e.currentTarget.value)}
+    <TelegramContentEditor
+      extraTags={[EVENT_ACTION_TAG]}
+      value={{
+        text: typeof data === 'string' ? data : '',
+        imageUrl: typeof node.imageUrl === 'string' ? node.imageUrl : '',
+        buttons: buttonsCodec.read(node.buttons),
+        linkPreview: node.linkPreview !== 'off',
+      }}
+      onChange={(next) => {
+        props.handleChange(props.path, next.text)
+        props.handleChange('imageUrl', next.imageUrl)
+        props.handleChange('buttons', buttonsCodec.write(next.buttons))
+        props.handleChange('linkPreview', next.linkPreview ? '' : 'off')
+      }}
+    >
+      <TelegramUnsubscribeControl
+        label={typeof node.unsubscribeButton === 'string' ? node.unsubscribeButton : ''}
+        onChange={(label) => props.handleChange('unsubscribeButton', label)}
       />
-      <Group justify="space-between">
-        <Menu>
-          <Menu.Target>
-            <Text component="button" type="button" size="sm" c="blue">
-              {t(($) => $.automations.insertMergeTag)}
-            </Text>
-          </Menu.Target>
-          <Menu.Dropdown>
-            {TAGS.map((tag) => (
-              <Menu.Item key={tag} onClick={() => insert(tag)}>
-                {tag}
-              </Menu.Item>
-            ))}
-          </Menu.Dropdown>
-        </Menu>
-        <Text size="sm" c={over ? 'red' : 'dimmed'}>
-          {t(($) => $.automations.telegramCounter, {
-            length: text.length,
-            limit: TELEGRAM_TEXT_LIMIT,
-          })}
-        </Text>
-      </Group>
-    </Stack>
+    </TelegramContentEditor>
   )
 }

@@ -616,13 +616,25 @@ export type AutomationStep = {
    */
   integrationId?: EntityId | null;
   /**
-   * The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written: publishing a longer one is refused.
+   * The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.
    */
   text?: string;
   /**
    * The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
    */
   unsubscribeButton?: string;
+  /**
+   * An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text message.
+   */
+  imageUrl?: string;
+  /**
+   * Up to 8 link buttons under a Telegram step's message, one per row, in order.
+   */
+  buttons?: Array<TelegramButton>;
+  /**
+   * Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image.
+   */
+  linkPreview?: boolean;
 };
 
 /**
@@ -4233,6 +4245,20 @@ export type TagResource = {
    * Creation timestamp
    */
   createdAt: Timestamp;
+};
+
+/**
+ * A link button under a Telegram message: an inline URL button on a row of its own
+ */
+export type TelegramButton = {
+  /**
+   * The button's label
+   */
+  label: string;
+  /**
+   * The URL it opens: absolute, http or https
+   */
+  url: string;
 };
 
 /**

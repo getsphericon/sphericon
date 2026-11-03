@@ -48,6 +48,14 @@ function flowNode(index: number) {
   return node
 }
 
+function canvasPane() {
+  const pane = document.querySelector('.react-flow__pane')
+  if (!pane) {
+    throw new Error('the canvas has not drawn yet')
+  }
+  return pane
+}
+
 test('a Telegram step round-trips: its bot and text load, an edit saves them back', async () => {
   const bodies: { steps?: SiteAutomationStep[] }[] = []
   let current = stored([STEP])
@@ -68,7 +76,7 @@ test('a Telegram step round-trips: its bot and text load, an edit saves them bac
 
   await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
   await page.elementLocator(flowNode(1)).click()
-  await screen.getByText('Properties').click()
+  await screen.getByText('Properties').click({ force: true })
   const picker = screen.getByRole('combobox', { name: 'Integration' })
   await expect.element(picker).toHaveValue('Acme bot')
   await picker.click()
@@ -100,10 +108,63 @@ test('a Telegram text over the limit is flagged by the counter', async () => {
 
   await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
   await page.elementLocator(flowNode(1)).click()
-  await screen.getByText('Properties').click()
-
   await expect.element(screen.getByText('4100 / 4096')).toBeVisible()
-  await expect.element(screen.getByText(/refused until the text is shorter/)).toBeVisible()
+  await expect.element(screen.getByText(/publishing is refused until it is shorter/)).toBeVisible()
+})
+
+test('adding an image switches the counter to the caption limit, and buttons and the preview switch round-trip', async () => {
+  const bodies: { steps?: SiteAutomationStep[] }[] = []
+  let current = stored([{ type: 'telegram', text: 'Hello {{ first_name }}', integrationId: '31' }])
+  worker.use(
+    handleSiteAutomationsGet(() => HttpResponse.json(current)),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      const body = await request.json()
+      bodies.push(body)
+      current = stored(body.steps ?? [])
+      return HttpResponse.json(current)
+    }),
+    handleSiteIntegrationsList({ body: INTEGRATIONS }),
+    handleSiteEnrollmentsList({
+      body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
+    }),
+  )
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(1)).click()
+  await expect.element(screen.getByText('22 / 4096')).toBeVisible()
+
+  await screen.getByRole('textbox', { name: 'Image URL' }).fill('https://cdn.example.com/a.png')
+  await expect.element(screen.getByText('22 / 1024')).toBeVisible()
+  const previewSwitch = screen.getByRole('switch', { name: 'Show a preview of links in the text' })
+  await previewSwitch.click()
+  await expect.element(previewSwitch).not.toBeChecked()
+  await screen.getByRole('button', { name: 'Add a button' }).click()
+  await screen.getByRole('textbox', { name: 'Button 1 label' }).fill('Open')
+  await screen.getByRole('textbox', { name: 'Button 1 URL' }).fill('https://example.com/a')
+  await expect.element(screen.getByTestId('telegram-preview')).toHaveTextContent('Hello AlexOpen')
+  // The open properties panel covers the toolbar at this viewport: deselect the node first.
+  await page.elementLocator(canvasPane()).click({ position: { x: 5, y: 300 } })
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies.map((body) => body.steps))
+    .toEqual([
+      [
+        {
+          type: 'telegram',
+          text: 'Hello {{ first_name }}',
+          integrationId: '31',
+          imageUrl: 'https://cdn.example.com/a.png',
+          buttons: [{ label: 'Open', url: 'https://example.com/a' }],
+          linkPreview: false,
+        },
+      ],
+    ])
+
+  // Back from the server, the saved content loads into the editor again.
+  await page.elementLocator(flowNode(1)).click()
+  await expect.element(screen.getByRole('textbox', { name: 'Button 1 label' })).toHaveValue('Open')
 })
 
 test('the unsubscribe button of a Telegram step is switched on with a label and saved', async () => {
@@ -131,6 +192,8 @@ test('the unsubscribe button of a Telegram step is switched on with a label and 
   const label = screen.getByRole('textbox', { name: 'Button label' })
   await expect.element(label).toHaveValue('Unsubscribe')
   await label.fill('Stop messages')
+  // The open properties panel covers the toolbar at this viewport: deselect the node first.
+  await page.elementLocator(canvasPane()).click({ position: { x: 5, y: 300 } })
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect

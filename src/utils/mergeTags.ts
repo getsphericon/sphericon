@@ -30,3 +30,7 @@ export function eventPropertyTag(name: string): string | null {
   }
   return PLAIN_NAME.test(key) ? `event.properties.${key}` : `event.properties["${key}"]`
 }
+
+// The source-scoped unsubscribe link a Telegram message may carry (ADR 0078): it opts the chat out
+// of the message's source on Telegram only. Email keeps its footer.
+export const UNSUBSCRIBE_URL_TAG = 'unsubscribe_url'

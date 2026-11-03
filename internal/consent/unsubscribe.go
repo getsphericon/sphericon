@@ -5,7 +5,10 @@ package consent
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -14,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -28,9 +32,10 @@ import (
 // double click) is a complete no-op and concurrent POSTs are counted exactly once.
 func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.UnsubTarget) error {
 	dest := suppression.NormalizeDestination(target.Destination)
-	if dest == "" || target.WorkspaceID == 0 || target.Source == "" {
+	if dest == "" || target.WorkspaceID == 0 || target.Source == "" || target.Channel == "" {
 		return nil
 	}
+	channel := unsubscribe.Channel(target.Channel)
 	automationID, isAutomation := eligibility.ParseAutomationSource(target.Source)
 
 	return settled(bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
@@ -38,7 +43,7 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 		// token here), so this is a scope source outside the site/external/job list.
 		sc := events.Ingest(tx.Scoped(target.WorkspaceID))
 		exists, err := sc.Unsubscribe().Query().Where(
-			unsubscribe.ChannelEQ(unsubscribe.ChannelEmail),
+			unsubscribe.ChannelEQ(channel),
 			unsubscribe.DestinationEQ(dest),
 			unsubscribe.SendingSourceEQ(target.Source),
 		).Exist(ctx)
@@ -46,7 +51,7 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 			return err
 		}
 		create := sc.Unsubscribe().Create().
-			SetChannel(unsubscribe.ChannelEmail).
+			SetChannel(channel).
 			SetDestination(dest).
 			SetSendingSource(target.Source)
 		if target.ContactID != 0 {
@@ -61,7 +66,7 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 		// re-confirmation (stale consent never silently reactivates). The immutable
 		// marketing.confirmed Event is preserved as proof ("confirmed at T1, left at
 		// T2"). A narrower per-source opt-out does NOT touch confirmation.
-		if target.Source == eligibility.SourceEverything {
+		if target.Source == eligibility.SourceEverything && target.Channel == messaging.ChannelEmail {
 			if _, err := sc.Confirmation().Delete().Where(
 				confirmation.ChannelEQ(confirmation.ChannelEmail),
 				confirmation.DestinationEQ(dest),
@@ -84,11 +89,39 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 			}
 		}
 
+		if target.Channel == messaging.ChannelTelegram {
+			return publishTelegramUnsubscribed(ctx, sc, pub, target, dest)
+		}
+		if target.Channel != messaging.ChannelEmail {
+			return nil
+		}
 		return pub.Publish(ctx, &events.EmailEngagement{
 			Action: events.NameEmailUnsubscribed, WorkspaceID: target.WorkspaceID, ContactID: target.ContactID,
 			Email: dest, BroadcastID: target.BroadcastID, AutomationID: automationID,
 		})
 	}))
+}
+
+// publishTelegramUnsubscribed records telegram.unsubscribed for the Contact a Telegram unsubscribe
+// link was issued to (the opt-out itself is the source-scoped row written above). A link with no
+// Contact, or one whose Contact is gone, has nobody to name.
+func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target tracking.UnsubTarget, dest string) error {
+	if target.ContactID == 0 {
+		return nil
+	}
+	c, err := sc.Contact().Get(ctx, target.ContactID)
+	if ent.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	automationID, _ := eligibility.ParseAutomationSource(target.Source)
+	return pub.Publish(ctx, &events.TelegramUnsubscribed{
+		WorkspaceID: target.WorkspaceID, ContactID: c.ID, Email: lo.FromPtr(c.Email), Via: events.UnsubscribedByLink,
+		BroadcastID: target.BroadcastID, AutomationID: automationID,
+		DedupID: fmt.Sprintf("link:%s:%s/unsubscribed/%d", target.Source, dest, c.ID),
+	})
 }
 
 // settled reports a write that lost to a database constraint as done: the Workspace

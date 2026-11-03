@@ -1,16 +1,19 @@
 import { Stack, Switch, TextInput } from '@mantine/core'
-import type { ControlProps } from '@workflowbuilder/sdk'
 import { useTranslation } from 'react-i18next'
 
 import { TELEGRAM_UNSUBSCRIBE_LIMIT } from './telegramFormat.ts'
 
 // TelegramUnsubscribeControl edits the label of a Telegram step's unsubscribe button: a switch adds
 // the button (its label starts as a default) and an input names it. The value is the label, '' for no
-// button, as the API holds it.
-export function TelegramUnsubscribeControl(props: ControlProps) {
-  const { data, path } = props
+// button, as the API holds it. It sits in the shared Telegram editor's `children` slot.
+export function TelegramUnsubscribeControl({
+  label,
+  onChange,
+}: {
+  label: string
+  onChange: (label: string) => void
+}) {
   const { t } = useTranslation()
-  const label = typeof data === 'string' ? data : ''
   const on = label !== ''
 
   return (
@@ -20,8 +23,7 @@ export function TelegramUnsubscribeControl(props: ControlProps) {
         description={t(($) => $.automations.telegramUnsubscribeHint)}
         checked={on}
         onChange={(e) =>
-          props.handleChange(
-            path,
+          onChange(
             e.currentTarget.checked ? t(($) => $.automations.telegramUnsubscribeDefault) : '',
           )
         }
@@ -31,7 +33,7 @@ export function TelegramUnsubscribeControl(props: ControlProps) {
           label={t(($) => $.automations.telegramUnsubscribeLabel)}
           maxLength={TELEGRAM_UNSUBSCRIBE_LIMIT}
           value={label}
-          onChange={(e) => props.handleChange(path, e.currentTarget.value)}
+          onChange={(e) => onChange(e.currentTarget.value)}
         />
       )}
     </Stack>

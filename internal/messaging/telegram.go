@@ -19,7 +19,7 @@ type TelegramBot interface {
 	SetWebhook(ctx context.Context, hook TelegramWebhook) error
 	// DeleteWebhook stops the bot's updates from reaching the webhook. Pending updates are kept.
 	DeleteWebhook(ctx context.Context) error
-	// SendMessage sends one text to a chat. A refusal of the Bot API is an error wrapping a
+	// SendMessage sends one message to a chat. A refusal of the Bot API is an error wrapping a
 	// *TelegramError; a network error or a 5xx is a plain error, which a retry may get past.
 	SendMessage(ctx context.Context, msg TelegramMessage) (TelegramSent, error)
 	// AnswerCallbackQuery tells Telegram a button press was received, so the person's client stops
@@ -30,14 +30,25 @@ type TelegramBot interface {
 // TelegramUnsubscribePayload is the fixed payload of the unsubscribe button's callback (ADR 0076).
 const TelegramUnsubscribePayload = "unsubscribe"
 
-// TelegramMessage is a sendMessage call: the chat it goes to (the Binding's chat id) and its text
-// in Telegram's HTML subset, sent with parse_mode=HTML.
+// TelegramMessage is a message to one chat (the Binding's chat id), its text in Telegram's HTML
+// subset sent with parse_mode=HTML. With an ImageURL it goes by sendPhoto and the text is the
+// caption; otherwise by sendMessage. Buttons are inline URL buttons, one per row.
 type TelegramMessage struct {
-	ChatID string
-	Text   string
+	ChatID   string
+	Text     string
+	ImageURL string
+	Buttons  []TelegramButton
+	// NoLinkPreview turns the link preview off (link_preview_options.is_disabled). A photo has none.
+	NoLinkPreview bool
 	// UnsubscribeButton is the label of a callback button, with the payload
 	// TelegramUnsubscribePayload, added as the last row of the message's buttons; "" adds none.
 	UnsubscribeButton string
+}
+
+// TelegramButton is an inline URL button.
+type TelegramButton struct {
+	Label string
+	URL   string
 }
 
 // TelegramSent is what Telegram answers to an accepted message: its id in the chat.

@@ -27,7 +27,6 @@ export const zApiTokenScope = z.enum([
   'webhooks:regenerate',
   'webhooks:test',
   'custom_fields:read',
-  'custom_fields:write',
   'sending_domains:read',
   'tracking_domains:read',
   'integrations:read',
@@ -296,7 +295,6 @@ export const zGrantableScope = z.enum([
   'webhooks:regenerate',
   'webhooks:test',
   'custom_fields:read',
-  'custom_fields:write',
   'sending_domains:read',
   'tracking_domains:read',
   'integrations:read'
@@ -412,7 +410,6 @@ export const zPermission = z.enum([
   'sending_domains:manage',
   'contacts:erase',
   'contacts:export',
-  'custom_fields:manage',
   'suppressions:manage',
   'second_factor:manage',
   'workspace:update',
@@ -456,7 +453,6 @@ export const zPersonalScope = z.enum([
   'webhooks:regenerate',
   'webhooks:test',
   'custom_fields:read',
-  'custom_fields:write',
   'sending_domains:read',
   'tracking_domains:read',
   'integrations:read',
@@ -929,40 +925,6 @@ export const zSiteAutomationStepType = z.enum([
 ]);
 
 /**
- * One node in an automation's ordered, linear sequence. A flat shape: email
- * steps carry subject/body, wait steps carry seconds.
- */
-export const zSiteAutomationStep = z.object({
-  type: zSiteAutomationStepType,
-  subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument),
-  editorVersion: z.exactOptional(z.string()),
-  seconds: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  tag: z.exactOptional(z.string()),
-  id: z.exactOptional(z.string()),
-  url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader).max(5)),
-  secret: z.exactOptional(z.string()),
-  clearSecret: z.exactOptional(z.boolean()),
-  hasSecret: z.exactOptional(z.boolean()),
-  integrationId: z.exactOptional(zEntityId.nullable()),
-  text: z.exactOptional(z.string()),
-  unsubscribeButton: z.exactOptional(z.string().max(64))
-});
-
-/**
- * One version of an automation's definition: what publishing makes it do (ADR 0065)
- */
-export const zSiteAutomationVersion = z.object({
-  number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  triggerEvent: z.string(),
-  exitEvents: z.array(z.string()),
-  goalEvent: z.string().nullable(),
-  steps: z.array(zSiteAutomationStep)
-});
-
-/**
  * What slows a sending broadcast
  */
 export const zSiteBroadcastLimit = z.enum(['sendCap', 'providerLimit']);
@@ -1123,17 +1085,6 @@ export const zSiteContactHoldings = z.object({
   unsubscribes: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   suppressions: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   capturedMessages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * Site request body for creating an automation
- */
-export const zSiteCreateAutomationInput = z.object({
-  name: z.string(),
-  triggerEvent: z.string(),
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(z.array(zSiteAutomationStep))
 });
 
 /**
@@ -2115,6 +2066,30 @@ export const zSiteSignupItemAnswer = z.object({
 });
 
 /**
+ * Accept an invite. For an address with no User or an Unverified User, name + password
+ * are required (422 otherwise), and the Sign-up items are answered as on the sign-up form. For a
+ * Verified User the body is not read: the session of that same User is the proof, and consent
+ * follows the User, so nothing is asked again (ADR 0062).
+ */
+export const zSiteAcceptInvitationInput = z.object({
+  name: z.exactOptional(z.string()),
+  password: z.exactOptional(z.string()),
+  signupItems: z.exactOptional(z.array(zSiteSignupItemAnswer))
+});
+
+/**
+ * Sign up with a name, an email and a password. The User stays Unverified until the
+ * address is proven (ADR 0030); the password is trusted only when the verification link
+ * is opened in the Sign-up browser.
+ */
+export const zSiteSignUpInput = z.object({
+  name: z.string(),
+  email: zEmailAddress,
+  password: z.exactOptional(z.string()),
+  signupItems: z.exactOptional(z.array(zSiteSignupItemAnswer))
+});
+
+/**
  * The answers that complete a pending sign-up
  */
 export const zSiteSigninPendingSubmitInput = z.object({
@@ -2270,27 +2245,6 @@ export const zSiteTransactionalEmailStatus = z.enum([
 ]);
 
 /**
- * Site request body for updating an automation. The name changes at once; the trigger, exit and
- * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
- * version's, and publishing makes the draft live.
- */
-export const zSiteUpdateAutomationInput = z.object({
-  name: z.exactOptional(z.string()),
-  triggerEvent: z.exactOptional(z.string()),
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(z.array(zSiteAutomationStep))
-});
-
-/**
- * Request body for updating a custom field: its key never changes
- */
-export const zSiteUpdateCustomFieldInput = z.object({
-  name: z.exactOptional(z.string().min(1)),
-  type: z.exactOptional(zSiteCustomFieldType)
-});
-
-/**
  * Change a member's role. Only an owner may grant/transfer the owner role.
  */
 export const zSiteUpdateMembershipInput = z.object({
@@ -2372,6 +2326,75 @@ export const zSmtpConfigInput = z.object({
   password: z.exactOptional(z.string().nullable()),
   from: zEmailAddress,
   fromName: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * A link button under a Telegram message: an inline URL button on a row of its own
+ */
+export const zTelegramButton = z.object({
+  label: z.string(),
+  url: z.string()
+});
+
+/**
+ * One node in an automation's ordered, linear sequence. A flat shape: email
+ * steps carry subject/body, wait steps carry seconds.
+ */
+export const zSiteAutomationStep = z.object({
+  type: zSiteAutomationStepType,
+  subject: z.exactOptional(z.string()),
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(zEditorDocument),
+  editorVersion: z.exactOptional(z.string()),
+  seconds: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  tag: z.exactOptional(z.string()),
+  id: z.exactOptional(z.string()),
+  url: z.exactOptional(z.string()),
+  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader).max(5)),
+  secret: z.exactOptional(z.string()),
+  clearSecret: z.exactOptional(z.boolean()),
+  hasSecret: z.exactOptional(z.boolean()),
+  integrationId: z.exactOptional(zEntityId.nullable()),
+  text: z.exactOptional(z.string()),
+  unsubscribeButton: z.exactOptional(z.string().max(64)),
+  imageUrl: z.exactOptional(z.string()),
+  buttons: z.exactOptional(z.array(zTelegramButton).max(8)),
+  linkPreview: z.exactOptional(z.boolean())
+});
+
+/**
+ * One version of an automation's definition: what publishing makes it do (ADR 0065)
+ */
+export const zSiteAutomationVersion = z.object({
+  number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  triggerEvent: z.string(),
+  exitEvents: z.array(z.string()),
+  goalEvent: z.string().nullable(),
+  steps: z.array(zSiteAutomationStep)
+});
+
+/**
+ * Site request body for creating an automation
+ */
+export const zSiteCreateAutomationInput = z.object({
+  name: z.string(),
+  triggerEvent: z.string(),
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
+  steps: z.exactOptional(z.array(zSiteAutomationStep))
+});
+
+/**
+ * Site request body for updating an automation. The name changes at once; the trigger, exit and
+ * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * version's, and publishing makes the draft live.
+ */
+export const zSiteUpdateAutomationInput = z.object({
+  name: z.exactOptional(z.string()),
+  triggerEvent: z.exactOptional(z.string()),
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
+  steps: z.exactOptional(z.array(zSiteAutomationStep))
 });
 
 /**
@@ -2480,6 +2503,17 @@ export const zSiteUpdateContactInput = z.object({
   avatar: z.exactOptional(zImageUrl.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable()),
   tags: z.exactOptional(z.array(z.string()))
+});
+
+/**
+ * Update the authenticated user's profile. To change the password, provide
+ * both currentPassword and newPassword.
+ */
+export const zSiteUpdateMeInput = z.object({
+  name: z.exactOptional(z.string()),
+  timezone: z.exactOptional(zTimeZoneName.nullable()),
+  currentPassword: z.exactOptional(z.string()),
+  newPassword: z.exactOptional(z.string())
 });
 
 /**
@@ -3467,48 +3501,6 @@ export const zInUseProblemDetails = z.object({
 });
 
 /**
- * What a User is called, as a person sets it: at most 100 characters. Surrounding spaces are
- * trimmed; an empty name, or one with a control, line-breaking or invisible character, is refused
- * by the handler (422), which applies the same limit to a Sign-in provider's name.
- */
-export const zUserName = z.string().max(100);
-
-/**
- * Accept an invite. For an address with no User or an Unverified User, name + password
- * are required (422 otherwise), and the Sign-up items are answered as on the sign-up form. For a
- * Verified User the body is not read: the session of that same User is the proof, and consent
- * follows the User, so nothing is asked again (ADR 0062).
- */
-export const zSiteAcceptInvitationInput = z.object({
-  name: z.exactOptional(zUserName),
-  password: z.exactOptional(z.string()),
-  signupItems: z.exactOptional(z.array(zSiteSignupItemAnswer))
-});
-
-/**
- * Sign up with a name, an email and a password. The User stays Unverified until the
- * address is proven (ADR 0030); the password is trusted only when the verification link
- * is opened in the Sign-up browser.
- */
-export const zSiteSignUpInput = z.object({
-  name: zUserName,
-  email: zEmailAddress,
-  password: z.exactOptional(z.string()),
-  signupItems: z.exactOptional(z.array(zSiteSignupItemAnswer))
-});
-
-/**
- * Update the authenticated user's profile. To change the password, provide
- * both currentPassword and newPassword.
- */
-export const zSiteUpdateMeInput = z.object({
-  name: z.exactOptional(zUserName),
-  timezone: z.exactOptional(zTimeZoneName.nullable()),
-  currentPassword: z.exactOptional(z.string()),
-  newPassword: z.exactOptional(z.string())
-});
-
-/**
  * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
  * Workspace's one public address.
  */
@@ -3905,17 +3897,6 @@ export const zSiteContactsListFilterEmail = z.string();
  * Keeps the contacts that carry the Tag of this exact name
  */
 export const zSiteContactsListFilterTag = z.string();
-
-/**
- * Unique identifier
- */
-export const zSiteCustomFieldResourceKeyId = zEntityId;
-
-/**
- * The Workspace id: its short opaque public address and the route key for nested
- * workspace resources (ADR 0043)
- */
-export const zSiteCustomFieldResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
  * The Workspace id: its short opaque public address and the route key for nested
@@ -5266,18 +5247,6 @@ export const zSiteCustomFieldsListResponse = z.object({
   totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
-
-export const zSiteCustomFieldsUpdateBody = zSiteUpdateCustomFieldInput;
-
-export const zSiteCustomFieldsUpdatePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteCustomFieldsUpdateResponse = zSiteCustomFieldResource;
 
 export const zSiteWorkspacesDeleteBody = zSiteDeleteWorkspaceInput;
 

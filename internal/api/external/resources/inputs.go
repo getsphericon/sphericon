@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -135,6 +136,7 @@ type Inputs interface {
 	// goverter:ignore EditorVersion
 	AutomationStep(source externalapi.AutomationStep) automationsteps.Step
 	AutomationSteps(source []externalapi.AutomationStep) []automationsteps.Step
+	TelegramButton(source externalapi.TelegramButton) telegramrender.Button
 	AutomationCreate(source *externalapi.CreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *externalapi.UpdateAutomationInput) automations.UpdateInput
 

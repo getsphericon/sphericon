@@ -5,6 +5,7 @@
 package telegramrender
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -18,6 +19,61 @@ import (
 
 // MaxText is the longest text Telegram accepts in a message, in characters.
 const MaxText = 4096
+
+// MaxCaption is the longest caption Telegram accepts under a photo, in characters.
+const MaxCaption = 1024
+
+// MaxButtons is the most link buttons a message carries, one per row.
+// contract-copy: the contract caps `buttons` at 8 too (); the domain refuses it for callers that skip the API
+const MaxButtons = 8
+
+// Limit is the longest text a message may carry: a caption when it has an image, else a text.
+func Limit(hasImage bool) int {
+	if hasImage {
+		return MaxCaption
+	}
+	return MaxText
+}
+
+// Button is a link button under a message: a label and the URL it opens, shown as an inline URL
+// button on a row of its own.
+type Button struct {
+	Label string `json:"label"`
+	URL   string `json:"url"`
+}
+
+// ErrContent is a Telegram message's image or buttons that Telegram would refuse.
+var ErrContent = errors.New("telegram content")
+
+// CheckImage refuses an image URL that is not an absolute https URL. Blank means no image.
+func CheckImage(imageURL string) error {
+	if strings.TrimSpace(imageURL) == "" {
+		return nil
+	}
+	u, err := url.Parse(strings.TrimSpace(imageURL))
+	if err != nil || u.Host == "" || !strings.EqualFold(u.Scheme, "https") {
+		return fmt.Errorf("%w: the image must be an absolute https URL", ErrContent)
+	}
+	return nil
+}
+
+// CheckButtons refuses more than MaxButtons buttons, a button with no label and one whose URL is
+// not an absolute http or https URL.
+func CheckButtons(buttons []Button) error {
+	if len(buttons) > MaxButtons {
+		return fmt.Errorf("%w: at most %d buttons, got %d", ErrContent, MaxButtons, len(buttons))
+	}
+	for i, b := range buttons {
+		if strings.TrimSpace(b.Label) == "" {
+			return fmt.Errorf("%w: button %d needs a label", ErrContent, i+1)
+		}
+		u, err := url.Parse(strings.TrimSpace(b.URL))
+		if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") {
+			return fmt.Errorf("%w: button %d needs an absolute http or https URL", ErrContent, i+1)
+		}
+	}
+	return nil
+}
 
 // allowed are the tags Telegram's HTML subset keeps; every other tag is dropped and its text kept.
 var allowed = map[string]bool{

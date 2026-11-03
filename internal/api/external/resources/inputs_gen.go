@@ -18,6 +18,7 @@ import (
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	segments "github.com/getsphericon/sphericon/internal/segments"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
+	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
 	templates "github.com/getsphericon/sphericon/internal/templates"
 	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -82,12 +83,20 @@ func (c *InputsImpl) AutomationStep(source external.AutomationStep) automations.
 	automationsStep.Tag = stringIn(source.Tag)
 	automationsStep.Text = stringIn(source.Text)
 	automationsStep.UnsubscribeButton = stringIn(source.UnsubscribeButton)
+	automationsStep.ImageURL = stringIn(source.ImageUrl)
+	if source.Buttons != nil {
+		automationsStep.Buttons = make([]telegramrender.Button, len(source.Buttons))
+		for i := 0; i < len(source.Buttons); i++ {
+			automationsStep.Buttons[i] = c.TelegramButton(source.Buttons[i])
+		}
+	}
+	automationsStep.LinkPreview = boolPtrIn(source.LinkPreview)
 	automationsStep.ID = stringIn(source.ID)
 	automationsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
 		automationsStep.Headers = make([]httpcall.Header, len(source.Headers))
-		for i := 0; i < len(source.Headers); i++ {
-			automationsStep.Headers[i] = c.externalapiAutomationHttpHeaderToHttpcallHeader(source.Headers[i])
+		for j := 0; j < len(source.Headers); j++ {
+			automationsStep.Headers[j] = c.externalapiAutomationHttpHeaderToHttpcallHeader(source.Headers[j])
 		}
 	}
 	automationsStep.Secret = stringIn(source.Secret)
@@ -432,6 +441,12 @@ func (c *InputsImpl) SuppressionChannel(source external.ConsentChannel) suppress
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return suppressionChannel
+}
+func (c *InputsImpl) TelegramButton(source external.TelegramButton) telegramrender.Button {
+	var telegramrenderButton telegramrender.Button
+	telegramrenderButton.Label = source.Label
+	telegramrenderButton.URL = source.URL
+	return telegramrenderButton
 }
 func (c *InputsImpl) TemplateCreate(source *external.CreateTemplateInput) templates.CreateInput {
 	var templatesCreateInput templates.CreateInput

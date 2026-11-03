@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // Kind is the kind of a Step.
@@ -55,10 +56,17 @@ type Step struct {
 	EditorVersion string          `json:"editorVersion,omitempty"`
 	Seconds       int             `json:"seconds,omitempty"`
 	Tag           string          `json:"tag,omitempty"`
-	// Text is a Telegram step's message: Telegram's HTML subset with Liquid merge tags.
+	// Text is a Telegram step's message: Telegram's HTML subset with Liquid merge tags. With an
+	// ImageURL it is the image's caption.
 	Text string `json:"text,omitempty"`
 	// UnsubscribeButton is the label of a Telegram step's unsubscribe button, "" for none.
 	UnsubscribeButton string `json:"unsubscribeButton,omitempty"`
+	// ImageURL is the https URL of a Telegram step's image, "" for none.
+	ImageURL string `json:"imageUrl,omitempty"`
+	// Buttons are a Telegram step's link buttons, one per row, at most telegramrender.MaxButtons.
+	Buttons []telegramrender.Button `json:"buttons,omitempty"`
+	// LinkPreview is whether a link in a Telegram step's text unfolds a preview; nil is on.
+	LinkPreview *bool `json:"linkPreview,omitempty"`
 
 	// HTTP steps (ADR 0039) hold ID, URL, Headers, Body (a Liquid JSON template) and
 	// Secret. Stored, URL, header values and Secret are ciphertext, sealed per field;

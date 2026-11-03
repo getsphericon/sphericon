@@ -23,6 +23,7 @@ import "../common/integrations.tsp";
 import "../common/sending-domains.tsp";
 import "../common/tracking-domains.tsp";
 import "../common/tags.tsp";
+import "../common/telegram-content.tsp";
 import "../common/telegram-start-links.tsp";
 import "../common/templates.tsp";
 import "../common/webhooks.tsp";

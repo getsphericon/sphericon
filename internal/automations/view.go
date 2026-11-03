@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // StepView is a stored Step as the API shows it: only the fields of its kind are set, so a field
@@ -12,9 +13,12 @@ import (
 type StepView struct {
 	Type          automationsteps.Kind
 	Subject, Body *string
-	// Text is a Telegram step's message.
-	Text *string
-	// UnsubscribeButton is a Telegram step's unsubscribe button label, nil when it has none.
+	// Text is a Telegram step's message; ImageURL, Buttons, LinkPreview and UnsubscribeButton the
+	// rest of its content (LinkPreview is set, true by default, on a Telegram step only).
+	Text              *string
+	ImageURL          *string
+	Buttons           []telegramrender.Button
+	LinkPreview       *bool
 	UnsubscribeButton *string
 	// Doc is an email step's editor document, and EditorVersion the editor that rendered it; a
 	// step written as HTML has neither.
@@ -67,6 +71,11 @@ func viewOf(s *automationsteps.Step) StepView {
 	case automationsteps.Telegram:
 		v.IntegrationID = s.IntegrationID
 		v.Text = &s.Text
+		if s.ImageURL != "" {
+			v.ImageURL = &s.ImageURL
+		}
+		v.Buttons = append([]telegramrender.Button{}, s.Buttons...)
+		v.LinkPreview = new(s.LinkPreview == nil || *s.LinkPreview)
 		if s.UnsubscribeButton != "" {
 			v.UnsubscribeButton = &s.UnsubscribeButton
 		}

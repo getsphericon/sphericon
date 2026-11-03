@@ -123,23 +123,45 @@ func (b *Bot) DeleteWebhook(ctx context.Context) error {
 	return refusal(b.bot.DeleteWebhook(ctx, &telego.DeleteWebhookParams{}))
 }
 
-// SendMessage sends msg.Text, as HTML, to the chat msg.ChatID.
+// SendMessage sends msg to the chat msg.ChatID, as HTML: by sendPhoto with the text as the caption
+// when it has an image, else by sendMessage.
 func (b *Bot) SendMessage(ctx context.Context, msg messaging.TelegramMessage) (messaging.TelegramSent, error) {
 	chat, err := strconv.ParseInt(msg.ChatID, 10, 64)
 	if err != nil {
 		return messaging.TelegramSent{}, fmt.Errorf("telegram: chat id %q is not a number", msg.ChatID)
 	}
-	params := &telego.SendMessageParams{
-		ChatID:    telego.ChatID{ID: chat},
-		Text:      msg.Text,
-		ParseMode: telego.ModeHTML,
+	var keyboard *telego.InlineKeyboardMarkup
+	if len(msg.Buttons) > 0 || msg.UnsubscribeButton != "" {
+		rows := make([][]telego.InlineKeyboardButton, 0, len(msg.Buttons)+1)
+		for _, btn := range msg.Buttons {
+			rows = append(rows, []telego.InlineKeyboardButton{{Text: btn.Label, URL: btn.URL}})
+		}
+		if msg.UnsubscribeButton != "" {
+			rows = append(rows, []telego.InlineKeyboardButton{{Text: msg.UnsubscribeButton, CallbackData: messaging.TelegramUnsubscribePayload}})
+		}
+		keyboard = &telego.InlineKeyboardMarkup{InlineKeyboard: rows}
 	}
-	if msg.UnsubscribeButton != "" {
-		params.ReplyMarkup = &telego.InlineKeyboardMarkup{InlineKeyboard: [][]telego.InlineKeyboardButton{{
-			{Text: msg.UnsubscribeButton, CallbackData: messaging.TelegramUnsubscribePayload},
-		}}}
+	var sent *telego.Message
+	if msg.ImageURL != "" {
+		sent, err = b.bot.SendPhoto(ctx, &telego.SendPhotoParams{
+			ChatID:      telego.ChatID{ID: chat},
+			Photo:       telego.InputFile{URL: msg.ImageURL},
+			Caption:     msg.Text,
+			ParseMode:   telego.ModeHTML,
+			ReplyMarkup: keyboard,
+		})
+	} else {
+		params := &telego.SendMessageParams{
+			ChatID:      telego.ChatID{ID: chat},
+			Text:        msg.Text,
+			ParseMode:   telego.ModeHTML,
+			ReplyMarkup: keyboard,
+		}
+		if msg.NoLinkPreview {
+			params.LinkPreviewOptions = &telego.LinkPreviewOptions{IsDisabled: true}
+		}
+		sent, err = b.bot.SendMessage(ctx, params)
 	}
-	sent, err := b.bot.SendMessage(ctx, params)
 	if err != nil {
 		return messaging.TelegramSent{}, refusal(err)
 	}

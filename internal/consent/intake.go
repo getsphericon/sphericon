@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -54,7 +55,7 @@ func Unsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destinatio
 		return nil, err
 	}
 
-	target := tracking.UnsubTarget{Source: source, Destination: dest, WorkspaceID: s.WorkspaceID()}
+	target := tracking.UnsubTarget{Channel: messaging.ChannelEmail, Source: source, Destination: dest, WorkspaceID: s.WorkspaceID()}
 	if c, err := s.Contact().Query().Where(contact.EmailEqualFold(dest)).First(ctx); err == nil {
 		target.ContactID = c.ID
 	} else if !ent.IsNotFound(err) {
@@ -72,7 +73,8 @@ func Unsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destinatio
 
 // TelegramUnsubscribe records the Channel-wide opt-out of a Telegram user id, with the effects of
 // the user stopping in Telegram (optout.StopTelegram): the row and telegram.unsubscribed for every
-// Contact the id is Bound to. Only the `everything` source exists on Telegram for now. Idempotent.
+// Contact the id is Bound to. A manual opt-out is Channel-wide: only the `everything` source is
+// accepted here; a source-scoped one comes from the link in a message (RecordUnsubscribe). Idempotent.
 func TelegramUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destination, source string) (*ent.Unsubscribe, error) {
 	dest := strings.TrimSpace(destination)
 	if dest == "" {

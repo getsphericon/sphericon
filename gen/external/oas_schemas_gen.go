@@ -2149,11 +2149,20 @@ type AutomationStep struct {
 	IntegrationId OptNilEntityId `json:"integrationId"`
 	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
 	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
-	// escaped. Up to 4096 characters as written: publishing a longer one is refused.
+	// escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer
+	// one is refused.
 	Text OptString `json:"text"`
 	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
 	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
 	UnsubscribeButton OptString `json:"unsubscribeButton"`
+	// An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text
+	// message.
+	ImageUrl OptString `json:"imageUrl"`
+	// Up to 8 link buttons under a Telegram step's message, one per row, in order.
+	Buttons []TelegramButton `json:"buttons"`
+	// Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an
+	// image.
+	LinkPreview OptBool `json:"linkPreview"`
 }
 
 // GetType returns the value of Type.
@@ -2236,6 +2245,21 @@ func (s *AutomationStep) GetUnsubscribeButton() OptString {
 	return s.UnsubscribeButton
 }
 
+// GetImageUrl returns the value of ImageUrl.
+func (s *AutomationStep) GetImageUrl() OptString {
+	return s.ImageUrl
+}
+
+// GetButtons returns the value of Buttons.
+func (s *AutomationStep) GetButtons() []TelegramButton {
+	return s.Buttons
+}
+
+// GetLinkPreview returns the value of LinkPreview.
+func (s *AutomationStep) GetLinkPreview() OptBool {
+	return s.LinkPreview
+}
+
 // SetType sets the value of Type.
 func (s *AutomationStep) SetType(val AutomationStepType) {
 	s.Type = val
@@ -2314,6 +2338,21 @@ func (s *AutomationStep) SetText(val OptString) {
 // SetUnsubscribeButton sets the value of UnsubscribeButton.
 func (s *AutomationStep) SetUnsubscribeButton(val OptString) {
 	s.UnsubscribeButton = val
+}
+
+// SetImageUrl sets the value of ImageUrl.
+func (s *AutomationStep) SetImageUrl(val OptString) {
+	s.ImageUrl = val
+}
+
+// SetButtons sets the value of Buttons.
+func (s *AutomationStep) SetButtons(val []TelegramButton) {
+	s.Buttons = val
+}
+
+// SetLinkPreview sets the value of LinkPreview.
+func (s *AutomationStep) SetLinkPreview(val OptBool) {
+	s.LinkPreview = val
 }
 
 // The messages of the send step at one position.
@@ -18048,6 +18087,35 @@ func (*TagsRemoveNotFound) tagsRemoveRes() {}
 type TagsRemoveUnauthorized ProblemDetails
 
 func (*TagsRemoveUnauthorized) tagsRemoveRes() {}
+
+// A link button under a Telegram message: an inline URL button on a row of its own.
+// Ref: #/components/schemas/TelegramButton
+type TelegramButton struct {
+	// The button's label.
+	Label string `json:"label"`
+	// The URL it opens: absolute, http or https.
+	URL string `json:"url"`
+}
+
+// GetLabel returns the value of Label.
+func (s *TelegramButton) GetLabel() string {
+	return s.Label
+}
+
+// GetURL returns the value of URL.
+func (s *TelegramButton) GetURL() string {
+	return s.URL
+}
+
+// SetLabel sets the value of Label.
+func (s *TelegramButton) SetLabel(val string) {
+	s.Label = val
+}
+
+// SetURL sets the value of URL.
+func (s *TelegramButton) SetURL(val string) {
+	s.URL = val
+}
 
 // A Telegram bot without its token: who it is, as Telegram said when it was connected.
 // Ref: #/components/schemas/TelegramConfig

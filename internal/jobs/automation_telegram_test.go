@@ -1,6 +1,9 @@
 package jobs_test
 
 import (
+	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -10,13 +13,17 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/stepping"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -135,4 +142,98 @@ func TestARenderedTextOverTheLimitFailsThatMessageAlone(t *testing.T) {
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
 	assert.Equal(t, "content_too_long", *msg.Reason)
+}
+
+func TestATelegramStepWithAnImageSendsAPhotoWithTheCaptionAndButtons(t *testing.T) {
+	env := testhelper.Setup(t)
+	bot := env.ConnectTelegram(t, 7305, "acme_photo_bot")
+	step := telegramStep(bot, "Look <b>here</b>")
+	step.ImageURL = "https://cdn.example.com/a.png"
+	step.Buttons = []telegramrender.Button{{Label: "Open", URL: "https://example.com/a"}, {Label: "More", URL: "https://example.com/b"}}
+	automationID := telegramAutomation(t, env, step)
+	env.BindTelegram(t, bot, fixtures.ContactBobID, 555031, 555031)
+	enrollVia(t, env, automationID, fixtures.ContactBobID)
+
+	runSteps(t, env)
+
+	assert.Empty(t, env.Telegram.RequestsOf(telegramtest.SendMessage))
+	photos := env.Telegram.RequestsOf(telegramtest.SendPhoto)
+	require.Len(t, photos, 1)
+	assert.Equal(t, "https://cdn.example.com/a.png", photos[0].String("photo"))
+	assert.Equal(t, "Look <b>here</b>", photos[0].String("caption"))
+	assert.Equal(t, "HTML", photos[0].String("parse_mode"))
+	assert.JSONEq(t,
+		`{"inline_keyboard":[[{"text":"Open","url":"https://example.com/a"}],[{"text":"More","url":"https://example.com/b"}]]}`,
+		photos[0].String("reply_markup"))
+}
+
+func TestTurningTheLinkPreviewOffSetsTheOption(t *testing.T) {
+	env := testhelper.Setup(t)
+	bot := env.ConnectTelegram(t, 7306, "acme_preview_bot")
+	off := telegramStep(bot, "See https://example.com")
+	off.LinkPreview = new(false)
+	automationID := telegramAutomation(t, env, off, telegramStep(bot, "See https://example.com"))
+	env.BindTelegram(t, bot, fixtures.ContactBobID, 555041, 555041)
+	enrollVia(t, env, automationID, fixtures.ContactBobID)
+
+	runSteps(t, env)
+
+	sends := env.Telegram.RequestsOf(telegramtest.SendMessage)
+	require.Len(t, sends, 2)
+	assert.JSONEq(t, `{"is_disabled":true}`, sends[0].String("link_preview_options"))
+	assert.Empty(t, sends[1].String("link_preview_options"), "on by default")
+}
+
+func TestARenderedCaptionOverTheCaptionLimitFails(t *testing.T) {
+	env := testhelper.Setup(t)
+	bot := env.ConnectTelegram(t, 7307, "acme_caption_bot")
+	env.DB.Contact.UpdateOneID(fixtures.ContactBobID).SetFirstName(strings.Repeat("x", 100)).ExecX(t.Context())
+	step := telegramStep(bot, strings.Repeat("a", 950)+"{{ first_name }}")
+	step.ImageURL = "https://cdn.example.com/a.png"
+	automationID := telegramAutomation(t, env, step)
+	env.BindTelegram(t, bot, fixtures.ContactBobID, 555051, 555051)
+	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
+
+	err := stepOnce(t, env, stepperWith(env, env.OutboundModule()), runID)
+
+	require.ErrorContains(t, err, "content_too_long")
+	assert.Empty(t, env.Telegram.RequestsOf(telegramtest.SendPhoto))
+}
+
+func TestTheUnsubscribeLinkOptsTheChatOutOfTheAutomationOnTelegramOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	bot := env.ConnectTelegram(t, 7308, "acme_unsub_bot")
+	emailOptOuts := func() int {
+		return env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(unsubscribe.ChannelEmail), unsubscribe.ContactID(fixtures.ContactBobID)).CountX(ctx)
+	}
+	emailBefore := emailOptOuts()
+	automationID := telegramAutomation(t, env, telegramStep(bot, `<a href="{{ unsubscribe_url }}">stop</a>`))
+	env.BindTelegram(t, bot, fixtures.ContactBobID, 555061, 555061)
+	enrollVia(t, env, automationID, fixtures.ContactBobID)
+	runSteps(t, env)
+	sends := env.Telegram.RequestsOf(telegramtest.SendMessage)
+	require.Len(t, sends, 1)
+	link := regexp.MustCompile(`/e/u/([^"]+)"`).FindStringSubmatch(sends[0].String("text"))
+	require.Len(t, link, 2, "the text carries the unsubscribe link")
+
+	out, err := env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: link[1]})
+
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SitePublicUnsubscribesPerformNoContent{}, out)
+	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.DestinationEQ("555061")).OnlyX(ctx)
+	assert.Equal(t, unsubscribe.ChannelTelegram, optOut.Channel)
+	assert.Equal(t, eligibility.AutomationSource(automationID), optOut.SendingSource)
+	assert.Equal(t, emailBefore, emailOptOuts(), "email to the same Contact keeps sending")
+	recorded := env.Outbox(t, events.NameTelegramUnsubscribed)
+	require.Len(t, recorded, 1, "the link records telegram.unsubscribed")
+	assert.Equal(t, strconv.Itoa(fixtures.ContactBobID), fmt.Sprint(recorded[0].Data["contactId"]))
+	assert.Equal(t, events.UnsubscribedByLink, recorded[0].Data["via"])
+	assert.Equal(t, strconv.FormatInt(automationID, 10), fmt.Sprint(recorded[0].Data["automationId"]))
+	assert.Zero(t, env.OutboxCount(t, events.NameEmailUnsubscribed, nil), "and no email event")
+
+	_, err = env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: link[1]})
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramUnsubscribed, nil), "a second click records nothing")
 }

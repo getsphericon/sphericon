@@ -20,6 +20,7 @@ import (
 	"golang.org/x/net/html"
 
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -62,8 +63,11 @@ func (t *Tracker) OnHost(host string) *Tracker {
 // destination directly — no contact-row lookup, and it survives the contact being
 // deleted between send and click. BroadcastID is set only for broadcast sends
 // (for per-broadcast attribution); Source is the sending-source string the opt-out
-// is scoped to ("broadcasts" / "automation:<id>" / "everything").
+// is scoped to ("broadcasts" / "automation:<id>" / "everything"). Channel is the Channel the
+// opt-out is recorded on: a link in a Telegram message unsubscribes on Telegram only (ADR 0077),
+// and Destination is that Channel's (the email address, the Telegram user id).
 type UnsubTarget struct {
+	Channel     messaging.Channel
 	Source      string
 	Destination string
 	WorkspaceID int64
@@ -91,6 +95,7 @@ type clickClaims struct {
 type unsubClaims struct {
 	jwt.RegisteredClaims
 
+	Channel     string `json:"ch"`
 	Source      string `json:"src"`
 	Destination string `json:"dest"`
 	WorkspaceID int64  `json:"ws,string"`
@@ -167,6 +172,7 @@ func (t *Tracker) DecodeClick(token string) (messageID int64, destination string
 // unsubToken mints a signed scoped-unsubscribe token.
 func (t *Tracker) unsubToken(target UnsubTarget) (string, error) {
 	return t.sign(&unsubClaims{
+		Channel:     string(target.Channel),
 		Source:      target.Source,
 		Destination: target.Destination,
 		WorkspaceID: target.WorkspaceID,
@@ -190,10 +196,15 @@ func (t *Tracker) DecodeUnsub(token string) (UnsubTarget, error) {
 	if c.Source == "" {
 		return UnsubTarget{}, ErrLinkInvalid.With("missing src claim")
 	}
+	switch messaging.Channel(c.Channel) {
+	case messaging.ChannelEmail, messaging.ChannelTelegram:
+	default:
+		return UnsubTarget{}, ErrLinkInvalid.With("missing or unknown ch claim")
+	}
 	if c.WorkspaceID == 0 {
 		return UnsubTarget{}, ErrLinkInvalid.With("missing ws claim")
 	}
-	return UnsubTarget{Source: c.Source, Destination: c.Destination, WorkspaceID: c.WorkspaceID, ContactID: c.ContactID, BroadcastID: c.BroadcastID}, nil
+	return UnsubTarget{Channel: messaging.Channel(c.Channel), Source: c.Source, Destination: c.Destination, WorkspaceID: c.WorkspaceID, ContactID: c.ContactID, BroadcastID: c.BroadcastID}, nil
 }
 
 // ConfirmTarget is the payload a double-opt-in confirmation link carries (ADR

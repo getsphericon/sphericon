@@ -10,6 +10,7 @@ import type {
 import { zSiteAutomationHttpHeader } from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
+import { completeButtons } from '../../utils/telegramContent.ts'
 import {
   APPLY_TAG_NODE_TYPE,
   EMAIL_NODE_ICON,
@@ -25,6 +26,7 @@ import {
   WAIT_NODE_ICON,
   WAIT_NODE_TYPE,
 } from './nodes.ts'
+import { buttonsCodec } from './telegramButtons.ts'
 
 // A step is the generated contract type (typed in TypeSpec; no hand-rolled
 // parse/serialize — the API carries steps as structured data, not a JSON string).
@@ -56,6 +58,19 @@ const STEP_ICON: Record<AutomationStep['type'], WBIcon> = {
   http: HTTP_NODE_ICON,
 }
 
+// A Telegram step's content, as the form holds it: every value a string.
+function telegramProperties(step: AutomationStep): Record<string, unknown> {
+  return {
+    integrationId: step.integrationId ?? '',
+    text: step.text ?? '',
+    unsubscribeButton: step.unsubscribeButton ?? '',
+    imageUrl: step.imageUrl ?? '',
+    buttons: buttonsCodec.write(step.buttons ?? []),
+    // 'off' is a preview turned off, '' the default.
+    linkPreview: step.linkPreview === false ? 'off' : '',
+  }
+}
+
 // The server never returns an HTTP step's URL, header values or signing secret, so the
 // canvas holds them blank: a blank field is "keep what is stored". The headers come back as
 // names only, held as JSON text (headersText) for the same reason.
@@ -76,11 +91,7 @@ function stepProperties(step: AutomationStep): Record<string, unknown> {
     return { tag: step.tag ?? '' }
   }
   if (step.type === 'telegram') {
-    return {
-      integrationId: step.integrationId ?? '',
-      text: step.text ?? '',
-      unsubscribeButton: step.unsubscribeButton ?? '',
-    }
+    return telegramProperties(step)
   }
   return {
     integrationId: step.integrationId ?? '',
@@ -224,11 +235,16 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
   if (node.data.type === TELEGRAM_NODE_TYPE) {
     const integrationId = asText(props.integrationId)
     const unsubscribeButton = asText(props.unsubscribeButton)
+    const imageUrl = asText(props.imageUrl).trim()
+    const buttons = completeButtons(buttonsCodec.read(props.buttons))
     return {
       type: 'telegram',
       text: asText(props.text),
       ...(integrationId === '' ? {} : { integrationId }),
       ...(unsubscribeButton === '' ? {} : { unsubscribeButton }),
+      ...(imageUrl === '' ? {} : { imageUrl }),
+      ...(buttons.length === 0 ? {} : { buttons }),
+      ...(props.linkPreview === 'off' ? { linkPreview: false } : {}),
     }
   }
   if (node.data.type === EMAIL_NODE_TYPE) {

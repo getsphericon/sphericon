@@ -90,7 +90,11 @@ func Encode(steps []automationsteps.Step) (string, error) {
 		case automationsteps.HTTP:
 			stored = append(stored, automationsteps.Step{Type: automationsteps.HTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret})
 		case automationsteps.Telegram:
-			stored = append(stored, automationsteps.Step{Type: automationsteps.Telegram, IntegrationID: s.IntegrationID, Text: s.Text, UnsubscribeButton: strings.TrimSpace(s.UnsubscribeButton)})
+			stored = append(stored, automationsteps.Step{
+				Type: automationsteps.Telegram, IntegrationID: s.IntegrationID, Text: s.Text,
+				ImageURL: strings.TrimSpace(s.ImageURL), Buttons: s.Buttons, LinkPreview: s.LinkPreview,
+				UnsubscribeButton: strings.TrimSpace(s.UnsubscribeButton),
+			})
 		default:
 			email := automationsteps.Step{Type: automationsteps.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
 			if len(s.Doc) > 0 {
@@ -120,6 +124,12 @@ func validate(steps []automationsteps.Step) error {
 			}
 			if n := utf8.RuneCountInString(strings.TrimSpace(s.UnsubscribeButton)); n > maxUnsubscribeButton {
 				return ErrInvalidStep.With(fmt.Sprintf("the unsubscribe button's label is %d characters long, up to %d", n, maxUnsubscribeButton))
+			}
+			if err := telegramrender.CheckImage(s.ImageURL); err != nil {
+				return ErrInvalidStep.With(err.Error())
+			}
+			if err := telegramrender.CheckButtons(s.Buttons); err != nil {
+				return ErrInvalidStep.With(err.Error())
 			}
 		case automationsteps.HTTP:
 		case automationsteps.Wait:
@@ -157,7 +167,11 @@ func (s SendStep) Content() (outbound.Content, error) {
 	case automationsteps.Email:
 		return outbound.EmailContent{Subject: s.Step.Subject, Body: s.Step.Body}, nil
 	case automationsteps.Telegram:
-		return outbound.TelegramContent{Text: s.Step.Text, UnsubscribeButton: s.Step.UnsubscribeButton}, nil
+		return outbound.TelegramContent{
+			Text: s.Step.Text, ImageURL: s.Step.ImageURL, Buttons: s.Step.Buttons,
+			NoLinkPreview:     s.Step.LinkPreview != nil && !*s.Step.LinkPreview,
+			UnsubscribeButton: s.Step.UnsubscribeButton,
+		}, nil
 	default:
 		return nil, fmt.Errorf("automations: step type %q has no message content", s.Step.Type)
 	}
@@ -610,8 +624,12 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	}
 	for i := range sends {
 		st := &sends[i]
-		if n := telegramrender.WrittenLength(st.Step.Text); st.Step.Type == automationsteps.Telegram && n > telegramrender.MaxText {
-			return ErrInvalidStep.With(fmt.Sprintf("step %d: the text is %d characters long, Telegram takes %d", st.Index+1, n, telegramrender.MaxText))
+		if st.Step.Type != automationsteps.Telegram {
+			continue
+		}
+		limit := telegramrender.Limit(st.Step.ImageURL != "")
+		if n := telegramrender.WrittenLength(st.Step.Text); n > limit {
+			return ErrInvalidStep.With(fmt.Sprintf("step %d: the text is %d characters long, Telegram takes %d", st.Index+1, n, limit))
 		}
 	}
 	type routeKey struct {

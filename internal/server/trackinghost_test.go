@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
@@ -65,7 +66,8 @@ func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 
 	unsubFor := func(ws int64) string {
 		full, err := tr.UnsubscribeURL(tracking.UnsubTarget{
-			Source: eligibility.SourceBroadcasts, Destination: "pat@umbrella.test", WorkspaceID: ws,
+			Channel: messaging.ChannelEmail,
+			Source:  eligibility.SourceBroadcasts, Destination: "pat@umbrella.test", WorkspaceID: ws,
 		})
 		require.NoError(t, err)
 		_, token, _ := strings.Cut(full, "/e/u/")

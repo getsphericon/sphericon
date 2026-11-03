@@ -107,12 +107,22 @@ model SiteAutomationStep {
    * through several (ADR 0081). */
   integrationId?: EntityId | null;
 
-  /** The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written: publishing a longer one is refused. */
+  /** The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused. */
   text?: string;
 
   /** The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button. */
   @maxLength(64)
   unsubscribeButton?: string;
+
+  /** An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text message. */
+  imageUrl?: string;
+
+  /** Up to 8 link buttons under a Telegram step's message, one per row, in order. */
+  @maxItems(8)
+  buttons?: TelegramButton[];
+
+  /** Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image. */
+  linkPreview?: boolean;
 }
 
 /** One version of an automation's definition: what publishing makes it do (ADR 0065) */

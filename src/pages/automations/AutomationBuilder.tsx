@@ -45,7 +45,7 @@ import { LeaveGuard } from './LeaveGuard.tsx'
 import { automationSnapshot } from './leaveSnapshot.ts'
 import { messageRenderer } from './messageRenderer.ts'
 import { useAutomationNodeTypes } from './nodes.ts'
-import { telegramTextRenderer, telegramUnsubscribeRenderer } from './telegramRenderer.ts'
+import { telegramTextRenderer } from './telegramRenderer.ts'
 import { exitEventsRenderer, goalEventRenderer, triggerRenderer } from './triggerRenderer.ts'
 
 // Imported as a raw string (not auto-injected): the SDK sheet carries unlayered
@@ -63,7 +63,6 @@ const jsonForm = {
     emailIntegrationRenderer,
     telegramIntegrationRenderer,
     telegramTextRenderer,
-    telegramUnsubscribeRenderer,
     triggerRenderer,
     exitEventsRenderer,
     goalEventRenderer,

@@ -46,6 +46,7 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	setupchecklist "github.com/getsphericon/sphericon/internal/setupchecklist"
 	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
+	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
 	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
 	webhook "github.com/getsphericon/sphericon/internal/webhook"
 	"time"
@@ -418,6 +419,14 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) si
 	siteapiSiteAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
 	siteapiSiteAutomationStep.Text = optString(source.Text)
 	siteapiSiteAutomationStep.UnsubscribeButton = optString(source.UnsubscribeButton)
+	siteapiSiteAutomationStep.ImageUrl = optString(source.ImageURL)
+	if source.Buttons != nil {
+		siteapiSiteAutomationStep.Buttons = make([]site.TelegramButton, len(source.Buttons))
+		for j := 0; j < len(source.Buttons); j++ {
+			siteapiSiteAutomationStep.Buttons[j] = c.TelegramButtonToResource(source.Buttons[j])
+		}
+	}
+	siteapiSiteAutomationStep.LinkPreview = optBool(source.LinkPreview)
 	return siteapiSiteAutomationStep
 }
 func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) site.SiteAutomationStepType {
@@ -2131,6 +2140,12 @@ func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []site.SiteTagResourc
 		siteapiSiteTagResourceList[i] = c.TagToResource(source[i])
 	}
 	return siteapiSiteTagResourceList
+}
+func (c *ConverterImpl) TelegramButtonToResource(source telegramrender.Button) site.TelegramButton {
+	var siteapiTelegramButton site.TelegramButton
+	siteapiTelegramButton.Label = source.Label
+	siteapiTelegramButton.URL = source.URL
+	return siteapiTelegramButton
 }
 func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTelegram) site.SiteTelegramConfig {
 	var siteapiSiteTelegramConfig site.SiteTelegramConfig

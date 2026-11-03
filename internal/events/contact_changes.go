@@ -178,6 +178,8 @@ const (
 	// UnsubscribedByBlock is the person blocking the bot, which Telegram reported by an update or
 	// by refusing a send.
 	UnsubscribedByBlock = "block"
+	// UnsubscribedByLink is a click on the `unsubscribe_url` link of a message, scoped to its source.
+	UnsubscribedByLink = "link"
 	// UnsubscribedByManual is an opt-out recorded by hand, through the API.
 	UnsubscribedByManual = "manual"
 )

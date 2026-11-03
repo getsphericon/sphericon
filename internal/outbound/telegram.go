@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
+	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // ReasonContentTooLong fails one Telegram message whose rendered text is over the limit (ADR 0078).
@@ -24,13 +25,19 @@ const ReasonContentTooLong = "content_too_long"
 // reasonContentEmpty fails a Telegram message whose text renders to nothing, which Telegram refuses.
 const reasonContentEmpty = "content_empty"
 
-// TelegramContent is Telegram's Message content (ADR 0078): a text in Telegram's HTML subset, with
-// Liquid merge tags, and an optional unsubscribe button. Images and link buttons come with their
-// own ticket.
+// TelegramContent is Telegram's Message content (ADR 0078): a text in Telegram's HTML subset with
+// Liquid merge tags, an optional image (the text is then its caption), link buttons, whether a
+// link in the text unfolds a preview, and an optional unsubscribe button.
 type TelegramContent struct {
 	Text string
+	// ImageURL is an https URL; "" sends a text.
+	ImageURL string
+	// Buttons are link buttons, one per row.
+	Buttons []telegramrender.Button
+	// NoLinkPreview turns the link preview off. Negated so that the zero value is the default.
+	NoLinkPreview bool
 	// UnsubscribeButton is the label of the callback button that is the opt-out, added as the
-	// last row; "" adds none.
+	// last row after the link buttons; "" adds none.
 	UnsubscribeButton string
 }
 
@@ -86,8 +93,14 @@ func (telegramChannel) targets(ctx context.Context, s *ent.Scoped, req Request, 
 	return out, nil
 }
 
-// telegramMessage is a rendered Telegram message: its text, as the Bot API takes it.
-type telegramMessage struct{ text, unsubscribeButton string }
+// telegramMessage is a rendered Telegram message, as the Bot API takes it.
+type telegramMessage struct {
+	text              string
+	imageURL          string
+	buttons           []messaging.TelegramButton
+	noLinkPreview     bool
+	unsubscribeButton string
+}
 
 func telegramContentOf(content Content) (TelegramContent, error) {
 	c, ok := content.(TelegramContent)
@@ -98,8 +111,9 @@ func telegramContentOf(content Content) (TelegramContent, error) {
 }
 
 // render renders the text for one recipient. A text that does not render, renders to nothing or is
-// over the limit once rendered is the message's own failure, the same on every attempt.
-func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, _ string, _ *ent.Workspace) (any, error) {
+// over the limit once rendered (1024 with an image, 4096 without) is the message's own failure, the
+// same on every attempt.
+func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error) {
 	content, err := telegramContentOf(req.Content)
 	if err != nil {
 		return nil, err
@@ -110,17 +124,57 @@ func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request,
 		return nil, err
 	}
 	maps.Copy(vars, start)
+	if err := c.m.bindUnsubscribeURL(ctx, s, req, dest, ws, content, vars); err != nil {
+		return nil, err
+	}
 	text, err := telegramrender.Render(content.Text, vars)
 	if err != nil {
 		return nil, contentError{err}
 	}
 	switch n := telegramrender.VisibleLength(text); {
-	case n == 0:
+	case n == 0 && content.ImageURL == "":
 		return nil, contentError{errors.New(reasonContentEmpty)}
-	case n > telegramrender.MaxText:
+	case n > telegramrender.Limit(content.ImageURL != ""):
 		return nil, contentError{errors.New(ReasonContentTooLong)}
 	}
-	return telegramMessage{text: text, unsubscribeButton: content.UnsubscribeButton}, nil
+	buttons := make([]messaging.TelegramButton, len(content.Buttons))
+	for i, b := range content.Buttons {
+		buttons[i] = messaging.TelegramButton{Label: b.Label, URL: b.URL}
+	}
+	return telegramMessage{text: text, imageURL: content.ImageURL, buttons: buttons, noLinkPreview: content.NoLinkPreview, unsubscribeButton: content.UnsubscribeButton}, nil
+}
+
+// unsubscribeURLTag is the merge tag that renders the message's source-scoped unsubscribe link.
+const unsubscribeURLTag = "unsubscribe_url"
+
+// bindUnsubscribeURL binds `unsubscribe_url` when the text uses it: a link that opts the person's
+// Telegram user id out of the message's source, on Telegram only (ADR 0078). A send with no source
+// has nothing to unsubscribe from, so the tag renders empty there.
+func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Request, dest string, ws *ent.Workspace, content TelegramContent, vars map[string]any) error {
+	if !strings.Contains(content.Text, unsubscribeURLTag) {
+		return nil
+	}
+	vars[unsubscribeURLTag] = ""
+	if req.Source == "" || m.tracker == nil {
+		return nil
+	}
+	tr, err := m.trackerFor(ctx, s)
+	if err != nil {
+		return err
+	}
+	url, err := tr.UnsubscribeURL(tracking.UnsubTarget{
+		Channel:     messaging.ChannelTelegram,
+		Source:      req.Source,
+		Destination: dest,
+		WorkspaceID: ws.ID,
+		ContactID:   req.contactID(),
+		BroadcastID: req.Ref.BroadcastID,
+	})
+	if err != nil {
+		return contentError{fmt.Errorf("unsubscribe url: %w", err)}
+	}
+	vars[unsubscribeURLTag] = url
+	return nil
 }
 
 // telegramAdapter is Telegram's provider adapter over the bot of the routed Integration.
@@ -136,14 +190,17 @@ func (telegramAdapter) prepare(_ context.Context, _ *ent.Scoped, content Content
 	return sendAs{}, "", nil
 }
 
-// send calls sendMessage for the target's chat. The receipt carries the id Telegram gave the
+// send calls sendPhoto (an image) or sendMessage for the target's chat. The receipt carries the id Telegram gave the
 // message in that chat, which is how a press on its unsubscribe button finds the message again.
 func (a telegramAdapter) send(ctx context.Context, _ sendAs, msg any, to target, _ messaging.Origin) (messaging.Receipt, error) {
 	m, ok := msg.(telegramMessage)
 	if !ok {
 		return messaging.Receipt{}, fmt.Errorf("outbound: %T is no Telegram message", msg)
 	}
-	sent, err := a.bot.SendMessage(ctx, messaging.TelegramMessage{ChatID: to.chat, Text: m.text, UnsubscribeButton: m.unsubscribeButton})
+	sent, err := a.bot.SendMessage(ctx, messaging.TelegramMessage{
+		ChatID: to.chat, Text: m.text, ImageURL: m.imageURL, Buttons: m.buttons, NoLinkPreview: m.noLinkPreview,
+		UnsubscribeButton: m.unsubscribeButton,
+	})
 	if err != nil {
 		return messaging.Receipt{}, classifyTelegram(err)
 	}

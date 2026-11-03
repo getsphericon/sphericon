@@ -175,6 +175,7 @@ func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target 
 		return base
 	}
 	allURL, err := tracker.UnsubscribeURL(tracking.UnsubTarget{
+		Channel:     target.Channel,
 		Source:      eligibility.SourceEverything,
 		Destination: target.Destination,
 		WorkspaceID: target.WorkspaceID,

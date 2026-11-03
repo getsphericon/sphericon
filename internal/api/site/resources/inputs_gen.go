@@ -26,6 +26,7 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	signup "github.com/getsphericon/sphericon/internal/signup"
 	signupsurvey "github.com/getsphericon/sphericon/internal/signupsurvey"
+	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
 	templates "github.com/getsphericon/sphericon/internal/templates"
 	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -104,12 +105,20 @@ func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automations.
 	automationsStep.Tag = stringIn(source.Tag)
 	automationsStep.Text = stringIn(source.Text)
 	automationsStep.UnsubscribeButton = stringIn(source.UnsubscribeButton)
+	automationsStep.ImageURL = stringIn(source.ImageUrl)
+	if source.Buttons != nil {
+		automationsStep.Buttons = make([]telegramrender.Button, len(source.Buttons))
+		for i := 0; i < len(source.Buttons); i++ {
+			automationsStep.Buttons[i] = c.TelegramButton(source.Buttons[i])
+		}
+	}
+	automationsStep.LinkPreview = boolPtrIn(source.LinkPreview)
 	automationsStep.ID = stringIn(source.ID)
 	automationsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
 		automationsStep.Headers = make([]httpcall.Header, len(source.Headers))
-		for i := 0; i < len(source.Headers); i++ {
-			automationsStep.Headers[i] = c.siteapiSiteAutomationHttpHeaderToHttpcallHeader(source.Headers[i])
+		for j := 0; j < len(source.Headers); j++ {
+			automationsStep.Headers[j] = c.siteapiSiteAutomationHttpHeaderToHttpcallHeader(source.Headers[j])
 		}
 	}
 	automationsStep.Secret = stringIn(source.Secret)
@@ -627,6 +636,12 @@ func (c *InputsImpl) SuppressionChannel(source site.SiteSuppressionChannel) supp
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return suppressionChannel
+}
+func (c *InputsImpl) TelegramButton(source site.TelegramButton) telegramrender.Button {
+	var telegramrenderButton telegramrender.Button
+	telegramrenderButton.Label = source.Label
+	telegramrenderButton.URL = source.URL
+	return telegramrenderButton
 }
 func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) templates.CreateInput {
 	var templatesCreateInput templates.CreateInput

@@ -18024,12 +18024,28 @@
           },
           "text": {
             "type": "string",
-            "description": "The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written: publishing a longer one is refused."
+            "description": "The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused."
           },
           "unsubscribeButton": {
             "type": "string",
             "maxLength": 64,
             "description": "The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button."
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text message."
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelegramButton"
+            },
+            "maxItems": 8,
+            "description": "Up to 8 link buttons under a Telegram step's message, one per row, in order."
+          },
+          "linkPreview": {
+            "type": "boolean",
+            "description": "Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image."
           }
         },
         "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds."
@@ -23947,6 +23963,21 @@
           }
         },
         "description": "SMTP credentials"
+      },
+      "TelegramButton": {
+        "type": "object",
+        "required": ["label", "url"],
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The button's label"
+          },
+          "url": {
+            "type": "string",
+            "description": "The URL it opens: absolute, http or https"
+          }
+        },
+        "description": "A link button under a Telegram message: an inline URL button on a row of its own"
       },
       "TelegramConfigInput": {
         "type": "object",

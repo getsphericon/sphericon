@@ -37,6 +37,7 @@ import (
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
+	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
 	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
 	transactional "github.com/getsphericon/sphericon/internal/transactional"
 	webhook "github.com/getsphericon/sphericon/internal/webhook"
@@ -225,6 +226,14 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) ex
 	externalapiAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
 	externalapiAutomationStep.Text = optString(source.Text)
 	externalapiAutomationStep.UnsubscribeButton = optString(source.UnsubscribeButton)
+	externalapiAutomationStep.ImageUrl = optString(source.ImageURL)
+	if source.Buttons != nil {
+		externalapiAutomationStep.Buttons = make([]external.TelegramButton, len(source.Buttons))
+		for j := 0; j < len(source.Buttons); j++ {
+			externalapiAutomationStep.Buttons[j] = c.TelegramButtonToResource(source.Buttons[j])
+		}
+	}
+	externalapiAutomationStep.LinkPreview = optBool(source.LinkPreview)
 	return externalapiAutomationStep
 }
 func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) external.AutomationStepType {
@@ -1367,6 +1376,12 @@ func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []external.TagResourc
 		externalapiTagResourceList[i] = c.TagToResource(source[i])
 	}
 	return externalapiTagResourceList
+}
+func (c *ConverterImpl) TelegramButtonToResource(source telegramrender.Button) external.TelegramButton {
+	var externalapiTelegramButton external.TelegramButton
+	externalapiTelegramButton.Label = source.Label
+	externalapiTelegramButton.URL = source.URL
+	return externalapiTelegramButton
 }
 func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTelegram) external.TelegramConfig {
 	var externalapiTelegramConfig external.TelegramConfig
