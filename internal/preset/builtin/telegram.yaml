@@ -20,16 +20,36 @@ verify:
   header: X-Telegram-Bot-Api-Secret-Token
 # Reading the updates (ADR 0076): a text message in a private chat becomes an Inbound message,
 # whose Destination is the sender's user id and whose chat id is kept apart (a private chat's id
-# is not promised to equal it). The id is the update_id, unique per bot. Ids are strings: Telegram
-# sends numbers. Groups, channels, edits, buttons and membership changes yield nothing yet.
+# is not promised to equal it). A press on a button under one of our messages is an Inbound
+# message too: the payload is the button's data, the message id the one pressed on, and the
+# callback id the query to answer. A my_chat_member in a private chat is a Reachability change:
+# `member` (the person started or unblocked the bot) is reachable, `kicked` (or `left`) is
+# unreachable because the person blocked it. The id is the update_id, unique per bot. Ids are
+# strings: Telegram sends numbers. Groups, channels and edits yield nothing.
 transform: |
   def keep: with_entries(select(.value != null and .value != ""));
+  def private($chat): ($chat | objects | .type) == "private";
   [(.body | objects) as $u
-   | ($u.message | objects) as $m
-   | select(($m.chat | objects | .type) == "private" and ($m.text | type) == "string" and ($m.from | objects | .id) != null)
-   | {kind: "inbound_message", id: ($u.update_id | tostring), channel: "telegram",
-      destination: ($m.from.id | tostring), chat_id: ($m.chat.id | tostring),
-      message_id: ($m.message_id | tostring), text: $m.text} | keep]
+   | (
+     (($u.message | objects) as $m
+      | select(private($m.chat) and ($m.text | type) == "string" and ($m.from | objects | .id) != null)
+      | {kind: "inbound_message", id: ($u.update_id | tostring), channel: "telegram",
+         destination: ($m.from.id | tostring), chat_id: ($m.chat.id | tostring),
+         message_id: ($m.message_id | tostring), text: $m.text}),
+     (($u.callback_query | objects) as $q
+      | ($q.message | objects) as $m
+      | select(private($m.chat) and ($q.data | type) == "string" and ($q.from | objects | .id) != null and $q.id != null)
+      | {kind: "inbound_message", id: ($u.update_id | tostring), channel: "telegram",
+         destination: ($q.from.id | tostring), chat_id: ($m.chat.id | tostring),
+         message_id: ($m.message_id | tostring), payload: $q.data, callback_id: ($q.id | tostring)}),
+     (($u.my_chat_member | objects) as $c
+      | select(private($c.chat) and ($c.from | objects | .id) != null)
+      | ($c.new_chat_member | objects | .status) as $status
+      | select($status == "member" or $status == "kicked" or $status == "left")
+      | {kind: "reachability_change", id: ($u.update_id | tostring), destination: ($c.from.id | tostring),
+         reachable: ($status == "member")}
+        + (if $status == "member" then {} else {reason: "blocked"} end))
+   ) | keep]
 tests:
   - name: a private message becomes an Inbound message
     params:
@@ -73,6 +93,62 @@ tests:
       headers:
         X-Telegram-Bot-Api-Secret-Token: telegram-test-secret-0123456789
       body: '{"update_id":10003,"edited_message":{"message_id":3,"chat":{"id":42,"type":"private"},"from":{"id":42},"text":"hi"}}'
+    expect:
+      notices: []
+  - name: a pressed button becomes an Inbound message with its payload and callback id
+    params:
+      secret: telegram-test-secret-0123456789
+    request:
+      headers:
+        X-Telegram-Bot-Api-Secret-Token: telegram-test-secret-0123456789
+      body: '{"update_id":10004,"callback_query":{"id":"7771","from":{"id":42,"is_bot":false,"first_name":"Alice"},"message":{"message_id":9,"date":1767225600,"chat":{"id":4242,"type":"private"}},"chat_instance":"1","data":"unsubscribe"}}'
+    expect:
+      inbound_messages:
+        - {
+            id: '10004',
+            channel: telegram,
+            destination: '42',
+            chat_id: '4242',
+            message_id: '9',
+            payload: unsubscribe,
+            callback_id: '7771',
+          }
+  - name: a button press in a group yields nothing
+    params:
+      secret: telegram-test-secret-0123456789
+    request:
+      headers:
+        X-Telegram-Bot-Api-Secret-Token: telegram-test-secret-0123456789
+      body: '{"update_id":10005,"callback_query":{"id":"7772","from":{"id":42,"is_bot":false},"message":{"message_id":9,"date":1767225600,"chat":{"id":-100,"type":"supergroup"}},"data":"unsubscribe"}}'
+    expect:
+      notices: []
+  - name: blocking the bot is a Reachability change, unreachable and blocked
+    params:
+      secret: telegram-test-secret-0123456789
+    request:
+      headers:
+        X-Telegram-Bot-Api-Secret-Token: telegram-test-secret-0123456789
+      body: '{"update_id":10006,"my_chat_member":{"chat":{"id":42,"type":"private","first_name":"Alice"},"from":{"id":42,"is_bot":false,"first_name":"Alice"},"date":1767225600,"old_chat_member":{"user":{"id":999,"is_bot":true},"status":"member"},"new_chat_member":{"user":{"id":999,"is_bot":true},"status":"kicked","until_date":0}}}'
+    expect:
+      reachability_changes:
+        - { id: '10006', destination: '42', reachable: false, reason: blocked }
+  - name: unblocking the bot is a Reachability change, reachable
+    params:
+      secret: telegram-test-secret-0123456789
+    request:
+      headers:
+        X-Telegram-Bot-Api-Secret-Token: telegram-test-secret-0123456789
+      body: '{"update_id":10007,"my_chat_member":{"chat":{"id":42,"type":"private"},"from":{"id":42,"is_bot":false},"date":1767225600,"old_chat_member":{"user":{"id":999,"is_bot":true},"status":"kicked"},"new_chat_member":{"user":{"id":999,"is_bot":true},"status":"member"}}}'
+    expect:
+      reachability_changes:
+        - { id: '10007', destination: '42', reachable: true }
+  - name: a membership change in a group yields nothing
+    params:
+      secret: telegram-test-secret-0123456789
+    request:
+      headers:
+        X-Telegram-Bot-Api-Secret-Token: telegram-test-secret-0123456789
+      body: '{"update_id":10008,"my_chat_member":{"chat":{"id":-100,"type":"supergroup"},"from":{"id":42,"is_bot":false},"date":1767225600,"new_chat_member":{"user":{"id":999,"is_bot":true},"status":"kicked"}}}'
     expect:
       notices: []
   - name: an update without the secret is refused

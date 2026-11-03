@@ -76,7 +76,11 @@ function stepProperties(step: AutomationStep): Record<string, unknown> {
     return { tag: step.tag ?? '' }
   }
   if (step.type === 'telegram') {
-    return { integrationId: step.integrationId ?? '', text: step.text ?? '' }
+    return {
+      integrationId: step.integrationId ?? '',
+      text: step.text ?? '',
+      unsubscribeButton: step.unsubscribeButton ?? '',
+    }
   }
   return {
     integrationId: step.integrationId ?? '',
@@ -219,10 +223,12 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
   }
   if (node.data.type === TELEGRAM_NODE_TYPE) {
     const integrationId = asText(props.integrationId)
+    const unsubscribeButton = asText(props.unsubscribeButton)
     return {
       type: 'telegram',
       text: asText(props.text),
       ...(integrationId === '' ? {} : { integrationId }),
+      ...(unsubscribeButton === '' ? {} : { unsubscribeButton }),
     }
   }
   if (node.data.type === EMAIL_NODE_TYPE) {

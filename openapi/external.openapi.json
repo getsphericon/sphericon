@@ -15274,6 +15274,11 @@
           "text": {
             "type": "string",
             "description": "The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written: publishing a longer one is refused."
+          },
+          "unsubscribeButton": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button."
           }
         },
         "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds, tag steps carry the tag name."
@@ -16224,6 +16229,11 @@
         "type": "string",
         "enum": ["eq", "neq", "contains", "beginsWith", "null", "notNull", "has", "doesNotHave"],
         "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,\nwhich the custom field lists as `ruleOperators` (a number custom field is also compared by a\nnumber leaf, a datetime one tested by the date leaves)."
+      },
+      "ConsentChannel": {
+        "type": "string",
+        "enum": ["email", "telegram"],
+        "description": "A Channel a destination can be suppressed or opt out on"
       },
       "ContactBatchItemResult": {
         "type": "object",
@@ -17374,13 +17384,18 @@
         "type": "object",
         "required": ["destination"],
         "properties": {
-          "destination": {
+          "channel": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EmailAddress"
+                "$ref": "#/components/schemas/ConsentChannel"
               }
             ],
-            "description": "Email address to stop sending to"
+            "description": "The Channel to stop sending on; `email` when omitted"
+          },
+          "destination": {
+            "type": "string",
+            "maxLength": 320,
+            "description": "What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`"
           }
         },
         "description": "Request body for suppressing a destination"
@@ -17416,17 +17431,22 @@
         "type": "object",
         "required": ["destination"],
         "properties": {
-          "destination": {
+          "channel": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EmailAddress"
+                "$ref": "#/components/schemas/ConsentChannel"
               }
             ],
-            "description": "Email address that opted out"
+            "description": "The Channel the destination opted out on; `email` when omitted"
+          },
+          "destination": {
+            "type": "string",
+            "maxLength": 320,
+            "description": "What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`. A Telegram opt-out covers every bot of the Workspace"
           },
           "sendingSource": {
             "type": "string",
-            "description": "The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave entirely)"
+            "description": "The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave entirely). On `telegram` only `everything` (the default) is accepted: a person stops all of the Workspace's Telegram messages"
           }
         },
         "description": "Request body for recording an unsubscribe"
@@ -20437,7 +20457,7 @@
       },
       "SuppressionResource": {
         "type": "object",
-        "required": ["id", "destination", "reason", "createdAt"],
+        "required": ["id", "channel", "destination", "reason", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -20447,9 +20467,17 @@
             ],
             "description": "Unique identifier"
           },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConsentChannel"
+              }
+            ],
+            "description": "The Channel the suppression is on"
+          },
           "destination": {
             "type": "string",
-            "description": "Normalized (lower-cased) email address"
+            "description": "Normalized destination: the lower-cased email address, or the Telegram user id"
           },
           "reason": {
             "allOf": [
@@ -20775,7 +20803,7 @@
       },
       "UnsubscribeResource": {
         "type": "object",
-        "required": ["id", "destination", "sendingSource", "createdAt"],
+        "required": ["id", "channel", "destination", "sendingSource", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -20785,9 +20813,17 @@
             ],
             "description": "Unique identifier"
           },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConsentChannel"
+              }
+            ],
+            "description": "The Channel the opt-out is on"
+          },
           "destination": {
             "type": "string",
-            "description": "Normalized (lower-cased) email address"
+            "description": "Normalized destination: the lower-cased email address, or the Telegram user id"
           },
           "sendingSource": {
             "type": "string",

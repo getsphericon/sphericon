@@ -11,7 +11,7 @@ import {
 import { HTTP_BODY_FORMAT, HTTP_HEADERS_FORMAT } from './httpFormat.ts'
 import { integrationFormat } from './integrationFormat.ts'
 import { MESSAGE_FORMAT } from './messageFormat.ts'
-import { TELEGRAM_TEXT_FORMAT } from './telegramFormat.ts'
+import { TELEGRAM_TEXT_FORMAT, TELEGRAM_UNSUBSCRIBE_FORMAT } from './telegramFormat.ts'
 import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
 
 // The palette `type` of each node, stored on `node.data.type` and used by the
@@ -156,7 +156,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         label: t(($) => $.automations.stepTelegram),
         description: t(($) => $.automations.telegramNodeDescription),
         // `integrationId` is the bot the step sends through, '' for the Telegram default (ADR 0081).
-        defaultPropertiesData: { integrationId: '', text: '' },
+        defaultPropertiesData: { integrationId: '', text: '', unsubscribeButton: '' },
         schema: {
           type: 'object',
           required: ['text'],
@@ -171,6 +171,11 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               type: 'string',
               label: t(($) => $.automations.telegramTextLabel),
               format: TELEGRAM_TEXT_FORMAT,
+            },
+            unsubscribeButton: {
+              type: 'string',
+              label: t(($) => $.automations.telegramUnsubscribeToggle),
+              format: TELEGRAM_UNSUBSCRIBE_FORMAT,
             },
           },
         },
@@ -187,6 +192,12 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               type: 'Text',
               scope: '#/properties/text',
               label: t(($) => $.automations.telegramTextLabel),
+              placeholder: '',
+            },
+            {
+              type: 'Text',
+              scope: '#/properties/unsubscribeButton',
+              label: t(($) => $.automations.telegramUnsubscribeToggle),
               placeholder: '',
             },
           ],

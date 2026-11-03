@@ -57,6 +57,8 @@ type Step struct {
 	Tag           string          `json:"tag,omitempty"`
 	// Text is a Telegram step's message: Telegram's HTML subset with Liquid merge tags.
 	Text string `json:"text,omitempty"`
+	// UnsubscribeButton is the label of a Telegram step's unsubscribe button, "" for none.
+	UnsubscribeButton string `json:"unsubscribeButton,omitempty"`
 
 	// HTTP steps (ADR 0039) hold ID, URL, Headers, Body (a Liquid JSON template) and
 	// Secret. Stored, URL, header values and Secret are ciphertext, sealed per field;

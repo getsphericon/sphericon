@@ -169,6 +169,55 @@ func (e *TelegramSent) Project() Projection {
 	}
 }
 
+// Ways a Contact stops Telegram marketing, the `via` property of telegram.unsubscribed.
+const (
+	// UnsubscribedByKeyword is `/stop` or a STOP keyword.
+	UnsubscribedByKeyword = "keyword"
+	// UnsubscribedByButton is a press on a message's unsubscribe button.
+	UnsubscribedByButton = "button"
+	// UnsubscribedByBlock is the person blocking the bot, which Telegram reported by an update or
+	// by refusing a send.
+	UnsubscribedByBlock = "block"
+	// UnsubscribedByManual is an opt-out recorded by hand, through the API.
+	UnsubscribedByManual = "manual"
+)
+
+// TelegramUnsubscribed is a Contact's Channel-wide Telegram opt-out (telegram.unsubscribed), recorded
+// with the opt-out in one transaction. Via says how, IntegrationID names the bot it came through,
+// and the Broadcast or Automation of the message a button was pressed on is named when it resolves.
+// DedupID is unique per Contact, so a redelivery records nothing twice.
+type TelegramUnsubscribed struct {
+	WorkspaceID   int64  `json:"workspaceId"`
+	ContactID     int64  `json:"contactId"`
+	Email         string `json:"email,omitempty"`
+	IntegrationID int64  `json:"integrationId,omitempty"`
+	Via           string `json:"via"`
+	BroadcastID   int64  `json:"broadcastId,omitempty"`
+	AutomationID  int64  `json:"automationId,omitempty"`
+	DedupID       string `json:"dedupId,omitempty"`
+}
+
+func (*TelegramUnsubscribed) EventName() string  { return NameTelegramUnsubscribed }
+func (*TelegramUnsubscribed) EventVersion() int  { return 1 }
+func (e *TelegramUnsubscribed) Workspace() int64 { return e.WorkspaceID }
+func (e *TelegramUnsubscribed) EventID() string  { return e.DedupID }
+func (e *TelegramUnsubscribed) Project() Projection {
+	props := map[string]any{"via": e.Via}
+	if e.IntegrationID != 0 {
+		props["integrationId"] = e.IntegrationID
+	}
+	if e.BroadcastID != 0 {
+		props["broadcastId"] = e.BroadcastID
+	}
+	if e.AutomationID != 0 {
+		props["automationId"] = e.AutomationID
+	}
+	return Projection{
+		Subject: e.Email, Action: NameTelegramUnsubscribed, Email: e.Email, ContactID: e.ContactID,
+		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
+	}
+}
+
 type causeKey struct{}
 
 // CausedBy returns ctx for the work of a Rule's Action: an event published in it carries cause

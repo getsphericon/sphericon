@@ -146,7 +146,6 @@ const (
 	ApiTokenScopeWebhooksRegenerate    ApiTokenScope = "webhooks:regenerate"
 	ApiTokenScopeWebhooksTest          ApiTokenScope = "webhooks:test"
 	ApiTokenScopeCustomFieldsRead      ApiTokenScope = "custom_fields:read"
-	ApiTokenScopeCustomFieldsWrite     ApiTokenScope = "custom_fields:write"
 	ApiTokenScopeSendingDomainsRead    ApiTokenScope = "sending_domains:read"
 	ApiTokenScopeTrackingDomainsRead   ApiTokenScope = "tracking_domains:read"
 	ApiTokenScopeIntegrationsRead      ApiTokenScope = "integrations:read"
@@ -189,7 +188,6 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeWebhooksRegenerate,
 		ApiTokenScopeWebhooksTest,
 		ApiTokenScopeCustomFieldsRead,
-		ApiTokenScopeCustomFieldsWrite,
 		ApiTokenScopeSendingDomainsRead,
 		ApiTokenScopeTrackingDomainsRead,
 		ApiTokenScopeIntegrationsRead,
@@ -252,8 +250,6 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeWebhooksTest:
 		return []byte(s), nil
 	case ApiTokenScopeCustomFieldsRead:
-		return []byte(s), nil
-	case ApiTokenScopeCustomFieldsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeSendingDomainsRead:
 		return []byte(s), nil
@@ -356,9 +352,6 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeCustomFieldsRead:
 		*s = ApiTokenScopeCustomFieldsRead
-		return nil
-	case ApiTokenScopeCustomFieldsWrite:
-		*s = ApiTokenScopeCustomFieldsWrite
 		return nil
 	case ApiTokenScopeSendingDomainsRead:
 		*s = ApiTokenScopeSendingDomainsRead
@@ -2158,6 +2151,9 @@ type AutomationStep struct {
 	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
 	// escaped. Up to 4096 characters as written: publishing a longer one is refused.
 	Text OptString `json:"text"`
+	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
+	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
+	UnsubscribeButton OptString `json:"unsubscribeButton"`
 }
 
 // GetType returns the value of Type.
@@ -2235,6 +2231,11 @@ func (s *AutomationStep) GetText() OptString {
 	return s.Text
 }
 
+// GetUnsubscribeButton returns the value of UnsubscribeButton.
+func (s *AutomationStep) GetUnsubscribeButton() OptString {
+	return s.UnsubscribeButton
+}
+
 // SetType sets the value of Type.
 func (s *AutomationStep) SetType(val AutomationStepType) {
 	s.Type = val
@@ -2308,6 +2309,11 @@ func (s *AutomationStep) SetIntegrationId(val OptNilEntityId) {
 // SetText sets the value of Text.
 func (s *AutomationStep) SetText(val OptString) {
 	s.Text = val
+}
+
+// SetUnsubscribeButton sets the value of UnsubscribeButton.
+func (s *AutomationStep) SetUnsubscribeButton(val OptString) {
+	s.UnsubscribeButton = val
 }
 
 // The messages of the send step at one position.
@@ -5486,6 +5492,49 @@ func (s *ConditionOperator) UnmarshalText(data []byte) error {
 	}
 }
 
+// A Channel a destination can be suppressed or opt out on.
+// Ref: #/components/schemas/ConsentChannel
+type ConsentChannel string
+
+const (
+	ConsentChannelEmail    ConsentChannel = "email"
+	ConsentChannelTelegram ConsentChannel = "telegram"
+)
+
+// AllValues returns all ConsentChannel values.
+func (ConsentChannel) AllValues() []ConsentChannel {
+	return []ConsentChannel{
+		ConsentChannelEmail,
+		ConsentChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConsentChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case ConsentChannelEmail:
+		return []byte(s), nil
+	case ConsentChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConsentChannel) UnmarshalText(data []byte) error {
+	switch ConsentChannel(data) {
+	case ConsentChannelEmail:
+		*s = ConsentChannelEmail
+		return nil
+	case ConsentChannelTelegram:
+		*s = ConsentChannelTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Per-item result of a contacts batch, in request order.
 // Ref: #/components/schemas/ContactBatchItemResult
 type ContactBatchItemResult struct {
@@ -7409,11 +7458,7 @@ type CreateContactInput struct {
 	City OptNilString `json:"city"`
 	// Https URL of the contact's photo.
 	Avatar OptNilImageUrl `json:"avatar"`
-	// Typed custom field values keyed by the field's machine key. A new key's first value sets the field's
-	// type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or
-	// `2026-01-15`, the last two read in the Workspace time zone) or text. Send a date without time as a
-	// `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes as UTC and lands on the previous day
-	// east of UTC.
+	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
 }
 
@@ -7754,17 +7799,29 @@ func (s *CreateSendingDomainInput) SetDkimSelector(val OptString) {
 // Request body for suppressing a destination.
 // Ref: #/components/schemas/CreateSuppressionInput
 type CreateSuppressionInput struct {
-	// Email address to stop sending to.
-	Destination EmailAddress `json:"destination"`
+	// The Channel to stop sending on; `email` when omitted.
+	Channel OptConsentChannel `json:"channel"`
+	// What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`.
+	Destination string `json:"destination"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *CreateSuppressionInput) GetChannel() OptConsentChannel {
+	return s.Channel
 }
 
 // GetDestination returns the value of Destination.
-func (s *CreateSuppressionInput) GetDestination() EmailAddress {
+func (s *CreateSuppressionInput) GetDestination() string {
 	return s.Destination
 }
 
+// SetChannel sets the value of Channel.
+func (s *CreateSuppressionInput) SetChannel(val OptConsentChannel) {
+	s.Channel = val
+}
+
 // SetDestination sets the value of Destination.
-func (s *CreateSuppressionInput) SetDestination(val EmailAddress) {
+func (s *CreateSuppressionInput) SetDestination(val string) {
 	s.Destination = val
 }
 
@@ -7826,15 +7883,24 @@ func (s *CreateTemplateInput) SetDoc(val OptEditorDocument) {
 // Request body for recording an unsubscribe.
 // Ref: #/components/schemas/CreateUnsubscribeInput
 type CreateUnsubscribeInput struct {
-	// Email address that opted out.
-	Destination EmailAddress `json:"destination"`
+	// The Channel the destination opted out on; `email` when omitted.
+	Channel OptConsentChannel `json:"channel"`
+	// What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`. A Telegram
+	// opt-out covers every bot of the Workspace.
+	Destination string `json:"destination"`
 	// The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave
-	// entirely).
+	// entirely). On `telegram` only `everything` (the default) is accepted: a person stops all of the
+	// Workspace's Telegram messages.
 	SendingSource OptString `json:"sendingSource"`
 }
 
+// GetChannel returns the value of Channel.
+func (s *CreateUnsubscribeInput) GetChannel() OptConsentChannel {
+	return s.Channel
+}
+
 // GetDestination returns the value of Destination.
-func (s *CreateUnsubscribeInput) GetDestination() EmailAddress {
+func (s *CreateUnsubscribeInput) GetDestination() string {
 	return s.Destination
 }
 
@@ -7843,8 +7909,13 @@ func (s *CreateUnsubscribeInput) GetSendingSource() OptString {
 	return s.SendingSource
 }
 
+// SetChannel sets the value of Channel.
+func (s *CreateUnsubscribeInput) SetChannel(val OptConsentChannel) {
+	s.Channel = val
+}
+
 // SetDestination sets the value of Destination.
-func (s *CreateUnsubscribeInput) SetDestination(val EmailAddress) {
+func (s *CreateUnsubscribeInput) SetDestination(val string) {
 	s.Destination = val
 }
 
@@ -7905,7 +7976,7 @@ type CustomFieldResource struct {
 	Key string `json:"key"`
 	// Display name.
 	Name string `json:"name"`
-	// Value type: inferred from the first value, changed by an owner or admin.
+	// Inferred value type.
 	Type CustomFieldType `json:"type"`
 	// The operators a rule leaf on this field takes, by its type.
 	RuleOperators []ConditionOperator `json:"ruleOperators"`
@@ -7984,8 +8055,6 @@ func (s *CustomFieldResource) SetCreatedAt(val Timestamp) {
 func (s *CustomFieldResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
-
-func (*CustomFieldResource) customFieldsUpdateRes() {}
 
 // A Custom field's value type.
 // Ref: #/components/schemas/CustomFieldType
@@ -8117,26 +8186,6 @@ func (*CustomFieldsListOK) customFieldsListRes() {}
 type CustomFieldsListUnauthorized ProblemDetails
 
 func (*CustomFieldsListUnauthorized) customFieldsListRes() {}
-
-type CustomFieldsUpdateBadRequest ProblemDetails
-
-func (*CustomFieldsUpdateBadRequest) customFieldsUpdateRes() {}
-
-type CustomFieldsUpdateForbidden ProblemDetails
-
-func (*CustomFieldsUpdateForbidden) customFieldsUpdateRes() {}
-
-type CustomFieldsUpdateNotFound ProblemDetails
-
-func (*CustomFieldsUpdateNotFound) customFieldsUpdateRes() {}
-
-type CustomFieldsUpdateUnauthorized ProblemDetails
-
-func (*CustomFieldsUpdateUnauthorized) customFieldsUpdateRes() {}
-
-type CustomFieldsUpdateUnprocessableEntity ProblemDetails
-
-func (*CustomFieldsUpdateUnprocessableEntity) customFieldsUpdateRes() {}
 
 // A DNS record the caller publishes to authenticate a Sending domain.
 // Ref: #/components/schemas/DnsRecord
@@ -10028,7 +10077,6 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 
 func (*InUseProblemDetails) automationsArchiveRes()    {}
 func (*InUseProblemDetails) automationsDeleteRes()     {}
-func (*InUseProblemDetails) customFieldsUpdateRes()    {}
 func (*InUseProblemDetails) integrationsArchiveRes()   {}
 func (*InUseProblemDetails) rulesDeleteRes()           {}
 func (*InUseProblemDetails) segmentsArchiveRes()       {}
@@ -12047,38 +12095,38 @@ func (o OptConditionGroup) Or(d ConditionGroup) ConditionGroup {
 	return d
 }
 
-// NewOptCustomFieldType returns new OptCustomFieldType with value set to v.
-func NewOptCustomFieldType(v CustomFieldType) OptCustomFieldType {
-	return OptCustomFieldType{
+// NewOptConsentChannel returns new OptConsentChannel with value set to v.
+func NewOptConsentChannel(v ConsentChannel) OptConsentChannel {
+	return OptConsentChannel{
 		Value: v,
 		Set:   true,
 	}
 }
 
-// OptCustomFieldType is optional CustomFieldType.
-type OptCustomFieldType struct {
-	Value CustomFieldType
+// OptConsentChannel is optional ConsentChannel.
+type OptConsentChannel struct {
+	Value ConsentChannel
 	Set   bool
 }
 
-// IsSet returns true if OptCustomFieldType was set.
-func (o OptCustomFieldType) IsSet() bool { return o.Set }
+// IsSet returns true if OptConsentChannel was set.
+func (o OptConsentChannel) IsSet() bool { return o.Set }
 
 // Reset unsets value.
-func (o *OptCustomFieldType) Reset() {
-	var v CustomFieldType
+func (o *OptConsentChannel) Reset() {
+	var v ConsentChannel
 	o.Value = v
 	o.Set = false
 }
 
 // SetTo sets value to v.
-func (o *OptCustomFieldType) SetTo(v CustomFieldType) {
+func (o *OptConsentChannel) SetTo(v ConsentChannel) {
 	o.Set = true
 	o.Value = v
 }
 
 // Get returns value and boolean that denotes whether value was set.
-func (o OptCustomFieldType) Get() (v CustomFieldType, ok bool) {
+func (o OptConsentChannel) Get() (v ConsentChannel, ok bool) {
 	if !o.Set {
 		return v, false
 	}
@@ -12086,7 +12134,7 @@ func (o OptCustomFieldType) Get() (v CustomFieldType, ok bool) {
 }
 
 // Or returns value if set, or given parameter if does not.
-func (o OptCustomFieldType) Or(d CustomFieldType) CustomFieldType {
+func (o OptConsentChannel) Or(d ConsentChannel) ConsentChannel {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -14717,7 +14765,6 @@ func (*ProblemDetailsHeaders) contactsGetRes()               {}
 func (*ProblemDetailsHeaders) contactsListRes()              {}
 func (*ProblemDetailsHeaders) contactsUpdateRes()            {}
 func (*ProblemDetailsHeaders) customFieldsListRes()          {}
-func (*ProblemDetailsHeaders) customFieldsUpdateRes()        {}
 func (*ProblemDetailsHeaders) emailLintLintRes()             {}
 func (*ProblemDetailsHeaders) emailSchemaGetRes()            {}
 func (*ProblemDetailsHeaders) emailsSendRes()                {}
@@ -17650,7 +17697,9 @@ func (s *SuppressionReason) UnmarshalText(data []byte) error {
 type SuppressionResource struct {
 	// Unique identifier.
 	ID EntityId `json:"id"`
-	// Normalized (lower-cased) email address.
+	// The Channel the suppression is on.
+	Channel ConsentChannel `json:"channel"`
+	// Normalized destination: the lower-cased email address, or the Telegram user id.
 	Destination string `json:"destination"`
 	// Why the destination is suppressed.
 	Reason SuppressionReason `json:"reason"`
@@ -17661,6 +17710,11 @@ type SuppressionResource struct {
 // GetID returns the value of ID.
 func (s *SuppressionResource) GetID() EntityId {
 	return s.ID
+}
+
+// GetChannel returns the value of Channel.
+func (s *SuppressionResource) GetChannel() ConsentChannel {
+	return s.Channel
 }
 
 // GetDestination returns the value of Destination.
@@ -17681,6 +17735,11 @@ func (s *SuppressionResource) GetCreatedAt() Timestamp {
 // SetID sets the value of ID.
 func (s *SuppressionResource) SetID(val EntityId) {
 	s.ID = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *SuppressionResource) SetChannel(val ConsentChannel) {
+	s.Channel = val
 }
 
 // SetDestination sets the value of Destination.
@@ -18881,7 +18940,9 @@ func (s *TransactionalSendStatus) UnmarshalText(data []byte) error {
 type UnsubscribeResource struct {
 	// Unique identifier.
 	ID EntityId `json:"id"`
-	// Normalized (lower-cased) email address.
+	// The Channel the opt-out is on.
+	Channel ConsentChannel `json:"channel"`
+	// Normalized destination: the lower-cased email address, or the Telegram user id.
 	Destination string `json:"destination"`
 	// The sending source opted out of: `broadcasts`, `automation:<id>` or `everything`.
 	SendingSource string `json:"sendingSource"`
@@ -18892,6 +18953,11 @@ type UnsubscribeResource struct {
 // GetID returns the value of ID.
 func (s *UnsubscribeResource) GetID() EntityId {
 	return s.ID
+}
+
+// GetChannel returns the value of Channel.
+func (s *UnsubscribeResource) GetChannel() ConsentChannel {
+	return s.Channel
 }
 
 // GetDestination returns the value of Destination.
@@ -18912,6 +18978,11 @@ func (s *UnsubscribeResource) GetCreatedAt() Timestamp {
 // SetID sets the value of ID.
 func (s *UnsubscribeResource) SetID(val EntityId) {
 	s.ID = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *UnsubscribeResource) SetChannel(val ConsentChannel) {
+	s.Channel = val
 }
 
 // SetDestination sets the value of Destination.
@@ -19091,11 +19162,7 @@ type UpdateContactInput struct {
 	City OptNilString `json:"city"`
 	// Https URL of the contact's photo.
 	Avatar OptNilImageUrl `json:"avatar"`
-	// Typed custom field values keyed by the field's machine key. A new key's first value sets the field's
-	// type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or
-	// `2026-01-15`, the last two read in the Workspace time zone) or text. Send a date without time as a
-	// `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes as UTC and lands on the previous day
-	// east of UTC.
+	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
 }
 
@@ -19217,35 +19284,6 @@ func (s *UpdateContactInput) SetAvatar(val OptNilImageUrl) {
 // SetCustomFields sets the value of CustomFields.
 func (s *UpdateContactInput) SetCustomFields(val OptNilJsonObject) {
 	s.CustomFields = val
-}
-
-// Request body for updating a custom field: its key never changes.
-// Ref: #/components/schemas/UpdateCustomFieldInput
-type UpdateCustomFieldInput struct {
-	// Display name.
-	Name OptString `json:"name"`
-	// Value type. Stored values are not rewritten: the leaves of the new type read them as they are.
-	Type OptCustomFieldType `json:"type"`
-}
-
-// GetName returns the value of Name.
-func (s *UpdateCustomFieldInput) GetName() OptString {
-	return s.Name
-}
-
-// GetType returns the value of Type.
-func (s *UpdateCustomFieldInput) GetType() OptCustomFieldType {
-	return s.Type
-}
-
-// SetName sets the value of Name.
-func (s *UpdateCustomFieldInput) SetName(val OptString) {
-	s.Name = val
-}
-
-// SetType sets the value of Type.
-func (s *UpdateCustomFieldInput) SetType(val OptCustomFieldType) {
-	s.Type = val
 }
 
 // Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep
@@ -19584,11 +19622,7 @@ type UpsertContactInput struct {
 	City OptNilString `json:"city"`
 	// Https URL of the contact's photo.
 	Avatar OptNilImageUrl `json:"avatar"`
-	// Typed custom field values keyed by the field's machine key, merged into the contact's. A new key's
-	// first value sets the field's type: a boolean, a number, a date (an ISO string:
-	// `2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace
-	// time zone) or text. Send a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that
-	// serializes as UTC and lands on the previous day east of UTC.
+	// Typed custom field values keyed by the field's machine key, merged into the contact's.
 	CustomFields OptNilJsonObject `json:"customFields"`
 }
 

@@ -93,7 +93,8 @@ func assertValidFactsOrARefusal(t *testing.T, res preset.Result, err error) {
 		return
 	}
 	assert.LessOrEqual(t, len(res.Notices)+len(res.InboundMessages)+len(res.ReachabilityChanges), preset.MaxFacts)
-	for _, m := range res.InboundMessages {
+	for i := range res.InboundMessages {
+		m := &res.InboundMessages[i]
 		assert.NotEmpty(t, m.ID)
 		assert.NotEmpty(t, m.Destination)
 		assert.Equal(t, strings.TrimSpace(m.Destination), m.Destination)

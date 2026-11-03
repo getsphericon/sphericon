@@ -259,6 +259,7 @@ var (
 	ErrorsSendingHeld                           = ID{key: "errors.sending_held"}
 	ErrorsSendingSourceAutomationUnknown        = ID{key: "errors.sending_source_automation_unknown"}
 	ErrorsSendingSourceInvalid                  = ID{key: "errors.sending_source_invalid"}
+	ErrorsSendingSourceTelegram                 = ID{key: "errors.sending_source_telegram"}
 	ErrorsSigninPendingGone                     = ID{key: "errors.signin_pending_gone"}
 	ErrorsSigninProviderUnknown                 = ID{key: "errors.signin_provider_unknown"}
 	ErrorsSignupItemArchiveMailings             = ID{key: "errors.signup_item_archive_mailings"}

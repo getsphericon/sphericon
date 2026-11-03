@@ -129,15 +129,26 @@ func (b *Bot) SendMessage(ctx context.Context, msg messaging.TelegramMessage) (m
 	if err != nil {
 		return messaging.TelegramSent{}, fmt.Errorf("telegram: chat id %q is not a number", msg.ChatID)
 	}
-	sent, err := b.bot.SendMessage(ctx, &telego.SendMessageParams{
+	params := &telego.SendMessageParams{
 		ChatID:    telego.ChatID{ID: chat},
 		Text:      msg.Text,
 		ParseMode: telego.ModeHTML,
-	})
+	}
+	if msg.UnsubscribeButton != "" {
+		params.ReplyMarkup = &telego.InlineKeyboardMarkup{InlineKeyboard: [][]telego.InlineKeyboardButton{{
+			{Text: msg.UnsubscribeButton, CallbackData: messaging.TelegramUnsubscribePayload},
+		}}}
+	}
+	sent, err := b.bot.SendMessage(ctx, params)
 	if err != nil {
 		return messaging.TelegramSent{}, refusal(err)
 	}
 	return messaging.TelegramSent{MessageID: int64(sent.MessageID)}, nil
+}
+
+// AnswerCallbackQuery answers a button press with nothing to show.
+func (b *Bot) AnswerCallbackQuery(ctx context.Context, callbackID string) error {
+	return refusal(b.bot.AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: callbackID}))
 }
 
 // refusal turns telego's error into a messaging.TelegramError when the Bot API answered one; any

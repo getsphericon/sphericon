@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 	"time"
@@ -79,6 +80,16 @@ func (m *Module) bot(token string) (messaging.TelegramBot, error) {
 		return nil, err
 	}
 	return m.catalog.BuildTelegram(messaging.ProviderTelegram, raw)
+}
+
+// Bot is the bot a Telegram Integration is, built from its stored token: what the Ingest hook
+// answers a button press through.
+func (m *Module) Bot(row *ent.Integration) (messaging.TelegramBot, error) {
+	cfg, err := m.telegramConfigOf(row)
+	if err != nil {
+		return nil, fmt.Errorf("open the config of integration %d: %w", row.ID, err)
+	}
+	return m.bot(cfg.Token)
 }
 
 // identify asks Telegram which bot token is of. A token Telegram does not accept is a refusal on

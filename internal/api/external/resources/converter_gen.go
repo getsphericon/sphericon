@@ -18,6 +18,7 @@ import (
 	schema "github.com/getsphericon/sphericon/ent/schema"
 	suppression "github.com/getsphericon/sphericon/ent/suppression"
 	trackingdomain "github.com/getsphericon/sphericon/ent/trackingdomain"
+	unsubscribe "github.com/getsphericon/sphericon/ent/unsubscribe"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	external "github.com/getsphericon/sphericon/gen/external"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
@@ -223,6 +224,7 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) ex
 	externalapiAutomationStep.HasSecret = optBool(source.HasSecret)
 	externalapiAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
 	externalapiAutomationStep.Text = optString(source.Text)
+	externalapiAutomationStep.UnsubscribeButton = optString(source.UnsubscribeButton)
 	return externalapiAutomationStep
 }
 func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) external.AutomationStepType {
@@ -1271,6 +1273,19 @@ func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) external.
 	externalapiTelegramStartLinkResource.ExpiresAt = timestamp(source.ExpiresAt)
 	return externalapiTelegramStartLinkResource
 }
+func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel) external.ConsentChannel {
+	var externalapiConsentChannel external.ConsentChannel
+	switch source {
+	case suppression.ChannelEmail:
+		externalapiConsentChannel = external.ConsentChannelEmail
+	case suppression.ChannelTelegram:
+		externalapiConsentChannel = external.ConsentChannelTelegram
+	// Skipped DefaultChannel(email) -> ConsentChannelEmail(email) because it duplicates ChannelEmail(email) -> ConsentChannelEmail(email)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiConsentChannel
+}
 func (c *ConverterImpl) SuppressionReasonToResource(source suppression.Reason) external.SuppressionReason {
 	var externalapiSuppressionReason external.SuppressionReason
 	switch source {
@@ -1302,6 +1317,7 @@ func (c *ConverterImpl) SuppressionToResource(source *ent.Suppression) external.
 	var externalapiSuppressionResource external.SuppressionResource
 	if source != nil {
 		externalapiSuppressionResource.ID = external.EntityId((*source).ID)
+		externalapiSuppressionResource.Channel = c.SuppressionChannelToResource((*source).Channel)
 		externalapiSuppressionResource.Destination = (*source).Destination
 		externalapiSuppressionResource.Reason = c.SuppressionReasonToResource((*source).Reason)
 		externalapiSuppressionResource.CreatedAt = timestamp((*source).CreatedAt)
@@ -1436,6 +1452,19 @@ func (c *ConverterImpl) TransactionalSendStatusToResource(source transactional.S
 	}
 	return externalapiTransactionalSendStatus
 }
+func (c *ConverterImpl) UnsubscribeChannelToResource(source unsubscribe.Channel) external.ConsentChannel {
+	var externalapiConsentChannel external.ConsentChannel
+	switch source {
+	case unsubscribe.ChannelEmail:
+		externalapiConsentChannel = external.ConsentChannelEmail
+	case unsubscribe.ChannelTelegram:
+		externalapiConsentChannel = external.ConsentChannelTelegram
+	// Skipped DefaultChannel(email) -> ConsentChannelEmail(email) because it duplicates ChannelEmail(email) -> ConsentChannelEmail(email)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiConsentChannel
+}
 func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) external.ContactExportUnsubscribe {
 	var externalapiContactExportUnsubscribe external.ContactExportUnsubscribe
 	if source != nil {
@@ -1451,6 +1480,7 @@ func (c *ConverterImpl) UnsubscribeToResource(source *ent.Unsubscribe) external.
 	var externalapiUnsubscribeResource external.UnsubscribeResource
 	if source != nil {
 		externalapiUnsubscribeResource.ID = external.EntityId((*source).ID)
+		externalapiUnsubscribeResource.Channel = c.UnsubscribeChannelToResource((*source).Channel)
 		externalapiUnsubscribeResource.Destination = (*source).Destination
 		externalapiUnsubscribeResource.SendingSource = (*source).SendingSource
 		externalapiUnsubscribeResource.CreatedAt = timestamp((*source).CreatedAt)

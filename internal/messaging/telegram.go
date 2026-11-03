@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -21,13 +22,22 @@ type TelegramBot interface {
 	// SendMessage sends one text to a chat. A refusal of the Bot API is an error wrapping a
 	// *TelegramError; a network error or a 5xx is a plain error, which a retry may get past.
 	SendMessage(ctx context.Context, msg TelegramMessage) (TelegramSent, error)
+	// AnswerCallbackQuery tells Telegram a button press was received, so the person's client stops
+	// waiting. It shows the person nothing.
+	AnswerCallbackQuery(ctx context.Context, callbackID string) error
 }
+
+// TelegramUnsubscribePayload is the fixed payload of the unsubscribe button's callback (ADR 0076).
+const TelegramUnsubscribePayload = "unsubscribe"
 
 // TelegramMessage is a sendMessage call: the chat it goes to (the Binding's chat id) and its text
 // in Telegram's HTML subset, sent with parse_mode=HTML.
 type TelegramMessage struct {
 	ChatID string
 	Text   string
+	// UnsubscribeButton is the label of a callback button, with the payload
+	// TelegramUnsubscribePayload, added as the last row of the message's buttons; "" adds none.
+	UnsubscribeButton string
 }
 
 // TelegramSent is what Telegram answers to an accepted message: its id in the chat.
@@ -69,4 +79,10 @@ func (e *TelegramError) Error() string {
 // Is makes a 401 match ErrTelegramUnauthorized.
 func (e *TelegramError) Is(target error) bool {
 	return target == ErrTelegramUnauthorized && e.Code == 401
+}
+
+// Blocked reports whether the Bot API refused a send because the person blocked the bot: a 403
+// "Forbidden: bot was blocked by the user".
+func (e *TelegramError) Blocked() bool {
+	return e.Code == 403 && strings.Contains(strings.ToLower(e.Description), "bot was blocked by the user")
 }

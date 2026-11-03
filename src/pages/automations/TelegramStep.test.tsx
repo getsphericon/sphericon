@@ -105,3 +105,63 @@ test('a Telegram text over the limit is flagged by the counter', async () => {
   await expect.element(screen.getByText('4100 / 4096')).toBeVisible()
   await expect.element(screen.getByText(/refused until the text is shorter/)).toBeVisible()
 })
+
+test('the unsubscribe button of a Telegram step is switched on with a label and saved', async () => {
+  const bodies: { steps?: SiteAutomationStep[] }[] = []
+  let current = stored([STEP])
+  worker.use(
+    handleSiteAutomationsGet(() => HttpResponse.json(current)),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      const body = await request.json()
+      bodies.push(body)
+      current = stored(body.steps ?? [STEP])
+      return HttpResponse.json(current)
+    }),
+    handleSiteIntegrationsList({ body: INTEGRATIONS }),
+    handleSiteEnrollmentsList({
+      body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
+    }),
+  )
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(1)).click()
+  await screen.getByText('Properties').click()
+  await screen.getByText('Unsubscribe button', { exact: true }).click({ force: true })
+  const label = screen.getByRole('textbox', { name: 'Button label' })
+  await expect.element(label).toHaveValue('Unsubscribe')
+  await label.fill('Stop messages')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies.map((body) => body.steps))
+    .toEqual([[{ ...STEP, unsubscribeButton: 'Stop messages' }]])
+})
+
+test('a Telegram step with an unsubscribe button loads its label, and switching it off drops it', async () => {
+  const bodies: { steps?: SiteAutomationStep[] }[] = []
+  let current = stored([{ ...STEP, unsubscribeButton: 'Stop' }])
+  worker.use(
+    handleSiteAutomationsGet(() => HttpResponse.json(current)),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      const body = await request.json()
+      bodies.push(body)
+      current = stored(body.steps ?? [STEP])
+      return HttpResponse.json(current)
+    }),
+    handleSiteIntegrationsList({ body: INTEGRATIONS }),
+    handleSiteEnrollmentsList({
+      body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
+    }),
+  )
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(1)).click()
+  await screen.getByText('Properties').click()
+  await expect.element(screen.getByRole('textbox', { name: 'Button label' })).toHaveValue('Stop')
+  await screen.getByText('Unsubscribe button', { exact: true }).click({ force: true })
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => bodies.map((body) => body.steps)).toEqual([[STEP]])
+})

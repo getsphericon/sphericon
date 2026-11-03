@@ -131,6 +131,9 @@ type InboundMessage struct {
 	Payload string `json:"payload,omitempty"`
 	// MessageID is the provider's id of the message: of the one pressed on, for a button.
 	MessageID string `json:"message_id,omitempty"`
+	// CallbackID is the provider's id of the button press, which the provider wants answered
+	// (Telegram's callback query id, for answerCallbackQuery): "" for a written message.
+	CallbackID string `json:"callback_id,omitempty"`
 }
 
 // Unreachability is why a Destination can no longer be reached.

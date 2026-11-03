@@ -14,6 +14,8 @@ type StepView struct {
 	Subject, Body *string
 	// Text is a Telegram step's message.
 	Text *string
+	// UnsubscribeButton is a Telegram step's unsubscribe button label, nil when it has none.
+	UnsubscribeButton *string
 	// Doc is an email step's editor document, and EditorVersion the editor that rendered it; a
 	// step written as HTML has neither.
 	Doc           json.RawMessage
@@ -65,6 +67,9 @@ func viewOf(s *automationsteps.Step) StepView {
 	case automationsteps.Telegram:
 		v.IntegrationID = s.IntegrationID
 		v.Text = &s.Text
+		if s.UnsubscribeButton != "" {
+			v.UnsubscribeButton = &s.UnsubscribeButton
+		}
 	case automationsteps.Email:
 		v.IntegrationID = s.IntegrationID
 		v.Subject = &s.Subject

@@ -246,6 +246,7 @@ type rawInbound struct {
 	Text        *string `json:"text"`
 	Payload     *string `json:"payload"`
 	MessageID   *string `json:"message_id"`
+	CallbackID  *string `json:"callback_id"`
 }
 
 func validateInbound(raw []byte) (InboundMessage, error) {
@@ -268,6 +269,9 @@ func validateInbound(raw []byte) (InboundMessage, error) {
 		return InboundMessage{}, err
 	}
 	if m.MessageID, err = optionalID("message_id", r.MessageID); err != nil {
+		return InboundMessage{}, err
+	}
+	if m.CallbackID, err = optionalID("callback_id", r.CallbackID); err != nil {
 		return InboundMessage{}, err
 	}
 	if m.Text, err = optionalText("text", r.Text, MaxTextChars); err != nil {

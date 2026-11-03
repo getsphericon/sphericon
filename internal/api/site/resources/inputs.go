@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
+	"github.com/getsphericon/sphericon/ent/suppression"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
@@ -163,6 +164,9 @@ type Inputs interface {
 	// goverter:enum:map SiteAnalyticsRange30d Window30Days
 	// goverter:enum:map SiteAnalyticsRange90d Window90Days
 	AnalyticsWindow(source siteapi.SiteAnalyticsRange) analytics.Window
+	// goverter:enum:map SiteSuppressionChannelEmail ChannelEmail
+	// goverter:enum:map SiteSuppressionChannelTelegram ChannelTelegram
+	SuppressionChannel(source siteapi.SiteSuppressionChannel) suppression.Channel
 	// goverter:enum:map SiteAnalyticsRevenueRange7d Window7Days
 	// goverter:enum:map SiteAnalyticsRevenueRange30d Window30Days
 	// goverter:enum:map SiteAnalyticsRevenueRange90d Window90Days

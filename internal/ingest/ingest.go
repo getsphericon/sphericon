@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/logging"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/preset"
 )
 
@@ -51,7 +52,15 @@ type Tx struct {
 	// Event names.
 	Preset string
 	Now    time.Time
+
+	after *[]func(context.Context)
 }
+
+// After queues work for after the request's transaction commits, before the hook answers: a
+// provider's acknowledgement (Telegram's answerCallbackQuery) that must not happen for facts that
+// were rolled back. It is best effort: it cannot fail the request, which is already recorded, so
+// it logs its own errors.
+func (tx Tx) After(f func(context.Context)) { *tx.after = append(*tx.after, f) }
 
 // DedupKey is the key a fact's writes deduplicate on: the provider's event id, which is unique
 // only per provider account, prefixed with the Channel and the Integration (on Telegram
@@ -60,13 +69,23 @@ func (tx Tx) DedupKey(eventID string) string {
 	return fmt.Sprintf("%s:%d:%s", tx.Integration.Channel, tx.Integration.ID, eventID)
 }
 
-// Module interprets the facts of every Ingest hook request.
-type Module struct {
-	bus *events.Bus
+// Bots opens the bot of a Telegram Integration, to answer what it was sent.
+type Bots interface {
+	Bot(row *ent.Integration) (messaging.TelegramBot, error)
 }
 
-// New builds the module on the bus the facts' System events are published through.
-func New(bus *events.Bus) *Module { return &Module{bus: bus} }
+// answerTimeout bounds one acknowledgement to a provider after the commit.
+const answerTimeout = 5 * time.Second
+
+// Module interprets the facts of every Ingest hook request.
+type Module struct {
+	bus  *events.Bus
+	bots Bots
+}
+
+// New builds the module on the bus the facts' System events are published through and the bots
+// of Telegram Integrations.
+func New(bus *events.Bus, bots Bots) *Module { return &Module{bus: bus, bots: bots} }
 
 // interpreterFor is the Interpreter of a Channel. A new Channel value fails the exhaustive
 // lint here until its Channel is given one: its own, or Ignore while it reads nothing.
@@ -75,7 +94,7 @@ func (m *Module) interpreterFor(ch integration.Channel) Interpreter {
 	case integration.ChannelEmail:
 		return email{}
 	case integration.ChannelTelegram:
-		return telegram{}
+		return telegram{bots: m.bots}
 	case integration.ChannelSms:
 		return Ignore{}
 	}
@@ -92,20 +111,23 @@ func (m *Module) Interpret(ctx context.Context, s *ent.Scoped, row *ent.Integrat
 		return nil
 	}
 	interp := m.interpreterFor(row.Channel)
-	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		tx := Tx{Scoped: ts, Pub: pub, Integration: row, Preset: presetName, Now: now}
+	var after []func(context.Context)
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		after = after[:0]
+		tx := Tx{Scoped: ts, Pub: pub, Integration: row, Preset: presetName, Now: now, after: &after}
 		for _, n := range res.Notices {
 			if err := interp.DeliveryNotice(ctx, tx, n); err != nil {
 				return err
 			}
 		}
-		for _, msg := range res.InboundMessages {
+		for i := range res.InboundMessages {
+			msg := &res.InboundMessages[i]
 			if string(msg.Channel) != string(row.Channel) {
 				logging.FromContext(ctx).Warn("ingest: an Inbound message of another Channel than its Integration's is dropped",
 					"integration_id", row.ID, "preset", presetName, "channel", msg.Channel, "event_id", msg.ID)
 				continue
 			}
-			if err := interp.InboundMessage(ctx, tx, msg); err != nil {
+			if err := interp.InboundMessage(ctx, tx, *msg); err != nil {
 				return err
 			}
 		}
@@ -116,4 +138,13 @@ func (m *Module) Interpret(ctx context.Context, s *ent.Scoped, row *ent.Integrat
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	for _, f := range after {
+		answerCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), answerTimeout)
+		f(answerCtx)
+		cancel()
+	}
+	return nil
 }

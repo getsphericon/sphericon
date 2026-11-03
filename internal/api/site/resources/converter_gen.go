@@ -417,6 +417,7 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) si
 	siteapiSiteAutomationStep.HasSecret = optBool(source.HasSecret)
 	siteapiSiteAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
 	siteapiSiteAutomationStep.Text = optString(source.Text)
+	siteapiSiteAutomationStep.UnsubscribeButton = optString(source.UnsubscribeButton)
 	return siteapiSiteAutomationStep
 }
 func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) site.SiteAutomationStepType {

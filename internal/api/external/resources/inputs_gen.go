@@ -6,10 +6,10 @@ package resources
 import (
 	"fmt"
 	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
+	suppression "github.com/getsphericon/sphericon/ent/suppression"
 	external "github.com/getsphericon/sphericon/gen/external"
 	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
-	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	eventlog "github.com/getsphericon/sphericon/internal/eventlog"
@@ -70,58 +70,59 @@ func (c *InputsImpl) AutomationReportPeriod(source external.AutomationsReportPer
 	}
 	return automationsReportPeriod
 }
-func (c *InputsImpl) AutomationStep(source external.AutomationStep) automationsteps.Step {
-	var automationstepsStep automationsteps.Step
-	automationstepsStep.Type = c.AutomationStepType(source.Type)
-	automationstepsStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
-	automationstepsStep.Subject = stringIn(source.Subject)
-	automationstepsStep.Body = stringIn(source.Body)
-	automationstepsStep.Doc = documentIn(source.Doc)
-	// automationstepsStep.EditorVersion: ignore
-	automationstepsStep.Seconds = int32In(source.Seconds)
-	automationstepsStep.Tag = stringIn(source.Tag)
-	automationstepsStep.Text = stringIn(source.Text)
-	automationstepsStep.ID = stringIn(source.ID)
-	automationstepsStep.URL = stringIn(source.URL)
+func (c *InputsImpl) AutomationStep(source external.AutomationStep) automations.Step {
+	var automationsStep automations.Step
+	automationsStep.Type = c.AutomationStepType(source.Type)
+	automationsStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
+	automationsStep.Subject = stringIn(source.Subject)
+	automationsStep.Body = stringIn(source.Body)
+	automationsStep.Doc = documentIn(source.Doc)
+	// automationsStep.EditorVersion: ignore
+	automationsStep.Seconds = int32In(source.Seconds)
+	automationsStep.Tag = stringIn(source.Tag)
+	automationsStep.Text = stringIn(source.Text)
+	automationsStep.UnsubscribeButton = stringIn(source.UnsubscribeButton)
+	automationsStep.ID = stringIn(source.ID)
+	automationsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		automationstepsStep.Headers = make([]httpcall.Header, len(source.Headers))
+		automationsStep.Headers = make([]httpcall.Header, len(source.Headers))
 		for i := 0; i < len(source.Headers); i++ {
-			automationstepsStep.Headers[i] = c.externalapiAutomationHttpHeaderToHttpcallHeader(source.Headers[i])
+			automationsStep.Headers[i] = c.externalapiAutomationHttpHeaderToHttpcallHeader(source.Headers[i])
 		}
 	}
-	automationstepsStep.Secret = stringIn(source.Secret)
-	automationstepsStep.ClearSecret = boolIn(source.ClearSecret)
-	return automationstepsStep
+	automationsStep.Secret = stringIn(source.Secret)
+	automationsStep.ClearSecret = boolIn(source.ClearSecret)
+	return automationsStep
 }
-func (c *InputsImpl) AutomationStepType(source external.AutomationStepType) automationsteps.Kind {
-	var automationstepsKind automationsteps.Kind
+func (c *InputsImpl) AutomationStepType(source external.AutomationStepType) automations.StepType {
+	var automationsStepType automations.StepType
 	switch source {
 	case external.AutomationStepTypeApplyTag:
-		automationstepsKind = automationsteps.ApplyTag
+		automationsStepType = automations.StepApplyTag
 	case external.AutomationStepTypeEmail:
-		automationstepsKind = automationsteps.Email
+		automationsStepType = automations.StepEmail
 	case external.AutomationStepTypeHTTP:
-		automationstepsKind = automationsteps.HTTP
+		automationsStepType = automations.StepHTTP
 	case external.AutomationStepTypeRemoveTag:
-		automationstepsKind = automationsteps.RemoveTag
+		automationsStepType = automations.StepRemoveTag
 	case external.AutomationStepTypeTelegram:
-		automationstepsKind = automationsteps.Telegram
+		automationsStepType = automations.StepTelegram
 	case external.AutomationStepTypeWait:
-		automationstepsKind = automationsteps.Wait
+		automationsStepType = automations.StepWait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return automationstepsKind
+	return automationsStepType
 }
-func (c *InputsImpl) AutomationSteps(source []external.AutomationStep) []automationsteps.Step {
-	var automationstepsStepList []automationsteps.Step
+func (c *InputsImpl) AutomationSteps(source []external.AutomationStep) []automations.Step {
+	var automationsStepList []automations.Step
 	if source != nil {
-		automationstepsStepList = make([]automationsteps.Step, len(source))
+		automationsStepList = make([]automations.Step, len(source))
 		for i := 0; i < len(source); i++ {
-			automationstepsStepList[i] = c.AutomationStep(source[i])
+			automationsStepList[i] = c.AutomationStep(source[i])
 		}
 	}
-	return automationstepsStepList
+	return automationsStepList
 }
 func (c *InputsImpl) AutomationUpdate(source *external.UpdateAutomationInput) automations.UpdateInput {
 	var automationsUpdateInput automations.UpdateInput
@@ -236,14 +237,6 @@ func (c *InputsImpl) ContactUpserts(source []external.UpsertContactInput) []cont
 		}
 	}
 	return contactsUpsertInputList
-}
-func (c *InputsImpl) CustomFieldUpdate(source *external.UpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
-	var contactsCustomFieldUpdateInput contacts.CustomFieldUpdateInput
-	if source != nil {
-		contactsCustomFieldUpdateInput.Name = stringPatch((*source).Name)
-		contactsCustomFieldUpdateInput.Type = customFieldTypePatch((*source).Type)
-	}
-	return contactsCustomFieldUpdateInput
 }
 func (c *InputsImpl) EmailBroadcastContentIn(source external.EmailBroadcastContentInput) broadcasts.EmailContentInput {
 	var broadcastsEmailContentInput broadcasts.EmailContentInput
@@ -427,6 +420,18 @@ func (c *InputsImpl) SendingDomainUpdate(source *external.UpdateSendingDomainInp
 		sendingdomainsUpdateInput.Selector = stringPatch((*source).DkimSelector)
 	}
 	return sendingdomainsUpdateInput
+}
+func (c *InputsImpl) SuppressionChannel(source external.ConsentChannel) suppression.Channel {
+	var suppressionChannel suppression.Channel
+	switch source {
+	case external.ConsentChannelEmail:
+		suppressionChannel = suppression.ChannelEmail
+	case external.ConsentChannelTelegram:
+		suppressionChannel = suppression.ChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return suppressionChannel
 }
 func (c *InputsImpl) TemplateCreate(source *external.CreateTemplateInput) templates.CreateInput {
 	var templatesCreateInput templates.CreateInput

@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/samber/lo"
 
@@ -37,6 +38,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
+
+// maxUnsubscribeButton is the longest label of a Telegram step's unsubscribe button, in characters.
+// contract-copy: the unsubscribeButton limit of the step contract, which the editor and the API enforce too
+const maxUnsubscribeButton = 64
 
 // Domain errors. Callers match with errors.Is.
 var (
@@ -85,7 +90,7 @@ func Encode(steps []automationsteps.Step) (string, error) {
 		case automationsteps.HTTP:
 			stored = append(stored, automationsteps.Step{Type: automationsteps.HTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret})
 		case automationsteps.Telegram:
-			stored = append(stored, automationsteps.Step{Type: automationsteps.Telegram, IntegrationID: s.IntegrationID, Text: s.Text})
+			stored = append(stored, automationsteps.Step{Type: automationsteps.Telegram, IntegrationID: s.IntegrationID, Text: s.Text, UnsubscribeButton: strings.TrimSpace(s.UnsubscribeButton)})
 		default:
 			email := automationsteps.Step{Type: automationsteps.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
 			if len(s.Doc) > 0 {
@@ -112,6 +117,9 @@ func validate(steps []automationsteps.Step) error {
 			}
 			if err := telegramrender.Check(s.Text); err != nil {
 				return ErrInvalidStep.With(err.Error())
+			}
+			if n := utf8.RuneCountInString(strings.TrimSpace(s.UnsubscribeButton)); n > maxUnsubscribeButton {
+				return ErrInvalidStep.With(fmt.Sprintf("the unsubscribe button's label is %d characters long, up to %d", n, maxUnsubscribeButton))
 			}
 		case automationsteps.HTTP:
 		case automationsteps.Wait:
@@ -149,7 +157,7 @@ func (s SendStep) Content() (outbound.Content, error) {
 	case automationsteps.Email:
 		return outbound.EmailContent{Subject: s.Step.Subject, Body: s.Step.Body}, nil
 	case automationsteps.Telegram:
-		return outbound.TelegramContent{Text: s.Step.Text}, nil
+		return outbound.TelegramContent{Text: s.Step.Text, UnsubscribeButton: s.Step.UnsubscribeButton}, nil
 	default:
 		return nil, fmt.Errorf("automations: step type %q has no message content", s.Step.Type)
 	}

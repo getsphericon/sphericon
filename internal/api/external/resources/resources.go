@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/auditapi"
@@ -453,6 +454,10 @@ type Converter interface {
 	RuleDryRunOutcomeToResource(source rules.DryRunOutcome) externalapi.RuleDryRunOutcome
 	// goverter:enum:transform value
 	RuleStatusToResource(source rule.Status) externalapi.RuleStatus
+	// goverter:enum:transform value
+	SuppressionChannelToResource(source suppression.Channel) externalapi.ConsentChannel
+	// goverter:enum:transform value
+	UnsubscribeChannelToResource(source unsubscribe.Channel) externalapi.ConsentChannel
 	// goverter:enum:transform value
 	SuppressionReasonToResource(source suppression.Reason) externalapi.SuppressionReason
 	// goverter:enum:transform value

@@ -34,7 +34,7 @@ func hooksHandler(client *ent.Client, bus *events.Bus, integ *integrations.Modul
 	}
 	h := &hook{
 		ent:    client,
-		ingest: ingest.New(bus),
+		ingest: ingest.New(bus, integ),
 		integ:  integ,
 		now:    now,
 	}

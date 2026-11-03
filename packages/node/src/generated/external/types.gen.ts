@@ -619,6 +619,10 @@ export type AutomationStep = {
    * The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written: publishing a longer one is refused.
    */
   text?: string;
+  /**
+   * The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
+   */
+  unsubscribeButton?: string;
 };
 
 /**
@@ -1317,6 +1321,16 @@ export const ConditionOperator = {
  * number leaf, a datetime one tested by the date leaves).
  */
 export type ConditionOperator = typeof ConditionOperator[keyof typeof ConditionOperator];
+
+/**
+ * A Channel a destination can be suppressed or opt out on
+ */
+export const ConsentChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
+
+/**
+ * A Channel a destination can be suppressed or opt out on
+ */
+export type ConsentChannel = typeof ConsentChannel[keyof typeof ConsentChannel];
 
 /**
  * Per-item result of a contacts batch, in request order
@@ -2027,9 +2041,13 @@ export type CreateSendingDomainInput = {
  */
 export type CreateSuppressionInput = {
   /**
-   * Email address to stop sending to
+   * The Channel to stop sending on; `email` when omitted
    */
-  destination: EmailAddress;
+  channel?: ConsentChannel;
+  /**
+   * What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`
+   */
+  destination: string;
 };
 
 /**
@@ -2060,11 +2078,15 @@ export type CreateTemplateInput = {
  */
 export type CreateUnsubscribeInput = {
   /**
-   * Email address that opted out
+   * The Channel the destination opted out on; `email` when omitted
    */
-  destination: EmailAddress;
+  channel?: ConsentChannel;
   /**
-   * The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave entirely)
+   * What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`. A Telegram opt-out covers every bot of the Workspace
+   */
+  destination: string;
+  /**
+   * The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave entirely). On `telegram` only `everything` (the default) is accepted: a person stops all of the Workspace's Telegram messages
    */
   sendingSource?: string;
 };
@@ -4178,7 +4200,11 @@ export type SuppressionResource = {
    */
   id: EntityId;
   /**
-   * Normalized (lower-cased) email address
+   * The Channel the suppression is on
+   */
+  channel: ConsentChannel;
+  /**
+   * Normalized destination: the lower-cased email address, or the Telegram user id
    */
   destination: string;
   /**
@@ -4440,7 +4466,11 @@ export type UnsubscribeResource = {
    */
   id: EntityId;
   /**
-   * Normalized (lower-cased) email address
+   * The Channel the opt-out is on
+   */
+  channel: ConsentChannel;
+  /**
+   * Normalized destination: the lower-cased email address, or the Telegram user id
    */
   destination: string;
   /**

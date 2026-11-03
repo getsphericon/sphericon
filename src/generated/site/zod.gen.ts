@@ -947,7 +947,8 @@ export const zSiteAutomationStep = z.object({
   clearSecret: z.exactOptional(z.boolean()),
   hasSecret: z.exactOptional(z.boolean()),
   integrationId: z.exactOptional(zEntityId.nullable()),
-  text: z.exactOptional(z.string())
+  text: z.exactOptional(z.string()),
+  unsubscribeButton: z.exactOptional(z.string().max(64))
 });
 
 /**

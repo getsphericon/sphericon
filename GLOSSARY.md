@@ -273,6 +273,14 @@ or a blocked bot, WhatsApp's stop, an unsubscribe button — has the `everything
 Channel, as the law and WhatsApp treat it; a source-scoped opt-out there is only a link to the
 unsubscribe page that the author put into the message. Its reversal (START, a resume, an unblocked
 bot) lifts it.
+On Telegram the Destination is the user's id, so one stop covers every bot of the Workspace, and it
+is recorded with the `telegram.unsubscribed` System event: `/stop`, a STOP keyword (the core's list,
+shared with SMS later), a press on the message's unsubscribe button (a callback button with the fixed
+payload `unsubscribe`, attributed to the Broadcast or Automation of the message when its provider
+message id resolves to an Outbound message) and blocking the bot, which Telegram reports by an update
+or by refusing a send. A `/start`, bare or with a token, and unblocking the bot lift it. A deactivated
+user is no opt-out: the Binding goes (`telegram.unbound`). A stop from a Destination nobody is Bound to
+is still kept, and records nothing else.
 On email the opt-out is offered two ways with **identical scope**: the visible footer link and an RFC 8058
 **one-click** `List-Unsubscribe` header (Broadcast + Automation only, never Transactional — see
 ADR 0012), both carrying the same source-scoped token; a mailbox provider's one-click button never

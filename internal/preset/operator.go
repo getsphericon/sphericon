@@ -65,7 +65,8 @@ func (p *Preset) WriteSample(ctx context.Context, w io.Writer, req Request, para
 		_, _ = fmt.Fprintf(w, "%s %s id=%s sending_domain=%s message_id=%s reason=%q\n",
 			noticeKind(n), n.Destination, n.ID, n.SendingDomain, n.MessageID, n.Reason)
 	}
-	for _, m := range res.InboundMessages {
+	for i := range res.InboundMessages {
+		m := &res.InboundMessages[i]
 		_, _ = fmt.Fprintf(w, "%s %s %s id=%s chat_id=%s message_id=%s text=%q payload=%q\n",
 			kindInboundMessage, m.Channel, m.Destination, m.ID, m.ChatID, m.MessageID, m.Text, m.Payload)
 	}

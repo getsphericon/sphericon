@@ -12282,6 +12282,9 @@ type SiteAutomationStep struct {
 	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
 	// escaped. Up to 4096 characters as written: publishing a longer one is refused.
 	Text OptString `json:"text"`
+	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
+	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
+	UnsubscribeButton OptString `json:"unsubscribeButton"`
 }
 
 // GetType returns the value of Type.
@@ -12359,6 +12362,11 @@ func (s *SiteAutomationStep) GetText() OptString {
 	return s.Text
 }
 
+// GetUnsubscribeButton returns the value of UnsubscribeButton.
+func (s *SiteAutomationStep) GetUnsubscribeButton() OptString {
+	return s.UnsubscribeButton
+}
+
 // SetType sets the value of Type.
 func (s *SiteAutomationStep) SetType(val SiteAutomationStepType) {
 	s.Type = val
@@ -12432,6 +12440,11 @@ func (s *SiteAutomationStep) SetIntegrationId(val OptNilEntityId) {
 // SetText sets the value of Text.
 func (s *SiteAutomationStep) SetText(val OptString) {
 	s.Text = val
+}
+
+// SetUnsubscribeButton sets the value of UnsubscribeButton.
+func (s *SiteAutomationStep) SetUnsubscribeButton(val OptString) {
+	s.UnsubscribeButton = val
 }
 
 // The messages of the send step at one position.

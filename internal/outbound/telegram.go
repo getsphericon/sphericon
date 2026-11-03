@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"maps"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -24,9 +25,13 @@ const ReasonContentTooLong = "content_too_long"
 const reasonContentEmpty = "content_empty"
 
 // TelegramContent is Telegram's Message content (ADR 0078): a text in Telegram's HTML subset, with
-// Liquid merge tags. Images, buttons and the unsubscribe button come with their own tickets.
+// Liquid merge tags, and an optional unsubscribe button. Images and link buttons come with their
+// own ticket.
 type TelegramContent struct {
 	Text string
+	// UnsubscribeButton is the label of the callback button that is the opt-out, added as the
+	// last row; "" adds none.
+	UnsubscribeButton string
 }
 
 // Channel is Telegram.
@@ -82,7 +87,7 @@ func (telegramChannel) targets(ctx context.Context, s *ent.Scoped, req Request, 
 }
 
 // telegramMessage is a rendered Telegram message: its text, as the Bot API takes it.
-type telegramMessage struct{ text string }
+type telegramMessage struct{ text, unsubscribeButton string }
 
 func telegramContentOf(content Content) (TelegramContent, error) {
 	c, ok := content.(TelegramContent)
@@ -115,7 +120,7 @@ func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request,
 	case n > telegramrender.MaxText:
 		return nil, contentError{errors.New(ReasonContentTooLong)}
 	}
-	return telegramMessage{text: text}, nil
+	return telegramMessage{text: text, unsubscribeButton: content.UnsubscribeButton}, nil
 }
 
 // telegramAdapter is Telegram's provider adapter over the bot of the routed Integration.
@@ -131,17 +136,18 @@ func (telegramAdapter) prepare(_ context.Context, _ *ent.Scoped, content Content
 	return sendAs{}, "", nil
 }
 
-// send calls sendMessage for the target's chat. Telegram keeps no id of ours per Binding: the
-// receipt is empty.
+// send calls sendMessage for the target's chat. The receipt carries the id Telegram gave the
+// message in that chat, which is how a press on its unsubscribe button finds the message again.
 func (a telegramAdapter) send(ctx context.Context, _ sendAs, msg any, to target, _ messaging.Origin) (messaging.Receipt, error) {
 	m, ok := msg.(telegramMessage)
 	if !ok {
 		return messaging.Receipt{}, fmt.Errorf("outbound: %T is no Telegram message", msg)
 	}
-	if _, err := a.bot.SendMessage(ctx, messaging.TelegramMessage{ChatID: to.chat, Text: m.text}); err != nil {
+	sent, err := a.bot.SendMessage(ctx, messaging.TelegramMessage{ChatID: to.chat, Text: m.text, UnsubscribeButton: m.unsubscribeButton})
+	if err != nil {
 		return messaging.Receipt{}, classifyTelegram(err)
 	}
-	return messaging.Receipt{}, nil
+	return messaging.Receipt{MessageID: strconv.FormatInt(sent.MessageID, 10)}, nil
 }
 
 // classifyTelegram sorts a refusal of the Bot API by whom it concerns (ADR 0079), reading the code

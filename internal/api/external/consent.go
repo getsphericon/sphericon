@@ -3,6 +3,8 @@ package external
 import (
 	"context"
 
+	"github.com/getsphericon/sphericon/ent"
+
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/consent"
@@ -18,7 +20,7 @@ import (
 func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.CreateSuppressionInput) (externalapi.SuppressionsCreateRes, error) {
 	s := auth.TokenScoped(ctx)
 
-	created, err := suppression.AddManual(ctx, s, string(req.Destination))
+	created, err := suppression.AddManual(ctx, s, inputs.SuppressionChannel(req.Channel.Or(externalapi.ConsentChannelEmail)), req.Destination)
 	if err != nil {
 		return nil, err
 	}
@@ -29,8 +31,13 @@ func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.Crea
 func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.CreateUnsubscribeInput) (externalapi.UnsubscribesCreateRes, error) {
 	s := auth.TokenScoped(ctx)
 
-	source := req.SendingSource.Or(eligibility.SourceBroadcasts)
-	u, err := consent.Unsubscribe(ctx, h.bus, s, string(req.Destination), source)
+	var u *ent.Unsubscribe
+	var err error
+	if req.Channel.Or(externalapi.ConsentChannelEmail) == externalapi.ConsentChannelTelegram {
+		u, err = consent.TelegramUnsubscribe(ctx, h.bus, s, req.Destination, req.SendingSource.Or(eligibility.SourceEverything))
+	} else {
+		u, err = consent.Unsubscribe(ctx, h.bus, s, req.Destination, req.SendingSource.Or(eligibility.SourceBroadcasts))
+	}
 	if err != nil {
 		return nil, err
 	}

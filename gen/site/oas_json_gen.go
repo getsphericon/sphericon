@@ -18915,9 +18915,15 @@ func (s *SiteAutomationStep) encodeFields(e *jx.Encoder) {
 			s.Text.Encode(e)
 		}
 	}
+	{
+		if s.UnsubscribeButton.Set {
+			e.FieldStart("unsubscribeButton")
+			s.UnsubscribeButton.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteAutomationStep = [15]string{
+var jsonFieldsNameOfSiteAutomationStep = [16]string{
 	0:  "type",
 	1:  "subject",
 	2:  "body",
@@ -18933,6 +18939,7 @@ var jsonFieldsNameOfSiteAutomationStep = [15]string{
 	12: "hasSecret",
 	13: "integrationId",
 	14: "text",
+	15: "unsubscribeButton",
 }
 
 // Decode decodes SiteAutomationStep from json.
@@ -19100,6 +19107,16 @@ func (s *SiteAutomationStep) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"text\"")
+			}
+		case "unsubscribeButton":
+			if err := func() error {
+				s.UnsubscribeButton.Reset()
+				if err := s.UnsubscribeButton.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"unsubscribeButton\"")
 			}
 		default:
 			return d.Skip()

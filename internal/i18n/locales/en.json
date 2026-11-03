@@ -287,6 +287,7 @@
   "errors.send_route_held": "the email integration it sends through cannot send: enable it, choose another one or set a default",
   "errors.test_send_refused": "the test send was not sent",
   "errors.destination_empty": "destination must not be empty",
+  "errors.sending_source_telegram": "sendingSource on telegram must be everything",
   "errors.variables_invalid": "invalid variables",
   "errors.send_in_progress": "a send with this Idempotency-Key is already in progress",
   "errors.send_key_failed": "a previous send with this Idempotency-Key failed; retry with a new key",

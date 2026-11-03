@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/suppression"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/automations"
@@ -167,6 +168,9 @@ type Inputs interface {
 	RuleActionType(source externalapi.RuleActionType) rules.ActionType
 	// goverter:enum:transform value
 	BroadcastChannel(source externalapi.BroadcastChannel) broadcast.Channel
+	// goverter:enum:map ConsentChannelEmail ChannelEmail
+	// goverter:enum:map ConsentChannelTelegram ChannelTelegram
+	SuppressionChannel(source externalapi.ConsentChannel) suppression.Channel
 }
 
 // goverter:context backfill

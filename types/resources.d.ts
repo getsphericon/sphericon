@@ -440,6 +440,10 @@ export default interface Resources {
       "telegramTextHint": "Telegram's HTML: b, i, u, s, a href, code, pre, tg-spoiler, blockquote. Merge tags are escaped.",
       "telegramTextLabel": "Message",
       "telegramTextTooLong": "Telegram takes up to 4096 characters: publishing is refused until the text is shorter.",
+      "telegramUnsubscribeDefault": "Unsubscribe",
+      "telegramUnsubscribeHint": "A button under the message that stops all of your Telegram messages to the person.",
+      "telegramUnsubscribeLabel": "Button label",
+      "telegramUnsubscribeToggle": "Unsubscribe button",
       "triggerColumn": "Trigger",
       "triggerHint": "The event that enrolls a contact into this automation.",
       "triggerLabel": "Trigger event",
@@ -1029,7 +1033,8 @@ export default interface Resources {
       "telegramBound": "Telegram chat bound",
       "telegramReceived": "Sent a Telegram message",
       "telegramSent": "Was sent a Telegram message",
-      "telegramUnbound": "Telegram chat unbound"
+      "telegramUnbound": "Telegram chat unbound",
+      "telegramUnsubscribed": "Unsubscribed from Telegram"
     },
     "eventRows": {
       "completed": "Completed",
@@ -2224,6 +2229,9 @@ export default interface Resources {
       }
     },
     "suppressions": {
+      "channelEmail": "Email",
+      "channelLabel": "Channel",
+      "channelTelegram": "Telegram",
       "create": "Suppress",
       "createError": "Failed to suppress address",
       "emailColumn": "Email",
@@ -2244,6 +2252,8 @@ export default interface Resources {
         "unsubscribed": "Unsubscribed"
       },
       "showLifted": "Show lifted",
+      "telegramHint": "The person's Telegram user id. Telegram sends to it through any of the workspace's bots will be skipped.",
+      "telegramLabel": "Telegram user id",
       "title": "Suppression list"
     },
     "table": {
