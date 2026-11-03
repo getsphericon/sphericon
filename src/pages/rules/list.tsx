@@ -88,8 +88,15 @@ export function RulesListPage() {
           siteRulesListOptions({ path: { workspaceId }, query: { ...query, archived } })
         }
         loadErrorTitle={t(($) => $.alerts.ruleLoadErrorTitle)}
-        noRecordsText={t(($) => $.rules.noRecords)}
-        emptyState={t(($) => $.rules.emptyState)}
+        collection={t(($) => $.nav.rules)}
+        empty={{
+          title: t(($) => $.rules.noRecords),
+          action: (
+            <ButtonLink variant="default" to={rulesCreateRoute.to} params={{ workspaceId }}>
+              {t(($) => $.rules.addRule)}
+            </ButtonLink>
+          ),
+        }}
         onRowClick={(record) =>
           void navigate({ to: rulesDetailRoute.to, params: { workspaceId, ruleId: record.id } })
         }

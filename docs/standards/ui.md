@@ -99,8 +99,9 @@ focus. A few submit buttons are disabled in place of validation (`signup-survey.
   its place while a refresh fails.)
 - An empty value in a cell or a key-value row is a hyphen, not a blank and not `0`.
 
-**Target (#1001):** the anatomy above (heading, action, count) is applied list by list; the lists checked
-(contacts, suppressions) pass a title or one line of text, without the action or the count.
+`PagedTable` takes the anatomy as `collection` (the name in the count, "Contacts (0)") and `empty`
+(`title`, an optional `description`, and the `action` button). A list that is not a `PagedTable`
+renders the same by hand.
 
 ## Loading
 

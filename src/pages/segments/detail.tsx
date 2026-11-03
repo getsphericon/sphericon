@@ -58,7 +58,6 @@ function SegmentDetail() {
         </Group>
       </Group>
 
-      <Title order={5}>{t(($) => $.segments.matchingContacts)}</Title>
       <PagedTable
         page={page}
         onPageChange={(next) =>
@@ -68,7 +67,8 @@ function SegmentDetail() {
           siteSegmentContactsListOptions({ path: { workspaceId, segmentId }, query })
         }
         loadErrorTitle={t(($) => $.alerts.loadErrorTitle)}
-        noRecordsText={t(($) => $.segments.noMatchingContacts)}
+        collection={t(($) => $.segments.matchingContacts)}
+        empty={{ title: t(($) => $.segments.noMatchingContacts) }}
         columns={[
           {
             accessor: 'email',

@@ -74,7 +74,11 @@ test('shows the empty state when there are no broadcasts', async () => {
 
   const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
 
-  await expect.element(screen.getByText('Create your first broadcast.')).toBeInTheDocument()
+  await expect.element(screen.getByText('No broadcasts yet')).toBeInTheDocument()
+  // One create action in the empty state, the same label as the header's button.
+  await expect
+    .element(screen.getByRole('link', { name: 'New broadcast' }).nth(1))
+    .toBeInTheDocument()
 })
 
 test('shows an error alert when the list fails to load', async () => {

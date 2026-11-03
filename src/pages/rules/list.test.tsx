@@ -59,7 +59,9 @@ test('shows the empty state when there are no rules', async () => {
 
   const { screen } = await renderWithRouter(<RulesListPage />, LIST_ROUTE)
 
-  await expect.element(screen.getByText('Create your first rule.')).toBeInTheDocument()
+  await expect.element(screen.getByText('No rules yet')).toBeInTheDocument()
+  // One create action in the empty state, the same label as the header's button.
+  await expect.element(screen.getByRole('link', { name: 'New rule' }).nth(1)).toBeInTheDocument()
 })
 
 test('shows an error alert when the list fails to load', async () => {

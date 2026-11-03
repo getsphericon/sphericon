@@ -111,6 +111,10 @@ export function ContactsListPage() {
     setFilter({ email: value.trim() || undefined })
   }, 300)
   const filtered = Boolean(email || tag || country)
+  const clearFilters = () => {
+    setSearch('')
+    setFilter({ email: undefined, tag: undefined, country: undefined })
+  }
 
   return (
     <Stack>
@@ -150,10 +154,28 @@ export function ContactsListPage() {
           })
         }
         loadErrorTitle={t(($) => $.alerts.loadErrorTitle)}
-        // A search or filter that matches nothing is not an empty Workspace: no invitation to
-        // create the first contact.
-        noRecordsText={filtered ? t(($) => $.contacts.noMatches) : t(($) => $.contacts.noRecords)}
-        emptyState={filtered ? undefined : t(($) => $.contacts.emptyState)}
+        collection={t(($) => $.nav.contacts)}
+        // A search or filter that matches nothing is not an empty Workspace: it offers to clear the
+        // filter, not to create the first contact.
+        empty={
+          filtered
+            ? {
+                title: t(($) => $.contacts.noMatches),
+                action: (
+                  <Button variant="default" onClick={clearFilters}>
+                    {t(($) => $.table.clearFilter)}
+                  </Button>
+                ),
+              }
+            : {
+                title: t(($) => $.contacts.noRecords),
+                action: (
+                  <Button variant="default" onClick={openCreate}>
+                    {t(($) => $.contacts.addContact)}
+                  </Button>
+                ),
+              }
+        }
         onRowClick={(record) =>
           void navigate({
             to: contactsDetailRoute.to,

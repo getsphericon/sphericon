@@ -35,7 +35,9 @@ test('shows the empty state when there are no segments', async () => {
 
   const { screen } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
 
-  await expect.element(screen.getByText('Create your first segment.')).toBeInTheDocument()
+  await expect.element(screen.getByText('No segments yet')).toBeInTheDocument()
+  // One create action in the empty state, the same label as the header's button.
+  await expect.element(screen.getByRole('link', { name: 'Add segment' }).nth(1)).toBeInTheDocument()
 })
 
 test('shows an error alert when the list fails to load', async () => {

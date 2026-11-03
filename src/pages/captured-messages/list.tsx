@@ -56,7 +56,8 @@ export function CapturedMessagesListPage() {
         pageSize={20}
         options={(query) => siteCapturedMessagesListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.capturedMessages.loadError)}
-        noRecordsText={t(($) => $.capturedMessages.noRecords)}
+        collection={t(($) => $.capturedMessages.title)}
+        empty={{ title: t(($) => $.capturedMessages.noRecords) }}
         onRowClick={(record) =>
           void navigate({
             to: capturedMessageRoute.to,

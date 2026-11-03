@@ -32,7 +32,11 @@ test('shows the empty state when there are no templates', async () => {
 
   const { screen } = await renderWithRouter(<TemplatesListPage />, LIST_ROUTE)
 
-  await expect.element(screen.getByText('Create your first template.')).toBeInTheDocument()
+  await expect.element(screen.getByText('No templates yet')).toBeInTheDocument()
+  // One create action in the empty state, the same label as the header's button.
+  await expect
+    .element(screen.getByRole('link', { name: 'New template' }).nth(1))
+    .toBeInTheDocument()
 })
 
 test('shows an error alert when the list fails to load', async () => {

@@ -9,6 +9,7 @@ import {
   NativeSelect,
   Stack,
   Switch,
+  Text,
   TextInput,
   Title,
 } from '@mantine/core'
@@ -57,6 +58,7 @@ function SuppressionsTable({
   fetching,
   onPageChange,
   onLift,
+  onCreate,
 }: {
   workspaceId: string
   page: number
@@ -65,6 +67,7 @@ function SuppressionsTable({
   fetching: boolean
   onPageChange: (page: number) => void
   onLift: (id: string) => void
+  onCreate: () => void
 }) {
   const { t } = useTranslation()
   const { items: records, totalItems } = useSuspenseQuery(
@@ -75,55 +78,70 @@ function SuppressionsTable({
   ).data
 
   return (
-    <DataTable
-      minHeight={records.length === 0 ? 200 : 0}
-      withTableBorder
-      records={records}
-      idAccessor="id"
-      fetching={fetching}
-      columns={[
-        { accessor: 'destination', title: t(($) => $.suppressions.emailColumn) },
-        {
-          accessor: 'reason',
-          title: t(($) => $.suppressions.reasonColumn),
-          render: (record) => (
-            <Badge variant="light" color={REASON_COLORS[record.reason]}>
-              {t(($) => $.suppressions.reasons[record.reason])}
-            </Badge>
-          ),
-        },
-        {
-          accessor: 'actions',
-          title: '',
-          render: (record) => {
-            if (record.liftedAt) {
-              return (
-                <Badge variant="light" color="gray">
-                  {t(($) => $.suppressions.liftedBadge)}
-                </Badge>
-              )
-            }
-            if (!canManage) {
-              return null
-            }
-            return (
-              <Group justify="flex-end">
-                <RowActionsMenu>
-                  <Menu.Item onClick={() => onLift(record.id)}>
-                    {t(($) => $.suppressions.lift)}
-                  </Menu.Item>
-                </RowActionsMenu>
-              </Group>
-            )
+    <Stack gap="xs">
+      <Text fw={600}>
+        {t(($) => $.table.collection, { name: t(($) => $.suppressions.title), total: totalItems })}
+      </Text>
+      <DataTable
+        minHeight={records.length === 0 ? 200 : 0}
+        withTableBorder
+        records={records}
+        idAccessor="id"
+        fetching={fetching}
+        columns={[
+          { accessor: 'destination', title: t(($) => $.suppressions.emailColumn) },
+          {
+            accessor: 'reason',
+            title: t(($) => $.suppressions.reasonColumn),
+            render: (record) => (
+              <Badge variant="light" color={REASON_COLORS[record.reason]}>
+                {t(($) => $.suppressions.reasons[record.reason])}
+              </Badge>
+            ),
           },
-        },
-      ]}
-      emptyState={<EmptyState title={t(($) => $.suppressions.empty)} />}
-      totalRecords={totalItems}
-      recordsPerPage={PAGE_SIZE}
-      page={page}
-      onPageChange={onPageChange}
-    />
+          {
+            accessor: 'actions',
+            title: '',
+            render: (record) => {
+              if (record.liftedAt) {
+                return (
+                  <Badge variant="light" color="gray">
+                    {t(($) => $.suppressions.liftedBadge)}
+                  </Badge>
+                )
+              }
+              if (!canManage) {
+                return null
+              }
+              return (
+                <Group justify="flex-end">
+                  <RowActionsMenu>
+                    <Menu.Item onClick={() => onLift(record.id)}>
+                      {t(($) => $.suppressions.lift)}
+                    </Menu.Item>
+                  </RowActionsMenu>
+                </Group>
+              )
+            },
+          },
+        ]}
+        emptyState={
+          <EmptyState title={t(($) => $.suppressions.empty)}>
+            {canManage ? (
+              <EmptyState.Actions>
+                <Button variant="default" onClick={onCreate}>
+                  {t(($) => $.suppressions.create)}
+                </Button>
+              </EmptyState.Actions>
+            ) : null}
+          </EmptyState>
+        }
+        totalRecords={totalItems}
+        recordsPerPage={PAGE_SIZE}
+        page={page}
+        onPageChange={onPageChange}
+      />
+    </Stack>
   )
 }
 
@@ -208,6 +226,7 @@ export function SuppressionsListPage() {
           fetching={page !== shownPage || lifted !== shownLifted}
           onPageChange={pageHandlers.set}
           onLift={onLift}
+          onCreate={openCreate}
         />
       </QueryBoundary>
       <Modal opened={createOpened} onClose={closeCreate} title={t(($) => $.suppressions.create)}>

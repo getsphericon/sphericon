@@ -1,3 +1,5 @@
+import { Button } from '@mantine/core'
+import type { ComponentProps } from 'react'
 import { expect, test } from 'vitest'
 
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
@@ -17,7 +19,7 @@ interface Source {
 }
 
 // A list that answers with a row naming the call, and fails on demand.
-function source(): Source {
+function source(rows = 1): Source {
   let calls = 0
   let failing = false
   return {
@@ -34,13 +36,16 @@ function source(): Source {
         if (failing) {
           throw new Error('boom')
         }
-        return { items: [{ id: `row-${calls}` }], totalItems: 1 }
+        return { items: rows ? [{ id: `row-${calls}` }] : [], totalItems: rows }
       },
     }),
   }
 }
 
-async function renderTable(list: Source) {
+async function renderTable(
+  list: Source,
+  empty: ComponentProps<typeof PagedTable>['empty'] = { title: 'No rows' },
+) {
   return await renderWithProviders(
     <PagedTable
       page={1}
@@ -48,7 +53,8 @@ async function renderTable(list: Source) {
       options={list.options}
       columns={[{ accessor: 'id', title: 'Id' }]}
       loadErrorTitle="Failed to load"
-      noRecordsText="No rows"
+      collection="Rows"
+      empty={empty}
     />,
   )
 }
@@ -88,4 +94,34 @@ test('a failed refresh leaves the previous time in place', async () => {
   await expect.element(screen.getByText('Failed to load').first()).toBeInTheDocument()
 
   expect(screen.getByRole('time').element().getAttribute('datetime')).toBe(before)
+})
+
+test('an empty list shows its heading, the description and the one action under the count', async () => {
+  let clicked = 0
+  const label = ['Add', 'row'].join(' ')
+  const screen = await renderTable(source(0), {
+    title: 'No rows yet',
+    description: 'Rows appear once something happens.',
+    action: (
+      <Button
+        onClick={() => {
+          clicked += 1
+        }}
+      >
+        {label}
+      </Button>
+    ),
+  })
+
+  await expect.element(screen.getByText('Rows (0)')).toBeInTheDocument()
+  await expect.element(screen.getByText('No rows yet')).toBeInTheDocument()
+  await expect.element(screen.getByText('Rows appear once something happens.')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Add row' }).click()
+  expect(clicked).toBe(1)
+})
+
+test('the count follows the total of the collection', async () => {
+  const screen = await renderTable(source())
+
+  await expect.element(screen.getByText('Rows (1)')).toBeInTheDocument()
 })

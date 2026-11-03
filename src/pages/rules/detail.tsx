@@ -142,7 +142,6 @@ export function RuleDetailPage() {
 
       {rule.live ? <RuleVersionSummary version={rule.live} /> : null}
 
-      <Title order={5}>{t(($) => $.rules.firingsTitle)}</Title>
       <PagedTable
         page={page}
         onPageChange={(next) =>
@@ -150,7 +149,8 @@ export function RuleDetailPage() {
         }
         options={(query) => siteRuleFiringsListOptions({ path: { workspaceId, ruleId }, query })}
         loadErrorTitle={t(($) => $.alerts.firingsLoadErrorTitle)}
-        noRecordsText={t(($) => $.rules.noFirings)}
+        collection={t(($) => $.rules.firingsTitle)}
+        empty={{ title: t(($) => $.rules.noFirings) }}
         columns={[
           {
             accessor: 'createdAt',

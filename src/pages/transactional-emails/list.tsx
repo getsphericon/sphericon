@@ -43,7 +43,8 @@ export function TransactionalEmailsListPage() {
         pageSize={20}
         options={(query) => siteTransactionalEmailsListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.alerts.transactionalEmailsLoadErrorTitle)}
-        noRecordsText={t(($) => $.transactionalEmails.noRecords)}
+        collection={t(($) => $.transactionalEmails.title)}
+        empty={{ title: t(($) => $.transactionalEmails.noRecords) }}
         columns={[
           { accessor: 'destination', title: t(($) => $.transactionalEmails.destinationLabel) },
           {

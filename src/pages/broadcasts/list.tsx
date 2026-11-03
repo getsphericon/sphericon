@@ -111,8 +111,15 @@ export function BroadcastsListPage() {
           })
         }
         loadErrorTitle={t(($) => $.alerts.broadcastLoadErrorTitle)}
-        noRecordsText={t(($) => $.broadcasts.noRecords)}
-        emptyState={t(($) => $.broadcasts.emptyState)}
+        collection={t(($) => $.nav.broadcasts)}
+        empty={{
+          title: t(($) => $.broadcasts.noRecords),
+          action: (
+            <ButtonLink variant="default" to={broadcastsCreateRoute.to} params={{ workspaceId }}>
+              {t(($) => $.broadcasts.addBroadcast)}
+            </ButtonLink>
+          ),
+        }}
         onRowClick={(record) =>
           void navigate({
             to: broadcastsReportRoute.to,
