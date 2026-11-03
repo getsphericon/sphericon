@@ -7,6 +7,7 @@ import { lazy, Suspense } from 'react'
 import { I18nextProvider } from 'react-i18next'
 
 import { NotificationsProvider } from './components/NotificationsProvider.tsx'
+import { RegionalDates } from './components/RegionalDates.tsx'
 import { editorCssVariablesResolver } from './editorCssVariables.ts'
 import { i18n } from './i18n.ts'
 import type { AppRouter } from './router.ts'
@@ -27,11 +28,13 @@ export function App({ queryClient, router }: { queryClient: QueryClient; router:
           defaultColorScheme="auto"
           cssVariablesResolver={editorCssVariablesResolver}
         >
-          <ModalsProvider>
-            <NotificationsProvider>
-              <RouterProvider router={router} />
-            </NotificationsProvider>
-          </ModalsProvider>
+          <RegionalDates>
+            <ModalsProvider>
+              <NotificationsProvider>
+                <RouterProvider router={router} />
+              </NotificationsProvider>
+            </ModalsProvider>
+          </RegionalDates>
         </MantineProvider>
       </I18nextProvider>
       {Devtools ? (

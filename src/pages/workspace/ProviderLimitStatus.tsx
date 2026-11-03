@@ -1,23 +1,23 @@
-import { Badge, Group, NumberFormatter, Progress, Stack, Text } from '@mantine/core'
+import { Badge, Group, Progress, Stack, Text } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import type {
   SiteProviderLimitStatus,
   SiteProviderLimitValue,
 } from '../../generated/site/types.gen.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useProviderLimitWarnings } from './providerLimit.ts'
 
 function LimitLine({ label, value }: { label: string; value: SiteProviderLimitValue }) {
   const { t } = useTranslation()
+  const { formatNumber } = useFormat()
   return (
     <Group gap="xs" wrap="nowrap">
       <Text size="sm">
         {label}:{' '}
-        {value.limit === null ? (
-          t(($) => $.settings.integrations.providerLimit.unlimited)
-        ) : (
-          <NumberFormatter value={value.limit} thousandSeparator=" " />
-        )}
+        {value.limit === null
+          ? t(($) => $.settings.integrations.providerLimit.unlimited)
+          : formatNumber(value.limit)}
       </Text>
       {value.source ? (
         <Badge size="xs" variant="light" color={value.source === 'manual' ? 'blue' : 'grape'}>
@@ -41,6 +41,7 @@ export function ProviderLimitStatus({
   withWarnings?: boolean
 }) {
   const { t } = useTranslation()
+  const { formatNumber } = useFormat()
   const flagged = useProviderLimitWarnings().filter(
     (copy) => withWarnings && status.warnings.includes(copy.warning),
   )
@@ -66,11 +67,11 @@ export function ProviderLimitStatus({
       />
       <Text size="xs" c="dimmed">
         {t(($) => $.settings.integrations.providerLimit.sentLast24h)}:{' '}
-        <NumberFormatter value={status.sentLast24h} thousandSeparator=" " />
+        {formatNumber(status.sentLast24h)}
         {daily === null ? null : (
           <>
             {' / '}
-            <NumberFormatter value={daily} thousandSeparator=" " />
+            {formatNumber(daily)}
           </>
         )}
       </Text>

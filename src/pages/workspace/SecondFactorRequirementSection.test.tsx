@@ -63,6 +63,6 @@ test('without second_factor:manage the requirement and its grace show but do not
   await expect.element(toggle).toBeChecked()
   await expect.element(toggle).toBeDisabled()
   await expect
-    .element(screen.getByText(new RegExp(`have until ${formatDate('2026-03-08T00:00:00Z')}`)))
+    .element(screen.getByText(new RegExp(`have until ${formatDate('2026-03-08T00:00:00Z', 'en')}`)))
     .toBeInTheDocument()
 })

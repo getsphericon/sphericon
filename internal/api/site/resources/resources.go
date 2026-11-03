@@ -91,6 +91,7 @@ import (
 // goverter:extend optNilDate
 // goverter:extend nilCurrencyCode
 // goverter:extend nilTimeZone
+// goverter:extend nilRegionalFormat
 // goverter:extend attributionWindowDays
 // goverter:extend workspaceTimezone
 // goverter:extend optNilTimestamp
@@ -874,6 +875,11 @@ func nilCurrencyCode(v *string) siteapi.NilCurrencyCode {
 // nilTimeZone is the User time zone (ADR 0068), null while the app follows the browser.
 func nilTimeZone(v *string) siteapi.NilTimeZoneName {
 	return convert.Nil[siteapi.NilTimeZoneName]((*siteapi.TimeZoneName)(v))
+}
+
+// nilRegionalFormat is the User's Regional format, null while the app follows the Instance's language.
+func nilRegionalFormat(v *string) siteapi.NilRegionalFormat {
+	return convert.Nil[siteapi.NilRegionalFormat]((*siteapi.RegionalFormat)(v))
 }
 
 func attributionWindowDays(v int) siteapi.AttributionWindowDays {

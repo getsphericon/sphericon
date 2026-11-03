@@ -16,7 +16,7 @@ import {
   siteUserGetMeQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteSignupItem, SiteSoleOwnedWorkspace } from '../../generated/site/types.gen.ts'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useLogout } from '../../hooks/useLogout.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as acceptanceRoute } from '../../routes/acceptance.tsx'
@@ -38,7 +38,7 @@ function PendingDocument({ item }: { item: SiteSignupItem }) {
 
 // PendingDocumentText is the version and the Markdown of one pending document.
 function PendingDocumentText({ documentKey }: { documentKey: string }) {
-  const { formatDate } = useDateFormat()
+  const { formatDate } = useFormat()
   const { t } = useTranslation()
   const legal = useSuspenseQuery({
     ...siteLegalDocumentsGetOptions({ path: { key: documentKey } }),

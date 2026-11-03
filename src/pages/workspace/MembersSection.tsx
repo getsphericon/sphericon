@@ -43,7 +43,7 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { zSiteInvitableRole, zSiteMembershipRole } from '../../generated/site/zod.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { can } from '../../utils/permissions.ts'
 
@@ -72,7 +72,7 @@ function MembersTabs({
   onRemove: (id: string) => void
   onRevoke: (id: string) => void
 }) {
-  const { formatDate } = useDateFormat()
+  const { formatDate } = useFormat()
   const { t } = useTranslation()
   const [{ data: me }, { data: members }, { data: invites }] = useSuspenseQueries({
     queries: [

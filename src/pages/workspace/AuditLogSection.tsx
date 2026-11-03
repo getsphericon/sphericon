@@ -45,7 +45,7 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { zRetentionDays, zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
 import { useAuditActionLabel } from '../../hooks/useAuditActionLabel.ts'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
@@ -224,7 +224,7 @@ function EntryRows({
   filter,
   onFilterChange,
 }: FilterProps & { entry: SiteAuditEntryResource }) {
-  const { formatDateTime } = useDateFormat()
+  const { formatDateTime } = useFormat()
   const { t } = useTranslation()
   const actorLabel = useActorLabel()
   const [open, { toggle }] = useDisclosure(false)

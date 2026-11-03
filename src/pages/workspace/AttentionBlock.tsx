@@ -13,14 +13,13 @@ import type {
   SiteAttentionKind,
   SiteAttentionSeverity,
 } from '../../generated/site/types.gen.ts'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as automationRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as broadcastReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as emailsRoute } from '../../routes/workspaces/$workspaceId/settings/emails.tsx'
 import { Route as webhooksRoute } from '../../routes/workspaces/$workspaceId/settings/webhooks.tsx'
 import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId/suppressions/index.tsx'
 import { holdExplanation } from '../../utils/hold.ts'
-import { formatPercent } from '../../utils/percent.ts'
 
 const SEVERITY_ICON = {
   blocked: { color: 'red', Icon: IconCircleX },
@@ -30,7 +29,7 @@ const SEVERITY_ICON = {
 
 const nameOf = (item: SiteAttentionItem) => item.subject?.name ?? ''
 
-type FormatDateTime = ReturnType<typeof useDateFormat>['formatDateTime']
+type Format = ReturnType<typeof useFormat>
 
 // MESSAGE is each kind of item as a sentence about its object; an instant it names is shown in the
 // User time zone.
@@ -51,20 +50,20 @@ const MESSAGE = {
       name: nameOf(item),
       reason: item.holdReason ? holdExplanation(t, item.holdReason) : '',
     }),
-  deliverabilityWarning: (t, item) => {
+  deliverabilityWarning: (t, item, format) => {
     const metric = item.abuse?.metric ?? 'bounce'
     return t(($) => $.overview.attention.kinds.deliverabilityWarning, {
       metric: t(($) => $.overview.attention.metrics[metric]),
-      rate: formatPercent(item.abuse?.rate ?? 0),
+      rate: format.formatPercent(item.abuse?.rate ?? 0),
       domain: item.abuse?.domain ?? '',
     })
   },
   sendCapSpent: (t) => t(($) => $.overview.attention.kinds.sendCapSpent),
-  scheduledBroadcastOverSendCap: (t, item, formatDateTime) =>
+  scheduledBroadcastOverSendCap: (t, item, format) =>
     t(($) => $.overview.attention.kinds.scheduledBroadcastOverSendCap, {
       name: nameOf(item),
       count: item.count,
-      finish: item.estimatedCompletionAt ? formatDateTime(item.estimatedCompletionAt) : '',
+      finish: item.estimatedCompletionAt ? format.formatDateTime(item.estimatedCompletionAt) : '',
     }),
   providerLimitSpent: (t, item) =>
     t(($) => $.overview.attention.kinds.providerLimitSpent, { name: nameOf(item) }),
@@ -85,7 +84,7 @@ const MESSAGE = {
     t(($) => $.overview.attention.kinds.sendingDomainNotBulkReady, { name: nameOf(item) }),
 } as const satisfies Record<
   SiteAttentionKind,
-  (t: TFunction, item: SiteAttentionItem, formatDateTime: FormatDateTime) => string
+  (t: TFunction, item: SiteAttentionItem, format: Format) => string
 >
 
 interface ActionProps {
@@ -167,7 +166,7 @@ function ItemAction({ item, workspaceId }: { item: SiteAttentionItem; workspaceI
 // nothing does: the block is never an "all good" box.
 function AttentionItems({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const { formatDateTime } = useDateFormat()
+  const format = useFormat()
   const items = useSuspenseQuery(siteAttentionGetOptions({ path: { workspaceId } })).data.items
   if (items.length === 0) {
     return null
@@ -190,7 +189,7 @@ function AttentionItems({ workspaceId }: { workspaceId: string }) {
                 <Icon size={16} />
               </ThemeIcon>
               <Stack gap={2}>
-                <Text size="sm">{MESSAGE[item.kind](t, item, formatDateTime)}</Text>
+                <Text size="sm">{MESSAGE[item.kind](t, item, format)}</Text>
                 <ItemAction item={item} workspaceId={workspaceId} />
               </Stack>
             </Group>

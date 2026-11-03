@@ -766,6 +766,12 @@ prints dates in it. Empty until chosen, which is the browser's zone in the app a
 Never read by a report: a **Report day** is in the **Workspace time zone**.
 _Avoid_: Locale
 
+**Regional format**:
+The locale, with its region, a User chooses for how the app shows them dates, times and numbers:
+`en-GB`, `de-DE`. Empty until chosen, which is the **Instance**'s language. It never changes the
+language of the UI, and is not the **Contact locale**.
+_Avoid_: Locale, date format
+
 **Report day**:
 A calendar day in the **Workspace time zone**: the one bucket every analytics report counts by, so
 the dashboard, the engagement rates and the hour-of-day report agree on what "today" and "9 a.m."

@@ -10,15 +10,19 @@ import (
 )
 
 // ProfileChange is what a User asks to change on their own profile. A nil Name keeps the name;
-// a nil Timezone keeps the User time zone (ADR 0068) unless ClearTimezone clears it; an empty
+// a nil Timezone keeps the User time zone (ADR 0068) unless ClearTimezone clears it, and a nil
+// RegionalFormat keeps the Regional format unless ClearRegionalFormat clears it; an empty
 // NewPassword keeps the password, and then CurrentPassword is not read. The email is the login
 // identity and changes through its own confirmed link, not here.
 type ProfileChange struct {
-	Name            *string
-	Timezone        *string
-	ClearTimezone   bool
-	NewPassword     string
-	CurrentPassword string
+	Name           *string
+	Timezone       *string
+	ClearTimezone  bool
+	RegionalFormat *string
+	// ClearRegionalFormat clears the Regional format; a RegionalFormat given with it wins.
+	ClearRegionalFormat bool
+	NewPassword         string
+	CurrentPassword     string
 }
 
 // Prove is the proof of a User's current password, which the adapter supplies: the login
@@ -84,15 +88,20 @@ type newPasswordForm struct {
 	NewPassword string `json:"newPassword" validate:"password_not_blank,password_length"`
 }
 
-// ChangeProfile changes the name, the time zone and/or the password of the User u. A blank name
-// is refused, and so is a time zone the zone database does not know (ErrUnknownZone); a new
+// ChangeProfile changes the name, the time zone, the Regional format and/or the password of the User
+// u. A blank name is refused, and so is a time zone the zone database does not know
+// (ErrUnknownZone) and a Regional format that is no well-formed tag (ErrMalformedRegionalFormat); a new
 // password is checked against the password rule before the current one is proven, so a
 // refused one costs no hash, and it needs the current password, proven through prove. A
 // refused field is a *validation.FieldsError, and prove's refusal (a wrong current password, a
 // running throttle delay) comes back as it is. Nothing is written unless every rule holds; a change that asks for nothing writes
 // nothing and returns u.
 func (a *Accounts) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChange, prove Prove) (ProfileChanged, error) {
-	w := profileWrite{Timezone: c.Timezone, ClearTimezone: c.ClearTimezone && c.Timezone == nil}
+	w := profileWrite{
+		Timezone:            c.Timezone,
+		ClearTimezone:       c.ClearTimezone && c.Timezone == nil,
+		ClearRegionalFormat: c.ClearRegionalFormat && c.RegionalFormat == nil,
+	}
 	if c.Name != nil {
 		trimmed := strings.TrimSpace(*c.Name)
 		if trimmed == "" {
@@ -107,6 +116,13 @@ func (a *Accounts) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChan
 		if err := checkZone(*c.Timezone); err != nil {
 			return ProfileChanged{}, err
 		}
+	}
+	if c.RegionalFormat != nil {
+		tag, err := canonicalRegionalFormat(*c.RegionalFormat)
+		if err != nil {
+			return ProfileChanged{}, err
+		}
+		w.RegionalFormat = &tag
 	}
 	if c.NewPassword != "" {
 		if err := validation.Form(newPasswordForm{NewPassword: c.NewPassword}); err != nil {

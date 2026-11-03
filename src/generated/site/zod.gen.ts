@@ -490,6 +490,12 @@ export const zProblemDetails = z.object({
 });
 
 /**
+ * A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and
+ * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
+ */
+export const zRegionalFormat = z.string().max(35);
+
+/**
  * A number of days an Audit log is kept: 1 to 3650
  */
 export const zRetentionDays = z.int().gte(1).lte(3650);
@@ -3345,6 +3351,7 @@ export const zSiteUserResource = z.object({
   email: zEmailAddress,
   emailVerified: z.boolean(),
   timezone: zTimeZoneName.nullable(),
+  regionalFormat: zRegionalFormat.nullable(),
   signupSurveyDue: z.boolean(),
   acceptancesPending: z.array(zSiteSignupItem),
   createdAt: zTimestamp
@@ -3554,6 +3561,7 @@ export const zSiteSignUpInput = z.object({
 export const zSiteUpdateMeInput = z.object({
   name: z.exactOptional(zUserName),
   timezone: z.exactOptional(zTimeZoneName.nullable()),
+  regionalFormat: z.exactOptional(zRegionalFormat.nullable()),
   currentPassword: z.exactOptional(z.string()),
   newPassword: z.exactOptional(z.string())
 });

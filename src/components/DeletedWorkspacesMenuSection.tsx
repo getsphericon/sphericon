@@ -8,7 +8,7 @@ import {
   siteWorkspacesListDeletedOptions,
   siteWorkspacesRestoreMutation,
 } from '../generated/site/@tanstack/react-query.gen.ts'
-import { useDateFormat } from '../hooks/useDateFormat.ts'
+import { useFormat } from '../hooks/useFormat.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
 
@@ -16,7 +16,7 @@ import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.
 // deletion window, with the date their data is erased, and restores one (ADR 0043). It
 // renders inside the open menu, so the list is fetched when the menu opens.
 export function DeletedWorkspacesMenuSection() {
-  const { formatDate } = useDateFormat()
+  const { formatDate } = useFormat()
   const { t } = useTranslation()
   const navigate = useNavigate()
   const deleted = useQuery(siteWorkspacesListDeletedOptions())

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { siteTransactionalEmailsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteTransactionalEmailStatus } from '../../generated/site/types.gen.ts'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as transactionalEmailsRoute } from '../../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
 
@@ -25,7 +25,7 @@ function StatusBadge({ t, status }: { t: TFunction; status: SiteTransactionalEma
 }
 
 export function TransactionalEmailsListPage() {
-  const { formatDateTime } = useDateFormat()
+  const { formatDateTime } = useFormat()
   const { page } = transactionalEmailsRoute.useSearch()
   const pageNavigate = transactionalEmailsRoute.useNavigate()
   const { t } = useTranslation()

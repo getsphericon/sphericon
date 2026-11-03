@@ -33,7 +33,7 @@ import {
 import type { SiteCreateTokenInput } from '../../generated/site/types.gen.ts'
 import { zApiTokenScope } from '../../generated/site/zod.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { ScopePicker } from './ScopePicker.tsx'
 
@@ -52,7 +52,7 @@ function ApiKeysTable({
   onRename: (record: { id: string; name: string }) => void
   onRevoke: (record: { id: string; name: string }) => void
 }) {
-  const { formatDate } = useDateFormat()
+  const { formatDate } = useFormat()
   const { t } = useTranslation()
   const records = useSuspenseQuery(siteTokensListOptions({ path: { workspaceId } })).data
 

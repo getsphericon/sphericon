@@ -61726,6 +61726,7 @@ type UserMutation struct {
 	addsecond_factor_last_step     *int64
 	signup_survey_due_at           *time.Time
 	timezone                       *string
+	regional_format                *string
 	feed_position                  *int64
 	addfeed_position               *int64
 	clearedFields                  map[string]struct{}
@@ -62457,6 +62458,55 @@ func (m *UserMutation) ResetTimezone() {
 	delete(m.clearedFields, user.FieldTimezone)
 }
 
+// SetRegionalFormat sets the "regional_format" field.
+func (m *UserMutation) SetRegionalFormat(s string) {
+	m.regional_format = &s
+}
+
+// RegionalFormat returns the value of the "regional_format" field in the mutation.
+func (m *UserMutation) RegionalFormat() (r string, exists bool) {
+	v := m.regional_format
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRegionalFormat returns the old "regional_format" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldRegionalFormat(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRegionalFormat is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRegionalFormat requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRegionalFormat: %w", err)
+	}
+	return oldValue.RegionalFormat, nil
+}
+
+// ClearRegionalFormat clears the value of the "regional_format" field.
+func (m *UserMutation) ClearRegionalFormat() {
+	m.regional_format = nil
+	m.clearedFields[user.FieldRegionalFormat] = struct{}{}
+}
+
+// RegionalFormatCleared returns if the "regional_format" field was cleared in this mutation.
+func (m *UserMutation) RegionalFormatCleared() bool {
+	_, ok := m.clearedFields[user.FieldRegionalFormat]
+	return ok
+}
+
+// ResetRegionalFormat resets all changes to the "regional_format" field.
+func (m *UserMutation) ResetRegionalFormat() {
+	m.regional_format = nil
+	delete(m.clearedFields, user.FieldRegionalFormat)
+}
+
 // SetFeedPosition sets the "feed_position" field.
 func (m *UserMutation) SetFeedPosition(i int64) {
 	m.feed_position = &i
@@ -62910,7 +62960,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -62950,6 +63000,9 @@ func (m *UserMutation) Fields() []string {
 	if m.timezone != nil {
 		fields = append(fields, user.FieldTimezone)
 	}
+	if m.regional_format != nil {
+		fields = append(fields, user.FieldRegionalFormat)
+	}
 	if m.feed_position != nil {
 		fields = append(fields, user.FieldFeedPosition)
 	}
@@ -62987,6 +63040,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.SignupSurveyDueAt()
 	case user.FieldTimezone:
 		return m.Timezone()
+	case user.FieldRegionalFormat:
+		return m.RegionalFormat()
 	case user.FieldFeedPosition:
 		return m.FeedPosition()
 	}
@@ -63024,6 +63079,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldSignupSurveyDueAt(ctx)
 	case user.FieldTimezone:
 		return m.OldTimezone(ctx)
+	case user.FieldRegionalFormat:
+		return m.OldRegionalFormat(ctx)
 	case user.FieldFeedPosition:
 		return m.OldFeedPosition(ctx)
 	}
@@ -63126,6 +63183,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTimezone(v)
 		return nil
+	case user.FieldRegionalFormat:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRegionalFormat(v)
+		return nil
 	case user.FieldFeedPosition:
 		v, ok := value.(int64)
 		if !ok {
@@ -63223,6 +63287,9 @@ func (m *UserMutation) ClearedFields() []string {
 	if m.FieldCleared(user.FieldTimezone) {
 		fields = append(fields, user.FieldTimezone)
 	}
+	if m.FieldCleared(user.FieldRegionalFormat) {
+		fields = append(fields, user.FieldRegionalFormat)
+	}
 	return fields
 }
 
@@ -63257,6 +63324,9 @@ func (m *UserMutation) ClearField(name string) error {
 		return nil
 	case user.FieldTimezone:
 		m.ClearTimezone()
+		return nil
+	case user.FieldRegionalFormat:
+		m.ClearRegionalFormat()
 		return nil
 	}
 	return fmt.Errorf("unknown User nullable field %s", name)
@@ -63304,6 +63374,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldTimezone:
 		m.ResetTimezone()
+		return nil
+	case user.FieldRegionalFormat:
+		m.ResetRegionalFormat()
 		return nil
 	case user.FieldFeedPosition:
 		m.ResetFeedPosition()

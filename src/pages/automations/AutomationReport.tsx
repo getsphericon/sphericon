@@ -14,10 +14,8 @@ import type {
   SiteAutomationStepFigures,
 } from '../../generated/site/types.gen.ts'
 import { zSiteAutomationReportPeriod } from '../../generated/site/zod.gen.ts'
-import { formatChange } from '../../utils/change.ts'
-import { formatDate } from '../../utils/datetime.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { formatMessageRevenue } from '../../utils/messageRevenue.ts'
-import { formatDuration } from './resultsFormat.ts'
 
 const PERIODS = zSiteAutomationReportPeriod.options
 
@@ -25,6 +23,7 @@ const PERIODS = zSiteAutomationReportPeriod.options
 // line under a figure is its value then and the change since.
 function ResultsFigures({ results }: { results: SiteAutomationResults }) {
   const { t } = useTranslation()
+  const { formatChange, formatDate, formatDuration, locale } = useFormat()
   const { current, previous } = results
   const label = t(($) => $.automations.results.previous, {
     period: t(($) => $.automations.results.periods[results.period]),
@@ -39,8 +38,8 @@ function ResultsFigures({ results }: { results: SiteAutomationResults }) {
 
   const duration = current.averageDurationSeconds
   const durationBefore = previous.averageDurationSeconds
-  const revenue = formatMessageRevenue(current.revenue)
-  const revenueBefore = formatMessageRevenue(previous.revenue)
+  const revenue = formatMessageRevenue(current.revenue, locale)
+  const revenueBefore = formatMessageRevenue(previous.revenue, locale)
 
   return (
     <>
@@ -153,7 +152,8 @@ function StepFigures({ steps }: { steps: SiteAutomationStepFigures[] }) {
 // How the emails of an Automation were engaged with over its whole history.
 function Engagement({ report }: { report: SiteAutomationReport }) {
   const { t } = useTranslation()
-  const revenue = formatMessageRevenue(report.revenue)
+  const { locale } = useFormat()
+  const revenue = formatMessageRevenue(report.revenue, locale)
   return (
     <Stack gap="xs">
       <Title order={5}>{t(($) => $.automations.engagementTitle)}</Title>

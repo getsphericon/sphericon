@@ -42,8 +42,8 @@ import type {
   SiteWebhookTestResult,
 } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from '../../utils/auditFilter.ts'
 import {
@@ -69,7 +69,7 @@ const EVENT_OPTIONS = [
 
 function FailureText({ failure }: { failure: SiteWebhookFailure }) {
   const { t } = useTranslation()
-  const { formatDateTime } = useDateFormat()
+  const { formatDateTime } = useFormat()
   const reason = {
     timeout: t(($) => $.settings.webhooks.errorTimeout),
     blocked_address: t(($) => $.settings.webhooks.errorBlockedAddress),
@@ -184,7 +184,7 @@ function WebhooksTable({
   onToggle: (record: SiteWebhookEndpointResource) => void
   onDelete: (record: { id: string; url: string }) => void
 }) {
-  const { formatDateTime } = useDateFormat()
+  const { formatDateTime } = useFormat()
   const { t } = useTranslation()
   const records = useSuspenseQuery(siteWebhooksListOptions({ path: { workspaceId } })).data.items
 

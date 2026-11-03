@@ -40,6 +40,8 @@ const (
 	FieldSignupSurveyDueAt = "signup_survey_due_at"
 	// FieldTimezone holds the string denoting the timezone field in the database.
 	FieldTimezone = "timezone"
+	// FieldRegionalFormat holds the string denoting the regional_format field in the database.
+	FieldRegionalFormat = "regional_format"
 	// FieldFeedPosition holds the string denoting the feed_position field in the database.
 	FieldFeedPosition = "feed_position"
 	// EdgeMemberships holds the string denoting the memberships edge name in mutations.
@@ -125,6 +127,7 @@ var Columns = []string{
 	FieldSecondFactorLastStep,
 	FieldSignupSurveyDueAt,
 	FieldTimezone,
+	FieldRegionalFormat,
 	FieldFeedPosition,
 }
 
@@ -155,6 +158,8 @@ var (
 	DefaultSecondFactorLastStep int64
 	// TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
 	TimezoneValidator func(string) error
+	// RegionalFormatValidator is a validator for the "regional_format" field. It is called by the builders before save.
+	RegionalFormatValidator func(string) error
 	// DefaultFeedPosition holds the default value on creation for the "feed_position" field.
 	DefaultFeedPosition int64
 )
@@ -230,6 +235,11 @@ func BySignupSurveyDueAt(opts ...sql.OrderTermOption) OrderOption {
 // ByTimezone orders the results by the timezone field.
 func ByTimezone(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTimezone, opts...).ToFunc()
+}
+
+// ByRegionalFormat orders the results by the regional_format field.
+func ByRegionalFormat(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRegionalFormat, opts...).ToFunc()
 }
 
 // ByFeedPosition orders the results by the feed_position field.

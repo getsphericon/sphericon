@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"golang.org/x/text/currency"
+	"golang.org/x/text/language"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
@@ -313,6 +314,25 @@ var ErrUnknownCurrency = validation.RefuseField("reportingCurrency", "accounts: 
 // ErrUnknownZone refuses a Workspace or a User time zone the zone database does not know. It
 // wraps reportday.ErrUnknownZone.
 var ErrUnknownZone = validation.RefuseField("timezone", "accounts: unknown time zone", i18n.ErrorsTimezoneUnknown)
+
+// ErrMalformedRegionalFormat refuses a Regional format that is not a well-formed BCP 47 tag.
+var ErrMalformedRegionalFormat = validation.RefuseField("regionalFormat", "accounts: malformed regional format", i18n.ErrorsRegionalFormatMalformed)
+
+// canonicalRegionalFormat is the Regional format tag in its canonical spelling (`de-de` is
+// `de-DE`), or ErrMalformedRegionalFormat when it is not a well-formed BCP 47 tag. The tag is not
+// checked against a list of regions: the app's own list is a convenience, not a rule. Its length
+// is the contract's (RegionalFormat), which the request validation holds.
+func canonicalRegionalFormat(typed string) (string, error) {
+	tag := strings.TrimSpace(typed)
+	if tag == "" {
+		return "", ErrMalformedRegionalFormat
+	}
+	parsed, err := language.Parse(tag)
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", ErrMalformedRegionalFormat, err)
+	}
+	return parsed.String(), nil
+}
 
 // checkZone refuses with ErrUnknownZone an IANA name the zone database does not know.
 func checkZone(name string) error {
@@ -777,11 +797,12 @@ func (a *Accounts) verified(ctx context.Context, proven bool, write func(tx *ent
 	}
 }
 
-// profileWrite is what updateProfile writes: a nil Name, PasswordHash or Timezone leaves that
-// field unchanged, and ClearTimezone clears the User time zone.
+// profileWrite is what updateProfile writes: a nil Name, PasswordHash, Timezone or RegionalFormat
+// leaves that field unchanged, ClearTimezone clears the User time zone and ClearRegionalFormat
+// the Regional format.
 type profileWrite struct {
-	Name, PasswordHash, Timezone *string
-	ClearTimezone                bool
+	Name, PasswordHash, Timezone, RegionalFormat *string
+	ClearTimezone, ClearRegionalFormat           bool
 }
 
 // updateProfile writes w to the User and returns the stored User. A password change bumps the
@@ -806,9 +827,12 @@ func (a *Accounts) updateProfile(ctx context.Context, id int64, w profileWrite, 
 			}
 			stamped = n > 0
 		}
-		upd := tx.User.UpdateOneID(id).SetNillableName(w.Name).SetNillableTimezone(w.Timezone)
+		upd := tx.User.UpdateOneID(id).SetNillableName(w.Name).SetNillableTimezone(w.Timezone).SetNillableRegionalFormat(w.RegionalFormat)
 		if w.ClearTimezone {
 			upd = upd.ClearTimezone()
+		}
+		if w.ClearRegionalFormat {
+			upd = upd.ClearRegionalFormat()
 		}
 		if w.PasswordHash != nil {
 			// A new password ends every session issued before it (ADR 0020).

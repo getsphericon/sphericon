@@ -34,7 +34,7 @@ import type {
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { can } from '../../utils/permissions.ts'
 import { ScopePicker } from './ScopePicker.tsx'
@@ -60,7 +60,7 @@ function PersonalTokensTable({
   workspaceId: string
   onRevoke: (record: { id: string; name: string }) => void
 }) {
-  const { formatDate } = useDateFormat()
+  const { formatDate } = useFormat()
   const { t } = useTranslation()
   const records = useSuspenseQuery(sitePersonalTokensListOptions({ path: { workspaceId } })).data
 

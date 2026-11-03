@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { StatCard } from '../../../components/StatCard.tsx'
 import { siteAnalyticsSubscribedPeopleOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
+import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as subscribedPeopleRoute } from '../../../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
 
@@ -26,6 +27,7 @@ export function SubscribedPeoplePage() {
 
 function SubscribedPeopleReport() {
   const { t } = useTranslation()
+  const { formatDay, formatNumber } = useFormat()
   const { workspaceId } = subscribedPeopleRoute.useParams()
   const range = useAnalyticsRange()
 
@@ -53,6 +55,8 @@ function SubscribedPeopleReport() {
               h={260}
               data={report.series}
               dataKey="date"
+              xAxisProps={{ tickFormatter: formatDay }}
+              valueFormatter={formatNumber}
               withLegend
               series={[
                 {

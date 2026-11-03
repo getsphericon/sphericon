@@ -12,7 +12,7 @@ import { staffWorkspacesListOptions } from '../generated/staffee/@tanstack/react
 import type { StaffWorkspaceReview } from '../generated/staffee/types.gen.ts'
 import { zStaffWorkspaceReview } from '../generated/staffee/zod.gen.ts'
 import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/_enterprise/workspaces.$workspaceId.tsx'
-import { formatDateTime } from '../utils/datetime.ts'
+import { formatDateTime } from './format.ts'
 
 const PAGE_SIZE = 25
 const REVIEWS = zStaffWorkspaceReview.options

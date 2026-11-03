@@ -1292,6 +1292,12 @@ export type ProblemDetails = {
 };
 
 /**
+ * A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and
+ * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
+ */
+export type RegionalFormat = string;
+
+/**
  * A number of days an Audit log is kept: 1 to 3650
  */
 export type RetentionDays = number;
@@ -6505,6 +6511,11 @@ export type SiteUpdateMeInput = {
    */
   timezone?: TimeZoneName | null;
   /**
+   * New Regional format, a well-formed BCP 47 tag (422 when it is malformed; it is stored in
+   * its canonical spelling); null clears it, so the app follows the Instance's language again
+   */
+  regionalFormat?: RegionalFormat | null;
+  /**
    * Current password — required when changing the password
    */
   currentPassword?: string;
@@ -6613,6 +6624,12 @@ export type SiteUserResource = {
    * the Workspace time zone, never this one.
    */
   timezone: TimeZoneName | null;
+  /**
+   * The Regional format: the locale, with its region, the app shows this User's dates, times
+   * and numbers in (`en-GB`, `de-DE`). Null follows the Instance's language. It never changes
+   * the language of the UI.
+   */
+  regionalFormat: RegionalFormat | null;
   /**
    * Whether the User owes the Sign-up survey: computed on the server, so the app reads this
    * one field and never the Instance setting. True after a public sign-up on an Instance that

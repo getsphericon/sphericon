@@ -252,6 +252,26 @@ func (_u *UserUpdate) ClearTimezone() *UserUpdate {
 	return _u
 }
 
+// SetRegionalFormat sets the "regional_format" field.
+func (_u *UserUpdate) SetRegionalFormat(v string) *UserUpdate {
+	_u.mutation.SetRegionalFormat(v)
+	return _u
+}
+
+// SetNillableRegionalFormat sets the "regional_format" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableRegionalFormat(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetRegionalFormat(*v)
+	}
+	return _u
+}
+
+// ClearRegionalFormat clears the value of the "regional_format" field.
+func (_u *UserUpdate) ClearRegionalFormat() *UserUpdate {
+	_u.mutation.ClearRegionalFormat()
+	return _u
+}
+
 // SetFeedPosition sets the "feed_position" field.
 func (_u *UserUpdate) SetFeedPosition(v int64) *UserUpdate {
 	_u.mutation.ResetFeedPosition()
@@ -572,6 +592,11 @@ func (_u *UserUpdate) check() error {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "User.timezone": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RegionalFormat(); ok {
+		if err := user.RegionalFormatValidator(v); err != nil {
+			return &ValidationError{Name: "regional_format", err: fmt.Errorf(`ent: validator failed for field "User.regional_format": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -655,6 +680,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.TimezoneCleared() {
 		_spec.ClearField(user.FieldTimezone, field.TypeString)
+	}
+	if value, ok := _u.mutation.RegionalFormat(); ok {
+		_spec.SetField(user.FieldRegionalFormat, field.TypeString, value)
+	}
+	if _u.mutation.RegionalFormatCleared() {
+		_spec.ClearField(user.FieldRegionalFormat, field.TypeString)
 	}
 	if value, ok := _u.mutation.FeedPosition(); ok {
 		_spec.SetField(user.FieldFeedPosition, field.TypeInt64, value)
@@ -1199,6 +1230,26 @@ func (_u *UserUpdateOne) ClearTimezone() *UserUpdateOne {
 	return _u
 }
 
+// SetRegionalFormat sets the "regional_format" field.
+func (_u *UserUpdateOne) SetRegionalFormat(v string) *UserUpdateOne {
+	_u.mutation.SetRegionalFormat(v)
+	return _u
+}
+
+// SetNillableRegionalFormat sets the "regional_format" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableRegionalFormat(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetRegionalFormat(*v)
+	}
+	return _u
+}
+
+// ClearRegionalFormat clears the value of the "regional_format" field.
+func (_u *UserUpdateOne) ClearRegionalFormat() *UserUpdateOne {
+	_u.mutation.ClearRegionalFormat()
+	return _u
+}
+
 // SetFeedPosition sets the "feed_position" field.
 func (_u *UserUpdateOne) SetFeedPosition(v int64) *UserUpdateOne {
 	_u.mutation.ResetFeedPosition()
@@ -1532,6 +1583,11 @@ func (_u *UserUpdateOne) check() error {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "User.timezone": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RegionalFormat(); ok {
+		if err := user.RegionalFormatValidator(v); err != nil {
+			return &ValidationError{Name: "regional_format", err: fmt.Errorf(`ent: validator failed for field "User.regional_format": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1632,6 +1688,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.TimezoneCleared() {
 		_spec.ClearField(user.FieldTimezone, field.TypeString)
+	}
+	if value, ok := _u.mutation.RegionalFormat(); ok {
+		_spec.SetField(user.FieldRegionalFormat, field.TypeString, value)
+	}
+	if _u.mutation.RegionalFormatCleared() {
+		_spec.ClearField(user.FieldRegionalFormat, field.TypeString)
 	}
 	if value, ok := _u.mutation.FeedPosition(); ok {
 		_spec.SetField(user.FieldFeedPosition, field.TypeInt64, value)

@@ -25,7 +25,7 @@ import {
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../../hooks/useConfirmation.tsx'
-import { useDateFormat } from '../../../hooks/useDateFormat.ts'
+import { useFormat } from '../../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
 import { Route as mcpRoute } from '../../../routes/workspaces/$workspaceId/settings/mcp.tsx'
 import { DOCS_URL } from '../../../utils/docs.ts'
@@ -82,7 +82,7 @@ function McpSection({ workspace }: { workspace: SiteWorkspaceResource }) {
 // members:manage, which the server decides) and revokes one. They are not API tokens and are not
 // listed with them.
 function ConnectionsSection({ workspace }: { workspace: SiteWorkspaceResource }) {
-  const { formatDate } = useDateFormat()
+  const { formatDate } = useFormat()
   const { t } = useTranslation()
   const confirmRevoke = useConfirmation()
   const workspaceId = workspace.id

@@ -8,7 +8,7 @@ import {
   siteTelegramIssueStartLinkMutation,
   siteTelegramListBindingsOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { useDateFormat } from '../../hooks/useDateFormat.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 
 interface Props {
@@ -21,7 +21,7 @@ interface Props {
 // bind theirs. With several bots the action offers each of them.
 export function TelegramSection({ workspaceId, contactId }: Props) {
   const { t } = useTranslation()
-  const { formatDateTime } = useDateFormat()
+  const { formatDateTime } = useFormat()
   const clipboard = useClipboard()
   const bindings = useQuery(siteTelegramListBindingsOptions({ path: { workspaceId, contactId } }))
   const integrations = useQuery(

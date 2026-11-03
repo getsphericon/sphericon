@@ -1374,10 +1374,10 @@ type Invoker interface {
 	SiteUserSignOutEverywhere(ctx context.Context) (*SiteUserSignOutEverywhereNoContent, error)
 	// SiteUserUpdateMe invokes SiteUser_updateMe operation.
 	//
-	// Update the authenticated user's profile (name, time zone and/or password). A password change ends
-	// every session of the user (ADR 0020); the acting one continues under the fresh session cookie set in
-	// this response. A wrong current password feeds the Login throttle, which answers 429 even for a right
-	// one while its delay runs.
+	// Update the authenticated user's profile (name, time zone, Regional format and/or password). A
+	// password change ends every session of the user (ADR 0020); the acting one continues under the fresh
+	// session cookie set in this response. A wrong current password feeds the Login throttle, which
+	// answers 429 even for a right one while its delay runs.
 	//
 	// PUT /me
 	SiteUserUpdateMe(ctx context.Context, request *SiteUpdateMeInput) (SiteUserUpdateMeRes, error)
@@ -28962,10 +28962,10 @@ func (c *Client) sendSiteUserSignOutEverywhere(ctx context.Context) (res *SiteUs
 
 // SiteUserUpdateMe invokes SiteUser_updateMe operation.
 //
-// Update the authenticated user's profile (name, time zone and/or password). A password change ends
-// every session of the user (ADR 0020); the acting one continues under the fresh session cookie set in
-// this response. A wrong current password feeds the Login throttle, which answers 429 even for a right
-// one while its delay runs.
+// Update the authenticated user's profile (name, time zone, Regional format and/or password). A
+// password change ends every session of the user (ADR 0020); the acting one continues under the fresh
+// session cookie set in this response. A wrong current password feeds the Login throttle, which
+// answers 429 even for a right one while its delay runs.
 //
 // PUT /me
 func (c *Client) SiteUserUpdateMe(ctx context.Context, request *SiteUpdateMeInput) (SiteUserUpdateMeRes, error) {

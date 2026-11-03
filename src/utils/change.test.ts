@@ -29,10 +29,10 @@ test('a change from a period with none has no share', () => {
 })
 
 test('a change is shown with its sign, and no change without one', () => {
-  const up = formatChange(6, 4)
-  const down = formatChange(4, 5)
-  const flat = formatChange(4, 4)
-  const fromNone = formatChange(4, 0)
+  const up = formatChange(6, 4, 'en')
+  const down = formatChange(4, 5, 'en')
+  const flat = formatChange(4, 4, 'en')
+  const fromNone = formatChange(4, 0, 'en')
 
   expect(up).toBe('+50%')
   expect(down).toBe('-20%')
@@ -41,11 +41,11 @@ test('a change is shown with its sign, and no change without one', () => {
 })
 
 test('a rate changes by the points between the two rates, not by a share of the earlier one', () => {
-  const up = formatPointChange(0.3, 0.2)
-  const down = formatPointChange(0.25, 0.5)
-  const fromNone = formatPointChange(0.05, 0)
-  const flat = formatPointChange(0.4, 0.4)
-  const fraction = formatPointChange(0.256, 0.25)
+  const up = formatPointChange(0.3, 0.2, 'en')
+  const down = formatPointChange(0.25, 0.5, 'en')
+  const fromNone = formatPointChange(0.05, 0, 'en')
+  const flat = formatPointChange(0.4, 0.4, 'en')
+  const fraction = formatPointChange(0.256, 0.25, 'en')
 
   expect(up).toBe('+10')
   expect(down).toBe('-25')

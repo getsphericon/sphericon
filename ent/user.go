@@ -44,6 +44,8 @@ type User struct {
 	SignupSurveyDueAt *time.Time `json:"signup_survey_due_at,omitempty"`
 	// Timezone holds the value of the "timezone" field.
 	Timezone *string `json:"timezone,omitempty"`
+	// RegionalFormat holds the value of the "regional_format" field.
+	RegionalFormat *string `json:"regional_format,omitempty"`
 	// FeedPosition holds the value of the "feed_position" field.
 	FeedPosition int64 `json:"feed_position,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -145,7 +147,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldID, user.FieldSessionEpoch, user.FieldSecondFactorLastStep, user.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
-		case user.FieldName, user.FieldEmail, user.FieldPasswordHash, user.FieldSecondFactorSecretEncrypted, user.FieldTimezone:
+		case user.FieldName, user.FieldEmail, user.FieldPasswordHash, user.FieldSecondFactorSecretEncrypted, user.FieldTimezone, user.FieldRegionalFormat:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldEmailVerifiedAt, user.FieldEmailProvenAt, user.FieldSecondFactorConfirmedAt, user.FieldSignupSurveyDueAt:
 			values[i] = new(sql.NullTime)
@@ -252,6 +254,13 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Timezone = new(string)
 				*_m.Timezone = value.String
+			}
+		case user.FieldRegionalFormat:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field regional_format", values[i])
+			} else if value.Valid {
+				_m.RegionalFormat = new(string)
+				*_m.RegionalFormat = value.String
 			}
 		case user.FieldFeedPosition:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -374,6 +383,11 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	if v := _m.Timezone; v != nil {
 		builder.WriteString("timezone=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.RegionalFormat; v != nil {
+		builder.WriteString("regional_format=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")

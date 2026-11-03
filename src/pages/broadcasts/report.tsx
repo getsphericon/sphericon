@@ -13,6 +13,7 @@ import {
   siteSegmentsGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastResource, SiteBroadcastStats } from '../../generated/site/types.gen.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { formatMessageRevenue } from '../../utils/messageRevenue.ts'
 import { BroadcastHoldAlert } from './BroadcastHold.tsx'
@@ -33,6 +34,7 @@ function reported<V>(entries: Entry<V>[]): { label: string; value: V }[] {
 function statEntries(
   t: TFunction,
   stats: SiteBroadcastStats,
+  locale: string,
 ): { label: string; value: number | string }[] {
   return [
     ...reported<number | string>([
@@ -49,7 +51,7 @@ function statEntries(
       { label: t(($) => $.broadcasts.stats.unsubscribed), value: stats.unsubscribedCount },
       { label: t(($) => $.broadcasts.stats.failed), value: stats.failedCount },
     ]),
-    ...revenueEntries(t, stats),
+    ...revenueEntries(t, stats, locale),
   ]
 }
 
@@ -57,8 +59,9 @@ function statEntries(
 function revenueEntries(
   t: TFunction,
   stats: SiteBroadcastStats,
+  locale: string,
 ): { label: string; value: number | string }[] {
-  const revenue = formatMessageRevenue(stats.revenue)
+  const revenue = formatMessageRevenue(stats.revenue, locale)
   if (revenue === null) {
     return []
   }
@@ -148,6 +151,7 @@ export function BroadcastReportPage() {
 
 function BroadcastReport() {
   const { t } = useTranslation()
+  const { locale } = useFormat()
   const { workspaceId, broadcastId } = broadcastsReportRoute.useParams()
 
   const broadcast = useSuspenseQuery(
@@ -166,7 +170,7 @@ function BroadcastReport() {
       {broadcast.progress && <BroadcastProgress progress={broadcast.progress} />}
 
       <SimpleGrid cols={{ base: 2, sm: 3 }}>
-        {statEntries(t, broadcast.stats).map((entry) => (
+        {statEntries(t, broadcast.stats, locale).map((entry) => (
           <StatCard key={entry.label} label={entry.label} value={entry.value} />
         ))}
       </SimpleGrid>

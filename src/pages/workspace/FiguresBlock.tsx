@@ -9,9 +9,9 @@ import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
 import { siteAnalyticsOverviewOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsRange, SiteAnalyticsSending } from '../../generated/site/types.gen.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as emailMetricsRoute } from '../../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { Route as subscribedPeopleRoute } from '../../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
-import { formatChange, formatPointChange } from '../../utils/change.ts'
 
 interface FiguresProps {
   workspaceId: string
@@ -31,6 +31,7 @@ const sentIn = (sending: SiteAnalyticsSending) =>
 // period under it, with the change since; the number of the subscribed is a snapshot and has none.
 function Figures({ workspaceId, range, periodControl }: FiguresProps) {
   const { t } = useTranslation()
+  const { formatChange, formatPointChange } = useFormat()
   const overview = useSuspenseQuery(
     siteAnalyticsOverviewOptions({ path: { workspaceId }, query: { range } }),
   ).data

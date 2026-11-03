@@ -120,6 +120,11 @@ func Timezone(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldTimezone, v))
 }
 
+// RegionalFormat applies equality check predicate on the "regional_format" field. It's identical to RegionalFormatEQ.
+func RegionalFormat(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRegionalFormat, v))
+}
+
 // FeedPosition applies equality check predicate on the "feed_position" field. It's identical to FeedPositionEQ.
 func FeedPosition(v int64) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldFeedPosition, v))
@@ -838,6 +843,81 @@ func TimezoneEqualFold(v string) predicate.User {
 // TimezoneContainsFold applies the ContainsFold predicate on the "timezone" field.
 func TimezoneContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldTimezone, v))
+}
+
+// RegionalFormatEQ applies the EQ predicate on the "regional_format" field.
+func RegionalFormatEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRegionalFormat, v))
+}
+
+// RegionalFormatNEQ applies the NEQ predicate on the "regional_format" field.
+func RegionalFormatNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldRegionalFormat, v))
+}
+
+// RegionalFormatIn applies the In predicate on the "regional_format" field.
+func RegionalFormatIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldRegionalFormat, vs...))
+}
+
+// RegionalFormatNotIn applies the NotIn predicate on the "regional_format" field.
+func RegionalFormatNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldRegionalFormat, vs...))
+}
+
+// RegionalFormatGT applies the GT predicate on the "regional_format" field.
+func RegionalFormatGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldRegionalFormat, v))
+}
+
+// RegionalFormatGTE applies the GTE predicate on the "regional_format" field.
+func RegionalFormatGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldRegionalFormat, v))
+}
+
+// RegionalFormatLT applies the LT predicate on the "regional_format" field.
+func RegionalFormatLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldRegionalFormat, v))
+}
+
+// RegionalFormatLTE applies the LTE predicate on the "regional_format" field.
+func RegionalFormatLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldRegionalFormat, v))
+}
+
+// RegionalFormatContains applies the Contains predicate on the "regional_format" field.
+func RegionalFormatContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldRegionalFormat, v))
+}
+
+// RegionalFormatHasPrefix applies the HasPrefix predicate on the "regional_format" field.
+func RegionalFormatHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldRegionalFormat, v))
+}
+
+// RegionalFormatHasSuffix applies the HasSuffix predicate on the "regional_format" field.
+func RegionalFormatHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldRegionalFormat, v))
+}
+
+// RegionalFormatIsNil applies the IsNil predicate on the "regional_format" field.
+func RegionalFormatIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldRegionalFormat))
+}
+
+// RegionalFormatNotNil applies the NotNil predicate on the "regional_format" field.
+func RegionalFormatNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldRegionalFormat))
+}
+
+// RegionalFormatEqualFold applies the EqualFold predicate on the "regional_format" field.
+func RegionalFormatEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldRegionalFormat, v))
+}
+
+// RegionalFormatContainsFold applies the ContainsFold predicate on the "regional_format" field.
+func RegionalFormatContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldRegionalFormat, v))
 }
 
 // FeedPositionEQ applies the EQ predicate on the "feed_position" field.

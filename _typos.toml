@@ -42,3 +42,7 @@ decorder = "decorder"
 importas = "importas"
 # COSE (CBOR Object Signing and Encryption), the key format of a Passkey's public key.
 COSE = "COSE"
+# German words the Regional format tests expect (src/utils/regionalFormat.test.ts): the month
+# "Dezember" and the "vor" of "vor 5 Minuten". The checker would turn them into English.
+Dezember = "Dezember"
+vor = "vor"

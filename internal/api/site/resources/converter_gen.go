@@ -2324,6 +2324,7 @@ func (c *ConverterImpl) UserToResource(source *ent.User) *site.SiteUserResource 
 		siteapiSiteUserResource.Email = site.EmailAddress((*source).Email)
 		siteapiSiteUserResource.EmailVerified = emailVerified((*source).EmailVerifiedAt)
 		siteapiSiteUserResource.Timezone = nilTimeZone((*source).Timezone)
+		siteapiSiteUserResource.RegionalFormat = nilRegionalFormat((*source).RegionalFormat)
 		// siteapiSiteUserResource.SignupSurveyDue: ignore
 		// siteapiSiteUserResource.AcceptancesPending: ignore
 		siteapiSiteUserResource.CreatedAt = timestamp((*source).CreatedAt)

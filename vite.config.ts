@@ -11,6 +11,41 @@ const require = createRequire(import.meta.url)
 
 const SUPPORTED_LOCALES = new Set(['en'])
 
+// The dayjs locale data the date inputs load when a User's Regional format needs it
+// (src/utils/dayjsLocale.ts), each a dynamic import: optimized up front, or the first use reloads
+// the page.
+const DAYJS_LOCALES = [
+  'cs',
+  'da',
+  'de',
+  'de-at',
+  'de-ch',
+  'en-au',
+  'en-ca',
+  'en-gb',
+  'en-in',
+  'es',
+  'es-mx',
+  'fi',
+  'fr',
+  'fr-ca',
+  'fr-ch',
+  'it',
+  'ja',
+  'ko',
+  'nb',
+  'nl',
+  'pl',
+  'pt',
+  'pt-br',
+  'ru',
+  'sv',
+  'tr',
+  'uk',
+  'zh-cn',
+  'zh-tw',
+]
+
 // Dev-only: substitute the {{APP_LOCALE}} sentinels in index.html the same way
 // the Go backend does at serve time in prod (internal/server/spa/spa.go). Applied
 // only in `serve` so the `build` output keeps the raw sentinels for Go to
@@ -86,8 +121,9 @@ export default defineConfig({
       'ahooks',
       'ajv/dist/2020.js',
       'dayjs',
+      'dayjs/plugin/customParseFormat.js',
       'dayjs/plugin/localizedFormat.js',
-      'dayjs/plugin/relativeTime.js',
+      ...DAYJS_LOCALES.map((name) => `dayjs/locale/${name}.js`),
       'react-error-boundary',
     ],
   },
@@ -138,6 +174,8 @@ export default defineConfig({
         'src/main.tsx',
         'src/routes/**',
         'src/routeTree.gen.ts',
+        // A table of dynamic imports (dayjs locale data); its test loads every one.
+        'src/utils/dayjsLocaleLoaders.ts',
       ],
       reporter: ['text-summary', 'html'],
       // The floor is 90% on every metric, so CI catches regressions without flaking on

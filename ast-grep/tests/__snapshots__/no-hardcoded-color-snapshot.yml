@@ -1,6 +1,6 @@
 id: no-hardcoded-color
 snapshots:
-  <Box bg="rgb(0, 0, 0)" />:
+  '<Box bg="rgb(0, 0, 0)" />':
     labels:
       - source: rgb(0, 0, 0)
         style: primary
@@ -18,7 +18,7 @@ snapshots:
         style: primary
         start: 11
         end: 15
-  const c = 'hsla(0, 0%, 0%, 0.5)':
+  "const c = 'hsla(0, 0%, 0%, 0.5)'":
     labels:
       - source: hsla(0, 0%, 0%, 0.5)
         style: primary

@@ -1,0 +1,20 @@
+id: no-instance-locale-in-formatting
+snapshots:
+  const locale = resolveLocale():
+    labels:
+      - source: resolveLocale()
+        style: primary
+        start: 15
+        end: 30
+  'formatMoney(amount, currency, resolveLocale())':
+    labels:
+      - source: resolveLocale()
+        style: primary
+        start: 30
+        end: 45
+  new Intl.NumberFormat(resolveLocale()).format(value):
+    labels:
+      - source: resolveLocale()
+        style: primary
+        start: 22
+        end: 37

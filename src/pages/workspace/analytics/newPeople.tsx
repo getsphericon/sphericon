@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { StatCard } from '../../../components/StatCard.tsx'
 import { siteAnalyticsNewPeopleOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
+import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as newPeopleRoute } from '../../../routes/workspaces/$workspaceId/analytics/new-people.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
 
@@ -21,6 +22,7 @@ export function NewPeoplePage() {
 
 function NewPeopleReport() {
   const { t } = useTranslation()
+  const { formatDay, formatNumber } = useFormat()
   const { workspaceId } = newPeopleRoute.useParams()
   const range = useAnalyticsRange()
 
@@ -43,6 +45,8 @@ function NewPeopleReport() {
           h={300}
           data={report.timeseries}
           dataKey="date"
+          xAxisProps={{ tickFormatter: formatDay }}
+          valueFormatter={formatNumber}
           type="stacked"
           withLegend
           series={[

@@ -43,6 +43,7 @@ test('shows the API keys of the workspace and, apart, the personal tokens', asyn
         email: 'ann@acme.com',
         emailVerified: true,
         timezone: null,
+        regionalFormat: null,
         signupSurveyDue: false,
         acceptancesPending: [],
         createdAt: '2026-01-01T00:00:00Z',

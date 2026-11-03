@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { StaffDeliverability, StaffRate } from '../generated/staffee/types.gen.ts'
 import { resolveLocale } from '../i18n.ts'
-import { formatPercent } from '../utils/percent.ts'
+import { formatPercent } from './format.ts'
 
 // A rate as its percentage over its "<numerator> / <denominator>" counts: the counts always
 // show, and the percentage is replaced by the floor notice while the rate is undefined

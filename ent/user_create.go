@@ -195,6 +195,20 @@ func (_c *UserCreate) SetNillableTimezone(v *string) *UserCreate {
 	return _c
 }
 
+// SetRegionalFormat sets the "regional_format" field.
+func (_c *UserCreate) SetRegionalFormat(v string) *UserCreate {
+	_c.mutation.SetRegionalFormat(v)
+	return _c
+}
+
+// SetNillableRegionalFormat sets the "regional_format" field if the given value is not nil.
+func (_c *UserCreate) SetNillableRegionalFormat(v *string) *UserCreate {
+	if v != nil {
+		_c.SetRegionalFormat(*v)
+	}
+	return _c
+}
+
 // SetFeedPosition sets the "feed_position" field.
 func (_c *UserCreate) SetFeedPosition(v int64) *UserCreate {
 	_c.mutation.SetFeedPosition(v)
@@ -416,6 +430,11 @@ func (_c *UserCreate) check() error {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "User.timezone": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.RegionalFormat(); ok {
+		if err := user.RegionalFormatValidator(v); err != nil {
+			return &ValidationError{Name: "regional_format", err: fmt.Errorf(`ent: validator failed for field "User.regional_format": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.FeedPosition(); !ok {
 		return &ValidationError{Name: "feed_position", err: errors.New(`ent: missing required field "User.feed_position"`)}
 	}
@@ -503,6 +522,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Timezone(); ok {
 		_spec.SetField(user.FieldTimezone, field.TypeString, value)
 		_node.Timezone = &value
+	}
+	if value, ok := _c.mutation.RegionalFormat(); ok {
+		_spec.SetField(user.FieldRegionalFormat, field.TypeString, value)
+		_node.RegionalFormat = &value
 	}
 	if value, ok := _c.mutation.FeedPosition(); ok {
 		_spec.SetField(user.FieldFeedPosition, field.TypeInt64, value)
@@ -870,6 +893,24 @@ func (u *UserUpsert) ClearTimezone() *UserUpsert {
 	return u
 }
 
+// SetRegionalFormat sets the "regional_format" field.
+func (u *UserUpsert) SetRegionalFormat(v string) *UserUpsert {
+	u.Set(user.FieldRegionalFormat, v)
+	return u
+}
+
+// UpdateRegionalFormat sets the "regional_format" field to the value that was provided on create.
+func (u *UserUpsert) UpdateRegionalFormat() *UserUpsert {
+	u.SetExcluded(user.FieldRegionalFormat)
+	return u
+}
+
+// ClearRegionalFormat clears the value of the "regional_format" field.
+func (u *UserUpsert) ClearRegionalFormat() *UserUpsert {
+	u.SetNull(user.FieldRegionalFormat)
+	return u
+}
+
 // SetFeedPosition sets the "feed_position" field.
 func (u *UserUpsert) SetFeedPosition(v int64) *UserUpsert {
 	u.Set(user.FieldFeedPosition, v)
@@ -1167,6 +1208,27 @@ func (u *UserUpsertOne) UpdateTimezone() *UserUpsertOne {
 func (u *UserUpsertOne) ClearTimezone() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearTimezone()
+	})
+}
+
+// SetRegionalFormat sets the "regional_format" field.
+func (u *UserUpsertOne) SetRegionalFormat(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetRegionalFormat(v)
+	})
+}
+
+// UpdateRegionalFormat sets the "regional_format" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateRegionalFormat() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateRegionalFormat()
+	})
+}
+
+// ClearRegionalFormat clears the value of the "regional_format" field.
+func (u *UserUpsertOne) ClearRegionalFormat() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearRegionalFormat()
 	})
 }
 
@@ -1636,6 +1698,27 @@ func (u *UserUpsertBulk) UpdateTimezone() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearTimezone() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearTimezone()
+	})
+}
+
+// SetRegionalFormat sets the "regional_format" field.
+func (u *UserUpsertBulk) SetRegionalFormat(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetRegionalFormat(v)
+	})
+}
+
+// UpdateRegionalFormat sets the "regional_format" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateRegionalFormat() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateRegionalFormat()
+	})
+}
+
+// ClearRegionalFormat clears the value of the "regional_format" field.
+func (u *UserUpsertBulk) ClearRegionalFormat() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearRegionalFormat()
 	})
 }
 

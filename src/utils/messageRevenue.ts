@@ -3,20 +3,23 @@ import { formatMoney } from './money.ts'
 
 // The net revenue credited to a Broadcast or an Automation, formatted in the Reporting currency.
 // Null while the currency is unset: there is no figure to show then, not a zero.
-export function formatMessageRevenue(revenue: SiteMessageRevenue): string | null {
+export function formatMessageRevenue(revenue: SiteMessageRevenue, locale: string): string | null {
   if (revenue.reportingCurrency === null) {
     return null
   }
-  return formatMoney(revenue.amount, revenue.reportingCurrency)
+  return formatMoney(revenue.amount, revenue.reportingCurrency, locale)
 }
 
 // The Orders and Revenue cells of a list row: blank while the Reporting currency is unset (or the
 // row has no revenue), so a table never shows a zero it did not count.
-export function messageRevenueCells(revenue: SiteMessageRevenue | undefined): {
+export function messageRevenueCells(
+  revenue: SiteMessageRevenue | undefined,
+  locale: string,
+): {
   orders: number | ''
   revenue: string
 } {
-  const formatted = revenue ? formatMessageRevenue(revenue) : null
+  const formatted = revenue ? formatMessageRevenue(revenue, locale) : null
   if (!revenue || formatted === null) {
     return { orders: '', revenue: '' }
   }

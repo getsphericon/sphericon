@@ -1563,8 +1563,12 @@ func init() {
 	userDescTimezone := userFields[11].Descriptor()
 	// user.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
 	user.TimezoneValidator = userDescTimezone.Validators[0].(func(string) error)
+	// userDescRegionalFormat is the schema descriptor for regional_format field.
+	userDescRegionalFormat := userFields[12].Descriptor()
+	// user.RegionalFormatValidator is a validator for the "regional_format" field. It is called by the builders before save.
+	user.RegionalFormatValidator = userDescRegionalFormat.Validators[0].(func(string) error)
 	// userDescFeedPosition is the schema descriptor for feed_position field.
-	userDescFeedPosition := userFields[12].Descriptor()
+	userDescFeedPosition := userFields[13].Descriptor()
 	// user.DefaultFeedPosition holds the default value on creation for the feed_position field.
 	user.DefaultFeedPosition = userDescFeedPosition.Default.(int64)
 	useridentityMixin := schema.UserIdentity{}.Mixin()

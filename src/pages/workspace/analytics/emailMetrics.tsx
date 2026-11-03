@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { StatCard } from '../../../components/StatCard.tsx'
 import { siteAnalyticsOverviewOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
+import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as emailMetricsRoute } from '../../../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
 
@@ -21,6 +22,7 @@ export function EmailMetricsPage() {
 
 function EmailMetricsReport() {
   const { t } = useTranslation()
+  const { formatDay, formatNumber } = useFormat()
   const { workspaceId } = emailMetricsRoute.useParams()
   const range = useAnalyticsRange()
 
@@ -61,6 +63,8 @@ function EmailMetricsReport() {
               h={260}
               data={overview.timeseries}
               dataKey="date"
+              xAxisProps={{ tickFormatter: formatDay }}
+              valueFormatter={formatNumber}
               withLegend
               curveType="monotone"
               series={[

@@ -86,6 +86,14 @@ func (User) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			NotEmpty(),
+		// The User's Regional format: the BCP 47 tag, with its region, the app shows the User's
+		// dates, times and numbers in (`en-GB`, `de-DE`). NULL follows the Instance's language.
+		// It never changes the language of the UI and is not the Contact locale. The tag is
+		// checked for form, in its canonical spelling, by internal/accounts.
+		field.String("regional_format").
+			Optional().
+			Nillable().
+			NotEmpty(),
 		// The User's place in the service feed of Users (ADR 0062): a position that only grows,
 		// taken whenever the User is created, renamed, changes email or verification, makes a
 		// new decision on the mailings consent item or that item's mark moves. 0 until the first

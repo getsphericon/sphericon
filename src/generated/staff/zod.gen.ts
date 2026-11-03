@@ -132,6 +132,12 @@ export const zPreconditionRequiredProblem = z.object({
 });
 
 /**
+ * A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and
+ * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
+ */
+export const zRegionalFormat = z.string().max(35);
+
+/**
  * A Sign-up item's key: its address, and the last segment of its Legal document's public page
  */
 export const zSignupItemKey = z.string().min(1).max(64).regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);

@@ -19630,6 +19630,11 @@
         },
         "description": "Request body for recording events"
       },
+      "RegionalFormat": {
+        "type": "string",
+        "maxLength": 35,
+        "description": "A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and\nnumbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422)."
+      },
       "RuleAction": {
         "type": "object",
         "required": ["type"],
