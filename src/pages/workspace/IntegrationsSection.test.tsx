@@ -437,9 +437,9 @@ test('shows the effective limit, its source and the 24-hour usage', async () => 
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect.element(screen.getByText('Per second: 14')).toBeInTheDocument()
-  await expect.element(screen.getByText('Per 24 h: 50 000')).toBeInTheDocument()
+  await expect.element(screen.getByText('Per 24 h: 50,000')).toBeInTheDocument()
   await expect
-    .element(screen.getByText('Sent in the last 24 h: 1 200 / 50 000'))
+    .element(screen.getByText('Sent in the last 24 h: 1,200 / 50,000'))
     .toBeInTheDocument()
   await expect.element(screen.getByText('Manual').first()).toBeInTheDocument()
   await expect.element(screen.getByText('has no Provider limit')).not.toBeInTheDocument()

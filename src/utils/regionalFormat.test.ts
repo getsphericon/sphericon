@@ -1,7 +1,14 @@
 import { expect, test } from 'vitest'
 
-import { formatDate, formatDateTime, formatLongDate, formatRelative } from './datetime.ts'
+import {
+  formatDate,
+  formatDateTime,
+  formatDay,
+  formatLongDate,
+  formatRelative,
+} from './datetime.ts'
 import { formatMoney } from './money.ts'
+import { formatNumber } from './number.ts'
 import { formatPercent } from './percent.ts'
 
 // The Regional format (#1010) is a locale the helpers take as an argument: the same instant and
@@ -29,7 +36,7 @@ test('the time zone moves the instant, the locale only writes it', () => {
 
 test('a long date is spelled out in the locale', () => {
   expect(formatLongDate('2026-12-31T12:00:00', 'en-US')).toBe('December 31, 2026')
-  expect(formatLongDate('2026-12-31T12:00:00', 'de-DE')).toBe('31. December 2026')
+  expect(formatLongDate('2026-12-31T12:00:00', 'de-DE')).toBe('31. Dezember 2026')
 })
 
 test('a bare calendar day stays that day, whatever the browser’s zone', () => {
@@ -37,11 +44,22 @@ test('a bare calendar day stays that day, whatever the browser’s zone', () => 
   expect(formatDate('1990-05-01', 'de-DE')).toBe('01.05.1990')
 })
 
+test('a calendar day is not moved by a time zone', () => {
+  expect(formatDate('1990-05-01', 'de-DE', 'Pacific/Kiritimati')).toBe('01.05.1990')
+  expect(formatDate('1990-05-01', 'de-DE', 'Pacific/Pago_Pago')).toBe('01.05.1990')
+  expect(formatDay('2026-12-31', 'en-GB')).toBe('31/12/2026')
+})
+
+test('a number uses the locale’s grouping and decimal separator', () => {
+  expect(plain(formatNumber(1_234_567.5, 'de-DE'))).toBe('1.234.567,5')
+  expect(formatNumber(1_234_567.5, 'en-US')).toBe('1,234,567.5')
+})
+
 test('a relative time is worded in the locale', () => {
   const fiveMinutesAgo = Date.now() - 5 * 60 * 1000
 
   expect(formatRelative(fiveMinutesAgo, 'en')).toBe('5 minutes ago')
-  expect(formatRelative(fiveMinutesAgo, 'de-DE')).toBe('for 5 Minuten')
+  expect(formatRelative(fiveMinutesAgo, 'de-DE')).toBe('vor 5 Minuten')
 })
 
 test('a money amount uses the locale’s separators and symbol placement', () => {

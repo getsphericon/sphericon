@@ -1,15 +1,18 @@
-import { Card, NumberFormatter, Text } from '@mantine/core'
+import { Card, Text } from '@mantine/core'
+
+import { useFormat } from '../hooks/useFormat.ts'
 
 type Figure = number | string
 
-// A figure as a card shows it: a 0–1 ratio as a percentage with `percent`, a count as it is, and a
-// string as the caller formatted it (an amount in a currency).
-function figure(value: Figure, percent: boolean) {
-  return percent && typeof value === 'number' ? (
-    <NumberFormatter value={value * 100} suffix="%" decimalScale={1} />
-  ) : (
-    value
-  )
+type Format = Pick<ReturnType<typeof useFormat>, 'formatNumber' | 'formatPercent'>
+
+// A figure as a card shows it, in the User's Regional format: a 0–1 ratio as a percentage with
+// `percent`, a count as a number, and a string as the caller formatted it (an amount in a currency).
+function figure(value: Figure, percent: boolean, { formatNumber, formatPercent }: Format) {
+  if (typeof value !== 'number') {
+    return value
+  }
+  return percent ? formatPercent(value) : formatNumber(value)
 }
 
 // StatCard shows a single labelled metric. With `percent`, the value is
@@ -29,17 +32,18 @@ export function StatCard({
   percent?: boolean
   comparison?: { label: string; value: Figure; change: string | null }
 }) {
+  const format = useFormat()
   return (
     <Card withBorder padding="md">
       <Text size="xs" c="dimmed" tt="uppercase">
         {label}
       </Text>
       <Text fw={700} size="xl">
-        {figure(value, percent)}
+        {figure(value, percent, format)}
       </Text>
       {comparison === undefined ? null : (
         <Text size="xs" c="dimmed">
-          {comparison.label}: {figure(comparison.value, percent)}
+          {comparison.label}: {figure(comparison.value, percent, format)}
           {comparison.change === null ? null : ` (${comparison.change})`}
         </Text>
       )}

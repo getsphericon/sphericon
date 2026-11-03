@@ -24,7 +24,7 @@ test('shows the current number and the net of each day', async () => {
   worker.use(handleSiteAnalyticsSubscribedPeople({ body: report }))
   const { screen } = await renderWithRouter(<SubscribedPeoplePage />, mount)
 
-  await expect.element(screen.getByText('1234')).toBeInTheDocument()
+  await expect.element(screen.getByText('1,234')).toBeInTheDocument()
   await expect.element(screen.getByText('+3')).toBeInTheDocument()
   await expect.element(screen.getByText('-4')).toBeInTheDocument()
 })

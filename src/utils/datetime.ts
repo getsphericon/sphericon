@@ -32,6 +32,11 @@ function instantOf(value: DateInput): Date {
   return dayjs(value).toDate()
 }
 
+// A bare calendar day ("2026-12-31"): a day of the calendar, not an instant, so no time zone moves it.
+function isCalendarDay(value: DateInput): value is string {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+}
+
 const dateFormats = new Map<string, Intl.DateTimeFormat>()
 
 // An Intl.DateTimeFormat for the locale, zone and options, built once.
@@ -57,7 +62,16 @@ const SHORT_DATE: Intl.DateTimeFormatOptions = {
 // The locale's own medium time: "09:00:00" in de-DE and en-GB, "9:00:00 AM" in en-US.
 const TIME: Intl.DateTimeFormatOptions = { timeStyle: 'medium' }
 
+// A calendar day ("2026-12-31", a chart's day or a birthday) written in the locale, the same day
+// whatever zone the User or the browser is in.
+export function formatDay(day: string, locale: string): string {
+  return dateFormat(locale, 'UTC', SHORT_DATE).format(new Date(`${day}T12:00:00Z`))
+}
+
 export function formatDate(value: DateInput, locale: string, timeZone?: string): string {
+  if (isCalendarDay(value)) {
+    return formatDay(value, locale)
+  }
   return dateFormat(locale, timeZone, SHORT_DATE).format(instantOf(value))
 }
 
@@ -91,6 +105,9 @@ export function dayOf(value: DateInput, timeZone?: string): string {
 
 // A date spelled out ("October 30, 2026"), for a sentence rather than a table cell.
 export function formatLongDate(value: DateInput, locale: string): string {
+  if (isCalendarDay(value)) {
+    return dateFormat(locale, 'UTC', { dateStyle: 'long' }).format(new Date(`${value}T12:00:00Z`))
+  }
   return dateFormat(locale, undefined, { dateStyle: 'long' }).format(instantOf(value))
 }
 

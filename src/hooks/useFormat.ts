@@ -4,9 +4,16 @@ import { useMemo } from 'react'
 import { siteUserGetMeOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import { resolveLocale } from '../i18n.ts'
 import { formatChange, formatPointChange } from '../utils/change.ts'
-import { formatDate, formatDateTime, formatLongDate, formatRelative } from '../utils/datetime.ts'
+import {
+  formatDate,
+  formatDateTime,
+  formatDay,
+  formatLongDate,
+  formatRelative,
+} from '../utils/datetime.ts'
 import { formatDuration } from '../utils/duration.ts'
 import { formatMoney } from '../utils/money.ts'
+import { formatNumber } from '../utils/number.ts'
 import { formatPercent } from '../utils/percent.ts'
 
 type DateInput = Parameters<typeof formatDateTime>[0]
@@ -54,7 +61,8 @@ export function useFormat() {
       formatDate: (value: DateInput) => formatDate(value, locale, timeZone),
       formatLongDate: (value: DateInput) => formatLongDate(value, locale),
       formatRelative: (value: DateInput) => formatRelative(value, locale),
-      formatNumber: (value: number) => new Intl.NumberFormat(locale).format(value),
+      formatDay: (day: string) => formatDay(day, locale),
+      formatNumber: (value: number) => formatNumber(value, locale),
       formatPercent: (rate: number) => formatPercent(rate, locale),
       formatMoney: (minorUnits: number, currency: string) =>
         formatMoney(minorUnits, currency, locale),
