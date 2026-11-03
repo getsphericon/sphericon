@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/telegram"
 	"github.com/getsphericon/sphericon/internal/preset"
@@ -132,7 +132,7 @@ func (m *Module) register(ctx context.Context, token, key, secret string, drop b
 func (m *Module) release(ctx context.Context, row *ent.Integration) {
 	cfg, err := m.telegramConfigOf(row)
 	if err != nil {
-		slog.WarnContext(ctx, "telegram: open the config to delete the bot's webhook failed", "integration_id", row.ID, "err", err)
+		logging.FromContext(ctx).Warn("telegram: open the config to delete the bot's webhook failed", "integration_id", row.ID, "err", err)
 		return
 	}
 	m.releaseToken(ctx, row.ID, cfg.Token)
@@ -147,7 +147,7 @@ func (m *Module) releaseToken(ctx context.Context, integrationID int64, token st
 		err = b.DeleteWebhook(ctx)
 	}
 	if err != nil {
-		slog.WarnContext(ctx, "telegram: delete the bot's webhook failed", "integration_id", integrationID, "err", err)
+		logging.FromContext(ctx).Warn("telegram: delete the bot's webhook failed", "integration_id", integrationID, "err", err)
 	}
 }
 
