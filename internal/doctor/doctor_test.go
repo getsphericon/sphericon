@@ -24,7 +24,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
-	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/doctor"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -43,8 +42,9 @@ func healthy(t *testing.T) doctor.Input {
 	key, err := secrets.GenerateKeysetBase64()
 	require.NoError(t, err)
 
-	sqlDB := testhelper.RealDB(t)
-	entClient := appdb.NewEntClient(sqlDB)
+	env := testhelper.Setup(t)
+	sqlDB := env.SQLDB
+	entClient := env.DB
 	domains, err := entClient.SendingDomain.Query().All(context.Background())
 	require.NoError(t, err)
 	keys := map[string][]string{} // two Workspaces may claim one name, each with its own key

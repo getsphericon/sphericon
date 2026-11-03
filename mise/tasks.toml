@@ -261,7 +261,7 @@ else
   for d in $($psql -c "select datname from pg_database where not datistemplate and datname <> 'postgres'"); do
     if grep -qxF "$d" "$keep"; then continue; fi
     case "$d" in *\"*) echo "keep    database $d (unusual name)"; continue ;; esac
-    # pgtestdb's databases belong to a test that may be running in any checkout: step 2 sweeps them.
+    # pgtestdb's leftovers belong to no checkout: step 2 sweeps them.
     case "$d" in testdb_tpl_*) echo "keep    database $d (pgtestdb)"; continue ;; esac
     # A live checkout's test process databases: `<test db>_w<i>` and `<test db>_tpl_<hash>`
     # (dbcleaner.WithTemplate, wired in internal/testhelper). They go with the checkout's `<test db>`.
@@ -272,11 +272,9 @@ else
   done
 fi
 
-# 2. pgtestdb's databases (testhelper.RealDB), which no worktree owns. A test drops its instance
-#    when it ends, so one that outlived its test belongs to a killed run: an instance goes after a
-#    day, and only if nothing is connected (a plain DROP DATABASE refuses otherwise). A template
-#    (datistemplate) is rebuilt by pgtestdb when it is missing, so the ones of old schema hashes go
-#    after a week; a test starting in that very moment may fail once and passes on a rerun.
+# 2. What pgtestdb left on the server (testhelper.RealDB no longer uses it), which no worktree owns:
+#    an instance goes after a day, and only if nothing is connected (a plain DROP DATABASE refuses
+#    otherwise), a template (datistemplate) after a week. Delete this step once none is left.
 if [ -z "$refuse" ] && nc -z "$PGHOST" "$PGPORT" 2>/dev/null; then
   age="(pg_stat_file('base/' || oid)).modification"
   for d in $($psql -c "select datname from pg_database where datname ~ '^testdb_tpl_[0-9a-f]+_inst_[0-9a-f]+\$' and $age < now() - interval '1 day'" || true); do

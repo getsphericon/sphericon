@@ -23,7 +23,7 @@ func (loggedArgs) Kind() string { return "logged" }
 // A line a job logs through the process's logger, with the job's context, is kept on the job,
 // where the job queue UI shows it.
 func TestAJobKeepsTheLinesItLogged(t *testing.T) {
-	db := testhelper.RealDB(t)
+	db := testhelper.Setup(t).SQLDB
 	logger := logging.New(&config.Config{LogLevel: "info"})
 	worker := river.WorkFunc(func(ctx context.Context, _ *river.Job[loggedArgs]) error {
 		logger.InfoContext(ctx, "sent the welcome mail", "to", "ada@example.com")
