@@ -35,14 +35,17 @@ test('a field shows no error on open, shows one after blur and clears it on a va
   await expect.element(screen.getByText('Name is required.')).not.toBeInTheDocument()
 })
 
-test('an error that shows is re-checked on each keystroke', async () => {
+test('a valid field shows no error on blur', async () => {
   const screen = await renderWithProviders(<Form />)
-  const name = screen.getByLabelText('Name')
-  await name.fill('A')
+  await screen.getByLabelText('Name').fill('A')
   await screen.getByLabelText('Email').click()
   await expect.element(screen.getByText('Name is required.')).not.toBeInTheDocument()
+})
 
-  await name.fill('')
+test('an error that shows is re-checked on each keystroke, a cleared one waits for the next blur', async () => {
+  const screen = await renderWithProviders(<Form />)
+  const name = screen.getByLabelText('Name')
+  await name.click()
   await screen.getByLabelText('Email').click()
   await expect.element(screen.getByText('Name is required.')).toBeInTheDocument()
 

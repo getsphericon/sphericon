@@ -25,16 +25,16 @@ export function useSchemaForm<TValues extends object, TOutput>(
     validate: schemaResolver(schema, { sync: true }),
     transformValues: (values) => schema.parse(values),
     validateInputOnBlur: true,
-    enhanceGetInputProps: ({ inputProps, field, form: current }) => {
+    enhanceGetInputProps: ({ inputProps, field, form: renderedForm }) => {
       // The error showing at render time is the one the keystroke is about to clear.
-      if (!current.errors[field]) {
+      if (!renderedForm.errors[field]) {
         return undefined
       }
       const { onChange } = inputProps
       return {
         onChange: (...args: unknown[]) => {
           onChange(...args)
-          current.validateField(field)
+          renderedForm.validateField(field)
         },
       }
     },
