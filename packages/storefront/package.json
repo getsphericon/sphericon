@@ -5,11 +5,13 @@
   "description": "Brightpath demo storefront: a customer site that sends events to the dev stack",
   "type": "module",
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "prototype": "vite --config vite.prototype.config.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",
     "@mantine/core": "^9.7.4",
+    "@puckeditor/core": "0.24.0",
     "@sphericon/analytics": "workspace:*",
     "@sphericon/node": "workspace:*",
     "hono": "^4.13.14",
