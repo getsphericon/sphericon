@@ -203,6 +203,7 @@
   "errors.delete_user_email_mismatch": "type your own email address to confirm",
   "errors.currency_unknown": "unknown currency: use an ISO 4217 code such as EUR",
   "errors.timezone_unknown": "unknown time zone: use an IANA name such as Europe/Berlin",
+  "errors.regional_format_malformed": "not a regional format: use a language tag with a region such as de-DE",
   "errors.leave_only_owner": "you are the only owner: make another member an owner or delete the workspace first",
   "errors.integration_kind_mismatch": "kind must match the integration provider",
   "errors.integration_archived_default": "an archived integration cannot be the default: restore it first",

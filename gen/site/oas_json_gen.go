@@ -6364,6 +6364,50 @@ func (s *NilInt64) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes RegionalFormat as json.
+func (o NilRegionalFormat) Encode(e *jx.Encoder) {
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes RegionalFormat from json.
+func (o *NilRegionalFormat) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode NilRegionalFormat to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v RegionalFormat
+		o.Value = v
+		o.Null = true
+		return nil
+	}
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s NilRegionalFormat) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *NilRegionalFormat) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes RetentionDays as json.
 func (o NilRetentionDays) Encode(e *jx.Encoder) {
 	if o.Null {
@@ -7794,6 +7838,55 @@ func (s OptNilMaxPerSecond) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilMaxPerSecond) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes RegionalFormat as json.
+func (o OptNilRegionalFormat) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes RegionalFormat from json.
+func (o *OptNilRegionalFormat) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilRegionalFormat to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v RegionalFormat
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilRegionalFormat) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilRegionalFormat) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -9856,6 +9949,46 @@ func (s ProblemDetailsFields) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ProblemDetailsFields) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes RegionalFormat as json.
+func (s RegionalFormat) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
+}
+
+// Decode decodes RegionalFormat from json.
+func (s *RegionalFormat) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RegionalFormat to nil")
+	}
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = RegionalFormat(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s RegionalFormat) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RegionalFormat) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -63619,6 +63752,12 @@ func (s *SiteUpdateMeInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.RegionalFormat.Set {
+			e.FieldStart("regionalFormat")
+			s.RegionalFormat.Encode(e)
+		}
+	}
+	{
 		if s.CurrentPassword.Set {
 			e.FieldStart("currentPassword")
 			s.CurrentPassword.Encode(e)
@@ -63632,11 +63771,12 @@ func (s *SiteUpdateMeInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteUpdateMeInput = [4]string{
+var jsonFieldsNameOfSiteUpdateMeInput = [5]string{
 	0: "name",
 	1: "timezone",
-	2: "currentPassword",
-	3: "newPassword",
+	2: "regionalFormat",
+	3: "currentPassword",
+	4: "newPassword",
 }
 
 // Decode decodes SiteUpdateMeInput from json.
@@ -63666,6 +63806,16 @@ func (s *SiteUpdateMeInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"timezone\"")
+			}
+		case "regionalFormat":
+			if err := func() error {
+				s.RegionalFormat.Reset()
+				if err := s.RegionalFormat.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"regionalFormat\"")
 			}
 		case "currentPassword":
 			if err := func() error {
@@ -64608,6 +64758,10 @@ func (s *SiteUserResource) encodeFields(e *jx.Encoder) {
 		s.Timezone.Encode(e)
 	}
 	{
+		e.FieldStart("regionalFormat")
+		s.RegionalFormat.Encode(e)
+	}
+	{
 		e.FieldStart("signupSurveyDue")
 		e.Bool(s.SignupSurveyDue)
 	}
@@ -64625,15 +64779,16 @@ func (s *SiteUserResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteUserResource = [8]string{
+var jsonFieldsNameOfSiteUserResource = [9]string{
 	0: "id",
 	1: "name",
 	2: "email",
 	3: "emailVerified",
 	4: "timezone",
-	5: "signupSurveyDue",
-	6: "acceptancesPending",
-	7: "createdAt",
+	5: "regionalFormat",
+	6: "signupSurveyDue",
+	7: "acceptancesPending",
+	8: "createdAt",
 }
 
 // Decode decodes SiteUserResource from json.
@@ -64641,7 +64796,7 @@ func (s *SiteUserResource) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode SiteUserResource to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -64699,8 +64854,18 @@ func (s *SiteUserResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"timezone\"")
 			}
-		case "signupSurveyDue":
+		case "regionalFormat":
 			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				if err := s.RegionalFormat.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"regionalFormat\"")
+			}
+		case "signupSurveyDue":
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				v, err := d.Bool()
 				s.SignupSurveyDue = bool(v)
@@ -64712,7 +64877,7 @@ func (s *SiteUserResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"signupSurveyDue\"")
 			}
 		case "acceptancesPending":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				s.AcceptancesPending = make([]SiteSignupItem, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -64730,7 +64895,7 @@ func (s *SiteUserResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"acceptancesPending\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -64748,8 +64913,9 @@ func (s *SiteUserResource) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
+	for i, mask := range [2]uint8{
 		0b11111111,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

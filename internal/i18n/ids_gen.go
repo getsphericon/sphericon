@@ -235,6 +235,7 @@ var (
 	ErrorsPresetParamsWithoutPreset             = ID{key: "errors.preset_params_without_preset"}
 	ErrorsPresetUnknown                         = ID{key: "errors.preset_unknown"}
 	ErrorsPrivacyEmailInvalid                   = ID{key: "errors.privacy_email_invalid"}
+	ErrorsRegionalFormatMalformed               = ID{key: "errors.regional_format_malformed"}
 	ErrorsResetLinkInvalid                      = ID{key: "errors.reset_link_invalid"}
 	ErrorsRuleInvalid                           = ID{key: "errors.rule_invalid"}
 	ErrorsRuleNotFound                          = ID{key: "errors.rule_not_found"}

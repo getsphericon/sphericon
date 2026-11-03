@@ -3960,6 +3960,51 @@ func (o NilInt64) Or(d int64) int64 {
 	return d
 }
 
+// NewNilRegionalFormat returns new NilRegionalFormat with value set to v.
+func NewNilRegionalFormat(v RegionalFormat) NilRegionalFormat {
+	return NilRegionalFormat{
+		Value: v,
+	}
+}
+
+// NilRegionalFormat is nullable RegionalFormat.
+type NilRegionalFormat struct {
+	Value RegionalFormat
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilRegionalFormat) SetTo(v RegionalFormat) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilRegionalFormat) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilRegionalFormat) SetToNull() {
+	o.Null = true
+	var v RegionalFormat
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilRegionalFormat) Get() (v RegionalFormat, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilRegionalFormat) Or(d RegionalFormat) RegionalFormat {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilRetentionDays returns new NilRetentionDays with value set to v.
 func NewNilRetentionDays(v RetentionDays) NilRetentionDays {
 	return NilRetentionDays{
@@ -5888,6 +5933,74 @@ func (o OptNilMaxPerSecond) Get() (v MaxPerSecond, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilMaxPerSecond) Or(d MaxPerSecond) MaxPerSecond {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilRegionalFormat returns new OptNilRegionalFormat with value set to v.
+func NewOptNilRegionalFormat(v RegionalFormat) OptNilRegionalFormat {
+	return OptNilRegionalFormat{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilRegionalFormat is optional nullable RegionalFormat.
+type OptNilRegionalFormat struct {
+	Value RegionalFormat
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilRegionalFormat was set.
+func (o OptNilRegionalFormat) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilRegionalFormat) Reset() {
+	var v RegionalFormat
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilRegionalFormat) SetTo(v RegionalFormat) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilRegionalFormat) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilRegionalFormat) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v RegionalFormat
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilRegionalFormat) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilRegionalFormat) Get() (v RegionalFormat, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilRegionalFormat) Or(d RegionalFormat) RegionalFormat {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -8764,6 +8877,8 @@ func (*ProblemDetailsHeaders) siteSignupSurveySubmitRes()                  {}
 func (*ProblemDetailsHeaders) siteUserDeleteUserRes()                      {}
 func (*ProblemDetailsHeaders) siteUserEmailChangeRes()                     {}
 func (*ProblemDetailsHeaders) siteUserUpdateMeRes()                        {}
+
+type RegionalFormat string
 
 type RetentionDays int32
 
@@ -27541,6 +27656,9 @@ type SiteUpdateMeInput struct {
 	// New User time zone, an IANA name (422 when the zone database does not know it); null clears it, so
 	// the app follows the browser again.
 	Timezone OptNilTimeZoneName `json:"timezone"`
+	// New Regional format, a well-formed BCP 47 tag (422 when it is malformed; it is stored in its
+	// canonical spelling); null clears it, so the app follows the Instance's language again.
+	RegionalFormat OptNilRegionalFormat `json:"regionalFormat"`
 	// Current password — required when changing the password.
 	CurrentPassword OptString `json:"currentPassword"`
 	// New password.
@@ -27555,6 +27673,11 @@ func (s *SiteUpdateMeInput) GetName() OptUserName {
 // GetTimezone returns the value of Timezone.
 func (s *SiteUpdateMeInput) GetTimezone() OptNilTimeZoneName {
 	return s.Timezone
+}
+
+// GetRegionalFormat returns the value of RegionalFormat.
+func (s *SiteUpdateMeInput) GetRegionalFormat() OptNilRegionalFormat {
+	return s.RegionalFormat
 }
 
 // GetCurrentPassword returns the value of CurrentPassword.
@@ -27575,6 +27698,11 @@ func (s *SiteUpdateMeInput) SetName(val OptUserName) {
 // SetTimezone sets the value of Timezone.
 func (s *SiteUpdateMeInput) SetTimezone(val OptNilTimeZoneName) {
 	s.Timezone = val
+}
+
+// SetRegionalFormat sets the value of RegionalFormat.
+func (s *SiteUpdateMeInput) SetRegionalFormat(val OptNilRegionalFormat) {
+	s.RegionalFormat = val
 }
 
 // SetCurrentPassword sets the value of CurrentPassword.
@@ -27830,6 +27958,10 @@ type SiteUserResource struct {
 	// in. Null follows the browser in the app and is UTC in mail. Reports count in the Workspace time
 	// zone, never this one.
 	Timezone NilTimeZoneName `json:"timezone"`
+	// The Regional format: the locale, with its region, the app shows this User's dates, times and numbers
+	// in (`en-GB`, `de-DE`). Null follows the Instance's language. It never changes the language of the
+	// UI.
+	RegionalFormat NilRegionalFormat `json:"regionalFormat"`
 	// Whether the User owes the Sign-up survey: computed on the server, so the app reads this one field
 	// and never the Instance setting. True after a public sign-up on an Instance that asks, until the
 	// survey is answered.
@@ -27867,6 +27999,11 @@ func (s *SiteUserResource) GetEmailVerified() bool {
 // GetTimezone returns the value of Timezone.
 func (s *SiteUserResource) GetTimezone() NilTimeZoneName {
 	return s.Timezone
+}
+
+// GetRegionalFormat returns the value of RegionalFormat.
+func (s *SiteUserResource) GetRegionalFormat() NilRegionalFormat {
+	return s.RegionalFormat
 }
 
 // GetSignupSurveyDue returns the value of SignupSurveyDue.
@@ -27907,6 +28044,11 @@ func (s *SiteUserResource) SetEmailVerified(val bool) {
 // SetTimezone sets the value of Timezone.
 func (s *SiteUserResource) SetTimezone(val NilTimeZoneName) {
 	s.Timezone = val
+}
+
+// SetRegionalFormat sets the value of RegionalFormat.
+func (s *SiteUserResource) SetRegionalFormat(val NilRegionalFormat) {
+	s.RegionalFormat = val
 }
 
 // SetSignupSurveyDue sets the value of SignupSurveyDue.

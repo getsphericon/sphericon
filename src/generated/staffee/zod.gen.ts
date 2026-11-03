@@ -220,6 +220,12 @@ export const zPreconditionRequiredProblem = z.object({
 });
 
 /**
+ * A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and
+ * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
+ */
+export const zRegionalFormat = z.string().max(35);
+
+/**
  * Which metric of a Sending domain breached the abuse detector's warning limit
  */
 export const zStaffAbuseMetric = z.enum(['complaint', 'bounce']);

@@ -96,6 +96,50 @@ func TestSiteUserUpdateMeRejectsUnknownTimezone(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteUserUpdateMeUnprocessableEntity{}, res)
 }
 
+// The Regional format is set, stored in its canonical spelling and cleared through the profile, and
+// a change of the name alone keeps it.
+func TestSiteUserUpdateMeRegionalFormat(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+
+	me, err := c.SiteUserGetMe(ctx)
+	require.NoError(t, err)
+	assert.True(t, me.RegionalFormat.IsNull(), "no format until the User chooses one")
+
+	res, err := c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{RegionalFormat: siteapi.NewOptNilRegionalFormat("de-de")})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteUserResourceHeaders{}, res)
+	_, err = c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptUserName("Renamed")})
+	require.NoError(t, err)
+	me, err = c.SiteUserGetMe(ctx)
+	require.NoError(t, err)
+	format, ok := me.RegionalFormat.Get()
+	require.True(t, ok)
+	assert.Equal(t, siteapi.RegionalFormat("de-DE"), format, "stored in the canonical spelling, kept by an unrelated change")
+
+	_, err = c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{RegionalFormat: siteapi.OptNilRegionalFormat{Set: true, Null: true}})
+	require.NoError(t, err)
+	me, err = c.SiteUserGetMe(ctx)
+	require.NoError(t, err)
+	assert.True(t, me.RegionalFormat.IsNull(), "null clears the format")
+}
+
+func TestSiteUserUpdateMeRejectsMalformedRegionalFormat(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+
+	for _, tag := range []string{"xx-??", "not a tag", "   "} {
+		res, err := c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{RegionalFormat: siteapi.NewOptNilRegionalFormat(siteapi.RegionalFormat(tag))})
+		require.NoError(t, err)
+		assert.IsType(t, &siteapi.SiteUserUpdateMeUnprocessableEntity{}, res, tag)
+	}
+	me, err := c.SiteUserGetMe(ctx)
+	require.NoError(t, err)
+	assert.True(t, me.RegionalFormat.IsNull(), "a refused tag stores nothing")
+}
+
 func TestSiteUserUpdateMePasswordWrongCurrent(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)

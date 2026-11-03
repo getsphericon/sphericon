@@ -9,6 +9,11 @@ scalar Timestamp extends string;
 
 scalar TimeZoneName extends string;
 
+/** A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and
+ * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422). */
+@maxLength(35)
+scalar RegionalFormat extends string;
+
 /** An ISO 3166-1 alpha-2 country code, upper case (`US`, `DE`) */
 @pattern("^[A-Z]{2}$")
 scalar CountryCode extends string;

@@ -620,7 +620,7 @@ export const siteUserGetMeOptions = (options?: Options<SiteUserGetMeData>) => qu
 export const siteUserUpdateMeMutationKey = (options?: Partial<Options<SiteUserUpdateMeData>>) => createMutationKey('siteUserUpdateMe', options, ['Site User']);
 
 /**
- * Update the authenticated user's profile (name, time zone and/or password). A password
+ * Update the authenticated user's profile (name, time zone, Regional format and/or password). A password
  * change ends every session of the user (ADR 0020); the acting one continues
  * under the fresh session cookie set in this response. A wrong current password feeds the
  * Login throttle, which answers 429 even for a right one while its delay runs.

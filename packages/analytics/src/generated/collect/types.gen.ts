@@ -334,6 +334,12 @@ export type ProblemDetails = {
   debug?: ProblemDebug;
 };
 
+/**
+ * A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and
+ * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
+ */
+export type RegionalFormat = string;
+
 export type TimeZoneName = string;
 
 export type Timestamp = string;
