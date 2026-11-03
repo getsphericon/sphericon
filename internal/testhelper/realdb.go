@@ -87,7 +87,11 @@ type baselineHandle struct {
 	name   string // the database's name
 	url    string // its URL
 	shared string // the URL of the shared test database, where the clones are created and dropped
-	err    error
+	// The Cleaner that leased the worker, kept for as long as the process runs: its session holds
+	// the lease, and a session nothing refers to is closed by the garbage collector, which would
+	// give the worker to another process while this one still clones from it.
+	lease *dbcleaner.Cleaner
+	err   error
 }
 
 // baselineDB leases, on the first call of the process, a database of its own (a dbcleaner
@@ -147,7 +151,7 @@ func openBaseline() baselineHandle {
 	if err := dropClones(ctx, admin, name); err != nil {
 		return baselineHandle{err: err}
 	}
-	return baselineHandle{name: name, url: dsn, shared: shared}
+	return baselineHandle{name: name, url: dsn, shared: shared, lease: leased}
 }
 
 // dropClones drops what an earlier process left of the baseline's clones. Only the process that
