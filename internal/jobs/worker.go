@@ -190,7 +190,7 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 		SoftStopTimeout: SoftStopTimeout,
 		Workers:         workers,
 		Logger:          logger,
-		ErrorHandler:    &errorHandler{logger: logger},
+		ErrorHandler:    NewErrorHandler(logger),
 		// OTel spans + metrics per job insert/work, via the global providers set
 		// by telemetry.Setup (a no-op when telemetry is disabled, e.g. tests).
 		// events.JobCorrelation carries the chain of the domain event being handled through the

@@ -23,6 +23,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
+	"github.com/aws/smithy-go"
 
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -151,9 +152,29 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 			// message bad (ADR 0023).
 			return messaging.Receipt{}, fmt.Errorf("ses: send: %w: %w", busy, err)
 		}
+		if refused(err) {
+			return messaging.Receipt{}, fmt.Errorf("ses: send: %w: %w", messaging.ErrRefused, err)
+		}
 		return messaging.Receipt{}, fmt.Errorf("ses: send: %w", err)
 	}
 	return messaging.Receipt{MessageID: aws.ToString(out.MessageId)}, nil
+}
+
+// refusedCodes are the error codes SES answers with when no retry changes the answer: the
+// credentials may not send as the identity (IAM's AccessDenied), the message or its Mail-from
+// domain is refused, the identity does not exist. An account that is paused or suspended is not
+// among them: a person lifts that, often within the time a job queue keeps retrying.
+var refusedCodes = map[string]bool{
+	"AccessDeniedException":              true,
+	"MessageRejected":                    true,
+	"MailFromDomainNotVerifiedException": true,
+	"NotFoundException":                  true,
+}
+
+// refused tells whether err is one of refusedCodes.
+func refused(err error) bool {
+	var api smithy.APIError
+	return errors.As(err, &api) && refusedCodes[api.ErrorCode()]
 }
 
 // SendQuota reads the account's send quota and standing (GetAccount): MaxSendRate messages
