@@ -25,6 +25,7 @@ export function TemplatesListPage() {
     workspaceId,
     successMessage: t(($) => $.notifications.templateDeleted),
     errorTitle: t(($) => $.alerts.templateDeleteErrorTitle),
+    consequence: t(($) => $.confirmations.deleteTemplate),
   })
 
   return (

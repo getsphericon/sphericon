@@ -18,18 +18,21 @@ costly it is to recreate them, and whether something must be done first.
 - **One click, no confirmation:** low risk, easy to recreate, nothing depends on it, no
   prerequisite. The row leaves the list and no message follows.
 - **Simple confirmation:** one or several resources that are not quickly recreated but unlikely to
-  break anything running. A modal; the toast after it reports the result. This is
+  break anything running. A modal that names the consequence (required, no default text); the toast
+  after it reports the result. This is
   `useConfirmation` (`src/hooks/useConfirmation.tsx`) and, with the request, `useDeleteResource`.
 - **Additional confirmation:** serious, irreversible or cascading: the person types the resource's
-  name before the button enables. This is `DeleteWorkspaceControl`.
+  name before the button enables. This is `DeleteWorkspaceControl` and `useConfirmation` with
+  `typedName`, both rendering `TypedConfirmation`.
 
 The modal says what the deletion does and what to do first (a deactivation, a copy), in its own
 words rather than the default text. How a row is removed (physically or archived) is rule 9 of
 `review-rules.md`, not a choice made here.
 
-**Target (#998):** every confirmation today is the same red "Delete" modal with the default text, whatever
-it deletes. A deletion that breaks something live (an API key in use, a Webhook endpoint a receiver
-depends on) takes the additional confirmation or at least names the consequence.
+`useConfirmation` and `useDeleteResource` take the consequence text as required input (there is no
+default) and `typedName` (the additional confirmation, the same `TypedConfirmation` component
+`DeleteWorkspaceControl` renders). A credential or endpoint something live depends on (an API key,
+a Webhook endpoint) takes the typed one.
 
 ## Forms and validation
 

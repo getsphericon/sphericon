@@ -110,7 +110,10 @@ test('revokes a token after confirmation', async () => {
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Revoke' }).click()
   await expect.element(screen.getByText('Revoke token?')).toBeInTheDocument()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+  const dialog = screen.getByRole('dialog')
+  await expect.element(dialog.getByRole('button', { name: 'Delete' })).toBeDisabled()
+  await dialog.getByLabelText('Type CI to confirm').fill('CI')
+  await dialog.getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => revoked).toBe(true)
 })
@@ -132,7 +135,9 @@ test('a failed revoke shows the error toast', async () => {
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Revoke' }).click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText('Type CI to confirm').fill('CI')
+  await dialog.getByRole('button', { name: 'Delete' }).click()
 
   await expect.element(screen.getByText(REVOKE_FAILED)).toBeInTheDocument()
 })

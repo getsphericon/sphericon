@@ -182,7 +182,7 @@ function WebhooksTable({
   onTest: (id: string) => void
   onRegenerate: (id: string) => void
   onToggle: (record: SiteWebhookEndpointResource) => void
-  onDelete: (id: string) => void
+  onDelete: (record: { id: string; url: string }) => void
 }) {
   const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
@@ -274,7 +274,7 @@ function WebhooksTable({
                     ? t(($) => $.settings.webhooks.disable)
                     : t(($) => $.settings.webhooks.enable)}
                 </Menu.Item>
-                <Menu.Item color="red" onClick={() => onDelete(record.id)}>
+                <Menu.Item color="red" onClick={() => onDelete(record)}>
                   {t(($) => $.settings.webhooks.delete)}
                 </Menu.Item>
               </RowActionsMenu>
@@ -342,9 +342,11 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
       body: { url: record.url, eventTypes: record.eventTypes, enabled: !record.enabled },
     })
 
-  const onDelete = (id: string) =>
+  const onDelete = ({ id, url }: { id: string; url: string }) =>
     confirmDelete({
       title: t(($) => $.settings.webhooks.deleteConfirmTitle),
+      description: t(($) => $.settings.webhooks.deleteConfirmDescription),
+      typedName: url,
       onConfirm: () => deleteMutation.mutate({ path: { workspaceId, id } }),
     })
 

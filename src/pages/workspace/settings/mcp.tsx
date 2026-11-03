@@ -91,10 +91,11 @@ function ConnectionsSection({ workspace }: { workspace: SiteWorkspaceResource })
     mutation: siteConnectionsDeleteMutation(),
     errorTitle: t(($) => $.settings.connections.revokeError),
   })
-  const onRevoke = (id: string) => {
+  const onRevoke = ({ id, name }: { id: string; name: string }) => {
     confirmRevoke({
       title: t(($) => $.settings.connections.revokeConfirmTitle),
       description: t(($) => $.settings.connections.revokeConfirmDescription),
+      typedName: name,
       confirmLabel: t(($) => $.settings.connections.revoke),
       onConfirm: () => revoke.mutate({ path: { workspaceId, id } }),
     })
@@ -146,7 +147,7 @@ function ConnectionsSection({ workspace }: { workspace: SiteWorkspaceResource })
                 size="xs"
                 variant="subtle"
                 color="red"
-                onClick={() => onRevoke(record.id)}
+                onClick={() => onRevoke(record)}
                 aria-label={t(($) => $.settings.connections.revokeLabel, { name: record.name })}
               >
                 {t(($) => $.settings.connections.revoke)}

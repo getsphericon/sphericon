@@ -98,7 +98,9 @@ test('revokes a token after confirmation', async () => {
 
   await screen.getByRole('button', { name: 'Revoke Import script' }).click()
   await expect.element(screen.getByText('Revoke this personal token?')).toBeInTheDocument()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Revoke' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText('Type Import script to confirm').fill('Import script')
+  await dialog.getByRole('button', { name: 'Revoke' }).click()
 
   await expect.element(screen.getByText('No personal tokens')).toBeInTheDocument()
   await expect.element(screen.getByText('Import script')).not.toBeInTheDocument()

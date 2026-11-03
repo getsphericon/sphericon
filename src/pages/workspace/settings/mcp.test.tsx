@@ -91,6 +91,7 @@ test('revoking a connection asks first, then removes it', async () => {
 
   const { screen } = await renderWithRouter(<McpPage />, MCP_ROUTE)
   await screen.getByRole('button', { name: 'Revoke Claude' }).click()
+  await screen.getByLabelText('Type Claude to confirm').fill('Claude')
   await screen.getByRole('button', { name: 'Revoke', exact: true }).click()
 
   await expect.poll(() => revoked).toEqual(['7'])

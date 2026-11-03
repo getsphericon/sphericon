@@ -207,7 +207,11 @@ test('deletes an endpoint after confirmation', async () => {
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Delete' }).click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog
+    .getByLabelText('Type https://example.com/hook to confirm')
+    .fill('https://example.com/hook')
+  await dialog.getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => deleted).toBe(true)
 })
