@@ -79,8 +79,8 @@ func TestOverTheTrackingGuardAClickStillRedirectsButIsNotRecorded(t *testing.T) 
 
 	assert.Equal(t, http.StatusFound, rec.Code)
 	assert.Equal(t, clickDest, rec.Header().Get("Location"))
-	assert.NotNil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientUnengagedFirstID).ClickedAt)
-	assert.Nil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientUnengagedSecondID).ClickedAt)
+	assert.NotNil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedFirstID).ClickedAt)
+	assert.Nil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedSecondID).ClickedAt)
 }
 
 func TestOverTheTrackingGuardAnOpenStillReturnsThePixelButIsNotRecorded(t *testing.T) {
@@ -94,8 +94,8 @@ func TestOverTheTrackingGuardAnOpenStillReturnsThePixelButIsNotRecorded(t *testi
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "image/gif", rec.Header().Get("Content-Type"))
 	assert.NotEmpty(t, rec.Body.Bytes())
-	assert.NotNil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientUnengagedFirstID).OpenedAt)
-	assert.Nil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientUnengagedSecondID).OpenedAt)
+	assert.NotNil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedFirstID).OpenedAt)
+	assert.Nil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedSecondID).OpenedAt)
 }
 
 func TestBelowTheTrackingGuardEngagementsAreRecorded(t *testing.T) {
@@ -107,8 +107,8 @@ func TestBelowTheTrackingGuardEngagementsAreRecorded(t *testing.T) {
 	clicked := trackingGet(t, env, clickPath(t, env, fixtures.OutboundMessageUnengagedSecondID))
 	require.Equal(t, http.StatusFound, clicked.Code)
 
-	assert.NotNil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientUnengagedFirstID).OpenedAt)
-	assert.NotNil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientUnengagedSecondID).ClickedAt)
+	assert.NotNil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedFirstID).OpenedAt)
+	assert.NotNil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedSecondID).ClickedAt)
 }
 
 func TestOneClickUnsubscribeIsNeverRateLimited(t *testing.T) {
@@ -150,11 +150,8 @@ func TestASkippedRecordingIsCountedUnderTheTrackingPolicy(t *testing.T) {
 
 func TestAZeroTrackingLimitRecordsEverything(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(0))
-	for message, recipient := range map[int64]int64{
-		fixtures.OutboundMessageUnengagedFirstID:  fixtures.BroadcastRecipientUnengagedFirstID,
-		fixtures.OutboundMessageUnengagedSecondID: fixtures.BroadcastRecipientUnengagedSecondID,
-	} {
+	for _, message := range []int64{fixtures.OutboundMessageUnengagedFirstID, fixtures.OutboundMessageUnengagedSecondID} {
 		require.Equal(t, http.StatusOK, trackingGet(t, env, "/e/o/"+trackingToken(t, env, message)).Code)
-		assert.NotNil(t, env.DB.BroadcastRecipient.GetX(t.Context(), recipient).OpenedAt)
+		assert.NotNil(t, env.DB.OutboundMessage.GetX(t.Context(), message).OpenedAt)
 	}
 }

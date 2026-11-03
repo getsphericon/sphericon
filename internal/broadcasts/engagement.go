@@ -9,22 +9,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
-// The engagement of a recipient with the email it was sent. Each is set once, by a conditional
-// update, and reports whether this call set it, so a repeated hit (a mailbox that fetches the
-// pixel twice, a double click) is counted exactly once. The caller publishes the engagement
-// event only for the call that set it, in the same transaction.
-
-// RecordOpen marks the recipient as having opened the email.
-func RecordOpen(ctx context.Context, s *ent.Scoped, recipientID int64) (bool, error) {
-	return setOnce(ctx, s, broadcastrecipient.ID(recipientID), broadcastrecipient.OpenedAtIsNil(),
-		func(u *ent.BroadcastRecipientScopedUpdate, at time.Time) { u.SetOpenedAt(at) })
-}
-
-// RecordClick marks the recipient as having clicked a link of the email.
-func RecordClick(ctx context.Context, s *ent.Scoped, recipientID int64) (bool, error) {
-	return setOnce(ctx, s, broadcastrecipient.ID(recipientID), broadcastrecipient.ClickedAtIsNil(),
-		func(u *ent.BroadcastRecipientScopedUpdate, at time.Time) { u.SetClickedAt(at) })
-}
+// The unsubscribe of a recipient is set once, by a conditional update, and reported as whether
+// this call set it, so a repeated click on the link is counted exactly once. Its opens and clicks
+// are the Outbound message's stamps (outbound.StampOpened, ADR 0053).
 
 // RecordUnsubscribe marks the Contact's recipient row of the Broadcast as having unsubscribed
 // from it. A Contact that was never a recipient of it (a link to an erased row) matches nothing.

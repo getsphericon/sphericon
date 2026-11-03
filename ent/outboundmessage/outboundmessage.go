@@ -51,6 +51,10 @@ const (
 	FieldBouncedAt = "bounced_at"
 	// FieldComplainedAt holds the string denoting the complained_at field in the database.
 	FieldComplainedAt = "complained_at"
+	// FieldOpenedAt holds the string denoting the opened_at field in the database.
+	FieldOpenedAt = "opened_at"
+	// FieldClickedAt holds the string denoting the clicked_at field in the database.
+	FieldClickedAt = "clicked_at"
 	// FieldCaptured holds the string denoting the captured field in the database.
 	FieldCaptured = "captured"
 	// FieldBroadcastID holds the string denoting the broadcast_id field in the database.
@@ -177,6 +181,8 @@ var Columns = []string{
 	FieldDeliveredAt,
 	FieldBouncedAt,
 	FieldComplainedAt,
+	FieldOpenedAt,
+	FieldClickedAt,
 	FieldCaptured,
 	FieldBroadcastID,
 	FieldBroadcastRecipientID,
@@ -388,6 +394,16 @@ func ByBouncedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByComplainedAt orders the results by the complained_at field.
 func ByComplainedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldComplainedAt, opts...).ToFunc()
+}
+
+// ByOpenedAt orders the results by the opened_at field.
+func ByOpenedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOpenedAt, opts...).ToFunc()
+}
+
+// ByClickedAt orders the results by the clicked_at field.
+func ByClickedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldClickedAt, opts...).ToFunc()
 }
 
 // ByCaptured orders the results by the captured field.

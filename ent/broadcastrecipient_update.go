@@ -106,46 +106,6 @@ func (_u *BroadcastRecipientUpdate) ClearDeferredUntil() *BroadcastRecipientUpda
 	return _u
 }
 
-// SetOpenedAt sets the "opened_at" field.
-func (_u *BroadcastRecipientUpdate) SetOpenedAt(v time.Time) *BroadcastRecipientUpdate {
-	_u.mutation.SetOpenedAt(v)
-	return _u
-}
-
-// SetNillableOpenedAt sets the "opened_at" field if the given value is not nil.
-func (_u *BroadcastRecipientUpdate) SetNillableOpenedAt(v *time.Time) *BroadcastRecipientUpdate {
-	if v != nil {
-		_u.SetOpenedAt(*v)
-	}
-	return _u
-}
-
-// ClearOpenedAt clears the value of the "opened_at" field.
-func (_u *BroadcastRecipientUpdate) ClearOpenedAt() *BroadcastRecipientUpdate {
-	_u.mutation.ClearOpenedAt()
-	return _u
-}
-
-// SetClickedAt sets the "clicked_at" field.
-func (_u *BroadcastRecipientUpdate) SetClickedAt(v time.Time) *BroadcastRecipientUpdate {
-	_u.mutation.SetClickedAt(v)
-	return _u
-}
-
-// SetNillableClickedAt sets the "clicked_at" field if the given value is not nil.
-func (_u *BroadcastRecipientUpdate) SetNillableClickedAt(v *time.Time) *BroadcastRecipientUpdate {
-	if v != nil {
-		_u.SetClickedAt(*v)
-	}
-	return _u
-}
-
-// ClearClickedAt clears the value of the "clicked_at" field.
-func (_u *BroadcastRecipientUpdate) ClearClickedAt() *BroadcastRecipientUpdate {
-	_u.mutation.ClearClickedAt()
-	return _u
-}
-
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (_u *BroadcastRecipientUpdate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpdate {
 	_u.mutation.SetUnsubscribedAt(v)
@@ -277,18 +237,6 @@ func (_u *BroadcastRecipientUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if _u.mutation.DeferredUntilCleared() {
 		_spec.ClearField(broadcastrecipient.FieldDeferredUntil, field.TypeTime)
-	}
-	if value, ok := _u.mutation.OpenedAt(); ok {
-		_spec.SetField(broadcastrecipient.FieldOpenedAt, field.TypeTime, value)
-	}
-	if _u.mutation.OpenedAtCleared() {
-		_spec.ClearField(broadcastrecipient.FieldOpenedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.ClickedAt(); ok {
-		_spec.SetField(broadcastrecipient.FieldClickedAt, field.TypeTime, value)
-	}
-	if _u.mutation.ClickedAtCleared() {
-		_spec.ClearField(broadcastrecipient.FieldClickedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.UnsubscribedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime, value)
@@ -479,46 +427,6 @@ func (_u *BroadcastRecipientUpdateOne) ClearDeferredUntil() *BroadcastRecipientU
 	return _u
 }
 
-// SetOpenedAt sets the "opened_at" field.
-func (_u *BroadcastRecipientUpdateOne) SetOpenedAt(v time.Time) *BroadcastRecipientUpdateOne {
-	_u.mutation.SetOpenedAt(v)
-	return _u
-}
-
-// SetNillableOpenedAt sets the "opened_at" field if the given value is not nil.
-func (_u *BroadcastRecipientUpdateOne) SetNillableOpenedAt(v *time.Time) *BroadcastRecipientUpdateOne {
-	if v != nil {
-		_u.SetOpenedAt(*v)
-	}
-	return _u
-}
-
-// ClearOpenedAt clears the value of the "opened_at" field.
-func (_u *BroadcastRecipientUpdateOne) ClearOpenedAt() *BroadcastRecipientUpdateOne {
-	_u.mutation.ClearOpenedAt()
-	return _u
-}
-
-// SetClickedAt sets the "clicked_at" field.
-func (_u *BroadcastRecipientUpdateOne) SetClickedAt(v time.Time) *BroadcastRecipientUpdateOne {
-	_u.mutation.SetClickedAt(v)
-	return _u
-}
-
-// SetNillableClickedAt sets the "clicked_at" field if the given value is not nil.
-func (_u *BroadcastRecipientUpdateOne) SetNillableClickedAt(v *time.Time) *BroadcastRecipientUpdateOne {
-	if v != nil {
-		_u.SetClickedAt(*v)
-	}
-	return _u
-}
-
-// ClearClickedAt clears the value of the "clicked_at" field.
-func (_u *BroadcastRecipientUpdateOne) ClearClickedAt() *BroadcastRecipientUpdateOne {
-	_u.mutation.ClearClickedAt()
-	return _u
-}
-
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (_u *BroadcastRecipientUpdateOne) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpdateOne {
 	_u.mutation.SetUnsubscribedAt(v)
@@ -680,18 +588,6 @@ func (_u *BroadcastRecipientUpdateOne) sqlSave(ctx context.Context) (_node *Broa
 	}
 	if _u.mutation.DeferredUntilCleared() {
 		_spec.ClearField(broadcastrecipient.FieldDeferredUntil, field.TypeTime)
-	}
-	if value, ok := _u.mutation.OpenedAt(); ok {
-		_spec.SetField(broadcastrecipient.FieldOpenedAt, field.TypeTime, value)
-	}
-	if _u.mutation.OpenedAtCleared() {
-		_spec.ClearField(broadcastrecipient.FieldOpenedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.ClickedAt(); ok {
-		_spec.SetField(broadcastrecipient.FieldClickedAt, field.TypeTime, value)
-	}
-	if _u.mutation.ClickedAtCleared() {
-		_spec.ClearField(broadcastrecipient.FieldClickedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.UnsubscribedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime, value)

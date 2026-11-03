@@ -345,8 +345,6 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 	if source != nil {
 		externalapiContactExportBroadcastRecipient.ID = external.EntityId((*source).ID)
 		externalapiContactExportBroadcastRecipient.BroadcastId = external.EntityId((*source).BroadcastID)
-		externalapiContactExportBroadcastRecipient.OpenedAt = optNilTimestamp((*source).OpenedAt)
-		externalapiContactExportBroadcastRecipient.ClickedAt = optNilTimestamp((*source).ClickedAt)
 		externalapiContactExportBroadcastRecipient.UnsubscribedAt = optNilTimestamp((*source).UnsubscribedAt)
 		externalapiContactExportBroadcastRecipient.CreatedAt = timestamp((*source).CreatedAt)
 	}
@@ -972,6 +970,8 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 		externalapiContactExportOutboundMessage.DeliveredAt = optNilTimestamp((*source).DeliveredAt)
 		externalapiContactExportOutboundMessage.BouncedAt = optNilTimestamp((*source).BouncedAt)
 		externalapiContactExportOutboundMessage.ComplainedAt = optNilTimestamp((*source).ComplainedAt)
+		externalapiContactExportOutboundMessage.OpenedAt = optNilTimestamp((*source).OpenedAt)
+		externalapiContactExportOutboundMessage.ClickedAt = optNilTimestamp((*source).ClickedAt)
 		externalapiContactExportOutboundMessage.Captured = (*source).Captured
 		externalapiContactExportOutboundMessage.BroadcastId = optNilEntityID((*source).BroadcastID)
 		externalapiContactExportOutboundMessage.AutomationId = optNilEntityID((*source).AutomationID)

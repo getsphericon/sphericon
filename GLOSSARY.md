@@ -345,11 +345,12 @@ _Avoid_: Campaign, newsletter blast, mailshot, email blast
 
 **Broadcast recipient**:
 The per-(Broadcast, Contact) record — the frozen audience snapshot taken at send
-time. It holds no delivery state of its own: its send ends in exactly one Outbound message
-(sent / skipped / failed), and it is _pending_ until then. It is also the home of a denormalized
-**rollup** of engagement (opened / clicked / unsubscribed, each set once) for per-broadcast
-stats; opens and clicks are also the `email.opened` / `email.clicked` Events, which are the
-source of truth, so the rollup is a convenience view. Delivery figures (delivered, bounced, complained) are read from
+time. It holds no delivery or engagement state of its own: its send ends in exactly one Outbound message
+(sent / skipped / failed), and it is _pending_ until then. Its only stamp is the unsubscribe
+(set once). The first human open and click are stamps of the Outbound message too (`opened_at`,
+`clicked_at`, set once, a machine hit sets nothing), whatever surface sent it; they are also the
+`email.opened` / `email.clicked` Events, so the stamps are a convenience view that does not
+shrink when the Events expire. Delivery figures (delivered, bounced, complained) are read from
 the Outbound message's delivery result, never counted from Events. A Broadcast's figures (recipients, sent,
 skipped, failed, pending, opened, clicked, unsubscribed) are derived from its recipients and
 their messages and never stored, so they are live while it sends. Each Channel reports its own: a
@@ -747,9 +748,10 @@ _Avoid_: Delivery-failure rate (that would fold in soft bounces)
 
 **Engagement rates**:
 The open, click and click-to-open ratios of the analytics reports over a chosen window (7, 30 or 90 **Report days**).
-A **send cohort**: the denominator is the Broadcast recipients sent in the window, and opens and
-clicks are counted among that same cohort, so opened never exceeds sent and the rates stay within
-[0, 1]. Not the **Complaint rate** or **Bounce rate**: those are deliverability flow rates per
+A **send cohort**: the denominator is the Broadcast and Automation Outbound messages sent in the
+window (a Transactional one is left out, and each message counts once, not each person), and opens
+and clicks, the stamps on those messages, are counted among that same cohort, so opened never
+exceeds sent and the rates stay within [0, 1]. Not the **Complaint rate** or **Bounce rate**: those are deliverability flow rates per
 Sending domain, counted from Events by their own time and never tied to a send.
 _Avoid_: Reputation, deliverability (those name the Sending-domain rates)
 
@@ -958,7 +960,7 @@ An open or click made by software rather than the recipient: a mail client's pri
 Mail Privacy Protection), a security scanner, a link prefetcher, or a messenger fetching a link to
 build its preview (Telegram, WhatsApp). It is still recorded as an `email.opened` /
 `<channel>.clicked` Event, flagged `machine`, but it never counts toward open or click
-figures, never sets a Broadcast recipient's rollup and never starts an Automation. Detected from
+figures, never stamps the Outbound message as opened or clicked and never starts an Automation. Detected from
 the request's user-agent and source address, neither of which is stored. Detection is a partial
 signal, not proof: a proxy that hides itself is not caught.
 _Avoid_: Bot open, false open

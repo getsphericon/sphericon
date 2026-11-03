@@ -4,6 +4,9 @@ status: accepted
 
 # Delivery and engagement Events cover every send, and machine engagement is flagged, not dropped
 
+> **Amended below:** the rollup of a human open and click moved from the Broadcast recipient to
+> the Outbound message, so it covers every surface.
+
 Opens and clicks were recorded once per Broadcast recipient, only for Broadcasts, and counted
 whatever made the request; delivery was inferred (ADR 0011). We now record the full set a sender
 expects (`email.delivered`, `email.delayed`, `email.dropped` beside sent, bounced, complained,
@@ -47,3 +50,22 @@ request, a Transactional send.
   stored and providers return it.
 - **Keep `sent − hard bounces`** (rejected): it is only an approximation of delivered, and the
   Delivery notice is now ingested anyway.
+
+## Amendment: the engagement rollup is on the Outbound message
+
+The rollup of the first human open and click moved from the Broadcast recipient to the Outbound
+message (`opened_at`, `clicked_at`), for the reason it existed: reports must not shrink when the
+Events expire (ADR 0019). The recipient's rollup covered a Broadcast only, because an Automation
+message has no recipient row and its Events name the message but expire; the message is the one
+record every surface has, and it already carries the delivery stamps.
+
+- **One lasting rollup.** Each stamp is set once (`... WHERE opened_at IS NULL`), only by a human
+  hit, in the transaction that publishes the engagement Event, for every tracked message: a
+  Broadcast, an Automation and a Transactional send with `track`. A machine hit still stamps
+  nothing. The Broadcast recipient has no `opened_at` / `clicked_at` any more (its
+  `unsubscribed_at` stays); a Broadcast's stats and report, the contact export and the analytics
+  read the message's stamps.
+- **The overview's engagement covers the Broadcast and Automation messages** sent in the range (a
+  Transactional message is left out), one count per message, not per person, so the rates stay in
+  [0, 1]. Its labels no longer say "Broadcast".
+- Not changed: the Automation report's own opens and clicks stay repeat counts from Events.

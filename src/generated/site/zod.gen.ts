@@ -622,9 +622,10 @@ export const zSiteAnalyticsContacts = z.object({
 });
 
 /**
- * Email engagement for the Broadcast messages sent in the selected range (the send
- * cohort), from delivery logs. Opens/clicks are counted among that cohort, so
- * the counts reconcile and the rates stay in [0,1].
+ * Email engagement for the Broadcast and Automation messages sent in the selected range
+ * (the send cohort; a Transactional message is not in it), from delivery logs. Each message
+ * counts once, not each person. Opens/clicks are the first human open/click stamped on the
+ * message and are counted among that cohort, so the counts reconcile and the rates stay in [0,1].
  */
 export const zSiteAnalyticsEmail = z.object({
   sentCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
@@ -2547,13 +2548,11 @@ export const zSiteWorkspaceTimezoneInput = z.object({
 export const zTimestamp = z.iso.datetime();
 
 /**
- * The contact's engagement with one broadcast (how its send ended is in `outboundMessages`)
+ * The contact's place in one broadcast's audience (how its send ended, and whether it was opened or clicked, is in `outboundMessages`)
  */
 export const zContactExportBroadcastRecipient = z.object({
   id: zEntityId,
   broadcastId: zEntityId,
-  openedAt: z.exactOptional(zTimestamp.nullable()),
-  clickedAt: z.exactOptional(zTimestamp.nullable()),
   unsubscribedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp
 });
@@ -2626,6 +2625,8 @@ export const zContactExportOutboundMessage = z.object({
   deliveredAt: z.exactOptional(zTimestamp.nullable()),
   bouncedAt: z.exactOptional(zTimestamp.nullable()),
   complainedAt: z.exactOptional(zTimestamp.nullable()),
+  openedAt: z.exactOptional(zTimestamp.nullable()),
+  clickedAt: z.exactOptional(zTimestamp.nullable()),
   captured: z.boolean(),
   broadcastId: z.exactOptional(zEntityId.nullable()),
   automationId: z.exactOptional(zEntityId.nullable()),

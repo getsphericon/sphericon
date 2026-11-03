@@ -9502,30 +9502,6 @@ func (x *BroadcastRecipientScopedCreate) SetNillableDeferredUntil(v *time.Time) 
 	return x
 }
 
-// SetOpenedAt sets the "opened_at" field.
-func (x *BroadcastRecipientScopedCreate) SetOpenedAt(v time.Time) *BroadcastRecipientScopedCreate {
-	x.b.SetOpenedAt(v)
-	return x
-}
-
-// SetNillableOpenedAt sets the "opened_at" field if the given value is not nil.
-func (x *BroadcastRecipientScopedCreate) SetNillableOpenedAt(v *time.Time) *BroadcastRecipientScopedCreate {
-	x.b.SetNillableOpenedAt(v)
-	return x
-}
-
-// SetClickedAt sets the "clicked_at" field.
-func (x *BroadcastRecipientScopedCreate) SetClickedAt(v time.Time) *BroadcastRecipientScopedCreate {
-	x.b.SetClickedAt(v)
-	return x
-}
-
-// SetNillableClickedAt sets the "clicked_at" field if the given value is not nil.
-func (x *BroadcastRecipientScopedCreate) SetNillableClickedAt(v *time.Time) *BroadcastRecipientScopedCreate {
-	x.b.SetNillableClickedAt(v)
-	return x
-}
-
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (x *BroadcastRecipientScopedCreate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedCreate {
 	x.b.SetUnsubscribedAt(v)
@@ -9669,42 +9645,6 @@ func (u *BroadcastRecipientScopedUpsert) UpdateDeferredUntil() *BroadcastRecipie
 // ClearDeferredUntil clears the value of the "deferred_until" field.
 func (u *BroadcastRecipientScopedUpsert) ClearDeferredUntil() *BroadcastRecipientScopedUpsert {
 	u.u.SetNull(broadcastrecipient.FieldDeferredUntil)
-	return u
-}
-
-// SetOpenedAt sets the "opened_at" field.
-func (u *BroadcastRecipientScopedUpsert) SetOpenedAt(v time.Time) *BroadcastRecipientScopedUpsert {
-	u.u.Set(broadcastrecipient.FieldOpenedAt, v)
-	return u
-}
-
-// UpdateOpenedAt sets the "opened_at" field to the value that was provided on create.
-func (u *BroadcastRecipientScopedUpsert) UpdateOpenedAt() *BroadcastRecipientScopedUpsert {
-	u.u.SetExcluded(broadcastrecipient.FieldOpenedAt)
-	return u
-}
-
-// ClearOpenedAt clears the value of the "opened_at" field.
-func (u *BroadcastRecipientScopedUpsert) ClearOpenedAt() *BroadcastRecipientScopedUpsert {
-	u.u.SetNull(broadcastrecipient.FieldOpenedAt)
-	return u
-}
-
-// SetClickedAt sets the "clicked_at" field.
-func (u *BroadcastRecipientScopedUpsert) SetClickedAt(v time.Time) *BroadcastRecipientScopedUpsert {
-	u.u.Set(broadcastrecipient.FieldClickedAt, v)
-	return u
-}
-
-// UpdateClickedAt sets the "clicked_at" field to the value that was provided on create.
-func (u *BroadcastRecipientScopedUpsert) UpdateClickedAt() *BroadcastRecipientScopedUpsert {
-	u.u.SetExcluded(broadcastrecipient.FieldClickedAt)
-	return u
-}
-
-// ClearClickedAt clears the value of the "clicked_at" field.
-func (u *BroadcastRecipientScopedUpsert) ClearClickedAt() *BroadcastRecipientScopedUpsert {
-	u.u.SetNull(broadcastrecipient.FieldClickedAt)
 	return u
 }
 
@@ -9926,42 +9866,6 @@ func (x *BroadcastRecipientScopedUpdateOne) ClearDeferredUntil() *BroadcastRecip
 	return x
 }
 
-// SetOpenedAt sets the "opened_at" field.
-func (x *BroadcastRecipientScopedUpdateOne) SetOpenedAt(v time.Time) *BroadcastRecipientScopedUpdateOne {
-	x.b.SetOpenedAt(v)
-	return x
-}
-
-// SetNillableOpenedAt sets the "opened_at" field if the given value is not nil.
-func (x *BroadcastRecipientScopedUpdateOne) SetNillableOpenedAt(v *time.Time) *BroadcastRecipientScopedUpdateOne {
-	x.b.SetNillableOpenedAt(v)
-	return x
-}
-
-// ClearOpenedAt clears the value of the "opened_at" field.
-func (x *BroadcastRecipientScopedUpdateOne) ClearOpenedAt() *BroadcastRecipientScopedUpdateOne {
-	x.b.ClearOpenedAt()
-	return x
-}
-
-// SetClickedAt sets the "clicked_at" field.
-func (x *BroadcastRecipientScopedUpdateOne) SetClickedAt(v time.Time) *BroadcastRecipientScopedUpdateOne {
-	x.b.SetClickedAt(v)
-	return x
-}
-
-// SetNillableClickedAt sets the "clicked_at" field if the given value is not nil.
-func (x *BroadcastRecipientScopedUpdateOne) SetNillableClickedAt(v *time.Time) *BroadcastRecipientScopedUpdateOne {
-	x.b.SetNillableClickedAt(v)
-	return x
-}
-
-// ClearClickedAt clears the value of the "clicked_at" field.
-func (x *BroadcastRecipientScopedUpdateOne) ClearClickedAt() *BroadcastRecipientScopedUpdateOne {
-	x.b.ClearClickedAt()
-	return x
-}
-
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (x *BroadcastRecipientScopedUpdateOne) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpdateOne {
 	x.b.SetUnsubscribedAt(v)
@@ -10117,42 +10021,6 @@ func (x *BroadcastRecipientScopedUpdate) SetNillableDeferredUntil(v *time.Time) 
 // ClearDeferredUntil clears the value of the "deferred_until" field.
 func (x *BroadcastRecipientScopedUpdate) ClearDeferredUntil() *BroadcastRecipientScopedUpdate {
 	x.b.ClearDeferredUntil()
-	return x
-}
-
-// SetOpenedAt sets the "opened_at" field.
-func (x *BroadcastRecipientScopedUpdate) SetOpenedAt(v time.Time) *BroadcastRecipientScopedUpdate {
-	x.b.SetOpenedAt(v)
-	return x
-}
-
-// SetNillableOpenedAt sets the "opened_at" field if the given value is not nil.
-func (x *BroadcastRecipientScopedUpdate) SetNillableOpenedAt(v *time.Time) *BroadcastRecipientScopedUpdate {
-	x.b.SetNillableOpenedAt(v)
-	return x
-}
-
-// ClearOpenedAt clears the value of the "opened_at" field.
-func (x *BroadcastRecipientScopedUpdate) ClearOpenedAt() *BroadcastRecipientScopedUpdate {
-	x.b.ClearOpenedAt()
-	return x
-}
-
-// SetClickedAt sets the "clicked_at" field.
-func (x *BroadcastRecipientScopedUpdate) SetClickedAt(v time.Time) *BroadcastRecipientScopedUpdate {
-	x.b.SetClickedAt(v)
-	return x
-}
-
-// SetNillableClickedAt sets the "clicked_at" field if the given value is not nil.
-func (x *BroadcastRecipientScopedUpdate) SetNillableClickedAt(v *time.Time) *BroadcastRecipientScopedUpdate {
-	x.b.SetNillableClickedAt(v)
-	return x
-}
-
-// ClearClickedAt clears the value of the "clicked_at" field.
-func (x *BroadcastRecipientScopedUpdate) ClearClickedAt() *BroadcastRecipientScopedUpdate {
-	x.b.ClearClickedAt()
 	return x
 }
 
@@ -23779,6 +23647,30 @@ func (x *OutboundMessageScopedCreate) SetNillableComplainedAt(v *time.Time) *Out
 	return x
 }
 
+// SetOpenedAt sets the "opened_at" field.
+func (x *OutboundMessageScopedCreate) SetOpenedAt(v time.Time) *OutboundMessageScopedCreate {
+	x.b.SetOpenedAt(v)
+	return x
+}
+
+// SetNillableOpenedAt sets the "opened_at" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableOpenedAt(v *time.Time) *OutboundMessageScopedCreate {
+	x.b.SetNillableOpenedAt(v)
+	return x
+}
+
+// SetClickedAt sets the "clicked_at" field.
+func (x *OutboundMessageScopedCreate) SetClickedAt(v time.Time) *OutboundMessageScopedCreate {
+	x.b.SetClickedAt(v)
+	return x
+}
+
+// SetNillableClickedAt sets the "clicked_at" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableClickedAt(v *time.Time) *OutboundMessageScopedCreate {
+	x.b.SetNillableClickedAt(v)
+	return x
+}
+
 // SetCaptured sets the "captured" field.
 func (x *OutboundMessageScopedCreate) SetCaptured(v bool) *OutboundMessageScopedCreate {
 	x.b.SetCaptured(v)
@@ -24264,6 +24156,42 @@ func (u *OutboundMessageScopedUpsert) UpdateComplainedAt() *OutboundMessageScope
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (u *OutboundMessageScopedUpsert) ClearComplainedAt() *OutboundMessageScopedUpsert {
 	u.u.SetNull(outboundmessage.FieldComplainedAt)
+	return u
+}
+
+// SetOpenedAt sets the "opened_at" field.
+func (u *OutboundMessageScopedUpsert) SetOpenedAt(v time.Time) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldOpenedAt, v)
+	return u
+}
+
+// UpdateOpenedAt sets the "opened_at" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateOpenedAt() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldOpenedAt)
+	return u
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (u *OutboundMessageScopedUpsert) ClearOpenedAt() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldOpenedAt)
+	return u
+}
+
+// SetClickedAt sets the "clicked_at" field.
+func (u *OutboundMessageScopedUpsert) SetClickedAt(v time.Time) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldClickedAt, v)
+	return u
+}
+
+// UpdateClickedAt sets the "clicked_at" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateClickedAt() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldClickedAt)
+	return u
+}
+
+// ClearClickedAt clears the value of the "clicked_at" field.
+func (u *OutboundMessageScopedUpsert) ClearClickedAt() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldClickedAt)
 	return u
 }
 
@@ -24758,6 +24686,42 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableComplainedAt(v *time.Time) *
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (x *OutboundMessageScopedUpdateOne) ClearComplainedAt() *OutboundMessageScopedUpdateOne {
 	x.b.ClearComplainedAt()
+	return x
+}
+
+// SetOpenedAt sets the "opened_at" field.
+func (x *OutboundMessageScopedUpdateOne) SetOpenedAt(v time.Time) *OutboundMessageScopedUpdateOne {
+	x.b.SetOpenedAt(v)
+	return x
+}
+
+// SetNillableOpenedAt sets the "opened_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableOpenedAt(v *time.Time) *OutboundMessageScopedUpdateOne {
+	x.b.SetNillableOpenedAt(v)
+	return x
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (x *OutboundMessageScopedUpdateOne) ClearOpenedAt() *OutboundMessageScopedUpdateOne {
+	x.b.ClearOpenedAt()
+	return x
+}
+
+// SetClickedAt sets the "clicked_at" field.
+func (x *OutboundMessageScopedUpdateOne) SetClickedAt(v time.Time) *OutboundMessageScopedUpdateOne {
+	x.b.SetClickedAt(v)
+	return x
+}
+
+// SetNillableClickedAt sets the "clicked_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableClickedAt(v *time.Time) *OutboundMessageScopedUpdateOne {
+	x.b.SetNillableClickedAt(v)
+	return x
+}
+
+// ClearClickedAt clears the value of the "clicked_at" field.
+func (x *OutboundMessageScopedUpdateOne) ClearClickedAt() *OutboundMessageScopedUpdateOne {
+	x.b.ClearClickedAt()
 	return x
 }
 
@@ -25336,6 +25300,42 @@ func (x *OutboundMessageScopedUpdate) SetNillableComplainedAt(v *time.Time) *Out
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (x *OutboundMessageScopedUpdate) ClearComplainedAt() *OutboundMessageScopedUpdate {
 	x.b.ClearComplainedAt()
+	return x
+}
+
+// SetOpenedAt sets the "opened_at" field.
+func (x *OutboundMessageScopedUpdate) SetOpenedAt(v time.Time) *OutboundMessageScopedUpdate {
+	x.b.SetOpenedAt(v)
+	return x
+}
+
+// SetNillableOpenedAt sets the "opened_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableOpenedAt(v *time.Time) *OutboundMessageScopedUpdate {
+	x.b.SetNillableOpenedAt(v)
+	return x
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (x *OutboundMessageScopedUpdate) ClearOpenedAt() *OutboundMessageScopedUpdate {
+	x.b.ClearOpenedAt()
+	return x
+}
+
+// SetClickedAt sets the "clicked_at" field.
+func (x *OutboundMessageScopedUpdate) SetClickedAt(v time.Time) *OutboundMessageScopedUpdate {
+	x.b.SetClickedAt(v)
+	return x
+}
+
+// SetNillableClickedAt sets the "clicked_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableClickedAt(v *time.Time) *OutboundMessageScopedUpdate {
+	x.b.SetNillableClickedAt(v)
+	return x
+}
+
+// ClearClickedAt clears the value of the "clicked_at" field.
+func (x *OutboundMessageScopedUpdate) ClearClickedAt() *OutboundMessageScopedUpdate {
+	x.b.ClearClickedAt()
 	return x
 }
 

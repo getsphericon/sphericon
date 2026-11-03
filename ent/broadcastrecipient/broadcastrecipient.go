@@ -26,10 +26,6 @@ const (
 	FieldContactID = "contact_id"
 	// FieldDeferredUntil holds the string denoting the deferred_until field in the database.
 	FieldDeferredUntil = "deferred_until"
-	// FieldOpenedAt holds the string denoting the opened_at field in the database.
-	FieldOpenedAt = "opened_at"
-	// FieldClickedAt holds the string denoting the clicked_at field in the database.
-	FieldClickedAt = "clicked_at"
 	// FieldUnsubscribedAt holds the string denoting the unsubscribed_at field in the database.
 	FieldUnsubscribedAt = "unsubscribed_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -72,8 +68,6 @@ var Columns = []string{
 	FieldBroadcastID,
 	FieldContactID,
 	FieldDeferredUntil,
-	FieldOpenedAt,
-	FieldClickedAt,
 	FieldUnsubscribedAt,
 }
 
@@ -132,16 +126,6 @@ func ByContactID(opts ...sql.OrderTermOption) OrderOption {
 // ByDeferredUntil orders the results by the deferred_until field.
 func ByDeferredUntil(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDeferredUntil, opts...).ToFunc()
-}
-
-// ByOpenedAt orders the results by the opened_at field.
-func ByOpenedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldOpenedAt, opts...).ToFunc()
-}
-
-// ByClickedAt orders the results by the clicked_at field.
-func ByClickedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldClickedAt, opts...).ToFunc()
 }
 
 // ByUnsubscribedAt orders the results by the unsubscribed_at field.

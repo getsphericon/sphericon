@@ -73,8 +73,7 @@ func TestEveryOpenIsAnEventAndTheRollupIsStampedOnce(t *testing.T) {
 		assert.EqualValues(t, fixtures.OutboundMessageTrackingSampleID, got.OutboundMessageID)
 		assert.EqualValues(t, fixtures.BroadcastSentUntrackedID, got.BroadcastID)
 	}
-	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientUntrackedID)
-	require.NotNil(t, rec.OpenedAt)
+	require.NotNil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).OpenedAt)
 	assert.Equal(t, 1, figures(t, env, fixtures.BroadcastSentUntrackedID).Opened, "unique opens count the recipient once")
 }
 

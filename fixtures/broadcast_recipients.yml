@@ -1,9 +1,9 @@
-# Workspace acme (id 1). Per-recipient audience and engagement for the sent broadcasts
-# (200-205). A recipient holds no delivery state (ADR 0015): how its send ended is its row in
-# outbound_messages.yml (kind: broadcast, key "broadcast:<id>"), and a recipient with no message
-# is pending. The send time that drives the analytics cohort + time series is the message's;
-# opened_at is a subset of sent, clicked_at a subset of opened. A broadcast's figures are
-# derived from these rows, never stored.
+# Workspace acme (id 1). Per-recipient audience for the sent broadcasts (200-205). A recipient
+# holds no delivery or engagement state (ADR 0015, ADR 0053): how its send ended, and whether it
+# was opened or clicked, is its row in outbound_messages.yml (kind: broadcast, key
+# "broadcast:<id>"), and a recipient with no message is pending. The send time that drives the
+# analytics cohort + time series is the message's; opened_at is a subset of sent, clicked_at a
+# subset of opened. A broadcast's figures are derived from these rows, never stored.
 
 # --- Broadcast 200: sent 3d ago, 10 sent, 5 opened, 2 clicked ---
 - {
@@ -11,8 +11,6 @@
     broadcast_id: 200,
     contact_id: 100,
     workspace_id: 1,
-    opened_at: '{{daysAgo 2}}',
-    clicked_at: '{{daysAgo 2}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 2}}',
   }
@@ -21,8 +19,6 @@
     broadcast_id: 200,
     contact_id: 101,
     workspace_id: 1,
-    opened_at: '{{daysAgo 2}}',
-    clicked_at: '{{daysAgo 2}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 2}}',
   }
@@ -31,7 +27,6 @@
     broadcast_id: 200,
     contact_id: 102,
     workspace_id: 1,
-    opened_at: '{{daysAgo 2}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 2}}',
   }
@@ -40,7 +35,6 @@
     broadcast_id: 200,
     contact_id: 103,
     workspace_id: 1,
-    opened_at: '{{daysAgo 2}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 2}}',
   }
@@ -49,7 +43,6 @@
     broadcast_id: 200,
     contact_id: 104,
     workspace_id: 1,
-    opened_at: '{{daysAgo 2}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 2}}',
   }
@@ -100,8 +93,6 @@
     broadcast_id: 201,
     contact_id: 105,
     workspace_id: 1,
-    opened_at: '{{daysAgo 8}}',
-    clicked_at: '{{daysAgo 8}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 8}}',
   }
@@ -110,7 +101,6 @@
     broadcast_id: 201,
     contact_id: 106,
     workspace_id: 1,
-    opened_at: '{{daysAgo 8}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 8}}',
   }
@@ -119,7 +109,6 @@
     broadcast_id: 201,
     contact_id: 107,
     workspace_id: 1,
-    opened_at: '{{daysAgo 8}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 8}}',
   }
@@ -128,7 +117,6 @@
     broadcast_id: 201,
     contact_id: 108,
     workspace_id: 1,
-    opened_at: '{{daysAgo 8}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 8}}',
   }
@@ -187,8 +175,6 @@
     broadcast_id: 202,
     contact_id: 110,
     workspace_id: 1,
-    opened_at: '{{daysAgo 15}}',
-    clicked_at: '{{daysAgo 15}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 15}}',
   }
@@ -197,8 +183,6 @@
     broadcast_id: 202,
     contact_id: 111,
     workspace_id: 1,
-    opened_at: '{{daysAgo 15}}',
-    clicked_at: '{{daysAgo 15}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 15}}',
   }
@@ -207,7 +191,6 @@
     broadcast_id: 202,
     contact_id: 112,
     workspace_id: 1,
-    opened_at: '{{daysAgo 15}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 15}}',
   }
@@ -216,7 +199,6 @@
     broadcast_id: 202,
     contact_id: 113,
     workspace_id: 1,
-    opened_at: '{{daysAgo 15}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 15}}',
   }
@@ -225,7 +207,6 @@
     broadcast_id: 202,
     contact_id: 114,
     workspace_id: 1,
-    opened_at: '{{daysAgo 15}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 15}}',
   }
@@ -276,8 +257,6 @@
     broadcast_id: 203,
     contact_id: 115,
     workspace_id: 1,
-    opened_at: '{{daysAgo 23}}',
-    clicked_at: '{{daysAgo 23}}',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 23}}',
   }
@@ -286,7 +265,6 @@
     broadcast_id: 203,
     contact_id: 116,
     workspace_id: 1,
-    opened_at: '{{daysAgo 23}}',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 23}}',
   }
@@ -295,7 +273,6 @@
     broadcast_id: 203,
     contact_id: 117,
     workspace_id: 1,
-    opened_at: '{{daysAgo 23}}',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 23}}',
   }
@@ -304,7 +281,6 @@
     broadcast_id: 203,
     contact_id: 118,
     workspace_id: 1,
-    opened_at: '{{daysAgo 23}}',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 23}}',
   }
@@ -363,8 +339,6 @@
     broadcast_id: 204,
     contact_id: 120,
     workspace_id: 1,
-    opened_at: '{{daysAgo 39}}',
-    clicked_at: '{{daysAgo 39}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 39}}',
   }
@@ -373,8 +347,6 @@
     broadcast_id: 204,
     contact_id: 121,
     workspace_id: 1,
-    opened_at: '{{daysAgo 39}}',
-    clicked_at: '{{daysAgo 39}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 39}}',
   }
@@ -383,8 +355,6 @@
     broadcast_id: 204,
     contact_id: 122,
     workspace_id: 1,
-    opened_at: '{{daysAgo 39}}',
-    clicked_at: '{{daysAgo 39}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 39}}',
   }
@@ -393,7 +363,6 @@
     broadcast_id: 204,
     contact_id: 123,
     workspace_id: 1,
-    opened_at: '{{daysAgo 39}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 39}}',
   }
@@ -402,7 +371,6 @@
     broadcast_id: 204,
     contact_id: 124,
     workspace_id: 1,
-    opened_at: '{{daysAgo 39}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 39}}',
   }
@@ -411,7 +379,6 @@
     broadcast_id: 204,
     contact_id: 125,
     workspace_id: 1,
-    opened_at: '{{daysAgo 39}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 39}}',
   }
@@ -454,8 +421,6 @@
     broadcast_id: 205,
     contact_id: 100,
     workspace_id: 1,
-    opened_at: '{{daysAgo 69}}',
-    clicked_at: '{{daysAgo 69}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 69}}',
   }
@@ -464,7 +429,6 @@
     broadcast_id: 205,
     contact_id: 103,
     workspace_id: 1,
-    opened_at: '{{daysAgo 69}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 69}}',
   }
@@ -473,7 +437,6 @@
     broadcast_id: 205,
     contact_id: 105,
     workspace_id: 1,
-    opened_at: '{{daysAgo 69}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 69}}',
   }
@@ -482,7 +445,6 @@
     broadcast_id: 205,
     contact_id: 107,
     workspace_id: 1,
-    opened_at: '{{daysAgo 69}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 69}}',
   }
@@ -670,16 +632,12 @@
   broadcast_id: 20001
   contact_id: 20024
   workspace_id: 20
-  opened_at: '{{hoursAgo 1869}}'
-  clicked_at: '{{hoursAgo 1868}}'
   created_at: '{{hoursAgo 1884}}'
   updated_at: '{{hoursAgo 1872}}'
 - id: 20006
   broadcast_id: 20001
   contact_id: 20025
   workspace_id: 20
-  opened_at: '{{hoursAgo 1868}}'
-  clicked_at: '{{hoursAgo 1867}}'
   created_at: '{{hoursAgo 1884}}'
   updated_at: '{{hoursAgo 1872}}'
 - id: 20007
@@ -692,7 +650,6 @@
   broadcast_id: 20001
   contact_id: 20027
   workspace_id: 20
-  opened_at: '{{hoursAgo 1872}}'
   created_at: '{{hoursAgo 1884}}'
   updated_at: '{{hoursAgo 1872}}'
 - id: 20009
@@ -705,14 +662,12 @@
   broadcast_id: 20001
   contact_id: 20029
   workspace_id: 20
-  opened_at: '{{hoursAgo 1873}}'
   created_at: '{{hoursAgo 1884}}'
   updated_at: '{{hoursAgo 1872}}'
 - id: 20011
   broadcast_id: 20001
   contact_id: 20030
   workspace_id: 20
-  opened_at: '{{hoursAgo 1868}}'
   created_at: '{{hoursAgo 1884}}'
   updated_at: '{{hoursAgo 1872}}'
 - id: 20012
@@ -755,14 +710,12 @@
   broadcast_id: 20002
   contact_id: 20015
   workspace_id: 20
-  opened_at: '{{hoursAgo 1244}}'
   created_at: '{{hoursAgo 1260}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20019
   broadcast_id: 20002
   contact_id: 20016
   workspace_id: 20
-  opened_at: '{{hoursAgo 1244}}'
   created_at: '{{hoursAgo 1260}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20020
@@ -787,14 +740,12 @@
   broadcast_id: 20002
   contact_id: 20020
   workspace_id: 20
-  opened_at: '{{hoursAgo 1245}}'
   created_at: '{{hoursAgo 1260}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20024
   broadcast_id: 20002
   contact_id: 20021
   workspace_id: 20
-  opened_at: '{{hoursAgo 1244}}'
   created_at: '{{hoursAgo 1260}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20025
@@ -807,7 +758,6 @@
   broadcast_id: 20002
   contact_id: 20023
   workspace_id: 20
-  opened_at: '{{hoursAgo 1242}}'
   created_at: '{{hoursAgo 1260}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20027
@@ -832,36 +782,30 @@
   broadcast_id: 20002
   contact_id: 20027
   workspace_id: 20
-  opened_at: '{{hoursAgo 1244}}'
   created_at: '{{hoursAgo 1260}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20031
   broadcast_id: 20002
   contact_id: 20028
   workspace_id: 20
-  opened_at: '{{hoursAgo 1242}}'
   created_at: '{{hoursAgo 1260}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20032
   broadcast_id: 20002
   contact_id: 20029
   workspace_id: 20
-  opened_at: '{{hoursAgo 1247}}'
   created_at: '{{hoursAgo 1260}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20033
   broadcast_id: 20002
   contact_id: 20030
   workspace_id: 20
-  opened_at: '{{hoursAgo 1251}}'
-  clicked_at: '{{hoursAgo 1250}}'
   created_at: '{{hoursAgo 1260}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20034
   broadcast_id: 20002
   contact_id: 20031
   workspace_id: 20
-  opened_at: '{{hoursAgo 1240}}'
   created_at: '{{hoursAgo 1260}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20035
@@ -880,8 +824,6 @@
   broadcast_id: 20002
   contact_id: 20034
   workspace_id: 20
-  opened_at: '{{hoursAgo 1243}}'
-  clicked_at: '{{hoursAgo 1241}}'
   created_at: '{{hoursAgo 1260}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20038
@@ -924,7 +866,6 @@
   broadcast_id: 20002
   contact_id: 20041
   workspace_id: 20
-  opened_at: '{{hoursAgo 1246}}'
   created_at: '{{hoursAgo 1260}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20045
@@ -949,7 +890,6 @@
   broadcast_id: 20003
   contact_id: 20015
   workspace_id: 20
-  opened_at: '{{hoursAgo 793}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20049
@@ -968,46 +908,36 @@
   broadcast_id: 20003
   contact_id: 20018
   workspace_id: 20
-  opened_at: '{{hoursAgo 789}}'
-  clicked_at: '{{hoursAgo 787}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20052
   broadcast_id: 20003
   contact_id: 20019
   workspace_id: 20
-  opened_at: '{{hoursAgo 788}}'
-  clicked_at: '{{hoursAgo 787}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20053
   broadcast_id: 20003
   contact_id: 20020
   workspace_id: 20
-  opened_at: '{{hoursAgo 795}}'
-  clicked_at: '{{hoursAgo 793}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20054
   broadcast_id: 20003
   contact_id: 20021
   workspace_id: 20
-  opened_at: '{{hoursAgo 790}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20055
   broadcast_id: 20003
   contact_id: 20022
   workspace_id: 20
-  opened_at: '{{hoursAgo 791}}'
-  clicked_at: '{{hoursAgo 788}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20056
   broadcast_id: 20003
   contact_id: 20023
   workspace_id: 20
-  opened_at: '{{hoursAgo 789}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20057
@@ -1020,36 +950,30 @@
   broadcast_id: 20003
   contact_id: 20025
   workspace_id: 20
-  opened_at: '{{hoursAgo 790}}'
-  clicked_at: '{{hoursAgo 787}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20059
   broadcast_id: 20003
   contact_id: 20026
   workspace_id: 20
-  opened_at: '{{hoursAgo 784}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20060
   broadcast_id: 20003
   contact_id: 20027
   workspace_id: 20
-  opened_at: '{{hoursAgo 784}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20061
   broadcast_id: 20003
   contact_id: 20028
   workspace_id: 20
-  opened_at: '{{hoursAgo 785}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20062
   broadcast_id: 20003
   contact_id: 20029
   workspace_id: 20
-  opened_at: '{{hoursAgo 792}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20063
@@ -1062,7 +986,6 @@
   broadcast_id: 20003
   contact_id: 20031
   workspace_id: 20
-  opened_at: '{{hoursAgo 787}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20065
@@ -1081,15 +1004,12 @@
   broadcast_id: 20003
   contact_id: 20034
   workspace_id: 20
-  opened_at: '{{hoursAgo 788}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20068
   broadcast_id: 20003
   contact_id: 20035
   workspace_id: 20
-  opened_at: '{{hoursAgo 794}}'
-  clicked_at: '{{hoursAgo 793}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20069
@@ -1120,7 +1040,6 @@
   broadcast_id: 20003
   contact_id: 20040
   workspace_id: 20
-  opened_at: '{{hoursAgo 791}}'
   created_at: '{{hoursAgo 804}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20074
@@ -1151,16 +1070,12 @@
   broadcast_id: 20004
   contact_id: 20015
   workspace_id: 20
-  opened_at: '{{hoursAgo 451}}'
-  clicked_at: '{{hoursAgo 450}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20079
   broadcast_id: 20004
   contact_id: 20016
   workspace_id: 20
-  opened_at: '{{hoursAgo 452}}'
-  clicked_at: '{{hoursAgo 449}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20080
@@ -1173,36 +1088,30 @@
   broadcast_id: 20004
   contact_id: 20018
   workspace_id: 20
-  opened_at: '{{hoursAgo 455}}'
-  clicked_at: '{{hoursAgo 454}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20082
   broadcast_id: 20004
   contact_id: 20019
   workspace_id: 20
-  opened_at: '{{hoursAgo 458}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20083
   broadcast_id: 20004
   contact_id: 20020
   workspace_id: 20
-  opened_at: '{{hoursAgo 456}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20084
   broadcast_id: 20004
   contact_id: 20021
   workspace_id: 20
-  opened_at: '{{hoursAgo 455}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20085
   broadcast_id: 20004
   contact_id: 20022
   workspace_id: 20
-  opened_at: '{{hoursAgo 448}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20086
@@ -1215,14 +1124,12 @@
   broadcast_id: 20004
   contact_id: 20024
   workspace_id: 20
-  opened_at: '{{hoursAgo 456}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20088
   broadcast_id: 20004
   contact_id: 20025
   workspace_id: 20
-  opened_at: '{{hoursAgo 453}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20089
@@ -1235,44 +1142,36 @@
   broadcast_id: 20004
   contact_id: 20027
   workspace_id: 20
-  opened_at: '{{hoursAgo 454}}'
-  clicked_at: '{{hoursAgo 452}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20091
   broadcast_id: 20004
   contact_id: 20028
   workspace_id: 20
-  opened_at: '{{hoursAgo 451}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20092
   broadcast_id: 20004
   contact_id: 20029
   workspace_id: 20
-  opened_at: '{{hoursAgo 450}}'
-  clicked_at: '{{hoursAgo 448}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20093
   broadcast_id: 20004
   contact_id: 20030
   workspace_id: 20
-  opened_at: '{{hoursAgo 451}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20094
   broadcast_id: 20004
   contact_id: 20031
   workspace_id: 20
-  opened_at: '{{hoursAgo 452}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20095
   broadcast_id: 20004
   contact_id: 20032
   workspace_id: 20
-  opened_at: '{{hoursAgo 449}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20096
@@ -1315,8 +1214,6 @@
   broadcast_id: 20004
   contact_id: 20039
   workspace_id: 20
-  opened_at: '{{hoursAgo 450}}'
-  clicked_at: '{{hoursAgo 447}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20103
@@ -1335,7 +1232,6 @@
   broadcast_id: 20004
   contact_id: 20042
   workspace_id: 20
-  opened_at: '{{hoursAgo 448}}'
   created_at: '{{hoursAgo 468}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20106
@@ -1372,7 +1268,6 @@
   broadcast_id: 20005
   contact_id: 20012
   workspace_id: 20
-  opened_at: '{{hoursAgo 215}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20112
@@ -1385,7 +1280,6 @@
   broadcast_id: 20005
   contact_id: 20014
   workspace_id: 20
-  opened_at: '{{hoursAgo 213}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20114
@@ -1398,45 +1292,36 @@
   broadcast_id: 20005
   contact_id: 20016
   workspace_id: 20
-  opened_at: '{{hoursAgo 207}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20116
   broadcast_id: 20005
   contact_id: 20017
   workspace_id: 20
-  opened_at: '{{hoursAgo 215}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20117
   broadcast_id: 20005
   contact_id: 20018
   workspace_id: 20
-  opened_at: '{{hoursAgo 213}}'
-  clicked_at: '{{hoursAgo 211}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20118
   broadcast_id: 20005
   contact_id: 20019
   workspace_id: 20
-  opened_at: '{{hoursAgo 214}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20119
   broadcast_id: 20005
   contact_id: 20020
   workspace_id: 20
-  opened_at: '{{hoursAgo 218}}'
-  clicked_at: '{{hoursAgo 217}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20120
   broadcast_id: 20005
   contact_id: 20021
   workspace_id: 20
-  opened_at: '{{hoursAgo 207}}'
-  clicked_at: '{{hoursAgo 204}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20121
@@ -1455,7 +1340,6 @@
   broadcast_id: 20005
   contact_id: 20024
   workspace_id: 20
-  opened_at: '{{hoursAgo 218}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20124
@@ -1468,8 +1352,6 @@
   broadcast_id: 20005
   contact_id: 20026
   workspace_id: 20
-  opened_at: '{{hoursAgo 208}}'
-  clicked_at: '{{hoursAgo 206}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20126
@@ -1488,29 +1370,24 @@
   broadcast_id: 20005
   contact_id: 20029
   workspace_id: 20
-  opened_at: '{{hoursAgo 214}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20129
   broadcast_id: 20005
   contact_id: 20030
   workspace_id: 20
-  opened_at: '{{hoursAgo 214}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20130
   broadcast_id: 20005
   contact_id: 20031
   workspace_id: 20
-  opened_at: '{{hoursAgo 215}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20131
   broadcast_id: 20005
   contact_id: 20032
   workspace_id: 20
-  opened_at: '{{hoursAgo 215}}'
-  clicked_at: '{{hoursAgo 213}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20132
@@ -1523,7 +1400,6 @@
   broadcast_id: 20005
   contact_id: 20034
   workspace_id: 20
-  opened_at: '{{hoursAgo 210}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20134
@@ -1536,8 +1412,6 @@
   broadcast_id: 20005
   contact_id: 20036
   workspace_id: 20
-  opened_at: '{{hoursAgo 214}}'
-  clicked_at: '{{hoursAgo 213}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20136
@@ -1550,8 +1424,6 @@
   broadcast_id: 20005
   contact_id: 20038
   workspace_id: 20
-  opened_at: '{{hoursAgo 212}}'
-  clicked_at: '{{hoursAgo 209}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20138
@@ -1570,7 +1442,6 @@
   broadcast_id: 20005
   contact_id: 20041
   workspace_id: 20
-  opened_at: '{{hoursAgo 210}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20141
@@ -1583,7 +1454,6 @@
   broadcast_id: 20005
   contact_id: 20043
   workspace_id: 20
-  opened_at: '{{hoursAgo 214}}'
   created_at: '{{hoursAgo 228}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20143
@@ -1668,7 +1538,6 @@
   broadcast_id: 20006
   contact_id: 20015
   workspace_id: 20
-  opened_at: '{{hoursAgo 74}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20157
@@ -1681,7 +1550,6 @@
   broadcast_id: 20006
   contact_id: 20017
   workspace_id: 20
-  opened_at: '{{hoursAgo 64}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20159
@@ -1694,21 +1562,18 @@
   broadcast_id: 20006
   contact_id: 20019
   workspace_id: 20
-  opened_at: '{{hoursAgo 69}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20161
   broadcast_id: 20006
   contact_id: 20020
   workspace_id: 20
-  opened_at: '{{hoursAgo 72}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20162
   broadcast_id: 20006
   contact_id: 20021
   workspace_id: 20
-  opened_at: '{{hoursAgo 63}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20163
@@ -1733,59 +1598,48 @@
   broadcast_id: 20006
   contact_id: 20025
   workspace_id: 20
-  opened_at: '{{hoursAgo 72}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20167
   broadcast_id: 20006
   contact_id: 20026
   workspace_id: 20
-  opened_at: '{{hoursAgo 68}}'
-  clicked_at: '{{hoursAgo 66}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20168
   broadcast_id: 20006
   contact_id: 20027
   workspace_id: 20
-  opened_at: '{{hoursAgo 64}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20169
   broadcast_id: 20006
   contact_id: 20028
   workspace_id: 20
-  opened_at: '{{hoursAgo 69}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20170
   broadcast_id: 20006
   contact_id: 20029
   workspace_id: 20
-  opened_at: '{{hoursAgo 72}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20171
   broadcast_id: 20006
   contact_id: 20030
   workspace_id: 20
-  opened_at: '{{hoursAgo 70}}'
-  clicked_at: '{{hoursAgo 67}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20172
   broadcast_id: 20006
   contact_id: 20031
   workspace_id: 20
-  opened_at: '{{hoursAgo 69}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20173
   broadcast_id: 20006
   contact_id: 20032
   workspace_id: 20
-  opened_at: '{{hoursAgo 68}}'
-  clicked_at: '{{hoursAgo 67}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20174
@@ -1798,14 +1652,12 @@
   broadcast_id: 20006
   contact_id: 20034
   workspace_id: 20
-  opened_at: '{{hoursAgo 66}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20176
   broadcast_id: 20006
   contact_id: 20035
   workspace_id: 20
-  opened_at: '{{hoursAgo 71}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20177
@@ -1848,22 +1700,18 @@
   broadcast_id: 20006
   contact_id: 20042
   workspace_id: 20
-  opened_at: '{{hoursAgo 71}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20184
   broadcast_id: 20006
   contact_id: 20043
   workspace_id: 20
-  opened_at: '{{hoursAgo 65}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20185
   broadcast_id: 20006
   contact_id: 20044
   workspace_id: 20
-  opened_at: '{{hoursAgo 71}}'
-  clicked_at: '{{hoursAgo 70}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
 
@@ -1919,8 +1767,6 @@
     broadcast_id: 20009,
     contact_id: 20050,
     workspace_id: 61,
-    opened_at: '2026-03-08 05:00:00+00',
-    clicked_at: '2026-03-08 05:00:00+00',
     created_at: '2026-01-02 00:00:00',
     updated_at: '2026-01-02 00:00:00',
   }
@@ -1953,7 +1799,6 @@
     broadcast_id: 20009,
     contact_id: 20054,
     workspace_id: 61,
-    opened_at: '2026-11-01 04:00:00+00',
     created_at: '2026-01-02 00:00:00',
     updated_at: '2026-01-02 00:00:00',
   }
@@ -1962,8 +1807,6 @@
     broadcast_id: 20009,
     contact_id: 20055,
     workspace_id: 61,
-    opened_at: '2026-11-02 04:59:00+00',
-    clicked_at: '2026-11-02 04:59:00+00',
     created_at: '2026-01-02 00:00:00',
     updated_at: '2026-01-02 00:00:00',
   }

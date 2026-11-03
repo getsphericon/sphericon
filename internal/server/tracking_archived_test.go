@@ -25,7 +25,6 @@ func TestTrackingKeepsRecordingForAnArchivedBroadcast(t *testing.T) {
 	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
 
 	b := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentUntrackedID)
-	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientUntrackedID)
 	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Broadcast().Discard(ctx, b.ID))
 	token, err := tr.Token(fixtures.OutboundMessageTrackingSampleID)
 	require.NoError(t, err)
@@ -35,7 +34,7 @@ func TestTrackingKeepsRecordingForAnArchivedBroadcast(t *testing.T) {
 	env.Server.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	opened := env.DB.BroadcastRecipient.GetX(ctx, rec.ID).OpenedAt
+	opened := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).OpenedAt
 	assert.NotNil(t, opened)
 	assert.Equal(t, 1, figures(t, env, b.ID).Opened)
 }

@@ -259,6 +259,34 @@ func (_c *OutboundMessageCreate) SetNillableComplainedAt(v *time.Time) *Outbound
 	return _c
 }
 
+// SetOpenedAt sets the "opened_at" field.
+func (_c *OutboundMessageCreate) SetOpenedAt(v time.Time) *OutboundMessageCreate {
+	_c.mutation.SetOpenedAt(v)
+	return _c
+}
+
+// SetNillableOpenedAt sets the "opened_at" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableOpenedAt(v *time.Time) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetOpenedAt(*v)
+	}
+	return _c
+}
+
+// SetClickedAt sets the "clicked_at" field.
+func (_c *OutboundMessageCreate) SetClickedAt(v time.Time) *OutboundMessageCreate {
+	_c.mutation.SetClickedAt(v)
+	return _c
+}
+
+// SetNillableClickedAt sets the "clicked_at" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableClickedAt(v *time.Time) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetClickedAt(*v)
+	}
+	return _c
+}
+
 // SetCaptured sets the "captured" field.
 func (_c *OutboundMessageCreate) SetCaptured(v bool) *OutboundMessageCreate {
 	_c.mutation.SetCaptured(v)
@@ -669,6 +697,14 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 	if value, ok := _c.mutation.ComplainedAt(); ok {
 		_spec.SetField(outboundmessage.FieldComplainedAt, field.TypeTime, value)
 		_node.ComplainedAt = &value
+	}
+	if value, ok := _c.mutation.OpenedAt(); ok {
+		_spec.SetField(outboundmessage.FieldOpenedAt, field.TypeTime, value)
+		_node.OpenedAt = &value
+	}
+	if value, ok := _c.mutation.ClickedAt(); ok {
+		_spec.SetField(outboundmessage.FieldClickedAt, field.TypeTime, value)
+		_node.ClickedAt = &value
 	}
 	if value, ok := _c.mutation.Captured(); ok {
 		_spec.SetField(outboundmessage.FieldCaptured, field.TypeBool, value)
@@ -1127,6 +1163,42 @@ func (u *OutboundMessageUpsert) UpdateComplainedAt() *OutboundMessageUpsert {
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (u *OutboundMessageUpsert) ClearComplainedAt() *OutboundMessageUpsert {
 	u.SetNull(outboundmessage.FieldComplainedAt)
+	return u
+}
+
+// SetOpenedAt sets the "opened_at" field.
+func (u *OutboundMessageUpsert) SetOpenedAt(v time.Time) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldOpenedAt, v)
+	return u
+}
+
+// UpdateOpenedAt sets the "opened_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateOpenedAt() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldOpenedAt)
+	return u
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (u *OutboundMessageUpsert) ClearOpenedAt() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldOpenedAt)
+	return u
+}
+
+// SetClickedAt sets the "clicked_at" field.
+func (u *OutboundMessageUpsert) SetClickedAt(v time.Time) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldClickedAt, v)
+	return u
+}
+
+// UpdateClickedAt sets the "clicked_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateClickedAt() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldClickedAt)
+	return u
+}
+
+// ClearClickedAt clears the value of the "clicked_at" field.
+func (u *OutboundMessageUpsert) ClearClickedAt() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldClickedAt)
 	return u
 }
 
@@ -1629,6 +1701,48 @@ func (u *OutboundMessageUpsertOne) UpdateComplainedAt() *OutboundMessageUpsertOn
 func (u *OutboundMessageUpsertOne) ClearComplainedAt() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearComplainedAt()
+	})
+}
+
+// SetOpenedAt sets the "opened_at" field.
+func (u *OutboundMessageUpsertOne) SetOpenedAt(v time.Time) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetOpenedAt(v)
+	})
+}
+
+// UpdateOpenedAt sets the "opened_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateOpenedAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateOpenedAt()
+	})
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (u *OutboundMessageUpsertOne) ClearOpenedAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearOpenedAt()
+	})
+}
+
+// SetClickedAt sets the "clicked_at" field.
+func (u *OutboundMessageUpsertOne) SetClickedAt(v time.Time) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetClickedAt(v)
+	})
+}
+
+// UpdateClickedAt sets the "clicked_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateClickedAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateClickedAt()
+	})
+}
+
+// ClearClickedAt clears the value of the "clicked_at" field.
+func (u *OutboundMessageUpsertOne) ClearClickedAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearClickedAt()
 	})
 }
 
@@ -2324,6 +2438,48 @@ func (u *OutboundMessageUpsertBulk) UpdateComplainedAt() *OutboundMessageUpsertB
 func (u *OutboundMessageUpsertBulk) ClearComplainedAt() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearComplainedAt()
+	})
+}
+
+// SetOpenedAt sets the "opened_at" field.
+func (u *OutboundMessageUpsertBulk) SetOpenedAt(v time.Time) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetOpenedAt(v)
+	})
+}
+
+// UpdateOpenedAt sets the "opened_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateOpenedAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateOpenedAt()
+	})
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (u *OutboundMessageUpsertBulk) ClearOpenedAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearOpenedAt()
+	})
+}
+
+// SetClickedAt sets the "clicked_at" field.
+func (u *OutboundMessageUpsertBulk) SetClickedAt(v time.Time) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetClickedAt(v)
+	})
+}
+
+// UpdateClickedAt sets the "clicked_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateClickedAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateClickedAt()
+	})
+}
+
+// ClearClickedAt clears the value of the "clicked_at" field.
+func (u *OutboundMessageUpsertBulk) ClearClickedAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearClickedAt()
 	})
 }
 

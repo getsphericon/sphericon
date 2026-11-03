@@ -68,8 +68,7 @@ func TestAScannerOpenIsAMachineEventAndCountsNowhere(t *testing.T) {
 
 	e := onlyEngagement(t, env, events.NameEmailOpened)
 	assert.True(t, e.Machine)
-	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientUntrackedID)
-	assert.Nil(t, rec.OpenedAt, "a machine open sets no rollup")
+	assert.Nil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).OpenedAt, "a machine open stamps nothing")
 	assert.Zero(t, figures(t, env, fixtures.BroadcastSentUntrackedID).Opened)
 }
 
@@ -83,8 +82,7 @@ func TestAScannerClickRedirectsAndCountsNowhere(t *testing.T) {
 
 	e := onlyEngagement(t, env, events.NameEmailClicked)
 	assert.True(t, e.Machine)
-	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientUntrackedID)
-	assert.Nil(t, rec.ClickedAt, "a machine click sets no rollup")
+	assert.Nil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).ClickedAt, "a machine click stamps nothing")
 	assert.Zero(t, figures(t, env, fixtures.BroadcastSentUntrackedID).Clicked)
 
 	persistEngagement(t, env)
@@ -115,9 +113,9 @@ func TestAPersonsHitIsUnaffected(t *testing.T) {
 
 	assert.False(t, onlyEngagement(t, env, events.NameEmailOpened).Machine)
 	assert.False(t, onlyEngagement(t, env, events.NameEmailClicked).Machine)
-	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientUntrackedID)
-	assert.NotNil(t, rec.OpenedAt)
-	assert.NotNil(t, rec.ClickedAt)
+	msg := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID)
+	assert.NotNil(t, msg.OpenedAt)
+	assert.NotNil(t, msg.ClickedAt)
 	got := figures(t, env, fixtures.BroadcastSentUntrackedID)
 	assert.Equal(t, 1, got.Opened)
 	assert.Equal(t, 1, got.Clicked)

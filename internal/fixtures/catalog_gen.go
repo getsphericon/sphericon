@@ -1575,6 +1575,10 @@ const (
 	OutboundMessageAutomationOnOpenDestination = "alice.automation@example.com"
 	// OutboundMessageAutomationOnOpenID is from fixtures/outbound_messages.
 	OutboundMessageAutomationOnOpenID = 5702
+	// OutboundMessageAutomationSentRecentlyDestination is from fixtures/outbound_messages.
+	OutboundMessageAutomationSentRecentlyDestination = "usage.two@codebasics.dev"
+	// OutboundMessageAutomationSentRecentlyID is from fixtures/outbound_messages.
+	OutboundMessageAutomationSentRecentlyID = 108
 	// OutboundMessageAutomationTrackedDestination is from fixtures/outbound_messages.
 	OutboundMessageAutomationTrackedDestination = "alice.automation@example.com"
 	// OutboundMessageAutomationTrackedID is from fixtures/outbound_messages.

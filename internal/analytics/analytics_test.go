@@ -8,9 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/orders"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -38,17 +40,18 @@ func overview(t *testing.T, ws int64, w analytics.Window) *analytics.Overview {
 	return ov
 }
 
-// Fixtures (broadcast_recipients.yml): Acme sent 11 (5 opened, 2 clicked) three days
-// ago, 10 (4, 1) nine days ago, 10 (5, 2) sixteen days ago, 9 (4, 1) twenty-four days
-// ago, 10 (6, 3) forty days ago and 10 (4, 1) seventy days ago.
+// Fixtures (outbound_messages.yml): Acme sent 11 Broadcast messages (5 opened, 2 clicked) three
+// days ago, 10 (4, 1) nine days ago, 10 (5, 2) sixteen days ago, 9 (4, 1) twenty-four days ago, 10
+// (6, 3) forty days ago and 10 (4, 1) seventy days ago. Four more unengaged marketing messages went
+// out in the last 30 hours (3 Broadcast ones and 1 Automation one) and are in every window's cohort.
 func TestEngagementIsCountedOverTheSendCohortOfTheWindow(t *testing.T) {
 	cases := []struct {
 		window                analytics.Window
 		sent, opened, clicked int
 	}{
-		{analytics.Window7Days, 11, 5, 2},
-		{analytics.Window30Days, 40, 18, 6},
-		{analytics.Window90Days, 60, 28, 10},
+		{analytics.Window7Days, 15, 5, 2},
+		{analytics.Window30Days, 44, 18, 6},
+		{analytics.Window90Days, 64, 28, 10},
 	}
 	for _, c := range cases {
 		ov := overview(t, fixtures.AcmeID, c.window)
@@ -93,7 +96,44 @@ func TestTimeSeriesIsOneZeroFilledUTCDayPerDayEndingToday(t *testing.T) {
 	assert.Equal(t, 11, threeDaysAgo.Sent)
 	assert.Equal(t, 5, threeDaysAgo.Opened)
 	assert.Equal(t, 2, threeDaysAgo.Clicked)
-	assert.Equal(t, analytics.Point{Date: ov.Series[6].Date}, ov.Series[6], "an empty day is all zeros")
+	assert.Equal(t, analytics.Point{Date: ov.Series[0].Date}, ov.Series[0], "an empty day is all zeros")
+}
+
+// An Automation message is in the engagement cohort like a Broadcast one (ADR 0053): its first
+// human open and click, stamped on the message, reach the cards and the series. A Transactional
+// message is not in the cohort, tracked or not.
+func TestAnAutomationMessageIsCountedAndATransactionalOneIsNot(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	read := func() *analytics.Overview {
+		ov, err := analytics.New().Overview(ctx, acme, analytics.Window7Days)
+		require.NoError(t, err)
+		return ov
+	}
+	before := read()
+
+	for _, id := range []int64{fixtures.OutboundMessageAutomationSentRecentlyID, fixtures.OutboundMessageWelcomeID} {
+		for _, record := range []func(context.Context, *ent.Scoped, int64) (bool, error){outbound.StampOpened, outbound.StampClicked} {
+			set, err := record(ctx, acme, id)
+			require.NoError(t, err)
+			require.True(t, set)
+		}
+	}
+	after := read()
+
+	assert.Equal(t, before.Current.Email.Sent, after.Current.Email.Sent)
+	assert.Equal(t, before.Current.Email.Opened+1, after.Current.Email.Opened, "only the Automation open")
+	assert.Equal(t, before.Current.Email.Clicked+1, after.Current.Email.Clicked, "only the Automation click")
+	assert.LessOrEqual(t, after.Current.Email.OpenRate, float32(1))
+
+	opened, clicked := 0, 0
+	for i, p := range after.Series {
+		opened += p.Opened - before.Series[i].Opened
+		clicked += p.Clicked - before.Series[i].Clicked
+	}
+	assert.Equal(t, 1, opened, "the series carries the Automation open")
+	assert.Equal(t, 1, clicked, "the series carries the Automation click")
 }
 
 func TestSeriesLengthFollowsTheWindow(t *testing.T) {
@@ -117,12 +157,13 @@ func TestAutomationsSnapshot(t *testing.T) {
 
 func TestAnEmptyCohortHasZeroRates(t *testing.T) {
 	ov := overview(t, fixtures.AcmeID, analytics.Window7Days)
-	empty := ov.Series[6]
+	empty := ov.Series[0]
 	require.Zero(t, empty.Sent)
 
-	// A window nothing was sent in: no Workspace but Acme has recipients, so use the other.
+	// Globex has one marketing message in the window (a usage fixture) and none of it engaged.
 	other := overview(t, fixtures.GlobexID, analytics.Window7Days)
-	assert.Zero(t, other.Current.Email.Sent)
+	assert.Equal(t, 1, other.Current.Email.Sent)
+	assert.Zero(t, other.Current.Email.Opened)
 	assert.Zero(t, other.Current.Email.OpenRate)
 	assert.Zero(t, other.Current.Email.ClickToOpenRate)
 }

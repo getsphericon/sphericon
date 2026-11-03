@@ -1336,9 +1336,9 @@ export default interface Resources {
         "title": "Needs attention"
       },
       "audience": {
-        "clickRate": "Broadcast click rate",
+        "clickRate": "Click rate",
         "new": "New contacts",
-        "openRate": "Broadcast open rate",
+        "openRate": "Open rate",
         "report": "Subscribed people",
         "subscribed": "Subscribed",
         "title": "Audience"

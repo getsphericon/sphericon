@@ -699,12 +699,6 @@ func ScopedEntities() []ScopedEntity {
 				if src.DeferredUntil != nil {
 					b.SetDeferredUntil(*src.DeferredUntil)
 				}
-				if src.OpenedAt != nil {
-					b.SetOpenedAt(*src.OpenedAt)
-				}
-				if src.ClickedAt != nil {
-					b.SetClickedAt(*src.ClickedAt)
-				}
 				if src.UnsubscribedAt != nil {
 					b.SetUnsubscribedAt(*src.UnsubscribedAt)
 				}
@@ -1678,6 +1672,12 @@ func ScopedEntities() []ScopedEntity {
 				}
 				if src.ComplainedAt != nil {
 					b.SetComplainedAt(*src.ComplainedAt)
+				}
+				if src.OpenedAt != nil {
+					b.SetOpenedAt(*src.OpenedAt)
+				}
+				if src.ClickedAt != nil {
+					b.SetClickedAt(*src.ClickedAt)
 				}
 				b.SetCaptured(src.Captured)
 				if src.BroadcastID != nil {

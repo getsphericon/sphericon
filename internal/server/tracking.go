@@ -11,13 +11,13 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/clientip"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/machine"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -219,8 +219,9 @@ func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target 
 // The record* helpers commit the rollup stamp and publish the engagement event in one
 // transaction (transactional outbox). Every hit is an Event of its own, with its URL for a
 // click (ADR 0053): a repeated open or a second click is a real engagement, not a duplicate.
-// What is counted once is the Broadcast recipient's rollup, a conditional UPDATE
-// (... WHERE opened_at IS NULL, in the broadcasts module) that backs the unique figures. The
+// What is counted once is the Outbound message's stamp, a conditional UPDATE
+// (... WHERE opened_at IS NULL, in the outbound module) that backs the unique figures of
+// every surface: a Broadcast, an Automation and a tracked Transactional send. The
 // persist subscriber writes the Event log row and the automations subscriber enrolls the
 // contact, both off the bus.
 
@@ -309,8 +310,8 @@ func recordOpen(ctx context.Context, client *ent.Client, bus *events.Bus, messag
 		return
 	}
 	err := bus.WithinScopedTx(ctx, e.scope, func(ts *ent.Scoped, pub events.Publisher) error {
-		if e.msg.BroadcastRecipientID != nil && !software {
-			if _, err := broadcasts.RecordOpen(ctx, ts, *e.msg.BroadcastRecipientID); err != nil {
+		if !software {
+			if _, err := outbound.StampOpened(ctx, ts, e.msg.ID); err != nil {
 				return err
 			}
 		}
@@ -327,8 +328,8 @@ func recordClick(ctx context.Context, client *ent.Client, bus *events.Bus, messa
 		return
 	}
 	err := bus.WithinScopedTx(ctx, e.scope, func(ts *ent.Scoped, pub events.Publisher) error {
-		if e.msg.BroadcastRecipientID != nil && !software {
-			if _, err := broadcasts.RecordClick(ctx, ts, *e.msg.BroadcastRecipientID); err != nil {
+		if !software {
+			if _, err := outbound.StampClicked(ctx, ts, e.msg.ID); err != nil {
 				return err
 			}
 		}

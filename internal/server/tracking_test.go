@@ -196,8 +196,7 @@ func TestTrackingEndpoints(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.Code)
 	assert.Equal(t, "image/gif", resp.Header().Get("Content-Type"))
 
-	gotRec := env.DB.BroadcastRecipient.GetX(ctx, rec.ID)
-	assert.NotNil(t, gotRec.OpenedAt)
+	assert.NotNil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).OpenedAt)
 	assert.Equal(t, 1, figures(t, env, b.ID).Opened)
 
 	// Click: records the click and 302-redirects to the destination.
@@ -207,7 +206,7 @@ func TestTrackingEndpoints(t *testing.T) {
 	resp = get("/e/c/" + clickToken)
 	assert.Equal(t, http.StatusFound, resp.Code)
 	assert.Equal(t, "https://dest.test/x", resp.Header().Get("Location"))
-	assert.NotNil(t, env.DB.BroadcastRecipient.GetX(ctx, rec.ID).ClickedAt)
+	assert.NotNil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).ClickedAt)
 	assert.Equal(t, 1, figures(t, env, b.ID).Clicked)
 
 	// Unsubscribe (ADR 0012 / RFC 8058): the broadcast footer link is a

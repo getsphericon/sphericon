@@ -13,7 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -165,7 +165,7 @@ func TestTelegramsLinkPreviewFetcherIsMachineEngagementAndAPersonSetsTheRollupAn
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
 	text, buttons := shortPaths(t, env)
 	clicked := func() bool {
-		return env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(id)).OnlyX(ctx).ClickedAt != nil
+		return env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id)).OnlyX(ctx).ClickedAt != nil
 	}
 
 	resp := follow(t, env, text[0], telegramUA)

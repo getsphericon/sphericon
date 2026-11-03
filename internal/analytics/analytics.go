@@ -22,7 +22,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -190,20 +189,16 @@ func contactCounts(ctx context.Context, s *ent.Scoped) (Contacts, error) {
 	return Contacts{Total: total, Active: total - unsub, Unsubscribed: unsub}, nil
 }
 
-// sentBetween matches the recipients whose email was sent in [since, until): the send time is
-// the Outbound message's (ADR 0015), the recipient only carries the engagement.
-func sentBetween(since, until time.Time) predicate.BroadcastRecipient {
-	return func(sel *sql.Selector) {
-		m := sql.Table(outboundmessage.Table).As("sent")
-		sel.Where(sql.Exists(
-			sql.Select(m.C(outboundmessage.FieldID)).From(m).Where(sql.And(
-				sql.ColumnsEQ(m.C(outboundmessage.FieldBroadcastRecipientID), sel.C(broadcastrecipient.FieldID)),
-				sql.EQ(m.C(outboundmessage.FieldStatus), string(outboundmessage.StatusSent)),
-				sql.GTE(m.C(outboundmessage.FieldSentAt), since),
-				sql.LT(m.C(outboundmessage.FieldSentAt), until),
-			)),
-		))
-	}
+// engagementCohort matches the marketing messages whose email was sent in [since, until): the
+// Broadcast and Automation sends, a Transactional one left out (ADR 0053). The send time is the
+// Outbound message's (ADR 0015), and so are its opened and clicked stamps (ADR 0053), so the
+// cohort counts every message, not one per person.
+func engagementCohort(since, until time.Time) predicate.OutboundMessage {
+	return outboundmessage.And(
+		outboundmessage.KindIn(outboundmessage.KindBroadcast, outboundmessage.KindAutomation),
+		outboundmessage.StatusEQ(outboundmessage.StatusSent),
+		outboundmessage.SentAtGTE(since), outboundmessage.SentAtLT(until),
+	)
 }
 
 // sendingCounts counts the Outbound messages sent in [since, until) per kind, and the delivery
@@ -253,18 +248,18 @@ func sendingCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (
 }
 
 func emailCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (Email, error) {
-	cohort := func() *ent.BroadcastRecipientQuery {
-		return s.BroadcastRecipient().Query().Where(sentBetween(since, until))
+	cohort := func() *ent.OutboundMessageQuery {
+		return s.OutboundMessage().Query().Where(engagementCohort(since, until))
 	}
 	sent, err := cohort().Count(ctx)
 	if err != nil {
 		return Email{}, err
 	}
-	opened, err := cohort().Where(broadcastrecipient.OpenedAtNotNil()).Count(ctx)
+	opened, err := cohort().Where(outboundmessage.OpenedAtNotNil()).Count(ctx)
 	if err != nil {
 		return Email{}, err
 	}
-	clicked, err := cohort().Where(broadcastrecipient.ClickedAtNotNil()).Count(ctx)
+	clicked, err := cohort().Where(outboundmessage.ClickedAtNotNil()).Count(ctx)
 	if err != nil {
 		return Email{}, err
 	}
@@ -303,22 +298,15 @@ func timeSeries(ctx context.Context, s *ent.Scoped, days reportday.Window) ([]Po
 		Opened  int    `sql:"opened"`
 		Clicked int    `sql:"clicked"`
 	}
-	err := s.BroadcastRecipient().Query().
+	err := s.OutboundMessage().Query().
+		Where(engagementCohort(days.Since, days.Until)).
 		Modify(func(sel *sql.Selector) {
-			// One message per recipient (ADR 0015): the join keeps one row per recipient.
-			m := sql.Table(outboundmessage.Table).As("sent")
-			sel.Join(m).On(sel.C(broadcastrecipient.FieldID), m.C(outboundmessage.FieldBroadcastRecipientID))
-			sentAt := m.C(outboundmessage.FieldSentAt)
 			sel.Select(
 				sql.As("COUNT(*)", "sent"),
-				sql.As(fmt.Sprintf("COUNT(%s)", sel.C(broadcastrecipient.FieldOpenedAt)), "opened"),
-				sql.As(fmt.Sprintf("COUNT(%s)", sel.C(broadcastrecipient.FieldClickedAt)), "clicked"),
+				sql.As(fmt.Sprintf("COUNT(%s)", sel.C(outboundmessage.FieldOpenedAt)), "opened"),
+				sql.As(fmt.Sprintf("COUNT(%s)", sel.C(outboundmessage.FieldClickedAt)), "clicked"),
 			)
-			sel.AppendSelectExprAs(reportday.Label(sentAt, days.Loc), "day").
-				Where(sql.And(
-					sql.EQ(m.C(outboundmessage.FieldStatus), string(outboundmessage.StatusSent)),
-					sql.GTE(sentAt, days.Since), sql.LT(sentAt, days.Until),
-				)).
+			sel.AppendSelectExprAs(reportday.Label(sel.C(outboundmessage.FieldSentAt), days.Loc), "day").
 				GroupBy("day")
 		}).
 		Scan(ctx, &rows)
