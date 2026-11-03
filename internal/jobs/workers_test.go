@@ -36,7 +36,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/cleanup"
-	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -55,9 +54,8 @@ import (
 )
 
 // riverEnv is a real river client over the test database. The workers read and
-// write through the test's txdb-bound ent client (rolled back with the test), while
-// the queue itself is real: river inserts commit on their own pool, so the test
-// clears river_job before and after.
+// write through the test's txdb-bound ent client (rolled back with the test), and river
+// queues on the same connection, so the queue rolls back with the test too.
 type riverEnv struct {
 	*testhelper.TestEnv
 
@@ -73,12 +71,23 @@ type riverEnv struct {
 func newRiverEnv(t *testing.T) *riverEnv {
 	t.Helper()
 	env := testhelper.Setup(t)
+	// river rides the test's own connection, so what it queues rolls back with the test.
+	return newRiverEnvOn(t, env, env.SQLDB)
+}
 
+// newRiverEnvWithRealQueue is newRiverEnv for a test that needs the queue really committed: a
+// river runtime working it from connections of its own, or a reader of the table that goes by
+// the database's clock (a transaction's now() stays at its start, so a job river stamps later
+// is not yet due in it). The queue lives in a database of the test's own, dropped with it.
+func newRiverEnvWithRealQueue(t *testing.T) *riverEnv {
+	t.Helper()
+	return newRiverEnvOn(t, testhelper.Setup(t), testhelper.RealDB(t))
+}
+
+func newRiverEnvOn(t *testing.T, env *testhelper.TestEnv, pool *sql.DB) *riverEnv {
+	t.Helper()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	pool, err := appdb.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(pool, "pool") })
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	fs := &fakeSender{}
@@ -88,8 +97,6 @@ func newRiverEnv(t *testing.T) *riverEnv {
 	queue, err := jobs.NewInserter(pool)
 	require.NoError(t, err)
 	e := &riverEnv{TestEnv: env, pool: pool, client: client, queue: queue, cipher: cipher, cfg: cfg, sender: fs}
-	e.clearQueue(t)
-	t.Cleanup(func() { e.clearQueue(t) })
 	return e
 }
 
@@ -99,7 +106,8 @@ func (e *riverEnv) workCtx() context.Context {
 	return rivertest.WorkContext(context.Background(), e.queue)
 }
 
-// clearQueue removes every job from the real queue.
+// clearQueue removes every job from the queue, for a test that checks what a second step queues
+// on its own. It rolls back with the test.
 func (e *riverEnv) clearQueue(t *testing.T) {
 	t.Helper()
 	_, err := e.queue.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, stepping.QueueHTTPSteps))
@@ -158,7 +166,7 @@ func TestClientStartAndStop(t *testing.T) {
 
 // A real river runtime picks the job up and runs the registered worker.
 func TestClientRunsAnEnqueuedWelcomeJob(t *testing.T) {
-	e := newRiverEnv(t)
+	e := newRiverEnvWithRealQueue(t)
 	ctx := context.Background()
 	require.NoError(t, e.client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.Background())) })
