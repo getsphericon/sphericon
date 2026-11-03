@@ -28,7 +28,9 @@ Project Owner.
 - Commit messages and the pull request title follow
   [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, ...);
   release notes are generated from them, and the `pr-title` check fails a title that does not parse.
-- Run `mise run check` and `mise run test` before you push.
+- Before you push, run the checks and tests that cover your change (`mise run check:fe` or
+  `check:be`, `mise run test -- ./internal/<package>/...`); CI runs the full `mise run check` and
+  `mise run test` on the pull request.
 - Generated files are never edited by hand; run `mise run generate` instead.
 - A feature or a larger change starts from an issue a maintainer has accepted (label
   `ready-for-agent` or `ready-for-human`); name it in the pull request.
@@ -49,8 +51,8 @@ you answer for every line, for its license and for what it does.
 - Say how an AI tool was used in the "AI assistance" section of the pull request template.
 - A commit written with an agent may end with a `Co-Authored-By:` or an `Assisted-by:` trailer naming
   the tool; either is accepted. `Signed-off-by` and the signature of the CLA are yours alone.
-- The checks that run on every pull request run on yours; an agent that skips them (`mise run check`,
-  `mise run test`) only moves the failure to your review.
+- The checks that run on every pull request run on yours; an agent that skips the ones that cover
+  the change only moves the failure to your review.
 - Maintainers may close a pull request that does not meet these terms, without a review.
 
 ## Stack

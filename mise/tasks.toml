@@ -130,7 +130,7 @@ run = "go run ./cmd/server genkey"
 # --- worktrees ----------------------------------------------------------------------
 
 ["land"]
-description = "Open the pull request for the work of this worktree: rebase onto origin/main, mise run check and test, the title and body checks, push the branch, gh pr create. `mise run land -- --door <one-way|two-way> --blast <word> [--ai <none|helped|wrote>] [--title <t>] [--skip-test] [<issue>...]`; a branch with a clean tree"
+description = "Open the pull request for the work of this worktree: rebase onto origin/main, the title and body checks, push the branch, gh pr create. `mise run land -- --door <one-way|two-way> --blast <word> [--ai <none|helped|wrote>] [--title <t>] [<issue>...]`; a branch with a clean tree"
 run = "node mise/scripts/land.ts"
 
 ["worktrees:prune"]
