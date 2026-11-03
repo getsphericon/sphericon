@@ -197,7 +197,7 @@ only caller of their writes (`forbidigo`).
      holds hosts and states, no Workspace data, so it scopes over nothing; and the contacts peak
      of `ee/usage` (`raise`, run by its ent hook), which scopes over each
      Workspace id it is given only after loading that Workspace's row and finding it live.
-- **The raw `*ent.Client` is allowed only in:** `internal/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/accounts` (User, Membership,
+- **The raw `*ent.Client` is allowed only in:** `internal/bindings` (only `PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/accounts` (User, Membership,
   Workspace incl. Workspace id resolution, invitation by token, and the Pending sign-up of a Sign-in provider, ADR 0062: no User
   or Workspace exists yet, and its completion creates them, its Consent records and an Invitation's Membership in one
   transaction; the prune river job only calls it), `internal/api/auth` (credentials, token and key lookup),

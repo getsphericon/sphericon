@@ -38,9 +38,10 @@ marketing stop, a provider-side suppression). Bindings are made only from such i
 - **Start tokens.** sphericon issues a single-use opaque token (at most 64 characters of
   `[A-Za-z0-9_-]`, Telegram's limit) for `t.me/<bot>?start=<token>`, from a merge tag in a message
   of any Channel, from the tracker for the current Visitor, or through the API; it lapses after 30
-  days, since a link waits in an inbox for weeks. The chat binds to whoever the token was issued to,
-  a Contact or a Visitor; a Visitor's Binding follows it through Identify (amends ADR 0075). (Amended by ADR 0088: a Start
-  token also rides in a prefilled `START <token>` on SMS and WhatsApp, and makes its sender known.)
+  days, since a link waits in an inbox for weeks; a daily job deletes the lapsed and the used ones.
+  The chat binds to whoever the token was issued to, a Contact or a Visitor; a Visitor's Binding
+  follows it through Identify (amends ADR 0075). (Amended by ADR 0088: a Start token also rides in a
+  prefilled `START <token>` on SMS and WhatsApp, and makes its sender known.)
 - **sphericon connects the bot.** Saving a Telegram Integration calls `setWebhook` with the
   Integration's hook URL and a secret token, replacing any webhook the bot had, which the UI says
   first. ADR 0037's rules hold for every Channel: verify before parsing, write before answering 2xx,

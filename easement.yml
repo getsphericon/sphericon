@@ -67,13 +67,14 @@ components:
   # The core packages that may hold the raw *ent.Client: the closed list "The raw *ent.Client is
   # allowed only in" of docs/architecture.md (Workspace scoping), kept in step with it. A package
   # is the unit, so the doc's narrower grants (`capturedmessages` only `Purge`, `automations` only
-  # `FenceOn`) are left to review. The composition roots and `internal/api/auth` are in the doc's
+  # `FenceOn`, `bindings` only `PruneStartTokens`) are left to review. The composition roots and `internal/api/auth` are in the doc's
   # list too; they sit in `wiring` and `api-auth`, which do not forbid the client.
   core-raw:
     in:
       [
         internal/accounts,
         internal/automations,
+        internal/bindings,
         internal/capturedmessages,
         internal/consent,
         internal/consentrecords,

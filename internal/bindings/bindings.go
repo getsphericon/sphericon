@@ -486,3 +486,17 @@ func AnnounceVisitor(ctx context.Context, s *ent.Scoped, pub events.Publisher, v
 	}
 	return nil
 }
+
+// PruneStartTokens deletes the Start tokens that lapsed by now or were used, in every Workspace,
+// and returns how many went. A lapsed or used token redeems nothing; the tracker and a merge tag
+// issue a fresh one per call, so they would otherwise pile up. The one function of the package
+// that takes the raw client, called by a river job: the tokens belong to no one Workspace's request.
+func PruneStartTokens(ctx context.Context, client *ent.Client, now time.Time) (int, error) {
+	n, err := client.StartToken.Delete().
+		Where(starttoken.Or(starttoken.ExpiresAtLTE(now), starttoken.UsedAtNotNil())).
+		Exec(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("prune start tokens: %w", err)
+	}
+	return n, nil
+}

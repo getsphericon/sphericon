@@ -2133,8 +2133,14 @@ const (
 	StaleUnverifiedUserID = 15
 	// StaleUnverifiedUserName is from fixtures/users.
 	StaleUnverifiedUserName = "Stale"
+	// StartTokenAcmeLapsedID is from fixtures/start_tokens.
+	StartTokenAcmeLapsedID = 3
+	// StartTokenAcmeOpenID is from fixtures/start_tokens.
+	StartTokenAcmeOpenID = 2
 	// StartTokenAcmeUsedID is from fixtures/start_tokens.
 	StartTokenAcmeUsedID = 1
+	// StartTokenAcmeUsedOpenID is from fixtures/start_tokens.
+	StartTokenAcmeUsedOpenID = 4
 	// StartTokenGlobexUsedID is from fixtures/start_tokens.
 	StartTokenGlobexUsedID = 900
 	// SuppressionErasableDestination is from fixtures/suppressions.
