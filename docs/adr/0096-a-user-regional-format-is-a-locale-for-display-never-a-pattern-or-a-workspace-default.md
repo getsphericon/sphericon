@@ -29,6 +29,16 @@ and 24-hour time. A User could say where they are (ADR 0068) but not how they wr
   argument and never read the Instance's language themselves (an `ast-grep` rule keeps it so). The
   formats come from `Intl`, not from dayjs locale data, which only serves the date inputs' month
   names and typed-date parsing and is loaded when a format is first used.
+- **A number inside a string follows it too (#1022).** A quantity a string prints is written
+  `{{count, number}}`, never passed in already formatted: `count` stays a number, so the plural
+  form is still picked by the UI language's rules. i18next 26 has no `interpolation.format`, so the
+  built-in `number` formatter is replaced after init by one that formats in the Regional format
+  (`setRegionalFormat` in `src/i18n.ts`), and `<RegionalNumbers>`, mounted once, feeds it from the
+  cached profile and re-renders the strings on screen when it changes; it is mounted at the root
+  and pinned to the Instance's language under `/console`. No `useTranslation` wrapper is needed,
+  and `src/locales.test.ts` fails a bare `{{count}}`. An identifier (a version, an
+  id, an IP address) is not a quantity and is printed as it is. A figure that is not in a string
+  goes through `useFormat().formatNumber`, and a table's range through `usePaginationText()`.
 - **Unaffected:** public pages and the Staff console (no User preference to read), mail to the User
   (still the Instance's formatting), parsing of incoming values (ingest stays ISO-only), Report days
   (ADR 0057) and everything addressed to a Contact, which follows the Contact locale.

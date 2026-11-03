@@ -2,6 +2,7 @@ import { Stack, Table, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import type { SiteLinkClicks } from '../generated/site/types.gen.ts'
+import { useFormat } from '../hooks/useFormat.ts'
 
 /**
  * The clicked links of a Broadcast or an Automation, with how often each was. Renders nothing
@@ -9,6 +10,7 @@ import type { SiteLinkClicks } from '../generated/site/types.gen.ts'
  */
 export function LinkClickTable({ links }: { links: SiteLinkClicks[] }) {
   const { t } = useTranslation()
+  const { formatNumber } = useFormat()
 
   if (links.length === 0) {
     return null
@@ -36,7 +38,7 @@ export function LinkClickTable({ links }: { links: SiteLinkClicks[] }) {
                     {link.url}
                   </Text>
                 </Table.Td>
-                <Table.Td>{link.clicks}</Table.Td>
+                <Table.Td>{formatNumber(link.clicks)}</Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>

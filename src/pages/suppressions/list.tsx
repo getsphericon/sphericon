@@ -34,6 +34,7 @@ import type {
   SiteSuppressionReason,
 } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
+import { usePaginationText } from '../../hooks/usePaginationText.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId/suppressions/index.tsx'
 import { can } from '../../utils/permissions.ts'
@@ -70,6 +71,7 @@ function SuppressionsTable({
   onCreate: () => void
 }) {
   const { t } = useTranslation()
+  const paginationText = usePaginationText()
   const { items: records, totalItems } = useSuspenseQuery(
     siteSuppressionsListOptions({
       path: { workspaceId },
@@ -137,6 +139,7 @@ function SuppressionsTable({
           </EmptyState>
         }
         totalRecords={totalItems}
+        paginationText={paginationText}
         recordsPerPage={PAGE_SIZE}
         page={page}
         onPageChange={onPageChange}

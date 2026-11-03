@@ -33,6 +33,7 @@ import type { SiteContactResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useContactExport } from '../../hooks/useContactExport.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
+import { usePaginationText } from '../../hooks/usePaginationText.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
@@ -145,6 +146,7 @@ function ContactActions({ workspaceId, contactId }: { workspaceId: string; conta
 
 function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contactId: string }) {
   const { t } = useTranslation()
+  const paginationText = usePaginationText()
   const { page = 1, machine: showMachine = false } = contactsDetailRoute.useSearch()
   const navigate = contactsDetailRoute.useNavigate()
   const setPage = (next: number) =>
@@ -210,6 +212,7 @@ function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contac
         ]}
         rowExpansion={{ content: EventRowDetails }}
         totalRecords={eventsTotal}
+        paginationText={paginationText}
         recordsPerPage={EVENTS_PAGE_SIZE}
         page={page}
         onPageChange={setPage}

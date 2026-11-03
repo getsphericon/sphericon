@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { siteEnrollmentsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { useFormat } from '../../hooks/useFormat.ts'
 
 /**
  * A button with the number of Enrollments an HTTP step failed, opening the reason each recorded.
@@ -17,6 +18,7 @@ export function FailedEnrollments({
   automationId: string
 }) {
   const { t } = useTranslation()
+  const { formatNumber } = useFormat()
   const [opened, { open, close }] = useDisclosure(false)
   const failedQuery = useQuery(
     siteEnrollmentsListOptions({
@@ -37,7 +39,7 @@ export function FailedEnrollments({
   return (
     <>
       <Button color="red" variant="light" onClick={open}>
-        {title} ({failed.length})
+        {title} ({formatNumber(failed.length)})
       </Button>
       <Drawer opened={opened} onClose={close} title={title} position="right" size="xl">
         <Table.ScrollContainer minWidth={420}>

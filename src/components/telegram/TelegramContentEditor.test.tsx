@@ -16,14 +16,14 @@ test('a text over the limit is refused as a message, and under a smaller caption
   const long = 'x'.repeat(1100)
 
   const asText = await renderWithProviders(<Harness initial={{ ...BASE, text: long }} />)
-  await expect.element(asText.getByText('1100 / 4096')).toBeVisible()
+  await expect.element(asText.getByText('1,100 / 4,096')).toBeVisible()
   await expect.element(asText.getByText(/in a message/)).not.toBeInTheDocument()
   await asText.unmount()
 
   const asCaption = await renderWithProviders(
     <Harness initial={{ ...BASE, text: long, imageUrl: 'https://cdn.example.com/a.png' }} />,
   )
-  await expect.element(asCaption.getByText('1100 / 1024')).toBeVisible()
+  await expect.element(asCaption.getByText('1,100 / 1,024')).toBeVisible()
   await expect.element(asCaption.getByText(/in a caption/)).toBeVisible()
 })
 

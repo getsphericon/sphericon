@@ -15,6 +15,7 @@ import {
   siteEventsListOptions,
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useEventActionFilter, useEventActionLabel } from '../../../hooks/useEventActionLabel.ts'
+import { usePaginationText } from '../../../hooks/usePaginationText.ts'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as workspaceRoute } from '../../../routes/workspaces/$workspaceId/route.tsx'
 import { withPage } from '../../../searchSchemas.ts'
@@ -27,6 +28,7 @@ const LIVE_REFETCH_MS = 5000
 // manual reload — the primary way to verify that tracking works.
 export function RecentActivityPage() {
   const { t } = useTranslation()
+  const paginationText = usePaginationText()
   const actionFilter = useEventActionFilter()
   const { workspaceId } = workspaceRoute.useParams()
   const [live, setLive] = useState(true)
@@ -132,6 +134,7 @@ export function RecentActivityPage() {
         ]}
         rowExpansion={{ content: DetailedEventRowDetails }}
         totalRecords={totalItems}
+        paginationText={paginationText}
         recordsPerPage={PAGE_SIZE}
         page={page}
         onPageChange={setPage}

@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest'
 import { renderHook } from 'vitest-browser-react'
 
+import { formatNumber } from '../../utils/number.ts'
 import {
   fromLimit,
   NO_LIMITS,
@@ -49,9 +50,9 @@ test('a limit must be a whole number within the contract bounds', async () => {
 
   expect(result.current.maxPerSecond(PER_SECOND.max, NO_LIMITS)).toBeNull()
   expect(result.current.maxPerSecond(PER_SECOND.max + 1, NO_LIMITS)).toBe(
-    `Enter a whole number from ${PER_SECOND.min} to ${PER_SECOND.max}`,
+    `Enter a whole number from ${formatNumber(PER_SECOND.min, 'en')} to ${formatNumber(PER_SECOND.max, 'en')}`,
   )
   expect(result.current.maxPerDay(1.5, NO_LIMITS)).toBe(
-    `Enter a whole number from ${PER_DAY.min} to ${PER_DAY.max}`,
+    `Enter a whole number from ${formatNumber(PER_DAY.min, 'en')} to ${formatNumber(PER_DAY.max, 'en')}`,
   )
 })

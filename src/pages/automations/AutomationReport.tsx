@@ -114,6 +114,7 @@ function ResultsFigures({ results }: { results: SiteAutomationResults }) {
 // (ADR 0081), so this is where a step that missed people shows. Renders nothing before any send.
 function StepFigures({ steps }: { steps: SiteAutomationStepFigures[] }) {
   const { t } = useTranslation()
+  const { formatNumber } = useFormat()
 
   if (steps.length === 0) {
     return null
@@ -138,8 +139,8 @@ function StepFigures({ steps }: { steps: SiteAutomationStepFigures[] }) {
             {steps.map((figures) => (
               <Table.Tr key={figures.step}>
                 <Table.Td>{figures.step + 1}</Table.Td>
-                <Table.Td>{figures.sent}</Table.Td>
-                <Table.Td>{figures.skipped}</Table.Td>
+                <Table.Td>{formatNumber(figures.sent)}</Table.Td>
+                <Table.Td>{formatNumber(figures.skipped)}</Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>

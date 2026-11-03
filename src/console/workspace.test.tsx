@@ -249,7 +249,7 @@ test('a rate below the volume floor shows the notice and its counts, never a per
 
   await expect.element(screen.getByText('promo.soylent.test')).toBeInTheDocument()
   await expect
-    .element(screen.getByText('Not enough data (fewer than 1000 sent)').first())
+    .element(screen.getByText('Not enough data (fewer than 1,000 sent)').first())
     .toBeInTheDocument()
   await expect.element(screen.getByText('1 / 8')).toBeInTheDocument()
   await expect.element(screen.getByText('1 / 7')).toBeInTheDocument()

@@ -29,6 +29,8 @@ export function resolveLocale(): Locale {
 // its own provider bound back to the global instance it initialises).
 const i18n = createInstance()
 
+const REGIONAL_FORMAT_CHANGED = 'regionalFormatChanged'
+
 // index.html ships a static lang="en" (so the a11y lint accepts a real code);
 // reflect the actual instance locale onto <html lang> once we know it.
 document.documentElement.lang = resolveLocale()
@@ -42,7 +44,35 @@ void i18n.use(initReactI18next).init({
   interpolation: {
     escapeValue: false,
   },
+  // A string re-renders when the User's Regional format changes, as when the language does.
+  react: { bindI18n: `languageChanged ${REGIONAL_FORMAT_CHANGED}` },
 })
+
+// The Regional format (#1010) the numbers inside strings are written in, or undefined for the
+// Instance's language. The UI language, and with it the plural rules, never changes: only the
+// digit grouping and the decimal separator of `{{count, number}}` do (#1022).
+let regionalFormat: string | undefined
+
+// i18next 26 has no `interpolation.format`: a formatter is added to the service after init, and
+// it replaces the built-in `number` of the same name. The options after the name
+// (`{{value, number(minimumFractionDigits: 2)}}`) reach `Intl.NumberFormat` as they did.
+const formatter = i18n.services.formatter
+if (!formatter) {
+  throw new Error('i18next has no formatter after init: the number format would not apply')
+}
+formatter.add('number', (value: number, lng: string | undefined, options: object) =>
+  new Intl.NumberFormat(regionalFormat ?? lng, options).format(value),
+)
+
+// setRegionalFormat tells the strings which Regional format their numbers follow, and re-renders
+// the ones already on screen. Called by <RegionalNumbers>, the one place that reads the profile.
+export function setRegionalFormat(tag: string | undefined): void {
+  if (tag === regionalFormat) {
+    return
+  }
+  regionalFormat = tag
+  i18n.emit(REGIONAL_FORMAT_CHANGED)
+}
 
 // Zod's default message for a missing required value ("Invalid input: expected string,
 // received undefined") is useless in a form. Whatever the rule that failed, a value is missing

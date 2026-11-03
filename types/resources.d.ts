@@ -115,8 +115,8 @@ export default interface Resources {
         "clicks": "Clicks",
         "empty": "No links were clicked in this window",
         "hint": "Every human click counts, so a link clicked twice by one person shows twice. Link scanners and other software are left out.",
-        "ownerClicks": "{{kind}}: {{clicks}}",
-        "retentionNote": "Clicks are kept for {{days}} days on this instance, so this window counts only the last {{days}} days.",
+        "ownerClicks": "{{kind}}: {{clicks, number}}",
+        "retentionNote": "Clicks are kept for {{days, number}} days on this instance, so this window counts only the last {{days, number}} days.",
         "url": "Link"
       },
       "contacts": {
@@ -173,7 +173,7 @@ export default interface Resources {
         "total": "New people"
       },
       "opensByHour": {
-        "cell": "{{day}} {{hour}}:00, {{count}} open" | "{{day}} {{hour}}:00, {{count}} opens",
+        "cell": "{{day}} {{hour}}:00, {{count, number}} open" | "{{day}} {{hour}}:00, {{count, number}} opens",
         "empty": "No opens in this window",
         "note": "Human opens by hour of day in the workspace time zone. Opens by mail software that fetches images for the reader are left out.",
         "weekdays": {
@@ -530,10 +530,10 @@ export default interface Resources {
         "almostDone": "almost done",
         "limitedByProviderLimit": "Paced by the Provider limit of its Integration",
         "limitedBySendCap": "Slowed by the Send cap set by the platform: the rest goes out as the 24-hour window frees up",
-        "remainingDays": "about {{count}} day remaining" | "about {{count}} days remaining",
-        "remainingHours": "about {{count}} hour remaining" | "about {{count}} hours remaining",
-        "remainingMinutes": "about {{count}} minute remaining" | "about {{count}} minutes remaining",
-        "summary": "Sent {{processed}} of {{total}}"
+        "remainingDays": "about {{count, number}} day remaining" | "about {{count, number}} days remaining",
+        "remainingHours": "about {{count, number}} hour remaining" | "about {{count, number}} hours remaining",
+        "remainingMinutes": "about {{count, number}} minute remaining" | "about {{count, number}} minutes remaining",
+        "summary": "Sent {{processed, number}} of {{total, number}}"
       },
       "recipientsLabel": "Recipients",
       "report": "Report",
@@ -543,7 +543,7 @@ export default interface Resources {
       "segmentLabel": "Segment",
       "segmentNote": "Unsubscribed contacts are always excluded.",
       "segmentNoteTelegram": "It goes to the contacts with a Telegram chat bound to this bot who have not stopped Telegram messages. A contact with several chats gets one message in each and counts once.",
-      "sendCapWarning": "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count}} day. You can still send or schedule it." | "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count}} days. You can still send or schedule it.",
+      "sendCapWarning": "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count, number}} day. You can still send or schedule it." | "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count, number}} days. You can still send or schedule it.",
       "sendCapWarningError": "Could not read the Send cap",
       "sendNow": "Send now",
       "stats": {
@@ -888,14 +888,14 @@ export default interface Resources {
         "noReason": "No reason given",
         "notSuspended": "Sending is not suspended.",
         "rates": {
-          "belowFloor": "Not enough data (fewer than {{floor}} sent)",
+          "belowFloor": "Not enough data (fewer than {{floor, number}} sent)",
           "bounceRate": "Bounce rate",
           "complaintRate": "Complaint rate",
           "domain": "Sending domain",
           "noDomains": "No sending domains.",
           "sendVolume": "Sent",
           "title": "Deliverability",
-          "window": "Last {{hours}} hours"
+          "window": "Last {{hours, number}} hours"
         },
         "reason": "Reason",
         "sendCap": {
@@ -1262,8 +1262,8 @@ export default interface Resources {
       "errorMessage": "Something went wrong. Please try again.",
       "inUse": "Still in use by: {{users}}. Change or finish those first.",
       "rateLimited": "Too many requests. Please wait a minute and try again.",
-      "rateLimitedMinutes": "Too many attempts. Try again in {{count}} minute." | "Too many attempts. Try again in {{count}} minutes.",
-      "rateLimitedSeconds": "Too many attempts. Try again in {{count}} second." | "Too many attempts. Try again in {{count}} seconds.",
+      "rateLimitedMinutes": "Too many attempts. Try again in {{count, number}} minute." | "Too many attempts. Try again in {{count, number}} minutes.",
+      "rateLimitedSeconds": "Too many attempts. Try again in {{count, number}} second." | "Too many attempts. Try again in {{count, number}} seconds.",
       "ruleArchived": "Rule archived",
       "ruleCreated": "Rule created",
       "ruleDeactivated": "Rule deactivated",
@@ -1283,9 +1283,9 @@ export default interface Resources {
       "templateDeleted": "Template deleted",
       "templateUpdated": "Template updated",
       "testSent": "Test email sent",
-      "usedByEnrollments": "{{count}} enrollment of \"{{name}}\"" | "{{count}} enrollments of \"{{name}}\"",
-      "usedByFirings": "{{count}} firing of \"{{name}}\"" | "{{count}} firings of \"{{name}}\"",
-      "usedByMessages": "{{count}} message sent by \"{{name}}\"" | "{{count}} messages sent by \"{{name}}\""
+      "usedByEnrollments": "{{count, number}} enrollment of \"{{name}}\"" | "{{count, number}} enrollments of \"{{name}}\"",
+      "usedByFirings": "{{count, number}} firing of \"{{name}}\"" | "{{count, number}} firings of \"{{name}}\"",
+      "usedByMessages": "{{count, number}} message sent by \"{{name}}\"" | "{{count, number}} messages sent by \"{{name}}\""
     },
     "oauthConsent": {
       "allow": "Allow access",
@@ -1310,7 +1310,7 @@ export default interface Resources {
       "workspaceLabel": "Workspace"
     },
     "oneTimeCode": {
-      "digit": "Digit {{n}}",
+      "digit": "Digit {{n, number}}",
       "recoveryLabel": "Recovery code",
       "useAppCode": "Use a code from the app",
       "useRecoveryCode": "Use a recovery code"
@@ -1329,7 +1329,7 @@ export default interface Resources {
           "broadcastFailed": "{{name}} failed to send.",
           "broadcastHeld": "{{name}} is on hold. {{reason}}",
           "deliverabilityWarning": "The {{metric}} rate on {{domain}} is {{rate}} over the last 24 hours, over the warning limit. Clean your list: if it keeps rising, sending for this workspace is suspended automatically.",
-          "enrollmentsFailed": "{{count}} run of {{name}} failed this week." | "{{count}} runs of {{name}} failed this week.",
+          "enrollmentsFailed": "{{count, number}} run of {{name}} failed this week." | "{{count, number}} runs of {{name}} failed this week.",
           "integrationProviderProbation": "Your provider has put the account behind {{name}} under review. It still sends: keep bounces and complaints low.",
           "integrationProviderRefused": "{{name}}'s credentials were refused by its provider: nothing sends through it until it is saved again with working ones.",
           "integrationProviderSandbox": "{{name}} is in the provider's sandbox: it sends only to addresses verified with the provider.",
@@ -1369,7 +1369,7 @@ export default interface Resources {
         "loadError": "Failed to load revenue",
         "note": "This is the revenue of the orders sent to Sphericon, not of your shop.",
         "orders": "Orders",
-        "otherCurrency": "{{count}} order in {{currency}} is not counted: revenue is summed in {{reportingCurrency}}." | "{{count}} orders in {{currency}} are not counted: revenue is summed in {{reportingCurrency}}.",
+        "otherCurrency": "{{count, number}} order in {{currency}} is not counted: revenue is summed in {{reportingCurrency}}." | "{{count, number}} orders in {{currency}} are not counted: revenue is summed in {{reportingCurrency}}.",
         "title": "Revenue",
         "total": "Total revenue"
       },
@@ -1379,7 +1379,7 @@ export default interface Resources {
         "deliverability": "Sending domains, last 24 hours",
         "deliverabilityReport": "Deliverability",
         "delivered": "Delivered",
-        "domainRates": "{{domain}}: Complaint rate {{complaintRate}} of {{delivered}} delivered · Bounce rate {{bounceRate}} of {{sent}} sent",
+        "domainRates": "{{domain}}: Complaint rate {{complaintRate}} of {{delivered, number}} delivered · Bounce rate {{bounceRate}} of {{sent, number}} sent",
         "report": "Email metrics",
         "sent": "Sent",
         "split": "Broadcasts {{broadcast}} · Automations {{automation}} · Transactional {{transactional}}",
@@ -1388,14 +1388,14 @@ export default interface Resources {
       "sends": {
         "allAutomations": "All automations",
         "allBroadcasts": "All broadcasts",
-        "automations": "{{count}} active automation, {{runs}} enrollments in progress." | "{{count}} active automations, {{runs}} enrollments in progress.",
+        "automations": "{{count, number}} active automation, {{runs, number}} enrollments in progress." | "{{count, number}} active automations, {{runs, number}} enrollments in progress.",
         "automationsTitle": "Automations",
         "empty": "Nothing has gone out yet. Start with a broadcast, or an automation that sends when a contact does something.",
         "lastSentEmpty": "Nothing has been sent yet.",
         "lastSentTitle": "Last sent",
         "loadError": "Failed to load what is going out",
         "scheduledFor": "Scheduled for {{date}}",
-        "sending": "Sending: {{sent}} of {{total}}",
+        "sending": "Sending: {{sent, number}} of {{total, number}}",
         "sentDetail": "Sent {{date}}: {{opened}} opened, {{clicked}} clicked",
         "sentDetailNoOpens": "Sent {{date}}: {{clicked}} clicked",
         "title": "Sends",
@@ -1549,7 +1549,7 @@ export default interface Resources {
     },
     "security": {
       "codeLabel": "Code from the app",
-      "codesRemaining": "{{count}} recovery code left" | "{{count}} recovery codes left",
+      "codesRemaining": "{{count, number}} recovery code left" | "{{count, number}} recovery codes left",
       "confirmButton": "Turn on",
       "confirmErrorTitle": "Could not turn on two-factor authentication",
       "copied": "Copied",
@@ -1624,7 +1624,7 @@ export default interface Resources {
       "noMatchingContacts": "No contacts match this segment",
       "noRecords": "No segments yet",
       "previewButton": "Preview segment",
-      "previewCount": "{{count}} matching contact" | "{{count}} matching contacts",
+      "previewCount": "{{count, number}} matching contact" | "{{count, number}} matching contacts",
       "triggerKeyLabel": "Event property name"
     },
     "settings": {
@@ -1668,7 +1668,7 @@ export default interface Resources {
         "retentionDescription": "Older entries are removed automatically. Leave empty to keep them forever.",
         "retentionError": "Could not save the retention",
         "retentionForever": "Entries are kept forever.",
-        "retentionKept": "Entries older than {{count}} day are removed automatically." | "Entries older than {{count}} days are removed automatically.",
+        "retentionKept": "Entries older than {{count, number}} day are removed automatically." | "Entries older than {{count, number}} days are removed automatically.",
         "retentionLabel": "Keep the log for (days)",
         "retentionPlaceholder": "Forever",
         "retentionSaved": "Retention saved",
@@ -1794,7 +1794,7 @@ export default interface Resources {
           "edit": "Provider limit",
           "editTitle": "Provider limit: {{name}}",
           "hint": "Blank means no limit",
-          "invalid": "Enter a whole number from {{min}} to {{max}}",
+          "invalid": "Enter a whole number from {{min, number}} to {{max, number}}",
           "perDay": "Max per 24 hours",
           "perDayShort": "Per 24 h",
           "perSecond": "Max per second",
@@ -1906,7 +1906,7 @@ export default interface Resources {
         "descriptionManager": "Members' own tokens for the scripts and tools they run. Each acts as its member and can do no more than that member's role allows.",
         "empty": "No personal tokens",
         "expires": "Expires",
-        "inDays": "In {{count}} day" | "In {{count}} days",
+        "inDays": "In {{count, number}} day" | "In {{count, number}} days",
         "loadError": "Failed to load personal tokens",
         "nameLabel": "Token name",
         "never": "Never",
@@ -1924,16 +1924,16 @@ export default interface Resources {
       "postalAddressLabel": "Postal address",
       "postalAddressPlaceholder": "Acme Inc, 123 Main St, Springfield, IL 62704, USA",
       "privacy": {
-        "capturedMessages": "Captured messages: {{n}}",
+        "capturedMessages": "Captured messages: {{n, number}}",
         "contactHeld": "Contact: held",
         "contactNotHeld": "Contact: none",
-        "deliveryRecords": "Delivery records: {{n}}",
+        "deliveryRecords": "Delivery records: {{n, number}}",
         "description": "Look up what this Workspace holds for an email address, to answer a GDPR access or erasure request. The lookup shows counts only.",
         "emailLabel": "Email address",
         "eraseConfirmDescription": "Erasure is permanent and cannot be undone. It removes the contact for this address with its visitors, events, tags and custom fields, and cancels its automation runs and queued mail. Delivery records to the address are anonymized and its captured messages are deleted. Unsubscribes and suppressions are kept so the person is never mailed again.",
         "eraseConfirmTitle": "Erase {{email}}?",
         "erased": "Address erased",
-        "events": "Events: {{n}}",
+        "events": "Events: {{n, number}}",
         "invalidEmail": "This is not a valid email address.",
         "lookup": "Look up",
         "lookupError": "Could not look up the address.",
@@ -1941,8 +1941,8 @@ export default interface Resources {
         "nothingFound": "Nothing found for this address. It may have been erased already.",
         "nothingHeld": "Nothing is held for this address.",
         "resultTitle": "Held for this address",
-        "suppressions": "Suppressions: {{n}}",
-        "unsubscribes": "Unsubscribes: {{n}}"
+        "suppressions": "Suppressions: {{n, number}}",
+        "unsubscribes": "Unsubscribes: {{n, number}}"
       },
       "revenue": {
         "currencyDescription": "Every revenue figure is shown in this currency. The first order your shop sends sets it; an order in another currency is kept but counted in no sum.",
@@ -1956,7 +1956,7 @@ export default interface Resources {
         "windowLabel": "Attribution window (days)"
       },
       "saved": "Workspace updated",
-      "scopesCount": "{{count}} scope" | "{{count}} scopes",
+      "scopesCount": "{{count, number}} scope" | "{{count, number}} scopes",
       "sendCap": {
         "description": "The platform sets the most messages this workspace may send in any 24 hours, across all its providers, transactional mail included. Messages beyond it wait until the 24-hour window frees up; transactional mail is never delayed. It is not a Provider limit, which you set for each provider.",
         "perDay": "{{perDay, number}} per 24 hours",
@@ -2101,7 +2101,7 @@ export default interface Resources {
         "eventsHint": "Leave empty to receive all events",
         "eventsLabel": "Events",
         "failing": "Failing",
-        "failureSummary": "{{reason}}: {{count}} delivery failed since {{since}}" | "{{reason}}: {{count}} deliveries failed in a row since {{since}}",
+        "failureSummary": "{{reason}}: {{count, number}} delivery failed since {{since}}" | "{{reason}}: {{count, number}} deliveries failed in a row since {{since}}",
         "loadError": "Failed to load webhooks",
         "regenerate": "Regenerate secret",
         "regenerateConfirmBody": "The current secret stops verifying at once. Update your receiver with the new one.",
@@ -2175,7 +2175,7 @@ export default interface Resources {
       "nameLabel": "Name",
       "passwordLabel": "Password",
       "readItem": "Read the {{title}}",
-      "resendIn": "Resend in {{seconds}}s",
+      "resendIn": "Resend in {{seconds, number}}s",
       "signInLink": "Sign in",
       "submitButton": "Sign up",
       "title": "Sign up"
@@ -2254,7 +2254,7 @@ export default interface Resources {
       "optional": "This question is optional. Continue without choosing if you prefer.",
       "other": "Other",
       "otherLabel": "Tell us more",
-      "progress": "Question {{current}} of {{total}}",
+      "progress": "Question {{current, number}} of {{total, number}}",
       "role": {
         "developer": "Developer",
         "founder": "Founder",
@@ -2298,7 +2298,7 @@ export default interface Resources {
       "birthday": "Birthday",
       "city": "City",
       "clearFilter": "Clear filter",
-      "collection": "{{name}} ({{total}})",
+      "collection": "{{name}} ({{total, number}})",
       "contact": "Contact",
       "country": "Country",
       "email": "Email",
@@ -2322,20 +2322,20 @@ export default interface Resources {
     },
     "telegramEditor": {
       "addButton": "Add a button",
-      "buttonLabel": "Button {{n}} label",
+      "buttonLabel": "Button {{n, number}} label",
       "buttonLabelPlaceholder": "Label",
-      "buttonUrl": "Button {{n}} URL",
+      "buttonUrl": "Button {{n, number}} URL",
       "buttonsLabel": "Link buttons",
-      "counter": "{{length}} / {{limit}}",
+      "counter": "{{length, number}} / {{limit, number}}",
       "imageHint": "An https URL. The text becomes the image's caption.",
       "imageLabel": "Image URL",
       "insertMergeTag": "Insert a merge tag",
       "linkPreview": "Show a preview of links in the text",
       "previewTitle": "Preview for a sample contact",
-      "removeButton": "Remove button {{n}}",
+      "removeButton": "Remove button {{n, number}}",
       "textHint": "Telegram's HTML: b, i, u, s, a href, code, pre, tg-spoiler, blockquote. Merge tags are escaped.",
       "textLabel": "Message",
-      "tooLong": "Telegram takes up to {{limit}} characters in {{what}}: it cannot go out until it is shorter.",
+      "tooLong": "Telegram takes up to {{limit, number}} characters in {{what}}: it cannot go out until it is shorter.",
       "whatCaption": "a caption",
       "whatText": "a message"
     },
