@@ -494,6 +494,37 @@ test('the Sending card shows each domain with its rates over their denominators 
     .toHaveAttribute('href', '/workspaces/TestWs01/analytics/deliverability?range=30d')
 })
 
+test('the Sending card shows the rates of the last 24 hours even when the period sent nothing', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: {
+        ...overview,
+        deliverability: {
+          windowHours: 24,
+          domains: [
+            {
+              sendingDomainId: '1',
+              domain: 'mail.acme.com',
+              complaintRate: { numerator: 0, denominator: 3, rate: 0 },
+              bounceRate: { numerator: 0, denominator: 3, rate: 0 },
+            },
+          ],
+        },
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(
+      screen.getByText(
+        'mail.acme.com: Complaint rate 0% of 3 delivered · Bounce rate 0% of 3 sent',
+      ),
+    )
+    .toBeInTheDocument()
+})
+
 test('the Sending card has no deliverability lines for a Workspace whose domains had no traffic', async () => {
   worker.use(
     handleSiteAnalyticsOverview({

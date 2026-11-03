@@ -38,7 +38,10 @@ function Figures({ workspaceId, range, periodControl }: FiguresProps) {
   ).data
   const { current, previous, contacts } = overview
   const sent = sentIn(current.sending)
-  if (sent === 0 && contacts.total === 0) {
+  // The Sending domains' rates cover the last 24 hours, which the period does not always hold a
+  // send of: they are a reason to show the card on their own.
+  const rated = overview.deliverability.domains.length > 0
+  if (sent === 0 && !rated && contacts.total === 0) {
     return null
   }
 
@@ -63,7 +66,7 @@ function Figures({ workspaceId, range, periodControl }: FiguresProps) {
   return (
     <>
       {periodControl}
-      {sent > 0 && (
+      {(sent > 0 || rated) && (
         <Card withBorder padding="lg">
           <Stack gap="sm">
             <Group justify="space-between">
@@ -102,7 +105,7 @@ function Figures({ workspaceId, range, periodControl }: FiguresProps) {
             <Text size="xs" c="dimmed">
               {t(($) => $.overview.sending.split, current.sending)}
             </Text>
-            {overview.deliverability.domains.length > 0 && (
+            {rated && (
               <Stack gap={2}>
                 <Group justify="space-between">
                   <Text size="sm" fw={600}>
