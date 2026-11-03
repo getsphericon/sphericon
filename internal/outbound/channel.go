@@ -119,6 +119,13 @@ type unreachableError struct{ err error }
 func (e unreachableError) Error() string { return "outbound: unreachable: " + e.err.Error() }
 func (e unreachableError) Unwrap() error { return e.err }
 
+// chatRefusedError is a provider adapter's word that one target refuses the message for good and
+// that the refusal is that target's alone (Telegram's 403 "bot can't initiate conversation"): the
+// message goes on to the other targets. It fails, with the description, only when none took it.
+type chatRefusedError struct{ description string }
+
+func (e chatRefusedError) Error() string { return e.description }
+
 // contentError marks a render failure that comes from the message itself (a template that does
 // not render, a link that cannot be rewritten): it is the same on every attempt, so the send ends
 // as Failed. Any other render error is a failure of what the render reads (the tracking host

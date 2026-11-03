@@ -522,10 +522,13 @@ func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request
 // again. Before any has: stopped is the Held or Deferral Result the failure means (the caller drops
 // the claim), else the error is retryable, except a contentError, which is the message's own. A
 // target the provider says reaches no one is dropped (its Channel's unreachable) and one whose user
-// blocked the bot is the user's opt-out (recordBlocked, blocked is set); the message goes on to the
-// others, and first is nil when none took it and none failed.
+// blocked the bot is the user's opt-out (recordBlocked, blocked is set); one that refuses the message
+// for good, for that target alone (chatRefusedError), is a failed target only. The message goes on to
+// the others: first is nil when none took it and none failed, and a contentError with the first
+// refusal's description when none took it and one refused.
 func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req Request, rendered any, targets []target, origin messaging.Origin, msg *ent.OutboundMessage) (first *accepted, stopped *Result, blocked bool, err error) {
 	messageID := msg.ID
+	var refused *chatRefusedError
 	for i, t := range targets {
 		if i > 0 {
 			// The first call is what reserve took a token for.
@@ -551,37 +554,56 @@ func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req R
 			}
 			continue
 		}
+		if cr, ok := errors.AsType[chatRefusedError](err); ok {
+			if refused == nil {
+				refused = &cr
+			}
+			continue
+		}
 		if first != nil {
 			logging.FromContext(ctx).Warn("outbound: a target did not take the message", "message_id", messageID, "err", err)
 			continue
 		}
-		if reason := heldBy(err); reason != "" {
-			if reason == HoldProviderRefused {
-				// The provider refused the credentials: remember it, so every send through the
-				// Integration holds until it is saved again, and none asks the provider meanwhile.
-				if rerr := m.refuse(ctx, s, g.route.Integration); rerr != nil {
-					return nil, nil, blocked, rerr
-				}
-			}
-			// The adapter found the source blocked only at the provider (email: the Sending
-			// domain lost verification between prepare and the signer): a hold, not a failure.
-			// The claim is dropped so the same Request can run again.
-			return nil, &Result{Outcome: Held, Reason: reason}, blocked, err
-		}
-		if wait := deferralBackoff(err); wait > 0 && req.Kind != outboundmessage.KindTransactional {
-			// The provider answered "too fast" or "quota exceeded": it refused the
-			// message, so nothing left. A Deferral, like our own spent limit: the claim
-			// is dropped, no attempt is consumed and the same Request runs again later.
-			// Transactional mail never defers (ADR 0023): it falls through to the
-			// retryable error below, which releases the claim for the caller's retry.
-			return nil, &Result{Outcome: Deferral, Cause: providerlimit.CauseProvider, Wait: wait}, blocked, err
+		if stop, serr := m.stopOf(ctx, s, g, req, err); stop != nil || serr != nil {
+			return nil, stop, blocked, serr
 		}
 		if isContentError(err) {
 			return nil, nil, blocked, err
 		}
 		return nil, nil, blocked, fmt.Errorf("outbound: send to %s: %w", t.dest, err)
 	}
+	if first == nil && refused != nil {
+		return nil, nil, blocked, contentError{errors.New(refused.description)}
+	}
 	return first, nil, blocked, nil
+}
+
+// stopOf is the Held or Deferral Result a provider's refusal of the first send means, nil when it
+// means neither. The error is the one to return with it: the refusal itself, or the failure to
+// remember it.
+func (m *Module) stopOf(ctx context.Context, s *ent.Scoped, g gateResult, req Request, err error) (*Result, error) {
+	if reason := heldBy(err); reason != "" {
+		if reason == HoldProviderRefused {
+			// The provider refused the credentials: remember it, so every send through the
+			// Integration holds until it is saved again, and none asks the provider meanwhile.
+			if rerr := m.refuse(ctx, s, g.route.Integration); rerr != nil {
+				return nil, rerr
+			}
+		}
+		// The adapter found the source blocked only at the provider (email: the Sending
+		// domain lost verification between prepare and the signer): a hold, not a failure.
+		// The claim is dropped so the same Request can run again.
+		return &Result{Outcome: Held, Reason: reason}, err
+	}
+	if wait := deferralBackoff(err); wait > 0 && req.Kind != outboundmessage.KindTransactional {
+		// The provider answered "too fast" or "quota exceeded": it refused the
+		// message, so nothing left. A Deferral, like our own spent limit: the claim
+		// is dropped, no attempt is consumed and the same Request runs again later.
+		// Transactional mail never defers (ADR 0023): it falls through to the
+		// retryable error, which releases the claim for the caller's retry.
+		return &Result{Outcome: Deferral, Cause: providerlimit.CauseProvider, Wait: wait}, err
+	}
+	return nil, nil
 }
 
 // dropTarget removes a target its provider said reaches no one, in a transaction of its own.
