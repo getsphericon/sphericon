@@ -99,13 +99,13 @@ func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request,
 	if err != nil {
 		return nil, err
 	}
-	bindings := Bindings(req.Contact, req.Variables)
+	vars := Bindings(req.Contact, req.Variables)
 	start, err := c.m.startLinkBinding(ctx, s, req, messageID, content.Text)
 	if err != nil {
 		return nil, err
 	}
-	maps.Copy(bindings, start)
-	text, err := telegramrender.Render(content.Text, bindings)
+	maps.Copy(vars, start)
+	text, err := telegramrender.Render(content.Text, vars)
 	if err != nil {
 		return nil, contentError{err}
 	}
