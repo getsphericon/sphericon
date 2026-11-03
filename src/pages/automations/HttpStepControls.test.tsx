@@ -72,9 +72,11 @@ test('headers are rows: added, edited and removed, at most five', async () => {
     .poll(() => headersOf(latest.headers))
     .toEqual([{ name: 'Authorization', value: 'Bearer x' }])
 
-  for (let added = 1; added < 5; added++) {
-    await screen.getByRole('button', { name: 'Add header' }).click()
-  }
+  const addHeader = screen.getByRole('button', { name: 'Add header' })
+  await addHeader.click()
+  await addHeader.click()
+  await addHeader.click()
+  await addHeader.click()
   await expect.element(screen.getByRole('button', { name: 'Add header' })).not.toBeInTheDocument()
   await screen.getByRole('button', { name: 'Remove header' }).first().click()
   await expect.poll(() => headersOf(latest.headers)).toHaveLength(4)

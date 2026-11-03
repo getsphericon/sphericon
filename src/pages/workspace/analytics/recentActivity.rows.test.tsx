@@ -116,14 +116,22 @@ test('a page view names the page by its title, the path when it has none', async
 })
 
 // An email Event carries the subject its message kept; Broadcast 5 exists, Broadcast 6 is gone.
+type EmailEvent = ReturnType<typeof event> & { emailSubject: string | null }
+
 const emailEvent = (
   id: string,
   action: string,
   properties: Record<string, unknown>,
-  emailSubject: string | null = 'Welcome to Hexlet',
-) => ({ ...event(id, action, properties), emailSubject })
+): EmailEvent => ({ ...event(id, action, properties), emailSubject: 'Welcome to Hexlet' })
 
-function serveEmails(...items: ReturnType<typeof emailEvent>[]) {
+// A message that kept no subject: sent before it was kept, or erased with its Contact.
+const subjectless = (
+  id: string,
+  action: string,
+  properties: Record<string, unknown>,
+): EmailEvent => ({ ...emailEvent(id, action, properties), emailSubject: null })
+
+function serveEmails(...items: EmailEvent[]) {
   serve(...items)
   worker.use(
     handleSiteBroadcastsGet(({ params }) =>
@@ -220,9 +228,9 @@ test('a bounce says whether it was hard or soft', async () => {
 
 test('an email Event whose message kept no subject shows the words of its action', async () => {
   serveEmails(
-    emailEvent('1', 'email.opened', { broadcastId: 5 }, null),
-    emailEvent('2', 'email.clicked', { broadcastId: 5, url: 'https://hexlet.io/courses' }, null),
-    emailEvent('3', 'email.bounced', { broadcastId: 5, bounceKind: 'hard' }, null),
+    subjectless('1', 'email.opened', { broadcastId: 5 }),
+    subjectless('2', 'email.clicked', { broadcastId: 5, url: 'https://hexlet.io/courses' }),
+    subjectless('3', 'email.bounced', { broadcastId: 5, bounceKind: 'hard' }),
   )
   const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
 

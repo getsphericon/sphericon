@@ -157,6 +157,21 @@ export default defineConfig({
       files: ['**/*.ts', '**/*.tsx'],
       rules: { 'typescript/promise-function-async': 'error', 'import/unambiguous': 'error' },
     },
+    // Our own TypeScript only: the JavaScript beside it (the emaildoc runtime shims, the TypeSpec
+    // decorators) implements the API of the host that calls it, whose signatures, private fields and
+    // sequential awaits are not ours to reshape.
+    {
+      files: ['**/*.ts', '**/*.tsx'],
+      rules: {
+        'unicorn/no-await-expression-member': 'error',
+        'unicorn/prefer-spread': 'error',
+        'typescript/prefer-readonly': 'error',
+        'typescript/no-non-null-assertion': 'error',
+        'eslint/no-await-in-loop': 'error',
+        'eslint/max-params': 'error',
+        'eslint/no-multi-assign': 'error',
+      },
+    },
     // Text shown to a person comes from the catalog; the punctuation joining translated pieces is not text.
     {
       files: ['src/**'],

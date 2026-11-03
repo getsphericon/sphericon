@@ -63,7 +63,7 @@ test('picking a System event by its name puts its action in the URL, on the firs
   await screen.getByRole('option', { name: /Opened an email/ }).click()
 
   await expect.poll(() => navigate.mock.calls.at(-1)?.[0]).toMatchObject({ replace: true })
-  const target = router.buildLocation(navigate.mock.calls.at(-1)![0])
+  const target = router.buildLocation(navigate.mock.calls.at(-1)?.[0] ?? {})
   expect(target.search).toEqual({ range: '30d', action: 'email.opened' })
 })
 
