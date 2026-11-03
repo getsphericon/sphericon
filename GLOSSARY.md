@@ -769,7 +769,8 @@ _Avoid_: Locale
 **Regional format**:
 The locale, with its region, a User chooses for how the app shows them dates, times and numbers:
 `en-GB`, `de-DE`. Empty until chosen, which is the **Instance**'s language. It never changes the
-language of the UI, and is not the **Contact locale**.
+language of the UI, and is not the **Contact locale**. In code the tag is passed as `locale`, the
+name `Intl` gives it; in the product it is never called a locale.
 _Avoid_: Locale, date format
 
 **Report day**:
