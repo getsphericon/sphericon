@@ -88,5 +88,8 @@ func (StartToken) Indexes() []ent.Index {
 			StorageKey("start_tokens_contact_id"),
 		index.Fields("visitor_id").
 			StorageKey("start_tokens_visitor_id"),
+		// The purge of lapsed tokens finds them by their expiry.
+		index.Fields("expires_at").
+			StorageKey("start_tokens_expires_at"),
 	}
 }

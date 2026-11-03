@@ -60,5 +60,6 @@ func (TrackedLink) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("outbound_message_id").
 			StorageKey("tracked_links_outbound_message_id"),
+		index.Fields("workspace_id"),
 	}
 }

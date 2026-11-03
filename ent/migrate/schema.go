@@ -2462,6 +2462,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{StartTokensColumns[8]},
 			},
+			{
+				Name:    "start_tokens_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{StartTokensColumns[4]},
+			},
 		},
 	}
 	// SuppressionsColumns holds the columns for the "suppressions" table.
@@ -2579,6 +2584,11 @@ var (
 				Name:    "tracked_links_outbound_message_id",
 				Unique:  false,
 				Columns: []*schema.Column{TrackedLinksColumns[5]},
+			},
+			{
+				Name:    "trackedlink_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{TrackedLinksColumns[6]},
 			},
 		},
 	}
