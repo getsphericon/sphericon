@@ -80,7 +80,8 @@ func parse(config []byte) (Config, error) {
 
 // Bot is one bot on the Bot API.
 type Bot struct {
-	bot *telego.Bot
+	bot   *telego.Bot
+	token string
 }
 
 // New builds the bot of token at the Bot API base URL apiURL.
@@ -96,21 +97,21 @@ func New(apiURL, token string) (*Bot, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Bot{bot: b}, nil
+	return &Bot{bot: b, token: token}, nil
 }
 
 // GetMe asks Telegram which bot the token belongs to.
 func (b *Bot) GetMe(ctx context.Context) (messaging.TelegramBotInfo, error) {
 	me, err := b.bot.GetMe(ctx)
 	if err != nil {
-		return messaging.TelegramBotInfo{}, refusal(err)
+		return messaging.TelegramBotInfo{}, b.refusal(err)
 	}
 	return messaging.TelegramBotInfo{ID: me.ID, Username: me.Username}, nil
 }
 
 // SetWebhook points the bot's updates at hook.URL.
 func (b *Bot) SetWebhook(ctx context.Context, hook messaging.TelegramWebhook) error {
-	return refusal(b.bot.SetWebhook(ctx, &telego.SetWebhookParams{
+	return b.refusal(b.bot.SetWebhook(ctx, &telego.SetWebhookParams{
 		URL:                hook.URL,
 		SecretToken:        hook.SecretToken,
 		AllowedUpdates:     hook.AllowedUpdates,
@@ -120,7 +121,7 @@ func (b *Bot) SetWebhook(ctx context.Context, hook messaging.TelegramWebhook) er
 
 // DeleteWebhook removes the bot's webhook, keeping its pending updates.
 func (b *Bot) DeleteWebhook(ctx context.Context) error {
-	return refusal(b.bot.DeleteWebhook(ctx, &telego.DeleteWebhookParams{}))
+	return b.refusal(b.bot.DeleteWebhook(ctx, &telego.DeleteWebhookParams{}))
 }
 
 // SendMessage sends msg to the chat msg.ChatID, as HTML: by sendPhoto with the text as the caption
@@ -163,25 +164,27 @@ func (b *Bot) SendMessage(ctx context.Context, msg messaging.TelegramMessage) (m
 		sent, err = b.bot.SendMessage(ctx, params)
 	}
 	if err != nil {
-		return messaging.TelegramSent{}, refusal(err)
+		return messaging.TelegramSent{}, b.refusal(err)
 	}
 	return messaging.TelegramSent{MessageID: int64(sent.MessageID)}, nil
 }
 
 // AnswerCallbackQuery answers a button press with nothing to show.
 func (b *Bot) AnswerCallbackQuery(ctx context.Context, callbackID string) error {
-	return refusal(b.bot.AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: callbackID}))
+	return b.refusal(b.bot.AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: callbackID}))
 }
 
-// refusal turns telego's error into a messaging.TelegramError when the Bot API answered one; any
-// other error (the network, a 5xx) is returned as it is.
-func refusal(err error) error {
+// refusal turns telego's error into a messaging.TelegramError when the Bot API answered one. Any
+// other error (the network, a 5xx) is returned with the bot token taken out of its text: telego
+// wraps the transport's *url.Error, whose URL is .../bot<token>/method, and the text reaches the
+// user, the logs and the retried send's error. The wrapped chain stays, so errors.Is/As still work.
+func (b *Bot) refusal(err error) error {
 	if err == nil {
 		return nil
 	}
 	apiErr, ok := errors.AsType[*ta.Error](err)
 	if !ok {
-		return err
+		return redacted{msg: strings.ReplaceAll(err.Error(), b.token, "<token>"), cause: err}
 	}
 	out := &messaging.TelegramError{Code: apiErr.ErrorCode, Description: apiErr.Description}
 	if apiErr.Parameters != nil {
@@ -189,3 +192,12 @@ func refusal(err error) error {
 	}
 	return out
 }
+
+// redacted is an error whose text has the bot token removed and whose cause is kept for Is and As.
+type redacted struct {
+	msg   string
+	cause error
+}
+
+func (e redacted) Error() string { return e.msg }
+func (e redacted) Unwrap() error { return e.cause }
