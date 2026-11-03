@@ -4,6 +4,9 @@ status: accepted
 
 # Consent on the new Channels
 
+> **Amended by #962:** on Telegram any `/start`, bare or with a Start token, lifts the Channel-wide
+> opt-out (see "A reversal made in the Channel lifts it").
+
 Send-eligibility (ADR 0013) has four layers keyed by (Channel, Destination): Suppression, an
 `everything` Unsubscribe, a source Unsubscribe, and a Confirmation that only a Workspace requiring
 confirmed opt-in asks for. That fits email. The research on the map issue
@@ -29,7 +32,9 @@ GDPR, WhatsApp policy), and that providers report both a person's choice and a d
   sphericon sends there is marketing. A source-scoped opt-out exists on these Channels only as a
   link to the unsubscribe page that the author puts in the message.
 - **A reversal made in the Channel lifts it.** START or UNSTOP, WhatsApp's resume and an unblocked
-  bot lift the Unsubscribe; on SMS and WhatsApp a START also records a Confirmation with the
+  bot lift the Unsubscribe; on Telegram any `/start` does too, a bare one or one with a Start token
+  (ADR 0076: a bare `/start` still creates no Contact and no Binding, and from a Destination with
+  no opt-out it records nothing); on SMS and WhatsApp a START also records a Confirmation with the
   provenance `keyword`, since the person asked to receive again.
 - **A dead address is not an opt-out.** A web push 404 or 410 and a deactivated Telegram user remove
   the Binding (`<channel>.unbound`). An SMS number the provider reports as not existing is

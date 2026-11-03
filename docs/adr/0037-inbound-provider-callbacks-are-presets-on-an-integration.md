@@ -4,6 +4,14 @@ status: accepted
 
 # Inbound provider callbacks are Presets on an Integration
 
+> **Amended by [[0076-presets-parse-inbound-and-the-core-reads-what-it-means]] and #962:** a
+> `transform` returns more than Delivery failures. The facts a Preset may emit are a closed set of
+> three kinds, each carrying the provider's event id: Delivery notices, an **Inbound message** (a message, or a
+> pressed button's payload, read from a Destination) and a **Reachability change** (the person
+> blocked or unblocked the bot, or the account is gone). Go validates every kind the same way and
+> the core, not the Preset, decides what each means on its Channel. Verifying before parsing,
+> writing before answering and deduplicating on the event id hold for all three.
+
 Suppression was fed by one hand-written SES-over-SNS adapter at `/hooks/{ingest_key}/ses`, with the
 key on the Workspace. A Self-hoster on an SMTP relay (Postmark, Mailgun) never learned of a bounce,
 and the SES hook had a hole: an SNS signature proves a message came from AWS, not from this
