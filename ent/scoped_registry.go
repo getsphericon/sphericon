@@ -1701,6 +1701,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.TemplateID != nil {
 					b.SetTemplateID(remap("EmailTemplate", *src.TemplateID))
 				}
+				if src.Subject != nil {
+					b.SetSubject(*src.Subject)
+				}
 				if src.AppOrigin != nil {
 					b.SetAppOrigin(*src.AppOrigin)
 				}

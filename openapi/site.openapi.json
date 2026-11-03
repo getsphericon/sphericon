@@ -20259,6 +20259,11 @@
             "nullable": true,
             "description": "Arbitrary event properties"
           },
+          "emailSubject": {
+            "type": "string",
+            "nullable": true,
+            "description": "The subject the Contact received on the email the event is about, merge tags filled; null for\nan event that is about no email, or whose email kept no subject (sent before it was kept, or\nerased with the Contact)"
+          },
           "occurredAt": {
             "allOf": [
               {

@@ -711,6 +711,12 @@ const (
 	EventAnonymousVisitorID = 980
 	// EventAnonymousVisitorVisitorID is from fixtures/events.
 	EventAnonymousVisitorVisitorID = "vis-anonymous-301"
+	// EventBouncedNoSubjectAction is from fixtures/events.
+	EventBouncedNoSubjectAction = "email.bounced"
+	// EventBouncedNoSubjectEmail is from fixtures/events.
+	EventBouncedNoSubjectEmail = "emma.sql@codebasics.dev"
+	// EventBouncedNoSubjectID is from fixtures/events.
+	EventBouncedNoSubjectID = 20436
 	// EventBystanderCustomAction is from fixtures/events.
 	EventBystanderCustomAction = "plan_upgraded"
 	// EventBystanderCustomEmail is from fixtures/events.
@@ -947,6 +953,12 @@ const (
 	EventOldUnsubscribedEmail = "old305@example.com"
 	// EventOldUnsubscribedID is from fixtures/events.
 	EventOldUnsubscribedID = 305
+	// EventOpenedKeptSubjectAction is from fixtures/events.
+	EventOpenedKeptSubjectAction = "email.opened"
+	// EventOpenedKeptSubjectEmail is from fixtures/events.
+	EventOpenedKeptSubjectEmail = "liam.python@codebasics.dev"
+	// EventOpenedKeptSubjectID is from fixtures/events.
+	EventOpenedKeptSubjectID = 20435
 	// EventPaymentFailedAction is from fixtures/events.
 	EventPaymentFailedAction = "payment_failed"
 	// EventPaymentFailedEmail is from fixtures/events.
@@ -1573,6 +1585,8 @@ const (
 	OutboundMessageErasableBroadcastDestination = "erin@initech.test"
 	// OutboundMessageErasableBroadcastID is from fixtures/outbound_messages.
 	OutboundMessageErasableBroadcastID = 300
+	// OutboundMessageErasableBroadcastSubject is from fixtures/outbound_messages.
+	OutboundMessageErasableBroadcastSubject = "Erin's launch news"
 	// OutboundMessageErasableTransactionalDestination is from fixtures/outbound_messages.
 	OutboundMessageErasableTransactionalDestination = "erin@initech.test"
 	// OutboundMessageErasableTransactionalID is from fixtures/outbound_messages.
@@ -1615,6 +1629,8 @@ const (
 	OutboundMessageWelcomeDestination = "liam.python@codebasics.dev"
 	// OutboundMessageWelcomeID is from fixtures/outbound_messages.
 	OutboundMessageWelcomeID = 100
+	// OutboundMessageWelcomeSubject is from fixtures/outbound_messages.
+	OutboundMessageWelcomeSubject = "Welcome to Hexlet"
 	// OutsiderOscarEmail is from fixtures/users.
 	OutsiderOscarEmail = "oscar@nowhere.test"
 	// OutsiderOscarID is from fixtures/users.

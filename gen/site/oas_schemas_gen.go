@@ -18230,6 +18230,10 @@ type SiteEventResource struct {
 	Action string `json:"action"`
 	// Arbitrary event properties.
 	Properties OptNilJsonObject `json:"properties"`
+	// The subject the Contact received on the email the event is about, merge tags filled; null for an
+	// event that is about no email, or whose email kept no subject (sent before it was kept, or erased
+	// with the Contact).
+	EmailSubject OptNilString `json:"emailSubject"`
 	// When the event happened: the time the source gave, or when it was published if it gave none.
 	OccurredAt Timestamp `json:"occurredAt"`
 	// When the event was recorded.
@@ -18259,6 +18263,11 @@ func (s *SiteEventResource) GetAction() string {
 // GetProperties returns the value of Properties.
 func (s *SiteEventResource) GetProperties() OptNilJsonObject {
 	return s.Properties
+}
+
+// GetEmailSubject returns the value of EmailSubject.
+func (s *SiteEventResource) GetEmailSubject() OptNilString {
+	return s.EmailSubject
 }
 
 // GetOccurredAt returns the value of OccurredAt.
@@ -18294,6 +18303,11 @@ func (s *SiteEventResource) SetAction(val string) {
 // SetProperties sets the value of Properties.
 func (s *SiteEventResource) SetProperties(val OptNilJsonObject) {
 	s.Properties = val
+}
+
+// SetEmailSubject sets the value of EmailSubject.
+func (s *SiteEventResource) SetEmailSubject(val OptNilString) {
+	s.EmailSubject = val
 }
 
 // SetOccurredAt sets the value of OccurredAt.

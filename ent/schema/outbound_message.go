@@ -16,7 +16,7 @@ import (
 // BEFORE the provider is called, under a per-logical-send idempotency key, so a
 // retried job or request never sends twice; the outcome and the `email.sent` Event
 // are written in one transaction afterwards. It carries provenance and outcome
-// only — never the rendered content (PII + volume) — and references the surface's
+// only — never the rendered content (PII + volume), bar the rendered subject line — and references the surface's
 // own records by foreign keys (review rule 8): RESTRICT for a Broadcast, an
 // Automation and an Integration, which are discarded and never deleted (ADR 0049), SET NULL
 // for a Contact, a Template, an Automation run and a Broadcast recipient, which a physical delete or an
@@ -116,6 +116,13 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.Int64("integration_id").Optional().Nillable(),
 		// The Template a transactional send referenced (ADR 0005).
 		field.Int64("template_id").Optional().Nillable(),
+		// The subject the recipient received, merge tags filled, written when an email is sent
+		// so a feed can name the email an Event is about after its Broadcast or Automation step
+		// changed or went. Personal data: cleared with the Contact (ADR 0021). Nil for a message
+		// sent before it was kept, a Channel with no subject and a message that was not sent.
+		field.String("subject").
+			Optional().
+			Nillable(),
 		// The Instance's origin (SPHERICON_APP_URL) the message's links were built on, so
 		// `sphericon doctor` can warn when the configured origin has since changed (ADR 0036).
 		// Nil when the send carried no links of its own (a Transactional send has no Tracker).

@@ -153,6 +153,7 @@ func TestExternalContactsEraseRemovesThePersonsData(t *testing.T) {
 		require.NoError(t, err)
 		assert.Emptyf(t, m.Destination, "message %d destination", id)
 		assert.Nilf(t, m.ContactID, "message %d contact_id", id)
+		assert.Nilf(t, m.Subject, "message %d subject: what the Contact received goes with the Contact", id)
 		assert.Equal(t, outboundmessage.StatusSent, m.Status)
 	}
 	r, err := env.DB.BroadcastRecipient.Get(ctx, fixtures.BroadcastRecipientErasableID)

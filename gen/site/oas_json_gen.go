@@ -34929,6 +34929,12 @@ func (s *SiteEventResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.EmailSubject.Set {
+			e.FieldStart("emailSubject")
+			s.EmailSubject.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("occurredAt")
 		s.OccurredAt.Encode(e)
 	}
@@ -34938,14 +34944,15 @@ func (s *SiteEventResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteEventResource = [7]string{
+var jsonFieldsNameOfSiteEventResource = [8]string{
 	0: "id",
 	1: "subjectId",
 	2: "email",
 	3: "action",
 	4: "properties",
-	5: "occurredAt",
-	6: "createdAt",
+	5: "emailSubject",
+	6: "occurredAt",
+	7: "createdAt",
 }
 
 // Decode decodes SiteEventResource from json.
@@ -35011,8 +35018,18 @@ func (s *SiteEventResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"properties\"")
 			}
+		case "emailSubject":
+			if err := func() error {
+				s.EmailSubject.Reset()
+				if err := s.EmailSubject.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"emailSubject\"")
+			}
 		case "occurredAt":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				if err := s.OccurredAt.Decode(d); err != nil {
 					return err
@@ -35022,7 +35039,7 @@ func (s *SiteEventResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"occurredAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -35041,7 +35058,7 @@ func (s *SiteEventResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01101011,
+		0b11001011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

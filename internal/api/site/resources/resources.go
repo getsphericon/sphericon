@@ -240,6 +240,8 @@ type Converter interface {
 	AttentionItemsToResources(source []attention.Item) []siteapi.SiteAttentionItem
 	AttentionSubjectToResource(source attention.Subject) siteapi.SiteAttentionSubject
 
+	// The email's subject is not on the Event: the handler reads it from the Outbound message.
+	// goverter:ignore EmailSubject
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 	// goverter:useEmptyOnNil:slice
 	EventsToResources(source []*ent.Event) []siteapi.SiteEventResource

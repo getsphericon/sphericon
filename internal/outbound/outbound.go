@@ -495,7 +495,16 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		}
 		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, eligibility.ReasonNoDestination)
 	}
-	return m.recordSent(ctx, s, req, msg, g, first.to.dest, first.receipt)
+	return m.recordSent(ctx, s, req, msg, g, first.to.dest, first.receipt, renderedSubject(rendered))
+}
+
+// renderedSubject is the subject line of the rendered message, "" for a Channel whose messages
+// have none: what the recipient received, kept on the Outbound message (#899).
+func renderedSubject(rendered any) string {
+	if email, ok := rendered.(messaging.EmailMessage); ok {
+		return email.Subject
+	}
+	return ""
 }
 
 // eligibleTargets is the targets that pass Send-eligibility, each checked on its own at send time,
@@ -861,7 +870,7 @@ func EnrollmentVariables(run *ent.AutomationRun) map[string]any {
 // the send fact reaches the Event log iff the message is recorded as sent. The provider call
 // precedes this transaction, so delivery to the provider is at-least-once; the idempotency key and
 // the Event DedupID make a retry safe.
-func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg *ent.OutboundMessage, g gateResult, dest string, receipt messaging.Receipt) (Result, error) {
+func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg *ent.OutboundMessage, g gateResult, dest string, receipt messaging.Receipt, subject string) (Result, error) {
 	now := m.now()
 	var integrationID int64
 	if g.route.Integration != nil {
@@ -875,6 +884,9 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 			upd.SetSentAt(now)
 			// A Channel of Bindings had no Destination at the claim: it is the first that accepted.
 			upd.SetDestination(dest)
+			if subject != "" {
+				upd.SetSubject(subject)
+			}
 			if g.route.Integration != nil {
 				upd.SetIntegrationID(g.route.Integration.ID)
 			}

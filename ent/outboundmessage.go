@@ -77,6 +77,8 @@ type OutboundMessage struct {
 	IntegrationID *int64 `json:"integration_id,omitempty"`
 	// TemplateID holds the value of the "template_id" field.
 	TemplateID *int64 `json:"template_id,omitempty"`
+	// Subject holds the value of the "subject" field.
+	Subject *string `json:"subject,omitempty"`
 	// AppOrigin holds the value of the "app_origin" field.
 	AppOrigin *string `json:"app_origin,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -216,7 +218,7 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationStep, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
 			values[i] = new(sql.NullInt64)
-		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldReason, outboundmessage.FieldAppOrigin:
+		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldReason, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
 			values[i] = new(sql.NullString)
 		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt:
 			values[i] = new(sql.NullTime)
@@ -412,6 +414,13 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.TemplateID = new(int64)
 				*_m.TemplateID = value.Int64
+			}
+		case outboundmessage.FieldSubject:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field subject", values[i])
+			} else if value.Valid {
+				_m.Subject = new(string)
+				*_m.Subject = value.String
 			}
 		case outboundmessage.FieldAppOrigin:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -609,6 +618,11 @@ func (_m *OutboundMessage) String() string {
 	if v := _m.TemplateID; v != nil {
 		builder.WriteString("template_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.Subject; v != nil {
+		builder.WriteString("subject=")
+		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
 	if v := _m.AppOrigin; v != nil {

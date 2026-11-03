@@ -461,6 +461,26 @@ func (_u *OutboundMessageUpdate) ClearTemplateID() *OutboundMessageUpdate {
 	return _u
 }
 
+// SetSubject sets the "subject" field.
+func (_u *OutboundMessageUpdate) SetSubject(v string) *OutboundMessageUpdate {
+	_u.mutation.SetSubject(v)
+	return _u
+}
+
+// SetNillableSubject sets the "subject" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableSubject(v *string) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetSubject(*v)
+	}
+	return _u
+}
+
+// ClearSubject clears the value of the "subject" field.
+func (_u *OutboundMessageUpdate) ClearSubject() *OutboundMessageUpdate {
+	_u.mutation.ClearSubject()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *OutboundMessageUpdate) SetWorkspace(v *Workspace) *OutboundMessageUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -739,6 +759,12 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.AutomationStepCleared() {
 		_spec.ClearField(outboundmessage.FieldAutomationStep, field.TypeInt)
+	}
+	if value, ok := _u.mutation.Subject(); ok {
+		_spec.SetField(outboundmessage.FieldSubject, field.TypeString, value)
+	}
+	if _u.mutation.SubjectCleared() {
+		_spec.ClearField(outboundmessage.FieldSubject, field.TypeString)
 	}
 	if _u.mutation.AppOriginCleared() {
 		_spec.ClearField(outboundmessage.FieldAppOrigin, field.TypeString)
@@ -1465,6 +1491,26 @@ func (_u *OutboundMessageUpdateOne) ClearTemplateID() *OutboundMessageUpdateOne 
 	return _u
 }
 
+// SetSubject sets the "subject" field.
+func (_u *OutboundMessageUpdateOne) SetSubject(v string) *OutboundMessageUpdateOne {
+	_u.mutation.SetSubject(v)
+	return _u
+}
+
+// SetNillableSubject sets the "subject" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableSubject(v *string) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetSubject(*v)
+	}
+	return _u
+}
+
+// ClearSubject clears the value of the "subject" field.
+func (_u *OutboundMessageUpdateOne) ClearSubject() *OutboundMessageUpdateOne {
+	_u.mutation.ClearSubject()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *OutboundMessageUpdateOne) SetWorkspace(v *Workspace) *OutboundMessageUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -1773,6 +1819,12 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.AutomationStepCleared() {
 		_spec.ClearField(outboundmessage.FieldAutomationStep, field.TypeInt)
+	}
+	if value, ok := _u.mutation.Subject(); ok {
+		_spec.SetField(outboundmessage.FieldSubject, field.TypeString, value)
+	}
+	if _u.mutation.SubjectCleared() {
+		_spec.ClearField(outboundmessage.FieldSubject, field.TypeString)
 	}
 	if _u.mutation.AppOriginCleared() {
 		_spec.ClearField(outboundmessage.FieldAppOrigin, field.TypeString)

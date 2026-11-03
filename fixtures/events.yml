@@ -5420,3 +5420,21 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
+# An email Event names the email it is about by the Outbound message its properties carry: the
+# first opens message 100, which kept its subject, the second bounces message 101, which kept none.
+- id: 20435 # fixture: EventOpenedKeptSubject
+  contact_id: 100
+  email: liam.python@codebasics.dev
+  action: email.opened
+  properties: '{"outboundMessageId":100}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 20436 # fixture: EventBouncedNoSubject
+  contact_id: 101
+  email: emma.sql@codebasics.dev
+  action: email.bounced
+  properties: '{"outboundMessageId":101,"bounceKind":"hard"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
