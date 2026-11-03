@@ -70,3 +70,4 @@ func readBody(bodyFile string) (string, error) {
 	b, err := os.ReadFile(bodyFile)
 	return string(b), err
 }
+// cold-cache measurement, to be reverted

@@ -38,3 +38,4 @@ export async function requireUser(queryClient: QueryClient, returnTo?: string) {
     )
   }
 }
+// cold-cache measurement, to be reverted
