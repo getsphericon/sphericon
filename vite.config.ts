@@ -174,6 +174,8 @@ export default defineConfig({
         'src/main.tsx',
         'src/routes/**',
         'src/routeTree.gen.ts',
+        // A table of dynamic imports (dayjs locale data); its test loads every one.
+        'src/utils/dayjsLocaleLoaders.ts',
       ],
       reporter: ['text-summary', 'html'],
       // The floor is 90% on every metric, so CI catches regressions without flaking on
