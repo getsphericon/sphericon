@@ -185,6 +185,8 @@ _Avoid_: Purchase, transaction, sale
 **Revenue**:
 The net amount of Orders in the Workspace's reporting currency: each Order's total minus its refunds,
 a cancelled Order counting nothing. **Attributed revenue** is the part credited to a Broadcast or an Automation.
+**Captured revenue** is an On-site form's own figure: Orders of Contacts it captured, placed inside the
+Attribution window after their Form submit; it is not attribution and takes nothing from a message.
 _Avoid_: Sales, turnover, GMV
 
 **Reporting currency**:
