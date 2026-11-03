@@ -7,44 +7,11 @@ import { playwright } from '@vitest/browser-playwright'
 import type { Plugin } from 'vite'
 import { configDefaults, defineConfig } from 'vitest/config'
 
+import { DAYJS_LOCALE_LOADERS } from './src/utils/dayjsLocaleLoaders.ts'
+
 const require = createRequire(import.meta.url)
 
 const SUPPORTED_LOCALES = new Set(['en'])
-
-// The dayjs locale data the date inputs load when a User's Regional format needs it
-// (src/utils/dayjsLocale.ts), each a dynamic import: optimized up front, or the first use reloads
-// the page.
-const DAYJS_LOCALES = [
-  'cs',
-  'da',
-  'de',
-  'de-at',
-  'de-ch',
-  'en-au',
-  'en-ca',
-  'en-gb',
-  'en-in',
-  'es',
-  'es-mx',
-  'fi',
-  'fr',
-  'fr-ca',
-  'fr-ch',
-  'it',
-  'ja',
-  'ko',
-  'nb',
-  'nl',
-  'pl',
-  'pt',
-  'pt-br',
-  'ru',
-  'sv',
-  'tr',
-  'uk',
-  'zh-cn',
-  'zh-tw',
-]
 
 // Dev-only: substitute the {{APP_LOCALE}} sentinels in index.html the same way
 // the Go backend does at serve time in prod (internal/server/spa/spa.go). Applied
@@ -123,7 +90,9 @@ export default defineConfig({
       'dayjs',
       'dayjs/plugin/customParseFormat.js',
       'dayjs/plugin/localizedFormat.js',
-      ...DAYJS_LOCALES.map((name) => `dayjs/locale/${name}.js`),
+      // The dayjs locale data the date inputs load for a Regional format, each a dynamic import
+      // (src/utils/dayjsLocale.ts): optimized up front, or the first use reloads the page.
+      ...Object.keys(DAYJS_LOCALE_LOADERS).map((name) => `dayjs/locale/${name}.js`),
       'react-error-boundary',
     ],
   },
