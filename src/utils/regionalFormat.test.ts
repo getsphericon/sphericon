@@ -55,6 +55,16 @@ test('a number uses the locale’s grouping and decimal separator', () => {
   expect(formatNumber(1_234_567.5, 'en-US')).toBe('1,234,567.5')
 })
 
+test('a relative time picks the largest unit it spans, past or future', () => {
+  const now = Date.now()
+  const hour = 3_600_000
+
+  expect(formatRelative(now, 'en')).toBe('now')
+  expect(formatRelative(now + 2 * hour + 60_000, 'en')).toBe('in 2 hours')
+  expect(formatRelative(now - 3 * 86_400_000, 'en')).toBe('3 days ago')
+  expect(formatRelative(now - 400 * 86_400_000, 'en')).toBe('last year')
+})
+
 test('a relative time is worded in the locale', () => {
   const fiveMinutesAgo = Date.now() - 5 * 60 * 1000
 

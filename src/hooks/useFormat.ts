@@ -44,7 +44,7 @@ export function useRegionalFormat(): string | undefined {
 // useLocale is the locale a signed-in page writes dates, times and numbers in: the User's
 // Regional format, or the Instance's language until they choose one. The UI's own language is
 // the Instance's either way.
-export function useLocale(): string {
+function useLocale(): string {
   return useRegionalFormat() ?? resolveLocale()
 }
 

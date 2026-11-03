@@ -56,11 +56,13 @@ export async function loadDayjsLocale(name: string): Promise<void> {
   await LOADERS[name]?.()
 }
 
+type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6
+
+const WEEKDAYS: readonly Weekday[] = [0, 1, 2, 3, 4, 5, 6]
+
 // The first day of the week a locale starts its calendar on, as Mantine counts it (0 is Sunday,
 // 1 Monday), or undefined when the browser cannot tell: the pickers then keep their own default.
-export function firstDayOfWeek(
-  regionalFormat: string | undefined,
-): 0 | 1 | 2 | 3 | 4 | 5 | 6 | undefined {
+export function firstDayOfWeek(regionalFormat: string | undefined): Weekday | undefined {
   if (regionalFormat === undefined) {
     return undefined
   }
@@ -70,22 +72,6 @@ export function firstDayOfWeek(
     typeof info === 'function' ? Reflect.apply(info, locale, []) : Reflect.get(locale, 'weekInfo')
   const first: unknown =
     week !== null && typeof week === 'object' ? Reflect.get(week, 'firstDay') : undefined
-  switch (first) {
-    case 1:
-      return 1
-    case 2:
-      return 2
-    case 3:
-      return 3
-    case 4:
-      return 4
-    case 5:
-      return 5
-    case 6:
-      return 6
-    case 7:
-      return 0
-    default:
-      return undefined
-  }
+  // Intl counts Monday as 1 and Sunday as 7; Mantine counts Sunday as 0.
+  return typeof first === 'number' ? WEEKDAYS.find((day) => day === first % 7) : undefined
 }

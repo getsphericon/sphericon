@@ -9,6 +9,9 @@ import { useFormat } from './useFormat.ts'
 
 const AT = '2026-03-08T00:00:00Z'
 const LOAD = 'Load profile'
+// Midday in the browser's own zone, so the day reads the same wherever the test runs.
+const NOON = '2026-03-08T12:00:00'
+const FIVE_MINUTES_AGO = Date.now() - 5 * 60_000
 
 const me: SiteUserResource = {
   id: '1',
@@ -66,4 +69,60 @@ test('writes dates in the Instance language until the cached profile names a Reg
   await screen.getByRole('button', { name: LOAD }).click()
 
   await expect.element(screen.getByRole('status')).toHaveTextContent('08.03.2026 09:00:00')
+})
+
+function Figures() {
+  const queryClient = useQueryClient()
+  const format = useFormat()
+  const figures = [
+    format.formatDate(NOON),
+    format.formatDay('2026-03-08'),
+    format.formatLongDate(NOON),
+    format.formatNumber(1_234.5),
+    format.formatPercent(0.5),
+    format.formatMoney(123_450, 'EUR'),
+    // The narrow unit wording is the ICU data's own; the minutes are what matters here.
+    format.formatDuration(3_600 + 1_200).includes('20') ? 'duration' : 'no duration',
+    format.formatChange(6, 4),
+    format.formatPointChange(0.3, 0.2),
+    format.formatRelative(FIVE_MINUTES_AGO),
+  ]
+  return (
+    <>
+      <output>{figures.join(' | ').replaceAll(/\s/g, ' ')}</output>
+      <button
+        type="button"
+        onClick={() => {
+          queryClient.setQueryData(siteUserGetMeQueryKey(), {
+            ...me,
+            timezone: null,
+            regionalFormat: 'de-DE',
+          })
+        }}
+      >
+        {LOAD}
+      </button>
+    </>
+  )
+}
+
+// Every figure the hook writes follows the Regional format of the cached profile, from dates to
+// money and durations.
+test('writes every kind of figure in the cached Regional format', async () => {
+  const screen = await renderWithProviders(<Figures />)
+  const shown = () => screen.getByRole('status').element().textContent
+
+  await expect
+    .poll(shown)
+    .toBe(
+      '03/08/2026 | 03/08/2026 | March 8, 2026 | 1,234.5 | 50% | €1,234.50 | duration | +50% | +10 | 5 minutes ago',
+    )
+
+  await screen.getByRole('button', { name: LOAD }).click()
+
+  await expect
+    .poll(shown)
+    .toBe(
+      '08.03.2026 | 08.03.2026 | 8. März 2026 | 1.234,5 | 50 % | 1.234,50 € | duration | +50 % | +10 | vor 5 Minuten',
+    )
 })

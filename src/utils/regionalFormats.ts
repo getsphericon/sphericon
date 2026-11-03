@@ -3,7 +3,7 @@ import { formatDate } from './datetime.ts'
 // The Regional formats (#1010) the profile offers: common language-region pairs. The server takes
 // any well-formed tag, so a value outside this list that an API client stored is still shown and
 // kept until the User changes it; the list is a convenience, not a rule.
-export const REGIONAL_FORMATS = [
+const REGIONAL_FORMATS = [
   'en-US',
   'en-GB',
   'en-AU',
