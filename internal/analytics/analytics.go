@@ -48,6 +48,9 @@ type Overview struct {
 	Current, Previous Period
 	// Series is the current period by Report day.
 	Series []Point
+	// Deliverability is the Sending domains' rates over the trailing 24 hours; the window does not
+	// follow the range.
+	Deliverability Deliverability
 }
 
 // Period is the figures of one period of Report days.
@@ -157,7 +160,11 @@ func (m *Module) Overview(ctx context.Context, s *ent.Scoped, w Window) (*Overvi
 	if err != nil {
 		return nil, err
 	}
-	return &Overview{Contacts: contacts, Automations: automations, Current: current, Previous: previous, Series: series}, nil
+	deliverability, err := m.overviewDeliverability(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	return &Overview{Contacts: contacts, Automations: automations, Current: current, Previous: previous, Series: series, Deliverability: deliverability}, nil
 }
 
 // periodOf reads the figures of the period of Report days w.

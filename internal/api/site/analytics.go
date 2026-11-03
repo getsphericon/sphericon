@@ -39,6 +39,18 @@ func (h *Handlers) SiteAnalyticsEvents(ctx context.Context, params siteapi.SiteA
 	})
 }
 
+// SiteAnalyticsDeliverability maps the Deliverability report onto the DTO.
+func (h *Handlers) SiteAnalyticsDeliverability(ctx context.Context, params siteapi.SiteAnalyticsDeliverabilityParams) (siteapi.SiteAnalyticsDeliverabilityRes, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsDeliverabilityRes, error) {
+		report, err := h.analytics.Deliverability(ctx, s, w)
+		if err != nil {
+			return nil, err
+		}
+		res := mapper.AnalyticsDeliverabilityToResource(*report)
+		return &res, nil
+	})
+}
+
 // SiteAnalyticsSubscribedPeople maps the Subscribed people report onto the DTO.
 func (h *Handlers) SiteAnalyticsSubscribedPeople(ctx context.Context, params siteapi.SiteAnalyticsSubscribedPeopleParams) (siteapi.SiteAnalyticsSubscribedPeopleRes, error) {
 	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsSubscribedPeopleRes, error) {

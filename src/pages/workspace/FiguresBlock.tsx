@@ -10,6 +10,7 @@ import { StatCard } from '../../components/StatCard.tsx'
 import { siteAnalyticsOverviewOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsRange, SiteAnalyticsSending } from '../../generated/site/types.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
+import { Route as deliverabilityRoute } from '../../routes/workspaces/$workspaceId/analytics/deliverability.tsx'
 import { Route as emailMetricsRoute } from '../../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { Route as subscribedPeopleRoute } from '../../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
 
@@ -31,13 +32,16 @@ const sentIn = (sending: SiteAnalyticsSending) =>
 // period under it, with the change since; the number of the subscribed is a snapshot and has none.
 function Figures({ workspaceId, range, periodControl }: FiguresProps) {
   const { t } = useTranslation()
-  const { formatChange, formatPointChange } = useFormat()
+  const { formatChange, formatPointChange, formatRate } = useFormat()
   const overview = useSuspenseQuery(
     siteAnalyticsOverviewOptions({ path: { workspaceId }, query: { range } }),
   ).data
   const { current, previous, contacts } = overview
   const sent = sentIn(current.sending)
-  if (sent === 0 && contacts.total === 0) {
+  // The Sending domains' rates cover the last 24 hours, which the period does not always hold a
+  // send of: they are a reason to show the card on their own.
+  const rated = overview.deliverability.domains.length > 0
+  if (sent === 0 && !rated && contacts.total === 0) {
     return null
   }
 
@@ -62,7 +66,7 @@ function Figures({ workspaceId, range, periodControl }: FiguresProps) {
   return (
     <>
       {periodControl}
-      {sent > 0 && (
+      {(sent > 0 || rated) && (
         <Card withBorder padding="lg">
           <Stack gap="sm">
             <Group justify="space-between">
@@ -101,6 +105,34 @@ function Figures({ workspaceId, range, periodControl }: FiguresProps) {
             <Text size="xs" c="dimmed">
               {t(($) => $.overview.sending.split, current.sending)}
             </Text>
+            {rated && (
+              <Stack gap={2}>
+                <Group justify="space-between">
+                  <Text size="sm" fw={600}>
+                    {t(($) => $.overview.sending.deliverability)}
+                  </Text>
+                  <AnchorLink
+                    to={deliverabilityRoute.to}
+                    params={{ workspaceId }}
+                    search={{ range }}
+                    size="sm"
+                  >
+                    {t(($) => $.overview.sending.deliverabilityReport)}
+                  </AnchorLink>
+                </Group>
+                {overview.deliverability.domains.map((d) => (
+                  <Text key={d.sendingDomainId} size="sm">
+                    {t(($) => $.overview.sending.domainRates, {
+                      domain: d.domain,
+                      complaintRate: formatRate(d.complaintRate.rate),
+                      delivered: d.complaintRate.denominator,
+                      bounceRate: formatRate(d.bounceRate.rate),
+                      sent: d.bounceRate.denominator,
+                    })}
+                  </Text>
+                ))}
+              </Stack>
+            )}
           </Stack>
         </Card>
       )}

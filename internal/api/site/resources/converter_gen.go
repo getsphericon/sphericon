@@ -42,6 +42,7 @@ import (
 	orders "github.com/getsphericon/sphericon/internal/orders"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
+	reputation "github.com/getsphericon/sphericon/internal/reputation"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	setupchecklist "github.com/getsphericon/sphericon/internal/setupchecklist"
@@ -79,6 +80,23 @@ func (c *ConverterImpl) AnalyticsContactsToResource(source analytics.Contacts) s
 	siteapiSiteAnalyticsContacts.Active = count(source.Active)
 	siteapiSiteAnalyticsContacts.Unsubscribed = count(source.Unsubscribed)
 	return siteapiSiteAnalyticsContacts
+}
+func (c *ConverterImpl) AnalyticsDeliverabilityToResource(source analytics.Deliverability) site.SiteAnalyticsDeliverability {
+	var siteapiSiteAnalyticsDeliverability site.SiteAnalyticsDeliverability
+	siteapiSiteAnalyticsDeliverability.WindowHours = windowHours(source.Window)
+	siteapiSiteAnalyticsDeliverability.Domains = make([]site.SiteSendingDomainRates, len(source.Domains))
+	for i := 0; i < len(source.Domains); i++ {
+		siteapiSiteAnalyticsDeliverability.Domains[i] = c.AnalyticsDomainRatesToResource(source.Domains[i])
+	}
+	return siteapiSiteAnalyticsDeliverability
+}
+func (c *ConverterImpl) AnalyticsDomainRatesToResource(source analytics.DomainRates) site.SiteSendingDomainRates {
+	var siteapiSiteSendingDomainRates site.SiteSendingDomainRates
+	siteapiSiteSendingDomainRates.SendingDomainId = site.EntityId(source.SendingDomainID)
+	siteapiSiteSendingDomainRates.Domain = source.Domain
+	siteapiSiteSendingDomainRates.ComplaintRate = c.AnalyticsRateToResource(source.Complaint)
+	siteapiSiteSendingDomainRates.BounceRate = c.AnalyticsRateToResource(source.Bounce)
+	return siteapiSiteSendingDomainRates
 }
 func (c *ConverterImpl) AnalyticsEmailToResource(source analytics.Email) site.SiteAnalyticsEmail {
 	var siteapiSiteAnalyticsEmail site.SiteAnalyticsEmail
@@ -144,6 +162,7 @@ func (c *ConverterImpl) AnalyticsOverviewToResource(source *analytics.Overview) 
 		for i := 0; i < len((*source).Series); i++ {
 			siteapiSiteAnalyticsOverview.Timeseries[i] = c.analyticsPointToSiteapiSiteAnalyticsPoint((*source).Series[i])
 		}
+		siteapiSiteAnalyticsOverview.Deliverability = c.AnalyticsDeliverabilityToResource((*source).Deliverability)
 		pSiteapiSiteAnalyticsOverview = &siteapiSiteAnalyticsOverview
 	}
 	return pSiteapiSiteAnalyticsOverview
@@ -168,6 +187,13 @@ func (c *ConverterImpl) AnalyticsPeriodToResource(source analytics.Period) site.
 	siteapiSiteAnalyticsPeriod.Email = c.AnalyticsEmailToResource(source.Email)
 	siteapiSiteAnalyticsPeriod.NewContacts = count(source.NewContacts)
 	return siteapiSiteAnalyticsPeriod
+}
+func (c *ConverterImpl) AnalyticsRateToResource(source reputation.Rate) site.SiteRate {
+	var siteapiSiteRate site.SiteRate
+	siteapiSiteRate.Numerator = count(source.Numerator)
+	siteapiSiteRate.Denominator = count(source.Denominator)
+	siteapiSiteRate.Rate = nilFloat64(source.Rate)
+	return siteapiSiteRate
 }
 func (c *ConverterImpl) AnalyticsSubscribedPeopleToResource(source *analytics.SubscribedPeople) *site.SiteAnalyticsSubscribedPeople {
 	var pSiteapiSiteAnalyticsSubscribedPeople *site.SiteAnalyticsSubscribedPeople

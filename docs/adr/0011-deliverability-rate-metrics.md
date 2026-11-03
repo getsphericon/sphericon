@@ -143,3 +143,16 @@ single Outbound send module ([[0015-outbound-send-single-chokepoint]]), as part 
 `email.*` envelope. The Outbound message record also stores the Sending domain and provider
 message id, which makes send↔feedback correlation possible later; the metric itself stays a flow
 rate by each Event's own timestamp, exactly as decided here.
+
+## Amendment: the core's display has no floor and no limit
+
+"Insufficient data below a small display floor" is dropped for what the core shows (#936). The
+Site API and the app show each Sending domain's Complaint rate and Bounce rate as they are, next to
+the denominator they are over ("50% of 2"); a rate is undefined (null) only when its denominator is
+zero. The core sets no limit of its own on them: no good or bad colouring and no Needs attention
+item, because a Workspace connects its own channels and answers for them. The overview shows the
+trailing 24 hours and the Deliverability report in the analytics section shows the section's
+window, both from `reputation.Module.Rates`, the one place that counts.
+
+The EE detector is unchanged: its volume floor and its warn and freeze limits stay its policy
+(and are not shown to the customer), applied to the same triple.

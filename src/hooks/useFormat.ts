@@ -64,6 +64,8 @@ export function useFormat() {
       formatDay: (day: string) => formatDay(day, locale),
       formatNumber: (value: number) => formatNumber(value, locale),
       formatPercent: (rate: number) => formatPercent(rate, locale),
+      // A rate over nothing is undefined (null): shown as a dash, never as 0%.
+      formatRate: (rate: number | null) => (rate === null ? '–' : formatPercent(rate, locale)),
       formatMoney: (minorUnits: number, currency: string) =>
         formatMoney(minorUnits, currency, locale),
       formatDuration: (totalSeconds: number) => formatDuration(totalSeconds, locale),

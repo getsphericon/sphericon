@@ -3871,6 +3871,51 @@ func (o NilFloat32) Or(d float32) float32 {
 	return d
 }
 
+// NewNilFloat64 returns new NilFloat64 with value set to v.
+func NewNilFloat64(v float64) NilFloat64 {
+	return NilFloat64{
+		Value: v,
+	}
+}
+
+// NilFloat64 is nullable float64.
+type NilFloat64 struct {
+	Value float64
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilFloat64) SetTo(v float64) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilFloat64) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilFloat64) SetToNull() {
+	o.Null = true
+	var v float64
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilFloat64) Get() (v float64, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilFloat64) Or(d float64) float64 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilInt32 returns new NilInt32 with value set to v.
 func NewNilInt32(v int32) NilInt32 {
 	return NilInt32{
@@ -9572,6 +9617,47 @@ func (s *SiteAnalyticsContacts) SetUnsubscribed(val int32) {
 	s.Unsubscribed = val
 }
 
+// The Sending domains' deliverability over a window: one entry per domain that had sends or deliveries
+// in it, archived ones included (ADR 0049), oldest first. Numbers only: the core sets no limit on
+// them.
+// Ref: #/components/schemas/SiteAnalyticsDeliverability
+type SiteAnalyticsDeliverability struct {
+	// Length of the window, in hours.
+	WindowHours int32 `json:"windowHours"`
+	// The domains with traffic in the window.
+	Domains []SiteSendingDomainRates `json:"domains"`
+}
+
+// GetWindowHours returns the value of WindowHours.
+func (s *SiteAnalyticsDeliverability) GetWindowHours() int32 {
+	return s.WindowHours
+}
+
+// GetDomains returns the value of Domains.
+func (s *SiteAnalyticsDeliverability) GetDomains() []SiteSendingDomainRates {
+	return s.Domains
+}
+
+// SetWindowHours sets the value of WindowHours.
+func (s *SiteAnalyticsDeliverability) SetWindowHours(val int32) {
+	s.WindowHours = val
+}
+
+// SetDomains sets the value of Domains.
+func (s *SiteAnalyticsDeliverability) SetDomains(val []SiteSendingDomainRates) {
+	s.Domains = val
+}
+
+func (*SiteAnalyticsDeliverability) siteAnalyticsDeliverabilityRes() {}
+
+type SiteAnalyticsDeliverabilityBadRequest ProblemDetails
+
+func (*SiteAnalyticsDeliverabilityBadRequest) siteAnalyticsDeliverabilityRes() {}
+
+type SiteAnalyticsDeliverabilityNotFound ProblemDetails
+
+func (*SiteAnalyticsDeliverabilityNotFound) siteAnalyticsDeliverabilityRes() {}
+
 // Email engagement for the Broadcast and Automation messages sent in the selected range (the send
 // cohort; a Transactional message is not in it), from delivery logs. Each message counts once, not
 // each person. Opens/clicks are the first human open/click stamped on the message and are counted
@@ -9927,6 +10013,8 @@ type SiteAnalyticsOverview struct {
 	Previous SiteAnalyticsPeriod `json:"previous"`
 	// Daily engagement series of the current period, oldest first, one point per day in the range.
 	Timeseries []SiteAnalyticsPoint `json:"timeseries"`
+	// The Sending domains' rates over the trailing 24 hours; the range does not change them.
+	Deliverability SiteAnalyticsDeliverability `json:"deliverability"`
 }
 
 // GetContacts returns the value of Contacts.
@@ -9954,6 +10042,11 @@ func (s *SiteAnalyticsOverview) GetTimeseries() []SiteAnalyticsPoint {
 	return s.Timeseries
 }
 
+// GetDeliverability returns the value of Deliverability.
+func (s *SiteAnalyticsOverview) GetDeliverability() SiteAnalyticsDeliverability {
+	return s.Deliverability
+}
+
 // SetContacts sets the value of Contacts.
 func (s *SiteAnalyticsOverview) SetContacts(val SiteAnalyticsContacts) {
 	s.Contacts = val
@@ -9977,6 +10070,11 @@ func (s *SiteAnalyticsOverview) SetPrevious(val SiteAnalyticsPeriod) {
 // SetTimeseries sets the value of Timeseries.
 func (s *SiteAnalyticsOverview) SetTimeseries(val []SiteAnalyticsPoint) {
 	s.Timeseries = val
+}
+
+// SetDeliverability sets the value of Deliverability.
+func (s *SiteAnalyticsOverview) SetDeliverability(val SiteAnalyticsDeliverability) {
+	s.Deliverability = val
 }
 
 func (*SiteAnalyticsOverview) siteAnalyticsOverviewRes() {}
@@ -22615,6 +22713,48 @@ type SitePublicUnsubscribesPerformNoContent struct{}
 
 func (*SitePublicUnsubscribesPerformNoContent) sitePublicUnsubscribesPerformRes() {}
 
+// A rate as the (numerator, denominator, rate) triple (ADR 0011). The core shows it as it is, with no
+// display floor: the rate is null only when the denominator is zero.
+// Ref: #/components/schemas/SiteRate
+type SiteRate struct {
+	// Events counted against the rate.
+	Numerator int32 `json:"numerator"`
+	// The population the rate is over.
+	Denominator int32 `json:"denominator"`
+	// Numerator / denominator, null when the denominator is zero, never reported as 0.
+	Rate NilFloat64 `json:"rate"`
+}
+
+// GetNumerator returns the value of Numerator.
+func (s *SiteRate) GetNumerator() int32 {
+	return s.Numerator
+}
+
+// GetDenominator returns the value of Denominator.
+func (s *SiteRate) GetDenominator() int32 {
+	return s.Denominator
+}
+
+// GetRate returns the value of Rate.
+func (s *SiteRate) GetRate() NilFloat64 {
+	return s.Rate
+}
+
+// SetNumerator sets the value of Numerator.
+func (s *SiteRate) SetNumerator(val int32) {
+	s.Numerator = val
+}
+
+// SetDenominator sets the value of Denominator.
+func (s *SiteRate) SetDenominator(val int32) {
+	s.Denominator = val
+}
+
+// SetRate sets the value of Rate.
+func (s *SiteRate) SetRate(val NilFloat64) {
+	s.Rate = val
+}
+
 // A fresh set of Recovery codes. They are shown only in this response.
 // Ref: #/components/schemas/SiteRecoveryCodes
 type SiteRecoveryCodes struct {
@@ -24508,6 +24648,59 @@ func (s *SiteSendCap) SetPerDay(val MaxPerDay) {
 // SetSentLast24h sets the value of SentLast24h.
 func (s *SiteSendCap) SetSentLast24h(val int32) {
 	s.SentLast24h = val
+}
+
+// The Complaint and Bounce rates of one Sending domain over a window.
+// Ref: #/components/schemas/SiteSendingDomainRates
+type SiteSendingDomainRates struct {
+	// Sending domain id.
+	SendingDomainId EntityId `json:"sendingDomainId"`
+	// The domain the rates are for.
+	Domain string `json:"domain"`
+	// Complaints over delivered mail; the rate is null when nothing was delivered in the window.
+	ComplaintRate SiteRate `json:"complaintRate"`
+	// Hard bounces over sent.
+	BounceRate SiteRate `json:"bounceRate"`
+}
+
+// GetSendingDomainId returns the value of SendingDomainId.
+func (s *SiteSendingDomainRates) GetSendingDomainId() EntityId {
+	return s.SendingDomainId
+}
+
+// GetDomain returns the value of Domain.
+func (s *SiteSendingDomainRates) GetDomain() string {
+	return s.Domain
+}
+
+// GetComplaintRate returns the value of ComplaintRate.
+func (s *SiteSendingDomainRates) GetComplaintRate() SiteRate {
+	return s.ComplaintRate
+}
+
+// GetBounceRate returns the value of BounceRate.
+func (s *SiteSendingDomainRates) GetBounceRate() SiteRate {
+	return s.BounceRate
+}
+
+// SetSendingDomainId sets the value of SendingDomainId.
+func (s *SiteSendingDomainRates) SetSendingDomainId(val EntityId) {
+	s.SendingDomainId = val
+}
+
+// SetDomain sets the value of Domain.
+func (s *SiteSendingDomainRates) SetDomain(val string) {
+	s.Domain = val
+}
+
+// SetComplaintRate sets the value of ComplaintRate.
+func (s *SiteSendingDomainRates) SetComplaintRate(val SiteRate) {
+	s.ComplaintRate = val
+}
+
+// SetBounceRate sets the value of BounceRate.
+func (s *SiteSendingDomainRates) SetBounceRate(val SiteRate) {
+	s.BounceRate = val
 }
 
 // Sending domain resource used by the site UI (ADR 0010). sphericon generates the DKIM keypair; the

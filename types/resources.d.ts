@@ -126,6 +126,18 @@ export default interface Resources {
         "total": "Total",
         "unsubscribed": "Unsubscribed"
       },
+      "deliverability": {
+        "bounceRate": "Bounce rate",
+        "complaintRate": "Complaint rate",
+        "complaints": "Complaints",
+        "delivered": "Delivered",
+        "domain": "Sending domain",
+        "empty": "No Sending domain sent or delivered mail in this window",
+        "hardBounces": "Hard bounces",
+        "loadError": "Failed to load deliverability",
+        "note": "Complaint rate is complaints over delivered mail; Bounce rate is hard bounces over sent mail. A rate is shown as it is, however few messages it is over.",
+        "sent": "Sent"
+      },
       "email": {
         "clickRate": "Click rate",
         "clickToOpenRate": "Click-to-open",
@@ -147,6 +159,7 @@ export default interface Resources {
       "loadError": "Failed to load analytics",
       "nav": {
         "clicksByLink": "Clicks by link",
+        "deliverability": "Deliverability",
         "emailMetrics": "Email metrics",
         "events": "Events",
         "newPeople": "New people",
@@ -1363,7 +1376,10 @@ export default interface Resources {
       "sending": {
         "bounced": "Bounced",
         "complained": "Complaints",
+        "deliverability": "Sending domains, last 24 hours",
+        "deliverabilityReport": "Deliverability",
         "delivered": "Delivered",
+        "domainRates": "{{domain}}: Complaint rate {{complaintRate}} of {{delivered}} delivered · Bounce rate {{bounceRate}} of {{sent}} sent",
         "report": "Email metrics",
         "sent": "Sent",
         "split": "Broadcasts {{broadcast}} · Automations {{automation}} · Transactional {{transactional}}",

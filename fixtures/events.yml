@@ -5446,3 +5446,74 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
+
+# Sending-domain rates of the last 24 hours (Site API overview and Deliverability report), on the
+# Acme domains that have no other traffic. Ids 60000 and up. Rows are two hours old unless said.
+# launch.acme.com: 7 sent, 2 hard bounces, 5 delivered, 1 complaint: Bounce rate 2/7, Complaint rate 1/5.
+# {{range $i := seq 60000 60006}}
+- id: '{{$i}}'
+  email: 'rates{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"launch.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
+# {{end}}
+# {{range $i := seq 60007 60008}}
+- id: '{{$i}}'
+  email: 'rates{{$i}}@example.com'
+  action: email.bounced
+  properties: '{"sendingDomain":"launch.acme.com","bounceKind":"hard"}'
+  workspace_id: 1
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
+# {{end}}
+# {{range $i := seq 60009 60013}}
+- id: '{{$i}}'
+  email: 'rates{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"launch.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
+# {{end}}
+- id: 60014
+  email: rates60014@example.com
+  action: email.complained
+  properties: '{"sendingDomain":"launch.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
+# lost.acme.com: 1 sent and 1 hard bounce, nothing delivered: Bounce rate 1/1 (no floor), Complaint rate undefined.
+- id: 60020
+  email: rates60020@example.com
+  action: email.sent
+  properties: '{"sendingDomain":"lost.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
+- id: 60021
+  email: rates60021@example.com
+  action: email.bounced
+  properties: '{"sendingDomain":"lost.acme.com","bounceKind":"hard"}'
+  workspace_id: 1
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
+# old.acme.com (archived): a complaint two hours ago, which the overview lists, and 4 sent three days
+# ago, which only the 7-day report counts.
+- id: 60030
+  email: rates60030@example.com
+  action: email.complained
+  properties: '{"sendingDomain":"old.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
+# {{range $i := seq 60031 60034}}
+- id: '{{$i}}'
+  email: 'rates{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"old.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+# {{end}}

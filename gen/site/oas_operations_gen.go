@@ -7,6 +7,7 @@ type OperationName = string
 
 const (
 	SiteAnalyticsClicksByLinkOperation                 OperationName = "SiteAnalyticsClicksByLink"
+	SiteAnalyticsDeliverabilityOperation               OperationName = "SiteAnalyticsDeliverability"
 	SiteAnalyticsEventsOperation                       OperationName = "SiteAnalyticsEvents"
 	SiteAnalyticsNewPeopleOperation                    OperationName = "SiteAnalyticsNewPeople"
 	SiteAnalyticsOpensByHourOperation                  OperationName = "SiteAnalyticsOpensByHour"
