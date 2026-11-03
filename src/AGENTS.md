@@ -20,6 +20,9 @@
   `src/components`); `src/generated` imports nothing of ours. Something a route's search schema
   needs lives in `src/utils`, not next to its page. Every file under `src/` must belong to a
   component (`strict`), so a new top-level directory is added to `easement.yml`.
+- How a screen behaves (delete confirmations, form validation, tables, empty states, loading,
+  error messages, wording) is `docs/standards/ui.md`, after Cloudscape (ADR 0091); read it before
+  you add or change a screen, and look a component up through the Mantine MCP before you write one.
 - A library comes before a hand-written helper: `@mantine/hooks` and `ahooks` for hooks, `es-toolkit`
   for utilities, `@mantine/charts` for charts, dates through `src/utils/datetime.ts` (dayjs, which
   `easement.yml` refuses elsewhere; feeds show `<RelativeTime>`).

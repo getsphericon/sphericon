@@ -90,6 +90,8 @@ The rules of the code are in `docs/`, read before you write or review:
 - `docs/standards/review-rules.md`: the numbered rules every change is checked against; a check's message names
   its number.
 - `CODING_STANDARDS.md`: tests, plain-table schema, no custom CSS, theming, lint.
+- `docs/standards/ui.md`, before you add or change a screen: how a delete is confirmed, when a form
+  validates, tables, empty states, loading, errors and wording (ADR 0091).
 
 The rules of a directory are in its own `AGENTS.md`, loaded when you work there: `ent/schema/`
 (migrations, Squawk, schemalens), `src/` (generated client, routing, i18n, lint), `e2e/`, and
