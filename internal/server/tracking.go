@@ -204,6 +204,8 @@ func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target 
 		Destination: target.Destination,
 		WorkspaceID: target.WorkspaceID,
 		ContactID:   target.ContactID,
+		// The same email's link: opting out of everything from it is about that message too.
+		OutboundMessageID: target.OutboundMessageID,
 	})
 	if err != nil {
 		return base

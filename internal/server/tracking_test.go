@@ -2,9 +2,11 @@ package server_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -256,6 +258,35 @@ func TestTrackingEndpoints(t *testing.T) {
 	assert.Contains(t, names, "email.opened")
 	assert.Contains(t, names, "email.clicked")
 	assert.Contains(t, names, "email.unsubscribed")
+}
+
+// The unsubscribe link names the email it sits in, so the email.unsubscribed Event is about that
+// message and a feed can show its subject (#899); the everything-scoped escalation offered after
+// it is about the same message.
+func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	cfg, err := config.Load("test")
+	require.NoError(t, err)
+	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
+	target := tracking.UnsubTarget{
+		Channel: messaging.ChannelEmail, Source: eligibility.SourceBroadcasts, Destination: *c.Email,
+		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, OutboundMessageID: fixtures.OutboundMessageWelcomeID,
+	}
+
+	decoded, err := tr.DecodeUnsub(strings.TrimPrefix(unsubPath(t, tr, target), "/e/u/"))
+	require.NoError(t, err)
+	assert.Equal(t, int64(fixtures.OutboundMessageWelcomeID), decoded.OutboundMessageID)
+
+	req := httptest.NewRequestWithContext(ctx, http.MethodPost, unsubPath(t, tr, target), nil)
+	w := httptest.NewRecorder()
+	env.Server.ServeHTTP(w, req)
+	require.Equal(t, http.StatusNoContent, w.Code)
+
+	unsubscribed := env.Outbox(t, "email.unsubscribed")
+	require.Len(t, unsubscribed, 1)
+	assert.Equal(t, json.Number(strconv.Itoa(fixtures.OutboundMessageWelcomeID)), unsubscribed[0].Data["outboundMessageId"])
 }
 
 // Unsubscribing from an automation records the opt-out AND exits the in-flight

@@ -98,6 +98,7 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 		return pub.Publish(ctx, &events.EmailEngagement{
 			Action: events.NameEmailUnsubscribed, WorkspaceID: target.WorkspaceID, ContactID: target.ContactID,
 			Email: dest, BroadcastID: target.BroadcastID, AutomationID: automationID,
+			OutboundMessageID: target.OutboundMessageID,
 		})
 	}))
 }
