@@ -11,13 +11,15 @@ const schema = z.object({
   email: z.string().min(1, 'Enter a valid email address.'),
 })
 
+const submitLabel = 'Save'
+
 function Form() {
   const form = useSchemaForm(schema, { name: '', email: '' })
   return (
     <form onSubmit={form.onSubmit(() => undefined)}>
       <TextInput label="Name" {...form.getInputProps('name')} />
       <TextInput label="Email" {...form.getInputProps('email')} />
-      <button type="submit">{'Save'}</button>
+      <button type="submit">{submitLabel}</button>
     </form>
   )
 }
