@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/consentrecord"
-	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/userfeed"
@@ -17,8 +16,9 @@ import (
 // change, so every path goes through a transaction; a Consent record is refused whatever its
 // item, so a writer that forgets the transaction is caught on its first record.
 func TestPlainClientRefusesAChangeToTheUserFeed(t *testing.T) {
-	// A database of the test's own: a refusal that regressed would commit.
-	client := db.NewEntClient(testhelper.RealDB(t))
+	// env.DB is the plain client; a refusal that regressed would write inside the test's
+	// transaction, which rolls back.
+	client := testhelper.Setup(t).DB
 
 	// test writes: the hook fires on this write
 	_, err := client.User.Create().SetName("Plain").SetEmail("plain@plain.test").Save(t.Context())

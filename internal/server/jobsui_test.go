@@ -17,7 +17,7 @@ import (
 // The job queue's UI serves its embedded pages and its API from the binary, and lists jobs with
 // their arguments hidden unless the Staff member asks for them.
 func TestTheJobQueueUIServesItsPagesAndHidesArguments(t *testing.T) {
-	ui, err := server.NewJobsUI(testhelper.RealDB(t))
+	ui, err := server.NewJobsUI(testhelper.Setup(t).SQLDB)
 	require.NoError(t, err)
 	ctx, stop := context.WithCancel(context.Background())
 	t.Cleanup(stop)

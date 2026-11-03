@@ -1,8 +1,9 @@
 # Go test harness
 
 `internal/testhelper.Setup(t)` is the standard fixture. Each test process gets a database of
-its own, cloned from a template migrated + loaded with the committed YAML fixtures from
-`fixtures/` (built once per change of either), then each test runs inside
+its own, cloned from a template with the migrated schema only (built once per change of the
+migrations); the committed YAML fixtures from `fixtures/` are loaded into it once per test
+process, so their relative dates count from now. Then each test runs inside
 a transaction that rolls back on cleanup (`dbcleaner`'s `Transaction` strategy, go-txdb underneath:
 full isolation, DB stays at fixture state). Tests drive the real server in-memory through **actors** (typed ogen clients, see
 below) — no sockets. See `internal/api/site/contacts_test.go`.
