@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"hash/fnv"
 	"io/fs"
 	"net/url"
 	"os"
@@ -87,7 +88,11 @@ type baselineHandle struct {
 	name   string // the database's name
 	url    string // its URL
 	shared string // the URL of the shared test database, where the clones are created and dropped
-	err    error
+	// The Cleaner that leased the worker, kept for as long as the process runs: its session holds
+	// the lease, and a session nothing refers to is closed by the garbage collector, which would
+	// give the worker to another process while this one still clones from it.
+	lease *dbcleaner.Cleaner
+	err   error
 }
 
 // baselineDB leases, on the first call of the process, a database of its own (a dbcleaner
@@ -147,7 +152,31 @@ func openBaseline() baselineHandle {
 	if err := dropClones(ctx, admin, name); err != nil {
 		return baselineHandle{err: err}
 	}
-	return baselineHandle{name: name, url: dsn, shared: shared}
+	return baselineHandle{name: name, url: dsn, shared: shared, lease: leased}
+}
+
+// BaselineLeaseHeld tells whether this process still holds the lease of the worker its RealDB
+// clones are made from: the advisory lock dbcleaner takes on the worker's name (the FNV-64a of
+// "worker:<name>", split by the server into its class and object ids), which the server drops
+// with the session that took it. A test of the harness asks it after a garbage collection.
+func BaselineLeaseHeld(t *testing.T) bool {
+	t.Helper()
+	base := baselineDB(t)
+	admin, err := sql.Open("pgx", base.shared)
+	require.NoError(t, err)
+	defer cleanup.Close(admin, "BaselineLeaseHeld admin")
+
+	h := fnv.New64a()
+	_, err = h.Write([]byte("worker:" + base.name))
+	require.NoError(t, err)
+	key := h.Sum64()
+	var held int
+	// raw sql: pg_locks is a server view; ent has no entity for it.
+	err = admin.QueryRowContext(t.Context(),
+		`SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND granted AND objsubid = 1 AND classid = $1::bigint::oid AND objid = $2::bigint::oid`,
+		int64(key>>32), int64(key&0xffffffff)).Scan(&held)
+	require.NoError(t, err)
+	return held > 0
 }
 
 // dropClones drops what an earlier process left of the baseline's clones. Only the process that
