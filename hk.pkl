@@ -1,8 +1,10 @@
 amends "package://github.com/jdx/hk/releases/download/v2.10.0/hk@2.10.0#/Config.pkl"
 import "package://github.com/jdx/hk/releases/download/v2.10.0/hk@2.10.0#/Builtins.pkl"
 
-// Local git hooks. Slow whole-project checks (tsc, i18n drift, go test) stay in
-// `mise run check` / CI; hooks only run what is fast on staged files.
+// Local git hooks. A hook runs only what is fast on the staged files. Whole-project checks (tsc,
+// golangci-lint, knip, go.mod tidiness, go test) are not run by a hook: they are heavy and several
+// agents share one machine, so a change runs the task that covers it by hand (AGENTS.md, "Run only
+// what the change touches") and CI runs the rest.
 local linters = new Mapping {
     // Scan staged content only. The full history is checked by `mise run check:security`.
     ["betterleaks"] {
@@ -19,18 +21,6 @@ local linters = new Mapping {
         glob = List("**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.json", "**/*.jsonc", "**/*.md", "**/*.yml", "**/*.yaml")
         check = "pnpm exec oxfmt --check --no-error-on-unmatched-pattern {{files}}"
         fix = "pnpm exec oxfmt --no-error-on-unmatched-pattern {{files}}"
-    }
-    // Unused files/exports/dependencies; whole-project, check only (never --fix).
-    ["knip"] {
-        check = "pnpm exec knip"
-        exclusive = true
-    }
-    // The build with our analyzers (tools/analyzers), never a stock golangci-lint: the config
-    // enables the linter "sphericon", which only that binary has.
-    ["golangci_lint"] {
-        glob = List("**/*.go")
-        check = "mise run build:lint && .bin/custom-gcl run ./..."
-        fix = "mise run build:lint && .bin/custom-gcl run --fix ./..."
     }
     // Check only: the builtin runs `zizmor --fix` in fix mode and rewrites workflows.
     ["zizmor"] {
@@ -59,18 +49,6 @@ local linters = new Mapping {
 steps = linters
 
 hooks {
-    // Whole-project checks that need the full program (tsc, golangci-lint, go.mod
-    // tidiness); too slow per commit, so they gate the push instead.
-    ["pre-push"] {
-        steps {
-            ["check-fe"] {
-                check = "mise run check:fe"
-            }
-            ["check-be"] {
-                check = "mise run check:be"
-            }
-        }
-    }
     // Conventional Commits drive release-please; CI re-checks the pushed range.
     ["commit-msg"] {
         steps {

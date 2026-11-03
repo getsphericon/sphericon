@@ -159,8 +159,8 @@ The rest of this file is for maintainers and the agents they run: how work lands
   `.claude/settings.json`), so what an agent needs to know is written down in a Markdown file.
 - **A maintainer may push straight to `main`; a pull request is the default for anything sizeable.**
   The repository ruleset lets the admin role bypass the pull request and the status checks, so a
-  small, low-risk change (a doc line, a typo, a config tweak, a one-file fix the pre-push hook
-  passes) goes from its worktree as `git fetch origin && git rebase origin/main && git push origin
+  small, low-risk change (a doc line, a typo, a config tweak, a one-file fix whose covering
+  checks pass) goes from its worktree as `git fetch origin && git rebase origin/main && git push origin
   HEAD:main`. History stays linear: rebase, never merge. A change that touches several areas, a
   contract, a schema or a `CODEOWNERS` path, or that CI should see first, goes through a pull request.
   An agent pushes to `main` only when the user asks for it in that session ("push", "залей в main");
