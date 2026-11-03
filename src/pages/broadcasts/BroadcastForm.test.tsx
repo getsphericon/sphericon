@@ -344,3 +344,30 @@ test('a Telegram broadcast carries an image, buttons, no preview and an unsubscr
       },
     ])
 })
+
+// Only the Contacts with a Binding on the bot are reached, so the Send cap is compared with the
+// recipients the preview counts for the Channel and Integration, not with every matching Contact.
+test('a Telegram broadcast is warned about by its recipients, not by every contact', async () => {
+  const previews: unknown[] = []
+  serve([], [], { perDay: 5000, sentLast24h: 0 })
+  worker.use(
+    handleSiteIntegrationsList({ body: [TELEGRAM_INTEGRATION] }),
+    handleSiteSegmentsPreview(async ({ request }) => {
+      const body = await request.json()
+      previews.push(body)
+      return HttpResponse.json({ count: 50_000, recipients: body.integrationId ? 12_000 : 100 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+
+  await screen.getByRole('button', { name: 'Continue' }).click()
+  await expect.poll(() => previews).toEqual([{ channel: 'telegram' }])
+  await expect.element(screen.getByText(/Send cap/)).not.toBeInTheDocument()
+  await screen.getByRole('combobox', { name: 'Send through' }).click()
+  await screen.getByRole('option', { name: 'News bot' }).click()
+
+  await expect
+    .element(screen.getByText(/12,000 contacts.*Send cap.*about 2 days/))
+    .toBeInTheDocument()
+  expect(previews).toEqual([{ channel: 'telegram' }, { channel: 'telegram', integrationId: '2' }])
+})

@@ -1682,7 +1682,8 @@ export const zSitePresetResource = z.object({
  * Result of a segment preview: how many deliverable contacts match
  */
 export const zSitePreviewSegmentResult = z.object({
-  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  recipients: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
 });
 
 /**
@@ -3694,7 +3695,9 @@ export const zSiteCreateSegmentInput = z.object({
  * Request body for previewing a condition's segment
  */
 export const zSitePreviewSegmentInput = z.object({
-  condition: z.exactOptional(zSiteConditionGroup)
+  condition: z.exactOptional(zSiteConditionGroup),
+  channel: z.exactOptional(zBroadcastChannel),
+  integrationId: z.exactOptional(zEntityId.nullable())
 });
 
 /**

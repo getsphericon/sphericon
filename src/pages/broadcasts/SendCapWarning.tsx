@@ -7,13 +7,17 @@ import {
   siteSegmentsPreviewOptions,
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteSegmentResource } from '../../generated/site/types.gen.ts'
+import type { BroadcastChannel, SiteSegmentResource } from '../../generated/site/types.gen.ts'
 import { sendCapDays } from './sendCapDays.ts'
 
 interface SendCapWarningProps {
   workspaceId: string
   segmentId: string | null | undefined
   segments: SiteSegmentResource[] | undefined
+  // A Channel whose audience is narrower than the Segment's match (Telegram: only the Contacts
+  // with a Binding on the bot): the count is then the recipients the Broadcast would take through
+  // the Integration, "" being the Channel's default.
+  reach?: { channel: BroadcastChannel; integrationId: string }
 }
 
 // Warns that a Broadcast to more contacts than the Send cap (ADR 0067) lets out within a day goes
@@ -28,9 +32,9 @@ export function SendCapWarning(props: SendCapWarningProps) {
 }
 
 // The audience is the segment preview's count of the chosen Segment, or of all contacts for a blank
-// one; nothing is asked, and nothing renders, while the Workspace has no Send cap or the audience
+// one, or its recipients on the Channel the Broadcast is for; nothing is asked, and nothing renders, while the Workspace has no Send cap or the audience
 // goes out within 24 hours.
-function Warning({ workspaceId, segmentId, segments }: SendCapWarningProps) {
+function Warning({ workspaceId, segmentId, segments, reach }: SendCapWarningProps) {
   const { t } = useTranslation()
   const { data: workspaces } = useSuspenseQuery(siteWorkspacesListOptions())
   const sendCap = workspaces.find((w) => w.id === workspaceId)?.sendCap
@@ -42,10 +46,14 @@ function Warning({ workspaceId, segmentId, segments }: SendCapWarningProps) {
   const preview = useQuery({
     ...siteSegmentsPreviewOptions({
       path: { workspaceId },
-      body: condition ? { condition } : {},
+      body: {
+        ...(condition ? { condition } : {}),
+        ...(reach ? { channel: reach.channel } : {}),
+        ...(reach?.integrationId ? { integrationId: reach.integrationId } : {}),
+      },
     }),
     enabled: Boolean(sendCap) && resolved,
-    select: (data) => data.count,
+    select: (data) => (reach ? (data.recipients ?? data.count) : data.count),
   })
 
   const audience = preview.data

@@ -272,3 +272,36 @@ func TestSiteSegmentsUpdateContractRejectsNullCondition(t *testing.T) {
 	assert.Equal(t, "Renamed", updated.Name)
 	assert.Equal(t, stored.Condition, updated.Condition)
 }
+
+// With a channel the preview also says how many of the matching contacts a Broadcast there would
+// take: on Telegram those with an eligible Binding on the routed Integration, not every contact.
+func TestSiteSegmentsPreviewCountsTheRecipientsOfATelegramBroadcast(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	bot := env.ConnectTelegram(t, 7501, "acme_preview_bot")
+	env.BindTelegram(t, bot, fixtures.ContactAliceID, 700001, 1)
+	env.BindTelegram(t, bot, fixtures.ContactAliceID, 700002, 2)
+	env.BindTelegram(t, bot, fixtures.ContactBobID, 700003, 3)
+
+	out, err := c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
+		Channel:       siteapi.NewOptBroadcastChannel(siteapi.BroadcastChannelTelegram),
+		IntegrationId: siteapi.NewOptNilEntityId(idStr(int64(bot.Integration.ID))),
+	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+
+	res, ok := out.(*siteapi.SitePreviewSegmentResult)
+	require.Truef(t, ok, "got %T", out)
+	assert.Equal(t, siteapi.NewOptInt32(2), res.Recipients, "Alice and Bob, whatever the chats each has")
+	assert.Greater(t, res.Count, int32(2), "the Segment matches more contacts than are bound")
+}
+
+func TestSiteSegmentsPreviewLeavesRecipientsOutWithoutAChannel(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
+
+	out := previewOne(t, c, `{"kind":"rule","field":"custom:plan","operator":"eq","value":"preview-pro"}`)
+
+	res, ok := out.(*siteapi.SitePreviewSegmentResult)
+	require.Truef(t, ok, "got %T", out)
+	assert.False(t, res.Recipients.Set)
+}

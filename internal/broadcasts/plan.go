@@ -242,21 +242,47 @@ var ErrNoAudience = errors.New("broadcasts: the audience of the broadcast cannot
 // 0080): on email the Contact's address, on Telegram its Bindings on the Integration the Broadcast
 // routes through, the one it names or the Channel's default. A route with none reaches nobody.
 func destinationOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (eligibility.Destination, error) {
-	switch b.Channel {
+	dest, err := destinationFor(ctx, s, b.Channel, b.IntegrationID)
+	if err != nil {
+		return nil, fmt.Errorf("broadcasts: broadcast %d: %w", b.ID, err)
+	}
+	return dest, nil
+}
+
+// destinationFor is destinationOf for a Channel and the Integration a Broadcast names (nil: the
+// Channel's default), before a Broadcast exists.
+func destinationFor(ctx context.Context, s *ent.Scoped, channel broadcast.Channel, integrationID *int64) (eligibility.Destination, error) {
+	switch channel {
 	case broadcast.ChannelEmail:
 		return eligibility.EmailDestination(), nil
 	case broadcast.ChannelTelegram:
-		integ, err := messaging.Integration(ctx, s, messaging.ChannelTelegram, b.IntegrationID)
+		integ, err := messaging.Integration(ctx, s, messaging.ChannelTelegram, integrationID)
 		if errors.Is(err, messaging.ErrNoProvider) {
 			return eligibility.BindingDestination(eligibility.ChannelTelegram, 0), nil
 		}
 		if err != nil {
-			return nil, fmt.Errorf("broadcasts: broadcast %d integration: %w", b.ID, err)
+			return nil, fmt.Errorf("integration: %w", err)
 		}
 		return eligibility.BindingDestination(eligibility.ChannelTelegram, integ.ID), nil
 	default:
-		return nil, fmt.Errorf("broadcasts: broadcast %d is on channel %q, which has no destination", b.ID, b.Channel)
+		return nil, fmt.Errorf("channel %q has no destination", channel)
 	}
+}
+
+// RecipientsOf is how many of the Contacts that match the Condition cond (a Segment's rule, "" for
+// all) a Broadcast on the Channel would take if it ran now, through the Integration it names (nil:
+// the Channel's default): the audience of its plan, so the Contacts with an eligible Destination on
+// that Channel. It is the audience the plan takes, asked before a Broadcast exists.
+func RecipientsOf(ctx context.Context, s *ent.Scoped, channel broadcast.Channel, integrationID *int64, cond string) (int, error) {
+	dest, err := destinationFor(ctx, s, channel, integrationID)
+	if err != nil {
+		return 0, err
+	}
+	pred, err := condition.ContactPredicate(ctx, s, cond)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %w", ErrNoAudience, err)
+	}
+	return s.Contact().Query().Where(eligibility.Audience(dest, eligibility.SourceBroadcasts), pred).Count(ctx)
 }
 
 // audienceOf is the Contacts the plan of the Broadcast b, which has left draft, takes: the

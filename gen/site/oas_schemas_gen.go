@@ -22173,6 +22173,12 @@ func (s *SitePresetResource) SetParamsSchema(val JsonObject) {
 type SitePreviewSegmentInput struct {
 	// Condition; absent means all contacts.
 	Condition OptSiteConditionGroup `json:"condition"`
+	// The Channel of a Broadcast the audience is asked for. When given, the result also counts the
+	// recipients the Broadcast would take: the matching contacts it could send to now.
+	Channel OptBroadcastChannel `json:"channel"`
+	// The Integration the Broadcast routes through; null or absent is the Channel's default. Only read
+	// with a channel.
+	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetCondition returns the value of Condition.
@@ -22180,9 +22186,29 @@ func (s *SitePreviewSegmentInput) GetCondition() OptSiteConditionGroup {
 	return s.Condition
 }
 
+// GetChannel returns the value of Channel.
+func (s *SitePreviewSegmentInput) GetChannel() OptBroadcastChannel {
+	return s.Channel
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SitePreviewSegmentInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
 // SetCondition sets the value of Condition.
 func (s *SitePreviewSegmentInput) SetCondition(val OptSiteConditionGroup) {
 	s.Condition = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *SitePreviewSegmentInput) SetChannel(val OptBroadcastChannel) {
+	s.Channel = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SitePreviewSegmentInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
 }
 
 // Result of a segment preview: how many deliverable contacts match.
@@ -22190,6 +22216,10 @@ func (s *SitePreviewSegmentInput) SetCondition(val OptSiteConditionGroup) {
 type SitePreviewSegmentResult struct {
 	// Number of active contacts matching the condition.
 	Count int32 `json:"count"`
+	// Number of matching contacts a Broadcast on the asked Channel would take: on email those with a
+	// mailable address, on Telegram those with an eligible Binding on the routed Integration. Absent
+	// unless a channel was given.
+	Recipients OptInt32 `json:"recipients"`
 }
 
 // GetCount returns the value of Count.
@@ -22197,9 +22227,19 @@ func (s *SitePreviewSegmentResult) GetCount() int32 {
 	return s.Count
 }
 
+// GetRecipients returns the value of Recipients.
+func (s *SitePreviewSegmentResult) GetRecipients() OptInt32 {
+	return s.Recipients
+}
+
 // SetCount sets the value of Count.
 func (s *SitePreviewSegmentResult) SetCount(val int32) {
 	s.Count = val
+}
+
+// SetRecipients sets the value of Recipients.
+func (s *SitePreviewSegmentResult) SetRecipients(val OptInt32) {
+	s.Recipients = val
 }
 
 func (*SitePreviewSegmentResult) siteSegmentsPreviewRes() {}
