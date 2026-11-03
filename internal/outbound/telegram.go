@@ -223,7 +223,8 @@ func (a telegramAdapter) send(ctx context.Context, _ sendAs, msg any, to target,
 // classifyTelegram sorts a refusal of the Bot API by whom it concerns (ADR 0079), reading the code
 // and the description together. A 401 is the bot's (a Hold), a 429 the rate (a Deferral of at least
 // retry_after), a deactivated user or a missing chat the chat's (the Binding goes), any other 400
-// the message's own (it fails with Telegram's description). Anything else, a network error or a
+// or 403 the message's own (it fails with Telegram's description). A 403 for a block is the person's
+// opt-out and is left as it came, for the sender to record. Anything else, a network error or a
 // 5xx included, is left as it came: a retryable error.
 func classifyTelegram(err error) error {
 	te, ok := errors.AsType[*messaging.TelegramError](err)
@@ -239,7 +240,8 @@ func classifyTelegram(err error) error {
 	case te.Code == http.StatusForbidden && strings.Contains(desc, "user is deactivated"),
 		te.Code == http.StatusBadRequest && strings.Contains(desc, "chat not found"):
 		return unreachableError{err}
-	case te.Code == http.StatusBadRequest:
+	case te.Code == http.StatusBadRequest,
+		te.Code == http.StatusForbidden && !te.Blocked():
 		return contentError{errors.New(te.Description)}
 	default:
 		return err

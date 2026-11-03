@@ -121,6 +121,9 @@ var (
 	Blocked = Failure{Code: http.StatusForbidden, Description: "Forbidden: bot was blocked by the user"}
 	// Deactivated is a person who deleted their Telegram account.
 	Deactivated = Failure{Code: http.StatusForbidden, Description: "Forbidden: user is deactivated"}
+	// CantInitiate is a chat the bot may not start a conversation in: a 403 that is neither a block
+	// nor a deactivated user.
+	CantInitiate = Failure{Code: http.StatusForbidden, Description: "Forbidden: bot can't initiate conversation with a user"}
 	// ChatNotFound is a chat id the bot cannot resolve.
 	ChatNotFound = Failure{Code: http.StatusBadRequest, Description: "Bad Request: chat not found"}
 	// BadEntities is a text whose formatting Telegram cannot parse.

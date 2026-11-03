@@ -113,6 +113,26 @@ func TestATelegramContentRefusalFailsThatMessageWithTelegramsReason(t *testing.T
 	assert.Equal(t, 1, env.DB.Binding.Query().Where(binding.Destination("555121")).CountX(ctx), "the Binding stays")
 }
 
+// Any other 403 (the bot may not start the conversation) will recur on every attempt: it fails that
+// message with Telegram's description instead of being retried for good.
+func TestATelegramForbiddenThatIsNeitherBlockNorDeactivationFailsTheMessage(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	bot := env.ConnectTelegram(t, 7315, "acme_forbidden_bot")
+	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
+	env.BindTelegram(t, bot, fixtures.ContactBobID, 555141, 555141)
+	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
+	env.Telegram.Fail(telegramtest.SendMessage, telegramtest.CantInitiate)
+
+	err := stepOnce(t, env, stepperWith(env, env.OutboundModule()), runID)
+
+	require.ErrorContains(t, err, "can't initiate conversation")
+	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
+	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
+	assert.Contains(t, *msg.Reason, "can't initiate conversation")
+	assert.Equal(t, 1, env.DB.Binding.Query().Where(binding.Destination("555141")).CountX(ctx), "the Binding stays")
+}
+
 // A deactivated user and a missing chat remove the Binding and record telegram.unbound; the other
 // Binding of the Contact still gets the message, and with none left the step is Skipped
 // no_destination and the sequence goes on.
