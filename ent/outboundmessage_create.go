@@ -371,6 +371,20 @@ func (_c *OutboundMessageCreate) SetNillableTemplateID(v *int64) *OutboundMessag
 	return _c
 }
 
+// SetSubject sets the "subject" field.
+func (_c *OutboundMessageCreate) SetSubject(v string) *OutboundMessageCreate {
+	_c.mutation.SetSubject(v)
+	return _c
+}
+
+// SetNillableSubject sets the "subject" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableSubject(v *string) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetSubject(*v)
+	}
+	return _c
+}
+
 // SetAppOrigin sets the "app_origin" field.
 func (_c *OutboundMessageCreate) SetAppOrigin(v string) *OutboundMessageCreate {
 	_c.mutation.SetAppOrigin(v)
@@ -663,6 +677,10 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 	if value, ok := _c.mutation.AutomationStep(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
 		_node.AutomationStep = &value
+	}
+	if value, ok := _c.mutation.Subject(); ok {
+		_spec.SetField(outboundmessage.FieldSubject, field.TypeString, value)
+		_node.Subject = &value
 	}
 	if value, ok := _c.mutation.AppOrigin(); ok {
 		_spec.SetField(outboundmessage.FieldAppOrigin, field.TypeString, value)
@@ -1256,6 +1274,24 @@ func (u *OutboundMessageUpsert) ClearTemplateID() *OutboundMessageUpsert {
 	return u
 }
 
+// SetSubject sets the "subject" field.
+func (u *OutboundMessageUpsert) SetSubject(v string) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldSubject, v)
+	return u
+}
+
+// UpdateSubject sets the "subject" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateSubject() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldSubject)
+	return u
+}
+
+// ClearSubject clears the value of the "subject" field.
+func (u *OutboundMessageUpsert) ClearSubject() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldSubject)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -1761,6 +1797,27 @@ func (u *OutboundMessageUpsertOne) UpdateTemplateID() *OutboundMessageUpsertOne 
 func (u *OutboundMessageUpsertOne) ClearTemplateID() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearTemplateID()
+	})
+}
+
+// SetSubject sets the "subject" field.
+func (u *OutboundMessageUpsertOne) SetSubject(v string) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetSubject(v)
+	})
+}
+
+// UpdateSubject sets the "subject" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateSubject() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateSubject()
+	})
+}
+
+// ClearSubject clears the value of the "subject" field.
+func (u *OutboundMessageUpsertOne) ClearSubject() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearSubject()
 	})
 }
 
@@ -2435,6 +2492,27 @@ func (u *OutboundMessageUpsertBulk) UpdateTemplateID() *OutboundMessageUpsertBul
 func (u *OutboundMessageUpsertBulk) ClearTemplateID() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearTemplateID()
+	})
+}
+
+// SetSubject sets the "subject" field.
+func (u *OutboundMessageUpsertBulk) SetSubject(v string) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetSubject(v)
+	})
+}
+
+// UpdateSubject sets the "subject" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateSubject() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateSubject()
+	})
+}
+
+// ClearSubject clears the value of the "subject" field.
+func (u *OutboundMessageUpsertBulk) ClearSubject() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearSubject()
 	})
 }
 

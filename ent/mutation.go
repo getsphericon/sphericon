@@ -36283,6 +36283,7 @@ type OutboundMessageMutation struct {
 	captured                   *bool
 	automation_step            *int
 	addautomation_step         *int
+	subject                    *string
 	app_origin                 *string
 	clearedFields              map[string]struct{}
 	workspace                  *int64
@@ -37591,6 +37592,55 @@ func (m *OutboundMessageMutation) ResetTemplateID() {
 	delete(m.clearedFields, outboundmessage.FieldTemplateID)
 }
 
+// SetSubject sets the "subject" field.
+func (m *OutboundMessageMutation) SetSubject(s string) {
+	m.subject = &s
+}
+
+// Subject returns the value of the "subject" field in the mutation.
+func (m *OutboundMessageMutation) Subject() (r string, exists bool) {
+	v := m.subject
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubject returns the old "subject" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldSubject(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubject is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubject requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubject: %w", err)
+	}
+	return oldValue.Subject, nil
+}
+
+// ClearSubject clears the value of the "subject" field.
+func (m *OutboundMessageMutation) ClearSubject() {
+	m.subject = nil
+	m.clearedFields[outboundmessage.FieldSubject] = struct{}{}
+}
+
+// SubjectCleared returns if the "subject" field was cleared in this mutation.
+func (m *OutboundMessageMutation) SubjectCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldSubject]
+	return ok
+}
+
+// ResetSubject resets all changes to the "subject" field.
+func (m *OutboundMessageMutation) ResetSubject() {
+	m.subject = nil
+	delete(m.clearedFields, outboundmessage.FieldSubject)
+}
+
 // SetAppOrigin sets the "app_origin" field.
 func (m *OutboundMessageMutation) SetAppOrigin(s string) {
 	m.app_origin = &s
@@ -37944,7 +37994,7 @@ func (m *OutboundMessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutboundMessageMutation) Fields() []string {
-	fields := make([]string, 0, 27)
+	fields := make([]string, 0, 28)
 	if m.created_at != nil {
 		fields = append(fields, outboundmessage.FieldCreatedAt)
 	}
@@ -38023,6 +38073,9 @@ func (m *OutboundMessageMutation) Fields() []string {
 	if m.template != nil {
 		fields = append(fields, outboundmessage.FieldTemplateID)
 	}
+	if m.subject != nil {
+		fields = append(fields, outboundmessage.FieldSubject)
+	}
 	if m.app_origin != nil {
 		fields = append(fields, outboundmessage.FieldAppOrigin)
 	}
@@ -38086,6 +38139,8 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.IntegrationID()
 	case outboundmessage.FieldTemplateID:
 		return m.TemplateID()
+	case outboundmessage.FieldSubject:
+		return m.Subject()
 	case outboundmessage.FieldAppOrigin:
 		return m.AppOrigin()
 	}
@@ -38149,6 +38204,8 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldIntegrationID(ctx)
 	case outboundmessage.FieldTemplateID:
 		return m.OldTemplateID(ctx)
+	case outboundmessage.FieldSubject:
+		return m.OldSubject(ctx)
 	case outboundmessage.FieldAppOrigin:
 		return m.OldAppOrigin(ctx)
 	}
@@ -38342,6 +38399,13 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTemplateID(v)
 		return nil
+	case outboundmessage.FieldSubject:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubject(v)
+		return nil
 	case outboundmessage.FieldAppOrigin:
 		v, ok := value.(string)
 		if !ok {
@@ -38445,6 +38509,9 @@ func (m *OutboundMessageMutation) ClearedFields() []string {
 	if m.FieldCleared(outboundmessage.FieldTemplateID) {
 		fields = append(fields, outboundmessage.FieldTemplateID)
 	}
+	if m.FieldCleared(outboundmessage.FieldSubject) {
+		fields = append(fields, outboundmessage.FieldSubject)
+	}
 	if m.FieldCleared(outboundmessage.FieldAppOrigin) {
 		fields = append(fields, outboundmessage.FieldAppOrigin)
 	}
@@ -38512,6 +38579,9 @@ func (m *OutboundMessageMutation) ClearField(name string) error {
 		return nil
 	case outboundmessage.FieldTemplateID:
 		m.ClearTemplateID()
+		return nil
+	case outboundmessage.FieldSubject:
+		m.ClearSubject()
 		return nil
 	case outboundmessage.FieldAppOrigin:
 		m.ClearAppOrigin()
@@ -38601,6 +38671,9 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 		return nil
 	case outboundmessage.FieldTemplateID:
 		m.ResetTemplateID()
+		return nil
+	case outboundmessage.FieldSubject:
+		m.ResetSubject()
 		return nil
 	case outboundmessage.FieldAppOrigin:
 		m.ResetAppOrigin()

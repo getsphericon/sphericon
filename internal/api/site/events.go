@@ -20,7 +20,20 @@ func (h *Handlers) SiteEventsList(ctx context.Context, params siteapi.SiteEvents
 		return nil, err
 	}
 
-	return mapper.EventsListPage(page), nil
+	subjects, err := h.eventlog.Subjects(ctx, scoped, page.Items)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.EventsListPage(page)
+	// The page and its items are in the same order.
+	for i, e := range page.Items {
+		if id, ok := eventlog.OutboundMessageID(e); ok {
+			if subject, kept := subjects[id]; kept {
+				res.Items[i].EmailSubject = siteapi.NewOptNilString(subject)
+			}
+		}
+	}
+	return res, nil
 }
 
 // SiteEventsActions returns the distinct event actions in the workspace, sorted —

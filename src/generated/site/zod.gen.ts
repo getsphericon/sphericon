@@ -3062,6 +3062,7 @@ export const zSiteEventResource = z.object({
   email: z.exactOptional(z.string().nullable()),
   action: z.string(),
   properties: z.exactOptional(zJsonObject.nullable()),
+  emailSubject: z.exactOptional(z.string().nullable()),
   occurredAt: zTimestamp,
   createdAt: zTimestamp
 });

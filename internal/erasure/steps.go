@@ -234,7 +234,7 @@ func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purgi
 // their status and timing, so reports keep their totals, but no longer name anyone.
 func anonymizeDelivery(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
 	if _, err := s.OutboundMessage().Update().Where(outboundmessage.ContactID(t.ContactID)).
-		ClearContactID().ClearDestination().Save(ctx); err != nil {
+		ClearContactID().ClearDestination().ClearSubject().Save(ctx); err != nil {
 		return err
 	}
 	if _, err := s.BroadcastRecipient().Update().Where(broadcastrecipient.ContactID(t.ContactID)).
@@ -247,7 +247,7 @@ func anonymizeDelivery(ctx context.Context, s *ent.Scoped, t *Target, _ events.P
 		return nil
 	}
 	_, err := s.OutboundMessage().Update().Where(outboundmessage.DestinationIn(t.Destinations...)).
-		ClearContactID().ClearDestination().Save(ctx)
+		ClearContactID().ClearDestination().ClearSubject().Save(ctx)
 	return err
 }
 

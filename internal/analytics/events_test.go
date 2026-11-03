@@ -68,7 +68,8 @@ func TestEventsReportListsReservedActionsAndLeavesMachineOpensOut(t *testing.T) 
 	rows := eventActions(t, env, fixtures.AcmeID, analytics.Window7Days)
 
 	opened := actionRow(t, rows, "email.opened")
-	assert.Equal(t, 2, opened.Count)
+	// Two opens in the report fixtures and EventOpenedKeptSubject, all of one Contact.
+	assert.Equal(t, 3, opened.Count)
 	assert.Equal(t, 1, opened.Contacts)
 	sent := actionRow(t, rows, "email.sent")
 	assert.Positive(t, sent.Count)

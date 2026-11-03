@@ -4,14 +4,17 @@ import { useTranslation } from 'react-i18next'
 
 import {
   siteAutomationsGetOptions,
+  siteBroadcastsGetOptions,
   siteCustomFieldsListOptions,
   siteTagsListOptions,
 } from '../generated/site/@tanstack/react-query.gen.ts'
 import type { JsonObject, SiteEventResource } from '../generated/site/types.gen.ts'
 import { zSiteTagsListQuery } from '../generated/site/zod.gen.ts'
 import { Route as automationRoute } from '../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
+import { Route as broadcastReportRoute } from '../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as tagsRoute } from '../routes/workspaces/$workspaceId/tags/index.tsx'
 import { boundsOf } from '../utils/bounds.ts'
+import { shortUrl } from '../utils/shortUrl.ts'
 import { EventActionName } from './EventActionName.tsx'
 import { AnchorLink } from './RouterLink.tsx'
 
@@ -48,6 +51,36 @@ export function EventSummary({ workspaceId, event }: Row) {
       return <EnrollmentChange {...row} verb={t(($) => $.eventRows.left)} />
     case 'page.view':
       return <PageView event={event} />
+    case 'email.sent':
+      return <EmailEvent {...row} prefix={t(($) => $.eventRows.wasSent)} />
+    case 'email.delivered':
+      return <EmailEvent {...row} prefix={t(($) => $.eventRows.received)} />
+    case 'email.delayed':
+      return <EmailEvent {...row} prefix={t(($) => $.eventRows.delayed)} />
+    case 'email.dropped':
+      return <EmailEvent {...row} prefix={t(($) => $.eventRows.dropped)} />
+    case 'email.opened':
+      return <EmailEvent {...row} prefix={t(($) => $.eventRows.opened)} />
+    case 'email.unsubscribed':
+      return <EmailEvent {...row} prefix={t(($) => $.eventRows.unsubscribedFrom)} />
+    case 'email.complained':
+      return (
+        <EmailEvent
+          {...row}
+          prefix={t(($) => $.eventRows.marked)}
+          suffix={t(($) => $.eventRows.asSpam)}
+        />
+      )
+    case 'email.bounced': {
+      const byKind: Record<string, string> = {
+        hard: t(($) => $.eventRows.bouncedHard),
+        soft: t(($) => $.eventRows.bouncedSoft),
+      }
+      const kind = text(event.properties, 'bounceKind') ?? ''
+      return <EmailEvent {...row} prefix={byKind[kind] ?? t(($) => $.eventRows.bounced)} />
+    }
+    case 'email.clicked':
+      return <ClickedLink {...row} />
     default:
       return <EventActionName action={event.action} />
   }
@@ -60,6 +93,11 @@ function text(properties: JsonObject | null | undefined, key: string): string | 
     return undefined
   }
   return typeof value === 'string' ? value : JSON.stringify(value)
+}
+
+// subjectOf is the subject of the email an Event is about, undefined when its message kept none.
+function subjectOf(event: SiteEventResource): string | undefined {
+  return event.emailSubject === null || event.emailSubject === '' ? undefined : event.emailSubject
 }
 
 // Verb is the row's verb, its action's code on hover as EventActionName's.
@@ -139,6 +177,96 @@ function EnrollmentChange({ workspaceId, event, verb }: Row & { verb: string }) 
       <AnchorLink to={automationRoute.to} params={{ workspaceId, automationId: automation.id }}>
         {t(($) => $.eventRows.quoted, { name: automation.name })}
       </AnchorLink>
+    </Text>
+  )
+}
+
+// EmailSubject is the subject of the email an Event is about, quoted, a link to the Broadcast or
+// the Automation that sent it while that still exists. A Broadcast or an Automation that is gone,
+// or not loaded yet, leaves the subject plain.
+function EmailSubject({ workspaceId, event, subject }: Row & { subject: string }) {
+  const { t } = useTranslation()
+  const broadcastId = text(event.properties, 'broadcastId')
+  const automationId = text(event.properties, 'automationId')
+  const broadcastQuery = useQuery({
+    ...siteBroadcastsGetOptions({ path: { workspaceId, id: broadcastId ?? '' } }),
+    enabled: broadcastId !== undefined,
+    retry: false,
+  })
+  const automationQuery = useQuery({
+    ...siteAutomationsGetOptions({ path: { workspaceId, id: automationId ?? '' } }),
+    enabled: broadcastId === undefined && automationId !== undefined,
+    retry: false,
+  })
+  const quoted = t(($) => $.eventRows.quoted, { name: subject })
+  if (broadcastQuery.data !== undefined) {
+    return (
+      <AnchorLink
+        to={broadcastReportRoute.to}
+        params={{ workspaceId, broadcastId: broadcastQuery.data.id }}
+      >
+        {quoted}
+      </AnchorLink>
+    )
+  }
+  if (automationQuery.data !== undefined) {
+    return (
+      <AnchorLink
+        to={automationRoute.to}
+        params={{ workspaceId, automationId: automationQuery.data.id }}
+      >
+        {quoted}
+      </AnchorLink>
+    )
+  }
+  return quoted
+}
+
+// EmailEvent is the row of an email System event: its verb, the subject the Contact received, and
+// what follows it. An Event whose email kept no subject (sent before it was kept, or erased with
+// the Contact) shows the action's words alone.
+function EmailEvent({
+  workspaceId,
+  event,
+  prefix,
+  suffix,
+}: Row & { prefix: string; suffix?: string }) {
+  const subject = subjectOf(event)
+  if (subject === undefined) {
+    return <EventActionName action={event.action} />
+  }
+  return (
+    <Text span inherit>
+      <Verb action={event.action}>{prefix}</Verb>{' '}
+      <EmailSubject workspaceId={workspaceId} event={event} subject={subject} />
+      {suffix === undefined ? null : ` ${suffix}`}
+    </Text>
+  )
+}
+
+// ClickedLink is the row of a click: the link without its scheme, a long one shortened with the
+// whole one on hover, then the email it was in.
+function ClickedLink({ workspaceId, event }: Row) {
+  const { t } = useTranslation()
+  const subject = subjectOf(event)
+  const url = text(event.properties, 'url')
+  if (subject === undefined || url === undefined) {
+    return <EventActionName action={event.action} />
+  }
+  return (
+    <Text span inherit>
+      <Tooltip label={event.action}>
+        <Text span inherit>
+          {t(($) => $.eventRows.clicked)}
+        </Text>
+      </Tooltip>{' '}
+      <Tooltip label={url}>
+        <Text span inherit>
+          {shortUrl(url)}
+        </Text>
+      </Tooltip>{' '}
+      {t(($) => $.eventRows.in)}{' '}
+      <EmailSubject workspaceId={workspaceId} event={event} subject={subject} />
     </Text>
   )
 }

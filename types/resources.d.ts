@@ -1043,16 +1043,29 @@ export default interface Resources {
       "telegramUnsubscribed": "Unsubscribed from Telegram"
     },
     "eventRows": {
+      "asSpam": "as spam",
+      "bounced": "Bounced:",
+      "bouncedHard": "Bounced (hard):",
+      "bouncedSoft": "Bounced (soft):",
+      "clicked": "Clicked",
       "completed": "Completed",
+      "delayed": "Delayed",
+      "dropped": "Dropped",
       "entered": "Entered",
       "fieldCleared": "Cleared {{field}}",
       "fieldSet": "Set {{field}} to \"{{value}}\"",
+      "in": "in",
       "left": "Left",
+      "marked": "Marked",
+      "opened": "Opened",
       "quoted": "\"{{name}}\"",
       "reachedGoalOf": "Reached the goal of",
+      "received": "Received",
       "tagged": "Tagged",
+      "unsubscribedFrom": "Unsubscribed from",
       "untagged": "Untagged",
-      "visited": "Visited \"{{name}}\""
+      "visited": "Visited \"{{name}}\"",
+      "wasSent": "Was sent"
     },
     "forgotPassword": {
       "backToLogin": "Back to sign in",

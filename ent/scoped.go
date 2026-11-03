@@ -23875,6 +23875,18 @@ func (x *OutboundMessageScopedCreate) SetNillableTemplateID(v *int64) *OutboundM
 	return x
 }
 
+// SetSubject sets the "subject" field.
+func (x *OutboundMessageScopedCreate) SetSubject(v string) *OutboundMessageScopedCreate {
+	x.b.SetSubject(v)
+	return x
+}
+
+// SetNillableSubject sets the "subject" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableSubject(v *string) *OutboundMessageScopedCreate {
+	x.b.SetNillableSubject(v)
+	return x
+}
+
 // SetAppOrigin sets the "app_origin" field.
 func (x *OutboundMessageScopedCreate) SetAppOrigin(v string) *OutboundMessageScopedCreate {
 	x.b.SetAppOrigin(v)
@@ -24360,6 +24372,24 @@ func (u *OutboundMessageScopedUpsert) UpdateTemplateID() *OutboundMessageScopedU
 // ClearTemplateID clears the value of the "template_id" field.
 func (u *OutboundMessageScopedUpsert) ClearTemplateID() *OutboundMessageScopedUpsert {
 	u.u.SetNull(outboundmessage.FieldTemplateID)
+	return u
+}
+
+// SetSubject sets the "subject" field.
+func (u *OutboundMessageScopedUpsert) SetSubject(v string) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldSubject, v)
+	return u
+}
+
+// UpdateSubject sets the "subject" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateSubject() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldSubject)
+	return u
+}
+
+// ClearSubject clears the value of the "subject" field.
+func (u *OutboundMessageScopedUpsert) ClearSubject() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldSubject)
 	return u
 }
 
@@ -24872,6 +24902,24 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableTemplateID(v *int64) *Outbou
 // ClearTemplateID clears the value of the "template_id" field.
 func (x *OutboundMessageScopedUpdateOne) ClearTemplateID() *OutboundMessageScopedUpdateOne {
 	x.b.ClearTemplateID()
+	return x
+}
+
+// SetSubject sets the "subject" field.
+func (x *OutboundMessageScopedUpdateOne) SetSubject(v string) *OutboundMessageScopedUpdateOne {
+	x.b.SetSubject(v)
+	return x
+}
+
+// SetNillableSubject sets the "subject" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableSubject(v *string) *OutboundMessageScopedUpdateOne {
+	x.b.SetNillableSubject(v)
+	return x
+}
+
+// ClearSubject clears the value of the "subject" field.
+func (x *OutboundMessageScopedUpdateOne) ClearSubject() *OutboundMessageScopedUpdateOne {
+	x.b.ClearSubject()
 	return x
 }
 
@@ -25432,6 +25480,24 @@ func (x *OutboundMessageScopedUpdate) SetNillableTemplateID(v *int64) *OutboundM
 // ClearTemplateID clears the value of the "template_id" field.
 func (x *OutboundMessageScopedUpdate) ClearTemplateID() *OutboundMessageScopedUpdate {
 	x.b.ClearTemplateID()
+	return x
+}
+
+// SetSubject sets the "subject" field.
+func (x *OutboundMessageScopedUpdate) SetSubject(v string) *OutboundMessageScopedUpdate {
+	x.b.SetSubject(v)
+	return x
+}
+
+// SetNillableSubject sets the "subject" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableSubject(v *string) *OutboundMessageScopedUpdate {
+	x.b.SetNillableSubject(v)
+	return x
+}
+
+// ClearSubject clears the value of the "subject" field.
+func (x *OutboundMessageScopedUpdate) ClearSubject() *OutboundMessageScopedUpdate {
+	x.b.ClearSubject()
 	return x
 }
 

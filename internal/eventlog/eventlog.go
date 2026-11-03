@@ -16,6 +16,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/orders"
@@ -220,4 +221,46 @@ func (m *Module) ListActions(ctx context.Context, s *ent.Scoped, p pagination.Pa
 			return distinct().Order(ent.Asc(event.FieldAction)).Limit(limit).Offset(offset).
 				Select(event.FieldAction).Strings(ctx)
 		})
+}
+
+// Subjects is the subject each of the Events' emails kept, by Outbound message id: the one the
+// recipient received, merge tags filled. An Event that names no message, or whose message kept no
+// subject (sent before it was kept, or erased with the Contact), has no entry.
+func (m *Module) Subjects(ctx context.Context, s *ent.Scoped, evs []*ent.Event) (map[int64]string, error) {
+	ids := make([]int64, 0, len(evs))
+	for _, e := range evs {
+		if id, ok := OutboundMessageID(e); ok {
+			ids = append(ids, id)
+		}
+	}
+	subjects := map[int64]string{}
+	if len(ids) == 0 {
+		return subjects, nil
+	}
+	rows, err := s.OutboundMessage().Query().
+		Where(outboundmessage.IDIn(ids...), outboundmessage.SubjectNotNil()).
+		Select(outboundmessage.FieldID, outboundmessage.FieldSubject).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range rows {
+		subjects[r.ID] = *r.Subject
+	}
+	return subjects, nil
+}
+
+// OutboundMessageID is the Outbound message an email Event is about, from the id the send or the
+// Delivery notice stamped on it; false for any other Event, whose own property of that name is
+// the customer's.
+func OutboundMessageID(e *ent.Event) (int64, bool) {
+	if !strings.HasPrefix(e.Action, "email.") {
+		return 0, false
+	}
+	switch id := e.Properties["outboundMessageId"].(type) {
+	case float64:
+		return int64(id), id > 0
+	case int64:
+		return id, id > 0
+	}
+	return 0, false
 }

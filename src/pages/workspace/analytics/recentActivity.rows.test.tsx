@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteAutomationsGet,
+  handleSiteBroadcastsGet,
   handleSiteCustomFieldsList,
   handleSiteEventsActions,
   handleSiteEventsList,
@@ -112,6 +113,122 @@ test('a page view names the page by its title, the path when it has none', async
 
   await expect.element(screen.getByText('Visited "Pricing"')).toBeVisible()
   await expect.element(screen.getByText('Visited "/docs"')).toBeVisible()
+})
+
+// An email Event carries the subject its message kept; Broadcast 5 exists, Broadcast 6 is gone.
+const emailEvent = (
+  id: string,
+  action: string,
+  properties: Record<string, unknown>,
+  emailSubject: string | null = 'Welcome to Hexlet',
+) => ({ ...event(id, action, properties), emailSubject })
+
+function serveEmails(...items: ReturnType<typeof emailEvent>[]) {
+  serve(...items)
+  worker.use(
+    handleSiteBroadcastsGet(({ params }) =>
+      params.id === '5'
+        ? HttpResponse.json({
+            id: '5',
+            name: 'Launch',
+            channel: 'email',
+            content: { channel: 'email', subject: 'Welcome {{name}}', body: '<p></p>' },
+            status: 'sent',
+            ...TIMESTAMPS,
+          })
+        : problem(404, 'Not Found'),
+    ),
+  )
+}
+
+test('an email Event names the email by its subject, linked to the Broadcast while it exists', async () => {
+  serveEmails(
+    emailEvent('1', 'email.opened', { broadcastId: 5 }),
+    emailEvent('2', 'email.delivered', { broadcastId: 6 }),
+    emailEvent('3', 'email.sent', { automationId: 7 }),
+    emailEvent('4', 'email.unsubscribed', { broadcastId: 5 }),
+    emailEvent('5', 'email.complained', { broadcastId: 5 }),
+  )
+  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+
+  await expect
+    .element(
+      screen
+        .getByRole('row', { name: /Opened "Welcome to Hexlet"/ })
+        .getByRole('link', { name: '"Welcome to Hexlet"' }),
+    )
+    .toBeVisible()
+  await expect
+    .element(screen.getByRole('row', { name: /Unsubscribed from "Welcome to Hexlet"/ }))
+    .toBeVisible()
+  await expect
+    .element(screen.getByRole('row', { name: /Marked "Welcome to Hexlet" as spam/ }))
+    .toBeVisible()
+  // The Broadcast is gone: the subject stays, plain.
+  const delivered = screen.getByRole('row', { name: /Received "Welcome to Hexlet"/ })
+  await expect.element(delivered).toBeVisible()
+  await expect.element(delivered.getByRole('link')).not.toBeInTheDocument()
+  // An Automation's email is linked to the Automation.
+  await expect
+    .element(
+      screen
+        .getByRole('row', { name: /Was sent "Welcome to Hexlet"/ })
+        .getByRole('link', { name: '"Welcome to Hexlet"' }),
+    )
+    .toBeVisible()
+})
+
+test('a click names its link without the scheme, the whole one on hover, and the email', async () => {
+  serveEmails(
+    emailEvent('1', 'email.clicked', { broadcastId: 5, url: 'https://hexlet.io/courses' }),
+    emailEvent('2', 'email.clicked', {
+      broadcastId: 5,
+      url: 'https://hexlet.io/courses/python/lessons/loops-and-conditions?utm=mail',
+    }),
+  )
+  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+
+  await expect
+    .element(
+      screen.getByRole('row', { name: /Clicked hexlet\.io\/courses in "Welcome to Hexlet"/ }),
+    )
+    .toBeVisible()
+  const long = screen.getByText(/hexlet\.io\/courses\/python.*…/)
+  await expect.element(long).toBeVisible()
+  await long.hover()
+  await expect
+    .element(
+      screen.getByText('https://hexlet.io/courses/python/lessons/loops-and-conditions?utm=mail'),
+    )
+    .toBeVisible()
+})
+
+test('a bounce says whether it was hard or soft', async () => {
+  serveEmails(
+    emailEvent('1', 'email.bounced', { broadcastId: 5, bounceKind: 'hard' }),
+    emailEvent('2', 'email.bounced', { broadcastId: 5, bounceKind: 'soft' }),
+  )
+  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+
+  await expect
+    .element(screen.getByRole('row', { name: /Bounced \(hard\): "Welcome to Hexlet"/ }))
+    .toBeVisible()
+  await expect
+    .element(screen.getByRole('row', { name: /Bounced \(soft\): "Welcome to Hexlet"/ }))
+    .toBeVisible()
+})
+
+test('an email Event whose message kept no subject shows the words of its action', async () => {
+  serveEmails(
+    emailEvent('1', 'email.opened', { broadcastId: 5 }, null),
+    emailEvent('2', 'email.clicked', { broadcastId: 5, url: 'https://hexlet.io/courses' }, null),
+    emailEvent('3', 'email.bounced', { broadcastId: 5, bounceKind: 'hard' }, null),
+  )
+  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+
+  await expect.element(screen.getByText('Opened an email')).toBeVisible()
+  await expect.element(screen.getByText('Clicked a link in an email')).toBeVisible()
+  await expect.element(screen.getByText('Bounced', { exact: true })).toBeVisible()
 })
 
 test('an Event without what its row names shows the words of its action', async () => {

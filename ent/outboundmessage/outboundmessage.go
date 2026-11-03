@@ -67,6 +67,8 @@ const (
 	FieldIntegrationID = "integration_id"
 	// FieldTemplateID holds the string denoting the template_id field in the database.
 	FieldTemplateID = "template_id"
+	// FieldSubject holds the string denoting the subject field in the database.
+	FieldSubject = "subject"
 	// FieldAppOrigin holds the string denoting the app_origin field in the database.
 	FieldAppOrigin = "app_origin"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -183,6 +185,7 @@ var Columns = []string{
 	FieldAutomationStep,
 	FieldIntegrationID,
 	FieldTemplateID,
+	FieldSubject,
 	FieldAppOrigin,
 }
 
@@ -425,6 +428,11 @@ func ByIntegrationID(opts ...sql.OrderTermOption) OrderOption {
 // ByTemplateID orders the results by the template_id field.
 func ByTemplateID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTemplateID, opts...).ToFunc()
+}
+
+// BySubject orders the results by the subject field.
+func BySubject(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSubject, opts...).ToFunc()
 }
 
 // ByAppOrigin orders the results by the app_origin field.

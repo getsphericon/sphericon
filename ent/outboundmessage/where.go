@@ -170,6 +170,11 @@ func TemplateID(v int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldTemplateID, v))
 }
 
+// Subject applies equality check predicate on the "subject" field. It's identical to SubjectEQ.
+func Subject(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldSubject, v))
+}
+
 // AppOrigin applies equality check predicate on the "app_origin" field. It's identical to AppOriginEQ.
 func AppOrigin(v string) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldAppOrigin, v))
@@ -1283,6 +1288,81 @@ func TemplateIDIsNil() predicate.OutboundMessage {
 // TemplateIDNotNil applies the NotNil predicate on the "template_id" field.
 func TemplateIDNotNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotNull(FieldTemplateID))
+}
+
+// SubjectEQ applies the EQ predicate on the "subject" field.
+func SubjectEQ(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldSubject, v))
+}
+
+// SubjectNEQ applies the NEQ predicate on the "subject" field.
+func SubjectNEQ(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldSubject, v))
+}
+
+// SubjectIn applies the In predicate on the "subject" field.
+func SubjectIn(vs ...string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldSubject, vs...))
+}
+
+// SubjectNotIn applies the NotIn predicate on the "subject" field.
+func SubjectNotIn(vs ...string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldSubject, vs...))
+}
+
+// SubjectGT applies the GT predicate on the "subject" field.
+func SubjectGT(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldSubject, v))
+}
+
+// SubjectGTE applies the GTE predicate on the "subject" field.
+func SubjectGTE(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldSubject, v))
+}
+
+// SubjectLT applies the LT predicate on the "subject" field.
+func SubjectLT(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldSubject, v))
+}
+
+// SubjectLTE applies the LTE predicate on the "subject" field.
+func SubjectLTE(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldSubject, v))
+}
+
+// SubjectContains applies the Contains predicate on the "subject" field.
+func SubjectContains(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldContains(FieldSubject, v))
+}
+
+// SubjectHasPrefix applies the HasPrefix predicate on the "subject" field.
+func SubjectHasPrefix(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldHasPrefix(FieldSubject, v))
+}
+
+// SubjectHasSuffix applies the HasSuffix predicate on the "subject" field.
+func SubjectHasSuffix(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldHasSuffix(FieldSubject, v))
+}
+
+// SubjectIsNil applies the IsNil predicate on the "subject" field.
+func SubjectIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldSubject))
+}
+
+// SubjectNotNil applies the NotNil predicate on the "subject" field.
+func SubjectNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldSubject))
+}
+
+// SubjectEqualFold applies the EqualFold predicate on the "subject" field.
+func SubjectEqualFold(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEqualFold(FieldSubject, v))
+}
+
+// SubjectContainsFold applies the ContainsFold predicate on the "subject" field.
+func SubjectContainsFold(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldContainsFold(FieldSubject, v))
 }
 
 // AppOriginEQ applies the EQ predicate on the "app_origin" field.

@@ -1143,6 +1143,7 @@ func (c *ConverterImpl) EventToResource(source *ent.Event) site.SiteEventResourc
 		siteapiSiteEventResource.Email = optNilString((*source).Email)
 		siteapiSiteEventResource.Action = (*source).Action
 		siteapiSiteEventResource.Properties = jsonObject((*source).Properties)
+		// siteapiSiteEventResource.EmailSubject: ignore
 		siteapiSiteEventResource.OccurredAt = timestamp((*source).OccurredAt)
 		siteapiSiteEventResource.CreatedAt = timestamp((*source).CreatedAt)
 	}

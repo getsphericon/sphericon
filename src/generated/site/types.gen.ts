@@ -4115,6 +4115,12 @@ export type SiteEventResource = {
    */
   properties?: JsonObject | null;
   /**
+   * The subject the Contact received on the email the event is about, merge tags filled; null for
+   * an event that is about no email, or whose email kept no subject (sent before it was kept, or
+   * erased with the Contact)
+   */
+  emailSubject?: string | null;
+  /**
    * When the event happened: the time the source gave, or when it was published if it gave none
    */
   occurredAt: Timestamp;
