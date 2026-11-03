@@ -16,16 +16,16 @@ export function RegionalDates({ children }: { children: ReactNode }) {
   const [loaded, setLoaded] = useState('en')
 
   useEffect(() => {
-    let current = true
+    const controller = new AbortController()
     async function load() {
       await loadDayjsLocale(name)
-      if (current) {
+      if (!controller.signal.aborted) {
         setLoaded(name)
       }
     }
     void load()
     return () => {
-      current = false
+      controller.abort()
     }
   }, [name])
 
