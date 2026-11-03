@@ -5377,3 +5377,46 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
+# --- Telegram Events of two Contacts, for the Erasure of one (ADR 0021): its sent, clicked, bound
+# and received Events, and the received Event of another Contact. ---
+- id: 20430 # fixture: EventTelegramErasableSent
+  contact_id: 106
+  email: mason.sql@codebasics.dev
+  action: telegram.sent
+  properties: '{"destination":"801001","integrationId":9}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 20431 # fixture: EventTelegramErasableClicked
+  contact_id: 106
+  email: mason.sql@codebasics.dev
+  action: telegram.clicked
+  properties: '{"url":"https://shop.example/offer?e=mason","integrationId":9}'
+  url: 'https://shop.example/offer?e=mason'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 20432 # fixture: EventTelegramErasableBound
+  contact_id: 106
+  email: mason.sql@codebasics.dev
+  action: telegram.bound
+  properties: '{"integrationId":9}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 20433 # fixture: EventTelegramErasableReceived
+  contact_id: 106
+  email: mason.sql@codebasics.dev
+  action: telegram.received
+  properties: '{"text":"my own words"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 20434 # fixture: EventTelegramBystanderReceived
+  contact_id: 111
+  email: amelia.sql@codebasics.dev
+  action: telegram.received
+  properties: '{"text":"someone else"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'

@@ -9,14 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/erasure"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -36,20 +34,6 @@ func eraseContact(t *testing.T, env *testhelper.TestEnv, contactID int64) {
 		erasure.ByContactID(contactID), erasure.Requester{Kind: erasure.RequesterAPIToken}))
 }
 
-// recordTelegramEvent stores an Event of the Contact as the Event consumer would.
-func recordTelegramEvent(t *testing.T, s *ent.Scoped, contactID int64, action string, props map[string]any) int64 {
-	t.Helper()
-	// test writes: the harness runs no Event consumer, and the stored Event rows are what Erasure acts on.
-	create := s.Event().Create().SetContactID(contactID).SetEmail("bob@example.test").SetAction(action).
-		SetProperties(props).SetOccurredAt(time.Now())
-	if u, ok := props["url"].(string); ok {
-		create.SetURL(u)
-	}
-	saved, err := create.Save(t.Context())
-	require.NoError(t, err)
-	return saved.ID
-}
-
 func TestErasingABoundContactRemovesItsTelegramDataAndKeepsItsOptOut(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
@@ -58,25 +42,22 @@ func TestErasingABoundContactRemovesItsTelegramDataAndKeepsItsOptOut(t *testing.
 	const user = 801001
 	step := telegramStep(bot, `See <a href="`+textLink+`">the offer</a>`)
 	automationID := telegramAutomation(t, env, step)
-	env.BindTelegram(t, bot, fixtures.ContactBobID, user, 1)
-	enrollVia(t, env, automationID, fixtures.ContactBobID)
+	env.BindTelegram(t, bot, fixtures.ContactTelegramErasableID, user, 1)
+	enrollVia(t, env, automationID, fixtures.ContactTelegramErasableID)
 	runSteps(t, env)
 	text, _ := shortPaths(t, env)
 	require.Len(t, text, 1)
 	require.Equal(t, http.StatusFound, follow(t, env, text[0], browserUA).Code)
-	require.NotZero(t, env.DB.StartToken.Query().Where(starttoken.ContactID(fixtures.ContactBobID)).CountX(ctx))
+	require.NotZero(t, env.DB.StartToken.Query().Where(starttoken.ContactID(fixtures.ContactTelegramErasableID)).CountX(ctx))
 
-	sent := recordTelegramEvent(t, s, fixtures.ContactBobID, events.NameTelegramSent, map[string]any{"integrationId": bot.Integration.ID, "destination": "801001"})
-	clicked := recordTelegramEvent(t, s, fixtures.ContactBobID, events.NameTelegramClicked, map[string]any{"url": textLink, "integrationId": bot.Integration.ID})
-	bound := recordTelegramEvent(t, s, fixtures.ContactBobID, events.NameTelegramBound, map[string]any{"integrationId": bot.Integration.ID})
-	received := recordTelegramEvent(t, s, fixtures.ContactBobID, events.NameTelegramReceived, map[string]any{"text": "my own words"})
-	otherReceived := recordTelegramEvent(t, s, fixtures.ContactAliceID, events.NameTelegramReceived, map[string]any{"text": "someone else"})
+	sent, clicked, bound := int64(fixtures.EventTelegramErasableSentID), int64(fixtures.EventTelegramErasableClickedID), int64(fixtures.EventTelegramErasableBoundID)
+	received, otherReceived := int64(fixtures.EventTelegramErasableReceivedID), int64(fixtures.EventTelegramBystanderReceivedID)
 	require.Equal(t, http.StatusOK, env.PostTelegramUpdate(t, bot, sayTG(2, user, "STOP")).Code)
 
-	eraseContact(t, env, fixtures.ContactBobID)
+	eraseContact(t, env, fixtures.ContactTelegramErasableID)
 
-	assert.Zero(t, env.DB.Binding.Query().Where(binding.ContactID(fixtures.ContactBobID)).CountX(ctx), "no Binding")
-	assert.Zero(t, env.DB.StartToken.Query().Where(starttoken.ContactID(fixtures.ContactBobID)).CountX(ctx), "no Start token")
+	assert.Zero(t, env.DB.Binding.Query().Where(binding.ContactID(fixtures.ContactTelegramErasableID)).CountX(ctx), "no Binding")
+	assert.Zero(t, env.DB.StartToken.Query().Where(starttoken.ContactID(fixtures.ContactTelegramErasableID)).CountX(ctx), "no Start token")
 	assert.Equal(t, http.StatusNotFound, follow(t, env, text[0], browserUA).Code, "the short link answers 404")
 	assert.Zero(t, env.DB.TrackedLink.Query().Where(trackedlink.URL(textLink)).CountX(ctx))
 	assert.False(t, env.DB.Event.Query().Where(event.ID(received)).ExistX(ctx), "the person's words are gone")

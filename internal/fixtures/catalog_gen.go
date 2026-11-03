@@ -591,6 +591,14 @@ const (
 	ContactPaymentFailedEmail = "payment.failed@codebasics.dev"
 	// ContactPaymentFailedID is from fixtures/contacts.
 	ContactPaymentFailedID = 133
+	// ContactTelegramBystanderEmail is from fixtures/contacts.
+	ContactTelegramBystanderEmail = "amelia.sql@codebasics.dev"
+	// ContactTelegramBystanderID is from fixtures/contacts.
+	ContactTelegramBystanderID = 111
+	// ContactTelegramErasableEmail is from fixtures/contacts.
+	ContactTelegramErasableEmail = "mason.sql@codebasics.dev"
+	// ContactTelegramErasableID is from fixtures/contacts.
+	ContactTelegramErasableID = 106
 	// ContactUnsubscribedEverythingEmail is from fixtures/contacts.
 	ContactUnsubscribedEverythingEmail = "scarlett.sql@codebasics.dev"
 	// ContactUnsubscribedEverythingID is from fixtures/contacts.
@@ -989,6 +997,38 @@ const (
 	EventRuleVipLiamAction = "rule_vip"
 	// EventRuleVipLiamID is from fixtures/events.
 	EventRuleVipLiamID = 9101
+	// EventTelegramBystanderReceivedAction is from fixtures/events.
+	EventTelegramBystanderReceivedAction = "telegram.received"
+	// EventTelegramBystanderReceivedEmail is from fixtures/events.
+	EventTelegramBystanderReceivedEmail = "amelia.sql@codebasics.dev"
+	// EventTelegramBystanderReceivedID is from fixtures/events.
+	EventTelegramBystanderReceivedID = 20434
+	// EventTelegramErasableBoundAction is from fixtures/events.
+	EventTelegramErasableBoundAction = "telegram.bound"
+	// EventTelegramErasableBoundEmail is from fixtures/events.
+	EventTelegramErasableBoundEmail = "mason.sql@codebasics.dev"
+	// EventTelegramErasableBoundID is from fixtures/events.
+	EventTelegramErasableBoundID = 20432
+	// EventTelegramErasableClickedAction is from fixtures/events.
+	EventTelegramErasableClickedAction = "telegram.clicked"
+	// EventTelegramErasableClickedEmail is from fixtures/events.
+	EventTelegramErasableClickedEmail = "mason.sql@codebasics.dev"
+	// EventTelegramErasableClickedID is from fixtures/events.
+	EventTelegramErasableClickedID = 20431
+	// EventTelegramErasableClickedURL is from fixtures/events.
+	EventTelegramErasableClickedURL = "https://shop.example/offer?e=mason"
+	// EventTelegramErasableReceivedAction is from fixtures/events.
+	EventTelegramErasableReceivedAction = "telegram.received"
+	// EventTelegramErasableReceivedEmail is from fixtures/events.
+	EventTelegramErasableReceivedEmail = "mason.sql@codebasics.dev"
+	// EventTelegramErasableReceivedID is from fixtures/events.
+	EventTelegramErasableReceivedID = 20433
+	// EventTelegramErasableSentAction is from fixtures/events.
+	EventTelegramErasableSentAction = "telegram.sent"
+	// EventTelegramErasableSentEmail is from fixtures/events.
+	EventTelegramErasableSentEmail = "mason.sql@codebasics.dev"
+	// EventTelegramErasableSentID is from fixtures/events.
+	EventTelegramErasableSentID = 20430
 	// EventTieFirstAction is from fixtures/events.
 	EventTieFirstAction = "tie_probe"
 	// EventTieFirstEmail is from fixtures/events.
