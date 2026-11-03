@@ -3,6 +3,7 @@ package outbound
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -33,6 +34,10 @@ type channel interface {
 	// Destination dest, into the message the Channel's adapter sends. A contentError is the
 	// message's own and ends the send as Failed; any other error is retried.
 	render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error)
+	// unreachable drops a target the provider said no longer reaches anyone (an unreachableError
+	// of send): a Channel of Bindings removes the Binding and records that it is gone. It runs in
+	// a transaction of its own, outside the send's claim.
+	unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, to target, messageID int64) error
 }
 
 // target is one place a message goes: dest is its Destination, the key of Send-eligibility and what
@@ -96,6 +101,23 @@ func heldBy(err error) string {
 	}
 	return ""
 }
+
+// deferError is a provider adapter's word that the provider asked for slower calls and said for
+// how long (Telegram's 429 with retry_after): nothing left, the send is deferred by at least wait.
+type deferError struct {
+	wait time.Duration
+	err  error
+}
+
+func (e deferError) Error() string { return "outbound: deferred: " + e.err.Error() }
+func (e deferError) Unwrap() error { return e.err }
+
+// unreachableError is a provider adapter's word that the target reaches no one any more (Telegram's
+// "user is deactivated", "chat not found"): the Binding goes, and the message goes to the others.
+type unreachableError struct{ err error }
+
+func (e unreachableError) Error() string { return "outbound: unreachable: " + e.err.Error() }
+func (e unreachableError) Unwrap() error { return e.err }
 
 // contentError marks a render failure that comes from the message itself (a template that does
 // not render, a link that cannot be rewritten): it is the same on every attempt, so the send ends

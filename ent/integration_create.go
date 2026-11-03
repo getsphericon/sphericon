@@ -253,6 +253,20 @@ func (_c *IntegrationCreate) SetNillableProviderSandbox(v *bool) *IntegrationCre
 	return _c
 }
 
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (_c *IntegrationCreate) SetProviderRefusedAt(v time.Time) *IntegrationCreate {
+	_c.mutation.SetProviderRefusedAt(v)
+	return _c
+}
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (_c *IntegrationCreate) SetNillableProviderRefusedAt(v *time.Time) *IntegrationCreate {
+	if v != nil {
+		_c.SetProviderRefusedAt(*v)
+	}
+	return _c
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (_c *IntegrationCreate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationCreate {
 	_c.mutation.SetProviderQuotaCheckedAt(v)
@@ -599,6 +613,10 @@ func (_c *IntegrationCreate) createSpec() (*Integration, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ProviderSandbox(); ok {
 		_spec.SetField(integration.FieldProviderSandbox, field.TypeBool, value)
 		_node.ProviderSandbox = value
+	}
+	if value, ok := _c.mutation.ProviderRefusedAt(); ok {
+		_spec.SetField(integration.FieldProviderRefusedAt, field.TypeTime, value)
+		_node.ProviderRefusedAt = &value
 	}
 	if value, ok := _c.mutation.ProviderQuotaCheckedAt(); ok {
 		_spec.SetField(integration.FieldProviderQuotaCheckedAt, field.TypeTime, value)
@@ -1029,6 +1047,24 @@ func (u *IntegrationUpsert) UpdateProviderSandbox() *IntegrationUpsert {
 	return u
 }
 
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (u *IntegrationUpsert) SetProviderRefusedAt(v time.Time) *IntegrationUpsert {
+	u.Set(integration.FieldProviderRefusedAt, v)
+	return u
+}
+
+// UpdateProviderRefusedAt sets the "provider_refused_at" field to the value that was provided on create.
+func (u *IntegrationUpsert) UpdateProviderRefusedAt() *IntegrationUpsert {
+	u.SetExcluded(integration.FieldProviderRefusedAt)
+	return u
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (u *IntegrationUpsert) ClearProviderRefusedAt() *IntegrationUpsert {
+	u.SetNull(integration.FieldProviderRefusedAt)
+	return u
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (u *IntegrationUpsert) SetProviderQuotaCheckedAt(v time.Time) *IntegrationUpsert {
 	u.Set(integration.FieldProviderQuotaCheckedAt, v)
@@ -1449,6 +1485,27 @@ func (u *IntegrationUpsertOne) SetProviderSandbox(v bool) *IntegrationUpsertOne 
 func (u *IntegrationUpsertOne) UpdateProviderSandbox() *IntegrationUpsertOne {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.UpdateProviderSandbox()
+	})
+}
+
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (u *IntegrationUpsertOne) SetProviderRefusedAt(v time.Time) *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetProviderRefusedAt(v)
+	})
+}
+
+// UpdateProviderRefusedAt sets the "provider_refused_at" field to the value that was provided on create.
+func (u *IntegrationUpsertOne) UpdateProviderRefusedAt() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateProviderRefusedAt()
+	})
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (u *IntegrationUpsertOne) ClearProviderRefusedAt() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.ClearProviderRefusedAt()
 	})
 }
 
@@ -2044,6 +2101,27 @@ func (u *IntegrationUpsertBulk) SetProviderSandbox(v bool) *IntegrationUpsertBul
 func (u *IntegrationUpsertBulk) UpdateProviderSandbox() *IntegrationUpsertBulk {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.UpdateProviderSandbox()
+	})
+}
+
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (u *IntegrationUpsertBulk) SetProviderRefusedAt(v time.Time) *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetProviderRefusedAt(v)
+	})
+}
+
+// UpdateProviderRefusedAt sets the "provider_refused_at" field to the value that was provided on create.
+func (u *IntegrationUpsertBulk) UpdateProviderRefusedAt() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateProviderRefusedAt()
+	})
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (u *IntegrationUpsertBulk) ClearProviderRefusedAt() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.ClearProviderRefusedAt()
 	})
 }
 

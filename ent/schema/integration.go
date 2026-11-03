@@ -105,6 +105,13 @@ func (Integration) Fields() []ent.Field {
 		// verified addresses (SES without production access); a warning, not a hold.
 		field.Bool("provider_sandbox").
 			Default(false),
+		// When a send found the provider refusing the Integration's credentials (Telegram's 401):
+		// the Integration is held (provider_refused) until it is saved again with credentials the
+		// provider accepts, which clears it. Nil is not refused. Unlike provider_enforcement it is
+		// found at send time, not read from the provider.
+		field.Time("provider_refused_at").
+			Optional().
+			Nillable(),
 		// When the quota was last looked up, successfully or not.
 		field.Time("provider_quota_checked_at").
 			Optional().

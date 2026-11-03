@@ -25319,6 +25319,8 @@ func (s *HoldReason) Decode(d *jx.Decoder) error {
 		*s = HoldReasonUnverifiedDomain
 	case HoldReasonProviderStopped:
 		*s = HoldReasonProviderStopped
+	case HoldReasonProviderRefused:
+		*s = HoldReasonProviderRefused
 	default:
 		*s = HoldReason(v)
 	}

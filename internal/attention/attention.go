@@ -43,6 +43,9 @@ const (
 	// KindIntegrationProviderStopped: the provider has stopped the Integration's account, and
 	// every send through it is held (ADR 0067).
 	KindIntegrationProviderStopped Kind = "integrationProviderStopped"
+	// KindIntegrationProviderRefused: a send found the provider refusing the Integration's
+	// credentials, and every send through it is held until it is saved again with working ones.
+	KindIntegrationProviderRefused Kind = "integrationProviderRefused"
 	// KindBroadcastHeld: a Broadcast whose sending is held for a reason a member can fix.
 	KindBroadcastHeld Kind = "broadcastHeld"
 	// KindAutomationCannotSend: an active Automation whose live version has an email step that a
@@ -217,6 +220,9 @@ func (m *Module) integrations(ctx context.Context, s *ent.Scoped, now time.Time)
 	for _, integ := range integs {
 		subject := &Subject{ID: integ.ID, Name: integ.Name}
 		eff := providerlimit.EffectiveOf(integ)
+		if integ.ProviderRefusedAt != nil {
+			items = append(items, Item{Kind: KindIntegrationProviderRefused, Severity: SeverityBlocked, Count: 1, Subject: subject, Since: integ.ProviderRefusedAt})
+		}
 		switch eff.Enforcement {
 		case messaging.EnforcementShutdown:
 			items = append(items, Item{Kind: KindIntegrationProviderStopped, Severity: SeverityBlocked, Count: 1, Subject: subject})

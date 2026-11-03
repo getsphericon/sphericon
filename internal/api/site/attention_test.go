@@ -113,6 +113,18 @@ func TestTheProviderStandingOfAnIntegrationIsAnItem(t *testing.T) {
 	assert.True(t, sandbox)
 }
 
+func TestAnIntegrationWhoseCredentialsTheProviderRefusedIsABlockedItem(t *testing.T) {
+	env := testhelper.Setup(t)
+	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
+		SetProviderRefusedAt(time.Now()).Exec(t.Context()))
+
+	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
+
+	refused, ok := itemAbout(items, siteapi.SiteAttentionKindIntegrationProviderRefused, fixtures.IntegrationAcmeDefaultID)
+	require.True(t, ok)
+	assert.Equal(t, siteapi.SiteAttentionSeverityBlocked, refused.Severity)
+}
+
 // Fixtures: Acme's default Integration sent messages over the last 24 hours.
 func TestASpentProviderLimitIsAnItemAndALimitWithRoomIsNot(t *testing.T) {
 	env := testhelper.Setup(t)

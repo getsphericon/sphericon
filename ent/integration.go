@@ -57,6 +57,8 @@ type Integration struct {
 	ProviderEnforcement *integration.ProviderEnforcement `json:"provider_enforcement,omitempty"`
 	// ProviderSandbox holds the value of the "provider_sandbox" field.
 	ProviderSandbox bool `json:"provider_sandbox,omitempty"`
+	// ProviderRefusedAt holds the value of the "provider_refused_at" field.
+	ProviderRefusedAt *time.Time `json:"provider_refused_at,omitempty"`
 	// ProviderQuotaCheckedAt holds the value of the "provider_quota_checked_at" field.
 	ProviderQuotaCheckedAt *time.Time `json:"provider_quota_checked_at,omitempty"`
 	// ProviderQuotaFailedAt holds the value of the "provider_quota_failed_at" field.
@@ -144,7 +146,7 @@ func (*Integration) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case integration.FieldName, integration.FieldChannel, integration.FieldProvider, integration.FieldConfigEncrypted, integration.FieldPreset, integration.FieldParamsEncrypted, integration.FieldIngestKey, integration.FieldProviderEnforcement:
 			values[i] = new(sql.NullString)
-		case integration.FieldCreatedAt, integration.FieldUpdatedAt, integration.FieldDiscardedAt, integration.FieldProviderQuotaCheckedAt, integration.FieldProviderQuotaFailedAt:
+		case integration.FieldCreatedAt, integration.FieldUpdatedAt, integration.FieldDiscardedAt, integration.FieldProviderRefusedAt, integration.FieldProviderQuotaCheckedAt, integration.FieldProviderQuotaFailedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -287,6 +289,13 @@ func (_m *Integration) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field provider_sandbox", values[i])
 			} else if value.Valid {
 				_m.ProviderSandbox = value.Bool
+			}
+		case integration.FieldProviderRefusedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field provider_refused_at", values[i])
+			} else if value.Valid {
+				_m.ProviderRefusedAt = new(time.Time)
+				*_m.ProviderRefusedAt = value.Time
 			}
 		case integration.FieldProviderQuotaCheckedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -431,6 +440,11 @@ func (_m *Integration) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("provider_sandbox=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ProviderSandbox))
+	builder.WriteString(", ")
+	if v := _m.ProviderRefusedAt; v != nil {
+		builder.WriteString("provider_refused_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	if v := _m.ProviderQuotaCheckedAt; v != nil {
 		builder.WriteString("provider_quota_checked_at=")

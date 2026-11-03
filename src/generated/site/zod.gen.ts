@@ -312,7 +312,8 @@ export const zHoldReason = z.enum([
   'staff_hold',
   'no_integration',
   'unverified_domain',
-  'provider_stopped'
+  'provider_stopped',
+  'provider_refused'
 ]);
 
 /**
@@ -779,6 +780,7 @@ export const zSiteAnalyticsSubscribedPeople = z.object({
 export const zSiteAttentionKind = z.enum([
   'sendingDomainVerificationLost',
   'integrationProviderStopped',
+  'integrationProviderRefused',
   'broadcastHeld',
   'automationCannotSend',
   'deliverabilityWarning',

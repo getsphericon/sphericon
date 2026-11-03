@@ -392,8 +392,9 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	patch.ApplySet(in.Enabled, upd.SetEnabled)
 	if sealed != nil {
 		// The account's standing was read with the old credentials, which may name another
-		// account: it goes until the read the save schedules, so a failed one holds nothing.
-		upd.SetConfigEncrypted(*sealed).ClearProviderEnforcement().SetProviderSandbox(false)
+		// account: it goes until the read the save schedules, so a failed one holds nothing. The
+		// provider's refusal of the old credentials goes with them: new ones are tried at the next send.
+		upd.SetConfigEncrypted(*sealed).ClearProviderEnforcement().ClearProviderRefusedAt().SetProviderSandbox(false)
 	}
 	if inb.apply {
 		if inb.preset == nil {

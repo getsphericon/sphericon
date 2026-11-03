@@ -26,12 +26,16 @@ const (
 	// ProviderStopped: the provider has stopped the account behind the Integration (ADR 0067); it
 	// lifts when a quota read finds it sending again.
 	ProviderStopped Reason = "provider_stopped"
+	// ProviderRefused: the provider refused the Integration's credentials at send time (Telegram's
+	// 401, a revoked bot token); it lifts when the Integration is saved with credentials the
+	// provider accepts.
+	ProviderRefused Reason = "provider_refused"
 )
 
 // all is every reason, Workspace-level first.
 var all = []Reason{
 	WorkspaceSuspended, WorkspacePendingDeletion, StaffHold,
-	NoIntegration, UnverifiedDomain, ProviderStopped,
+	NoIntegration, UnverifiedDomain, ProviderStopped, ProviderRefused,
 }
 
 // Values is every reason, as an ent enum column takes them.
@@ -45,5 +49,5 @@ func (Reason) Values() []string {
 
 // Source is the source-level reasons.
 func Source() []Reason {
-	return []Reason{NoIntegration, UnverifiedDomain, ProviderStopped}
+	return []Reason{NoIntegration, UnverifiedDomain, ProviderStopped, ProviderRefused}
 }

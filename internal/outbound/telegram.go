@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"net/http"
+	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
@@ -136,9 +139,40 @@ func (a telegramAdapter) send(ctx context.Context, _ sendAs, msg any, to target,
 		return messaging.Receipt{}, fmt.Errorf("outbound: %T is no Telegram message", msg)
 	}
 	if _, err := a.bot.SendMessage(ctx, messaging.TelegramMessage{ChatID: to.chat, Text: m.text}); err != nil {
-		return messaging.Receipt{}, err
+		return messaging.Receipt{}, classifyTelegram(err)
 	}
 	return messaging.Receipt{}, nil
+}
+
+// classifyTelegram sorts a refusal of the Bot API by whom it concerns (ADR 0079), reading the code
+// and the description together. A 401 is the bot's (a Hold), a 429 the rate (a Deferral of at least
+// retry_after), a deactivated user or a missing chat the chat's (the Binding goes), any other 400
+// the message's own (it fails with Telegram's description). Anything else, a network error or a
+// 5xx included, is left as it came: a retryable error.
+func classifyTelegram(err error) error {
+	te, ok := errors.AsType[*messaging.TelegramError](err)
+	if !ok {
+		return err
+	}
+	desc := strings.ToLower(te.Description)
+	switch {
+	case te.Code == http.StatusUnauthorized:
+		return holdError{reason: HoldProviderRefused}
+	case te.Code == http.StatusTooManyRequests:
+		return deferError{wait: max(te.RetryAfter, DeferralBackoff), err: err}
+	case te.Code == http.StatusForbidden && strings.Contains(desc, "user is deactivated"),
+		te.Code == http.StatusBadRequest && strings.Contains(desc, "chat not found"):
+		return unreachableError{err}
+	case te.Code == http.StatusBadRequest:
+		return contentError{errors.New(te.Description)}
+	default:
+		return err
+	}
+}
+
+// unreachable removes the Binding of a chat Telegram no longer reaches, and records telegram.unbound.
+func (c telegramChannel) unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, to target, messageID int64) error {
+	return bindings.Remove(ctx, s, pub, integ, to.dest, fmt.Sprintf("%s:gone:%d:%s", events.NameTelegramUnbound, messageID, to.dest))
 }
 
 // publishSent publishes telegram.sent, with the Broadcast or Automation the message came from.

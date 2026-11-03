@@ -818,6 +818,8 @@ func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) external.
 	switch source {
 	case holdreason.NoIntegration:
 		externalapiHoldReason = external.HoldReasonNoIntegration
+	case holdreason.ProviderRefused:
+		externalapiHoldReason = external.HoldReasonProviderRefused
 	case holdreason.ProviderStopped:
 		externalapiHoldReason = external.HoldReasonProviderStopped
 	case holdreason.StaffHold:

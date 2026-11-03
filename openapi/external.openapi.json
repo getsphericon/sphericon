@@ -18754,7 +18754,8 @@
           "staff_hold",
           "no_integration",
           "unverified_domain",
-          "provider_stopped"
+          "provider_stopped",
+          "provider_refused"
         ],
         "description": "Why a send is held (a Hold). A hold is reversible and not a failure: a held Broadcast keeps its\nstatus and its remaining recipients send once it lifts, and an Automation's email steps wait."
       },

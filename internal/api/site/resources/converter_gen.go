@@ -204,6 +204,8 @@ func (c *ConverterImpl) AttentionKindToResource(source attention.Kind) site.Site
 		siteapiSiteAttentionKind = site.SiteAttentionKindEnrollmentsFailed
 	case attention.KindIntegrationProviderProbation:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderProbation
+	case attention.KindIntegrationProviderRefused:
+		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderRefused
 	case attention.KindIntegrationProviderSandbox:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderSandbox
 	case attention.KindIntegrationProviderStopped:
@@ -1154,6 +1156,8 @@ func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) site.Hold
 	switch source {
 	case holdreason.NoIntegration:
 		siteapiHoldReason = site.HoldReasonNoIntegration
+	case holdreason.ProviderRefused:
+		siteapiHoldReason = site.HoldReasonProviderRefused
 	case holdreason.ProviderStopped:
 		siteapiHoldReason = site.HoldReasonProviderStopped
 	case holdreason.StaffHold:

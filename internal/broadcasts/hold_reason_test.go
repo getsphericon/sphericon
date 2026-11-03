@@ -26,7 +26,7 @@ func TestTheBroadcastHoldReasonIsEveryReasonASendIsHeldFor(t *testing.T) {
 
 	assert.ElementsMatch(t, []string{
 		holds.ReasonSuspended, holds.ReasonPendingDeletion, holds.ReasonStaff,
-		outbound.HoldNoIntegration, outbound.HoldUnverifiedDomain, outbound.HoldProviderStopped,
+		outbound.HoldNoIntegration, outbound.HoldUnverifiedDomain, outbound.HoldProviderStopped, outbound.HoldProviderRefused,
 	}, declared)
 }
 

@@ -332,6 +332,32 @@ func bind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Int
 	return announce(ctx, s, pub, bot, events.NameTelegramBound, tok.ContactID, r.DedupKey+"/bound")
 }
 
+// Remove deletes the Binding of the Destination on bot, a chat Telegram says no longer reaches a
+// person (a deactivated user, a chat that does not exist), and records telegram.unbound for the
+// Contact it reached: the Binding's own, or the one its Visitor was identified as. No Binding is
+// nothing to remove. dedup keys the event, so a retried removal records it once. Run it inside the
+// transaction s and pub are bound to.
+func Remove(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, destination, dedup string) error {
+	b, err := s.Binding().Query().
+		Where(binding.IntegrationID(bot.ID), binding.Destination(destination)).
+		WithVisitor().
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("find binding: %w", err)
+	}
+	if err := s.Binding().DeleteOneID(b.ID).Exec(ctx); err != nil {
+		return fmt.Errorf("delete binding: %w", err)
+	}
+	owner := b.ContactID
+	if owner == nil && b.Edges.Visitor != nil {
+		owner = b.Edges.Visitor.ContactID
+	}
+	return announce(ctx, s, pub, bot, events.NameTelegramUnbound, owner, dedup)
+}
+
 func sameOwner(b *ent.Binding, tok *ent.StartToken) bool {
 	return lo.FromPtr(b.ContactID) == lo.FromPtr(tok.ContactID) && lo.FromPtr(b.VisitorID) == lo.FromPtr(tok.VisitorID)
 }

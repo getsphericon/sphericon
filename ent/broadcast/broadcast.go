@@ -199,7 +199,7 @@ func StatusValidator(s Status) error {
 // HoldReasonValidator is a validator for the "hold_reason" field enum values. It is called by the builders before save.
 func HoldReasonValidator(hr holdreason.Reason) error {
 	switch hr {
-	case "workspace_suspended", "workspace_pending_deletion", "staff_hold", "no_integration", "unverified_domain", "provider_stopped":
+	case "workspace_suspended", "workspace_pending_deletion", "staff_hold", "no_integration", "unverified_domain", "provider_stopped", "provider_refused":
 		return nil
 	default:
 		return fmt.Errorf("broadcast: invalid enum value for hold_reason field: %q", hr)

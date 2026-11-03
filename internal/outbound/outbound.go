@@ -84,6 +84,9 @@ const (
 // deferralBackoff is the wait a provider "too fast" or "quota exceeded" error asks
 // for, zero when err is neither.
 func deferralBackoff(err error) time.Duration {
+	if d, ok := errors.AsType[deferError](err); ok {
+		return d.wait
+	}
 	switch {
 	case errors.Is(err, messaging.ErrQuotaExceeded):
 		return QuotaBackoff
@@ -105,6 +108,9 @@ const SkipContactErased = "contact_erased"
 const (
 	HoldNoIntegration   = string(holdreason.NoIntegration)
 	HoldProviderStopped = string(holdreason.ProviderStopped)
+	// HoldProviderRefused: the provider refused the Integration's credentials at send time; saving
+	// the Integration with credentials it accepts lifts it.
+	HoldProviderRefused = string(holdreason.ProviderRefused)
 )
 
 // Reasons a Test send from the System sender is Refused (ADR 0041).
@@ -130,6 +136,8 @@ func Detail(reason string) string {
 		return "sender domain is not a verified sending domain"
 	case HoldProviderStopped:
 		return "the email provider has stopped sending from this account"
+	case HoldProviderRefused:
+		return "the provider refused the integration's credentials: save the integration again with working ones"
 	case RefuseOtherRecipient:
 		return "until a sending domain is verified, a test send can only go to your own address"
 	case RefuseNoSystemSender:
@@ -464,14 +472,23 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	}
 
 	origin := messaging.Origin{OutboundMessageID: msg.ID, Surface: messaging.Surface(req.Kind), Source: req.Source}
-	first, stopped, err := m.deliver(ctx, g, req, rendered, eligible, origin, msg.ID)
+	first, stopped, err := m.deliver(ctx, s, g, req, rendered, eligible, origin, msg.ID)
 	if err != nil {
 		if stopped != nil {
 			m.dropClaim(ctx, s, msg)
 			return *stopped, nil
 		}
+		if ce, ok := errors.AsType[contentError](err); ok {
+			// The provider refused the message itself, as it will on every attempt.
+			return m.finish(ctx, s, msg, outboundmessage.StatusFailed, Failed, ce.Error())
+		}
 		m.release(ctx, s, msg)
 		return Result{}, err
+	}
+	if first == nil {
+		// Every target turned out to reach no one: their Bindings are gone, so the Contact has no
+		// Destination left on the Channel.
+		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, eligibility.ReasonNoDestination)
 	}
 	return m.recordSent(ctx, s, req, msg, g, first.to.dest, first.receipt)
 }
@@ -498,8 +515,10 @@ func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request
 // deliver hands the rendered message to each target in turn and returns the first the provider
 // accepted. A target that fails after one has accepted is not retried, which would send the first
 // again. Before any has: stopped is the Held or Deferral Result the failure means (the caller drops
-// the claim), else the error is retryable.
-func (m *Module) deliver(ctx context.Context, g gateResult, req Request, rendered any, targets []target, origin messaging.Origin, messageID int64) (first *accepted, stopped *Result, err error) {
+// the claim), else the error is retryable, except a contentError, which is the message's own. A
+// target the provider says reaches no one is dropped (its Channel's unreachable) and the message
+// goes on to the others; first is nil when none took it and none failed.
+func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req Request, rendered any, targets []target, origin messaging.Origin, messageID int64) (first *accepted, stopped *Result, err error) {
 	for _, t := range targets {
 		receipt, err := g.route.Sender.send(ctx, g.as, rendered, t, origin)
 		if err == nil {
@@ -508,11 +527,24 @@ func (m *Module) deliver(ctx context.Context, g gateResult, req Request, rendere
 			}
 			continue
 		}
+		if _, gone := errors.AsType[unreachableError](err); gone {
+			if err := m.dropTarget(ctx, s, req, g, t, messageID); err != nil {
+				return first, nil, err
+			}
+			continue
+		}
 		if first != nil {
 			logging.FromContext(ctx).Warn("outbound: a target did not take the message", "message_id", messageID, "err", err)
 			continue
 		}
 		if reason := heldBy(err); reason != "" {
+			if reason == HoldProviderRefused {
+				// The provider refused the credentials: remember it, so every send through the
+				// Integration holds until it is saved again, and none asks the provider meanwhile.
+				if rerr := m.refuse(ctx, s, g.route.Integration); rerr != nil {
+					return nil, nil, rerr
+				}
+			}
 			// The adapter found the source blocked only at the provider (email: the Sending
 			// domain lost verification between prepare and the signer): a hold, not a failure.
 			// The claim is dropped so the same Request can run again.
@@ -526,9 +558,35 @@ func (m *Module) deliver(ctx context.Context, g gateResult, req Request, rendere
 			// retryable error below, which releases the claim for the caller's retry.
 			return nil, &Result{Outcome: Deferral, Cause: providerlimit.CauseProvider, Wait: wait}, err
 		}
+		if isContentError(err) {
+			return nil, nil, err
+		}
 		return nil, nil, fmt.Errorf("outbound: send to %s: %w", t.dest, err)
 	}
 	return first, nil, nil
+}
+
+// dropTarget removes a target its provider said reaches no one, in a transaction of its own.
+func (m *Module) dropTarget(ctx context.Context, s *ent.Scoped, req Request, g gateResult, t target, messageID int64) error {
+	ch, err := m.channel(req.Channel())
+	if err != nil {
+		return err
+	}
+	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		return ch.unreachable(ctx, ts, pub, g.route.Integration, t, messageID)
+	})
+}
+
+// refuse records that the provider refused the Integration's credentials (ProviderRefusedAt), which
+// holds the Integration's Send route (HoldProviderRefused).
+func (m *Module) refuse(ctx context.Context, s *ent.Scoped, integ *ent.Integration) error {
+	if integ == nil {
+		return nil
+	}
+	if err := s.Integration().UpdateOneID(integ.ID).SetProviderRefusedAt(m.now()).Exec(ctx); err != nil {
+		return fmt.Errorf("outbound: hold the refused integration: %w", err)
+	}
+	return nil
 }
 
 // accepted is the first target the provider took a message for.

@@ -2925,7 +2925,8 @@ export const HoldReason = {
   STAFF_HOLD: 'staff_hold',
   NO_INTEGRATION: 'no_integration',
   UNVERIFIED_DOMAIN: 'unverified_domain',
-  PROVIDER_STOPPED: 'provider_stopped'
+  PROVIDER_STOPPED: 'provider_stopped',
+  PROVIDER_REFUSED: 'provider_refused'
 } as const;
 
 /**

@@ -17860,6 +17860,18 @@ func (x *IntegrationScopedCreate) SetNillableProviderSandbox(v *bool) *Integrati
 	return x
 }
 
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (x *IntegrationScopedCreate) SetProviderRefusedAt(v time.Time) *IntegrationScopedCreate {
+	x.b.SetProviderRefusedAt(v)
+	return x
+}
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (x *IntegrationScopedCreate) SetNillableProviderRefusedAt(v *time.Time) *IntegrationScopedCreate {
+	x.b.SetNillableProviderRefusedAt(v)
+	return x
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (x *IntegrationScopedCreate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationScopedCreate {
 	x.b.SetProviderQuotaCheckedAt(v)
@@ -18320,6 +18332,24 @@ func (u *IntegrationScopedUpsert) SetProviderSandbox(v bool) *IntegrationScopedU
 // UpdateProviderSandbox sets the "provider_sandbox" field to the value that was provided on create.
 func (u *IntegrationScopedUpsert) UpdateProviderSandbox() *IntegrationScopedUpsert {
 	u.u.SetExcluded(integration.FieldProviderSandbox)
+	return u
+}
+
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (u *IntegrationScopedUpsert) SetProviderRefusedAt(v time.Time) *IntegrationScopedUpsert {
+	u.u.Set(integration.FieldProviderRefusedAt, v)
+	return u
+}
+
+// UpdateProviderRefusedAt sets the "provider_refused_at" field to the value that was provided on create.
+func (u *IntegrationScopedUpsert) UpdateProviderRefusedAt() *IntegrationScopedUpsert {
+	u.u.SetExcluded(integration.FieldProviderRefusedAt)
+	return u
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (u *IntegrationScopedUpsert) ClearProviderRefusedAt() *IntegrationScopedUpsert {
+	u.u.SetNull(integration.FieldProviderRefusedAt)
 	return u
 }
 
@@ -18804,6 +18834,24 @@ func (x *IntegrationScopedUpdateOne) SetProviderSandbox(v bool) *IntegrationScop
 // SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
 func (x *IntegrationScopedUpdateOne) SetNillableProviderSandbox(v *bool) *IntegrationScopedUpdateOne {
 	x.b.SetNillableProviderSandbox(v)
+	return x
+}
+
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (x *IntegrationScopedUpdateOne) SetProviderRefusedAt(v time.Time) *IntegrationScopedUpdateOne {
+	x.b.SetProviderRefusedAt(v)
+	return x
+}
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (x *IntegrationScopedUpdateOne) SetNillableProviderRefusedAt(v *time.Time) *IntegrationScopedUpdateOne {
+	x.b.SetNillableProviderRefusedAt(v)
+	return x
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (x *IntegrationScopedUpdateOne) ClearProviderRefusedAt() *IntegrationScopedUpdateOne {
+	x.b.ClearProviderRefusedAt()
 	return x
 }
 
@@ -19308,6 +19356,24 @@ func (x *IntegrationScopedUpdate) SetProviderSandbox(v bool) *IntegrationScopedU
 // SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
 func (x *IntegrationScopedUpdate) SetNillableProviderSandbox(v *bool) *IntegrationScopedUpdate {
 	x.b.SetNillableProviderSandbox(v)
+	return x
+}
+
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (x *IntegrationScopedUpdate) SetProviderRefusedAt(v time.Time) *IntegrationScopedUpdate {
+	x.b.SetProviderRefusedAt(v)
+	return x
+}
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (x *IntegrationScopedUpdate) SetNillableProviderRefusedAt(v *time.Time) *IntegrationScopedUpdate {
+	x.b.SetNillableProviderRefusedAt(v)
+	return x
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (x *IntegrationScopedUpdate) ClearProviderRefusedAt() *IntegrationScopedUpdate {
+	x.b.ClearProviderRefusedAt()
 	return x
 }
 

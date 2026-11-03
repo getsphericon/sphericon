@@ -3062,6 +3062,7 @@ const (
 	HoldReasonNoIntegration            HoldReason = "no_integration"
 	HoldReasonUnverifiedDomain         HoldReason = "unverified_domain"
 	HoldReasonProviderStopped          HoldReason = "provider_stopped"
+	HoldReasonProviderRefused          HoldReason = "provider_refused"
 )
 
 // AllValues returns all HoldReason values.
@@ -3073,6 +3074,7 @@ func (HoldReason) AllValues() []HoldReason {
 		HoldReasonNoIntegration,
 		HoldReasonUnverifiedDomain,
 		HoldReasonProviderStopped,
+		HoldReasonProviderRefused,
 	}
 }
 
@@ -3090,6 +3092,8 @@ func (s HoldReason) MarshalText() ([]byte, error) {
 	case HoldReasonUnverifiedDomain:
 		return []byte(s), nil
 	case HoldReasonProviderStopped:
+		return []byte(s), nil
+	case HoldReasonProviderRefused:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -3116,6 +3120,9 @@ func (s *HoldReason) UnmarshalText(data []byte) error {
 		return nil
 	case HoldReasonProviderStopped:
 		*s = HoldReasonProviderStopped
+		return nil
+	case HoldReasonProviderRefused:
+		*s = HoldReasonProviderRefused
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -10581,6 +10588,7 @@ type SiteAttentionKind string
 const (
 	SiteAttentionKindSendingDomainVerificationLost SiteAttentionKind = "sendingDomainVerificationLost"
 	SiteAttentionKindIntegrationProviderStopped    SiteAttentionKind = "integrationProviderStopped"
+	SiteAttentionKindIntegrationProviderRefused    SiteAttentionKind = "integrationProviderRefused"
 	SiteAttentionKindBroadcastHeld                 SiteAttentionKind = "broadcastHeld"
 	SiteAttentionKindAutomationCannotSend          SiteAttentionKind = "automationCannotSend"
 	SiteAttentionKindDeliverabilityWarning         SiteAttentionKind = "deliverabilityWarning"
@@ -10600,6 +10608,7 @@ func (SiteAttentionKind) AllValues() []SiteAttentionKind {
 	return []SiteAttentionKind{
 		SiteAttentionKindSendingDomainVerificationLost,
 		SiteAttentionKindIntegrationProviderStopped,
+		SiteAttentionKindIntegrationProviderRefused,
 		SiteAttentionKindBroadcastHeld,
 		SiteAttentionKindAutomationCannotSend,
 		SiteAttentionKindDeliverabilityWarning,
@@ -10621,6 +10630,8 @@ func (s SiteAttentionKind) MarshalText() ([]byte, error) {
 	case SiteAttentionKindSendingDomainVerificationLost:
 		return []byte(s), nil
 	case SiteAttentionKindIntegrationProviderStopped:
+		return []byte(s), nil
+	case SiteAttentionKindIntegrationProviderRefused:
 		return []byte(s), nil
 	case SiteAttentionKindBroadcastHeld:
 		return []byte(s), nil
@@ -10659,6 +10670,9 @@ func (s *SiteAttentionKind) UnmarshalText(data []byte) error {
 		return nil
 	case SiteAttentionKindIntegrationProviderStopped:
 		*s = SiteAttentionKindIntegrationProviderStopped
+		return nil
+	case SiteAttentionKindIntegrationProviderRefused:
+		*s = SiteAttentionKindIntegrationProviderRefused
 		return nil
 	case SiteAttentionKindBroadcastHeld:
 		*s = SiteAttentionKindBroadcastHeld

@@ -354,6 +354,26 @@ func (_u *IntegrationUpdate) SetNillableProviderSandbox(v *bool) *IntegrationUpd
 	return _u
 }
 
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (_u *IntegrationUpdate) SetProviderRefusedAt(v time.Time) *IntegrationUpdate {
+	_u.mutation.SetProviderRefusedAt(v)
+	return _u
+}
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (_u *IntegrationUpdate) SetNillableProviderRefusedAt(v *time.Time) *IntegrationUpdate {
+	if v != nil {
+		_u.SetProviderRefusedAt(*v)
+	}
+	return _u
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (_u *IntegrationUpdate) ClearProviderRefusedAt() *IntegrationUpdate {
+	_u.mutation.ClearProviderRefusedAt()
+	return _u
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (_u *IntegrationUpdate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationUpdate {
 	_u.mutation.SetProviderQuotaCheckedAt(v)
@@ -731,6 +751,12 @@ func (_u *IntegrationUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if value, ok := _u.mutation.ProviderSandbox(); ok {
 		_spec.SetField(integration.FieldProviderSandbox, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ProviderRefusedAt(); ok {
+		_spec.SetField(integration.FieldProviderRefusedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProviderRefusedAtCleared() {
+		_spec.ClearField(integration.FieldProviderRefusedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ProviderQuotaCheckedAt(); ok {
 		_spec.SetField(integration.FieldProviderQuotaCheckedAt, field.TypeTime, value)
@@ -1279,6 +1305,26 @@ func (_u *IntegrationUpdateOne) SetNillableProviderSandbox(v *bool) *Integration
 	return _u
 }
 
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (_u *IntegrationUpdateOne) SetProviderRefusedAt(v time.Time) *IntegrationUpdateOne {
+	_u.mutation.SetProviderRefusedAt(v)
+	return _u
+}
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (_u *IntegrationUpdateOne) SetNillableProviderRefusedAt(v *time.Time) *IntegrationUpdateOne {
+	if v != nil {
+		_u.SetProviderRefusedAt(*v)
+	}
+	return _u
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (_u *IntegrationUpdateOne) ClearProviderRefusedAt() *IntegrationUpdateOne {
+	_u.mutation.ClearProviderRefusedAt()
+	return _u
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (_u *IntegrationUpdateOne) SetProviderQuotaCheckedAt(v time.Time) *IntegrationUpdateOne {
 	_u.mutation.SetProviderQuotaCheckedAt(v)
@@ -1686,6 +1732,12 @@ func (_u *IntegrationUpdateOne) sqlSave(ctx context.Context) (_node *Integration
 	}
 	if value, ok := _u.mutation.ProviderSandbox(); ok {
 		_spec.SetField(integration.FieldProviderSandbox, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ProviderRefusedAt(); ok {
+		_spec.SetField(integration.FieldProviderRefusedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProviderRefusedAtCleared() {
+		_spec.ClearField(integration.FieldProviderRefusedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ProviderQuotaCheckedAt(); ok {
 		_spec.SetField(integration.FieldProviderQuotaCheckedAt, field.TypeTime, value)

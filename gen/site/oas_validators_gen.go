@@ -862,6 +862,8 @@ func (s HoldReason) Validate() error {
 		return nil
 	case "provider_stopped":
 		return nil
+	case "provider_refused":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -2421,6 +2423,8 @@ func (s SiteAttentionKind) Validate() error {
 	case "sendingDomainVerificationLost":
 		return nil
 	case "integrationProviderStopped":
+		return nil
+	case "integrationProviderRefused":
 		return nil
 	case "broadcastHeld":
 		return nil

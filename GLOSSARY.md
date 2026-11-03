@@ -395,9 +395,11 @@ _Avoid_: Send log, delivery row, email record
 
 **Outcome** (of an Outbound send):
 Either **per-recipient** and final for that destination — _Sent_, _Skipped_ (no Destination on the
-Channel, Suppression, Unsubscribe, or missing Confirmation), or a permanent failure of that one message — or
+Channel, Suppression, Unsubscribe, or missing Confirmation), or a permanent failure of that one message
+(on Telegram, a message the Bot API refuses for its content) — or
 **per-source** and reversible: a **Hold** (Workspace suspension, Staff hold, an unverified
-Sending domain, no Integration, a provider that refuses the customer's account or credentials, or
+Sending domain, no Integration, a provider that has stopped the customer's account, a provider that
+refuses the Integration's credentials (`provider_refused`), or
 a WhatsApp template Meta has paused or disabled) or a **Deferral** (the Integration's Provider
 limit or the Workspace's Send cap is spent, or the provider asks to slow down), after which the
 same messages may still be sent.
@@ -435,7 +437,12 @@ _Avoid_: Throttled, rate-limited (as an outcome), delay
 **Hold**:
 The reversible, per-source Outcome that stops sending without consuming recipients: a Broadcast
 pauses with its remaining recipients pending, Automation Enrollments wait, a Transactional request
-is refused. Distinct from _Skipped_, which is final for one destination.
+is refused. Distinct from _Skipped_, which is final for one destination. The reasons are
+`workspace_suspended`, `workspace_pending_deletion`, `staff_hold`, `no_integration`,
+`unverified_domain`, `provider_stopped` and `provider_refused`. The last is found at send time: the
+provider refused the Integration's credentials (Telegram's 401, a revoked bot token), the Integration
+keeps that standing until it is saved again with credentials the provider accepts, and only the work
+that sends through it waits.
 _Avoid_: Block, failure, ban
 
 **Sent** (vs delivered):

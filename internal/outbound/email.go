@@ -52,6 +52,11 @@ func (emailChannel) targets(_ context.Context, _ *ent.Scoped, _ Request, _ Route
 	return []target{{dest: dest}}, nil
 }
 
+// unreachable: an email address is no Binding, and no email adapter reports one gone.
+func (emailChannel) unreachable(context.Context, *ent.Scoped, events.Publisher, *ent.Integration, target, int64) error {
+	return nil
+}
+
 func (c emailChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error) {
 	msg, err := c.m.renderEmail(ctx, s, req, messageID, dest, ws)
 	if err != nil {

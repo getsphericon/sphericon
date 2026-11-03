@@ -1304,6 +1304,9 @@ func ScopedEntities() []ScopedEntity {
 					b.SetProviderEnforcement(*src.ProviderEnforcement)
 				}
 				b.SetProviderSandbox(src.ProviderSandbox)
+				if src.ProviderRefusedAt != nil {
+					b.SetProviderRefusedAt(*src.ProviderRefusedAt)
+				}
 				if src.ProviderQuotaCheckedAt != nil {
 					b.SetProviderQuotaCheckedAt(*src.ProviderQuotaCheckedAt)
 				}

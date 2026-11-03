@@ -53,6 +53,8 @@ const (
 	FieldProviderEnforcement = "provider_enforcement"
 	// FieldProviderSandbox holds the string denoting the provider_sandbox field in the database.
 	FieldProviderSandbox = "provider_sandbox"
+	// FieldProviderRefusedAt holds the string denoting the provider_refused_at field in the database.
+	FieldProviderRefusedAt = "provider_refused_at"
 	// FieldProviderQuotaCheckedAt holds the string denoting the provider_quota_checked_at field in the database.
 	FieldProviderQuotaCheckedAt = "provider_quota_checked_at"
 	// FieldProviderQuotaFailedAt holds the string denoting the provider_quota_failed_at field in the database.
@@ -128,6 +130,7 @@ var Columns = []string{
 	FieldProviderMaxPerDay,
 	FieldProviderEnforcement,
 	FieldProviderSandbox,
+	FieldProviderRefusedAt,
 	FieldProviderQuotaCheckedAt,
 	FieldProviderQuotaFailedAt,
 }
@@ -343,6 +346,11 @@ func ByProviderEnforcement(opts ...sql.OrderTermOption) OrderOption {
 // ByProviderSandbox orders the results by the provider_sandbox field.
 func ByProviderSandbox(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProviderSandbox, opts...).ToFunc()
+}
+
+// ByProviderRefusedAt orders the results by the provider_refused_at field.
+func ByProviderRefusedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProviderRefusedAt, opts...).ToFunc()
 }
 
 // ByProviderQuotaCheckedAt orders the results by the provider_quota_checked_at field.

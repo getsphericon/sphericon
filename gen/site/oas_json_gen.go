@@ -4693,6 +4693,8 @@ func (s *HoldReason) Decode(d *jx.Decoder) error {
 		*s = HoldReasonUnverifiedDomain
 	case HoldReasonProviderStopped:
 		*s = HoldReasonProviderStopped
+	case HoldReasonProviderRefused:
+		*s = HoldReasonProviderRefused
 	default:
 		*s = HoldReason(v)
 	}
@@ -14800,6 +14802,8 @@ func (s *SiteAttentionKind) Decode(d *jx.Decoder) error {
 		*s = SiteAttentionKindSendingDomainVerificationLost
 	case SiteAttentionKindIntegrationProviderStopped:
 		*s = SiteAttentionKindIntegrationProviderStopped
+	case SiteAttentionKindIntegrationProviderRefused:
+		*s = SiteAttentionKindIntegrationProviderRefused
 	case SiteAttentionKindBroadcastHeld:
 		*s = SiteAttentionKindBroadcastHeld
 	case SiteAttentionKindAutomationCannotSend:

@@ -913,7 +913,8 @@ export const HoldReason = {
   STAFF_HOLD: 'staff_hold',
   NO_INTEGRATION: 'no_integration',
   UNVERIFIED_DOMAIN: 'unverified_domain',
-  PROVIDER_STOPPED: 'provider_stopped'
+  PROVIDER_STOPPED: 'provider_stopped',
+  PROVIDER_REFUSED: 'provider_refused'
 } as const;
 
 /**
@@ -1985,6 +1986,7 @@ export type SiteAttentionItem = {
 export const SiteAttentionKind = {
   SENDING_DOMAIN_VERIFICATION_LOST: 'sendingDomainVerificationLost',
   INTEGRATION_PROVIDER_STOPPED: 'integrationProviderStopped',
+  INTEGRATION_PROVIDER_REFUSED: 'integrationProviderRefused',
   BROADCAST_HELD: 'broadcastHeld',
   AUTOMATION_CANNOT_SEND: 'automationCannotSend',
   DELIVERABILITY_WARNING: 'deliverabilityWarning',

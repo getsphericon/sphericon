@@ -11,6 +11,9 @@ enum SiteAttentionKind {
   /** The provider has stopped the Integration's account: every send through it is held (ADR 0067) */
   integrationProviderStopped,
 
+  /** The provider refused the Integration's credentials at send time (a revoked bot token): every send through it is held until it is saved again with working ones */
+  integrationProviderRefused,
+
   /** A Broadcast is held by a check of its own: no Integration can send it, its Sending domain is
    * not verified, or its provider stopped the account. `holdReason` says which. */
   broadcastHeld,
