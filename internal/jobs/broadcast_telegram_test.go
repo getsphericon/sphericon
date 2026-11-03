@@ -289,3 +289,29 @@ func TestATelegramBroadcastIsHeldWhileItsBotIsRefusedAndResumesWhenTheTokenIsSav
 	require.Len(t, accepted, 1, "the one send the new token made")
 	assert.Equal(t, "600071", accepted[0].String("chat_id"))
 }
+
+// The Provider limit counts bot calls, not messages: a Contact with two chats spends two tokens,
+// so at two a second the next Contact's send waits.
+func TestATelegramContactWithSeveralChatsSpendsTheProviderLimitPerChat(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	bot := env.ConnectTelegram(t, 7406, "acme_paced_bot")
+	env.BindTelegram(t, bot, fixtures.ContactAliceID, 600041, 41)
+	env.BindTelegram(t, bot, fixtures.ContactAliceID, 600042, 42)
+	env.BindTelegram(t, bot, fixtures.ContactBobID, 600043, 43)
+	env.DB.Integration.UpdateOneID(int64(bot.Integration.ID)).SetMaxPerSecond(2).ExecX(ctx)
+	id := telegramBroadcast(t, env, bot, "Paced")
+	mod := env.OutboundModule()
+	ids, err := planAudience(ctx, env.DB, mod, id)
+	require.NoError(t, err)
+	require.Len(t, ids, 2)
+
+	for _, rid := range ids {
+		// The second one is deferred: its error is the retry.
+		if err := deliverRecipient(ctx, env.DB, mod, rid); err != nil {
+			t.Log(err)
+		}
+	}
+
+	assert.ElementsMatch(t, []string{"600041", "600042"}, chatsSentTo(env), "Bob waits: Alice's two chats took the two tokens")
+}

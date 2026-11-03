@@ -526,7 +526,11 @@ func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request
 // others, and first is nil when none took it and none failed.
 func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req Request, rendered any, targets []target, origin messaging.Origin, msg *ent.OutboundMessage) (first *accepted, stopped *Result, blocked bool, err error) {
 	messageID := msg.ID
-	for _, t := range targets {
+	for i, t := range targets {
+		if i > 0 {
+			// The first call is what reserve took a token for.
+			m.spendCall(ctx, s, g.route, messageID)
+		}
 		receipt, err := g.route.Sender.send(ctx, g.as, rendered, t, origin)
 		if err == nil {
 			if first == nil {
