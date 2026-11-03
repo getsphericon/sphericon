@@ -60,7 +60,8 @@ test('the decision targets the workspace the user picked', async () => {
   serve(
     [workspace('AcmeWs01', 'Acme'), workspace('BetaWs02', 'Beta')],
     async ({ request: req }) => {
-      ids.push((await req.json()).workspaceId)
+      const { workspaceId } = await req.json()
+      ids.push(workspaceId)
       return HttpResponse.json({ redirectUrl: '#done' })
     },
   )

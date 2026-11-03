@@ -145,7 +145,7 @@ async function flushEvents(): Promise<void> {
   }
 
   const state = runtime
-  const events = state.pendingEvents.slice()
+  const events = [...state.pendingEvents]
 
   state.sending = true
 
@@ -228,8 +228,8 @@ export function initTracking(config?: TrackerConfig): void {
 export async function identify(payload: IdentifyInput): Promise<void> {
   if (!runtime) {
     if (isBrowser) {
-      const queue = (window._omq ??= [])
-      Array.prototype.push.call(queue, ['identify', payload])
+      window._omq ??= []
+      Array.prototype.push.call(window._omq, ['identify', payload])
     }
 
     return
@@ -283,8 +283,8 @@ function browserContext(): NonNullable<CollectIdentifyInput['context']> {
 export function track(action: string, properties?: EventProperties): void {
   if (!runtime) {
     if (isBrowser) {
-      const queue = (window._omq ??= [])
-      Array.prototype.push.call(queue, ['track', action, properties])
+      window._omq ??= []
+      Array.prototype.push.call(window._omq, ['track', action, properties])
     }
 
     return

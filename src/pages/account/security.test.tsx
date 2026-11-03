@@ -114,9 +114,11 @@ test('enrolls an authenticator app and shows the recovery codes once', async () 
 
   await expect.element(screen.getByText('Save your recovery codes')).toBeInTheDocument()
   await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
-  for (const code of codes) {
-    await expect.element(screen.getByText(code)).toBeInTheDocument()
-  }
+  await Promise.all(
+    codes.map(async (code) => {
+      await expect.element(screen.getByText(code)).toBeInTheDocument()
+    }),
+  )
   expect(calls).toEqual([
     { op: 'start', body: { currentPassword: 'pw-123456' } },
     { op: 'confirm', body: { currentPassword: 'pw-123456', code: '123456' } },

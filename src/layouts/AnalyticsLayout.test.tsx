@@ -18,7 +18,7 @@ test('choosing a window keeps the report and puts the window in the URL', async 
   await screen.getByText('Last 90 days').click()
 
   expect(navigate).toHaveBeenCalledOnce()
-  const target = router.buildLocation(navigate.mock.calls[0]![0])
+  const target = router.buildLocation(navigate.mock.calls[0]?.[0] ?? {})
   expect(target.pathname).toBe('/workspaces/AcmeWs01/analytics/recent-activity')
   expect(target.search).toEqual({ range: '90d' })
 })

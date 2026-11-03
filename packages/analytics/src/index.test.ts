@@ -103,7 +103,8 @@ test('reuses the visitor id from the cookie and persists a new one', async () =>
   first.initTracking(CONFIG)
   first.track('a')
   await vi.advanceTimersByTimeAsync(200)
-  expect((await sentBody('/collect/events')).events[0]?.visitorId).toBe('existing-visitor')
+  const { events: firstEvents } = await sentBody('/collect/events')
+  expect(firstEvents[0]?.visitorId).toBe('existing-visitor')
 
   clearVisitorCookie()
   const second = await loadTracker()
@@ -200,7 +201,8 @@ interface Sent {
 }
 
 async function sentEvents(): Promise<Sent[][]> {
-  return (await sentBodies('/collect/events')).map((b) => b.events)
+  const bodies = await sentBodies('/collect/events')
+  return bodies.map((b) => b.events)
 }
 
 function storedQueue(): Sent[] {
@@ -345,8 +347,10 @@ test('calls made before init are queued on window._omq and replayed by init', as
   initTracking(CONFIG)
   await vi.advanceTimersByTimeAsync(200)
 
-  expect((await sentBody('/collect/identify')).subjectId).toBe('s1')
-  expect((await sentBody('/collect/events')).events[0]?.action).toBe('early')
+  const { subjectId } = await sentBody('/collect/identify')
+  const { events } = await sentBody('/collect/events')
+  expect(subjectId).toBe('s1')
+  expect(events[0]?.action).toBe('early')
 })
 
 test('resolves the config from an init command in the async stub queue', async () => {
@@ -376,8 +380,10 @@ test('commands pushed to window._omq after init are processed immediately', asyn
   )
   await vi.advanceTimersByTimeAsync(200)
 
-  expect((await sentBody('/collect/identify')).email).toBe('p@example.com')
-  expect((await sentBody('/collect/events')).events[0]?.action).toBe('pushed')
+  const { email } = await sentBody('/collect/identify')
+  const { events } = await sentBody('/collect/events')
+  expect(email).toBe('p@example.com')
+  expect(events[0]?.action).toBe('pushed')
 })
 
 test('init without a usable collect key does not start tracking', async () => {
@@ -419,7 +425,8 @@ test('pagehide flushes pending events without waiting for the timer', async () =
   await flushMicrotasks()
 
   // Trackers loaded by earlier tests keep their pagehide listeners, so look for this event only.
-  const sent = (await sentEvents()).flat().filter((e) => e.action === 'leaving')
+  const batches = await sentEvents()
+  const sent = batches.flat().filter((e) => e.action === 'leaving')
   expect(sent).toHaveLength(1)
 })
 
@@ -441,7 +448,8 @@ test('a new visitor id is a UUID kept in the visitor cookie', async () => {
   track('a')
   await vi.advanceTimersByTimeAsync(200)
 
-  const visitorId = (await sentBody('/collect/events')).events[0]?.visitorId
+  const { events } = await sentBody('/collect/events')
+  const visitorId = events[0]?.visitorId
   expect(visitorId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
   expect(document.cookie).toContain(`om_vid=${visitorId}`)
 })
@@ -453,7 +461,8 @@ test('an empty visitor cookie is replaced by a new id', async () => {
   track('a')
   await vi.advanceTimersByTimeAsync(200)
 
-  expect((await sentBody('/collect/events')).events[0]?.visitorId).toMatch(/.+/)
+  const { events } = await sentBody('/collect/events')
+  expect(events[0]?.visitorId).toMatch(/.+/)
 })
 
 test('an untyped snippet queue may omit the config base url and the identify payload', async () => {
