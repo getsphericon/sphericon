@@ -101,12 +101,14 @@ jobs:
     steps:
       # The job is the heaviest on disk (mise toolchains, module and build caches, SCIP indexes) and
       # twice ran the runner out of space ("No space left on device") while restoring the Go cache.
-      # The preinstalled SDKs below are not used by any job.
+      # The preinstalled SDKs below are not used by any job. The removal takes about a minute, so it
+      # runs in the background while the checkout and mise setup go on, and the step before the Go
+      # cache waits for it.
       - name: Free disk space
         run: |
           df -h /
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
-          df -h /
+          nohup sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL > /dev/null 2>&1 &
+          echo "$!" > "$RUNNER_TEMP/free-disk.pid"
 
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -145,6 +147,13 @@ jobs:
       - name: Install dependencies
         if: steps.indexes.outputs.cached != 'true'
         run: pnpm install --frozen-lockfile
+
+      # /proc is read, not `kill -0`: the process runs as root, and a signal check from this user
+      # would fail at once.
+      - name: Wait for the disk space
+        run: |
+          while [ -d "/proc/$(cat "$RUNNER_TEMP/free-disk.pid")" ]; do sleep 1; done
+          df -h /
 
       - name: Cache Go
         if: steps.indexes.outputs.cached != 'true'
