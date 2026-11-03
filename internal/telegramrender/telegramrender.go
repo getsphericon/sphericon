@@ -8,7 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/netip"
 	"net/url"
+	"slices"
 	"strings"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -72,16 +74,92 @@ type Button struct {
 // ErrContent is a Telegram message's image or buttons that Telegram would refuse.
 var ErrContent = errors.New("telegram content")
 
-// CheckImage refuses an image URL that is not an absolute https URL. Blank means no image.
+// CheckImage refuses an image URL that is not an absolute https URL, or that points where the
+// server that fetches it must not go. Blank means no image.
+//
+// The image is fetched by the Bot API server, which a Self-hoster may run inside their own network
+// (SPHERICON_TELEGRAM_BOT_API_URL), so a URL that names an internal address would make that server
+// read it. Refused: userinfo, a `localhost`, `.localhost`, `.local`, `.internal` (and the like) host,
+// a single-label host, a host whose last label is numeric (a decimal or hex spelling of an address)
+// and an IP literal in a loopback, private, link-local, unspecified, CGNAT, unique-local, multicast or
+// reserved range, IPv4-mapped IPv6 included. Resolving a name is out of scope: the Bot API server
+// resolves it, so a public name that points to an internal address is not seen here.
 func CheckImage(imageURL string) error {
-	if strings.TrimSpace(imageURL) == "" {
+	raw := strings.TrimSpace(imageURL)
+	if raw == "" {
 		return nil
 	}
-	u, err := url.Parse(strings.TrimSpace(imageURL))
+	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" || !strings.EqualFold(u.Scheme, "https") {
 		return fmt.Errorf("%w: the image must be an absolute https URL", ErrContent)
 	}
+	if u.User != nil {
+		return fmt.Errorf("%w: the image URL must not carry a user name or password", ErrContent)
+	}
+	if reason := internalHost(u.Hostname()); reason != "" {
+		return fmt.Errorf("%w: the image URL must point to a public host, not %s", ErrContent, reason)
+	}
 	return nil
+}
+
+// internalSuffixes are the names that never resolve on the public internet.
+var internalSuffixes = []string{".localhost", ".local", ".internal", ".localdomain", ".lan", ".home.arpa"}
+
+// blockedPrefixes are the ranges, beyond what netip classifies, that a public image never lives in.
+var blockedPrefixes = []netip.Prefix{
+	netip.MustParsePrefix("0.0.0.0/8"),      // "this network"
+	netip.MustParsePrefix("100.64.0.0/10"),  // CGNAT
+	netip.MustParsePrefix("192.0.0.0/24"),   // IETF protocol assignments
+	netip.MustParsePrefix("198.18.0.0/15"),  // benchmarking
+	netip.MustParsePrefix("240.0.0.0/4"),    // reserved, broadcast
+	netip.MustParsePrefix("::/96"),          // IPv4-compatible, unspecified and ::1
+	netip.MustParsePrefix("64:ff9b::/96"),   // NAT64: reaches the IPv4 address inside
+	netip.MustParsePrefix("64:ff9b:1::/48"), // local-use NAT64
+	netip.MustParsePrefix("2002::/16"),      // 6to4: embeds an IPv4 address
+	netip.MustParsePrefix("fec0::/10"),      // site-local, deprecated
+	netip.MustParsePrefix("100::/64"),       // discard-only
+}
+
+// internalHost says what kind of internal host name is, "" when it may be public.
+func internalHost(host string) string {
+	host = strings.ToLower(strings.TrimSuffix(host, "."))
+	if host == "" {
+		return "an empty host"
+	}
+	if addr, err := netip.ParseAddr(host); err == nil {
+		if blockedAddr(addr) {
+			return "an internal address"
+		}
+		return ""
+	}
+	if host == "localhost" {
+		return "localhost"
+	}
+	for _, suffix := range internalSuffixes {
+		if strings.HasSuffix(host, suffix) {
+			return "an internal name"
+		}
+	}
+	if !strings.Contains(host, ".") {
+		return "a name with a single label"
+	}
+	last := host[strings.LastIndex(host, ".")+1:]
+	if strings.HasPrefix(last, "0x") || strings.Trim(last, "0123456789") == "" {
+		return "a numeric host that is not a plain IP address"
+	}
+	return ""
+}
+
+func blockedAddr(addr netip.Addr) bool {
+	if addr.Zone() != "" {
+		return true
+	}
+	addr = addr.Unmap()
+	if addr.IsLoopback() || addr.IsPrivate() || addr.IsLinkLocalUnicast() || addr.IsLinkLocalMulticast() ||
+		addr.IsInterfaceLocalMulticast() || addr.IsMulticast() || addr.IsUnspecified() {
+		return true
+	}
+	return slices.ContainsFunc(blockedPrefixes, func(p netip.Prefix) bool { return p.Contains(addr) })
 }
 
 // CheckUnsubscribeButton refuses a label of an unsubscribe button longer than MaxUnsubscribeButton

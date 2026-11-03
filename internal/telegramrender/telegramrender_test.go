@@ -1,6 +1,7 @@
 package telegramrender_test
 
 import (
+	"net/netip"
 	"strings"
 	"testing"
 
@@ -125,6 +126,70 @@ func TestCheckImageTakesOnlyAbsoluteHTTPS(t *testing.T) {
 		err := telegramrender.CheckImage(url)
 		assert.Equal(t, ok, err == nil, url)
 	}
+}
+
+// refusedImageURLs are the forms of an internal target the Bot API server must not be sent to.
+var refusedImageURLs = []string{
+	"https://user@cdn.example.com/a.png", "https://user:pw@cdn.example.com/a.png", "https://@cdn.example.com/a.png",
+	"https://localhost/a.png", "https://LOCALHOST:8443/a.png", "https://localhost./a.png", "https://app.localhost/a.png",
+	"https://printer.local/a.png", "https://db.internal/a.png", "https://intranet/a.png", "https://metadata/a.png",
+	"https://127.0.0.1/a.png", "https://127.1.2.3:9000/a.png", "https://10.0.0.5/a.png", "https://172.16.0.1/a.png",
+	"https://172.31.255.255/a.png", "https://192.168.1.1/a.png", "https://169.254.169.254/latest/meta-data",
+	"https://0.0.0.0/a.png", "https://100.64.0.1/a.png", "https://100.127.255.254/a.png", "https://0.1.2.3/a.png",
+	"https://[::1]/a.png", "https://[::]/a.png", "https://[fe80::1]/a.png", "https://[fc00::1]/a.png",
+	"https://[fd12:3456::1]/a.png", "https://[::ffff:127.0.0.1]/a.png", "https://[::ffff:10.0.0.1]/a.png",
+	"https://[::ffff:169.254.169.254]/a.png", "https://[64:ff9b::7f00:1]/a.png", "https://[fe80::1%25eth0]/a.png",
+	"https://2130706433/a.png", "https://0x7f000001/a.png", "https://0x7f.1/a.png", "https://127.1/a.png",
+}
+
+func TestCheckImageRefusesInternalTargets(t *testing.T) {
+	for _, u := range refusedImageURLs {
+		require.ErrorIs(t, telegramrender.CheckImage(u), telegramrender.ErrContent, u)
+	}
+}
+
+func TestCheckImageTakesPublicHosts(t *testing.T) {
+	for _, u := range []string{
+		"https://cdn.example.com/a.png", "https://example.com:8443/a.png?x=1", "https://8.8.8.8/a.png",
+		"https://[2606:4700:4700::1111]/a.png", "https://100.63.255.255/a.png", "https://172.32.0.1/a.png",
+		"https://img.localhost.example.com/a.png", "https://notlocal.com/a.png", "https://CDN.Example.COM./a.png",
+	} {
+		require.NoError(t, telegramrender.CheckImage(u), u)
+	}
+}
+
+func TestCheckImageErrorsAreReadable(t *testing.T) {
+	require.ErrorContains(t, telegramrender.CheckImage("https://localhost/a.png"), "public host")
+	require.ErrorContains(t, telegramrender.CheckImage("https://u:p@example.com/a.png"), "user name")
+}
+
+func TestCheckImageRefusesEveryInternalAddressSpelling(t *testing.T) {
+	blocked := []string{
+		"127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16", "0.0.0.0/8",
+		"100.64.0.0/10", "224.0.0.0/4", "240.0.0.0/4", "::1/128", "fe80::/10", "fc00::/7", "ff00::/8",
+	}
+	rapid.Check(t, func(t *rapid.T) {
+		p := netip.MustParsePrefix(rapid.SampledFrom(blocked).Draw(t, "range"))
+		noise := rapid.SliceOfN(rapid.Byte(), 16, 16).Draw(t, "noise")
+		// Keep the prefix's bits and take the rest from the noise.
+		base := p.Addr().As16()
+		bits := p.Bits()
+		if p.Addr().Is4() {
+			bits += 96
+		}
+		for i := range base {
+			keep := min(max(bits-8*i, 0), 8)
+			mask := ^byte(0) << (8 - keep)
+			base[i] = base[i]&mask | noise[i]&^mask
+		}
+		addr := netip.AddrFrom16(base)
+		hosts := []string{"[" + addr.String() + "]"}
+		if p.Addr().Is4() {
+			hosts = []string{addr.Unmap().String(), "[" + addr.String() + "]"}
+		}
+		host := rapid.SampledFrom(hosts).Draw(t, "form")
+		require.Error(t, telegramrender.CheckImage("https://"+host+"/a.png"), host)
+	})
 }
 
 func TestCheckButtonsRefusesTooManyBlankLabelsAndBadURLs(t *testing.T) {
