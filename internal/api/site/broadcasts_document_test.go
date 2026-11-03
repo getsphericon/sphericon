@@ -23,31 +23,30 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:    "Authored",
-		Subject: siteapi.NewOptString("Hi {{ first_name }}"),
-		Doc:     siteapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
+		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hi {{ first_name }}"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}"))}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", created)
-	assert.Contains(t, res.Body, "Hello {{ first_name }}")
-	assert.True(t, res.Doc.Set && !res.Doc.Null, "the response carries the document")
-	assert.Equal(t, emaildoc.EditorVersion(), res.EditorVersion.Value)
+	assert.Contains(t, testhelper.SiteEmailOf(res).Body, "Hello {{ first_name }}")
+	assert.True(t, testhelper.SiteEmailOf(res).Doc.Set && !testhelper.SiteEmailOf(res).Doc.Null, "the response carries the document")
+	assert.Equal(t, emaildoc.EditorVersion(), testhelper.SiteEmailOf(res).EditorVersion.Value)
 
 	row := env.DB.Broadcast.GetX(ctx, int64(res.ID))
-	assert.Equal(t, res.Body, row.Body)
+	assert.Equal(t, testhelper.SiteEmailOf(res).Body, *row.Body)
 	assert.JSONEq(t, `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello {{ first_name }}"}]}]}`, string(row.Doc))
 	require.NotNil(t, row.EditorVersion)
-	assert.Equal(t, emailrender.SanitizeHTML(row.Body), row.Body, "the stored body survives the sanitizer")
+	assert.Equal(t, emailrender.SanitizeHTML(*row.Body), *row.Body, "the stored body survives the sanitizer")
 
 	// Saving another document rebuilds the body.
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		Doc: siteapi.NewOptEditorDocument(paragraphDoc("Second")),
+		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(paragraphDoc("Second"))}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", updated)
-	assert.Contains(t, upd.Body, "Second")
-	assert.NotContains(t, upd.Body, "Hello")
+	assert.Contains(t, testhelper.SiteEmailOf(upd).Body, "Second")
+	assert.NotContains(t, testhelper.SiteEmailOf(upd).Body, "Hello")
 
 	// A name-only write leaves the document alone.
 	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptString("Renamed")},
@@ -56,16 +55,16 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 	assert.NotEmpty(t, env.DB.Broadcast.GetX(ctx, int64(res.ID)).Doc)
 
 	// A body-only write clears the document and its editor version.
-	cleared, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Body: siteapi.NewOptString("<p>Plain</p>")},
+	cleared, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>Plain</p>")})},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	clr, ok := cleared.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", cleared)
-	assert.False(t, clr.Doc.Set && !clr.Doc.Null, "the response carries no document")
+	assert.False(t, testhelper.SiteEmailOf(clr).Doc.Set && !testhelper.SiteEmailOf(clr).Doc.Null, "the response carries no document")
 	row = env.DB.Broadcast.GetX(ctx, int64(res.ID))
 	assert.Empty(t, row.Doc)
 	assert.Nil(t, row.EditorVersion)
-	assert.Equal(t, "<p>Plain</p>", row.Body)
+	assert.Equal(t, "<p>Plain</p>", *row.Body)
 }
 
 func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
@@ -81,7 +80,8 @@ func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 		"content": jx.Raw(`[{"type":"heading","attrs":{"level":9},"content":[{"type":"text","text":"x"}]}]`),
 	}
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name: "Bad", Doc: siteapi.NewOptEditorDocument(badLevel),
+		Name:    "Bad",
+		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(badLevel)}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	refused, ok := created.(*siteapi.SiteBroadcastsCreateUnprocessableEntity)
@@ -90,8 +90,8 @@ func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 	assert.Equal(t, before, env.DB.Broadcast.Query().CountX(ctx), "nothing is stored")
 
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		Name: siteapi.NewOptString("Renamed"),
-		Doc:  siteapi.NewOptEditorDocument(map[string]jx.Raw{"type": jx.Raw(`"nope"`)}),
+		Name:    siteapi.NewOptString("Renamed"),
+		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(map[string]jx.Raw{"type": jx.Raw(`"nope"`)})}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, updated)
@@ -106,15 +106,14 @@ func TestSiteBroadcastsRefuseABodyAndADocumentTogether(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name: "Both", Body: siteapi.NewOptString("<p>x</p>"),
-		Doc: siteapi.NewOptEditorDocument(paragraphDoc("x")),
+		Name:    "Both",
+		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("x"))}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, created)
 
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		Body: siteapi.NewOptString("<p>x</p>"),
-		Doc:  siteapi.NewOptEditorDocument(paragraphDoc("x")),
+		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("x"))}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, updated)
@@ -129,7 +128,7 @@ func TestSiteBroadcastsWithoutADocumentStayHTMLOnly(t *testing.T) {
 	require.NoError(t, err)
 	res, ok := got.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", got)
-	assert.False(t, res.Doc.Set && !res.Doc.Null)
+	assert.False(t, testhelper.SiteEmailOf(res).Doc.Set && !testhelper.SiteEmailOf(res).Doc.Null)
 	assert.Empty(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Doc)
 }
 

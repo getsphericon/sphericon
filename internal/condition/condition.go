@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/reportday"
 )
@@ -45,6 +46,10 @@ const (
 	// tagField marks a leaf as a Tag condition: field "tag" with operator "has" or
 	// "doesNotHave" and value = the Tag name.
 	tagField = "tag"
+
+	// telegramField marks a leaf as the Telegram condition (ADR 0075): operator "has" or
+	// "doesNotHave", no value.
+	telegramField = "telegram"
 	// triggerFieldPrefix marks a leaf as a test on the triggering Event's own properties:
 	// "trigger:<key>". Valid only in a Rule (RulePredicate); a Segment refuses it.
 	triggerFieldPrefix = "trigger:"
@@ -286,6 +291,8 @@ func (c *compiler) rule(ctx context.Context, r Leaf) (predicate.Contact, error) 
 	switch {
 	case r.Field == tagField:
 		return tagRule(op, r.Value)
+	case r.Field == telegramField:
+		return telegramRule(op)
 	case strings.HasPrefix(r.Field, customFieldPrefix):
 		return c.custom(ctx, strings.TrimPrefix(r.Field, customFieldPrefix), op, r.Value)
 	case strings.HasPrefix(r.Field, triggerFieldPrefix):
@@ -583,6 +590,21 @@ func tagRule(op operator, value string) (predicate.Contact, error) {
 		p = contact.Not(p)
 	}
 	return p, nil
+}
+
+// telegramRule is the subject has (or lacks) a Binding on a Telegram Integration of the Workspace,
+// its own or one of its Visitors'. Evaluated live; a Binding exists only for a Telegram Integration
+// and goes with it, so the existence of one is the test.
+func telegramRule(op operator) (predicate.Contact, error) {
+	p := contact.Or(contact.HasBindings(), contact.HasVisitorsWith(visitor.HasBindings()))
+	switch op {
+	case opHas:
+		return p, nil
+	case opDoesNotHave:
+		return contact.Not(p), nil
+	default:
+		return nil, fmt.Errorf("unsupported operator %q for telegram field", op)
+	}
 }
 
 // custom is a condition on one Custom field. The key must be in the Workspace's

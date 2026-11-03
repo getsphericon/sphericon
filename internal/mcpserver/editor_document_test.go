@@ -122,7 +122,7 @@ func TestMCPInvalidAndHostileDocumentsAreRefusedAndStoreNothing(t *testing.T) {
 	assert.Contains(t, text(t, res), "422")
 	assert.Contains(t, text(t, res), "absolute URL")
 
-	res = call(t, s, "broadcasts_create", map[string]any{"name": "Hostile", "doc": map[string]any{"type": "nope"}})
+	res = call(t, s, "broadcasts_create", map[string]any{"name": "Hostile", "content": map[string]any{"channel": "email", "doc": map[string]any{"type": "nope"}}})
 	require.True(t, res.IsError)
 	assert.Contains(t, text(t, res), "422")
 

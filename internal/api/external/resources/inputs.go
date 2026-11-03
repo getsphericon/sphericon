@@ -6,6 +6,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/suppression"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/automations"
@@ -20,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -49,6 +52,8 @@ import (
 // goverter:extend maxPerSecondPatch
 // goverter:extend maxPerDayPatch
 // goverter:extend listPatch
+// goverter:extend buttonsPtrIn
+// goverter:extend buttonsPatch
 // goverter:extend stringIn
 // goverter:extend stringPtrIn
 // goverter:extend nilStringPtrIn
@@ -80,13 +85,24 @@ import (
 // goverter:extend nilObjectIn
 // goverter:extend nilObjectPatch
 // goverter:extend customFieldTypePatch
+// goverter:extend broadcastContentIn
+// goverter:extend broadcastContentPatch
+// goverter:extend broadcastChannelPtrIn
 type Inputs interface {
 	// goverter:ignore Prepared
 	TemplateCreate(source *externalapi.CreateTemplateInput) templates.CreateInput
 	TemplateUpdate(source *externalapi.UpdateTemplateInput) templates.UpdateInput
 
-	BroadcastCreate(source *externalapi.CreateBroadcastInput) broadcasts.CreateInput
-	BroadcastUpdate(source *externalapi.UpdateBroadcastInput) broadcasts.UpdateInput
+	BroadcastCreate(source *externalapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
+	BroadcastUpdate(source *externalapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)
+	// The arms of a Broadcast's content, which broadcastContentIn and broadcastContentPatch pick.
+	EmailBroadcastContentIn(source externalapi.EmailBroadcastContentInput) broadcasts.EmailContentInput
+	EmailBroadcastContentPatch(source externalapi.EmailBroadcastContentInput) broadcasts.EmailContentPatch
+	TelegramBroadcastContentIn(source externalapi.TelegramBroadcastContentInput) broadcasts.TelegramContentInput
+	TelegramBroadcastContentPatch(source externalapi.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch
+	// The list's filter: the API lists every status.
+	// goverter:ignore Statuses
+	BroadcastsListFilter(source externalapi.BroadcastsListParams) broadcasts.ListFilter
 
 	WebhookCreate(source *externalapi.CreateWebhookInput) webhooks.CreateInput
 	WebhookUpdate(source *externalapi.UpdateWebhookInput) webhooks.UpdateInput
@@ -124,6 +140,7 @@ type Inputs interface {
 	// goverter:ignore EditorVersion
 	AutomationStep(source externalapi.AutomationStep) automationsteps.Step
 	AutomationSteps(source []externalapi.AutomationStep) []automationsteps.Step
+	TelegramButton(source externalapi.TelegramButton) telegramrender.Button
 	AutomationCreate(source *externalapi.CreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *externalapi.UpdateAutomationInput) automations.UpdateInput
 
@@ -155,6 +172,11 @@ type Inputs interface {
 	AutomationStepType(source externalapi.AutomationStepType) automationsteps.Kind
 	// goverter:enum:transform value
 	RuleActionType(source externalapi.RuleActionType) rules.ActionType
+	// goverter:enum:transform value
+	BroadcastChannel(source externalapi.BroadcastChannel) broadcast.Channel
+	// goverter:enum:map ConsentChannelEmail ChannelEmail
+	// goverter:enum:map ConsentChannelTelegram ChannelTelegram
+	SuppressionChannel(source externalapi.ConsentChannel) suppression.Channel
 }
 
 // goverter:context backfill
@@ -218,6 +240,23 @@ func listPtrIn(list []string) *[]string {
 func timestampIn(o externalapi.OptNilTimestamp) time.Time {
 	v, _ := o.Get()
 	return time.Time(v)
+}
+
+// buttonsPtrIn is the link buttons a Telegram Broadcast's update replaces: an omitted list (nil)
+// keeps the stored ones, an empty list removes them.
+func buttonsPtrIn(c Inputs, list []externalapi.TelegramButton) *[]telegramrender.Button {
+	if list == nil {
+		return nil
+	}
+	out := make([]telegramrender.Button, len(list))
+	for i, b := range list {
+		out[i] = c.TelegramButton(b)
+	}
+	return &out
+}
+
+func buttonsPatch(c Inputs, list []externalapi.TelegramButton) patch.Field[[]telegramrender.Button] {
+	return patch.FromPtr(buttonsPtrIn(c, list))
 }
 
 func timestampPtrIn(o externalapi.OptNilTimestamp) *time.Time {
@@ -302,6 +341,48 @@ func intPtr[T ~int32](o interface{ Get() (T, bool) }) *int {
 	return &n
 }
 
+// errUnknownChannel: content whose channel the contract does not know, which the decoder never
+// lets through.
+var errUnknownChannel = errors.New("unsupported channel")
+
+// broadcastContentIn maps a Broadcast's content union onto the module's input of its Channel; a
+// oneOf is beyond goverter, so only the switch is written here.
+func broadcastContentIn(c Inputs, in externalapi.BroadcastContentInput) (broadcasts.ContentInput, error) {
+	switch in.OneOf.Type {
+	case externalapi.EmailBroadcastContentInputBroadcastContentInputSum:
+		return c.EmailBroadcastContentIn(in.OneOf.EmailBroadcastContentInput), nil
+	case externalapi.TelegramBroadcastContentInputBroadcastContentInputSum:
+		return c.TelegramBroadcastContentIn(in.OneOf.TelegramBroadcastContentInput), nil
+	default:
+		return nil, errUnknownChannel
+	}
+}
+
+// broadcastContentPatch is the content of an update: absent keeps the content.
+func broadcastContentPatch(c Inputs, o externalapi.OptBroadcastContentInput) (broadcasts.ContentPatch, error) {
+	in, ok := o.Get()
+	if !ok {
+		return nil, nil
+	}
+	switch in.OneOf.Type {
+	case externalapi.EmailBroadcastContentInputBroadcastContentInputSum:
+		return c.EmailBroadcastContentPatch(in.OneOf.EmailBroadcastContentInput), nil
+	case externalapi.TelegramBroadcastContentInputBroadcastContentInputSum:
+		return c.TelegramBroadcastContentPatch(in.OneOf.TelegramBroadcastContentInput), nil
+	default:
+		return nil, errUnknownChannel
+	}
+}
+
+// broadcastChannelPtrIn is the Channel a list is narrowed to: nil for every Channel.
+func broadcastChannelPtrIn(c Inputs, o externalapi.OptBroadcastChannel) *broadcast.Channel {
+	v, ok := o.Get()
+	if !ok {
+		return nil
+	}
+	return new(c.BroadcastChannel(v))
+}
+
 // errUnknownProvider: a config whose kind the contract does not know, which the decoder never
 // lets through.
 var errUnknownProvider = errors.New("unsupported provider")
@@ -324,6 +405,8 @@ func integrationConfigIn(in externalapi.IntegrationConfigInput) (integrations.Co
 		}}, nil
 	case externalapi.InboxConfigInputIntegrationConfigInputSum:
 		return integrations.ConfigInput{Inbox: &integrations.InboxConfig{}}, nil
+	case externalapi.TelegramConfigInputIntegrationConfigInputSum:
+		return integrations.ConfigInput{Telegram: &integrations.TelegramConfig{Token: in.OneOf.TelegramConfigInput.Token}}, nil
 	}
 	return integrations.ConfigInput{}, errUnknownProvider
 }

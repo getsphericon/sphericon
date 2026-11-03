@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
+	"github.com/getsphericon/sphericon/ent/suppression"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
@@ -28,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -57,6 +59,8 @@ import (
 // goverter:extend maxPerSecondPatch
 // goverter:extend maxPerDayPatch
 // goverter:extend listPatch
+// goverter:extend buttonsPtrIn
+// goverter:extend buttonsPatch
 // goverter:extend stringIn
 // goverter:extend stringPtrIn
 // goverter:extend nilStringPtrIn
@@ -88,13 +92,24 @@ import (
 // goverter:extend nilObjectPatch
 // goverter:extend signupSourcePtrIn
 // goverter:extend customFieldTypePatch
+// goverter:extend broadcastContentIn
+// goverter:extend broadcastContentPatch
+// goverter:extend broadcastChannelPtrIn
 type Inputs interface {
 	// goverter:ignore Prepared
 	TemplateCreate(source *siteapi.CreateTemplateInput) templates.CreateInput
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) templates.UpdateInput
 
-	BroadcastCreate(source *siteapi.CreateBroadcastInput) broadcasts.CreateInput
-	BroadcastUpdate(source *siteapi.UpdateBroadcastInput) broadcasts.UpdateInput
+	BroadcastCreate(source *siteapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
+	BroadcastUpdate(source *siteapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)
+	// The arms of a Broadcast's content, which broadcastContentIn and broadcastContentPatch pick.
+	EmailBroadcastContentIn(source siteapi.EmailBroadcastContentInput) broadcasts.EmailContentInput
+	EmailBroadcastContentPatch(source siteapi.EmailBroadcastContentInput) broadcasts.EmailContentPatch
+	TelegramBroadcastContentIn(source siteapi.TelegramBroadcastContentInput) broadcasts.TelegramContentInput
+	TelegramBroadcastContentPatch(source siteapi.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch
+	// The list's filter; the statuses go member by member (BroadcastStatuses).
+	// goverter:map Status Statuses
+	BroadcastsListFilter(source siteapi.SiteBroadcastsListParams) broadcasts.ListFilter
 
 	WebhookCreate(source *siteapi.CreateWebhookInput) webhooks.CreateInput
 	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhooks.UpdateInput
@@ -122,6 +137,7 @@ type Inputs interface {
 	// goverter:ignore EditorVersion
 	AutomationStep(source siteapi.SiteAutomationStep) automationsteps.Step
 	AutomationSteps(source []siteapi.SiteAutomationStep) []automationsteps.Step
+	TelegramButton(source siteapi.TelegramButton) telegramrender.Button
 	AutomationCreate(source *siteapi.SiteCreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *siteapi.SiteUpdateAutomationInput) automations.UpdateInput
 
@@ -154,6 +170,9 @@ type Inputs interface {
 	// goverter:enum:map SiteAnalyticsRange30d Window30Days
 	// goverter:enum:map SiteAnalyticsRange90d Window90Days
 	AnalyticsWindow(source siteapi.SiteAnalyticsRange) analytics.Window
+	// goverter:enum:map SiteSuppressionChannelEmail ChannelEmail
+	// goverter:enum:map SiteSuppressionChannelTelegram ChannelTelegram
+	SuppressionChannel(source siteapi.SiteSuppressionChannel) suppression.Channel
 	// goverter:enum:map SiteAnalyticsRevenueRange7d Window7Days
 	// goverter:enum:map SiteAnalyticsRevenueRange30d Window30Days
 	// goverter:enum:map SiteAnalyticsRevenueRange90d Window90Days
@@ -174,6 +193,8 @@ type Inputs interface {
 	BroadcastStatuses(source []siteapi.SiteBroadcastStatus) []broadcast.Status
 	// goverter:enum:transform value
 	BroadcastsOrder(source siteapi.SiteBroadcastsOrder) broadcasts.Order
+	// goverter:enum:transform value
+	BroadcastChannel(source siteapi.BroadcastChannel) broadcast.Channel
 	// goverter:enum:transform value
 	AutomationStepType(source siteapi.SiteAutomationStepType) automationsteps.Kind
 	// goverter:enum:transform value
@@ -242,6 +263,23 @@ func listPtrIn(list []string) *[]string {
 		return nil
 	}
 	return &list
+}
+
+// buttonsPtrIn is the link buttons a Telegram Broadcast's update replaces: an omitted list (nil)
+// keeps the stored ones, an empty list removes them.
+func buttonsPtrIn(c Inputs, list []siteapi.TelegramButton) *[]telegramrender.Button {
+	if list == nil {
+		return nil
+	}
+	out := make([]telegramrender.Button, len(list))
+	for i, b := range list {
+		out[i] = c.TelegramButton(b)
+	}
+	return &out
+}
+
+func buttonsPatch(c Inputs, list []siteapi.TelegramButton) patch.Field[[]telegramrender.Button] {
+	return patch.FromPtr(buttonsPtrIn(c, list))
 }
 
 func timestampPtrIn(o siteapi.OptNilTimestamp) *time.Time {
@@ -331,6 +369,8 @@ func integrationConfigIn(in siteapi.IntegrationConfigInput) (integrations.Config
 		}}, nil
 	case siteapi.InboxConfigInputIntegrationConfigInputSum:
 		return integrations.ConfigInput{Inbox: &integrations.InboxConfig{}}, nil
+	case siteapi.TelegramConfigInputIntegrationConfigInputSum:
+		return integrations.ConfigInput{Telegram: &integrations.TelegramConfig{Token: in.OneOf.TelegramConfigInput.Token}}, nil
 	}
 	return integrations.ConfigInput{}, errUnknownProvider
 }
@@ -345,6 +385,48 @@ func integrationConfigPatch(o siteapi.OptIntegrationConfigInput) (patch.Field[in
 		return patch.Field[integrations.ConfigInput]{}, err
 	}
 	return patch.Set(cfg), nil
+}
+
+// errUnknownChannel: content whose channel the contract does not know, which the decoder never
+// lets through.
+var errUnknownChannel = errors.New("unsupported channel")
+
+// broadcastContentIn maps a Broadcast's content union onto the module's input of its Channel; a
+// oneOf is beyond goverter, so only the switch is written here.
+func broadcastContentIn(c Inputs, in siteapi.BroadcastContentInput) (broadcasts.ContentInput, error) {
+	switch in.OneOf.Type {
+	case siteapi.EmailBroadcastContentInputBroadcastContentInputSum:
+		return c.EmailBroadcastContentIn(in.OneOf.EmailBroadcastContentInput), nil
+	case siteapi.TelegramBroadcastContentInputBroadcastContentInputSum:
+		return c.TelegramBroadcastContentIn(in.OneOf.TelegramBroadcastContentInput), nil
+	default:
+		return nil, errUnknownChannel
+	}
+}
+
+// broadcastContentPatch is the content of an update: absent keeps the content.
+func broadcastContentPatch(c Inputs, o siteapi.OptBroadcastContentInput) (broadcasts.ContentPatch, error) {
+	in, ok := o.Get()
+	if !ok {
+		return nil, nil
+	}
+	switch in.OneOf.Type {
+	case siteapi.EmailBroadcastContentInputBroadcastContentInputSum:
+		return c.EmailBroadcastContentPatch(in.OneOf.EmailBroadcastContentInput), nil
+	case siteapi.TelegramBroadcastContentInputBroadcastContentInputSum:
+		return c.TelegramBroadcastContentPatch(in.OneOf.TelegramBroadcastContentInput), nil
+	default:
+		return nil, errUnknownChannel
+	}
+}
+
+// broadcastChannelPtrIn is the Channel a list is narrowed to: nil for every Channel.
+func broadcastChannelPtrIn(c Inputs, o siteapi.OptBroadcastChannel) *broadcast.Channel {
+	v, ok := o.Get()
+	if !ok {
+		return nil
+	}
+	return new(c.BroadcastChannel(v))
 }
 
 func createSegmentCondition(g siteapi.SiteConditionGroup) (*string, error) {

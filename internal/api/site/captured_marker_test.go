@@ -60,8 +60,8 @@ func TestTheBroadcastReportCountsTheMessagesCapturedInATestInbox(t *testing.T) {
 
 	stats := got.(*siteapi.SiteBroadcastResource).Stats
 	assert.Equal(t, int32(1), stats.SentCount)
-	assert.Equal(t, int32(1), stats.CapturedCount)
-	assert.Equal(t, int32(1), stats.DeliveredCount, "captured messages are stamped delivered, so the report tells them apart")
+	assert.Equal(t, int32(1), stats.CapturedCount.Value)
+	assert.Equal(t, int32(1), stats.DeliveredCount.Value, "captured messages are stamped delivered, so the report tells them apart")
 }
 
 func TestTheAutomationReportCountsTheMessagesCapturedInATestInbox(t *testing.T) {

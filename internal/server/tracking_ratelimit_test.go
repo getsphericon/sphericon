@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/telemetry"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -113,7 +114,8 @@ func TestBelowTheTrackingGuardEngagementsAreRecorded(t *testing.T) {
 func TestOneClickUnsubscribeIsNeverRateLimited(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(1))
 	path := unsubPath(t, env.Tracker, tracking.UnsubTarget{
-		Source: eligibility.SourceBroadcasts, Destination: fixtures.ContactAliceEmail,
+		Channel: messaging.ChannelEmail,
+		Source:  eligibility.SourceBroadcasts, Destination: fixtures.ContactAliceEmail,
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
 	})
 	for i := range 10 {

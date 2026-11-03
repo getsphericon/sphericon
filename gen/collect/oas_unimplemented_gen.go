@@ -26,3 +26,13 @@ func (UnimplementedHandler) CollectEventsCreate(ctx context.Context, req *Collec
 func (UnimplementedHandler) CollectIdentifyCreate(ctx context.Context, req *CollectIdentifyInput) (r CollectIdentifyCreateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
+
+// CollectTelegramStartLinksCreate implements CollectTelegramStartLinks_create operation.
+//
+// Issues a start link on the workspace's default Telegram integration. It is refused with 422 when the
+// workspace has no enabled default one.
+//
+// POST /telegram-start-links
+func (UnimplementedHandler) CollectTelegramStartLinksCreate(ctx context.Context, req *CollectTelegramStartLinkInput) (r CollectTelegramStartLinksCreateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}

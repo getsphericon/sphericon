@@ -30,6 +30,7 @@ import (
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
+	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
@@ -45,6 +46,7 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	setupchecklist "github.com/getsphericon/sphericon/internal/setupchecklist"
 	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
+	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
 	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
 	webhook "github.com/getsphericon/sphericon/internal/webhook"
 	"time"
@@ -203,6 +205,8 @@ func (c *ConverterImpl) AttentionKindToResource(source attention.Kind) site.Site
 		siteapiSiteAttentionKind = site.SiteAttentionKindEnrollmentsFailed
 	case attention.KindIntegrationProviderProbation:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderProbation
+	case attention.KindIntegrationProviderRefused:
+		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderRefused
 	case attention.KindIntegrationProviderSandbox:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderSandbox
 	case attention.KindIntegrationProviderStopped:
@@ -348,6 +352,12 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) si
 	siteapiSiteAutomationReport.Revenue = c.MessageRevenueToResource(source.Revenue)
 	siteapiSiteAutomationReport.Links = c.LinkClicksToResource(source.Links)
 	siteapiSiteAutomationReport.Results = c.AutomationResultsToResource(source.Results)
+	if source.Steps != nil {
+		siteapiSiteAutomationReport.Steps = make([]site.SiteAutomationStepFigures, len(source.Steps))
+		for i := 0; i < len(source.Steps); i++ {
+			siteapiSiteAutomationReport.Steps[i] = c.automationsStepFiguresToSiteapiSiteAutomationStepFigures(source.Steps[i])
+		}
+	}
 	return siteapiSiteAutomationReport
 }
 func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) site.SiteAutomationResultsPoint {
@@ -406,6 +416,17 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) si
 	// siteapiSiteAutomationStep.Secret: ignore
 	// siteapiSiteAutomationStep.ClearSecret: ignore
 	siteapiSiteAutomationStep.HasSecret = optBool(source.HasSecret)
+	siteapiSiteAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
+	siteapiSiteAutomationStep.Text = optString(source.Text)
+	siteapiSiteAutomationStep.UnsubscribeButton = optString(source.UnsubscribeButton)
+	siteapiSiteAutomationStep.ImageUrl = optString(source.ImageURL)
+	if source.Buttons != nil {
+		siteapiSiteAutomationStep.Buttons = make([]site.TelegramButton, len(source.Buttons))
+		for j := 0; j < len(source.Buttons); j++ {
+			siteapiSiteAutomationStep.Buttons[j] = c.TelegramButtonToResource(source.Buttons[j])
+		}
+	}
+	siteapiSiteAutomationStep.LinkPreview = optBool(source.LinkPreview)
 	return siteapiSiteAutomationStep
 }
 func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) site.SiteAutomationStepType {
@@ -419,6 +440,8 @@ func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeHTTP
 	case automationsteps.RemoveTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeRemoveTag
+	case automationsteps.Telegram:
+		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeTelegram
 	case automationsteps.Wait:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeWait
 	default:
@@ -463,7 +486,6 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 			}
 		}
 		siteapiSiteAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
-		siteapiSiteAutomationVersion.IntegrationId = optNilEntityID((*source).IntegrationID)
 		siteapiSiteAutomationVersion.Steps = automationSteps(c, (*source).Steps)
 	}
 	return siteapiSiteAutomationVersion
@@ -536,6 +558,23 @@ func (c *ConverterImpl) AutomationsWithRevenueToResources(source []automations.W
 	}
 	return siteapiSiteAutomationResourceList
 }
+func (c *ConverterImpl) BindingToResource(source bindings.Chat) site.SiteBindingResource {
+	var siteapiSiteBindingResource site.SiteBindingResource
+	siteapiSiteBindingResource.ID = site.EntityId(source.ID)
+	siteapiSiteBindingResource.IntegrationId = site.EntityId(source.IntegrationID)
+	siteapiSiteBindingResource.IntegrationName = source.IntegrationName
+	siteapiSiteBindingResource.BotUsername = omitEmpty(source.BotUsername)
+	siteapiSiteBindingResource.BoundAt = timestamp(source.BoundAt)
+	return siteapiSiteBindingResource
+}
+func (c *ConverterImpl) BindingsToResources(source []bindings.Chat) []site.SiteBindingResource {
+	var siteapiSiteBindingResourceList []site.SiteBindingResource
+	siteapiSiteBindingResourceList = make([]site.SiteBindingResource, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteBindingResourceList[i] = c.BindingToResource(source[i])
+	}
+	return siteapiSiteBindingResourceList
+}
 func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKitResource {
 	var siteapiSiteBrandKitResource site.SiteBrandKitResource
 	siteapiSiteBrandKitResource.Saved = source.Saved
@@ -550,6 +589,18 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKi
 	siteapiSiteBrandKitResource.FooterText = source.FooterText
 	siteapiSiteBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return siteapiSiteBrandKitResource
+}
+func (c *ConverterImpl) BroadcastChannelToResource(source broadcast.Channel) site.BroadcastChannel {
+	var siteapiBroadcastChannel site.BroadcastChannel
+	switch source {
+	case broadcast.ChannelEmail:
+		siteapiBroadcastChannel = site.BroadcastChannelEmail
+	case broadcast.ChannelTelegram:
+		siteapiBroadcastChannel = site.BroadcastChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiBroadcastChannel
 }
 func (c *ConverterImpl) BroadcastLimitToResource(source providerlimit.Cause) site.SiteBroadcastLimit {
 	var siteapiSiteBroadcastLimit site.SiteBroadcastLimit
@@ -585,24 +636,26 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 	}
 	return siteapiContactExportBroadcastRecipient
 }
-func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Stats) site.SiteBroadcastStats {
+func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Figures) site.SiteBroadcastStats {
 	var siteapiSiteBroadcastStats site.SiteBroadcastStats
 	siteapiSiteBroadcastStats.RecipientsTotal = count(source.Recipients)
 	siteapiSiteBroadcastStats.SentCount = count(source.Sent)
-	siteapiSiteBroadcastStats.OpenedCount = count(source.Opened)
+	siteapiSiteBroadcastStats.SkippedCount = count(source.Skipped)
+	siteapiSiteBroadcastStats.FailedCount = count(source.Failed)
+	siteapiSiteBroadcastStats.PendingCount = count(source.Pending)
+	siteapiSiteBroadcastStats.OpenedCount = nilInt32(source.Opened)
 	siteapiSiteBroadcastStats.ClickedCount = count(source.Clicked)
 	siteapiSiteBroadcastStats.UnsubscribedCount = count(source.Unsubscribed)
-	siteapiSiteBroadcastStats.FailedCount = count(source.Failed)
-	siteapiSiteBroadcastStats.DeliveredCount = count(source.Delivered)
-	siteapiSiteBroadcastStats.BouncedCount = count(source.Bounced)
-	siteapiSiteBroadcastStats.ComplainedCount = count(source.Complained)
-	siteapiSiteBroadcastStats.CapturedCount = count(source.Captured)
-	siteapiSiteBroadcastStats.DeliveryRate = source.DeliveryRate()
-	siteapiSiteBroadcastStats.OpenRate = source.OpenRate()
-	siteapiSiteBroadcastStats.ClickRate = source.ClickRate()
-	siteapiSiteBroadcastStats.ClickToOpenRate = source.ClickToOpenRate()
-	siteapiSiteBroadcastStats.UnsubscribeRate = source.UnsubscribeRate()
-	siteapiSiteBroadcastStats.FailureRate = source.FailureRate()
+	siteapiSiteBroadcastStats.DeliveredCount = nilInt32(source.Delivered)
+	siteapiSiteBroadcastStats.BouncedCount = nilInt32(source.Bounced)
+	siteapiSiteBroadcastStats.ComplainedCount = nilInt32(source.Complained)
+	siteapiSiteBroadcastStats.CapturedCount = nilInt32(source.Captured)
+	siteapiSiteBroadcastStats.DeliveryRate = nilFloat32(source.DeliveryRate)
+	siteapiSiteBroadcastStats.OpenRate = nilFloat32(source.OpenRate)
+	siteapiSiteBroadcastStats.ClickRate = source.ClickRate
+	siteapiSiteBroadcastStats.ClickToOpenRate = nilFloat32(source.ClickToOpenRate)
+	siteapiSiteBroadcastStats.UnsubscribeRate = source.UnsubscribeRate
+	siteapiSiteBroadcastStats.FailureRate = source.FailureRate
 	siteapiSiteBroadcastStats.Revenue = c.MessageRevenueToResource(source.Revenue)
 	return siteapiSiteBroadcastStats
 }
@@ -630,12 +683,8 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 	if source != nil {
 		siteapiSiteBroadcastResource.ID = site.EntityId((*source).ID)
 		siteapiSiteBroadcastResource.Name = (*source).Name
-		siteapiSiteBroadcastResource.Subject = (*source).Subject
-		siteapiSiteBroadcastResource.FromName = optNilString((*source).FromName)
-		siteapiSiteBroadcastResource.FromEmail = optNilEmailAddress((*source).FromEmail)
-		siteapiSiteBroadcastResource.Body = (*source).Body
-		siteapiSiteBroadcastResource.Doc = editorDocument((*source).Doc)
-		siteapiSiteBroadcastResource.EditorVersion = optNilString((*source).EditorVersion)
+		siteapiSiteBroadcastResource.Channel = c.BroadcastChannelToResource((*source).Channel)
+		siteapiSiteBroadcastResource.Content = broadcastContent(c, source)
 		// siteapiSiteBroadcastResource.Warnings: ignore
 		siteapiSiteBroadcastResource.SegmentId = optNilEntityID((*source).SegmentID)
 		siteapiSiteBroadcastResource.IntegrationId = optNilEntityID((*source).IntegrationID)
@@ -960,6 +1009,23 @@ func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) site.S
 	siteapiSiteDnsRecord.Value = source.Value
 	return siteapiSiteDnsRecord
 }
+func (c *ConverterImpl) EmailBroadcastContentToResource(source *ent.Broadcast) site.EmailBroadcastContent {
+	var siteapiEmailBroadcastContent site.EmailBroadcastContent
+	if source != nil {
+		siteapiEmailBroadcastContent.Channel = emailContentChannel((*source).Channel)
+		if (*source).Subject != nil {
+			siteapiEmailBroadcastContent.Subject = *(*source).Subject
+		}
+		siteapiEmailBroadcastContent.FromName = optNilString((*source).FromName)
+		siteapiEmailBroadcastContent.FromEmail = optNilEmailAddress((*source).FromEmail)
+		if (*source).Body != nil {
+			siteapiEmailBroadcastContent.Body = *(*source).Body
+		}
+		siteapiEmailBroadcastContent.Doc = editorDocument((*source).Doc)
+		siteapiEmailBroadcastContent.EditorVersion = optNilString((*source).EditorVersion)
+	}
+	return siteapiEmailBroadcastContent
+}
 func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) site.SiteEmailTemplateResource {
 	var siteapiSiteEmailTemplateResource site.SiteEmailTemplateResource
 	if source != nil {
@@ -1104,6 +1170,8 @@ func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) site.Hold
 	switch source {
 	case holdreason.NoIntegration:
 		siteapiHoldReason = site.HoldReasonNoIntegration
+	case holdreason.ProviderRefused:
+		siteapiHoldReason = site.HoldReasonProviderRefused
 	case holdreason.ProviderStopped:
 		siteapiHoldReason = site.HoldReasonProviderStopped
 	case holdreason.StaffHold:
@@ -1150,6 +1218,8 @@ func (c *ConverterImpl) IntegrationChannelToResource(source integration.Channel)
 		siteapiSiteIntegrationChannel = site.SiteIntegrationChannelEmail
 	case integration.ChannelSms:
 		siteapiSiteIntegrationChannel = site.SiteIntegrationChannelSMS
+	case integration.ChannelTelegram:
+		siteapiSiteIntegrationChannel = site.SiteIntegrationChannelTelegram
 	// Skipped DefaultChannel(email) -> SiteIntegrationChannelEmail(email) because it duplicates ChannelEmail(email) -> SiteIntegrationChannelEmail(email)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -1165,6 +1235,8 @@ func (c *ConverterImpl) IntegrationProviderToResource(source integration.Provide
 		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderSMTP
 	case integration.ProviderSes:
 		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderSes
+	case integration.ProviderTelegram:
+		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1953,11 +2025,19 @@ func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) s
 	siteapiSiteSmtpConfig.FromName = omitEmpty(source.FromName)
 	return siteapiSiteSmtpConfig
 }
+func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) site.TelegramStartLinkResource {
+	var siteapiTelegramStartLinkResource site.TelegramStartLinkResource
+	siteapiTelegramStartLinkResource.URL = source.URL
+	siteapiTelegramStartLinkResource.ExpiresAt = timestamp(source.ExpiresAt)
+	return siteapiTelegramStartLinkResource
+}
 func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel) site.SiteSuppressionChannel {
 	var siteapiSiteSuppressionChannel site.SiteSuppressionChannel
 	switch source {
 	case suppression.ChannelEmail:
 		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelEmail
+	case suppression.ChannelTelegram:
+		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelTelegram
 	// Skipped DefaultChannel(email) -> SiteSuppressionChannelEmail(email) because it duplicates ChannelEmail(email) -> SiteSuppressionChannelEmail(email)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -2064,6 +2144,38 @@ func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []site.SiteTagResourc
 		siteapiSiteTagResourceList[i] = c.TagToResource(source[i])
 	}
 	return siteapiSiteTagResourceList
+}
+func (c *ConverterImpl) TelegramBroadcastContentToResource(source *ent.Broadcast) site.TelegramBroadcastContent {
+	var siteapiTelegramBroadcastContent site.TelegramBroadcastContent
+	if source != nil {
+		siteapiTelegramBroadcastContent.Channel = telegramContentChannel((*source).Channel)
+		if (*source).Text != nil {
+			siteapiTelegramBroadcastContent.Text = *(*source).Text
+		}
+		siteapiTelegramBroadcastContent.ImageUrl = optNilString((*source).ImageURL)
+		if (*source).Buttons != nil {
+			siteapiTelegramBroadcastContent.Buttons = make([]site.TelegramButton, len((*source).Buttons))
+			for i := 0; i < len((*source).Buttons); i++ {
+				siteapiTelegramBroadcastContent.Buttons[i] = c.TelegramButtonToResource((*source).Buttons[i])
+			}
+		}
+		siteapiTelegramBroadcastContent.LinkPreview = (*source).LinkPreview
+		siteapiTelegramBroadcastContent.UnsubscribeButton = optNilString((*source).UnsubscribeButton)
+	}
+	return siteapiTelegramBroadcastContent
+}
+func (c *ConverterImpl) TelegramButtonToResource(source telegramrender.Button) site.TelegramButton {
+	var siteapiTelegramButton site.TelegramButton
+	siteapiTelegramButton.Label = source.Label
+	siteapiTelegramButton.URL = source.URL
+	return siteapiTelegramButton
+}
+func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTelegram) site.SiteTelegramConfig {
+	var siteapiSiteTelegramConfig site.SiteTelegramConfig
+	siteapiSiteTelegramConfig.Kind = telegramConfigKind(source)
+	siteapiSiteTelegramConfig.BotId = source.BotID
+	siteapiSiteTelegramConfig.Username = source.Username
+	return siteapiSiteTelegramConfig
 }
 func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) *site.SiteTemplatesListOK {
 	var siteapiSiteTemplatesListOK site.SiteTemplatesListOK
@@ -2400,6 +2512,13 @@ func (c *ConverterImpl) attentionItemToSiteapiSiteAttentionItem(source attention
 	siteapiSiteAttentionItem.Abuse = optAbuseWarning(c, source.Abuse)
 	siteapiSiteAttentionItem.EstimatedCompletionAt = optNilTimestamp(source.EstimatedCompletionAt)
 	return siteapiSiteAttentionItem
+}
+func (c *ConverterImpl) automationsStepFiguresToSiteapiSiteAutomationStepFigures(source automations.StepFigures) site.SiteAutomationStepFigures {
+	var siteapiSiteAutomationStepFigures site.SiteAutomationStepFigures
+	siteapiSiteAutomationStepFigures.Step = count(source.Step)
+	siteapiSiteAutomationStepFigures.Sent = count(source.Sent)
+	siteapiSiteAutomationStepFigures.Skipped = count(source.Skipped)
+	return siteapiSiteAutomationStepFigures
 }
 func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclicks.Clicks) site.SiteLinkClicks {
 	var siteapiSiteLinkClicks site.SiteLinkClicks

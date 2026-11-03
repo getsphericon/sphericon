@@ -6,7 +6,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
@@ -37,7 +37,7 @@ type Detail struct {
 
 // Detail reads a Broadcast's figures and, when it is sending, its Progress.
 func (m *Module) Detail(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (Detail, error) {
-	figures, err := StatsOf(ctx, s, b.ID)
+	figures, err := StatsFor(ctx, s, b)
 	if err != nil {
 		return Detail{}, err
 	}
@@ -62,7 +62,7 @@ func (m *Module) progressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast
 	if pending == 0 || b.HoldReason != nil {
 		return p, nil
 	}
-	channel := outbound.BroadcastContent(b).Channel()
+	channel := messaging.Channel(b.Channel)
 	route, err := m.out.Route(ctx, s, channel, b.IntegrationID)
 	if err != nil {
 		return nil, err

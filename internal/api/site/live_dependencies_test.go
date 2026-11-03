@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -173,7 +175,7 @@ func TestDamagedStoredStepsDoNotPermitIntegrationRemoval(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ctx := t.Context()
 	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
-		SetIntegrationID(fixtures.IntegrationAcmeMailgunID).SetSteps(`[{"type":"wait"},`).Exec(ctx)
+		SetSteps(`[{"type":"wait"},`).Exec(ctx)
 	require.NoError(t, err)
 
 	_, err = env.Integrations.Archive(ctx, s, fixtures.IntegrationAcmeMailgunID)
@@ -212,6 +214,8 @@ func TestDamagedStoredStepsDoNotPermitSendingDomainRemoval(t *testing.T) {
 
 // A draft's email does not establish a dependency; only the kept, active live version does.
 func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) {
+	// Each email Step names the Integration it sends through (ADR 0081).
+	mailgunEmail := fmt.Sprintf(`[{"type":"email","integrationId":%d,"subject":"Hello"}]`, fixtures.IntegrationAcmeMailgunID)
 	for _, tc := range []struct {
 		name     string
 		steps    string
@@ -220,18 +224,19 @@ func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) 
 	}{
 		{name: "draft only", steps: `[{"type":"wait","seconds":60}]`, status: automation.StatusActive},
 		{name: "HTTP and Tags send no email", steps: `[{"type":"http","body":"email"},{"type":"apply_tag","tag":"email"}]`, status: automation.StatusActive},
-		{name: "inactive", steps: `[{"type":"email","subject":"Hello"}]`, status: automation.StatusInactive},
-		{name: "archived", steps: `[{"type":"email","subject":"Hello"}]`, status: automation.StatusActive, archived: new(time.Now())},
+		{name: "inactive", steps: mailgunEmail, status: automation.StatusInactive},
+		{name: "archived", steps: mailgunEmail, status: automation.StatusActive, archived: new(time.Now())},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			s := env.DB.Scoped(fixtures.AcmeID)
 			ctx := t.Context()
+			stopMailgunSender(t, s)
 			err := s.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesVersionID).
-				SetIntegrationID(fixtures.IntegrationAcmeMailgunID).SetSteps(tc.steps).Exec(ctx)
+				SetSteps(tc.steps).Exec(ctx)
 			require.NoError(t, err)
 			err = s.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesDraftVersionID).
-				SetIntegrationID(fixtures.IntegrationAcmeMailgunID).Exec(ctx)
+				SetSteps(mailgunEmail).Exec(ctx)
 			require.NoError(t, err)
 			err = s.Automation().UpdateOneID(fixtures.AutomationWelcomeSeriesID).
 				SetStatus(tc.status).SetNillableDiscardedAt(tc.archived).Exec(ctx)
@@ -243,4 +248,13 @@ func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) 
 			assert.NotNil(t, archived.DiscardedAt)
 		})
 	}
+}
+
+// stopMailgunSender stops the fixture Automation whose second email step sends through the
+// Mailgun Integration, for a test about who else uses it.
+func stopMailgunSender(t *testing.T, s *ent.Scoped) {
+	t.Helper()
+	err := s.Automation().UpdateOneID(fixtures.AutomationJobsEmailsThenTagID).
+		SetStatus(automation.StatusInactive).Exec(t.Context())
+	require.NoError(t, err)
 }

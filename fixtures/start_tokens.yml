@@ -1,0 +1,46 @@
+# Start tokens (ADR 0076), stored as the hash of the token. These are used up: a link issued for
+# a test comes from the API.
+- id: 1 # fixture: StartTokenAcmeUsed
+  integration_id: 9
+  contact_id: 100
+  token_hash: '{{ secretHash "fixture-start-token-acme" }}'
+  expires_at: '{{daysAgo 1}}'
+  used_at: '{{daysAgo 5}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 6}}'
+  updated_at: '{{daysAgo 5}}'
+- id: 900 # fixture: StartTokenGlobexUsed
+  integration_id: 903
+  contact_id: 900
+  token_hash: '{{ secretHash "fixture-start-token-globex" }}'
+  expires_at: '2026-01-31 00:00:00'
+  used_at: '2026-01-01 00:00:00'
+  workspace_id: 2
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# The purge of lapsed Start tokens keeps the open ones and removes the lapsed and the used.
+- id: 2 # fixture: StartTokenAcmeOpen
+  integration_id: 9
+  contact_id: 100
+  token_hash: '{{ secretHash "fixture-start-token-open" }}'
+  expires_at: '{{daysAhead 20}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 10}}'
+  updated_at: '{{daysAgo 10}}'
+- id: 3 # fixture: StartTokenAcmeLapsed
+  integration_id: 9
+  contact_id: 100
+  token_hash: '{{ secretHash "fixture-start-token-lapsed" }}'
+  expires_at: '{{daysAgo 2}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 32}}'
+  updated_at: '{{daysAgo 32}}'
+- id: 4 # fixture: StartTokenAcmeUsedOpen
+  integration_id: 9
+  contact_id: 100
+  token_hash: '{{ secretHash "fixture-start-token-used-open" }}'
+  expires_at: '{{daysAhead 20}}'
+  used_at: '{{daysAgo 1}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 10}}'
+  updated_at: '{{daysAgo 1}}'

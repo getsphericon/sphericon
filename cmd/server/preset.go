@@ -46,7 +46,8 @@ func presetTestCommand() *cli.Command {
 		Description: "Without --payload, runs the `tests` the Preset carries and prints PASS or FAIL for each case.\n" +
 			"With --payload, verifies the sample with the Preset's scheme (--header name=value and\n" +
 			"--param name=value, repeatable, supply the request headers and the Integration's params,\n" +
-			"secrets included) and prints the Delivery notices, or the reason it was refused.",
+			"secrets included) and prints the facts it makes (Delivery notices, Inbound messages and\n" +
+			"Reachability changes), or the reason it was refused.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "payload", Usage: "file holding the raw request body to run the Preset on"},
 			&cli.StringSliceFlag{Name: "header", Usage: "request header of the sample, name=value"},

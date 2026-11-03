@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -465,6 +466,21 @@ func (_u *OutboundMessageUpdate) SetWorkspace(v *Workspace) *OutboundMessageUpda
 	return _u.SetWorkspaceID(v.ID)
 }
 
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by IDs.
+func (_u *OutboundMessageUpdate) AddTrackedLinkIDs(ids ...int64) *OutboundMessageUpdate {
+	_u.mutation.AddTrackedLinkIDs(ids...)
+	return _u
+}
+
+// AddTrackedLinks adds the "tracked_links" edges to the TrackedLink entity.
+func (_u *OutboundMessageUpdate) AddTrackedLinks(v ...*TrackedLink) *OutboundMessageUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTrackedLinkIDs(ids...)
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (_u *OutboundMessageUpdate) SetBroadcast(v *Broadcast) *OutboundMessageUpdate {
 	return _u.SetBroadcastID(v.ID)
@@ -509,6 +525,27 @@ func (_u *OutboundMessageUpdate) Mutation() *OutboundMessageMutation {
 func (_u *OutboundMessageUpdate) ClearWorkspace() *OutboundMessageUpdate {
 	_u.mutation.ClearWorkspace()
 	return _u
+}
+
+// ClearTrackedLinks clears all "tracked_links" edges to the TrackedLink entity.
+func (_u *OutboundMessageUpdate) ClearTrackedLinks() *OutboundMessageUpdate {
+	_u.mutation.ClearTrackedLinks()
+	return _u
+}
+
+// RemoveTrackedLinkIDs removes the "tracked_links" edge to TrackedLink entities by IDs.
+func (_u *OutboundMessageUpdate) RemoveTrackedLinkIDs(ids ...int64) *OutboundMessageUpdate {
+	_u.mutation.RemoveTrackedLinkIDs(ids...)
+	return _u
+}
+
+// RemoveTrackedLinks removes "tracked_links" edges to TrackedLink entities.
+func (_u *OutboundMessageUpdate) RemoveTrackedLinks(v ...*TrackedLink) *OutboundMessageUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTrackedLinkIDs(ids...)
 }
 
 // ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
@@ -728,6 +765,51 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TrackedLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.TrackedLinksTable,
+			Columns: []string{outboundmessage.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTrackedLinksIDs(); len(nodes) > 0 && !_u.mutation.TrackedLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.TrackedLinksTable,
+			Columns: []string{outboundmessage.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TrackedLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.TrackedLinksTable,
+			Columns: []string{outboundmessage.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1388,6 +1470,21 @@ func (_u *OutboundMessageUpdateOne) SetWorkspace(v *Workspace) *OutboundMessageU
 	return _u.SetWorkspaceID(v.ID)
 }
 
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by IDs.
+func (_u *OutboundMessageUpdateOne) AddTrackedLinkIDs(ids ...int64) *OutboundMessageUpdateOne {
+	_u.mutation.AddTrackedLinkIDs(ids...)
+	return _u
+}
+
+// AddTrackedLinks adds the "tracked_links" edges to the TrackedLink entity.
+func (_u *OutboundMessageUpdateOne) AddTrackedLinks(v ...*TrackedLink) *OutboundMessageUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTrackedLinkIDs(ids...)
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (_u *OutboundMessageUpdateOne) SetBroadcast(v *Broadcast) *OutboundMessageUpdateOne {
 	return _u.SetBroadcastID(v.ID)
@@ -1432,6 +1529,27 @@ func (_u *OutboundMessageUpdateOne) Mutation() *OutboundMessageMutation {
 func (_u *OutboundMessageUpdateOne) ClearWorkspace() *OutboundMessageUpdateOne {
 	_u.mutation.ClearWorkspace()
 	return _u
+}
+
+// ClearTrackedLinks clears all "tracked_links" edges to the TrackedLink entity.
+func (_u *OutboundMessageUpdateOne) ClearTrackedLinks() *OutboundMessageUpdateOne {
+	_u.mutation.ClearTrackedLinks()
+	return _u
+}
+
+// RemoveTrackedLinkIDs removes the "tracked_links" edge to TrackedLink entities by IDs.
+func (_u *OutboundMessageUpdateOne) RemoveTrackedLinkIDs(ids ...int64) *OutboundMessageUpdateOne {
+	_u.mutation.RemoveTrackedLinkIDs(ids...)
+	return _u
+}
+
+// RemoveTrackedLinks removes "tracked_links" edges to TrackedLink entities.
+func (_u *OutboundMessageUpdateOne) RemoveTrackedLinks(v ...*TrackedLink) *OutboundMessageUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTrackedLinkIDs(ids...)
 }
 
 // ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
@@ -1681,6 +1799,51 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TrackedLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.TrackedLinksTable,
+			Columns: []string{outboundmessage.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTrackedLinksIDs(); len(nodes) > 0 && !_u.mutation.TrackedLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.TrackedLinksTable,
+			Columns: []string{outboundmessage.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TrackedLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.TrackedLinksTable,
+			Columns: []string{outboundmessage.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

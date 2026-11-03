@@ -21,7 +21,7 @@ func TestAddNormalizesAndSuppressesInEligibility(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	got, err := suppression.AddManual(ctx, s, "  Blocked@Example.COM ")
+	got, err := suppression.AddManual(ctx, s, entsuppression.ChannelEmail, "  Blocked@Example.COM ")
 	require.NoError(t, err)
 	assert.Equal(t, "blocked@example.com", got.Destination)
 	assert.Equal(t, entsuppression.ReasonManual, got.Reason)
@@ -37,7 +37,7 @@ func TestAddIsIdempotentAndKeepsTheFirstReason(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	got, err := suppression.AddManual(ctx, s, fixtures.SuppressionGhostBounceDestination)
+	got, err := suppression.AddManual(ctx, s, entsuppression.ChannelEmail, fixtures.SuppressionGhostBounceDestination)
 	require.NoError(t, err)
 	assert.Equal(t, entsuppression.ReasonBounce, got.Reason)
 	assert.Equal(t, int64(fixtures.SuppressionGhostBounceID), got.ID)
@@ -53,7 +53,7 @@ func TestAddIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 
-	got, err := suppression.AddManual(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceEmail)
+	got, err := suppression.AddManual(ctx, env.DB.Scoped(fixtures.GlobexID), entsuppression.ChannelEmail, fixtures.ContactAliceEmail)
 	require.NoError(t, err)
 	assert.Equal(t, int64(fixtures.GlobexID), got.WorkspaceID)
 
@@ -83,7 +83,7 @@ func TestRemoveLiftsAndReportsAMissingOrLiftedRow(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	added, err := suppression.AddManual(ctx, s, "gone@example.com")
+	added, err := suppression.AddManual(ctx, s, entsuppression.ChannelEmail, "gone@example.com")
 	require.NoError(t, err)
 	require.NoError(t, suppression.Remove(ctx, s, added.ID))
 

@@ -135,6 +135,11 @@ func ProviderSandbox(v bool) predicate.Integration {
 	return predicate.Integration(sql.FieldEQ(FieldProviderSandbox, v))
 }
 
+// ProviderRefusedAt applies equality check predicate on the "provider_refused_at" field. It's identical to ProviderRefusedAtEQ.
+func ProviderRefusedAt(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldProviderRefusedAt, v))
+}
+
 // ProviderQuotaCheckedAt applies equality check predicate on the "provider_quota_checked_at" field. It's identical to ProviderQuotaCheckedAtEQ.
 func ProviderQuotaCheckedAt(v time.Time) predicate.Integration {
 	return predicate.Integration(sql.FieldEQ(FieldProviderQuotaCheckedAt, v))
@@ -940,6 +945,56 @@ func ProviderSandboxNEQ(v bool) predicate.Integration {
 	return predicate.Integration(sql.FieldNEQ(FieldProviderSandbox, v))
 }
 
+// ProviderRefusedAtEQ applies the EQ predicate on the "provider_refused_at" field.
+func ProviderRefusedAtEQ(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldProviderRefusedAt, v))
+}
+
+// ProviderRefusedAtNEQ applies the NEQ predicate on the "provider_refused_at" field.
+func ProviderRefusedAtNEQ(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldNEQ(FieldProviderRefusedAt, v))
+}
+
+// ProviderRefusedAtIn applies the In predicate on the "provider_refused_at" field.
+func ProviderRefusedAtIn(vs ...time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldIn(FieldProviderRefusedAt, vs...))
+}
+
+// ProviderRefusedAtNotIn applies the NotIn predicate on the "provider_refused_at" field.
+func ProviderRefusedAtNotIn(vs ...time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldNotIn(FieldProviderRefusedAt, vs...))
+}
+
+// ProviderRefusedAtGT applies the GT predicate on the "provider_refused_at" field.
+func ProviderRefusedAtGT(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldGT(FieldProviderRefusedAt, v))
+}
+
+// ProviderRefusedAtGTE applies the GTE predicate on the "provider_refused_at" field.
+func ProviderRefusedAtGTE(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldGTE(FieldProviderRefusedAt, v))
+}
+
+// ProviderRefusedAtLT applies the LT predicate on the "provider_refused_at" field.
+func ProviderRefusedAtLT(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldLT(FieldProviderRefusedAt, v))
+}
+
+// ProviderRefusedAtLTE applies the LTE predicate on the "provider_refused_at" field.
+func ProviderRefusedAtLTE(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldLTE(FieldProviderRefusedAt, v))
+}
+
+// ProviderRefusedAtIsNil applies the IsNil predicate on the "provider_refused_at" field.
+func ProviderRefusedAtIsNil() predicate.Integration {
+	return predicate.Integration(sql.FieldIsNull(FieldProviderRefusedAt))
+}
+
+// ProviderRefusedAtNotNil applies the NotNil predicate on the "provider_refused_at" field.
+func ProviderRefusedAtNotNil() predicate.Integration {
+	return predicate.Integration(sql.FieldNotNull(FieldProviderRefusedAt))
+}
+
 // ProviderQuotaCheckedAtEQ applies the EQ predicate on the "provider_quota_checked_at" field.
 func ProviderQuotaCheckedAtEQ(v time.Time) predicate.Integration {
 	return predicate.Integration(sql.FieldEQ(FieldProviderQuotaCheckedAt, v))
@@ -1101,6 +1156,52 @@ func HasCapturedMessages() predicate.Integration {
 func HasCapturedMessagesWith(preds ...predicate.CapturedMessage) predicate.Integration {
 	return predicate.Integration(func(s *sql.Selector) {
 		step := newCapturedMessagesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasBindings applies the HasEdge predicate on the "bindings" edge.
+func HasBindings() predicate.Integration {
+	return predicate.Integration(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BindingsTable, BindingsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBindingsWith applies the HasEdge predicate on the "bindings" edge with a given conditions (other predicates).
+func HasBindingsWith(preds ...predicate.Binding) predicate.Integration {
+	return predicate.Integration(func(s *sql.Selector) {
+		step := newBindingsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasStartTokens applies the HasEdge predicate on the "start_tokens" edge.
+func HasStartTokens() predicate.Integration {
+	return predicate.Integration(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, StartTokensTable, StartTokensColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStartTokensWith applies the HasEdge predicate on the "start_tokens" edge with a given conditions (other predicates).
+func HasStartTokensWith(preds ...predicate.StartToken) predicate.Integration {
+	return predicate.Integration(func(s *sql.Selector) {
+		step := newStartTokensStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

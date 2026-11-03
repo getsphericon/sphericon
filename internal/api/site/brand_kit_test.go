@@ -175,7 +175,7 @@ func TestSiteBrandKitEditChangesNoMessageAlreadyWritten(t *testing.T) {
 			snap.templates[tpl.ID] = tpl.Body + string(tpl.Doc)
 		}
 		for _, b := range s.Broadcast().Query().AllX(ctx) {
-			snap.broadcasts[b.ID] = b.Body
+			snap.broadcasts[b.ID] = *b.Body
 		}
 		for _, v := range s.AutomationVersion().Query().AllX(ctx) {
 			snap.automation[v.ID] = v.Steps

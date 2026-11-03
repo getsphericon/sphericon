@@ -82,9 +82,10 @@ type Handler interface {
 	// AutomationsPublish implements Automations_publish operation.
 	//
 	// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
-	// draft, the live version is resumed. 422 with neither. 409 when the version going live has an email
-	// step and the integration it sends through cannot send (disabled or archived, or no default): a draft
-	// may name such an integration, only publishing it is refused. Needs the automations:publish scope.
+	// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
+	// live sends through an integration that cannot send (disabled, archived, of another channel, or no
+	// default for the step's channel): a draft may name such an integration, only publishing it is
+	// refused. Needs the automations:publish scope.
 	//
 	// POST /automations/{id}/publish
 	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error)
@@ -181,6 +182,8 @@ type Handler interface {
 	// BroadcastsTestSend implements Broadcasts_testSend operation.
 	//
 	// Send a rendered preview with sample merge data to a single address. Never sends to the audience.
+	// Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a
+	// 422.
 	//
 	// POST /broadcasts/{id}/test-send
 	BroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error)
@@ -397,7 +400,8 @@ type Handler interface {
 	//
 	// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 	// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-	// email automation through the default, uses it (`usedBy` names them).
+	// email automation through the default, uses it (`usedBy` names them). A Telegram integration's
+	// webhook is removed, best effort.
 	//
 	// POST /integrations/{id}/archive
 	IntegrationsArchive(ctx context.Context, params IntegrationsArchiveParams) (IntegrationsArchiveRes, error)
@@ -422,13 +426,15 @@ type Handler interface {
 	// IntegrationsRegenerateKey implements Integrations_regenerateKey operation.
 	//
 	// Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
-	// pasted into the provider. Needs a person: hidden from MCP.
+	// pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
+	// is a 422). Needs a person: hidden from MCP.
 	//
 	// POST /integrations/{id}/regenerate-key
 	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error)
 	// IntegrationsUnarchive implements Integrations_unarchive operation.
 	//
-	// Restore an archived integration to the list. It is not the default; promote it with an update.
+	// Restore an archived integration to the list. It is not the default; promote it with an update. An
+	// enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422.
 	//
 	// POST /integrations/{id}/unarchive
 	IntegrationsUnarchive(ctx context.Context, params IntegrationsUnarchiveParams) (IntegrationsUnarchiveRes, error)
@@ -654,6 +660,13 @@ type Handler interface {
 	//
 	// DELETE /contacts/{contactId}/tags/{name}
 	TagsRemove(ctx context.Context, params TagsRemoveParams) (TagsRemoveRes, error)
+	// TelegramStartLinksIssue implements TelegramStartLinks_issue operation.
+	//
+	// Issue a start link for a contact: `https://t.me/<bot>?start=<token>`. The chat that starts with it
+	// binds to the contact, once. Each call issues a new link.
+	//
+	// POST /contacts/{contactId}/telegram-start-links
+	TelegramStartLinksIssue(ctx context.Context, req *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (TelegramStartLinksIssueRes, error)
 	// TemplatesCreate implements Templates_create operation.
 	//
 	// Create a resource.

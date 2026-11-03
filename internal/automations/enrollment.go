@@ -292,7 +292,8 @@ func Exit(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID
 }
 
 // ExitRun ends one Enrollment by run id at now, the caller's clock, for the step executor that
-// already holds the run (an ineligible destination exits it rather than walk on skipping mail).
+// already holds the run (a send step Skipped because the Contact unsubscribed from this Automation
+// exits it).
 // lifecycle.ErrInvalidTransition when it is no longer active.
 func ExitRun(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, now time.Time) error {
 	return move(ctx, s, pub, runID, triggerExit, now, nil)

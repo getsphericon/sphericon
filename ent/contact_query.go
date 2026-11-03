@@ -13,11 +13,13 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -32,6 +34,8 @@ type ContactQuery struct {
 	predicates      []predicate.Contact
 	withWorkspace   *WorkspaceQuery
 	withVisitors    *VisitorQuery
+	withBindings    *BindingQuery
+	withStartTokens *StartTokenQuery
 	withTags        *TagQuery
 	withEvents      *EventQuery
 	withOrders      *OrderQuery
@@ -110,6 +114,50 @@ func (_q *ContactQuery) QueryVisitors() *VisitorQuery {
 			sqlgraph.From(contact.Table, contact.FieldID, selector),
 			sqlgraph.To(visitor.Table, visitor.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, contact.VisitorsTable, contact.VisitorsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBindings chains the current query on the "bindings" edge.
+func (_q *ContactQuery) QueryBindings() *BindingQuery {
+	query := (&BindingClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contact.Table, contact.FieldID, selector),
+			sqlgraph.To(binding.Table, binding.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, contact.BindingsTable, contact.BindingsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryStartTokens chains the current query on the "start_tokens" edge.
+func (_q *ContactQuery) QueryStartTokens() *StartTokenQuery {
+	query := (&StartTokenClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contact.Table, contact.FieldID, selector),
+			sqlgraph.To(starttoken.Table, starttoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, contact.StartTokensTable, contact.StartTokensColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -399,6 +447,8 @@ func (_q *ContactQuery) Clone() *ContactQuery {
 		predicates:      append([]predicate.Contact{}, _q.predicates...),
 		withWorkspace:   _q.withWorkspace.Clone(),
 		withVisitors:    _q.withVisitors.Clone(),
+		withBindings:    _q.withBindings.Clone(),
+		withStartTokens: _q.withStartTokens.Clone(),
 		withTags:        _q.withTags.Clone(),
 		withEvents:      _q.withEvents.Clone(),
 		withOrders:      _q.withOrders.Clone(),
@@ -429,6 +479,28 @@ func (_q *ContactQuery) WithVisitors(opts ...func(*VisitorQuery)) *ContactQuery 
 		opt(query)
 	}
 	_q.withVisitors = query
+	return _q
+}
+
+// WithBindings tells the query-builder to eager-load the nodes that are connected to
+// the "bindings" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ContactQuery) WithBindings(opts ...func(*BindingQuery)) *ContactQuery {
+	query := (&BindingClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withBindings = query
+	return _q
+}
+
+// WithStartTokens tells the query-builder to eager-load the nodes that are connected to
+// the "start_tokens" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ContactQuery) WithStartTokens(opts ...func(*StartTokenQuery)) *ContactQuery {
+	query := (&StartTokenClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withStartTokens = query
 	return _q
 }
 
@@ -554,9 +626,11 @@ func (_q *ContactQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cont
 	var (
 		nodes       = []*Contact{}
 		_spec       = _q.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [8]bool{
 			_q.withWorkspace != nil,
 			_q.withVisitors != nil,
+			_q.withBindings != nil,
+			_q.withStartTokens != nil,
 			_q.withTags != nil,
 			_q.withEvents != nil,
 			_q.withOrders != nil,
@@ -594,6 +668,20 @@ func (_q *ContactQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cont
 		if err := _q.loadVisitors(ctx, query, nodes,
 			func(n *Contact) { n.Edges.Visitors = []*Visitor{} },
 			func(n *Contact, e *Visitor) { n.Edges.Visitors = append(n.Edges.Visitors, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withBindings; query != nil {
+		if err := _q.loadBindings(ctx, query, nodes,
+			func(n *Contact) { n.Edges.Bindings = []*Binding{} },
+			func(n *Contact, e *Binding) { n.Edges.Bindings = append(n.Edges.Bindings, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withStartTokens; query != nil {
+		if err := _q.loadStartTokens(ctx, query, nodes,
+			func(n *Contact) { n.Edges.StartTokens = []*StartToken{} },
+			func(n *Contact, e *StartToken) { n.Edges.StartTokens = append(n.Edges.StartTokens, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -672,6 +760,72 @@ func (_q *ContactQuery) loadVisitors(ctx context.Context, query *VisitorQuery, n
 	}
 	query.Where(predicate.Visitor(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(contact.VisitorsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ContactID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "contact_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "contact_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ContactQuery) loadBindings(ctx context.Context, query *BindingQuery, nodes []*Contact, init func(*Contact), assign func(*Contact, *Binding)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Contact)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(binding.FieldContactID)
+	}
+	query.Where(predicate.Binding(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(contact.BindingsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ContactID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "contact_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "contact_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ContactQuery) loadStartTokens(ctx context.Context, query *StartTokenQuery, nodes []*Contact, init func(*Contact), assign func(*Contact, *StartToken)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Contact)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(starttoken.FieldContactID)
+	}
+	query.Where(predicate.StartToken(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(contact.StartTokensColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

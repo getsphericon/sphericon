@@ -41,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -184,6 +185,10 @@ type TestEnv struct {
 
 	// SES scripts the send quota every "ses" Integration reports.
 	SES *FakeSES
+
+	// Telegram is the fake Bot API every Telegram Integration's bot is reached at
+	// (SPHERICON_TELEGRAM_BOT_API_URL points at it): add bots, script failures, read the calls.
+	Telegram *telegramtest.Server
 
 	// Machine is the detector the tracking endpoints judge hits by, fed by PrivateRelay, the
 	// scripted source of the published Private Relay list: Refresh replaces the stored ranges.
@@ -416,6 +421,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		oauthFetcher = oauthserver.NewFetcher(cfg.OutboundAllow)
 	}
 	fakeSES := &FakeSES{}
+	botAPI := telegramtest.New(t)
+	cfg.TelegramBotAPIURL = botAPI.URL()
 	relay := &FakeRelayRanges{}
 	confirmations := &Confirmations{}
 
@@ -427,7 +434,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	do.OverrideValue(injector, Passwords())
 	do.OverrideValue(injector, app.SystemSender{EmailSender: systemSender})
 	// SES's quota lookup is answered by a fake instead of the AWS API.
-	do.OverrideValue(injector, catalogWith(fakeSES))
+	do.OverrideValue(injector, catalogWith(fakeSES, cfg.TelegramBotAPIURL))
 	do.OverrideValue(injector, stubTXT)
 	do.OverrideValue[machine.Source](injector, relay)
 	do.OverrideValue(injector, presets)
@@ -496,6 +503,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		SystemMail:      systemMail,
 		CustomerMail:    customerMail,
 		SES:             fakeSES,
+		Telegram:        botAPI,
 		Machine:         do.MustInvoke[*machine.Detector](injector),
 		PrivateRelay:    relay,
 		Confirmations:   confirmations,

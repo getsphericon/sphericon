@@ -103,9 +103,10 @@ type Invoker interface {
 	// AutomationsPublish invokes Automations_publish operation.
 	//
 	// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
-	// draft, the live version is resumed. 422 with neither. 409 when the version going live has an email
-	// step and the integration it sends through cannot send (disabled or archived, or no default): a draft
-	// may name such an integration, only publishing it is refused. Needs the automations:publish scope.
+	// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
+	// live sends through an integration that cannot send (disabled, archived, of another channel, or no
+	// default for the step's channel): a draft may name such an integration, only publishing it is
+	// refused. Needs the automations:publish scope.
 	//
 	// POST /automations/{id}/publish
 	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error)
@@ -202,6 +203,8 @@ type Invoker interface {
 	// BroadcastsTestSend invokes Broadcasts_testSend operation.
 	//
 	// Send a rendered preview with sample merge data to a single address. Never sends to the audience.
+	// Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a
+	// 422.
 	//
 	// POST /broadcasts/{id}/test-send
 	BroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error)
@@ -418,7 +421,8 @@ type Invoker interface {
 	//
 	// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 	// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-	// email automation through the default, uses it (`usedBy` names them).
+	// email automation through the default, uses it (`usedBy` names them). A Telegram integration's
+	// webhook is removed, best effort.
 	//
 	// POST /integrations/{id}/archive
 	IntegrationsArchive(ctx context.Context, params IntegrationsArchiveParams) (IntegrationsArchiveRes, error)
@@ -443,13 +447,15 @@ type Invoker interface {
 	// IntegrationsRegenerateKey invokes Integrations_regenerateKey operation.
 	//
 	// Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
-	// pasted into the provider. Needs a person: hidden from MCP.
+	// pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
+	// is a 422). Needs a person: hidden from MCP.
 	//
 	// POST /integrations/{id}/regenerate-key
 	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error)
 	// IntegrationsUnarchive invokes Integrations_unarchive operation.
 	//
-	// Restore an archived integration to the list. It is not the default; promote it with an update.
+	// Restore an archived integration to the list. It is not the default; promote it with an update. An
+	// enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422.
 	//
 	// POST /integrations/{id}/unarchive
 	IntegrationsUnarchive(ctx context.Context, params IntegrationsUnarchiveParams) (IntegrationsUnarchiveRes, error)
@@ -675,6 +681,13 @@ type Invoker interface {
 	//
 	// DELETE /contacts/{contactId}/tags/{name}
 	TagsRemove(ctx context.Context, params TagsRemoveParams) (TagsRemoveRes, error)
+	// TelegramStartLinksIssue invokes TelegramStartLinks_issue operation.
+	//
+	// Issue a start link for a contact: `https://t.me/<bot>?start=<token>`. The chat that starts with it
+	// binds to the contact, once. Each call issues a new link.
+	//
+	// POST /contacts/{contactId}/telegram-start-links
+	TelegramStartLinksIssue(ctx context.Context, request *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (TelegramStartLinksIssueRes, error)
 	// TemplatesCreate invokes Templates_create operation.
 	//
 	// Create a resource.
@@ -2657,9 +2670,10 @@ func (c *Client) sendAutomationsList(ctx context.Context, params AutomationsList
 // AutomationsPublish invokes Automations_publish operation.
 //
 // Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
-// draft, the live version is resumed. 422 with neither. 409 when the version going live has an email
-// step and the integration it sends through cannot send (disabled or archived, or no default): a draft
-// may name such an integration, only publishing it is refused. Needs the automations:publish scope.
+// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
+// live sends through an integration that cannot send (disabled, archived, of another channel, or no
+// default for the step's channel): a draft may name such an integration, only publishing it is
+// refused. Needs the automations:publish scope.
 //
 // POST /automations/{id}/publish
 func (c *Client) AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error) {
@@ -4098,6 +4112,23 @@ func (c *Client) sendBroadcastsList(ctx context.Context, params BroadcastsListPa
 			return res, errors.Wrap(err, "encode query")
 		}
 	}
+	{
+		// Encode "channel" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "channel",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Channel.Get(); ok {
+				return e.EncodeValue(conv.StringToString(string(val)))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
 	u.RawQuery = q.Values().Encode()
 
 	stage = "EncodeRequest"
@@ -4581,6 +4612,8 @@ func (c *Client) sendBroadcastsSetSegment(ctx context.Context, request *SetBroad
 // BroadcastsTestSend invokes Broadcasts_testSend operation.
 //
 // Send a rendered preview with sample merge data to a single address. Never sends to the audience.
+// Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a
+// 422.
 //
 // POST /broadcasts/{id}/test-send
 func (c *Client) BroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error) {
@@ -8883,7 +8916,8 @@ func (c *Client) sendExportMessages(ctx context.Context, params ExportMessagesPa
 //
 // Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 // not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-// email automation through the default, uses it (`usedBy` names them).
+// email automation through the default, uses it (`usedBy` names them). A Telegram integration's
+// webhook is removed, best effort.
 //
 // POST /integrations/{id}/archive
 func (c *Client) IntegrationsArchive(ctx context.Context, params IntegrationsArchiveParams) (IntegrationsArchiveRes, error) {
@@ -9437,7 +9471,8 @@ func (c *Client) sendIntegrationsList(ctx context.Context, params IntegrationsLi
 // IntegrationsRegenerateKey invokes Integrations_regenerateKey operation.
 //
 // Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
-// pasted into the provider. Needs a person: hidden from MCP.
+// pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
+// is a 422). Needs a person: hidden from MCP.
 //
 // POST /integrations/{id}/regenerate-key
 func (c *Client) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error) {
@@ -9572,7 +9607,8 @@ func (c *Client) sendIntegrationsRegenerateKey(ctx context.Context, params Integ
 
 // IntegrationsUnarchive invokes Integrations_unarchive operation.
 //
-// Restore an archived integration to the list. It is not the default; promote it with an update.
+// Restore an archived integration to the list. It is not the default; promote it with an update. An
+// enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422.
 //
 // POST /integrations/{id}/unarchive
 func (c *Client) IntegrationsUnarchive(ctx context.Context, params IntegrationsUnarchiveParams) (IntegrationsUnarchiveRes, error) {
@@ -14535,6 +14571,145 @@ func (c *Client) sendTagsRemove(ctx context.Context, params TagsRemoveParams) (r
 
 	stage = "DecodeResponse"
 	result, err := decodeTagsRemoveResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// TelegramStartLinksIssue invokes TelegramStartLinks_issue operation.
+//
+// Issue a start link for a contact: `https://t.me/<bot>?start=<token>`. The chat that starts with it
+// binds to the contact, once. Each call issues a new link.
+//
+// POST /contacts/{contactId}/telegram-start-links
+func (c *Client) TelegramStartLinksIssue(ctx context.Context, request *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (TelegramStartLinksIssueRes, error) {
+	res, err := c.sendTelegramStartLinksIssue(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendTelegramStartLinksIssue(ctx context.Context, request *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (res TelegramStartLinksIssueRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("TelegramStartLinks_issue"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/contacts/{contactId}/telegram-start-links"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, TelegramStartLinksIssueOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/contacts/"
+	{
+		// Encode "contactId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "contactId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ContactId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/telegram-start-links"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeTelegramStartLinksIssueRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, TelegramStartLinksIssueOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeTelegramStartLinksIssueResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

@@ -336,7 +336,9 @@ func TestGiveUpAfterTheMailLeftKeepsTheRecipientSent(t *testing.T) {
 	b := d.broadcastRow()
 	rec := d.recipientRow(id)
 	c := d.env.DB.Contact.GetX(d.t.Context(), fixtures.ContactAliceID)
-	res, err := d.out.Send(d.t.Context(), d.s, outbound.BroadcastRecipient(b, rec, c))
+	req, err := outbound.BroadcastRecipient(b, rec, c)
+	require.NoError(d.t, err)
+	res, err := d.out.Send(d.t.Context(), d.s, req)
 	require.NoError(t, err)
 	require.Equal(t, outbound.Sent, res.Outcome)
 

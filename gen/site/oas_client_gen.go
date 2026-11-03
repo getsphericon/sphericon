@@ -322,9 +322,10 @@ type Invoker interface {
 	// SiteAutomationsPublish invokes SiteAutomations_publish operation.
 	//
 	// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
-	// draft, the live version is resumed. 422 with neither. 409 when the version going live has an email
-	// step and the integration it sends through cannot send (disabled or archived, or no default): a draft
-	// may name such an integration, only publishing it is refused.
+	// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
+	// live sends through an integration that cannot send (disabled, archived, of another channel, or no
+	// default for the step's channel): a draft may name such an integration, only publishing it is
+	// refused.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/publish
 	SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (SiteAutomationsPublishRes, error)
@@ -426,9 +427,11 @@ type Invoker interface {
 	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error)
 	// SiteBroadcastsTestSend invokes SiteBroadcasts_testSend operation.
 	//
-	// Send a one-off rendered preview to a single address. While the Workspace has no verified Sending
-	// domain it goes from the System sender and only to the asking User's own address (ADR 0041): another
-	// address is refused with 422, the System sender's caps answer 429.
+	// Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram has
+	// no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram broadcast is a
+	// 422. While the Workspace has no verified Sending domain it goes from the System sender and only to
+	// the asking User's own address (ADR 0041): another address is refused with 422, the System sender's
+	// caps answer 429.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
 	SiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
@@ -621,7 +624,8 @@ type Invoker interface {
 	//
 	// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 	// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-	// email automation through the default, uses it. Owners and admins only.
+	// email automation through the default, uses it. A Telegram integration's webhook is removed, best
+	// effort. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/archive
 	SiteIntegrationsArchive(ctx context.Context, params SiteIntegrationsArchiveParams) (SiteIntegrationsArchiveRes, error)
@@ -646,14 +650,17 @@ type Invoker interface {
 	SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (SiteIntegrationsListRes, error)
 	// SiteIntegrationsRegenerateKey invokes SiteIntegrations_regenerateKey operation.
 	//
-	// Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.
+	// Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
+	// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 	SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error)
 	// SiteIntegrationsUnarchive invokes SiteIntegrations_unarchive operation.
 	//
 	// Restore an archived integration to the list. It is not the default; promote it with an update.
-	// Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.
+	// Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram
+	// integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins
+	// only.
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/unarchive
 	SiteIntegrationsUnarchive(ctx context.Context, params SiteIntegrationsUnarchiveParams) (SiteIntegrationsUnarchiveRes, error)
@@ -1206,6 +1213,18 @@ type Invoker interface {
 	//
 	// DELETE /workspaces/{workspaceId}/contacts/{contactId}/tags/{name}
 	SiteTagsRemove(ctx context.Context, params SiteTagsRemoveParams) (SiteTagsRemoveRes, error)
+	// SiteTelegramIssueStartLink invokes SiteTelegram_issueStartLink operation.
+	//
+	// Issue a Telegram start link for a contact. Each call issues a new link.
+	//
+	// POST /workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links
+	SiteTelegramIssueStartLink(ctx context.Context, request *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (SiteTelegramIssueStartLinkRes, error)
+	// SiteTelegramListBindings invokes SiteTelegram_listBindings operation.
+	//
+	// List the Telegram chats a contact is reached through.
+	//
+	// GET /workspaces/{workspaceId}/contacts/{contactId}/bindings
+	SiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) (SiteTelegramListBindingsRes, error)
 	// SiteTemplatesCreate invokes SiteTemplates_create operation.
 	//
 	// Create a resource from the site UI.
@@ -6711,9 +6730,10 @@ func (c *Client) sendSiteAutomationsList(ctx context.Context, params SiteAutomat
 // SiteAutomationsPublish invokes SiteAutomations_publish operation.
 //
 // Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
-// draft, the live version is resumed. 422 with neither. 409 when the version going live has an email
-// step and the integration it sends through cannot send (disabled or archived, or no default): a draft
-// may name such an integration, only publishing it is refused.
+// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
+// live sends through an integration that cannot send (disabled, archived, of another channel, or no
+// default for the step's channel): a draft may name such an integration, only publishing it is
+// refused.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/publish
 func (c *Client) SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (SiteAutomationsPublishRes, error) {
@@ -8673,6 +8693,23 @@ func (c *Client) sendSiteBroadcastsList(ctx context.Context, params SiteBroadcas
 		}
 	}
 	{
+		// Encode "channel" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "channel",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Channel.Get(); ok {
+				return e.EncodeValue(conv.StringToString(string(val)))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
 		// Encode "order" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
 			Name:    "order",
@@ -9077,9 +9114,11 @@ func (c *Client) sendSiteBroadcastsSend(ctx context.Context, params SiteBroadcas
 
 // SiteBroadcastsTestSend invokes SiteBroadcasts_testSend operation.
 //
-// Send a one-off rendered preview to a single address. While the Workspace has no verified Sending
-// domain it goes from the System sender and only to the asking User's own address (ADR 0041): another
-// address is refused with 422, the System sender's caps answer 429.
+// Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram has
+// no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram broadcast is a
+// 422. While the Workspace has no verified Sending domain it goes from the System sender and only to
+// the asking User's own address (ADR 0041): another address is refused with 422, the System sender's
+// caps answer 429.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
 func (c *Client) SiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error) {
@@ -13655,7 +13694,8 @@ func (c *Client) sendSiteInstanceGetRelease(ctx context.Context) (res SiteInstan
 //
 // Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 // not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-// email automation through the default, uses it. Owners and admins only.
+// email automation through the default, uses it. A Telegram integration's webhook is removed, best
+// effort. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/archive
 func (c *Client) SiteIntegrationsArchive(ctx context.Context, params SiteIntegrationsArchiveParams) (SiteIntegrationsArchiveRes, error) {
@@ -14263,7 +14303,8 @@ func (c *Client) sendSiteIntegrationsList(ctx context.Context, params SiteIntegr
 
 // SiteIntegrationsRegenerateKey invokes SiteIntegrations_regenerateKey operation.
 //
-// Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.
+// Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
+// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 func (c *Client) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error) {
@@ -14421,7 +14462,9 @@ func (c *Client) sendSiteIntegrationsRegenerateKey(ctx context.Context, params S
 // SiteIntegrationsUnarchive invokes SiteIntegrations_unarchive operation.
 //
 // Restore an archived integration to the list. It is not the default; promote it with an update.
-// Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.
+// Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram
+// integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins
+// only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/unarchive
 func (c *Client) SiteIntegrationsUnarchive(ctx context.Context, params SiteIntegrationsUnarchiveParams) (SiteIntegrationsUnarchiveRes, error) {
@@ -25747,6 +25790,323 @@ func (c *Client) sendSiteTagsRemove(ctx context.Context, params SiteTagsRemovePa
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteTagsRemoveResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteTelegramIssueStartLink invokes SiteTelegram_issueStartLink operation.
+//
+// Issue a Telegram start link for a contact. Each call issues a new link.
+//
+// POST /workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links
+func (c *Client) SiteTelegramIssueStartLink(ctx context.Context, request *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (SiteTelegramIssueStartLinkRes, error) {
+	res, err := c.sendSiteTelegramIssueStartLink(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSiteTelegramIssueStartLink(ctx context.Context, request *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (res SiteTelegramIssueStartLinkRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteTelegram_issueStartLink"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteTelegramIssueStartLinkOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contacts/"
+	{
+		// Encode "contactId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "contactId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ContactId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/telegram-start-links"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteTelegramIssueStartLinkRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteTelegramIssueStartLinkOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteTelegramIssueStartLinkResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteTelegramListBindings invokes SiteTelegram_listBindings operation.
+//
+// List the Telegram chats a contact is reached through.
+//
+// GET /workspaces/{workspaceId}/contacts/{contactId}/bindings
+func (c *Client) SiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) (SiteTelegramListBindingsRes, error) {
+	res, err := c.sendSiteTelegramListBindings(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) (res SiteTelegramListBindingsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteTelegram_listBindings"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contacts/{contactId}/bindings"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteTelegramListBindingsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contacts/"
+	{
+		// Encode "contactId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "contactId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ContactId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/bindings"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteTelegramListBindingsOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteTelegramListBindingsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

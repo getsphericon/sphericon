@@ -85,6 +85,10 @@ const (
 	EdgeHeldOrderEvents = "held_order_events"
 	// EdgeVisitors holds the string denoting the visitors edge name in mutations.
 	EdgeVisitors = "visitors"
+	// EdgeBindings holds the string denoting the bindings edge name in mutations.
+	EdgeBindings = "bindings"
+	// EdgeStartTokens holds the string denoting the start_tokens edge name in mutations.
+	EdgeStartTokens = "start_tokens"
 	// EdgeAPITokens holds the string denoting the api_tokens edge name in mutations.
 	EdgeAPITokens = "api_tokens"
 	// EdgeIntegrations holds the string denoting the integrations edge name in mutations.
@@ -133,6 +137,8 @@ const (
 	EdgeConfirmations = "confirmations"
 	// EdgeOutboundMessages holds the string denoting the outbound_messages edge name in mutations.
 	EdgeOutboundMessages = "outbound_messages"
+	// EdgeTrackedLinks holds the string denoting the tracked_links edge name in mutations.
+	EdgeTrackedLinks = "tracked_links"
 	// EdgeCapturedMessages holds the string denoting the captured_messages edge name in mutations.
 	EdgeCapturedMessages = "captured_messages"
 	// EdgeMemberships holds the string denoting the memberships edge name in mutations.
@@ -210,6 +216,20 @@ const (
 	VisitorsInverseTable = "visitors"
 	// VisitorsColumn is the table column denoting the visitors relation/edge.
 	VisitorsColumn = "workspace_id"
+	// BindingsTable is the table that holds the bindings relation/edge.
+	BindingsTable = "bindings"
+	// BindingsInverseTable is the table name for the Binding entity.
+	// It exists in this package in order to avoid circular dependency with the "binding" package.
+	BindingsInverseTable = "bindings"
+	// BindingsColumn is the table column denoting the bindings relation/edge.
+	BindingsColumn = "workspace_id"
+	// StartTokensTable is the table that holds the start_tokens relation/edge.
+	StartTokensTable = "start_tokens"
+	// StartTokensInverseTable is the table name for the StartToken entity.
+	// It exists in this package in order to avoid circular dependency with the "starttoken" package.
+	StartTokensInverseTable = "start_tokens"
+	// StartTokensColumn is the table column denoting the start_tokens relation/edge.
+	StartTokensColumn = "workspace_id"
 	// APITokensTable is the table that holds the api_tokens relation/edge.
 	APITokensTable = "api_tokens"
 	// APITokensInverseTable is the table name for the ApiToken entity.
@@ -378,6 +398,13 @@ const (
 	OutboundMessagesInverseTable = "outbound_messages"
 	// OutboundMessagesColumn is the table column denoting the outbound_messages relation/edge.
 	OutboundMessagesColumn = "workspace_id"
+	// TrackedLinksTable is the table that holds the tracked_links relation/edge.
+	TrackedLinksTable = "tracked_links"
+	// TrackedLinksInverseTable is the table name for the TrackedLink entity.
+	// It exists in this package in order to avoid circular dependency with the "trackedlink" package.
+	TrackedLinksInverseTable = "tracked_links"
+	// TrackedLinksColumn is the table column denoting the tracked_links relation/edge.
+	TrackedLinksColumn = "workspace_id"
 	// CapturedMessagesTable is the table that holds the captured_messages relation/edge.
 	CapturedMessagesTable = "captured_messages"
 	// CapturedMessagesInverseTable is the table name for the CapturedMessage entity.
@@ -786,6 +813,34 @@ func ByVisitors(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByBindingsCount orders the results by bindings count.
+func ByBindingsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBindingsStep(), opts...)
+	}
+}
+
+// ByBindings orders the results by bindings terms.
+func ByBindings(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBindingsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByStartTokensCount orders the results by start_tokens count.
+func ByStartTokensCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newStartTokensStep(), opts...)
+	}
+}
+
+// ByStartTokens orders the results by start_tokens terms.
+func ByStartTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStartTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByAPITokensCount orders the results by api_tokens count.
 func ByAPITokensCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1122,6 +1177,20 @@ func ByOutboundMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption 
 	}
 }
 
+// ByTrackedLinksCount orders the results by tracked_links count.
+func ByTrackedLinksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTrackedLinksStep(), opts...)
+	}
+}
+
+// ByTrackedLinks orders the results by tracked_links terms.
+func ByTrackedLinks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTrackedLinksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByCapturedMessagesCount orders the results by captured_messages count.
 func ByCapturedMessagesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1266,6 +1335,20 @@ func newVisitorsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(VisitorsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, VisitorsTable, VisitorsColumn),
+	)
+}
+func newBindingsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BindingsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, BindingsTable, BindingsColumn),
+	)
+}
+func newStartTokensStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StartTokensInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, StartTokensTable, StartTokensColumn),
 	)
 }
 func newAPITokensStep() *sqlgraph.Step {
@@ -1434,6 +1517,13 @@ func newOutboundMessagesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(OutboundMessagesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, OutboundMessagesTable, OutboundMessagesColumn),
+	)
+}
+func newTrackedLinksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TrackedLinksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TrackedLinksTable, TrackedLinksColumn),
 	)
 }
 func newCapturedMessagesStep() *sqlgraph.Step {

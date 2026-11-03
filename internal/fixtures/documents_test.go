@@ -49,7 +49,7 @@ func TestFixtureBroadcastBodiesAreTheRenderOfTheirDocuments(t *testing.T) {
 
 	messages := make([]authored, 0, len(rows))
 	for _, row := range rows {
-		messages = append(messages, authored{id: row.ID, subject: row.Subject, doc: row.Doc, version: row.EditorVersion, body: row.Body})
+		messages = append(messages, authored{id: row.ID, subject: *row.Subject, doc: row.Doc, version: row.EditorVersion, body: *row.Body})
 	}
 	requireBodiesAreRenders(t, "broadcasts.yml", messages)
 }

@@ -10,6 +10,8 @@ import type {
 import { zSiteAutomationHttpHeader } from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
+import { buttonsCodec } from '../../utils/telegramButtons.ts'
+import { completeButtons } from '../../utils/telegramContent.ts'
 import {
   APPLY_TAG_NODE_TYPE,
   EMAIL_NODE_ICON,
@@ -18,6 +20,8 @@ import {
   HTTP_NODE_TYPE,
   REMOVE_TAG_NODE_TYPE,
   TAG_NODE_ICON,
+  TELEGRAM_NODE_ICON,
+  TELEGRAM_NODE_TYPE,
   TRIGGER_NODE_ICON,
   TRIGGER_NODE_TYPE,
   WAIT_NODE_ICON,
@@ -47,10 +51,24 @@ export interface AutomationGraph {
 
 const STEP_ICON: Record<AutomationStep['type'], WBIcon> = {
   email: EMAIL_NODE_ICON,
+  telegram: TELEGRAM_NODE_ICON,
   wait: WAIT_NODE_ICON,
   apply_tag: TAG_NODE_ICON,
   remove_tag: TAG_NODE_ICON,
   http: HTTP_NODE_ICON,
+}
+
+// A Telegram step's content, as the form holds it: every value a string.
+function telegramProperties(step: AutomationStep): Record<string, unknown> {
+  return {
+    integrationId: step.integrationId ?? '',
+    text: step.text ?? '',
+    unsubscribeButton: step.unsubscribeButton ?? '',
+    imageUrl: step.imageUrl ?? '',
+    buttons: buttonsCodec.write(step.buttons ?? []),
+    // 'off' is a preview turned off, '' the default.
+    linkPreview: step.linkPreview === false ? 'off' : '',
+  }
 }
 
 // The server never returns an HTTP step's URL, header values or signing secret, so the
@@ -72,7 +90,11 @@ function stepProperties(step: AutomationStep): Record<string, unknown> {
   if (step.type === 'apply_tag' || step.type === 'remove_tag') {
     return { tag: step.tag ?? '' }
   }
+  if (step.type === 'telegram') {
+    return telegramProperties(step)
+  }
   return {
+    integrationId: step.integrationId ?? '',
     subject: step.subject ?? '',
     body: step.body ?? '',
     doc: step.doc ? z.encode(docCodec, step.doc) : '',
@@ -210,14 +232,32 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
       tag: asText(props.tag),
     }
   }
+  if (node.data.type === TELEGRAM_NODE_TYPE) {
+    const integrationId = asText(props.integrationId)
+    const unsubscribeButton = asText(props.unsubscribeButton)
+    const imageUrl = asText(props.imageUrl).trim()
+    const buttons = completeButtons(buttonsCodec.read(props.buttons))
+    return {
+      type: 'telegram',
+      text: asText(props.text),
+      ...(integrationId === '' ? {} : { integrationId }),
+      ...(unsubscribeButton === '' ? {} : { unsubscribeButton }),
+      ...(imageUrl === '' ? {} : { imageUrl }),
+      ...(buttons.length === 0 ? {} : { buttons }),
+      ...(props.linkPreview === 'off' ? { linkPreview: false } : {}),
+    }
+  }
   if (node.data.type === EMAIL_NODE_TYPE) {
     // A message written in the editor is saved as its document alone (the server builds the
-    // body; sending both is a 422), and one written as HTML as its body alone.
+    // body; sending both is a 422), and one written as HTML as its body alone. A step that names
+    // no Integration ('') leaves it out: it sends through the email default.
     const subject = asText(props.subject)
+    const integrationId = asText(props.integrationId)
+    const via = integrationId === '' ? {} : { integrationId }
     const doc = docCodec.safeParse(asText(props.doc))
     return doc.success
-      ? { type: 'email', subject, doc: doc.data }
-      : { type: 'email', subject, body: asText(props.body) }
+      ? { type: 'email', ...via, subject, doc: doc.data }
+      : { type: 'email', ...via, subject, body: asText(props.body) }
   }
   return null
 }

@@ -11,10 +11,12 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -352,6 +354,26 @@ func (_u *IntegrationUpdate) SetNillableProviderSandbox(v *bool) *IntegrationUpd
 	return _u
 }
 
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (_u *IntegrationUpdate) SetProviderRefusedAt(v time.Time) *IntegrationUpdate {
+	_u.mutation.SetProviderRefusedAt(v)
+	return _u
+}
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (_u *IntegrationUpdate) SetNillableProviderRefusedAt(v *time.Time) *IntegrationUpdate {
+	if v != nil {
+		_u.SetProviderRefusedAt(*v)
+	}
+	return _u
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (_u *IntegrationUpdate) ClearProviderRefusedAt() *IntegrationUpdate {
+	_u.mutation.ClearProviderRefusedAt()
+	return _u
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (_u *IntegrationUpdate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationUpdate {
 	_u.mutation.SetProviderQuotaCheckedAt(v)
@@ -431,6 +453,36 @@ func (_u *IntegrationUpdate) AddCapturedMessages(v ...*CapturedMessage) *Integra
 	return _u.AddCapturedMessageIDs(ids...)
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (_u *IntegrationUpdate) AddBindingIDs(ids ...int64) *IntegrationUpdate {
+	_u.mutation.AddBindingIDs(ids...)
+	return _u
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (_u *IntegrationUpdate) AddBindings(v ...*Binding) *IntegrationUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBindingIDs(ids...)
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (_u *IntegrationUpdate) AddStartTokenIDs(ids ...int64) *IntegrationUpdate {
+	_u.mutation.AddStartTokenIDs(ids...)
+	return _u
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (_u *IntegrationUpdate) AddStartTokens(v ...*StartToken) *IntegrationUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddStartTokenIDs(ids...)
+}
+
 // Mutation returns the IntegrationMutation object of the builder.
 func (_u *IntegrationUpdate) Mutation() *IntegrationMutation {
 	return _u.mutation
@@ -467,6 +519,48 @@ func (_u *IntegrationUpdate) RemoveCapturedMessages(v ...*CapturedMessage) *Inte
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveCapturedMessageIDs(ids...)
+}
+
+// ClearBindings clears all "bindings" edges to the Binding entity.
+func (_u *IntegrationUpdate) ClearBindings() *IntegrationUpdate {
+	_u.mutation.ClearBindings()
+	return _u
+}
+
+// RemoveBindingIDs removes the "bindings" edge to Binding entities by IDs.
+func (_u *IntegrationUpdate) RemoveBindingIDs(ids ...int64) *IntegrationUpdate {
+	_u.mutation.RemoveBindingIDs(ids...)
+	return _u
+}
+
+// RemoveBindings removes "bindings" edges to Binding entities.
+func (_u *IntegrationUpdate) RemoveBindings(v ...*Binding) *IntegrationUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBindingIDs(ids...)
+}
+
+// ClearStartTokens clears all "start_tokens" edges to the StartToken entity.
+func (_u *IntegrationUpdate) ClearStartTokens() *IntegrationUpdate {
+	_u.mutation.ClearStartTokens()
+	return _u
+}
+
+// RemoveStartTokenIDs removes the "start_tokens" edge to StartToken entities by IDs.
+func (_u *IntegrationUpdate) RemoveStartTokenIDs(ids ...int64) *IntegrationUpdate {
+	_u.mutation.RemoveStartTokenIDs(ids...)
+	return _u
+}
+
+// RemoveStartTokens removes "start_tokens" edges to StartToken entities.
+func (_u *IntegrationUpdate) RemoveStartTokens(v ...*StartToken) *IntegrationUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveStartTokenIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -658,6 +752,12 @@ func (_u *IntegrationUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.ProviderSandbox(); ok {
 		_spec.SetField(integration.FieldProviderSandbox, field.TypeBool, value)
 	}
+	if value, ok := _u.mutation.ProviderRefusedAt(); ok {
+		_spec.SetField(integration.FieldProviderRefusedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProviderRefusedAtCleared() {
+		_spec.ClearField(integration.FieldProviderRefusedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.ProviderQuotaCheckedAt(); ok {
 		_spec.SetField(integration.FieldProviderQuotaCheckedAt, field.TypeTime, value)
 	}
@@ -766,6 +866,96 @@ func (_u *IntegrationUpdate) sqlSave(ctx context.Context) (_node int, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BindingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.BindingsTable,
+			Columns: []string{integration.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBindingsIDs(); len(nodes) > 0 && !_u.mutation.BindingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.BindingsTable,
+			Columns: []string{integration.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BindingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.BindingsTable,
+			Columns: []string{integration.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.StartTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.StartTokensTable,
+			Columns: []string{integration.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedStartTokensIDs(); len(nodes) > 0 && !_u.mutation.StartTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.StartTokensTable,
+			Columns: []string{integration.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.StartTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.StartTokensTable,
+			Columns: []string{integration.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1115,6 +1305,26 @@ func (_u *IntegrationUpdateOne) SetNillableProviderSandbox(v *bool) *Integration
 	return _u
 }
 
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (_u *IntegrationUpdateOne) SetProviderRefusedAt(v time.Time) *IntegrationUpdateOne {
+	_u.mutation.SetProviderRefusedAt(v)
+	return _u
+}
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (_u *IntegrationUpdateOne) SetNillableProviderRefusedAt(v *time.Time) *IntegrationUpdateOne {
+	if v != nil {
+		_u.SetProviderRefusedAt(*v)
+	}
+	return _u
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (_u *IntegrationUpdateOne) ClearProviderRefusedAt() *IntegrationUpdateOne {
+	_u.mutation.ClearProviderRefusedAt()
+	return _u
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (_u *IntegrationUpdateOne) SetProviderQuotaCheckedAt(v time.Time) *IntegrationUpdateOne {
 	_u.mutation.SetProviderQuotaCheckedAt(v)
@@ -1194,6 +1404,36 @@ func (_u *IntegrationUpdateOne) AddCapturedMessages(v ...*CapturedMessage) *Inte
 	return _u.AddCapturedMessageIDs(ids...)
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (_u *IntegrationUpdateOne) AddBindingIDs(ids ...int64) *IntegrationUpdateOne {
+	_u.mutation.AddBindingIDs(ids...)
+	return _u
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (_u *IntegrationUpdateOne) AddBindings(v ...*Binding) *IntegrationUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBindingIDs(ids...)
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (_u *IntegrationUpdateOne) AddStartTokenIDs(ids ...int64) *IntegrationUpdateOne {
+	_u.mutation.AddStartTokenIDs(ids...)
+	return _u
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (_u *IntegrationUpdateOne) AddStartTokens(v ...*StartToken) *IntegrationUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddStartTokenIDs(ids...)
+}
+
 // Mutation returns the IntegrationMutation object of the builder.
 func (_u *IntegrationUpdateOne) Mutation() *IntegrationMutation {
 	return _u.mutation
@@ -1230,6 +1470,48 @@ func (_u *IntegrationUpdateOne) RemoveCapturedMessages(v ...*CapturedMessage) *I
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveCapturedMessageIDs(ids...)
+}
+
+// ClearBindings clears all "bindings" edges to the Binding entity.
+func (_u *IntegrationUpdateOne) ClearBindings() *IntegrationUpdateOne {
+	_u.mutation.ClearBindings()
+	return _u
+}
+
+// RemoveBindingIDs removes the "bindings" edge to Binding entities by IDs.
+func (_u *IntegrationUpdateOne) RemoveBindingIDs(ids ...int64) *IntegrationUpdateOne {
+	_u.mutation.RemoveBindingIDs(ids...)
+	return _u
+}
+
+// RemoveBindings removes "bindings" edges to Binding entities.
+func (_u *IntegrationUpdateOne) RemoveBindings(v ...*Binding) *IntegrationUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBindingIDs(ids...)
+}
+
+// ClearStartTokens clears all "start_tokens" edges to the StartToken entity.
+func (_u *IntegrationUpdateOne) ClearStartTokens() *IntegrationUpdateOne {
+	_u.mutation.ClearStartTokens()
+	return _u
+}
+
+// RemoveStartTokenIDs removes the "start_tokens" edge to StartToken entities by IDs.
+func (_u *IntegrationUpdateOne) RemoveStartTokenIDs(ids ...int64) *IntegrationUpdateOne {
+	_u.mutation.RemoveStartTokenIDs(ids...)
+	return _u
+}
+
+// RemoveStartTokens removes "start_tokens" edges to StartToken entities.
+func (_u *IntegrationUpdateOne) RemoveStartTokens(v ...*StartToken) *IntegrationUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveStartTokenIDs(ids...)
 }
 
 // Where appends a list predicates to the IntegrationUpdate builder.
@@ -1451,6 +1733,12 @@ func (_u *IntegrationUpdateOne) sqlSave(ctx context.Context) (_node *Integration
 	if value, ok := _u.mutation.ProviderSandbox(); ok {
 		_spec.SetField(integration.FieldProviderSandbox, field.TypeBool, value)
 	}
+	if value, ok := _u.mutation.ProviderRefusedAt(); ok {
+		_spec.SetField(integration.FieldProviderRefusedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProviderRefusedAtCleared() {
+		_spec.ClearField(integration.FieldProviderRefusedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.ProviderQuotaCheckedAt(); ok {
 		_spec.SetField(integration.FieldProviderQuotaCheckedAt, field.TypeTime, value)
 	}
@@ -1559,6 +1847,96 @@ func (_u *IntegrationUpdateOne) sqlSave(ctx context.Context) (_node *Integration
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BindingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.BindingsTable,
+			Columns: []string{integration.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBindingsIDs(); len(nodes) > 0 && !_u.mutation.BindingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.BindingsTable,
+			Columns: []string{integration.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BindingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.BindingsTable,
+			Columns: []string{integration.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.StartTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.StartTokensTable,
+			Columns: []string{integration.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedStartTokensIDs(); len(nodes) > 0 && !_u.mutation.StartTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.StartTokensTable,
+			Columns: []string{integration.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.StartTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.StartTokensTable,
+			Columns: []string{integration.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

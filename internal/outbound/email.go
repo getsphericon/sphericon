@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -42,6 +43,20 @@ func (c emailChannel) adapter(ctx context.Context, s *ent.Scoped, integ *ent.Int
 	return emailAdapter{sender: sender}, nil
 }
 
+// targets is the Request's Destination, the one address the message goes to; none for a Contact
+// with no email.
+func (emailChannel) targets(_ context.Context, _ *ent.Scoped, _ Request, _ Route, dest string) ([]target, error) {
+	if dest == "" {
+		return nil, nil
+	}
+	return []target{{dest: dest}}, nil
+}
+
+// unreachable: an email address is no Binding, and no email adapter reports one gone.
+func (emailChannel) unreachable(context.Context, *ent.Scoped, events.Publisher, *ent.Integration, target, int64) error {
+	return nil
+}
+
 func (c emailChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error) {
 	msg, err := c.m.renderEmail(ctx, s, req, messageID, dest, ws)
 	if err != nil {
@@ -70,6 +85,11 @@ func (m *Module) renderEmail(ctx context.Context, s *ent.Scoped, req Request, me
 		return messaging.EmailMessage{}, err
 	}
 	bindings := Bindings(req.Contact, req.Variables)
+	start, err := m.startLinkBinding(ctx, s, req, messageID, content.Subject, content.Body)
+	if err != nil {
+		return messaging.EmailMessage{}, err
+	}
+	maps.Copy(bindings, start)
 	email, err := emailrender.RenderEmail(content.Subject, content.Body, bindings)
 	if err != nil {
 		return messaging.EmailMessage{}, contentError{err}
@@ -92,15 +112,9 @@ func (m *Module) renderEmail(ctx context.Context, s *ent.Scoped, req Request, me
 // footer and the one-click header. Its errors are renderEmail's (see contentError).
 func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace, out messaging.EmailMessage) (messaging.EmailMessage, error) {
 	// One choice per message: every link and the List-Unsubscribe URL share one host.
-	tr := m.tracker
-	if m.trackingHosts != nil {
-		host, err := m.trackingHosts.ServingHost(ctx, s)
-		if err != nil {
-			return messaging.EmailMessage{}, fmt.Errorf("tracking host: %w", err)
-		}
-		if host != "" {
-			tr = tr.OnHost(host)
-		}
+	tr, err := m.trackerFor(ctx, s)
+	if err != nil {
+		return messaging.EmailMessage{}, err
 	}
 	if req.Source == "" {
 		// A tracked Transactional send: pixel and rewritten links, no footer, no header (ADR 0053).
@@ -113,6 +127,7 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 	}
 
 	unsub := tracking.UnsubTarget{
+		Channel:     messaging.ChannelEmail,
 		Source:      req.Source,
 		Destination: dest,
 		WorkspaceID: ws.ID,
@@ -142,6 +157,22 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 	}
 	out.ListUnsubscribeURL = url
 	return out, nil
+}
+
+// trackerFor is the Tracker a message's links are built on: the Workspace's serving Tracking domain
+// when it has one (ADR 0038), else the Instance's own host.
+func (m *Module) trackerFor(ctx context.Context, s *ent.Scoped) (*tracking.Tracker, error) {
+	tr := m.tracker
+	if m.trackingHosts != nil {
+		host, err := m.trackingHosts.ServingHost(ctx, s)
+		if err != nil {
+			return nil, fmt.Errorf("tracking host: %w", err)
+		}
+		if host != "" {
+			tr = tr.OnHost(host)
+		}
+	}
+	return tr, nil
 }
 
 // HoldUnverifiedDomain holds an email whose From is on no verified Sending domain of the Workspace
@@ -178,12 +209,12 @@ func (a emailAdapter) prepare(ctx context.Context, s *ent.Scoped, content Conten
 	return sendAs{address: from, name: name, sendingDomain: messaging.DomainOf(from)}, "", nil
 }
 
-func (a emailAdapter) send(ctx context.Context, as sendAs, msg any, dest string, origin messaging.Origin) (messaging.Receipt, error) {
+func (a emailAdapter) send(ctx context.Context, as sendAs, msg any, to target, origin messaging.Origin) (messaging.Receipt, error) {
 	email, ok := msg.(messaging.EmailMessage)
 	if !ok {
 		return messaging.Receipt{}, fmt.Errorf("outbound: %T is no email message", msg)
 	}
-	email.From, email.FromName, email.To, email.Origin = as.address, as.name, dest, &origin
+	email.From, email.FromName, email.To, email.Origin = as.address, as.name, to.dest, &origin
 	return sendEmail(ctx, a.sender, email)
 }
 

@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -155,7 +154,8 @@ func TestPublishRefusesADraftWhoseIntegrationIsArchived(t *testing.T) {
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{IntegrationID: patch.Set(int64(fixtures.IntegrationAcmeMailgunID))})
+	mailgun := int64(fixtures.IntegrationAcmeMailgunID)
+	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationsteps.Step{emailVia(&mailgun)}})
 	require.NoError(t, err)
 	require.NoError(t, acme.Integration().Discard(ctx, fixtures.IntegrationAcmeMailgunID))
 
@@ -164,7 +164,7 @@ func TestPublishRefusesADraftWhoseIntegrationIsArchived(t *testing.T) {
 	after, err := m.Get(ctx, acme, fixtures.AutomationHoldDemoID)
 	require.NoError(t, err)
 	live, draft := automations.LiveAndDraft(after)
-	assert.Nil(t, live.IntegrationID, "the live version still sends through the default")
+	assert.Equal(t, []*int64{nil}, stepIntegrations(live), "the live version still sends through the default")
 	assert.NotNil(t, draft, "the draft stays")
 }
 

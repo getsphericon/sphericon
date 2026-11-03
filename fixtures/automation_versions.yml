@@ -1,6 +1,6 @@
-# The definition of each Automation (ADR 0049, ADR 0065), one version per row: its Trigger, its
-# Integration (none here: the Workspace default) and its steps. Id = the Automation's id for
-# version 1. The Automation points at its live version and its draft in automations.yml, by the
+# The definition of each Automation (ADR 0049, ADR 0065), one version per row: its Trigger and its
+# steps, each send step with the Integration it names (integrationId; none here but 5568: the
+# Workspace default). Id = the Automation's id for version 1. The Automation points at its live version and its draft in automations.yml, by the
 # rules of the migration that moved the definition here. The linear JSON step list
 # ({"type":"email"|"wait", ...}); HTML bodies are kept attribute-free for clean JSON. Onboarding
 # drip (106) has two versions, with Enrollments on both.
@@ -257,6 +257,17 @@
   exit_events: '["job_tag_exit_left"]'
   version: 1
   steps: '[{"type":"apply_tag","tag":"tag-race"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# Two email steps through two Integrations (the default, then the Mailgun relay, id 21), then a tag
+# step: a Contact whose emails are skipped walks past them to the tag (ADR 0081).
+- id: 5568 # fixture: AutomationJobsEmailsThenTagVersion
+  automation_id: 5568
+  trigger_event: job_emails_then_tag
+  version: 1
+  steps: '[{"type":"email","subject":"First","body":"<p>First</p>"},{"type":"wait","seconds":3600},{"type":"email","subject":"Second","body":"<p>Second</p>","integrationId":21},{"type":"apply_tag","tag":"walked-past"}]'
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'

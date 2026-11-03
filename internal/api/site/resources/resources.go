@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/holdreason"
@@ -61,6 +62,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/signupitems"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
@@ -105,6 +107,7 @@ import (
 // goverter:extend transactionalStatus
 // goverter:extend transactionalError
 // goverter:extend nilInt32
+// goverter:extend nilFloat32
 // goverter:extend nilString
 // goverter:extend count
 // goverter:extend maxPerDay
@@ -127,6 +130,9 @@ import (
 // goverter:extend optWebhookDisabledReason
 // goverter:extend optConsentDecision
 // goverter:extend durationSeconds
+// goverter:extend broadcastContent
+// goverter:extend emailContentChannel
+// goverter:extend telegramContentChannel
 type Converter interface {
 	// The contact is read with its tags loaded (`WithTags`).
 	// goverter:map Edges.Tags Tags
@@ -262,11 +268,19 @@ type Converter interface {
 	// goverter:ignore Warnings
 	// The contract names the discarded state "archived" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
+	// goverter:map . Content | broadcastContent
 	BroadcastToResource(source *ent.Broadcast) siteapi.SiteBroadcastResource
+	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.
+	EmailBroadcastContentToResource(source *ent.Broadcast) siteapi.EmailBroadcastContent
+	// The Telegram content of a Telegram Broadcast, the arm of its content that broadcastContent wraps.
+	TelegramBroadcastContentToResource(source *ent.Broadcast) siteapi.TelegramBroadcastContent
 
-	// A Broadcast's delivery figures; the rates are Stats methods, ratios in [0,1].
+	// A Broadcast's delivery figures as its Channel reports them: a figure it does not report is
+	// null. The rates are ratios in [0,1].
 	// goverter:map Recipients RecipientsTotal
 	// goverter:map Sent SentCount
+	// goverter:map Skipped SkippedCount
+	// goverter:map Pending PendingCount
 	// goverter:map Opened OpenedCount
 	// goverter:map Clicked ClickedCount
 	// goverter:map Unsubscribed UnsubscribedCount
@@ -275,7 +289,7 @@ type Converter interface {
 	// goverter:map Bounced BouncedCount
 	// goverter:map Complained ComplainedCount
 	// goverter:map Captured CapturedCount
-	BroadcastStatsToResource(source broadcasts.Stats) siteapi.SiteBroadcastStats
+	BroadcastStatsToResource(source broadcasts.Figures) siteapi.SiteBroadcastStats
 
 	// goverter:map Processed ProcessedCount
 	// goverter:map Remaining RemainingCount
@@ -321,16 +335,17 @@ type Converter interface {
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
 	// goverter:map Steps | automationSteps
-	// goverter:map IntegrationID IntegrationId
 	AutomationVersionToResource(source *ent.AutomationVersion) siteapi.SiteAutomationVersion
 	// A step is the module's masked view: what it hides is never mapped.
 	// goverter:ignore URL
 	// goverter:ignore Secret
 	// goverter:ignore ClearSecret
+	// goverter:map IntegrationID IntegrationId
 	AutomationStepToResource(source automations.StepView) siteapi.SiteAutomationStep
 	AutomationStepsToResources(source []automations.StepView) []siteapi.SiteAutomationStep
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) siteapi.SiteAutomationHttpHeader
+	TelegramButtonToResource(source telegramrender.Button) siteapi.TelegramButton
 
 	// The config is a oneOf the generator cannot express, and the params, hook URL and
 	// retiring secrets come from the integrations module (decryption, instance URL), and
@@ -348,6 +363,9 @@ type Converter interface {
 	SmtpConfigToResource(source integrations.RedactedSMTP) siteapi.SiteSmtpConfig
 	// goverter:map . Kind | sesConfigKind
 	SesConfigToResource(source integrations.RedactedSES) siteapi.SiteSesConfig
+	// goverter:map . Kind | telegramConfigKind
+	// goverter:map BotID BotId
+	TelegramConfigToResource(source integrations.RedactedTelegram) siteapi.SiteTelegramConfig
 	// goverter:map Sent24h SentLast24h
 	ProviderLimitToStatus(source providerlimit.Status) siteapi.SiteProviderLimitStatus
 	// goverter:map Sent24h SentLast24h
@@ -364,6 +382,10 @@ type Converter interface {
 	CustomFieldToResource(source *ent.CustomField) siteapi.SiteCustomFieldResource
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsToResources(source []*ent.CustomField) []siteapi.SiteCustomFieldResource
+	StartLinkToResource(source bindings.StartLink) siteapi.TelegramStartLinkResource
+	BindingToResource(source bindings.Chat) siteapi.SiteBindingResource
+	// goverter:useEmptyOnNil:slice
+	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
 	TagToResource(source *ent.Tag) siteapi.SiteTagResource
 	// goverter:useEmptyOnNil:slice
 	TagsToResources(source []*ent.Tag) []siteapi.SiteTagResource
@@ -606,6 +628,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) siteapi.SiteBroadcastStatus
 	// goverter:enum:transform value
+	BroadcastChannelToResource(source broadcast.Channel) siteapi.BroadcastChannel
+	// goverter:enum:transform value
 	CapturedMessageSurfaceToResource(source capturedmessage.Surface) siteapi.SiteCapturedMessageSurface
 	// goverter:enum:transform value
 	ContactExportSourceToResource(source contact.Source) siteapi.ContactExportSource
@@ -736,8 +760,36 @@ func broadcastLimit(c Converter, v providerlimit.Cause) siteapi.NilSiteBroadcast
 	return siteapi.NewNilSiteBroadcastLimit(c.BroadcastLimitToResource(v))
 }
 
+// nilFloat32 renders a figure a Channel may not report: null when it does not.
+func nilFloat32(v *float32) siteapi.NilFloat32 {
+	return convert.Nil[siteapi.NilFloat32](v)
+}
+
 func optNilInt32(v *int) siteapi.OptNilInt32 {
 	return convert.Opt[siteapi.OptNilInt32](convert.Int32Ptr(v))
+}
+
+// broadcastContent is a Broadcast's content in the arm of its Channel: a oneOf is beyond
+// goverter, so only the switch is written here.
+func broadcastContent(c Converter, b *ent.Broadcast) siteapi.BroadcastContent {
+	switch b.Channel {
+	case broadcast.ChannelEmail:
+		return siteapi.BroadcastContent{OneOf: siteapi.NewEmailBroadcastContentBroadcastContentSum(c.EmailBroadcastContentToResource(b))}
+	case broadcast.ChannelTelegram:
+		return siteapi.BroadcastContent{OneOf: siteapi.NewTelegramBroadcastContentBroadcastContentSum(c.TelegramBroadcastContentToResource(b))}
+	default:
+		return siteapi.BroadcastContent{}
+	}
+}
+
+// telegramContentChannel is the discriminator of Telegram's content arm.
+func telegramContentChannel(broadcast.Channel) siteapi.TelegramBroadcastContentChannel {
+	return siteapi.TelegramBroadcastContentChannelTelegram
+}
+
+// emailContentChannel is the discriminator of email's content arm.
+func emailContentChannel(broadcast.Channel) siteapi.EmailBroadcastContentChannel {
+	return siteapi.EmailBroadcastContentChannelEmail
 }
 
 // jsonObject renders a stored JSON object (custom fields, event properties): absent when it has
@@ -1013,6 +1065,10 @@ func smtpConfigKind(integrations.RedactedSMTP) siteapi.SiteSmtpConfigKind {
 
 func sesConfigKind(integrations.RedactedSES) siteapi.SiteSesConfigKind {
 	return siteapi.SiteSesConfigKindSes
+}
+
+func telegramConfigKind(integrations.RedactedTelegram) siteapi.SiteTelegramConfigKind {
+	return siteapi.SiteTelegramConfigKindTelegram
 }
 
 // sendingDomainVerified derives the verified flag from the verified and lost moments.

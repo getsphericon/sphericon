@@ -175,7 +175,9 @@ only caller of their writes (`forbidigo`).
      Integration, so the hook resolves the Integration by key with the raw client and then
      scopes to its Workspace (`row.WorkspaceID`); the tracking endpoints (`loadEngaged` in
      `internal/server/tracking.go`), where the token names an outbound message that is loaded
-     with the raw client and scoped to its Workspace; signed unsubscribe/confirm tokens
+     with the raw client and scoped to its Workspace, and the short link `GET /c/{token}` there,
+     whose token names a `tracked_links` row that is read with the raw client for the message and
+     the Workspace it belongs to; signed unsubscribe/confirm tokens
      (`internal/consent`), and `accounts.BootstrapScope` (the bootstrap token);
   7. the platform Staff member (ADR 0026): `ee/staff` scopes over the one Workspace the console
      is looking at, in three reads, each after the Workspace row is loaded and each through
@@ -195,7 +197,7 @@ only caller of their writes (`forbidigo`).
      holds hosts and states, no Workspace data, so it scopes over nothing; and the contacts peak
      of `ee/usage` (`raise`, run by its ent hook), which scopes over each
      Workspace id it is given only after loading that Workspace's row and finding it live.
-- **The raw `*ent.Client` is allowed only in:** `internal/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/accounts` (User, Membership,
+- **The raw `*ent.Client` is allowed only in:** `internal/bindings` (only `PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/accounts` (User, Membership,
   Workspace incl. Workspace id resolution, invitation by token, and the Pending sign-up of a Sign-in provider, ADR 0062: no User
   or Workspace exists yet, and its completion creates them, its Consent records and an Invitation's Membership in one
   transaction; the prune river job only calls it), `internal/api/auth` (credentials, token and key lookup),

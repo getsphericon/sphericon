@@ -90,9 +90,13 @@ func steps(ctx context.Context, s *ent.Scoped) (Checklist, error) {
 	var c Checklist
 	var err error
 
-	// A Test inbox delivers nothing outside, so only a real provider completes the step. Archived
-	// Integrations are out of the default query.
-	provider := s.Integration().Query().Where(integration.ProviderNEQ(integration.ProviderInbox))
+	// The step is an email provider: a Telegram bot sends no mail, and a Test inbox delivers nothing
+	// outside, so only a real email provider completes it. Archived Integrations are out of the
+	// default query.
+	provider := s.Integration().Query().Where(
+		integration.ChannelEQ(integration.ChannelEmail),
+		integration.ProviderNEQ(integration.ProviderInbox),
+	)
 	if c.Steps.Integration, err = exists(provider.Exist(ctx)); err != nil {
 		return Checklist{}, err
 	}

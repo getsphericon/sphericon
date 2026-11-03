@@ -4,7 +4,11 @@ import { v4 as uuid } from 'uuid'
 
 import { createClient } from './generated/collect/client/index.ts'
 import type { Client } from './generated/collect/client/index.ts'
-import { collectEventsCreate, collectIdentifyCreate } from './generated/collect/sdk.gen.ts'
+import {
+  collectEventsCreate,
+  collectIdentifyCreate,
+  collectTelegramStartLinksCreate,
+} from './generated/collect/sdk.gen.ts'
 import type { CollectEventInput, CollectIdentifyInput } from './generated/collect/types.gen.ts'
 
 const VISITOR_COOKIE_NAME = 'om_vid'
@@ -244,6 +248,28 @@ export async function identify(payload: IdentifyInput): Promise<void> {
       context: browserContext(),
     },
   }).catch(() => undefined)
+}
+
+// A Telegram start link for the current visitor, for a "Get updates in Telegram" button the site
+// draws: whoever presses Start in the bot with it binds their chat to this browser, and it reaches
+// the contact once identify resolves the visitor. null when there is nothing to link to: the
+// tracker is not started, the workspace has no enabled default Telegram bot, or the call failed.
+export async function telegramStartLink(): Promise<string | null> {
+  if (!runtime) {
+    return null
+  }
+
+  try {
+    const { data } = await collectTelegramStartLinksCreate({
+      client: runtime.client,
+      retry: 0,
+      body: { visitorId: runtime.visitorId },
+    })
+
+    return data?.url ?? null
+  } catch {
+    return null
+  }
 }
 
 // The browser's time zone and language: guesses the server uses only for a Contact that has none.

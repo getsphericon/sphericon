@@ -10,7 +10,7 @@ import (
 )
 
 // Integration is a workspace-scoped connection to an external sending provider.
-// It is channel-agnostic on purpose: "email" today (smtp/ses), "sms" and others
+// It is channel-agnostic on purpose: "email" (smtp/ses/inbox) and "telegram" (a bot), "sms" and others
 // plug in the same way later by adding enum values + a catalog descriptor, with
 // no schema reshape. Provider-specific credentials live encrypted in
 // config_encrypted (the cleartext JSON shape is owned by the messaging catalog).
@@ -39,10 +39,10 @@ func (Integration) Fields() []ent.Field {
 		// Channel reserves "sms" now so the column/type is ready before any SMS
 		// provider exists.
 		field.Enum("channel").
-			Values("email", "sms").
+			Values("email", "sms", "telegram").
 			Default("email"),
 		field.Enum("provider").
-			Values("smtp", "ses", "inbox"),
+			Values("smtp", "ses", "inbox", "telegram"),
 		// Encrypted JSON blob produced by internal/secrets.Cipher.
 		field.String("config_encrypted").
 			Sensitive().
@@ -105,6 +105,13 @@ func (Integration) Fields() []ent.Field {
 		// verified addresses (SES without production access); a warning, not a hold.
 		field.Bool("provider_sandbox").
 			Default(false),
+		// When a send found the provider refusing the Integration's credentials (Telegram's 401):
+		// the Integration is held (provider_refused) until it is saved again with credentials the
+		// provider accepts, which clears it. Nil is not refused. Unlike provider_enforcement it is
+		// found at send time, not read from the provider.
+		field.Time("provider_refused_at").
+			Optional().
+			Nillable(),
 		// When the quota was last looked up, successfully or not.
 		field.Time("provider_quota_checked_at").
 			Optional().
@@ -127,6 +134,11 @@ func (Integration) Edges() []ent.Edge {
 		// What a Test inbox kept (ADR 0058) dies with the Integration; only Workspace deletion
 		// removes an Integration, since an Integration is archived, never deleted (ADR 0049).
 		edge.To("captured_messages", CapturedMessage.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// The chats the bot reached and the Start tokens issued for it die with it likewise.
+		edge.To("bindings", Binding.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("start_tokens", StartToken.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

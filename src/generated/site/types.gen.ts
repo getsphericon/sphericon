@@ -172,6 +172,34 @@ export const AuditAction = {
 export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
 
 /**
+ * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
+ */
+export const BroadcastChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
+
+/**
+ * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
+ */
+export type BroadcastChannel = typeof BroadcastChannel[keyof typeof BroadcastChannel];
+
+/**
+ * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
+ */
+export type BroadcastContent = ({
+  channel: 'email';
+} & EmailBroadcastContent) | ({
+  channel: 'telegram';
+} & TelegramBroadcastContent);
+
+/**
+ * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
+ */
+export type BroadcastContentInput = ({
+  channel: 'email';
+} & EmailBroadcastContentInput) | ({
+  channel: 'telegram';
+} & TelegramBroadcastContentInput);
+
+/**
  * The contact's engagement with one broadcast (how its send ended is in `outboundMessages`)
  */
 export type ContactExportBroadcastRecipient = {
@@ -601,32 +629,15 @@ export type CreateBroadcastInput = {
    */
   name: string;
   /**
-   * Email subject line
+   * What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel.
    */
-  subject?: string;
-  /**
-   * Sender display name; null or omitted means the integration's default
-   */
-  fromName?: string | null;
-  /**
-   * Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Null or omitted means the integration's default.
-   */
-  fromEmail?: EmailAddress | null;
-  /**
-   * HTML body with Liquid merge tags. Write this or `doc`, not both.
-   */
-  body?: string;
-  /**
-   * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
-   */
-  doc?: EditorDocument;
+  content: BroadcastContentInput;
   /**
    * Target segment; null or omitted means all contacts. An archived segment is refused with 422.
    */
   segmentId?: EntityId | null;
   /**
-   * Sending integration; null or omitted means the workspace default. An archived integration is refused with 422.
+   * Sending integration, of the broadcast's Channel; null or omitted means the Channel's default. An archived integration, or one of another Channel, is refused with 422.
    */
   integrationId?: EntityId | null;
 };
@@ -690,7 +701,7 @@ export type CreateContactInput = {
 };
 
 /**
- * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409.
+ * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422
  */
 export type CreateIntegrationInput = {
   name: string;
@@ -706,11 +717,11 @@ export type CreateIntegrationInput = {
   maxPerDay?: MaxPerDay | null;
   config: IntegrationConfigInput;
   /**
-   * Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with
+   * Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A Telegram integration takes none: it always reads its bot's updates with the built-in `telegram` Preset
    */
   preset?: string | null;
   /**
-   * The Preset's params, validated against its `paramsSchema`: read the schema first
+   * The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram integration takes none
    */
   params?: JsonObject;
 };
@@ -787,6 +798,72 @@ export type EditorDocument = {
 export type EmailAddress = string;
 
 /**
+ * Email's content of a Broadcast as stored
+ */
+export type EmailBroadcastContent = {
+  /**
+   * The Channel the content is for
+   */
+  channel: 'email';
+  /**
+   * Email subject line
+   */
+  subject: string;
+  /**
+   * Sender display name (defaults to the integration's)
+   */
+  fromName?: string | null;
+  /**
+   * Sender email address (defaults to the integration's)
+   */
+  fromEmail?: EmailAddress | null;
+  /**
+   * HTML body with Liquid merge tags
+   */
+  body: string;
+  /**
+   * The editor's JSON document the body was built from; null when the body was written as HTML
+   */
+  doc?: EditorDocument | null;
+  /**
+   * Version of the editor that rendered the document; null with it
+   */
+  editorVersion?: string | null;
+};
+
+/**
+ * Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on
+ * update an omitted field keeps its value and null clears it.
+ */
+export type EmailBroadcastContentInput = {
+  /**
+   * The Channel the content is for: the Broadcast's own, which an update cannot change
+   */
+  channel: 'email';
+  /**
+   * Email subject line
+   */
+  subject?: string;
+  /**
+   * Sender display name; null or omitted on create means the integration's default, null on update goes back to it
+   */
+  fromName?: string | null;
+  /**
+   * Sender email address: a new value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. Null or omitted on create means the integration's default, null on update goes back to it.
+   */
+  fromEmail?: EmailAddress | null;
+  /**
+   * HTML body with Liquid merge tags. Writing only a body on update clears the stored document. Write this or `doc`, not both.
+   */
+  body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
+   */
+  doc?: EditorDocument;
+};
+
+/**
  * A primary key, written as a decimal string so JavaScript never rounds it. The format
  * makes the Go servers parse it into an int64: a malformed id is refused as a 400 before
  * a handler runs. The pattern says the same in the contract, so a client (or a fuzzer) can
@@ -844,7 +921,8 @@ export const HoldReason = {
   STAFF_HOLD: 'staff_hold',
   NO_INTEGRATION: 'no_integration',
   UNVERIFIED_DOMAIN: 'unverified_domain',
-  PROVIDER_STOPPED: 'provider_stopped'
+  PROVIDER_STOPPED: 'provider_stopped',
+  PROVIDER_REFUSED: 'provider_refused'
 } as const;
 
 /**
@@ -932,7 +1010,19 @@ export type IntegrationConfigInput = ({
   kind: 'ses';
 } & SesConfigInput) | ({
   kind: 'inbox';
-} & InboxConfigInput);
+} & InboxConfigInput) | ({
+  kind: 'telegram';
+} & TelegramConfigInput);
+
+/**
+ * Request body for issuing a Telegram start link
+ */
+export type IssueTelegramStartLinkInput = {
+  /**
+   * The Telegram bot the link is for; null or omitted means the workspace's default Telegram integration. A disabled or archived bot, or an integration of another channel, is refused with 422.
+   */
+  integrationId?: EntityId | null;
+};
 
 /**
  * A JSON object whose members the contract leaves open: custom field values, event properties,
@@ -1904,6 +1994,7 @@ export type SiteAttentionItem = {
 export const SiteAttentionKind = {
   SENDING_DOMAIN_VERIFICATION_LOST: 'sendingDomainVerificationLost',
   INTEGRATION_PROVIDER_STOPPED: 'integrationProviderStopped',
+  INTEGRATION_PROVIDER_REFUSED: 'integrationProviderRefused',
   BROADCAST_HELD: 'broadcastHeld',
   AUTOMATION_CANNOT_SEND: 'automationCannotSend',
   DELIVERABILITY_WARNING: 'deliverabilityWarning',
@@ -2135,7 +2226,8 @@ export type SiteAutomationPeriodResults = {
    */
   goalReached: number;
   /**
-   * Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event
+   * Enrollments that left early in it: an unsubscribe from the automation or an exit event. A
+   * skipped send (no address, an opt-out from the Channel, a suppression) moves on instead.
    */
   exited: number;
   /**
@@ -2202,6 +2294,11 @@ export type SiteAutomationReport = {
    * What the automation's enrollments did over the chosen period and the period before it
    */
   results: SiteAutomationResults;
+  /**
+   * The send steps' messages by step position, in step order: one entry per position any of the
+   * automation's messages was sent from, across its versions
+   */
+  steps: Array<SiteAutomationStepFigures>;
 };
 
 /**
@@ -2279,7 +2376,8 @@ export type SiteAutomationResultCounts = {
    */
   goalReached: number;
   /**
-   * Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event
+   * Enrollments that left early in it: an unsubscribe from the automation or an exit event. A
+   * skipped send (no address, an opt-out from the Channel, a suppression) moves on instead.
    */
   exited: number;
   /**
@@ -2328,7 +2426,8 @@ export type SiteAutomationResultsPoint = {
    */
   goalReached: number;
   /**
-   * Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event
+   * Enrollments that left early in it: an unsubscribe from the automation or an exit event. A
+   * skipped send (no address, an opt-out from the Channel, a suppression) moves on instead.
    */
   exited: number;
   /**
@@ -2411,6 +2510,51 @@ export type SiteAutomationStep = {
    * Whether a signing secret is stored (HTTP steps, read only)
    */
   hasSecret?: boolean;
+  /**
+   * The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or
+   * omitted is that Channel's default. Each send step names its own, so one automation may send
+   * through several (ADR 0081).
+   */
+  integrationId?: EntityId | null;
+  /**
+   * The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.
+   */
+  text?: string;
+  /**
+   * The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
+   */
+  unsubscribeButton?: string;
+  /**
+   * An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text message.
+   */
+  imageUrl?: string;
+  /**
+   * Up to 8 link buttons under a Telegram step's message, one per row, in order.
+   */
+  buttons?: Array<TelegramButton>;
+  /**
+   * Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image.
+   */
+  linkPreview?: boolean;
+};
+
+/**
+ * The messages of the send step at one position
+ */
+export type SiteAutomationStepFigures = {
+  /**
+   * The step's position, 0 for the first step
+   */
+  step: number;
+  /**
+   * Messages the provider accepted
+   */
+  sent: number;
+  /**
+   * Messages skipped: the contact had no address on the step's Channel, had opted out of it, or
+   * was suppressed. The enrollment moved on to the next step.
+   */
+  skipped: number;
 };
 
 /**
@@ -2418,6 +2562,7 @@ export type SiteAutomationStep = {
  */
 export const SiteAutomationStepType = {
   EMAIL: 'email',
+  TELEGRAM: 'telegram',
   WAIT: 'wait',
   APPLY_TAG: 'apply_tag',
   REMOVE_TAG: 'remove_tag',
@@ -2452,13 +2597,35 @@ export type SiteAutomationVersion = {
    */
   goalEvent: string | null;
   /**
-   * Sending integration of the email steps; null means the workspace default
-   */
-  integrationId?: EntityId | null;
-  /**
    * The ordered, linear steps
    */
   steps: Array<SiteAutomationStep>;
+};
+
+/**
+ * A Telegram chat a contact is reached through: its own, or that of one of its visitors. Made only by what the bot receives, so it is read here and never written.
+ */
+export type SiteBindingResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The Telegram integration (the bot) the chat is on
+   */
+  integrationId: EntityId;
+  /**
+   * The bot's name as the integration is named
+   */
+  integrationName: string;
+  /**
+   * The bot's `@username`, without the
+   */
+  botUsername?: string | null;
+  /**
+   * When the chat was bound to its current owner
+   */
+  boundAt: Timestamp;
 };
 
 /**
@@ -2573,29 +2740,13 @@ export type SiteBroadcastResource = {
    */
   name: string;
   /**
-   * Email subject line
+   * The Channel the broadcast sends on, fixed when it was created
    */
-  subject: string;
+  channel: BroadcastChannel;
   /**
-   * Sender display name (defaults to the integration's)
+   * What the broadcast says, in the shape of its Channel
    */
-  fromName?: string | null;
-  /**
-   * Sender email address (defaults to the integration's)
-   */
-  fromEmail?: EmailAddress | null;
-  /**
-   * HTML body with Liquid merge tags
-   */
-  body: string;
-  /**
-   * The editor's JSON document the body was built from; null when the body was written as HTML
-   */
-  doc?: EditorDocument | null;
-  /**
-   * Version of the editor that rendered the document; null with it
-   */
-  editorVersion?: string | null;
+  content: BroadcastContent;
   /**
    * Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it
    */
@@ -2653,7 +2804,10 @@ export type SiteBroadcastResource = {
 };
 
 /**
- * Denormalized delivery counters for a broadcast
+ * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
+ * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
+ * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
+ * reports no delivered, opened, bounced or complained count and so no delivery or open rate.
  */
 export type SiteBroadcastStats = {
   /**
@@ -2665,9 +2819,21 @@ export type SiteBroadcastStats = {
    */
   sentCount: number;
   /**
-   * Recipients that opened the email
+   * Recipients skipped at send time: no destination any more, or an opt-out that landed after planning
    */
-  openedCount: number;
+  skippedCount: number;
+  /**
+   * Messages that failed to send
+   */
+  failedCount: number;
+  /**
+   * Recipients whose send has not ended yet
+   */
+  pendingCount: number;
+  /**
+   * Recipients that opened the email; null on a Channel that cannot tell
+   */
+  openedCount: number | null;
   /**
    * Recipients that clicked a link
    */
@@ -2677,41 +2843,37 @@ export type SiteBroadcastStats = {
    */
   unsubscribedCount: number;
   /**
-   * Messages that failed to send
+   * Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none
    */
-  failedCount: number;
+  deliveredCount: number | null;
   /**
-   * Messages the provider reported delivered, read from the delivery result stamped on each message
+   * Messages the provider reported bounced, read from the delivery result stamped on each message; null on a Channel whose provider reports none
    */
-  deliveredCount: number;
+  bouncedCount: number | null;
   /**
-   * Messages the provider reported bounced, read from the delivery result stamped on each message
+   * Messages a recipient complained about, read from the delivery result stamped on each message; null on a Channel whose provider reports none
    */
-  bouncedCount: number;
+  complainedCount: number | null;
   /**
-   * Messages a recipient complained about, read from the delivery result stamped on each message
+   * Messages that went through a Test inbox: captured, not delivered; they count as delivered too. Null off email.
    */
-  complainedCount: number;
+  capturedCount: number | null;
   /**
-   * Messages that went through a Test inbox: captured, not delivered; they count as delivered too
+   * Messages handed to the provider ÷ recipients targeted (0–1); null on a Channel that reports no delivery
    */
-  capturedCount: number;
+  deliveryRate: number | null;
   /**
-   * Messages handed to the provider ÷ recipients targeted (0–1)
+   * Unique opens ÷ messages sent (0–1); null on a Channel that reports no opens
    */
-  deliveryRate: number;
-  /**
-   * Unique opens ÷ messages sent (0–1)
-   */
-  openRate: number;
+  openRate: number | null;
   /**
    * Unique clicks ÷ messages sent (0–1)
    */
   clickRate: number;
   /**
-   * Unique clicks ÷ unique opens (0–1)
+   * Unique clicks ÷ unique opens (0–1); null on a Channel that reports no opens
    */
-  clickToOpenRate: number;
+  clickToOpenRate: number | null;
   /**
    * Unsubscribes ÷ messages sent (0–1)
    */
@@ -3083,7 +3245,8 @@ export type SiteConditionLeaf = {
   kind: 'rule';
   /**
    * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
-   * time_zone, country, locale, city), "tag", "custom:<key>" for a custom field of the workspace,
+   * time_zone, country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a Visitor; the value is
+   * ignored), "custom:<key>" for a custom field of the workspace,
    * or "trigger:<key>" (a property of the Event that fired a rule: valid only in a rule, refused in
    * a segment, takes the text operators, and is false when the Event lacks the key or holds a value
    * that is not text; a number property is compared by a number leaf)
@@ -3158,7 +3321,7 @@ export type SiteConditionNumberOperator = typeof SiteConditionNumberOperator[key
 
 /**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag field takes has and doesNotHave; a custom field takes the operators of its type,
+ * notNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,
  * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
  * number leaf, a datetime one tested by the date leaves).
  */
@@ -3175,7 +3338,7 @@ export const SiteConditionOperator = {
 
 /**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag field takes has and doesNotHave; a custom field takes the operators of its type,
+ * notNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,
  * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
  * number leaf, a datetime one tested by the date leaves).
  */
@@ -3343,10 +3506,6 @@ export type SiteCreateAutomationInput = {
    */
   goalEvent?: string | null;
   steps?: Array<SiteAutomationStep>;
-  /**
-   * Sending integration of the email steps; null/omitted means the workspace default
-   */
-  integrationId?: EntityId | null;
 };
 
 /**
@@ -3995,7 +4154,11 @@ export type SiteInstanceRelease = {
 /**
  * Delivery channel an integration belongs to
  */
-export const SiteIntegrationChannel = { EMAIL: 'email', SMS: 'sms' } as const;
+export const SiteIntegrationChannel = {
+  EMAIL: 'email',
+  SMS: 'sms',
+  TELEGRAM: 'telegram'
+} as const;
 
 /**
  * Delivery channel an integration belongs to
@@ -4011,7 +4174,9 @@ export type SiteIntegrationConfig = ({
   kind: 'ses';
 } & SiteSesConfig) | ({
   kind: 'inbox';
-} & SiteInboxConfig);
+} & SiteInboxConfig) | ({
+  kind: 'telegram';
+} & SiteTelegramConfig);
 
 /**
  * Concrete sending provider
@@ -4019,7 +4184,8 @@ export type SiteIntegrationConfig = ({
 export const SiteIntegrationProvider = {
   SMTP: 'smtp',
   SES: 'ses',
-  INBOX: 'inbox'
+  INBOX: 'inbox',
+  TELEGRAM: 'telegram'
 } as const;
 
 /**
@@ -4088,7 +4254,7 @@ export type SiteIntegrationResource = {
    */
   hookUrl: string;
   /**
-   * When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks.
+   * When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks (a Telegram bot's webhook is removed, so Telegram sends it none).
    */
   archivedAt?: Timestamp | null;
   /**
@@ -5939,12 +6105,12 @@ export type SiteSoleOwnedWorkspace = {
 };
 
 /**
- * The channel a suppression applies to (email today; sms reserved)
+ * The channel a suppression applies to
  */
-export const SiteSuppressionChannel = { EMAIL: 'email' } as const;
+export const SiteSuppressionChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
 
 /**
- * The channel a suppression applies to (email today; sms reserved)
+ * The channel a suppression applies to
  */
 export type SiteSuppressionChannel = typeof SiteSuppressionChannel[keyof typeof SiteSuppressionChannel];
 
@@ -6014,6 +6180,21 @@ export type SiteTagResource = {
    * Creation timestamp
    */
   createdAt: Timestamp;
+};
+
+/**
+ * A Telegram bot without its token: who it is, as Telegram said when it was connected
+ */
+export type SiteTelegramConfig = {
+  kind: 'telegram';
+  /**
+   * The bot's numeric Telegram id
+   */
+  botId: number;
+  /**
+   * The bot's
+   */
+  username: string;
 };
 
 /**
@@ -6192,8 +6373,8 @@ export const SiteTransactionalEmailStatus = {
 export type SiteTransactionalEmailStatus = typeof SiteTransactionalEmailStatus[keyof typeof SiteTransactionalEmailStatus];
 
 /**
- * Site request body for updating an automation. The name changes at once; the trigger, steps
- * and integration write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * Site request body for updating an automation. The name changes at once; the trigger, exit and
+ * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
  * version's, and publishing makes the draft live.
  */
 export type SiteUpdateAutomationInput = {
@@ -6208,10 +6389,6 @@ export type SiteUpdateAutomationInput = {
    */
   goalEvent?: string | null;
   steps?: Array<SiteAutomationStep>;
-  /**
-   * Sending integration of the email steps; null means the workspace default, omitted keeps it
-   */
-  integrationId?: EntityId | null;
 };
 
 /**
@@ -6742,6 +6919,107 @@ export type SmtpConfigInput = {
 };
 
 /**
+ * Telegram's content of a Broadcast as stored
+ */
+export type TelegramBroadcastContent = {
+  /**
+   * The Channel the content is for
+   */
+  channel: 'telegram';
+  /**
+   * The message text in Telegram's HTML subset, with Liquid merge tags
+   */
+  text: string;
+  /**
+   * The https image sent with the message, its caption being the text; null for a text message
+   */
+  imageUrl?: string | null;
+  /**
+   * The link buttons under the message, one per row, in order
+   */
+  buttons: Array<TelegramButton>;
+  /**
+   * Whether a link in the text unfolds a preview
+   */
+  linkPreview: boolean;
+  /**
+   * The label of the unsubscribe button under the message; null for none
+   */
+  unsubscribeButton?: string | null;
+};
+
+/**
+ * Telegram's content of a Broadcast (ADR 0078), the same Message content as a Telegram step. On
+ * create an omitted field takes its default (an empty text, no image, no buttons, the link preview
+ * on, no unsubscribe button); on update an omitted field keeps its value.
+ */
+export type TelegramBroadcastContentInput = {
+  /**
+   * The Channel the content is for: the Broadcast's own, which an update cannot change
+   */
+  channel: 'telegram';
+  /**
+   * The message text in Telegram's HTML subset (b, i, u, s, a, code, pre, tg-spoiler, blockquote) with Liquid merge tags, at most 4096 characters as written (Schedule refuses a longer one). Nothing is appended to it.
+   */
+  text?: string;
+  /**
+   * An https image sent with the message; the text becomes its caption, of at most 1024 characters as written. An empty string removes the image.
+   */
+  imageUrl?: string;
+  /**
+   * Up to 8 link buttons under the message, one per row, in order. An empty list removes them.
+   */
+  buttons?: Array<TelegramButton>;
+  /**
+   * Whether a link in the text unfolds a preview. On when omitted; no effect with an image.
+   */
+  linkPreview?: boolean;
+  /**
+   * The label of an unsubscribe button under the message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out. An empty string removes the button.
+   */
+  unsubscribeButton?: string;
+};
+
+/**
+ * A link button under a Telegram message: an inline URL button on a row of its own
+ */
+export type TelegramButton = {
+  /**
+   * The button's label
+   */
+  label: string;
+  /**
+   * The URL it opens: absolute, http or https
+   */
+  url: string;
+};
+
+/**
+ * A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had: use a bot dedicated to sphericon
+ */
+export type TelegramConfigInput = {
+  kind: 'telegram';
+  /**
+   * The bot token
+   */
+  token: string;
+};
+
+/**
+ * A Telegram start link: the person who opens it and presses Start binds their chat to the contact it was issued for. The link works once.
+ */
+export type TelegramStartLinkResource = {
+  /**
+   * `https://t.me/<bot>?start=<token>`. The token is shown only here: treat the link as a secret until it is used.
+   */
+  url: string;
+  /**
+   * When the link lapses, 30 days after it is issued
+   */
+  expiresAt: Timestamp;
+};
+
+/**
  * Request body for a test send
  */
 export type TestSendBroadcastInput = {
@@ -6792,32 +7070,15 @@ export type UpdateBroadcastInput = {
    */
   name?: string;
   /**
-   * Email subject line
+   * What the broadcast says; its `channel` must be the broadcast's own (422 otherwise). Omitted keeps the content.
    */
-  subject?: string;
-  /**
-   * Sender display name; null goes back to the integration's default
-   */
-  fromName?: string | null;
-  /**
-   * Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. Null goes back to the integration's default.
-   */
-  fromEmail?: EmailAddress | null;
-  /**
-   * HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
-   */
-  body?: string;
-  /**
-   * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
-   */
-  doc?: EditorDocument;
+  content?: BroadcastContentInput;
   /**
    * Target segment; null means all contacts. An archived segment is refused with 422.
    */
   segmentId?: EntityId | null;
   /**
-   * Sending integration; null means the workspace default. An archived integration is refused with 422.
+   * Sending integration, of the broadcast's Channel; null means the Channel's default. An archived integration, or one of another Channel, is refused with 422.
    */
   integrationId?: EntityId | null;
 };
@@ -6897,11 +7158,11 @@ export type UpdateIntegrationInput = {
   maxPerDay?: MaxPerDay | null;
   config?: IntegrationConfigInput;
   /**
-   * Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over
+   * Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over. A Telegram integration's Preset is fixed
    */
   preset?: string | null;
   /**
-   * The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)
+   * The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired). A Telegram integration takes none
    */
   params?: JsonObject;
   /**
@@ -7129,6 +7390,11 @@ export type SiteBroadcastResourceParentKey = WorkspaceId;
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
 export type SiteBroadcastsListFilterArchived = boolean;
+
+/**
+ * Only the broadcasts on this Channel; every Channel when absent
+ */
+export type SiteBroadcastsListFilterChannel = BroadcastChannel;
 
 /**
  * The order of the list: `newest` when absent
@@ -10504,6 +10770,10 @@ export type SiteBroadcastsListData = {
      */
     status?: Array<SiteBroadcastStatus>;
     /**
+     * Only the broadcasts on this Channel; every Channel when absent
+     */
+    channel?: BroadcastChannel;
+    /**
      * The order of the list: `newest` when absent
      */
     order?: SiteBroadcastsOrder;
@@ -11501,6 +11771,38 @@ export type SiteContactsLookupResponses = {
 
 export type SiteContactsLookupResponse = SiteContactsLookupResponses[keyof SiteContactsLookupResponses];
 
+export type SiteTelegramListBindingsData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/bindings';
+};
+
+export type SiteTelegramListBindingsErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteTelegramListBindingsError = SiteTelegramListBindingsErrors[keyof SiteTelegramListBindingsErrors];
+
+export type SiteTelegramListBindingsResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Array<SiteBindingResource>;
+};
+
+export type SiteTelegramListBindingsResponse = SiteTelegramListBindingsResponses[keyof SiteTelegramListBindingsResponses];
+
 export type SiteTagsListForContactData = {
   body?: never;
   path: {
@@ -11635,6 +11937,42 @@ export type SiteTagsRemoveResponses = {
 };
 
 export type SiteTagsRemoveResponse = SiteTagsRemoveResponses[keyof SiteTagsRemoveResponses];
+
+export type SiteTelegramIssueStartLinkData = {
+  body: IssueTelegramStartLinkInput;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links';
+};
+
+export type SiteTelegramIssueStartLinkErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteTelegramIssueStartLinkError = SiteTelegramIssueStartLinkErrors[keyof SiteTelegramIssueStartLinkErrors];
+
+export type SiteTelegramIssueStartLinkResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: TelegramStartLinkResource;
+};
+
+export type SiteTelegramIssueStartLinkResponse = SiteTelegramIssueStartLinkResponses[keyof SiteTelegramIssueStartLinkResponses];
 
 export type SiteContactsDeleteData = {
   body?: never;
@@ -12355,6 +12693,10 @@ export type SiteIntegrationsRegenerateKeyErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteIntegrationsRegenerateKeyError = SiteIntegrationsRegenerateKeyErrors[keyof SiteIntegrationsRegenerateKeyErrors];
@@ -12402,6 +12744,10 @@ export type SiteIntegrationsUnarchiveErrors = {
    * RFC 7807 conflict response
    */
   409: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteIntegrationsUnarchiveError = SiteIntegrationsUnarchiveErrors[keyof SiteIntegrationsUnarchiveErrors];

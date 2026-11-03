@@ -171,6 +171,8 @@ const (
 	SiteTagsListOperation                              OperationName = "SiteTagsList"
 	SiteTagsListForContactOperation                    OperationName = "SiteTagsListForContact"
 	SiteTagsRemoveOperation                            OperationName = "SiteTagsRemove"
+	SiteTelegramIssueStartLinkOperation                OperationName = "SiteTelegramIssueStartLink"
+	SiteTelegramListBindingsOperation                  OperationName = "SiteTelegramListBindings"
 	SiteTemplatesCreateOperation                       OperationName = "SiteTemplatesCreate"
 	SiteTemplatesDeleteOperation                       OperationName = "SiteTemplatesDelete"
 	SiteTemplatesGetOperation                          OperationName = "SiteTemplatesGet"

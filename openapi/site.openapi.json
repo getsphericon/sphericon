@@ -19,6 +19,9 @@
       "name": "Site Tags"
     },
     {
+      "name": "Site Telegram"
+    },
+    {
       "name": "Site Auth"
     },
     {
@@ -5698,7 +5701,7 @@
     "/workspaces/{workspaceId}/automations/{id}/publish": {
       "post": {
         "operationId": "SiteAutomations_publish",
-        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts;\nwith no draft, the live version is resumed. 422 with neither. 409 when the version going live\nhas an email step and the integration it sends through cannot send (disabled or archived, or no\ndefault): a draft may name such an integration, only publishing it is refused.",
+        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts;\nwith no draft, the live version is resumed. 422 with neither. 409 when any send step of the version\ngoing live sends through an integration that cannot send (disabled, archived, of another\nchannel, or no default for the step's channel): a draft may name such an integration, only\npublishing it is refused.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -6089,6 +6092,9 @@
           },
           {
             "$ref": "#/components/parameters/SiteBroadcastsListFilter.status"
+          },
+          {
+            "$ref": "#/components/parameters/SiteBroadcastsListFilter.channel"
           },
           {
             "$ref": "#/components/parameters/SiteBroadcastsListFilter.order"
@@ -6652,7 +6658,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/test-send": {
       "post": {
         "operationId": "SiteBroadcasts_testSend",
-        "description": "Send a one-off rendered preview to a single address. While the Workspace has no verified\nSending domain it goes from the System sender and only to the asking User's own address\n(ADR 0041): another address is refused with 422, the System sender's caps answer 429.",
+        "description": "Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram\nhas no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram\nbroadcast is a 422. While the Workspace has no verified\nSending domain it goes from the System sender and only to the asking User's own address\n(ADR 0041): another address is refused with 422, the System sender's caps answer 429.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -7533,6 +7539,67 @@
         "x-required-permissions": ["contacts:erase"]
       }
     },
+    "/workspaces/{workspaceId}/contacts/{contactId}/bindings": {
+      "get": {
+        "operationId": "SiteTelegram_listBindings",
+        "description": "List the Telegram chats a contact is reached through",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SiteBindingResource"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Telegram"],
+        "x-required-permissions": []
+      }
+    },
     "/workspaces/{workspaceId}/contacts/{contactId}/tags": {
       "get": {
         "operationId": "SiteTags_listForContact",
@@ -7770,6 +7837,84 @@
           }
         },
         "tags": ["Site Tags"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links": {
+      "post": {
+        "operationId": "SiteTelegram_issueStartLink",
+        "description": "Issue a Telegram start link for a contact. Each call issues a new link.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramStartLinkResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Telegram"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueTelegramStartLinkInput"
+              }
+            }
+          }
+        },
         "x-required-permissions": []
       }
     },
@@ -8757,7 +8902,7 @@
     "/workspaces/{workspaceId}/integrations/{id}/archive": {
       "post": {
         "operationId": "SiteIntegrations_archive",
-        "description": "Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. Owners and admins only.",
+        "description": "Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. A Telegram integration's webhook is removed, best effort. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.workspaceId"
@@ -8825,7 +8970,7 @@
     "/workspaces/{workspaceId}/integrations/{id}/regenerate-key": {
       "post": {
         "operationId": "SiteIntegrations_regenerateKey",
-        "description": "Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.",
+        "description": "Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.workspaceId"
@@ -8874,6 +9019,16 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "tags": ["Site Integrations"],
@@ -8883,7 +9038,7 @@
     "/workspaces/{workspaceId}/integrations/{id}/unarchive": {
       "post": {
         "operationId": "SiteIntegrations_unarchive",
-        "description": "Restore an archived integration to the list. It is not the default; promote it with an update. Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.",
+        "description": "Restore an archived integration to the list. It is not the default; promote it with an update. Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.workspaceId"
@@ -8935,6 +9090,16 @@
           },
           "409": {
             "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14038,6 +14203,16 @@
         },
         "explode": false
       },
+      "SiteBroadcastsListFilter.channel": {
+        "name": "channel",
+        "in": "query",
+        "required": false,
+        "description": "Only the broadcasts on this Channel; every Channel when absent",
+        "schema": {
+          "$ref": "#/components/schemas/BroadcastChannel"
+        },
+        "explode": false
+      },
       "SiteBroadcastsListFilter.order": {
         "name": "order",
         "in": "query",
@@ -14674,6 +14849,49 @@
           "webhook_endpoint.delete"
         ],
         "description": "What an Audit entry says was done, as `<entity>.<verb>`: an action the server records on its\nown, or the create, update or delete of an audited object"
+      },
+      "BroadcastChannel": {
+        "type": "string",
+        "enum": ["email", "telegram"],
+        "description": "The Channel a Broadcast sends on, fixed when it is created (ADR 0080)"
+      },
+      "BroadcastContent": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailBroadcastContent"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramBroadcastContent"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "channel",
+          "mapping": {
+            "email": "#/components/schemas/EmailBroadcastContent",
+            "telegram": "#/components/schemas/TelegramBroadcastContent"
+          }
+        },
+        "description": "What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)"
+      },
+      "BroadcastContentInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailBroadcastContentInput"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramBroadcastContentInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "channel",
+          "mapping": {
+            "email": "#/components/schemas/EmailBroadcastContentInput",
+            "telegram": "#/components/schemas/TelegramBroadcastContentInput"
+          }
+        },
+        "description": "What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)"
       },
       "ContactExportBroadcastRecipient": {
         "type": "object",
@@ -15341,42 +15559,19 @@
       },
       "CreateBroadcastInput": {
         "type": "object",
-        "required": ["name"],
+        "required": ["name", "content"],
         "properties": {
           "name": {
             "type": "string",
             "description": "Internal broadcast name"
           },
-          "subject": {
-            "type": "string",
-            "description": "Email subject line"
-          },
-          "fromName": {
-            "type": "string",
-            "nullable": true,
-            "description": "Sender display name; null or omitted means the integration's default"
-          },
-          "fromEmail": {
-            "type": "string",
+          "content": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EmailAddress"
+                "$ref": "#/components/schemas/BroadcastContentInput"
               }
             ],
-            "nullable": true,
-            "description": "Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Null or omitted means the integration's default."
-          },
-          "body": {
-            "type": "string",
-            "description": "HTML body with Liquid merge tags. Write this or `doc`, not both."
-          },
-          "doc": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EditorDocument"
-              }
-            ],
-            "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
+            "description": "What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel."
           },
           "segmentId": {
             "type": "string",
@@ -15396,7 +15591,7 @@
               }
             ],
             "nullable": true,
-            "description": "Sending integration; null or omitted means the workspace default. An archived integration is refused with 422."
+            "description": "Sending integration, of the broadcast's Channel; null or omitted means the Channel's default. An archived integration, or one of another Channel, is refused with 422."
           }
         },
         "description": "Request body for creating a broadcast"
@@ -15538,7 +15733,7 @@
           "preset": {
             "type": "string",
             "nullable": true,
-            "description": "Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with"
+            "description": "Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A Telegram integration takes none: it always reads its bot's updates with the built-in `telegram` Preset"
           },
           "params": {
             "allOf": [
@@ -15546,10 +15741,10 @@
                 "$ref": "#/components/schemas/JsonObject"
               }
             ],
-            "description": "The Preset's params, validated against its `paramsSchema`: read the schema first"
+            "description": "The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram integration takes none"
           }
         },
-        "description": "Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409."
+        "description": "Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422"
       },
       "CreateSendingDomainInput": {
         "type": "object",
@@ -15629,6 +15824,99 @@
         "type": "string",
         "maxLength": 320,
         "format": "email"
+      },
+      "EmailBroadcastContent": {
+        "type": "object",
+        "required": ["channel", "subject", "body"],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["email"],
+            "description": "The Channel the content is for"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject line"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sender display name (defaults to the integration's)"
+          },
+          "fromEmail": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "nullable": true,
+            "description": "Sender email address (defaults to the integration's)"
+          },
+          "body": {
+            "type": "string",
+            "description": "HTML body with Liquid merge tags"
+          },
+          "doc": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
+            "nullable": true,
+            "description": "The editor's JSON document the body was built from; null when the body was written as HTML"
+          },
+          "editorVersion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Version of the editor that rendered the document; null with it"
+          }
+        },
+        "description": "Email's content of a Broadcast as stored"
+      },
+      "EmailBroadcastContentInput": {
+        "type": "object",
+        "required": ["channel"],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["email"],
+            "description": "The Channel the content is for: the Broadcast's own, which an update cannot change"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject line"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sender display name; null or omitted on create means the integration's default, null on update goes back to it"
+          },
+          "fromEmail": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "nullable": true,
+            "description": "Sender email address: a new value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. Null or omitted on create means the integration's default, null on update goes back to it."
+          },
+          "body": {
+            "type": "string",
+            "description": "HTML body with Liquid merge tags. Writing only a body on update clears the stored document. Write this or `doc`, not both."
+          },
+          "doc": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
+            "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
+          }
+        },
+        "description": "Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on\nupdate an omitted field keeps its value and null clears it."
       },
       "EntityId": {
         "type": "string",
@@ -15755,7 +16043,8 @@
           "staff_hold",
           "no_integration",
           "unverified_domain",
-          "provider_stopped"
+          "provider_stopped",
+          "provider_refused"
         ],
         "description": "Why a send is held (a Hold). A hold is reversible and not a failure: a held Broadcast keeps its\nstatus and its remaining recipients send once it lifts, and an Automation's email steps wait."
       },
@@ -15864,6 +16153,9 @@
           },
           {
             "$ref": "#/components/schemas/InboxConfigInput"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramConfigInput"
           }
         ],
         "discriminator": {
@@ -15871,10 +16163,27 @@
           "mapping": {
             "smtp": "#/components/schemas/SmtpConfigInput",
             "ses": "#/components/schemas/SesConfigInput",
-            "inbox": "#/components/schemas/InboxConfigInput"
+            "inbox": "#/components/schemas/InboxConfigInput",
+            "telegram": "#/components/schemas/TelegramConfigInput"
           }
         },
         "description": "Provider config submitted by the caller, discriminated by `kind`."
+      },
+      "IssueTelegramStartLinkInput": {
+        "type": "object",
+        "properties": {
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Telegram bot the link is for; null or omitted means the workspace's default Telegram integration. A disabled or archived bot, or an integration of another channel, is refused with 422."
+          }
+        },
+        "description": "Request body for issuing a Telegram start link"
       },
       "JsonObject": {
         "type": "object",
@@ -17044,6 +17353,7 @@
         "enum": [
           "sendingDomainVerificationLost",
           "integrationProviderStopped",
+          "integrationProviderRefused",
           "broadcastHeld",
           "automationCannotSend",
           "deliverabilityWarning",
@@ -17334,7 +17644,7 @@
           "exited": {
             "type": "integer",
             "format": "int32",
-            "description": "Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event"
+            "description": "Enrollments that left early in it: an unsubscribe from the automation or an exit event. A\nskipped send (no address, an opt-out from the Channel, a suppression) moves on instead."
           },
           "failed": {
             "type": "integer",
@@ -17377,7 +17687,8 @@
           "captured",
           "revenue",
           "links",
-          "results"
+          "results",
+          "steps"
         ],
         "properties": {
           "opens": {
@@ -17432,6 +17743,13 @@
               }
             ],
             "description": "What the automation's enrollments did over the chosen period and the period before it"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAutomationStepFigures"
+            },
+            "description": "The send steps' messages by step position, in step order: one entry per position any of the\nautomation's messages was sent from, across its versions"
           }
         },
         "description": "An automation's engagement figures"
@@ -17544,7 +17862,7 @@
           "exited": {
             "type": "integer",
             "format": "int32",
-            "description": "Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event"
+            "description": "Enrollments that left early in it: an unsubscribe from the automation or an exit event. A\nskipped send (no address, an opt-out from the Channel, a suppression) moves on instead."
           },
           "failed": {
             "type": "integer",
@@ -17614,7 +17932,7 @@
           "exited": {
             "type": "integer",
             "format": "int32",
-            "description": "Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event"
+            "description": "Enrollments that left early in it: an unsubscribe from the automation or an exit event. A\nskipped send (no address, an opt-out from the Channel, a suppression) moves on instead."
           },
           "failed": {
             "type": "integer",
@@ -17701,13 +18019,70 @@
           "hasSecret": {
             "type": "boolean",
             "description": "Whether a signing secret is stored (HTTP steps, read only)"
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or\nomitted is that Channel's default. Each send step names its own, so one automation may send\nthrough several (ADR 0081)."
+          },
+          "text": {
+            "type": "string",
+            "description": "The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused."
+          },
+          "unsubscribeButton": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button."
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text message."
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelegramButton"
+            },
+            "maxItems": 8,
+            "description": "Up to 8 link buttons under a Telegram step's message, one per row, in order."
+          },
+          "linkPreview": {
+            "type": "boolean",
+            "description": "Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image."
           }
         },
         "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds."
       },
+      "SiteAutomationStepFigures": {
+        "type": "object",
+        "required": ["step", "sent", "skipped"],
+        "properties": {
+          "step": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The step's position, 0 for the first step"
+          },
+          "sent": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the provider accepted"
+          },
+          "skipped": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages skipped: the contact had no address on the step's Channel, had opted out of it, or\nwas suppressed. The enrollment moved on to the next step."
+          }
+        },
+        "description": "The messages of the send step at one position"
+      },
       "SiteAutomationStepType": {
         "type": "string",
-        "enum": ["email", "wait", "apply_tag", "remove_tag", "http"],
+        "enum": ["email", "telegram", "wait", "apply_tag", "remove_tag", "http"],
         "description": "Kind of automation step"
       },
       "SiteAutomationVersion": {
@@ -17735,16 +18110,6 @@
             "nullable": true,
             "description": "Event action that ends an active enrollment as goal_reached (e.g. \"payment_succeeded\"); null\nwhen there is none"
           },
-          "integrationId": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "nullable": true,
-            "description": "Sending integration of the email steps; null means the workspace default"
-          },
           "steps": {
             "type": "array",
             "items": {
@@ -17754,6 +18119,46 @@
           }
         },
         "description": "One version of an automation's definition: what publishing makes it do (ADR 0065)"
+      },
+      "SiteBindingResource": {
+        "type": "object",
+        "required": ["id", "integrationId", "integrationName", "boundAt"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "integrationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Telegram integration (the bot) the chat is on"
+          },
+          "integrationName": {
+            "type": "string",
+            "description": "The bot's name as the integration is named"
+          },
+          "botUsername": {
+            "type": "string",
+            "nullable": true,
+            "description": "The bot's `@username`, without the"
+          },
+          "boundAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the chat was bound to its current owner"
+          }
+        },
+        "description": "A Telegram chat a contact is reached through: its own, or that of one of its visitors. Made only by what the bot receives, so it is read here and never written."
       },
       "SiteBrandKitResource": {
         "type": "object",
@@ -17885,7 +18290,16 @@
       },
       "SiteBroadcastResource": {
         "type": "object",
-        "required": ["id", "name", "subject", "body", "status", "stats", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "name",
+          "channel",
+          "content",
+          "status",
+          "stats",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -17899,43 +18313,21 @@
             "type": "string",
             "description": "Internal broadcast name"
           },
-          "subject": {
-            "type": "string",
-            "description": "Email subject line"
-          },
-          "fromName": {
-            "type": "string",
-            "nullable": true,
-            "description": "Sender display name (defaults to the integration's)"
-          },
-          "fromEmail": {
-            "type": "string",
+          "channel": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EmailAddress"
+                "$ref": "#/components/schemas/BroadcastChannel"
               }
             ],
-            "nullable": true,
-            "description": "Sender email address (defaults to the integration's)"
+            "description": "The Channel the broadcast sends on, fixed when it was created"
           },
-          "body": {
-            "type": "string",
-            "description": "HTML body with Liquid merge tags"
-          },
-          "doc": {
-            "type": "object",
+          "content": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EditorDocument"
+                "$ref": "#/components/schemas/BroadcastContent"
               }
             ],
-            "nullable": true,
-            "description": "The editor's JSON document the body was built from; null when the body was written as HTML"
-          },
-          "editorVersion": {
-            "type": "string",
-            "nullable": true,
-            "description": "Version of the editor that rendered the document; null with it"
+            "description": "What the broadcast says, in the shape of its Channel"
           },
           "warnings": {
             "type": "array",
@@ -18063,10 +18455,12 @@
         "required": [
           "recipientsTotal",
           "sentCount",
+          "skippedCount",
+          "failedCount",
+          "pendingCount",
           "openedCount",
           "clickedCount",
           "unsubscribedCount",
-          "failedCount",
           "deliveredCount",
           "bouncedCount",
           "complainedCount",
@@ -18090,10 +18484,26 @@
             "format": "int32",
             "description": "Messages successfully handed to the provider"
           },
+          "skippedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Recipients skipped at send time: no destination any more, or an opt-out that landed after planning"
+          },
+          "failedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages that failed to send"
+          },
+          "pendingCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Recipients whose send has not ended yet"
+          },
           "openedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Recipients that opened the email"
+            "nullable": true,
+            "description": "Recipients that opened the email; null on a Channel that cannot tell"
           },
           "clickedCount": {
             "type": "integer",
@@ -18105,40 +18515,41 @@
             "format": "int32",
             "description": "Recipients that unsubscribed via this broadcast"
           },
-          "failedCount": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Messages that failed to send"
-          },
           "deliveredCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages the provider reported delivered, read from the delivery result stamped on each message"
+            "nullable": true,
+            "description": "Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none"
           },
           "bouncedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages the provider reported bounced, read from the delivery result stamped on each message"
+            "nullable": true,
+            "description": "Messages the provider reported bounced, read from the delivery result stamped on each message; null on a Channel whose provider reports none"
           },
           "complainedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages a recipient complained about, read from the delivery result stamped on each message"
+            "nullable": true,
+            "description": "Messages a recipient complained about, read from the delivery result stamped on each message; null on a Channel whose provider reports none"
           },
           "capturedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages that went through a Test inbox: captured, not delivered; they count as delivered too"
+            "nullable": true,
+            "description": "Messages that went through a Test inbox: captured, not delivered; they count as delivered too. Null off email."
           },
           "deliveryRate": {
             "type": "number",
             "format": "float",
-            "description": "Messages handed to the provider ÷ recipients targeted (0–1)"
+            "nullable": true,
+            "description": "Messages handed to the provider ÷ recipients targeted (0–1); null on a Channel that reports no delivery"
           },
           "openRate": {
             "type": "number",
             "format": "float",
-            "description": "Unique opens ÷ messages sent (0–1)"
+            "nullable": true,
+            "description": "Unique opens ÷ messages sent (0–1); null on a Channel that reports no opens"
           },
           "clickRate": {
             "type": "number",
@@ -18148,7 +18559,8 @@
           "clickToOpenRate": {
             "type": "number",
             "format": "float",
-            "description": "Unique clicks ÷ unique opens (0–1)"
+            "nullable": true,
+            "description": "Unique clicks ÷ unique opens (0–1); null on a Channel that reports no opens"
           },
           "unsubscribeRate": {
             "type": "number",
@@ -18169,7 +18581,7 @@
             "description": "Orders credited to the Broadcast and their net revenue (ADR 0064)"
           }
         },
-        "description": "Denormalized delivery counters for a broadcast"
+        "description": "Delivery figures of a broadcast, derived from its recipients and their messages, per Channel\n(ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and\nunsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram\nreports no delivered, opened, bounced or complained count and so no delivery or open rate."
       },
       "SiteBroadcastStatus": {
         "type": "string",
@@ -18639,7 +19051,7 @@
           },
           "field": {
             "type": "string",
-            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone, country, locale, city), \"tag\", \"custom:<key>\" for a custom field of the workspace,\nor \"trigger:<key>\" (a property of the Event that fired a rule: valid only in a rule, refused in\na segment, takes the text operators, and is false when the Event lacks the key or holds a value\nthat is not text; a number property is compared by a number leaf)"
+            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone, country, locale, city), \"tag\", \"telegram\" (has a Telegram chat bound, on its own or through a Visitor; the value is\nignored), \"custom:<key>\" for a custom field of the workspace,\nor \"trigger:<key>\" (a property of the Event that fired a rule: valid only in a rule, refused in\na segment, takes the text operators, and is false when the Event lacks the key or holds a value\nthat is not text; a number property is compared by a number leaf)"
           },
           "operator": {
             "allOf": [
@@ -18727,7 +19139,7 @@
       "SiteConditionOperator": {
         "type": "string",
         "enum": ["eq", "neq", "contains", "beginsWith", "null", "notNull", "has", "doesNotHave"],
-        "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; the tag field takes has and doesNotHave; a custom field takes the operators of its type,\nwhich the custom field lists as `ruleOperators` (a number custom field is also compared by a\nnumber leaf, a datetime one tested by the date leaves)."
+        "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,\nwhich the custom field lists as `ruleOperators` (a number custom field is also compared by a\nnumber leaf, a datetime one tested by the date leaves)."
       },
       "SiteConfirmEmailChangeInput": {
         "type": "object",
@@ -18993,16 +19405,6 @@
             "items": {
               "$ref": "#/components/schemas/SiteAutomationStep"
             }
-          },
-          "integrationId": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "nullable": true,
-            "description": "Sending integration of the email steps; null/omitted means the workspace default"
           }
         },
         "description": "Site request body for creating an automation"
@@ -19909,7 +20311,7 @@
       },
       "SiteIntegrationChannel": {
         "type": "string",
-        "enum": ["email", "sms"],
+        "enum": ["email", "sms", "telegram"],
         "description": "Delivery channel an integration belongs to"
       },
       "SiteIntegrationConfig": {
@@ -19923,6 +20325,9 @@
           },
           {
             "$ref": "#/components/schemas/SiteInboxConfig"
+          },
+          {
+            "$ref": "#/components/schemas/SiteTelegramConfig"
           }
         ],
         "discriminator": {
@@ -19930,14 +20335,15 @@
           "mapping": {
             "smtp": "#/components/schemas/SiteSmtpConfig",
             "ses": "#/components/schemas/SiteSesConfig",
-            "inbox": "#/components/schemas/SiteInboxConfig"
+            "inbox": "#/components/schemas/SiteInboxConfig",
+            "telegram": "#/components/schemas/SiteTelegramConfig"
           }
         },
         "description": "Provider config returned to the UI, discriminated by `kind`. Secrets are omitted."
       },
       "SiteIntegrationProvider": {
         "type": "string",
-        "enum": ["smtp", "ses", "inbox"],
+        "enum": ["smtp", "ses", "inbox", "telegram"],
         "description": "Concrete sending provider"
       },
       "SiteIntegrationResource": {
@@ -20057,7 +20463,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks."
+            "description": "When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks (a Telegram bot's webhook is removed, so Telegram sends it none)."
           },
           "createdAt": {
             "allOf": [
@@ -22492,8 +22898,8 @@
       },
       "SiteSuppressionChannel": {
         "type": "string",
-        "enum": ["email"],
-        "description": "The channel a suppression applies to (email today; sms reserved)"
+        "enum": ["email", "telegram"],
+        "description": "The channel a suppression applies to"
       },
       "SiteSuppressionReason": {
         "type": "string",
@@ -22587,6 +22993,26 @@
           }
         },
         "description": "A Tag: a presence-only, workspace-scoped label on Contacts (auto-created on first use)."
+      },
+      "SiteTelegramConfig": {
+        "type": "object",
+        "required": ["kind", "botId", "username"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["telegram"]
+          },
+          "botId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The bot's numeric Telegram id"
+          },
+          "username": {
+            "type": "string",
+            "description": "The bot's"
+          }
+        },
+        "description": "A Telegram bot without its token: who it is, as Telegram said when it was connected"
       },
       "SiteTestSendBroadcastResult": {
         "type": "object",
@@ -22833,19 +23259,9 @@
             "items": {
               "$ref": "#/components/schemas/SiteAutomationStep"
             }
-          },
-          "integrationId": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "nullable": true,
-            "description": "Sending integration of the email steps; null means the workspace default, omitted keeps it"
           }
         },
-        "description": "Site request body for updating an automation. The name changes at once; the trigger, steps\nand integration write the draft (ADR 0065): omitted fields keep the draft's, else the live\nversion's, and publishing makes the draft live."
+        "description": "Site request body for updating an automation. The name changes at once; the trigger, exit and\ngoal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live\nversion's, and publishing makes the draft live."
       },
       "SiteUpdateContactInput": {
         "type": "object",
@@ -23576,6 +23992,129 @@
         },
         "description": "SMTP credentials"
       },
+      "TelegramBroadcastContent": {
+        "type": "object",
+        "required": ["channel", "text", "buttons", "linkPreview"],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["telegram"],
+            "description": "The Channel the content is for"
+          },
+          "text": {
+            "type": "string",
+            "description": "The message text in Telegram's HTML subset, with Liquid merge tags"
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The https image sent with the message, its caption being the text; null for a text message"
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelegramButton"
+            },
+            "description": "The link buttons under the message, one per row, in order"
+          },
+          "linkPreview": {
+            "type": "boolean",
+            "description": "Whether a link in the text unfolds a preview"
+          },
+          "unsubscribeButton": {
+            "type": "string",
+            "nullable": true,
+            "description": "The label of the unsubscribe button under the message; null for none"
+          }
+        },
+        "description": "Telegram's content of a Broadcast as stored"
+      },
+      "TelegramBroadcastContentInput": {
+        "type": "object",
+        "required": ["channel"],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["telegram"],
+            "description": "The Channel the content is for: the Broadcast's own, which an update cannot change"
+          },
+          "text": {
+            "type": "string",
+            "description": "The message text in Telegram's HTML subset (b, i, u, s, a, code, pre, tg-spoiler, blockquote) with Liquid merge tags, at most 4096 characters as written (Schedule refuses a longer one). Nothing is appended to it."
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "An https image sent with the message; the text becomes its caption, of at most 1024 characters as written. An empty string removes the image."
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelegramButton"
+            },
+            "maxItems": 8,
+            "description": "Up to 8 link buttons under the message, one per row, in order. An empty list removes them."
+          },
+          "linkPreview": {
+            "type": "boolean",
+            "description": "Whether a link in the text unfolds a preview. On when omitted; no effect with an image."
+          },
+          "unsubscribeButton": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The label of an unsubscribe button under the message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out. An empty string removes the button."
+          }
+        },
+        "description": "Telegram's content of a Broadcast (ADR 0078), the same Message content as a Telegram step. On\ncreate an omitted field takes its default (an empty text, no image, no buttons, the link preview\non, no unsubscribe button); on update an omitted field keeps its value."
+      },
+      "TelegramButton": {
+        "type": "object",
+        "required": ["label", "url"],
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The button's label"
+          },
+          "url": {
+            "type": "string",
+            "description": "The URL it opens: absolute, http or https"
+          }
+        },
+        "description": "A link button under a Telegram message: an inline URL button on a row of its own"
+      },
+      "TelegramConfigInput": {
+        "type": "object",
+        "required": ["kind", "token"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["telegram"]
+          },
+          "token": {
+            "type": "string",
+            "description": "The bot token"
+          }
+        },
+        "description": "A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had: use a bot dedicated to sphericon"
+      },
+      "TelegramStartLinkResource": {
+        "type": "object",
+        "required": ["url", "expiresAt"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "`https://t.me/<bot>?start=<token>`. The token is shown only here: treat the link as a secret until it is used."
+          },
+          "expiresAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the link lapses, 30 days after it is issued"
+          }
+        },
+        "description": "A Telegram start link: the person who opens it and presses Start binds their chat to the contact it was issued for. The link works once."
+      },
       "TestSendBroadcastInput": {
         "type": "object",
         "required": ["email"],
@@ -23629,36 +24168,13 @@
             "type": "string",
             "description": "Internal broadcast name"
           },
-          "subject": {
-            "type": "string",
-            "description": "Email subject line"
-          },
-          "fromName": {
-            "type": "string",
-            "nullable": true,
-            "description": "Sender display name; null goes back to the integration's default"
-          },
-          "fromEmail": {
-            "type": "string",
+          "content": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EmailAddress"
+                "$ref": "#/components/schemas/BroadcastContentInput"
               }
             ],
-            "nullable": true,
-            "description": "Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. Null goes back to the integration's default."
-          },
-          "body": {
-            "type": "string",
-            "description": "HTML body. Writing only a body clears the stored document. Write this or `doc`, not both."
-          },
-          "doc": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EditorDocument"
-              }
-            ],
-            "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
+            "description": "What the broadcast says; its `channel` must be the broadcast's own (422 otherwise). Omitted keeps the content."
           },
           "segmentId": {
             "type": "string",
@@ -23678,7 +24194,7 @@
               }
             ],
             "nullable": true,
-            "description": "Sending integration; null means the workspace default. An archived integration is refused with 422."
+            "description": "Sending integration, of the broadcast's Channel; null means the Channel's default. An archived integration, or one of another Channel, is refused with 422."
           }
         },
         "description": "Request body for updating a draft broadcast: an omitted field keeps its value, null clears it"
@@ -23819,7 +24335,7 @@
           "preset": {
             "type": "string",
             "nullable": true,
-            "description": "Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over"
+            "description": "Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over. A Telegram integration's Preset is fixed"
           },
           "params": {
             "allOf": [
@@ -23827,7 +24343,7 @@
                 "$ref": "#/components/schemas/JsonObject"
               }
             ],
-            "description": "The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)"
+            "description": "The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired). A Telegram integration takes none"
           },
           "retireSecrets": {
             "type": "boolean",

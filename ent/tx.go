@@ -26,6 +26,8 @@ type Tx struct {
 	AutomationRun *AutomationRunClient
 	// AutomationVersion is the client for interacting with the AutomationVersion builders.
 	AutomationVersion *AutomationVersionClient
+	// Binding is the client for interacting with the Binding builders.
+	Binding *BindingClient
 	// BrandKit is the client for interacting with the BrandKit builders.
 	BrandKit *BrandKitClient
 	// Broadcast is the client for interacting with the Broadcast builders.
@@ -124,10 +126,14 @@ type Tx struct {
 	SignupSurveyResponse *SignupSurveyResponseClient
 	// StaffMember is the client for interacting with the StaffMember builders.
 	StaffMember *StaffMemberClient
+	// StartToken is the client for interacting with the StartToken builders.
+	StartToken *StartTokenClient
 	// Suppression is the client for interacting with the Suppression builders.
 	Suppression *SuppressionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
+	// TrackedLink is the client for interacting with the TrackedLink builders.
+	TrackedLink *TrackedLinkClient
 	// TrackingDomain is the client for interacting with the TrackingDomain builders.
 	TrackingDomain *TrackingDomainClient
 	// TrackingHostChange is the client for interacting with the TrackingHostChange builders.
@@ -285,6 +291,7 @@ func (tx *Tx) init() {
 	tx.Automation = NewAutomationClient(tx.config)
 	tx.AutomationRun = NewAutomationRunClient(tx.config)
 	tx.AutomationVersion = NewAutomationVersionClient(tx.config)
+	tx.Binding = NewBindingClient(tx.config)
 	tx.BrandKit = NewBrandKitClient(tx.config)
 	tx.Broadcast = NewBroadcastClient(tx.config)
 	tx.BroadcastRecipient = NewBroadcastRecipientClient(tx.config)
@@ -334,8 +341,10 @@ func (tx *Tx) init() {
 	tx.SignupItem = NewSignupItemClient(tx.config)
 	tx.SignupSurveyResponse = NewSignupSurveyResponseClient(tx.config)
 	tx.StaffMember = NewStaffMemberClient(tx.config)
+	tx.StartToken = NewStartTokenClient(tx.config)
 	tx.Suppression = NewSuppressionClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
+	tx.TrackedLink = NewTrackedLinkClient(tx.config)
 	tx.TrackingDomain = NewTrackingDomainClient(tx.config)
 	tx.TrackingHostChange = NewTrackingHostChangeClient(tx.config)
 	tx.Unsubscribe = NewUnsubscribeClient(tx.config)

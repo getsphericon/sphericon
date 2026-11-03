@@ -136,8 +136,9 @@ func (s *CollectEventsCreateServiceUnavailableHeaders) SetResponse(val ProblemDe
 	s.Response = val
 }
 
-func (*CollectEventsCreateServiceUnavailableHeaders) collectEventsCreateRes()   {}
-func (*CollectEventsCreateServiceUnavailableHeaders) collectIdentifyCreateRes() {}
+func (*CollectEventsCreateServiceUnavailableHeaders) collectEventsCreateRes()             {}
+func (*CollectEventsCreateServiceUnavailableHeaders) collectIdentifyCreateRes()           {}
+func (*CollectEventsCreateServiceUnavailableHeaders) collectTelegramStartLinksCreateRes() {}
 
 type CollectEventsCreateUnauthorized ProblemDetails
 
@@ -313,6 +314,70 @@ func (CollectOkResponseOk) AllValues() []CollectOkResponseOk {
 		CollectOkResponseOkTrue,
 	}
 }
+
+// A Telegram start link for a visitor: pressing Start in the bot binds the chat to the visitor, and it
+// reaches the contact once the visitor is identified. The link works once.
+// Ref: #/components/schemas/CollectTelegramStartLink
+type CollectTelegramStartLink struct {
+	// `https://t.me/<bot>?start=<token>`.
+	URL string `json:"url"`
+	// When the link lapses, 30 days after it is issued.
+	ExpiresAt Timestamp `json:"expiresAt"`
+}
+
+// GetURL returns the value of URL.
+func (s *CollectTelegramStartLink) GetURL() string {
+	return s.URL
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *CollectTelegramStartLink) GetExpiresAt() Timestamp {
+	return s.ExpiresAt
+}
+
+// SetURL sets the value of URL.
+func (s *CollectTelegramStartLink) SetURL(val string) {
+	s.URL = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *CollectTelegramStartLink) SetExpiresAt(val Timestamp) {
+	s.ExpiresAt = val
+}
+
+func (*CollectTelegramStartLink) collectTelegramStartLinksCreateRes() {}
+
+// Ref: #/components/schemas/CollectTelegramStartLinkInput
+type CollectTelegramStartLinkInput struct {
+	// The tracker's id of the visitor the link is for, created when it has not been seen.
+	VisitorId string `json:"visitorId"`
+}
+
+// GetVisitorId returns the value of VisitorId.
+func (s *CollectTelegramStartLinkInput) GetVisitorId() string {
+	return s.VisitorId
+}
+
+// SetVisitorId sets the value of VisitorId.
+func (s *CollectTelegramStartLinkInput) SetVisitorId(val string) {
+	s.VisitorId = val
+}
+
+type CollectTelegramStartLinksCreateBadRequest ProblemDetails
+
+func (*CollectTelegramStartLinksCreateBadRequest) collectTelegramStartLinksCreateRes() {}
+
+type CollectTelegramStartLinksCreateRequestEntityTooLarge ProblemDetails
+
+func (*CollectTelegramStartLinksCreateRequestEntityTooLarge) collectTelegramStartLinksCreateRes() {}
+
+type CollectTelegramStartLinksCreateUnauthorized ProblemDetails
+
+func (*CollectTelegramStartLinksCreateUnauthorized) collectTelegramStartLinksCreateRes() {}
+
+type CollectTelegramStartLinksCreateUnprocessableEntity ProblemDetails
+
+func (*CollectTelegramStartLinksCreateUnprocessableEntity) collectTelegramStartLinksCreateRes() {}
 
 type EmailAddress string
 
@@ -1297,7 +1362,8 @@ func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
 
-func (*ProblemDetailsHeaders) collectEventsCreateRes()   {}
-func (*ProblemDetailsHeaders) collectIdentifyCreateRes() {}
+func (*ProblemDetailsHeaders) collectEventsCreateRes()             {}
+func (*ProblemDetailsHeaders) collectIdentifyCreateRes()           {}
+func (*ProblemDetailsHeaders) collectTelegramStartLinksCreateRes() {}
 
 type Timestamp time.Time

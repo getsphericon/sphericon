@@ -110,6 +110,7 @@ var ExternalOperationScopes = map[externalapi.OperationName][]apitokens.Scope{
 	externalapi.TagsListForContactOperation:        {apitokens.ScopeContactsRead},
 	externalapi.TagsListOperation:                  {apitokens.ScopeContactsRead},
 	externalapi.TagsRemoveOperation:                {apitokens.ScopeContactsWrite},
+	externalapi.TelegramStartLinksIssueOperation:   {apitokens.ScopeContactsWrite},
 	externalapi.TemplatesCreateOperation:           {apitokens.ScopeTemplatesWrite},
 	externalapi.TemplatesDeleteOperation:           {apitokens.ScopeTemplatesWrite},
 	externalapi.TemplatesGetOperation:              {apitokens.ScopeTemplatesRead},

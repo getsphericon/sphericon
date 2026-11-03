@@ -24,7 +24,8 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 
 	create := func(from string) siteapi.SiteBroadcastsCreateRes {
 		res, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-			Name: "from check", FromEmail: siteapi.NewOptNilEmailAddress(siteapi.EmailAddress(from)),
+			Name:    "from check",
+			Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{FromEmail: siteapi.NewOptNilEmailAddress(siteapi.EmailAddress(from))}),
 		}, createParams)
 		require.NoError(t, err)
 		return res
@@ -43,17 +44,17 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	require.True(t, ok)
 	assert.Contains(t, problem.Detail.Or(""), fixtures.SendingDomainUnverifiedDomain, "the refusal names the domain")
 
-	res, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "no from"}, createParams)
+	res, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "no from", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})}, createParams)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastResource{}, res)
 
 	badUpd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		FromEmail: siteapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainUnverifiedDomain),
+		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{FromEmail: siteapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainUnverifiedDomain)}),
 	}, updateParams)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, badUpd)
 	okUpd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		FromEmail: siteapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainVerifiedDomain),
+		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{FromEmail: siteapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainVerifiedDomain)}),
 	}, updateParams)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastResource{}, okUpd)
@@ -62,11 +63,11 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	// the unchanged From in the request.
 	lost := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastDraftFromLostDomainID}
 	for _, in := range []*siteapi.UpdateBroadcastInput{
-		{Subject: siteapi.NewOptString("New subject")},
-		{
+		{Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("New subject")})},
+		{Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{
 			Subject:   siteapi.NewOptString("Newer subject"),
 			FromEmail: siteapi.NewOptNilEmailAddress("hello@" + fixtures.SendingDomainLostDomain),
-		},
+		})},
 	} {
 		got, err := c.SiteBroadcastsUpdate(ctx, in, lost)
 		require.NoError(t, err)

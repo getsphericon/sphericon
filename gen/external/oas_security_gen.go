@@ -132,6 +132,7 @@ var operationRolesBearerAuth = map[string][]string{
 	TagsListOperation:                  []string{},
 	TagsListForContactOperation:        []string{},
 	TagsRemoveOperation:                []string{},
+	TelegramStartLinksIssueOperation:   []string{},
 	TemplatesCreateOperation:           []string{},
 	TemplatesDeleteOperation:           []string{},
 	TemplatesGetOperation:              []string{},

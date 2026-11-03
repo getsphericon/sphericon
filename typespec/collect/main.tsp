@@ -7,6 +7,7 @@ import "../common/errors.tsp";
 import "./resources/errors.tsp";
 import "./resources/identify.tsp";
 import "./resources/events.tsp";
+import "./resources/telegram.tsp";
 
 using TypeSpec.OpenAPI;
 using TypeSpec.Http;

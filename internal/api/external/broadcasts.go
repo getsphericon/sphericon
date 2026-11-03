@@ -18,7 +18,7 @@ import (
 
 func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.BroadcastsListParams) (externalapi.BroadcastsListRes, error) {
 	ws := auth.TokenScoped(ctx)
-	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false), nil, broadcasts.OrderNewest)
+	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), inputs.BroadcastsListFilter(params), broadcasts.OrderNewest)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +28,11 @@ func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.Broadc
 func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.CreateBroadcastInput) (externalapi.BroadcastsCreateRes, error) {
 	ws := auth.TokenScoped(ctx)
 
-	b, err := h.broadcasts.Create(ctx, ws, inputs.BroadcastCreate(req))
+	in, err := inputs.BroadcastCreate(req)
+	if err != nil {
+		return nil, err
+	}
+	b, err := h.broadcasts.Create(ctx, ws, in)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +52,11 @@ func (h *Handlers) BroadcastsGet(ctx context.Context, params externalapi.Broadca
 
 func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.UpdateBroadcastInput, params externalapi.BroadcastsUpdateParams) (externalapi.BroadcastsUpdateRes, error) {
 	id := int64(params.ID)
-	b, err := h.broadcasts.Update(ctx, auth.TokenScoped(ctx), id, inputs.BroadcastUpdate(req))
+	in, err := inputs.BroadcastUpdate(req)
+	if err != nil {
+		return nil, err
+	}
+	b, err := h.broadcasts.Update(ctx, auth.TokenScoped(ctx), id, in)
 	if err != nil {
 		return nil, err
 	}

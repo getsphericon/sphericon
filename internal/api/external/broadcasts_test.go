@@ -36,13 +36,13 @@ func TestExternalBroadcastsAreCreatedAsDraftsAndEditedWhileDraft(t *testing.T) {
 
 	created, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name:    "Spring sale",
-		Subject: externalapi.NewOptString("Big news"),
+		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Big news")}),
 	})
 	require.NoError(t, err)
 	b, ok := created.(*externalapi.BroadcastResource)
 	require.Truef(t, ok, "got %T", created)
 	assert.Equal(t, externalapi.BroadcastStatusDraft, b.Status)
-	assert.Equal(t, "Big news", b.Subject)
+	assert.Equal(t, "Big news", testhelper.ExternalEmailOf(b).Subject)
 	assert.False(t, b.SegmentId.IsSet(), "no Segment yet")
 
 	got, err := c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: b.ID})
@@ -77,17 +77,18 @@ func TestExternalBroadcastsUpdateClearsANullAndKeepsAnAbsentField(t *testing.T) 
 	params := externalapi.BroadcastsUpdateParams{ID: draftBroadcast}
 
 	_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
-		SegmentId: externalapi.NewOptNilEntityId(proSegment), FromName: externalapi.NewOptNilString("Acme"),
+		Content:   testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{FromName: externalapi.NewOptNilString("Acme")}),
+		SegmentId: externalapi.NewOptNilEntityId(proSegment),
 	}, params)
 	require.NoError(t, err)
 
 	var none externalapi.OptNilString
 	none.SetToNull()
-	res, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{FromName: none}, params)
+	res, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{FromName: none})}, params)
 	require.NoError(t, err)
 	got, ok := res.(*externalapi.BroadcastResource)
 	require.Truef(t, ok, "got %T", res)
-	assert.Empty(t, got.FromName.Or(""), "a null clears the From name")
+	assert.Empty(t, testhelper.ExternalEmailOf(got).FromName.Or(""), "a null clears the From name")
 	assert.Equal(t, externalapi.NewOptNilEntityId(proSegment), got.SegmentId, "an absent Segment is kept")
 }
 
@@ -187,7 +188,7 @@ func TestExternalBroadcastReport(t *testing.T) {
 	// The figures are the recipients' (fixtures: 11 sent, 5 opened, 2 clicked).
 	assert.EqualValues(t, 11, sr.RecipientsTotal)
 	assert.EqualValues(t, 11, sr.SentCount)
-	assert.EqualValues(t, 5, sr.OpenedCount)
+	assert.EqualValues(t, 5, sr.OpenedCount.Value)
 	assert.EqualValues(t, 2, sr.ClickedCount)
 }
 
@@ -206,7 +207,7 @@ func TestExternalBroadcastsRequireScopes(t *testing.T) {
 	assert.IsType(t, &externalapi.BroadcastReport{}, rep)
 
 	// ...but cannot write, set the Segment or test-send.
-	created, err := readOnly.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: "x"})
+	created, err := readOnly.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: "x", Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsCreateForbidden{}, created)
 	upd, err := readOnly.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{}, externalapi.BroadcastsUpdateParams{ID: draftBroadcast})

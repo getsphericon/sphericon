@@ -295,6 +295,97 @@ func (s AuditAction) Validate() error {
 	}
 }
 
+func (s BroadcastChannel) Validate() error {
+	switch s {
+	case "email":
+		return nil
+	case "telegram":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *BroadcastContent) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *BroadcastContentInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s BroadcastContentInputSum) Validate() error {
+	switch s.Type {
+	case EmailBroadcastContentInputBroadcastContentInputSum:
+		if err := s.EmailBroadcastContentInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TelegramBroadcastContentInputBroadcastContentInputSum:
+		if err := s.TelegramBroadcastContentInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s BroadcastContentSum) Validate() error {
+	switch s.Type {
+	case EmailBroadcastContentBroadcastContentSum:
+		if err := s.EmailBroadcastContent.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TelegramBroadcastContentBroadcastContentSum:
+		if err := s.TelegramBroadcastContent.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
 func (s *ContactExportContact) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -499,20 +590,13 @@ func (s *CreateBroadcastInput) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if value, ok := s.FromEmail.Get(); ok {
-			if err := func() error {
-				if err := value.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
+		if err := s.Content.Validate(); err != nil {
+			return err
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "fromEmail",
+			Name:  "content",
 			Error: err,
 		})
 	}
@@ -621,6 +705,106 @@ func (s EmailAddress) Validate() error {
 	return nil
 }
 
+func (s *EmailBroadcastContent) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.FromEmail.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "fromEmail",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s EmailBroadcastContentChannel) Validate() error {
+	switch s {
+	case "email":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *EmailBroadcastContentInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.FromEmail.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "fromEmail",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s EmailBroadcastContentInputChannel) Validate() error {
+	switch s {
+	case "email":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s GrantableScope) Validate() error {
 	switch s {
 	case "contacts:read":
@@ -689,6 +873,8 @@ func (s HoldReason) Validate() error {
 	case "unverified_domain":
 		return nil
 	case "provider_stopped":
+		return nil
+	case "provider_refused":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -882,6 +1068,11 @@ func (s IntegrationConfigInputSum) Validate() error {
 		return nil
 	case InboxConfigInputIntegrationConfigInputSum:
 		if err := s.InboxConfigInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TelegramConfigInputIntegrationConfigInputSum:
+		if err := s.TelegramConfigInput.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -2245,6 +2436,8 @@ func (s SiteAttentionKind) Validate() error {
 		return nil
 	case "integrationProviderStopped":
 		return nil
+	case "integrationProviderRefused":
+		return nil
 	case "broadcastHeld":
 		return nil
 	case "automationCannotSend":
@@ -2923,6 +3116,17 @@ func (s *SiteAutomationReport) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if s.Steps == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "steps",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -3155,6 +3359,55 @@ func (s *SiteAutomationStep) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if value, ok := s.UnsubscribeButton.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     64,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "unsubscribeButton",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Buttons == nil {
+			return nil // optional
+		}
+		if err := (validate.Array{
+			MinLength:    0,
+			MinLengthSet: false,
+			MaxLength:    8,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.Buttons)); err != nil {
+			return errors.Wrap(err, "array")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "buttons",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -3164,6 +3417,8 @@ func (s *SiteAutomationStep) Validate() error {
 func (s SiteAutomationStepType) Validate() error {
 	switch s {
 	case "email":
+		return nil
+	case "telegram":
 		return nil
 	case "wait":
 		return nil
@@ -3693,20 +3948,24 @@ func (s *SiteBroadcastResource) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if value, ok := s.FromEmail.Get(); ok {
-			if err := func() error {
-				if err := value.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
+		if err := s.Channel.Validate(); err != nil {
+			return err
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "fromEmail",
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Content.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "content",
 			Error: err,
 		})
 	}
@@ -3806,8 +4065,15 @@ func (s *SiteBroadcastStats) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if err := (validate.Float{}).Validate(float64(s.DeliveryRate)); err != nil {
-			return errors.Wrap(err, "float")
+		if value, ok := s.DeliveryRate.Get(); ok {
+			if err := func() error {
+				if err := (validate.Float{}).Validate(float64(value)); err != nil {
+					return errors.Wrap(err, "float")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
 		}
 		return nil
 	}(); err != nil {
@@ -3817,8 +4083,15 @@ func (s *SiteBroadcastStats) Validate() error {
 		})
 	}
 	if err := func() error {
-		if err := (validate.Float{}).Validate(float64(s.OpenRate)); err != nil {
-			return errors.Wrap(err, "float")
+		if value, ok := s.OpenRate.Get(); ok {
+			if err := func() error {
+				if err := (validate.Float{}).Validate(float64(value)); err != nil {
+					return errors.Wrap(err, "float")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
 		}
 		return nil
 	}(); err != nil {
@@ -3839,8 +4112,15 @@ func (s *SiteBroadcastStats) Validate() error {
 		})
 	}
 	if err := func() error {
-		if err := (validate.Float{}).Validate(float64(s.ClickToOpenRate)); err != nil {
-			return errors.Wrap(err, "float")
+		if value, ok := s.ClickToOpenRate.Get(); ok {
+			if err := func() error {
+				if err := (validate.Float{}).Validate(float64(value)); err != nil {
+					return errors.Wrap(err, "float")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
 		}
 		return nil
 	}(); err != nil {
@@ -6702,6 +6982,8 @@ func (s SiteIntegrationChannel) Validate() error {
 		return nil
 	case "sms":
 		return nil
+	case "telegram":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -6747,6 +7029,11 @@ func (s SiteIntegrationConfigSum) Validate() error {
 			return err
 		}
 		return nil
+	case SiteTelegramConfigSiteIntegrationConfigSum:
+		if err := s.SiteTelegramConfig.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -6759,6 +7046,8 @@ func (s SiteIntegrationProvider) Validate() error {
 	case "ses":
 		return nil
 	case "inbox":
+		return nil
+	case "telegram":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -6977,6 +7266,14 @@ func (s *SiteIntegrationsRegenerateKeyNotFound) Validate() error {
 	return nil
 }
 
+func (s *SiteIntegrationsRegenerateKeyUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteIntegrationsUnarchiveBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -7002,6 +7299,14 @@ func (s *SiteIntegrationsUnarchiveForbidden) Validate() error {
 }
 
 func (s *SiteIntegrationsUnarchiveNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteIntegrationsUnarchiveUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -11619,6 +11924,8 @@ func (s SiteSuppressionChannel) Validate() error {
 	switch s {
 	case "email":
 		return nil
+	case "telegram":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -11937,6 +12244,86 @@ func (s *SiteTagsRemoveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (s *SiteTelegramConfig) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteTelegramConfigKind) Validate() error {
+	switch s {
+	case "telegram":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SiteTelegramIssueStartLinkBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTelegramIssueStartLinkNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTelegramIssueStartLinkUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTelegramListBindingsBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTelegramListBindingsNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s SiteTelegramListBindingsOKApplicationJSON) Validate() error {
+	alias := ([]SiteBindingResource)(s)
+	if alias == nil {
+		return errors.New("nil is invalid value")
 	}
 	return nil
 }
@@ -13996,6 +14383,162 @@ func (s SmtpConfigInputKind) Validate() error {
 	}
 }
 
+func (s *TelegramBroadcastContent) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Buttons == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "buttons",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s TelegramBroadcastContentChannel) Validate() error {
+	switch s {
+	case "telegram":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *TelegramBroadcastContentInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Buttons == nil {
+			return nil // optional
+		}
+		if err := (validate.Array{
+			MinLength:    0,
+			MinLengthSet: false,
+			MaxLength:    8,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.Buttons)); err != nil {
+			return errors.Wrap(err, "array")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "buttons",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.UnsubscribeButton.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     64,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "unsubscribeButton",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s TelegramBroadcastContentInputChannel) Validate() error {
+	switch s {
+	case "telegram":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *TelegramConfigInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s TelegramConfigInputKind) Validate() error {
+	switch s {
+	case "telegram":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *TestSendBroadcastInput) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -14026,7 +14569,7 @@ func (s *UpdateBroadcastInput) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if value, ok := s.FromEmail.Get(); ok {
+		if value, ok := s.Content.Get(); ok {
 			if err := func() error {
 				if err := value.Validate(); err != nil {
 					return err
@@ -14039,7 +14582,7 @@ func (s *UpdateBroadcastInput) Validate() error {
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "fromEmail",
+			Name:  "content",
 			Error: err,
 		})
 	}

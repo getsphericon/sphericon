@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { siteBrandKitGetOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import { brandTheme } from '../utils/brandTheme.ts'
-import { CONTACT_TAGS, EVENT_ACTION_TAG } from '../utils/mergeTags.ts'
+import { CONTACT_TAGS, EVENT_ACTION_TAG, TELEGRAM_START_TAG } from '../utils/mergeTags.ts'
 import type { MessageDoc } from '../utils/messageDoc.ts'
 import { BlockSkeleton } from './Skeletons.tsx'
 
@@ -72,7 +72,11 @@ export function MessageEditor({ doc, body, onChange, eventTags = false }: Messag
         <Suspense fallback={<BlockSkeleton />}>
           <VisualEditor
             initial={initial}
-            variables={eventTags ? [...CONTACT_TAGS, EVENT_ACTION_TAG] : CONTACT_TAGS}
+            variables={
+              eventTags
+                ? [...CONTACT_TAGS, TELEGRAM_START_TAG, EVENT_ACTION_TAG]
+                : [...CONTACT_TAGS, TELEGRAM_START_TAG]
+            }
             eventProperties={eventTags}
             theme={theme}
             onChange={(next) => onChange({ doc: next })}

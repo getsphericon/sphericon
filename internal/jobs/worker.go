@@ -132,6 +132,7 @@ func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outb
 	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(acc, retention.UnverifiedUsers))
 	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, time.Now))
 	river.AddWorker(workers, NewPrunePendingSignupsWorker(acc, time.Now))
+	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, time.Now))
 	river.AddWorker(workers, NewEraseWorkspacesWorker(workspacedeletion.New(entClient, bus), time.Now))
 
 	var extraPeriodic []*river.PeriodicJob
@@ -297,6 +298,14 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				dailyAtUTC{hour: passkeyChallengesHourUTC},
 				func() (river.JobArgs, *river.InsertOpts) {
 					return PrunePasskeyChallengesArgs{}, nil
+				},
+				nil,
+			),
+			// Delete the lapsed and used Start tokens daily at 04:00 UTC (ADR 0076).
+			river.NewPeriodicJob(
+				dailyAtUTC{hour: startTokensHourUTC},
+				func() (river.JobArgs, *river.InsertOpts) {
+					return PruneStartTokensArgs{}, nil
 				},
 				nil,
 			),

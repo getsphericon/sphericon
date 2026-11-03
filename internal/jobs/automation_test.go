@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -126,9 +125,9 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 	assert.Equal(t, 2, sent)
 }
 
-// An opt-out from this automation's source (or a suppression) exits the
-// enrollment instead of sending: a run never silently skips its emails.
-// Leo opted out of the Welcome series' own sending source.
+// An opt-out from this Automation's own source exits the Enrollment instead of sending: an
+// unsubscribe from the Automation ends it, whichever Channel it came from (ADR 0081). Leo opted out
+// of the Welcome series' own sending source.
 func TestAutomationExitsOnUnsubscribe(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -140,19 +139,6 @@ func TestAutomationExitsOnUnsubscribe(t *testing.T) {
 	assert.Empty(t, fs.sent, "ineligible destination receives no email")
 	assert.Equal(t, automationrun.StatusExited, env.DB.AutomationRun.GetX(ctx, runID).Status)
 	assert.Empty(t, queuedSteps(t, env), "an exit queues no further step")
-}
-
-// A suppression exits the enrollment too (the global hard floor).
-func TestAutomationExitsOnSuppression(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	runID := enrollVia(t, env, fixtures.AutomationJobsSingleEmailID, fixtures.ContactComplainedID)
-
-	fs := &fakeSender{}
-	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
-
-	assert.Empty(t, fs.sent)
-	assert.Equal(t, automationrun.StatusExited, env.DB.AutomationRun.GetX(ctx, runID).Status)
 }
 
 // A per-source opt-out is scoped: unsubscribing from "broadcasts" does not block
@@ -308,31 +294,6 @@ func TestAutomationHeldStepWaitsAndResumes(t *testing.T) {
 	assert.Len(t, fs.sent, 1, "after the unfreeze the step sends")
 }
 
-// Every email an Automation sends goes through the Integration it names, not the default.
-func TestAnAutomationSendsThroughItsOwnIntegration(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationJobsGreetingVersionID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
-	enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
-
-	var through []int64
-	fs := &fakeSender{}
-	resolver := &SendersMock{EmailSenderFunc: func(_ context.Context, _ *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error) {
-		through = append(through, integ.ID)
-		return fs, nil
-	}}
-	env.RunQueuedSteps(t, stepperOf(env, resolver))
-
-	require.Len(t, fs.sent, 2)
-	assert.Equal(t, []int64{fixtures.IntegrationAcmeMailgunID, fixtures.IntegrationAcmeMailgunID}, through)
-	sent := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationID(fixtures.AutomationJobsGreetingID)).AllX(ctx)
-	require.Len(t, sent, 2)
-	for _, msg := range sent {
-		require.NotNil(t, msg.IntegrationID)
-		assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, *msg.IntegrationID)
-	}
-}
-
 // Naming no Integration is the Workspace default, the one every Automation used before.
 func TestAnAutomationWithoutAnIntegrationSendsThroughTheDefault(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -346,37 +307,6 @@ func TestAnAutomationWithoutAnIntegrationSendsThroughTheDefault(t *testing.T) {
 	env.RunQueuedSteps(t, stepperOf(env, resolver))
 
 	assert.Equal(t, []int64{fixtures.IntegrationAcmeDefaultID, fixtures.IntegrationAcmeDefaultID}, through)
-}
-
-// A named Integration that cannot send, because it is disabled or archived, holds the step,
-// which asks again later: nothing falls back to the default, and the Enrollment does not move.
-func TestAnAutomationStepIsHeldWhenItsIntegrationCannotSend(t *testing.T) {
-	unusable := map[string]func(env *testhelper.TestEnv){
-		"disabled": func(env *testhelper.TestEnv) {
-			env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetEnabled(false).ExecX(context.Background())
-		},
-		"archived": func(env *testhelper.TestEnv) {
-			require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Integration().Discard(context.Background(), fixtures.IntegrationAcmeMailgunID))
-		},
-	}
-	for name, makeUnusable := range unusable {
-		t.Run(name, func(t *testing.T) {
-			env := testhelper.Setup(t)
-			ctx := context.Background()
-			env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationJobsGreetingVersionID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
-			makeUnusable(env)
-			runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
-
-			fs := &fakeSender{}
-			require.True(t, env.RunNextStep(t, stepperOf(env, resolvingTo(fs))))
-
-			run := env.DB.AutomationRun.GetX(ctx, runID)
-			assert.Equal(t, automationrun.StatusActive, run.Status)
-			assert.Zero(t, run.CurrentStep, "a hold does not advance the enrollment")
-			assert.Equal(t, []map[string]any{stepJob(runID, 0)}, queuedSteps(t, env), "the worker reschedules the same step")
-			assert.Empty(t, fs.sent)
-		})
-	}
 }
 
 // An Enrollment exited while a step is in flight stays exited: the late step's own

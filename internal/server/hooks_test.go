@@ -160,6 +160,39 @@ func TestHookAcceptsAValidRequestWithNothingToHandle(t *testing.T) {
 	assert.Empty(t, env.OutboxEvents(t, deliveryNames...))
 }
 
+// The generic Preset passes its body through, so it carries facts of every kind. An email
+// Integration reads Delivery notices only: an Inbound message and a Reachability change are
+// accepted and record nothing, and so is a message its Preset says came in on another Channel.
+func TestAnEmailIntegrationAcceptsInboundMessagesAndReachabilityChangesAndRecordsNothing(t *testing.T) {
+	env := setupHooks(t)
+	body := `[{"kind":"inbound_message","id":"evt_1","channel":"email","destination":"` + fixtures.ContactAliceEmail + `","text":"STOP"},` +
+		`{"kind":"inbound_message","id":"evt_2","channel":"telegram","destination":"42","chat_id":"42","text":"/start abc"},` +
+		`{"kind":"reachability_change","id":"evt_3","destination":"` + fixtures.ContactAliceEmail + `","reachable":false,"reason":"blocked"}]`
+
+	rec := signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", body)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Empty(t, env.OutboxEvents(t))
+}
+
+// A malformed fact of a new kind fails the transform as a malformed Delivery notice does: the
+// request is verified, so the fault is the Preset's, and nothing of it is recorded.
+func TestAMalformedFactIsRefusedLikeAMalformedDeliveryNotice(t *testing.T) {
+	env := setupHooks(t)
+	bodies := map[string]string{
+		"a Delivery notice that names no address":      `[{"id":"evt_1","destination":"not an address","kind":"bounce"}]`,
+		"an Inbound message without a destination":     `[{"kind":"inbound_message","id":"evt_2","channel":"email","text":"STOP"}]`,
+		"a Reachability change with an unknown reason": `[{"kind":"reachability_change","id":"evt_3","destination":"42","reachable":false,"reason":"moved"}]`,
+		"a valid notice beside a malformed fact":       `[{"id":"evt_4","destination":"a@example.com","kind":"bounce"},{"kind":"reachability_change","id":"evt_4","destination":""}]`,
+	}
+	for name, body := range bodies {
+		rec := signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_"+name, body)
+
+		assert.Equal(t, http.StatusInternalServerError, rec.Code, name)
+	}
+	assert.Empty(t, env.OutboxEvents(t))
+}
+
 // A hard bounce suppresses; a soft one is still published (the deliverability rates read
 // it) and never suppresses.
 func TestHookSuppressesAHardBounceAndOnlyRecordsASoftOne(t *testing.T) {

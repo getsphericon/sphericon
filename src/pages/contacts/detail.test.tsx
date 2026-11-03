@@ -13,9 +13,16 @@ import {
   handleSiteContactsExport,
   handleSiteContactsGet,
   handleSiteEventsList,
+  handleSiteIntegrationsList,
+  handleSiteTelegramIssueStartLink,
+  handleSiteTelegramListBindings,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { Permission, SiteContactResource } from '../../generated/site/types.gen.ts'
+import type {
+  Permission,
+  SiteContactResource,
+  SiteIntegrationResource,
+} from '../../generated/site/types.gen.ts'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { problem } from '../../test/problem.ts'
@@ -49,7 +56,11 @@ const ADA: SiteContactResource = {
 
 // The page reads the signed-in User's Permissions on every render; tests that care override them.
 beforeEach(() => {
-  worker.use(holding([]))
+  worker.use(
+    holding([]),
+    handleSiteTelegramListBindings({ body: [] }),
+    handleSiteIntegrationsList({ body: [] }),
+  )
 })
 
 const NO_EVENTS = handleSiteEventsList(() => HttpResponse.json({ items: [], totalItems: 0 }))
@@ -380,4 +391,59 @@ test('lists the tags of the contact', async () => {
 
   await expect.element(screen.getByText('vip', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('beta', { exact: true })).toBeInTheDocument()
+})
+
+const BOT: SiteIntegrationResource = {
+  id: '9',
+  name: 'Acme bot',
+  channel: 'telegram',
+  provider: 'telegram',
+  enabled: true,
+  isDefault: false,
+  maxPerSecond: null,
+  maxPerDay: null,
+  providerLimit: {
+    perSecond: { limit: 30, source: 'provider' },
+    perDay: { limit: null, source: null },
+    sentLast24h: 0,
+    warnings: [],
+  },
+  config: { kind: 'telegram', botId: 7000000001, username: 'acme_bot' },
+  preset: 'telegram',
+  params: {},
+  secretsRetiring: [],
+  hookUrl: 'https://app.test/hooks/omik_nine',
+  createdAt: NOW,
+  updatedAt: NOW,
+}
+
+test('lists the Telegram chats of the contact and copies a start link', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteContactsGet({ body: ADA }),
+    NO_EVENTS,
+    handleSiteIntegrationsList({ body: [BOT] }),
+    handleSiteTelegramListBindings({
+      body: [
+        {
+          id: '1',
+          integrationId: '9',
+          integrationName: 'Acme bot',
+          botUsername: 'acme_bot',
+          boundAt: NOW,
+        },
+      ],
+    }),
+    handleSiteTelegramIssueStartLink(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({ url: 'https://t.me/acme_bot?start=tok', expiresAt: NOW })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+  await expect.element(screen.getByText('@acme_bot')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Copy Telegram link' }).click()
+
+  await expect.element(screen.getByText(/Start link copied/)).toBeInTheDocument()
+  expect(bodies).toEqual([{ integrationId: '9' }])
 })

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
@@ -43,7 +44,7 @@ func TestDecodeRejectsMalformedClaims(t *testing.T) {
 
 func TestDecodeUnsubRejectsMalformedClaims(t *testing.T) {
 	tr := newTracker()
-	ok := jwt.MapClaims{"src": "broadcasts", "dest": "a@b.com", "ws": "1", "cid": "2", "bid": "3"}
+	ok := jwt.MapClaims{"ch": "email", "src": "broadcasts", "dest": "a@b.com", "ws": "1", "cid": "2", "bid": "3"}
 	with := func(k string, v any) jwt.MapClaims {
 		c := jwt.MapClaims{}
 		maps.Copy(c, ok)
@@ -57,9 +58,11 @@ func TestDecodeUnsubRejectsMalformedClaims(t *testing.T) {
 
 	got, err := tr.DecodeUnsub(signed(t, ok))
 	require.NoError(t, err)
-	assert.Equal(t, tracking.UnsubTarget{Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1, ContactID: 2, BroadcastID: 3}, got)
+	assert.Equal(t, tracking.UnsubTarget{Channel: messaging.ChannelEmail, Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1, ContactID: 2, BroadcastID: 3}, got)
 
 	for name, claims := range map[string]jwt.MapClaims{
+		"missing ch":  with("ch", nil),
+		"unknown ch":  with("ch", "sms"),
 		"missing src": with("src", nil),
 		"empty src":   with("src", ""),
 		"missing ws":  with("ws", nil),
@@ -118,7 +121,7 @@ func TestDecodeConfirmRejectsMalformedClaims(t *testing.T) {
 func TestURLsCarryDecodableTokens(t *testing.T) {
 	tr := tracking.New(forgeSecret, "https://app.test/")
 
-	u, err := tr.UnsubscribeURL(tracking.UnsubTarget{Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1})
+	u, err := tr.UnsubscribeURL(tracking.UnsubTarget{Channel: messaging.ChannelEmail, Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1})
 	require.NoError(t, err)
 	require.Contains(t, u, "https://app.test/e/u/")
 	target, err := tr.DecodeUnsub(u[len("https://app.test/e/u/"):])

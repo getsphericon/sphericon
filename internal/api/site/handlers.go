@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
@@ -83,6 +84,7 @@ type Handlers struct {
 	contacts        *contacts.Module
 	erasure         *erasure.Module
 	tags            *tags.Module
+	bindings        *bindings.Module
 	templates       *templates.Module
 	brandKit        *brandkit.Module
 	automations     *automations.Module
@@ -170,6 +172,7 @@ type Deps struct {
 	Contacts    *contacts.Module
 	Erasure     *erasure.Module
 	Tags        *tags.Module
+	Bindings    *bindings.Module
 	Templates   *templates.Module
 	BrandKit    *brandkit.Module
 	Automations *automations.Module
@@ -245,7 +248,7 @@ func NewHandlers(d Deps) *Handlers {
 	}
 	h := &Handlers{
 		accounts: d.Accounts, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
-		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
+		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, mail: d.Mail,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, captured: d.CapturedMessages, links: accounts.NewLinks(d.Accounts, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,

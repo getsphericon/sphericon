@@ -7,13 +7,14 @@ import {
   handleSiteAutomationsPublish,
   handleSiteAutomationsRevert,
   handleSiteEnrollmentsList,
+  handleSiteIntegrationsGet,
 } from '../../generated/site/msw.gen.ts'
 import type {
   SiteAutomationResource,
   SiteAutomationResults,
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { emailIntegration, page, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -80,6 +81,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
         captured: 0,
         revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [],
+        steps: [],
         results: NO_RESULTS,
       },
     }),
@@ -138,6 +140,7 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
           { url: 'https://dest.test/a', clicks: 7 },
           { url: 'https://dest.test/b', clicks: 2 },
         ],
+        steps: [],
         results: NO_RESULTS,
       },
     }),
@@ -188,6 +191,7 @@ test('marks an inactive automation as inactive', async () => {
         captured: 0,
         revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [],
+        steps: [],
         results: NO_RESULTS,
       },
     }),
@@ -236,6 +240,7 @@ test('shows the orders and the net revenue credited to the automation', async ()
         captured: 0,
         revenue: { reportingCurrency: 'USD', orders: 4, amount: 12000 },
         links: [],
+        steps: [],
         results: NO_RESULTS,
       },
     }),
@@ -277,6 +282,7 @@ test('shows no orders or revenue on the automation until the first order sets th
         captured: 0,
         revenue: { reportingCurrency: null, orders: 0, amount: 0 },
         links: [],
+        steps: [],
         results: NO_RESULTS,
       },
     }),
@@ -317,6 +323,7 @@ const NO_FIGURES = {
   captured: 0,
   revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
   links: [],
+  steps: [],
   results: NO_RESULTS,
 }
 
@@ -330,9 +337,9 @@ test('shows what the live version does, its exit and goal events included, not t
           triggerEvent: 'signup',
           exitEvents: ['account_closed'],
           goalEvent: 'course_started',
-          integrationId: null,
           steps: [
             { type: 'email', subject: 'Welcome aboard' },
+            { type: 'email', subject: 'Second look', integrationId: '21' },
             { type: 'apply_tag', tag: 'onboarded' },
           ],
         },
@@ -347,6 +354,7 @@ test('shows what the live version does, its exit and goal events included, not t
     }),
     handleSiteAutomationReportsGet({ body: NO_FIGURES }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
+    handleSiteIntegrationsGet({ body: emailIntegration('21', 'Mailgun relay') }),
   )
 
   const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
@@ -355,8 +363,10 @@ test('shows what the live version does, its exit and goal events included, not t
   await expect.element(screen.getByText('signup')).toBeInTheDocument()
   await expect.element(screen.getByText('account_closed')).toBeInTheDocument()
   await expect.element(screen.getByText('course_started')).toBeInTheDocument()
-  await expect.element(screen.getByText('Workspace default')).toBeInTheDocument()
   await expect.element(screen.getByText('Send email: Welcome aboard')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText('Send email: Second look · Mailgun relay'))
+    .toBeInTheDocument()
   await expect.element(screen.getByText('Apply tag: onboarded')).toBeInTheDocument()
   await expect.element(screen.getByText('course_completed')).not.toBeInTheDocument()
   await expect.element(screen.getByText('Call a URL')).not.toBeInTheDocument()
@@ -511,4 +521,26 @@ test('the period picked shows the results of that period', async () => {
   await expect.element(screen.getByText('Previous 7 days: 6 (+50%)')).toBeInTheDocument()
   await expect.element(screen.getByText(/from 03\/11\/2026 to 03\/17\/2026/)).toBeInTheDocument()
   await expect.element(screen.getByText('Previous 30 days: 3 (+33.33%)')).not.toBeInTheDocument()
+})
+
+test('shows what each send step sent and skipped, by its position', async () => {
+  worker.use(
+    handleSiteAutomationsGet({ body: { ...PENDING, draft: null } }),
+    handleSiteAutomationReportsGet({
+      body: {
+        ...NO_FIGURES,
+        steps: [
+          { step: 0, sent: 41, skipped: 3 },
+          { step: 2, sent: 17, skipped: 29 },
+        ],
+      },
+    }),
+    handleSiteEnrollmentsList({ body: page([], 0) }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
+
+  await expect.element(screen.getByText('Send steps')).toBeInTheDocument()
+  await expect.element(screen.getByRole('row', { name: '1 41 3' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('row', { name: '3 17 29' })).toBeInTheDocument()
 })

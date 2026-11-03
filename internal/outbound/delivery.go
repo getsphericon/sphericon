@@ -20,7 +20,7 @@ func FindByProviderMessageID(ctx context.Context, s *ent.Scoped, providerMessage
 		return nil, nil
 	}
 	m, err := s.OutboundMessage().Query().
-		Where(outboundmessage.ProviderMessageID(providerMessageID)).
+		Where(outboundmessage.ProviderMessageID(providerMessageID), outboundmessage.ChannelEQ(outboundmessage.ChannelEmail)).
 		Order(outboundmessage.ByID(sql.OrderDesc())).
 		First(ctx)
 	if ent.IsNotFound(err) {
@@ -28,6 +28,34 @@ func FindByProviderMessageID(ctx context.Context, s *ent.Scoped, providerMessage
 	}
 	if err != nil {
 		return nil, fmt.Errorf("find message by provider id: %w", err)
+	}
+	return m, nil
+}
+
+// FindTelegramMessage is the Outbound message a Telegram button press was made on, nil when none
+// resolves. A Telegram message id is only unique within its chat, so the press is matched by the
+// bot it came to, the user who pressed it (the Destination recorded as the first Binding the
+// message was accepted for) and the message id. A message that went to several chats of one
+// Contact is found through the first of them only; a press in another does not resolve and is
+// not attributed, but is still the opt-out.
+func FindTelegramMessage(ctx context.Context, s *ent.Scoped, integrationID int64, destination, providerMessageID string) (*ent.OutboundMessage, error) {
+	if providerMessageID == "" {
+		return nil, nil
+	}
+	m, err := s.OutboundMessage().Query().
+		Where(
+			outboundmessage.ChannelEQ(outboundmessage.ChannelTelegram),
+			outboundmessage.IntegrationID(integrationID),
+			outboundmessage.Destination(destination),
+			outboundmessage.ProviderMessageID(providerMessageID),
+		).
+		Order(outboundmessage.ByID(sql.OrderDesc())).
+		First(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("find telegram message: %w", err)
 	}
 	return m, nil
 }

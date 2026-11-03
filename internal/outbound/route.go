@@ -50,8 +50,9 @@ func (r Route) Held() bool { return r.Hold != "" }
 func (r Route) Interval() time.Duration { return r.Limits.Interval() }
 
 // Armable refuses to arm a send through a route with no Integration that can send, with
-// ErrRouteHeld. A provider that has stopped the account (HoldProviderStopped) does not refuse it:
-// that standing lifts by itself once a quota read finds the account sending again, and the sends
+// ErrRouteHeld. A provider that has stopped the account (HoldProviderStopped) or refused the
+// credentials (HoldProviderRefused) does not refuse it: that standing lifts once a quota read finds
+// the account sending again or the Integration is saved with working credentials, and the sends
 // wait for it.
 func (r Route) Armable() error {
 	if r.Hold == HoldNoIntegration {
@@ -65,7 +66,8 @@ func (r Route) Armable() error {
 // Channel holds the route (HoldNoIntegration) and never falls back to the default; so does a
 // Channel with no default, or an Integration the provider adapter cannot be built for
 // (messaging.ErrNoProvider). An Integration whose provider has stopped its account holds it too
-// (HoldProviderStopped). It says nothing of the Workspace freeze or the Channel's own check (the
+// (HoldProviderStopped), and so does one whose credentials the provider refused at send time
+// (HoldProviderRefused). It says nothing of the Workspace freeze or the Channel's own check (the
 // From's Sending domain on email): those are the send's own checks (gate).
 func (m *Module) Route(ctx context.Context, s *ent.Scoped, ch messaging.Channel, integrationID *int64) (Route, error) {
 	part, err := m.channel(ch)
@@ -81,6 +83,9 @@ func (m *Module) Route(ctx context.Context, s *ent.Scoped, ch messaging.Channel,
 	}
 	if integ != nil && providerlimit.Stopped(integ) {
 		return Route{Integration: integ, Limits: providerlimit.EffectiveOf(integ).Limits(), Hold: HoldProviderStopped}, nil
+	}
+	if integ != nil && integ.ProviderRefusedAt != nil {
+		return Route{Integration: integ, Limits: providerlimit.EffectiveOf(integ).Limits(), Hold: HoldProviderRefused}, nil
 	}
 	// Without a default row the sender is still asked: a test double sends for any Workspace.
 	adapter, err := part.adapter(ctx, s, integ)

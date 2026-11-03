@@ -20,7 +20,7 @@ func TestSiteBroadcastsRefuseABlankNameWith422(t *testing.T) {
 			env := testhelper.Setup(t)
 			c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-			res, err := c.SiteBroadcastsCreate(context.Background(), &siteapi.CreateBroadcastInput{Name: name},
+			res, err := c.SiteBroadcastsCreate(context.Background(), &siteapi.CreateBroadcastInput{Name: name, Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})},
 				siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 			require.NoError(t, err)
 			refused, ok := res.(*siteapi.SiteBroadcastsCreateUnprocessableEntity)

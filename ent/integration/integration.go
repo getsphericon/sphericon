@@ -53,6 +53,8 @@ const (
 	FieldProviderEnforcement = "provider_enforcement"
 	// FieldProviderSandbox holds the string denoting the provider_sandbox field in the database.
 	FieldProviderSandbox = "provider_sandbox"
+	// FieldProviderRefusedAt holds the string denoting the provider_refused_at field in the database.
+	FieldProviderRefusedAt = "provider_refused_at"
 	// FieldProviderQuotaCheckedAt holds the string denoting the provider_quota_checked_at field in the database.
 	FieldProviderQuotaCheckedAt = "provider_quota_checked_at"
 	// FieldProviderQuotaFailedAt holds the string denoting the provider_quota_failed_at field in the database.
@@ -63,6 +65,10 @@ const (
 	EdgeProviderLimiter = "provider_limiter"
 	// EdgeCapturedMessages holds the string denoting the captured_messages edge name in mutations.
 	EdgeCapturedMessages = "captured_messages"
+	// EdgeBindings holds the string denoting the bindings edge name in mutations.
+	EdgeBindings = "bindings"
+	// EdgeStartTokens holds the string denoting the start_tokens edge name in mutations.
+	EdgeStartTokens = "start_tokens"
 	// Table holds the table name of the integration in the database.
 	Table = "integrations"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -86,6 +92,20 @@ const (
 	CapturedMessagesInverseTable = "captured_messages"
 	// CapturedMessagesColumn is the table column denoting the captured_messages relation/edge.
 	CapturedMessagesColumn = "integration_id"
+	// BindingsTable is the table that holds the bindings relation/edge.
+	BindingsTable = "bindings"
+	// BindingsInverseTable is the table name for the Binding entity.
+	// It exists in this package in order to avoid circular dependency with the "binding" package.
+	BindingsInverseTable = "bindings"
+	// BindingsColumn is the table column denoting the bindings relation/edge.
+	BindingsColumn = "integration_id"
+	// StartTokensTable is the table that holds the start_tokens relation/edge.
+	StartTokensTable = "start_tokens"
+	// StartTokensInverseTable is the table name for the StartToken entity.
+	// It exists in this package in order to avoid circular dependency with the "starttoken" package.
+	StartTokensInverseTable = "start_tokens"
+	// StartTokensColumn is the table column denoting the start_tokens relation/edge.
+	StartTokensColumn = "integration_id"
 )
 
 // Columns holds all SQL columns for integration fields.
@@ -110,6 +130,7 @@ var Columns = []string{
 	FieldProviderMaxPerDay,
 	FieldProviderEnforcement,
 	FieldProviderSandbox,
+	FieldProviderRefusedAt,
 	FieldProviderQuotaCheckedAt,
 	FieldProviderQuotaFailedAt,
 }
@@ -157,8 +178,9 @@ const DefaultChannel = ChannelEmail
 
 // Channel values.
 const (
-	ChannelEmail Channel = "email"
-	ChannelSms   Channel = "sms"
+	ChannelEmail    Channel = "email"
+	ChannelSms      Channel = "sms"
+	ChannelTelegram Channel = "telegram"
 )
 
 func (c Channel) String() string {
@@ -168,7 +190,7 @@ func (c Channel) String() string {
 // ChannelValidator is a validator for the "channel" field enum values. It is called by the builders before save.
 func ChannelValidator(c Channel) error {
 	switch c {
-	case ChannelEmail, ChannelSms:
+	case ChannelEmail, ChannelSms, ChannelTelegram:
 		return nil
 	default:
 		return fmt.Errorf("integration: invalid enum value for channel field: %q", c)
@@ -180,9 +202,10 @@ type Provider string
 
 // Provider values.
 const (
-	ProviderSMTP  Provider = "smtp"
-	ProviderSes   Provider = "ses"
-	ProviderInbox Provider = "inbox"
+	ProviderSMTP     Provider = "smtp"
+	ProviderSes      Provider = "ses"
+	ProviderInbox    Provider = "inbox"
+	ProviderTelegram Provider = "telegram"
 )
 
 func (pr Provider) String() string {
@@ -192,7 +215,7 @@ func (pr Provider) String() string {
 // ProviderValidator is a validator for the "provider" field enum values. It is called by the builders before save.
 func ProviderValidator(pr Provider) error {
 	switch pr {
-	case ProviderSMTP, ProviderSes, ProviderInbox:
+	case ProviderSMTP, ProviderSes, ProviderInbox, ProviderTelegram:
 		return nil
 	default:
 		return fmt.Errorf("integration: invalid enum value for provider field: %q", pr)
@@ -325,6 +348,11 @@ func ByProviderSandbox(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProviderSandbox, opts...).ToFunc()
 }
 
+// ByProviderRefusedAt orders the results by the provider_refused_at field.
+func ByProviderRefusedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProviderRefusedAt, opts...).ToFunc()
+}
+
 // ByProviderQuotaCheckedAt orders the results by the provider_quota_checked_at field.
 func ByProviderQuotaCheckedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProviderQuotaCheckedAt, opts...).ToFunc()
@@ -362,6 +390,34 @@ func ByCapturedMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption 
 		sqlgraph.OrderByNeighborTerms(s, newCapturedMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByBindingsCount orders the results by bindings count.
+func ByBindingsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBindingsStep(), opts...)
+	}
+}
+
+// ByBindings orders the results by bindings terms.
+func ByBindings(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBindingsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByStartTokensCount orders the results by start_tokens count.
+func ByStartTokensCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newStartTokensStep(), opts...)
+	}
+}
+
+// ByStartTokens orders the results by start_tokens terms.
+func ByStartTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStartTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -381,5 +437,19 @@ func newCapturedMessagesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CapturedMessagesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, CapturedMessagesTable, CapturedMessagesColumn),
+	)
+}
+func newBindingsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BindingsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, BindingsTable, BindingsColumn),
+	)
+}
+func newStartTokensStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StartTokensInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, StartTokensTable, StartTokensColumn),
 	)
 }

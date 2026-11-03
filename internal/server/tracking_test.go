@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/samber/lo"
@@ -143,13 +144,15 @@ func TestUnsubscribeEverythingInvalidatesConfirmation(t *testing.T) {
 
 	// A per-source (broadcasts) opt-out must NOT invalidate the confirmation.
 	post(unsubPath(t, tr, tracking.UnsubTarget{
-		Source: eligibility.SourceBroadcasts, Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
+		Channel: messaging.ChannelEmail,
+		Source:  eligibility.SourceBroadcasts, Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	}))
 	assert.True(t, confExists(), "per-source opt-out leaves the confirmation")
 
 	// The everything opt-out deletes the confirmation row.
 	post(unsubPath(t, tr, tracking.UnsubTarget{
-		Source: eligibility.SourceEverything, Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
+		Channel: messaging.ChannelEmail,
+		Source:  eligibility.SourceEverything, Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	}))
 	assert.False(t, confExists(), "everything opt-out invalidates the confirmation")
 }
@@ -210,7 +213,8 @@ func TestTrackingEndpoints(t *testing.T) {
 	// page and records nothing (a link scanner's GET must not opt anyone out); only
 	// POST performs the opt-out.
 	uPath := unsubPath(t, tr, tracking.UnsubTarget{
-		Source: eligibility.SourceBroadcasts, Destination: *c.Email,
+		Channel: messaging.ChannelEmail,
+		Source:  eligibility.SourceBroadcasts, Destination: *c.Email,
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, BroadcastID: b.ID,
 	})
 	optedOut := func() bool {
@@ -277,7 +281,8 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 
 	// POST performs the opt-out (GET only renders the confirm page — ADR 0012).
 	resp := post(unsubPath(t, tr, tracking.UnsubTarget{
-		Source: eligibility.AutomationSource(a.ID), Destination: *c.Email,
+		Channel: messaging.ChannelEmail,
+		Source:  eligibility.AutomationSource(a.ID), Destination: *c.Email,
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	}))
 	assert.Equal(t, http.StatusNoContent, resp.Code)
@@ -323,7 +328,8 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 	// GET the source unsubscribe → confirm-page redirect carrying the escalation
 	// URL in ?all=.
 	srcPath := unsubPath(t, tr, tracking.UnsubTarget{
-		Source: eligibility.SourceBroadcasts, Destination: *c.Email,
+		Channel: messaging.ChannelEmail,
+		Source:  eligibility.SourceBroadcasts, Destination: *c.Email,
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, BroadcastID: b.ID,
 	})
 	resp := get(srcPath)

@@ -14,6 +14,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -82,7 +83,8 @@ func TestSitePublicUnsubscribesPerform(t *testing.T) {
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 	url, err := env.Tracker.UnsubscribeURL(tracking.UnsubTarget{
-		Source: eligibility.SourceBroadcasts, Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
+		Channel: messaging.ChannelEmail,
+		Source:  eligibility.SourceBroadcasts, Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	})
 	require.NoError(t, err)
 	token := tokenAfter(t, url, "/e/u/")
@@ -144,7 +146,8 @@ func TestSitePublicConsentWriteFailureIsAnError(t *testing.T) {
 	const poisoned = "a\x00b@example.com"
 
 	unsubURL, err := env.Tracker.UnsubscribeURL(tracking.UnsubTarget{
-		Source: eligibility.SourceBroadcasts, Destination: poisoned, WorkspaceID: fixtures.AcmeID,
+		Channel: messaging.ChannelEmail,
+		Source:  eligibility.SourceBroadcasts, Destination: poisoned, WorkspaceID: fixtures.AcmeID,
 	})
 	require.NoError(t, err)
 	_, err = anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: tokenAfter(t, unsubURL, "/e/u/")})
@@ -165,7 +168,8 @@ func TestSitePublicConsentForDeletedWorkspaceIsNoOp(t *testing.T) {
 	const goneWorkspace = 999999
 
 	unsubURL, err := env.Tracker.UnsubscribeURL(tracking.UnsubTarget{
-		Source: eligibility.SourceBroadcasts, Destination: fixtures.ContactAliceEmail, WorkspaceID: goneWorkspace,
+		Channel: messaging.ChannelEmail,
+		Source:  eligibility.SourceBroadcasts, Destination: fixtures.ContactAliceEmail, WorkspaceID: goneWorkspace,
 	})
 	require.NoError(t, err)
 	out, err := anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: tokenAfter(t, unsubURL, "/e/u/")})

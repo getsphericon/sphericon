@@ -20,6 +20,7 @@ import (
 	"golang.org/x/net/html"
 
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -62,8 +63,11 @@ func (t *Tracker) OnHost(host string) *Tracker {
 // destination directly — no contact-row lookup, and it survives the contact being
 // deleted between send and click. BroadcastID is set only for broadcast sends
 // (for per-broadcast attribution); Source is the sending-source string the opt-out
-// is scoped to ("broadcasts" / "automation:<id>" / "everything").
+// is scoped to ("broadcasts" / "automation:<id>" / "everything"). Channel is the Channel the
+// opt-out is recorded on: a link in a Telegram message unsubscribes on Telegram only (ADR 0077),
+// and Destination is that Channel's (the email address, the Telegram user id).
 type UnsubTarget struct {
+	Channel     messaging.Channel
 	Source      string
 	Destination string
 	WorkspaceID int64
@@ -91,6 +95,7 @@ type clickClaims struct {
 type unsubClaims struct {
 	jwt.RegisteredClaims
 
+	Channel     string `json:"ch"`
 	Source      string `json:"src"`
 	Destination string `json:"dest"`
 	WorkspaceID int64  `json:"ws,string"`
@@ -158,7 +163,7 @@ func (t *Tracker) DecodeClick(token string) (messageID int64, destination string
 	if c.MessageID == 0 {
 		return 0, "", errors.New("tracking: missing mid claim")
 	}
-	if !trackable(c.Destination) {
+	if !Trackable(c.Destination) {
 		return 0, "", errors.New("tracking: missing or invalid dest claim")
 	}
 	return c.MessageID, c.Destination, nil
@@ -167,6 +172,7 @@ func (t *Tracker) DecodeClick(token string) (messageID int64, destination string
 // unsubToken mints a signed scoped-unsubscribe token.
 func (t *Tracker) unsubToken(target UnsubTarget) (string, error) {
 	return t.sign(&unsubClaims{
+		Channel:     string(target.Channel),
 		Source:      target.Source,
 		Destination: target.Destination,
 		WorkspaceID: target.WorkspaceID,
@@ -190,10 +196,15 @@ func (t *Tracker) DecodeUnsub(token string) (UnsubTarget, error) {
 	if c.Source == "" {
 		return UnsubTarget{}, ErrLinkInvalid.With("missing src claim")
 	}
+	switch messaging.Channel(c.Channel) {
+	case messaging.ChannelEmail, messaging.ChannelTelegram:
+	default:
+		return UnsubTarget{}, ErrLinkInvalid.With("missing or unknown ch claim")
+	}
 	if c.WorkspaceID == 0 {
 		return UnsubTarget{}, ErrLinkInvalid.With("missing ws claim")
 	}
-	return UnsubTarget{Source: c.Source, Destination: c.Destination, WorkspaceID: c.WorkspaceID, ContactID: c.ContactID, BroadcastID: c.BroadcastID}, nil
+	return UnsubTarget{Channel: messaging.Channel(c.Channel), Source: c.Source, Destination: c.Destination, WorkspaceID: c.WorkspaceID, ContactID: c.ContactID, BroadcastID: c.BroadcastID}, nil
 }
 
 // ConfirmTarget is the payload a double-opt-in confirmation link carries (ADR
@@ -256,6 +267,12 @@ func (t *Tracker) ClickURL(messageID int64, dest string) (string, error) {
 		return "", err
 	}
 	return t.baseURL + "/e/c/" + token, nil
+}
+
+// ShortURL is the short tracked link of a Telegram message's link or button (ADR 0083): the token
+// names the URL stored with the Outbound message, so nothing of the destination travels in it.
+func (t *Tracker) ShortURL(token string) string {
+	return t.baseURL + "/c/" + token
 }
 
 // UnsubscribeURL is the public link that records the scoped opt-out in target.
@@ -346,7 +363,7 @@ func (t *Tracker) rewriteLinks(body string, messageID int64) (string, error) {
 		tok := z.Token()
 		if tt == html.StartTagToken && tok.Data == "a" {
 			for i, a := range tok.Attr {
-				if a.Key == "href" && trackable(a.Val) {
+				if a.Key == "href" && Trackable(a.Val) {
 					link, err := t.ClickURL(messageID, a.Val)
 					if err != nil {
 						return "", err
@@ -359,8 +376,8 @@ func (t *Tracker) rewriteLinks(body string, messageID int64) (string, error) {
 	}
 }
 
-// trackable reports whether a link should be routed through the click tracker.
+// Trackable reports whether a link should be routed through the click tracker.
 // Only absolute http(s) links are wrapped; mailto/tel/anchors are left alone.
-func trackable(href string) bool {
+func Trackable(href string) bool {
 	return strings.HasPrefix(href, "http://") || strings.HasPrefix(href, "https://")
 }

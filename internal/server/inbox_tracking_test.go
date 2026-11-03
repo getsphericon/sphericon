@@ -33,7 +33,7 @@ func TestOpeningAndFollowingALinkOfACapturedMessageIsTrackedLikeAnyOther(t *test
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteIntegrationResource{}, chosen)
 	edited, err := jane.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		Body: siteapi.NewOptString(`<p>Read <a href="https://dest.test/a">this</a>.</p>`),
+		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString(`<p>Read <a href="https://dest.test/a">this</a>.</p>`)}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.GlobexPublicID, ID: siteapi.EntityId(fixtures.BroadcastGlobexID)})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteBroadcastResource{}, edited)

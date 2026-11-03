@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -44,8 +45,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
@@ -655,6 +658,36 @@ func (_u *WorkspaceUpdate) AddVisitors(v ...*Visitor) *WorkspaceUpdate {
 	return _u.AddVisitorIDs(ids...)
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (_u *WorkspaceUpdate) AddBindingIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddBindingIDs(ids...)
+	return _u
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (_u *WorkspaceUpdate) AddBindings(v ...*Binding) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBindingIDs(ids...)
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (_u *WorkspaceUpdate) AddStartTokenIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddStartTokenIDs(ids...)
+	return _u
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (_u *WorkspaceUpdate) AddStartTokens(v ...*StartToken) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddStartTokenIDs(ids...)
+}
+
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
 func (_u *WorkspaceUpdate) AddAPITokenIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddAPITokenIDs(ids...)
@@ -1015,6 +1048,21 @@ func (_u *WorkspaceUpdate) AddOutboundMessages(v ...*OutboundMessage) *Workspace
 	return _u.AddOutboundMessageIDs(ids...)
 }
 
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by IDs.
+func (_u *WorkspaceUpdate) AddTrackedLinkIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddTrackedLinkIDs(ids...)
+	return _u
+}
+
+// AddTrackedLinks adds the "tracked_links" edges to the TrackedLink entity.
+func (_u *WorkspaceUpdate) AddTrackedLinks(v ...*TrackedLink) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTrackedLinkIDs(ids...)
+}
+
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
 func (_u *WorkspaceUpdate) AddCapturedMessageIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddCapturedMessageIDs(ids...)
@@ -1297,6 +1345,48 @@ func (_u *WorkspaceUpdate) RemoveVisitors(v ...*Visitor) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveVisitorIDs(ids...)
+}
+
+// ClearBindings clears all "bindings" edges to the Binding entity.
+func (_u *WorkspaceUpdate) ClearBindings() *WorkspaceUpdate {
+	_u.mutation.ClearBindings()
+	return _u
+}
+
+// RemoveBindingIDs removes the "bindings" edge to Binding entities by IDs.
+func (_u *WorkspaceUpdate) RemoveBindingIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveBindingIDs(ids...)
+	return _u
+}
+
+// RemoveBindings removes "bindings" edges to Binding entities.
+func (_u *WorkspaceUpdate) RemoveBindings(v ...*Binding) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBindingIDs(ids...)
+}
+
+// ClearStartTokens clears all "start_tokens" edges to the StartToken entity.
+func (_u *WorkspaceUpdate) ClearStartTokens() *WorkspaceUpdate {
+	_u.mutation.ClearStartTokens()
+	return _u
+}
+
+// RemoveStartTokenIDs removes the "start_tokens" edge to StartToken entities by IDs.
+func (_u *WorkspaceUpdate) RemoveStartTokenIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveStartTokenIDs(ids...)
+	return _u
+}
+
+// RemoveStartTokens removes "start_tokens" edges to StartToken entities.
+func (_u *WorkspaceUpdate) RemoveStartTokens(v ...*StartToken) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveStartTokenIDs(ids...)
 }
 
 // ClearAPITokens clears all "api_tokens" edges to the ApiToken entity.
@@ -1801,6 +1891,27 @@ func (_u *WorkspaceUpdate) RemoveOutboundMessages(v ...*OutboundMessage) *Worksp
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOutboundMessageIDs(ids...)
+}
+
+// ClearTrackedLinks clears all "tracked_links" edges to the TrackedLink entity.
+func (_u *WorkspaceUpdate) ClearTrackedLinks() *WorkspaceUpdate {
+	_u.mutation.ClearTrackedLinks()
+	return _u
+}
+
+// RemoveTrackedLinkIDs removes the "tracked_links" edge to TrackedLink entities by IDs.
+func (_u *WorkspaceUpdate) RemoveTrackedLinkIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveTrackedLinkIDs(ids...)
+	return _u
+}
+
+// RemoveTrackedLinks removes "tracked_links" edges to TrackedLink entities.
+func (_u *WorkspaceUpdate) RemoveTrackedLinks(v ...*TrackedLink) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTrackedLinkIDs(ids...)
 }
 
 // ClearCapturedMessages clears all "captured_messages" edges to the CapturedMessage entity.
@@ -2553,6 +2664,96 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(visitor.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BindingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BindingsTable,
+			Columns: []string{workspace.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBindingsIDs(); len(nodes) > 0 && !_u.mutation.BindingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BindingsTable,
+			Columns: []string{workspace.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BindingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BindingsTable,
+			Columns: []string{workspace.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.StartTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.StartTokensTable,
+			Columns: []string{workspace.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedStartTokensIDs(); len(nodes) > 0 && !_u.mutation.StartTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.StartTokensTable,
+			Columns: []string{workspace.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.StartTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.StartTokensTable,
+			Columns: []string{workspace.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -3633,6 +3834,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TrackedLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackedLinksTable,
+			Columns: []string{workspace.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTrackedLinksIDs(); len(nodes) > 0 && !_u.mutation.TrackedLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackedLinksTable,
+			Columns: []string{workspace.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TrackedLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackedLinksTable,
+			Columns: []string{workspace.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -4519,6 +4765,36 @@ func (_u *WorkspaceUpdateOne) AddVisitors(v ...*Visitor) *WorkspaceUpdateOne {
 	return _u.AddVisitorIDs(ids...)
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (_u *WorkspaceUpdateOne) AddBindingIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddBindingIDs(ids...)
+	return _u
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (_u *WorkspaceUpdateOne) AddBindings(v ...*Binding) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBindingIDs(ids...)
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (_u *WorkspaceUpdateOne) AddStartTokenIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddStartTokenIDs(ids...)
+	return _u
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (_u *WorkspaceUpdateOne) AddStartTokens(v ...*StartToken) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddStartTokenIDs(ids...)
+}
+
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
 func (_u *WorkspaceUpdateOne) AddAPITokenIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddAPITokenIDs(ids...)
@@ -4879,6 +5155,21 @@ func (_u *WorkspaceUpdateOne) AddOutboundMessages(v ...*OutboundMessage) *Worksp
 	return _u.AddOutboundMessageIDs(ids...)
 }
 
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by IDs.
+func (_u *WorkspaceUpdateOne) AddTrackedLinkIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddTrackedLinkIDs(ids...)
+	return _u
+}
+
+// AddTrackedLinks adds the "tracked_links" edges to the TrackedLink entity.
+func (_u *WorkspaceUpdateOne) AddTrackedLinks(v ...*TrackedLink) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTrackedLinkIDs(ids...)
+}
+
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
 func (_u *WorkspaceUpdateOne) AddCapturedMessageIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddCapturedMessageIDs(ids...)
@@ -5161,6 +5452,48 @@ func (_u *WorkspaceUpdateOne) RemoveVisitors(v ...*Visitor) *WorkspaceUpdateOne 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveVisitorIDs(ids...)
+}
+
+// ClearBindings clears all "bindings" edges to the Binding entity.
+func (_u *WorkspaceUpdateOne) ClearBindings() *WorkspaceUpdateOne {
+	_u.mutation.ClearBindings()
+	return _u
+}
+
+// RemoveBindingIDs removes the "bindings" edge to Binding entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveBindingIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveBindingIDs(ids...)
+	return _u
+}
+
+// RemoveBindings removes "bindings" edges to Binding entities.
+func (_u *WorkspaceUpdateOne) RemoveBindings(v ...*Binding) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBindingIDs(ids...)
+}
+
+// ClearStartTokens clears all "start_tokens" edges to the StartToken entity.
+func (_u *WorkspaceUpdateOne) ClearStartTokens() *WorkspaceUpdateOne {
+	_u.mutation.ClearStartTokens()
+	return _u
+}
+
+// RemoveStartTokenIDs removes the "start_tokens" edge to StartToken entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveStartTokenIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveStartTokenIDs(ids...)
+	return _u
+}
+
+// RemoveStartTokens removes "start_tokens" edges to StartToken entities.
+func (_u *WorkspaceUpdateOne) RemoveStartTokens(v ...*StartToken) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveStartTokenIDs(ids...)
 }
 
 // ClearAPITokens clears all "api_tokens" edges to the ApiToken entity.
@@ -5665,6 +5998,27 @@ func (_u *WorkspaceUpdateOne) RemoveOutboundMessages(v ...*OutboundMessage) *Wor
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOutboundMessageIDs(ids...)
+}
+
+// ClearTrackedLinks clears all "tracked_links" edges to the TrackedLink entity.
+func (_u *WorkspaceUpdateOne) ClearTrackedLinks() *WorkspaceUpdateOne {
+	_u.mutation.ClearTrackedLinks()
+	return _u
+}
+
+// RemoveTrackedLinkIDs removes the "tracked_links" edge to TrackedLink entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveTrackedLinkIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveTrackedLinkIDs(ids...)
+	return _u
+}
+
+// RemoveTrackedLinks removes "tracked_links" edges to TrackedLink entities.
+func (_u *WorkspaceUpdateOne) RemoveTrackedLinks(v ...*TrackedLink) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTrackedLinkIDs(ids...)
 }
 
 // ClearCapturedMessages clears all "captured_messages" edges to the CapturedMessage entity.
@@ -6447,6 +6801,96 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(visitor.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BindingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BindingsTable,
+			Columns: []string{workspace.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBindingsIDs(); len(nodes) > 0 && !_u.mutation.BindingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BindingsTable,
+			Columns: []string{workspace.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BindingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BindingsTable,
+			Columns: []string{workspace.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.StartTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.StartTokensTable,
+			Columns: []string{workspace.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedStartTokensIDs(); len(nodes) > 0 && !_u.mutation.StartTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.StartTokensTable,
+			Columns: []string{workspace.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.StartTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.StartTokensTable,
+			Columns: []string{workspace.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -7527,6 +7971,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TrackedLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackedLinksTable,
+			Columns: []string{workspace.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTrackedLinksIDs(); len(nodes) > 0 && !_u.mutation.TrackedLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackedLinksTable,
+			Columns: []string{workspace.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TrackedLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.TrackedLinksTable,
+			Columns: []string{workspace.TrackedLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

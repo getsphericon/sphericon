@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -45,14 +46,17 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 var (
@@ -196,6 +200,22 @@ func (s *Scoped) verifyAutomationVersion(ctx context.Context, ids []int64) error
 	}
 	if n != len(ids) {
 		return fmt.Errorf("AutomationVersion: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyBinding fails with ErrNotInWorkspace unless every id is a Binding of the Workspace.
+func (s *Scoped) verifyBinding(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.Binding.Query().Where(binding.IDIn(ids...), binding.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("Binding: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -632,6 +652,22 @@ func (s *Scoped) verifySendingDomain(ctx context.Context, ids []int64) error {
 	return nil
 }
 
+// verifyStartToken fails with ErrNotInWorkspace unless every id is a StartToken of the Workspace.
+func (s *Scoped) verifyStartToken(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.StartToken.Query().Where(starttoken.IDIn(ids...), starttoken.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("StartToken: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
 // verifySuppression fails with ErrNotInWorkspace unless every id is a Suppression of the Workspace.
 func (s *Scoped) verifySuppression(ctx context.Context, ids []int64) error {
 	ids = uniqueIDs(ids)
@@ -660,6 +696,22 @@ func (s *Scoped) verifyTag(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Tag: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyTrackedLink fails with ErrNotInWorkspace unless every id is a TrackedLink of the Workspace.
+func (s *Scoped) verifyTrackedLink(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.TrackedLink.Query().Where(trackedlink.IDIn(ids...), trackedlink.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("TrackedLink: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -4783,18 +4835,6 @@ func (x *AutomationVersionScopedCreate) SetNillableGoalEvent(v *string) *Automat
 	return x
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (x *AutomationVersionScopedCreate) SetIntegrationID(v int64) *AutomationVersionScopedCreate {
-	x.b.SetIntegrationID(v)
-	return x
-}
-
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (x *AutomationVersionScopedCreate) SetNillableIntegrationID(v *int64) *AutomationVersionScopedCreate {
-	x.b.SetNillableIntegrationID(v)
-	return x
-}
-
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedCreate) SetAutomation(v *Automation) *AutomationVersionScopedCreate {
 	x.b.SetAutomation(v)
@@ -4813,12 +4853,6 @@ func (x *AutomationVersionScopedCreate) AddRuns(v ...*AutomationRun) *Automation
 	return x
 }
 
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (x *AutomationVersionScopedCreate) SetIntegration(v *Integration) *AutomationVersionScopedCreate {
-	x.b.SetIntegration(v)
-	return x
-}
-
 func (x *AutomationVersionScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -4827,9 +4861,6 @@ func (x *AutomationVersionScopedCreate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
-	}
-	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
-		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }
@@ -4965,18 +4996,6 @@ func (u *AutomationVersionScopedUpsert) UpdateGoalEvent() *AutomationVersionScop
 // ClearGoalEvent clears the value of the "goal_event" field.
 func (u *AutomationVersionScopedUpsert) ClearGoalEvent() *AutomationVersionScopedUpsert {
 	u.u.SetNull(automationversion.FieldGoalEvent)
-	return u
-}
-
-// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
-func (u *AutomationVersionScopedUpsert) UpdateIntegrationID() *AutomationVersionScopedUpsert {
-	u.u.SetExcluded(automationversion.FieldIntegrationID)
-	return u
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (u *AutomationVersionScopedUpsert) ClearIntegrationID() *AutomationVersionScopedUpsert {
-	u.u.SetNull(automationversion.FieldIntegrationID)
 	return u
 }
 
@@ -5198,24 +5217,6 @@ func (x *AutomationVersionScopedUpdateOne) ClearGoalEvent() *AutomationVersionSc
 	return x
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (x *AutomationVersionScopedUpdateOne) SetIntegrationID(v int64) *AutomationVersionScopedUpdateOne {
-	x.b.SetIntegrationID(v)
-	return x
-}
-
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdateOne) SetNillableIntegrationID(v *int64) *AutomationVersionScopedUpdateOne {
-	x.b.SetNillableIntegrationID(v)
-	return x
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (x *AutomationVersionScopedUpdateOne) ClearIntegrationID() *AutomationVersionScopedUpdateOne {
-	x.b.ClearIntegrationID()
-	return x
-}
-
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdateOne) SetAutomation(v *Automation) *AutomationVersionScopedUpdateOne {
 	x.b.SetAutomation(v)
@@ -5258,18 +5259,6 @@ func (x *AutomationVersionScopedUpdateOne) RemoveRuns(v ...*AutomationRun) *Auto
 	return x
 }
 
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (x *AutomationVersionScopedUpdateOne) SetIntegration(v *Integration) *AutomationVersionScopedUpdateOne {
-	x.b.SetIntegration(v)
-	return x
-}
-
-// ClearIntegration clears the "integration" edge to the Integration entity.
-func (x *AutomationVersionScopedUpdateOne) ClearIntegration() *AutomationVersionScopedUpdateOne {
-	x.b.ClearIntegration()
-	return x
-}
-
 func (x *AutomationVersionScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -5278,9 +5267,6 @@ func (x *AutomationVersionScopedUpdateOne) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
-	}
-	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
-		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }
@@ -5407,24 +5393,6 @@ func (x *AutomationVersionScopedUpdate) ClearGoalEvent() *AutomationVersionScope
 	return x
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (x *AutomationVersionScopedUpdate) SetIntegrationID(v int64) *AutomationVersionScopedUpdate {
-	x.b.SetIntegrationID(v)
-	return x
-}
-
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdate) SetNillableIntegrationID(v *int64) *AutomationVersionScopedUpdate {
-	x.b.SetNillableIntegrationID(v)
-	return x
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (x *AutomationVersionScopedUpdate) ClearIntegrationID() *AutomationVersionScopedUpdate {
-	x.b.ClearIntegrationID()
-	return x
-}
-
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdate) SetAutomation(v *Automation) *AutomationVersionScopedUpdate {
 	x.b.SetAutomation(v)
@@ -5467,18 +5435,6 @@ func (x *AutomationVersionScopedUpdate) RemoveRuns(v ...*AutomationRun) *Automat
 	return x
 }
 
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (x *AutomationVersionScopedUpdate) SetIntegration(v *Integration) *AutomationVersionScopedUpdate {
-	x.b.SetIntegration(v)
-	return x
-}
-
-// ClearIntegration clears the "integration" edge to the Integration entity.
-func (x *AutomationVersionScopedUpdate) ClearIntegration() *AutomationVersionScopedUpdate {
-	x.b.ClearIntegration()
-	return x
-}
-
 func (x *AutomationVersionScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -5487,9 +5443,6 @@ func (x *AutomationVersionScopedUpdate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
-	}
-	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
-		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }
@@ -5508,6 +5461,784 @@ func (x *AutomationVersionScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *AutomationVersionScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// BindingScoped reaches Binding entities of one Workspace.
+type BindingScoped struct{ s *Scoped }
+
+// Binding returns the Binding entities of the Workspace.
+func (s *Scoped) Binding() *BindingScoped { return &BindingScoped{s: s} }
+
+// Query returns a Binding query already confined to the Workspace.
+func (t *BindingScoped) Query() *BindingQuery {
+	return t.s.c.Binding.Query().Where(binding.WorkspaceID(t.s.ws))
+}
+
+// Get returns the Binding with the id; a row of another Workspace is not found.
+func (t *BindingScoped) Get(ctx context.Context, id int64) (*Binding, error) {
+	return t.Query().Where(binding.ID(id)).Only(ctx)
+}
+
+// BindingScopedDeleteOne wraps BindingDeleteOne.
+type BindingScopedDeleteOne struct {
+	s *Scoped
+	b *BindingDeleteOne
+}
+
+// DeleteOneID deletes the Binding with the id; a row of another Workspace is not found.
+func (t *BindingScoped) DeleteOneID(id int64) *BindingScopedDeleteOne {
+	return &BindingScopedDeleteOne{s: t.s, b: t.s.c.Binding.DeleteOneID(id).Where(binding.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *BindingScopedDeleteOne) Where(ps ...predicate.Binding) *BindingScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *BindingScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// BindingScopedDelete wraps BindingDelete.
+type BindingScopedDelete struct {
+	s *Scoped
+	b *BindingDelete
+}
+
+// Delete deletes the Binding entities of the Workspace that match the predicates.
+func (t *BindingScoped) Delete() *BindingScopedDelete {
+	return &BindingScopedDelete{s: t.s, b: t.s.c.Binding.Delete().Where(binding.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *BindingScopedDelete) Where(ps ...predicate.Binding) *BindingScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *BindingScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// BindingScopedCreate wraps BindingCreate. It has no way to name a Workspace.
+type BindingScopedCreate struct {
+	s *Scoped
+	b *BindingCreate
+}
+
+// Create starts a Binding in the Workspace.
+func (t *BindingScoped) Create() *BindingScopedCreate {
+	return &BindingScopedCreate{s: t.s, b: t.s.c.Binding.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *BindingScopedCreate) SetCreatedAt(v time.Time) *BindingScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *BindingScopedCreate) SetNillableCreatedAt(v *time.Time) *BindingScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *BindingScopedCreate) SetUpdatedAt(v time.Time) *BindingScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *BindingScopedCreate) SetNillableUpdatedAt(v *time.Time) *BindingScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (x *BindingScopedCreate) SetIntegrationID(v int64) *BindingScopedCreate {
+	x.b.SetIntegrationID(v)
+	return x
+}
+
+// SetChannel sets the "channel" field.
+func (x *BindingScopedCreate) SetChannel(v binding.Channel) *BindingScopedCreate {
+	x.b.SetChannel(v)
+	return x
+}
+
+// SetDestination sets the "destination" field.
+func (x *BindingScopedCreate) SetDestination(v string) *BindingScopedCreate {
+	x.b.SetDestination(v)
+	return x
+}
+
+// SetChatID sets the "chat_id" field.
+func (x *BindingScopedCreate) SetChatID(v string) *BindingScopedCreate {
+	x.b.SetChatID(v)
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *BindingScopedCreate) SetContactID(v int64) *BindingScopedCreate {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetNillableContactID sets the "contact_id" field if the given value is not nil.
+func (x *BindingScopedCreate) SetNillableContactID(v *int64) *BindingScopedCreate {
+	x.b.SetNillableContactID(v)
+	return x
+}
+
+// SetVisitorID sets the "visitor_id" field.
+func (x *BindingScopedCreate) SetVisitorID(v int64) *BindingScopedCreate {
+	x.b.SetVisitorID(v)
+	return x
+}
+
+// SetNillableVisitorID sets the "visitor_id" field if the given value is not nil.
+func (x *BindingScopedCreate) SetNillableVisitorID(v *int64) *BindingScopedCreate {
+	x.b.SetNillableVisitorID(v)
+	return x
+}
+
+// SetAnnounced sets the "announced" field.
+func (x *BindingScopedCreate) SetAnnounced(v bool) *BindingScopedCreate {
+	x.b.SetAnnounced(v)
+	return x
+}
+
+// SetNillableAnnounced sets the "announced" field if the given value is not nil.
+func (x *BindingScopedCreate) SetNillableAnnounced(v *bool) *BindingScopedCreate {
+	x.b.SetNillableAnnounced(v)
+	return x
+}
+
+// SetBoundAt sets the "bound_at" field.
+func (x *BindingScopedCreate) SetBoundAt(v time.Time) *BindingScopedCreate {
+	x.b.SetBoundAt(v)
+	return x
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *BindingScopedCreate) SetIntegration(v *Integration) *BindingScopedCreate {
+	x.b.SetIntegration(v)
+	return x
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *BindingScopedCreate) SetContact(v *Contact) *BindingScopedCreate {
+	x.b.SetContact(v)
+	return x
+}
+
+// SetVisitor sets the "visitor" edge to the Visitor entity.
+func (x *BindingScopedCreate) SetVisitor(v *Visitor) *BindingScopedCreate {
+	x.b.SetVisitor(v)
+	return x
+}
+
+func (x *BindingScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
+	}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyVisitor(ctx, m.VisitorIDs()); err != nil {
+		return fmt.Errorf("visitor: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the Binding.
+func (x *BindingScopedCreate) Save(ctx context.Context) (*Binding, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *BindingScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// BindingScopedCreateBulk creates several Binding entities of one Workspace at once.
+type BindingScopedCreateBulk struct {
+	s  *Scoped
+	xs []*BindingScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *BindingScoped) CreateBulk(xs ...*BindingScopedCreate) *BindingScopedCreateBulk {
+	return &BindingScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *BindingScopedCreateBulk) raw(ctx context.Context) (*BindingCreateBulk, error) {
+	builders := make([]*BindingCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("Binding: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.Binding.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the Binding entities.
+func (b *BindingScopedCreateBulk) Save(ctx context.Context) ([]*Binding, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *BindingScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// BindingScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type BindingScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *BindingScopedUpsert) SetUpdatedAt(v time.Time) *BindingScopedUpsert {
+	u.u.Set(binding.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *BindingScopedUpsert) UpdateUpdatedAt() *BindingScopedUpsert {
+	u.u.SetExcluded(binding.FieldUpdatedAt)
+	return u
+}
+
+// SetChatID sets the "chat_id" field.
+func (u *BindingScopedUpsert) SetChatID(v string) *BindingScopedUpsert {
+	u.u.Set(binding.FieldChatID, v)
+	return u
+}
+
+// UpdateChatID sets the "chat_id" field to the value that was provided on create.
+func (u *BindingScopedUpsert) UpdateChatID() *BindingScopedUpsert {
+	u.u.SetExcluded(binding.FieldChatID)
+	return u
+}
+
+// UpdateContactID sets the "contact_id" field to the value that was provided on create.
+func (u *BindingScopedUpsert) UpdateContactID() *BindingScopedUpsert {
+	u.u.SetExcluded(binding.FieldContactID)
+	return u
+}
+
+// ClearContactID clears the value of the "contact_id" field.
+func (u *BindingScopedUpsert) ClearContactID() *BindingScopedUpsert {
+	u.u.SetNull(binding.FieldContactID)
+	return u
+}
+
+// UpdateVisitorID sets the "visitor_id" field to the value that was provided on create.
+func (u *BindingScopedUpsert) UpdateVisitorID() *BindingScopedUpsert {
+	u.u.SetExcluded(binding.FieldVisitorID)
+	return u
+}
+
+// ClearVisitorID clears the value of the "visitor_id" field.
+func (u *BindingScopedUpsert) ClearVisitorID() *BindingScopedUpsert {
+	u.u.SetNull(binding.FieldVisitorID)
+	return u
+}
+
+// SetAnnounced sets the "announced" field.
+func (u *BindingScopedUpsert) SetAnnounced(v bool) *BindingScopedUpsert {
+	u.u.Set(binding.FieldAnnounced, v)
+	return u
+}
+
+// UpdateAnnounced sets the "announced" field to the value that was provided on create.
+func (u *BindingScopedUpsert) UpdateAnnounced() *BindingScopedUpsert {
+	u.u.SetExcluded(binding.FieldAnnounced)
+	return u
+}
+
+// SetBoundAt sets the "bound_at" field.
+func (u *BindingScopedUpsert) SetBoundAt(v time.Time) *BindingScopedUpsert {
+	u.u.Set(binding.FieldBoundAt, v)
+	return u
+}
+
+// UpdateBoundAt sets the "bound_at" field to the value that was provided on create.
+func (u *BindingScopedUpsert) UpdateBoundAt() *BindingScopedUpsert {
+	u.u.SetExcluded(binding.FieldBoundAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *BindingScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(binding.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// BindingScopedUpsertOne is the "upsert" of one Binding.
+type BindingScopedUpsertOne struct {
+	x *BindingScopedCreate
+	u *BindingUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *BindingScopedCreate) OnConflictColumns(columns ...string) *BindingScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *BindingScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *BindingScopedUpsertOne {
+	return &BindingScopedUpsertOne{x: x, u: x.b.OnConflict((&BindingScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *BindingScopedUpsertOne) UpdateNewValues() *BindingScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *BindingScopedUpsertOne) Ignore() *BindingScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *BindingScopedUpsertOne) DoNothing() *BindingScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *BindingScopedUpsertOne) Update(set func(*BindingScopedUpsert)) *BindingScopedUpsertOne {
+	u.u.Update(func(s *BindingUpsert) { set(&BindingScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *BindingScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *BindingScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// BindingScopedUpsertBulk is the "upsert" of several Binding entities.
+type BindingScopedUpsertBulk struct {
+	b       *BindingScopedCreateBulk
+	t       *BindingScoped
+	columns []string
+	opts    []func(*BindingUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *BindingScopedCreateBulk) OnConflictColumns(columns ...string) *BindingScopedUpsertBulk {
+	return &BindingScopedUpsertBulk{b: b, t: &BindingScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *BindingScopedUpsertBulk) UpdateNewValues() *BindingScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *BindingUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *BindingScopedUpsertBulk) Ignore() *BindingScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *BindingUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *BindingScopedUpsertBulk) DoNothing() *BindingScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *BindingUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *BindingScopedUpsertBulk) Update(set func(*BindingScopedUpsert)) *BindingScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *BindingUpsertBulk) {
+		r.Update(func(s *BindingUpsert) { set(&BindingScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *BindingScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// BindingScopedUpdateOne wraps BindingUpdateOne. It has no way to move the row to another Workspace.
+type BindingScopedUpdateOne struct {
+	s *Scoped
+	b *BindingUpdateOne
+}
+
+// UpdateOneID updates the Binding with the id; a row of another Workspace is not found.
+func (t *BindingScoped) UpdateOneID(id int64) *BindingScopedUpdateOne {
+	return &BindingScopedUpdateOne{s: t.s, b: t.s.c.Binding.UpdateOneID(id).Where(binding.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *BindingScopedUpdateOne) Where(ps ...predicate.Binding) *BindingScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *BindingScopedUpdateOne) SetUpdatedAt(v time.Time) *BindingScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetChatID sets the "chat_id" field.
+func (x *BindingScopedUpdateOne) SetChatID(v string) *BindingScopedUpdateOne {
+	x.b.SetChatID(v)
+	return x
+}
+
+// SetNillableChatID sets the "chat_id" field if the given value is not nil.
+func (x *BindingScopedUpdateOne) SetNillableChatID(v *string) *BindingScopedUpdateOne {
+	x.b.SetNillableChatID(v)
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *BindingScopedUpdateOne) SetContactID(v int64) *BindingScopedUpdateOne {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetNillableContactID sets the "contact_id" field if the given value is not nil.
+func (x *BindingScopedUpdateOne) SetNillableContactID(v *int64) *BindingScopedUpdateOne {
+	x.b.SetNillableContactID(v)
+	return x
+}
+
+// ClearContactID clears the value of the "contact_id" field.
+func (x *BindingScopedUpdateOne) ClearContactID() *BindingScopedUpdateOne {
+	x.b.ClearContactID()
+	return x
+}
+
+// SetVisitorID sets the "visitor_id" field.
+func (x *BindingScopedUpdateOne) SetVisitorID(v int64) *BindingScopedUpdateOne {
+	x.b.SetVisitorID(v)
+	return x
+}
+
+// SetNillableVisitorID sets the "visitor_id" field if the given value is not nil.
+func (x *BindingScopedUpdateOne) SetNillableVisitorID(v *int64) *BindingScopedUpdateOne {
+	x.b.SetNillableVisitorID(v)
+	return x
+}
+
+// ClearVisitorID clears the value of the "visitor_id" field.
+func (x *BindingScopedUpdateOne) ClearVisitorID() *BindingScopedUpdateOne {
+	x.b.ClearVisitorID()
+	return x
+}
+
+// SetAnnounced sets the "announced" field.
+func (x *BindingScopedUpdateOne) SetAnnounced(v bool) *BindingScopedUpdateOne {
+	x.b.SetAnnounced(v)
+	return x
+}
+
+// SetNillableAnnounced sets the "announced" field if the given value is not nil.
+func (x *BindingScopedUpdateOne) SetNillableAnnounced(v *bool) *BindingScopedUpdateOne {
+	x.b.SetNillableAnnounced(v)
+	return x
+}
+
+// SetBoundAt sets the "bound_at" field.
+func (x *BindingScopedUpdateOne) SetBoundAt(v time.Time) *BindingScopedUpdateOne {
+	x.b.SetBoundAt(v)
+	return x
+}
+
+// SetNillableBoundAt sets the "bound_at" field if the given value is not nil.
+func (x *BindingScopedUpdateOne) SetNillableBoundAt(v *time.Time) *BindingScopedUpdateOne {
+	x.b.SetNillableBoundAt(v)
+	return x
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *BindingScopedUpdateOne) SetContact(v *Contact) *BindingScopedUpdateOne {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *BindingScopedUpdateOne) ClearContact() *BindingScopedUpdateOne {
+	x.b.ClearContact()
+	return x
+}
+
+// SetVisitor sets the "visitor" edge to the Visitor entity.
+func (x *BindingScopedUpdateOne) SetVisitor(v *Visitor) *BindingScopedUpdateOne {
+	x.b.SetVisitor(v)
+	return x
+}
+
+// ClearVisitor clears the "visitor" edge to the Visitor entity.
+func (x *BindingScopedUpdateOne) ClearVisitor() *BindingScopedUpdateOne {
+	x.b.ClearVisitor()
+	return x
+}
+
+func (x *BindingScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
+	}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyVisitor(ctx, m.VisitorIDs()); err != nil {
+		return fmt.Errorf("visitor: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the Binding.
+func (x *BindingScopedUpdateOne) Save(ctx context.Context) (*Binding, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *BindingScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// BindingScopedUpdate wraps BindingUpdate: a conditional bulk update of one Workspace.
+type BindingScopedUpdate struct {
+	s *Scoped
+	b *BindingUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the Binding entities of the Workspace that match the predicates.
+func (t *BindingScoped) Update() *BindingScopedUpdate {
+	return &BindingScopedUpdate{s: t.s, b: t.s.c.Binding.Update().Where(binding.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *BindingScopedUpdate) Where(ps ...predicate.Binding) *BindingScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *BindingScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *BindingScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(binding.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *BindingScopedUpdate) SetUpdatedAt(v time.Time) *BindingScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetChatID sets the "chat_id" field.
+func (x *BindingScopedUpdate) SetChatID(v string) *BindingScopedUpdate {
+	x.b.SetChatID(v)
+	return x
+}
+
+// SetNillableChatID sets the "chat_id" field if the given value is not nil.
+func (x *BindingScopedUpdate) SetNillableChatID(v *string) *BindingScopedUpdate {
+	x.b.SetNillableChatID(v)
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *BindingScopedUpdate) SetContactID(v int64) *BindingScopedUpdate {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetNillableContactID sets the "contact_id" field if the given value is not nil.
+func (x *BindingScopedUpdate) SetNillableContactID(v *int64) *BindingScopedUpdate {
+	x.b.SetNillableContactID(v)
+	return x
+}
+
+// ClearContactID clears the value of the "contact_id" field.
+func (x *BindingScopedUpdate) ClearContactID() *BindingScopedUpdate {
+	x.b.ClearContactID()
+	return x
+}
+
+// SetVisitorID sets the "visitor_id" field.
+func (x *BindingScopedUpdate) SetVisitorID(v int64) *BindingScopedUpdate {
+	x.b.SetVisitorID(v)
+	return x
+}
+
+// SetNillableVisitorID sets the "visitor_id" field if the given value is not nil.
+func (x *BindingScopedUpdate) SetNillableVisitorID(v *int64) *BindingScopedUpdate {
+	x.b.SetNillableVisitorID(v)
+	return x
+}
+
+// ClearVisitorID clears the value of the "visitor_id" field.
+func (x *BindingScopedUpdate) ClearVisitorID() *BindingScopedUpdate {
+	x.b.ClearVisitorID()
+	return x
+}
+
+// SetAnnounced sets the "announced" field.
+func (x *BindingScopedUpdate) SetAnnounced(v bool) *BindingScopedUpdate {
+	x.b.SetAnnounced(v)
+	return x
+}
+
+// SetNillableAnnounced sets the "announced" field if the given value is not nil.
+func (x *BindingScopedUpdate) SetNillableAnnounced(v *bool) *BindingScopedUpdate {
+	x.b.SetNillableAnnounced(v)
+	return x
+}
+
+// SetBoundAt sets the "bound_at" field.
+func (x *BindingScopedUpdate) SetBoundAt(v time.Time) *BindingScopedUpdate {
+	x.b.SetBoundAt(v)
+	return x
+}
+
+// SetNillableBoundAt sets the "bound_at" field if the given value is not nil.
+func (x *BindingScopedUpdate) SetNillableBoundAt(v *time.Time) *BindingScopedUpdate {
+	x.b.SetNillableBoundAt(v)
+	return x
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *BindingScopedUpdate) SetContact(v *Contact) *BindingScopedUpdate {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *BindingScopedUpdate) ClearContact() *BindingScopedUpdate {
+	x.b.ClearContact()
+	return x
+}
+
+// SetVisitor sets the "visitor" edge to the Visitor entity.
+func (x *BindingScopedUpdate) SetVisitor(v *Visitor) *BindingScopedUpdate {
+	x.b.SetVisitor(v)
+	return x
+}
+
+// ClearVisitor clears the "visitor" edge to the Visitor entity.
+func (x *BindingScopedUpdate) ClearVisitor() *BindingScopedUpdate {
+	x.b.ClearVisitor()
+	return x
+}
+
+func (x *BindingScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
+	}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyVisitor(ctx, m.VisitorIDs()); err != nil {
+		return fmt.Errorf("visitor: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *BindingScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *BindingScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }
@@ -6698,6 +7429,12 @@ func (x *BroadcastScopedCreate) SetName(v string) *BroadcastScopedCreate {
 	return x
 }
 
+// SetChannel sets the "channel" field.
+func (x *BroadcastScopedCreate) SetChannel(v broadcast.Channel) *BroadcastScopedCreate {
+	x.b.SetChannel(v)
+	return x
+}
+
 // SetSubject sets the "subject" field.
 func (x *BroadcastScopedCreate) SetSubject(v string) *BroadcastScopedCreate {
 	x.b.SetSubject(v)
@@ -6731,6 +7468,60 @@ func (x *BroadcastScopedCreate) SetFromEmail(v string) *BroadcastScopedCreate {
 // SetNillableFromEmail sets the "from_email" field if the given value is not nil.
 func (x *BroadcastScopedCreate) SetNillableFromEmail(v *string) *BroadcastScopedCreate {
 	x.b.SetNillableFromEmail(v)
+	return x
+}
+
+// SetText sets the "text" field.
+func (x *BroadcastScopedCreate) SetText(v string) *BroadcastScopedCreate {
+	x.b.SetText(v)
+	return x
+}
+
+// SetNillableText sets the "text" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableText(v *string) *BroadcastScopedCreate {
+	x.b.SetNillableText(v)
+	return x
+}
+
+// SetImageURL sets the "image_url" field.
+func (x *BroadcastScopedCreate) SetImageURL(v string) *BroadcastScopedCreate {
+	x.b.SetImageURL(v)
+	return x
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableImageURL(v *string) *BroadcastScopedCreate {
+	x.b.SetNillableImageURL(v)
+	return x
+}
+
+// SetButtons sets the "buttons" field.
+func (x *BroadcastScopedCreate) SetButtons(v []telegramrender.Button) *BroadcastScopedCreate {
+	x.b.SetButtons(v)
+	return x
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (x *BroadcastScopedCreate) SetLinkPreview(v bool) *BroadcastScopedCreate {
+	x.b.SetLinkPreview(v)
+	return x
+}
+
+// SetNillableLinkPreview sets the "link_preview" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableLinkPreview(v *bool) *BroadcastScopedCreate {
+	x.b.SetNillableLinkPreview(v)
+	return x
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (x *BroadcastScopedCreate) SetUnsubscribeButton(v string) *BroadcastScopedCreate {
+	x.b.SetUnsubscribeButton(v)
+	return x
+}
+
+// SetNillableUnsubscribeButton sets the "unsubscribe_button" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableUnsubscribeButton(v *string) *BroadcastScopedCreate {
+	x.b.SetNillableUnsubscribeButton(v)
 	return x
 }
 
@@ -7056,6 +7847,12 @@ func (u *BroadcastScopedUpsert) UpdateSubject() *BroadcastScopedUpsert {
 	return u
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (u *BroadcastScopedUpsert) ClearSubject() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldSubject)
+	return u
+}
+
 // SetFromName sets the "from_name" field.
 func (u *BroadcastScopedUpsert) SetFromName(v string) *BroadcastScopedUpsert {
 	u.u.Set(broadcast.FieldFromName, v)
@@ -7092,6 +7889,90 @@ func (u *BroadcastScopedUpsert) ClearFromEmail() *BroadcastScopedUpsert {
 	return u
 }
 
+// SetText sets the "text" field.
+func (u *BroadcastScopedUpsert) SetText(v string) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldText, v)
+	return u
+}
+
+// UpdateText sets the "text" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateText() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldText)
+	return u
+}
+
+// ClearText clears the value of the "text" field.
+func (u *BroadcastScopedUpsert) ClearText() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldText)
+	return u
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *BroadcastScopedUpsert) SetImageURL(v string) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldImageURL, v)
+	return u
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateImageURL() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldImageURL)
+	return u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *BroadcastScopedUpsert) ClearImageURL() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldImageURL)
+	return u
+}
+
+// SetButtons sets the "buttons" field.
+func (u *BroadcastScopedUpsert) SetButtons(v []telegramrender.Button) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldButtons, v)
+	return u
+}
+
+// UpdateButtons sets the "buttons" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateButtons() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldButtons)
+	return u
+}
+
+// ClearButtons clears the value of the "buttons" field.
+func (u *BroadcastScopedUpsert) ClearButtons() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldButtons)
+	return u
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (u *BroadcastScopedUpsert) SetLinkPreview(v bool) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldLinkPreview, v)
+	return u
+}
+
+// UpdateLinkPreview sets the "link_preview" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateLinkPreview() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldLinkPreview)
+	return u
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (u *BroadcastScopedUpsert) SetUnsubscribeButton(v string) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldUnsubscribeButton, v)
+	return u
+}
+
+// UpdateUnsubscribeButton sets the "unsubscribe_button" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateUnsubscribeButton() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldUnsubscribeButton)
+	return u
+}
+
+// ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
+func (u *BroadcastScopedUpsert) ClearUnsubscribeButton() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldUnsubscribeButton)
+	return u
+}
+
 // SetBody sets the "body" field.
 func (u *BroadcastScopedUpsert) SetBody(v string) *BroadcastScopedUpsert {
 	u.u.Set(broadcast.FieldBody, v)
@@ -7101,6 +7982,12 @@ func (u *BroadcastScopedUpsert) SetBody(v string) *BroadcastScopedUpsert {
 // UpdateBody sets the "body" field to the value that was provided on create.
 func (u *BroadcastScopedUpsert) UpdateBody() *BroadcastScopedUpsert {
 	u.u.SetExcluded(broadcast.FieldBody)
+	return u
+}
+
+// ClearBody clears the value of the "body" field.
+func (u *BroadcastScopedUpsert) ClearBody() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldBody)
 	return u
 }
 
@@ -7510,6 +8397,12 @@ func (x *BroadcastScopedUpdateOne) SetNillableSubject(v *string) *BroadcastScope
 	return x
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (x *BroadcastScopedUpdateOne) ClearSubject() *BroadcastScopedUpdateOne {
+	x.b.ClearSubject()
+	return x
+}
+
 // SetFromName sets the "from_name" field.
 func (x *BroadcastScopedUpdateOne) SetFromName(v string) *BroadcastScopedUpdateOne {
 	x.b.SetFromName(v)
@@ -7546,6 +8439,90 @@ func (x *BroadcastScopedUpdateOne) ClearFromEmail() *BroadcastScopedUpdateOne {
 	return x
 }
 
+// SetText sets the "text" field.
+func (x *BroadcastScopedUpdateOne) SetText(v string) *BroadcastScopedUpdateOne {
+	x.b.SetText(v)
+	return x
+}
+
+// SetNillableText sets the "text" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableText(v *string) *BroadcastScopedUpdateOne {
+	x.b.SetNillableText(v)
+	return x
+}
+
+// ClearText clears the value of the "text" field.
+func (x *BroadcastScopedUpdateOne) ClearText() *BroadcastScopedUpdateOne {
+	x.b.ClearText()
+	return x
+}
+
+// SetImageURL sets the "image_url" field.
+func (x *BroadcastScopedUpdateOne) SetImageURL(v string) *BroadcastScopedUpdateOne {
+	x.b.SetImageURL(v)
+	return x
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableImageURL(v *string) *BroadcastScopedUpdateOne {
+	x.b.SetNillableImageURL(v)
+	return x
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (x *BroadcastScopedUpdateOne) ClearImageURL() *BroadcastScopedUpdateOne {
+	x.b.ClearImageURL()
+	return x
+}
+
+// SetButtons sets the "buttons" field.
+func (x *BroadcastScopedUpdateOne) SetButtons(v []telegramrender.Button) *BroadcastScopedUpdateOne {
+	x.b.SetButtons(v)
+	return x
+}
+
+// AppendButtons appends value to the "buttons" field.
+func (x *BroadcastScopedUpdateOne) AppendButtons(v []telegramrender.Button) *BroadcastScopedUpdateOne {
+	x.b.AppendButtons(v)
+	return x
+}
+
+// ClearButtons clears the value of the "buttons" field.
+func (x *BroadcastScopedUpdateOne) ClearButtons() *BroadcastScopedUpdateOne {
+	x.b.ClearButtons()
+	return x
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (x *BroadcastScopedUpdateOne) SetLinkPreview(v bool) *BroadcastScopedUpdateOne {
+	x.b.SetLinkPreview(v)
+	return x
+}
+
+// SetNillableLinkPreview sets the "link_preview" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableLinkPreview(v *bool) *BroadcastScopedUpdateOne {
+	x.b.SetNillableLinkPreview(v)
+	return x
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (x *BroadcastScopedUpdateOne) SetUnsubscribeButton(v string) *BroadcastScopedUpdateOne {
+	x.b.SetUnsubscribeButton(v)
+	return x
+}
+
+// SetNillableUnsubscribeButton sets the "unsubscribe_button" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableUnsubscribeButton(v *string) *BroadcastScopedUpdateOne {
+	x.b.SetNillableUnsubscribeButton(v)
+	return x
+}
+
+// ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
+func (x *BroadcastScopedUpdateOne) ClearUnsubscribeButton() *BroadcastScopedUpdateOne {
+	x.b.ClearUnsubscribeButton()
+	return x
+}
+
 // SetBody sets the "body" field.
 func (x *BroadcastScopedUpdateOne) SetBody(v string) *BroadcastScopedUpdateOne {
 	x.b.SetBody(v)
@@ -7555,6 +8532,12 @@ func (x *BroadcastScopedUpdateOne) SetBody(v string) *BroadcastScopedUpdateOne {
 // SetNillableBody sets the "body" field if the given value is not nil.
 func (x *BroadcastScopedUpdateOne) SetNillableBody(v *string) *BroadcastScopedUpdateOne {
 	x.b.SetNillableBody(v)
+	return x
+}
+
+// ClearBody clears the value of the "body" field.
+func (x *BroadcastScopedUpdateOne) ClearBody() *BroadcastScopedUpdateOne {
+	x.b.ClearBody()
 	return x
 }
 
@@ -7933,6 +8916,12 @@ func (x *BroadcastScopedUpdate) SetNillableSubject(v *string) *BroadcastScopedUp
 	return x
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (x *BroadcastScopedUpdate) ClearSubject() *BroadcastScopedUpdate {
+	x.b.ClearSubject()
+	return x
+}
+
 // SetFromName sets the "from_name" field.
 func (x *BroadcastScopedUpdate) SetFromName(v string) *BroadcastScopedUpdate {
 	x.b.SetFromName(v)
@@ -7969,6 +8958,90 @@ func (x *BroadcastScopedUpdate) ClearFromEmail() *BroadcastScopedUpdate {
 	return x
 }
 
+// SetText sets the "text" field.
+func (x *BroadcastScopedUpdate) SetText(v string) *BroadcastScopedUpdate {
+	x.b.SetText(v)
+	return x
+}
+
+// SetNillableText sets the "text" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableText(v *string) *BroadcastScopedUpdate {
+	x.b.SetNillableText(v)
+	return x
+}
+
+// ClearText clears the value of the "text" field.
+func (x *BroadcastScopedUpdate) ClearText() *BroadcastScopedUpdate {
+	x.b.ClearText()
+	return x
+}
+
+// SetImageURL sets the "image_url" field.
+func (x *BroadcastScopedUpdate) SetImageURL(v string) *BroadcastScopedUpdate {
+	x.b.SetImageURL(v)
+	return x
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableImageURL(v *string) *BroadcastScopedUpdate {
+	x.b.SetNillableImageURL(v)
+	return x
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (x *BroadcastScopedUpdate) ClearImageURL() *BroadcastScopedUpdate {
+	x.b.ClearImageURL()
+	return x
+}
+
+// SetButtons sets the "buttons" field.
+func (x *BroadcastScopedUpdate) SetButtons(v []telegramrender.Button) *BroadcastScopedUpdate {
+	x.b.SetButtons(v)
+	return x
+}
+
+// AppendButtons appends value to the "buttons" field.
+func (x *BroadcastScopedUpdate) AppendButtons(v []telegramrender.Button) *BroadcastScopedUpdate {
+	x.b.AppendButtons(v)
+	return x
+}
+
+// ClearButtons clears the value of the "buttons" field.
+func (x *BroadcastScopedUpdate) ClearButtons() *BroadcastScopedUpdate {
+	x.b.ClearButtons()
+	return x
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (x *BroadcastScopedUpdate) SetLinkPreview(v bool) *BroadcastScopedUpdate {
+	x.b.SetLinkPreview(v)
+	return x
+}
+
+// SetNillableLinkPreview sets the "link_preview" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableLinkPreview(v *bool) *BroadcastScopedUpdate {
+	x.b.SetNillableLinkPreview(v)
+	return x
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (x *BroadcastScopedUpdate) SetUnsubscribeButton(v string) *BroadcastScopedUpdate {
+	x.b.SetUnsubscribeButton(v)
+	return x
+}
+
+// SetNillableUnsubscribeButton sets the "unsubscribe_button" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableUnsubscribeButton(v *string) *BroadcastScopedUpdate {
+	x.b.SetNillableUnsubscribeButton(v)
+	return x
+}
+
+// ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
+func (x *BroadcastScopedUpdate) ClearUnsubscribeButton() *BroadcastScopedUpdate {
+	x.b.ClearUnsubscribeButton()
+	return x
+}
+
 // SetBody sets the "body" field.
 func (x *BroadcastScopedUpdate) SetBody(v string) *BroadcastScopedUpdate {
 	x.b.SetBody(v)
@@ -7978,6 +9051,12 @@ func (x *BroadcastScopedUpdate) SetBody(v string) *BroadcastScopedUpdate {
 // SetNillableBody sets the "body" field if the given value is not nil.
 func (x *BroadcastScopedUpdate) SetNillableBody(v *string) *BroadcastScopedUpdate {
 	x.b.SetNillableBody(v)
+	return x
+}
+
+// ClearBody clears the value of the "body" field.
+func (x *BroadcastScopedUpdate) ClearBody() *BroadcastScopedUpdate {
+	x.b.ClearBody()
 	return x
 }
 
@@ -10706,6 +11785,30 @@ func (x *ContactScopedCreate) AddVisitors(v ...*Visitor) *ContactScopedCreate {
 	return x
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (x *ContactScopedCreate) AddBindingIDs(ids ...int64) *ContactScopedCreate {
+	x.b.AddBindingIDs(ids...)
+	return x
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (x *ContactScopedCreate) AddBindings(v ...*Binding) *ContactScopedCreate {
+	x.b.AddBindings(v...)
+	return x
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (x *ContactScopedCreate) AddStartTokenIDs(ids ...int64) *ContactScopedCreate {
+	x.b.AddStartTokenIDs(ids...)
+	return x
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (x *ContactScopedCreate) AddStartTokens(v ...*StartToken) *ContactScopedCreate {
+	x.b.AddStartTokens(v...)
+	return x
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (x *ContactScopedCreate) AddTagIDs(ids ...int64) *ContactScopedCreate {
 	x.b.AddTagIDs(ids...)
@@ -10747,6 +11850,12 @@ func (x *ContactScopedCreate) check(ctx context.Context) error {
 	_ = m
 	if err := x.s.verifyVisitor(ctx, m.VisitorsIDs()); err != nil {
 		return fmt.Errorf("visitors: %w", err)
+	}
+	if err := x.s.verifyBinding(ctx, m.BindingsIDs()); err != nil {
+		return fmt.Errorf("bindings: %w", err)
+	}
+	if err := x.s.verifyStartToken(ctx, m.StartTokensIDs()); err != nil {
+		return fmt.Errorf("start_tokens: %w", err)
 	}
 	if err := x.s.verifyTag(ctx, m.TagsIDs()); err != nil {
 		return fmt.Errorf("tags: %w", err)
@@ -11503,6 +12612,66 @@ func (x *ContactScopedUpdateOne) RemoveVisitors(v ...*Visitor) *ContactScopedUpd
 	return x
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (x *ContactScopedUpdateOne) AddBindingIDs(ids ...int64) *ContactScopedUpdateOne {
+	x.b.AddBindingIDs(ids...)
+	return x
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (x *ContactScopedUpdateOne) AddBindings(v ...*Binding) *ContactScopedUpdateOne {
+	x.b.AddBindings(v...)
+	return x
+}
+
+// ClearBindings clears the "bindings" edges to the Binding entity.
+func (x *ContactScopedUpdateOne) ClearBindings() *ContactScopedUpdateOne {
+	x.b.ClearBindings()
+	return x
+}
+
+// RemoveBindingIDs removes the "bindings" edge to Binding entities by IDs.
+func (x *ContactScopedUpdateOne) RemoveBindingIDs(ids ...int64) *ContactScopedUpdateOne {
+	x.b.RemoveBindingIDs(ids...)
+	return x
+}
+
+// RemoveBindings removes "bindings" edges to Binding entities.
+func (x *ContactScopedUpdateOne) RemoveBindings(v ...*Binding) *ContactScopedUpdateOne {
+	x.b.RemoveBindings(v...)
+	return x
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (x *ContactScopedUpdateOne) AddStartTokenIDs(ids ...int64) *ContactScopedUpdateOne {
+	x.b.AddStartTokenIDs(ids...)
+	return x
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (x *ContactScopedUpdateOne) AddStartTokens(v ...*StartToken) *ContactScopedUpdateOne {
+	x.b.AddStartTokens(v...)
+	return x
+}
+
+// ClearStartTokens clears the "start_tokens" edges to the StartToken entity.
+func (x *ContactScopedUpdateOne) ClearStartTokens() *ContactScopedUpdateOne {
+	x.b.ClearStartTokens()
+	return x
+}
+
+// RemoveStartTokenIDs removes the "start_tokens" edge to StartToken entities by IDs.
+func (x *ContactScopedUpdateOne) RemoveStartTokenIDs(ids ...int64) *ContactScopedUpdateOne {
+	x.b.RemoveStartTokenIDs(ids...)
+	return x
+}
+
+// RemoveStartTokens removes "start_tokens" edges to StartToken entities.
+func (x *ContactScopedUpdateOne) RemoveStartTokens(v ...*StartToken) *ContactScopedUpdateOne {
+	x.b.RemoveStartTokens(v...)
+	return x
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (x *ContactScopedUpdateOne) AddTagIDs(ids ...int64) *ContactScopedUpdateOne {
 	x.b.AddTagIDs(ids...)
@@ -11598,6 +12767,12 @@ func (x *ContactScopedUpdateOne) check(ctx context.Context) error {
 	_ = m
 	if err := x.s.verifyVisitor(ctx, m.VisitorsIDs()); err != nil {
 		return fmt.Errorf("visitors: %w", err)
+	}
+	if err := x.s.verifyBinding(ctx, m.BindingsIDs()); err != nil {
+		return fmt.Errorf("bindings: %w", err)
+	}
+	if err := x.s.verifyStartToken(ctx, m.StartTokensIDs()); err != nil {
+		return fmt.Errorf("start_tokens: %w", err)
 	}
 	if err := x.s.verifyTag(ctx, m.TagsIDs()); err != nil {
 		return fmt.Errorf("tags: %w", err)
@@ -11923,6 +13098,66 @@ func (x *ContactScopedUpdate) RemoveVisitors(v ...*Visitor) *ContactScopedUpdate
 	return x
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (x *ContactScopedUpdate) AddBindingIDs(ids ...int64) *ContactScopedUpdate {
+	x.b.AddBindingIDs(ids...)
+	return x
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (x *ContactScopedUpdate) AddBindings(v ...*Binding) *ContactScopedUpdate {
+	x.b.AddBindings(v...)
+	return x
+}
+
+// ClearBindings clears the "bindings" edges to the Binding entity.
+func (x *ContactScopedUpdate) ClearBindings() *ContactScopedUpdate {
+	x.b.ClearBindings()
+	return x
+}
+
+// RemoveBindingIDs removes the "bindings" edge to Binding entities by IDs.
+func (x *ContactScopedUpdate) RemoveBindingIDs(ids ...int64) *ContactScopedUpdate {
+	x.b.RemoveBindingIDs(ids...)
+	return x
+}
+
+// RemoveBindings removes "bindings" edges to Binding entities.
+func (x *ContactScopedUpdate) RemoveBindings(v ...*Binding) *ContactScopedUpdate {
+	x.b.RemoveBindings(v...)
+	return x
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (x *ContactScopedUpdate) AddStartTokenIDs(ids ...int64) *ContactScopedUpdate {
+	x.b.AddStartTokenIDs(ids...)
+	return x
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (x *ContactScopedUpdate) AddStartTokens(v ...*StartToken) *ContactScopedUpdate {
+	x.b.AddStartTokens(v...)
+	return x
+}
+
+// ClearStartTokens clears the "start_tokens" edges to the StartToken entity.
+func (x *ContactScopedUpdate) ClearStartTokens() *ContactScopedUpdate {
+	x.b.ClearStartTokens()
+	return x
+}
+
+// RemoveStartTokenIDs removes the "start_tokens" edge to StartToken entities by IDs.
+func (x *ContactScopedUpdate) RemoveStartTokenIDs(ids ...int64) *ContactScopedUpdate {
+	x.b.RemoveStartTokenIDs(ids...)
+	return x
+}
+
+// RemoveStartTokens removes "start_tokens" edges to StartToken entities.
+func (x *ContactScopedUpdate) RemoveStartTokens(v ...*StartToken) *ContactScopedUpdate {
+	x.b.RemoveStartTokens(v...)
+	return x
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (x *ContactScopedUpdate) AddTagIDs(ids ...int64) *ContactScopedUpdate {
 	x.b.AddTagIDs(ids...)
@@ -12018,6 +13253,12 @@ func (x *ContactScopedUpdate) check(ctx context.Context) error {
 	_ = m
 	if err := x.s.verifyVisitor(ctx, m.VisitorsIDs()); err != nil {
 		return fmt.Errorf("visitors: %w", err)
+	}
+	if err := x.s.verifyBinding(ctx, m.BindingsIDs()); err != nil {
+		return fmt.Errorf("bindings: %w", err)
+	}
+	if err := x.s.verifyStartToken(ctx, m.StartTokensIDs()); err != nil {
+		return fmt.Errorf("start_tokens: %w", err)
 	}
 	if err := x.s.verifyTag(ctx, m.TagsIDs()); err != nil {
 		return fmt.Errorf("tags: %w", err)
@@ -16943,6 +18184,18 @@ func (x *IntegrationScopedCreate) SetNillableProviderSandbox(v *bool) *Integrati
 	return x
 }
 
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (x *IntegrationScopedCreate) SetProviderRefusedAt(v time.Time) *IntegrationScopedCreate {
+	x.b.SetProviderRefusedAt(v)
+	return x
+}
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (x *IntegrationScopedCreate) SetNillableProviderRefusedAt(v *time.Time) *IntegrationScopedCreate {
+	x.b.SetNillableProviderRefusedAt(v)
+	return x
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (x *IntegrationScopedCreate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationScopedCreate {
 	x.b.SetProviderQuotaCheckedAt(v)
@@ -16997,6 +18250,30 @@ func (x *IntegrationScopedCreate) AddCapturedMessages(v ...*CapturedMessage) *In
 	return x
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (x *IntegrationScopedCreate) AddBindingIDs(ids ...int64) *IntegrationScopedCreate {
+	x.b.AddBindingIDs(ids...)
+	return x
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (x *IntegrationScopedCreate) AddBindings(v ...*Binding) *IntegrationScopedCreate {
+	x.b.AddBindings(v...)
+	return x
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (x *IntegrationScopedCreate) AddStartTokenIDs(ids ...int64) *IntegrationScopedCreate {
+	x.b.AddStartTokenIDs(ids...)
+	return x
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (x *IntegrationScopedCreate) AddStartTokens(v ...*StartToken) *IntegrationScopedCreate {
+	x.b.AddStartTokens(v...)
+	return x
+}
+
 func (x *IntegrationScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -17005,6 +18282,12 @@ func (x *IntegrationScopedCreate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyCapturedMessage(ctx, m.CapturedMessagesIDs()); err != nil {
 		return fmt.Errorf("captured_messages: %w", err)
+	}
+	if err := x.s.verifyBinding(ctx, m.BindingsIDs()); err != nil {
+		return fmt.Errorf("bindings: %w", err)
+	}
+	if err := x.s.verifyStartToken(ctx, m.StartTokensIDs()); err != nil {
+		return fmt.Errorf("start_tokens: %w", err)
 	}
 	return nil
 }
@@ -17373,6 +18656,24 @@ func (u *IntegrationScopedUpsert) SetProviderSandbox(v bool) *IntegrationScopedU
 // UpdateProviderSandbox sets the "provider_sandbox" field to the value that was provided on create.
 func (u *IntegrationScopedUpsert) UpdateProviderSandbox() *IntegrationScopedUpsert {
 	u.u.SetExcluded(integration.FieldProviderSandbox)
+	return u
+}
+
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (u *IntegrationScopedUpsert) SetProviderRefusedAt(v time.Time) *IntegrationScopedUpsert {
+	u.u.Set(integration.FieldProviderRefusedAt, v)
+	return u
+}
+
+// UpdateProviderRefusedAt sets the "provider_refused_at" field to the value that was provided on create.
+func (u *IntegrationScopedUpsert) UpdateProviderRefusedAt() *IntegrationScopedUpsert {
+	u.u.SetExcluded(integration.FieldProviderRefusedAt)
+	return u
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (u *IntegrationScopedUpsert) ClearProviderRefusedAt() *IntegrationScopedUpsert {
+	u.u.SetNull(integration.FieldProviderRefusedAt)
 	return u
 }
 
@@ -17860,6 +19161,24 @@ func (x *IntegrationScopedUpdateOne) SetNillableProviderSandbox(v *bool) *Integr
 	return x
 }
 
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (x *IntegrationScopedUpdateOne) SetProviderRefusedAt(v time.Time) *IntegrationScopedUpdateOne {
+	x.b.SetProviderRefusedAt(v)
+	return x
+}
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (x *IntegrationScopedUpdateOne) SetNillableProviderRefusedAt(v *time.Time) *IntegrationScopedUpdateOne {
+	x.b.SetNillableProviderRefusedAt(v)
+	return x
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (x *IntegrationScopedUpdateOne) ClearProviderRefusedAt() *IntegrationScopedUpdateOne {
+	x.b.ClearProviderRefusedAt()
+	return x
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (x *IntegrationScopedUpdateOne) SetProviderQuotaCheckedAt(v time.Time) *IntegrationScopedUpdateOne {
 	x.b.SetProviderQuotaCheckedAt(v)
@@ -17950,6 +19269,66 @@ func (x *IntegrationScopedUpdateOne) RemoveCapturedMessages(v ...*CapturedMessag
 	return x
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (x *IntegrationScopedUpdateOne) AddBindingIDs(ids ...int64) *IntegrationScopedUpdateOne {
+	x.b.AddBindingIDs(ids...)
+	return x
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (x *IntegrationScopedUpdateOne) AddBindings(v ...*Binding) *IntegrationScopedUpdateOne {
+	x.b.AddBindings(v...)
+	return x
+}
+
+// ClearBindings clears the "bindings" edges to the Binding entity.
+func (x *IntegrationScopedUpdateOne) ClearBindings() *IntegrationScopedUpdateOne {
+	x.b.ClearBindings()
+	return x
+}
+
+// RemoveBindingIDs removes the "bindings" edge to Binding entities by IDs.
+func (x *IntegrationScopedUpdateOne) RemoveBindingIDs(ids ...int64) *IntegrationScopedUpdateOne {
+	x.b.RemoveBindingIDs(ids...)
+	return x
+}
+
+// RemoveBindings removes "bindings" edges to Binding entities.
+func (x *IntegrationScopedUpdateOne) RemoveBindings(v ...*Binding) *IntegrationScopedUpdateOne {
+	x.b.RemoveBindings(v...)
+	return x
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (x *IntegrationScopedUpdateOne) AddStartTokenIDs(ids ...int64) *IntegrationScopedUpdateOne {
+	x.b.AddStartTokenIDs(ids...)
+	return x
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (x *IntegrationScopedUpdateOne) AddStartTokens(v ...*StartToken) *IntegrationScopedUpdateOne {
+	x.b.AddStartTokens(v...)
+	return x
+}
+
+// ClearStartTokens clears the "start_tokens" edges to the StartToken entity.
+func (x *IntegrationScopedUpdateOne) ClearStartTokens() *IntegrationScopedUpdateOne {
+	x.b.ClearStartTokens()
+	return x
+}
+
+// RemoveStartTokenIDs removes the "start_tokens" edge to StartToken entities by IDs.
+func (x *IntegrationScopedUpdateOne) RemoveStartTokenIDs(ids ...int64) *IntegrationScopedUpdateOne {
+	x.b.RemoveStartTokenIDs(ids...)
+	return x
+}
+
+// RemoveStartTokens removes "start_tokens" edges to StartToken entities.
+func (x *IntegrationScopedUpdateOne) RemoveStartTokens(v ...*StartToken) *IntegrationScopedUpdateOne {
+	x.b.RemoveStartTokens(v...)
+	return x
+}
+
 func (x *IntegrationScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -17958,6 +19337,12 @@ func (x *IntegrationScopedUpdateOne) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyCapturedMessage(ctx, m.CapturedMessagesIDs()); err != nil {
 		return fmt.Errorf("captured_messages: %w", err)
+	}
+	if err := x.s.verifyBinding(ctx, m.BindingsIDs()); err != nil {
+		return fmt.Errorf("bindings: %w", err)
+	}
+	if err := x.s.verifyStartToken(ctx, m.StartTokensIDs()); err != nil {
+		return fmt.Errorf("start_tokens: %w", err)
 	}
 	return nil
 }
@@ -18298,6 +19683,24 @@ func (x *IntegrationScopedUpdate) SetNillableProviderSandbox(v *bool) *Integrati
 	return x
 }
 
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (x *IntegrationScopedUpdate) SetProviderRefusedAt(v time.Time) *IntegrationScopedUpdate {
+	x.b.SetProviderRefusedAt(v)
+	return x
+}
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (x *IntegrationScopedUpdate) SetNillableProviderRefusedAt(v *time.Time) *IntegrationScopedUpdate {
+	x.b.SetNillableProviderRefusedAt(v)
+	return x
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (x *IntegrationScopedUpdate) ClearProviderRefusedAt() *IntegrationScopedUpdate {
+	x.b.ClearProviderRefusedAt()
+	return x
+}
+
 // SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
 func (x *IntegrationScopedUpdate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationScopedUpdate {
 	x.b.SetProviderQuotaCheckedAt(v)
@@ -18388,6 +19791,66 @@ func (x *IntegrationScopedUpdate) RemoveCapturedMessages(v ...*CapturedMessage) 
 	return x
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (x *IntegrationScopedUpdate) AddBindingIDs(ids ...int64) *IntegrationScopedUpdate {
+	x.b.AddBindingIDs(ids...)
+	return x
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (x *IntegrationScopedUpdate) AddBindings(v ...*Binding) *IntegrationScopedUpdate {
+	x.b.AddBindings(v...)
+	return x
+}
+
+// ClearBindings clears the "bindings" edges to the Binding entity.
+func (x *IntegrationScopedUpdate) ClearBindings() *IntegrationScopedUpdate {
+	x.b.ClearBindings()
+	return x
+}
+
+// RemoveBindingIDs removes the "bindings" edge to Binding entities by IDs.
+func (x *IntegrationScopedUpdate) RemoveBindingIDs(ids ...int64) *IntegrationScopedUpdate {
+	x.b.RemoveBindingIDs(ids...)
+	return x
+}
+
+// RemoveBindings removes "bindings" edges to Binding entities.
+func (x *IntegrationScopedUpdate) RemoveBindings(v ...*Binding) *IntegrationScopedUpdate {
+	x.b.RemoveBindings(v...)
+	return x
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (x *IntegrationScopedUpdate) AddStartTokenIDs(ids ...int64) *IntegrationScopedUpdate {
+	x.b.AddStartTokenIDs(ids...)
+	return x
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (x *IntegrationScopedUpdate) AddStartTokens(v ...*StartToken) *IntegrationScopedUpdate {
+	x.b.AddStartTokens(v...)
+	return x
+}
+
+// ClearStartTokens clears the "start_tokens" edges to the StartToken entity.
+func (x *IntegrationScopedUpdate) ClearStartTokens() *IntegrationScopedUpdate {
+	x.b.ClearStartTokens()
+	return x
+}
+
+// RemoveStartTokenIDs removes the "start_tokens" edge to StartToken entities by IDs.
+func (x *IntegrationScopedUpdate) RemoveStartTokenIDs(ids ...int64) *IntegrationScopedUpdate {
+	x.b.RemoveStartTokenIDs(ids...)
+	return x
+}
+
+// RemoveStartTokens removes "start_tokens" edges to StartToken entities.
+func (x *IntegrationScopedUpdate) RemoveStartTokens(v ...*StartToken) *IntegrationScopedUpdate {
+	x.b.RemoveStartTokens(v...)
+	return x
+}
+
 func (x *IntegrationScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -18396,6 +19859,12 @@ func (x *IntegrationScopedUpdate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyCapturedMessage(ctx, m.CapturedMessagesIDs()); err != nil {
 		return fmt.Errorf("captured_messages: %w", err)
+	}
+	if err := x.s.verifyBinding(ctx, m.BindingsIDs()); err != nil {
+		return fmt.Errorf("bindings: %w", err)
+	}
+	if err := x.s.verifyStartToken(ctx, m.StartTokensIDs()); err != nil {
+		return fmt.Errorf("start_tokens: %w", err)
 	}
 	return nil
 }
@@ -22418,6 +23887,18 @@ func (x *OutboundMessageScopedCreate) SetNillableAppOrigin(v *string) *OutboundM
 	return x
 }
 
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by IDs.
+func (x *OutboundMessageScopedCreate) AddTrackedLinkIDs(ids ...int64) *OutboundMessageScopedCreate {
+	x.b.AddTrackedLinkIDs(ids...)
+	return x
+}
+
+// AddTrackedLinks adds the "tracked_links" edges to the TrackedLink entity.
+func (x *OutboundMessageScopedCreate) AddTrackedLinks(v ...*TrackedLink) *OutboundMessageScopedCreate {
+	x.b.AddTrackedLinks(v...)
+	return x
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (x *OutboundMessageScopedCreate) SetBroadcast(v *Broadcast) *OutboundMessageScopedCreate {
 	x.b.SetBroadcast(v)
@@ -22463,6 +23944,9 @@ func (x *OutboundMessageScopedCreate) SetTemplate(v *EmailTemplate) *OutboundMes
 func (x *OutboundMessageScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyTrackedLink(ctx, m.TrackedLinksIDs()); err != nil {
+		return fmt.Errorf("tracked_links: %w", err)
+	}
 	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
 		return fmt.Errorf("broadcast: %w", err)
 	}
@@ -23391,6 +24875,36 @@ func (x *OutboundMessageScopedUpdateOne) ClearTemplateID() *OutboundMessageScope
 	return x
 }
 
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by IDs.
+func (x *OutboundMessageScopedUpdateOne) AddTrackedLinkIDs(ids ...int64) *OutboundMessageScopedUpdateOne {
+	x.b.AddTrackedLinkIDs(ids...)
+	return x
+}
+
+// AddTrackedLinks adds the "tracked_links" edges to the TrackedLink entity.
+func (x *OutboundMessageScopedUpdateOne) AddTrackedLinks(v ...*TrackedLink) *OutboundMessageScopedUpdateOne {
+	x.b.AddTrackedLinks(v...)
+	return x
+}
+
+// ClearTrackedLinks clears the "tracked_links" edges to the TrackedLink entity.
+func (x *OutboundMessageScopedUpdateOne) ClearTrackedLinks() *OutboundMessageScopedUpdateOne {
+	x.b.ClearTrackedLinks()
+	return x
+}
+
+// RemoveTrackedLinkIDs removes the "tracked_links" edge to TrackedLink entities by IDs.
+func (x *OutboundMessageScopedUpdateOne) RemoveTrackedLinkIDs(ids ...int64) *OutboundMessageScopedUpdateOne {
+	x.b.RemoveTrackedLinkIDs(ids...)
+	return x
+}
+
+// RemoveTrackedLinks removes "tracked_links" edges to TrackedLink entities.
+func (x *OutboundMessageScopedUpdateOne) RemoveTrackedLinks(v ...*TrackedLink) *OutboundMessageScopedUpdateOne {
+	x.b.RemoveTrackedLinks(v...)
+	return x
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (x *OutboundMessageScopedUpdateOne) SetBroadcast(v *Broadcast) *OutboundMessageScopedUpdateOne {
 	x.b.SetBroadcast(v)
@@ -23478,6 +24992,9 @@ func (x *OutboundMessageScopedUpdateOne) ClearTemplate() *OutboundMessageScopedU
 func (x *OutboundMessageScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyTrackedLink(ctx, m.TrackedLinksIDs()); err != nil {
+		return fmt.Errorf("tracked_links: %w", err)
+	}
 	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
 		return fmt.Errorf("broadcast: %w", err)
 	}
@@ -23918,6 +25435,36 @@ func (x *OutboundMessageScopedUpdate) ClearTemplateID() *OutboundMessageScopedUp
 	return x
 }
 
+// AddTrackedLinkIDs adds the "tracked_links" edge to the TrackedLink entity by IDs.
+func (x *OutboundMessageScopedUpdate) AddTrackedLinkIDs(ids ...int64) *OutboundMessageScopedUpdate {
+	x.b.AddTrackedLinkIDs(ids...)
+	return x
+}
+
+// AddTrackedLinks adds the "tracked_links" edges to the TrackedLink entity.
+func (x *OutboundMessageScopedUpdate) AddTrackedLinks(v ...*TrackedLink) *OutboundMessageScopedUpdate {
+	x.b.AddTrackedLinks(v...)
+	return x
+}
+
+// ClearTrackedLinks clears the "tracked_links" edges to the TrackedLink entity.
+func (x *OutboundMessageScopedUpdate) ClearTrackedLinks() *OutboundMessageScopedUpdate {
+	x.b.ClearTrackedLinks()
+	return x
+}
+
+// RemoveTrackedLinkIDs removes the "tracked_links" edge to TrackedLink entities by IDs.
+func (x *OutboundMessageScopedUpdate) RemoveTrackedLinkIDs(ids ...int64) *OutboundMessageScopedUpdate {
+	x.b.RemoveTrackedLinkIDs(ids...)
+	return x
+}
+
+// RemoveTrackedLinks removes "tracked_links" edges to TrackedLink entities.
+func (x *OutboundMessageScopedUpdate) RemoveTrackedLinks(v ...*TrackedLink) *OutboundMessageScopedUpdate {
+	x.b.RemoveTrackedLinks(v...)
+	return x
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (x *OutboundMessageScopedUpdate) SetBroadcast(v *Broadcast) *OutboundMessageScopedUpdate {
 	x.b.SetBroadcast(v)
@@ -24005,6 +25552,9 @@ func (x *OutboundMessageScopedUpdate) ClearTemplate() *OutboundMessageScopedUpda
 func (x *OutboundMessageScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyTrackedLink(ctx, m.TrackedLinksIDs()); err != nil {
+		return fmt.Errorf("tracked_links: %w", err)
+	}
 	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
 		return fmt.Errorf("broadcast: %w", err)
 	}
@@ -30582,6 +32132,574 @@ func (x *SendingDomainScopedUpdate) Exec(ctx context.Context) error {
 	return err
 }
 
+// StartTokenScoped reaches StartToken entities of one Workspace.
+type StartTokenScoped struct{ s *Scoped }
+
+// StartToken returns the StartToken entities of the Workspace.
+func (s *Scoped) StartToken() *StartTokenScoped { return &StartTokenScoped{s: s} }
+
+// Query returns a StartToken query already confined to the Workspace.
+func (t *StartTokenScoped) Query() *StartTokenQuery {
+	return t.s.c.StartToken.Query().Where(starttoken.WorkspaceID(t.s.ws))
+}
+
+// Get returns the StartToken with the id; a row of another Workspace is not found.
+func (t *StartTokenScoped) Get(ctx context.Context, id int64) (*StartToken, error) {
+	return t.Query().Where(starttoken.ID(id)).Only(ctx)
+}
+
+// StartTokenScopedDeleteOne wraps StartTokenDeleteOne.
+type StartTokenScopedDeleteOne struct {
+	s *Scoped
+	b *StartTokenDeleteOne
+}
+
+// DeleteOneID deletes the StartToken with the id; a row of another Workspace is not found.
+func (t *StartTokenScoped) DeleteOneID(id int64) *StartTokenScopedDeleteOne {
+	return &StartTokenScopedDeleteOne{s: t.s, b: t.s.c.StartToken.DeleteOneID(id).Where(starttoken.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *StartTokenScopedDeleteOne) Where(ps ...predicate.StartToken) *StartTokenScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *StartTokenScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// StartTokenScopedDelete wraps StartTokenDelete.
+type StartTokenScopedDelete struct {
+	s *Scoped
+	b *StartTokenDelete
+}
+
+// Delete deletes the StartToken entities of the Workspace that match the predicates.
+func (t *StartTokenScoped) Delete() *StartTokenScopedDelete {
+	return &StartTokenScopedDelete{s: t.s, b: t.s.c.StartToken.Delete().Where(starttoken.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *StartTokenScopedDelete) Where(ps ...predicate.StartToken) *StartTokenScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *StartTokenScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// StartTokenScopedCreate wraps StartTokenCreate. It has no way to name a Workspace.
+type StartTokenScopedCreate struct {
+	s *Scoped
+	b *StartTokenCreate
+}
+
+// Create starts a StartToken in the Workspace.
+func (t *StartTokenScoped) Create() *StartTokenScopedCreate {
+	return &StartTokenScopedCreate{s: t.s, b: t.s.c.StartToken.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *StartTokenScopedCreate) SetCreatedAt(v time.Time) *StartTokenScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *StartTokenScopedCreate) SetNillableCreatedAt(v *time.Time) *StartTokenScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *StartTokenScopedCreate) SetUpdatedAt(v time.Time) *StartTokenScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *StartTokenScopedCreate) SetNillableUpdatedAt(v *time.Time) *StartTokenScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (x *StartTokenScopedCreate) SetIntegrationID(v int64) *StartTokenScopedCreate {
+	x.b.SetIntegrationID(v)
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *StartTokenScopedCreate) SetContactID(v int64) *StartTokenScopedCreate {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetNillableContactID sets the "contact_id" field if the given value is not nil.
+func (x *StartTokenScopedCreate) SetNillableContactID(v *int64) *StartTokenScopedCreate {
+	x.b.SetNillableContactID(v)
+	return x
+}
+
+// SetVisitorID sets the "visitor_id" field.
+func (x *StartTokenScopedCreate) SetVisitorID(v int64) *StartTokenScopedCreate {
+	x.b.SetVisitorID(v)
+	return x
+}
+
+// SetNillableVisitorID sets the "visitor_id" field if the given value is not nil.
+func (x *StartTokenScopedCreate) SetNillableVisitorID(v *int64) *StartTokenScopedCreate {
+	x.b.SetNillableVisitorID(v)
+	return x
+}
+
+// SetTokenHash sets the "token_hash" field.
+func (x *StartTokenScopedCreate) SetTokenHash(v string) *StartTokenScopedCreate {
+	x.b.SetTokenHash(v)
+	return x
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (x *StartTokenScopedCreate) SetExpiresAt(v time.Time) *StartTokenScopedCreate {
+	x.b.SetExpiresAt(v)
+	return x
+}
+
+// SetUsedAt sets the "used_at" field.
+func (x *StartTokenScopedCreate) SetUsedAt(v time.Time) *StartTokenScopedCreate {
+	x.b.SetUsedAt(v)
+	return x
+}
+
+// SetNillableUsedAt sets the "used_at" field if the given value is not nil.
+func (x *StartTokenScopedCreate) SetNillableUsedAt(v *time.Time) *StartTokenScopedCreate {
+	x.b.SetNillableUsedAt(v)
+	return x
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *StartTokenScopedCreate) SetIntegration(v *Integration) *StartTokenScopedCreate {
+	x.b.SetIntegration(v)
+	return x
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *StartTokenScopedCreate) SetContact(v *Contact) *StartTokenScopedCreate {
+	x.b.SetContact(v)
+	return x
+}
+
+// SetVisitor sets the "visitor" edge to the Visitor entity.
+func (x *StartTokenScopedCreate) SetVisitor(v *Visitor) *StartTokenScopedCreate {
+	x.b.SetVisitor(v)
+	return x
+}
+
+func (x *StartTokenScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
+	}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyVisitor(ctx, m.VisitorIDs()); err != nil {
+		return fmt.Errorf("visitor: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the StartToken.
+func (x *StartTokenScopedCreate) Save(ctx context.Context) (*StartToken, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *StartTokenScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// StartTokenScopedCreateBulk creates several StartToken entities of one Workspace at once.
+type StartTokenScopedCreateBulk struct {
+	s  *Scoped
+	xs []*StartTokenScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *StartTokenScoped) CreateBulk(xs ...*StartTokenScopedCreate) *StartTokenScopedCreateBulk {
+	return &StartTokenScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *StartTokenScopedCreateBulk) raw(ctx context.Context) (*StartTokenCreateBulk, error) {
+	builders := make([]*StartTokenCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("StartToken: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.StartToken.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the StartToken entities.
+func (b *StartTokenScopedCreateBulk) Save(ctx context.Context) ([]*StartToken, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *StartTokenScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// StartTokenScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type StartTokenScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *StartTokenScopedUpsert) SetUpdatedAt(v time.Time) *StartTokenScopedUpsert {
+	u.u.Set(starttoken.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *StartTokenScopedUpsert) UpdateUpdatedAt() *StartTokenScopedUpsert {
+	u.u.SetExcluded(starttoken.FieldUpdatedAt)
+	return u
+}
+
+// SetUsedAt sets the "used_at" field.
+func (u *StartTokenScopedUpsert) SetUsedAt(v time.Time) *StartTokenScopedUpsert {
+	u.u.Set(starttoken.FieldUsedAt, v)
+	return u
+}
+
+// UpdateUsedAt sets the "used_at" field to the value that was provided on create.
+func (u *StartTokenScopedUpsert) UpdateUsedAt() *StartTokenScopedUpsert {
+	u.u.SetExcluded(starttoken.FieldUsedAt)
+	return u
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (u *StartTokenScopedUpsert) ClearUsedAt() *StartTokenScopedUpsert {
+	u.u.SetNull(starttoken.FieldUsedAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *StartTokenScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(starttoken.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// StartTokenScopedUpsertOne is the "upsert" of one StartToken.
+type StartTokenScopedUpsertOne struct {
+	x *StartTokenScopedCreate
+	u *StartTokenUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *StartTokenScopedCreate) OnConflictColumns(columns ...string) *StartTokenScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *StartTokenScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *StartTokenScopedUpsertOne {
+	return &StartTokenScopedUpsertOne{x: x, u: x.b.OnConflict((&StartTokenScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *StartTokenScopedUpsertOne) UpdateNewValues() *StartTokenScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *StartTokenScopedUpsertOne) Ignore() *StartTokenScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *StartTokenScopedUpsertOne) DoNothing() *StartTokenScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *StartTokenScopedUpsertOne) Update(set func(*StartTokenScopedUpsert)) *StartTokenScopedUpsertOne {
+	u.u.Update(func(s *StartTokenUpsert) { set(&StartTokenScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *StartTokenScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *StartTokenScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// StartTokenScopedUpsertBulk is the "upsert" of several StartToken entities.
+type StartTokenScopedUpsertBulk struct {
+	b       *StartTokenScopedCreateBulk
+	t       *StartTokenScoped
+	columns []string
+	opts    []func(*StartTokenUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *StartTokenScopedCreateBulk) OnConflictColumns(columns ...string) *StartTokenScopedUpsertBulk {
+	return &StartTokenScopedUpsertBulk{b: b, t: &StartTokenScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *StartTokenScopedUpsertBulk) UpdateNewValues() *StartTokenScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *StartTokenUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *StartTokenScopedUpsertBulk) Ignore() *StartTokenScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *StartTokenUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *StartTokenScopedUpsertBulk) DoNothing() *StartTokenScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *StartTokenUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *StartTokenScopedUpsertBulk) Update(set func(*StartTokenScopedUpsert)) *StartTokenScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *StartTokenUpsertBulk) {
+		r.Update(func(s *StartTokenUpsert) { set(&StartTokenScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *StartTokenScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// StartTokenScopedUpdateOne wraps StartTokenUpdateOne. It has no way to move the row to another Workspace.
+type StartTokenScopedUpdateOne struct {
+	s *Scoped
+	b *StartTokenUpdateOne
+}
+
+// UpdateOneID updates the StartToken with the id; a row of another Workspace is not found.
+func (t *StartTokenScoped) UpdateOneID(id int64) *StartTokenScopedUpdateOne {
+	return &StartTokenScopedUpdateOne{s: t.s, b: t.s.c.StartToken.UpdateOneID(id).Where(starttoken.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *StartTokenScopedUpdateOne) Where(ps ...predicate.StartToken) *StartTokenScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *StartTokenScopedUpdateOne) SetUpdatedAt(v time.Time) *StartTokenScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetUsedAt sets the "used_at" field.
+func (x *StartTokenScopedUpdateOne) SetUsedAt(v time.Time) *StartTokenScopedUpdateOne {
+	x.b.SetUsedAt(v)
+	return x
+}
+
+// SetNillableUsedAt sets the "used_at" field if the given value is not nil.
+func (x *StartTokenScopedUpdateOne) SetNillableUsedAt(v *time.Time) *StartTokenScopedUpdateOne {
+	x.b.SetNillableUsedAt(v)
+	return x
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (x *StartTokenScopedUpdateOne) ClearUsedAt() *StartTokenScopedUpdateOne {
+	x.b.ClearUsedAt()
+	return x
+}
+
+func (x *StartTokenScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
+	}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyVisitor(ctx, m.VisitorIDs()); err != nil {
+		return fmt.Errorf("visitor: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the StartToken.
+func (x *StartTokenScopedUpdateOne) Save(ctx context.Context) (*StartToken, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *StartTokenScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// StartTokenScopedUpdate wraps StartTokenUpdate: a conditional bulk update of one Workspace.
+type StartTokenScopedUpdate struct {
+	s *Scoped
+	b *StartTokenUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the StartToken entities of the Workspace that match the predicates.
+func (t *StartTokenScoped) Update() *StartTokenScopedUpdate {
+	return &StartTokenScopedUpdate{s: t.s, b: t.s.c.StartToken.Update().Where(starttoken.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *StartTokenScopedUpdate) Where(ps ...predicate.StartToken) *StartTokenScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *StartTokenScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *StartTokenScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(starttoken.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *StartTokenScopedUpdate) SetUpdatedAt(v time.Time) *StartTokenScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetUsedAt sets the "used_at" field.
+func (x *StartTokenScopedUpdate) SetUsedAt(v time.Time) *StartTokenScopedUpdate {
+	x.b.SetUsedAt(v)
+	return x
+}
+
+// SetNillableUsedAt sets the "used_at" field if the given value is not nil.
+func (x *StartTokenScopedUpdate) SetNillableUsedAt(v *time.Time) *StartTokenScopedUpdate {
+	x.b.SetNillableUsedAt(v)
+	return x
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (x *StartTokenScopedUpdate) ClearUsedAt() *StartTokenScopedUpdate {
+	x.b.ClearUsedAt()
+	return x
+}
+
+func (x *StartTokenScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
+	}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyVisitor(ctx, m.VisitorIDs()); err != nil {
+		return fmt.Errorf("visitor: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *StartTokenScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *StartTokenScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
 // SuppressionScoped reaches Suppression entities of one Workspace.
 type SuppressionScoped struct{ s *Scoped }
 
@@ -31978,6 +34096,454 @@ func (x *TagScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *TagScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// TrackedLinkScoped reaches TrackedLink entities of one Workspace.
+type TrackedLinkScoped struct{ s *Scoped }
+
+// TrackedLink returns the TrackedLink entities of the Workspace.
+func (s *Scoped) TrackedLink() *TrackedLinkScoped { return &TrackedLinkScoped{s: s} }
+
+// Query returns a TrackedLink query already confined to the Workspace.
+func (t *TrackedLinkScoped) Query() *TrackedLinkQuery {
+	return t.s.c.TrackedLink.Query().Where(trackedlink.WorkspaceID(t.s.ws))
+}
+
+// Get returns the TrackedLink with the id; a row of another Workspace is not found.
+func (t *TrackedLinkScoped) Get(ctx context.Context, id int64) (*TrackedLink, error) {
+	return t.Query().Where(trackedlink.ID(id)).Only(ctx)
+}
+
+// TrackedLinkScopedDeleteOne wraps TrackedLinkDeleteOne.
+type TrackedLinkScopedDeleteOne struct {
+	s *Scoped
+	b *TrackedLinkDeleteOne
+}
+
+// DeleteOneID deletes the TrackedLink with the id; a row of another Workspace is not found.
+func (t *TrackedLinkScoped) DeleteOneID(id int64) *TrackedLinkScopedDeleteOne {
+	return &TrackedLinkScopedDeleteOne{s: t.s, b: t.s.c.TrackedLink.DeleteOneID(id).Where(trackedlink.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *TrackedLinkScopedDeleteOne) Where(ps ...predicate.TrackedLink) *TrackedLinkScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *TrackedLinkScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// TrackedLinkScopedDelete wraps TrackedLinkDelete.
+type TrackedLinkScopedDelete struct {
+	s *Scoped
+	b *TrackedLinkDelete
+}
+
+// Delete deletes the TrackedLink entities of the Workspace that match the predicates.
+func (t *TrackedLinkScoped) Delete() *TrackedLinkScopedDelete {
+	return &TrackedLinkScopedDelete{s: t.s, b: t.s.c.TrackedLink.Delete().Where(trackedlink.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *TrackedLinkScopedDelete) Where(ps ...predicate.TrackedLink) *TrackedLinkScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *TrackedLinkScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// TrackedLinkScopedCreate wraps TrackedLinkCreate. It has no way to name a Workspace.
+type TrackedLinkScopedCreate struct {
+	s *Scoped
+	b *TrackedLinkCreate
+}
+
+// Create starts a TrackedLink in the Workspace.
+func (t *TrackedLinkScoped) Create() *TrackedLinkScopedCreate {
+	return &TrackedLinkScopedCreate{s: t.s, b: t.s.c.TrackedLink.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *TrackedLinkScopedCreate) SetCreatedAt(v time.Time) *TrackedLinkScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *TrackedLinkScopedCreate) SetNillableCreatedAt(v *time.Time) *TrackedLinkScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *TrackedLinkScopedCreate) SetUpdatedAt(v time.Time) *TrackedLinkScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *TrackedLinkScopedCreate) SetNillableUpdatedAt(v *time.Time) *TrackedLinkScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetOutboundMessageID sets the "outbound_message_id" field.
+func (x *TrackedLinkScopedCreate) SetOutboundMessageID(v int64) *TrackedLinkScopedCreate {
+	x.b.SetOutboundMessageID(v)
+	return x
+}
+
+// SetToken sets the "token" field.
+func (x *TrackedLinkScopedCreate) SetToken(v string) *TrackedLinkScopedCreate {
+	x.b.SetToken(v)
+	return x
+}
+
+// SetURL sets the "url" field.
+func (x *TrackedLinkScopedCreate) SetURL(v string) *TrackedLinkScopedCreate {
+	x.b.SetURL(v)
+	return x
+}
+
+// SetOutboundMessage sets the "outbound_message" edge to the OutboundMessage entity.
+func (x *TrackedLinkScopedCreate) SetOutboundMessage(v *OutboundMessage) *TrackedLinkScopedCreate {
+	x.b.SetOutboundMessage(v)
+	return x
+}
+
+func (x *TrackedLinkScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessageIDs()); err != nil {
+		return fmt.Errorf("outbound_message: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the TrackedLink.
+func (x *TrackedLinkScopedCreate) Save(ctx context.Context) (*TrackedLink, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *TrackedLinkScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// TrackedLinkScopedCreateBulk creates several TrackedLink entities of one Workspace at once.
+type TrackedLinkScopedCreateBulk struct {
+	s  *Scoped
+	xs []*TrackedLinkScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *TrackedLinkScoped) CreateBulk(xs ...*TrackedLinkScopedCreate) *TrackedLinkScopedCreateBulk {
+	return &TrackedLinkScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *TrackedLinkScopedCreateBulk) raw(ctx context.Context) (*TrackedLinkCreateBulk, error) {
+	builders := make([]*TrackedLinkCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("TrackedLink: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.TrackedLink.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the TrackedLink entities.
+func (b *TrackedLinkScopedCreateBulk) Save(ctx context.Context) ([]*TrackedLink, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *TrackedLinkScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// TrackedLinkScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type TrackedLinkScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *TrackedLinkScopedUpsert) SetUpdatedAt(v time.Time) *TrackedLinkScopedUpsert {
+	u.u.Set(trackedlink.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *TrackedLinkScopedUpsert) UpdateUpdatedAt() *TrackedLinkScopedUpsert {
+	u.u.SetExcluded(trackedlink.FieldUpdatedAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *TrackedLinkScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(trackedlink.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// TrackedLinkScopedUpsertOne is the "upsert" of one TrackedLink.
+type TrackedLinkScopedUpsertOne struct {
+	x *TrackedLinkScopedCreate
+	u *TrackedLinkUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *TrackedLinkScopedCreate) OnConflictColumns(columns ...string) *TrackedLinkScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *TrackedLinkScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *TrackedLinkScopedUpsertOne {
+	return &TrackedLinkScopedUpsertOne{x: x, u: x.b.OnConflict((&TrackedLinkScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *TrackedLinkScopedUpsertOne) UpdateNewValues() *TrackedLinkScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *TrackedLinkScopedUpsertOne) Ignore() *TrackedLinkScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *TrackedLinkScopedUpsertOne) DoNothing() *TrackedLinkScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *TrackedLinkScopedUpsertOne) Update(set func(*TrackedLinkScopedUpsert)) *TrackedLinkScopedUpsertOne {
+	u.u.Update(func(s *TrackedLinkUpsert) { set(&TrackedLinkScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *TrackedLinkScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *TrackedLinkScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// TrackedLinkScopedUpsertBulk is the "upsert" of several TrackedLink entities.
+type TrackedLinkScopedUpsertBulk struct {
+	b       *TrackedLinkScopedCreateBulk
+	t       *TrackedLinkScoped
+	columns []string
+	opts    []func(*TrackedLinkUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *TrackedLinkScopedCreateBulk) OnConflictColumns(columns ...string) *TrackedLinkScopedUpsertBulk {
+	return &TrackedLinkScopedUpsertBulk{b: b, t: &TrackedLinkScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *TrackedLinkScopedUpsertBulk) UpdateNewValues() *TrackedLinkScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *TrackedLinkUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *TrackedLinkScopedUpsertBulk) Ignore() *TrackedLinkScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *TrackedLinkUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *TrackedLinkScopedUpsertBulk) DoNothing() *TrackedLinkScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *TrackedLinkUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *TrackedLinkScopedUpsertBulk) Update(set func(*TrackedLinkScopedUpsert)) *TrackedLinkScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *TrackedLinkUpsertBulk) {
+		r.Update(func(s *TrackedLinkUpsert) { set(&TrackedLinkScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *TrackedLinkScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// TrackedLinkScopedUpdateOne wraps TrackedLinkUpdateOne. It has no way to move the row to another Workspace.
+type TrackedLinkScopedUpdateOne struct {
+	s *Scoped
+	b *TrackedLinkUpdateOne
+}
+
+// UpdateOneID updates the TrackedLink with the id; a row of another Workspace is not found.
+func (t *TrackedLinkScoped) UpdateOneID(id int64) *TrackedLinkScopedUpdateOne {
+	return &TrackedLinkScopedUpdateOne{s: t.s, b: t.s.c.TrackedLink.UpdateOneID(id).Where(trackedlink.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *TrackedLinkScopedUpdateOne) Where(ps ...predicate.TrackedLink) *TrackedLinkScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *TrackedLinkScopedUpdateOne) SetUpdatedAt(v time.Time) *TrackedLinkScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+func (x *TrackedLinkScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessageIDs()); err != nil {
+		return fmt.Errorf("outbound_message: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the TrackedLink.
+func (x *TrackedLinkScopedUpdateOne) Save(ctx context.Context) (*TrackedLink, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *TrackedLinkScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// TrackedLinkScopedUpdate wraps TrackedLinkUpdate: a conditional bulk update of one Workspace.
+type TrackedLinkScopedUpdate struct {
+	s *Scoped
+	b *TrackedLinkUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the TrackedLink entities of the Workspace that match the predicates.
+func (t *TrackedLinkScoped) Update() *TrackedLinkScopedUpdate {
+	return &TrackedLinkScopedUpdate{s: t.s, b: t.s.c.TrackedLink.Update().Where(trackedlink.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *TrackedLinkScopedUpdate) Where(ps ...predicate.TrackedLink) *TrackedLinkScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *TrackedLinkScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *TrackedLinkScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(trackedlink.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *TrackedLinkScopedUpdate) SetUpdatedAt(v time.Time) *TrackedLinkScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+func (x *TrackedLinkScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessageIDs()); err != nil {
+		return fmt.Errorf("outbound_message: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *TrackedLinkScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *TrackedLinkScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }
@@ -34275,6 +36841,30 @@ func (x *VisitorScopedCreate) SetNillableLastSeenAt(v *time.Time) *VisitorScoped
 	return x
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (x *VisitorScopedCreate) AddBindingIDs(ids ...int64) *VisitorScopedCreate {
+	x.b.AddBindingIDs(ids...)
+	return x
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (x *VisitorScopedCreate) AddBindings(v ...*Binding) *VisitorScopedCreate {
+	x.b.AddBindings(v...)
+	return x
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (x *VisitorScopedCreate) AddStartTokenIDs(ids ...int64) *VisitorScopedCreate {
+	x.b.AddStartTokenIDs(ids...)
+	return x
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (x *VisitorScopedCreate) AddStartTokens(v ...*StartToken) *VisitorScopedCreate {
+	x.b.AddStartTokens(v...)
+	return x
+}
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *VisitorScopedCreate) SetContact(v *Contact) *VisitorScopedCreate {
 	x.b.SetContact(v)
@@ -34284,6 +36874,12 @@ func (x *VisitorScopedCreate) SetContact(v *Contact) *VisitorScopedCreate {
 func (x *VisitorScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyBinding(ctx, m.BindingsIDs()); err != nil {
+		return fmt.Errorf("bindings: %w", err)
+	}
+	if err := x.s.verifyStartToken(ctx, m.StartTokensIDs()); err != nil {
+		return fmt.Errorf("start_tokens: %w", err)
+	}
 	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
 		return fmt.Errorf("contact: %w", err)
 	}
@@ -34594,6 +37190,66 @@ func (x *VisitorScopedUpdateOne) SetNillableLastSeenAt(v *time.Time) *VisitorSco
 	return x
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (x *VisitorScopedUpdateOne) AddBindingIDs(ids ...int64) *VisitorScopedUpdateOne {
+	x.b.AddBindingIDs(ids...)
+	return x
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (x *VisitorScopedUpdateOne) AddBindings(v ...*Binding) *VisitorScopedUpdateOne {
+	x.b.AddBindings(v...)
+	return x
+}
+
+// ClearBindings clears the "bindings" edges to the Binding entity.
+func (x *VisitorScopedUpdateOne) ClearBindings() *VisitorScopedUpdateOne {
+	x.b.ClearBindings()
+	return x
+}
+
+// RemoveBindingIDs removes the "bindings" edge to Binding entities by IDs.
+func (x *VisitorScopedUpdateOne) RemoveBindingIDs(ids ...int64) *VisitorScopedUpdateOne {
+	x.b.RemoveBindingIDs(ids...)
+	return x
+}
+
+// RemoveBindings removes "bindings" edges to Binding entities.
+func (x *VisitorScopedUpdateOne) RemoveBindings(v ...*Binding) *VisitorScopedUpdateOne {
+	x.b.RemoveBindings(v...)
+	return x
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (x *VisitorScopedUpdateOne) AddStartTokenIDs(ids ...int64) *VisitorScopedUpdateOne {
+	x.b.AddStartTokenIDs(ids...)
+	return x
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (x *VisitorScopedUpdateOne) AddStartTokens(v ...*StartToken) *VisitorScopedUpdateOne {
+	x.b.AddStartTokens(v...)
+	return x
+}
+
+// ClearStartTokens clears the "start_tokens" edges to the StartToken entity.
+func (x *VisitorScopedUpdateOne) ClearStartTokens() *VisitorScopedUpdateOne {
+	x.b.ClearStartTokens()
+	return x
+}
+
+// RemoveStartTokenIDs removes the "start_tokens" edge to StartToken entities by IDs.
+func (x *VisitorScopedUpdateOne) RemoveStartTokenIDs(ids ...int64) *VisitorScopedUpdateOne {
+	x.b.RemoveStartTokenIDs(ids...)
+	return x
+}
+
+// RemoveStartTokens removes "start_tokens" edges to StartToken entities.
+func (x *VisitorScopedUpdateOne) RemoveStartTokens(v ...*StartToken) *VisitorScopedUpdateOne {
+	x.b.RemoveStartTokens(v...)
+	return x
+}
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *VisitorScopedUpdateOne) SetContact(v *Contact) *VisitorScopedUpdateOne {
 	x.b.SetContact(v)
@@ -34609,6 +37265,12 @@ func (x *VisitorScopedUpdateOne) ClearContact() *VisitorScopedUpdateOne {
 func (x *VisitorScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyBinding(ctx, m.BindingsIDs()); err != nil {
+		return fmt.Errorf("bindings: %w", err)
+	}
+	if err := x.s.verifyStartToken(ctx, m.StartTokensIDs()); err != nil {
+		return fmt.Errorf("start_tokens: %w", err)
+	}
 	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
 		return fmt.Errorf("contact: %w", err)
 	}
@@ -34713,6 +37375,66 @@ func (x *VisitorScopedUpdate) SetNillableLastSeenAt(v *time.Time) *VisitorScoped
 	return x
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (x *VisitorScopedUpdate) AddBindingIDs(ids ...int64) *VisitorScopedUpdate {
+	x.b.AddBindingIDs(ids...)
+	return x
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (x *VisitorScopedUpdate) AddBindings(v ...*Binding) *VisitorScopedUpdate {
+	x.b.AddBindings(v...)
+	return x
+}
+
+// ClearBindings clears the "bindings" edges to the Binding entity.
+func (x *VisitorScopedUpdate) ClearBindings() *VisitorScopedUpdate {
+	x.b.ClearBindings()
+	return x
+}
+
+// RemoveBindingIDs removes the "bindings" edge to Binding entities by IDs.
+func (x *VisitorScopedUpdate) RemoveBindingIDs(ids ...int64) *VisitorScopedUpdate {
+	x.b.RemoveBindingIDs(ids...)
+	return x
+}
+
+// RemoveBindings removes "bindings" edges to Binding entities.
+func (x *VisitorScopedUpdate) RemoveBindings(v ...*Binding) *VisitorScopedUpdate {
+	x.b.RemoveBindings(v...)
+	return x
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (x *VisitorScopedUpdate) AddStartTokenIDs(ids ...int64) *VisitorScopedUpdate {
+	x.b.AddStartTokenIDs(ids...)
+	return x
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (x *VisitorScopedUpdate) AddStartTokens(v ...*StartToken) *VisitorScopedUpdate {
+	x.b.AddStartTokens(v...)
+	return x
+}
+
+// ClearStartTokens clears the "start_tokens" edges to the StartToken entity.
+func (x *VisitorScopedUpdate) ClearStartTokens() *VisitorScopedUpdate {
+	x.b.ClearStartTokens()
+	return x
+}
+
+// RemoveStartTokenIDs removes the "start_tokens" edge to StartToken entities by IDs.
+func (x *VisitorScopedUpdate) RemoveStartTokenIDs(ids ...int64) *VisitorScopedUpdate {
+	x.b.RemoveStartTokenIDs(ids...)
+	return x
+}
+
+// RemoveStartTokens removes "start_tokens" edges to StartToken entities.
+func (x *VisitorScopedUpdate) RemoveStartTokens(v ...*StartToken) *VisitorScopedUpdate {
+	x.b.RemoveStartTokens(v...)
+	return x
+}
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *VisitorScopedUpdate) SetContact(v *Contact) *VisitorScopedUpdate {
 	x.b.SetContact(v)
@@ -34728,6 +37450,12 @@ func (x *VisitorScopedUpdate) ClearContact() *VisitorScopedUpdate {
 func (x *VisitorScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyBinding(ctx, m.BindingsIDs()); err != nil {
+		return fmt.Errorf("bindings: %w", err)
+	}
+	if err := x.s.verifyStartToken(ctx, m.StartTokensIDs()); err != nil {
+		return fmt.Errorf("start_tokens: %w", err)
+	}
 	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
 		return fmt.Errorf("contact: %w", err)
 	}

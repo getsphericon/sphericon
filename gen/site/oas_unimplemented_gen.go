@@ -417,9 +417,10 @@ func (UnimplementedHandler) SiteAutomationsList(ctx context.Context, params Site
 // SiteAutomationsPublish implements SiteAutomations_publish operation.
 //
 // Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
-// draft, the live version is resumed. 422 with neither. 409 when the version going live has an email
-// step and the integration it sends through cannot send (disabled or archived, or no default): a draft
-// may name such an integration, only publishing it is refused.
+// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
+// live sends through an integration that cannot send (disabled, archived, of another channel, or no
+// default for the step's channel): a draft may name such an integration, only publishing it is
+// refused.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/publish
 func (UnimplementedHandler) SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (r SiteAutomationsPublishRes, _ error) {
@@ -566,9 +567,11 @@ func (UnimplementedHandler) SiteBroadcastsSend(ctx context.Context, params SiteB
 
 // SiteBroadcastsTestSend implements SiteBroadcasts_testSend operation.
 //
-// Send a one-off rendered preview to a single address. While the Workspace has no verified Sending
-// domain it goes from the System sender and only to the asking User's own address (ADR 0041): another
-// address is refused with 422, the System sender's caps answer 429.
+// Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram has
+// no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram broadcast is a
+// 422. While the Workspace has no verified Sending domain it goes from the System sender and only to
+// the asking User's own address (ADR 0041): another address is refused with 422, the System sender's
+// caps answer 429.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
 func (UnimplementedHandler) SiteBroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (r SiteBroadcastsTestSendRes, _ error) {
@@ -848,7 +851,8 @@ func (UnimplementedHandler) SiteInstanceGetRelease(ctx context.Context) (r SiteI
 //
 // Archive an integration: it leaves the list and gives up the default, and can be restored (it does
 // not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-// email automation through the default, uses it. Owners and admins only.
+// email automation through the default, uses it. A Telegram integration's webhook is removed, best
+// effort. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/archive
 func (UnimplementedHandler) SiteIntegrationsArchive(ctx context.Context, params SiteIntegrationsArchiveParams) (r SiteIntegrationsArchiveRes, _ error) {
@@ -885,7 +889,8 @@ func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params Sit
 
 // SiteIntegrationsRegenerateKey implements SiteIntegrations_regenerateKey operation.
 //
-// Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.
+// Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
+// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (r SiteIntegrationsRegenerateKeyRes, _ error) {
@@ -895,7 +900,9 @@ func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, p
 // SiteIntegrationsUnarchive implements SiteIntegrations_unarchive operation.
 //
 // Restore an archived integration to the list. It is not the default; promote it with an update.
-// Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.
+// Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram
+// integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins
+// only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/unarchive
 func (UnimplementedHandler) SiteIntegrationsUnarchive(ctx context.Context, params SiteIntegrationsUnarchiveParams) (r SiteIntegrationsUnarchiveRes, _ error) {
@@ -1682,6 +1689,24 @@ func (UnimplementedHandler) SiteTagsListForContact(ctx context.Context, params S
 //
 // DELETE /workspaces/{workspaceId}/contacts/{contactId}/tags/{name}
 func (UnimplementedHandler) SiteTagsRemove(ctx context.Context, params SiteTagsRemoveParams) (r SiteTagsRemoveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteTelegramIssueStartLink implements SiteTelegram_issueStartLink operation.
+//
+// Issue a Telegram start link for a contact. Each call issues a new link.
+//
+// POST /workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links
+func (UnimplementedHandler) SiteTelegramIssueStartLink(ctx context.Context, req *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (r SiteTelegramIssueStartLinkRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteTelegramListBindings implements SiteTelegram_listBindings operation.
+//
+// List the Telegram chats a contact is reached through.
+//
+// GET /workspaces/{workspaceId}/contacts/{contactId}/bindings
+func (UnimplementedHandler) SiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) (r SiteTelegramListBindingsRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

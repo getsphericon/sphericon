@@ -1529,7 +1529,8 @@ type AutomationPeriodResults struct {
 	Completed int32 `json:"completed"`
 	// Enrollments that ended in it because their goal event was recorded.
 	GoalReached int32 `json:"goalReached"`
-	// Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event.
+	// Enrollments that left early in it: an unsubscribe from the automation or an exit event. A skipped
+	// send (no address, an opt-out from the Channel, a suppression) moves on instead.
 	Exited int32 `json:"exited"`
 	// Enrollments that ended in it on a step that failed.
 	Failed int32 `json:"failed"`
@@ -1659,6 +1660,9 @@ type AutomationReport struct {
 	Links []LinkClicks `json:"links"`
 	// What the automation's enrollments did over the chosen period and the period before it.
 	Results AutomationResults `json:"results"`
+	// The send steps' messages by step position, in step order: one entry per position any of the
+	// automation's messages was sent from, across its versions.
+	Steps []AutomationStepFigures `json:"steps"`
 }
 
 // GetOpens returns the value of Opens.
@@ -1706,6 +1710,11 @@ func (s *AutomationReport) GetResults() AutomationResults {
 	return s.Results
 }
 
+// GetSteps returns the value of Steps.
+func (s *AutomationReport) GetSteps() []AutomationStepFigures {
+	return s.Steps
+}
+
 // SetOpens sets the value of Opens.
 func (s *AutomationReport) SetOpens(val int32) {
 	s.Opens = val
@@ -1749,6 +1758,11 @@ func (s *AutomationReport) SetLinks(val []LinkClicks) {
 // SetResults sets the value of Results.
 func (s *AutomationReport) SetResults(val AutomationResults) {
 	s.Results = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *AutomationReport) SetSteps(val []AutomationStepFigures) {
+	s.Steps = val
 }
 
 func (*AutomationReport) automationsReportRes() {}
@@ -1986,7 +2000,8 @@ type AutomationResultsPoint struct {
 	Completed int32 `json:"completed"`
 	// Enrollments that ended in it because their goal event was recorded.
 	GoalReached int32 `json:"goalReached"`
-	// Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event.
+	// Enrollments that left early in it: an unsubscribe from the automation or an exit event. A skipped
+	// send (no address, an opt-out from the Channel, a suppression) moves on instead.
 	Exited int32 `json:"exited"`
 	// Enrollments that ended in it on a step that failed.
 	Failed int32 `json:"failed"`
@@ -2135,6 +2150,26 @@ type AutomationStep struct {
 	ClearSecret OptBool `json:"clearSecret"`
 	// Whether a signing secret is stored (HTTP steps, read only).
 	HasSecret OptBool `json:"hasSecret"`
+	// The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or
+	// omitted is that Channel's default. Each send step names its own, so one automation may send through
+	// several (ADR 0081).
+	IntegrationId OptNilEntityId `json:"integrationId"`
+	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
+	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
+	// escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer
+	// one is refused.
+	Text OptString `json:"text"`
+	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
+	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
+	UnsubscribeButton OptString `json:"unsubscribeButton"`
+	// An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text
+	// message.
+	ImageUrl OptString `json:"imageUrl"`
+	// Up to 8 link buttons under a Telegram step's message, one per row, in order.
+	Buttons []TelegramButton `json:"buttons"`
+	// Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an
+	// image.
+	LinkPreview OptBool `json:"linkPreview"`
 }
 
 // GetType returns the value of Type.
@@ -2202,6 +2237,36 @@ func (s *AutomationStep) GetHasSecret() OptBool {
 	return s.HasSecret
 }
 
+// GetIntegrationId returns the value of IntegrationId.
+func (s *AutomationStep) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// GetText returns the value of Text.
+func (s *AutomationStep) GetText() OptString {
+	return s.Text
+}
+
+// GetUnsubscribeButton returns the value of UnsubscribeButton.
+func (s *AutomationStep) GetUnsubscribeButton() OptString {
+	return s.UnsubscribeButton
+}
+
+// GetImageUrl returns the value of ImageUrl.
+func (s *AutomationStep) GetImageUrl() OptString {
+	return s.ImageUrl
+}
+
+// GetButtons returns the value of Buttons.
+func (s *AutomationStep) GetButtons() []TelegramButton {
+	return s.Buttons
+}
+
+// GetLinkPreview returns the value of LinkPreview.
+func (s *AutomationStep) GetLinkPreview() OptBool {
+	return s.LinkPreview
+}
+
 // SetType sets the value of Type.
 func (s *AutomationStep) SetType(val AutomationStepType) {
 	s.Type = val
@@ -2267,12 +2332,85 @@ func (s *AutomationStep) SetHasSecret(val OptBool) {
 	s.HasSecret = val
 }
 
+// SetIntegrationId sets the value of IntegrationId.
+func (s *AutomationStep) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+// SetText sets the value of Text.
+func (s *AutomationStep) SetText(val OptString) {
+	s.Text = val
+}
+
+// SetUnsubscribeButton sets the value of UnsubscribeButton.
+func (s *AutomationStep) SetUnsubscribeButton(val OptString) {
+	s.UnsubscribeButton = val
+}
+
+// SetImageUrl sets the value of ImageUrl.
+func (s *AutomationStep) SetImageUrl(val OptString) {
+	s.ImageUrl = val
+}
+
+// SetButtons sets the value of Buttons.
+func (s *AutomationStep) SetButtons(val []TelegramButton) {
+	s.Buttons = val
+}
+
+// SetLinkPreview sets the value of LinkPreview.
+func (s *AutomationStep) SetLinkPreview(val OptBool) {
+	s.LinkPreview = val
+}
+
+// The messages of the send step at one position.
+// Ref: #/components/schemas/AutomationStepFigures
+type AutomationStepFigures struct {
+	// The step's position, 0 for the first step.
+	Step int32 `json:"step"`
+	// Messages the provider accepted.
+	Sent int32 `json:"sent"`
+	// Messages skipped: the contact had no address on the step's Channel, had opted out of it, or was
+	// suppressed. The enrollment moved on to the next step.
+	Skipped int32 `json:"skipped"`
+}
+
+// GetStep returns the value of Step.
+func (s *AutomationStepFigures) GetStep() int32 {
+	return s.Step
+}
+
+// GetSent returns the value of Sent.
+func (s *AutomationStepFigures) GetSent() int32 {
+	return s.Sent
+}
+
+// GetSkipped returns the value of Skipped.
+func (s *AutomationStepFigures) GetSkipped() int32 {
+	return s.Skipped
+}
+
+// SetStep sets the value of Step.
+func (s *AutomationStepFigures) SetStep(val int32) {
+	s.Step = val
+}
+
+// SetSent sets the value of Sent.
+func (s *AutomationStepFigures) SetSent(val int32) {
+	s.Sent = val
+}
+
+// SetSkipped sets the value of Skipped.
+func (s *AutomationStepFigures) SetSkipped(val int32) {
+	s.Skipped = val
+}
+
 // Kind of automation step.
 // Ref: #/components/schemas/AutomationStepType
 type AutomationStepType string
 
 const (
 	AutomationStepTypeEmail     AutomationStepType = "email"
+	AutomationStepTypeTelegram  AutomationStepType = "telegram"
 	AutomationStepTypeWait      AutomationStepType = "wait"
 	AutomationStepTypeApplyTag  AutomationStepType = "apply_tag"
 	AutomationStepTypeRemoveTag AutomationStepType = "remove_tag"
@@ -2283,6 +2421,7 @@ const (
 func (AutomationStepType) AllValues() []AutomationStepType {
 	return []AutomationStepType{
 		AutomationStepTypeEmail,
+		AutomationStepTypeTelegram,
 		AutomationStepTypeWait,
 		AutomationStepTypeApplyTag,
 		AutomationStepTypeRemoveTag,
@@ -2294,6 +2433,8 @@ func (AutomationStepType) AllValues() []AutomationStepType {
 func (s AutomationStepType) MarshalText() ([]byte, error) {
 	switch s {
 	case AutomationStepTypeEmail:
+		return []byte(s), nil
+	case AutomationStepTypeTelegram:
 		return []byte(s), nil
 	case AutomationStepTypeWait:
 		return []byte(s), nil
@@ -2313,6 +2454,9 @@ func (s *AutomationStepType) UnmarshalText(data []byte) error {
 	switch AutomationStepType(data) {
 	case AutomationStepTypeEmail:
 		*s = AutomationStepTypeEmail
+		return nil
+	case AutomationStepTypeTelegram:
+		*s = AutomationStepTypeTelegram
 		return nil
 	case AutomationStepTypeWait:
 		*s = AutomationStepTypeWait
@@ -2344,8 +2488,6 @@ type AutomationVersion struct {
 	// Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null when
 	// there is none.
 	GoalEvent NilString `json:"goalEvent"`
-	// Sending integration of the email steps; null means the workspace default.
-	IntegrationId OptNilEntityId `json:"integrationId"`
 	// The ordered, linear steps.
 	Steps []AutomationStep `json:"steps"`
 }
@@ -2368,11 +2510,6 @@ func (s *AutomationVersion) GetExitEvents() []string {
 // GetGoalEvent returns the value of GoalEvent.
 func (s *AutomationVersion) GetGoalEvent() NilString {
 	return s.GoalEvent
-}
-
-// GetIntegrationId returns the value of IntegrationId.
-func (s *AutomationVersion) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
 }
 
 // GetSteps returns the value of Steps.
@@ -2398,11 +2535,6 @@ func (s *AutomationVersion) SetExitEvents(val []string) {
 // SetGoalEvent sets the value of GoalEvent.
 func (s *AutomationVersion) SetGoalEvent(val NilString) {
 	s.GoalEvent = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *AutomationVersion) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
 }
 
 // SetSteps sets the value of Steps.
@@ -2926,7 +3058,222 @@ func (s *BrandKitResource) SetUpdatedAt(val OptNilTimestamp) {
 
 func (*BrandKitResource) brandKitGetRes() {}
 
-// Delivery report of a broadcast.
+// The Channel a Broadcast sends on, fixed when it is created (ADR 0080).
+// Ref: #/components/schemas/BroadcastChannel
+type BroadcastChannel string
+
+const (
+	BroadcastChannelEmail    BroadcastChannel = "email"
+	BroadcastChannelTelegram BroadcastChannel = "telegram"
+)
+
+// AllValues returns all BroadcastChannel values.
+func (BroadcastChannel) AllValues() []BroadcastChannel {
+	return []BroadcastChannel{
+		BroadcastChannelEmail,
+		BroadcastChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BroadcastChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case BroadcastChannelEmail:
+		return []byte(s), nil
+	case BroadcastChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BroadcastChannel) UnmarshalText(data []byte) error {
+	switch BroadcastChannel(data) {
+	case BroadcastChannelEmail:
+		*s = BroadcastChannelEmail
+		return nil
+	case BroadcastChannelTelegram:
+		*s = BroadcastChannelTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078).
+// Ref: #/components/schemas/BroadcastContent
+type BroadcastContent struct {
+	OneOf BroadcastContentSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *BroadcastContent) GetOneOf() BroadcastContentSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *BroadcastContent) SetOneOf(val BroadcastContentSum) {
+	s.OneOf = val
+}
+
+// What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078).
+// Ref: #/components/schemas/BroadcastContentInput
+type BroadcastContentInput struct {
+	OneOf BroadcastContentInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *BroadcastContentInput) GetOneOf() BroadcastContentInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *BroadcastContentInput) SetOneOf(val BroadcastContentInputSum) {
+	s.OneOf = val
+}
+
+// BroadcastContentInputSum represents sum type.
+type BroadcastContentInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                          BroadcastContentInputSumType
+	EmailBroadcastContentInput    EmailBroadcastContentInput
+	TelegramBroadcastContentInput TelegramBroadcastContentInput
+}
+
+// BroadcastContentInputSumType is oneOf type of BroadcastContentInputSum.
+type BroadcastContentInputSumType string
+
+// Possible values for BroadcastContentInputSumType.
+const (
+	EmailBroadcastContentInputBroadcastContentInputSum    BroadcastContentInputSumType = "email"
+	TelegramBroadcastContentInputBroadcastContentInputSum BroadcastContentInputSumType = "telegram"
+)
+
+// IsEmailBroadcastContentInput reports whether BroadcastContentInputSum is EmailBroadcastContentInput.
+func (s BroadcastContentInputSum) IsEmailBroadcastContentInput() bool {
+	return s.Type == EmailBroadcastContentInputBroadcastContentInputSum
+}
+
+// IsTelegramBroadcastContentInput reports whether BroadcastContentInputSum is TelegramBroadcastContentInput.
+func (s BroadcastContentInputSum) IsTelegramBroadcastContentInput() bool {
+	return s.Type == TelegramBroadcastContentInputBroadcastContentInputSum
+}
+
+// SetEmailBroadcastContentInput sets BroadcastContentInputSum to EmailBroadcastContentInput.
+func (s *BroadcastContentInputSum) SetEmailBroadcastContentInput(v EmailBroadcastContentInput) {
+	s.Type = EmailBroadcastContentInputBroadcastContentInputSum
+	s.EmailBroadcastContentInput = v
+}
+
+// GetEmailBroadcastContentInput returns EmailBroadcastContentInput and true boolean if BroadcastContentInputSum is EmailBroadcastContentInput.
+func (s BroadcastContentInputSum) GetEmailBroadcastContentInput() (v EmailBroadcastContentInput, ok bool) {
+	if !s.IsEmailBroadcastContentInput() {
+		return v, false
+	}
+	return s.EmailBroadcastContentInput, true
+}
+
+// NewEmailBroadcastContentInputBroadcastContentInputSum returns new BroadcastContentInputSum from EmailBroadcastContentInput.
+func NewEmailBroadcastContentInputBroadcastContentInputSum(v EmailBroadcastContentInput) BroadcastContentInputSum {
+	var s BroadcastContentInputSum
+	s.SetEmailBroadcastContentInput(v)
+	return s
+}
+
+// SetTelegramBroadcastContentInput sets BroadcastContentInputSum to TelegramBroadcastContentInput.
+func (s *BroadcastContentInputSum) SetTelegramBroadcastContentInput(v TelegramBroadcastContentInput) {
+	s.Type = TelegramBroadcastContentInputBroadcastContentInputSum
+	s.TelegramBroadcastContentInput = v
+}
+
+// GetTelegramBroadcastContentInput returns TelegramBroadcastContentInput and true boolean if BroadcastContentInputSum is TelegramBroadcastContentInput.
+func (s BroadcastContentInputSum) GetTelegramBroadcastContentInput() (v TelegramBroadcastContentInput, ok bool) {
+	if !s.IsTelegramBroadcastContentInput() {
+		return v, false
+	}
+	return s.TelegramBroadcastContentInput, true
+}
+
+// NewTelegramBroadcastContentInputBroadcastContentInputSum returns new BroadcastContentInputSum from TelegramBroadcastContentInput.
+func NewTelegramBroadcastContentInputBroadcastContentInputSum(v TelegramBroadcastContentInput) BroadcastContentInputSum {
+	var s BroadcastContentInputSum
+	s.SetTelegramBroadcastContentInput(v)
+	return s
+}
+
+// BroadcastContentSum represents sum type.
+type BroadcastContentSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                     BroadcastContentSumType
+	EmailBroadcastContent    EmailBroadcastContent
+	TelegramBroadcastContent TelegramBroadcastContent
+}
+
+// BroadcastContentSumType is oneOf type of BroadcastContentSum.
+type BroadcastContentSumType string
+
+// Possible values for BroadcastContentSumType.
+const (
+	EmailBroadcastContentBroadcastContentSum    BroadcastContentSumType = "email"
+	TelegramBroadcastContentBroadcastContentSum BroadcastContentSumType = "telegram"
+)
+
+// IsEmailBroadcastContent reports whether BroadcastContentSum is EmailBroadcastContent.
+func (s BroadcastContentSum) IsEmailBroadcastContent() bool {
+	return s.Type == EmailBroadcastContentBroadcastContentSum
+}
+
+// IsTelegramBroadcastContent reports whether BroadcastContentSum is TelegramBroadcastContent.
+func (s BroadcastContentSum) IsTelegramBroadcastContent() bool {
+	return s.Type == TelegramBroadcastContentBroadcastContentSum
+}
+
+// SetEmailBroadcastContent sets BroadcastContentSum to EmailBroadcastContent.
+func (s *BroadcastContentSum) SetEmailBroadcastContent(v EmailBroadcastContent) {
+	s.Type = EmailBroadcastContentBroadcastContentSum
+	s.EmailBroadcastContent = v
+}
+
+// GetEmailBroadcastContent returns EmailBroadcastContent and true boolean if BroadcastContentSum is EmailBroadcastContent.
+func (s BroadcastContentSum) GetEmailBroadcastContent() (v EmailBroadcastContent, ok bool) {
+	if !s.IsEmailBroadcastContent() {
+		return v, false
+	}
+	return s.EmailBroadcastContent, true
+}
+
+// NewEmailBroadcastContentBroadcastContentSum returns new BroadcastContentSum from EmailBroadcastContent.
+func NewEmailBroadcastContentBroadcastContentSum(v EmailBroadcastContent) BroadcastContentSum {
+	var s BroadcastContentSum
+	s.SetEmailBroadcastContent(v)
+	return s
+}
+
+// SetTelegramBroadcastContent sets BroadcastContentSum to TelegramBroadcastContent.
+func (s *BroadcastContentSum) SetTelegramBroadcastContent(v TelegramBroadcastContent) {
+	s.Type = TelegramBroadcastContentBroadcastContentSum
+	s.TelegramBroadcastContent = v
+}
+
+// GetTelegramBroadcastContent returns TelegramBroadcastContent and true boolean if BroadcastContentSum is TelegramBroadcastContent.
+func (s BroadcastContentSum) GetTelegramBroadcastContent() (v TelegramBroadcastContent, ok bool) {
+	if !s.IsTelegramBroadcastContent() {
+		return v, false
+	}
+	return s.TelegramBroadcastContent, true
+}
+
+// NewTelegramBroadcastContentBroadcastContentSum returns new BroadcastContentSum from TelegramBroadcastContent.
+func NewTelegramBroadcastContentBroadcastContentSum(v TelegramBroadcastContent) BroadcastContentSum {
+	var s BroadcastContentSum
+	s.SetTelegramBroadcastContent(v)
+	return s
+}
+
+// Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does not
+// report is null, never zero: Telegram reports no delivered, opened, bounced or complained count and
+// so no open rate.
 // Ref: #/components/schemas/BroadcastReport
 type BroadcastReport struct {
 	// Lifecycle status.
@@ -2935,28 +3282,34 @@ type BroadcastReport struct {
 	HoldReason OptNilHoldReason `json:"holdReason"`
 	// Recipients the broadcast targets.
 	RecipientsTotal int32 `json:"recipientsTotal"`
-	// Messages handed to the email provider.
+	// Messages handed to the provider.
 	SentCount int32 `json:"sentCount"`
-	// Recipients skipped at send time (unsubscribed or suppressed after planning).
+	// Recipients skipped at send time (no destination any more, unsubscribed or suppressed after planning).
 	SkippedCount int32 `json:"skippedCount"`
 	// Messages that failed to send.
 	FailedCount int32 `json:"failedCount"`
-	// Recipients that opened the email.
-	OpenedCount int32 `json:"openedCount"`
+	// Recipients whose send has not ended yet.
+	PendingCount int32 `json:"pendingCount"`
+	// Recipients that opened the email; null on a Channel that cannot tell.
+	OpenedCount NilInt32 `json:"openedCount"`
 	// Recipients that clicked a link.
 	ClickedCount int32 `json:"clickedCount"`
 	// Recipients that unsubscribed via this broadcast.
 	UnsubscribedCount int32 `json:"unsubscribedCount"`
-	// Messages the provider reported delivered, read from the delivery result stamped on each message.
-	DeliveredCount int32 `json:"deliveredCount"`
-	// Messages the provider reported bounced, read from the delivery result stamped on each message.
-	BouncedCount int32 `json:"bouncedCount"`
-	// Messages a recipient complained about, read from the delivery result stamped on each message.
-	ComplainedCount int32 `json:"complainedCount"`
-	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too.
-	CapturedCount int32 `json:"capturedCount"`
-	// Unique opens ÷ messages sent (0-1).
-	OpenRate float32 `json:"openRate"`
+	// Messages the provider reported delivered, read from the delivery result stamped on each message;
+	// null on a Channel whose provider reports none.
+	DeliveredCount NilInt32 `json:"deliveredCount"`
+	// Messages the provider reported bounced, read from the delivery result stamped on each message; null
+	// on a Channel whose provider reports none.
+	BouncedCount NilInt32 `json:"bouncedCount"`
+	// Messages a recipient complained about, read from the delivery result stamped on each message; null
+	// on a Channel whose provider reports none.
+	ComplainedCount NilInt32 `json:"complainedCount"`
+	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too. Null
+	// off email.
+	CapturedCount NilInt32 `json:"capturedCount"`
+	// Unique opens ÷ messages sent (0-1); null on a Channel that reports no opens.
+	OpenRate NilFloat32 `json:"openRate"`
 	// Unique clicks ÷ messages sent (0-1).
 	ClickRate float32 `json:"clickRate"`
 }
@@ -2991,8 +3344,13 @@ func (s *BroadcastReport) GetFailedCount() int32 {
 	return s.FailedCount
 }
 
+// GetPendingCount returns the value of PendingCount.
+func (s *BroadcastReport) GetPendingCount() int32 {
+	return s.PendingCount
+}
+
 // GetOpenedCount returns the value of OpenedCount.
-func (s *BroadcastReport) GetOpenedCount() int32 {
+func (s *BroadcastReport) GetOpenedCount() NilInt32 {
 	return s.OpenedCount
 }
 
@@ -3007,27 +3365,27 @@ func (s *BroadcastReport) GetUnsubscribedCount() int32 {
 }
 
 // GetDeliveredCount returns the value of DeliveredCount.
-func (s *BroadcastReport) GetDeliveredCount() int32 {
+func (s *BroadcastReport) GetDeliveredCount() NilInt32 {
 	return s.DeliveredCount
 }
 
 // GetBouncedCount returns the value of BouncedCount.
-func (s *BroadcastReport) GetBouncedCount() int32 {
+func (s *BroadcastReport) GetBouncedCount() NilInt32 {
 	return s.BouncedCount
 }
 
 // GetComplainedCount returns the value of ComplainedCount.
-func (s *BroadcastReport) GetComplainedCount() int32 {
+func (s *BroadcastReport) GetComplainedCount() NilInt32 {
 	return s.ComplainedCount
 }
 
 // GetCapturedCount returns the value of CapturedCount.
-func (s *BroadcastReport) GetCapturedCount() int32 {
+func (s *BroadcastReport) GetCapturedCount() NilInt32 {
 	return s.CapturedCount
 }
 
 // GetOpenRate returns the value of OpenRate.
-func (s *BroadcastReport) GetOpenRate() float32 {
+func (s *BroadcastReport) GetOpenRate() NilFloat32 {
 	return s.OpenRate
 }
 
@@ -3066,8 +3424,13 @@ func (s *BroadcastReport) SetFailedCount(val int32) {
 	s.FailedCount = val
 }
 
+// SetPendingCount sets the value of PendingCount.
+func (s *BroadcastReport) SetPendingCount(val int32) {
+	s.PendingCount = val
+}
+
 // SetOpenedCount sets the value of OpenedCount.
-func (s *BroadcastReport) SetOpenedCount(val int32) {
+func (s *BroadcastReport) SetOpenedCount(val NilInt32) {
 	s.OpenedCount = val
 }
 
@@ -3082,27 +3445,27 @@ func (s *BroadcastReport) SetUnsubscribedCount(val int32) {
 }
 
 // SetDeliveredCount sets the value of DeliveredCount.
-func (s *BroadcastReport) SetDeliveredCount(val int32) {
+func (s *BroadcastReport) SetDeliveredCount(val NilInt32) {
 	s.DeliveredCount = val
 }
 
 // SetBouncedCount sets the value of BouncedCount.
-func (s *BroadcastReport) SetBouncedCount(val int32) {
+func (s *BroadcastReport) SetBouncedCount(val NilInt32) {
 	s.BouncedCount = val
 }
 
 // SetComplainedCount sets the value of ComplainedCount.
-func (s *BroadcastReport) SetComplainedCount(val int32) {
+func (s *BroadcastReport) SetComplainedCount(val NilInt32) {
 	s.ComplainedCount = val
 }
 
 // SetCapturedCount sets the value of CapturedCount.
-func (s *BroadcastReport) SetCapturedCount(val int32) {
+func (s *BroadcastReport) SetCapturedCount(val NilInt32) {
 	s.CapturedCount = val
 }
 
 // SetOpenRate sets the value of OpenRate.
-func (s *BroadcastReport) SetOpenRate(val float32) {
+func (s *BroadcastReport) SetOpenRate(val NilFloat32) {
 	s.OpenRate = val
 }
 
@@ -3120,18 +3483,10 @@ type BroadcastResource struct {
 	ID EntityId `json:"id"`
 	// Internal broadcast name.
 	Name string `json:"name"`
-	// Email subject line.
-	Subject string `json:"subject"`
-	// Sender display name (defaults to the integration's).
-	FromName OptNilString `json:"fromName"`
-	// Sender email address (defaults to the integration's).
-	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// HTML body with Liquid merge tags.
-	Body string `json:"body"`
-	// The editor's JSON document the body was built from; null when the body was written as HTML.
-	Doc OptNilEditorDocument `json:"doc"`
-	// Version of the editor that rendered the document; null with it.
-	EditorVersion OptNilString `json:"editorVersion"`
+	// The Channel the broadcast sends on, fixed when it was created.
+	Channel BroadcastChannel `json:"channel"`
+	// What the broadcast says, in the shape of its Channel.
+	Content BroadcastContent `json:"content"`
 	// Segment this broadcast goes to; null means all contacts. Once the broadcast leaves draft it holds a
 	// copy of the segment's condition taken then, and this names the segment only as where its audience
 	// came from.
@@ -3162,34 +3517,14 @@ func (s *BroadcastResource) GetName() string {
 	return s.Name
 }
 
-// GetSubject returns the value of Subject.
-func (s *BroadcastResource) GetSubject() string {
-	return s.Subject
+// GetChannel returns the value of Channel.
+func (s *BroadcastResource) GetChannel() BroadcastChannel {
+	return s.Channel
 }
 
-// GetFromName returns the value of FromName.
-func (s *BroadcastResource) GetFromName() OptNilString {
-	return s.FromName
-}
-
-// GetFromEmail returns the value of FromEmail.
-func (s *BroadcastResource) GetFromEmail() OptNilEmailAddress {
-	return s.FromEmail
-}
-
-// GetBody returns the value of Body.
-func (s *BroadcastResource) GetBody() string {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *BroadcastResource) GetDoc() OptNilEditorDocument {
-	return s.Doc
-}
-
-// GetEditorVersion returns the value of EditorVersion.
-func (s *BroadcastResource) GetEditorVersion() OptNilString {
-	return s.EditorVersion
+// GetContent returns the value of Content.
+func (s *BroadcastResource) GetContent() BroadcastContent {
+	return s.Content
 }
 
 // GetSegmentId returns the value of SegmentId.
@@ -3242,34 +3577,14 @@ func (s *BroadcastResource) SetName(val string) {
 	s.Name = val
 }
 
-// SetSubject sets the value of Subject.
-func (s *BroadcastResource) SetSubject(val string) {
-	s.Subject = val
+// SetChannel sets the value of Channel.
+func (s *BroadcastResource) SetChannel(val BroadcastChannel) {
+	s.Channel = val
 }
 
-// SetFromName sets the value of FromName.
-func (s *BroadcastResource) SetFromName(val OptNilString) {
-	s.FromName = val
-}
-
-// SetFromEmail sets the value of FromEmail.
-func (s *BroadcastResource) SetFromEmail(val OptNilEmailAddress) {
-	s.FromEmail = val
-}
-
-// SetBody sets the value of Body.
-func (s *BroadcastResource) SetBody(val string) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *BroadcastResource) SetDoc(val OptNilEditorDocument) {
-	s.Doc = val
-}
-
-// SetEditorVersion sets the value of EditorVersion.
-func (s *BroadcastResource) SetEditorVersion(val OptNilString) {
-	s.EditorVersion = val
+// SetContent sets the value of Content.
+func (s *BroadcastResource) SetContent(val BroadcastContent) {
+	s.Content = val
 }
 
 // SetSegmentId sets the value of SegmentId.
@@ -4790,7 +5105,8 @@ func (s *ConditionGroupKind) UnmarshalText(data []byte) error {
 type ConditionLeaf struct {
 	Kind ConditionLeafKind `json:"kind"`
 	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone,
-	// country, locale, city), "tag", "custom:" for a custom field of the workspace, or "trigger:" (a
+	// country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a
+	// Visitor; the value is ignored), "custom:" for a custom field of the workspace, or "trigger:" (a
 	// property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the text
 	// operators, and is false when the Event lacks the key or holds a value that is not text; a number
 	// property is compared by a number leaf).
@@ -5216,9 +5532,9 @@ func (s *ConditionNumberOperator) UnmarshalText(data []byte) error {
 }
 
 // What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and notNull;
-// the tag field takes has and doesNotHave; a custom field takes the operators of its type, which the
-// custom field lists as `ruleOperators` (a number custom field is also compared by a number leaf, a
-// datetime one tested by the date leaves).
+// the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its
+// type, which the custom field lists as `ruleOperators` (a number custom field is also compared by a
+// number leaf, a datetime one tested by the date leaves).
 // Ref: #/components/schemas/ConditionOperator
 type ConditionOperator string
 
@@ -5297,6 +5613,49 @@ func (s *ConditionOperator) UnmarshalText(data []byte) error {
 		return nil
 	case ConditionOperatorDoesNotHave:
 		*s = ConditionOperatorDoesNotHave
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Channel a destination can be suppressed or opt out on.
+// Ref: #/components/schemas/ConsentChannel
+type ConsentChannel string
+
+const (
+	ConsentChannelEmail    ConsentChannel = "email"
+	ConsentChannelTelegram ConsentChannel = "telegram"
+)
+
+// AllValues returns all ConsentChannel values.
+func (ConsentChannel) AllValues() []ConsentChannel {
+	return []ConsentChannel{
+		ConsentChannelEmail,
+		ConsentChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConsentChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case ConsentChannelEmail:
+		return []byte(s), nil
+	case ConsentChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConsentChannel) UnmarshalText(data []byte) error {
+	switch ConsentChannel(data) {
+	case ConsentChannelEmail:
+		*s = ConsentChannelEmail
+		return nil
+	case ConsentChannelTelegram:
+		*s = ConsentChannelTelegram
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -7094,8 +7453,6 @@ type CreateAutomationInput struct {
 	// exit event. Null or omitted is none.
 	GoalEvent OptNilString     `json:"goalEvent"`
 	Steps     []AutomationStep `json:"steps"`
-	// Sending integration of the email steps; null/omitted means the workspace default.
-	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetName returns the value of Name.
@@ -7123,11 +7480,6 @@ func (s *CreateAutomationInput) GetSteps() []AutomationStep {
 	return s.Steps
 }
 
-// GetIntegrationId returns the value of IntegrationId.
-func (s *CreateAutomationInput) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
-}
-
 // SetName sets the value of Name.
 func (s *CreateAutomationInput) SetName(val string) {
 	s.Name = val
@@ -7153,33 +7505,18 @@ func (s *CreateAutomationInput) SetSteps(val []AutomationStep) {
 	s.Steps = val
 }
 
-// SetIntegrationId sets the value of IntegrationId.
-func (s *CreateAutomationInput) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
-}
-
 // Request body for creating a broadcast.
 // Ref: #/components/schemas/CreateBroadcastInput
 type CreateBroadcastInput struct {
 	// Internal broadcast name.
 	Name string `json:"name"`
-	// Email subject line.
-	Subject OptString `json:"subject"`
-	// Sender display name; null or omitted means the integration's default.
-	FromName OptNilString `json:"fromName"`
-	// Sender email address: its domain must be a verified Sending domain of the workspace, or the write is
-	// a 422. Null or omitted means the integration's default.
-	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// HTML body with Liquid merge tags. Write this or `doc`, not both.
-	Body OptString `json:"body"`
-	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
-	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
-	// a 422 with the reason and nothing is stored.
-	Doc OptEditorDocument `json:"doc"`
+	// What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a
+	// broadcast is never converted to another Channel.
+	Content BroadcastContentInput `json:"content"`
 	// Target segment; null or omitted means all contacts. An archived segment is refused with 422.
 	SegmentId OptNilEntityId `json:"segmentId"`
-	// Sending integration; null or omitted means the workspace default. An archived integration is refused
-	// with 422.
+	// Sending integration, of the broadcast's Channel; null or omitted means the Channel's default. An
+	// archived integration, or one of another Channel, is refused with 422.
 	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
@@ -7188,29 +7525,9 @@ func (s *CreateBroadcastInput) GetName() string {
 	return s.Name
 }
 
-// GetSubject returns the value of Subject.
-func (s *CreateBroadcastInput) GetSubject() OptString {
-	return s.Subject
-}
-
-// GetFromName returns the value of FromName.
-func (s *CreateBroadcastInput) GetFromName() OptNilString {
-	return s.FromName
-}
-
-// GetFromEmail returns the value of FromEmail.
-func (s *CreateBroadcastInput) GetFromEmail() OptNilEmailAddress {
-	return s.FromEmail
-}
-
-// GetBody returns the value of Body.
-func (s *CreateBroadcastInput) GetBody() OptString {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *CreateBroadcastInput) GetDoc() OptEditorDocument {
-	return s.Doc
+// GetContent returns the value of Content.
+func (s *CreateBroadcastInput) GetContent() BroadcastContentInput {
+	return s.Content
 }
 
 // GetSegmentId returns the value of SegmentId.
@@ -7228,29 +7545,9 @@ func (s *CreateBroadcastInput) SetName(val string) {
 	s.Name = val
 }
 
-// SetSubject sets the value of Subject.
-func (s *CreateBroadcastInput) SetSubject(val OptString) {
-	s.Subject = val
-}
-
-// SetFromName sets the value of FromName.
-func (s *CreateBroadcastInput) SetFromName(val OptNilString) {
-	s.FromName = val
-}
-
-// SetFromEmail sets the value of FromEmail.
-func (s *CreateBroadcastInput) SetFromEmail(val OptNilEmailAddress) {
-	s.FromEmail = val
-}
-
-// SetBody sets the value of Body.
-func (s *CreateBroadcastInput) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *CreateBroadcastInput) SetDoc(val OptEditorDocument) {
-	s.Doc = val
+// SetContent sets the value of Content.
+func (s *CreateBroadcastInput) SetContent(val BroadcastContentInput) {
+	s.Content = val
 }
 
 // SetSegmentId sets the value of SegmentId.
@@ -7418,7 +7715,8 @@ func (s *CreateContactInput) SetCustomFields(val OptNilJsonObject) {
 
 // Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox
 // (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused
-// with 409.
+// with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save;
+// a refusal is a 422.
 // Ref: #/components/schemas/CreateIntegrationInput
 type CreateIntegrationInput struct {
 	Name      string  `json:"name"`
@@ -7431,9 +7729,12 @@ type CreateIntegrationInput struct {
 	// except on an SES Integration with an `endpoint`, which requires it.
 	MaxPerDay OptNilMaxPerDay        `json:"maxPerDay"`
 	Config    IntegrationConfigInput `json:"config"`
-	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with.
+	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A
+	// Telegram integration takes none: it always reads its bot's updates with the built-in `telegram`
+	// Preset.
 	Preset OptNilString `json:"preset"`
-	// The Preset's params, validated against its `paramsSchema`: read the schema first.
+	// The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram
+	// integration takes none.
 	Params OptJsonObject `json:"params"`
 }
 
@@ -7629,17 +7930,29 @@ func (s *CreateSendingDomainInput) SetDkimSelector(val OptString) {
 // Request body for suppressing a destination.
 // Ref: #/components/schemas/CreateSuppressionInput
 type CreateSuppressionInput struct {
-	// Email address to stop sending to.
-	Destination EmailAddress `json:"destination"`
+	// The Channel to stop sending on; `email` when omitted.
+	Channel OptConsentChannel `json:"channel"`
+	// What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`.
+	Destination string `json:"destination"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *CreateSuppressionInput) GetChannel() OptConsentChannel {
+	return s.Channel
 }
 
 // GetDestination returns the value of Destination.
-func (s *CreateSuppressionInput) GetDestination() EmailAddress {
+func (s *CreateSuppressionInput) GetDestination() string {
 	return s.Destination
 }
 
+// SetChannel sets the value of Channel.
+func (s *CreateSuppressionInput) SetChannel(val OptConsentChannel) {
+	s.Channel = val
+}
+
 // SetDestination sets the value of Destination.
-func (s *CreateSuppressionInput) SetDestination(val EmailAddress) {
+func (s *CreateSuppressionInput) SetDestination(val string) {
 	s.Destination = val
 }
 
@@ -7701,15 +8014,24 @@ func (s *CreateTemplateInput) SetDoc(val OptEditorDocument) {
 // Request body for recording an unsubscribe.
 // Ref: #/components/schemas/CreateUnsubscribeInput
 type CreateUnsubscribeInput struct {
-	// Email address that opted out.
-	Destination EmailAddress `json:"destination"`
+	// The Channel the destination opted out on; `email` when omitted.
+	Channel OptConsentChannel `json:"channel"`
+	// What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`. A Telegram
+	// opt-out covers every bot of the Workspace.
+	Destination string `json:"destination"`
 	// The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave
-	// entirely).
+	// entirely). On `telegram` only `everything` (the default) is accepted: a person stops all of the
+	// Workspace's Telegram messages.
 	SendingSource OptString `json:"sendingSource"`
 }
 
+// GetChannel returns the value of Channel.
+func (s *CreateUnsubscribeInput) GetChannel() OptConsentChannel {
+	return s.Channel
+}
+
 // GetDestination returns the value of Destination.
-func (s *CreateUnsubscribeInput) GetDestination() EmailAddress {
+func (s *CreateUnsubscribeInput) GetDestination() string {
 	return s.Destination
 }
 
@@ -7718,8 +8040,13 @@ func (s *CreateUnsubscribeInput) GetSendingSource() OptString {
 	return s.SendingSource
 }
 
+// SetChannel sets the value of Channel.
+func (s *CreateUnsubscribeInput) SetChannel(val OptConsentChannel) {
+	s.Channel = val
+}
+
 // SetDestination sets the value of Destination.
-func (s *CreateUnsubscribeInput) SetDestination(val EmailAddress) {
+func (s *CreateUnsubscribeInput) SetDestination(val string) {
 	s.Destination = val
 }
 
@@ -8193,6 +8520,249 @@ func (s *EditorDocument) init() EditorDocument {
 }
 
 type EmailAddress string
+
+// Email's content of a Broadcast as stored.
+// Ref: #/components/schemas/EmailBroadcastContent
+type EmailBroadcastContent struct {
+	// The Channel the content is for.
+	Channel EmailBroadcastContentChannel `json:"channel"`
+	// Email subject line.
+	Subject string `json:"subject"`
+	// Sender display name (defaults to the integration's).
+	FromName OptNilString `json:"fromName"`
+	// Sender email address (defaults to the integration's).
+	FromEmail OptNilEmailAddress `json:"fromEmail"`
+	// HTML body with Liquid merge tags.
+	Body string `json:"body"`
+	// The editor's JSON document the body was built from; null when the body was written as HTML.
+	Doc OptNilEditorDocument `json:"doc"`
+	// Version of the editor that rendered the document; null with it.
+	EditorVersion OptNilString `json:"editorVersion"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *EmailBroadcastContent) GetChannel() EmailBroadcastContentChannel {
+	return s.Channel
+}
+
+// GetSubject returns the value of Subject.
+func (s *EmailBroadcastContent) GetSubject() string {
+	return s.Subject
+}
+
+// GetFromName returns the value of FromName.
+func (s *EmailBroadcastContent) GetFromName() OptNilString {
+	return s.FromName
+}
+
+// GetFromEmail returns the value of FromEmail.
+func (s *EmailBroadcastContent) GetFromEmail() OptNilEmailAddress {
+	return s.FromEmail
+}
+
+// GetBody returns the value of Body.
+func (s *EmailBroadcastContent) GetBody() string {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *EmailBroadcastContent) GetDoc() OptNilEditorDocument {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *EmailBroadcastContent) GetEditorVersion() OptNilString {
+	return s.EditorVersion
+}
+
+// SetChannel sets the value of Channel.
+func (s *EmailBroadcastContent) SetChannel(val EmailBroadcastContentChannel) {
+	s.Channel = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *EmailBroadcastContent) SetSubject(val string) {
+	s.Subject = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *EmailBroadcastContent) SetFromName(val OptNilString) {
+	s.FromName = val
+}
+
+// SetFromEmail sets the value of FromEmail.
+func (s *EmailBroadcastContent) SetFromEmail(val OptNilEmailAddress) {
+	s.FromEmail = val
+}
+
+// SetBody sets the value of Body.
+func (s *EmailBroadcastContent) SetBody(val string) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *EmailBroadcastContent) SetDoc(val OptNilEditorDocument) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *EmailBroadcastContent) SetEditorVersion(val OptNilString) {
+	s.EditorVersion = val
+}
+
+// The Channel the content is for.
+type EmailBroadcastContentChannel string
+
+const (
+	EmailBroadcastContentChannelEmail EmailBroadcastContentChannel = "email"
+)
+
+// AllValues returns all EmailBroadcastContentChannel values.
+func (EmailBroadcastContentChannel) AllValues() []EmailBroadcastContentChannel {
+	return []EmailBroadcastContentChannel{
+		EmailBroadcastContentChannelEmail,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EmailBroadcastContentChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case EmailBroadcastContentChannelEmail:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EmailBroadcastContentChannel) UnmarshalText(data []byte) error {
+	switch EmailBroadcastContentChannel(data) {
+	case EmailBroadcastContentChannelEmail:
+		*s = EmailBroadcastContentChannelEmail
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on update
+// an omitted field keeps its value and null clears it.
+// Ref: #/components/schemas/EmailBroadcastContentInput
+type EmailBroadcastContentInput struct {
+	// The Channel the content is for: the Broadcast's own, which an update cannot change.
+	Channel EmailBroadcastContentInputChannel `json:"channel"`
+	// Email subject line.
+	Subject OptString `json:"subject"`
+	// Sender display name; null or omitted on create means the integration's default, null on update goes
+	// back to it.
+	FromName OptNilString `json:"fromName"`
+	// Sender email address: a new value must be on a verified Sending domain of the workspace, or the
+	// write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays
+	// editable. Null or omitted on create means the integration's default, null on update goes back to it.
+	FromEmail OptNilEmailAddress `json:"fromEmail"`
+	// HTML body with Liquid merge tags. Writing only a body on update clears the stored document. Write
+	// this or `doc`, not both.
+	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+	// a 422 with the reason and nothing is stored.
+	Doc OptEditorDocument `json:"doc"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *EmailBroadcastContentInput) GetChannel() EmailBroadcastContentInputChannel {
+	return s.Channel
+}
+
+// GetSubject returns the value of Subject.
+func (s *EmailBroadcastContentInput) GetSubject() OptString {
+	return s.Subject
+}
+
+// GetFromName returns the value of FromName.
+func (s *EmailBroadcastContentInput) GetFromName() OptNilString {
+	return s.FromName
+}
+
+// GetFromEmail returns the value of FromEmail.
+func (s *EmailBroadcastContentInput) GetFromEmail() OptNilEmailAddress {
+	return s.FromEmail
+}
+
+// GetBody returns the value of Body.
+func (s *EmailBroadcastContentInput) GetBody() OptString {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *EmailBroadcastContentInput) GetDoc() OptEditorDocument {
+	return s.Doc
+}
+
+// SetChannel sets the value of Channel.
+func (s *EmailBroadcastContentInput) SetChannel(val EmailBroadcastContentInputChannel) {
+	s.Channel = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *EmailBroadcastContentInput) SetSubject(val OptString) {
+	s.Subject = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *EmailBroadcastContentInput) SetFromName(val OptNilString) {
+	s.FromName = val
+}
+
+// SetFromEmail sets the value of FromEmail.
+func (s *EmailBroadcastContentInput) SetFromEmail(val OptNilEmailAddress) {
+	s.FromEmail = val
+}
+
+// SetBody sets the value of Body.
+func (s *EmailBroadcastContentInput) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *EmailBroadcastContentInput) SetDoc(val OptEditorDocument) {
+	s.Doc = val
+}
+
+// The Channel the content is for: the Broadcast's own, which an update cannot change.
+type EmailBroadcastContentInputChannel string
+
+const (
+	EmailBroadcastContentInputChannelEmail EmailBroadcastContentInputChannel = "email"
+)
+
+// AllValues returns all EmailBroadcastContentInputChannel values.
+func (EmailBroadcastContentInputChannel) AllValues() []EmailBroadcastContentInputChannel {
+	return []EmailBroadcastContentInputChannel{
+		EmailBroadcastContentInputChannelEmail,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EmailBroadcastContentInputChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case EmailBroadcastContentInputChannelEmail:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EmailBroadcastContentInputChannel) UnmarshalText(data []byte) error {
+	switch EmailBroadcastContentInputChannel(data) {
+	case EmailBroadcastContentInputChannelEmail:
+		*s = EmailBroadcastContentInputChannelEmail
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 type EmailLintLintBadRequest ProblemDetails
 
@@ -9440,6 +10010,7 @@ const (
 	HoldReasonNoIntegration            HoldReason = "no_integration"
 	HoldReasonUnverifiedDomain         HoldReason = "unverified_domain"
 	HoldReasonProviderStopped          HoldReason = "provider_stopped"
+	HoldReasonProviderRefused          HoldReason = "provider_refused"
 )
 
 // AllValues returns all HoldReason values.
@@ -9451,6 +10022,7 @@ func (HoldReason) AllValues() []HoldReason {
 		HoldReasonNoIntegration,
 		HoldReasonUnverifiedDomain,
 		HoldReasonProviderStopped,
+		HoldReasonProviderRefused,
 	}
 }
 
@@ -9468,6 +10040,8 @@ func (s HoldReason) MarshalText() ([]byte, error) {
 	case HoldReasonUnverifiedDomain:
 		return []byte(s), nil
 	case HoldReasonProviderStopped:
+		return []byte(s), nil
+	case HoldReasonProviderRefused:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -9494,6 +10068,9 @@ func (s *HoldReason) UnmarshalText(data []byte) error {
 		return nil
 	case HoldReasonProviderStopped:
 		*s = HoldReasonProviderStopped
+		return nil
+	case HoldReasonProviderRefused:
+		*s = HoldReasonProviderRefused
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -9789,8 +10366,9 @@ func (s *InboxConfigKind) UnmarshalText(data []byte) error {
 type IntegrationChannel string
 
 const (
-	IntegrationChannelEmail IntegrationChannel = "email"
-	IntegrationChannelSMS   IntegrationChannel = "sms"
+	IntegrationChannelEmail    IntegrationChannel = "email"
+	IntegrationChannelSMS      IntegrationChannel = "sms"
+	IntegrationChannelTelegram IntegrationChannel = "telegram"
 )
 
 // AllValues returns all IntegrationChannel values.
@@ -9798,6 +10376,7 @@ func (IntegrationChannel) AllValues() []IntegrationChannel {
 	return []IntegrationChannel{
 		IntegrationChannelEmail,
 		IntegrationChannelSMS,
+		IntegrationChannelTelegram,
 	}
 }
 
@@ -9807,6 +10386,8 @@ func (s IntegrationChannel) MarshalText() ([]byte, error) {
 	case IntegrationChannelEmail:
 		return []byte(s), nil
 	case IntegrationChannelSMS:
+		return []byte(s), nil
+	case IntegrationChannelTelegram:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -9821,6 +10402,9 @@ func (s *IntegrationChannel) UnmarshalText(data []byte) error {
 		return nil
 	case IntegrationChannelSMS:
 		*s = IntegrationChannelSMS
+		return nil
+	case IntegrationChannelTelegram:
+		*s = IntegrationChannelTelegram
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -9862,10 +10446,11 @@ func (s *IntegrationConfigInput) SetOneOf(val IntegrationConfigInputSum) {
 // IntegrationConfigInputSum represents sum type.
 type IntegrationConfigInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type             IntegrationConfigInputSumType
-	SmtpConfigInput  SmtpConfigInput
-	SesConfigInput   SesConfigInput
-	InboxConfigInput InboxConfigInput
+	Type                IntegrationConfigInputSumType
+	SmtpConfigInput     SmtpConfigInput
+	SesConfigInput      SesConfigInput
+	InboxConfigInput    InboxConfigInput
+	TelegramConfigInput TelegramConfigInput
 }
 
 // IntegrationConfigInputSumType is oneOf type of IntegrationConfigInputSum.
@@ -9873,9 +10458,10 @@ type IntegrationConfigInputSumType string
 
 // Possible values for IntegrationConfigInputSumType.
 const (
-	SmtpConfigInputIntegrationConfigInputSum  IntegrationConfigInputSumType = "smtp"
-	SesConfigInputIntegrationConfigInputSum   IntegrationConfigInputSumType = "ses"
-	InboxConfigInputIntegrationConfigInputSum IntegrationConfigInputSumType = "inbox"
+	SmtpConfigInputIntegrationConfigInputSum     IntegrationConfigInputSumType = "smtp"
+	SesConfigInputIntegrationConfigInputSum      IntegrationConfigInputSumType = "ses"
+	InboxConfigInputIntegrationConfigInputSum    IntegrationConfigInputSumType = "inbox"
+	TelegramConfigInputIntegrationConfigInputSum IntegrationConfigInputSumType = "telegram"
 )
 
 // IsSmtpConfigInput reports whether IntegrationConfigInputSum is SmtpConfigInput.
@@ -9891,6 +10477,11 @@ func (s IntegrationConfigInputSum) IsSesConfigInput() bool {
 // IsInboxConfigInput reports whether IntegrationConfigInputSum is InboxConfigInput.
 func (s IntegrationConfigInputSum) IsInboxConfigInput() bool {
 	return s.Type == InboxConfigInputIntegrationConfigInputSum
+}
+
+// IsTelegramConfigInput reports whether IntegrationConfigInputSum is TelegramConfigInput.
+func (s IntegrationConfigInputSum) IsTelegramConfigInput() bool {
+	return s.Type == TelegramConfigInputIntegrationConfigInputSum
 }
 
 // SetSmtpConfigInput sets IntegrationConfigInputSum to SmtpConfigInput.
@@ -9956,13 +10547,35 @@ func NewInboxConfigInputIntegrationConfigInputSum(v InboxConfigInput) Integratio
 	return s
 }
 
+// SetTelegramConfigInput sets IntegrationConfigInputSum to TelegramConfigInput.
+func (s *IntegrationConfigInputSum) SetTelegramConfigInput(v TelegramConfigInput) {
+	s.Type = TelegramConfigInputIntegrationConfigInputSum
+	s.TelegramConfigInput = v
+}
+
+// GetTelegramConfigInput returns TelegramConfigInput and true boolean if IntegrationConfigInputSum is TelegramConfigInput.
+func (s IntegrationConfigInputSum) GetTelegramConfigInput() (v TelegramConfigInput, ok bool) {
+	if !s.IsTelegramConfigInput() {
+		return v, false
+	}
+	return s.TelegramConfigInput, true
+}
+
+// NewTelegramConfigInputIntegrationConfigInputSum returns new IntegrationConfigInputSum from TelegramConfigInput.
+func NewTelegramConfigInputIntegrationConfigInputSum(v TelegramConfigInput) IntegrationConfigInputSum {
+	var s IntegrationConfigInputSum
+	s.SetTelegramConfigInput(v)
+	return s
+}
+
 // IntegrationConfigSum represents sum type.
 type IntegrationConfigSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type        IntegrationConfigSumType
-	SmtpConfig  SmtpConfig
-	SesConfig   SesConfig
-	InboxConfig InboxConfig
+	Type           IntegrationConfigSumType
+	SmtpConfig     SmtpConfig
+	SesConfig      SesConfig
+	InboxConfig    InboxConfig
+	TelegramConfig TelegramConfig
 }
 
 // IntegrationConfigSumType is oneOf type of IntegrationConfigSum.
@@ -9970,9 +10583,10 @@ type IntegrationConfigSumType string
 
 // Possible values for IntegrationConfigSumType.
 const (
-	SmtpConfigIntegrationConfigSum  IntegrationConfigSumType = "smtp"
-	SesConfigIntegrationConfigSum   IntegrationConfigSumType = "ses"
-	InboxConfigIntegrationConfigSum IntegrationConfigSumType = "inbox"
+	SmtpConfigIntegrationConfigSum     IntegrationConfigSumType = "smtp"
+	SesConfigIntegrationConfigSum      IntegrationConfigSumType = "ses"
+	InboxConfigIntegrationConfigSum    IntegrationConfigSumType = "inbox"
+	TelegramConfigIntegrationConfigSum IntegrationConfigSumType = "telegram"
 )
 
 // IsSmtpConfig reports whether IntegrationConfigSum is SmtpConfig.
@@ -9983,6 +10597,11 @@ func (s IntegrationConfigSum) IsSesConfig() bool { return s.Type == SesConfigInt
 
 // IsInboxConfig reports whether IntegrationConfigSum is InboxConfig.
 func (s IntegrationConfigSum) IsInboxConfig() bool { return s.Type == InboxConfigIntegrationConfigSum }
+
+// IsTelegramConfig reports whether IntegrationConfigSum is TelegramConfig.
+func (s IntegrationConfigSum) IsTelegramConfig() bool {
+	return s.Type == TelegramConfigIntegrationConfigSum
+}
 
 // SetSmtpConfig sets IntegrationConfigSum to SmtpConfig.
 func (s *IntegrationConfigSum) SetSmtpConfig(v SmtpConfig) {
@@ -10047,14 +10666,36 @@ func NewInboxConfigIntegrationConfigSum(v InboxConfig) IntegrationConfigSum {
 	return s
 }
 
+// SetTelegramConfig sets IntegrationConfigSum to TelegramConfig.
+func (s *IntegrationConfigSum) SetTelegramConfig(v TelegramConfig) {
+	s.Type = TelegramConfigIntegrationConfigSum
+	s.TelegramConfig = v
+}
+
+// GetTelegramConfig returns TelegramConfig and true boolean if IntegrationConfigSum is TelegramConfig.
+func (s IntegrationConfigSum) GetTelegramConfig() (v TelegramConfig, ok bool) {
+	if !s.IsTelegramConfig() {
+		return v, false
+	}
+	return s.TelegramConfig, true
+}
+
+// NewTelegramConfigIntegrationConfigSum returns new IntegrationConfigSum from TelegramConfig.
+func NewTelegramConfigIntegrationConfigSum(v TelegramConfig) IntegrationConfigSum {
+	var s IntegrationConfigSum
+	s.SetTelegramConfig(v)
+	return s
+}
+
 // Concrete sending provider.
 // Ref: #/components/schemas/IntegrationProvider
 type IntegrationProvider string
 
 const (
-	IntegrationProviderSMTP  IntegrationProvider = "smtp"
-	IntegrationProviderSes   IntegrationProvider = "ses"
-	IntegrationProviderInbox IntegrationProvider = "inbox"
+	IntegrationProviderSMTP     IntegrationProvider = "smtp"
+	IntegrationProviderSes      IntegrationProvider = "ses"
+	IntegrationProviderInbox    IntegrationProvider = "inbox"
+	IntegrationProviderTelegram IntegrationProvider = "telegram"
 )
 
 // AllValues returns all IntegrationProvider values.
@@ -10063,6 +10704,7 @@ func (IntegrationProvider) AllValues() []IntegrationProvider {
 		IntegrationProviderSMTP,
 		IntegrationProviderSes,
 		IntegrationProviderInbox,
+		IntegrationProviderTelegram,
 	}
 }
 
@@ -10074,6 +10716,8 @@ func (s IntegrationProvider) MarshalText() ([]byte, error) {
 	case IntegrationProviderSes:
 		return []byte(s), nil
 	case IntegrationProviderInbox:
+		return []byte(s), nil
+	case IntegrationProviderTelegram:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -10091,6 +10735,9 @@ func (s *IntegrationProvider) UnmarshalText(data []byte) error {
 		return nil
 	case IntegrationProviderInbox:
 		*s = IntegrationProviderInbox
+		return nil
+	case IntegrationProviderTelegram:
+		*s = IntegrationProviderTelegram
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -10468,6 +11115,10 @@ type IntegrationsRegenerateKeyUnauthorized ProblemDetails
 
 func (*IntegrationsRegenerateKeyUnauthorized) integrationsRegenerateKeyRes() {}
 
+type IntegrationsRegenerateKeyUnprocessableEntity ProblemDetails
+
+func (*IntegrationsRegenerateKeyUnprocessableEntity) integrationsRegenerateKeyRes() {}
+
 type IntegrationsUnarchiveBadRequest ProblemDetails
 
 func (*IntegrationsUnarchiveBadRequest) integrationsUnarchiveRes() {}
@@ -10487,6 +11138,10 @@ func (*IntegrationsUnarchiveNotFound) integrationsUnarchiveRes() {}
 type IntegrationsUnarchiveUnauthorized ProblemDetails
 
 func (*IntegrationsUnarchiveUnauthorized) integrationsUnarchiveRes() {}
+
+type IntegrationsUnarchiveUnprocessableEntity ProblemDetails
+
+func (*IntegrationsUnarchiveUnprocessableEntity) integrationsUnarchiveRes() {}
 
 type IntegrationsUpdateBadRequest ProblemDetails
 
@@ -10511,6 +11166,24 @@ func (*IntegrationsUpdateUnauthorized) integrationsUpdateRes() {}
 type IntegrationsUpdateUnprocessableEntity ProblemDetails
 
 func (*IntegrationsUpdateUnprocessableEntity) integrationsUpdateRes() {}
+
+// Request body for issuing a Telegram start link.
+// Ref: #/components/schemas/IssueTelegramStartLinkInput
+type IssueTelegramStartLinkInput struct {
+	// The Telegram bot the link is for; null or omitted means the workspace's default Telegram
+	// integration. A disabled or archived bot, or an integration of another channel, is refused with 422.
+	IntegrationId OptNilEntityId `json:"integrationId"`
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *IssueTelegramStartLinkInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *IssueTelegramStartLinkInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
 
 // A JSON object whose members the contract leaves open: custom field values, event properties,
 // integration params, an audit diff. One named model, so every surface's Go code has one type for it
@@ -10932,6 +11605,51 @@ func (o NilEntityId) Get() (v EntityId, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilEntityId) Or(d EntityId) EntityId {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilFloat32 returns new NilFloat32 with value set to v.
+func NewNilFloat32(v float32) NilFloat32 {
+	return NilFloat32{
+		Value: v,
+	}
+}
+
+// NilFloat32 is nullable float32.
+type NilFloat32 struct {
+	Value float32
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilFloat32) SetTo(v float32) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilFloat32) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilFloat32) SetToNull() {
+	o.Null = true
+	var v float32
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilFloat32) Get() (v float32, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilFloat32) Or(d float32) float32 {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -11438,6 +12156,98 @@ func (o OptBool) Or(d bool) bool {
 	return d
 }
 
+// NewOptBroadcastChannel returns new OptBroadcastChannel with value set to v.
+func NewOptBroadcastChannel(v BroadcastChannel) OptBroadcastChannel {
+	return OptBroadcastChannel{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptBroadcastChannel is optional BroadcastChannel.
+type OptBroadcastChannel struct {
+	Value BroadcastChannel
+	Set   bool
+}
+
+// IsSet returns true if OptBroadcastChannel was set.
+func (o OptBroadcastChannel) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptBroadcastChannel) Reset() {
+	var v BroadcastChannel
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptBroadcastChannel) SetTo(v BroadcastChannel) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptBroadcastChannel) Get() (v BroadcastChannel, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptBroadcastChannel) Or(d BroadcastChannel) BroadcastChannel {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptBroadcastContentInput returns new OptBroadcastContentInput with value set to v.
+func NewOptBroadcastContentInput(v BroadcastContentInput) OptBroadcastContentInput {
+	return OptBroadcastContentInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptBroadcastContentInput is optional BroadcastContentInput.
+type OptBroadcastContentInput struct {
+	Value BroadcastContentInput
+	Set   bool
+}
+
+// IsSet returns true if OptBroadcastContentInput was set.
+func (o OptBroadcastContentInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptBroadcastContentInput) Reset() {
+	var v BroadcastContentInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptBroadcastContentInput) SetTo(v BroadcastContentInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptBroadcastContentInput) Get() (v BroadcastContentInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptBroadcastContentInput) Or(d BroadcastContentInput) BroadcastContentInput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptConditionGroup returns new OptConditionGroup with value set to v.
 func NewOptConditionGroup(v ConditionGroup) OptConditionGroup {
 	return OptConditionGroup{
@@ -11478,6 +12288,52 @@ func (o OptConditionGroup) Get() (v ConditionGroup, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptConditionGroup) Or(d ConditionGroup) ConditionGroup {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptConsentChannel returns new OptConsentChannel with value set to v.
+func NewOptConsentChannel(v ConsentChannel) OptConsentChannel {
+	return OptConsentChannel{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptConsentChannel is optional ConsentChannel.
+type OptConsentChannel struct {
+	Value ConsentChannel
+	Set   bool
+}
+
+// IsSet returns true if OptConsentChannel was set.
+func (o OptConsentChannel) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptConsentChannel) Reset() {
+	var v ConsentChannel
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptConsentChannel) SetTo(v ConsentChannel) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptConsentChannel) Get() (v ConsentChannel, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptConsentChannel) Or(d ConsentChannel) ConsentChannel {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -14204,6 +15060,7 @@ func (*ProblemDetailsHeaders) tagsDeleteRes()                {}
 func (*ProblemDetailsHeaders) tagsListForContactRes()        {}
 func (*ProblemDetailsHeaders) tagsListRes()                  {}
 func (*ProblemDetailsHeaders) tagsRemoveRes()                {}
+func (*ProblemDetailsHeaders) telegramStartLinksIssueRes()   {}
 func (*ProblemDetailsHeaders) templatesCreateRes()           {}
 func (*ProblemDetailsHeaders) templatesDeleteRes()           {}
 func (*ProblemDetailsHeaders) templatesGetRes()              {}
@@ -17086,7 +17943,9 @@ func (s *SuppressionReason) UnmarshalText(data []byte) error {
 type SuppressionResource struct {
 	// Unique identifier.
 	ID EntityId `json:"id"`
-	// Normalized (lower-cased) email address.
+	// The Channel the suppression is on.
+	Channel ConsentChannel `json:"channel"`
+	// Normalized destination: the lower-cased email address, or the Telegram user id.
 	Destination string `json:"destination"`
 	// Why the destination is suppressed.
 	Reason SuppressionReason `json:"reason"`
@@ -17097,6 +17956,11 @@ type SuppressionResource struct {
 // GetID returns the value of ID.
 func (s *SuppressionResource) GetID() EntityId {
 	return s.ID
+}
+
+// GetChannel returns the value of Channel.
+func (s *SuppressionResource) GetChannel() ConsentChannel {
+	return s.Channel
 }
 
 // GetDestination returns the value of Destination.
@@ -17117,6 +17981,11 @@ func (s *SuppressionResource) GetCreatedAt() Timestamp {
 // SetID sets the value of ID.
 func (s *SuppressionResource) SetID(val EntityId) {
 	s.ID = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *SuppressionResource) SetChannel(val ConsentChannel) {
+	s.Channel = val
 }
 
 // SetDestination sets the value of Destination.
@@ -17425,6 +18294,456 @@ func (*TagsRemoveNotFound) tagsRemoveRes() {}
 type TagsRemoveUnauthorized ProblemDetails
 
 func (*TagsRemoveUnauthorized) tagsRemoveRes() {}
+
+// Telegram's content of a Broadcast as stored.
+// Ref: #/components/schemas/TelegramBroadcastContent
+type TelegramBroadcastContent struct {
+	// The Channel the content is for.
+	Channel TelegramBroadcastContentChannel `json:"channel"`
+	// The message text in Telegram's HTML subset, with Liquid merge tags.
+	Text string `json:"text"`
+	// The https image sent with the message, its caption being the text; null for a text message.
+	ImageUrl OptNilString `json:"imageUrl"`
+	// The link buttons under the message, one per row, in order.
+	Buttons []TelegramButton `json:"buttons"`
+	// Whether a link in the text unfolds a preview.
+	LinkPreview bool `json:"linkPreview"`
+	// The label of the unsubscribe button under the message; null for none.
+	UnsubscribeButton OptNilString `json:"unsubscribeButton"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *TelegramBroadcastContent) GetChannel() TelegramBroadcastContentChannel {
+	return s.Channel
+}
+
+// GetText returns the value of Text.
+func (s *TelegramBroadcastContent) GetText() string {
+	return s.Text
+}
+
+// GetImageUrl returns the value of ImageUrl.
+func (s *TelegramBroadcastContent) GetImageUrl() OptNilString {
+	return s.ImageUrl
+}
+
+// GetButtons returns the value of Buttons.
+func (s *TelegramBroadcastContent) GetButtons() []TelegramButton {
+	return s.Buttons
+}
+
+// GetLinkPreview returns the value of LinkPreview.
+func (s *TelegramBroadcastContent) GetLinkPreview() bool {
+	return s.LinkPreview
+}
+
+// GetUnsubscribeButton returns the value of UnsubscribeButton.
+func (s *TelegramBroadcastContent) GetUnsubscribeButton() OptNilString {
+	return s.UnsubscribeButton
+}
+
+// SetChannel sets the value of Channel.
+func (s *TelegramBroadcastContent) SetChannel(val TelegramBroadcastContentChannel) {
+	s.Channel = val
+}
+
+// SetText sets the value of Text.
+func (s *TelegramBroadcastContent) SetText(val string) {
+	s.Text = val
+}
+
+// SetImageUrl sets the value of ImageUrl.
+func (s *TelegramBroadcastContent) SetImageUrl(val OptNilString) {
+	s.ImageUrl = val
+}
+
+// SetButtons sets the value of Buttons.
+func (s *TelegramBroadcastContent) SetButtons(val []TelegramButton) {
+	s.Buttons = val
+}
+
+// SetLinkPreview sets the value of LinkPreview.
+func (s *TelegramBroadcastContent) SetLinkPreview(val bool) {
+	s.LinkPreview = val
+}
+
+// SetUnsubscribeButton sets the value of UnsubscribeButton.
+func (s *TelegramBroadcastContent) SetUnsubscribeButton(val OptNilString) {
+	s.UnsubscribeButton = val
+}
+
+// The Channel the content is for.
+type TelegramBroadcastContentChannel string
+
+const (
+	TelegramBroadcastContentChannelTelegram TelegramBroadcastContentChannel = "telegram"
+)
+
+// AllValues returns all TelegramBroadcastContentChannel values.
+func (TelegramBroadcastContentChannel) AllValues() []TelegramBroadcastContentChannel {
+	return []TelegramBroadcastContentChannel{
+		TelegramBroadcastContentChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelegramBroadcastContentChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case TelegramBroadcastContentChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelegramBroadcastContentChannel) UnmarshalText(data []byte) error {
+	switch TelegramBroadcastContentChannel(data) {
+	case TelegramBroadcastContentChannelTelegram:
+		*s = TelegramBroadcastContentChannelTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Telegram's content of a Broadcast (ADR 0078), the same Message content as a Telegram step. On create
+// an omitted field takes its default (an empty text, no image, no buttons, the link preview on, no
+// unsubscribe button); on update an omitted field keeps its value.
+// Ref: #/components/schemas/TelegramBroadcastContentInput
+type TelegramBroadcastContentInput struct {
+	// The Channel the content is for: the Broadcast's own, which an update cannot change.
+	Channel TelegramBroadcastContentInputChannel `json:"channel"`
+	// The message text in Telegram's HTML subset (b, i, u, s, a, code, pre, tg-spoiler, blockquote) with
+	// Liquid merge tags, at most 4096 characters as written (Schedule refuses a longer one). Nothing is
+	// appended to it.
+	Text OptString `json:"text"`
+	// An https image sent with the message; the text becomes its caption, of at most 1024 characters as
+	// written. An empty string removes the image.
+	ImageUrl OptString `json:"imageUrl"`
+	// Up to 8 link buttons under the message, one per row, in order. An empty list removes them.
+	Buttons []TelegramButton `json:"buttons"`
+	// Whether a link in the text unfolds a preview. On when omitted; no effect with an image.
+	LinkPreview OptBool `json:"linkPreview"`
+	// The label of an unsubscribe button under the message, up to 64 characters. Pressing it is the
+	// person's Channel-wide Telegram opt-out. An empty string removes the button.
+	UnsubscribeButton OptString `json:"unsubscribeButton"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *TelegramBroadcastContentInput) GetChannel() TelegramBroadcastContentInputChannel {
+	return s.Channel
+}
+
+// GetText returns the value of Text.
+func (s *TelegramBroadcastContentInput) GetText() OptString {
+	return s.Text
+}
+
+// GetImageUrl returns the value of ImageUrl.
+func (s *TelegramBroadcastContentInput) GetImageUrl() OptString {
+	return s.ImageUrl
+}
+
+// GetButtons returns the value of Buttons.
+func (s *TelegramBroadcastContentInput) GetButtons() []TelegramButton {
+	return s.Buttons
+}
+
+// GetLinkPreview returns the value of LinkPreview.
+func (s *TelegramBroadcastContentInput) GetLinkPreview() OptBool {
+	return s.LinkPreview
+}
+
+// GetUnsubscribeButton returns the value of UnsubscribeButton.
+func (s *TelegramBroadcastContentInput) GetUnsubscribeButton() OptString {
+	return s.UnsubscribeButton
+}
+
+// SetChannel sets the value of Channel.
+func (s *TelegramBroadcastContentInput) SetChannel(val TelegramBroadcastContentInputChannel) {
+	s.Channel = val
+}
+
+// SetText sets the value of Text.
+func (s *TelegramBroadcastContentInput) SetText(val OptString) {
+	s.Text = val
+}
+
+// SetImageUrl sets the value of ImageUrl.
+func (s *TelegramBroadcastContentInput) SetImageUrl(val OptString) {
+	s.ImageUrl = val
+}
+
+// SetButtons sets the value of Buttons.
+func (s *TelegramBroadcastContentInput) SetButtons(val []TelegramButton) {
+	s.Buttons = val
+}
+
+// SetLinkPreview sets the value of LinkPreview.
+func (s *TelegramBroadcastContentInput) SetLinkPreview(val OptBool) {
+	s.LinkPreview = val
+}
+
+// SetUnsubscribeButton sets the value of UnsubscribeButton.
+func (s *TelegramBroadcastContentInput) SetUnsubscribeButton(val OptString) {
+	s.UnsubscribeButton = val
+}
+
+// The Channel the content is for: the Broadcast's own, which an update cannot change.
+type TelegramBroadcastContentInputChannel string
+
+const (
+	TelegramBroadcastContentInputChannelTelegram TelegramBroadcastContentInputChannel = "telegram"
+)
+
+// AllValues returns all TelegramBroadcastContentInputChannel values.
+func (TelegramBroadcastContentInputChannel) AllValues() []TelegramBroadcastContentInputChannel {
+	return []TelegramBroadcastContentInputChannel{
+		TelegramBroadcastContentInputChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelegramBroadcastContentInputChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case TelegramBroadcastContentInputChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelegramBroadcastContentInputChannel) UnmarshalText(data []byte) error {
+	switch TelegramBroadcastContentInputChannel(data) {
+	case TelegramBroadcastContentInputChannelTelegram:
+		*s = TelegramBroadcastContentInputChannelTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A link button under a Telegram message: an inline URL button on a row of its own.
+// Ref: #/components/schemas/TelegramButton
+type TelegramButton struct {
+	// The button's label.
+	Label string `json:"label"`
+	// The URL it opens: absolute, http or https.
+	URL string `json:"url"`
+}
+
+// GetLabel returns the value of Label.
+func (s *TelegramButton) GetLabel() string {
+	return s.Label
+}
+
+// GetURL returns the value of URL.
+func (s *TelegramButton) GetURL() string {
+	return s.URL
+}
+
+// SetLabel sets the value of Label.
+func (s *TelegramButton) SetLabel(val string) {
+	s.Label = val
+}
+
+// SetURL sets the value of URL.
+func (s *TelegramButton) SetURL(val string) {
+	s.URL = val
+}
+
+// A Telegram bot without its token: who it is, as Telegram said when it was connected.
+// Ref: #/components/schemas/TelegramConfig
+type TelegramConfig struct {
+	Kind TelegramConfigKind `json:"kind"`
+	// The bot's numeric Telegram id.
+	BotId int64 `json:"botId"`
+	// The bot's.
+	Username string `json:"username"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TelegramConfig) GetKind() TelegramConfigKind {
+	return s.Kind
+}
+
+// GetBotId returns the value of BotId.
+func (s *TelegramConfig) GetBotId() int64 {
+	return s.BotId
+}
+
+// GetUsername returns the value of Username.
+func (s *TelegramConfig) GetUsername() string {
+	return s.Username
+}
+
+// SetKind sets the value of Kind.
+func (s *TelegramConfig) SetKind(val TelegramConfigKind) {
+	s.Kind = val
+}
+
+// SetBotId sets the value of BotId.
+func (s *TelegramConfig) SetBotId(val int64) {
+	s.BotId = val
+}
+
+// SetUsername sets the value of Username.
+func (s *TelegramConfig) SetUsername(val string) {
+	s.Username = val
+}
+
+// A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with
+// Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had:
+// use a bot dedicated to sphericon.
+// Ref: #/components/schemas/TelegramConfigInput
+type TelegramConfigInput struct {
+	Kind TelegramConfigInputKind `json:"kind"`
+	// The bot token.
+	Token string `json:"token"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TelegramConfigInput) GetKind() TelegramConfigInputKind {
+	return s.Kind
+}
+
+// GetToken returns the value of Token.
+func (s *TelegramConfigInput) GetToken() string {
+	return s.Token
+}
+
+// SetKind sets the value of Kind.
+func (s *TelegramConfigInput) SetKind(val TelegramConfigInputKind) {
+	s.Kind = val
+}
+
+// SetToken sets the value of Token.
+func (s *TelegramConfigInput) SetToken(val string) {
+	s.Token = val
+}
+
+type TelegramConfigInputKind string
+
+const (
+	TelegramConfigInputKindTelegram TelegramConfigInputKind = "telegram"
+)
+
+// AllValues returns all TelegramConfigInputKind values.
+func (TelegramConfigInputKind) AllValues() []TelegramConfigInputKind {
+	return []TelegramConfigInputKind{
+		TelegramConfigInputKindTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelegramConfigInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TelegramConfigInputKindTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelegramConfigInputKind) UnmarshalText(data []byte) error {
+	switch TelegramConfigInputKind(data) {
+	case TelegramConfigInputKindTelegram:
+		*s = TelegramConfigInputKindTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type TelegramConfigKind string
+
+const (
+	TelegramConfigKindTelegram TelegramConfigKind = "telegram"
+)
+
+// AllValues returns all TelegramConfigKind values.
+func (TelegramConfigKind) AllValues() []TelegramConfigKind {
+	return []TelegramConfigKind{
+		TelegramConfigKindTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelegramConfigKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TelegramConfigKindTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelegramConfigKind) UnmarshalText(data []byte) error {
+	switch TelegramConfigKind(data) {
+	case TelegramConfigKindTelegram:
+		*s = TelegramConfigKindTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Telegram start link: the person who opens it and presses Start binds their chat to the contact it
+// was issued for. The link works once.
+// Ref: #/components/schemas/TelegramStartLinkResource
+type TelegramStartLinkResource struct {
+	// `https://t.me/<bot>?start=<token>`. The token is shown only here: treat the link as a secret until
+	// it is used.
+	URL string `json:"url"`
+	// When the link lapses, 30 days after it is issued.
+	ExpiresAt Timestamp `json:"expiresAt"`
+}
+
+// GetURL returns the value of URL.
+func (s *TelegramStartLinkResource) GetURL() string {
+	return s.URL
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *TelegramStartLinkResource) GetExpiresAt() Timestamp {
+	return s.ExpiresAt
+}
+
+// SetURL sets the value of URL.
+func (s *TelegramStartLinkResource) SetURL(val string) {
+	s.URL = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *TelegramStartLinkResource) SetExpiresAt(val Timestamp) {
+	s.ExpiresAt = val
+}
+
+func (*TelegramStartLinkResource) telegramStartLinksIssueRes() {}
+
+type TelegramStartLinksIssueBadRequest ProblemDetails
+
+func (*TelegramStartLinksIssueBadRequest) telegramStartLinksIssueRes() {}
+
+type TelegramStartLinksIssueForbidden ProblemDetails
+
+func (*TelegramStartLinksIssueForbidden) telegramStartLinksIssueRes() {}
+
+type TelegramStartLinksIssueNotFound ProblemDetails
+
+func (*TelegramStartLinksIssueNotFound) telegramStartLinksIssueRes() {}
+
+type TelegramStartLinksIssueUnauthorized ProblemDetails
+
+func (*TelegramStartLinksIssueUnauthorized) telegramStartLinksIssueRes() {}
+
+type TelegramStartLinksIssueUnprocessableEntity ProblemDetails
+
+func (*TelegramStartLinksIssueUnprocessableEntity) telegramStartLinksIssueRes() {}
 
 // Reusable email template.
 // Ref: #/components/schemas/TemplateResource
@@ -18126,7 +19445,9 @@ func (s *TransactionalSendStatus) UnmarshalText(data []byte) error {
 type UnsubscribeResource struct {
 	// Unique identifier.
 	ID EntityId `json:"id"`
-	// Normalized (lower-cased) email address.
+	// The Channel the opt-out is on.
+	Channel ConsentChannel `json:"channel"`
+	// Normalized destination: the lower-cased email address, or the Telegram user id.
 	Destination string `json:"destination"`
 	// The sending source opted out of: `broadcasts`, `automation:<id>` or `everything`.
 	SendingSource string `json:"sendingSource"`
@@ -18137,6 +19458,11 @@ type UnsubscribeResource struct {
 // GetID returns the value of ID.
 func (s *UnsubscribeResource) GetID() EntityId {
 	return s.ID
+}
+
+// GetChannel returns the value of Channel.
+func (s *UnsubscribeResource) GetChannel() ConsentChannel {
+	return s.Channel
 }
 
 // GetDestination returns the value of Destination.
@@ -18157,6 +19483,11 @@ func (s *UnsubscribeResource) GetCreatedAt() Timestamp {
 // SetID sets the value of ID.
 func (s *UnsubscribeResource) SetID(val EntityId) {
 	s.ID = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *UnsubscribeResource) SetChannel(val ConsentChannel) {
+	s.Channel = val
 }
 
 // SetDestination sets the value of Destination.
@@ -18192,8 +19523,8 @@ type UnsubscribesCreateUnprocessableEntity ProblemDetails
 
 func (*UnsubscribesCreateUnprocessableEntity) unsubscribesCreateRes() {}
 
-// Request body for updating an automation. The name changes at once; the trigger, steps and
-// integration write the draft (ADR 0065): omitted fields keep the draft's, else the live version's,
+// Request body for updating an automation. The name changes at once; the trigger, exit and goal events
+// and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live version's,
 // and only publishing makes the draft live.
 // Ref: #/components/schemas/UpdateAutomationInput
 type UpdateAutomationInput struct {
@@ -18204,8 +19535,6 @@ type UpdateAutomationInput struct {
 	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
 	GoalEvent OptNilString     `json:"goalEvent"`
 	Steps     []AutomationStep `json:"steps"`
-	// Sending integration of the email steps; null means the workspace default, omitted keeps it.
-	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetName returns the value of Name.
@@ -18233,11 +19562,6 @@ func (s *UpdateAutomationInput) GetSteps() []AutomationStep {
 	return s.Steps
 }
 
-// GetIntegrationId returns the value of IntegrationId.
-func (s *UpdateAutomationInput) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
-}
-
 // SetName sets the value of Name.
 func (s *UpdateAutomationInput) SetName(val OptString) {
 	s.Name = val
@@ -18263,33 +19587,18 @@ func (s *UpdateAutomationInput) SetSteps(val []AutomationStep) {
 	s.Steps = val
 }
 
-// SetIntegrationId sets the value of IntegrationId.
-func (s *UpdateAutomationInput) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
-}
-
 // Request body for updating a draft broadcast: an omitted field keeps its value, null clears it.
 // Ref: #/components/schemas/UpdateBroadcastInput
 type UpdateBroadcastInput struct {
 	// Internal broadcast name.
 	Name OptString `json:"name"`
-	// Email subject line.
-	Subject OptString `json:"subject"`
-	// Sender display name; null goes back to the integration's default.
-	FromName OptNilString `json:"fromName"`
-	// Sender email address: a changed value must be on a verified Sending domain of the workspace, or the
-	// write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays
-	// editable. Null goes back to the integration's default.
-	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
-	Body OptString `json:"body"`
-	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
-	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
-	// a 422 with the reason and nothing is stored.
-	Doc OptEditorDocument `json:"doc"`
+	// What the broadcast says; its `channel` must be the broadcast's own (422 otherwise). Omitted keeps
+	// the content.
+	Content OptBroadcastContentInput `json:"content"`
 	// Target segment; null means all contacts. An archived segment is refused with 422.
 	SegmentId OptNilEntityId `json:"segmentId"`
-	// Sending integration; null means the workspace default. An archived integration is refused with 422.
+	// Sending integration, of the broadcast's Channel; null means the Channel's default. An archived
+	// integration, or one of another Channel, is refused with 422.
 	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
@@ -18298,29 +19607,9 @@ func (s *UpdateBroadcastInput) GetName() OptString {
 	return s.Name
 }
 
-// GetSubject returns the value of Subject.
-func (s *UpdateBroadcastInput) GetSubject() OptString {
-	return s.Subject
-}
-
-// GetFromName returns the value of FromName.
-func (s *UpdateBroadcastInput) GetFromName() OptNilString {
-	return s.FromName
-}
-
-// GetFromEmail returns the value of FromEmail.
-func (s *UpdateBroadcastInput) GetFromEmail() OptNilEmailAddress {
-	return s.FromEmail
-}
-
-// GetBody returns the value of Body.
-func (s *UpdateBroadcastInput) GetBody() OptString {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *UpdateBroadcastInput) GetDoc() OptEditorDocument {
-	return s.Doc
+// GetContent returns the value of Content.
+func (s *UpdateBroadcastInput) GetContent() OptBroadcastContentInput {
+	return s.Content
 }
 
 // GetSegmentId returns the value of SegmentId.
@@ -18338,29 +19627,9 @@ func (s *UpdateBroadcastInput) SetName(val OptString) {
 	s.Name = val
 }
 
-// SetSubject sets the value of Subject.
-func (s *UpdateBroadcastInput) SetSubject(val OptString) {
-	s.Subject = val
-}
-
-// SetFromName sets the value of FromName.
-func (s *UpdateBroadcastInput) SetFromName(val OptNilString) {
-	s.FromName = val
-}
-
-// SetFromEmail sets the value of FromEmail.
-func (s *UpdateBroadcastInput) SetFromEmail(val OptNilEmailAddress) {
-	s.FromEmail = val
-}
-
-// SetBody sets the value of Body.
-func (s *UpdateBroadcastInput) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *UpdateBroadcastInput) SetDoc(val OptEditorDocument) {
-	s.Doc = val
+// SetContent sets the value of Content.
+func (s *UpdateBroadcastInput) SetContent(val OptBroadcastContentInput) {
+	s.Content = val
 }
 
 // SetSegmentId sets the value of SegmentId.
@@ -18570,10 +19839,10 @@ type UpdateIntegrationInput struct {
 	MaxPerDay OptNilMaxPerDay           `json:"maxPerDay"`
 	Config    OptIntegrationConfigInput `json:"config"`
 	// Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no
-	// secret carries over.
+	// secret carries over. A Telegram integration's Preset is fixed.
 	Preset OptNilString `json:"preset"`
 	// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
-	// rotates it (the old one stays valid until retired).
+	// rotates it (the old one stays valid until retired). A Telegram integration takes none.
 	Params OptJsonObject `json:"params"`
 	// Stop accepting the retiring value of every rotating secret.
 	RetireSecrets OptBool `json:"retireSecrets"`

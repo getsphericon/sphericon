@@ -22,7 +22,9 @@ import {
   dateOperators,
   inputTypeOf,
   inputTypeOfField,
+  haveOperators,
   operatorsOf,
+  telegramField,
   textOperators,
   triggerOperatorsOf,
 } from './fieldOperators.ts'
@@ -51,6 +53,8 @@ const contactFields: Field[] = [
   { name: 'city', label: 'City' },
   // The birthday is a date: it takes the date leaves alone.
   { name: 'birthday', label: 'Birthday', operators: dateOperators },
+  // Whether a Telegram chat is bound to the Contact or its Visitors: no value to type.
+  { name: telegramField, label: 'Telegram', operators: haveOperators, defaultOperator: 'has' },
 ]
 
 interface ConditionBuilderProps {

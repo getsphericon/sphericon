@@ -22,7 +22,7 @@ func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.Site
 func (h *Handlers) SiteSuppressionsCreate(ctx context.Context, req *siteapi.SiteCreateSuppressionInput, _ siteapi.SiteSuppressionsCreateParams) (siteapi.SiteSuppressionsCreateRes, error) {
 	s := workspaceScope(ctx)
 
-	created, err := suppression.AddManual(ctx, s, req.Destination)
+	created, err := suppression.AddManual(ctx, s, inputs.SuppressionChannel(req.Channel.Or(siteapi.SiteSuppressionChannelEmail)), req.Destination)
 	if err != nil {
 		return nil, err
 	}

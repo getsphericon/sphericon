@@ -9,6 +9,7 @@ import (
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
+	suppression "github.com/getsphericon/sphericon/ent/suppression"
 	site "github.com/getsphericon/sphericon/gen/site"
 	accounts "github.com/getsphericon/sphericon/internal/accounts"
 	analytics "github.com/getsphericon/sphericon/internal/analytics"
@@ -26,6 +27,7 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	signup "github.com/getsphericon/sphericon/internal/signup"
 	signupsurvey "github.com/getsphericon/sphericon/internal/signupsurvey"
+	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
 	templates "github.com/getsphericon/sphericon/internal/templates"
 	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -73,7 +75,6 @@ func (c *InputsImpl) AutomationCreate(source *site.SiteCreateAutomationInput) au
 		}
 		automationsCreateInput.GoalEvent = nilStringPtrIn((*source).GoalEvent)
 		automationsCreateInput.Steps = c.AutomationSteps((*source).Steps)
-		automationsCreateInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
 	return automationsCreateInput
 }
@@ -96,18 +97,29 @@ func (c *InputsImpl) AutomationReportPeriod(source site.SiteAutomationReportsGet
 func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automationsteps.Step {
 	var automationstepsStep automationsteps.Step
 	automationstepsStep.Type = c.AutomationStepType(source.Type)
+	automationstepsStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
 	automationstepsStep.Subject = stringIn(source.Subject)
 	automationstepsStep.Body = stringIn(source.Body)
 	automationstepsStep.Doc = documentIn(source.Doc)
 	// automationstepsStep.EditorVersion: ignore
 	automationstepsStep.Seconds = int32In(source.Seconds)
 	automationstepsStep.Tag = stringIn(source.Tag)
+	automationstepsStep.Text = stringIn(source.Text)
+	automationstepsStep.UnsubscribeButton = stringIn(source.UnsubscribeButton)
+	automationstepsStep.ImageURL = stringIn(source.ImageUrl)
+	if source.Buttons != nil {
+		automationstepsStep.Buttons = make([]telegramrender.Button, len(source.Buttons))
+		for i := 0; i < len(source.Buttons); i++ {
+			automationstepsStep.Buttons[i] = c.TelegramButton(source.Buttons[i])
+		}
+	}
+	automationstepsStep.LinkPreview = boolPtrIn(source.LinkPreview)
 	automationstepsStep.ID = stringIn(source.ID)
 	automationstepsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
 		automationstepsStep.Headers = make([]httpcall.Header, len(source.Headers))
-		for i := 0; i < len(source.Headers); i++ {
-			automationstepsStep.Headers[i] = c.siteapiSiteAutomationHttpHeaderToHttpcallHeader(source.Headers[i])
+		for j := 0; j < len(source.Headers); j++ {
+			automationstepsStep.Headers[j] = c.siteapiSiteAutomationHttpHeaderToHttpcallHeader(source.Headers[j])
 		}
 	}
 	automationstepsStep.Secret = stringIn(source.Secret)
@@ -125,6 +137,8 @@ func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) auto
 		automationstepsKind = automationsteps.HTTP
 	case site.SiteAutomationStepTypeRemoveTag:
 		automationstepsKind = automationsteps.RemoveTag
+	case site.SiteAutomationStepTypeTelegram:
+		automationstepsKind = automationsteps.Telegram
 	case site.SiteAutomationStepTypeWait:
 		automationstepsKind = automationsteps.Wait
 	default:
@@ -150,7 +164,6 @@ func (c *InputsImpl) AutomationUpdate(source *site.SiteUpdateAutomationInput) au
 		automationsUpdateInput.ExitEvents = listPtrIn((*source).ExitEvents)
 		automationsUpdateInput.GoalEvent = nilStringPatch((*source).GoalEvent)
 		automationsUpdateInput.Steps = automationStepsPtrIn(c, (*source).Steps)
-		automationsUpdateInput.IntegrationID = nilEntityIDPatch((*source).IntegrationId)
 	}
 	return automationsUpdateInput
 }
@@ -169,20 +182,32 @@ func (c *InputsImpl) BrandKitSave(source *site.SiteSaveBrandKitInput) brandkit.I
 	}
 	return brandkitInput
 }
-func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) broadcasts.CreateInput {
+func (c *InputsImpl) BroadcastChannel(source site.BroadcastChannel) broadcast.Channel {
+	var broadcastChannel broadcast.Channel
+	switch source {
+	case site.BroadcastChannelEmail:
+		broadcastChannel = broadcast.ChannelEmail
+	case site.BroadcastChannelTelegram:
+		broadcastChannel = broadcast.ChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return broadcastChannel
+}
+func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) (broadcasts.CreateInput, error) {
 	var broadcastsCreateInput broadcasts.CreateInput
 	if source != nil {
 		pString := (*source).Name
 		broadcastsCreateInput.Name = &pString
-		broadcastsCreateInput.Subject = stringPtrIn((*source).Subject)
-		broadcastsCreateInput.FromName = nilStringPtrIn((*source).FromName)
-		broadcastsCreateInput.FromEmail = nilEmailPtrIn((*source).FromEmail)
-		broadcastsCreateInput.Body = stringPtrIn((*source).Body)
-		broadcastsCreateInput.Doc = documentIn((*source).Doc)
+		broadcastsContentInput, err := broadcastContentIn(c, (*source).Content)
+		if err != nil {
+			return broadcastsCreateInput, err
+		}
+		broadcastsCreateInput.Content = broadcastsContentInput
 		broadcastsCreateInput.SegmentID = nilEntityIDPtrIn((*source).SegmentId)
 		broadcastsCreateInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
-	return broadcastsCreateInput
+	return broadcastsCreateInput, nil
 }
 func (c *InputsImpl) BroadcastStatus(source site.SiteBroadcastStatus) broadcast.Status {
 	var broadcastStatus broadcast.Status
@@ -212,19 +237,26 @@ func (c *InputsImpl) BroadcastStatuses(source []site.SiteBroadcastStatus) []broa
 	}
 	return broadcastStatusList
 }
-func (c *InputsImpl) BroadcastUpdate(source *site.UpdateBroadcastInput) broadcasts.UpdateInput {
+func (c *InputsImpl) BroadcastUpdate(source *site.UpdateBroadcastInput) (broadcasts.UpdateInput, error) {
 	var broadcastsUpdateInput broadcasts.UpdateInput
 	if source != nil {
 		broadcastsUpdateInput.Name = stringPatch((*source).Name)
-		broadcastsUpdateInput.Subject = stringPatch((*source).Subject)
-		broadcastsUpdateInput.FromName = nilStringPatch((*source).FromName)
-		broadcastsUpdateInput.FromEmail = nilEmailPatch((*source).FromEmail)
-		broadcastsUpdateInput.Body = stringPatch((*source).Body)
-		broadcastsUpdateInput.Doc = documentPatch((*source).Doc)
+		broadcastsContentPatch, err := broadcastContentPatch(c, (*source).Content)
+		if err != nil {
+			return broadcastsUpdateInput, err
+		}
+		broadcastsUpdateInput.Content = broadcastsContentPatch
 		broadcastsUpdateInput.SegmentID = nilEntityIDPatch((*source).SegmentId)
 		broadcastsUpdateInput.IntegrationID = nilEntityIDPatch((*source).IntegrationId)
 	}
-	return broadcastsUpdateInput
+	return broadcastsUpdateInput, nil
+}
+func (c *InputsImpl) BroadcastsListFilter(source site.SiteBroadcastsListParams) broadcasts.ListFilter {
+	var broadcastsListFilter broadcasts.ListFilter
+	broadcastsListFilter.Archived = boolIn(source.Archived)
+	broadcastsListFilter.Statuses = c.BroadcastStatuses(source.Status)
+	broadcastsListFilter.Channel = broadcastChannelPtrIn(c, source.Channel)
+	return broadcastsListFilter
 }
 func (c *InputsImpl) BroadcastsOrder(source site.SiteBroadcastsOrder) broadcasts.Order {
 	var broadcastsOrder broadcasts.Order
@@ -288,6 +320,24 @@ func (c *InputsImpl) CustomFieldUpdate(source *site.SiteUpdateCustomFieldInput) 
 		contactsCustomFieldUpdateInput.Type = customFieldTypePatch((*source).Type)
 	}
 	return contactsCustomFieldUpdateInput
+}
+func (c *InputsImpl) EmailBroadcastContentIn(source site.EmailBroadcastContentInput) broadcasts.EmailContentInput {
+	var broadcastsEmailContentInput broadcasts.EmailContentInput
+	broadcastsEmailContentInput.Subject = stringPtrIn(source.Subject)
+	broadcastsEmailContentInput.FromName = nilStringPtrIn(source.FromName)
+	broadcastsEmailContentInput.FromEmail = nilEmailPtrIn(source.FromEmail)
+	broadcastsEmailContentInput.Body = stringPtrIn(source.Body)
+	broadcastsEmailContentInput.Doc = documentIn(source.Doc)
+	return broadcastsEmailContentInput
+}
+func (c *InputsImpl) EmailBroadcastContentPatch(source site.EmailBroadcastContentInput) broadcasts.EmailContentPatch {
+	var broadcastsEmailContentPatch broadcasts.EmailContentPatch
+	broadcastsEmailContentPatch.Subject = stringPatch(source.Subject)
+	broadcastsEmailContentPatch.FromName = nilStringPatch(source.FromName)
+	broadcastsEmailContentPatch.FromEmail = nilEmailPatch(source.FromEmail)
+	broadcastsEmailContentPatch.Body = stringPatch(source.Body)
+	broadcastsEmailContentPatch.Doc = documentPatch(source.Doc)
+	return broadcastsEmailContentPatch
 }
 func (c *InputsImpl) IntegrationCreate(source *site.CreateIntegrationInput) (integrations.CreateInput, error) {
 	var integrationsCreateInput integrations.CreateInput
@@ -585,6 +635,42 @@ func (c *InputsImpl) SignupSurvey(source *site.SiteSignupSurveyInput) signupsurv
 		signupsurveyAnswers.HeardFromOther = stringPtrIn((*source).HeardFromOther)
 	}
 	return signupsurveyAnswers
+}
+func (c *InputsImpl) SuppressionChannel(source site.SiteSuppressionChannel) suppression.Channel {
+	var suppressionChannel suppression.Channel
+	switch source {
+	case site.SiteSuppressionChannelEmail:
+		suppressionChannel = suppression.ChannelEmail
+	case site.SiteSuppressionChannelTelegram:
+		suppressionChannel = suppression.ChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return suppressionChannel
+}
+func (c *InputsImpl) TelegramBroadcastContentIn(source site.TelegramBroadcastContentInput) broadcasts.TelegramContentInput {
+	var broadcastsTelegramContentInput broadcasts.TelegramContentInput
+	broadcastsTelegramContentInput.Text = stringPtrIn(source.Text)
+	broadcastsTelegramContentInput.ImageURL = stringPtrIn(source.ImageUrl)
+	broadcastsTelegramContentInput.Buttons = buttonsPtrIn(c, source.Buttons)
+	broadcastsTelegramContentInput.LinkPreview = boolPtrIn(source.LinkPreview)
+	broadcastsTelegramContentInput.UnsubscribeButton = stringPtrIn(source.UnsubscribeButton)
+	return broadcastsTelegramContentInput
+}
+func (c *InputsImpl) TelegramBroadcastContentPatch(source site.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch {
+	var broadcastsTelegramContentPatch broadcasts.TelegramContentPatch
+	broadcastsTelegramContentPatch.Text = stringPatch(source.Text)
+	broadcastsTelegramContentPatch.ImageURL = stringPatch(source.ImageUrl)
+	broadcastsTelegramContentPatch.Buttons = buttonsPatch(c, source.Buttons)
+	broadcastsTelegramContentPatch.LinkPreview = boolPatch(source.LinkPreview)
+	broadcastsTelegramContentPatch.UnsubscribeButton = stringPatch(source.UnsubscribeButton)
+	return broadcastsTelegramContentPatch
+}
+func (c *InputsImpl) TelegramButton(source site.TelegramButton) telegramrender.Button {
+	var telegramrenderButton telegramrender.Button
+	telegramrenderButton.Label = source.Label
+	telegramrenderButton.URL = source.URL
+	return telegramrenderButton
 }
 func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) templates.CreateInput {
 	var templatesCreateInput templates.CreateInput

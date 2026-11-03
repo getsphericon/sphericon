@@ -3,6 +3,7 @@ package outbound
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -24,10 +25,27 @@ type channel interface {
 	// integ is nil when the Channel has no Integration to send through: a test double's sender
 	// may still answer. messaging.ErrNoProvider when none can be built.
 	adapter(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (Adapter, error)
+	// targets resolves where the message goes, after the claim: one target per Destination the
+	// Channel reaches the Request's recipient at. dest is the Request's own normalized Destination
+	// (on email the address, empty for a Contact with none); a Channel of Bindings ignores it and
+	// reads the recipient's Bindings on the route's Integration. None is a Skipped no_destination.
+	targets(ctx context.Context, s *ent.Scoped, req Request, route Route, dest string) ([]target, error)
 	// render renders req's content for one recipient, whose Outbound message is messageID and
 	// Destination dest, into the message the Channel's adapter sends. A contentError is the
 	// message's own and ends the send as Failed; any other error is retried.
 	render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error)
+	// unreachable drops a target the provider said no longer reaches anyone (an unreachableError
+	// of send): a Channel of Bindings removes the Binding and records that it is gone. It runs in
+	// a transaction of its own, outside the send's claim.
+	unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, to target, messageID int64) error
+}
+
+// target is one place a message goes: dest is its Destination, the key of Send-eligibility and what
+// the message records, and chat the provider's own address for it when that differs (a Telegram
+// chat id), "" when the Destination is the address.
+type target struct {
+	dest string
+	chat string
 }
 
 // Adapter is a Channel's provider adapter, built for the Integration of one Send route. Only the
@@ -39,9 +57,9 @@ type Adapter interface {
 	// prepare runs the Channel's own checks of a send of content through the adapter, before
 	// anything is claimed: hold says why it cannot go now, else as is who it goes out as.
 	prepare(ctx context.Context, s *ent.Scoped, content Content) (as sendAs, hold string, err error)
-	// send hands one message its Channel's renderer made to the provider. An error wrapping a
-	// holdError holds the send.
-	send(ctx context.Context, as sendAs, msg any, dest string, origin messaging.Origin) (messaging.Receipt, error)
+	// send hands one message its Channel's renderer made to the provider, for one target. An error
+	// wrapping a holdError holds the send.
+	send(ctx context.Context, as sendAs, msg any, to target, origin messaging.Origin) (messaging.Receipt, error)
 	// publishSent publishes the Channel's Events of a message recorded sent, in the transaction that
 	// records it: its sent Event and, when the provider confirmed delivery on acceptance, its
 	// delivered Event.
@@ -66,6 +84,8 @@ type sentFact struct {
 	as          sendAs
 	receipt     messaging.Receipt
 	captured    bool
+	// integrationID is the Integration the message went through, 0 without one.
+	integrationID int64
 }
 
 // holdError is a provider adapter's word that the send cannot go now for a reason that clears by
@@ -81,6 +101,23 @@ func heldBy(err error) string {
 	}
 	return ""
 }
+
+// deferError is a provider adapter's word that the provider asked for slower calls and said for
+// how long (Telegram's 429 with retry_after): nothing left, the send is deferred by at least wait.
+type deferError struct {
+	wait time.Duration
+	err  error
+}
+
+func (e deferError) Error() string { return "outbound: deferred: " + e.err.Error() }
+func (e deferError) Unwrap() error { return e.err }
+
+// unreachableError is a provider adapter's word that the target reaches no one any more (Telegram's
+// "user is deactivated", "chat not found"): the Binding goes, and the message goes to the others.
+type unreachableError struct{ err error }
+
+func (e unreachableError) Error() string { return "outbound: unreachable: " + e.err.Error() }
+func (e unreachableError) Unwrap() error { return e.err }
 
 // contentError marks a render failure that comes from the message itself (a template that does
 // not render, a link that cannot be rewritten): it is the same on every attempt, so the send ends

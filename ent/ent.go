@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -67,8 +68,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/staffmember"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -145,6 +148,7 @@ func checkColumn(t, c string) error {
 			automation.Table:           automation.ValidColumn,
 			automationrun.Table:        automationrun.ValidColumn,
 			automationversion.Table:    automationversion.ValidColumn,
+			binding.Table:              binding.ValidColumn,
 			brandkit.Table:             brandkit.ValidColumn,
 			broadcast.Table:            broadcast.ValidColumn,
 			broadcastrecipient.Table:   broadcastrecipient.ValidColumn,
@@ -194,8 +198,10 @@ func checkColumn(t, c string) error {
 			signupitem.Table:           signupitem.ValidColumn,
 			signupsurveyresponse.Table: signupsurveyresponse.ValidColumn,
 			staffmember.Table:          staffmember.ValidColumn,
+			starttoken.Table:           starttoken.ValidColumn,
 			suppression.Table:          suppression.ValidColumn,
 			tag.Table:                  tag.ValidColumn,
+			trackedlink.Table:          trackedlink.ValidColumn,
 			trackingdomain.Table:       trackingdomain.ValidColumn,
 			trackinghostchange.Table:   trackinghostchange.ValidColumn,
 			unsubscribe.Table:          unsubscribe.ValidColumn,

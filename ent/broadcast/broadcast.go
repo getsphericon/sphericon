@@ -26,12 +26,24 @@ const (
 	FieldDiscardedAt = "discarded_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldChannel holds the string denoting the channel field in the database.
+	FieldChannel = "channel"
 	// FieldSubject holds the string denoting the subject field in the database.
 	FieldSubject = "subject"
 	// FieldFromName holds the string denoting the from_name field in the database.
 	FieldFromName = "from_name"
 	// FieldFromEmail holds the string denoting the from_email field in the database.
 	FieldFromEmail = "from_email"
+	// FieldText holds the string denoting the text field in the database.
+	FieldText = "text"
+	// FieldImageURL holds the string denoting the image_url field in the database.
+	FieldImageURL = "image_url"
+	// FieldButtons holds the string denoting the buttons field in the database.
+	FieldButtons = "buttons"
+	// FieldLinkPreview holds the string denoting the link_preview field in the database.
+	FieldLinkPreview = "link_preview"
+	// FieldUnsubscribeButton holds the string denoting the unsubscribe_button field in the database.
+	FieldUnsubscribeButton = "unsubscribe_button"
 	// FieldBody holds the string denoting the body field in the database.
 	FieldBody = "body"
 	// FieldDoc holds the string denoting the doc field in the database.
@@ -104,9 +116,15 @@ var Columns = []string{
 	FieldWorkspaceID,
 	FieldDiscardedAt,
 	FieldName,
+	FieldChannel,
 	FieldSubject,
 	FieldFromName,
 	FieldFromEmail,
+	FieldText,
+	FieldImageURL,
+	FieldButtons,
+	FieldLinkPreview,
+	FieldUnsubscribeButton,
 	FieldBody,
 	FieldDoc,
 	FieldEditorVersion,
@@ -140,11 +158,32 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
-	// DefaultSubject holds the default value on creation for the "subject" field.
-	DefaultSubject string
-	// DefaultBody holds the default value on creation for the "body" field.
-	DefaultBody string
+	// DefaultLinkPreview holds the default value on creation for the "link_preview" field.
+	DefaultLinkPreview bool
 )
+
+// Channel defines the type for the "channel" enum field.
+type Channel string
+
+// Channel values.
+const (
+	ChannelEmail    Channel = "email"
+	ChannelTelegram Channel = "telegram"
+)
+
+func (c Channel) String() string {
+	return string(c)
+}
+
+// ChannelValidator is a validator for the "channel" field enum values. It is called by the builders before save.
+func ChannelValidator(c Channel) error {
+	switch c {
+	case ChannelEmail, ChannelTelegram:
+		return nil
+	default:
+		return fmt.Errorf("broadcast: invalid enum value for channel field: %q", c)
+	}
+}
 
 // Status defines the type for the "status" enum field.
 type Status string
@@ -178,7 +217,7 @@ func StatusValidator(s Status) error {
 // HoldReasonValidator is a validator for the "hold_reason" field enum values. It is called by the builders before save.
 func HoldReasonValidator(hr holdreason.Reason) error {
 	switch hr {
-	case "workspace_suspended", "workspace_pending_deletion", "staff_hold", "no_integration", "unverified_domain", "provider_stopped":
+	case "workspace_suspended", "workspace_pending_deletion", "staff_hold", "no_integration", "unverified_domain", "provider_stopped", "provider_refused":
 		return nil
 	default:
 		return fmt.Errorf("broadcast: invalid enum value for hold_reason field: %q", hr)
@@ -218,6 +257,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
+// ByChannel orders the results by the channel field.
+func ByChannel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChannel, opts...).ToFunc()
+}
+
 // BySubject orders the results by the subject field.
 func BySubject(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubject, opts...).ToFunc()
@@ -231,6 +275,26 @@ func ByFromName(opts ...sql.OrderTermOption) OrderOption {
 // ByFromEmail orders the results by the from_email field.
 func ByFromEmail(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFromEmail, opts...).ToFunc()
+}
+
+// ByText orders the results by the text field.
+func ByText(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldText, opts...).ToFunc()
+}
+
+// ByImageURL orders the results by the image_url field.
+func ByImageURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldImageURL, opts...).ToFunc()
+}
+
+// ByLinkPreview orders the results by the link_preview field.
+func ByLinkPreview(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLinkPreview, opts...).ToFunc()
+}
+
+// ByUnsubscribeButton orders the results by the unsubscribe_button field.
+func ByUnsubscribeButton(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnsubscribeButton, opts...).ToFunc()
 }
 
 // ByBody orders the results by the body field.

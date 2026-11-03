@@ -32,16 +32,12 @@ const (
 	FieldExitEvents = "exit_events"
 	// FieldGoalEvent holds the string denoting the goal_event field in the database.
 	FieldGoalEvent = "goal_event"
-	// FieldIntegrationID holds the string denoting the integration_id field in the database.
-	FieldIntegrationID = "integration_id"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeAutomation holds the string denoting the automation edge name in mutations.
 	EdgeAutomation = "automation"
 	// EdgeRuns holds the string denoting the runs edge name in mutations.
 	EdgeRuns = "runs"
-	// EdgeIntegration holds the string denoting the integration edge name in mutations.
-	EdgeIntegration = "integration"
 	// Table holds the table name of the automationversion in the database.
 	Table = "automation_versions"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -65,13 +61,6 @@ const (
 	RunsInverseTable = "automation_runs"
 	// RunsColumn is the table column denoting the runs relation/edge.
 	RunsColumn = "version_id"
-	// IntegrationTable is the table that holds the integration relation/edge.
-	IntegrationTable = "automation_versions"
-	// IntegrationInverseTable is the table name for the Integration entity.
-	// It exists in this package in order to avoid circular dependency with the "integration" package.
-	IntegrationInverseTable = "integrations"
-	// IntegrationColumn is the table column denoting the integration relation/edge.
-	IntegrationColumn = "integration_id"
 )
 
 // Columns holds all SQL columns for automationversion fields.
@@ -86,7 +75,6 @@ var Columns = []string{
 	FieldTriggerEvent,
 	FieldExitEvents,
 	FieldGoalEvent,
-	FieldIntegrationID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -162,11 +150,6 @@ func ByGoalEvent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldGoalEvent, opts...).ToFunc()
 }
 
-// ByIntegrationID orders the results by the integration_id field.
-func ByIntegrationID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIntegrationID, opts...).ToFunc()
-}
-
 // ByWorkspaceField orders the results by workspace field.
 func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -194,13 +177,6 @@ func ByRuns(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRunsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-
-// ByIntegrationField orders the results by integration field.
-func ByIntegrationField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newIntegrationStep(), sql.OrderByField(field, opts...))
-	}
-}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -220,12 +196,5 @@ func newRunsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RunsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RunsTable, RunsColumn),
-	)
-}
-func newIntegrationStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(IntegrationInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, false, IntegrationTable, IntegrationColumn),
 	)
 }

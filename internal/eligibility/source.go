@@ -6,8 +6,11 @@ import (
 	"strings"
 )
 
-// ChannelEmail identifies the email channel, the only built one; sms is reserved.
+// ChannelEmail identifies the email channel; sms is reserved.
 const ChannelEmail = "email"
+
+// ChannelTelegram identifies the Telegram channel, whose Destinations are Bindings.
+const ChannelTelegram = "telegram"
 
 // Sending sources — the unit a destination unsubscribes from. A source is
 // automatic, never hand-authored: it IS the sender. All broadcasts share one

@@ -81,6 +81,18 @@ func (f AutomationVersionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AutomationVersionMutation", m)
 }
 
+// The BindingFunc type is an adapter to allow the use of ordinary
+// function as Binding mutator.
+type BindingFunc func(context.Context, *ent.BindingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BindingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.BindingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BindingMutation", m)
+}
+
 // The BrandKitFunc type is an adapter to allow the use of ordinary
 // function as BrandKit mutator.
 type BrandKitFunc func(context.Context, *ent.BrandKitMutation) (ent.Value, error)
@@ -669,6 +681,18 @@ func (f StaffMemberFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StaffMemberMutation", m)
 }
 
+// The StartTokenFunc type is an adapter to allow the use of ordinary
+// function as StartToken mutator.
+type StartTokenFunc func(context.Context, *ent.StartTokenMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f StartTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.StartTokenMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StartTokenMutation", m)
+}
+
 // The SuppressionFunc type is an adapter to allow the use of ordinary
 // function as Suppression mutator.
 type SuppressionFunc func(context.Context, *ent.SuppressionMutation) (ent.Value, error)
@@ -691,6 +715,18 @@ func (f TagFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) 
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TagMutation", m)
+}
+
+// The TrackedLinkFunc type is an adapter to allow the use of ordinary
+// function as TrackedLink mutator.
+type TrackedLinkFunc func(context.Context, *ent.TrackedLinkMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TrackedLinkFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TrackedLinkMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TrackedLinkMutation", m)
 }
 
 // The TrackingDomainFunc type is an adapter to allow the use of ordinary

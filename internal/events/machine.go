@@ -1,6 +1,8 @@
 package events
 
 import (
+	"slices"
+
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
 )
@@ -10,9 +12,13 @@ import (
 // queries; the property is there for segment conditions.
 const MachineProperty = "machine"
 
+// ClickActions are the Events of a click on a link of a message, one per Channel that tracks them
+// (ADR 0083): what a link report counts and what Attribution credits.
+var ClickActions = []string{NameEmailClicked, NameTelegramClicked}
+
 // IsEngagement reports whether action is an open or a click, the Events a machine can make.
 func IsEngagement(action string) bool {
-	return action == NameEmailOpened || action == NameEmailClicked
+	return action == NameEmailOpened || slices.Contains(ClickActions, action)
 }
 
 // HumanOnly narrows a query of Events to the ones not made by software, for every figure that

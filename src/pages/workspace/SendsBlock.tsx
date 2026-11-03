@@ -120,12 +120,18 @@ function SendsLists({ workspaceId }: { workspaceId: string }) {
       : t(($) => $.overview.sends.scheduledFor, {
           date: b.scheduledAt ? formatDateTime(b.scheduledAt) : '',
         })
-  const sentDetail = (b: SiteBroadcastResource) =>
-    t(($) => $.overview.sends.sentDetail, {
-      date: b.sentAt ? formatDateTime(b.sentAt) : '',
-      opened: formatPercent(b.stats.openRate),
-      clicked: formatPercent(b.stats.clickRate),
-    })
+  // A Channel that cannot tell opens (Telegram) has no open rate to show.
+  const sentDetail = (b: SiteBroadcastResource) => {
+    const date = b.sentAt ? formatDateTime(b.sentAt) : ''
+    const clicked = formatPercent(b.stats.clickRate)
+    return b.stats.openRate === null
+      ? t(($) => $.overview.sends.sentDetailNoOpens, { date, clicked })
+      : t(($) => $.overview.sends.sentDetail, {
+          date,
+          opened: formatPercent(b.stats.openRate),
+          clicked,
+        })
+  }
 
   return (
     <SimpleGrid cols={{ base: 1, md: 3 }}>

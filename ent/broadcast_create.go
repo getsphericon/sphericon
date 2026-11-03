@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // BroadcastCreate is the builder for creating a Broadcast entity.
@@ -82,6 +83,12 @@ func (_c *BroadcastCreate) SetName(v string) *BroadcastCreate {
 	return _c
 }
 
+// SetChannel sets the "channel" field.
+func (_c *BroadcastCreate) SetChannel(v broadcast.Channel) *BroadcastCreate {
+	_c.mutation.SetChannel(v)
+	return _c
+}
+
 // SetSubject sets the "subject" field.
 func (_c *BroadcastCreate) SetSubject(v string) *BroadcastCreate {
 	_c.mutation.SetSubject(v)
@@ -120,6 +127,68 @@ func (_c *BroadcastCreate) SetFromEmail(v string) *BroadcastCreate {
 func (_c *BroadcastCreate) SetNillableFromEmail(v *string) *BroadcastCreate {
 	if v != nil {
 		_c.SetFromEmail(*v)
+	}
+	return _c
+}
+
+// SetText sets the "text" field.
+func (_c *BroadcastCreate) SetText(v string) *BroadcastCreate {
+	_c.mutation.SetText(v)
+	return _c
+}
+
+// SetNillableText sets the "text" field if the given value is not nil.
+func (_c *BroadcastCreate) SetNillableText(v *string) *BroadcastCreate {
+	if v != nil {
+		_c.SetText(*v)
+	}
+	return _c
+}
+
+// SetImageURL sets the "image_url" field.
+func (_c *BroadcastCreate) SetImageURL(v string) *BroadcastCreate {
+	_c.mutation.SetImageURL(v)
+	return _c
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (_c *BroadcastCreate) SetNillableImageURL(v *string) *BroadcastCreate {
+	if v != nil {
+		_c.SetImageURL(*v)
+	}
+	return _c
+}
+
+// SetButtons sets the "buttons" field.
+func (_c *BroadcastCreate) SetButtons(v []telegramrender.Button) *BroadcastCreate {
+	_c.mutation.SetButtons(v)
+	return _c
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (_c *BroadcastCreate) SetLinkPreview(v bool) *BroadcastCreate {
+	_c.mutation.SetLinkPreview(v)
+	return _c
+}
+
+// SetNillableLinkPreview sets the "link_preview" field if the given value is not nil.
+func (_c *BroadcastCreate) SetNillableLinkPreview(v *bool) *BroadcastCreate {
+	if v != nil {
+		_c.SetLinkPreview(*v)
+	}
+	return _c
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (_c *BroadcastCreate) SetUnsubscribeButton(v string) *BroadcastCreate {
+	_c.mutation.SetUnsubscribeButton(v)
+	return _c
+}
+
+// SetNillableUnsubscribeButton sets the "unsubscribe_button" field if the given value is not nil.
+func (_c *BroadcastCreate) SetNillableUnsubscribeButton(v *string) *BroadcastCreate {
+	if v != nil {
+		_c.SetUnsubscribeButton(*v)
 	}
 	return _c
 }
@@ -363,13 +432,9 @@ func (_c *BroadcastCreate) defaults() {
 		v := broadcast.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := _c.mutation.Subject(); !ok {
-		v := broadcast.DefaultSubject
-		_c.mutation.SetSubject(v)
-	}
-	if _, ok := _c.mutation.Body(); !ok {
-		v := broadcast.DefaultBody
-		_c.mutation.SetBody(v)
+	if _, ok := _c.mutation.LinkPreview(); !ok {
+		v := broadcast.DefaultLinkPreview
+		_c.mutation.SetLinkPreview(v)
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := broadcast.DefaultStatus
@@ -396,11 +461,16 @@ func (_c *BroadcastCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Broadcast.name": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.Subject(); !ok {
-		return &ValidationError{Name: "subject", err: errors.New(`ent: missing required field "Broadcast.subject"`)}
+	if _, ok := _c.mutation.Channel(); !ok {
+		return &ValidationError{Name: "channel", err: errors.New(`ent: missing required field "Broadcast.channel"`)}
 	}
-	if _, ok := _c.mutation.Body(); !ok {
-		return &ValidationError{Name: "body", err: errors.New(`ent: missing required field "Broadcast.body"`)}
+	if v, ok := _c.mutation.Channel(); ok {
+		if err := broadcast.ChannelValidator(v); err != nil {
+			return &ValidationError{Name: "channel", err: fmt.Errorf(`ent: validator failed for field "Broadcast.channel": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.LinkPreview(); !ok {
+		return &ValidationError{Name: "link_preview", err: errors.New(`ent: missing required field "Broadcast.link_preview"`)}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Broadcast.status"`)}
@@ -467,9 +537,13 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 		_spec.SetField(broadcast.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
+	if value, ok := _c.mutation.Channel(); ok {
+		_spec.SetField(broadcast.FieldChannel, field.TypeEnum, value)
+		_node.Channel = value
+	}
 	if value, ok := _c.mutation.Subject(); ok {
 		_spec.SetField(broadcast.FieldSubject, field.TypeString, value)
-		_node.Subject = value
+		_node.Subject = &value
 	}
 	if value, ok := _c.mutation.FromName(); ok {
 		_spec.SetField(broadcast.FieldFromName, field.TypeString, value)
@@ -479,9 +553,29 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 		_spec.SetField(broadcast.FieldFromEmail, field.TypeString, value)
 		_node.FromEmail = &value
 	}
+	if value, ok := _c.mutation.Text(); ok {
+		_spec.SetField(broadcast.FieldText, field.TypeString, value)
+		_node.Text = &value
+	}
+	if value, ok := _c.mutation.ImageURL(); ok {
+		_spec.SetField(broadcast.FieldImageURL, field.TypeString, value)
+		_node.ImageURL = &value
+	}
+	if value, ok := _c.mutation.Buttons(); ok {
+		_spec.SetField(broadcast.FieldButtons, field.TypeJSON, value)
+		_node.Buttons = value
+	}
+	if value, ok := _c.mutation.LinkPreview(); ok {
+		_spec.SetField(broadcast.FieldLinkPreview, field.TypeBool, value)
+		_node.LinkPreview = value
+	}
+	if value, ok := _c.mutation.UnsubscribeButton(); ok {
+		_spec.SetField(broadcast.FieldUnsubscribeButton, field.TypeString, value)
+		_node.UnsubscribeButton = &value
+	}
 	if value, ok := _c.mutation.Body(); ok {
 		_spec.SetField(broadcast.FieldBody, field.TypeString, value)
-		_node.Body = value
+		_node.Body = &value
 	}
 	if value, ok := _c.mutation.Doc(); ok {
 		_spec.SetField(broadcast.FieldDoc, field.TypeJSON, value)
@@ -704,6 +798,12 @@ func (u *BroadcastUpsert) UpdateSubject() *BroadcastUpsert {
 	return u
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (u *BroadcastUpsert) ClearSubject() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldSubject)
+	return u
+}
+
 // SetFromName sets the "from_name" field.
 func (u *BroadcastUpsert) SetFromName(v string) *BroadcastUpsert {
 	u.Set(broadcast.FieldFromName, v)
@@ -740,6 +840,90 @@ func (u *BroadcastUpsert) ClearFromEmail() *BroadcastUpsert {
 	return u
 }
 
+// SetText sets the "text" field.
+func (u *BroadcastUpsert) SetText(v string) *BroadcastUpsert {
+	u.Set(broadcast.FieldText, v)
+	return u
+}
+
+// UpdateText sets the "text" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateText() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldText)
+	return u
+}
+
+// ClearText clears the value of the "text" field.
+func (u *BroadcastUpsert) ClearText() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldText)
+	return u
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *BroadcastUpsert) SetImageURL(v string) *BroadcastUpsert {
+	u.Set(broadcast.FieldImageURL, v)
+	return u
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateImageURL() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldImageURL)
+	return u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *BroadcastUpsert) ClearImageURL() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldImageURL)
+	return u
+}
+
+// SetButtons sets the "buttons" field.
+func (u *BroadcastUpsert) SetButtons(v []telegramrender.Button) *BroadcastUpsert {
+	u.Set(broadcast.FieldButtons, v)
+	return u
+}
+
+// UpdateButtons sets the "buttons" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateButtons() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldButtons)
+	return u
+}
+
+// ClearButtons clears the value of the "buttons" field.
+func (u *BroadcastUpsert) ClearButtons() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldButtons)
+	return u
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (u *BroadcastUpsert) SetLinkPreview(v bool) *BroadcastUpsert {
+	u.Set(broadcast.FieldLinkPreview, v)
+	return u
+}
+
+// UpdateLinkPreview sets the "link_preview" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateLinkPreview() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldLinkPreview)
+	return u
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (u *BroadcastUpsert) SetUnsubscribeButton(v string) *BroadcastUpsert {
+	u.Set(broadcast.FieldUnsubscribeButton, v)
+	return u
+}
+
+// UpdateUnsubscribeButton sets the "unsubscribe_button" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateUnsubscribeButton() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldUnsubscribeButton)
+	return u
+}
+
+// ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
+func (u *BroadcastUpsert) ClearUnsubscribeButton() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldUnsubscribeButton)
+	return u
+}
+
 // SetBody sets the "body" field.
 func (u *BroadcastUpsert) SetBody(v string) *BroadcastUpsert {
 	u.Set(broadcast.FieldBody, v)
@@ -749,6 +933,12 @@ func (u *BroadcastUpsert) SetBody(v string) *BroadcastUpsert {
 // UpdateBody sets the "body" field to the value that was provided on create.
 func (u *BroadcastUpsert) UpdateBody() *BroadcastUpsert {
 	u.SetExcluded(broadcast.FieldBody)
+	return u
+}
+
+// ClearBody clears the value of the "body" field.
+func (u *BroadcastUpsert) ClearBody() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldBody)
 	return u
 }
 
@@ -964,6 +1154,9 @@ func (u *BroadcastUpsertOne) UpdateNewValues() *BroadcastUpsertOne {
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(broadcast.FieldCreatedAt)
 		}
+		if _, exists := u.create.mutation.Channel(); exists {
+			s.SetIgnore(broadcast.FieldChannel)
+		}
 	}))
 	return u
 }
@@ -1072,6 +1265,13 @@ func (u *BroadcastUpsertOne) UpdateSubject() *BroadcastUpsertOne {
 	})
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (u *BroadcastUpsertOne) ClearSubject() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearSubject()
+	})
+}
+
 // SetFromName sets the "from_name" field.
 func (u *BroadcastUpsertOne) SetFromName(v string) *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
@@ -1114,6 +1314,104 @@ func (u *BroadcastUpsertOne) ClearFromEmail() *BroadcastUpsertOne {
 	})
 }
 
+// SetText sets the "text" field.
+func (u *BroadcastUpsertOne) SetText(v string) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetText(v)
+	})
+}
+
+// UpdateText sets the "text" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateText() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateText()
+	})
+}
+
+// ClearText clears the value of the "text" field.
+func (u *BroadcastUpsertOne) ClearText() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearText()
+	})
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *BroadcastUpsertOne) SetImageURL(v string) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetImageURL(v)
+	})
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateImageURL() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateImageURL()
+	})
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *BroadcastUpsertOne) ClearImageURL() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearImageURL()
+	})
+}
+
+// SetButtons sets the "buttons" field.
+func (u *BroadcastUpsertOne) SetButtons(v []telegramrender.Button) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetButtons(v)
+	})
+}
+
+// UpdateButtons sets the "buttons" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateButtons() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateButtons()
+	})
+}
+
+// ClearButtons clears the value of the "buttons" field.
+func (u *BroadcastUpsertOne) ClearButtons() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearButtons()
+	})
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (u *BroadcastUpsertOne) SetLinkPreview(v bool) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetLinkPreview(v)
+	})
+}
+
+// UpdateLinkPreview sets the "link_preview" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateLinkPreview() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateLinkPreview()
+	})
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (u *BroadcastUpsertOne) SetUnsubscribeButton(v string) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetUnsubscribeButton(v)
+	})
+}
+
+// UpdateUnsubscribeButton sets the "unsubscribe_button" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateUnsubscribeButton() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateUnsubscribeButton()
+	})
+}
+
+// ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
+func (u *BroadcastUpsertOne) ClearUnsubscribeButton() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearUnsubscribeButton()
+	})
+}
+
 // SetBody sets the "body" field.
 func (u *BroadcastUpsertOne) SetBody(v string) *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
@@ -1125,6 +1423,13 @@ func (u *BroadcastUpsertOne) SetBody(v string) *BroadcastUpsertOne {
 func (u *BroadcastUpsertOne) UpdateBody() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.UpdateBody()
+	})
+}
+
+// ClearBody clears the value of the "body" field.
+func (u *BroadcastUpsertOne) ClearBody() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearBody()
 	})
 }
 
@@ -1537,6 +1842,9 @@ func (u *BroadcastUpsertBulk) UpdateNewValues() *BroadcastUpsertBulk {
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(broadcast.FieldCreatedAt)
 			}
+			if _, exists := b.mutation.Channel(); exists {
+				s.SetIgnore(broadcast.FieldChannel)
+			}
 		}
 	}))
 	return u
@@ -1646,6 +1954,13 @@ func (u *BroadcastUpsertBulk) UpdateSubject() *BroadcastUpsertBulk {
 	})
 }
 
+// ClearSubject clears the value of the "subject" field.
+func (u *BroadcastUpsertBulk) ClearSubject() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearSubject()
+	})
+}
+
 // SetFromName sets the "from_name" field.
 func (u *BroadcastUpsertBulk) SetFromName(v string) *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
@@ -1688,6 +2003,104 @@ func (u *BroadcastUpsertBulk) ClearFromEmail() *BroadcastUpsertBulk {
 	})
 }
 
+// SetText sets the "text" field.
+func (u *BroadcastUpsertBulk) SetText(v string) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetText(v)
+	})
+}
+
+// UpdateText sets the "text" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateText() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateText()
+	})
+}
+
+// ClearText clears the value of the "text" field.
+func (u *BroadcastUpsertBulk) ClearText() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearText()
+	})
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *BroadcastUpsertBulk) SetImageURL(v string) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetImageURL(v)
+	})
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateImageURL() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateImageURL()
+	})
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *BroadcastUpsertBulk) ClearImageURL() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearImageURL()
+	})
+}
+
+// SetButtons sets the "buttons" field.
+func (u *BroadcastUpsertBulk) SetButtons(v []telegramrender.Button) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetButtons(v)
+	})
+}
+
+// UpdateButtons sets the "buttons" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateButtons() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateButtons()
+	})
+}
+
+// ClearButtons clears the value of the "buttons" field.
+func (u *BroadcastUpsertBulk) ClearButtons() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearButtons()
+	})
+}
+
+// SetLinkPreview sets the "link_preview" field.
+func (u *BroadcastUpsertBulk) SetLinkPreview(v bool) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetLinkPreview(v)
+	})
+}
+
+// UpdateLinkPreview sets the "link_preview" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateLinkPreview() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateLinkPreview()
+	})
+}
+
+// SetUnsubscribeButton sets the "unsubscribe_button" field.
+func (u *BroadcastUpsertBulk) SetUnsubscribeButton(v string) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetUnsubscribeButton(v)
+	})
+}
+
+// UpdateUnsubscribeButton sets the "unsubscribe_button" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateUnsubscribeButton() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateUnsubscribeButton()
+	})
+}
+
+// ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
+func (u *BroadcastUpsertBulk) ClearUnsubscribeButton() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearUnsubscribeButton()
+	})
+}
+
 // SetBody sets the "body" field.
 func (u *BroadcastUpsertBulk) SetBody(v string) *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
@@ -1699,6 +2112,13 @@ func (u *BroadcastUpsertBulk) SetBody(v string) *BroadcastUpsertBulk {
 func (u *BroadcastUpsertBulk) UpdateBody() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.UpdateBody()
+	})
+}
+
+// ClearBody clears the value of the "body" field.
+func (u *BroadcastUpsertBulk) ClearBody() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearBody()
 	})
 }
 

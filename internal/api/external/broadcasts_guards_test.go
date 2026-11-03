@@ -26,7 +26,7 @@ func TestExternalBroadcastsRefuseABlankName(t *testing.T) {
 			before, err := env.DB.Broadcast.Query().Where(broadcast.WorkspaceID(fixtures.AcmeID)).Count(ctx)
 			require.NoError(t, err)
 
-			res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: name})
+			res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: name, Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
 			require.NoError(t, err)
 			refused, ok := res.(*externalapi.BroadcastsCreateUnprocessableEntity)
 			require.Truef(t, ok, "got %T", res)

@@ -343,6 +343,52 @@ func HasWorkspaceWith(preds ...predicate.Workspace) predicate.Visitor {
 	})
 }
 
+// HasBindings applies the HasEdge predicate on the "bindings" edge.
+func HasBindings() predicate.Visitor {
+	return predicate.Visitor(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BindingsTable, BindingsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBindingsWith applies the HasEdge predicate on the "bindings" edge with a given conditions (other predicates).
+func HasBindingsWith(preds ...predicate.Binding) predicate.Visitor {
+	return predicate.Visitor(func(s *sql.Selector) {
+		step := newBindingsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasStartTokens applies the HasEdge predicate on the "start_tokens" edge.
+func HasStartTokens() predicate.Visitor {
+	return predicate.Visitor(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, StartTokensTable, StartTokensColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStartTokensWith applies the HasEdge predicate on the "start_tokens" edge with a given conditions (other predicates).
+func HasStartTokensWith(preds ...predicate.StartToken) predicate.Visitor {
+	return predicate.Visitor(func(s *sql.Selector) {
+		step := newStartTokensStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasContact applies the HasEdge predicate on the "contact" edge.
 func HasContact() predicate.Visitor {
 	return predicate.Visitor(func(s *sql.Selector) {

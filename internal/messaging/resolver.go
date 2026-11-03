@@ -73,6 +73,20 @@ func (r *Resolver) EmailSender(ctx context.Context, s *ent.Scoped, row *ent.Inte
 	return sender, nil
 }
 
+// TelegramBot is Sender for a Telegram Integration, typed: the sender of an Integration of another
+// Channel is no bot and is an error.
+func (r *Resolver) TelegramBot(ctx context.Context, s *ent.Scoped, row *ent.Integration) (TelegramBot, error) {
+	built, err := r.Sender(ctx, s, row)
+	if err != nil {
+		return nil, err
+	}
+	bot, ok := built.(TelegramBot)
+	if !ok {
+		return nil, fmt.Errorf("integration %d of channel %q is no Telegram bot", row.ID, row.Channel)
+	}
+	return bot, nil
+}
+
 // DefaultEmailIntegration is the Workspace's default, enabled email Integration. It returns
 // ErrNoProvider when there is none.
 func DefaultEmailIntegration(ctx context.Context, s *ent.Scoped) (*ent.Integration, error) {
@@ -86,6 +100,15 @@ func DefaultEmailIntegration(ctx context.Context, s *ent.Scoped) (*ent.Integrati
 // that arm one (an Automation's Publish, a Broadcast's Schedule).
 func IntegrationKept(ctx context.Context, s *ent.Scoped, id int64) (bool, error) {
 	return s.Integration().Query().Where(integration.ID(id)).Exist(ctx)
+}
+
+// KeptIntegrationOn reports whether the Workspace has a kept Integration with the id on channel:
+// work on that Channel may name it (IntegrationKept), and work on another Channel never does
+// (ADR 0074). Like IntegrationKept it says nothing of whether the Integration can send.
+func KeptIntegrationOn(ctx context.Context, s *ent.Scoped, channel Channel, id int64) (bool, error) {
+	return s.Integration().Query().
+		Where(integration.ID(id), integration.ChannelEQ(integration.Channel(channel))).
+		Exist(ctx)
 }
 
 // Integration is the enabled Integration of channel that a send on that Channel goes through: the

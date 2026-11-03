@@ -90,7 +90,31 @@ test('adds a suppression', async () => {
   await dialog.getByLabelText(/^Email address/).fill('blocked@example.com')
   await dialog.getByRole('button', { name: 'Suppress' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ destination: 'blocked@example.com' }])
+  await expect
+    .poll(() => bodies)
+    .toEqual([{ channel: 'email', destination: 'blocked@example.com' }])
+})
+
+test('adds a Telegram suppression by the user id', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    list([]),
+    handleSiteSuppressionsCreate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(suppression({ channel: 'telegram', reason: 'manual' }), {
+        status: 201,
+      })
+    }),
+  )
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
+
+  await screen.getByRole('button', { name: 'Suppress' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText('Channel').selectOptions('telegram')
+  await dialog.getByLabelText(/^Telegram user id/).fill('123456789')
+  await dialog.getByRole('button', { name: 'Suppress' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ channel: 'telegram', destination: '123456789' }])
 })
 
 test('lifts a suppression after confirmation', async () => {

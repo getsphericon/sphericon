@@ -2,6 +2,7 @@ package automations
 
 import (
 	"context"
+	"slices"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
@@ -30,10 +31,19 @@ type Report struct {
 	Links []linkclicks.Clicks
 	// Results is what the Enrollments did over the period and the period before it.
 	Results Results
+	// Steps is the send steps' messages by step position, in step order.
+	Steps []StepFigures
 }
 
-// ReportOf counts, leaving out machine engagement (ADR 0053), the `email.opened` and
-// `email.clicked` Events that carry the Automation, and the clicks by link, and reads its Results
+// StepFigures is what the send step at one position sent and skipped, over every version of the
+// Automation: a skip moves the Enrollment on (ADR 0081), so the report shows each step's skips.
+type StepFigures struct {
+	Step          int
+	Sent, Skipped int
+}
+
+// ReportOf counts, leaving out machine engagement (ADR 0053), the `email.opened` Events and the click Events
+// (`email.clicked`, `telegram.clicked`) that carry the Automation, and the clicks by link, and reads its Results
 // over the period p.
 func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p ReportPeriod) (Report, error) {
 	if _, err := m.Get(ctx, s, id); err != nil {
@@ -75,10 +85,57 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 	if err != nil {
 		return Report{}, err
 	}
-	report := Report{Opens: opens, Clicks: linkclicks.Total(links), Links: links, Revenue: revenue.Of(id), Results: results}
+	steps, err := stepFiguresOf(ctx, s, id)
+	if err != nil {
+		return Report{}, err
+	}
+	report := Report{
+		Opens: opens, Clicks: linkclicks.Total(links), Links: links, Revenue: revenue.Of(id), Results: results, Steps: steps,
+	}
 	if len(delivery) > 0 {
 		report.Delivered, report.Bounced, report.Complained = delivery[0].Delivered, delivery[0].Bounced, delivery[0].Complained
 		report.Captured = delivery[0].Captured
 	}
 	return report, nil
+}
+
+// stepFiguresOf counts the Automation's sent and skipped Outbound messages by the position of the
+// step that sent them, on every Channel.
+func stepFiguresOf(ctx context.Context, s *ent.Scoped, id int64) ([]StepFigures, error) {
+	var rows []struct {
+		Step   int                    `json:"automation_step"`
+		Status outboundmessage.Status `json:"status"`
+		Count  int                    `json:"count"`
+	}
+	err := s.OutboundMessage().Query().
+		Where(
+			outboundmessage.AutomationID(id),
+			outboundmessage.AutomationStepNotNil(),
+			outboundmessage.StatusIn(outboundmessage.StatusSent, outboundmessage.StatusSkipped),
+		).
+		GroupBy(outboundmessage.FieldAutomationStep, outboundmessage.FieldStatus).
+		Aggregate(ent.Count()).
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, err
+	}
+	byStep := map[int]*StepFigures{}
+	for _, r := range rows {
+		f := byStep[r.Step]
+		if f == nil {
+			f = &StepFigures{Step: r.Step}
+			byStep[r.Step] = f
+		}
+		if r.Status == outboundmessage.StatusSent {
+			f.Sent = r.Count
+		} else {
+			f.Skipped = r.Count
+		}
+	}
+	figures := make([]StepFigures, 0, len(byStep))
+	for _, f := range byStep {
+		figures = append(figures, *f)
+	}
+	slices.SortFunc(figures, func(a, b StepFigures) int { return a.Step - b.Step })
+	return figures, nil
 }

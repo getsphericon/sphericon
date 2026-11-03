@@ -157,36 +157,35 @@ func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
-		Name: "Authored", Subject: externalapi.NewOptString("Hi"),
-		Doc: externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
+		Name:    "Authored",
+		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Hi"), Doc: externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}"))}),
 	})
 	require.NoError(t, err)
 	res, ok := created.(*externalapi.BroadcastResource)
 	require.Truef(t, ok, "got %T", created)
-	assert.Contains(t, res.Body, "Hello {{ first_name }}")
-	assert.True(t, res.Doc.Set && !res.Doc.Null)
-	assert.Equal(t, emaildoc.EditorVersion(), res.EditorVersion.Value)
+	assert.Contains(t, testhelper.ExternalEmailOf(res).Body, "Hello {{ first_name }}")
+	assert.True(t, testhelper.ExternalEmailOf(res).Doc.Set && !testhelper.ExternalEmailOf(res).Doc.Null)
+	assert.Equal(t, emaildoc.EditorVersion(), testhelper.ExternalEmailOf(res).EditorVersion.Value)
 	row := env.DB.Broadcast.GetX(ctx, int64(res.ID))
-	assert.Equal(t, res.Body, row.Body)
+	assert.Equal(t, testhelper.ExternalEmailOf(res).Body, *row.Body)
 	assert.NotEmpty(t, row.Doc)
 
 	refused, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
-		Doc: externalapi.NewOptEditorDocument(badHeadingDoc()),
+		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Doc: externalapi.NewOptEditorDocument(badHeadingDoc())}),
 	}, externalapi.BroadcastsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	r, ok := refused.(*externalapi.BroadcastsUpdateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", refused)
 	assert.Contains(t, r.Detail.Or(""), "level")
-	assert.Equal(t, res.Body, env.DB.Broadcast.GetX(ctx, int64(res.ID)).Body, "nothing is stored")
+	assert.Equal(t, testhelper.ExternalEmailOf(res).Body, *env.DB.Broadcast.GetX(ctx, int64(res.ID)).Body, "nothing is stored")
 
 	both, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
-		Body: externalapi.NewOptString("<p>x</p>"),
-		Doc:  externalapi.NewOptEditorDocument(paragraphDoc("x")),
+		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(paragraphDoc("x"))}),
 	}, externalapi.BroadcastsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsUpdateUnprocessableEntity{}, both)
 
-	cleared, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Body: externalapi.NewOptString("<p>Plain</p>")},
+	cleared, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>Plain</p>")})},
 		externalapi.BroadcastsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.BroadcastResource{}, cleared)

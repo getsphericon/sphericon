@@ -1,0 +1,65 @@
+package schema
+
+import (
+	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
+	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
+)
+
+// TrackedLink is the short link `/c/<token>` that stands for one URL of one Outbound message
+// (ADR 0083): the Telegram renderer rewrites every link and button URL it emits into one. The
+// token is a short random value and the capability itself, so it is stored in the clear; the URL
+// is what a click redirects to. A message has one row per distinct URL, which a retry of the same
+// message reuses. It dies with its Outbound message.
+type TrackedLink struct {
+	ent.Schema
+}
+
+func (TrackedLink) Annotations() []schema.Annotation {
+	return []schema.Annotation{entsql.Annotation{Table: "tracked_links"}}
+}
+
+func (TrackedLink) Mixin() []ent.Mixin {
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "tracked_links"}}
+}
+
+func (TrackedLink) Fields() []ent.Field {
+	return []ent.Field{
+		field.Int64("id").
+			StorageKey("id").
+			Immutable(),
+		field.Int64("outbound_message_id").
+			Immutable(),
+		// Unique across Workspaces: a click names the token alone and finds its Workspace from it.
+		field.String("token").
+			NotEmpty().
+			Unique().
+			Immutable(),
+		// The absolute http(s) URL the link redirects to, as the message carried it.
+		field.Text("url").
+			NotEmpty().
+			Immutable(),
+	}
+}
+
+func (TrackedLink) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.From("outbound_message", OutboundMessage.Type).
+			Ref("tracked_links").
+			Field("outbound_message_id").
+			Unique().
+			Required().
+			Immutable(),
+	}
+}
+
+func (TrackedLink) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("outbound_message_id").
+			StorageKey("tracked_links_outbound_message_id"),
+		index.Fields("workspace_id"),
+	}
+}

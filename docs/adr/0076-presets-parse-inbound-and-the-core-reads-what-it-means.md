@@ -4,6 +4,9 @@ status: accepted
 
 # Presets parse what comes in, and the core reads what it means
 
+> **Amended by #962:** a `/start` from a Destination with a Channel-wide opt-out lifts it (see
+> "An unknown sender creates nothing").
+
 ADR 0037 made a provider's callbacks a Preset whose transform returns Delivery notices only. The new
 Channels (ADR 0074) send more back: a person's message (an SMS reply, a Telegram `/start`, a
 WhatsApp button), and a provider's own word that someone is out of reach (a blocked bot, WhatsApp's
@@ -16,6 +19,7 @@ marketing stop, a provider-side suppression). Bindings are made only from such i
   the payload of a pressed button, the provider's message id) and a **Reachability change** (the
   provider says a Destination became unreachable or reachable again). The closed set grows only by
   a decision like this one.
+
 - **The Preset parses; the core interprets.** What a message means on its Channel is the same for
   every provider and lives in the core: `/start <token>` binds a chat, a STOP keyword in any
   language sphericon supports opts out (some SMS providers do not recognise one). Putting that in
@@ -27,13 +31,17 @@ marketing stop, a provider-side suppression). Bindings are made only from such i
 - **An unknown sender creates nothing.** A message from a Destination no Contact has, a bare
   `/start`, a WhatsApp message with only a business-scoped id: no Contact, no Event, no Binding, and
   the bot does not answer. The one exception is an opt-out, which is kept by Destination because an
-  Unsubscribe outlives any Contact.
+  Unsubscribe outlives any Contact. That holds for a bare `/start` too: from a Destination with no
+  Channel-wide opt-out it creates nothing, while from one that has opted out it lifts the opt-out
+  (ADR 0077), since the person asked to receive again. A `/start <token>` binds as above and lifts
+  it likewise.
 - **Start tokens.** sphericon issues a single-use opaque token (at most 64 characters of
   `[A-Za-z0-9_-]`, Telegram's limit) for `t.me/<bot>?start=<token>`, from a merge tag in a message
   of any Channel, from the tracker for the current Visitor, or through the API; it lapses after 30
-  days, since a link waits in an inbox for weeks. The chat binds to whoever the token was issued to,
-  a Contact or a Visitor; a Visitor's Binding follows it through Identify (amends ADR 0075). (Amended by ADR 0088: a Start
-  token also rides in a prefilled `START <token>` on SMS and WhatsApp, and makes its sender known.)
+  days, since a link waits in an inbox for weeks; a daily job deletes the lapsed and the used ones.
+  The chat binds to whoever the token was issued to, a Contact or a Visitor; a Visitor's Binding
+  follows it through Identify (amends ADR 0075). (Amended by ADR 0088: a Start token also rides in a
+  prefilled `START <token>` on SMS and WhatsApp, and makes its sender known.)
 - **sphericon connects the bot.** Saving a Telegram Integration calls `setWebhook` with the
   Integration's hook URL and a secret token, replacing any webhook the bot had, which the UI says
   first. ADR 0037's rules hold for every Channel: verify before parsing, write before answering 2xx,

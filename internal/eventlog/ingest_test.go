@@ -114,7 +114,7 @@ func rejected(t *testing.T, err error) string {
 func TestIngestRefusesReservedActions(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := newModule(env)
-	for _, action := range []string{"email.opened", " Email.Clicked", "marketing.confirmed", "contact.created"} {
+	for _, action := range []string{"email.opened", " Email.Clicked", "marketing.confirmed", "contact.created", "telegram.bound", " Telegram.Unbound"} {
 		err := m.Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{{SubjectID: "s-1", Action: action}})
 		reason := rejected(t, err)
 		assert.Contains(t, reason, "reserved", action)

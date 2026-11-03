@@ -6,6 +6,7 @@ import {
   Group,
   Menu,
   Modal,
+  NativeSelect,
   Stack,
   Switch,
   TextInput,
@@ -143,8 +144,8 @@ export function SuppressionsListPage() {
     'suppressions:manage',
   )
 
-  const form = useForm<Pick<SiteCreateSuppressionInput, 'destination'>>({
-    initialValues: { destination: '' },
+  const form = useForm<Required<Pick<SiteCreateSuppressionInput, 'channel' | 'destination'>>>({
+    initialValues: { channel: 'email', destination: '' },
   })
 
   const createMutation = useResourceMutation({
@@ -207,16 +208,32 @@ export function SuppressionsListPage() {
           onSubmit={form.onSubmit((values) =>
             createMutation.mutate({
               path: { workspaceId },
-              body: { destination: values.destination.trim() },
+              body: { channel: values.channel, destination: values.destination.trim() },
             }),
           )}
         >
           <Stack>
+            <NativeSelect
+              label={t(($) => $.suppressions.channelLabel)}
+              data={[
+                { value: 'email', label: t(($) => $.suppressions.channelEmail) },
+                { value: 'telegram', label: t(($) => $.suppressions.channelTelegram) },
+              ]}
+              {...form.getInputProps('channel')}
+            />
             <TextInput
-              label={t(($) => $.suppressions.emailLabel)}
-              description={t(($) => $.suppressions.emailHint)}
-              placeholder="blocked@example.com"
-              type="email"
+              label={
+                form.values.channel === 'telegram'
+                  ? t(($) => $.suppressions.telegramLabel)
+                  : t(($) => $.suppressions.emailLabel)
+              }
+              description={
+                form.values.channel === 'telegram'
+                  ? t(($) => $.suppressions.telegramHint)
+                  : t(($) => $.suppressions.emailHint)
+              }
+              placeholder={form.values.channel === 'telegram' ? '123456789' : 'blocked@example.com'}
+              type={form.values.channel === 'telegram' ? 'text' : 'email'}
               required
               data-autofocus
               {...form.getInputProps('destination')}

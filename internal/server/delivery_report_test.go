@@ -42,9 +42,9 @@ func TestBroadcastReportCountsTheDeliveryResultAndSurvivesEventPruning(t *testin
 	env := testhelper.Setup(t)
 
 	before := broadcastStats(t, env)
-	assert.EqualValues(t, 3, before.DeliveredCount)
-	assert.EqualValues(t, 1, before.BouncedCount)
-	assert.EqualValues(t, 1, before.ComplainedCount)
+	assert.EqualValues(t, 3, before.DeliveredCount.Value)
+	assert.EqualValues(t, 1, before.BouncedCount.Value)
+	assert.EqualValues(t, 1, before.ComplainedCount.Value)
 
 	pruneAllAnalytical(t, env)
 
@@ -61,9 +61,9 @@ func TestExternalBroadcastReportCountsTheDeliveryResult(t *testing.T) {
 	require.NoError(t, err)
 	r, ok := res.(*externalapi.BroadcastReport)
 	require.True(t, ok, "got %T", res)
-	assert.EqualValues(t, 3, r.DeliveredCount)
-	assert.EqualValues(t, 1, r.BouncedCount)
-	assert.EqualValues(t, 1, r.ComplainedCount)
+	assert.EqualValues(t, 3, r.DeliveredCount.Value)
+	assert.EqualValues(t, 1, r.BouncedCount.Value)
+	assert.EqualValues(t, 1, r.ComplainedCount.Value)
 }
 
 func TestAutomationReportCountsTheDeliveryResultAndSurvivesEventPruning(t *testing.T) {

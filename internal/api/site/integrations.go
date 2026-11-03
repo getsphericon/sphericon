@@ -113,10 +113,9 @@ func (h *Handlers) SiteIntegrationsRegenerateKey(ctx context.Context, params sit
 
 // SitePresetsList returns the Presets the Instance offers with their params schemas.
 func (h *Handlers) SitePresetsList(_ context.Context) ([]siteapi.SitePresetResource, error) {
-	reg := h.integrations.Presets()
-	out := make([]siteapi.SitePresetResource, 0, len(reg.Names()))
-	for _, name := range reg.Names() {
-		p, _ := reg.Get(name)
+	choosable := h.integrations.Choosable()
+	out := make([]siteapi.SitePresetResource, 0, len(choosable))
+	for _, p := range choosable {
 		out = append(out, siteapi.SitePresetResource{
 			Name: p.Name(), Description: p.Description(),
 			ParamsSchema: siteapi.JsonObject(integrations.RawOf(p.ParamsSchema())),
@@ -184,6 +183,8 @@ func (h *Handlers) integrationToResource(row *ent.Integration, limit providerlim
 		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteSesConfigSiteIntegrationConfigSum(mapper.SesConfigToResource(*cfg.SES))}
 	case cfg.Inbox != nil:
 		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteInboxConfigSiteIntegrationConfigSum(siteapi.SiteInboxConfig{Kind: siteapi.SiteInboxConfigKindInbox})}
+	case cfg.Telegram != nil:
+		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteTelegramConfigSiteIntegrationConfigSum(mapper.TelegramConfigToResource(*cfg.Telegram))}
 	}
 	return res, nil
 }

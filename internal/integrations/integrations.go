@@ -18,7 +18,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/credentials"
@@ -30,12 +29,16 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
+	"github.com/getsphericon/sphericon/internal/messaging/telegram"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
+
+// fieldConfig is the field a refusal of the provider config is on.
+const fieldConfig = "config"
 
 // ErrDefaultConflict means another default Integration already exists for the channel.
 var ErrDefaultConflict = validation.Conflict("a default provider already exists for this channel", i18n.ErrorsIntegrationDefaultConflict)
@@ -141,9 +144,10 @@ type (
 
 // ConfigInput carries exactly one provider's settings.
 type ConfigInput struct {
-	SMTP  *SMTPConfig
-	SES   *SESConfig
-	Inbox *InboxConfig
+	SMTP     *SMTPConfig
+	SES      *SESConfig
+	Inbox    *InboxConfig
+	Telegram *TelegramConfig
 }
 
 // CreateInput is a new Integration. Enabled defaults to true when nil; a nil Provider limit
@@ -187,30 +191,52 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	if err != nil {
 		return nil, err
 	}
+	if err := presetFits(provider, in.Preset, in.Params); err != nil {
+		return nil, err
+	}
 	if in.Config.SES != nil {
 		if err := requireProviderLimit(in.Config.SES.Endpoint, in.MaxPerSecond, in.MaxPerDay); err != nil {
 			return nil, err
 		}
 	}
-	sealed, err := m.cipher.Encrypt(plaintext)
-	if err != nil {
-		return nil, err
-	}
 	enabled := true
 	if in.Enabled != nil {
 		enabled = *in.Enabled
 	}
-	// An SES Integration reads its callbacks with the `ses` Preset unless told otherwise.
-	presetName := in.Preset
-	if presetName == nil && provider == integration.ProviderSes {
-		presetName = new(string)
-		*presetName = "ses"
+	// An SES Integration reads its callbacks with the `ses` Preset unless told otherwise; a Telegram
+	// one always with the `telegram` Preset, its webhook secret generated here.
+	presetName, params := in.Preset, in.Params
+	var providerPerSecond *int
+	switch provider {
+	case integration.ProviderSes:
+		if presetName == nil {
+			presetName = new(string)
+			*presetName = "ses"
+		}
+	case integration.ProviderSMTP, integration.ProviderInbox:
+		// The Preset the caller named, if any.
+	case integration.ProviderTelegram:
+		presetName, params = new(string), telegramParams()
+		*presetName = TelegramPreset
+		providerPerSecond = new(int)
+		*providerPerSecond = telegramPerSecond
 	}
-	inb, err := m.sealInbound(nil, inboundChange{preset: patch.FromPtr(presetName), params: in.Params})
+	inb, err := m.sealInbound(nil, inboundChange{preset: patch.FromPtr(presetName), params: params})
 	if err != nil {
 		return nil, err
 	}
 	key, err := credentials.GenerateIngestKey()
+	if err != nil {
+		return nil, err
+	}
+	if provider == integration.ProviderTelegram {
+		// The bot is connected before the save: Telegram refuses a wrong token or a webhook it cannot
+		// reach, and the save is refused with it.
+		if plaintext, err = m.connectNew(ctx, tokenOf(in.Config.Telegram), key, currentSecret(params["secret"]), enabled); err != nil {
+			return nil, err
+		}
+	}
+	sealed, err := m.cipher.Encrypt(plaintext)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +261,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 			SetEnabled(enabled).
 			SetIsDefault(in.IsDefault).
 			SetNillableMaxPerSecond(in.MaxPerSecond).
-			SetNillableMaxPerDay(in.MaxPerDay)
+			SetNillableMaxPerDay(in.MaxPerDay).
+			SetNillableProviderMaxPerSecond(providerPerSecond)
 		if inb.sealed != nil {
 			create.SetParamsEncrypted(*inb.sealed)
 		}
@@ -243,6 +270,10 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		return err
 	})
 	if err != nil {
+		if provider == integration.ProviderTelegram && enabled {
+			// The bot was pointed at a hook that was never saved.
+			m.releaseToken(ctx, 0, tokenOf(in.Config.Telegram))
+		}
 		return nil, conflictOf(err)
 	}
 	m.discoverQuota(ctx, row)
@@ -266,8 +297,15 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		}
 		name = &n
 	}
-	sealed, err := m.sealEditedConfig(row, in.Config.Ptr())
-	if err != nil {
+	var sealed *string
+	var tg telegramEdit
+	if row.Provider == integration.ProviderTelegram {
+		// The bot is connected, as the edit asks, before the save commits.
+		if tg, err = m.editTelegram(ctx, row, in); err != nil {
+			return nil, err
+		}
+		sealed = tg.sealed
+	} else if sealed, err = m.sealEditedConfig(row, in.Config.Ptr()); err != nil {
 		return nil, err
 	}
 	if err := m.keepsProviderLimit(row, in); err != nil {
@@ -297,12 +335,18 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		}
 		upd := ts.Integration().UpdateOneID(row.ID)
 		applyEdit(upd, in, name, sealed, inb)
+		if tg.connected {
+			upd.SetProviderMaxPerSecond(telegramPerSecond)
+		}
 		var err error
 		updated, err = upd.Save(ctx)
 		return err
 	})
 	if err != nil {
 		return nil, conflictOf(err)
+	}
+	if tg.release {
+		m.release(ctx, updated)
 	}
 	if sealed != nil {
 		// New credentials or endpoint: what the provider allows may have changed.
@@ -323,7 +367,7 @@ func (m *Module) sealEditedConfig(row *ent.Integration, cfg *ConfigInput) (*stri
 		return nil, err
 	}
 	if provider.String() != row.Provider.String() {
-		return nil, &validation.Error{Field: "config", Message: i18n.T(i18n.ErrorsIntegrationKindMismatch, nil)}
+		return nil, &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationKindMismatch, nil)}
 	}
 	prev, err := m.cipher.Decrypt(row.ConfigEncrypted)
 	if err != nil {
@@ -348,8 +392,9 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	patch.ApplySet(in.Enabled, upd.SetEnabled)
 	if sealed != nil {
 		// The account's standing was read with the old credentials, which may name another
-		// account: it goes until the read the save schedules, so a failed one holds nothing.
-		upd.SetConfigEncrypted(*sealed).ClearProviderEnforcement().SetProviderSandbox(false)
+		// account: it goes until the read the save schedules, so a failed one holds nothing. The
+		// provider's refusal of the old credentials goes with them: new ones are tried at the next send.
+		upd.SetConfigEncrypted(*sealed).ClearProviderEnforcement().ClearProviderRefusedAt().SetProviderSandbox(false)
 	}
 	if inb.apply {
 		if inb.preset == nil {
@@ -371,6 +416,7 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 // picked. Archiving an archived Integration changes nothing. An unknown id is ErrNotFound. It
 // returns the Integration.
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
+	var released *ent.Integration
 	err := missing(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.Integration().Get(ctx, id)
 		if err != nil {
@@ -378,6 +424,9 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Int
 		}
 		if row.DiscardedAt != nil {
 			return nil
+		}
+		if row.Provider == integration.ProviderTelegram && holdsWebhook(row.Enabled, nil) {
+			released = row
 		}
 		users, err := liveUsers(ctx, ts, row)
 		if err != nil {
@@ -396,13 +445,27 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Int
 	if err != nil {
 		return nil, err
 	}
+	if released != nil {
+		m.release(ctx, released)
+	}
 	return m.Get(ctx, s, id)
 }
 
 // Unarchive brings an archived Integration back to the lists and returns it. It does not become
-// the default again. Restoring an Integration that is not archived changes nothing. An unknown id
-// is ErrNotFound.
+// the default again. Restoring an Integration that is not archived changes nothing. An enabled
+// Telegram Integration connects its bot again first, and Telegram's refusal refuses the restore.
+// An unknown id is ErrNotFound.
 func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
+	// An enabled Telegram Integration takes its bot's webhook back before it is restored.
+	archived, err := s.Integration().QueryDiscarded().Where(integration.ID(id)).Only(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return nil, err
+	}
+	if archived != nil && archived.Provider == integration.ProviderTelegram && archived.Enabled {
+		if err := m.reconnectStored(ctx, archived, archived.IngestKey); err != nil {
+			return nil, err
+		}
+	}
 	if err := conflictOf(missing(s.Integration().Restore(ctx, id))); err != nil {
 		return nil, err
 	}
@@ -412,7 +475,8 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.I
 // liveUsers is the live work that uses the Integration.
 func liveUsers(ctx context.Context, s *ent.Scoped, row *ent.Integration) ([]inuse.User, error) {
 	uses := broadcast.IntegrationID(row.ID)
-	if row.IsDefault {
+	if row.IsDefault && row.Channel == integration.ChannelEmail {
+		// A Broadcast that names no Integration sends through the default email one.
 		uses = broadcast.Or(uses, broadcast.IntegrationIDIsNil())
 	}
 	live, err := s.Broadcast().Query().
@@ -423,14 +487,14 @@ func liveUsers(ctx context.Context, s *ent.Scoped, row *ent.Integration) ([]inus
 		return nil, err
 	}
 	users := inuse.Broadcasts(live)
-	if row.Channel != integration.ChannelEmail {
-		return users, nil
-	}
-	sendsThrough := automationversion.IntegrationID(row.ID)
-	if row.IsDefault {
-		sendsThrough = automationversion.Or(sendsThrough, automationversion.IntegrationIDIsNil())
-	}
-	sending, err := liveuse.EmailAutomations(ctx, s, sendsThrough)
+	// A send step of the Integration's Channel that names it, or names none while it is that
+	// Channel's default, sends through it (ADR 0081).
+	sending, err := liveuse.SendingAutomations(ctx, s, messaging.Channel(row.Channel), func(id *int64) bool {
+		if id == nil {
+			return row.IsDefault
+		}
+		return *id == row.ID
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -502,6 +566,9 @@ func (m *Module) discoverQuota(ctx context.Context, row *ent.Integration) {
 // reportsQuota reports whether the Integration's provider can say what it allows: whether its
 // sender is a messaging.QuotaReader.
 func (m *Module) reportsQuota(row *ent.Integration) bool {
+	if row.Channel != integration.ChannelEmail {
+		return false
+	}
 	config, err := m.cipher.Decrypt(row.ConfigEncrypted)
 	if err != nil {
 		return false
@@ -548,6 +615,16 @@ func (m *Module) encode(in ConfigInput) (integration.Provider, integration.Chann
 	case in.Inbox != nil:
 		provider = integration.ProviderInbox
 		plaintext = []byte("{}")
+	case in.Telegram != nil:
+		// A blank token is an update that keeps the stored one; the bot's id and @username come from
+		// getMe when it connects.
+		token := tokenOf(in.Telegram)
+		if token != "" && !telegram.ValidToken(token) {
+			return "", "", nil, tokenFormatError()
+		}
+		channel, _ := m.catalog.ChannelOf(messaging.ProviderTelegram)
+		plaintext, err = json.Marshal(telegram.Config{Token: token})
+		return integration.ProviderTelegram, integration.Channel(channel), plaintext, err
 	default:
 		return "", "", nil, configError(errUnknownProvider)
 	}
@@ -566,7 +643,7 @@ func (m *Module) encode(in ConfigInput) (integration.Provider, integration.Chann
 }
 
 func configError(err error) *validation.Error {
-	return &validation.Error{Field: "config", Message: err.Error()}
+	return &validation.Error{Field: fieldConfig, Message: err.Error()}
 }
 
 // mergeSecrets carries forward a stored secret that the client did not resupply. Secrets
@@ -611,19 +688,22 @@ func mergeSecrets(provider integration.Provider, next, prev []byte) ([]byte, err
 		return json.Marshal(n)
 	case integration.ProviderInbox:
 		return next, nil // no secret
+	case integration.ProviderTelegram:
+		return next, nil // never merged here: editTelegram carries the token forward
 	}
 	return next, nil
 }
 
 func secretRequired() *validation.Error {
-	return &validation.Error{Field: "config", Message: i18n.T(i18n.ErrorsIntegrationSecretRequired, nil)}
+	return &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationSecretRequired, nil)}
 }
 
 // RedactedConfig is the read-side provider config: no password, no secret key.
 type RedactedConfig struct {
-	SMTP  *RedactedSMTP
-	SES   *RedactedSES
-	Inbox *RedactedInbox
+	SMTP     *RedactedSMTP
+	SES      *RedactedSES
+	Inbox    *RedactedInbox
+	Telegram *RedactedTelegram
 }
 
 type (
@@ -675,6 +755,12 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 		}}, nil
 	case integration.ProviderInbox:
 		return RedactedConfig{Inbox: &RedactedInbox{}}, nil
+	case integration.ProviderTelegram:
+		var c telegram.Config
+		if err := json.Unmarshal(plaintext, &c); err != nil {
+			return RedactedConfig{}, err
+		}
+		return RedactedConfig{Telegram: &RedactedTelegram{BotID: c.BotID, Username: c.Username}}, nil
 	}
 	return RedactedConfig{}, errUnknownProvider
 }

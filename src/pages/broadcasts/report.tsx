@@ -19,21 +19,36 @@ import { BroadcastHoldAlert } from './BroadcastHold.tsx'
 import { BroadcastProgress } from './BroadcastProgress.tsx'
 import { BroadcastStatusBadge } from './BroadcastStatusBadge.tsx'
 
+interface Entry<V> {
+  label: string
+  value: V | null
+}
+
+// Only the figures the Broadcast's Channel reports are shown: one it does not report is null, and
+// has no card (Telegram has no delivered, opened, bounced or complained count).
+function reported<V>(entries: Entry<V>[]): { label: string; value: V }[] {
+  return entries.flatMap(({ label, value }) => (value === null ? [] : [{ label, value }]))
+}
+
 function statEntries(
   t: TFunction,
   stats: SiteBroadcastStats,
 ): { label: string; value: number | string }[] {
   return [
-    { label: t(($) => $.broadcasts.stats.recipients), value: stats.recipientsTotal },
-    { label: t(($) => $.broadcasts.stats.sent), value: stats.sentCount },
-    { label: t(($) => $.broadcasts.stats.delivered), value: stats.deliveredCount },
-    { label: t(($) => $.broadcasts.stats.bounced), value: stats.bouncedCount },
-    { label: t(($) => $.broadcasts.stats.complained), value: stats.complainedCount },
-    { label: t(($) => $.broadcasts.stats.captured), value: stats.capturedCount },
-    { label: t(($) => $.broadcasts.stats.opened), value: stats.openedCount },
-    { label: t(($) => $.broadcasts.stats.clicked), value: stats.clickedCount },
-    { label: t(($) => $.broadcasts.stats.unsubscribed), value: stats.unsubscribedCount },
-    { label: t(($) => $.broadcasts.stats.failed), value: stats.failedCount },
+    ...reported<number | string>([
+      { label: t(($) => $.broadcasts.stats.recipients), value: stats.recipientsTotal },
+      { label: t(($) => $.broadcasts.stats.sent), value: stats.sentCount },
+      { label: t(($) => $.broadcasts.stats.skipped), value: stats.skippedCount },
+      { label: t(($) => $.broadcasts.stats.pending), value: stats.pendingCount },
+      { label: t(($) => $.broadcasts.stats.delivered), value: stats.deliveredCount },
+      { label: t(($) => $.broadcasts.stats.bounced), value: stats.bouncedCount },
+      { label: t(($) => $.broadcasts.stats.complained), value: stats.complainedCount },
+      { label: t(($) => $.broadcasts.stats.captured), value: stats.capturedCount },
+      { label: t(($) => $.broadcasts.stats.opened), value: stats.openedCount },
+      { label: t(($) => $.broadcasts.stats.clicked), value: stats.clickedCount },
+      { label: t(($) => $.broadcasts.stats.unsubscribed), value: stats.unsubscribedCount },
+      { label: t(($) => $.broadcasts.stats.failed), value: stats.failedCount },
+    ]),
     ...revenueEntries(t, stats),
   ]
 }
@@ -54,14 +69,14 @@ function revenueEntries(
 }
 
 function rateEntries(t: TFunction, stats: SiteBroadcastStats): { label: string; value: number }[] {
-  return [
+  return reported<number>([
     { label: t(($) => $.broadcasts.stats.deliveryRate), value: stats.deliveryRate },
     { label: t(($) => $.broadcasts.stats.openRate), value: stats.openRate },
     { label: t(($) => $.broadcasts.stats.clickRate), value: stats.clickRate },
     { label: t(($) => $.broadcasts.stats.clickToOpenRate), value: stats.clickToOpenRate },
     { label: t(($) => $.broadcasts.stats.unsubscribeRate), value: stats.unsubscribeRate },
     { label: t(($) => $.broadcasts.stats.failureRate), value: stats.failureRate },
-  ]
+  ])
 }
 
 // Where the audience came from (ADR 0065): the Segment, archived or not, or all contacts. Past draft
@@ -145,7 +160,7 @@ function BroadcastReport() {
         <Title order={4}>{broadcast.name}</Title>
         <BroadcastStatusBadge status={broadcast.status} size="lg" />
       </Group>
-      <Text c="dimmed">{broadcast.subject}</Text>
+      {broadcast.content.channel === 'email' && <Text c="dimmed">{broadcast.content.subject}</Text>}
       <BroadcastAudience workspaceId={workspaceId} broadcast={broadcast} />
       {broadcast.holdReason && <BroadcastHoldAlert reason={broadcast.holdReason} />}
       {broadcast.progress && <BroadcastProgress progress={broadcast.progress} />}

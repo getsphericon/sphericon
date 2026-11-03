@@ -7,6 +7,8 @@ package suppression
 
 import (
 	"context"
+	"net/mail"
+	"regexp"
 	"strings"
 	"time"
 
@@ -23,6 +25,8 @@ var (
 	// ErrDestinationEmpty: the destination is blank after normalization. Every surface answers
 	// it alike, on the `destination` field (review rule 15).
 	ErrDestinationEmpty = validation.RefuseField("destination", "suppression: destination must not be empty", i18n.ErrorsDestinationInvalid)
+	// ErrDestinationInvalid: the destination is not what the Channel's Destinations are.
+	ErrDestinationInvalid = validation.RefuseField("destination", "suppression: destination is not valid for the channel", i18n.ErrorsDestinationInvalid)
 	// ErrNotFound: no such Suppression in this Workspace.
 	ErrNotFound = validation.NotFound("suppression: not found", i18n.ErrorsSuppressionNotFound)
 )
@@ -65,14 +69,27 @@ func ForEvent(name, bounceKind string) (entsuppression.Reason, bool) {
 }
 
 // Entry is one Suppression to add. ContactID is the Contact the destination belongs
-// to, when known (display only); zero means none.
+// to, when known (display only); zero means none. Channel is email when empty.
 type Entry struct {
+	Channel     entsuppression.Channel
 	Destination string
 	Reason      entsuppression.Reason
 	ContactID   int64
 }
 
-// Add suppresses an email destination in the scoped Workspace with one insert. It is
+// telegramUserID is what a Telegram Destination is: the user's numeric id.
+var telegramUserID = regexp.MustCompile(`^\d{1,20}$`)
+
+// ValidDestination reports whether dest, already normalized, can be a Destination on the Channel:
+// anything non-empty on email (the contract checks the address), a Telegram user id on Telegram.
+func ValidDestination(channel, dest string) bool {
+	if channel == string(entsuppression.ChannelTelegram) {
+		return telegramUserID.MatchString(dest)
+	}
+	return dest != ""
+}
+
+// Add suppresses a destination in the scoped Workspace with one insert. It is
 // idempotent per (channel, destination): an existing active entry keeps its reason. A
 // lifted entry does not count (ADR 0049): the destination is suppressed anew in a new row.
 func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
@@ -80,8 +97,15 @@ func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
 	if dest == "" {
 		return ErrDestinationEmpty
 	}
+	channel := e.Channel
+	if channel == "" {
+		channel = entsuppression.ChannelEmail
+	}
+	if !ValidDestination(string(channel), dest) {
+		return ErrDestinationInvalid
+	}
 	create := s.Suppression().Create().
-		SetChannel(entsuppression.ChannelEmail).
+		SetChannel(channel).
 		SetDestination(dest).
 		SetReason(e.Reason)
 	if e.ContactID != 0 {
@@ -96,12 +120,21 @@ func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
 
 // AddManual is Add with the manual reason (an Owner's or an API caller's request), and
 // returns the entry, the existing one when the destination was already suppressed.
-func AddManual(ctx context.Context, s *ent.Scoped, destination string) (*ent.Suppression, error) {
-	if err := Add(ctx, s, Entry{Destination: destination, Reason: entsuppression.ReasonManual}); err != nil {
+func AddManual(ctx context.Context, s *ent.Scoped, channel entsuppression.Channel, destination string) (*ent.Suppression, error) {
+	if channel == "" {
+		channel = entsuppression.ChannelEmail
+	}
+	if channel == entsuppression.ChannelEmail {
+		// Someone typed it: the address must be one (the bus subscriber's addresses come from providers).
+		if addr, err := mail.ParseAddress(NormalizeDestination(destination)); err != nil || addr.Address != NormalizeDestination(destination) {
+			return nil, ErrDestinationInvalid
+		}
+	}
+	if err := Add(ctx, s, Entry{Channel: channel, Destination: destination, Reason: entsuppression.ReasonManual}); err != nil {
 		return nil, err
 	}
 	return s.Suppression().Query().
-		Where(entsuppression.ChannelEQ(entsuppression.ChannelEmail), entsuppression.DestinationEQ(NormalizeDestination(destination)), entsuppression.LiftedAtIsNil()).
+		Where(entsuppression.ChannelEQ(channel), entsuppression.DestinationEQ(NormalizeDestination(destination)), entsuppression.LiftedAtIsNil()).
 		Only(ctx)
 }
 

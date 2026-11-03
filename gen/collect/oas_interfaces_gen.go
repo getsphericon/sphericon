@@ -8,3 +8,7 @@ type CollectEventsCreateRes interface {
 type CollectIdentifyCreateRes interface {
 	collectIdentifyCreateRes()
 }
+
+type CollectTelegramStartLinksCreateRes interface {
+	collectTelegramStartLinksCreateRes()
+}

@@ -23,6 +23,8 @@ const (
 	ChannelEmail Channel = "email"
 	// ChannelSMS is reserved; no SMS provider is implemented yet.
 	ChannelSMS Channel = "sms"
+	// ChannelTelegram reaches a person through a Workspace's own Telegram bot.
+	ChannelTelegram Channel = "telegram"
 )
 
 // Provider identifies a concrete provider implementation. Values mirror the ent
@@ -35,6 +37,8 @@ const (
 	// ProviderInbox is the Test inbox: it keeps what it is sent as Captured messages and
 	// delivers nothing outside (ADR 0058).
 	ProviderInbox Provider = "inbox"
+	// ProviderTelegram is a Workspace's own Telegram bot, reached through the Bot API.
+	ProviderTelegram Provider = "telegram"
 )
 
 // EmailMessage is the channel-specific payload for email sends. HTML is used

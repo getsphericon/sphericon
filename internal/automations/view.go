@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // StepView is a stored Step as the API shows it: only the fields of its kind are set, so a field
@@ -12,6 +13,13 @@ import (
 type StepView struct {
 	Type          automationsteps.Kind
 	Subject, Body *string
+	// Text is a Telegram step's message; ImageURL, Buttons, LinkPreview and UnsubscribeButton the
+	// rest of its content (LinkPreview is set, true by default, on a Telegram step only).
+	Text              *string
+	ImageURL          *string
+	Buttons           []telegramrender.Button
+	LinkPreview       *bool
+	UnsubscribeButton *string
 	// Doc is an email step's editor document, and EditorVersion the editor that rendered it; a
 	// step written as HTML has neither.
 	Doc           json.RawMessage
@@ -22,6 +30,8 @@ type StepView struct {
 	// Headers is set, possibly empty, on an HTTP step only.
 	Headers   []HeaderName
 	HasSecret *bool
+	// IntegrationID is a send step's Integration, nil for its Channel's default.
+	IntegrationID *int64
 }
 
 // HeaderName is a header of an HTTP step without its value.
@@ -58,7 +68,19 @@ func viewOf(s *automationsteps.Step) StepView {
 		for i, h := range s.Headers {
 			v.Headers[i] = HeaderName{Name: h.Name}
 		}
+	case automationsteps.Telegram:
+		v.IntegrationID = s.IntegrationID
+		v.Text = &s.Text
+		if s.ImageURL != "" {
+			v.ImageURL = &s.ImageURL
+		}
+		v.Buttons = append([]telegramrender.Button{}, s.Buttons...)
+		v.LinkPreview = new(s.LinkPreview == nil || *s.LinkPreview)
+		if s.UnsubscribeButton != "" {
+			v.UnsubscribeButton = &s.UnsubscribeButton
+		}
 	case automationsteps.Email:
+		v.IntegrationID = s.IntegrationID
 		v.Subject = &s.Subject
 		v.Body = &s.Body
 		if len(s.Doc) > 0 {

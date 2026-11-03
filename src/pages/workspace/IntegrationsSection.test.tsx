@@ -842,3 +842,68 @@ test('an empty archive says so', async () => {
 
   await expect.element(screen.getByText('No archived providers')).toBeInTheDocument()
 })
+
+const telegramBot: SiteIntegrationResource = {
+  ...smtp,
+  id: '7',
+  name: 'Telegram bot',
+  channel: 'telegram',
+  provider: 'telegram',
+  isDefault: true,
+  providerLimit: {
+    perSecond: { limit: 30, source: 'provider' },
+    perDay: { limit: null, source: null },
+    sentLast24h: 0,
+    warnings: [],
+  },
+  config: { kind: 'telegram', botId: 7000000001, username: 'acme_news_bot' },
+  preset: 'telegram',
+  params: { secret: '********' },
+}
+
+test('connecting a Telegram bot warns that its webhook is replaced, then shows the bot', async () => {
+  const bodies: unknown[] = []
+  let saved: SiteIntegrationResource[] = [smtp]
+  worker.use(
+    handleSiteIntegrationsList(() => HttpResponse.json(saved)),
+    handleSiteIntegrationsCreate(async ({ request }) => {
+      bodies.push(await request.json())
+      saved = [smtp, telegramBot]
+      return HttpResponse.json(telegramBot, { status: 201 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Telegram bot' }).click()
+  await expect
+    .element(dialog.getByText("Connecting replaces the bot's webhook"))
+    .toBeInTheDocument()
+  await dialog.getByLabelText(/^Bot token/).fill(' 7000000001:AAtoken ')
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        name: 'Telegram bot',
+        isDefault: true,
+        maxPerSecond: null,
+        maxPerDay: null,
+        config: { kind: 'telegram', token: '7000000001:AAtoken' },
+      },
+    ])
+  await expect.element(screen.getByText('@acme_news_bot')).toBeInTheDocument()
+  await expect.element(screen.getByRole('heading', { name: 'Telegram' })).toBeInTheDocument()
+})
+
+test("a Telegram bot's inbound settings offer no Preset", async () => {
+  worker.use(list([telegramBot]))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await openInbound(screen)
+
+  await expect.element(screen.getByText('https://app.test/hooks/omik_one')).toBeInTheDocument()
+  await expect.element(screen.getByRole('combobox', { name: 'Preset' })).not.toBeInTheDocument()
+})

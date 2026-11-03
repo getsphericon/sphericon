@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
@@ -33,6 +34,22 @@ func (m *Module) reserve(ctx context.Context, s *ent.Scoped, req Request, r Rout
 		return providerlimit.Shortfall{}, fmt.Errorf("outbound: reserve send capacity: %w", err)
 	}
 	return short, nil
+}
+
+// spendCall takes one token of the Provider limit for one more call to the provider within a
+// message already reserved: a Channel that sends one message to several targets calls the provider
+// once per target, and the limit counts calls. It never waits (the message is under way and its
+// first call is made), so the bucket may go negative and later sends wait longer. The Send cap
+// counts messages and is spent once, by reserve. A failed spend is logged and the call goes on:
+// retrying the message would send its first call again.
+func (m *Module) spendCall(ctx context.Context, s *ent.Scoped, r Route, messageID int64) {
+	if r.Integration == nil {
+		return
+	}
+	res := providerlimit.Reservation{IntegrationID: r.Integration.ID, Limits: r.Limits}
+	if err := providerlimit.Spend(ctx, s, m.bus.WithinAuditTx, res, m.now()); err != nil {
+		logging.FromContext(ctx).Warn("outbound: spend of the provider limit failed", "message_id", messageID, "err", err)
+	}
 }
 
 // SendCapStatus is the Send cap that applies to the Workspace ws, whose scope s is, with its sends

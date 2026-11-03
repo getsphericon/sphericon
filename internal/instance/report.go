@@ -122,6 +122,8 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 			kinds = append(kinds, telemetryapi.TelemetryIntegrationKindSes)
 		case integration.ProviderInbox:
 			// A Test inbox sends nothing: it is not a sending Integration in use.
+		case integration.ProviderTelegram:
+			// The Telemetry report lists email providers; a Telegram kind is a change of its schema.
 		}
 	}
 	slices.Sort(kinds)

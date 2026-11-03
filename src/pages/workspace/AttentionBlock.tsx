@@ -39,6 +39,8 @@ const MESSAGE = {
     t(($) => $.overview.attention.kinds.sendingDomainVerificationLost, { name: nameOf(item) }),
   integrationProviderStopped: (t, item) =>
     t(($) => $.overview.attention.kinds.integrationProviderStopped, { name: nameOf(item) }),
+  integrationProviderRefused: (t, item) =>
+    t(($) => $.overview.attention.kinds.integrationProviderRefused, { name: nameOf(item) }),
   broadcastHeld: (t, item) =>
     t(($) => $.overview.attention.kinds.broadcastHeld, {
       name: nameOf(item),
@@ -140,6 +142,7 @@ function SuppressionsAction({ workspaceId }: ActionProps) {
 const ACTION = {
   sendingDomainVerificationLost: EmailsAction,
   integrationProviderStopped: EmailsAction,
+  integrationProviderRefused: EmailsAction,
   broadcastHeld: BroadcastAction,
   automationCannotSend: AutomationAction,
   deliverabilityWarning: SuppressionsAction,

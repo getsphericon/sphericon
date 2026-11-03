@@ -16,6 +16,7 @@ export default defineConfig({
       'analytics.range.*',
       'automations.enrollmentStatus.*',
       'automations.failureKind.*',
+      'broadcasts.channels.*',
       'broadcasts.hold.reasons.*',
       'capturedMessages.surfaces.*',
       'console.signupItems.kind.*',

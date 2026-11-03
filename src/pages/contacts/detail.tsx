@@ -42,6 +42,7 @@ import { contactFullName, contactName } from '../../utils/contactName.ts'
 import { countryName } from '../../utils/countries.ts'
 import { formatLongDate } from '../../utils/datetime.ts'
 import { can } from '../../utils/permissions.ts'
+import { TelegramSection } from './TelegramSection.tsx'
 
 const EVENTS_PAGE_SIZE = 10
 
@@ -310,6 +311,8 @@ export function ContactDetailPage() {
           </Group>
         </>
       ) : null}
+
+      <TelegramSection workspaceId={workspaceId} contactId={contactId} />
 
       <ContactEvents workspaceId={workspaceId} contactId={contactId} />
     </Stack>

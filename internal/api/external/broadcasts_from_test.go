@@ -22,7 +22,8 @@ func TestExternalBroadcastFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 
 	create := func(from string) externalapi.BroadcastsCreateRes {
 		res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
-			Name: "from check", FromEmail: externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(from)),
+			Name:    "from check",
+			Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{FromEmail: externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(from))}),
 		})
 		require.NoError(t, err)
 		return res
@@ -32,13 +33,13 @@ func TestExternalBroadcastFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	assert.IsType(t, &externalapi.BroadcastsCreateUnprocessableEntity{}, create("news@"+fixtures.SendingDomainGlobexDomain))
 
 	refused, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
-		FromEmail: externalapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainUnverifiedDomain),
+		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{FromEmail: externalapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainUnverifiedDomain)}),
 	}, externalapi.BroadcastsUpdateParams{ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsUpdateUnprocessableEntity{}, refused)
 
 	edited, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
-		Subject: externalapi.NewOptString("New subject"),
+		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("New subject")}),
 	}, externalapi.BroadcastsUpdateParams{ID: fixtures.BroadcastDraftFromLostDomainID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastResource{}, edited)

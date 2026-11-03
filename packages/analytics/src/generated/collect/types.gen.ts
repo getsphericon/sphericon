@@ -64,6 +64,27 @@ export type CollectOkResponse = {
 };
 
 /**
+ * A Telegram start link for a visitor: pressing Start in the bot binds the chat to the visitor, and it reaches the contact once the visitor is identified. The link works once.
+ */
+export type CollectTelegramStartLink = {
+  /**
+   * `https://t.me/<bot>?start=<token>`
+   */
+  url: string;
+  /**
+   * When the link lapses, 30 days after it is issued
+   */
+  expiresAt: Timestamp;
+};
+
+export type CollectTelegramStartLinkInput = {
+  /**
+   * The tracker's id of the visitor the link is for, created when it has not been seen
+   */
+  visitorId: string;
+};
+
+/**
  * RFC 7807 conflict response
  */
 export type ConflictProblem = {
@@ -457,3 +478,48 @@ export type CollectIdentifyCreateResponses = {
 };
 
 export type CollectIdentifyCreateResponse = CollectIdentifyCreateResponses[keyof CollectIdentifyCreateResponses];
+
+export type CollectTelegramStartLinksCreateData = {
+  body: CollectTelegramStartLinkInput;
+  path?: never;
+  query?: never;
+  url: '/telegram-start-links';
+};
+
+export type CollectTelegramStartLinksCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 payload too large response: the body exceeds the size cap (ADR 0025)
+   */
+  413: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+  /**
+   * RFC 7807 service unavailable response: the database cannot be reached. The request changed nothing; retry it after `Retry-After` seconds with the same `clientEventId`s.
+   */
+  503: ProblemDetails;
+};
+
+export type CollectTelegramStartLinksCreateError = CollectTelegramStartLinksCreateErrors[keyof CollectTelegramStartLinksCreateErrors];
+
+export type CollectTelegramStartLinksCreateResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: CollectTelegramStartLink;
+};
+
+export type CollectTelegramStartLinksCreateResponse = CollectTelegramStartLinksCreateResponses[keyof CollectTelegramStartLinksCreateResponses];

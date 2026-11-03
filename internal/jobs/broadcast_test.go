@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
@@ -243,6 +244,58 @@ func TestSendBroadcastToRuleSegment(t *testing.T) {
 	assert.NotContains(t, got, *noah.Email, "a free-plan contact is excluded by the segment")
 	// recipients_total matches what was actually sent (all segment matches eligible).
 	assert.Equal(t, len(fs.sent), figuresOf(t, env, fixtures.BroadcastProSegmentID).Recipients)
+}
+
+// A Broadcast whose Segment is "does not have Telegram" emails exactly the Contacts with no chat
+// bound: Liam (own Binding) and Emma (through her phone Visitor) are left out.
+func TestSendBroadcastToContactsWithoutTelegram(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).
+		SetCondition(`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"doesNotHave"}]}`).
+		ExecX(ctx)
+
+	fs := &fakeSender{}
+	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs)), fixtures.BroadcastProSegmentID))
+
+	got := make([]string, len(fs.sent))
+	for i, m := range fs.sent {
+		got[i] = m.To
+	}
+	liam := env.DB.Contact.GetX(ctx, fixtures.ContactLiamID)
+	emma := env.DB.Contact.GetX(ctx, 101)
+	noah := env.DB.Contact.GetX(ctx, fixtures.ContactNoahID)
+	assert.Contains(t, got, *noah.Email, "a Contact with no chat is in the audience")
+	assert.NotContains(t, got, *liam.Email, "a Contact bound in person is left out")
+	assert.NotContains(t, got, *emma.Email, "a Contact bound through its Visitor is left out")
+}
+
+// The start-link email of the spec: a Broadcast with {{ telegram_start_url }} to the "does not have
+// Telegram" Segment issues tokens for exactly the Contacts it emails, none for Liam and Emma.
+func TestABroadcastWithTheStartTagIssuesTokensOnlyForContactsWithoutTelegram(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	bot := env.ConnectTelegram(t, 7800, "acme_audience_bot")
+	env.MakeDefaultTelegram(t, bot)
+	env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).
+		SetCondition(`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"doesNotHave"}]}`).
+		ExecX(ctx)
+	env.DB.Broadcast.UpdateOneID(fixtures.BroadcastProSegmentID).
+		SetBody(`<p><a href="{{ telegram_start_url }}">Join us on Telegram</a></p>`).ClearDoc().ClearEditorVersion().
+		ExecX(ctx)
+	before := env.DB.StartToken.Query().CountX(ctx)
+
+	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), fixtures.BroadcastProSegmentID))
+
+	sent := env.CustomerMail.Messages()
+	require.NotEmpty(t, sent)
+	assert.Equal(t, before+len(sent), env.DB.StartToken.Query().CountX(ctx), "one token per email sent")
+	issuedTo := env.DB.StartToken.Query().Where(starttoken.IntegrationID(int64(bot.Integration.ID))).AllX(ctx)
+	require.Len(t, issuedTo, len(sent))
+	for _, tok := range issuedTo {
+		require.NotNil(t, tok.ContactID)
+		assert.NotContains(t, []int64{fixtures.ContactLiamID, 101}, *tok.ContactID, "no start link for a Contact that has Telegram")
+	}
 }
 
 // A send failure marks the recipient rows failed, finalizes the broadcast with

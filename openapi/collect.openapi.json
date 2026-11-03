@@ -269,6 +269,140 @@
           }
         }
       }
+    },
+    "/telegram-start-links": {
+      "post": {
+        "operationId": "CollectTelegramStartLinks_create",
+        "description": "Issues a start link on the workspace's default Telegram integration. It is refused with 422 when the workspace has no enabled default one.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectTelegramStartLink"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "RFC 7807 payload too large response: the body exceeds the size cap (ADR 0025)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RFC 7807 service unavailable response: the database cannot be reached. The request changed nothing; retry it after `Retry-After` seconds with the same `clientEventId`s.",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Collect"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectTelegramStartLinkInput"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "security": [
@@ -407,6 +541,37 @@
           "ok": {
             "type": "boolean",
             "enum": [true]
+          }
+        }
+      },
+      "CollectTelegramStartLink": {
+        "type": "object",
+        "required": ["url", "expiresAt"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "`https://t.me/<bot>?start=<token>`"
+          },
+          "expiresAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the link lapses, 30 days after it is issued"
+          }
+        },
+        "description": "A Telegram start link for a visitor: pressing Start in the bot binds the chat to the visitor, and it reaches the contact once the visitor is identified. The link works once."
+      },
+      "CollectTelegramStartLinkInput": {
+        "type": "object",
+        "required": ["visitorId"],
+        "properties": {
+          "visitorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "The tracker's id of the visitor the link is for, created when it has not been seen"
           }
         }
       },

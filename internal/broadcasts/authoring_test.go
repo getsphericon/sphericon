@@ -38,7 +38,7 @@ func TestListIsNewestFirstAndWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 
-	page, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, false, nil, broadcasts.OrderNewest)
+	page, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, broadcasts.ListFilter{}, broadcasts.OrderNewest)
 	require.NoError(t, err)
 	require.Len(t, page.Items, page.TotalItems)
 	require.Greater(t, page.TotalItems, 2)
@@ -60,12 +60,13 @@ func TestCreateMakesADraftWithTheGivenFields(t *testing.T) {
 	name, subject, body, from := "N", "S", "<p></p>", "a@"+fixtures.SendingDomainVerifiedDomain
 
 	b, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Create(context.Background(), env.DB.Scoped(fixtures.AcmeID),
-		broadcasts.CreateInput{Name: &name, Subject: &subject, Body: &body, FromEmail: &from})
+		broadcasts.CreateInput{Name: &name, Content: broadcasts.EmailContentInput{Subject: &subject, Body: &body, FromEmail: &from}})
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
 	assert.Equal(t, "N", b.Name)
-	assert.Equal(t, "S", b.Subject)
-	assert.Equal(t, "<p></p>", b.Body)
+	assert.Equal(t, broadcast.ChannelEmail, b.Channel)
+	assert.Equal(t, "S", *b.Subject)
+	assert.Equal(t, "<p></p>", *b.Body)
 	require.NotNil(t, b.FromEmail)
 	assert.Equal(t, from, *b.FromEmail)
 }
@@ -77,16 +78,16 @@ func TestUpdateOnlyEditsDraftsAndKeepsUnsetFields(t *testing.T) {
 	subject := "New subject"
 
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
-	b, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Subject: patch.Set(subject)})
+	b, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Content: broadcasts.EmailContentPatch{Subject: patch.Set(subject)}})
 	require.NoError(t, err)
-	assert.Equal(t, "New subject", b.Subject)
+	assert.Equal(t, "New subject", *b.Subject)
 	assert.Equal(t, before.Name, b.Name, "unset fields keep the stored value")
 
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, broadcasts.UpdateInput{Subject: patch.Set(subject)})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, broadcasts.UpdateInput{Content: broadcasts.EmailContentPatch{Subject: patch.Set(subject)}})
 	require.ErrorIs(t, err, broadcasts.ErrNotDraft)
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Subject: patch.Set(subject)})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Content: broadcasts.EmailContentPatch{Subject: patch.Set(subject)}})
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)
-	_, err = m.Update(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Subject: patch.Set(subject)})
+	_, err = m.Update(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Content: broadcasts.EmailContentPatch{Subject: patch.Set(subject)}})
 	assert.Error(t, err)
 }
 
@@ -147,16 +148,16 @@ func TestReport(t *testing.T) {
 	assert.Equal(t, broadcast.StatusSent, r.Status)
 	assert.Equal(t, 11, r.Recipients)
 	assert.Equal(t, 11, r.Sent)
-	assert.Equal(t, 5, r.Opened)
+	assert.Equal(t, 5, *r.Opened)
 	assert.Equal(t, 2, r.Clicked)
 	assert.Equal(t, 1, r.Unsubscribed)
-	assert.InDelta(t, 5.0/11, r.OpenRate(), 1e-6)
-	assert.InDelta(t, 2.0/11, r.ClickRate(), 1e-6)
+	assert.InDelta(t, 5.0/11, *r.OpenRate, 1e-6)
+	assert.InDelta(t, 2.0/11, r.ClickRate, 1e-6)
 
 	zero, err := m.Report(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
 	require.NoError(t, err)
-	assert.Zero(t, zero.OpenRate(), "no sends means a zero rate, not NaN")
-	assert.Zero(t, zero.ClickRate())
+	assert.Zero(t, *zero.OpenRate, "no sends means a zero rate, not NaN")
+	assert.Zero(t, zero.ClickRate)
 
 	_, err = m.Report(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastSentID)
 	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
@@ -259,12 +260,12 @@ func TestUpdatePatchClearsANullAndKeepsAnAbsentField(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	seg := int64(fixtures.SegmentProPlanID)
 	_, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{
-		FromName: patch.Set("Acme"), SegmentID: patch.Set(seg),
+		Content: broadcasts.EmailContentPatch{FromName: patch.Set("Acme")}, SegmentID: patch.Set(seg),
 	})
 	require.NoError(t, err)
 
 	b, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{
-		FromName: patch.Clear[string](), Subject: patch.Set("Only the subject"),
+		Content: broadcasts.EmailContentPatch{FromName: patch.Clear[string](), Subject: patch.Set("Only the subject")},
 	})
 	require.NoError(t, err)
 	assert.Nil(t, b.FromName, "a clear drops the stored value")

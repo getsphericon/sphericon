@@ -287,6 +287,11 @@ type Config struct {
 	// default) means only the built-in Presets.
 	PresetsDir string
 
+	// TelegramBotAPIURL is the Bot API base URL every Telegram Integration's bot is reached
+	// at, without a trailing slash: Telegram's own server by default, a local
+	// `telegram-bot-api` server of a Self-hoster, or a test's fake.
+	TelegramBotAPIURL string
+
 	// System (platform) transactional email — sphericon's OWN sender, distinct from a
 	// customer's per-workspace integration. Dev uses smtp → mailpit (the SMTP_*
 	// values); prod uses ses (the SES_* values). Sent via the same messaging
@@ -513,6 +518,11 @@ type environment struct {
 	// beside the built-in ones at start, and a file that does not load, or reuses a built-in name,
 	// stops the start. Empty loads only the built-in Presets.
 	PresetsDir string `env:"SPHERICON_PRESETS_DIR"`
+	// The base URL of the Telegram Bot API every Workspace's Telegram bot is reached at: Telegram's
+	// own server by default, or a local `telegram-bot-api` server (https://github.com/tdlib/telegram-bot-api)
+	// that runs the Bot API on your own infrastructure, such as `http://telegram-bot-api:8081`. Calls
+	// go to `<url>/bot<token>/<method>`.
+	TelegramBotAPIURL string `env:"SPHERICON_TELEGRAM_BOT_API_URL" envDefault:"https://api.telegram.org"`
 
 	// The edge host a Workspace's Tracking domain (e.g. `t.example.com`) is a CNAME to, such as
 	// `edge.example.com` (ADR 0038, ADR 0071). Empty turns Tracking domains off: the section is
@@ -652,6 +662,11 @@ func Load(envName string) (*Config, error) {
 		maxIdle = *e.DBMaxIdleConns
 	}
 
+	telegramURL, err := parseBaseURL("SPHERICON_TELEGRAM_BOT_API_URL", e.TelegramBotAPIURL)
+	if err != nil {
+		return nil, err
+	}
+
 	edgeCIDRs, err := parseCIDRs("SPHERICON_TRACKING_EDGE_CIDRS", e.TrackingEdgeCIDRs)
 	if err != nil {
 		return nil, err
@@ -737,6 +752,8 @@ func Load(envName string) (*Config, error) {
 		DNSAddr:         e.DNSAddr,
 		InternalAddr:    e.InternalAddr,
 		PresetsDir:      e.PresetsDir,
+
+		TelegramBotAPIURL: telegramURL,
 
 		TrackingCNAMETarget: strings.ToLower(strings.TrimSuffix(strings.TrimSpace(e.TrackingCNAMETarget), ".")),
 		TrackingHostHeader:  strings.TrimSpace(e.TrackingHostHeader),
@@ -1147,4 +1164,13 @@ func SecretValues(cfg *Config) []string {
 		}
 	}
 	return slices.DeleteFunc(values, func(v string) bool { return v == "" })
+}
+
+// parseBaseURL reads an http(s) base URL, without its trailing slash.
+func parseBaseURL(name, raw string) (string, error) {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return "", fmt.Errorf("%s must be an http:// or https:// URL, got %q", name, raw)
+	}
+	return strings.TrimRight(u.String(), "/"), nil
 }

@@ -8,12 +8,15 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/starttoken"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/automations"
@@ -37,13 +40,17 @@ var anonymousKeep = []string{"sendingDomain", "bounceKind"}
 // anonymized reports whether an Event action is a reserved system action that
 // Erasure keeps as an anonymous row. Every other action is customer-tracked and is
 // deleted; marketing.confirmed is deleted too, as consent proof for a person who is
-// gone (ADR 0021).
+// gone (ADR 0021), and so is telegram.received, the person's own words. The other telegram.*
+// System events are anonymized like email's, bound and unbound included: they say a Contact's
+// chat came and went, and with the Contact and the Destination dropped they are counts.
 func anonymized(action string) bool {
 	switch action {
 	case events.NameEmailSent, events.NameEmailOpened, events.NameEmailClicked,
 		events.NameEmailDelivered, events.NameEmailDelayed, events.NameEmailDropped,
 		events.NameEmailBounced, events.NameEmailComplained, events.NameEmailUnsubscribed,
-		events.NameContactCreated:
+		events.NameContactCreated,
+		events.NameTelegramSent, events.NameTelegramClicked, events.NameTelegramUnsubscribed,
+		events.NameTelegramBound, events.NameTelegramUnbound:
 		return true
 	}
 	return false
@@ -85,6 +92,50 @@ func purgeWebhookDeliveries(ctx context.Context, s *ent.Scoped, t *Target, purge
 }
 
 func visitorOf(contactID int64) predicate.Visitor { return visitor.ContactID(contactID) }
+
+// eraseTelegram deletes the Telegram data of the subject: the Bindings and Start tokens of the
+// Contact and of its Visitors (a Visitor's are owned by the Visitor row, which Erasure deletes
+// later), and the short links of the Contact's Outbound messages. The messages themselves stay
+// as anonymous rows (anonymizeDelivery), which clears the contact_id the links are found by, so
+// this runs before it, and before eraseVisitors. Telegram opt-outs are not here: they are keyed by the user id and stay
+// (detachOptOuts).
+func eraseTelegram(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+	var owners []predicate.Visitor
+	if t.ContactID != 0 {
+		owners = append(owners, visitorOf(t.ContactID))
+	}
+	if len(t.VisitorIDs) > 0 {
+		owners = append(owners, visitor.VisitorIDIn(t.VisitorIDs...))
+	}
+	var bindings []predicate.Binding
+	var tokens []predicate.StartToken
+	if t.ContactID != 0 {
+		bindings = append(bindings, binding.ContactID(t.ContactID))
+		tokens = append(tokens, starttoken.ContactID(t.ContactID))
+		if _, err := s.TrackedLink().Delete().Where(
+			trackedlink.HasOutboundMessageWith(outboundmessage.ContactID(t.ContactID))).Exec(ctx); err != nil {
+			return err
+		}
+	}
+	if len(owners) > 0 {
+		visitorIDs, err := s.Visitor().Query().Where(visitor.Or(owners...)).IDs(ctx)
+		if err != nil {
+			return err
+		}
+		if len(visitorIDs) > 0 {
+			bindings = append(bindings, binding.VisitorIDIn(visitorIDs...))
+			tokens = append(tokens, starttoken.VisitorIDIn(visitorIDs...))
+		}
+	}
+	if len(bindings) == 0 {
+		return nil
+	}
+	if _, err := s.Binding().Delete().Where(binding.Or(bindings...)).Exec(ctx); err != nil {
+		return err
+	}
+	_, err := s.StartToken().Delete().Where(starttoken.Or(tokens...)).Exec(ctx)
+	return err
+}
 
 // eraseEvents deletes the subject's customer-tracked Events and anonymizes its
 // system Events in place. Events are found by contact_id (Identify stitched earlier

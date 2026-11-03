@@ -1,8 +1,9 @@
-// Package preset is the Preset engine (ADR 0037): a Preset describes one provider's
-// inbound callbacks, how a request is verified and how its payload becomes Delivery
-// notices. The engine does no I/O: it takes a Preset, the raw request and the
-// Integration's params and returns the validated Delivery notices, an optional
-// action for the caller to perform, or a typed error.
+// Package preset is the Preset engine (ADR 0037, ADR 0076): a Preset describes one provider's
+// inbound callbacks, how a request is verified and how its payload becomes the closed set of
+// inbound facts: Delivery notices, Inbound messages and Reachability changes. The engine does no
+// I/O and reads no meaning into a fact (that is the core's, per Channel): it takes a Preset, the
+// raw request and the Integration's params and returns the validated facts, an optional action
+// for the caller to perform, or a typed error.
 package preset
 
 import (
@@ -26,9 +27,9 @@ const (
 	MaxBodyBytes = 1 << 20
 	// MaxProgramBytes is the largest transform program.
 	MaxProgramBytes = 16 << 10
-	// MaxNotices is the most Delivery notices one request may yield.
-	// contract-copy: provider preset cap on Delivery notices per request; not in the contract
-	MaxNotices = 100
+	// MaxFacts is the most facts (of every kind together) one request may yield.
+	// contract-copy: provider preset cap on facts per request; not in the contract
+	MaxFacts = 100
 	// TransformTimeout bounds one run of a transform.
 	TransformTimeout = 100 * time.Millisecond
 )
@@ -41,7 +42,7 @@ var (
 	// ErrMalformed: the body is not JSON, or is over the limit.
 	ErrMalformed = errors.New("preset: request is malformed")
 	// ErrTransformFailed: the transform failed, timed out or returned something that is
-	// not a list of valid Delivery notices.
+	// not a list of valid facts.
 	ErrTransformFailed = errors.New("preset: transform failed")
 	// ErrUnavailable: the request could not be verified because something on our side
 	// failed (the signing certificate could not be fetched). It says nothing about the
@@ -64,7 +65,8 @@ const (
 // contract-copy: cap of the reason an email delivery Event keeps; not in the contract
 const MaxReasonChars = 500
 
-// DeliveryNotice is the one normalized shape every Preset produces. Only a hard
+// DeliveryNotice is the normalized shape of a delivery result, one of the facts a Preset
+// produces. Only a hard
 // bounce or a complaint enters Suppression; a soft bounce still counts in the
 // deliverability rates.
 type DeliveryNotice struct {
@@ -85,6 +87,75 @@ type DeliveryNotice struct {
 	Reason string `json:"reason,omitempty"`
 }
 
+// Channel is the Channel an Inbound message came in on: one of the Channels of ADR 0074.
+type Channel string
+
+// channels are the Channels of ADR 0074. A Channel sphericon does not build yet is still read
+// here: the Ingest hook drops a message whose Channel is not its Integration's.
+// contract-copy: every Channel of ADR 0074 a Preset may name; the contract lists only the built ones
+var channels = []Channel{"email", "sms", "whatsapp", "telegram", "web_push", "mobile_push"}
+
+// The kinds a transform names the two facts by that are not Delivery notices; a Delivery notice
+// is named by its own Kind.
+const (
+	kindInboundMessage     = "inbound_message"
+	kindReachabilityChange = "reachability_change"
+)
+
+// Limits of an Inbound message's free text. Longer values are cut, not refused: the person
+// wrote them, and refusing would have the provider redeliver the request forever.
+const (
+	// MaxTextChars caps an Inbound message's text, in characters (Telegram's message limit).
+	// contract-copy: cap of the text a provider preset reads from an inbound message; not in the contract
+	MaxTextChars = 4096
+	// MaxPayloadChars caps the payload of a pressed button, in characters.
+	// contract-copy: cap of a button payload a provider preset reads; not in the contract
+	MaxPayloadChars = 1024
+)
+
+// InboundMessage is what a person sent on a Channel, as the Preset parsed it (ADR 0076): a text
+// they wrote or the payload of a button they pressed. What it means (a `/start` token, a STOP
+// keyword) is read by the core, per Channel, never by the Preset.
+type InboundMessage struct {
+	// ID is the provider's event id: the core keys its deduplication on it (with the Channel and
+	// the Integration), since a provider redelivers what it was not sure was received.
+	ID      string  `json:"id"`
+	Channel Channel `json:"channel"`
+	// Destination is the address the message came from, trimmed: on Telegram the user id.
+	Destination string `json:"destination"`
+	// ChatID is the chat the message came in, where the Channel has one: a reply goes there.
+	ChatID string `json:"chat_id,omitempty"`
+	// Text is what the person wrote, as written, cut at MaxTextChars characters.
+	Text string `json:"text,omitempty"`
+	// Payload is the payload of a pressed button, cut at MaxPayloadChars characters.
+	Payload string `json:"payload,omitempty"`
+	// MessageID is the provider's id of the message: of the one pressed on, for a button.
+	MessageID string `json:"message_id,omitempty"`
+	// CallbackID is the provider's id of the button press, which the provider wants answered
+	// (Telegram's callback query id, for answerCallbackQuery): "" for a written message.
+	CallbackID string `json:"callback_id,omitempty"`
+}
+
+// Unreachability is why a Destination can no longer be reached.
+type Unreachability string
+
+const (
+	// Blocked: the person blocked the sender (a bot), and may unblock it.
+	Blocked Unreachability = "blocked"
+	// Deactivated: the person's account is gone.
+	Deactivated Unreachability = "deactivated"
+)
+
+// ReachabilityChange is a provider saying on its own that a Destination can or can no longer be
+// reached (ADR 0076). Reason is set exactly when it can no longer be.
+type ReachabilityChange struct {
+	// ID is the provider's event id, as on an Inbound message.
+	ID          string         `json:"id"`
+	Destination string         `json:"destination"`
+	Reachable   bool           `json:"reachable"`
+	Reason      Unreachability `json:"reason,omitempty"`
+}
+
 // ActionKind is something the caller performs for the engine.
 type ActionKind string
 
@@ -98,10 +169,18 @@ type Action struct {
 	URL  string
 }
 
-// Result of a verified request.
+// Result of a verified request: the facts it carried, each kind in the order the transform
+// returned it, and the action asked of the caller.
 type Result struct {
-	Notices []DeliveryNotice
-	Action  *Action
+	Notices             []DeliveryNotice
+	InboundMessages     []InboundMessage
+	ReachabilityChanges []ReachabilityChange
+	Action              *Action
+}
+
+// Empty reports whether the request carried no fact.
+func (r Result) Empty() bool {
+	return len(r.Notices) == 0 && len(r.InboundMessages) == 0 && len(r.ReachabilityChanges) == 0
 }
 
 // Params are the values the Owner entered on the Integration, validated against the
@@ -162,7 +241,7 @@ func (p *Preset) ValidateParams(values Params) error {
 	return nil
 }
 
-// Handle verifies the request and turns its payload into Delivery notices. Nothing
+// Handle verifies the request and turns its payload into facts. Nothing
 // reaches the transform unverified: a header scheme checks the raw bytes before any
 // parsing, a body scheme parses under the body limit, verifies, and only then
 // transforms. now is the clock, for timestamp tolerance.
@@ -188,11 +267,10 @@ func (p *Preset) Handle(ctx context.Context, req Request, params Params, now tim
 			return Result{}, err
 		}
 	}
-	notices, err := p.run(ctx, body, req.Header)
+	res, err := p.run(ctx, body, req.Header)
 	if err != nil {
 		return Result{}, err
 	}
-	res := Result{Notices: notices}
 	if a, ok := p.verifier.(interface{ action(body any) *Action }); ok {
 		res.Action = a.action(body)
 	}

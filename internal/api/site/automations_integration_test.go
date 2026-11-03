@@ -13,56 +13,69 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// An Automation names the Integration its email steps send through: it is set on create, moved
-// or cleared with a JSON Merge Patch (an explicit null clears, an absent key keeps), and read back.
-func TestSiteAutomationsNameTheirIntegration(t *testing.T) {
+// siteEmailStepVia is an email step through the Integration id names; an unset one is the default.
+func siteEmailStepVia(id siteapi.OptNilEntityId) siteapi.SiteAutomationStep {
+	return siteapi.SiteAutomationStep{
+		Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"),
+		Body: siteapi.NewOptString("<p>Hi</p>"), IntegrationId: id,
+	}
+}
+
+// Each email step names the Integration it sends through (ADR 0081): it is saved with the step and
+// read back on it, a step that names none sends through the default, and steps rewritten without
+// it go back to the default.
+func TestSiteAutomationStepsNameTheirIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
+	mailgun := siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeMailgunID))
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
-		Name: "Onboarding", TriggerEvent: "signup", IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeMailgunID)),
+		Name: "Onboarding", TriggerEvent: "signup",
+		Steps: []siteapi.SiteAutomationStep{siteEmailStepVia(mailgun), siteEmailStepVia(siteapi.OptNilEntityId{})},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", created)
-	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, res.Draft.Value.IntegrationId.Or(0))
-
 	params := siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID}
 	renamed, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptString("Renamed")}, params)
 	require.NoError(t, err)
 	kept, ok := renamed.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", renamed)
-	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, kept.Draft.Value.IntegrationId.Or(0), "an absent key keeps it")
-
-	var null siteapi.OptNilEntityId
-	null.SetToNull()
-	cleared, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{IntegrationId: null}, params)
+	rewritten, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
+		Steps: []siteapi.SiteAutomationStep{siteEmailStepVia(siteapi.OptNilEntityId{})},
+	}, params)
 	require.NoError(t, err)
-	got, ok := cleared.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", cleared)
-	assert.Empty(t, got.Draft.Value.IntegrationId.Or(0), "an explicit null goes back to the default")
+	back, ok := rewritten.(*siteapi.SiteAutomationResource)
+	require.Truef(t, ok, "got %T", rewritten)
+
+	require.Len(t, res.Draft.Value.Steps, 2)
+	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, res.Draft.Value.Steps[0].IntegrationId.Or(0), "the first step through the relay")
+	assert.Empty(t, res.Draft.Value.Steps[1].IntegrationId.Or(0), "the second step through the default")
+	assert.Equal(t, res.Draft.Value.Steps, kept.Draft.Value.Steps, "an update that leaves the steps out keeps them")
+	require.Len(t, back.Draft.Value.Steps, 1)
+	assert.Empty(t, back.Draft.Value.Steps[0].IntegrationId.Or(0), "a step written without one goes back to the default")
 }
 
-// An Integration that does not exist in the Workspace is a 422 and stores nothing.
-func TestSiteAutomationsRefuseAnUnknownIntegration(t *testing.T) {
+// A step's Integration that does not exist in the Workspace is a 422 and stores nothing.
+func TestSiteAutomationsRefuseAStepsUnknownIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	bad := siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)) // another Workspace's
+	steps := []siteapi.SiteAutomationStep{siteEmailStepVia(siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)))} // another Workspace's
+	draftBefore := env.DB.AutomationVersion.GetX(ctx, fixtures.AutomationWelcomeSeriesDraftVersionID).Steps
 
-	create, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: "signup", IntegrationId: bad},
+	create, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: "signup", Steps: steps},
 		siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAutomationsCreateUnprocessableEntity{}, create)
-
-	update, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{IntegrationId: bad},
+	update, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Steps: steps},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.AutomationWelcomeSeriesID)})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAutomationsUpdateUnprocessableEntity{}, update)
 
+	assert.IsType(t, &siteapi.SiteAutomationsCreateUnprocessableEntity{}, create)
+	assert.IsType(t, &siteapi.SiteAutomationsUpdateUnprocessableEntity{}, update)
 	assert.False(t, env.DB.Automation.Query().Where(automation.Name("x")).ExistX(ctx), "a refused create stores nothing")
-	assert.Nil(t, env.DB.AutomationVersion.GetX(ctx, fixtures.AutomationWelcomeSeriesDraftVersionID).IntegrationID, "a refused update changes nothing")
+	assert.Equal(t, draftBefore, env.DB.AutomationVersion.GetX(ctx, fixtures.AutomationWelcomeSeriesDraftVersionID).Steps, "a refused update changes nothing")
 }

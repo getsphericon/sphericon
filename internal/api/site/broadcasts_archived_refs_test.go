@@ -21,13 +21,17 @@ func TestSiteBroadcastsCreateRefusesAnArchivedSegmentOrIntegration(t *testing.T)
 	before := env.DB.Broadcast.Query().CountX(ctx)
 
 	got, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name: "retired", SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentArchivedID)),
+		Name:      "retired",
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
+		SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentArchivedID)),
 	}, workspaceID)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, got)
 
 	got, err = c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name: "retired", IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeArchivedID)),
+		Name:          "retired",
+		Content:       testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
+		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeArchivedID)),
 	}, workspaceID)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, got)

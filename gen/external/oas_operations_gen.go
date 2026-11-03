@@ -105,6 +105,7 @@ const (
 	TagsListOperation                  OperationName = "TagsList"
 	TagsListForContactOperation        OperationName = "TagsListForContact"
 	TagsRemoveOperation                OperationName = "TagsRemove"
+	TelegramStartLinksIssueOperation   OperationName = "TelegramStartLinksIssue"
 	TemplatesCreateOperation           OperationName = "TemplatesCreate"
 	TemplatesDeleteOperation           OperationName = "TemplatesDelete"
 	TemplatesGetOperation              OperationName = "TemplatesGet"

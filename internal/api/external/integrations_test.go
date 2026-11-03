@@ -66,7 +66,7 @@ func TestExternalIntegrationsListIsPaginatedAndWorkspaceScoped(t *testing.T) {
 
 	all, err := c.IntegrationsList(ctx, externalapi.IntegrationsListParams{})
 	require.NoError(t, err)
-	n, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Where(integration.ProviderIn(integration.ProviderSMTP, integration.ProviderSes)).Count(ctx)
+	n, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Where(integration.ProviderIn(integration.ProviderSMTP, integration.ProviderSes, integration.ProviderTelegram)).Count(ctx)
 	require.NoError(t, err)
 	assert.Len(t, all.(*externalapi.IntegrationsListOK).Items, n)
 	for _, it := range all.(*externalapi.IntegrationsListOK).Items {

@@ -420,12 +420,26 @@ export default interface Resources {
       "statusLabel": "Status",
       "stepApplyTag": "Apply tag",
       "stepEmail": "Send email",
+      "stepFigures": {
+        "hint": "What each send step sent and skipped, across every version. A contact skipped at a step (no address, opted out of the channel, or suppressed) moves on to the next step.",
+        "sent": "Sent",
+        "skipped": "Skipped",
+        "step": "Step",
+        "title": "Send steps"
+      },
       "stepHttp": "Call a URL",
       "stepRemoveTag": "Remove tag",
+      "stepTelegram": "Send Telegram message",
       "stepTrigger": "Trigger",
       "stepWait": "Wait",
       "stepsLabel": "Steps",
       "tagNameLabel": "Tag",
+      "telegramNodeDescription": "Send a Telegram message to the contact's bound chats.",
+      "telegramTextLabel": "Message",
+      "telegramUnsubscribeDefault": "Unsubscribe",
+      "telegramUnsubscribeHint": "A button under the message that stops all of your Telegram messages to the person.",
+      "telegramUnsubscribeLabel": "Button label",
+      "telegramUnsubscribeToggle": "Unsubscribe button",
       "triggerColumn": "Trigger",
       "triggerHint": "The event that enrolls a contact into this automation.",
       "triggerLabel": "Trigger event",
@@ -469,6 +483,17 @@ export default interface Resources {
         "copied": "Its audience is the segment's conditions as they were when it was scheduled or sent: editing the segment since changes nothing for it.",
         "segment": "Audience: segment {{name}}"
       },
+      "channelAll": "Every channel",
+      "channelFilter": "Channel",
+      "channelHint": "Fixed once the broadcast is created: its content is written for this channel only.",
+      "channelLabel": "Channel",
+      "channelNone": "No channel can send yet: add an integration first.",
+      "channelNoneLink": "Integrations",
+      "channelShown": "Channel: {{channel}}",
+      "channels": {
+        "email": "Email",
+        "telegram": "Telegram"
+      },
       "createTitle": "New broadcast",
       "deliveryHint": "Send now, or schedule it for a future time. Only draft broadcasts can be sent.",
       "deliveryLabel": "Delivery",
@@ -506,6 +531,7 @@ export default interface Resources {
       "segmentAll": "All contacts",
       "segmentLabel": "Segment",
       "segmentNote": "Unsubscribed contacts are always excluded.",
+      "segmentNoteTelegram": "It goes to the contacts with a Telegram chat bound to this bot who have not stopped Telegram messages. A contact with several chats gets one message in each and counts once.",
       "sendCapWarning": "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count}} day. You can still send or schedule it." | "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count}} days. You can still send or schedule it.",
       "sendCapWarningError": "Could not read the Send cap",
       "sendNow": "Send now",
@@ -522,8 +548,10 @@ export default interface Resources {
         "failureRate": "Failure rate",
         "openRate": "Open rate",
         "opened": "Opened",
+        "pending": "Pending",
         "recipients": "Recipients",
         "sent": "Sent",
+        "skipped": "Skipped",
         "unsubscribeRate": "Unsubscribe rate",
         "unsubscribed": "Unsubscribed"
       },
@@ -938,6 +966,13 @@ export default interface Resources {
       "showMachineEvents": "Show machine events",
       "tagFilter": "Tag",
       "tagsTitle": "Tags",
+      "telegramBot": "Bot",
+      "telegramBoundSince": "Bound since",
+      "telegramCopyLink": "Copy Telegram link",
+      "telegramLinkCopied": "Start link copied. It works once and lapses in 30 days.",
+      "telegramLinkErrorTitle": "Could not issue the Telegram link",
+      "telegramNoChats": "No Telegram chat is bound to this contact yet.",
+      "telegramTitle": "Telegram",
       "updatedAt": "Updated at"
     },
     "createWorkspace": {
@@ -994,7 +1029,13 @@ export default interface Resources {
       "emailSent": "Was sent an email",
       "emailUnsubscribed": "Unsubscribed",
       "marketingConfirmed": "Confirmed opt-in",
-      "pageView": "Visited a page"
+      "pageView": "Visited a page",
+      "telegramBound": "Telegram chat bound",
+      "telegramClicked": "Clicked a link in a Telegram message",
+      "telegramReceived": "Sent a Telegram message",
+      "telegramSent": "Was sent a Telegram message",
+      "telegramUnbound": "Telegram chat unbound",
+      "telegramUnsubscribed": "Unsubscribed from Telegram"
     },
     "eventRows": {
       "completed": "Completed",
@@ -1023,6 +1064,7 @@ export default interface Resources {
     },
     "holdReasons": {
       "no_integration": "No email integration can send it: the one it uses is disabled or archived, or the workspace has no default. Choose an integration that sends, or set a default, to resume.",
+      "provider_refused": "The provider refused the integration's credentials, for example a revoked bot token. Save the integration again with a working one to resume.",
       "provider_stopped": "Your email provider has stopped sending from your account. Resolve it with the provider: sending resumes on its own once the provider reinstates the account.",
       "staff_hold": "Outbound email is on hold for this workspace. The notice at the top of the page says how to resolve it.",
       "unverified_domain": "The sender domain is not verified. Publish its DKIM record and verify the domain to resume.",
@@ -1261,6 +1303,7 @@ export default interface Resources {
           "deliverabilityWarning": "The {{metric}} rate on {{domain}} is {{rate}} over the last 24 hours, over the warning limit. Clean your list: if it keeps rising, sending for this workspace is suspended automatically.",
           "enrollmentsFailed": "{{count}} run of {{name}} failed this week." | "{{count}} runs of {{name}} failed this week.",
           "integrationProviderProbation": "Your provider has put the account behind {{name}} under review. It still sends: keep bounces and complaints low.",
+          "integrationProviderRefused": "{{name}}'s credentials were refused by its provider: nothing sends through it until it is saved again with working ones.",
           "integrationProviderSandbox": "{{name}} is in the provider's sandbox: it sends only to addresses verified with the provider.",
           "integrationProviderStopped": "Your provider has stopped the account behind {{name}}: nothing sends through it until the provider reinstates it.",
           "providerLimitSpent": "{{name}} has sent its daily limit: the rest goes out as the limit refills.",
@@ -1323,6 +1366,7 @@ export default interface Resources {
         "scheduledFor": "Scheduled for {{date}}",
         "sending": "Sending: {{sent}} of {{total}}",
         "sentDetail": "Sent {{date}}: {{opened}} opened, {{clicked}} clicked",
+        "sentDetailNoOpens": "Sent {{date}}: {{clicked}} clicked",
         "title": "Sends",
         "upcomingEmpty": "Nothing is sending or scheduled.",
         "upcomingTitle": "Sending and scheduled"
@@ -1647,12 +1691,17 @@ export default interface Resources {
       "integrations": {
         "advanced": "Advanced settings",
         "back": "Back",
+        "channels": {
+          "email": "Email",
+          "sms": "SMS",
+          "telegram": "Telegram"
+        },
         "create": "Connect provider",
         "createError": "Failed to save provider",
         "default": "Default",
         "defaultChanged": "Default provider changed",
         "defaultError": "Failed to change the default provider",
-        "description": "Connect an email provider so this workspace can send mail.",
+        "description": "Connect the providers this workspace sends through: an email provider for mail, a Telegram bot for Telegram. Each channel has its own default.",
         "empty": "No providers connected yet",
         "emptyArchived": "No archived providers",
         "fields": {
@@ -1666,6 +1715,8 @@ export default interface Resources {
           "port": "Port",
           "region": "AWS region",
           "secretAccessKey": "Secret access key",
+          "token": "Bot token",
+          "tokenHint": "The token @BotFather gave you for the bot.",
           "username": "Username"
         },
         "inbound": {
@@ -1688,6 +1739,8 @@ export default interface Resources {
           "saved": "Inbound settings saved",
           "secretKeep": "Stored. Leave blank to keep it.",
           "secretRotates": "A new value starts a rotation: the old one stays accepted until you retire it.",
+          "telegramDescription": "Telegram posts the bot's updates here. sphericon set the bot's webhook to this URL and checks its secret itself.",
+          "telegramRegenerateConfirm": "The current hook URL stops working at once, and the bot's webhook moves to the new one.",
           "title": "Inbound callbacks: {{name}}"
         },
         "inboxExplanation": "The Test inbox keeps every message it is given and delivers none. Read them on the Captured messages page. A workspace has one.",
@@ -1740,12 +1793,18 @@ export default interface Resources {
           "sesCompatible": "SES-compatible service",
           "sesCompatibleHint": "Any provider with the SES API, such as Yandex Cloud Postbox. Needs its endpoint URL.",
           "sesHint": "AWS SES. Needs a region and an access key.",
-          "smtpHint": "Any SMTP server."
+          "smtpHint": "Any SMTP server.",
+          "telegram": "Telegram bot",
+          "telegramHint": "Your own bot from @BotFather, to message the people who start it."
         },
         "removeError": "Failed to remove provider",
         "restoreError": "Failed to restore the provider",
         "restored": "Provider restored",
         "saved": "Provider saved",
+        "telegramWarning": {
+          "body": "If the bot already sends its updates to another tool, that tool stops receiving them. Use a bot dedicated to sphericon.",
+          "title": "Connecting replaces the bot's webhook"
+        },
         "title": "Providers"
       },
       "loadErrorTitle": "Failed to load workspace",
@@ -2172,6 +2231,9 @@ export default interface Resources {
       }
     },
     "suppressions": {
+      "channelEmail": "Email",
+      "channelLabel": "Channel",
+      "channelTelegram": "Telegram",
       "create": "Suppress",
       "createError": "Failed to suppress address",
       "emailColumn": "Email",
@@ -2192,6 +2254,8 @@ export default interface Resources {
         "unsubscribed": "Unsubscribed"
       },
       "showLifted": "Show lifted",
+      "telegramHint": "The person's Telegram user id. Telegram sends to it through any of the workspace's bots will be skipped.",
+      "telegramLabel": "Telegram user id",
       "title": "Suppression list"
     },
     "table": {
@@ -2218,6 +2282,25 @@ export default interface Resources {
       "nameLabel": "Name",
       "noRecords": "No tags yet",
       "viewContacts": "View contacts"
+    },
+    "telegramEditor": {
+      "addButton": "Add a button",
+      "buttonLabel": "Button {{n}} label",
+      "buttonLabelPlaceholder": "Label",
+      "buttonUrl": "Button {{n}} URL",
+      "buttonsLabel": "Link buttons",
+      "counter": "{{length}} / {{limit}}",
+      "imageHint": "An https URL. The text becomes the image's caption.",
+      "imageLabel": "Image URL",
+      "insertMergeTag": "Insert a merge tag",
+      "linkPreview": "Show a preview of links in the text",
+      "previewTitle": "Preview for a sample contact",
+      "removeButton": "Remove button {{n}}",
+      "textHint": "Telegram's HTML: b, i, u, s, a href, code, pre, tg-spoiler, blockquote. Merge tags are escaped.",
+      "textLabel": "Message",
+      "tooLong": "Telegram takes up to {{limit}} characters in {{what}}: it cannot go out until it is shorter.",
+      "whatCaption": "a caption",
+      "whatText": "a message"
     },
     "templates": {
       "addTemplate": "New template",

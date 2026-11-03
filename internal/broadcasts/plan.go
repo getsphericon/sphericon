@@ -9,12 +9,13 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
-	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // recipientInsertChunk bounds a single CreateBulk so a very large audience is planned in
@@ -133,7 +134,11 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	// exists: a Workspace freeze, no Integration, or an unverified From domain is a
 	// reversible hold (ADR 0015): the broadcast keeps its status, records why, and the
 	// plan is retried later; it is not failed.
-	hold, err := d.out.Preflight(ctx, s, outbound.BroadcastContent(b), b.IntegrationID)
+	content, err := outbound.BroadcastContent(b)
+	if err != nil {
+		return nil, err
+	}
+	hold, err := d.out.Preflight(ctx, s, content, b.IntegrationID)
 	if err != nil {
 		return nil, fmt.Errorf("preflight broadcast %d: %w", b.ID, err)
 	}
@@ -153,10 +158,10 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 		return nil, err
 	}
 
-	// A template that cannot render would fail every recipient: fail the broadcast once,
-	// here, before any recipient row exists (ADR 0015).
-	if verr := emailrender.Lint(b.Subject, b.Body, nil).Error; verr != nil {
-		return nil, failPlan(ctx, s, b.ID, fmt.Errorf("broadcast %d: template does not render: %w", b.ID, verr))
+	// Content that cannot render would fail every recipient: fail the broadcast once, here,
+	// before any recipient row exists (ADR 0015).
+	if verr := renderable(content); verr != nil {
+		return nil, failPlan(ctx, s, b.ID, fmt.Errorf("broadcast %d: content does not render: %w", b.ID, verr))
 	}
 
 	// The Broadcast is read again: begin has taken the copy of a draft's Condition. An audience
@@ -213,22 +218,57 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	return ids, nil
 }
 
+// renderable is the Channel's own check that content renders at all, before anything is sent: on
+// email a subject and body that Liquid and the HTML parser take.
+func renderable(content outbound.Content) error {
+	switch c := content.(type) {
+	case outbound.EmailContent:
+		return emailrender.Lint(c.Subject, c.Body, nil).Error
+	case outbound.TelegramContent:
+		return telegramrender.Check(c.Text)
+	default:
+		return fmt.Errorf("broadcasts: no render check for %T", content)
+	}
+}
+
 // ErrNoAudience marks a Broadcast whose audience cannot be resolved: a Segment Broadcast without
 // the copy of its Condition, or a copy that no longer compiles. Its plan fails it.
 var ErrNoAudience = errors.New("broadcasts: the audience of the broadcast cannot be resolved")
 
+// destinationOf is the Destination the Broadcast b reaches its audience at, by its Channel (ADR
+// 0080): on email the Contact's address, on Telegram its Bindings on the Integration the Broadcast
+// routes through, the one it names or the Channel's default. A route with none reaches nobody.
+func destinationOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (eligibility.Destination, error) {
+	switch b.Channel {
+	case broadcast.ChannelEmail:
+		return eligibility.EmailDestination(), nil
+	case broadcast.ChannelTelegram:
+		integ, err := messaging.Integration(ctx, s, messaging.ChannelTelegram, b.IntegrationID)
+		if errors.Is(err, messaging.ErrNoProvider) {
+			return eligibility.BindingDestination(eligibility.ChannelTelegram, 0), nil
+		}
+		if err != nil {
+			return nil, fmt.Errorf("broadcasts: broadcast %d integration: %w", b.ID, err)
+		}
+		return eligibility.BindingDestination(eligibility.ChannelTelegram, integ.ID), nil
+	default:
+		return nil, fmt.Errorf("broadcasts: broadcast %d is on channel %q, which has no destination", b.ID, b.Channel)
+	}
+}
+
 // audienceOf is the Contacts the plan of the Broadcast b, which has left draft, takes: the
-// Workspace's Contacts with an email address, narrowed by the Condition copied from its Segment
-// when it left draft (ADR 0065; a Broadcast to all contacts is not narrowed), then filtered to
-// eligible recipients. Eligibility is derived (ADR 0001): suppressed destinations and ones
+// Workspace's Contacts narrowed by the Condition copied from its Segment when it left draft (ADR
+// 0065; a Broadcast to all contacts is not narrowed) and by its Channel's Destination: they have
+// one, and it is eligible. Eligibility is derived (ADR 0001): suppressed destinations and ones
 // unsubscribed from the "broadcasts" source (or from everything) are excluded at the query level.
-// EmailNotNil keeps un-sendable contacts out so no row is created that could never send and would
-// block finalization forever.
+// A Contact without a Destination (on Telegram, an eligible Binding on the routed Integration) is left out, so no row is created that could never send and
+// would block finalization forever.
 func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (*ent.ContactQuery, error) {
-	audience := s.Contact().Query().Where(
-		contact.EmailNotNil(),
-		eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts),
-	)
+	dest, err := destinationOf(ctx, s, b)
+	if err != nil {
+		return nil, err
+	}
+	audience := s.Contact().Query().Where(eligibility.Audience(dest, eligibility.SourceBroadcasts))
 	if b.SegmentID == nil {
 		return audience, nil
 	}
@@ -276,7 +316,7 @@ func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, n int, now
 	if err != nil {
 		return nil, fmt.Errorf("load broadcast %d: %w", id, err)
 	}
-	channel := outbound.BroadcastContent(b).Channel()
+	channel := messaging.Channel(b.Channel)
 	route, err := d.out.Route(ctx, s, channel, b.IntegrationID)
 	if err != nil {
 		return nil, err

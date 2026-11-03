@@ -1,4 +1,4 @@
-import { Group, Menu, Stack, Title } from '@mantine/core'
+import { Group, Menu, Select, Stack, Title } from '@mantine/core'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
@@ -12,6 +12,7 @@ import {
   siteBroadcastsListOptions,
   siteBroadcastsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { zBroadcastChannel } from '../../generated/site/zod.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
@@ -45,7 +46,7 @@ export function BroadcastsListPage() {
     successMessage: t(($) => $.notifications.broadcastRestored),
     errorTitle: t(($) => $.alerts.broadcastRestoreErrorTitle),
   })
-  const { archived = false, page } = broadcastsRoute.useSearch()
+  const { archived = false, channel, page } = broadcastsRoute.useSearch()
   const routeNavigate = broadcastsRoute.useNavigate()
 
   return (
@@ -57,16 +58,43 @@ export function BroadcastsListPage() {
         </ButtonLink>
       </Group>
 
-      <ArchiveViewControl
-        archived={archived}
-        onChange={(next) =>
-          void routeNavigate({
-            search: { archived: next || undefined },
-            replace: true,
-            viewTransition: false,
-          })
-        }
-      />
+      <Group align="flex-end">
+        <ArchiveViewControl
+          archived={archived}
+          onChange={(next) =>
+            void routeNavigate({
+              search: { archived: next || undefined, ...(channel && { channel }) },
+              replace: true,
+              viewTransition: false,
+            })
+          }
+        />
+        <Select
+          w={200}
+          clearable
+          label={t(($) => $.broadcasts.channelFilter)}
+          placeholder={t(($) => $.broadcasts.channelAll)}
+          data={zBroadcastChannel.options.map((value) => ({
+            value,
+            label: t(($) => $.broadcasts.channels[value]),
+          }))}
+          value={channel ?? null}
+          onChange={(next) =>
+            void routeNavigate({
+              // A new filter starts again from the first page.
+              search: {
+                archived: archived || undefined,
+                channel: zBroadcastChannel
+                  .optional()
+                  .catch(undefined)
+                  .parse(next ?? undefined),
+              },
+              replace: true,
+              viewTransition: false,
+            })
+          }
+        />
+      </Group>
 
       <PagedTable
         page={page}
@@ -74,7 +102,10 @@ export function BroadcastsListPage() {
           void routeNavigate({ search: withPage(next), viewTransition: false })
         }
         options={(query) =>
-          siteBroadcastsListOptions({ path: { workspaceId }, query: { ...query, archived } })
+          siteBroadcastsListOptions({
+            path: { workspaceId },
+            query: { ...query, archived, ...(channel && { channel }) },
+          })
         }
         loadErrorTitle={t(($) => $.alerts.broadcastLoadErrorTitle)}
         noRecordsText={t(($) => $.broadcasts.noRecords)}
@@ -87,6 +118,11 @@ export function BroadcastsListPage() {
         }
         columns={[
           { accessor: 'name', title: t(($) => $.broadcasts.nameLabel) },
+          {
+            accessor: 'channel',
+            title: t(($) => $.broadcasts.channelLabel),
+            render: (record) => t(($) => $.broadcasts.channels[record.channel]),
+          },
           {
             accessor: 'status',
             title: t(($) => $.broadcasts.statusLabel),
@@ -105,7 +141,7 @@ export function BroadcastsListPage() {
           {
             accessor: 'opened',
             title: t(($) => $.broadcasts.openedLabel),
-            render: (record) => record.stats.openedCount,
+            render: (record) => record.stats.openedCount ?? '–',
           },
           {
             accessor: 'orders',

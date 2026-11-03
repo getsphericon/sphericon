@@ -90,6 +90,19 @@ test('the variable picker inserts a merge tag into the document', async () => {
   await expect.poll(() => JSON.stringify(bodies)).toContain('{{ first_name }}')
 })
 
+test('the variable picker offers the Telegram start link', async () => {
+  worker.use(handleSiteTemplatesGet({ body: WITH_DOC }))
+  const bodies = captureUpdates(WITH_DOC)
+
+  const { screen } = await renderWithRouter(<TemplateEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByRole('button', { name: 'Insert variable' })).toBeEnabled()
+  await screen.getByRole('button', { name: 'Insert variable' }).click()
+  await screen.getByRole('menuitem', { name: 'telegram_start_url' }).click()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => JSON.stringify(bodies)).toContain('{{ telegram_start_url }}')
+})
+
 test('a message with no document opens as editable source and saves a body only', async () => {
   worker.use(handleSiteTemplatesGet({ body: AS_HTML }))
   const bodies = captureUpdates(AS_HTML)

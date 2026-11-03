@@ -14,6 +14,7 @@ enum AutomationStatus {
 /** Kind of automation step */
 enum AutomationStepType {
   email,
+  telegram,
   wait,
   apply_tag,
   remove_tag,
@@ -100,6 +101,28 @@ model AutomationStep {
 
   /** Whether a signing secret is stored (HTTP steps, read only) */
   hasSecret?: boolean;
+
+  /** The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or
+   * omitted is that Channel's default. Each send step names its own, so one automation may send
+   * through several (ADR 0081). */
+  integrationId?: EntityId | null;
+
+  /** The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused. */
+  text?: string;
+
+  /** The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button. */
+  @maxLength(64)
+  unsubscribeButton?: string;
+
+  /** An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text message. */
+  imageUrl?: string;
+
+  /** Up to 8 link buttons under a Telegram step's message, one per row, in order. */
+  @maxItems(8)
+  buttons?: TelegramButton[];
+
+  /** Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image. */
+  linkPreview?: boolean;
 }
 
 /** One version of an automation's definition: what publishing makes it do (ADR 0065) */
@@ -117,9 +140,6 @@ model AutomationVersion {
   /** Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null
    * when there is none */
   goalEvent: string | null;
-
-  /** Sending integration of the email steps; null means the workspace default */
-  integrationId?: EntityId | null;
 
   /** The ordered, linear steps */
   steps: AutomationStep[];
@@ -172,13 +192,10 @@ model CreateAutomationInput {
   goalEvent?: string | null;
 
   steps?: AutomationStep[];
-
-  /** Sending integration of the email steps; null/omitted means the workspace default */
-  integrationId?: EntityId | null;
 }
 
-/** Request body for updating an automation. The name changes at once; the trigger, steps and
- * integration write the draft (ADR 0065): omitted fields keep the draft's, else the live
+/** Request body for updating an automation. The name changes at once; the trigger, exit and
+ * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
  * version's, and only publishing makes the draft live. */
 model UpdateAutomationInput {
   name?: string;
@@ -191,9 +208,6 @@ model UpdateAutomationInput {
   goalEvent?: string | null;
 
   steps?: AutomationStep[];
-
-  /** Sending integration of the email steps; null means the workspace default, omitted keeps it */
-  integrationId?: EntityId | null;
 }
 
 /** Filter of the automation list */
@@ -242,7 +256,8 @@ model AutomationResultCounts {
   /** Enrollments that ended in it because their goal event was recorded */
   goalReached: int32;
 
-  /** Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event */
+  /** Enrollments that left early in it: an unsubscribe from the automation or an exit event. A
+   * skipped send (no address, an opt-out from the Channel, a suppression) moves on instead. */
   exited: int32;
 
   /** Enrollments that ended in it on a step that failed */
@@ -324,6 +339,23 @@ model AutomationReport {
 
   /** What the automation's enrollments did over the chosen period and the period before it */
   results: AutomationResults;
+
+  /** The send steps' messages by step position, in step order: one entry per position any of the
+   * automation's messages was sent from, across its versions */
+  steps: AutomationStepFigures[];
+}
+
+/** The messages of the send step at one position */
+model AutomationStepFigures {
+  /** The step's position, 0 for the first step */
+  step: int32;
+
+  /** Messages the provider accepted */
+  sent: int32;
+
+  /** Messages skipped: the contact had no address on the step's Channel, had opted out of it, or
+   * was suppressed. The enrollment moved on to the next step. */
+  skipped: int32;
 }
 
 /**
@@ -369,7 +401,7 @@ interface Automations
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when the version going live has an email step and the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only publishing it is refused. Needs the automations:publish scope. */
+  /** Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. Needs the automations:publish scope. */
   @action("publish")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsPublish])

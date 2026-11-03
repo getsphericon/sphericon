@@ -92,6 +92,12 @@ func renderBoth(subject, body string, bindings map[string]any) (renderedSubject,
 	return renderedSubject, rendered, nil
 }
 
+// RenderBody renders a Liquid template as markup: the value of every {{ }} is HTML-escaped as it
+// is written, as in an email body. Another Channel's markup text (Telegram's) renders through it.
+func RenderBody(tmpl string, bindings map[string]any) (string, error) {
+	return bodyEngine.ParseAndRenderString(tmpl, bindings)
+}
+
 // Render renders a Liquid template with the given bindings. On a template error
 // it returns the original template unchanged together with the error (useful for
 // previews); RenderEmail treats that error as fatal.

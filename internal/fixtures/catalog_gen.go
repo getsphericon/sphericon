@@ -105,6 +105,12 @@ const (
 	AutomationJobsEditableName = "Jobs editable"
 	// AutomationJobsEditableVersionID is from fixtures/automation_versions.
 	AutomationJobsEditableVersionID = 5564
+	// AutomationJobsEmailsThenTagID is from fixtures/automations.
+	AutomationJobsEmailsThenTagID = 5568
+	// AutomationJobsEmailsThenTagName is from fixtures/automations.
+	AutomationJobsEmailsThenTagName = "Jobs emails then tag"
+	// AutomationJobsEmailsThenTagVersionID is from fixtures/automation_versions.
+	AutomationJobsEmailsThenTagVersionID = 5568
 	// AutomationJobsEmptyVersionID is from fixtures/automation_versions.
 	AutomationJobsEmptyVersionID = 55633
 	// AutomationJobsGreetingID is from fixtures/automations.
@@ -243,6 +249,20 @@ const (
 	AviatoName = "Aviato"
 	// AviatoPublicID is from fixtures/workspaces.
 	AviatoPublicID = "AviatW11"
+	// BindingEmmaPhoneDestination is from fixtures/bindings.
+	BindingEmmaPhoneDestination = "70002"
+	// BindingEmmaPhoneID is from fixtures/bindings.
+	BindingEmmaPhoneID = 2
+	// BindingEmmaPhoneVisitorID is from fixtures/bindings.
+	BindingEmmaPhoneVisitorID = "101"
+	// BindingGlobexDestination is from fixtures/bindings.
+	BindingGlobexDestination = "80001"
+	// BindingGlobexID is from fixtures/bindings.
+	BindingGlobexID = 900
+	// BindingLiamDestination is from fixtures/bindings.
+	BindingLiamDestination = "70001"
+	// BindingLiamID is from fixtures/bindings.
+	BindingLiamID = 1
 	// BluthCollectKey is from fixtures/workspaces.
 	BluthCollectKey = "omck_test_bluth_collect_key"
 	// BluthDanMembershipID is from fixtures/memberships.
@@ -571,6 +591,14 @@ const (
 	ContactPaymentFailedEmail = "payment.failed@codebasics.dev"
 	// ContactPaymentFailedID is from fixtures/contacts.
 	ContactPaymentFailedID = 133
+	// ContactTelegramBystanderEmail is from fixtures/contacts.
+	ContactTelegramBystanderEmail = "amelia.sql@codebasics.dev"
+	// ContactTelegramBystanderID is from fixtures/contacts.
+	ContactTelegramBystanderID = 111
+	// ContactTelegramErasableEmail is from fixtures/contacts.
+	ContactTelegramErasableEmail = "mason.sql@codebasics.dev"
+	// ContactTelegramErasableID is from fixtures/contacts.
+	ContactTelegramErasableID = 106
 	// ContactUnsubscribedEverythingEmail is from fixtures/contacts.
 	ContactUnsubscribedEverythingEmail = "scarlett.sql@codebasics.dev"
 	// ContactUnsubscribedEverythingID is from fixtures/contacts.
@@ -969,6 +997,38 @@ const (
 	EventRuleVipLiamAction = "rule_vip"
 	// EventRuleVipLiamID is from fixtures/events.
 	EventRuleVipLiamID = 9101
+	// EventTelegramBystanderReceivedAction is from fixtures/events.
+	EventTelegramBystanderReceivedAction = "telegram.received"
+	// EventTelegramBystanderReceivedEmail is from fixtures/events.
+	EventTelegramBystanderReceivedEmail = "amelia.sql@codebasics.dev"
+	// EventTelegramBystanderReceivedID is from fixtures/events.
+	EventTelegramBystanderReceivedID = 20434
+	// EventTelegramErasableBoundAction is from fixtures/events.
+	EventTelegramErasableBoundAction = "telegram.bound"
+	// EventTelegramErasableBoundEmail is from fixtures/events.
+	EventTelegramErasableBoundEmail = "mason.sql@codebasics.dev"
+	// EventTelegramErasableBoundID is from fixtures/events.
+	EventTelegramErasableBoundID = 20432
+	// EventTelegramErasableClickedAction is from fixtures/events.
+	EventTelegramErasableClickedAction = "telegram.clicked"
+	// EventTelegramErasableClickedEmail is from fixtures/events.
+	EventTelegramErasableClickedEmail = "mason.sql@codebasics.dev"
+	// EventTelegramErasableClickedID is from fixtures/events.
+	EventTelegramErasableClickedID = 20431
+	// EventTelegramErasableClickedURL is from fixtures/events.
+	EventTelegramErasableClickedURL = "https://shop.example/offer?e=mason"
+	// EventTelegramErasableReceivedAction is from fixtures/events.
+	EventTelegramErasableReceivedAction = "telegram.received"
+	// EventTelegramErasableReceivedEmail is from fixtures/events.
+	EventTelegramErasableReceivedEmail = "mason.sql@codebasics.dev"
+	// EventTelegramErasableReceivedID is from fixtures/events.
+	EventTelegramErasableReceivedID = 20433
+	// EventTelegramErasableSentAction is from fixtures/events.
+	EventTelegramErasableSentAction = "telegram.sent"
+	// EventTelegramErasableSentEmail is from fixtures/events.
+	EventTelegramErasableSentEmail = "mason.sql@codebasics.dev"
+	// EventTelegramErasableSentID is from fixtures/events.
+	EventTelegramErasableSentID = 20430
 	// EventTieFirstAction is from fixtures/events.
 	EventTieFirstAction = "tie_probe"
 	// EventTieFirstEmail is from fixtures/events.
@@ -1255,6 +1315,14 @@ const (
 	IntegrationAcmeSmsName = "SMS relay (reserved Channel)"
 	// IntegrationAcmeSmsProvider is from fixtures/integrations.
 	IntegrationAcmeSmsProvider = "smtp"
+	// IntegrationAcmeTelegramID is from fixtures/integrations.
+	IntegrationAcmeTelegramID = 9
+	// IntegrationAcmeTelegramIngestKey is from fixtures/integrations.
+	IntegrationAcmeTelegramIngestKey = "omik_test_integrationacmetelegram"
+	// IntegrationAcmeTelegramName is from fixtures/integrations.
+	IntegrationAcmeTelegramName = "Acme bot"
+	// IntegrationAcmeTelegramProvider is from fixtures/integrations.
+	IntegrationAcmeTelegramProvider = "telegram"
 	// IntegrationGlobexID is from fixtures/integrations.
 	IntegrationGlobexID = 900
 	// IntegrationGlobexInboxID is from fixtures/integrations.
@@ -1279,6 +1347,14 @@ const (
 	IntegrationGlobexSesNoTopicName = "Globex SES (stored without an SNS topic)"
 	// IntegrationGlobexSesNoTopicProvider is from fixtures/integrations.
 	IntegrationGlobexSesNoTopicProvider = "ses"
+	// IntegrationGlobexTelegramID is from fixtures/integrations.
+	IntegrationGlobexTelegramID = 903
+	// IntegrationGlobexTelegramIngestKey is from fixtures/integrations.
+	IntegrationGlobexTelegramIngestKey = "omik_test_integrationglobextelegram"
+	// IntegrationGlobexTelegramName is from fixtures/integrations.
+	IntegrationGlobexTelegramName = "Globex bot"
+	// IntegrationGlobexTelegramProvider is from fixtures/integrations.
+	IntegrationGlobexTelegramProvider = "telegram"
 	// IntegrationUmbrellaDefaultID is from fixtures/integrations.
 	IntegrationUmbrellaDefaultID = 910
 	// IntegrationUmbrellaDefaultIngestKey is from fixtures/integrations.
@@ -2057,6 +2133,16 @@ const (
 	StaleUnverifiedUserID = 15
 	// StaleUnverifiedUserName is from fixtures/users.
 	StaleUnverifiedUserName = "Stale"
+	// StartTokenAcmeLapsedID is from fixtures/start_tokens.
+	StartTokenAcmeLapsedID = 3
+	// StartTokenAcmeOpenID is from fixtures/start_tokens.
+	StartTokenAcmeOpenID = 2
+	// StartTokenAcmeUsedID is from fixtures/start_tokens.
+	StartTokenAcmeUsedID = 1
+	// StartTokenAcmeUsedOpenID is from fixtures/start_tokens.
+	StartTokenAcmeUsedOpenID = 4
+	// StartTokenGlobexUsedID is from fixtures/start_tokens.
+	StartTokenGlobexUsedID = 900
 	// SuppressionErasableDestination is from fixtures/suppressions.
 	SuppressionErasableDestination = "erin@initech.test"
 	// SuppressionErasableID is from fixtures/suppressions.
@@ -2207,6 +2293,14 @@ const (
 	TokenGlobexName = "Globex token"
 	// TokenGlobexPrefix is from fixtures/api_tokens.
 	TokenGlobexPrefix = "globextok001"
+	// TrackedLinkAcmeID is from fixtures/tracked_links.
+	TrackedLinkAcmeID = 1
+	// TrackedLinkAcmeURL is from fixtures/tracked_links.
+	TrackedLinkAcmeURL = "https://example.com/acme"
+	// TrackedLinkGlobexID is from fixtures/tracked_links.
+	TrackedLinkGlobexID = 900
+	// TrackedLinkGlobexURL is from fixtures/tracked_links.
+	TrackedLinkGlobexURL = "https://example.com/globex"
 	// TrackingDomainAcmeHost is from fixtures/tracking_domains.
 	TrackingDomainAcmeHost = "t.acme.com"
 	// TrackingDomainAcmeID is from fixtures/tracking_domains.

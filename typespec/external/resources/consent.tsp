@@ -4,6 +4,12 @@ using TypeSpec.Rest;
 
 namespace Sphericon;
 
+/** A Channel a destination can be suppressed or opt out on */
+enum ConsentChannel {
+  email,
+  telegram,
+}
+
 /** Why a destination is on the suppression (do-not-send) list */
 enum SuppressionReason {
   bounce,
@@ -16,7 +22,10 @@ model SuppressionResource {
   /** Unique identifier */
   id: EntityId;
 
-  /** Normalized (lower-cased) email address */
+  /** The Channel the suppression is on */
+  channel: ConsentChannel;
+
+  /** Normalized destination: the lower-cased email address, or the Telegram user id */
   destination: string;
 
   /** Why the destination is suppressed */
@@ -28,8 +37,12 @@ model SuppressionResource {
 
 /** Request body for suppressing a destination */
 model CreateSuppressionInput {
-  /** Email address to stop sending to */
-  destination: EmailAddress;
+  /** The Channel to stop sending on; `email` when omitted */
+  channel?: ConsentChannel;
+
+  /** What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram` */
+  @maxLength(320)
+  destination: string;
 }
 
 /** A per-sending-source opt-out of marketing */
@@ -37,7 +50,10 @@ model UnsubscribeResource {
   /** Unique identifier */
   id: EntityId;
 
-  /** Normalized (lower-cased) email address */
+  /** The Channel the opt-out is on */
+  channel: ConsentChannel;
+
+  /** Normalized destination: the lower-cased email address, or the Telegram user id */
   destination: string;
 
   /** The sending source opted out of: `broadcasts`, `automation:<id>` or `everything` */
@@ -49,10 +65,14 @@ model UnsubscribeResource {
 
 /** Request body for recording an unsubscribe */
 model CreateUnsubscribeInput {
-  /** Email address that opted out */
-  destination: EmailAddress;
+  /** The Channel the destination opted out on; `email` when omitted */
+  channel?: ConsentChannel;
 
-  /** The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave entirely) */
+  /** What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`. A Telegram opt-out covers every bot of the Workspace */
+  @maxLength(320)
+  destination: string;
+
+  /** The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave entirely). On `telegram` only `everything` (the default) is accepted: a person stops all of the Workspace's Telegram messages */
   sendingSource?: string;
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
@@ -65,7 +66,8 @@ func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 
 	unsubFor := func(ws int64) string {
 		full, err := tr.UnsubscribeURL(tracking.UnsubTarget{
-			Source: eligibility.SourceBroadcasts, Destination: "pat@umbrella.test", WorkspaceID: ws,
+			Channel: messaging.ChannelEmail,
+			Source:  eligibility.SourceBroadcasts, Destination: "pat@umbrella.test", WorkspaceID: ws,
 		})
 		require.NoError(t, err)
 		_, token, _ := strings.Cut(full, "/e/u/")
@@ -228,4 +230,18 @@ func TestTrackingHostHeaderIsTrustedFromTheConfiguredRanges(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, viaPeer(env, "10.1.2.3:4444", host))
 	assert.Equal(t, http.StatusOK, viaPeer(env, "10.2.2.3:4444", host))
 	assert.Equal(t, http.StatusOK, viaPeer(env, "127.0.0.1:4444", host))
+}
+
+// A short link names its Workspace through its token: it redirects on the Instance's own host and on
+// its own Workspace's Tracking host, and is not found on another Workspace's (ADR 0038, 0083).
+func TestAShortLinkIsServedOnlyToItsOwnWorkspacesHosts(t *testing.T) {
+	env := testhelper.Setup(t)
+	path := "/c/" + env.DB.TrackedLink.GetX(t.Context(), fixtures.TrackedLinkAcmeID).Token
+
+	own := hostReq(env, http.MethodGet, "", path)
+	assert.Equal(t, http.StatusFound, own.Code)
+	assert.Equal(t, fixtures.TrackedLinkAcmeURL, own.Header().Get("Location"))
+
+	foreign := hostReq(env, http.MethodGet, fixtures.TrackingDomainServingHost, path)
+	assert.Equal(t, http.StatusNotFound, foreign.Code, "Umbrella's Tracking host does not serve Acme's link")
 }

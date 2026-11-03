@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -70,8 +71,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/staffmember"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -103,6 +106,8 @@ type Client struct {
 	AutomationRun *AutomationRunClient
 	// AutomationVersion is the client for interacting with the AutomationVersion builders.
 	AutomationVersion *AutomationVersionClient
+	// Binding is the client for interacting with the Binding builders.
+	Binding *BindingClient
 	// BrandKit is the client for interacting with the BrandKit builders.
 	BrandKit *BrandKitClient
 	// Broadcast is the client for interacting with the Broadcast builders.
@@ -201,10 +206,14 @@ type Client struct {
 	SignupSurveyResponse *SignupSurveyResponseClient
 	// StaffMember is the client for interacting with the StaffMember builders.
 	StaffMember *StaffMemberClient
+	// StartToken is the client for interacting with the StartToken builders.
+	StartToken *StartTokenClient
 	// Suppression is the client for interacting with the Suppression builders.
 	Suppression *SuppressionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
+	// TrackedLink is the client for interacting with the TrackedLink builders.
+	TrackedLink *TrackedLinkClient
 	// TrackingDomain is the client for interacting with the TrackingDomain builders.
 	TrackingDomain *TrackingDomainClient
 	// TrackingHostChange is the client for interacting with the TrackingHostChange builders.
@@ -242,6 +251,7 @@ func (c *Client) init() {
 	c.Automation = NewAutomationClient(c.config)
 	c.AutomationRun = NewAutomationRunClient(c.config)
 	c.AutomationVersion = NewAutomationVersionClient(c.config)
+	c.Binding = NewBindingClient(c.config)
 	c.BrandKit = NewBrandKitClient(c.config)
 	c.Broadcast = NewBroadcastClient(c.config)
 	c.BroadcastRecipient = NewBroadcastRecipientClient(c.config)
@@ -291,8 +301,10 @@ func (c *Client) init() {
 	c.SignupItem = NewSignupItemClient(c.config)
 	c.SignupSurveyResponse = NewSignupSurveyResponseClient(c.config)
 	c.StaffMember = NewStaffMemberClient(c.config)
+	c.StartToken = NewStartTokenClient(c.config)
 	c.Suppression = NewSuppressionClient(c.config)
 	c.Tag = NewTagClient(c.config)
+	c.TrackedLink = NewTrackedLinkClient(c.config)
 	c.TrackingDomain = NewTrackingDomainClient(c.config)
 	c.TrackingHostChange = NewTrackingHostChangeClient(c.config)
 	c.Unsubscribe = NewUnsubscribeClient(c.config)
@@ -401,6 +413,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Automation:           NewAutomationClient(cfg),
 		AutomationRun:        NewAutomationRunClient(cfg),
 		AutomationVersion:    NewAutomationVersionClient(cfg),
+		Binding:              NewBindingClient(cfg),
 		BrandKit:             NewBrandKitClient(cfg),
 		Broadcast:            NewBroadcastClient(cfg),
 		BroadcastRecipient:   NewBroadcastRecipientClient(cfg),
@@ -450,8 +463,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		SignupItem:           NewSignupItemClient(cfg),
 		SignupSurveyResponse: NewSignupSurveyResponseClient(cfg),
 		StaffMember:          NewStaffMemberClient(cfg),
+		StartToken:           NewStartTokenClient(cfg),
 		Suppression:          NewSuppressionClient(cfg),
 		Tag:                  NewTagClient(cfg),
+		TrackedLink:          NewTrackedLinkClient(cfg),
 		TrackingDomain:       NewTrackingDomainClient(cfg),
 		TrackingHostChange:   NewTrackingHostChangeClient(cfg),
 		Unsubscribe:          NewUnsubscribeClient(cfg),
@@ -487,6 +502,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Automation:           NewAutomationClient(cfg),
 		AutomationRun:        NewAutomationRunClient(cfg),
 		AutomationVersion:    NewAutomationVersionClient(cfg),
+		Binding:              NewBindingClient(cfg),
 		BrandKit:             NewBrandKitClient(cfg),
 		Broadcast:            NewBroadcastClient(cfg),
 		BroadcastRecipient:   NewBroadcastRecipientClient(cfg),
@@ -536,8 +552,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		SignupItem:           NewSignupItemClient(cfg),
 		SignupSurveyResponse: NewSignupSurveyResponseClient(cfg),
 		StaffMember:          NewStaffMemberClient(cfg),
+		StartToken:           NewStartTokenClient(cfg),
 		Suppression:          NewSuppressionClient(cfg),
 		Tag:                  NewTagClient(cfg),
+		TrackedLink:          NewTrackedLinkClient(cfg),
 		TrackingDomain:       NewTrackingDomainClient(cfg),
 		TrackingHostChange:   NewTrackingHostChangeClient(cfg),
 		Unsubscribe:          NewUnsubscribeClient(cfg),
@@ -578,7 +596,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
-		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
+		c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
 		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.Contact, c.ContactTag,
 		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.HeldOrderEvent, c.Hold,
 		c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
@@ -589,9 +607,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
 		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendCapLimiter,
 		c.SendingDomain, c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse,
-		c.StaffMember, c.Suppression, c.Tag, c.TrackingDomain, c.TrackingHostChange,
-		c.Unsubscribe, c.Usage, c.User, c.UserIdentity, c.UserTombstone, c.Visitor,
-		c.WebhookEndpoint, c.Workspace,
+		c.StaffMember, c.StartToken, c.Suppression, c.Tag, c.TrackedLink,
+		c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
+		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -602,7 +620,7 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
-		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
+		c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
 		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.Contact, c.ContactTag,
 		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.HeldOrderEvent, c.Hold,
 		c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
@@ -613,9 +631,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
 		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendCapLimiter,
 		c.SendingDomain, c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse,
-		c.StaffMember, c.Suppression, c.Tag, c.TrackingDomain, c.TrackingHostChange,
-		c.Unsubscribe, c.Usage, c.User, c.UserIdentity, c.UserTombstone, c.Visitor,
-		c.WebhookEndpoint, c.Workspace,
+		c.StaffMember, c.StartToken, c.Suppression, c.Tag, c.TrackedLink,
+		c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
+		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -636,6 +654,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AutomationRun.mutate(ctx, m)
 	case *AutomationVersionMutation:
 		return c.AutomationVersion.mutate(ctx, m)
+	case *BindingMutation:
+		return c.Binding.mutate(ctx, m)
 	case *BrandKitMutation:
 		return c.BrandKit.mutate(ctx, m)
 	case *BroadcastMutation:
@@ -734,10 +754,14 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SignupSurveyResponse.mutate(ctx, m)
 	case *StaffMemberMutation:
 		return c.StaffMember.mutate(ctx, m)
+	case *StartTokenMutation:
+		return c.StartToken.mutate(ctx, m)
 	case *SuppressionMutation:
 		return c.Suppression.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
+	case *TrackedLinkMutation:
+		return c.TrackedLink.mutate(ctx, m)
 	case *TrackingDomainMutation:
 		return c.TrackingDomain.mutate(ctx, m)
 	case *TrackingHostChangeMutation:
@@ -1808,22 +1832,6 @@ func (c *AutomationVersionClient) QueryRuns(_m *AutomationVersion) *AutomationRu
 	return query
 }
 
-// QueryIntegration queries the integration edge of a AutomationVersion.
-func (c *AutomationVersionClient) QueryIntegration(_m *AutomationVersion) *IntegrationQuery {
-	query := (&IntegrationClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(automationversion.Table, automationversion.FieldID, id),
-			sqlgraph.To(integration.Table, integration.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, automationversion.IntegrationTable, automationversion.IntegrationColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
 func (c *AutomationVersionClient) Hooks() []Hook {
 	return c.hooks.AutomationVersion
@@ -1846,6 +1854,203 @@ func (c *AutomationVersionClient) mutate(ctx context.Context, m *AutomationVersi
 		return (&AutomationVersionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AutomationVersion mutation op: %q", m.Op())
+	}
+}
+
+// BindingClient is a client for the Binding schema.
+type BindingClient struct {
+	config
+}
+
+// NewBindingClient returns a client for the Binding from the given config.
+func NewBindingClient(c config) *BindingClient {
+	return &BindingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `binding.Hooks(f(g(h())))`.
+func (c *BindingClient) Use(hooks ...Hook) {
+	c.hooks.Binding = append(c.hooks.Binding, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `binding.Intercept(f(g(h())))`.
+func (c *BindingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Binding = append(c.inters.Binding, interceptors...)
+}
+
+// Create returns a builder for creating a Binding entity.
+func (c *BindingClient) Create() *BindingCreate {
+	mutation := newBindingMutation(c.config, OpCreate)
+	return &BindingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Binding entities.
+func (c *BindingClient) CreateBulk(builders ...*BindingCreate) *BindingCreateBulk {
+	return &BindingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *BindingClient) MapCreateBulk(slice any, setFunc func(*BindingCreate, int)) *BindingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &BindingCreateBulk{err: fmt.Errorf("calling to BindingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*BindingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &BindingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Binding.
+func (c *BindingClient) Update() *BindingUpdate {
+	mutation := newBindingMutation(c.config, OpUpdate)
+	return &BindingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BindingClient) UpdateOne(_m *Binding) *BindingUpdateOne {
+	mutation := newBindingMutation(c.config, OpUpdateOne, withBinding(_m))
+	return &BindingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BindingClient) UpdateOneID(id int64) *BindingUpdateOne {
+	mutation := newBindingMutation(c.config, OpUpdateOne, withBindingID(id))
+	return &BindingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Binding.
+func (c *BindingClient) Delete() *BindingDelete {
+	mutation := newBindingMutation(c.config, OpDelete)
+	return &BindingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *BindingClient) DeleteOne(_m *Binding) *BindingDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *BindingClient) DeleteOneID(id int64) *BindingDeleteOne {
+	builder := c.Delete().Where(binding.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BindingDeleteOne{builder}
+}
+
+// Query returns a query builder for Binding.
+func (c *BindingClient) Query() *BindingQuery {
+	return &BindingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeBinding},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Binding entity by its id.
+func (c *BindingClient) Get(ctx context.Context, id int64) (*Binding, error) {
+	return c.Query().Where(binding.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BindingClient) GetX(ctx context.Context, id int64) *Binding {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a Binding.
+func (c *BindingClient) QueryWorkspace(_m *Binding) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(binding.Table, binding.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, binding.WorkspaceTable, binding.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIntegration queries the integration edge of a Binding.
+func (c *BindingClient) QueryIntegration(_m *Binding) *IntegrationQuery {
+	query := (&IntegrationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(binding.Table, binding.FieldID, id),
+			sqlgraph.To(integration.Table, integration.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, binding.IntegrationTable, binding.IntegrationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContact queries the contact edge of a Binding.
+func (c *BindingClient) QueryContact(_m *Binding) *ContactQuery {
+	query := (&ContactClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(binding.Table, binding.FieldID, id),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, binding.ContactTable, binding.ContactColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryVisitor queries the visitor edge of a Binding.
+func (c *BindingClient) QueryVisitor(_m *Binding) *VisitorQuery {
+	query := (&VisitorClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(binding.Table, binding.FieldID, id),
+			sqlgraph.To(visitor.Table, visitor.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, binding.VisitorTable, binding.VisitorColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *BindingClient) Hooks() []Hook {
+	return c.hooks.Binding
+}
+
+// Interceptors returns the client interceptors.
+func (c *BindingClient) Interceptors() []Interceptor {
+	return c.inters.Binding
+}
+
+func (c *BindingClient) mutate(ctx context.Context, m *BindingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&BindingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&BindingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&BindingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&BindingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Binding mutation op: %q", m.Op())
 	}
 }
 
@@ -3020,6 +3225,38 @@ func (c *ContactClient) QueryVisitors(_m *Contact) *VisitorQuery {
 			sqlgraph.From(contact.Table, contact.FieldID, id),
 			sqlgraph.To(visitor.Table, visitor.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, contact.VisitorsTable, contact.VisitorsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBindings queries the bindings edge of a Contact.
+func (c *ContactClient) QueryBindings(_m *Contact) *BindingQuery {
+	query := (&BindingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contact.Table, contact.FieldID, id),
+			sqlgraph.To(binding.Table, binding.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, contact.BindingsTable, contact.BindingsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStartTokens queries the start_tokens edge of a Contact.
+func (c *ContactClient) QueryStartTokens(_m *Contact) *StartTokenQuery {
+	query := (&StartTokenClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contact.Table, contact.FieldID, id),
+			sqlgraph.To(starttoken.Table, starttoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, contact.StartTokensTable, contact.StartTokensColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -4573,6 +4810,38 @@ func (c *IntegrationClient) QueryCapturedMessages(_m *Integration) *CapturedMess
 			sqlgraph.From(integration.Table, integration.FieldID, id),
 			sqlgraph.To(capturedmessage.Table, capturedmessage.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, integration.CapturedMessagesTable, integration.CapturedMessagesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBindings queries the bindings edge of a Integration.
+func (c *IntegrationClient) QueryBindings(_m *Integration) *BindingQuery {
+	query := (&BindingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(integration.Table, integration.FieldID, id),
+			sqlgraph.To(binding.Table, binding.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, integration.BindingsTable, integration.BindingsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStartTokens queries the start_tokens edge of a Integration.
+func (c *IntegrationClient) QueryStartTokens(_m *Integration) *StartTokenQuery {
+	query := (&StartTokenClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(integration.Table, integration.FieldID, id),
+			sqlgraph.To(starttoken.Table, starttoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, integration.StartTokensTable, integration.StartTokensColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -6484,6 +6753,22 @@ func (c *OutboundMessageClient) QueryWorkspace(_m *OutboundMessage) *WorkspaceQu
 			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
 			sqlgraph.To(workspace.Table, workspace.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, outboundmessage.WorkspaceTable, outboundmessage.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTrackedLinks queries the tracked_links edge of a OutboundMessage.
+func (c *OutboundMessageClient) QueryTrackedLinks(_m *OutboundMessage) *TrackedLinkQuery {
+	query := (&TrackedLinkClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
+			sqlgraph.To(trackedlink.Table, trackedlink.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, outboundmessage.TrackedLinksTable, outboundmessage.TrackedLinksColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -9837,6 +10122,203 @@ func (c *StaffMemberClient) mutate(ctx context.Context, m *StaffMemberMutation) 
 	}
 }
 
+// StartTokenClient is a client for the StartToken schema.
+type StartTokenClient struct {
+	config
+}
+
+// NewStartTokenClient returns a client for the StartToken from the given config.
+func NewStartTokenClient(c config) *StartTokenClient {
+	return &StartTokenClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `starttoken.Hooks(f(g(h())))`.
+func (c *StartTokenClient) Use(hooks ...Hook) {
+	c.hooks.StartToken = append(c.hooks.StartToken, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `starttoken.Intercept(f(g(h())))`.
+func (c *StartTokenClient) Intercept(interceptors ...Interceptor) {
+	c.inters.StartToken = append(c.inters.StartToken, interceptors...)
+}
+
+// Create returns a builder for creating a StartToken entity.
+func (c *StartTokenClient) Create() *StartTokenCreate {
+	mutation := newStartTokenMutation(c.config, OpCreate)
+	return &StartTokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of StartToken entities.
+func (c *StartTokenClient) CreateBulk(builders ...*StartTokenCreate) *StartTokenCreateBulk {
+	return &StartTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *StartTokenClient) MapCreateBulk(slice any, setFunc func(*StartTokenCreate, int)) *StartTokenCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &StartTokenCreateBulk{err: fmt.Errorf("calling to StartTokenClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*StartTokenCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &StartTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for StartToken.
+func (c *StartTokenClient) Update() *StartTokenUpdate {
+	mutation := newStartTokenMutation(c.config, OpUpdate)
+	return &StartTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *StartTokenClient) UpdateOne(_m *StartToken) *StartTokenUpdateOne {
+	mutation := newStartTokenMutation(c.config, OpUpdateOne, withStartToken(_m))
+	return &StartTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *StartTokenClient) UpdateOneID(id int64) *StartTokenUpdateOne {
+	mutation := newStartTokenMutation(c.config, OpUpdateOne, withStartTokenID(id))
+	return &StartTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for StartToken.
+func (c *StartTokenClient) Delete() *StartTokenDelete {
+	mutation := newStartTokenMutation(c.config, OpDelete)
+	return &StartTokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *StartTokenClient) DeleteOne(_m *StartToken) *StartTokenDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *StartTokenClient) DeleteOneID(id int64) *StartTokenDeleteOne {
+	builder := c.Delete().Where(starttoken.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &StartTokenDeleteOne{builder}
+}
+
+// Query returns a query builder for StartToken.
+func (c *StartTokenClient) Query() *StartTokenQuery {
+	return &StartTokenQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeStartToken},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a StartToken entity by its id.
+func (c *StartTokenClient) Get(ctx context.Context, id int64) (*StartToken, error) {
+	return c.Query().Where(starttoken.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *StartTokenClient) GetX(ctx context.Context, id int64) *StartToken {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a StartToken.
+func (c *StartTokenClient) QueryWorkspace(_m *StartToken) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(starttoken.Table, starttoken.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, starttoken.WorkspaceTable, starttoken.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIntegration queries the integration edge of a StartToken.
+func (c *StartTokenClient) QueryIntegration(_m *StartToken) *IntegrationQuery {
+	query := (&IntegrationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(starttoken.Table, starttoken.FieldID, id),
+			sqlgraph.To(integration.Table, integration.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, starttoken.IntegrationTable, starttoken.IntegrationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContact queries the contact edge of a StartToken.
+func (c *StartTokenClient) QueryContact(_m *StartToken) *ContactQuery {
+	query := (&ContactClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(starttoken.Table, starttoken.FieldID, id),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, starttoken.ContactTable, starttoken.ContactColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryVisitor queries the visitor edge of a StartToken.
+func (c *StartTokenClient) QueryVisitor(_m *StartToken) *VisitorQuery {
+	query := (&VisitorClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(starttoken.Table, starttoken.FieldID, id),
+			sqlgraph.To(visitor.Table, visitor.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, starttoken.VisitorTable, starttoken.VisitorColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *StartTokenClient) Hooks() []Hook {
+	return c.hooks.StartToken
+}
+
+// Interceptors returns the client interceptors.
+func (c *StartTokenClient) Interceptors() []Interceptor {
+	return c.inters.StartToken
+}
+
+func (c *StartTokenClient) mutate(ctx context.Context, m *StartTokenMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&StartTokenCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&StartTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&StartTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&StartTokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown StartToken mutation op: %q", m.Op())
+	}
+}
+
 // SuppressionClient is a client for the Suppression schema.
 type SuppressionClient struct {
 	config
@@ -10180,6 +10662,171 @@ func (c *TagClient) mutate(ctx context.Context, m *TagMutation) (Value, error) {
 		return (&TagDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Tag mutation op: %q", m.Op())
+	}
+}
+
+// TrackedLinkClient is a client for the TrackedLink schema.
+type TrackedLinkClient struct {
+	config
+}
+
+// NewTrackedLinkClient returns a client for the TrackedLink from the given config.
+func NewTrackedLinkClient(c config) *TrackedLinkClient {
+	return &TrackedLinkClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `trackedlink.Hooks(f(g(h())))`.
+func (c *TrackedLinkClient) Use(hooks ...Hook) {
+	c.hooks.TrackedLink = append(c.hooks.TrackedLink, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `trackedlink.Intercept(f(g(h())))`.
+func (c *TrackedLinkClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TrackedLink = append(c.inters.TrackedLink, interceptors...)
+}
+
+// Create returns a builder for creating a TrackedLink entity.
+func (c *TrackedLinkClient) Create() *TrackedLinkCreate {
+	mutation := newTrackedLinkMutation(c.config, OpCreate)
+	return &TrackedLinkCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TrackedLink entities.
+func (c *TrackedLinkClient) CreateBulk(builders ...*TrackedLinkCreate) *TrackedLinkCreateBulk {
+	return &TrackedLinkCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TrackedLinkClient) MapCreateBulk(slice any, setFunc func(*TrackedLinkCreate, int)) *TrackedLinkCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TrackedLinkCreateBulk{err: fmt.Errorf("calling to TrackedLinkClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TrackedLinkCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TrackedLinkCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TrackedLink.
+func (c *TrackedLinkClient) Update() *TrackedLinkUpdate {
+	mutation := newTrackedLinkMutation(c.config, OpUpdate)
+	return &TrackedLinkUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TrackedLinkClient) UpdateOne(_m *TrackedLink) *TrackedLinkUpdateOne {
+	mutation := newTrackedLinkMutation(c.config, OpUpdateOne, withTrackedLink(_m))
+	return &TrackedLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TrackedLinkClient) UpdateOneID(id int64) *TrackedLinkUpdateOne {
+	mutation := newTrackedLinkMutation(c.config, OpUpdateOne, withTrackedLinkID(id))
+	return &TrackedLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TrackedLink.
+func (c *TrackedLinkClient) Delete() *TrackedLinkDelete {
+	mutation := newTrackedLinkMutation(c.config, OpDelete)
+	return &TrackedLinkDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TrackedLinkClient) DeleteOne(_m *TrackedLink) *TrackedLinkDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TrackedLinkClient) DeleteOneID(id int64) *TrackedLinkDeleteOne {
+	builder := c.Delete().Where(trackedlink.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TrackedLinkDeleteOne{builder}
+}
+
+// Query returns a query builder for TrackedLink.
+func (c *TrackedLinkClient) Query() *TrackedLinkQuery {
+	return &TrackedLinkQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTrackedLink},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TrackedLink entity by its id.
+func (c *TrackedLinkClient) Get(ctx context.Context, id int64) (*TrackedLink, error) {
+	return c.Query().Where(trackedlink.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TrackedLinkClient) GetX(ctx context.Context, id int64) *TrackedLink {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a TrackedLink.
+func (c *TrackedLinkClient) QueryWorkspace(_m *TrackedLink) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(trackedlink.Table, trackedlink.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, trackedlink.WorkspaceTable, trackedlink.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOutboundMessage queries the outbound_message edge of a TrackedLink.
+func (c *TrackedLinkClient) QueryOutboundMessage(_m *TrackedLink) *OutboundMessageQuery {
+	query := (&OutboundMessageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(trackedlink.Table, trackedlink.FieldID, id),
+			sqlgraph.To(outboundmessage.Table, outboundmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, trackedlink.OutboundMessageTable, trackedlink.OutboundMessageColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TrackedLinkClient) Hooks() []Hook {
+	return c.hooks.TrackedLink
+}
+
+// Interceptors returns the client interceptors.
+func (c *TrackedLinkClient) Interceptors() []Interceptor {
+	return c.inters.TrackedLink
+}
+
+func (c *TrackedLinkClient) mutate(ctx context.Context, m *TrackedLinkMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TrackedLinkCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TrackedLinkUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TrackedLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TrackedLinkDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TrackedLink mutation op: %q", m.Op())
 	}
 }
 
@@ -11430,6 +12077,38 @@ func (c *VisitorClient) QueryWorkspace(_m *Visitor) *WorkspaceQuery {
 	return query
 }
 
+// QueryBindings queries the bindings edge of a Visitor.
+func (c *VisitorClient) QueryBindings(_m *Visitor) *BindingQuery {
+	query := (&BindingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(visitor.Table, visitor.FieldID, id),
+			sqlgraph.To(binding.Table, binding.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, visitor.BindingsTable, visitor.BindingsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStartTokens queries the start_tokens edge of a Visitor.
+func (c *VisitorClient) QueryStartTokens(_m *Visitor) *StartTokenQuery {
+	query := (&StartTokenClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(visitor.Table, visitor.FieldID, id),
+			sqlgraph.To(starttoken.Table, starttoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, visitor.StartTokensTable, visitor.StartTokensColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryContact queries the contact edge of a Visitor.
 func (c *VisitorClient) QueryContact(_m *Visitor) *ContactQuery {
 	query := (&ContactClient{config: c.config}).Query()
@@ -11872,6 +12551,38 @@ func (c *WorkspaceClient) QueryVisitors(_m *Workspace) *VisitorQuery {
 	return query
 }
 
+// QueryBindings queries the bindings edge of a Workspace.
+func (c *WorkspaceClient) QueryBindings(_m *Workspace) *BindingQuery {
+	query := (&BindingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(binding.Table, binding.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.BindingsTable, workspace.BindingsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStartTokens queries the start_tokens edge of a Workspace.
+func (c *WorkspaceClient) QueryStartTokens(_m *Workspace) *StartTokenQuery {
+	query := (&StartTokenClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(starttoken.Table, starttoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.StartTokensTable, workspace.StartTokensColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryAPITokens queries the api_tokens edge of a Workspace.
 func (c *WorkspaceClient) QueryAPITokens(_m *Workspace) *ApiTokenQuery {
 	query := (&ApiTokenClient{config: c.config}).Query()
@@ -12256,6 +12967,22 @@ func (c *WorkspaceClient) QueryOutboundMessages(_m *Workspace) *OutboundMessageQ
 	return query
 }
 
+// QueryTrackedLinks queries the tracked_links edge of a Workspace.
+func (c *WorkspaceClient) QueryTrackedLinks(_m *Workspace) *TrackedLinkQuery {
+	query := (&TrackedLinkClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(trackedlink.Table, trackedlink.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.TrackedLinksTable, workspace.TrackedLinksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryCapturedMessages queries the captured_messages edge of a Workspace.
 func (c *WorkspaceClient) QueryCapturedMessages(_m *Workspace) *CapturedMessageQuery {
 	query := (&CapturedMessageClient{config: c.config}).Query()
@@ -12381,33 +13108,33 @@ func (c *WorkspaceClient) mutate(ctx context.Context, m *WorkspaceMutation) (Val
 type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
-		BrandKit, Broadcast, BroadcastRecipient, CapturedMessage, Confirmation,
-		ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event,
-		HeldOrderEvent, Hold, InstanceAuditEntry, InstanceState, Integration,
-		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
-		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
+		Binding, BrandKit, Broadcast, BroadcastRecipient, CapturedMessage,
+		Confirmation, ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate,
+		Erasure, Event, HeldOrderEvent, Hold, InstanceAuditEntry, InstanceState,
+		Integration, Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion,
+		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
 		OutboundMessage, OutboxDeadLetter, OutboxMessage, OutboxOffset, Passkey,
 		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
 		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
 		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
-		SignupSurveyResponse, StaffMember, Suppression, Tag, TrackingDomain,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, Workspace []ent.Hook
+		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
+		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
-		BrandKit, Broadcast, BroadcastRecipient, CapturedMessage, Confirmation,
-		ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event,
-		HeldOrderEvent, Hold, InstanceAuditEntry, InstanceState, Integration,
-		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
-		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
+		Binding, BrandKit, Broadcast, BroadcastRecipient, CapturedMessage,
+		Confirmation, ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate,
+		Erasure, Event, HeldOrderEvent, Hold, InstanceAuditEntry, InstanceState,
+		Integration, Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion,
+		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
 		OutboundMessage, OutboxDeadLetter, OutboxMessage, OutboxOffset, Passkey,
 		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
 		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
 		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
-		SignupSurveyResponse, StaffMember, Suppression, Tag, TrackingDomain,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
+		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

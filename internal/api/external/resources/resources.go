@@ -23,11 +23,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
@@ -45,6 +47,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -118,30 +121,41 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend nilCurrencyCode
 // goverter:extend durationSeconds
 // goverter:extend eventAction
+// goverter:extend broadcastContent
+// goverter:extend nilFloat32
+// goverter:extend emailContentChannel
+// goverter:extend telegramContentChannel
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	// goverter:useEmptyOnNil:slice
 	ContactsToResources(source []*ent.Contact) []externalapi.ContactResource
 	// The contract names the discarded state "archived" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
+	// goverter:map . Content | broadcastContent
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
+	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.
+	EmailBroadcastContentToResource(source *ent.Broadcast) externalapi.EmailBroadcastContent
+	// The Telegram content of a Telegram Broadcast, the arm of its content that broadcastContent wraps.
+	TelegramBroadcastContentToResource(source *ent.Broadcast) externalapi.TelegramBroadcastContent
 	// goverter:useEmptyOnNil:slice
 	BroadcastsToResources(source []*ent.Broadcast) []externalapi.BroadcastResource
 
-	// The figures are the report's Stats; the rates are Stats methods.
-	// goverter:map Stats.Recipients RecipientsTotal
-	// goverter:map Stats.Sent SentCount
-	// goverter:map Stats.Skipped SkippedCount
-	// goverter:map Stats.Failed FailedCount
-	// goverter:map Stats.Opened OpenedCount
-	// goverter:map Stats.Clicked ClickedCount
-	// goverter:map Stats.Unsubscribed UnsubscribedCount
-	// goverter:map Stats.Delivered DeliveredCount
-	// goverter:map Stats.Bounced BouncedCount
-	// goverter:map Stats.Complained ComplainedCount
-	// goverter:map Stats.Captured CapturedCount
-	// goverter:map Stats.OpenRate OpenRate
-	// goverter:map Stats.ClickRate ClickRate
+	// The figures are the report's Figures, as the Broadcast's Channel reports them: one it does not
+	// report is null.
+	// goverter:map Figures.Recipients RecipientsTotal
+	// goverter:map Figures.Sent SentCount
+	// goverter:map Figures.Skipped SkippedCount
+	// goverter:map Figures.Pending PendingCount
+	// goverter:map Figures.Failed FailedCount
+	// goverter:map Figures.Opened OpenedCount
+	// goverter:map Figures.Clicked ClickedCount
+	// goverter:map Figures.Unsubscribed UnsubscribedCount
+	// goverter:map Figures.Delivered DeliveredCount
+	// goverter:map Figures.Bounced BouncedCount
+	// goverter:map Figures.Complained ComplainedCount
+	// goverter:map Figures.Captured CapturedCount
+	// goverter:map Figures.OpenRate OpenRate
+	// goverter:map Figures.ClickRate ClickRate
 	BroadcastReportToResource(source broadcasts.Report) externalapi.BroadcastReport
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:autoMap Credited
@@ -187,6 +201,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsToResources(source []*ent.CustomField) []externalapi.CustomFieldResource
 	TagToResource(source *ent.Tag) externalapi.TagResource
+	StartLinkToResource(source bindings.StartLink) externalapi.TelegramStartLinkResource
 	// goverter:useEmptyOnNil:slice
 	TagsToResources(source []*ent.Tag) []externalapi.TagResource
 	// The contract names the discarded state "archived" (ADR 0049). The live version and the
@@ -201,16 +216,17 @@ type Converter interface {
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
 	// goverter:map Steps | automationSteps
-	// goverter:map IntegrationID IntegrationId
 	AutomationVersionToResource(source *ent.AutomationVersion) externalapi.AutomationVersion
 	// A step is the module's masked view: what it hides is never mapped.
 	// goverter:ignore URL
 	// goverter:ignore Secret
 	// goverter:ignore ClearSecret
+	// goverter:map IntegrationID IntegrationId
 	AutomationStepToResource(source automations.StepView) externalapi.AutomationStep
 	AutomationStepsToResources(source []automations.StepView) []externalapi.AutomationStep
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) externalapi.AutomationHttpHeader
+	TelegramButtonToResource(source telegramrender.Button) externalapi.TelegramButton
 
 	// The config is a oneOf the generator cannot express, and the params, hook URL and
 	// retiring secrets come from the integrations module (decryption, instance URL), and
@@ -245,6 +261,9 @@ type Converter interface {
 	SmtpConfigToResource(source integrations.RedactedSMTP) externalapi.SmtpConfig
 	// goverter:map . Kind | sesConfigKind
 	SesConfigToResource(source integrations.RedactedSES) externalapi.SesConfig
+	// goverter:map . Kind | telegramConfigKind
+	// goverter:map BotID BotId
+	TelegramConfigToResource(source integrations.RedactedTelegram) externalapi.TelegramConfig
 	// goverter:map Sent24h SentLast24h
 	ProviderLimitToStatus(source providerlimit.Status) externalapi.ProviderLimitStatus
 	// goverter:map Sent24h SentLast24h
@@ -408,6 +427,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) externalapi.BroadcastStatus
 	// goverter:enum:transform value
+	BroadcastChannelToResource(source broadcast.Channel) externalapi.BroadcastChannel
+	// goverter:enum:transform value
 	CapturedMessageSurfaceToResource(source capturedmessage.Surface) externalapi.CapturedMessageSurface
 	// goverter:enum:transform value
 	ContactExportSourceToResource(source contact.Source) externalapi.ContactExportSource
@@ -441,6 +462,10 @@ type Converter interface {
 	RuleDryRunOutcomeToResource(source rules.DryRunOutcome) externalapi.RuleDryRunOutcome
 	// goverter:enum:transform value
 	RuleStatusToResource(source rule.Status) externalapi.RuleStatus
+	// goverter:enum:transform value
+	SuppressionChannelToResource(source suppression.Channel) externalapi.ConsentChannel
+	// goverter:enum:transform value
+	UnsubscribeChannelToResource(source unsubscribe.Channel) externalapi.ConsentChannel
 	// goverter:enum:transform value
 	SuppressionReasonToResource(source suppression.Reason) externalapi.SuppressionReason
 	// goverter:enum:transform value
@@ -535,8 +560,36 @@ func optNilInt32(v *int) externalapi.OptNilInt32 {
 
 // jsonObject renders a stored JSON object (custom fields, event properties): absent when it has
 // no keys.
+// nilFloat32 renders a figure a Channel may not report: null when it does not.
+func nilFloat32(v *float32) externalapi.NilFloat32 {
+	return convert.Nil[externalapi.NilFloat32](v)
+}
+
 func jsonObject(m map[string]any) externalapi.OptNilJsonObject {
 	return convert.OptObject[externalapi.OptNilJsonObject](convert.RawObject[externalapi.JsonObject](m))
+}
+
+// broadcastContent is a Broadcast's content in the arm of its Channel: a oneOf is beyond
+// goverter, so only the switch is written here.
+func broadcastContent(c Converter, b *ent.Broadcast) externalapi.BroadcastContent {
+	switch b.Channel {
+	case broadcast.ChannelEmail:
+		return externalapi.BroadcastContent{OneOf: externalapi.NewEmailBroadcastContentBroadcastContentSum(c.EmailBroadcastContentToResource(b))}
+	case broadcast.ChannelTelegram:
+		return externalapi.BroadcastContent{OneOf: externalapi.NewTelegramBroadcastContentBroadcastContentSum(c.TelegramBroadcastContentToResource(b))}
+	default:
+		return externalapi.BroadcastContent{}
+	}
+}
+
+// telegramContentChannel is the discriminator of Telegram's content arm.
+func telegramContentChannel(broadcast.Channel) externalapi.TelegramBroadcastContentChannel {
+	return externalapi.TelegramBroadcastContentChannelTelegram
+}
+
+// emailContentChannel is the discriminator of email's content arm.
+func emailContentChannel(broadcast.Channel) externalapi.EmailBroadcastContentChannel {
+	return externalapi.EmailBroadcastContentChannelEmail
 }
 
 // editorDocument is a stored editor document (a Template's, a Broadcast's) as the opaque object of
@@ -674,6 +727,10 @@ func smtpConfigKind(integrations.RedactedSMTP) externalapi.SmtpConfigKind {
 
 func sesConfigKind(integrations.RedactedSES) externalapi.SesConfigKind {
 	return externalapi.SesConfigKindSes
+}
+
+func telegramConfigKind(integrations.RedactedTelegram) externalapi.TelegramConfigKind {
+	return externalapi.TelegramConfigKindTelegram
 }
 
 // sendingDomainVerified derives the verified flag from the verified and lost moments.

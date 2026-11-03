@@ -13,7 +13,6 @@ package broadcasts
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -22,13 +21,13 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/riverqueue/river"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
-	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -37,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -97,14 +97,37 @@ func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id int64, when tim
 	return m.claim(ctx, s, id, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when, m.armable)
 }
 
-// armable refuses a claimed Broadcast whose Send route cannot send.
+// armable refuses a claimed Broadcast that cannot go out as written: its Send route cannot send, or
+// its content breaks its Channel's written-length rule.
 func (m *Module) armable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
-	channel := outbound.BroadcastContent(b).Channel()
+	channel := messaging.Channel(b.Channel)
 	route, err := m.out.Route(ctx, ts, channel, b.IntegrationID)
 	if err != nil {
 		return err
 	}
-	return route.Armable()
+	if err := route.Armable(); err != nil {
+		return err
+	}
+	return checkWritten(b)
+}
+
+// checkWritten is the Channel's written-length rule (ADR 0078), checked at Schedule on the content
+// as written: telegramrender.CheckWritten, the rule an Automation's Publish applies to a Telegram
+// step, so a text is over its limit (1024 with an image, 4096 without) on both or on neither. A
+// message with neither a text nor an image has nothing to send. What a text renders to may still be
+// longer or shorter; a message over the limit once rendered fails its own send.
+func checkWritten(b *ent.Broadcast) error {
+	if b.Channel != broadcast.ChannelTelegram {
+		return nil
+	}
+	text, hasImage := lo.FromPtr(b.Text), lo.FromPtr(b.ImageURL) != ""
+	if strings.TrimSpace(text) == "" && !hasImage {
+		return ErrTextTooLong.With("the message has no text and no image")
+	}
+	if err := telegramrender.CheckWritten(text, hasImage); err != nil {
+		return ErrTextTooLong.With(err.Error())
+	}
+	return nil
 }
 
 // Unschedule returns a scheduled Broadcast to draft and drops its schedule. The
@@ -170,35 +193,37 @@ var (
 	ErrFromNotVerified = validation.Refuse("broadcasts: from email must be on a verified sending domain", i18n.ErrorsBroadcastFromNotVerified)
 	// ErrBlankName: the Broadcast name is empty or whitespace only.
 	ErrBlankName = validation.Refuse("broadcasts: name must not be empty", i18n.ErrorsNameEmpty)
+	// ErrNoChannel: a new Broadcast names no Channel: it has no content to take the shape of.
+	ErrNoChannel = validation.Refuse("broadcasts: a broadcast needs a channel", i18n.ErrorsBroadcastNoChannel)
+	// ErrChannelFixed: an edit carries content of another Channel than the Broadcast's, which is
+	// fixed at creation: a Broadcast is never converted to another Channel (ADR 0080).
+	ErrChannelFixed = validation.Refuse("broadcasts: the channel of a broadcast cannot change", i18n.ErrorsBroadcastChannelFixed)
+	// ErrTextTooLong: the message of a Telegram Broadcast is empty or its text is over what Telegram takes,
+	// so it is not scheduled (ADR 0078). Not a field refusal: Schedule and Send take no content, so
+	// there is no request field to list it under; the editor counts the limit as the author types.
+	ErrTextTooLong = validation.Refuse("broadcasts: the text is too long for Telegram", i18n.ErrorsBroadcastTextTooLong)
+	// ErrIntegrationOtherChannel: the Integration is of another Channel than the Broadcast's, so
+	// it can never send it (ADR 0074).
+	ErrIntegrationOtherChannel = validation.Refuse("broadcasts: the integration is of another channel", i18n.ErrorsBroadcastIntegrationOtherChannel)
 )
 
 // CreateInput is a new draft Broadcast. A nil field is "not provided": it takes the schema
-// default. SegmentID and IntegrationID reference rows of the same Workspace; the scoped client
-// refuses a foreign one with ent.ErrNotInWorkspace.
+// default. Content is required: its Channel is the Broadcast's, fixed from then on (ADR 0080).
+// SegmentID and IntegrationID reference rows of the same Workspace; the scoped client refuses a
+// foreign one with ent.ErrNotInWorkspace, and the Integration must be of the Broadcast's Channel.
 type CreateInput struct {
-	Name      *string
-	Subject   *string
-	FromName  *string
-	FromEmail *string
-	Body      *string
-	// Doc is the editor's JSON document, empty when the Broadcast is written as HTML. The body is
-	// built from it in the same save (ADR 0040).
-	Doc           json.RawMessage
+	Name          *string
+	Content       ContentInput
 	SegmentID     *int64
 	IntegrationID *int64
 }
 
 // UpdateInput is a patch of a draft Broadcast: a field that keeps leaves the stored value, a clear
-// drops it. Name, Subject, Body and Doc cannot be cleared; a Body alone clears the stored
-// document. FromName and FromEmail clear to the Integration's default, SegmentID to all contacts
-// and IntegrationID to the Workspace default.
+// drops it. Name cannot be cleared; SegmentID clears to all contacts and IntegrationID to the
+// Channel's default. A nil Content keeps the content; one of another Channel is ErrChannelFixed.
 type UpdateInput struct {
 	Name          patch.Field[string]
-	Subject       patch.Field[string]
-	FromName      patch.Field[string]
-	FromEmail     patch.Field[string]
-	Body          patch.Field[string]
-	Doc           patch.Field[json.RawMessage]
+	Content       ContentPatch
 	SegmentID     patch.Field[int64]
 	IntegrationID patch.Field[int64]
 }
@@ -231,49 +256,38 @@ func setsFrom(from, stored *string) bool {
 	return from != nil && *from != "" && (stored == nil || *stored != *from)
 }
 
-// Create makes a draft Broadcast. Nothing here schedules or sends. A blank name is ErrBlankName; a
-// subject, body or document that cannot render is emailrender.ErrInvalidContent; the body is
-// stored sanitized.
+// Create makes a draft Broadcast on the Channel of its content. Nothing here schedules or sends.
+// A blank name is ErrBlankName, no content ErrNoChannel and an Integration of another Channel
+// ErrIntegrationOtherChannel; content that cannot render is emailrender.ErrInvalidContent, and an
+// email body is stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent.Broadcast, error) {
 	if err := checkName(f.Name); err != nil {
 		return nil, err
 	}
-	c, err := emailrender.ResolveContent(ctx, m.renderer, f.Subject, f.Body, f.Doc, ErrBodyAndDoc)
-	if err != nil {
+	if f.Content == nil {
+		return nil, ErrNoChannel
+	}
+	channel := f.Content.Channel()
+	if err := m.checkRefs(ctx, s, channel, f.SegmentID, f.IntegrationID); err != nil {
 		return nil, err
 	}
-	if err := m.checkRefs(ctx, s, f.SegmentID, f.IntegrationID); err != nil {
-		return nil, err
-	}
-	if setsFrom(f.FromEmail, nil) {
-		if err := checkFrom(ctx, s, *f.FromEmail); err != nil {
-			return nil, err
-		}
-	}
-	body := c.Body
 	q := s.Broadcast().Create().
-		SetNillableFromName(f.FromName).
-		SetNillableFromEmail(f.FromEmail).
+		SetChannel(channelOf(channel)).
 		SetNillableSegmentID(f.SegmentID).
 		SetNillableIntegrationID(f.IntegrationID)
 	if f.Name != nil {
 		q.SetName(*f.Name)
 	}
-	if f.Subject != nil {
-		q.SetSubject(*f.Subject)
-	}
-	if body != nil {
-		q.SetBody(*body)
-	}
-	if c.Authored != nil {
-		q.SetDoc(f.Doc).SetEditorVersion(c.Authored.EditorVersion)
+	if err := f.Content.create(ctx, m, s, q); err != nil {
+		return nil, err
 	}
 	return q.Save(ctx)
 }
 
 // checkRefs refuses a Segment or Integration that is missing or archived: an archived row leaves
-// new work (ADR 0049). A Broadcast already pointing at one keeps it as history.
-func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, segmentID, integrationID *int64) error {
+// new work (ADR 0049). A Broadcast already pointing at one keeps it as history. An Integration of
+// another Channel than the Broadcast's never sends it (ADR 0074) and is refused too.
+func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, channel messaging.Channel, segmentID, integrationID *int64) error {
 	if segmentID != nil {
 		ok, err := s.Segment().Query().Where(segment.ID(*segmentID)).Exist(ctx)
 		if err != nil {
@@ -283,14 +297,22 @@ func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, segmentID, integr
 			return ErrSegmentNotFound
 		}
 	}
-	if integrationID != nil {
-		ok, err := messaging.IntegrationKept(ctx, s, *integrationID)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return ErrIntegrationNotFound
-		}
+	if integrationID == nil {
+		return nil
+	}
+	kept, err := messaging.IntegrationKept(ctx, s, *integrationID)
+	if err != nil {
+		return err
+	}
+	if !kept {
+		return ErrIntegrationNotFound
+	}
+	onChannel, err := messaging.KeptIntegrationOn(ctx, s, channel, *integrationID)
+	if err != nil {
+		return err
+	}
+	if !onChannel {
+		return ErrIntegrationOtherChannel
 	}
 	return nil
 }
@@ -304,16 +326,26 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadca
 	return b, err
 }
 
-// List returns one page of the Workspace's Broadcasts, newest first: the kept ones, or with
-// archived the archived ones.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool, statuses []broadcast.Status, order Order) (pagination.Page[*ent.Broadcast], error) {
+// ListFilter narrows the Broadcast list: the archived ones instead of the kept ones, only some
+// statuses (every one when empty), only one Channel (every one when nil).
+type ListFilter struct {
+	Archived bool
+	Statuses []broadcast.Status
+	Channel  *broadcast.Channel
+}
+
+// List returns one page of the Workspace's Broadcasts that f lets through, in order.
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f ListFilter, order Order) (pagination.Page[*ent.Broadcast], error) {
 	rows := func() *ent.BroadcastQuery {
 		q := s.Broadcast().Query()
-		if archived {
+		if f.Archived {
 			q = s.Broadcast().QueryDiscarded()
 		}
-		if len(statuses) > 0 {
-			q = q.Where(broadcast.StatusIn(statuses...))
+		if len(f.Statuses) > 0 {
+			q = q.Where(broadcast.StatusIn(f.Statuses...))
+		}
+		if f.Channel != nil {
+			q = q.Where(broadcast.ChannelEQ(*f.Channel))
 		}
 		return q
 	}
@@ -351,44 +383,32 @@ func (o Order) terms() []broadcast.OrderOption {
 
 // Update applies a patch to a draft and returns it. The UPDATE only matches a draft row, so a
 // Broadcast that was claimed for sending in the meantime is never edited. A blank name is
-// ErrBlankName; a Segment or Integration set here is checked as on Create, and a From email set
-// to a new value must be on a verified Sending domain.
+// ErrBlankName; a Segment or Integration set here is checked as on Create; content of another
+// Channel than the Broadcast's is ErrChannelFixed, since a Broadcast is never converted (ADR 0080).
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateInput) (*ent.Broadcast, error) {
 	if err := checkName(f.Name.Ptr()); err != nil {
 		return nil, err
 	}
-	doc, _ := f.Doc.Get()
-	c, err := emailrender.ResolveContent(ctx, m.renderer, f.Subject.Ptr(), f.Body.Ptr(), doc, ErrBodyAndDoc)
+	cur, err := m.Get(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
-	if err := m.checkRefs(ctx, s, f.SegmentID.Ptr(), f.IntegrationID.Ptr()); err != nil {
+	channel := messaging.Channel(cur.Channel)
+	if f.Content != nil && f.Content.Channel() != channel {
+		return nil, ErrChannelFixed
+	}
+	if err := m.checkRefs(ctx, s, channel, f.SegmentID.Ptr(), f.IntegrationID.Ptr()); err != nil {
 		return nil, err
 	}
-	if from, ok := f.FromEmail.Get(); ok {
-		cur, err := m.Get(ctx, s, id)
-		if err != nil {
+	u := s.Broadcast().Update().Where(draftOf(id))
+	if f.Content != nil {
+		if err := f.Content.update(ctx, m, s, cur, u); err != nil {
 			return nil, err
 		}
-		if setsFrom(&from, cur.FromEmail) {
-			if err := checkFrom(ctx, s, from); err != nil {
-				return nil, err
-			}
-		}
 	}
-	u := s.Broadcast().Update().Where(draftOf(id)).SetNillableBody(c.Body)
 	patch.ApplySet(f.Name, u.SetName)
-	patch.ApplySet(f.Subject, u.SetSubject)
-	patch.Apply(f.FromName, u.SetFromName, u.ClearFromName)
-	patch.Apply(f.FromEmail, u.SetFromEmail, u.ClearFromEmail)
 	patch.Apply(f.SegmentID, u.SetSegmentID, u.ClearSegmentID)
 	patch.Apply(f.IntegrationID, u.SetIntegrationID, u.ClearIntegrationID)
-	switch {
-	case c.Authored != nil:
-		u.SetDoc(doc).SetEditorVersion(c.Authored.EditorVersion)
-	case c.Body != nil:
-		u.ClearDoc().ClearEditorVersion()
-	}
 	return m.editDraft(ctx, s, id, u)
 }
 
@@ -460,10 +480,10 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.B
 	return m.Get(ctx, s, id)
 }
 
-// Report is a Broadcast's delivery report: its status, why it is held and its Stats. The
-// rates are Stats methods, ratios in [0,1] where a zero denominator yields 0.
+// Report is a Broadcast's delivery report: its status, why it is held and its Figures, the Stats
+// as its Channel reports them. The rates are ratios in [0,1] where a zero denominator yields 0.
 type Report struct {
-	Stats
+	Figures
 
 	Status     broadcast.Status
 	HoldReason *holdreason.Reason
@@ -475,11 +495,11 @@ func (m *Module) Report(ctx context.Context, s *ent.Scoped, id int64) (Report, e
 	if err != nil {
 		return Report{}, err
 	}
-	figures, err := StatsOf(ctx, s, id)
+	figures, err := StatsFor(ctx, s, b)
 	if err != nil {
 		return Report{}, err
 	}
-	return Report{Status: b.Status, HoldReason: b.HoldReason, Stats: figures[id]}, nil
+	return Report{Status: b.Status, HoldReason: b.HoldReason, Figures: figures[id].Figures()}, nil
 }
 
 func draftOf(id int64) predicate.Broadcast {

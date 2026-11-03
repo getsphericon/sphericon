@@ -36,12 +36,24 @@ model InboxConfig {
   kind: "inbox";
 }
 
+/** A Telegram bot without its token: who it is, as Telegram said when it was connected */
+model TelegramConfig {
+  kind: "telegram";
+
+  /** The bot's numeric Telegram id */
+  botId: int64;
+
+  /** The bot's @username, without the @ */
+  username: string;
+}
+
 /** Provider config as returned, discriminated by `kind`. Secrets are omitted. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union IntegrationConfig {
   smtp: SmtpConfig,
   ses: SesConfig,
   inbox: InboxConfig,
+  telegram: TelegramConfig,
 }
 
 // The input config (carries secrets; write-only) is common/integrations.tsp.
@@ -186,7 +198,7 @@ interface Integrations {
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them). */
+  /** Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them). A Telegram integration's webhook is removed, best effort. */
   @action("archive")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.integrationsWrite])
@@ -199,7 +211,7 @@ interface Integrations {
     | NotFoundProblem
     | InUseProblem;
 
-  /** Restore an archived integration to the list. It is not the default; promote it with an update */
+  /** Restore an archived integration to the list. It is not the default; promote it with an update. An enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422 */
   @action("unarchive")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.integrationsWrite])
@@ -210,9 +222,10 @@ interface Integrations {
     | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
-    | ConflictProblem;
+    | ConflictProblem
+    | UnprocessableEntityProblem;
 
-  /** Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider. Needs a person: hidden from MCP. */
+  /** Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Needs a person: hidden from MCP. */
   @action("regenerate-key")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.integrationsWrite])
@@ -222,7 +235,8 @@ interface Integrations {
     | UnauthorizedProblem
     | ForbiddenProblem
     | TooManyRequestsProblem
-    | NotFoundProblem;
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
 }
 
 // --- Presets (ADR 0037) ---

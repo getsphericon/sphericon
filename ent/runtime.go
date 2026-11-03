@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -57,8 +58,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/staffmember"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -235,6 +238,33 @@ func init() {
 	automationversionDescExitEvents := automationversionFields[3].Descriptor()
 	// automationversion.DefaultExitEvents holds the default value on creation for the exit_events field.
 	automationversion.DefaultExitEvents = automationversionDescExitEvents.Default.([]string)
+	bindingMixin := schema.Binding{}.Mixin()
+	bindingMixinFields0 := bindingMixin[0].Fields()
+	_ = bindingMixinFields0
+	bindingFields := schema.Binding{}.Fields()
+	_ = bindingFields
+	// bindingDescCreatedAt is the schema descriptor for created_at field.
+	bindingDescCreatedAt := bindingMixinFields0[0].Descriptor()
+	// binding.DefaultCreatedAt holds the default value on creation for the created_at field.
+	binding.DefaultCreatedAt = bindingDescCreatedAt.Default.(func() time.Time)
+	// bindingDescUpdatedAt is the schema descriptor for updated_at field.
+	bindingDescUpdatedAt := bindingMixinFields0[1].Descriptor()
+	// binding.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	binding.DefaultUpdatedAt = bindingDescUpdatedAt.Default.(func() time.Time)
+	// binding.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	binding.UpdateDefaultUpdatedAt = bindingDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// bindingDescDestination is the schema descriptor for destination field.
+	bindingDescDestination := bindingFields[3].Descriptor()
+	// binding.DestinationValidator is a validator for the "destination" field. It is called by the builders before save.
+	binding.DestinationValidator = bindingDescDestination.Validators[0].(func(string) error)
+	// bindingDescChatID is the schema descriptor for chat_id field.
+	bindingDescChatID := bindingFields[4].Descriptor()
+	// binding.ChatIDValidator is a validator for the "chat_id" field. It is called by the builders before save.
+	binding.ChatIDValidator = bindingDescChatID.Validators[0].(func(string) error)
+	// bindingDescAnnounced is the schema descriptor for announced field.
+	bindingDescAnnounced := bindingFields[7].Descriptor()
+	// binding.DefaultAnnounced holds the default value on creation for the announced field.
+	binding.DefaultAnnounced = bindingDescAnnounced.Default.(bool)
 	brandkitMixin := schema.BrandKit{}.Mixin()
 	brandkitMixinFields0 := brandkitMixin[0].Fields()
 	_ = brandkitMixinFields0
@@ -277,14 +307,10 @@ func init() {
 	broadcastDescName := broadcastFields[1].Descriptor()
 	// broadcast.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	broadcast.NameValidator = broadcastDescName.Validators[0].(func(string) error)
-	// broadcastDescSubject is the schema descriptor for subject field.
-	broadcastDescSubject := broadcastFields[2].Descriptor()
-	// broadcast.DefaultSubject holds the default value on creation for the subject field.
-	broadcast.DefaultSubject = broadcastDescSubject.Default.(string)
-	// broadcastDescBody is the schema descriptor for body field.
-	broadcastDescBody := broadcastFields[5].Descriptor()
-	// broadcast.DefaultBody holds the default value on creation for the body field.
-	broadcast.DefaultBody = broadcastDescBody.Default.(string)
+	// broadcastDescLinkPreview is the schema descriptor for link_preview field.
+	broadcastDescLinkPreview := broadcastFields[9].Descriptor()
+	// broadcast.DefaultLinkPreview holds the default value on creation for the link_preview field.
+	broadcast.DefaultLinkPreview = broadcastDescLinkPreview.Default.(bool)
 	broadcastrecipientMixin := schema.BroadcastRecipient{}.Mixin()
 	broadcastrecipientMixinFields0 := broadcastrecipientMixin[0].Fields()
 	_ = broadcastrecipientMixinFields0
@@ -1336,6 +1362,25 @@ func init() {
 	staffmemberDescSessionEpoch := staffmemberFields[6].Descriptor()
 	// staffmember.DefaultSessionEpoch holds the default value on creation for the session_epoch field.
 	staffmember.DefaultSessionEpoch = staffmemberDescSessionEpoch.Default.(int64)
+	starttokenMixin := schema.StartToken{}.Mixin()
+	starttokenMixinFields0 := starttokenMixin[0].Fields()
+	_ = starttokenMixinFields0
+	starttokenFields := schema.StartToken{}.Fields()
+	_ = starttokenFields
+	// starttokenDescCreatedAt is the schema descriptor for created_at field.
+	starttokenDescCreatedAt := starttokenMixinFields0[0].Descriptor()
+	// starttoken.DefaultCreatedAt holds the default value on creation for the created_at field.
+	starttoken.DefaultCreatedAt = starttokenDescCreatedAt.Default.(func() time.Time)
+	// starttokenDescUpdatedAt is the schema descriptor for updated_at field.
+	starttokenDescUpdatedAt := starttokenMixinFields0[1].Descriptor()
+	// starttoken.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	starttoken.DefaultUpdatedAt = starttokenDescUpdatedAt.Default.(func() time.Time)
+	// starttoken.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	starttoken.UpdateDefaultUpdatedAt = starttokenDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// starttokenDescTokenHash is the schema descriptor for token_hash field.
+	starttokenDescTokenHash := starttokenFields[4].Descriptor()
+	// starttoken.TokenHashValidator is a validator for the "token_hash" field. It is called by the builders before save.
+	starttoken.TokenHashValidator = starttokenDescTokenHash.Validators[0].(func(string) error)
 	suppressionMixin := schema.Suppression{}.Mixin()
 	suppressionMixinFields0 := suppressionMixin[0].Fields()
 	_ = suppressionMixinFields0
@@ -1374,6 +1419,29 @@ func init() {
 	tagDescName := tagFields[1].Descriptor()
 	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tag.NameValidator = tagDescName.Validators[0].(func(string) error)
+	trackedlinkMixin := schema.TrackedLink{}.Mixin()
+	trackedlinkMixinFields0 := trackedlinkMixin[0].Fields()
+	_ = trackedlinkMixinFields0
+	trackedlinkFields := schema.TrackedLink{}.Fields()
+	_ = trackedlinkFields
+	// trackedlinkDescCreatedAt is the schema descriptor for created_at field.
+	trackedlinkDescCreatedAt := trackedlinkMixinFields0[0].Descriptor()
+	// trackedlink.DefaultCreatedAt holds the default value on creation for the created_at field.
+	trackedlink.DefaultCreatedAt = trackedlinkDescCreatedAt.Default.(func() time.Time)
+	// trackedlinkDescUpdatedAt is the schema descriptor for updated_at field.
+	trackedlinkDescUpdatedAt := trackedlinkMixinFields0[1].Descriptor()
+	// trackedlink.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	trackedlink.DefaultUpdatedAt = trackedlinkDescUpdatedAt.Default.(func() time.Time)
+	// trackedlink.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	trackedlink.UpdateDefaultUpdatedAt = trackedlinkDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// trackedlinkDescToken is the schema descriptor for token field.
+	trackedlinkDescToken := trackedlinkFields[2].Descriptor()
+	// trackedlink.TokenValidator is a validator for the "token" field. It is called by the builders before save.
+	trackedlink.TokenValidator = trackedlinkDescToken.Validators[0].(func(string) error)
+	// trackedlinkDescURL is the schema descriptor for url field.
+	trackedlinkDescURL := trackedlinkFields[3].Descriptor()
+	// trackedlink.URLValidator is a validator for the "url" field. It is called by the builders before save.
+	trackedlink.URLValidator = trackedlinkDescURL.Validators[0].(func(string) error)
 	trackingdomainMixin := schema.TrackingDomain{}.Mixin()
 	trackingdomainMixinFields0 := trackingdomainMixin[0].Fields()
 	_ = trackingdomainMixinFields0

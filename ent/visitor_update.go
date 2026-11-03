@@ -11,8 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -104,6 +106,36 @@ func (_u *VisitorUpdate) SetWorkspace(v *Workspace) *VisitorUpdate {
 	return _u.SetWorkspaceID(v.ID)
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (_u *VisitorUpdate) AddBindingIDs(ids ...int64) *VisitorUpdate {
+	_u.mutation.AddBindingIDs(ids...)
+	return _u
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (_u *VisitorUpdate) AddBindings(v ...*Binding) *VisitorUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBindingIDs(ids...)
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (_u *VisitorUpdate) AddStartTokenIDs(ids ...int64) *VisitorUpdate {
+	_u.mutation.AddStartTokenIDs(ids...)
+	return _u
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (_u *VisitorUpdate) AddStartTokens(v ...*StartToken) *VisitorUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddStartTokenIDs(ids...)
+}
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (_u *VisitorUpdate) SetContact(v *Contact) *VisitorUpdate {
 	return _u.SetContactID(v.ID)
@@ -118,6 +150,48 @@ func (_u *VisitorUpdate) Mutation() *VisitorMutation {
 func (_u *VisitorUpdate) ClearWorkspace() *VisitorUpdate {
 	_u.mutation.ClearWorkspace()
 	return _u
+}
+
+// ClearBindings clears all "bindings" edges to the Binding entity.
+func (_u *VisitorUpdate) ClearBindings() *VisitorUpdate {
+	_u.mutation.ClearBindings()
+	return _u
+}
+
+// RemoveBindingIDs removes the "bindings" edge to Binding entities by IDs.
+func (_u *VisitorUpdate) RemoveBindingIDs(ids ...int64) *VisitorUpdate {
+	_u.mutation.RemoveBindingIDs(ids...)
+	return _u
+}
+
+// RemoveBindings removes "bindings" edges to Binding entities.
+func (_u *VisitorUpdate) RemoveBindings(v ...*Binding) *VisitorUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBindingIDs(ids...)
+}
+
+// ClearStartTokens clears all "start_tokens" edges to the StartToken entity.
+func (_u *VisitorUpdate) ClearStartTokens() *VisitorUpdate {
+	_u.mutation.ClearStartTokens()
+	return _u
+}
+
+// RemoveStartTokenIDs removes the "start_tokens" edge to StartToken entities by IDs.
+func (_u *VisitorUpdate) RemoveStartTokenIDs(ids ...int64) *VisitorUpdate {
+	_u.mutation.RemoveStartTokenIDs(ids...)
+	return _u
+}
+
+// RemoveStartTokens removes "start_tokens" edges to StartToken entities.
+func (_u *VisitorUpdate) RemoveStartTokens(v ...*StartToken) *VisitorUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveStartTokenIDs(ids...)
 }
 
 // ClearContact clears the "contact" edge to the Contact entity.
@@ -224,6 +298,96 @@ func (_u *VisitorUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BindingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   visitor.BindingsTable,
+			Columns: []string{visitor.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBindingsIDs(); len(nodes) > 0 && !_u.mutation.BindingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   visitor.BindingsTable,
+			Columns: []string{visitor.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BindingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   visitor.BindingsTable,
+			Columns: []string{visitor.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.StartTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   visitor.StartTokensTable,
+			Columns: []string{visitor.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedStartTokensIDs(); len(nodes) > 0 && !_u.mutation.StartTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   visitor.StartTokensTable,
+			Columns: []string{visitor.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.StartTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   visitor.StartTokensTable,
+			Columns: []string{visitor.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -355,6 +519,36 @@ func (_u *VisitorUpdateOne) SetWorkspace(v *Workspace) *VisitorUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
 }
 
+// AddBindingIDs adds the "bindings" edge to the Binding entity by IDs.
+func (_u *VisitorUpdateOne) AddBindingIDs(ids ...int64) *VisitorUpdateOne {
+	_u.mutation.AddBindingIDs(ids...)
+	return _u
+}
+
+// AddBindings adds the "bindings" edges to the Binding entity.
+func (_u *VisitorUpdateOne) AddBindings(v ...*Binding) *VisitorUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBindingIDs(ids...)
+}
+
+// AddStartTokenIDs adds the "start_tokens" edge to the StartToken entity by IDs.
+func (_u *VisitorUpdateOne) AddStartTokenIDs(ids ...int64) *VisitorUpdateOne {
+	_u.mutation.AddStartTokenIDs(ids...)
+	return _u
+}
+
+// AddStartTokens adds the "start_tokens" edges to the StartToken entity.
+func (_u *VisitorUpdateOne) AddStartTokens(v ...*StartToken) *VisitorUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddStartTokenIDs(ids...)
+}
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (_u *VisitorUpdateOne) SetContact(v *Contact) *VisitorUpdateOne {
 	return _u.SetContactID(v.ID)
@@ -369,6 +563,48 @@ func (_u *VisitorUpdateOne) Mutation() *VisitorMutation {
 func (_u *VisitorUpdateOne) ClearWorkspace() *VisitorUpdateOne {
 	_u.mutation.ClearWorkspace()
 	return _u
+}
+
+// ClearBindings clears all "bindings" edges to the Binding entity.
+func (_u *VisitorUpdateOne) ClearBindings() *VisitorUpdateOne {
+	_u.mutation.ClearBindings()
+	return _u
+}
+
+// RemoveBindingIDs removes the "bindings" edge to Binding entities by IDs.
+func (_u *VisitorUpdateOne) RemoveBindingIDs(ids ...int64) *VisitorUpdateOne {
+	_u.mutation.RemoveBindingIDs(ids...)
+	return _u
+}
+
+// RemoveBindings removes "bindings" edges to Binding entities.
+func (_u *VisitorUpdateOne) RemoveBindings(v ...*Binding) *VisitorUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBindingIDs(ids...)
+}
+
+// ClearStartTokens clears all "start_tokens" edges to the StartToken entity.
+func (_u *VisitorUpdateOne) ClearStartTokens() *VisitorUpdateOne {
+	_u.mutation.ClearStartTokens()
+	return _u
+}
+
+// RemoveStartTokenIDs removes the "start_tokens" edge to StartToken entities by IDs.
+func (_u *VisitorUpdateOne) RemoveStartTokenIDs(ids ...int64) *VisitorUpdateOne {
+	_u.mutation.RemoveStartTokenIDs(ids...)
+	return _u
+}
+
+// RemoveStartTokens removes "start_tokens" edges to StartToken entities.
+func (_u *VisitorUpdateOne) RemoveStartTokens(v ...*StartToken) *VisitorUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveStartTokenIDs(ids...)
 }
 
 // ClearContact clears the "contact" edge to the Contact entity.
@@ -505,6 +741,96 @@ func (_u *VisitorUpdateOne) sqlSave(ctx context.Context) (_node *Visitor, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BindingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   visitor.BindingsTable,
+			Columns: []string{visitor.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBindingsIDs(); len(nodes) > 0 && !_u.mutation.BindingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   visitor.BindingsTable,
+			Columns: []string{visitor.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BindingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   visitor.BindingsTable,
+			Columns: []string{visitor.BindingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(binding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.StartTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   visitor.StartTokensTable,
+			Columns: []string{visitor.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedStartTokensIDs(); len(nodes) > 0 && !_u.mutation.StartTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   visitor.StartTokensTable,
+			Columns: []string{visitor.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.StartTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   visitor.StartTokensTable,
+			Columns: []string{visitor.StartTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

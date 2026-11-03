@@ -91,6 +91,11 @@ func (Contact) Edges() []ent.Edge {
 		// The anonymous devices seen as this person. A Visitor may belong to no
 		// Contact before Identify; once bound, one Contact owns many Visitors.
 		edge.To("visitors", Visitor.Type),
+		// Its Telegram chats and the Start tokens issued for it die with it.
+		edge.To("bindings", Binding.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("start_tokens", StartToken.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 		// Presence-only labels (GLOSSARY: Tag), many-to-many via contact_tags.
 		edge.To("tags", Tag.Type).
 			Through("contact_tags", ContactTag.Type),

@@ -96,6 +96,21 @@ func TestPlanCreatesOnePendingRecipientPerEligibleContact(t *testing.T) {
 	assert.ElementsMatch(t, ids, again, "a re-plan converges on the same rows")
 }
 
+// The audience is reached at its Channel's Destination: on email a Contact without an address is
+// not frozen as a recipient, so no row waits for a send that can never happen.
+func TestPlanLeavesOutAContactWithoutADestination(t *testing.T) {
+	d := newDelivery(t)
+
+	_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
+	require.NoError(t, err)
+	frozen, err := d.s.BroadcastRecipient().Query().
+		Where(broadcastrecipient.BroadcastID(fixtures.BroadcastDraftID), broadcastrecipient.ContactID(fixtures.ContactJobsNoEmailID)).
+		Exist(d.t.Context())
+	require.NoError(t, err)
+
+	assert.False(t, frozen)
+}
+
 // A Broadcast pinned to a From whose domain has no verified sending domain is held at plan
 // time, before any recipient row exists, not failed: it keeps its status, records why, and
 // plans again once the domain is verified.

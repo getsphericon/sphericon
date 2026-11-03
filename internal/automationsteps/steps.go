@@ -8,6 +8,8 @@ import (
 	"slices"
 
 	"github.com/getsphericon/sphericon/internal/httpcall"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // Kind is the kind of a Step.
@@ -16,19 +18,37 @@ type Kind string
 // Step kinds.
 const (
 	Email     Kind = "email"
+	Telegram  Kind = "telegram"
 	Wait      Kind = "wait"
 	ApplyTag  Kind = "apply_tag"
 	RemoveTag Kind = "remove_tag"
 	HTTP      Kind = "http"
 )
 
+// Channel is the Channel a send step of the kind sends on (ADR 0081: the step's kind fixes its
+// Channel); false for a kind that sends nothing. A new Channel's send step adds its kind here, and
+// Publish, the step executor and the reports take it up.
+func (k Kind) Channel() (messaging.Channel, bool) {
+	switch k {
+	case Email:
+		return messaging.ChannelEmail, true
+	case Telegram:
+		return messaging.ChannelTelegram, true
+	default:
+		return "", false
+	}
+}
+
 // Step is one node of an Automation's linear sequence, in the executor's on-disk
 // JSON form. Email steps carry Subject and Body (HTML), wait steps Seconds, tag
 // steps Tag (the Tag name).
 type Step struct {
-	Type    Kind   `json:"type"`
-	Subject string `json:"subject,omitempty"`
-	Body    string `json:"body,omitempty"`
+	Type Kind `json:"type"`
+	// IntegrationID is the Integration a send step sends through, of the step's Channel; nil is
+	// that Channel's default (ADR 0081).
+	IntegrationID *int64 `json:"integrationId,omitempty"`
+	Subject       string `json:"subject,omitempty"`
+	Body          string `json:"body,omitempty"`
 	// Doc is the editor's JSON document an email step's Body was built from, and EditorVersion
 	// the editor that rendered it (ADR 0040). A step written as HTML has neither. A step being
 	// saved carries a Doc or a Body, not both: the save renders the Doc to the Body.
@@ -36,6 +56,17 @@ type Step struct {
 	EditorVersion string          `json:"editorVersion,omitempty"`
 	Seconds       int             `json:"seconds,omitempty"`
 	Tag           string          `json:"tag,omitempty"`
+	// Text is a Telegram step's message: Telegram's HTML subset with Liquid merge tags. With an
+	// ImageURL it is the image's caption.
+	Text string `json:"text,omitempty"`
+	// UnsubscribeButton is the label of a Telegram step's unsubscribe button, "" for none.
+	UnsubscribeButton string `json:"unsubscribeButton,omitempty"`
+	// ImageURL is the https URL of a Telegram step's image, "" for none.
+	ImageURL string `json:"imageUrl,omitempty"`
+	// Buttons are a Telegram step's link buttons, one per row, at most telegramrender.MaxButtons.
+	Buttons []telegramrender.Button `json:"buttons,omitempty"`
+	// LinkPreview is whether a link in a Telegram step's text unfolds a preview; nil is on.
+	LinkPreview *bool `json:"linkPreview,omitempty"`
 
 	// HTTP steps (ADR 0039) hold ID, URL, Headers, Body (a Liquid JSON template) and
 	// Secret. Stored, URL, header values and Secret are ciphertext, sealed per field;

@@ -1,15 +1,6 @@
-import {
-  Box,
-  Button,
-  Group,
-  Modal,
-  Paper,
-  Select,
-  TextInput,
-  useComputedColorScheme,
-} from '@mantine/core'
+import { Box, Button, Group, Modal, Paper, TextInput, useComputedColorScheme } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   closeSnackbar,
   registerComponentDecorator,
@@ -35,7 +26,6 @@ import {
   siteAutomationsGetQueryKey,
   siteAutomationsListQueryKey,
   siteAutomationsUpdateMutation,
-  siteIntegrationsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteAutomationResource,
@@ -50,10 +40,12 @@ import type { AutomationGraph } from './definition.ts'
 import { automationDraftActions } from './draftActions.ts'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
 import { httpBodyRenderer, httpHeadersRenderer } from './httpRenderer.ts'
+import { emailIntegrationRenderer, telegramIntegrationRenderer } from './integrationRenderer.ts'
 import { LeaveGuard } from './LeaveGuard.tsx'
 import { automationSnapshot } from './leaveSnapshot.ts'
 import { messageRenderer } from './messageRenderer.ts'
 import { useAutomationNodeTypes } from './nodes.ts'
+import { telegramTextRenderer } from './telegramRenderer.ts'
 import { exitEventsRenderer, goalEventRenderer, triggerRenderer } from './triggerRenderer.ts'
 
 // Imported as a raw string (not auto-injected): the SDK sheet carries unlayered
@@ -62,12 +54,15 @@ import { exitEventsRenderer, goalEventRenderer, triggerRenderer } from './trigge
 // (e.g. the dashboard's body scroll).
 import builderStyles from '@workflowbuilder/sdk/style.css?inline'
 
-// The email step's message is edited by the editor, not a text field, the Trigger's event, exit
-// events and goal event are typed with suggestions, and an HTTP step's headers are rows and its
-// body has a dry run. A stable reference.
+// The email step's message is edited by the editor, not a text field, a Telegram step's text has
+// its merge-tag picker and counter, each send step's Integration is picked from its Channel's, the Trigger's event, exit events and goal event are typed with
+// suggestions, and an HTTP step's headers are rows and its body has a dry run. A stable reference.
 const jsonForm = {
   renderers: [
     messageRenderer,
+    emailIntegrationRenderer,
+    telegramIntegrationRenderer,
+    telegramTextRenderer,
     triggerRenderer,
     exitEventsRenderer,
     goalEventRenderer,
@@ -110,19 +105,15 @@ function QuietRestore() {
 const isValidConnection: WorkflowBuilderIsValidConnection = ({ targetNode }) =>
   !targetNode.data.isStartNode
 
-// The picker's value for "no Integration named", which sends through the Workspace default.
-const DEFAULT_INTEGRATION = 'default'
-
 interface AutomationBarValues {
   name: string
-  integrationId: string | null
 }
 type AutomationBarForm = ReturnType<typeof useAutomationBarForm>
 
-function useAutomationBarForm(name: string, integrationId: string | null) {
+function useAutomationBarForm(name: string) {
   const { t } = useTranslation()
   return useForm<AutomationBarValues>({
-    initialValues: { name, integrationId },
+    initialValues: { name },
     validate: { name: (value) => (value.trim() === '' ? t(($) => $.validation.required) : null) },
   })
 }
@@ -174,19 +165,7 @@ function BuilderBar({
   const canvasNodes = useStore((state) => state.nodes)
   const canvasEdges = useStore((state) => state.edges)
   const dirty =
-    automationSnapshot(form.values.name, form.values.integrationId, {
-      nodes: canvasNodes,
-      edges: canvasEdges,
-    }) !== saved
-  const integrationsQuery = useQuery(
-    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
-  )
-  const integrations = [
-    { value: DEFAULT_INTEGRATION, label: t(($) => $.automations.integrationDefault) },
-    ...(integrationsQuery.data ?? [])
-      .filter((integration) => integration.channel === 'email')
-      .map((integration) => ({ value: integration.id, label: integration.name })),
-  ]
+    automationSnapshot(form.values.name, { nodes: canvasNodes, edges: canvasEdges }) !== saved
   const saveMutation = useMutation({
     mutationFn: async () => {
       const { nodes, edges } = useStore.getState()
@@ -211,19 +190,6 @@ function BuilderBar({
           />
         </Group>
         <Group wrap="nowrap" flex="none">
-          <Select
-            aria-label={t(($) => $.automations.integrationLabel)}
-            placeholder={t(($) => $.automations.integrationLabel)}
-            data={integrations}
-            allowDeselect={false}
-            value={form.values.integrationId ?? DEFAULT_INTEGRATION}
-            onChange={(value) =>
-              form.setFieldValue(
-                'integrationId',
-                value === null || value === DEFAULT_INTEGRATION ? null : value,
-              )
-            }
-          />
           <FailedEnrollments workspaceId={workspaceId} automationId={automation.id} />
           <Button
             loading={saveMutation.isPending}
@@ -260,7 +226,7 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
   const queryClient = useQueryClient()
   const nodeTypes = useAutomationNodeTypes()
 
-  const form = useAutomationBarForm(automation.name, edited.integrationId ?? null)
+  const form = useAutomationBarForm(automation.name)
 
   const initialGraph = useMemo(() => {
     const labels = Object.fromEntries(
@@ -269,9 +235,7 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
     return stepsToGraph(edited, edited.steps, labels)
   }, [edited, nodeTypes])
 
-  const [saved, setSaved] = useState(() =>
-    automationSnapshot(automation.name, edited.integrationId ?? null, initialGraph),
-  )
+  const [saved, setSaved] = useState(() => automationSnapshot(automation.name, initialGraph))
 
   const updateMutation = useMutation({
     ...siteAutomationsUpdateMutation(),
@@ -313,10 +277,9 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
             exitEvents,
             goalEvent,
             steps,
-            integrationId: values.integrationId,
           },
         })
-        setSaved(automationSnapshot(values.name, values.integrationId, graph))
+        setSaved(automationSnapshot(values.name, graph))
         notify({
           color: 'teal',
           title: t(($) => $.notifications.successTitle),
@@ -388,11 +351,7 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
           >
             <ThemeSync />
             <QuietRestore />
-            <LeaveGuard
-              name={form.values.name}
-              integrationId={form.values.integrationId}
-              saved={saved}
-            />
+            <LeaveGuard name={form.values.name} saved={saved} />
             <Box pos="relative" w="100%" h="100dvh">
               <WorkflowBuilder.Canvas />
               <I18nextProvider i18n={i18n}>

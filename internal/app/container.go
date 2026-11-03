@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/attention"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
@@ -318,7 +319,8 @@ var storagePackage = do.Package(
 var messagingPackage = do.Package(
 	// The provider catalog (registry of email providers).
 	do.Lazy(func(i do.Injector) (*messaging.Catalog, error) {
-		return registry.New(do.MustInvoke[*config.Config](i).SMTPAllowPrivateHosts), nil
+		cfg := do.MustInvoke[*config.Config](i)
+		return registry.New(cfg.SMTPAllowPrivateHosts, cfg.TelegramBotAPIURL), nil
 	}),
 	// The Tink cipher (credential encryption); fails fast at boot on a bad key.
 	do.Lazy(func(i do.Injector) (*secrets.Cipher, error) {
@@ -572,8 +574,10 @@ var deliveryPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*outbound.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		opts := []outbound.Option{
+			outbound.WithStartLinks(lazyStartLinks{i}),
 			outbound.WithTestSendBudget(do.MustInvoke[*accounts.Attempts](i)),
 			outbound.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
+			outbound.WithTelegramBots(do.MustInvoke[*messaging.Resolver](i)),
 		}
 		if cfg.SystemMailConfigured() {
 			opts = append(opts, outbound.WithSystemSender(do.MustInvoke[SystemSender](i).EmailSender))
@@ -647,6 +651,9 @@ var audiencePackage = do.Package(
 		cfg := do.MustInvoke[*config.Config](i)
 		return integrations.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*messaging.Catalog](i), do.MustInvoke[Enqueuer](i),
 			do.MustInvoke[*preset.Registry](i), cfg.AppURL, do.MustInvoke[IntegrationOptions](i)...), nil
+	}),
+	do.Lazy(func(i do.Injector) (*bindings.Module, error) {
+		return bindings.New(do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomains.Module, error) {
 		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Enqueuer](i)), nil
@@ -837,6 +844,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Contacts:         do.MustInvoke[*contacts.Module](i),
 		Erasure:          do.MustInvoke[*erasure.Module](i),
 		Tags:             do.MustInvoke[*tags.Module](i),
+		Bindings:         do.MustInvoke[*bindings.Module](i),
 		Templates:        do.MustInvoke[*templates.Module](i),
 		Transactional:    do.MustInvoke[*transactional.Module](i),
 		BrandKit:         do.MustInvoke[*brandkit.Module](i),
@@ -890,6 +898,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Contacts:                 do.MustInvoke[*contacts.Module](i),
 		Erasure:                  do.MustInvoke[*erasure.Module](i),
 		Tags:                     do.MustInvoke[*tags.Module](i),
+		Bindings:                 do.MustInvoke[*bindings.Module](i),
 		Templates:                do.MustInvoke[*templates.Module](i),
 		BrandKit:                 do.MustInvoke[*brandkit.Module](i),
 		Automations:              do.MustInvoke[*automations.Module](i),
@@ -939,4 +948,12 @@ func urlHost(origin string) string {
 		return ""
 	}
 	return strings.ToLower(u.Hostname())
+}
+
+// lazyStartLinks resolves the bindings module when a start link is issued, not when Outbound is
+// built: bindings reaches the Integrations module, which needs the Enqueuer, which needs Outbound.
+type lazyStartLinks struct{ i do.Injector }
+
+func (l lazyStartLinks) IssueStartLink(ctx context.Context, s *ent.Scoped, contactID int64, integrationID *int64) (bindings.StartLink, error) {
+	return do.MustInvoke[*bindings.Module](l.i).IssueStartLink(ctx, s, contactID, integrationID)
 }

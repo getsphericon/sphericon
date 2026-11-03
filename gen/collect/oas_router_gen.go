@@ -17,6 +17,9 @@ var (
 	rn3AllowedHeaders = map[string]string{
 		"POST": "Content-Type,X-Collect-Key",
 	}
+	rn4AllowedHeaders = map[string]string{
+		"POST": "Content-Type,X-Collect-Key",
+	}
 )
 
 func (s *Server) cutPrefix(path string) (string, bool) {
@@ -111,6 +114,31 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						s.notAllowed(w, r, notAllowedParams{
 							allowedMethods: "POST",
 							allowedHeaders: rn3AllowedHeaders,
+							acceptPost:     "application/json",
+							acceptPatch:    "",
+						})
+					}
+
+					return
+				}
+
+			case 't': // Prefix: "telegram-start-links"
+
+				if l := len("telegram-start-links"); len(elem) >= l && elem[0:l] == "telegram-start-links" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch r.Method {
+					case "POST":
+						s.handleCollectTelegramStartLinksCreateRequest([0]string{}, elemIsEscaped, w, r)
+					default:
+						s.notAllowed(w, r, notAllowedParams{
+							allowedMethods: "POST",
+							allowedHeaders: rn4AllowedHeaders,
 							acceptPost:     "application/json",
 							acceptPatch:    "",
 						})
@@ -261,6 +289,31 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						r.operationID = "CollectIdentify_create"
 						r.operationGroup = ""
 						r.pathPattern = "/identify"
+						r.args = args
+						r.count = 0
+						return r, true
+					default:
+						return
+					}
+				}
+
+			case 't': // Prefix: "telegram-start-links"
+
+				if l := len("telegram-start-links"); len(elem) >= l && elem[0:l] == "telegram-start-links" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch method {
+					case "POST":
+						r.name = CollectTelegramStartLinksCreateOperation
+						r.summary = ""
+						r.operationID = "CollectTelegramStartLinks_create"
+						r.operationGroup = ""
+						r.pathPattern = "/telegram-start-links"
 						r.args = args
 						r.count = 0
 						return r, true

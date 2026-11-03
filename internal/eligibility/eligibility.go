@@ -11,8 +11,8 @@
 //
 // The layers are defined exactly once (see layers) and consumed in two shapes that
 // therefore cannot drift: Check decides one (workspace, destination) pair, and
-// Predicate narrows a Contact query to the eligible audience. The rule is keyed by
-// destination, never by Contact — a transactional destination may have no Contact.
+// Audience narrows a Contact query to the Contacts with an eligible Destination. The rule is
+// keyed by destination, never by Contact — a transactional destination may have no Contact.
 //
 // A source of "" means a transactional send (ADR 0005): it skips layers 2–4 (you
 // cannot opt out of, nor must you confirm, your own password reset) but still
@@ -31,11 +31,13 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
+	entbinding "github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
@@ -46,6 +48,10 @@ const (
 	ReasonUnsubscribedEverything = "unsubscribed_everything"
 	ReasonUnsubscribedSource     = "unsubscribed_source"
 	ReasonUnconfirmed            = "unconfirmed"
+	// ReasonNoDestination: the Contact has no Destination on the Channel (no email address, no
+	// Binding), so there is nothing to send to. The Outbound send records it as a Skipped like an
+	// opt-out (ADR 0081).
+	ReasonNoDestination = "no_destination"
 )
 
 // Decision is the outcome of a single eligibility Check.
@@ -111,17 +117,84 @@ func Check(ctx context.Context, s *ent.Scoped, channel, dest, source string) (De
 // Workspace does not exist: the check fails closed instead of reporting eligible.
 const workspaceMissing = "!workspace"
 
-// Predicate narrows a Contact query to contacts whose email destination is
-// eligible for (channel, source); "" source means transactional (Suppression
-// only). It composes with a segment predicate (both are predicate.Contact). The
-// correlation joins on lower(contacts.email) — never on contact_id — because the
-// stores are destination-keyed.
-func Predicate(channel, source string) predicate.Contact {
+// A Destination is where a Channel reaches a Contact, as the audience predicate sees it (ADR
+// 0075): on email the Contact's own address. The Destination keys the eligibility stores, so the
+// predicate correlates on it, never on the Contact's id. A Channel of Bindings reaches a Contact
+// at each of its Bindings on the routed Integration, and its Destination adds itself here.
+type Destination interface {
+	// channel is the Channel whose stores the layers read.
+	channel() string
+	// reach narrows the outer contacts query to the Contacts that have a Destination for which
+	// eligible holds, given the Destination as a ref.
+	reach(s *sql.Selector, eligible func(ref) *sql.Predicate)
+}
+
+// EmailDestination is the email Destination: the Contact's address, which it must have.
+func EmailDestination() Destination { return emailDestination{} }
+
+type emailDestination struct{}
+
+func (emailDestination) channel() string { return ChannelEmail }
+
+func (emailDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate) {
+	s.Where(sql.And(sql.NotNull(s.C(contact.FieldEmail)), eligible(contactRef(s))))
+}
+
+// BindingDestination is the Destination of a Channel of Bindings (ADR 0075): the Contact is reached
+// at each Binding on the Integration, its own and its Visitors', and each one's Destination is
+// checked on its own, so a Contact with one eligible Binding is in the audience however many it
+// has. An Integration of 0 names none and reaches nobody.
+func BindingDestination(channel string, integrationID int64) Destination {
+	return bindingDestination{ch: channel, integration: integrationID}
+}
+
+type bindingDestination struct {
+	ch          string
+	integration int64
+}
+
+func (d bindingDestination) channel() string { return d.ch }
+
+func (d bindingDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate) {
+	b := sql.Table(entbinding.Table)
+	v := sql.Table(visitor.Table)
+	sub := sql.Select(b.C(entbinding.FieldID)).From(b)
+	ofVisitors := sql.Select(v.C(visitor.FieldID)).From(v)
+	// raw sql: the visitors of the outer Contact, a correlation ent predicates cannot name.
+	ofVisitors.Where(sql.P(func(w *sql.Builder) {
+		w.WriteString(v.C(visitor.FieldContactID)).WriteString(" = ").WriteString(s.C(contact.FieldID))
+	}))
+	r := ref{
+		workspace:   func(w *sql.Builder) { w.WriteString(b.C(entbinding.FieldWorkspaceID)) },
+		destination: func(w *sql.Builder) { w.WriteString(b.C(entbinding.FieldDestination)) },
+	}
+	sub.Where(sql.And(
+		sql.EQ(b.C(entbinding.FieldIntegrationID), d.integration),
+		sql.Or(
+			// raw sql: the Binding is the outer Contact's own, a correlation ent predicates cannot name.
+			sql.P(func(w *sql.Builder) {
+				w.WriteString(b.C(entbinding.FieldContactID)).WriteString(" = ").WriteString(s.C(contact.FieldID))
+			}),
+			sql.In(b.C(entbinding.FieldVisitorID), ofVisitors),
+		),
+		eligible(r),
+	))
+	s.Where(sql.Exists(sub))
+}
+
+// Audience narrows a Contact query to the Contacts reachable at dest on its Channel from
+// source: they have the Destination and it is eligible; "" source means transactional
+// (Suppression only). It composes with a Segment predicate (both are predicate.Contact).
+func Audience(dest Destination, source string) predicate.Contact {
 	return func(s *sql.Selector) {
-		r := contactRef(s)
-		for _, l := range layers(r, channel, source) {
-			s.Where(sql.Not(l.blocks))
-		}
+		dest.reach(s, func(r ref) *sql.Predicate {
+			ls := layers(r, dest.channel(), source)
+			kept := make([]*sql.Predicate, len(ls))
+			for i, l := range ls {
+				kept[i] = sql.Not(l.blocks)
+			}
+			return sql.And(kept...)
+		})
 	}
 }
 
@@ -197,24 +270,27 @@ func layers(r ref, channel, source string) []layer {
 	if source == "" {
 		return []layer{suppressed}
 	}
-	return []layer{
-		suppressed,
-		{
+	out := make([]layer, 0, 4)
+	out = append(out, suppressed,
+		layer{
 			reason: ReasonUnsubscribedEverything,
 			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, SourceEverything)),
 		},
-		{
+		layer{
 			reason: ReasonUnsubscribedSource,
 			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, source)),
-		},
-		{
-			reason: ReasonUnconfirmed,
-			// Only when the workspace has confirmed opt-in on (ADR 0013): the flag is
-			// read in SQL so the default single-opt-in path never touches the
-			// confirmation store and no caller can forget to pass it.
-			blocks: sql.And(requireConfirmed(r), sql.NotExists(match(r, confirmations, channel))),
-		},
+		})
+	if channel == ChannelTelegram {
+		// A Binding is the opt-in of a Channel of Bindings: there is no Confirmation to ask for.
+		return out
 	}
+	return append(out, layer{
+		reason: ReasonUnconfirmed,
+		// Only when the workspace has confirmed opt-in on (ADR 0013): the flag is
+		// read in SQL so the default single-opt-in path never touches the
+		// confirmation store and no caller can forget to pass it.
+		blocks: sql.And(requireConfirmed(r), sql.NotExists(match(r, confirmations, channel))),
+	})
 }
 
 // match builds SELECT id FROM store WHERE workspace/destination/channel equal the

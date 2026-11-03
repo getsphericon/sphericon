@@ -5,6 +5,8 @@ package resources
 
 import (
 	"fmt"
+	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
+	suppression "github.com/getsphericon/sphericon/ent/suppression"
 	external "github.com/getsphericon/sphericon/gen/external"
 	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
@@ -17,6 +19,7 @@ import (
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	segments "github.com/getsphericon/sphericon/internal/segments"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
+	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
 	templates "github.com/getsphericon/sphericon/internal/templates"
 	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -50,7 +53,6 @@ func (c *InputsImpl) AutomationCreate(source *external.CreateAutomationInput) au
 		}
 		automationsCreateInput.GoalEvent = nilStringPtrIn((*source).GoalEvent)
 		automationsCreateInput.Steps = c.AutomationSteps((*source).Steps)
-		automationsCreateInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
 	return automationsCreateInput
 }
@@ -73,18 +75,29 @@ func (c *InputsImpl) AutomationReportPeriod(source external.AutomationsReportPer
 func (c *InputsImpl) AutomationStep(source external.AutomationStep) automationsteps.Step {
 	var automationstepsStep automationsteps.Step
 	automationstepsStep.Type = c.AutomationStepType(source.Type)
+	automationstepsStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
 	automationstepsStep.Subject = stringIn(source.Subject)
 	automationstepsStep.Body = stringIn(source.Body)
 	automationstepsStep.Doc = documentIn(source.Doc)
 	// automationstepsStep.EditorVersion: ignore
 	automationstepsStep.Seconds = int32In(source.Seconds)
 	automationstepsStep.Tag = stringIn(source.Tag)
+	automationstepsStep.Text = stringIn(source.Text)
+	automationstepsStep.UnsubscribeButton = stringIn(source.UnsubscribeButton)
+	automationstepsStep.ImageURL = stringIn(source.ImageUrl)
+	if source.Buttons != nil {
+		automationstepsStep.Buttons = make([]telegramrender.Button, len(source.Buttons))
+		for i := 0; i < len(source.Buttons); i++ {
+			automationstepsStep.Buttons[i] = c.TelegramButton(source.Buttons[i])
+		}
+	}
+	automationstepsStep.LinkPreview = boolPtrIn(source.LinkPreview)
 	automationstepsStep.ID = stringIn(source.ID)
 	automationstepsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
 		automationstepsStep.Headers = make([]httpcall.Header, len(source.Headers))
-		for i := 0; i < len(source.Headers); i++ {
-			automationstepsStep.Headers[i] = c.externalapiAutomationHttpHeaderToHttpcallHeader(source.Headers[i])
+		for j := 0; j < len(source.Headers); j++ {
+			automationstepsStep.Headers[j] = c.externalapiAutomationHttpHeaderToHttpcallHeader(source.Headers[j])
 		}
 	}
 	automationstepsStep.Secret = stringIn(source.Secret)
@@ -102,6 +115,8 @@ func (c *InputsImpl) AutomationStepType(source external.AutomationStepType) auto
 		automationstepsKind = automationsteps.HTTP
 	case external.AutomationStepTypeRemoveTag:
 		automationstepsKind = automationsteps.RemoveTag
+	case external.AutomationStepTypeTelegram:
+		automationstepsKind = automationsteps.Telegram
 	case external.AutomationStepTypeWait:
 		automationstepsKind = automationsteps.Wait
 	default:
@@ -127,38 +142,56 @@ func (c *InputsImpl) AutomationUpdate(source *external.UpdateAutomationInput) au
 		automationsUpdateInput.ExitEvents = listPtrIn((*source).ExitEvents)
 		automationsUpdateInput.GoalEvent = nilStringPatch((*source).GoalEvent)
 		automationsUpdateInput.Steps = automationStepsPtrIn(c, (*source).Steps)
-		automationsUpdateInput.IntegrationID = nilEntityIDPatch((*source).IntegrationId)
 	}
 	return automationsUpdateInput
 }
-func (c *InputsImpl) BroadcastCreate(source *external.CreateBroadcastInput) broadcasts.CreateInput {
+func (c *InputsImpl) BroadcastChannel(source external.BroadcastChannel) broadcast.Channel {
+	var broadcastChannel broadcast.Channel
+	switch source {
+	case external.BroadcastChannelEmail:
+		broadcastChannel = broadcast.ChannelEmail
+	case external.BroadcastChannelTelegram:
+		broadcastChannel = broadcast.ChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return broadcastChannel
+}
+func (c *InputsImpl) BroadcastCreate(source *external.CreateBroadcastInput) (broadcasts.CreateInput, error) {
 	var broadcastsCreateInput broadcasts.CreateInput
 	if source != nil {
 		pString := (*source).Name
 		broadcastsCreateInput.Name = &pString
-		broadcastsCreateInput.Subject = stringPtrIn((*source).Subject)
-		broadcastsCreateInput.FromName = nilStringPtrIn((*source).FromName)
-		broadcastsCreateInput.FromEmail = nilEmailPtrIn((*source).FromEmail)
-		broadcastsCreateInput.Body = stringPtrIn((*source).Body)
-		broadcastsCreateInput.Doc = documentIn((*source).Doc)
+		broadcastsContentInput, err := broadcastContentIn(c, (*source).Content)
+		if err != nil {
+			return broadcastsCreateInput, err
+		}
+		broadcastsCreateInput.Content = broadcastsContentInput
 		broadcastsCreateInput.SegmentID = nilEntityIDPtrIn((*source).SegmentId)
 		broadcastsCreateInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
-	return broadcastsCreateInput
+	return broadcastsCreateInput, nil
 }
-func (c *InputsImpl) BroadcastUpdate(source *external.UpdateBroadcastInput) broadcasts.UpdateInput {
+func (c *InputsImpl) BroadcastUpdate(source *external.UpdateBroadcastInput) (broadcasts.UpdateInput, error) {
 	var broadcastsUpdateInput broadcasts.UpdateInput
 	if source != nil {
 		broadcastsUpdateInput.Name = stringPatch((*source).Name)
-		broadcastsUpdateInput.Subject = stringPatch((*source).Subject)
-		broadcastsUpdateInput.FromName = nilStringPatch((*source).FromName)
-		broadcastsUpdateInput.FromEmail = nilEmailPatch((*source).FromEmail)
-		broadcastsUpdateInput.Body = stringPatch((*source).Body)
-		broadcastsUpdateInput.Doc = documentPatch((*source).Doc)
+		broadcastsContentPatch, err := broadcastContentPatch(c, (*source).Content)
+		if err != nil {
+			return broadcastsUpdateInput, err
+		}
+		broadcastsUpdateInput.Content = broadcastsContentPatch
 		broadcastsUpdateInput.SegmentID = nilEntityIDPatch((*source).SegmentId)
 		broadcastsUpdateInput.IntegrationID = nilEntityIDPatch((*source).IntegrationId)
 	}
-	return broadcastsUpdateInput
+	return broadcastsUpdateInput, nil
+}
+func (c *InputsImpl) BroadcastsListFilter(source external.BroadcastsListParams) broadcasts.ListFilter {
+	var broadcastsListFilter broadcasts.ListFilter
+	broadcastsListFilter.Archived = boolIn(source.Archived)
+	// broadcastsListFilter.Statuses: ignore
+	broadcastsListFilter.Channel = broadcastChannelPtrIn(c, source.Channel)
+	return broadcastsListFilter
 }
 func (c *InputsImpl) ContactAttributes(source external.CreateContactInput) contacts.Attributes {
 	var contactsAttributes contacts.Attributes
@@ -224,6 +257,24 @@ func (c *InputsImpl) CustomFieldUpdate(source *external.UpdateCustomFieldInput) 
 		contactsCustomFieldUpdateInput.Type = customFieldTypePatch((*source).Type)
 	}
 	return contactsCustomFieldUpdateInput
+}
+func (c *InputsImpl) EmailBroadcastContentIn(source external.EmailBroadcastContentInput) broadcasts.EmailContentInput {
+	var broadcastsEmailContentInput broadcasts.EmailContentInput
+	broadcastsEmailContentInput.Subject = stringPtrIn(source.Subject)
+	broadcastsEmailContentInput.FromName = nilStringPtrIn(source.FromName)
+	broadcastsEmailContentInput.FromEmail = nilEmailPtrIn(source.FromEmail)
+	broadcastsEmailContentInput.Body = stringPtrIn(source.Body)
+	broadcastsEmailContentInput.Doc = documentIn(source.Doc)
+	return broadcastsEmailContentInput
+}
+func (c *InputsImpl) EmailBroadcastContentPatch(source external.EmailBroadcastContentInput) broadcasts.EmailContentPatch {
+	var broadcastsEmailContentPatch broadcasts.EmailContentPatch
+	broadcastsEmailContentPatch.Subject = stringPatch(source.Subject)
+	broadcastsEmailContentPatch.FromName = nilStringPatch(source.FromName)
+	broadcastsEmailContentPatch.FromEmail = nilEmailPatch(source.FromEmail)
+	broadcastsEmailContentPatch.Body = stringPatch(source.Body)
+	broadcastsEmailContentPatch.Doc = documentPatch(source.Doc)
+	return broadcastsEmailContentPatch
 }
 func (c *InputsImpl) Event(source external.EventInput, context bool) (eventlog.Input, error) {
 	var eventlogInput eventlog.Input
@@ -389,6 +440,42 @@ func (c *InputsImpl) SendingDomainUpdate(source *external.UpdateSendingDomainInp
 		sendingdomainsUpdateInput.Selector = stringPatch((*source).DkimSelector)
 	}
 	return sendingdomainsUpdateInput
+}
+func (c *InputsImpl) SuppressionChannel(source external.ConsentChannel) suppression.Channel {
+	var suppressionChannel suppression.Channel
+	switch source {
+	case external.ConsentChannelEmail:
+		suppressionChannel = suppression.ChannelEmail
+	case external.ConsentChannelTelegram:
+		suppressionChannel = suppression.ChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return suppressionChannel
+}
+func (c *InputsImpl) TelegramBroadcastContentIn(source external.TelegramBroadcastContentInput) broadcasts.TelegramContentInput {
+	var broadcastsTelegramContentInput broadcasts.TelegramContentInput
+	broadcastsTelegramContentInput.Text = stringPtrIn(source.Text)
+	broadcastsTelegramContentInput.ImageURL = stringPtrIn(source.ImageUrl)
+	broadcastsTelegramContentInput.Buttons = buttonsPtrIn(c, source.Buttons)
+	broadcastsTelegramContentInput.LinkPreview = boolPtrIn(source.LinkPreview)
+	broadcastsTelegramContentInput.UnsubscribeButton = stringPtrIn(source.UnsubscribeButton)
+	return broadcastsTelegramContentInput
+}
+func (c *InputsImpl) TelegramBroadcastContentPatch(source external.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch {
+	var broadcastsTelegramContentPatch broadcasts.TelegramContentPatch
+	broadcastsTelegramContentPatch.Text = stringPatch(source.Text)
+	broadcastsTelegramContentPatch.ImageURL = stringPatch(source.ImageUrl)
+	broadcastsTelegramContentPatch.Buttons = buttonsPatch(c, source.Buttons)
+	broadcastsTelegramContentPatch.LinkPreview = boolPatch(source.LinkPreview)
+	broadcastsTelegramContentPatch.UnsubscribeButton = stringPatch(source.UnsubscribeButton)
+	return broadcastsTelegramContentPatch
+}
+func (c *InputsImpl) TelegramButton(source external.TelegramButton) telegramrender.Button {
+	var telegramrenderButton telegramrender.Button
+	telegramrenderButton.Label = source.Label
+	telegramrenderButton.URL = source.URL
+	return telegramrenderButton
 }
 func (c *InputsImpl) TemplateCreate(source *external.CreateTemplateInput) templates.CreateInput {
 	var templatesCreateInput templates.CreateInput

@@ -11,12 +11,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
-// Attribution is the last click (ADR 0064): an Order is credited to the Broadcast or the
-// Automation whose email its Contact clicked last before the order, inside the Workspace's
-// Attribution window. This file is the whole of it: which click counts, the window and the credit.
+// Attribution is the last click (ADR 0064, 0083): an Order is credited to the Broadcast or the
+// Automation whose message its Contact clicked last, on any Channel, before the order, inside the
+// Workspace's Attribution window. This file is the whole of it: which click counts, the window and the credit.
 
 // click is the click that earns an Order its credit: the Broadcast or the Automation (one is
-// set) whose email was clicked, and when.
+// set) whose message was clicked, and when.
 type click struct {
 	broadcastID  int64
 	automationID int64
@@ -44,14 +44,14 @@ func credit(ctx context.Context, s *ent.Scoped, create *ent.OrderScopedCreate, c
 	return nil
 }
 
-// lastClick is the latest human `email.clicked` Event of the Contact within [since, until] that
+// lastClick is the latest human click Event (`email.clicked`, `telegram.clicked`) of the Contact within [since, until] that
 // carries a Broadcast or an Automation; nil for none. A click flagged `machine` (ADR 0053) and a
 // click of neither (a Transactional send) are passed over; equal times go to the click Event
 // stored last.
 func lastClick(ctx context.Context, s *ent.Scoped, contactID int64, since, until time.Time) (*click, error) {
 	e, err := s.Event().Query().
 		Where(
-			event.ContactID(contactID), event.ActionEQ(events.NameEmailClicked), events.HumanOnly(),
+			event.ContactID(contactID), event.ActionIn(events.ClickActions...), events.HumanOnly(),
 			event.Or(event.BroadcastIDNotNil(), event.AutomationIDNotNil()),
 			event.OccurredAtGTE(since), event.OccurredAtLTE(until),
 		).

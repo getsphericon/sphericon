@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging/inbox"
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
+	"github.com/getsphericon/sphericon/internal/messaging/telegram"
 )
 
 // FakeSES stands in for the SES account behind every "ses" Integration the server
@@ -81,8 +82,9 @@ func (s quotaSender) SendQuota(ctx context.Context) (messaging.Quota, error) {
 	return s.fake.SendQuota(ctx)
 }
 
-// catalogWith is the built-in catalog with SES's quota lookup answered by fake.
-func catalogWith(fake *FakeSES) *messaging.Catalog {
+// catalogWith is the built-in catalog with SES's quota lookup answered by fake, and Telegram's
+// bots reached at telegramAPIURL (the fake Bot API of the env).
+func catalogWith(fake *FakeSES, telegramAPIURL string) *messaging.Catalog {
 	descriptor := ses.Descriptor()
 	descriptor.Build = func(config []byte, deps messaging.Deps) (any, error) {
 		built, err := ses.Descriptor().Build(config, deps)
@@ -95,5 +97,5 @@ func catalogWith(fake *FakeSES) *messaging.Catalog {
 		}
 		return quotaSender{EmailSender: sender, fake: fake}, nil
 	}
-	return messaging.NewCatalog(smtp.Descriptor(), descriptor, inbox.Descriptor())
+	return messaging.NewCatalog(smtp.Descriptor(), descriptor, inbox.Descriptor(), telegram.Descriptor(telegramAPIURL))
 }

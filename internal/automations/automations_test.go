@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -242,32 +241,39 @@ func TestUsingTagCountsTheLiveVersionAndTheDraftOfKeptAutomations(t *testing.T) 
 	assert.Equal(t, []string{fixtures.AutomationWinBackName}, archived, "an archived Automation uses nothing")
 }
 
-func TestAnAutomationSavesAndClearsTheIntegrationItSendsThrough(t *testing.T) {
+// emailVia is an email step sending through the Integration id names, nil for the default.
+func emailVia(id *int64) automationsteps.Step {
+	return automationsteps.Step{Type: automationsteps.Email, Subject: "Hi", Body: "<p>Hello</p>", IntegrationID: id}
+}
+
+func TestEachEmailStepSavesTheIntegrationItSendsThrough(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
+	mailgun, smtp := int64(fixtures.IntegrationAcmeMailgunID), int64(fixtures.IntegrationAcmeDefaultID)
 
 	a, err := m.Create(ctx, acme, automations.CreateInput{
-		Name: "Onboarding", TriggerEvent: "signup", IntegrationID: new(int64(fixtures.IntegrationAcmeMailgunID)),
+		Name: "Onboarding", TriggerEvent: "signup",
+		Steps: []automationsteps.Step{emailVia(&mailgun), {Type: automationsteps.Wait, Seconds: 60}, emailVia(nil)},
 	})
 	require.NoError(t, err)
-	assert.Equal(t, new(int64(fixtures.IntegrationAcmeMailgunID)), draftIntegration(t, a))
+	created := draftIntegrations(t, a)
 
 	renamed, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{Name: new("Renamed")})
 	require.NoError(t, err)
-	assert.Equal(t, new(int64(fixtures.IntegrationAcmeMailgunID)), draftIntegration(t, renamed), "an update that does not name an Integration keeps it")
+	kept := draftIntegrations(t, renamed)
 
-	moved, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{IntegrationID: patch.Set(int64(fixtures.IntegrationAcmeDefaultID))})
+	moved, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{Steps: &[]automationsteps.Step{emailVia(nil), emailVia(&smtp)}})
 	require.NoError(t, err)
-	assert.Equal(t, new(int64(fixtures.IntegrationAcmeDefaultID)), draftIntegration(t, moved))
+	rewritten := draftIntegrations(t, moved)
 
-	cleared, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{IntegrationID: patch.Clear[int64]()})
-	require.NoError(t, err)
-	assert.Nil(t, draftIntegration(t, cleared), "cleared, the Automation sends through the default")
+	assert.Equal(t, []*int64{&mailgun, nil, nil}, created, "each email step keeps its own; the wait names none")
+	assert.Equal(t, created, kept, "an update that leaves the steps alone keeps them")
+	assert.Equal(t, []*int64{nil, &smtp}, rewritten)
 }
 
-func TestAnAutomationRefusesAnIntegrationThatIsMissingOrArchived(t *testing.T) {
+func TestAnAutomationRefusesAStepIntegrationThatIsMissingOrArchived(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
@@ -276,19 +282,25 @@ func TestAnAutomationRefusesAnIntegrationThatIsMissingOrArchived(t *testing.T) {
 	before := automationNames(t, env)
 
 	for name, id := range map[string]int64{"unknown": 999999, "archived": fixtures.IntegrationAcmeMailgunID} {
-		_, err := m.Create(ctx, acme, automations.CreateInput{Name: "X", TriggerEvent: "signup", IntegrationID: &id})
+		steps := []automationsteps.Step{emailVia(nil), emailVia(&id)}
+		_, err := m.Create(ctx, acme, automations.CreateInput{Name: "X", TriggerEvent: "signup", Steps: steps})
 		require.ErrorIs(t, err, automations.ErrIntegrationNotFound, name)
 
-		_, err = m.Update(ctx, acme, fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{IntegrationID: patch.Set(id)})
+		_, err = m.Update(ctx, acme, fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Steps: &steps})
 		require.ErrorIs(t, err, automations.ErrIntegrationNotFound, name)
 	}
 	assert.Equal(t, before, automationNames(t, env), "a refused save stores nothing")
 }
 
-// draftIntegration is the Integration the Automation's draft sends through; nil is the default.
-func draftIntegration(t *testing.T, a *ent.Automation) *int64 {
+// stepIntegrations is the Integration each step of the version names, nil for none.
+func stepIntegrations(v *ent.AutomationVersion) []*int64 {
+	return lo.Map(automations.Views(v.Steps), func(view automations.StepView, _ int) *int64 { return view.IntegrationID })
+}
+
+// draftIntegrations is the Integration each step of the Automation's draft names, nil for none.
+func draftIntegrations(t *testing.T, a *ent.Automation) []*int64 {
 	t.Helper()
 	_, draft := automations.LiveAndDraft(a)
 	require.NotNil(t, draft)
-	return draft.IntegrationID
+	return stepIntegrations(draft)
 }

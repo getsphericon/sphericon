@@ -156,6 +156,11 @@ export const zAuditAction = z.enum([
 ]);
 
 /**
+ * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
+ */
+export const zBroadcastChannel = z.enum(['email', 'telegram']);
+
+/**
  * How the contact first came to exist
  */
 export const zContactExportSource = z.enum([
@@ -211,6 +216,32 @@ export const zCreateTemplateInput = z.object({
 export const zEmailAddress = z.email().max(320);
 
 /**
+ * Email's content of a Broadcast as stored
+ */
+export const zEmailBroadcastContent = z.object({
+  channel: z.enum(['email']),
+  subject: z.string(),
+  fromName: z.exactOptional(z.string().nullable()),
+  fromEmail: z.exactOptional(zEmailAddress.nullable()),
+  body: z.string(),
+  doc: z.exactOptional(zEditorDocument.nullable()),
+  editorVersion: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on
+ * update an omitted field keeps its value and null clears it.
+ */
+export const zEmailBroadcastContentInput = z.object({
+  channel: z.enum(['email']),
+  subject: z.exactOptional(z.string()),
+  fromName: z.exactOptional(z.string().nullable()),
+  fromEmail: z.exactOptional(zEmailAddress.nullable()),
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(zEditorDocument)
+});
+
+/**
  * A primary key, written as a decimal string so JavaScript never rounds it. The format
  * makes the Go servers parse it into an int64: a malformed id is refused as a 400 before
  * a handler runs. The pattern says the same in the contract, so a client (or a fuzzer) can
@@ -218,20 +249,6 @@ export const zEmailAddress = z.email().max(320);
  * reaches, so every id the schema admits fits an int64.
  */
 export const zEntityId = z.string().regex(/^[0-9]+$/);
-
-/**
- * Request body for creating a broadcast
- */
-export const zCreateBroadcastInput = z.object({
-  name: z.string(),
-  subject: z.exactOptional(z.string()),
-  fromName: z.exactOptional(z.string().nullable()),
-  fromEmail: z.exactOptional(zEmailAddress.nullable()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument),
-  segmentId: z.exactOptional(zEntityId.nullable()),
-  integrationId: z.exactOptional(zEntityId.nullable())
-});
 
 /**
  * Scopes an OAuth client may be granted without any extra opt-in: the external
@@ -275,7 +292,8 @@ export const zHoldReason = z.enum([
   'staff_hold',
   'no_integration',
   'unverified_domain',
-  'provider_stopped'
+  'provider_stopped',
+  'provider_refused'
 ]);
 
 /**
@@ -288,6 +306,13 @@ export const zImageUrl = z.string().max(2048).regex(/^https:\/\/\S+$/);
  */
 export const zInboxConfigInput = z.object({
   kind: z.enum(['inbox'])
+});
+
+/**
+ * Request body for issuing a Telegram start link
+ */
+export const zIssueTelegramStartLinkInput = z.object({
+  integrationId: z.exactOptional(zEntityId.nullable())
 });
 
 /**
@@ -735,6 +760,7 @@ export const zSiteAnalyticsSubscribedPeople = z.object({
 export const zSiteAttentionKind = z.enum([
   'sendingDomainVerificationLost',
   'integrationProviderStopped',
+  'integrationProviderRefused',
   'broadcastHeld',
   'automationCannotSend',
   'deliverabilityWarning',
@@ -862,47 +888,25 @@ export const zSiteAutomationResultsPoint = z.object({
 export const zSiteAutomationStatus = z.enum(['active', 'inactive']);
 
 /**
+ * The messages of the send step at one position
+ */
+export const zSiteAutomationStepFigures = z.object({
+  step: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  sent: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skipped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * Kind of automation step
  */
 export const zSiteAutomationStepType = z.enum([
   'email',
+  'telegram',
   'wait',
   'apply_tag',
   'remove_tag',
   'http'
 ]);
-
-/**
- * One node in an automation's ordered, linear sequence. A flat shape: email
- * steps carry subject/body, wait steps carry seconds.
- */
-export const zSiteAutomationStep = z.object({
-  type: zSiteAutomationStepType,
-  subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument),
-  editorVersion: z.exactOptional(z.string()),
-  seconds: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  tag: z.exactOptional(z.string()),
-  id: z.exactOptional(z.string()),
-  url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader).max(5)),
-  secret: z.exactOptional(z.string()),
-  clearSecret: z.exactOptional(z.boolean()),
-  hasSecret: z.exactOptional(z.boolean())
-});
-
-/**
- * One version of an automation's definition: what publishing makes it do (ADR 0065)
- */
-export const zSiteAutomationVersion = z.object({
-  number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  triggerEvent: z.string(),
-  exitEvents: z.array(z.string()),
-  goalEvent: z.string().nullable(),
-  integrationId: z.exactOptional(zEntityId.nullable()),
-  steps: z.array(zSiteAutomationStep)
-});
 
 /**
  * What slows a sending broadcast
@@ -1023,7 +1027,7 @@ export const zSiteConditionNumberLeaf = z.object({
 
 /**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag field takes has and doesNotHave; a custom field takes the operators of its type,
+ * notNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,
  * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
  * number leaf, a datetime one tested by the date leaves).
  */
@@ -1065,18 +1069,6 @@ export const zSiteContactHoldings = z.object({
   unsubscribes: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   suppressions: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   capturedMessages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * Site request body for creating an automation
- */
-export const zSiteCreateAutomationInput = z.object({
-  name: z.string(),
-  triggerEvent: z.string(),
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(z.array(zSiteAutomationStep)),
-  integrationId: z.exactOptional(zEntityId.nullable())
 });
 
 /**
@@ -1235,7 +1227,11 @@ export const zSiteInstanceRelease = z.object({
 /**
  * Delivery channel an integration belongs to
  */
-export const zSiteIntegrationChannel = z.enum(['email', 'sms']);
+export const zSiteIntegrationChannel = z.enum([
+  'email',
+  'sms',
+  'telegram'
+]);
 
 /**
  * Concrete sending provider
@@ -1243,7 +1239,8 @@ export const zSiteIntegrationChannel = z.enum(['email', 'sms']);
 export const zSiteIntegrationProvider = z.enum([
   'smtp',
   'ses',
-  'inbox'
+  'inbox',
+  'telegram'
 ]);
 
 /**
@@ -1381,27 +1378,33 @@ export const zSiteAutomationReport = z.object({
   captured: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   revenue: zSiteMessageRevenue,
   links: z.array(zSiteLinkClicks),
-  results: zSiteAutomationResults
+  results: zSiteAutomationResults,
+  steps: z.array(zSiteAutomationStepFigures)
 });
 
 /**
- * Denormalized delivery counters for a broadcast
+ * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
+ * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
+ * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
+ * reports no delivered, opened, bounced or complained count and so no delivery or open rate.
  */
 export const zSiteBroadcastStats = z.object({
   recipientsTotal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   sentCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skippedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  failedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pendingCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
   clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  failedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  capturedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  deliveryRate: z.number(),
-  openRate: z.number(),
+  deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  capturedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  deliveryRate: z.number().nullable(),
+  openRate: z.number().nullable(),
   clickRate: z.number(),
-  clickToOpenRate: z.number(),
+  clickToOpenRate: z.number().nullable(),
   unsubscribeRate: z.number(),
   failureRate: z.number(),
   revenue: zSiteMessageRevenue
@@ -2117,18 +2120,9 @@ export const zSiteSmtpConfig = z.object({
 });
 
 /**
- * Provider config returned to the UI, discriminated by `kind`. Secrets are omitted.
+ * The channel a suppression applies to
  */
-export const zSiteIntegrationConfig = z.discriminatedUnion('kind', [
-  zSiteSmtpConfig.extend({ kind: z.literal('smtp') }),
-  zSiteSesConfig.extend({ kind: z.literal('ses') }),
-  zSiteInboxConfig.extend({ kind: z.literal('inbox') })
-]);
-
-/**
- * The channel a suppression applies to (email today; sms reserved)
- */
-export const zSiteSuppressionChannel = z.enum(['email']);
+export const zSiteSuppressionChannel = z.enum(['email', 'telegram']);
 
 /**
  * Site request body for manually suppressing a destination
@@ -2146,6 +2140,25 @@ export const zSiteSuppressionReason = z.enum([
   'bounce',
   'complaint',
   'manual'
+]);
+
+/**
+ * A Telegram bot without its token: who it is, as Telegram said when it was connected
+ */
+export const zSiteTelegramConfig = z.object({
+  kind: z.enum(['telegram']),
+  botId: z.string().regex(/^[0-9]+$/),
+  username: z.string()
+});
+
+/**
+ * Provider config returned to the UI, discriminated by `kind`. Secrets are omitted.
+ */
+export const zSiteIntegrationConfig = z.discriminatedUnion('kind', [
+  zSiteSmtpConfig.extend({ kind: z.literal('smtp') }),
+  zSiteSesConfig.extend({ kind: z.literal('ses') }),
+  zSiteInboxConfig.extend({ kind: z.literal('inbox') }),
+  zSiteTelegramConfig.extend({ kind: z.literal('telegram') })
 ]);
 
 /**
@@ -2195,20 +2208,6 @@ export const zSiteTransactionalEmailStatus = z.enum([
   'suppressed',
   'failed'
 ]);
-
-/**
- * Site request body for updating an automation. The name changes at once; the trigger, steps
- * and integration write the draft (ADR 0065): omitted fields keep the draft's, else the live
- * version's, and publishing makes the draft live.
- */
-export const zSiteUpdateAutomationInput = z.object({
-  name: z.exactOptional(z.string()),
-  triggerEvent: z.exactOptional(z.string()),
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(z.array(zSiteAutomationStep)),
-  integrationId: z.exactOptional(zEntityId.nullable())
-});
 
 /**
  * Request body for updating a custom field: its key never changes
@@ -2303,16 +2302,146 @@ export const zSmtpConfigInput = z.object({
 });
 
 /**
+ * A link button under a Telegram message: an inline URL button on a row of its own
+ */
+export const zTelegramButton = z.object({
+  label: z.string(),
+  url: z.string()
+});
+
+/**
+ * One node in an automation's ordered, linear sequence. A flat shape: email
+ * steps carry subject/body, wait steps carry seconds.
+ */
+export const zSiteAutomationStep = z.object({
+  type: zSiteAutomationStepType,
+  subject: z.exactOptional(z.string()),
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(zEditorDocument),
+  editorVersion: z.exactOptional(z.string()),
+  seconds: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  tag: z.exactOptional(z.string()),
+  id: z.exactOptional(z.string()),
+  url: z.exactOptional(z.string()),
+  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader).max(5)),
+  secret: z.exactOptional(z.string()),
+  clearSecret: z.exactOptional(z.boolean()),
+  hasSecret: z.exactOptional(z.boolean()),
+  integrationId: z.exactOptional(zEntityId.nullable()),
+  text: z.exactOptional(z.string()),
+  unsubscribeButton: z.exactOptional(z.string().max(64)),
+  imageUrl: z.exactOptional(z.string()),
+  buttons: z.exactOptional(z.array(zTelegramButton).max(8)),
+  linkPreview: z.exactOptional(z.boolean())
+});
+
+/**
+ * One version of an automation's definition: what publishing makes it do (ADR 0065)
+ */
+export const zSiteAutomationVersion = z.object({
+  number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  triggerEvent: z.string(),
+  exitEvents: z.array(z.string()),
+  goalEvent: z.string().nullable(),
+  steps: z.array(zSiteAutomationStep)
+});
+
+/**
+ * Site request body for creating an automation
+ */
+export const zSiteCreateAutomationInput = z.object({
+  name: z.string(),
+  triggerEvent: z.string(),
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
+  steps: z.exactOptional(z.array(zSiteAutomationStep))
+});
+
+/**
+ * Site request body for updating an automation. The name changes at once; the trigger, exit and
+ * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * version's, and publishing makes the draft live.
+ */
+export const zSiteUpdateAutomationInput = z.object({
+  name: z.exactOptional(z.string()),
+  triggerEvent: z.exactOptional(z.string()),
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
+  steps: z.exactOptional(z.array(zSiteAutomationStep))
+});
+
+/**
+ * Telegram's content of a Broadcast as stored
+ */
+export const zTelegramBroadcastContent = z.object({
+  channel: z.enum(['telegram']),
+  text: z.string(),
+  imageUrl: z.exactOptional(z.string().nullable()),
+  buttons: z.array(zTelegramButton),
+  linkPreview: z.boolean(),
+  unsubscribeButton: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
+ */
+export const zBroadcastContent = z.discriminatedUnion('channel', [
+  zEmailBroadcastContent.extend({ channel: z.literal('email') }),
+  zTelegramBroadcastContent.extend({ channel: z.literal('telegram') })
+]);
+
+/**
+ * Telegram's content of a Broadcast (ADR 0078), the same Message content as a Telegram step. On
+ * create an omitted field takes its default (an empty text, no image, no buttons, the link preview
+ * on, no unsubscribe button); on update an omitted field keeps its value.
+ */
+export const zTelegramBroadcastContentInput = z.object({
+  channel: z.enum(['telegram']),
+  text: z.exactOptional(z.string()),
+  imageUrl: z.exactOptional(z.string()),
+  buttons: z.exactOptional(z.array(zTelegramButton).max(8)),
+  linkPreview: z.exactOptional(z.boolean()),
+  unsubscribeButton: z.exactOptional(z.string().max(64))
+});
+
+/**
+ * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
+ */
+export const zBroadcastContentInput = z.discriminatedUnion('channel', [
+  zEmailBroadcastContentInput.extend({ channel: z.literal('email') }),
+  zTelegramBroadcastContentInput.extend({ channel: z.literal('telegram') })
+]);
+
+/**
+ * Request body for creating a broadcast
+ */
+export const zCreateBroadcastInput = z.object({
+  name: z.string(),
+  content: zBroadcastContentInput,
+  segmentId: z.exactOptional(zEntityId.nullable()),
+  integrationId: z.exactOptional(zEntityId.nullable())
+});
+
+/**
+ * A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had: use a bot dedicated to sphericon
+ */
+export const zTelegramConfigInput = z.object({
+  kind: z.enum(['telegram']),
+  token: z.string()
+});
+
+/**
  * Provider config submitted by the caller, discriminated by `kind`.
  */
 export const zIntegrationConfigInput = z.discriminatedUnion('kind', [
   zSmtpConfigInput.extend({ kind: z.literal('smtp') }),
   zSesConfigInput.extend({ kind: z.literal('ses') }),
-  zInboxConfigInput.extend({ kind: z.literal('inbox') })
+  zInboxConfigInput.extend({ kind: z.literal('inbox') }),
+  zTelegramConfigInput.extend({ kind: z.literal('telegram') })
 ]);
 
 /**
- * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409.
+ * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422
  */
 export const zCreateIntegrationInput = z.object({
   name: z.string(),
@@ -2682,6 +2811,17 @@ export const zSiteAutomationResource = z.object({
 });
 
 /**
+ * A Telegram chat a contact is reached through: its own, or that of one of its visitors. Made only by what the bot receives, so it is read here and never written.
+ */
+export const zSiteBindingResource = z.object({
+  id: zEntityId,
+  integrationId: zEntityId,
+  integrationName: z.string(),
+  botUsername: z.exactOptional(z.string().nullable()),
+  boundAt: zTimestamp
+});
+
+/**
  * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
  * the palette the editor offers and what an agent is told to use. Its values are written into a
  * message when the message is authored, so saving it never changes a message already written. A
@@ -2720,12 +2860,8 @@ export const zSiteBroadcastProgress = z.object({
 export const zSiteBroadcastResource = z.object({
   id: zEntityId,
   name: z.string(),
-  subject: z.string(),
-  fromName: z.exactOptional(z.string().nullable()),
-  fromEmail: z.exactOptional(zEmailAddress.nullable()),
-  body: z.string(),
-  doc: z.exactOptional(zEditorDocument.nullable()),
-  editorVersion: z.exactOptional(z.string().nullable()),
+  channel: zBroadcastChannel,
+  content: zBroadcastContent,
   warnings: z.exactOptional(z.array(zLintFinding)),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable()),
@@ -3253,6 +3389,14 @@ export const zSiteWorkspaceHold = z.object({
 });
 
 /**
+ * A Telegram start link: the person who opens it and presses Start binds their chat to the contact it was issued for. The link works once.
+ */
+export const zTelegramStartLinkResource = z.object({
+  url: z.string(),
+  expiresAt: zTimestamp
+});
+
+/**
  * Scopes only an API token can hold, never an OAuth grant
  */
 export const zTokenOnlyScope = z.enum([
@@ -3270,11 +3414,7 @@ export const zTokenOnlyScope = z.enum([
  */
 export const zUpdateBroadcastInput = z.object({
   name: z.exactOptional(z.string()),
-  subject: z.exactOptional(z.string()),
-  fromName: z.exactOptional(z.string().nullable()),
-  fromEmail: z.exactOptional(zEmailAddress.nullable()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument),
+  content: z.exactOptional(zBroadcastContentInput),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -3732,6 +3872,11 @@ export const zSiteBroadcastResourceParentKey = zWorkspaceId;
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
 export const zSiteBroadcastsListFilterArchived = z.boolean();
+
+/**
+ * Only the broadcasts on this Channel; every Channel when absent
+ */
+export const zSiteBroadcastsListFilterChannel = zBroadcastChannel;
 
 /**
  * The order of the list: `newest` when absent
@@ -4793,6 +4938,7 @@ export const zSiteBroadcastsListQuery = z.object({
   pageSize: z.int().gte(1).lte(100).optional().default(25),
   archived: z.exactOptional(z.boolean()),
   status: z.exactOptional(z.array(zSiteBroadcastStatus)),
+  channel: z.exactOptional(zBroadcastChannel),
   order: z.exactOptional(zSiteBroadcastsOrder)
 });
 
@@ -5056,6 +5202,16 @@ export const zSiteContactsLookupQuery = z.object({
  */
 export const zSiteContactsLookupResponse = zSiteContactHoldings;
 
+export const zSiteTelegramListBindingsPath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteTelegramListBindingsResponse = z.array(zSiteBindingResource);
+
 export const zSiteTagsListForContactPath = z.object({
   workspaceId: zWorkspaceId,
   contactId: zEntityId
@@ -5099,6 +5255,18 @@ export const zSiteTagsRemovePath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteTagsRemoveResponse = z.void();
+
+export const zSiteTelegramIssueStartLinkBody = zIssueTelegramStartLinkInput;
+
+export const zSiteTelegramIssueStartLinkPath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteTelegramIssueStartLinkResponse = zTelegramStartLinkResource;
 
 export const zSiteContactsDeletePath = z.object({
   workspaceId: zWorkspaceId,

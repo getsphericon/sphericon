@@ -50,7 +50,7 @@ test('stepsToGraph starts the chain with the Trigger node, linked to each step',
   })
   expect(nodes[0]?.deletable).toBe(false)
   expect(nodes.slice(1).map((n) => n.data.properties)).toEqual([
-    { subject: 'Hello', body: '<p></p>', doc: '' },
+    { integrationId: '', subject: 'Hello', body: '<p></p>', doc: '' },
     { seconds: 3600 },
     { tag: 'vip' },
     { tag: 'lead' },
@@ -71,7 +71,7 @@ test('stepsToGraph defaults missing step fields', () => {
   )
 
   expect(nodes.slice(1).map((n) => n.data.properties)).toEqual([
-    { subject: '', body: '', doc: '' },
+    { integrationId: '', subject: '', body: '', doc: '' },
     { seconds: 0 },
     { tag: '' },
   ])
@@ -106,6 +106,7 @@ test('an email step written in the editor is saved as its document alone', () =>
 
   // The canvas holds the document as text beside the body the server built...
   expect(stepsToGraph(on('contact.created'), [stored], {}).nodes[1]?.data.properties).toEqual({
+    integrationId: '',
     subject: 'Hi',
     body: '<p>built by the server</p>',
     doc: JSON.stringify(doc),
@@ -323,24 +324,43 @@ test('stepsToGraph names each node by its kind', () => {
   expect(nodes.map((n) => n.data.properties.label)).toEqual(['Trigger', 'Wait'])
 })
 
-test('the saved snapshot changes with the name, the Integration, the trigger or the steps, and not with a re-layout', () => {
+test("the saved snapshot changes with the name, the trigger, the steps or a step's Integration, and not with a re-layout", () => {
   const graph = stepsToGraph(on('contact.created'), STEPS, {})
-  const saved = automationSnapshot('Welcome', null, graph)
+  const saved = automationSnapshot('Welcome', graph)
+  const [first, ...rest] = STEPS
+  const throughRelay = [{ ...first, type: 'email' as const, integrationId: '21' }, ...rest]
 
-  expect(automationSnapshot('  Welcome ', null, graph)).toBe(saved)
-  expect(automationSnapshot('Welcome 2', null, graph)).not.toBe(saved)
-  expect(automationSnapshot('Welcome', '21', graph)).not.toBe(saved)
-  expect(automationSnapshot('Welcome', null, stepsToGraph(on('email.opened'), STEPS, {}))).not.toBe(
-    saved,
-  )
+  expect(automationSnapshot('  Welcome ', graph)).toBe(saved)
+  expect(automationSnapshot('Welcome 2', graph)).not.toBe(saved)
+  expect(automationSnapshot('Welcome', stepsToGraph(on('email.opened'), STEPS, {}))).not.toBe(saved)
   expect(
-    automationSnapshot('Welcome', null, stepsToGraph(on('contact.created'), STEPS.slice(1), {})),
+    automationSnapshot('Welcome', stepsToGraph(on('contact.created'), STEPS.slice(1), {})),
+  ).not.toBe(saved)
+  expect(
+    automationSnapshot('Welcome', stepsToGraph(on('contact.created'), throughRelay, {})),
   ).not.toBe(saved)
   const moved = {
     ...graph,
     nodes: graph.nodes.map((n) => ({ ...n, position: { x: 50, y: n.position.y } })),
   }
-  expect(automationSnapshot('Welcome', null, moved)).toBe(saved)
+  expect(automationSnapshot('Welcome', moved)).toBe(saved)
+})
+
+test('each email step keeps the Integration it names, and one that names none sends through the default', () => {
+  const steps: AutomationStep[] = [
+    { type: 'email', integrationId: '21', subject: 'First', body: '<p>1</p>' },
+    { type: 'wait', seconds: 60 },
+    { type: 'email', subject: 'Second', body: '<p>2</p>' },
+  ]
+  const graph = stepsToGraph(on('contact.created'), steps, {})
+
+  expect(graph.nodes.map((n) => n.data.properties.integrationId)).toEqual([
+    undefined,
+    '21',
+    undefined,
+    '',
+  ])
+  expect(graphToSteps(graph).steps).toEqual(steps)
 })
 
 test('the Trigger node carries the exit and goal events, which round-trip', () => {

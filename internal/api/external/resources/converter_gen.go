@@ -18,11 +18,13 @@ import (
 	schema "github.com/getsphericon/sphericon/ent/schema"
 	suppression "github.com/getsphericon/sphericon/ent/suppression"
 	trackingdomain "github.com/getsphericon/sphericon/ent/trackingdomain"
+	unsubscribe "github.com/getsphericon/sphericon/ent/unsubscribe"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	external "github.com/getsphericon/sphericon/gen/external"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
+	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	emaildoc "github.com/getsphericon/sphericon/internal/emaildoc"
@@ -35,6 +37,7 @@ import (
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
+	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
 	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
 	transactional "github.com/getsphericon/sphericon/internal/transactional"
 	webhook "github.com/getsphericon/sphericon/internal/webhook"
@@ -156,6 +159,12 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) ex
 		}
 	}
 	externalapiAutomationReport.Results = c.AutomationResultsToResource(source.Results)
+	if source.Steps != nil {
+		externalapiAutomationReport.Steps = make([]external.AutomationStepFigures, len(source.Steps))
+		for j := 0; j < len(source.Steps); j++ {
+			externalapiAutomationReport.Steps[j] = c.automationsStepFiguresToExternalapiAutomationStepFigures(source.Steps[j])
+		}
+	}
 	return externalapiAutomationReport
 }
 func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) external.AutomationResultsPoint {
@@ -214,6 +223,17 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) ex
 	// externalapiAutomationStep.Secret: ignore
 	// externalapiAutomationStep.ClearSecret: ignore
 	externalapiAutomationStep.HasSecret = optBool(source.HasSecret)
+	externalapiAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
+	externalapiAutomationStep.Text = optString(source.Text)
+	externalapiAutomationStep.UnsubscribeButton = optString(source.UnsubscribeButton)
+	externalapiAutomationStep.ImageUrl = optString(source.ImageURL)
+	if source.Buttons != nil {
+		externalapiAutomationStep.Buttons = make([]external.TelegramButton, len(source.Buttons))
+		for j := 0; j < len(source.Buttons); j++ {
+			externalapiAutomationStep.Buttons[j] = c.TelegramButtonToResource(source.Buttons[j])
+		}
+	}
+	externalapiAutomationStep.LinkPreview = optBool(source.LinkPreview)
 	return externalapiAutomationStep
 }
 func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) external.AutomationStepType {
@@ -227,6 +247,8 @@ func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind
 		externalapiAutomationStepType = external.AutomationStepTypeHTTP
 	case automationsteps.RemoveTag:
 		externalapiAutomationStepType = external.AutomationStepTypeRemoveTag
+	case automationsteps.Telegram:
+		externalapiAutomationStepType = external.AutomationStepTypeTelegram
 	case automationsteps.Wait:
 		externalapiAutomationStepType = external.AutomationStepTypeWait
 	default:
@@ -270,7 +292,6 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 			}
 		}
 		externalapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
-		externalapiAutomationVersion.IntegrationId = optNilEntityID((*source).IntegrationID)
 		externalapiAutomationVersion.Steps = automationSteps(c, (*source).Steps)
 	}
 	return externalapiAutomationVersion
@@ -307,6 +328,18 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) external.BrandKi
 	externalapiBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return externalapiBrandKitResource
 }
+func (c *ConverterImpl) BroadcastChannelToResource(source broadcast.Channel) external.BroadcastChannel {
+	var externalapiBroadcastChannel external.BroadcastChannel
+	switch source {
+	case broadcast.ChannelEmail:
+		externalapiBroadcastChannel = external.BroadcastChannelEmail
+	case broadcast.ChannelTelegram:
+		externalapiBroadcastChannel = external.BroadcastChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiBroadcastChannel
+}
 func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipient) external.ContactExportBroadcastRecipient {
 	var externalapiContactExportBroadcastRecipient external.ContactExportBroadcastRecipient
 	if source != nil {
@@ -323,19 +356,20 @@ func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) exte
 	var externalapiBroadcastReport external.BroadcastReport
 	externalapiBroadcastReport.Status = c.BroadcastStatusToResource(source.Status)
 	externalapiBroadcastReport.HoldReason = optNilHoldReason(c, source.HoldReason)
-	externalapiBroadcastReport.RecipientsTotal = count(source.Stats.Recipients)
-	externalapiBroadcastReport.SentCount = count(source.Stats.Sent)
-	externalapiBroadcastReport.SkippedCount = count(source.Stats.Skipped)
-	externalapiBroadcastReport.FailedCount = count(source.Stats.Failed)
-	externalapiBroadcastReport.OpenedCount = count(source.Stats.Opened)
-	externalapiBroadcastReport.ClickedCount = count(source.Stats.Clicked)
-	externalapiBroadcastReport.UnsubscribedCount = count(source.Stats.Unsubscribed)
-	externalapiBroadcastReport.DeliveredCount = count(source.Stats.Delivered)
-	externalapiBroadcastReport.BouncedCount = count(source.Stats.Bounced)
-	externalapiBroadcastReport.ComplainedCount = count(source.Stats.Complained)
-	externalapiBroadcastReport.CapturedCount = count(source.Stats.Captured)
-	externalapiBroadcastReport.OpenRate = source.Stats.OpenRate()
-	externalapiBroadcastReport.ClickRate = source.Stats.ClickRate()
+	externalapiBroadcastReport.RecipientsTotal = count(source.Figures.Recipients)
+	externalapiBroadcastReport.SentCount = count(source.Figures.Sent)
+	externalapiBroadcastReport.SkippedCount = count(source.Figures.Skipped)
+	externalapiBroadcastReport.FailedCount = count(source.Figures.Failed)
+	externalapiBroadcastReport.PendingCount = count(source.Figures.Pending)
+	externalapiBroadcastReport.OpenedCount = nilInt32(source.Figures.Opened)
+	externalapiBroadcastReport.ClickedCount = count(source.Figures.Clicked)
+	externalapiBroadcastReport.UnsubscribedCount = count(source.Figures.Unsubscribed)
+	externalapiBroadcastReport.DeliveredCount = nilInt32(source.Figures.Delivered)
+	externalapiBroadcastReport.BouncedCount = nilInt32(source.Figures.Bounced)
+	externalapiBroadcastReport.ComplainedCount = nilInt32(source.Figures.Complained)
+	externalapiBroadcastReport.CapturedCount = nilInt32(source.Figures.Captured)
+	externalapiBroadcastReport.OpenRate = nilFloat32(source.Figures.OpenRate)
+	externalapiBroadcastReport.ClickRate = source.Figures.ClickRate
 	return externalapiBroadcastReport
 }
 func (c *ConverterImpl) BroadcastStatusToResource(source broadcast.Status) external.BroadcastStatus {
@@ -362,12 +396,8 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 	if source != nil {
 		externalapiBroadcastResource.ID = external.EntityId((*source).ID)
 		externalapiBroadcastResource.Name = (*source).Name
-		externalapiBroadcastResource.Subject = (*source).Subject
-		externalapiBroadcastResource.FromName = optNilString((*source).FromName)
-		externalapiBroadcastResource.FromEmail = optNilEmailAddress((*source).FromEmail)
-		externalapiBroadcastResource.Body = (*source).Body
-		externalapiBroadcastResource.Doc = editorDocument((*source).Doc)
-		externalapiBroadcastResource.EditorVersion = optNilString((*source).EditorVersion)
+		externalapiBroadcastResource.Channel = c.BroadcastChannelToResource((*source).Channel)
+		externalapiBroadcastResource.Content = broadcastContent(c, source)
 		externalapiBroadcastResource.SegmentId = optNilEntityID((*source).SegmentID)
 		externalapiBroadcastResource.Status = c.BroadcastStatusToResource((*source).Status)
 		externalapiBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
@@ -639,6 +669,23 @@ func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) extern
 	externalapiDnsRecord.Value = source.Value
 	return externalapiDnsRecord
 }
+func (c *ConverterImpl) EmailBroadcastContentToResource(source *ent.Broadcast) external.EmailBroadcastContent {
+	var externalapiEmailBroadcastContent external.EmailBroadcastContent
+	if source != nil {
+		externalapiEmailBroadcastContent.Channel = emailContentChannel((*source).Channel)
+		if (*source).Subject != nil {
+			externalapiEmailBroadcastContent.Subject = *(*source).Subject
+		}
+		externalapiEmailBroadcastContent.FromName = optNilString((*source).FromName)
+		externalapiEmailBroadcastContent.FromEmail = optNilEmailAddress((*source).FromEmail)
+		if (*source).Body != nil {
+			externalapiEmailBroadcastContent.Body = *(*source).Body
+		}
+		externalapiEmailBroadcastContent.Doc = editorDocument((*source).Doc)
+		externalapiEmailBroadcastContent.EditorVersion = optNilString((*source).EditorVersion)
+	}
+	return externalapiEmailBroadcastContent
+}
 func (c *ConverterImpl) EmailSchemaToResource(source emaildoc.AgentDescription) external.EmailSchemaResult {
 	var externalapiEmailSchemaResult external.EmailSchemaResult
 	externalapiEmailSchemaResult.EditorVersion = source.EditorVersion
@@ -785,6 +832,8 @@ func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) external.
 	switch source {
 	case holdreason.NoIntegration:
 		externalapiHoldReason = external.HoldReasonNoIntegration
+	case holdreason.ProviderRefused:
+		externalapiHoldReason = external.HoldReasonProviderRefused
 	case holdreason.ProviderStopped:
 		externalapiHoldReason = external.HoldReasonProviderStopped
 	case holdreason.StaffHold:
@@ -807,6 +856,8 @@ func (c *ConverterImpl) IntegrationChannelToResource(source integration.Channel)
 		externalapiIntegrationChannel = external.IntegrationChannelEmail
 	case integration.ChannelSms:
 		externalapiIntegrationChannel = external.IntegrationChannelSMS
+	case integration.ChannelTelegram:
+		externalapiIntegrationChannel = external.IntegrationChannelTelegram
 	// Skipped DefaultChannel(email) -> IntegrationChannelEmail(email) because it duplicates ChannelEmail(email) -> IntegrationChannelEmail(email)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -822,6 +873,8 @@ func (c *ConverterImpl) IntegrationProviderToResource(source integration.Provide
 		externalapiIntegrationProvider = external.IntegrationProviderSMTP
 	case integration.ProviderSes:
 		externalapiIntegrationProvider = external.IntegrationProviderSes
+	case integration.ProviderTelegram:
+		externalapiIntegrationProvider = external.IntegrationProviderTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1226,6 +1279,25 @@ func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) e
 	externalapiSmtpConfig.FromName = omitEmpty(source.FromName)
 	return externalapiSmtpConfig
 }
+func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) external.TelegramStartLinkResource {
+	var externalapiTelegramStartLinkResource external.TelegramStartLinkResource
+	externalapiTelegramStartLinkResource.URL = source.URL
+	externalapiTelegramStartLinkResource.ExpiresAt = timestamp(source.ExpiresAt)
+	return externalapiTelegramStartLinkResource
+}
+func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel) external.ConsentChannel {
+	var externalapiConsentChannel external.ConsentChannel
+	switch source {
+	case suppression.ChannelEmail:
+		externalapiConsentChannel = external.ConsentChannelEmail
+	case suppression.ChannelTelegram:
+		externalapiConsentChannel = external.ConsentChannelTelegram
+	// Skipped DefaultChannel(email) -> ConsentChannelEmail(email) because it duplicates ChannelEmail(email) -> ConsentChannelEmail(email)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiConsentChannel
+}
 func (c *ConverterImpl) SuppressionReasonToResource(source suppression.Reason) external.SuppressionReason {
 	var externalapiSuppressionReason external.SuppressionReason
 	switch source {
@@ -1257,6 +1329,7 @@ func (c *ConverterImpl) SuppressionToResource(source *ent.Suppression) external.
 	var externalapiSuppressionResource external.SuppressionResource
 	if source != nil {
 		externalapiSuppressionResource.ID = external.EntityId((*source).ID)
+		externalapiSuppressionResource.Channel = c.SuppressionChannelToResource((*source).Channel)
 		externalapiSuppressionResource.Destination = (*source).Destination
 		externalapiSuppressionResource.Reason = c.SuppressionReasonToResource((*source).Reason)
 		externalapiSuppressionResource.CreatedAt = timestamp((*source).CreatedAt)
@@ -1306,6 +1379,38 @@ func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []external.TagResourc
 		externalapiTagResourceList[i] = c.TagToResource(source[i])
 	}
 	return externalapiTagResourceList
+}
+func (c *ConverterImpl) TelegramBroadcastContentToResource(source *ent.Broadcast) external.TelegramBroadcastContent {
+	var externalapiTelegramBroadcastContent external.TelegramBroadcastContent
+	if source != nil {
+		externalapiTelegramBroadcastContent.Channel = telegramContentChannel((*source).Channel)
+		if (*source).Text != nil {
+			externalapiTelegramBroadcastContent.Text = *(*source).Text
+		}
+		externalapiTelegramBroadcastContent.ImageUrl = optNilString((*source).ImageURL)
+		if (*source).Buttons != nil {
+			externalapiTelegramBroadcastContent.Buttons = make([]external.TelegramButton, len((*source).Buttons))
+			for i := 0; i < len((*source).Buttons); i++ {
+				externalapiTelegramBroadcastContent.Buttons[i] = c.TelegramButtonToResource((*source).Buttons[i])
+			}
+		}
+		externalapiTelegramBroadcastContent.LinkPreview = (*source).LinkPreview
+		externalapiTelegramBroadcastContent.UnsubscribeButton = optNilString((*source).UnsubscribeButton)
+	}
+	return externalapiTelegramBroadcastContent
+}
+func (c *ConverterImpl) TelegramButtonToResource(source telegramrender.Button) external.TelegramButton {
+	var externalapiTelegramButton external.TelegramButton
+	externalapiTelegramButton.Label = source.Label
+	externalapiTelegramButton.URL = source.URL
+	return externalapiTelegramButton
+}
+func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTelegram) external.TelegramConfig {
+	var externalapiTelegramConfig external.TelegramConfig
+	externalapiTelegramConfig.Kind = telegramConfigKind(source)
+	externalapiTelegramConfig.BotId = source.BotID
+	externalapiTelegramConfig.Username = source.Username
+	return externalapiTelegramConfig
 }
 func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) *external.TemplatesListOK {
 	var externalapiTemplatesListOK external.TemplatesListOK
@@ -1384,6 +1489,19 @@ func (c *ConverterImpl) TransactionalSendStatusToResource(source transactional.S
 	}
 	return externalapiTransactionalSendStatus
 }
+func (c *ConverterImpl) UnsubscribeChannelToResource(source unsubscribe.Channel) external.ConsentChannel {
+	var externalapiConsentChannel external.ConsentChannel
+	switch source {
+	case unsubscribe.ChannelEmail:
+		externalapiConsentChannel = external.ConsentChannelEmail
+	case unsubscribe.ChannelTelegram:
+		externalapiConsentChannel = external.ConsentChannelTelegram
+	// Skipped DefaultChannel(email) -> ConsentChannelEmail(email) because it duplicates ChannelEmail(email) -> ConsentChannelEmail(email)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiConsentChannel
+}
 func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) external.ContactExportUnsubscribe {
 	var externalapiContactExportUnsubscribe external.ContactExportUnsubscribe
 	if source != nil {
@@ -1399,6 +1517,7 @@ func (c *ConverterImpl) UnsubscribeToResource(source *ent.Unsubscribe) external.
 	var externalapiUnsubscribeResource external.UnsubscribeResource
 	if source != nil {
 		externalapiUnsubscribeResource.ID = external.EntityId((*source).ID)
+		externalapiUnsubscribeResource.Channel = c.UnsubscribeChannelToResource((*source).Channel)
 		externalapiUnsubscribeResource.Destination = (*source).Destination
 		externalapiUnsubscribeResource.SendingSource = (*source).SendingSource
 		externalapiUnsubscribeResource.CreatedAt = timestamp((*source).CreatedAt)
@@ -1481,6 +1600,13 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.Work
 		// externalapiWorkspaceResource.SendCap: ignore
 	}
 	return externalapiWorkspaceResource
+}
+func (c *ConverterImpl) automationsStepFiguresToExternalapiAutomationStepFigures(source automations.StepFigures) external.AutomationStepFigures {
+	var externalapiAutomationStepFigures external.AutomationStepFigures
+	externalapiAutomationStepFigures.Step = count(source.Step)
+	externalapiAutomationStepFigures.Sent = count(source.Sent)
+	externalapiAutomationStepFigures.Skipped = count(source.Skipped)
+	return externalapiAutomationStepFigures
 }
 func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(source emaildoc.AgentAttr) external.EmailSchemaAttribute {
 	var externalapiEmailSchemaAttribute external.EmailSchemaAttribute

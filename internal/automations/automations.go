@@ -1,9 +1,9 @@
 // Package automations is the one place an Automation's definition is stored,
 // validated and its lifecycle changed (ADR 0016). /site and /api handlers stay thin
 // adapters over it. internal/automationsteps owns the stored Step format and its reader,
-// shared by authoring, live-use checks and execution. The definition (Trigger, exit and goal events,
-// Integration and steps) lives in versions (ADR 0049): an edit writes the draft, Publish makes
-// it live (ADR 0065).
+// shared by authoring, live-use checks and execution. The definition (Trigger, exit and goal events and
+// steps, each send step with its own Integration, ADR 0081) lives in versions (ADR 0049): an edit
+// writes the draft, Publish makes it live (ADR 0065).
 package automations
 
 import (
@@ -14,6 +14,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
@@ -32,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -81,8 +84,14 @@ func Encode(steps []automationsteps.Step) (string, error) {
 			stored = append(stored, automationsteps.Step{Type: s.Type, Tag: strings.TrimSpace(s.Tag)})
 		case automationsteps.HTTP:
 			stored = append(stored, automationsteps.Step{Type: automationsteps.HTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret})
+		case automationsteps.Telegram:
+			stored = append(stored, automationsteps.Step{
+				Type: automationsteps.Telegram, IntegrationID: s.IntegrationID, Text: s.Text,
+				ImageURL: strings.TrimSpace(s.ImageURL), Buttons: s.Buttons, LinkPreview: s.LinkPreview,
+				UnsubscribeButton: strings.TrimSpace(s.UnsubscribeButton),
+			})
 		default:
-			email := automationsteps.Step{Type: automationsteps.Email, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
+			email := automationsteps.Step{Type: automationsteps.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
 			if len(s.Doc) > 0 {
 				email.Doc, email.EditorVersion = s.Doc, s.EditorVersion
 			}
@@ -101,6 +110,22 @@ func validate(steps []automationsteps.Step) error {
 			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
 				return ErrInvalidStep.With(err.Error())
 			}
+		case automationsteps.Telegram:
+			if strings.TrimSpace(s.Text) == "" {
+				return ErrInvalidStep.With("a Telegram step needs a text")
+			}
+			if err := telegramrender.Check(s.Text); err != nil {
+				return ErrInvalidStep.With(err.Error())
+			}
+			if err := telegramrender.CheckUnsubscribeButton(s.UnsubscribeButton); err != nil {
+				return ErrInvalidStep.With(err.Error())
+			}
+			if err := telegramrender.CheckImage(s.ImageURL); err != nil {
+				return ErrInvalidStep.With(err.Error())
+			}
+			if err := telegramrender.CheckButtons(s.Buttons); err != nil {
+				return ErrInvalidStep.With(err.Error())
+			}
 		case automationsteps.HTTP:
 		case automationsteps.Wait:
 			if s.Seconds < 0 {
@@ -115,6 +140,51 @@ func validate(steps []automationsteps.Step) error {
 		}
 	}
 	return nil
+}
+
+// SendStep is a send step of a version, where it stands and what it sends through.
+type SendStep struct {
+	// Index is the step's position in the version, 0 for the first.
+	Index int
+	Step  automationsteps.Step
+}
+
+// Channel is the Channel the step sends on.
+func (s SendStep) Channel() messaging.Channel {
+	ch, _ := s.Step.Type.Channel()
+	return ch
+}
+
+// Content is the step's Message content, its Channel's own shape (ADR 0078). A new send step kind
+// adds its case here beside Kind.Channel.
+func (s SendStep) Content() (outbound.Content, error) {
+	switch s.Step.Type {
+	case automationsteps.Email:
+		return outbound.EmailContent{Subject: s.Step.Subject, Body: s.Step.Body}, nil
+	case automationsteps.Telegram:
+		return outbound.TelegramContent{
+			Text: s.Step.Text, ImageURL: s.Step.ImageURL, Buttons: s.Step.Buttons,
+			NoLinkPreview:     s.Step.LinkPreview != nil && !*s.Step.LinkPreview,
+			UnsubscribeButton: s.Step.UnsubscribeButton,
+		}, nil
+	default:
+		return nil, fmt.Errorf("automations: step type %q has no message content", s.Step.Type)
+	}
+}
+
+// SendSteps are the send steps of the version, in step order.
+func SendSteps(v *ent.AutomationVersion) ([]SendStep, error) {
+	steps, err := automationsteps.Decode(v.Steps)
+	if err != nil {
+		return nil, err
+	}
+	var out []SendStep
+	for i := range steps {
+		if _, sends := steps[i].Type.Channel(); sends {
+			out = append(out, SendStep{Index: i, Step: steps[i]})
+		}
+	}
+	return out, nil
 }
 
 // Module is the automations module.
@@ -185,6 +255,12 @@ func (m *Module) build(ctx context.Context, steps []automationsteps.Step) ([]aut
 // for the figures and the log (ADR 0053).
 var engagementTriggers = []string{events.NameEmailOpened, events.NameEmailClicked, events.NameEmailUnsubscribed}
 
+// telegramTriggers are the `telegram.` Events an Automation may start from or end on: what happens
+// to a Binding and what the person does. `telegram.sent` is infrastructure, like `email.sent`.
+var telegramTriggers = []string{
+	events.NameTelegramBound, events.NameTelegramUnbound, "telegram.received", "telegram.clicked", "telegram.unsubscribed",
+}
+
 // validateTrigger refuses an empty trigger and an infrastructure Event as the trigger.
 func validateTrigger(trigger string) error {
 	if problem := eventProblem(trigger); problem != "" {
@@ -202,6 +278,9 @@ func eventProblem(action string) string {
 	}
 	if strings.HasPrefix(t, "email.") && !slices.Contains(engagementTriggers, t) {
 		return fmt.Sprintf("%q is not a customer action; use %s", action, strings.Join(engagementTriggers, ", "))
+	}
+	if strings.HasPrefix(t, "telegram.") && !slices.Contains(telegramTriggers, t) {
+		return fmt.Sprintf("%q is not a customer action; use %s", action, strings.Join(telegramTriggers, ", "))
 	}
 	return ""
 }
@@ -270,8 +349,6 @@ type CreateInput struct {
 	ExitEvents []string
 	GoalEvent  *string
 	Steps      []automationsteps.Step
-	// IntegrationID is the email Integration the steps send through; nil is the Workspace default.
-	IntegrationID *int64
 }
 
 // UpdateInput changes an Automation; nil fields are left alone. The name is the Automation's own;
@@ -284,9 +361,6 @@ type UpdateInput struct {
 	// GoalEvent sets the goal event, and a clear removes it.
 	GoalEvent patch.Field[string]
 	Steps     *[]automationsteps.Step
-	// IntegrationID moves the Automation to that Integration, and a clear goes back to the
-	// Workspace default.
-	IntegrationID patch.Field[int64]
 }
 
 // LiveAndDraft returns the Automation's live version and its draft, each nil when it has none.
@@ -377,10 +451,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		}
 		return a.ID, nil
 	}
-	e := edit{
-		trigger: &in.TriggerEvent, exits: &in.ExitEvents, goal: patch.FromPtr(in.GoalEvent),
-		integrationID: patch.FromPtr(in.IntegrationID),
-	}
+	e := edit{trigger: &in.TriggerEvent, exits: &in.ExitEvents, goal: patch.FromPtr(in.GoalEvent)}
 	if in.Steps != nil {
 		e.steps = &steps
 	}
@@ -394,7 +465,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // nothing. An edit of the Trigger, exit or goal events checks the three together (validateEvents),
 // so a new Trigger equal to a stored exit or goal event is refused too. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Automation, error) {
-	e := edit{trigger: in.TriggerEvent, exits: in.ExitEvents, goal: in.GoalEvent, integrationID: in.IntegrationID}
+	e := edit{trigger: in.TriggerEvent, exits: in.ExitEvents, goal: in.GoalEvent}
 	if in.Steps != nil {
 		built, err := m.build(ctx, *in.Steps)
 		if err != nil {
@@ -414,22 +485,20 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // edit is a change of an Automation's definition; nil fields keep the base's. The steps are built
 // (their documents rendered) before the transaction.
 type edit struct {
-	trigger       *string
-	exits         *[]string
-	goal          patch.Field[string]
-	integrationID patch.Field[int64]
-	steps         *[]automationsteps.Step
+	trigger *string
+	exits   *[]string
+	goal    patch.Field[string]
+	steps   *[]automationsteps.Step
 }
 
 // definition is the content of an Automation version as stored: its Trigger, the events that end
 // an Enrollment early (exits) and the one that ends it as having reached its goal (nil for none),
-// its Integration (nil for the Workspace default) and its encoded, sealed steps.
+// and its encoded, sealed steps, each send step naming its Integration.
 type definition struct {
-	trigger       string
-	exits         []string
-	goal          *string
-	integrationID *int64
-	steps         string
+	trigger string
+	exits   []string
+	goal    *string
+	steps   string
 }
 
 // versioned is the Automation's part of the lifecycle (drafts.Definition).
@@ -440,9 +509,9 @@ func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.Aut
 }
 
 // Merge lays the edit over the base version (nil for a new Automation) and validates what it
-// changes: the Trigger with the exit and goal events, checked together (validateEvents), the
-// Integration (kept, not archived) and the steps. An HTTP step that names one of the base's steps
-// by ID keeps the secrets it does not resend.
+// changes: the Trigger with the exit and goal events, checked together (validateEvents), and the
+// steps, each send step's Integration kept (not archived). An HTTP step that names one of the
+// base's steps by ID keeps the secrets it does not resend.
 func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit) (definition, error) {
 	def := definition{exits: []string{}, steps: "[]"}
 	var stored []automationsteps.Step
@@ -467,15 +536,14 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 			return definition{}, err
 		}
 	}
-	if id, ok := e.integrationID.Get(); ok {
-		if err := checkIntegration(ctx, ts, &id); err != nil {
-			return definition{}, err
-		}
-	}
-	def.integrationID = e.integrationID.Over(def.integrationID)
 	if e.steps != nil {
 		if err := validate(*e.steps); err != nil {
 			return definition{}, err
+		}
+		for i := range *e.steps {
+			if err := checkIntegration(ctx, ts, (*e.steps)[i].IntegrationID); err != nil {
+				return definition{}, err
+			}
 		}
 		sealed, err := v.m.sealSteps(*e.steps, stored)
 		if err != nil {
@@ -499,16 +567,13 @@ func canonical(v *ent.AutomationVersion) (definition, error) {
 	if err != nil {
 		return definition{}, err
 	}
-	return definition{
-		trigger: v.TriggerEvent, exits: normalizeExits(v.ExitEvents), goal: v.GoalEvent,
-		integrationID: v.IntegrationID, steps: steps,
-	}, nil
+	return definition{trigger: v.TriggerEvent, exits: normalizeExits(v.ExitEvents), goal: v.GoalEvent, steps: steps}, nil
 }
 
 func (versioned) Equal(v *ent.AutomationVersion, def definition) bool {
 	held, err := canonical(v)
 	return err == nil && held.trigger == def.trigger && slices.Equal(held.exits, def.exits) && samePtr(held.goal, def.goal) &&
-		samePtr(held.integrationID, def.integrationID) && held.steps == def.steps
+		held.steps == def.steps
 }
 
 func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int, draft *ent.AutomationVersion, def definition) (int64, error) {
@@ -517,13 +582,9 @@ func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int
 			SetTriggerEvent(def.trigger).
 			SetExitEvents(def.exits).
 			SetNillableGoalEvent(def.goal).
-			SetSteps(def.steps).
-			SetNillableIntegrationID(def.integrationID)
+			SetSteps(def.steps)
 		if def.goal == nil {
 			upd.ClearGoalEvent()
-		}
-		if def.integrationID == nil {
-			upd.ClearIntegrationID()
 		}
 		return draft.ID, upd.Exec(ctx)
 	}
@@ -533,7 +594,6 @@ func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int
 		SetTriggerEvent(def.trigger).
 		SetExitEvents(def.exits).
 		SetNillableGoalEvent(def.goal).
-		SetNillableIntegrationID(def.integrationID).
 		SetSteps(def.steps).
 		Save(ctx)
 	if err != nil {
@@ -542,33 +602,60 @@ func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int
 	return created.ID, nil
 }
 
-// Publishable checks the Trigger, exit and goal events of the version going live again, and its
-// Integration must still be kept. Publish arms its email steps, so a version with one is refused
-// with outbound.ErrRouteHeld while its Send route cannot send (the Integration it names is
-// disabled, or the Workspace has no default): an edit may name such an Integration, only Publish is
-// refused, and a route that stops sending after it holds each send instead.
+// Publishable checks the Trigger, exit and goal events of the version going live again, and the
+// Integration of each of its send steps must still be kept. Publish arms every send step (ADR
+// 0081), so the version is refused with outbound.ErrRouteHeld while the Send route of any of them,
+// on the step's Channel through the Integration it names (or that Channel's default), cannot send:
+// an edit may name such an Integration, only Publish is refused, and a route that stops sending
+// after it holds the sends at that step instead. A Telegram step whose text, as written, is over
+// Telegram's limit is refused too.
 func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent.AutomationVersion) error {
 	if err := validateEvents(definition{trigger: version.TriggerEvent, exits: version.ExitEvents, goal: version.GoalEvent}); err != nil {
 		return err
 	}
-	if err := checkIntegration(ctx, ts, version.IntegrationID); err != nil {
-		return err
-	}
-	sends, err := automationsteps.SendsEmail(version.Steps)
-	if err != nil || !sends {
-		return err
-	}
-	route, err := v.m.out.Route(ctx, ts, messaging.ChannelEmail, version.IntegrationID)
+	sends, err := SendSteps(version)
 	if err != nil {
 		return err
 	}
-	return route.Armable()
+	for i := range sends {
+		st := &sends[i]
+		if st.Step.Type != automationsteps.Telegram {
+			continue
+		}
+		if err := telegramrender.CheckWritten(st.Step.Text, st.Step.ImageURL != ""); err != nil {
+			return ErrInvalidStep.With(fmt.Sprintf("step %d: %s", st.Index+1, err))
+		}
+	}
+	type routeKey struct {
+		ch          messaging.Channel
+		integration int64
+	}
+	asked := map[routeKey]bool{}
+	for i := range sends {
+		st := &sends[i]
+		key := routeKey{st.Channel(), lo.FromPtr(st.Step.IntegrationID)}
+		if asked[key] {
+			continue
+		}
+		asked[key] = true
+		if err := checkIntegration(ctx, ts, st.Step.IntegrationID); err != nil {
+			return err
+		}
+		route, err := v.m.out.Route(ctx, ts, st.Channel(), st.Step.IntegrationID)
+		if err != nil {
+			return err
+		}
+		if err := route.Armable(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-// EmailSenders returns the Workspace's active, kept Automations whose live version has an email
-// step, each with its live version loaded, in id order: the ones that send through a Send route
-// whenever a run reaches such a step. A draft sends nothing until it is published.
-func EmailSenders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error) {
+// Senders returns the Workspace's active, kept Automations whose live version has a send step,
+// each with its live version loaded, in id order: the ones that send through a Send route whenever
+// a run reaches such a step. A draft sends nothing until it is published.
+func Senders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error) {
 	active, err := s.Automation().Query().
 		Where(automation.StatusEQ(automation.StatusActive), automation.HasLiveVersion()).
 		WithLiveVersion().
@@ -579,11 +666,11 @@ func EmailSenders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error)
 	}
 	senders := active[:0]
 	for _, a := range active {
-		sends, err := automationsteps.SendsEmail(a.Edges.LiveVersion.Steps)
+		sends, err := SendSteps(a.Edges.LiveVersion)
 		if err != nil {
 			return nil, err
 		}
-		if sends {
+		if len(sends) > 0 {
 			senders = append(senders, a)
 		}
 	}
@@ -617,8 +704,8 @@ func samePtr[T comparable](a, b *T) bool {
 }
 
 // checkIntegration refuses an Integration that is missing or archived, the rule a Broadcast
-// save applies too (messaging.IntegrationKept). A live version already pointing at one keeps it
-// as history.
+// save applies too (messaging.IntegrationKept). A live version whose step already points at one
+// keeps it as history.
 func checkIntegration(ctx context.Context, s *ent.Scoped, id *int64) error {
 	if id == nil {
 		return nil
@@ -694,8 +781,8 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.A
 // on the draft's definition, and the old live version stays as history; the Enrollments already on
 // it finish there. With no draft it makes an inactive live version active again and leaves an
 // active one as it is; with neither it is refused. The Trigger, exit and goal events of the version
-// going live are checked again and its Integration must still be kept; with an email step, its Send
-// route must be able to send (outbound.ErrRouteHeld). Publish is send-class (ADR 0065): the surfaces gate it by the
+// going live are checked again, and the Integration of each send step must still be kept and its
+// Send route able to send (outbound.ErrRouteHeld). Publish is send-class (ADR 0065): the surfaces gate it by the
 // publish scope. An archived Automation enrolls nobody and is restored before it is published, so
 // it is as good as absent here: ErrNotFound.
 func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {

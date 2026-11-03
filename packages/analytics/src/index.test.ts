@@ -127,6 +127,50 @@ test('identify posts the visitor id with nulls for missing fields', async () => 
   expect(body.visitorId).toEqual(expect.any(String))
 })
 
+const START_LINK = { url: 'https://t.me/acme_bot?start=tok', expiresAt: '2026-12-02T00:00:00Z' }
+
+function answerStartLink(status: number, body: unknown) {
+  fetchStub.mockImplementation(async () =>
+    Promise.resolve(
+      Response.json(body, { status, headers: { 'content-type': 'application/json' } }),
+    ),
+  )
+}
+
+test('telegramStartLink asks for a link for the current visitor and returns its url', async () => {
+  document.cookie = 'om_vid=existing-visitor; Path=/'
+  answerStartLink(200, START_LINK)
+  const { initTracking, telegramStartLink } = await loadTracker()
+  initTracking(CONFIG)
+
+  await expect(telegramStartLink()).resolves.toBe(START_LINK.url)
+
+  const [request] = sentRequests.filter((r) => r.url.endsWith('/collect/telegram-start-links'))
+  expect(request?.method).toBe('POST')
+  expect(request?.headers.get('x-collect-key')).toBe('ck_test')
+  expect(await sentBody('/collect/telegram-start-links')).toMatchObject({
+    visitorId: 'existing-visitor',
+  })
+})
+
+test('telegramStartLink is null when the workspace has no bot to link to', async () => {
+  answerStartLink(422, { title: 'Unprocessable Entity', status: 422 })
+  const { initTracking, telegramStartLink } = await loadTracker()
+  initTracking(CONFIG)
+
+  await expect(telegramStartLink()).resolves.toBeNull()
+})
+
+test('telegramStartLink is null when the request fails, and when tracking never started', async () => {
+  const started = await loadTracker()
+  started.initTracking(CONFIG)
+  fetchStub.mockRejectedValue(new TypeError('Failed to fetch'))
+  await expect(started.telegramStartLink()).resolves.toBeNull()
+
+  const idle = await loadTracker()
+  await expect(idle.telegramStartLink()).resolves.toBeNull()
+})
+
 test("identify sends the browser's time zone and language", async () => {
   const { initTracking, identify } = await loadTracker()
   initTracking(CONFIG)

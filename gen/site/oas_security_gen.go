@@ -175,6 +175,8 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteTagsListOperation:                              []string{},
 	SiteTagsListForContactOperation:                    []string{},
 	SiteTagsRemoveOperation:                            []string{},
+	SiteTelegramIssueStartLinkOperation:                []string{},
+	SiteTelegramListBindingsOperation:                  []string{},
 	SiteTemplatesCreateOperation:                       []string{},
 	SiteTemplatesDeleteOperation:                       []string{},
 	SiteTemplatesGetOperation:                          []string{},

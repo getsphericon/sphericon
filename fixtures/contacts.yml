@@ -87,7 +87,7 @@
   workspace_id: 1
   created_at: '{{daysAgo 15}}'
   updated_at: '{{daysAgo 5}}'
-- id: 106
+- id: 106 # fixture: ContactTelegramErasable
   email: mason.sql@codebasics.dev
   first_name: Mason
   last_name: Wilson
@@ -132,7 +132,7 @@
   workspace_id: 1
   created_at: '{{daysAgo 33}}'
   updated_at: '{{daysAgo 6}}'
-- id: 111
+- id: 111 # fixture: ContactTelegramBystander
   email: amelia.sql@codebasics.dev
   first_name: Amelia
   last_name: Jackson

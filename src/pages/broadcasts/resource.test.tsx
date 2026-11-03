@@ -42,14 +42,20 @@ function DetailProbe() {
   return null
 }
 
-function broadcast(status: string) {
+// An email Broadcast; content overrides fields of its email content.
+function broadcast(status: string, content: Record<string, unknown> = {}) {
   return {
     id: '7',
     name: 'Launch',
-    subject: 'Hello',
-    fromName: 'Ada',
-    fromEmail: 'ada@example.com',
-    body: '<p></p>',
+    channel: 'email',
+    content: {
+      channel: 'email',
+      subject: 'Hello',
+      fromName: 'Ada',
+      fromEmail: 'ada@example.com',
+      body: '<p></p>',
+      ...content,
+    },
     status,
   }
 }
@@ -169,11 +175,14 @@ test('creating a broadcast sends only the filled keys, refreshes the list and op
   )
   await expect.poll(() => fetches.list).toBe(1)
 
+  await screen.getByRole('button', { name: 'Continue' }).click()
   await screen.getByLabelText(/^Name/).fill('Launch')
   await screen.getByLabelText('Subject').fill('Hello')
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Launch', subject: 'Hello' }])
+  await expect
+    .poll(() => bodies)
+    .toEqual([{ name: 'Launch', content: { channel: 'email', subject: 'Hello' } }])
   await expect.element(screen.getByText('Broadcast created')).toBeInTheDocument()
   await expect.poll(() => fetches.list).toBe(2)
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
@@ -205,17 +214,72 @@ test('editing a draft; a cleared sender name is sent as null and the Segment is 
     .toEqual([
       {
         name: 'Launch',
-        subject: 'Hello',
-        fromName: null,
-        fromEmail: 'ada@example.com',
         segmentId: null,
         integrationId: null,
-        body: '<p></p>',
+        content: {
+          channel: 'email',
+          subject: 'Hello',
+          fromName: null,
+          fromEmail: 'ada@example.com',
+          body: '<p></p>',
+        },
       },
     ])
   await expect.element(screen.getByText('Broadcast updated')).toBeInTheDocument()
   await expect.poll(() => fetches.list).toBe(2)
   await expect.poll(() => fetches.detail).toBeGreaterThan(1)
+})
+
+test('editing a Telegram draft loads its message content and clears what is emptied', async () => {
+  const { bodies } = serve('draft')
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({
+        id: '7',
+        name: 'News',
+        channel: 'telegram',
+        status: 'draft',
+        content: {
+          channel: 'telegram',
+          text: 'Hi',
+          imageUrl: 'https://example.com/a.png',
+          buttons: [{ label: 'Open', url: 'https://example.com/b' }],
+          linkPreview: false,
+          unsubscribeButton: 'Stop',
+        },
+      }),
+    ),
+  )
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await expect.element(screen.getByLabelText('Image URL')).toHaveValue('https://example.com/a.png')
+  await expect.element(screen.getByRole('textbox', { name: 'Button 1 label' })).toHaveValue('Open')
+  await expect
+    .element(screen.getByRole('switch', { name: 'Show a preview of links in the text' }))
+    .not.toBeChecked()
+  await expect.element(screen.getByLabelText('Button label')).toHaveValue('Stop')
+
+  await screen.getByLabelText('Image URL').fill('')
+  await screen.getByRole('button', { name: 'Remove button 1' }).click()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        name: 'News',
+        segmentId: null,
+        integrationId: null,
+        content: {
+          channel: 'telegram',
+          text: 'Hi',
+          imageUrl: '',
+          buttons: [],
+          linkPreview: false,
+          unsubscribeButton: 'Stop',
+        },
+      },
+    ])
 })
 
 test('a draft can be sent now', async () => {
@@ -299,7 +363,7 @@ test('saving a broadcast written in the editor sends its document and no body', 
   worker.use(
     workspaces,
     handleSiteBroadcastsGet(() =>
-      HttpResponse.json({ ...broadcast('draft'), body: '<p>Hello there</p>', doc: DOC }),
+      HttpResponse.json(broadcast('draft', { body: '<p>Hello there</p>', doc: DOC })),
     ),
   )
 
@@ -312,12 +376,15 @@ test('saving a broadcast written in the editor sends its document and no body', 
     .toEqual([
       {
         name: 'Launch',
-        subject: 'Hello',
-        fromName: 'Ada',
-        fromEmail: 'ada@example.com',
         segmentId: null,
         integrationId: null,
-        doc: DOC,
+        content: {
+          channel: 'email',
+          subject: 'Hello',
+          fromName: 'Ada',
+          fromEmail: 'ada@example.com',
+          doc: DOC,
+        },
       },
     ])
 })
@@ -327,7 +394,7 @@ test('a broadcast with no document opens as editable source', async () => {
   worker.use(
     workspaces,
     handleSiteBroadcastsGet(() =>
-      HttpResponse.json({ ...broadcast('draft'), body: '<table><tr><td>Hi</td></tr></table>' }),
+      HttpResponse.json(broadcast('draft', { body: '<table><tr><td>Hi</td></tr></table>' })),
     ),
   )
 
@@ -342,7 +409,7 @@ test('a refused save shows the reason the server gave', async () => {
   serve('draft')
   worker.use(
     workspaces,
-    handleSiteBroadcastsGet(() => HttpResponse.json({ ...broadcast('draft'), doc: DOC })),
+    handleSiteBroadcastsGet(() => HttpResponse.json(broadcast('draft', { doc: DOC }))),
     handleSiteBroadcastsUpdate(() => problem(422, { detail: 'heading level 9 is not allowed' })),
   )
 
@@ -359,17 +426,23 @@ test('the From is a local part on a verified Sending domain, and an empty one is
   ])
 
   const { screen } = await renderWithRouter(<BroadcastCreatePage />, CREATE_ROUTE)
+  await screen.getByRole('button', { name: 'Continue' }).click()
   await screen.getByLabelText(/^Name/).fill('Launch')
   await screen.getByLabelText('From address').fill('news')
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Launch', fromEmail: 'news@news.example.com' }])
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      { name: 'Launch', content: { channel: 'email', fromEmail: 'news@news.example.com' } },
+    ])
 })
 
 test('a workspace with no verified Sending domain sees a hint with a link to set one up', async () => {
   serve('draft', undefined, [sendingDomain('pending.example.com', false)])
 
   const { screen } = await renderWithRouter(<BroadcastCreatePage />, CREATE_ROUTE)
+  await screen.getByRole('button', { name: 'Continue' }).click()
 
   await expect.element(screen.getByText(/Verify a sending domain/)).toBeInTheDocument()
   await expect.element(screen.getByRole('link', { name: 'Sending domains' })).toBeInTheDocument()
@@ -387,13 +460,14 @@ test('a saved From whose domain lost verification stays visible, marked, and sav
     .toHaveValue('example.com (not verified)')
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toMatchObject([{ fromEmail: 'ada@example.com' }])
+  await expect.poll(() => bodies).toMatchObject([{ content: { fromEmail: 'ada@example.com' } }])
 })
 
 test('the Integration a broadcast sends through is chosen among the email ones and saved', async () => {
   const { bodies } = serve('draft')
 
   const { screen } = await renderWithRouter(<BroadcastCreatePage />, CREATE_ROUTE)
+  await screen.getByRole('button', { name: 'Continue' }).click()
   await screen.getByLabelText(/^Name/).fill('Launch')
   const picker = screen.getByRole('combobox', { name: 'Send through' })
   await expect.element(picker).toHaveValue('Workspace default')
@@ -402,7 +476,9 @@ test('the Integration a broadcast sends through is chosen among the email ones a
   await screen.getByRole('option', { name: 'Postmark' }).click()
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Launch', integrationId: '21' }])
+  await expect
+    .poll(() => bodies)
+    .toEqual([{ name: 'Launch', integrationId: '21', content: { channel: 'email' } }])
 })
 
 test('a saved Integration is shown, and switching back to the default clears it', async () => {
@@ -422,4 +498,34 @@ test('a saved Integration is shown, and switching back to the default clears it'
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.poll(() => bodies).toMatchObject([{ integrationId: null }])
+})
+
+test("a new broadcast asks for its Channel, then shows that Channel's editor", async () => {
+  serve('draft')
+
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, CREATE_ROUTE)
+
+  // Email is the one Channel with an enabled Integration (the SMS one sends no Broadcast), so it
+  // is chosen already, and the editor waits for the person to go on.
+  await expect.element(screen.getByRole('radio', { name: 'Email' })).toBeChecked()
+  await expect.element(screen.getByLabelText('Subject')).not.toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Continue' }).click()
+
+  await expect.element(screen.getByText('Channel: Email')).toBeInTheDocument()
+  await expect.element(screen.getByLabelText('Subject')).toBeInTheDocument()
+})
+
+test('with no enabled Integration no Channel is offered, and the way to add one is shown', async () => {
+  serve('draft')
+  worker.use(
+    handleSiteIntegrationsList({
+      body: [{ ...integration('1', 'Primary SMTP', true), enabled: false }],
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, CREATE_ROUTE)
+
+  await expect.element(screen.getByText(/No channel can send yet/)).toBeInTheDocument()
+  await expect.element(screen.getByRole('radio', { name: 'Email' })).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Continue' })).toBeDisabled()
 })

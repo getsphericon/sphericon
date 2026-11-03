@@ -41,9 +41,9 @@ func (Unsubscribe) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// The channel this opt-out applies to (email today; sms reserved).
+		// The channel this opt-out applies to (email or telegram; sms is reserved).
 		field.Enum("channel").
-			Values("email").
+			Values("email", "telegram").
 			Default("email"),
 		// Normalized (lower-cased) channel-specific destination address.
 		field.String("destination").

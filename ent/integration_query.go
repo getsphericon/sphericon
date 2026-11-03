@@ -13,10 +13,12 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
+	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -30,6 +32,8 @@ type IntegrationQuery struct {
 	withWorkspace        *WorkspaceQuery
 	withProviderLimiter  *ProviderLimiterQuery
 	withCapturedMessages *CapturedMessageQuery
+	withBindings         *BindingQuery
+	withStartTokens      *StartTokenQuery
 	modifiers            []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -126,6 +130,50 @@ func (_q *IntegrationQuery) QueryCapturedMessages() *CapturedMessageQuery {
 			sqlgraph.From(integration.Table, integration.FieldID, selector),
 			sqlgraph.To(capturedmessage.Table, capturedmessage.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, integration.CapturedMessagesTable, integration.CapturedMessagesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBindings chains the current query on the "bindings" edge.
+func (_q *IntegrationQuery) QueryBindings() *BindingQuery {
+	query := (&BindingClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(integration.Table, integration.FieldID, selector),
+			sqlgraph.To(binding.Table, binding.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, integration.BindingsTable, integration.BindingsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryStartTokens chains the current query on the "start_tokens" edge.
+func (_q *IntegrationQuery) QueryStartTokens() *StartTokenQuery {
+	query := (&StartTokenClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(integration.Table, integration.FieldID, selector),
+			sqlgraph.To(starttoken.Table, starttoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, integration.StartTokensTable, integration.StartTokensColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -328,6 +376,8 @@ func (_q *IntegrationQuery) Clone() *IntegrationQuery {
 		withWorkspace:        _q.withWorkspace.Clone(),
 		withProviderLimiter:  _q.withProviderLimiter.Clone(),
 		withCapturedMessages: _q.withCapturedMessages.Clone(),
+		withBindings:         _q.withBindings.Clone(),
+		withStartTokens:      _q.withStartTokens.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -365,6 +415,28 @@ func (_q *IntegrationQuery) WithCapturedMessages(opts ...func(*CapturedMessageQu
 		opt(query)
 	}
 	_q.withCapturedMessages = query
+	return _q
+}
+
+// WithBindings tells the query-builder to eager-load the nodes that are connected to
+// the "bindings" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *IntegrationQuery) WithBindings(opts ...func(*BindingQuery)) *IntegrationQuery {
+	query := (&BindingClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withBindings = query
+	return _q
+}
+
+// WithStartTokens tells the query-builder to eager-load the nodes that are connected to
+// the "start_tokens" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *IntegrationQuery) WithStartTokens(opts ...func(*StartTokenQuery)) *IntegrationQuery {
+	query := (&StartTokenClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withStartTokens = query
 	return _q
 }
 
@@ -446,10 +518,12 @@ func (_q *IntegrationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	var (
 		nodes       = []*Integration{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [5]bool{
 			_q.withWorkspace != nil,
 			_q.withProviderLimiter != nil,
 			_q.withCapturedMessages != nil,
+			_q.withBindings != nil,
+			_q.withStartTokens != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -491,6 +565,20 @@ func (_q *IntegrationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 			func(n *Integration, e *CapturedMessage) {
 				n.Edges.CapturedMessages = append(n.Edges.CapturedMessages, e)
 			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withBindings; query != nil {
+		if err := _q.loadBindings(ctx, query, nodes,
+			func(n *Integration) { n.Edges.Bindings = []*Binding{} },
+			func(n *Integration, e *Binding) { n.Edges.Bindings = append(n.Edges.Bindings, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withStartTokens; query != nil {
+		if err := _q.loadStartTokens(ctx, query, nodes,
+			func(n *Integration) { n.Edges.StartTokens = []*StartToken{} },
+			func(n *Integration, e *StartToken) { n.Edges.StartTokens = append(n.Edges.StartTokens, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -568,6 +656,66 @@ func (_q *IntegrationQuery) loadCapturedMessages(ctx context.Context, query *Cap
 	}
 	query.Where(predicate.CapturedMessage(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(integration.CapturedMessagesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.IntegrationID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "integration_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *IntegrationQuery) loadBindings(ctx context.Context, query *BindingQuery, nodes []*Integration, init func(*Integration), assign func(*Integration, *Binding)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Integration)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(binding.FieldIntegrationID)
+	}
+	query.Where(predicate.Binding(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(integration.BindingsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.IntegrationID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "integration_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *IntegrationQuery) loadStartTokens(ctx context.Context, query *StartTokenQuery, nodes []*Integration, init func(*Integration), assign func(*Integration, *StartToken)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Integration)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(starttoken.FieldIntegrationID)
+	}
+	query.Where(predicate.StartToken(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(integration.StartTokensColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

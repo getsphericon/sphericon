@@ -102,6 +102,38 @@ func TestWriteSamplePrintsTheDeliveryNotices(t *testing.T) {
 	assert.Contains(t, out.String(), "sending_domain=news.example.com")
 }
 
+// A sample of the chat Preset (testdata/custom/chat.yaml) carries one fact of each kind it maps.
+func TestWriteSamplePrintsInboundMessagesAndReachabilityChanges(t *testing.T) {
+	p := openPreset(t, "testdata/custom/chat.yaml")
+	header := http.Header{}
+	header.Set("X-Token", "chat-token")
+	body := `{"events":[{"type":"message","event_id":"7","from":42,"chat":43,"message":11,"text":"/stop"},` +
+		`{"type":"button","event_id":"8","from":42,"chat":43,"message":12,"data":"unsubscribe"},` +
+		`{"type":"blocked","event_id":"9","from":42},{"type":"unblocked","event_id":"10","from":44}]}`
+	var out bytes.Buffer
+
+	err := p.WriteSample(t.Context(), &out, preset.Request{Header: header, Body: []byte(body)}, preset.Params{"token": "chat-token"}, time.Now())
+
+	require.NoError(t, err)
+	assert.Equal(t, `inbound_message telegram 42 id=7 chat_id=43 message_id=11 text="/stop" payload=""
+inbound_message telegram 42 id=8 chat_id=43 message_id=12 text="" payload="unsubscribe"
+reachability_change 42 id=9 unreachable reason=blocked
+reachability_change 44 id=10 reachable
+`, out.String())
+}
+
+func TestWriteSampleSaysWhenAVerifiedRequestCarriesNoFacts(t *testing.T) {
+	p := openPreset(t, "testdata/custom/chat.yaml")
+	header := http.Header{}
+	header.Set("X-Token", "chat-token")
+	var out bytes.Buffer
+
+	err := p.WriteSample(t.Context(), &out, preset.Request{Header: header, Body: []byte(`{"events":[]}`)}, preset.Params{"token": "chat-token"}, time.Now())
+
+	require.NoError(t, err)
+	assert.Equal(t, "verified, no facts (an event the Preset does not handle)\n", out.String())
+}
+
 func TestWriteSamplePrintsTheReasonOfARefusal(t *testing.T) {
 	req, params, now := genericSample("v1,wrong")
 	p := openPreset(t, "generic")

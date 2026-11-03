@@ -43,16 +43,26 @@ var (
 	ErrHeld = validation.Refuse("outbound: sending is held", i18n.ErrorsSendingHeld)
 	// ErrTestRefused: the System sender will not make this Test send (ADR 0041).
 	ErrTestRefused = validation.Refuse("outbound: the test send is refused", i18n.ErrorsTestSendRefused)
+	// ErrNoTestSend: the Broadcast's Channel has no Test send. Telegram has none: the author would
+	// need a Binding of their own (ADR 0080).
+	ErrNoTestSend = validation.Refuse("outbound: the channel has no test send", i18n.ErrorsBroadcastNoTestSend)
 )
 
 // SendBroadcastTest sends the Broadcast to one address with sample merge data for an author to
-// preview it. A Held or Refused Test send is ErrHeld or ErrTestRefused made With the reason worded
+// preview it. A Broadcast of a Channel with no Test send is ErrNoTestSend. A Held or Refused Test send is ErrHeld or ErrTestRefused made With the reason worded
 // by Detail, content that does not render is emailrender.ErrInvalidContent with its reason, and a
 // failed send is returned as the error it is, so every surface answers a refused preview the same
 // way. The System sender's cap is no error: the Result is a Deferral whose Wait and Limit say when
 // capacity returns.
 func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, to string, asker *Asker) (Result, error) {
-	content := BroadcastContent(b)
+	stored, err := BroadcastContent(b)
+	if err != nil {
+		return Result{}, err
+	}
+	content, ok := stored.(EmailContent)
+	if !ok {
+		return Result{}, ErrNoTestSend
+	}
 	content.Subject = TestSubjectPrefix + content.Subject
 	res, err := m.SendTest(ctx, s, TestRequest{
 		To:      to,

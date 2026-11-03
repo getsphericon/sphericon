@@ -32,10 +32,26 @@ func clicked(t *testing.T, env *testhelper.TestEnv, click events.EmailEngagement
 	click.ContactID = fixtures.ContactAliceID
 	click.Email = fixtures.ContactAliceEmail
 	click.URL = "https://shop.test/"
+	store(t, env, &click, at)
+}
+
+// clickedOnTelegram stores one telegram.clicked Event of Alice at the given time.
+func clickedOnTelegram(t *testing.T, env *testhelper.TestEnv, click events.TelegramClicked, at time.Time) {
+	t.Helper()
+	click.WorkspaceID = fixtures.AcmeID
+	click.ContactID = fixtures.ContactAliceID
+	click.Email = fixtures.ContactAliceEmail
+	click.URL = "https://shop.test/"
+	store(t, env, &click, at)
+}
+
+// store publishes the Event and stores it as the persist subscriber would, at the given time.
+func store(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent, at time.Time) {
+	t.Helper()
 	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
-		return pub.Publish(t.Context(), &click)
+		return pub.Publish(t.Context(), ev)
 	}))
-	sent := env.OutboxEnvelopes(t, events.NameEmailClicked)
+	sent := env.OutboxEnvelopes(t, ev.EventName())
 	stored := sent[len(sent)-1]
 	stored.OccurredAt = at
 	require.NoError(t, events.Persist(t.Context(), env.DB, stored))
@@ -238,4 +254,39 @@ func TestABackfilledOrderWhoseClickWasPrunedIsUnattributed(t *testing.T) {
 	assert.Zero(t, b)
 	assert.Zero(t, a)
 	assert.Nil(t, second.CreditedClickAt)
+}
+
+func TestAnOrderIsCreditedToTheSourceOfTheLastClickWhateverTheChannel(t *testing.T) {
+	t.Run("a Telegram click after an email click", func(t *testing.T) {
+		env := testhelper.Setup(t)
+		clicked(t, env, events.EmailEngagement{BroadcastID: fixtures.BroadcastSentUntrackedID}, ago(3*day))
+		clickedOnTelegram(t, env, events.TelegramClicked{AutomationID: fixtures.AutomationWelcomeSeriesID}, ago(day))
+
+		b, a := creditedTo(placeOrder(t, env, "C-1"))
+
+		assert.Zero(t, b)
+		assert.EqualValues(t, fixtures.AutomationWelcomeSeriesID, a, "the Telegram message's source")
+	})
+
+	t.Run("an email click after a Telegram click", func(t *testing.T) {
+		env := testhelper.Setup(t)
+		clickedOnTelegram(t, env, events.TelegramClicked{AutomationID: fixtures.AutomationWelcomeSeriesID}, ago(3*day))
+		clicked(t, env, events.EmailEngagement{BroadcastID: fixtures.BroadcastSentUntrackedID}, ago(day))
+
+		b, a := creditedTo(placeOrder(t, env, "C-1"))
+
+		assert.EqualValues(t, fixtures.BroadcastSentUntrackedID, b, "the email's source")
+		assert.Zero(t, a)
+	})
+
+	t.Run("a Telegram click by software credits nothing", func(t *testing.T) {
+		env := testhelper.Setup(t)
+		clicked(t, env, events.EmailEngagement{BroadcastID: fixtures.BroadcastSentUntrackedID}, ago(3*day))
+		clickedOnTelegram(t, env, events.TelegramClicked{AutomationID: fixtures.AutomationWelcomeSeriesID, Machine: true}, ago(day))
+
+		b, a := creditedTo(placeOrder(t, env, "C-1"))
+
+		assert.EqualValues(t, fixtures.BroadcastSentUntrackedID, b, "the preview fetcher's click is passed over")
+		assert.Zero(t, a)
+	})
 }

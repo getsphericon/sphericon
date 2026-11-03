@@ -288,7 +288,6 @@ var (
 		{Name: "exit_events", Type: field.TypeJSON, Default: "[]"},
 		{Name: "goal_event", Type: field.TypeString, Nullable: true},
 		{Name: "automation_id", Type: field.TypeInt64},
-		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// AutomationVersionsTable holds the schema information for the "automation_versions" table.
@@ -304,14 +303,8 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "automation_versions_integrations_integration",
-				Columns:    []*schema.Column{AutomationVersionsColumns[9]},
-				RefColumns: []*schema.Column{IntegrationsColumns[0]},
-				OnDelete:   schema.Restrict,
-			},
-			{
 				Symbol:     "automation_versions_workspaces_automation_versions",
-				Columns:    []*schema.Column{AutomationVersionsColumns[10]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[9]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -320,7 +313,7 @@ var (
 			{
 				Name:    "automation_versions_workspace_id_automation_id_version",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationVersionsColumns[10], AutomationVersionsColumns[8], AutomationVersionsColumns[3]},
+				Columns: []*schema.Column{AutomationVersionsColumns[9], AutomationVersionsColumns[8], AutomationVersionsColumns[3]},
 			},
 			{
 				Name:    "automationversion_automation_id",
@@ -330,12 +323,76 @@ var (
 			{
 				Name:    "automationversion_workspace_id_trigger_event",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[10], AutomationVersionsColumns[5]},
+				Columns: []*schema.Column{AutomationVersionsColumns[9], AutomationVersionsColumns[5]},
+			},
+		},
+	}
+	// BindingsColumns holds the columns for the "bindings" table.
+	BindingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"telegram"}},
+		{Name: "destination", Type: field.TypeString},
+		{Name: "chat_id", Type: field.TypeString},
+		{Name: "announced", Type: field.TypeBool, Default: false},
+		{Name: "bound_at", Type: field.TypeTime},
+		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "integration_id", Type: field.TypeInt64},
+		{Name: "visitor_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// BindingsTable holds the schema information for the "bindings" table.
+	BindingsTable = &schema.Table{
+		Name:       "bindings",
+		Columns:    BindingsColumns,
+		PrimaryKey: []*schema.Column{BindingsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "bindings_contacts_bindings",
+				Columns:    []*schema.Column{BindingsColumns[8]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.Cascade,
 			},
 			{
-				Name:    "automationversion_integration_id",
+				Symbol:     "bindings_integrations_bindings",
+				Columns:    []*schema.Column{BindingsColumns[9]},
+				RefColumns: []*schema.Column{IntegrationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "bindings_visitors_bindings",
+				Columns:    []*schema.Column{BindingsColumns[10]},
+				RefColumns: []*schema.Column{VisitorsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "bindings_workspaces_bindings",
+				Columns:    []*schema.Column{BindingsColumns[11]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "bindings_integration_destination",
+				Unique:  true,
+				Columns: []*schema.Column{BindingsColumns[9], BindingsColumns[4]},
+			},
+			{
+				Name:    "bindings_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[9]},
+				Columns: []*schema.Column{BindingsColumns[8]},
+			},
+			{
+				Name:    "bindings_visitor_id",
+				Unique:  false,
+				Columns: []*schema.Column{BindingsColumns[10]},
+			},
+			{
+				Name:    "binding_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{BindingsColumns[11]},
 			},
 		},
 	}
@@ -383,10 +440,16 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "subject", Type: field.TypeString, Default: ""},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
+		{Name: "subject", Type: field.TypeString, Nullable: true},
 		{Name: "from_name", Type: field.TypeString, Nullable: true},
 		{Name: "from_email", Type: field.TypeString, Nullable: true},
-		{Name: "body", Type: field.TypeString, Default: ""},
+		{Name: "text", Type: field.TypeString, Nullable: true},
+		{Name: "image_url", Type: field.TypeString, Nullable: true},
+		{Name: "buttons", Type: field.TypeJSON, Nullable: true},
+		{Name: "link_preview", Type: field.TypeBool, Default: true},
+		{Name: "unsubscribe_button", Type: field.TypeString, Nullable: true},
+		{Name: "body", Type: field.TypeString, Nullable: true},
 		{Name: "doc", Type: field.TypeJSON, Nullable: true},
 		{Name: "editor_version", Type: field.TypeString, Nullable: true},
 		{Name: "condition", Type: field.TypeString, Nullable: true},
@@ -394,7 +457,7 @@ var (
 		{Name: "scheduled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
 		{Name: "failed_at", Type: field.TypeTime, Nullable: true},
-		{Name: "hold_reason", Type: field.TypeEnum, Nullable: true, Enums: []string{"workspace_suspended", "workspace_pending_deletion", "staff_hold", "no_integration", "unverified_domain", "provider_stopped"}},
+		{Name: "hold_reason", Type: field.TypeEnum, Nullable: true, Enums: []string{"workspace_suspended", "workspace_pending_deletion", "staff_hold", "no_integration", "unverified_domain", "provider_stopped", "provider_refused"}},
 		{Name: "last_scheduled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "segment_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
@@ -408,19 +471,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcasts_segments_segment",
-				Columns:    []*schema.Column{BroadcastsColumns[18]},
+				Columns:    []*schema.Column{BroadcastsColumns[24]},
 				RefColumns: []*schema.Column{SegmentsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_integrations_integration",
-				Columns:    []*schema.Column{BroadcastsColumns[19]},
+				Columns:    []*schema.Column{BroadcastsColumns[25]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_workspaces_broadcasts",
-				Columns:    []*schema.Column{BroadcastsColumns[20]},
+				Columns:    []*schema.Column{BroadcastsColumns[26]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -429,17 +492,17 @@ var (
 			{
 				Name:    "broadcast_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[20]},
+				Columns: []*schema.Column{BroadcastsColumns[26]},
 			},
 			{
 				Name:    "broadcast_segment_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[18]},
+				Columns: []*schema.Column{BroadcastsColumns[24]},
 			},
 			{
 				Name:    "broadcast_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[19]},
+				Columns: []*schema.Column{BroadcastsColumns[25]},
 			},
 		},
 	}
@@ -572,7 +635,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "provenance", Type: field.TypeEnum, Enums: []string{"double_opt_in", "grandfathered", "imported"}},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
@@ -1059,8 +1122,8 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "sms"}, Default: "email"},
-		{Name: "provider", Type: field.TypeEnum, Enums: []string{"smtp", "ses", "inbox"}},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "sms", "telegram"}, Default: "email"},
+		{Name: "provider", Type: field.TypeEnum, Enums: []string{"smtp", "ses", "inbox", "telegram"}},
 		{Name: "config_encrypted", Type: field.TypeString},
 		{Name: "preset", Type: field.TypeString, Nullable: true},
 		{Name: "params_encrypted", Type: field.TypeString, Nullable: true},
@@ -1073,6 +1136,7 @@ var (
 		{Name: "provider_max_per_day", Type: field.TypeInt, Nullable: true},
 		{Name: "provider_enforcement", Type: field.TypeEnum, Nullable: true, Enums: []string{"probation", "shutdown"}},
 		{Name: "provider_sandbox", Type: field.TypeBool, Default: false},
+		{Name: "provider_refused_at", Type: field.TypeTime, Nullable: true},
 		{Name: "provider_quota_checked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "provider_quota_failed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -1085,7 +1149,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "integrations_workspaces_integrations",
-				Columns:    []*schema.Column{IntegrationsColumns[21]},
+				Columns:    []*schema.Column{IntegrationsColumns[22]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1094,7 +1158,7 @@ var (
 			{
 				Name:    "integration_workspace_id_channel",
 				Unique:  true,
-				Columns: []*schema.Column{IntegrationsColumns[21], IntegrationsColumns[5]},
+				Columns: []*schema.Column{IntegrationsColumns[22], IntegrationsColumns[5]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "is_default AND discarded_at IS NULL",
 				},
@@ -1102,12 +1166,12 @@ var (
 			{
 				Name:    "integration_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{IntegrationsColumns[21]},
+				Columns: []*schema.Column{IntegrationsColumns[22]},
 			},
 			{
 				Name:    "integrations_one_inbox_per_workspace",
 				Unique:  true,
-				Columns: []*schema.Column{IntegrationsColumns[21], IntegrationsColumns[6]},
+				Columns: []*schema.Column{IntegrationsColumns[22], IntegrationsColumns[6]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "provider = 'inbox' AND discarded_at IS NULL",
 				},
@@ -1564,7 +1628,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"broadcast", "automation", "transactional"}},
 		{Name: "idempotency_key", Type: field.TypeString},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString, Nullable: true},
 		{Name: "sending_source", Type: field.TypeString, Nullable: true},
 		{Name: "sending_domain", Type: field.TypeString, Nullable: true},
@@ -2333,12 +2397,84 @@ var (
 		Columns:    StaffMembersColumns,
 		PrimaryKey: []*schema.Column{StaffMembersColumns[0]},
 	}
+	// StartTokensColumns holds the columns for the "start_tokens" table.
+	StartTokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "token_hash", Type: field.TypeString},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "used_at", Type: field.TypeTime, Nullable: true},
+		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "integration_id", Type: field.TypeInt64},
+		{Name: "visitor_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// StartTokensTable holds the schema information for the "start_tokens" table.
+	StartTokensTable = &schema.Table{
+		Name:       "start_tokens",
+		Columns:    StartTokensColumns,
+		PrimaryKey: []*schema.Column{StartTokensColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "start_tokens_contacts_start_tokens",
+				Columns:    []*schema.Column{StartTokensColumns[6]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "start_tokens_integrations_start_tokens",
+				Columns:    []*schema.Column{StartTokensColumns[7]},
+				RefColumns: []*schema.Column{IntegrationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "start_tokens_visitors_start_tokens",
+				Columns:    []*schema.Column{StartTokensColumns[8]},
+				RefColumns: []*schema.Column{VisitorsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "start_tokens_workspaces_start_tokens",
+				Columns:    []*schema.Column{StartTokensColumns[9]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "start_tokens_token_hash",
+				Unique:  true,
+				Columns: []*schema.Column{StartTokensColumns[9], StartTokensColumns[3]},
+			},
+			{
+				Name:    "start_tokens_integration_id",
+				Unique:  false,
+				Columns: []*schema.Column{StartTokensColumns[7]},
+			},
+			{
+				Name:    "start_tokens_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{StartTokensColumns[6]},
+			},
+			{
+				Name:    "start_tokens_visitor_id",
+				Unique:  false,
+				Columns: []*schema.Column{StartTokensColumns[8]},
+			},
+			{
+				Name:    "start_tokens_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{StartTokensColumns[4]},
+			},
+		},
+	}
 	// SuppressionsColumns holds the columns for the "suppressions" table.
 	SuppressionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "reason", Type: field.TypeEnum, Enums: []string{"bounce", "complaint", "manual"}, Default: "manual"},
 		{Name: "lifted_at", Type: field.TypeTime, Nullable: true},
@@ -2411,6 +2547,48 @@ var (
 				Name:    "tags_workspace_id_name",
 				Unique:  true,
 				Columns: []*schema.Column{TagsColumns[4], TagsColumns[3]},
+			},
+		},
+	}
+	// TrackedLinksColumns holds the columns for the "tracked_links" table.
+	TrackedLinksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "token", Type: field.TypeString, Unique: true},
+		{Name: "url", Type: field.TypeString, Size: 2147483647},
+		{Name: "outbound_message_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// TrackedLinksTable holds the schema information for the "tracked_links" table.
+	TrackedLinksTable = &schema.Table{
+		Name:       "tracked_links",
+		Columns:    TrackedLinksColumns,
+		PrimaryKey: []*schema.Column{TrackedLinksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tracked_links_outbound_messages_tracked_links",
+				Columns:    []*schema.Column{TrackedLinksColumns[5]},
+				RefColumns: []*schema.Column{OutboundMessagesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "tracked_links_workspaces_tracked_links",
+				Columns:    []*schema.Column{TrackedLinksColumns[6]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tracked_links_outbound_message_id",
+				Unique:  false,
+				Columns: []*schema.Column{TrackedLinksColumns[5]},
+			},
+			{
+				Name:    "trackedlink_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{TrackedLinksColumns[6]},
 			},
 		},
 	}
@@ -2492,7 +2670,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "sending_source", Type: field.TypeString},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
@@ -2786,6 +2964,7 @@ var (
 		AutomationsTable,
 		AutomationRunsTable,
 		AutomationVersionsTable,
+		BindingsTable,
 		BrandKitsTable,
 		BroadcastsTable,
 		BroadcastRecipientsTable,
@@ -2832,8 +3011,10 @@ var (
 		SignupItemsTable,
 		SignupSurveyResponsesTable,
 		StaffMembersTable,
+		StartTokensTable,
 		SuppressionsTable,
 		TagsTable,
+		TrackedLinksTable,
 		TrackingDomainsTable,
 		TrackingHostChangesTable,
 		UnsubscribesTable,
@@ -2888,10 +3069,20 @@ func init() {
 		"automation_runs_status_check":       "status IN ('active', 'completed', 'failed', 'exited', 'goal_reached')",
 	}
 	AutomationVersionsTable.ForeignKeys[0].RefTable = AutomationsTable
-	AutomationVersionsTable.ForeignKeys[1].RefTable = IntegrationsTable
-	AutomationVersionsTable.ForeignKeys[2].RefTable = WorkspacesTable
+	AutomationVersionsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	AutomationVersionsTable.Annotation = &entsql.Annotation{
 		Table: "automation_versions",
+	}
+	BindingsTable.ForeignKeys[0].RefTable = ContactsTable
+	BindingsTable.ForeignKeys[1].RefTable = IntegrationsTable
+	BindingsTable.ForeignKeys[2].RefTable = VisitorsTable
+	BindingsTable.ForeignKeys[3].RefTable = WorkspacesTable
+	BindingsTable.Annotation = &entsql.Annotation{
+		Table: "bindings",
+	}
+	BindingsTable.Annotation.Checks = map[string]string{
+		"bindings_channel_check": "channel IN ('telegram')",
+		"bindings_owner_check":   "(contact_id IS NULL) <> (visitor_id IS NULL)",
 	}
 	BrandKitsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	BrandKitsTable.Annotation = &entsql.Annotation{
@@ -2904,8 +3095,10 @@ func init() {
 		Table: "broadcasts",
 	}
 	BroadcastsTable.Annotation.Checks = map[string]string{
+		"broadcasts_channel_check":      "channel IN ('email', 'telegram')",
+		"broadcasts_content_check":      "(channel = 'email' AND subject IS NOT NULL AND body IS NOT NULL AND text IS NULL AND buttons IS NULL AND image_url IS NULL AND unsubscribe_button IS NULL) OR (channel = 'telegram' AND text IS NOT NULL AND buttons IS NOT NULL AND subject IS NULL AND body IS NULL AND from_name IS NULL AND from_email IS NULL AND doc IS NULL AND editor_version IS NULL)",
 		"broadcasts_failed_at_check":    "status <> 'failed' OR failed_at IS NOT NULL",
-		"broadcasts_hold_reason_check":  "hold_reason IN ('workspace_suspended', 'workspace_pending_deletion', 'staff_hold', 'no_integration', 'unverified_domain', 'provider_stopped')",
+		"broadcasts_hold_reason_check":  "hold_reason IN ('workspace_suspended', 'workspace_pending_deletion', 'staff_hold', 'no_integration', 'unverified_domain', 'provider_stopped', 'provider_refused')",
 		"broadcasts_scheduled_at_check": "status <> 'scheduled' OR scheduled_at IS NOT NULL",
 		"broadcasts_sent_at_check":      "status <> 'sent' OR sent_at IS NOT NULL",
 		"broadcasts_status_check":       "status IN ('draft', 'scheduled', 'sending', 'sent', 'failed')",
@@ -2931,7 +3124,7 @@ func init() {
 		Table: "confirmations",
 	}
 	ConfirmationsTable.Annotation.Checks = map[string]string{
-		"confirmations_channel_check":    "channel IN ('email')",
+		"confirmations_channel_check":    "channel IN ('email', 'telegram')",
 		"confirmations_provenance_check": "provenance IN ('double_opt_in', 'grandfathered', 'imported')",
 	}
 	ConsentRecordsTable.ForeignKeys[0].RefTable = LegalDocumentVersionsTable
@@ -2998,8 +3191,8 @@ func init() {
 		Table: "integrations",
 	}
 	IntegrationsTable.Annotation.Checks = map[string]string{
-		"integrations_channel_check":              "channel IN ('email', 'sms')",
-		"integrations_provider_check":             "provider IN ('smtp', 'ses', 'inbox')",
+		"integrations_channel_check":              "channel IN ('email', 'sms', 'telegram')",
+		"integrations_provider_check":             "provider IN ('smtp', 'ses', 'inbox', 'telegram')",
 		"integrations_provider_enforcement_check": "provider_enforcement IN ('probation', 'shutdown')",
 	}
 	InvitationsTable.ForeignKeys[0].RefTable = UsersTable
@@ -3074,7 +3267,7 @@ func init() {
 		Table: "outbound_messages",
 	}
 	OutboundMessagesTable.Annotation.Checks = map[string]string{
-		"outbound_messages_channel_check": "channel IN ('email')",
+		"outbound_messages_channel_check": "channel IN ('email', 'telegram')",
 		"outbound_messages_kind_check":    "kind IN ('broadcast', 'automation', 'transactional')",
 		"outbound_messages_status_check":  "status IN ('pending', 'sent', 'skipped', 'failed')",
 	}
@@ -3168,18 +3361,33 @@ func init() {
 	StaffMembersTable.Annotation = &entsql.Annotation{
 		Table: "staff_members",
 	}
+	StartTokensTable.ForeignKeys[0].RefTable = ContactsTable
+	StartTokensTable.ForeignKeys[1].RefTable = IntegrationsTable
+	StartTokensTable.ForeignKeys[2].RefTable = VisitorsTable
+	StartTokensTable.ForeignKeys[3].RefTable = WorkspacesTable
+	StartTokensTable.Annotation = &entsql.Annotation{
+		Table: "start_tokens",
+	}
+	StartTokensTable.Annotation.Checks = map[string]string{
+		"start_tokens_owner_check": "(contact_id IS NULL) <> (visitor_id IS NULL)",
+	}
 	SuppressionsTable.ForeignKeys[0].RefTable = ContactsTable
 	SuppressionsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	SuppressionsTable.Annotation = &entsql.Annotation{
 		Table: "suppressions",
 	}
 	SuppressionsTable.Annotation.Checks = map[string]string{
-		"suppressions_channel_check": "channel IN ('email')",
+		"suppressions_channel_check": "channel IN ('email', 'telegram')",
 		"suppressions_reason_check":  "reason IN ('bounce', 'complaint', 'manual')",
 	}
 	TagsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	TagsTable.Annotation = &entsql.Annotation{
 		Table: "tags",
+	}
+	TrackedLinksTable.ForeignKeys[0].RefTable = OutboundMessagesTable
+	TrackedLinksTable.ForeignKeys[1].RefTable = WorkspacesTable
+	TrackedLinksTable.Annotation = &entsql.Annotation{
+		Table: "tracked_links",
 	}
 	TrackingDomainsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	TrackingDomainsTable.Annotation = &entsql.Annotation{
@@ -3203,7 +3411,7 @@ func init() {
 		Table: "unsubscribes",
 	}
 	UnsubscribesTable.Annotation.Checks = map[string]string{
-		"unsubscribes_channel_check": "channel IN ('email')",
+		"unsubscribes_channel_check": "channel IN ('email', 'telegram')",
 	}
 	UsagesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	UsagesTable.Annotation = &entsql.Annotation{

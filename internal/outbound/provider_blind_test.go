@@ -25,7 +25,7 @@ func TestSendPathDoesNotCompareAProviderName(t *testing.T) {
 
 // notProviderNames are the Provider-prefixed names that name no provider: the provider's id of a
 // message, and the hold of a provider that stopped the account, whichever provider it is.
-var notProviderNames = map[string]bool{"ProviderMessageID": true, "ProviderStopped": true}
+var notProviderNames = map[string]bool{"ProviderMessageID": true, "ProviderStopped": true, "ProviderRefused": true, "ProviderRefusedAt": true}
 
 // providerNameUses lists where the non-test files among files name a provider.
 func providerNameUses(t *testing.T, files []string) []string {
