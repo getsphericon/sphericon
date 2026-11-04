@@ -2106,31 +2106,31 @@ func (c *ConverterImpl) SmsBroadcastContentToResource(source *ent.Broadcast) sit
 	}
 	return siteapiSmsBroadcastContent
 }
-func (c *ConverterImpl) SmsConfirmationToResource(source *ent.Confirmation) site.SiteSmsConfirmation {
-	var siteapiSiteSmsConfirmation site.SiteSmsConfirmation
+func (c *ConverterImpl) SmsConfirmationToResource(source *ent.Confirmation) site.SmsConfirmation {
+	var siteapiSmsConfirmation site.SmsConfirmation
 	if source != nil {
-		siteapiSiteSmsConfirmation.Provenance = c.ConfirmationProvenanceToResource((*source).Provenance)
-		siteapiSiteSmsConfirmation.Wording = optNilString((*source).Wording)
-		siteapiSiteSmsConfirmation.Source = optNilString((*source).Source)
-		siteapiSiteSmsConfirmation.Brand = optNilString((*source).Brand)
-		siteapiSiteSmsConfirmation.ConfirmedAt = timestamp((*source).CreatedAt)
+		siteapiSmsConfirmation.Provenance = c.ConfirmationProvenanceToResource((*source).Provenance)
+		siteapiSmsConfirmation.Wording = optNilString((*source).Wording)
+		siteapiSmsConfirmation.Source = optNilString((*source).Source)
+		siteapiSmsConfirmation.Brand = optNilString((*source).Brand)
+		siteapiSmsConfirmation.ConfirmedAt = timestamp((*source).CreatedAt)
 	}
-	return siteapiSiteSmsConfirmation
+	return siteapiSmsConfirmation
 }
-func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) site.SiteSmsConsent {
-	var siteapiSiteSmsConsent site.SiteSmsConsent
-	siteapiSiteSmsConsent.Phone = optNilString(source.Phone)
-	siteapiSiteSmsConsent.Confirmation = optNilSmsConfirmation(c, source.Confirmation)
-	siteapiSiteSmsConsent.OptOut = optNilSmsOptOut(c, source.OptOut)
-	return siteapiSiteSmsConsent
+func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) site.SmsConsent {
+	var siteapiSmsConsent site.SmsConsent
+	siteapiSmsConsent.Phone = optNilString(source.Phone)
+	siteapiSmsConsent.Confirmation = optNilSmsConfirmation(c, source.Confirmation)
+	siteapiSmsConsent.OptOut = optNilSmsOptOut(c, source.OptOut)
+	return siteapiSmsConsent
 }
-func (c *ConverterImpl) SmsOptOutToResource(source *consent.SMSOptOut) site.SiteSmsOptOut {
-	var siteapiSiteSmsOptOut site.SiteSmsOptOut
+func (c *ConverterImpl) SmsOptOutToResource(source *consent.SMSOptOut) site.SmsOptOut {
+	var siteapiSmsOptOut site.SmsOptOut
 	if source != nil {
-		siteapiSiteSmsOptOut.Via = c.OptOutViaToResource((*source).Via)
-		siteapiSiteSmsOptOut.OptedOutAt = timestamp((*source).OptedOutAt)
+		siteapiSmsOptOut.Via = c.OptOutViaToResource((*source).Via)
+		siteapiSmsOptOut.OptedOutAt = timestamp((*source).OptedOutAt)
 	}
-	return siteapiSiteSmsOptOut
+	return siteapiSmsOptOut
 }
 func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) site.SiteSmtpConfig {
 	var siteapiSiteSmtpConfig site.SiteSmtpConfig

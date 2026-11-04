@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
@@ -90,6 +91,8 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optNilSendCap
 // goverter:extend optNilContactSource
 // goverter:extend optNilOptOutVia
+// goverter:extend optNilSmsConfirmation
+// goverter:extend optNilSmsOptOut
 // goverter:extend optNilHoldReason
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
@@ -366,6 +369,10 @@ type Converter interface {
 	SuppressionToResource(source *ent.Suppression) externalapi.SuppressionResource
 	UnsubscribeToResource(source *ent.Unsubscribe) externalapi.UnsubscribeResource
 	ConfirmationToResource(source *ent.Confirmation) externalapi.ConfirmationResource
+	SmsConsentToResource(source consent.ContactSMS) externalapi.SmsConsent
+	SmsOptOutToResource(source *consent.SMSOptOut) externalapi.SmsOptOut
+	// goverter:map CreatedAt ConfirmedAt
+	SmsConfirmationToResource(source *ent.Confirmation) externalapi.SmsConfirmation
 
 	// The Data export members (ADR 0021): the contract's typed projection of the
 	// stored rows, so the ent JSON tags are never the public format.
@@ -842,6 +849,22 @@ func ruleResults(c Converter, stored string) []externalapi.RuleActionResult {
 
 func optNilContactSource(c Converter, v *contact.Source) externalapi.OptNilContactExportSource {
 	return convert.OptVia[externalapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
+}
+
+// optNilSmsConfirmation is absent exactly when the phone has no SMS Confirmation.
+func optNilSmsConfirmation(c Converter, v *ent.Confirmation) externalapi.OptNilSmsConfirmation {
+	if v == nil {
+		return externalapi.OptNilSmsConfirmation{}
+	}
+	return externalapi.NewOptNilSmsConfirmation(c.SmsConfirmationToResource(v))
+}
+
+// optNilSmsOptOut is absent exactly when the phone has no SMS opt-out.
+func optNilSmsOptOut(c Converter, v *consent.SMSOptOut) externalapi.OptNilSmsOptOut {
+	if v == nil {
+		return externalapi.OptNilSmsOptOut{}
+	}
+	return externalapi.NewOptNilSmsOptOut(c.SmsOptOutToResource(v))
 }
 
 func optNilOptOutVia(c Converter, v *unsubscribe.Via) externalapi.OptNilOptOutVia {

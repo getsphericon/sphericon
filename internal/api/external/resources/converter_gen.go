@@ -28,6 +28,7 @@ import (
 	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	consent "github.com/getsphericon/sphericon/internal/consent"
 	emaildoc "github.com/getsphericon/sphericon/internal/emaildoc"
 	emailrender "github.com/getsphericon/sphericon/internal/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/holdreason"
@@ -1358,6 +1359,32 @@ func (c *ConverterImpl) SmsBroadcastContentToResource(source *ent.Broadcast) ext
 		externalapiSmsBroadcastContent.LinkTracking = (*source).LinkTracking
 	}
 	return externalapiSmsBroadcastContent
+}
+func (c *ConverterImpl) SmsConfirmationToResource(source *ent.Confirmation) external.SmsConfirmation {
+	var externalapiSmsConfirmation external.SmsConfirmation
+	if source != nil {
+		externalapiSmsConfirmation.Provenance = c.ConfirmationProvenanceToResource((*source).Provenance)
+		externalapiSmsConfirmation.Wording = optNilString((*source).Wording)
+		externalapiSmsConfirmation.Source = optNilString((*source).Source)
+		externalapiSmsConfirmation.Brand = optNilString((*source).Brand)
+		externalapiSmsConfirmation.ConfirmedAt = timestamp((*source).CreatedAt)
+	}
+	return externalapiSmsConfirmation
+}
+func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) external.SmsConsent {
+	var externalapiSmsConsent external.SmsConsent
+	externalapiSmsConsent.Phone = optNilString(source.Phone)
+	externalapiSmsConsent.Confirmation = optNilSmsConfirmation(c, source.Confirmation)
+	externalapiSmsConsent.OptOut = optNilSmsOptOut(c, source.OptOut)
+	return externalapiSmsConsent
+}
+func (c *ConverterImpl) SmsOptOutToResource(source *consent.SMSOptOut) external.SmsOptOut {
+	var externalapiSmsOptOut external.SmsOptOut
+	if source != nil {
+		externalapiSmsOptOut.Via = c.OptOutViaToResource((*source).Via)
+		externalapiSmsOptOut.OptedOutAt = timestamp((*source).OptedOutAt)
+	}
+	return externalapiSmsOptOut
 }
 func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) external.SmtpConfig {
 	var externalapiSmtpConfig external.SmtpConfig

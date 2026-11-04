@@ -35,13 +35,13 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 	optedOut, err := member.SiteSmsConsentsOptOut(ctx, siteapi.SiteSmsConsentsOptOutParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(fixtures.ContactTexterID)})
 	require.NoError(t, err)
 
-	before, ok := initial.(*siteapi.SiteSmsConsent)
+	before, ok := initial.(*siteapi.SmsConsent)
 	require.Truef(t, ok, "got %T", initial)
 	assert.Equal(t, fixtures.ContactTexterPhone, before.Phone.Value)
 	assert.False(t, before.Confirmation.Set, "no consent yet")
 	assert.False(t, before.OptOut.Set, "no opt-out yet")
 
-	after, ok := confirmed.(*siteapi.SiteSmsConsent)
+	after, ok := confirmed.(*siteapi.SmsConsent)
 	require.Truef(t, ok, "got %T", confirmed)
 	assert.Equal(t, siteapi.ConfirmationProvenanceImported, after.Confirmation.Value.Provenance)
 	assert.Equal(t, "phone call", after.Confirmation.Value.Source.Value)
@@ -53,7 +53,7 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 	marketingConfirmed := env.OutboxCount(t, events.NameMarketingConfirmed, nil)
 	assert.Equal(t, 0, marketingConfirmed, "marketing.confirmed is email's")
 
-	stopped, ok := optedOut.(*siteapi.SiteSmsConsent)
+	stopped, ok := optedOut.(*siteapi.SmsConsent)
 	require.Truef(t, ok, "got %T", optedOut)
 	require.True(t, stopped.OptOut.Set, "opted out")
 	assert.Equal(t, siteapi.OptOutViaManual, stopped.OptOut.Value.Via, "recorded by hand: an off-channel opt-out")
@@ -74,7 +74,7 @@ func TestSMSConsentIsRefusedForAContactWithoutAPhoneAndNotFoundInAnotherWorkspac
 
 	assert.IsType(t, new(siteapi.SiteSmsConsentsOptOutUnprocessableEntity), noPhone)
 	assert.IsType(t, new(siteapi.SiteSmsConsentsGetNotFound), foreign)
-	none, ok := read.(*siteapi.SiteSmsConsent)
+	none, ok := read.(*siteapi.SmsConsent)
 	require.Truef(t, ok, "got %T", read)
 	assert.False(t, none.Phone.Set, "no phone")
 }

@@ -3415,34 +3415,6 @@ export const zSiteSetupProgress = z.object({
 });
 
 /**
- * The SMS Confirmation of a contact's phone: when and how the number consented, with the evidence it carries
- */
-export const zSiteSmsConfirmation = z.object({
-  provenance: zConfirmationProvenance,
-  wording: z.exactOptional(z.string().nullable()),
-  source: z.exactOptional(z.string().nullable()),
-  brand: z.exactOptional(z.string().nullable()),
-  confirmedAt: zTimestamp
-});
-
-/**
- * The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped
- */
-export const zSiteSmsOptOut = z.object({
-  via: zOptOutVia,
-  optedOutAt: zTimestamp
-});
-
-/**
- * Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both keyed by the number
- */
-export const zSiteSmsConsent = z.object({
-  phone: z.exactOptional(z.string().nullable()),
-  confirmation: z.exactOptional(zSiteSmsConfirmation.nullable()),
-  optOut: z.exactOptional(zSiteSmsOptOut.nullable())
-});
-
-/**
  * A suppressed destination: the send path skips it on every surface
  */
 export const zSiteSuppressionResource = z.object({
@@ -3549,6 +3521,34 @@ export const zSiteWorkspaceHold = z.object({
   message: z.string(),
   since: zTimestamp,
   actionUrl: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * The SMS Confirmation of a contact's phone: when and how the number consented, with the evidence it carries
+ */
+export const zSmsConfirmation = z.object({
+  provenance: zConfirmationProvenance,
+  wording: z.exactOptional(z.string().nullable()),
+  source: z.exactOptional(z.string().nullable()),
+  brand: z.exactOptional(z.string().nullable()),
+  confirmedAt: zTimestamp
+});
+
+/**
+ * The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped
+ */
+export const zSmsOptOut = z.object({
+  via: zOptOutVia,
+  optedOutAt: zTimestamp
+});
+
+/**
+ * Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both keyed by the number
+ */
+export const zSmsConsent = z.object({
+  phone: z.exactOptional(z.string().nullable()),
+  confirmation: z.exactOptional(zSmsConfirmation.nullable()),
+  optOut: z.exactOptional(zSmsOptOut.nullable())
 });
 
 /**
@@ -5451,7 +5451,7 @@ export const zSiteSmsConsentsConfirmPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteSmsConsentsConfirmResponse = zSiteSmsConsent;
+export const zSiteSmsConsentsConfirmResponse = zSmsConsent;
 
 export const zSiteSmsConsentsGetPath = z.object({
   workspaceId: zWorkspaceId,
@@ -5461,7 +5461,7 @@ export const zSiteSmsConsentsGetPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteSmsConsentsGetResponse = zSiteSmsConsent;
+export const zSiteSmsConsentsGetResponse = zSmsConsent;
 
 export const zSiteSmsConsentsOptOutPath = z.object({
   workspaceId: zWorkspaceId,
@@ -5471,7 +5471,7 @@ export const zSiteSmsConsentsOptOutPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteSmsConsentsOptOutResponse = zSiteSmsConsent;
+export const zSiteSmsConsentsOptOutResponse = zSmsConsent;
 
 export const zSiteTagsListForContactPath = z.object({
   workspaceId: zWorkspaceId,

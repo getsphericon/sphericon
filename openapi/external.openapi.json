@@ -5257,6 +5257,120 @@
         "x-required-scopes": ["contacts:export"]
       }
     },
+    "/contacts/{contactId}/sms-consent": {
+      "get": {
+        "operationId": "SmsConsents_get",
+        "description": "Read whether a contact's phone may be texted: its SMS Confirmation (when and how the number\nconsented, with the wording, source and brand it carries) and its opt-out from every SMS of the\nWorkspace (when, and how the person stopped). Both are keyed by the number, so they follow the\nphone the contact has now.",
+        "parameters": [
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsConsent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Consent"],
+        "x-required-scopes": ["contacts:read"]
+      }
+    },
     "/contacts/{contactId}/tags": {
       "get": {
         "operationId": "Tags_listForContact",
@@ -20297,10 +20411,102 @@
         },
         "description": "SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an\nomitted field takes its default (an empty text, link tracking on); on update an omitted field\nkeeps its value."
       },
+      "SmsConfirmation": {
+        "type": "object",
+        "required": ["provenance", "confirmedAt"],
+        "properties": {
+          "provenance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfirmationProvenance"
+              }
+            ],
+            "description": "How the consent was obtained"
+          },
+          "wording": {
+            "type": "string",
+            "nullable": true,
+            "description": "The consent wording the person was shown; absent when the confirmation carries no evidence"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the consent was collected; absent when the confirmation carries no evidence"
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "description": "The brand the person agreed to hear from; absent when the confirmation carries no evidence"
+          },
+          "confirmedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the consent was recorded"
+          }
+        },
+        "description": "The SMS Confirmation of a contact's phone: when and how the number consented, with the evidence it carries"
+      },
+      "SmsConsent": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "The contact's phone in E.164; absent when it has none, and then nothing else is"
+          },
+          "confirmation": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SmsConfirmation"
+              }
+            ],
+            "nullable": true,
+            "description": "The phone's SMS Confirmation; absent when the number never consented, and a text does not go to it"
+          },
+          "optOut": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SmsOptOut"
+              }
+            ],
+            "nullable": true,
+            "description": "The phone's opt-out of every SMS of the Workspace; absent while it has none"
+          }
+        },
+        "description": "Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both keyed by the number"
+      },
       "SmsFromKind": {
         "type": "string",
         "enum": ["number", "alphanumeric", "messagingService"],
         "description": "What an SMS integration's messages go out from"
+      },
+      "SmsOptOut": {
+        "type": "object",
+        "required": ["via", "optedOutAt"],
+        "properties": {
+          "via": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OptOutVia"
+              }
+            ],
+            "description": "How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link), a send Twilio refused because the number had texted STOP to the sender there (refused_send), or recorded by hand (manual)"
+          },
+          "optedOutAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the phone opted out"
+          }
+        },
+        "description": "The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped"
       },
       "SmtpConfig": {
         "type": "object",

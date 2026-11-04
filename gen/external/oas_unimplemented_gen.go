@@ -881,6 +881,18 @@ func (UnimplementedHandler) SendingDomainsVerify(ctx context.Context, params Sen
 	return r, ht.ErrNotImplemented
 }
 
+// SmsConsentsGet implements SmsConsents_get operation.
+//
+// Read whether a contact's phone may be texted: its SMS Confirmation (when and how the number
+// consented, with the wording, source and brand it carries) and its opt-out from every SMS of the
+// Workspace (when, and how the person stopped). Both are keyed by the number, so they follow the phone
+// the contact has now.
+//
+// GET /contacts/{contactId}/sms-consent
+func (UnimplementedHandler) SmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (r SmsConsentsGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SuppressionsCreate implements Suppressions_create operation.
 //
 // Suppress a destination so no surface sends to it (a manual Suppression). Idempotent: an

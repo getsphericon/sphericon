@@ -361,6 +361,10 @@ type SendingDomainsVerifyRes interface {
 	sendingDomainsVerifyRes()
 }
 
+type SmsConsentsGetRes interface {
+	smsConsentsGetRes()
+}
+
 type SuppressionsCreateRes interface {
 	suppressionsCreateRes()
 }

@@ -27742,7 +27742,7 @@ func decodeSiteSmsConsentsConfirmResponse(resp *http.Response) (res SiteSmsConse
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteSmsConsent
+			var response SmsConsent
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -27924,7 +27924,7 @@ func decodeSiteSmsConsentsGetResponse(resp *http.Response) (res SiteSmsConsentsG
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteSmsConsent
+			var response SmsConsent
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -28062,7 +28062,7 @@ func decodeSiteSmsConsentsOptOutResponse(resp *http.Response) (res SiteSmsConsen
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteSmsConsent
+			var response SmsConsent
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err

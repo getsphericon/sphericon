@@ -123,6 +123,7 @@ var operationRolesBearerAuth = map[string][]string{
 	SendingDomainsListOperation:        []string{},
 	SendingDomainsUpdateOperation:      []string{},
 	SendingDomainsVerifyOperation:      []string{},
+	SmsConsentsGetOperation:            []string{},
 	SuppressionsCreateOperation:        []string{},
 	TagsApplyOperation:                 []string{},
 	TagsDeleteOperation:                []string{},

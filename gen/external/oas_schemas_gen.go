@@ -14433,6 +14433,142 @@ func (o OptNilSendCap) Or(d SendCap) SendCap {
 	return d
 }
 
+// NewOptNilSmsConfirmation returns new OptNilSmsConfirmation with value set to v.
+func NewOptNilSmsConfirmation(v SmsConfirmation) OptNilSmsConfirmation {
+	return OptNilSmsConfirmation{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSmsConfirmation is optional nullable SmsConfirmation.
+type OptNilSmsConfirmation struct {
+	Value SmsConfirmation
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSmsConfirmation was set.
+func (o OptNilSmsConfirmation) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSmsConfirmation) Reset() {
+	var v SmsConfirmation
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSmsConfirmation) SetTo(v SmsConfirmation) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSmsConfirmation) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSmsConfirmation) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SmsConfirmation
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSmsConfirmation) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSmsConfirmation) Get() (v SmsConfirmation, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSmsConfirmation) Or(d SmsConfirmation) SmsConfirmation {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilSmsOptOut returns new OptNilSmsOptOut with value set to v.
+func NewOptNilSmsOptOut(v SmsOptOut) OptNilSmsOptOut {
+	return OptNilSmsOptOut{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSmsOptOut is optional nullable SmsOptOut.
+type OptNilSmsOptOut struct {
+	Value SmsOptOut
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSmsOptOut was set.
+func (o OptNilSmsOptOut) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSmsOptOut) Reset() {
+	var v SmsOptOut
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSmsOptOut) SetTo(v SmsOptOut) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSmsOptOut) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSmsOptOut) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SmsOptOut
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSmsOptOut) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSmsOptOut) Get() (v SmsOptOut, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSmsOptOut) Or(d SmsOptOut) SmsOptOut {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilString returns new OptNilString with value set to v.
 func NewOptNilString(v string) OptNilString {
 	return OptNilString{
@@ -15806,6 +15942,7 @@ func (*ProblemDetailsHeaders) sendingDomainsGetRes()         {}
 func (*ProblemDetailsHeaders) sendingDomainsListRes()        {}
 func (*ProblemDetailsHeaders) sendingDomainsUpdateRes()      {}
 func (*ProblemDetailsHeaders) sendingDomainsVerifyRes()      {}
+func (*ProblemDetailsHeaders) smsConsentsGetRes()            {}
 func (*ProblemDetailsHeaders) suppressionsCreateRes()        {}
 func (*ProblemDetailsHeaders) tagsApplyRes()                 {}
 func (*ProblemDetailsHeaders) tagsDeleteRes()                {}
@@ -18526,6 +18663,132 @@ func (s *SmsBroadcastContentInputChannel) UnmarshalText(data []byte) error {
 	}
 }
 
+// The SMS Confirmation of a contact's phone: when and how the number consented, with the evidence it
+// carries.
+// Ref: #/components/schemas/SmsConfirmation
+type SmsConfirmation struct {
+	// How the consent was obtained.
+	Provenance ConfirmationProvenance `json:"provenance"`
+	// The consent wording the person was shown; absent when the confirmation carries no evidence.
+	Wording OptNilString `json:"wording"`
+	// Where the consent was collected; absent when the confirmation carries no evidence.
+	Source OptNilString `json:"source"`
+	// The brand the person agreed to hear from; absent when the confirmation carries no evidence.
+	Brand OptNilString `json:"brand"`
+	// When the consent was recorded.
+	ConfirmedAt Timestamp `json:"confirmedAt"`
+}
+
+// GetProvenance returns the value of Provenance.
+func (s *SmsConfirmation) GetProvenance() ConfirmationProvenance {
+	return s.Provenance
+}
+
+// GetWording returns the value of Wording.
+func (s *SmsConfirmation) GetWording() OptNilString {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *SmsConfirmation) GetSource() OptNilString {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *SmsConfirmation) GetBrand() OptNilString {
+	return s.Brand
+}
+
+// GetConfirmedAt returns the value of ConfirmedAt.
+func (s *SmsConfirmation) GetConfirmedAt() Timestamp {
+	return s.ConfirmedAt
+}
+
+// SetProvenance sets the value of Provenance.
+func (s *SmsConfirmation) SetProvenance(val ConfirmationProvenance) {
+	s.Provenance = val
+}
+
+// SetWording sets the value of Wording.
+func (s *SmsConfirmation) SetWording(val OptNilString) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *SmsConfirmation) SetSource(val OptNilString) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *SmsConfirmation) SetBrand(val OptNilString) {
+	s.Brand = val
+}
+
+// SetConfirmedAt sets the value of ConfirmedAt.
+func (s *SmsConfirmation) SetConfirmedAt(val Timestamp) {
+	s.ConfirmedAt = val
+}
+
+// Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both
+// keyed by the number.
+// Ref: #/components/schemas/SmsConsent
+type SmsConsent struct {
+	// The contact's phone in E.164; absent when it has none, and then nothing else is.
+	Phone OptNilString `json:"phone"`
+	// The phone's SMS Confirmation; absent when the number never consented, and a text does not go to it.
+	Confirmation OptNilSmsConfirmation `json:"confirmation"`
+	// The phone's opt-out of every SMS of the Workspace; absent while it has none.
+	OptOut OptNilSmsOptOut `json:"optOut"`
+}
+
+// GetPhone returns the value of Phone.
+func (s *SmsConsent) GetPhone() OptNilString {
+	return s.Phone
+}
+
+// GetConfirmation returns the value of Confirmation.
+func (s *SmsConsent) GetConfirmation() OptNilSmsConfirmation {
+	return s.Confirmation
+}
+
+// GetOptOut returns the value of OptOut.
+func (s *SmsConsent) GetOptOut() OptNilSmsOptOut {
+	return s.OptOut
+}
+
+// SetPhone sets the value of Phone.
+func (s *SmsConsent) SetPhone(val OptNilString) {
+	s.Phone = val
+}
+
+// SetConfirmation sets the value of Confirmation.
+func (s *SmsConsent) SetConfirmation(val OptNilSmsConfirmation) {
+	s.Confirmation = val
+}
+
+// SetOptOut sets the value of OptOut.
+func (s *SmsConsent) SetOptOut(val OptNilSmsOptOut) {
+	s.OptOut = val
+}
+
+func (*SmsConsent) smsConsentsGetRes() {}
+
+type SmsConsentsGetBadRequest ProblemDetails
+
+func (*SmsConsentsGetBadRequest) smsConsentsGetRes() {}
+
+type SmsConsentsGetForbidden ProblemDetails
+
+func (*SmsConsentsGetForbidden) smsConsentsGetRes() {}
+
+type SmsConsentsGetNotFound ProblemDetails
+
+func (*SmsConsentsGetNotFound) smsConsentsGetRes() {}
+
+type SmsConsentsGetUnauthorized ProblemDetails
+
+func (*SmsConsentsGetUnauthorized) smsConsentsGetRes() {}
+
 // What an SMS integration's messages go out from.
 // Ref: #/components/schemas/SmsFromKind
 type SmsFromKind string
@@ -18574,6 +18837,37 @@ func (s *SmsFromKind) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped.
+// Ref: #/components/schemas/SmsOptOut
+type SmsOptOut struct {
+	// How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link),
+	// a send Twilio refused because the number had texted STOP to the sender there (refused_send), or
+	// recorded by hand (manual).
+	Via OptOutVia `json:"via"`
+	// When the phone opted out.
+	OptedOutAt Timestamp `json:"optedOutAt"`
+}
+
+// GetVia returns the value of Via.
+func (s *SmsOptOut) GetVia() OptOutVia {
+	return s.Via
+}
+
+// GetOptedOutAt returns the value of OptedOutAt.
+func (s *SmsOptOut) GetOptedOutAt() Timestamp {
+	return s.OptedOutAt
+}
+
+// SetVia sets the value of Via.
+func (s *SmsOptOut) SetVia(val OptOutVia) {
+	s.Via = val
+}
+
+// SetOptedOutAt sets the value of OptedOutAt.
+func (s *SmsOptOut) SetOptedOutAt(val Timestamp) {
+	s.OptedOutAt = val
 }
 
 // SMTP config without the password.

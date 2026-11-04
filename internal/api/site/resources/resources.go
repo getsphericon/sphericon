@@ -419,13 +419,13 @@ type Converter interface {
 	BindingToResource(source bindings.Chat) siteapi.SiteBindingResource
 	// goverter:useEmptyOnNil:slice
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
-	SmsConsentToResource(source consent.ContactSMS) siteapi.SiteSmsConsent
+	SmsConsentToResource(source consent.ContactSMS) siteapi.SmsConsent
 	TestSendResultToResource(source outbound.Result) siteapi.SiteTestSendBroadcastResult
-	SmsOptOutToResource(source *consent.SMSOptOut) siteapi.SiteSmsOptOut
+	SmsOptOutToResource(source *consent.SMSOptOut) siteapi.SmsOptOut
 	// goverter:enum:transform value
 	OptOutViaToResource(source unsubscribe.Via) siteapi.OptOutVia
 	// goverter:map CreatedAt ConfirmedAt
-	SmsConfirmationToResource(source *ent.Confirmation) siteapi.SiteSmsConfirmation
+	SmsConfirmationToResource(source *ent.Confirmation) siteapi.SmsConfirmation
 	// goverter:enum:transform value
 	ConfirmationProvenanceToResource(source confirmation.Provenance) siteapi.ConfirmationProvenance
 	TagToResource(source *ent.Tag) siteapi.SiteTagResource
@@ -795,19 +795,19 @@ func optNilSendCap(c Converter, v *providerlimit.SendCapStatus) siteapi.OptNilSi
 }
 
 // optNilSmsConfirmation is absent exactly when the phone has no SMS Confirmation.
-func optNilSmsConfirmation(c Converter, v *ent.Confirmation) siteapi.OptNilSiteSmsConfirmation {
+func optNilSmsConfirmation(c Converter, v *ent.Confirmation) siteapi.OptNilSmsConfirmation {
 	if v == nil {
-		return siteapi.OptNilSiteSmsConfirmation{}
+		return siteapi.OptNilSmsConfirmation{}
 	}
-	return siteapi.NewOptNilSiteSmsConfirmation(c.SmsConfirmationToResource(v))
+	return siteapi.NewOptNilSmsConfirmation(c.SmsConfirmationToResource(v))
 }
 
 // optNilSmsOptOut is absent exactly when the phone has no SMS opt-out.
-func optNilSmsOptOut(c Converter, v *consent.SMSOptOut) siteapi.OptNilSiteSmsOptOut {
+func optNilSmsOptOut(c Converter, v *consent.SMSOptOut) siteapi.OptNilSmsOptOut {
 	if v == nil {
-		return siteapi.OptNilSiteSmsOptOut{}
+		return siteapi.OptNilSmsOptOut{}
 	}
-	return siteapi.NewOptNilSiteSmsOptOut(c.SmsOptOutToResource(v))
+	return siteapi.NewOptNilSmsOptOut(c.SmsOptOutToResource(v))
 }
 
 // broadcastLimit is null exactly when nothing limits the Broadcast (its limit is empty).

@@ -196,3 +196,23 @@ namespace Confirmations {
     | TooManyRequestsProblem
     | UnprocessableEntityProblem;
 }
+
+@route("/contacts/{contactId}/sms-consent")
+@tag("Consent")
+namespace SmsConsents {
+  /**
+   * Read whether a contact's phone may be texted: its SMS Confirmation (when and how the number
+   * consented, with the wording, source and brand it carries) and its opt-out from every SMS of the
+   * Workspace (when, and how the person stopped). Both are keyed by the number, so they follow the
+   * phone the contact has now.
+   */
+  @get
+  @requiresScopes(#[ApiTokenScope.contactsRead])
+  op get(@path contactId: EntityId):
+    | SmsConsent
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | ForbiddenProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem;
+}
