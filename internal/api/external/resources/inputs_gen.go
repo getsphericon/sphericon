@@ -466,6 +466,8 @@ func (c *InputsImpl) SuppressionChannel(source external.SuppressionChannel) supp
 	switch source {
 	case external.SuppressionChannelEmail:
 		suppressionChannel = suppression.ChannelEmail
+	case external.SuppressionChannelSMS:
+		suppressionChannel = suppression.ChannelSms
 	case external.SuppressionChannelTelegram:
 		suppressionChannel = suppression.ChannelTelegram
 	default:

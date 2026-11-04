@@ -2197,7 +2197,11 @@ export const zSiteSmtpConfig = z.object({
 /**
  * The channel a suppression applies to
  */
-export const zSiteSuppressionChannel = z.enum(['email', 'telegram']);
+export const zSiteSuppressionChannel = z.enum([
+  'email',
+  'telegram',
+  'sms'
+]);
 
 /**
  * Site request body for manually suppressing a destination

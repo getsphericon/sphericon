@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/bindings"
+	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
@@ -251,9 +252,13 @@ func classifyTelegram(err error) error {
 	}
 }
 
-// unreachable removes the Binding of a chat Telegram no longer reaches, and records telegram.unbound.
-func (c telegramChannel) unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, to target, messageID int64) error {
-	return bindings.Remove(ctx, s, pub, integ, to.dest, fmt.Sprintf("%s:gone:%d:%s", events.NameTelegramUnbound, messageID, to.dest))
+// unreachable removes the Binding of a chat Telegram no longer reaches, and records telegram.unbound:
+// the chat is no Destination any more.
+func (c telegramChannel) unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, _ Request, to target, messageID int64) (string, error) {
+	if err := bindings.Remove(ctx, s, pub, integ, to.dest, fmt.Sprintf("%s:gone:%d:%s", events.NameTelegramUnbound, messageID, to.dest)); err != nil {
+		return "", err
+	}
+	return eligibility.ReasonNoDestination, nil
 }
 
 // publishSent publishes telegram.sent, with the Broadcast or Automation the message came from.

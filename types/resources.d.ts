@@ -1128,7 +1128,7 @@ export default interface Resources {
     },
     "holdReasons": {
       "no_integration": "No email integration can send it: the one it uses is disabled or archived, or the workspace has no default. Choose an integration that sends, or set a default, to resume.",
-      "provider_refused": "The provider refused the integration's credentials, for example a revoked bot token. Save the integration again with a working one to resume.",
+      "provider_refused": "The provider refused the integration's credentials or account, for example a revoked bot token or API key, a suspended account or a sender the account cannot use. Save the integration again with working ones to resume.",
       "provider_stopped": "Your email provider has stopped sending from your account. Resolve it with the provider: sending resumes on its own once the provider reinstates the account.",
       "staff_hold": "Outbound email is on hold for this workspace. The notice at the top of the page says how to resolve it.",
       "unverified_domain": "The sender domain is not verified. Publish its DKIM record and verify the domain to resume.",
@@ -1378,7 +1378,7 @@ export default interface Resources {
           "deliverabilityWarning": "The {{metric}} rate on {{domain}} is {{rate}} over the last 24 hours, over the warning limit. Clean your list: if it keeps rising, sending for this workspace is suspended automatically.",
           "enrollmentsFailed": "{{count, number}} run of {{name}} failed this week." | "{{count, number}} runs of {{name}} failed this week.",
           "integrationProviderProbation": "Your provider has put the account behind {{name}} under review. It still sends: keep bounces and complaints low.",
-          "integrationProviderRefused": "{{name}}'s credentials were refused by its provider: nothing sends through it until it is saved again with working ones.",
+          "integrationProviderRefused": "{{name}}'s credentials or account were refused by its provider: nothing sends through it until it is saved again with working ones.",
           "integrationProviderSandbox": "{{name}} is in the provider's sandbox: it sends only to addresses verified with the provider.",
           "integrationProviderStopped": "Your provider has stopped the account behind {{name}}: nothing sends through it until the provider reinstates it.",
           "providerLimitSpent": "{{name}} has sent its daily limit: the rest goes out as the limit refills.",
@@ -2342,6 +2342,7 @@ export default interface Resources {
     "suppressions": {
       "channelEmail": "Email",
       "channelLabel": "Channel",
+      "channelSms": "SMS",
       "channelTelegram": "Telegram",
       "create": "Suppress",
       "createError": "Failed to suppress address",
@@ -2363,6 +2364,8 @@ export default interface Resources {
         "unsubscribed": "Unsubscribed"
       },
       "showLifted": "Show lifted",
+      "smsHint": "A phone number with its country code. Texts to it through any of the workspace's senders will be skipped.",
+      "smsLabel": "Phone number",
       "telegramHint": "The person's Telegram user id. Telegram sends to it through any of the workspace's bots will be skipped.",
       "telegramLabel": "Telegram user id",
       "title": "Suppression list"

@@ -42747,6 +42747,8 @@ func (s *SuppressionChannel) Decode(d *jx.Decoder) error {
 		*s = SuppressionChannelEmail
 	case SuppressionChannelTelegram:
 		*s = SuppressionChannelTelegram
+	case SuppressionChannelSMS:
+		*s = SuppressionChannelSMS
 	default:
 		*s = SuppressionChannel(v)
 	}

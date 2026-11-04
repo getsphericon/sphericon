@@ -180,6 +180,7 @@ type Inputs interface {
 	AnalyticsWindow(source siteapi.SiteAnalyticsRange) analytics.Window
 	// goverter:enum:map SiteSuppressionChannelEmail ChannelEmail
 	// goverter:enum:map SiteSuppressionChannelTelegram ChannelTelegram
+	// goverter:enum:map SiteSuppressionChannelSMS ChannelSms
 	SuppressionChannel(source siteapi.SiteSuppressionChannel) suppression.Channel
 	// goverter:enum:map SiteAnalyticsRevenueRange7d Window7Days
 	// goverter:enum:map SiteAnalyticsRevenueRange30d Window30Days

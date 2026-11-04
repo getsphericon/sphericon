@@ -2189,7 +2189,7 @@ export type CreateSuppressionInput = {
    */
   channel?: SuppressionChannel;
   /**
-   * What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`
+   * What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone number with its country code on `sms` (stored in E.164)
    */
   destination: string;
 };
@@ -4357,7 +4357,11 @@ export type SmtpConfigInput = {
 /**
  * A Channel a destination can be suppressed on
  */
-export const SuppressionChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
+export const SuppressionChannel = {
+  EMAIL: 'email',
+  TELEGRAM: 'telegram',
+  SMS: 'sms'
+} as const;
 
 /**
  * A Channel a destination can be suppressed on
@@ -4391,7 +4395,7 @@ export type SuppressionResource = {
    */
   channel: SuppressionChannel;
   /**
-   * Normalized destination: the lower-cased email address, or the Telegram user id
+   * Normalized destination: the lower-cased email address, the Telegram user id, or the phone number in E.164
    */
   destination: string;
   /**

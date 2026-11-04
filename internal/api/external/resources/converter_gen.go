@@ -1343,6 +1343,8 @@ func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel)
 	switch source {
 	case suppression.ChannelEmail:
 		externalapiSuppressionChannel = external.SuppressionChannelEmail
+	case suppression.ChannelSms:
+		externalapiSuppressionChannel = external.SuppressionChannelSMS
 	case suppression.ChannelTelegram:
 		externalapiSuppressionChannel = external.SuppressionChannelTelegram
 	// Skipped DefaultChannel(email) -> SuppressionChannelEmail(email) because it duplicates ChannelEmail(email) -> SuppressionChannelEmail(email)

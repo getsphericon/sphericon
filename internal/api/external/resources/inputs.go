@@ -178,6 +178,7 @@ type Inputs interface {
 	BroadcastChannel(source externalapi.BroadcastChannel) broadcast.Channel
 	// goverter:enum:map SuppressionChannelEmail ChannelEmail
 	// goverter:enum:map SuppressionChannelTelegram ChannelTelegram
+	// goverter:enum:map SuppressionChannelSMS ChannelSms
 	SuppressionChannel(source externalapi.SuppressionChannel) suppression.Channel
 
 	// The evidence of consent a Confirmation carries, from its own body or a batch item's.

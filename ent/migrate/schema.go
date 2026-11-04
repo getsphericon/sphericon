@@ -2478,7 +2478,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "reason", Type: field.TypeEnum, Enums: []string{"bounce", "complaint", "manual"}, Default: "manual"},
 		{Name: "lifted_at", Type: field.TypeTime, Nullable: true},
@@ -3382,7 +3382,7 @@ func init() {
 		Table: "suppressions",
 	}
 	SuppressionsTable.Annotation.Checks = map[string]string{
-		"suppressions_channel_check": "channel IN ('email', 'telegram')",
+		"suppressions_channel_check": "channel IN ('email', 'telegram', 'sms')",
 		"suppressions_reason_check":  "reason IN ('bounce', 'complaint', 'manual')",
 	}
 	TagsTable.ForeignKeys[0].RefTable = WorkspacesTable

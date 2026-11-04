@@ -3754,7 +3754,7 @@ export type SiteCreateSuppressionInput = {
    */
   channel?: SiteSuppressionChannel;
   /**
-   * The destination address to suppress
+   * The destination to suppress: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone number with its country code on `sms` (stored in E.164)
    */
   destination: string;
 };
@@ -6322,7 +6322,11 @@ export type SiteSoleOwnedWorkspace = {
 /**
  * The channel a suppression applies to
  */
-export const SiteSuppressionChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
+export const SiteSuppressionChannel = {
+  EMAIL: 'email',
+  TELEGRAM: 'telegram',
+  SMS: 'sms'
+} as const;
 
 /**
  * The channel a suppression applies to

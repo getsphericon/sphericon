@@ -17164,7 +17164,7 @@
           "destination": {
             "type": "string",
             "maxLength": 320,
-            "description": "What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`"
+            "description": "What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone number with its country code on `sms` (stored in E.164)"
           }
         },
         "description": "Request body for suppressing a destination"
@@ -20261,7 +20261,7 @@
       },
       "SuppressionChannel": {
         "type": "string",
-        "enum": ["email", "telegram"],
+        "enum": ["email", "telegram", "sms"],
         "description": "A Channel a destination can be suppressed on"
       },
       "SuppressionReason": {
@@ -20291,7 +20291,7 @@
           },
           "destination": {
             "type": "string",
-            "description": "Normalized destination: the lower-cased email address, or the Telegram user id"
+            "description": "Normalized destination: the lower-cased email address, the Telegram user id, or the phone number in E.164"
           },
           "reason": {
             "allOf": [

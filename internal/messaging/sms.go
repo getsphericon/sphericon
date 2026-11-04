@@ -20,8 +20,8 @@ type SMSSender interface {
 	// then given to the provider some other way (with each message, or by hand).
 	PointCallbacks(ctx context.Context, from SMSFrom, url string) (bool, error)
 	// Send hands one text to the provider, from the configured sender. A refusal of the provider's
-	// API is an error wrapping a *SMSError; a network error or a 5xx is a plain error, which a
-	// retry may get past.
+	// API is an error wrapping a *SMSError, which says whom it concerns; a network error is a plain
+	// error, which a retry may get past.
 	Send(ctx context.Context, msg SMSMessage) (SMSSent, error)
 }
 
@@ -66,12 +66,40 @@ var ErrSMSUnauthorized = errors.New("sms: the provider does not accept the crede
 // ErrSMSSenderNotFound means the account has no such sender.
 var ErrSMSSenderNotFound = errors.New("sms: the account has no such sender")
 
-// SMSError is a refusal of the provider's API: the HTTP status, the provider's error code and its
-// message in its own words.
+// SMSRefusal is whom a refusal of the provider concerns (ADR 0079), as the provider's adapter reads
+// its error code: the send path takes its course from it and never reads a provider's codes.
+type SMSRefusal string
+
+const (
+	// SMSRefusalAccount concerns the account: the credentials, an account that is not active, a
+	// sender the account cannot use. Every send through the Integration would get it.
+	SMSRefusalAccount SMSRefusal = "account"
+	// SMSRefusalRate is a rate signal: too many calls, a full queue. A later send gets past it.
+	SMSRefusalRate SMSRefusal = "rate"
+	// SMSRefusalDestination concerns the number alone: invalid, or not reachable from the sender.
+	SMSRefusalDestination SMSRefusal = "destination"
+	// SMSRefusalDeadNumber says the number reaches no handset: it does not exist or is not a mobile
+	// number. It is suppressed like a hard bounce.
+	SMSRefusalDeadNumber SMSRefusal = "dead_number"
+	// SMSRefusalAmbiguous tells nothing of whom it concerns (a carrier filter, an unknown code): it
+	// is recorded on the message only, so a transient problem never suppresses a real person.
+	SMSRefusalAmbiguous SMSRefusal = "ambiguous"
+	// SMSRefusalTransient is a failure of the provider itself (a 5xx), which a retry may get past.
+	SMSRefusalTransient SMSRefusal = "transient"
+)
+
+// SMSError is a refusal of the provider's API: the HTTP status, the provider's error code, its
+// message in its own words, and whom the refusal concerns as the provider's adapter reads the code.
 type SMSError struct {
 	Status  int
 	Code    int
 	Message string
+	Refusal SMSRefusal
+}
+
+// Reason is the refusal as a message records it: the provider's words and its code.
+func (e *SMSError) Reason() string {
+	return fmt.Sprintf("%s (error %d)", e.Message, e.Code)
 }
 
 func (e *SMSError) Error() string {

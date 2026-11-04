@@ -44,7 +44,7 @@ const (
 	// every send through it is held (ADR 0067).
 	KindIntegrationProviderStopped Kind = "integrationProviderStopped"
 	// KindIntegrationProviderRefused: a send found the provider refusing the Integration's
-	// credentials, and every send through it is held until it is saved again with working ones.
+	// credentials or account, and every send through it is held until it is saved again.
 	KindIntegrationProviderRefused Kind = "integrationProviderRefused"
 	// KindBroadcastHeld: a Broadcast whose sending is held for a reason a member can fix.
 	KindBroadcastHeld Kind = "broadcastHeld"

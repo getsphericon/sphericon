@@ -19758,7 +19758,7 @@
           },
           "destination": {
             "type": "string",
-            "description": "The destination address to suppress"
+            "description": "The destination to suppress: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone number with its country code on `sms` (stored in E.164)"
           }
         },
         "description": "Site request body for manually suppressing a destination"
@@ -23175,7 +23175,7 @@
       },
       "SiteSuppressionChannel": {
         "type": "string",
-        "enum": ["email", "telegram"],
+        "enum": ["email", "telegram", "sms"],
         "description": "The channel a suppression applies to"
       },
       "SiteSuppressionReason": {

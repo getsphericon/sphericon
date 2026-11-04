@@ -35,9 +35,10 @@ type channel interface {
 	// message's own and ends the send as Failed; any other error is retried.
 	render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error)
 	// unreachable drops a target the provider said no longer reaches anyone (an unreachableError
-	// of send): a Channel of Bindings removes the Binding and records that it is gone. It runs in
-	// a transaction of its own, outside the send's claim.
-	unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, to target, messageID int64) error
+	// of send): a Channel of Bindings removes the Binding and records that it is gone, SMS
+	// suppresses the number. skip is the Skipped reason Send-eligibility now gives the target
+	// (no_destination, suppressed). It runs in a transaction of its own, outside the send's claim.
+	unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, req Request, to target, messageID int64) (skip string, err error)
 }
 
 // target is one place a message goes: dest is its Destination, the key of Send-eligibility and what
@@ -113,15 +114,18 @@ func (e deferError) Error() string { return "outbound: deferred: " + e.err.Error
 func (e deferError) Unwrap() error { return e.err }
 
 // unreachableError is a provider adapter's word that the target reaches no one any more (Telegram's
-// "user is deactivated", "chat not found"): the Binding goes, and the message goes to the others.
+// "user is deactivated", "chat not found", a number that is no mobile one): the Channel drops it (the
+// Binding goes, the number is suppressed), and the message goes to the others.
 type unreachableError struct{ err error }
 
 func (e unreachableError) Error() string { return "outbound: unreachable: " + e.err.Error() }
 func (e unreachableError) Unwrap() error { return e.err }
 
 // chatRefusedError is a provider adapter's word that one target refuses the message for good and
-// that the refusal is that target's alone (Telegram's 403 "bot can't initiate conversation"): the
-// message goes on to the other targets. It fails, with the description, only when none took it.
+// that the refusal is that target's alone (Telegram's 403 "bot can't initiate conversation", an
+// invalid number on SMS): the message goes on to the other targets. It fails, with the description,
+// only when none took it. A description that starts with ReasonMessageRefused fails the message
+// alone: its source goes on (Result.MessageOnly).
 type chatRefusedError struct{ description string }
 
 func (e chatRefusedError) Error() string { return e.description }

@@ -23,6 +23,6 @@ enum HoldReason {
   /** The email provider has stopped sending from the integration's account */
   provider_stopped,
 
-  /** The provider refused the integration's credentials at send time (a revoked bot token): saving the integration again with working credentials lifts it */
+  /** The provider refused the integration's credentials or account at send time (a revoked bot token or API key, a suspended account, a sender the account cannot use): saving the integration again with working credentials lifts it */
   provider_refused,
 }

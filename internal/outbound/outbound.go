@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"strings"
 	"time"
 
 	"github.com/samber/lo"
@@ -98,6 +99,12 @@ func deferralBackoff(err error) time.Duration {
 	}
 }
 
+// ReasonMessageRefused starts the Failed reason of a message the provider refused for its own
+// Destination, or with an answer that concerns no one else (an invalid number, a code that tells
+// nothing): "message_refused: <the provider's words> (error <code>)". The message fails alone: the
+// source's other messages, and an Automation's next steps, go on (Result.MessageOnly).
+const ReasonMessageRefused = "message_refused"
+
 // SkipContactErased is the Skipped reason of a send whose Contact was erased after
 // the send was queued (ADR 0021). Nothing is recorded for it: the message row would
 // carry the erased person's address.
@@ -109,8 +116,9 @@ const SkipContactErased = "contact_erased"
 const (
 	HoldNoIntegration   = string(holdreason.NoIntegration)
 	HoldProviderStopped = string(holdreason.ProviderStopped)
-	// HoldProviderRefused: the provider refused the Integration's credentials at send time; saving
-	// the Integration with credentials it accepts lifts it.
+	// HoldProviderRefused: the provider refused the Integration's credentials or account at send
+	// time (a revoked token or key, a suspended account, a sender it cannot use); saving the
+	// Integration lifts it.
 	HoldProviderRefused = string(holdreason.ProviderRefused)
 )
 
@@ -138,7 +146,7 @@ func Detail(reason string) string {
 	case HoldProviderStopped:
 		return "the email provider has stopped sending from this account"
 	case HoldProviderRefused:
-		return "the provider refused the integration's credentials: save the integration again with working ones"
+		return "the provider refused the integration's credentials or account: save the integration again with working ones"
 	case RefuseOtherRecipient:
 		return "until a sending domain is verified, a test send can only go to your own address"
 	case RefuseNoSystemSender:
@@ -179,6 +187,12 @@ type Result struct {
 	// Captured is true for a Test send that went through a sender that delivers nowhere
 	// outside: the message was kept, not sent to the address named (ADR 0058).
 	Captured bool
+}
+
+// MessageOnly reports whether a Failed is this message's alone (ReasonMessageRefused), so the source
+// goes on past it. It reads the recorded reason, so a replayed Result answers as the first did.
+func (r Result) MessageOnly() bool {
+	return r.Outcome == Failed && strings.HasPrefix(r.Reason, ReasonMessageRefused+":")
 }
 
 // Senders builds the EmailSender email's provider adapter sends through, for the Integration a
@@ -479,7 +493,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	}
 
 	origin := messaging.Origin{OutboundMessageID: msg.ID, Surface: messaging.Surface(req.Kind), Source: req.Source}
-	first, stopped, blocked, err := m.deliver(ctx, s, g, req, rendered, eligible, origin, msg)
+	first, stopped, skip, err := m.deliver(ctx, s, g, req, rendered, eligible, origin, msg)
 	if err != nil {
 		if stopped != nil {
 			m.dropClaim(ctx, s, msg)
@@ -493,13 +507,13 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return Result{}, err
 	}
 	if first == nil {
-		// No target took the message. When a chat had blocked the bot that is recorded as the
-		// person's opt-out, which is what Send-eligibility would now say; otherwise every target
-		// turned out to reach no one: their Bindings are gone, so the Contact has no Destination left.
-		if blocked {
-			return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, eligibility.ReasonUnsubscribedEverything)
+		// No target took the message. What the provider said of them is recorded (an opt-out, a
+		// Binding gone, a suppressed number), and the message is Skipped with what Send-eligibility
+		// would now say.
+		if skip == "" {
+			skip = eligibility.ReasonNoDestination
 		}
-		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, eligibility.ReasonNoDestination)
+		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, skip)
 	}
 	return m.recordSent(ctx, s, req, msg, g, first.to.dest, first.receipt, renderedSubject(rendered))
 }
@@ -536,12 +550,13 @@ func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request
 // accepted. A target that fails after one has accepted is not retried, which would send the first
 // again. Before any has: stopped is the Held or Deferral Result the failure means (the caller drops
 // the claim), else the error is retryable, except a contentError, which is the message's own. A
-// target the provider says reaches no one is dropped (its Channel's unreachable) and one whose user
-// blocked the bot is the user's opt-out (recordBlocked, blocked is set); one that refuses the message
-// for good, for that target alone (chatRefusedError), is a failed target only. The message goes on to
-// the others: first is nil when none took it and none failed, and a contentError with the first
-// refusal's description when none took it and one refused.
-func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req Request, rendered any, targets []target, origin messaging.Origin, msg *ent.OutboundMessage) (first *accepted, stopped *Result, blocked bool, err error) {
+// target the provider says reaches no one is dropped (its Channel's unreachable, skip is the reason
+// it now has) and one whose user blocked the bot is the user's opt-out (recordBlocked, skip is
+// unsubscribed_everything); one that refuses the message for good, for that target alone
+// (chatRefusedError), is a failed target only. The message goes on to the others: first is nil when
+// none took it and none failed, and a contentError with the first refusal's description when none
+// took it and one refused.
+func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req Request, rendered any, targets []target, origin messaging.Origin, msg *ent.OutboundMessage) (first *accepted, stopped *Result, skip string, err error) {
 	messageID := msg.ID
 	var refused *chatRefusedError
 	for i, t := range targets {
@@ -558,14 +573,19 @@ func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req R
 		}
 		if blockedByUser(err) {
 			if err := m.recordBlocked(ctx, s, g, msg, t); err != nil {
-				return first, nil, blocked, err
+				return first, nil, skip, err
 			}
-			blocked = true
+			// The person's opt-out outweighs a dropped target's reason.
+			skip = eligibility.ReasonUnsubscribedEverything
 			continue
 		}
 		if _, gone := errors.AsType[unreachableError](err); gone {
-			if err := m.dropTarget(ctx, s, req, g, t, messageID); err != nil {
-				return first, nil, blocked, err
+			reason, err := m.dropTarget(ctx, s, req, g, t, messageID)
+			if err != nil {
+				return first, nil, skip, err
+			}
+			if skip == "" {
+				skip = reason
 			}
 			continue
 		}
@@ -580,17 +600,17 @@ func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req R
 			continue
 		}
 		if stop, serr := m.stopOf(ctx, s, g, req, err); stop != nil || serr != nil {
-			return nil, stop, blocked, serr
+			return nil, stop, skip, serr
 		}
 		if isContentError(err) {
-			return nil, nil, blocked, err
+			return nil, nil, skip, err
 		}
-		return nil, nil, blocked, fmt.Errorf("outbound: send to %s: %w", t.dest, err)
+		return nil, nil, skip, fmt.Errorf("outbound: send to %s: %w", t.dest, err)
 	}
 	if first == nil && refused != nil {
-		return nil, nil, blocked, contentError{errors.New(refused.description)}
+		return nil, nil, skip, contentError{errors.New(refused.description)}
 	}
-	return first, nil, blocked, nil
+	return first, nil, skip, nil
 }
 
 // stopOf is the Held or Deferral Result a provider's refusal of the first send means, nil when it
@@ -621,15 +641,20 @@ func (m *Module) stopOf(ctx context.Context, s *ent.Scoped, g gateResult, req Re
 	return nil, nil
 }
 
-// dropTarget removes a target its provider said reaches no one, in a transaction of its own.
-func (m *Module) dropTarget(ctx context.Context, s *ent.Scoped, req Request, g gateResult, t target, messageID int64) error {
+// dropTarget removes a target its provider said reaches no one, in a transaction of its own, and
+// returns the Skipped reason the target now has.
+func (m *Module) dropTarget(ctx context.Context, s *ent.Scoped, req Request, g gateResult, t target, messageID int64) (string, error) {
 	ch, err := m.channel(req.Channel())
 	if err != nil {
-		return err
+		return "", err
 	}
-	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		return ch.unreachable(ctx, ts, pub, g.route.Integration, t, messageID)
+	var skip string
+	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		var uerr error
+		skip, uerr = ch.unreachable(ctx, ts, pub, g.route.Integration, req, t, messageID)
+		return uerr
 	})
+	return skip, err
 }
 
 // refuse records that the provider refused the Integration's credentials (ProviderRefusedAt), which

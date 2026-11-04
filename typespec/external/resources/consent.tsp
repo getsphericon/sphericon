@@ -15,6 +15,7 @@ enum ConsentChannel {
 enum SuppressionChannel {
   email,
   telegram,
+  sms,
 }
 
 /** Why a destination is on the suppression (do-not-send) list */
@@ -32,7 +33,7 @@ model SuppressionResource {
   /** The Channel the suppression is on */
   channel: SuppressionChannel;
 
-  /** Normalized destination: the lower-cased email address, or the Telegram user id */
+  /** Normalized destination: the lower-cased email address, the Telegram user id, or the phone number in E.164 */
   destination: string;
 
   /** Why the destination is suppressed */
@@ -47,7 +48,7 @@ model CreateSuppressionInput {
   /** The Channel to stop sending on; `email` when omitted */
   channel?: SuppressionChannel;
 
-  /** What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram` */
+  /** What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone number with its country code on `sms` (stored in E.164) */
   @maxLength(320)
   destination: string;
 }

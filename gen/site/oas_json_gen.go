@@ -59176,6 +59176,8 @@ func (s *SiteSuppressionChannel) Decode(d *jx.Decoder) error {
 		*s = SiteSuppressionChannelEmail
 	case SiteSuppressionChannelTelegram:
 		*s = SiteSuppressionChannelTelegram
+	case SiteSuppressionChannelSMS:
+		*s = SiteSuppressionChannelSMS
 	default:
 		*s = SiteSuppressionChannel(v)
 	}

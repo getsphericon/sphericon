@@ -26,9 +26,9 @@ const (
 	// ProviderStopped: the provider has stopped the account behind the Integration (ADR 0067); it
 	// lifts when a quota read finds it sending again.
 	ProviderStopped Reason = "provider_stopped"
-	// ProviderRefused: the provider refused the Integration's credentials at send time (Telegram's
-	// 401, a revoked bot token); it lifts when the Integration is saved with credentials the
-	// provider accepts.
+	// ProviderRefused: the provider refused the Integration's credentials or account at send time
+	// (Telegram's 401, a revoked bot token; Twilio's refused key, a suspended account, a sender the
+	// account cannot use); it lifts when the Integration is saved again.
 	ProviderRefused Reason = "provider_refused"
 )
 

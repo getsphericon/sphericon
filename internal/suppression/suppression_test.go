@@ -139,3 +139,25 @@ func TestEraseContactKeepsTheSuppressionRefusingTheAddress(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, verdict.Eligible)
 }
+
+// A typed number is suppressed on sms in E.164, and SMS Send-eligibility refuses it; text that is
+// no phone number with its country code is refused on the destination.
+func TestAManualSMSSuppressionStoresTheNumberInE164(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	s := env.DB.Scoped(fixtures.AcmeID)
+
+	got, err := suppression.AddManual(ctx, s, entsuppression.ChannelSms, " +1 (415) 555-0132 ")
+	require.NoError(t, err)
+	assert.Equal(t, "+14155550132", got.Destination)
+	assert.Equal(t, entsuppression.ChannelSms, got.Channel)
+
+	verdict, err := eligibility.Check(ctx, s, eligibility.ChannelSMS, "+14155550132", eligibility.SourceBroadcasts)
+	require.NoError(t, err)
+	assert.Equal(t, eligibility.ReasonSuppressed, verdict.Reason)
+
+	for _, typed := range []string{"4155550132", "not a number", "+1"} {
+		_, err := suppression.AddManual(ctx, s, entsuppression.ChannelSms, typed)
+		assert.ErrorIs(t, err, suppression.ErrDestinationInvalid, typed)
+	}
+}

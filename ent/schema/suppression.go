@@ -38,9 +38,10 @@ func (Suppression) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// The channel this suppression applies to (email or telegram; sms is reserved).
+		// The channel this suppression applies to: email, telegram, or sms (a number the provider
+		// reports reaches no handset, or a manual one).
 		field.Enum("channel").
-			Values("email", "telegram").
+			Values("email", "telegram", "sms").
 			Default("email"),
 		// Normalized (lower-cased) channel-specific destination address.
 		field.String("destination").

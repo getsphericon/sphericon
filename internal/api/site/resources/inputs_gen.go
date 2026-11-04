@@ -701,6 +701,8 @@ func (c *InputsImpl) SuppressionChannel(source site.SiteSuppressionChannel) supp
 	switch source {
 	case site.SiteSuppressionChannelEmail:
 		suppressionChannel = suppression.ChannelEmail
+	case site.SiteSuppressionChannelSMS:
+		suppressionChannel = suppression.ChannelSms
 	case site.SiteSuppressionChannelTelegram:
 		suppressionChannel = suppression.ChannelTelegram
 	default:

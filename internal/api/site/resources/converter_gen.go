@@ -2106,6 +2106,8 @@ func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel)
 	switch source {
 	case suppression.ChannelEmail:
 		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelEmail
+	case suppression.ChannelSms:
+		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelSMS
 	case suppression.ChannelTelegram:
 		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelTelegram
 	// Skipped DefaultChannel(email) -> SiteSuppressionChannelEmail(email) because it duplicates ChannelEmail(email) -> SiteSuppressionChannelEmail(email)

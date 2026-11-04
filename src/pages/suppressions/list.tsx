@@ -15,6 +15,7 @@ import {
 import { useForm } from '@mantine/form'
 import { useCounter, useDisclosure } from '@mantine/hooks'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import type { TFunction } from 'i18next'
 import { DataTable } from 'mantine-datatable'
 import { useDeferredValue, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -31,6 +32,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteCreateSuppressionInput,
+  SiteSuppressionChannel,
   SiteSuppressionReason,
 } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
@@ -43,6 +45,36 @@ const REASON_COLORS: Record<SiteSuppressionReason, string> = {
   bounce: 'orange',
   complaint: 'red',
   manual: 'gray',
+}
+
+// What a destination is on each Channel, as the add form asks for it.
+const destinationField: Record<
+  SiteSuppressionChannel,
+  {
+    label: (t: TFunction) => string
+    hint: (t: TFunction) => string
+    placeholder: string
+    type: 'email' | 'text' | 'tel'
+  }
+> = {
+  email: {
+    label: (t) => t(($) => $.suppressions.emailLabel),
+    hint: (t) => t(($) => $.suppressions.emailHint),
+    placeholder: 'blocked@example.com',
+    type: 'email',
+  },
+  telegram: {
+    label: (t) => t(($) => $.suppressions.telegramLabel),
+    hint: (t) => t(($) => $.suppressions.telegramHint),
+    placeholder: '123456789',
+    type: 'text',
+  },
+  sms: {
+    label: (t) => t(($) => $.suppressions.smsLabel),
+    hint: (t) => t(($) => $.suppressions.smsHint),
+    placeholder: '+14155550132',
+    type: 'tel',
+  },
 }
 
 // The list grows automatically (bounces/complaints), so it is paginated
@@ -250,22 +282,15 @@ export function SuppressionsListPage() {
               data={[
                 { value: 'email', label: t(($) => $.suppressions.channelEmail) },
                 { value: 'telegram', label: t(($) => $.suppressions.channelTelegram) },
+                { value: 'sms', label: t(($) => $.suppressions.channelSms) },
               ]}
               {...form.getInputProps('channel')}
             />
             <TextInput
-              label={
-                form.values.channel === 'telegram'
-                  ? t(($) => $.suppressions.telegramLabel)
-                  : t(($) => $.suppressions.emailLabel)
-              }
-              description={
-                form.values.channel === 'telegram'
-                  ? t(($) => $.suppressions.telegramHint)
-                  : t(($) => $.suppressions.emailHint)
-              }
-              placeholder={form.values.channel === 'telegram' ? '123456789' : 'blocked@example.com'}
-              type={form.values.channel === 'telegram' ? 'text' : 'email'}
+              label={destinationField[form.values.channel].label(t)}
+              description={destinationField[form.values.channel].hint(t)}
+              placeholder={destinationField[form.values.channel].placeholder}
+              type={destinationField[form.values.channel].type}
               required
               data-autofocus
               {...form.getInputProps('destination')}

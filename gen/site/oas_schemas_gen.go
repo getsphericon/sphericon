@@ -17487,7 +17487,8 @@ func (s *SiteCreateSegmentInput) SetCondition(val SiteConditionGroup) {
 type SiteCreateSuppressionInput struct {
 	// Channel (defaults to email when omitted).
 	Channel OptSiteSuppressionChannel `json:"channel"`
-	// The destination address to suppress.
+	// The destination to suppress: an email address on `email`, a Telegram user id (digits) on `telegram`,
+	// a phone number with its country code on `sms` (stored in E.164).
 	Destination string `json:"destination"`
 }
 
@@ -26732,6 +26733,7 @@ type SiteSuppressionChannel string
 const (
 	SiteSuppressionChannelEmail    SiteSuppressionChannel = "email"
 	SiteSuppressionChannelTelegram SiteSuppressionChannel = "telegram"
+	SiteSuppressionChannelSMS      SiteSuppressionChannel = "sms"
 )
 
 // AllValues returns all SiteSuppressionChannel values.
@@ -26739,6 +26741,7 @@ func (SiteSuppressionChannel) AllValues() []SiteSuppressionChannel {
 	return []SiteSuppressionChannel{
 		SiteSuppressionChannelEmail,
 		SiteSuppressionChannelTelegram,
+		SiteSuppressionChannelSMS,
 	}
 }
 
@@ -26748,6 +26751,8 @@ func (s SiteSuppressionChannel) MarshalText() ([]byte, error) {
 	case SiteSuppressionChannelEmail:
 		return []byte(s), nil
 	case SiteSuppressionChannelTelegram:
+		return []byte(s), nil
+	case SiteSuppressionChannelSMS:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -26762,6 +26767,9 @@ func (s *SiteSuppressionChannel) UnmarshalText(data []byte) error {
 		return nil
 	case SiteSuppressionChannelTelegram:
 		*s = SiteSuppressionChannelTelegram
+		return nil
+	case SiteSuppressionChannelSMS:
+		*s = SiteSuppressionChannelSMS
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

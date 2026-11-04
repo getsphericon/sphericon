@@ -251,7 +251,9 @@ _Avoid_: Subscription (a rejected concept), endpoint, device, channel identity
 
 **Suppression**:
 The workspace's authoritative, (channel, destination)-keyed do-not-send registry for hard,
-global facts: hard bounce, spam complaint, and manual bans. Destination-centric (covers
+global facts: hard bounce, spam complaint, and manual bans. On SMS a number the provider reports
+reaches no handset (no mobile number, unknown) is suppressed as a bounce; an ambiguous failure (a
+carrier filter, an unknown code) never is. Destination-centric (covers
 destinations with no contact) and a compliance ratchet (bounce/complaint do not auto-clear).
 Removing one is **lifting** it: the row stays with `lifted_at` and no longer blocks sends.
 The send path's global hard floor, checked on every send.
@@ -420,10 +422,11 @@ _Avoid_: Send log, delivery row, email record
 **Outcome** (of an Outbound send):
 Either **per-recipient** and final for that destination — _Sent_, _Skipped_ (no Destination on the
 Channel, Suppression, Unsubscribe, or missing Confirmation), or a permanent failure of that one message
-(on Telegram, a message the Bot API refuses for its content) — or
+(on Telegram, a message the Bot API refuses for its content; on SMS, a number the provider refuses,
+which fails that message alone and lets an Automation go on) — or
 **per-source** and reversible: a **Hold** (Workspace suspension, Staff hold, an unverified
 Sending domain, no Integration, a provider that has stopped the customer's account, a provider that
-refuses the Integration's credentials (`provider_refused`), or
+refuses the Integration's credentials or account (`provider_refused`), or
 a WhatsApp template Meta has paused or disabled) or a **Deferral** (the Integration's Provider
 limit or the Workspace's Send cap is spent, or the provider asks to slow down), after which the
 same messages may still be sent.
@@ -464,7 +467,8 @@ pauses with its remaining recipients pending, Automation Enrollments wait, a Tra
 is refused. Distinct from _Skipped_, which is final for one destination. The reasons are
 `workspace_suspended`, `workspace_pending_deletion`, `staff_hold`, `no_integration`,
 `unverified_domain`, `provider_stopped` and `provider_refused`. The last is found at send time: the
-provider refused the Integration's credentials (Telegram's 401, a revoked bot token), the Integration
+provider refused the Integration's credentials or account (Telegram's 401, a revoked bot token, a
+suspended Twilio account or a sender it cannot use), the Integration
 keeps that standing until it is saved again with credentials the provider accepts, and only the work
 that sends through it waits.
 _Avoid_: Block, failure, ban

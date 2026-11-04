@@ -18,6 +18,7 @@ import (
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/phone"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -80,11 +81,18 @@ type Entry struct {
 // telegramUserID is what a Telegram Destination is: the user's numeric id.
 var telegramUserID = regexp.MustCompile(`^\d{1,20}$`)
 
+// e164 is what an SMS Destination is: a phone number in E.164.
+var e164 = regexp.MustCompile(`^\+[1-9]\d{6,14}$`)
+
 // ValidDestination reports whether dest, already normalized, can be a Destination on the Channel:
-// anything non-empty on email (the contract checks the address), a Telegram user id on Telegram.
+// anything non-empty on email (the contract checks the address), a Telegram user id on Telegram, a
+// number in E.164 on SMS.
 func ValidDestination(channel, dest string) bool {
-	if channel == string(entsuppression.ChannelTelegram) {
+	switch channel {
+	case string(entsuppression.ChannelTelegram):
 		return telegramUserID.MatchString(dest)
+	case string(entsuppression.ChannelSms):
+		return e164.MatchString(dest)
 	}
 	return dest != ""
 }
@@ -124,11 +132,24 @@ func AddManual(ctx context.Context, s *ent.Scoped, channel entsuppression.Channe
 	if channel == "" {
 		channel = entsuppression.ChannelEmail
 	}
-	if channel == entsuppression.ChannelEmail {
-		// Someone typed it: the address must be one (the bus subscriber's addresses come from providers).
+	// Someone typed it: the address must be one (the bus subscriber's addresses come from
+	// providers), and a number is stored in E.164, read with the country code it must carry.
+	switch channel {
+	case entsuppression.ChannelEmail:
 		if addr, err := mail.ParseAddress(NormalizeDestination(destination)); err != nil || addr.Address != NormalizeDestination(destination) {
 			return nil, ErrDestinationInvalid
 		}
+	case entsuppression.ChannelSms:
+		if strings.TrimSpace(destination) == "" {
+			return nil, ErrDestinationEmpty
+		}
+		number, err := phone.Normalize(destination, "")
+		if err != nil {
+			return nil, ErrDestinationInvalid
+		}
+		destination = number
+	case entsuppression.ChannelTelegram:
+		// A user id is checked by Add.
 	}
 	if err := Add(ctx, s, Entry{Channel: channel, Destination: destination, Reason: entsuppression.ReasonManual}); err != nil {
 		return nil, err

@@ -117,6 +117,28 @@ test('adds a Telegram suppression by the user id', async () => {
   await expect.poll(() => bodies).toEqual([{ channel: 'telegram', destination: '123456789' }])
 })
 
+test('adds an SMS suppression by the phone number', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    list([]),
+    handleSiteSuppressionsCreate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(suppression({ channel: 'sms', reason: 'manual' }), {
+        status: 201,
+      })
+    }),
+  )
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
+
+  await screen.getByRole('button', { name: 'Suppress' }).first().click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText('Channel').selectOptions('sms')
+  await dialog.getByLabelText(/^Phone number/).fill('+14155550132')
+  await dialog.getByRole('button', { name: 'Suppress' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ channel: 'sms', destination: '+14155550132' }])
+})
+
 test('lifts a suppression after confirmation', async () => {
   let deleted = false
   worker.use(

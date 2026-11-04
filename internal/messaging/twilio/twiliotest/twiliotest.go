@@ -89,6 +89,56 @@ type Server struct {
 	forbidden map[string]bool    // sender SIDs the credentials may read but not change
 	requests  []Request
 	messages  []Message
+	// refusal is what the next message create answers instead of accepting it, nil to accept;
+	// refuseOnce answers it once.
+	refusal    *Refusal
+	refuseOnce bool
+}
+
+// Refusal is how Twilio refuses a call: the HTTP status, its error code and its message.
+type Refusal struct {
+	Status  int
+	Code    int
+	Message string
+}
+
+// The refusals of a message create a test scripts, in Twilio's own words
+// (https://www.twilio.com/docs/api/errors/<code>).
+var (
+	// TooManyRequests is the account over its REST concurrency.
+	TooManyRequests = Refusal{Status: http.StatusTooManyRequests, Code: 20429, Message: "Too Many Requests"}
+	// QueueFull is the From's queue at capacity.
+	QueueFull = Refusal{Status: http.StatusBadRequest, Code: 21611, Message: "This 'From' number has exceeded the maximum number of queued messages"}
+	// AccountNotActive is a suspended account.
+	AccountNotActive = Refusal{Status: http.StatusBadRequest, Code: 20005, Message: "Account not active"}
+	// InvalidTo is a To that is no valid phone number.
+	InvalidTo = Refusal{Status: http.StatusBadRequest, Code: 21211, Message: "Invalid 'To' Phone Number"}
+	// NotMobile is a To that is no mobile number (a landline).
+	NotMobile = Refusal{Status: http.StatusBadRequest, Code: 21614, Message: "'To' number is not a valid mobile number"}
+	// Unknown is a code no table names.
+	Unknown = Refusal{Status: http.StatusBadRequest, Code: 29999, Message: "Something Twilio does not explain"}
+)
+
+// RefuseSends makes every message create answer r, after the credentials are checked, until
+// AcceptSends.
+func (s *Server) RefuseSends(r Refusal) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.refusal, s.refuseOnce = &r, false
+}
+
+// RefuseNextSend makes the next message create answer r; the ones after it are accepted.
+func (s *Server) RefuseNextSend(r Refusal) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.refusal, s.refuseOnce = &r, true
+}
+
+// AcceptSends drops a scripted refusal.
+func (s *Server) AcceptSends() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.refusal = nil
 }
 
 // New makes a fake API, closed when the test ends. It listens at once but serves from the first
@@ -350,6 +400,13 @@ func (s *Server) createMessage(w http.ResponseWriter, account string, form url.V
 	}
 	if m, ok := s.services[service]; service != "" && (!ok || m.account != account) {
 		fail(w, http.StatusBadRequest, 21701, "The Messaging Service Sid "+service+" is invalid.")
+		return
+	}
+	if r := s.refusal; r != nil {
+		if s.refuseOnce {
+			s.refusal = nil
+		}
+		fail(w, r.Status, r.Code, r.Message)
 		return
 	}
 	msg := Message{

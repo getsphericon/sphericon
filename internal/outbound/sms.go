@@ -6,9 +6,12 @@ import (
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
+	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/smsrender"
+	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // SMSContent is SMS's Message content (ADR 0078): one plain text with Liquid merge tags, no media,
@@ -61,9 +64,16 @@ func (smsChannel) targets(_ context.Context, _ *ent.Scoped, _ Request, _ Route, 
 	return []target{{dest: dest}}, nil
 }
 
-// unreachable: a phone number is no Binding; a dead number is the Suppression's to record.
-func (smsChannel) unreachable(context.Context, *ent.Scoped, events.Publisher, *ent.Integration, target, int64) error {
-	return nil
+// unreachable suppresses a number the provider reports reaches no handset, like a hard bounce: no
+// send on the Channel goes to it again, and the message is Skipped as suppressed.
+func (smsChannel) unreachable(ctx context.Context, s *ent.Scoped, _ events.Publisher, _ *ent.Integration, req Request, to target, _ int64) (string, error) {
+	err := suppression.Add(ctx, s, suppression.Entry{
+		Channel: entsuppression.ChannelSms, Destination: to.dest, Reason: entsuppression.ReasonBounce, ContactID: req.contactID(),
+	})
+	if err != nil {
+		return "", fmt.Errorf("outbound: suppress a dead number: %w", err)
+	}
+	return eligibility.ReasonSuppressed, nil
 }
 
 // smsMessage is a rendered text, as the provider takes it.
@@ -117,9 +127,33 @@ func (a smsAdapter) send(ctx context.Context, _ sendAs, msg any, to target, _ me
 	}
 	sent, err := a.sender.Send(ctx, messaging.SMSMessage{To: to.dest, Body: m.body, StatusCallback: a.statusCallback})
 	if err != nil {
-		return messaging.Receipt{}, err
+		return messaging.Receipt{}, classifySMS(err)
 	}
 	return messaging.Receipt{MessageID: sent.ID}, nil
+}
+
+// classifySMS takes the course a refusal of the provider calls for, by whom the provider's adapter
+// says it concerns (ADR 0079): the account holds the Integration (HoldProviderRefused), a rate signal
+// defers the send, a number that reaches no handset is suppressed, and a refusal of the number or one
+// that tells nothing fails this message alone (ReasonMessageRefused), with the provider's words and
+// code. A failure of the provider itself or of the network is left as it came: a retryable error.
+func classifySMS(err error) error {
+	e, ok := errors.AsType[*messaging.SMSError](err)
+	if !ok {
+		return err
+	}
+	switch e.Refusal {
+	case messaging.SMSRefusalAccount:
+		return fmt.Errorf("%w: %w", holdError{reason: HoldProviderRefused}, err)
+	case messaging.SMSRefusalRate:
+		return deferError{wait: DeferralBackoff, err: err}
+	case messaging.SMSRefusalDeadNumber:
+		return unreachableError{err}
+	case messaging.SMSRefusalDestination, messaging.SMSRefusalAmbiguous:
+		return chatRefusedError{description: ReasonMessageRefused + ": " + e.Reason()}
+	default:
+		return err
+	}
 }
 
 // publishSent publishes sms.sent, with the Broadcast or Automation the message came from.

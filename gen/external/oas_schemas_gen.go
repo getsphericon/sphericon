@@ -8279,7 +8279,8 @@ func (s *CreateSendingDomainInput) SetDkimSelector(val OptString) {
 type CreateSuppressionInput struct {
 	// The Channel to stop sending on; `email` when omitted.
 	Channel OptSuppressionChannel `json:"channel"`
-	// What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`.
+	// What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`, a
+	// phone number with its country code on `sms` (stored in E.164).
 	Destination string `json:"destination"`
 }
 
@@ -18375,6 +18376,7 @@ type SuppressionChannel string
 const (
 	SuppressionChannelEmail    SuppressionChannel = "email"
 	SuppressionChannelTelegram SuppressionChannel = "telegram"
+	SuppressionChannelSMS      SuppressionChannel = "sms"
 )
 
 // AllValues returns all SuppressionChannel values.
@@ -18382,6 +18384,7 @@ func (SuppressionChannel) AllValues() []SuppressionChannel {
 	return []SuppressionChannel{
 		SuppressionChannelEmail,
 		SuppressionChannelTelegram,
+		SuppressionChannelSMS,
 	}
 }
 
@@ -18391,6 +18394,8 @@ func (s SuppressionChannel) MarshalText() ([]byte, error) {
 	case SuppressionChannelEmail:
 		return []byte(s), nil
 	case SuppressionChannelTelegram:
+		return []byte(s), nil
+	case SuppressionChannelSMS:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -18405,6 +18410,9 @@ func (s *SuppressionChannel) UnmarshalText(data []byte) error {
 		return nil
 	case SuppressionChannelTelegram:
 		*s = SuppressionChannelTelegram
+		return nil
+	case SuppressionChannelSMS:
+		*s = SuppressionChannelSMS
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -18468,7 +18476,8 @@ type SuppressionResource struct {
 	ID EntityId `json:"id"`
 	// The Channel the suppression is on.
 	Channel SuppressionChannel `json:"channel"`
-	// Normalized destination: the lower-cased email address, or the Telegram user id.
+	// Normalized destination: the lower-cased email address, the Telegram user id, or the phone number in
+	// E.164.
 	Destination string `json:"destination"`
 	// Why the destination is suppressed.
 	Reason SuppressionReason `json:"reason"`
