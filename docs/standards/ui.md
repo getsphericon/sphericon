@@ -77,6 +77,28 @@ a form needs no code of its own for them. A form on a bare `useForm` has to be m
   beside it, in a polite live region. The rows stay on screen while it runs, and a failed refresh
   leaves the previous time. No list adds its own refresh.
 
+## Status and its details
+
+[Status indicator](https://cloudscape.design/components/status-indicator/),
+[popover](https://cloudscape.design/components/popover/) and
+[tooltip](https://cloudscape.design/components/tooltip/).
+
+- A resource shows one status, a word or two that names its current state ("Failing", "Disabled"),
+  never color alone. When two could apply, the one the person must act on first wins.
+- Why it is in that state (the reason, since when, the last error) opens in a popover on the
+  status, not in a dimmed line under it. The popover is supplementary: the status alone is enough to
+  act on. Its text is short, at most about 150 characters, with no links or buttons; a longer
+  explanation or an action belongs on the page.
+- A tooltip only names an icon, shows truncated text or explains a term. It holds no status
+  details and nothing to act on.
+- A dimmed line that is not about a status stays: a secondary value (an email under a name, a
+  count under a figure) or an instruction.
+
+This is `DetailsBadge` (`src/components/DetailsBadge.tsx`): a badge, and with `details` a button
+that opens them in a popover, by click, tap or keyboard. Cloudscape draws a status as an icon and
+colored text with a dashed-underline trigger; we keep Mantine's `Badge`, which the app uses
+everywhere, and mark the badge that has details with an info icon.
+
 ## Empty states
 
 [Empty states](https://cloudscape.design/patterns/general/empty-states/).

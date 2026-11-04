@@ -23,6 +23,7 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { DetailsBadge } from '../../components/DetailsBadge.tsx'
 import { EventActionNames, EventActionOption } from '../../components/EventActionName.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
@@ -67,23 +68,65 @@ const EVENT_OPTIONS = [
   'audit.entry',
 ]
 
-function FailureText({ failure }: { failure: SiteWebhookFailure }) {
+// useFailureSummary says why an endpoint's deliveries fail, how many in a row and since when.
+function useFailureSummary() {
   const { t } = useTranslation()
   const { formatDateTime } = useFormat()
-  const reason = {
-    timeout: t(($) => $.settings.webhooks.errorTimeout),
-    blocked_address: t(($) => $.settings.webhooks.errorBlockedAddress),
-    http_status: t(($) => $.settings.webhooks.errorHttpStatus, { status: failure.status ?? 0 }),
-    network: t(($) => $.settings.webhooks.errorNetwork),
-  }[failure.kind]
+  return (failure: SiteWebhookFailure) =>
+    t(($) => $.settings.webhooks.failureSummary, {
+      reason: {
+        timeout: t(($) => $.settings.webhooks.errorTimeout),
+        blocked_address: t(($) => $.settings.webhooks.errorBlockedAddress),
+        http_status: t(($) => $.settings.webhooks.errorHttpStatus, {
+          status: failure.status ?? 0,
+        }),
+        network: t(($) => $.settings.webhooks.errorNetwork),
+      }[failure.kind],
+      count: failure.consecutiveFailures,
+      since: formatDateTime(failure.since),
+    })
+}
+
+// WebhookStatus is the one status of an endpoint: Disabled wins over Failing, and the reason,
+// the time it was turned off and the failing deliveries open in the badge's popover.
+function WebhookStatus({ record }: { record: SiteWebhookEndpointResource }) {
+  const { t } = useTranslation()
+  const { formatDateTime } = useFormat()
+  const failureSummary = useFailureSummary()
+  const failure = record.failure ? failureSummary(record.failure) : null
+
+  if (!record.enabled) {
+    const reason = record.disabledReason
+      ? {
+          owner: t(($) => $.settings.webhooks.disabledOwner),
+          gone: t(($) => $.settings.webhooks.disabledGone),
+          persistent_failure: t(($) => $.settings.webhooks.disabledPersistentFailure),
+        }[record.disabledReason]
+      : null
+    return (
+      <DetailsBadge
+        variant="light"
+        color="gray"
+        details={[
+          reason && record.disabledAt ? `${reason} (${formatDateTime(record.disabledAt)})` : reason,
+          failure,
+        ]}
+      >
+        {t(($) => $.settings.webhooks.disabled)}
+      </DetailsBadge>
+    )
+  }
+  if (failure !== null) {
+    return (
+      <DetailsBadge variant="light" color="red" details={[failure]}>
+        {t(($) => $.settings.webhooks.failing)}
+      </DetailsBadge>
+    )
+  }
   return (
-    <Text size="xs" c="dimmed">
-      {t(($) => $.settings.webhooks.failureSummary, {
-        reason,
-        count: failure.consecutiveFailures,
-        since: formatDateTime(failure.since),
-      })}
-    </Text>
+    <Badge variant="light" color="teal">
+      {t(($) => $.settings.webhooks.enabled)}
+    </Badge>
   )
 }
 
@@ -184,7 +227,6 @@ function WebhooksTable({
   onToggle: (record: SiteWebhookEndpointResource) => void
   onDelete: (record: { id: string; url: string }) => void
 }) {
-  const { formatDateTime } = useFormat()
   const { t } = useTranslation()
   const records = useSuspenseQuery(siteWebhooksListOptions({ path: { workspaceId } })).data.items
 
@@ -209,35 +251,7 @@ function WebhooksTable({
         {
           accessor: 'enabled',
           title: t(($) => $.settings.webhooks.statusColumn),
-          render: (record) => (
-            <Stack gap={2}>
-              <Badge variant="light" color={record.enabled ? 'teal' : 'gray'}>
-                {record.enabled
-                  ? t(($) => $.settings.webhooks.enabled)
-                  : t(($) => $.settings.webhooks.disabled)}
-              </Badge>
-              {record.disabledReason ? (
-                <Text size="xs" c="dimmed">
-                  {
-                    {
-                      owner: t(($) => $.settings.webhooks.disabledOwner),
-                      gone: t(($) => $.settings.webhooks.disabledGone),
-                      persistent_failure: t(($) => $.settings.webhooks.disabledPersistentFailure),
-                    }[record.disabledReason]
-                  }
-                  {record.disabledAt ? ` (${formatDateTime(record.disabledAt)})` : ''}
-                </Text>
-              ) : null}
-              {record.failure ? (
-                <>
-                  <Badge variant="light" color="red">
-                    {t(($) => $.settings.webhooks.failing)}
-                  </Badge>
-                  <FailureText failure={record.failure} />
-                </>
-              ) : null}
-            </Stack>
-          ),
+          render: (record) => <WebhookStatus record={record} />,
         },
         {
           accessor: 'secret',

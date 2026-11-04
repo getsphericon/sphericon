@@ -79,7 +79,10 @@ test('lists a failing endpoint with its last error', async () => {
   )
   const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
-  await expect.element(screen.getByText('Failing', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText(/HTTP 503: 7 deliveries failed/)).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Enabled', { exact: true })).not.toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Failing' }).click()
+
   await expect.element(screen.getByText(/HTTP 503: 7 deliveries failed/)).toBeInTheDocument()
 })
 
@@ -87,7 +90,35 @@ test('says why an endpoint turned itself off', async () => {
   worker.use(list([endpoint({ enabled: false, disabledReason: 'gone' })]))
   const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
+  await screen.getByRole('button', { name: 'Disabled' }).click()
+
   await expect.element(screen.getByText('Receiver answered 410 Gone')).toBeInTheDocument()
+})
+
+test('shows an endpoint turned off for failing with its last error', async () => {
+  worker.use(
+    list([
+      endpoint({
+        enabled: false,
+        disabledReason: 'persistent_failure',
+        failure: {
+          consecutiveFailures: 3,
+          since: '2026-01-01T00:00:00Z',
+          lastFailureAt: '2026-01-02T00:00:00Z',
+          kind: 'timeout',
+        },
+      }),
+    ]),
+  )
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
+
+  await expect.element(screen.getByText('Failing', { exact: true })).not.toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Disabled' }).click()
+
+  await expect
+    .element(screen.getByText('Turned off after failing for too long'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText(/Timed out: 3 deliveries failed/)).toBeInTheDocument()
 })
 
 test('says when an owner turned an endpoint off', async () => {
@@ -97,6 +128,8 @@ test('says when an owner turned an endpoint off', async () => {
     ]),
   )
   const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
+
+  await screen.getByRole('button', { name: 'Disabled' }).click()
 
   await expect.element(screen.getByText(/Turned off by a member \(/)).toBeInTheDocument()
 })
