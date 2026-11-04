@@ -42,6 +42,7 @@ import type {
   SiteWebhookFailure,
   SiteWebhookTestResult,
 } from '../../generated/site/types.gen.ts'
+import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
@@ -52,7 +53,7 @@ import {
   ENROLLMENT_ACTIONS,
   TELEGRAM_ACTIONS,
 } from '../../utils/systemEvents.ts'
-import { ChangeHistoryLink } from './AuditLogSection.tsx'
+import { HistoryMenuItem } from './AuditLogSection.tsx'
 
 // The domain events an endpoint can subscribe to. An empty selection means all customer
 // events; audit.entry (Enterprise) is never included and must be chosen explicitly.
@@ -229,6 +230,7 @@ function WebhooksTable({
 }) {
   const { t } = useTranslation()
   const records = useSuspenseQuery(siteWebhooksListOptions({ path: { workspaceId } })).data.items
+  const historyOffered = useAuditLogOffered(workspaceId)
 
   return (
     <DataTable
@@ -270,13 +272,15 @@ function WebhooksTable({
           accessor: 'actions',
           title: '',
           render: (record) => (
-            <Group gap="xs" wrap="nowrap" justify="flex-end">
-              <ChangeHistoryLink
-                workspaceId={workspaceId}
-                targetType={AUDIT_TARGET_WEBHOOK_ENDPOINT}
-                targetId={record.id}
-              />
+            <Group justify="flex-end">
               <RowActionsMenu>
+                {historyOffered ? (
+                  <HistoryMenuItem
+                    workspaceId={workspaceId}
+                    targetType={AUDIT_TARGET_WEBHOOK_ENDPOINT}
+                    targetId={record.id}
+                  />
+                ) : null}
                 <Menu.Item onClick={() => onTest(record.id)}>
                   {t(($) => $.settings.webhooks.sendTest)}
                 </Menu.Item>

@@ -49,10 +49,11 @@ import type {
   SiteIntegrationResource,
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
+import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_INTEGRATION } from '../../utils/auditFilter.ts'
 import { can } from '../../utils/permissions.ts'
-import { ChangeHistoryLink } from './AuditLogSection.tsx'
+import { HistoryMenuItem } from './AuditLogSection.tsx'
 import { InboundModal } from './InboundModal.tsx'
 import {
   NO_LIMITS,
@@ -192,6 +193,7 @@ function IntegrationsList({
   const { t } = useTranslation()
   const records = useSuspenseQuery(integrationsOptions(workspaceId, archived)).data
   const warnings = useProviderLimitWarnings()
+  const historyOffered = useAuditLogOffered(workspaceId)
   const channelLabels: Record<SiteIntegrationChannel, string> = {
     email: t(($) => $.settings.integrations.channels.email),
     sms: t(($) => $.settings.integrations.channels.sms),
@@ -261,11 +263,6 @@ function IntegrationsList({
                 title: '',
                 render: (record) => (
                   <Group gap="xs" wrap="nowrap" justify="flex-end">
-                    <ChangeHistoryLink
-                      workspaceId={workspaceId}
-                      targetType={AUDIT_TARGET_INTEGRATION}
-                      targetId={record.id}
-                    />
                     {canManage && archived ? (
                       <RowActionsMenu>
                         <Menu.Item onClick={() => onRestore(record.id)}>
@@ -273,22 +270,33 @@ function IntegrationsList({
                         </Menu.Item>
                       </RowActionsMenu>
                     ) : null}
-                    {canManage && !archived ? (
+                    {!archived && (canManage || historyOffered) ? (
                       <RowActionsMenu>
-                        {record.isDefault ? null : (
+                        {historyOffered ? (
+                          <HistoryMenuItem
+                            workspaceId={workspaceId}
+                            targetType={AUDIT_TARGET_INTEGRATION}
+                            targetId={record.id}
+                          />
+                        ) : null}
+                        {canManage && !record.isDefault ? (
                           <Menu.Item onClick={() => onMakeDefault(record.id)}>
                             {t(($) => $.settings.integrations.makeDefault)}
                           </Menu.Item>
-                        )}
-                        <Menu.Item onClick={() => onEditLimits(record)}>
-                          {t(($) => $.settings.integrations.providerLimit.edit)}
-                        </Menu.Item>
-                        <Menu.Item onClick={() => onInbound(record)}>
-                          {t(($) => $.settings.integrations.inbound.open)}
-                        </Menu.Item>
-                        <Menu.Item color="red" onClick={() => onRemove(record.id)}>
-                          {t(($) => $.actions.remove)}
-                        </Menu.Item>
+                        ) : null}
+                        {canManage ? (
+                          <>
+                            <Menu.Item onClick={() => onEditLimits(record)}>
+                              {t(($) => $.settings.integrations.providerLimit.edit)}
+                            </Menu.Item>
+                            <Menu.Item onClick={() => onInbound(record)}>
+                              {t(($) => $.settings.integrations.inbound.open)}
+                            </Menu.Item>
+                            <Menu.Item color="red" onClick={() => onRemove(record.id)}>
+                              {t(($) => $.actions.remove)}
+                            </Menu.Item>
+                          </>
+                        ) : null}
                       </RowActionsMenu>
                     ) : null}
                   </Group>

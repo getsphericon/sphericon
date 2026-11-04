@@ -29,7 +29,7 @@ import * as z from 'zod'
 import { ActionOption } from '../../components/ActionName.tsx'
 import { AuditActionName } from '../../components/AuditActionName.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
-import { ButtonLink } from '../../components/RouterLink.tsx'
+import { MenuItemLink } from '../../components/RouterLink.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteAuditExportOptions,
@@ -45,6 +45,7 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { zRetentionDays, zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
 import { useAuditActionLabel } from '../../hooks/useAuditActionLabel.ts'
+import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -395,7 +396,7 @@ export function AuditExportButton({
   filter: AuditFilter
 }) {
   const { t } = useTranslation()
-  const probe = useQuery(siteAuditListOptions({ path: { workspaceId }, query: { limit: 1 } }))
+  const offered = useAuditLogOffered(workspaceId)
   const notify = useNotify()
   const queryClient = useQueryClient()
   const exportCsv = useMutation({
@@ -412,7 +413,7 @@ export function AuditExportButton({
         message: t(($) => $.settings.auditLog.exportError),
       }),
   })
-  if (!probe.isSuccess) {
+  if (!offered) {
     return null
   }
 
@@ -671,10 +672,9 @@ function FilterBar({ workspaceId, filter, onFilterChange }: FilterProps & { work
   )
 }
 
-// ChangeHistoryLink opens the Audit log pre-filtered to one object (an Integration or a
-// Webhook endpoint). It renders nothing where the log is not offered (a plain member, or
-// no Enterprise license), so it never points at a section that is not there.
-export function ChangeHistoryLink({
+// HistoryMenuItem is the row action that opens the Audit log pre-filtered to one object (an
+// Integration or a Webhook endpoint). Its row renders it only where `useAuditLogOffered` holds.
+export function HistoryMenuItem({
   workspaceId,
   targetType,
   targetId,
@@ -684,21 +684,10 @@ export function ChangeHistoryLink({
   targetId: string
 }) {
   const { t } = useTranslation()
-  const probe = useQuery(siteAuditListOptions({ path: { workspaceId }, query: { limit: 1 } }))
-  if (!probe.isSuccess) {
-    return null
-  }
-
   return (
-    <ButtonLink
-      size="compact-sm"
-      variant="subtle"
-      to={auditLogRoute.to}
-      params={{ workspaceId }}
-      search={{ targetType, targetId }}
-    >
-      {t(($) => $.settings.auditLog.changeHistory)}
-    </ButtonLink>
+    <MenuItemLink to={auditLogRoute.to} params={{ workspaceId }} search={{ targetType, targetId }}>
+      {t(($) => $.settings.auditLog.viewHistory)}
+    </MenuItemLink>
   )
 }
 

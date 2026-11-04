@@ -1657,7 +1657,6 @@ export default interface Resources {
         "anyActor": "Anyone",
         "anyTarget": "Any target",
         "anyTime": "Any time",
-        "changeHistory": "Change history",
         "changedMarker": "changed",
         "chipActor": "Actor #{{value}}",
         "chipIp": "IP {{value}}",
@@ -1695,7 +1694,8 @@ export default interface Resources {
         "target": "Target",
         "targetType": "Target type",
         "time": "Time",
-        "today": "Today"
+        "today": "Today",
+        "viewHistory": "View history"
       },
       "backToWorkspace": "Back to workspace",
       "browserSdkLink": "Browser SDK (@sphericon/analytics)",

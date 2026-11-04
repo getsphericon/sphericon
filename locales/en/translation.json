@@ -1684,7 +1684,6 @@
       "anyTarget": "Any target",
       "anyTime": "Any time",
       "changedMarker": "changed",
-      "changeHistory": "Change history",
       "chipActor": "Actor #{{value}}",
       "chipIp": "IP {{value}}",
       "chipRequest": "Request {{value}}",
@@ -1722,7 +1721,8 @@
       "target": "Target",
       "targetType": "Target type",
       "time": "Time",
-      "today": "Today"
+      "today": "Today",
+      "viewHistory": "View history"
     },
     "backToWorkspace": "Back to workspace",
     "browserSdkLink": "Browser SDK (@sphericon/analytics)",

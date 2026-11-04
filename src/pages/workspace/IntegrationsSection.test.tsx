@@ -71,7 +71,7 @@ const create = (bodies: unknown[]) =>
     return HttpResponse.json(smtp, { status: 201 })
   })
 
-// Without a license the change-history link probes the Audit log and hides itself.
+// Without a license the history row action probes the Audit log and is not offered.
 beforeEach(() => {
   worker.use(handleSiteAuditList(() => problem(402)))
 })
@@ -541,6 +541,28 @@ test('a member without integrations:manage reads the providers but does not chan
     .element(screen.getByRole('button', { name: 'Connect provider' }))
     .not.toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Remove' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'More actions' }).elements()).toHaveLength(0)
+})
+
+test("a provider's history opens the Audit log filtered to it", async () => {
+  worker.use(list([smtp]), handleSiteAuditList({ body: { items: [] } }))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  const history = screen.getByRole('menuitem', { name: 'View history' })
+  await expect.element(history).toBeInTheDocument()
+  const href = history.element().getAttribute('href') ?? ''
+  expect(href).toContain('targetType=integration')
+  expect(href).toContain('targetId=%221%22')
+})
+
+test('a member who reads the Audit log but cannot manage providers gets only the history', async () => {
+  worker.use(list([smtp]), handleSiteAuditList({ body: { items: [] } }))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={workspaceWith([])} />)
+
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await expect.element(screen.getByRole('menuitem', { name: 'View history' })).toBeInTheDocument()
+  expect(screen.getByRole('menuitem', { name: 'Remove' }).elements()).toHaveLength(0)
 })
 
 // The built-in Presets as the server lists them (internal/preset/builtin), and a custom one with
