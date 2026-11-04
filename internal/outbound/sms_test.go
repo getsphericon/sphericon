@@ -1,7 +1,6 @@
 package outbound_test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/samber/lo"
@@ -71,7 +70,8 @@ func TestTheProviderLimitOfATwilioIntegrationPacesItsTexts(t *testing.T) {
 	assert.Equal(t, outbound.Deferral, second.Outcome)
 	assert.Equal(t, providerlimit.CauseProviderLimit, second.Cause)
 	assert.Positive(t, second.Wait)
-	assert.Len(t, env.Twilio.Messages(), 1, "Twilio is not asked for the deferred text")
+	inbox := env.Twilio.Messages()
+	assert.Len(t, inbox, 1, "Twilio is not asked for the deferred text")
 }
 
 // Twilio refuses a text with 21610 to a number that texted STOP to the sender at Twilio: that is the
@@ -81,7 +81,7 @@ func TestATextTwilioRefusesAsOptedOutRecordsTheOptOutAndIsSkipped(t *testing.T) 
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	account := connectConfirmedTexter(t, env)
-	env.Twilio.RefuseSends(twiliotest.Unsubscribed)
+	env.Twilio.RefuseNextSend(twiliotest.Unsubscribed)
 
 	res := sendText(t, env, textTo(t, env, account, "sms:1"))
 
@@ -94,16 +94,14 @@ func TestATextTwilioRefusesAsOptedOutRecordsTheOptOutAndIsSkipped(t *testing.T) 
 	assert.Equal(t, eligibility.SourceEverything, stop.SendingSource)
 	assert.Equal(t, unsubscribe.ViaRefusedSend, lo.FromPtr(stop.Via))
 	assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(stop.ContactID))
-	assert.False(t, env.DB.Confirmation.Query().Where(confirmation.ChannelEQ(confirmation.ChannelSms), confirmation.DestinationEQ(fixtures.ContactTexterPhone)).ExistX(ctx),
-		"the refused number's consent ends with its stop")
+	consented := env.DB.Confirmation.Query().Where(confirmation.ChannelEQ(confirmation.ChannelSms), confirmation.DestinationEQ(fixtures.ContactTexterPhone)).ExistX(ctx)
+	assert.False(t, consented, "the refused number's consent ends with its stop")
 
 	again := sendText(t, env, textTo(t, env, account, "sms:2"))
 
 	assert.Equal(t, outbound.Skipped, again.Outcome)
-	sends := lo.Filter(env.Twilio.Requests(), func(r twiliotest.Request, _ int) bool {
-		return strings.HasSuffix(r.Path, "/Messages.json")
-	})
-	assert.Len(t, sends, 1, "Twilio is not asked again for a number that stopped")
+	inbox := env.Twilio.Messages()
+	assert.Empty(t, inbox, "Twilio is not asked again for a number that stopped, though it would accept now")
 }
 
 func TestTheSendCapCountsTextsWithEmail(t *testing.T) {
@@ -117,7 +115,8 @@ func TestTheSendCapCountsTextsWithEmail(t *testing.T) {
 	require.Equal(t, outbound.Sent, email.Outcome)
 	assert.Equal(t, outbound.Deferral, text.Outcome)
 	assert.Equal(t, providerlimit.CauseSendCap, text.Cause)
-	assert.Empty(t, env.Twilio.Messages())
+	inbox := env.Twilio.Messages()
+	assert.Empty(t, inbox)
 }
 
 func TestAnSMSSentCountsAgainstTheSendCapOfLaterEmail(t *testing.T) {

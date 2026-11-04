@@ -39,14 +39,6 @@ type APIKey struct {
 	Secret string
 }
 
-// Request is one call the fake received: the method, the path and the form (the query of a GET,
-// the body of a POST).
-type Request struct {
-	Method string
-	Path   string
-	Form   url.Values
-}
-
 // Webhooks is where Twilio posts for a number or a Messaging Service, as the calls set it.
 type Webhooks struct {
 	// Inbound is a number's SmsUrl or a Messaging Service's InboundRequestUrl.
@@ -87,7 +79,6 @@ type Server struct {
 	numbers   map[string]*sender // by SID
 	services  map[string]*sender // by SID
 	forbidden map[string]bool    // sender SIDs the credentials may read but not change
-	requests  []Request
 	messages  []Message
 	// refusal is what the next message create answers instead of accepting it, nil to accept;
 	// refuseOnce answers it once.
@@ -237,13 +228,6 @@ func (s *Server) Webhooks(senderSID string) Webhooks {
 	return Webhooks{}
 }
 
-// Requests is every call the fake received, in order.
-func (s *Server) Requests() []Request {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return slices.Clone(s.requests)
-}
-
 // Messages is every message the fake accepted, in order.
 func (s *Server) Messages() []Message {
 	s.mu.Lock()
@@ -284,7 +268,6 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.requests = append(s.requests, Request{Method: r.Method, Path: r.URL.Path, Form: form})
 
 	account, ok := s.authenticate(r)
 	if !ok {

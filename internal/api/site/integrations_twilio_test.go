@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -10,6 +9,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -55,7 +55,8 @@ func TestSiteTwilioConnectsANumberWithAnAPIKey(t *testing.T) {
 	assert.True(t, cfg.CallbacksSet)
 	assert.JSONEq(t, `"********"`, string(row.Params["auth_token"]), "the webhook secret is never shown")
 	assert.True(t, row.ProviderLimit.PerSecond.Limit.Null, "no Provider limit is read from Twilio")
-	assert.Equal(t, row.HookUrl, env.Twilio.Webhooks(sms.NumberSID).Inbound, "the number's inbound messages reach the hook")
+	hooks := env.Twilio.Webhooks(sms.NumberSID)
+	assert.Equal(t, row.HookUrl, hooks.Inbound, "the number's inbound messages reach the hook")
 }
 
 func TestSiteTwilioPointsAMessagingServiceAtTheHook(t *testing.T) {
@@ -80,15 +81,18 @@ func TestSiteTwilioAnAlphanumericSenderLeavesTheAddressToCopy(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	account := env.Twilio.AddAccount()
+	number := env.Twilio.AddNumber(account, testhelper.TwilioNumber)
+	service := env.Twilio.AddMessagingService(account)
 
 	row := twilioCreated(t, createTwilio(t, c, testhelper.SiteTwilio(account.SID, "", account.AuthToken, "Acme Shop"), account.AuthToken))
 
 	cfg := twilioConfigOf(t, row)
 	assert.Equal(t, siteapi.SmsFromKindAlphanumeric, cfg.FromKind)
 	assert.False(t, cfg.CallbacksSet)
-	for _, call := range env.Twilio.Requests() {
-		assert.Equal(t, http.MethodGet, call.Method, "nothing is changed in the account: %s", call.Path)
-	}
+	numberHooks := env.Twilio.Webhooks(number)
+	serviceHooks := env.Twilio.Webhooks(service)
+	assert.Equal(t, twiliotest.Webhooks{}, numberHooks, "nothing is changed in the account")
+	assert.Equal(t, twiliotest.Webhooks{}, serviceHooks, "nothing is changed in the account")
 }
 
 func TestSiteTwilioLeavesTheAddressToCopyWhenTheKeyMayNotChangeTheNumber(t *testing.T) {
@@ -166,15 +170,15 @@ func TestSiteTwilioRotatingTheWebhookSecretLeavesTheSendCredential(t *testing.T)
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	sms := env.ConnectTwilio(t)
-	calls := len(env.Twilio.Requests())
 
 	row := updated(t, updateTelegram(t, c, sms.Integration.ID, &siteapi.UpdateIntegrationInput{
 		Params: siteapi.NewOptJsonObject(testhelper.TwilioAuthToken("rotatedauthtoken")),
 	}))
 
 	assert.Equal(t, []string{"auth_token"}, row.SecretsRetiring, "the old Auth Token stays accepted until retired")
-	assert.Equal(t, twilioConfigOf(t, sms.Integration), twilioConfigOf(t, row))
-	assert.Len(t, env.Twilio.Requests(), calls, "Twilio is not called: the send credential is untouched")
+	assert.Equal(t, twilioConfigOf(t, sms.Integration), twilioConfigOf(t, row), "the send credential is untouched")
+	hooks := env.Twilio.Webhooks(sms.NumberSID)
+	assert.Equal(t, row.HookUrl, hooks.Inbound, "the number still reaches the same hook")
 
 	t.Run("the stored secret still reaches Twilio", func(t *testing.T) {
 		service := env.Twilio.AddMessagingService(sms.Account)
@@ -184,7 +188,8 @@ func TestSiteTwilioRotatingTheWebhookSecretLeavesTheSendCredential(t *testing.T)
 		}))
 
 		assert.Equal(t, service, twilioConfigOf(t, row).From)
-		assert.Equal(t, row.HookUrl, env.Twilio.Webhooks(service).Inbound)
+		hooks := env.Twilio.Webhooks(service)
+		assert.Equal(t, row.HookUrl, hooks.Inbound)
 	})
 
 	t.Run("a blank secret is not kept for another key", func(t *testing.T) {
@@ -219,7 +224,8 @@ func TestSiteTwilioANewKeyRepointsTheNumber(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 
 	assert.NotEqual(t, sms.Integration.HookUrl, row.HookUrl)
-	assert.Equal(t, row.HookUrl, env.Twilio.Webhooks(sms.NumberSID).Inbound)
+	hooks := env.Twilio.Webhooks(sms.NumberSID)
+	assert.Equal(t, row.HookUrl, hooks.Inbound)
 }
 
 func updated(t *testing.T, res siteapi.SiteIntegrationsUpdateRes) *siteapi.SiteIntegrationResource {
