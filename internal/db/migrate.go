@@ -57,6 +57,19 @@ func Status(ctx context.Context, sqlDB *sql.DB) (SchemaStatus, error) {
 	return st, nil
 }
 
+// MigrateBefore is MigrateFS over files with the Go migrations older than version, as Migrate runs
+// them among the SQL files: the schema as it stood before the migration of that version, for a
+// test of that migration.
+func MigrateBefore(ctx context.Context, sqlDB *sql.DB, files fs.FS, version int64) (int, error) {
+	var older []*goose.Migration
+	for _, m := range goMigrations() {
+		if m.Version < version {
+			older = append(older, m)
+		}
+	}
+	return migrateFS(ctx, sqlDB, files, older)
+}
+
 // MigrateFS is Migrate over any migrations directory of SQL files.
 func MigrateFS(ctx context.Context, sqlDB *sql.DB, files fs.FS) (int, error) {
 	return migrateFS(ctx, sqlDB, files, nil)
