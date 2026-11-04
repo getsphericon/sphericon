@@ -3344,9 +3344,9 @@ export type IntegrationResource = {
    */
   hookUrl: string;
   /**
-   * When the integration was deleted; null while it is kept. A deleted integration is no longer listed and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks.
+   * When the integration was deleted (discarded); null while it is kept. A deleted integration is no longer listed, is read-only and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks.
    */
-  deletedAt?: Timestamp | null;
+  discardedAt?: Timestamp | null;
   /**
    * Creation timestamp
    */
@@ -4279,9 +4279,9 @@ export type SendingDomainResource = {
    */
   verificationLostAt?: Timestamp | null;
   /**
-   * When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot be restored, but stays readable by id.
+   * When the domain was deleted (discarded); null while it is kept. A deleted domain is no longer listed, is read-only, is never checked again and cannot be restored, but stays readable by id.
    */
-  deletedAt?: Timestamp | null;
+  discardedAt?: Timestamp | null;
   /**
    * Creation timestamp
    */

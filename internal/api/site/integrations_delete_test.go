@@ -53,7 +53,7 @@ func TestSiteIntegrationsDelete(t *testing.T) {
 	require.NoError(t, err)
 	opened, ok := got.(*siteapi.SiteIntegrationResource)
 	require.Truef(t, ok, "a deleted Integration can still be read by id, got %T", got)
-	assert.True(t, opened.DeletedAt.IsSet())
+	assert.True(t, opened.DiscardedAt.IsSet())
 
 	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegration(t, c, id), "deleting it again changes nothing")
 	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNotFound{}, deleteIntegration(t, c, 999999))
@@ -135,7 +135,7 @@ func TestSiteSentBroadcastStillNamesItsDeletedIntegration(t *testing.T) {
 	row, ok := integ.(*siteapi.SiteIntegrationResource)
 	require.Truef(t, ok, "got %T", integ)
 	assert.Equal(t, "Old relay (archived)", row.Name)
-	assert.True(t, row.DeletedAt.IsSet())
+	assert.True(t, row.DiscardedAt.IsSet())
 }
 
 // The delete is recorded in the Audit log with its actor.

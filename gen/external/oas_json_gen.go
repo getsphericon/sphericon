@@ -27874,9 +27874,9 @@ func (s *IntegrationResource) encodeFields(e *jx.Encoder) {
 		e.Str(s.HookUrl)
 	}
 	{
-		if s.DeletedAt.Set {
-			e.FieldStart("deletedAt")
-			s.DeletedAt.Encode(e)
+		if s.DiscardedAt.Set {
+			e.FieldStart("discardedAt")
+			s.DiscardedAt.Encode(e)
 		}
 	}
 	{
@@ -27904,7 +27904,7 @@ var jsonFieldsNameOfIntegrationResource = [17]string{
 	11: "params",
 	12: "secretsRetiring",
 	13: "hookUrl",
-	14: "deletedAt",
+	14: "discardedAt",
 	15: "createdAt",
 	16: "updatedAt",
 }
@@ -28076,15 +28076,15 @@ func (s *IntegrationResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"hookUrl\"")
 			}
-		case "deletedAt":
+		case "discardedAt":
 			if err := func() error {
-				s.DeletedAt.Reset()
-				if err := s.DeletedAt.Decode(d); err != nil {
+				s.DiscardedAt.Reset()
+				if err := s.DiscardedAt.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"deletedAt\"")
+				return errors.Wrap(err, "decode field \"discardedAt\"")
 			}
 		case "createdAt":
 			requiredBitSet[1] |= 1 << 7
@@ -40473,9 +40473,9 @@ func (s *SendingDomainResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.DeletedAt.Set {
-			e.FieldStart("deletedAt")
-			s.DeletedAt.Encode(e)
+		if s.DiscardedAt.Set {
+			e.FieldStart("discardedAt")
+			s.DiscardedAt.Encode(e)
 		}
 	}
 	{
@@ -40501,7 +40501,7 @@ var jsonFieldsNameOfSendingDomainResource = [15]string{
 	9:  "lastCheckedAt",
 	10: "verifiedAt",
 	11: "verificationLostAt",
-	12: "deletedAt",
+	12: "discardedAt",
 	13: "createdAt",
 	14: "updatedAt",
 }
@@ -40641,15 +40641,15 @@ func (s *SendingDomainResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"verificationLostAt\"")
 			}
-		case "deletedAt":
+		case "discardedAt":
 			if err := func() error {
-				s.DeletedAt.Reset()
-				if err := s.DeletedAt.Decode(d); err != nil {
+				s.DiscardedAt.Reset()
+				if err := s.DiscardedAt.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"deletedAt\"")
+				return errors.Wrap(err, "decode field \"discardedAt\"")
 			}
 		case "createdAt":
 			requiredBitSet[1] |= 1 << 5

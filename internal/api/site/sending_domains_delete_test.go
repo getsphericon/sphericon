@@ -49,7 +49,7 @@ func TestSiteSendingDomainsDelete(t *testing.T) {
 	require.NoError(t, err)
 	opened, ok := got.(*siteapi.SiteSendingDomainResource)
 	require.Truef(t, ok, "a deleted domain can still be read by id, got %T", got)
-	assert.True(t, opened.DeletedAt.IsSet())
+	assert.True(t, opened.DiscardedAt.IsSet())
 
 	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, deleteSendingDomain(t, c, id), "deleting it again changes nothing")
 }

@@ -3225,7 +3225,7 @@ export const zSiteIntegrationResource = z.object({
   params: zJsonObject,
   secretsRetiring: z.array(z.string()),
   hookUrl: z.string(),
-  deletedAt: z.exactOptional(zTimestamp.nullable()),
+  discardedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3408,7 +3408,7 @@ export const zSiteSendingDomainResource = z.object({
   lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
   verifiedAt: z.exactOptional(zTimestamp.nullable()),
   verificationLostAt: z.exactOptional(zTimestamp.nullable()),
-  deletedAt: z.exactOptional(zTimestamp.nullable()),
+  discardedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });

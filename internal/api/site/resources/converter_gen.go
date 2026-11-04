@@ -1317,7 +1317,7 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) site.Site
 		// siteapiSiteIntegrationResource.Params: ignore
 		// siteapiSiteIntegrationResource.SecretsRetiring: ignore
 		// siteapiSiteIntegrationResource.HookUrl: ignore
-		siteapiSiteIntegrationResource.DeletedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteIntegrationResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteIntegrationResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -2020,7 +2020,7 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.
 		siteapiSiteSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
 		siteapiSiteSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
 		siteapiSiteSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
-		siteapiSiteSendingDomainResource.DeletedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteSendingDomainResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteSendingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

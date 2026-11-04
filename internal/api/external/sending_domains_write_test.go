@@ -195,7 +195,7 @@ func TestExternalSendingDomainsDelete(t *testing.T) {
 	require.NoError(t, err)
 	deleted, ok := got.(*externalapi.SendingDomainResource)
 	require.Truef(t, ok, "a deleted domain is still readable by id, got %T", got)
-	assert.True(t, deleted.DeletedAt.IsSet())
+	assert.True(t, deleted.DiscardedAt.IsSet())
 
 	again, err := c.SendingDomainsCreate(ctx, &externalapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainUnverifiedDomain})
 	require.NoError(t, err)

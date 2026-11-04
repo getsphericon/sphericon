@@ -19031,7 +19031,7 @@
             "type": "string",
             "description": "Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is)"
           },
-          "deletedAt": {
+          "discardedAt": {
             "type": "string",
             "allOf": [
               {
@@ -19039,7 +19039,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the integration was deleted; null while it is kept. A deleted integration is no longer listed and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks."
+            "description": "When the integration was deleted (discarded); null while it is kept. A deleted integration is no longer listed, is read-only and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks."
           },
           "createdAt": {
             "allOf": [
@@ -20232,7 +20232,7 @@
             "nullable": true,
             "description": "When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or verified again since)"
           },
-          "deletedAt": {
+          "discardedAt": {
             "type": "string",
             "allOf": [
               {
@@ -20240,7 +20240,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot be restored, but stays readable by id."
+            "description": "When the domain was deleted (discarded); null while it is kept. A deleted domain is no longer listed, is read-only, is never checked again and cannot be restored, but stays readable by id."
           },
           "createdAt": {
             "allOf": [

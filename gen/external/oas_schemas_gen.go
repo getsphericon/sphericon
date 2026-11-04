@@ -11320,10 +11320,11 @@ type IntegrationResource struct {
 	// Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is
 	// an address, not the authentication (the Preset's signature or secret is).
 	HookUrl string `json:"hookUrl"`
-	// When the integration was deleted; null while it is kept. A deleted integration is no longer listed
-	// and cannot be restored, but stays readable by id for the history that names it; it is never the
-	// default, takes no new work, and its hook still reads the provider's callbacks.
-	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	// When the integration was deleted (discarded); null while it is kept. A deleted integration is no
+	// longer listed, is read-only and cannot be restored, but stays readable by id for the history that
+	// names it; it is never the default, takes no new work, and its hook still reads the provider's
+	// callbacks.
+	DiscardedAt OptNilTimestamp `json:"discardedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -11400,9 +11401,9 @@ func (s *IntegrationResource) GetHookUrl() string {
 	return s.HookUrl
 }
 
-// GetDeletedAt returns the value of DeletedAt.
-func (s *IntegrationResource) GetDeletedAt() OptNilTimestamp {
-	return s.DeletedAt
+// GetDiscardedAt returns the value of DiscardedAt.
+func (s *IntegrationResource) GetDiscardedAt() OptNilTimestamp {
+	return s.DiscardedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -11485,9 +11486,9 @@ func (s *IntegrationResource) SetHookUrl(val string) {
 	s.HookUrl = val
 }
 
-// SetDeletedAt sets the value of DeletedAt.
-func (s *IntegrationResource) SetDeletedAt(val OptNilTimestamp) {
-	s.DeletedAt = val
+// SetDiscardedAt sets the value of DiscardedAt.
+func (s *IntegrationResource) SetDiscardedAt(val OptNilTimestamp) {
+	s.DiscardedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -17905,9 +17906,9 @@ type SendingDomainResource struct {
 	// When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or
 	// verified again since).
 	VerificationLostAt OptNilTimestamp `json:"verificationLostAt"`
-	// When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot
-	// be restored, but stays readable by id.
-	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	// When the domain was deleted (discarded); null while it is kept. A deleted domain is no longer
+	// listed, is read-only, is never checked again and cannot be restored, but stays readable by id.
+	DiscardedAt OptNilTimestamp `json:"discardedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -17974,9 +17975,9 @@ func (s *SendingDomainResource) GetVerificationLostAt() OptNilTimestamp {
 	return s.VerificationLostAt
 }
 
-// GetDeletedAt returns the value of DeletedAt.
-func (s *SendingDomainResource) GetDeletedAt() OptNilTimestamp {
-	return s.DeletedAt
+// GetDiscardedAt returns the value of DiscardedAt.
+func (s *SendingDomainResource) GetDiscardedAt() OptNilTimestamp {
+	return s.DiscardedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -18049,9 +18050,9 @@ func (s *SendingDomainResource) SetVerificationLostAt(val OptNilTimestamp) {
 	s.VerificationLostAt = val
 }
 
-// SetDeletedAt sets the value of DeletedAt.
-func (s *SendingDomainResource) SetDeletedAt(val OptNilTimestamp) {
-	s.DeletedAt = val
+// SetDiscardedAt sets the value of DiscardedAt.
+func (s *SendingDomainResource) SetDiscardedAt(val OptNilTimestamp) {
+	s.DiscardedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.

@@ -211,7 +211,7 @@ func TestDamagedStoredStepsDoNotPermitSendingDomainRemoval(t *testing.T) {
 	require.NoError(t, err)
 	kept, ok := got.(*siteapi.SiteSendingDomainResource)
 	require.Truef(t, ok, "got %T", got)
-	deleted := kept.DeletedAt.IsSet()
+	deleted := kept.DiscardedAt.IsSet()
 	assert.False(t, deleted)
 }
 

@@ -47,7 +47,7 @@ func TestExternalIntegrationsDelete(t *testing.T) {
 	require.NoError(t, err)
 	deleted, ok := got.(*externalapi.IntegrationResource)
 	require.Truef(t, ok, "a deleted Integration is still readable by id, got %T", got)
-	assert.True(t, deleted.DeletedAt.IsSet())
+	assert.True(t, deleted.DiscardedAt.IsSet())
 	assert.False(t, deleted.IsDefault)
 
 	missing, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationGlobexID)})

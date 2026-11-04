@@ -68,8 +68,8 @@ model SiteSendingDomainResource {
   /** When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or verified again since) */
   verificationLostAt?: Timestamp | null;
 
-  /** When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot be restored, but stays readable by id. */
-  deletedAt?: Timestamp | null;
+  /** When the domain was deleted (discarded); null while it is kept. A deleted domain is no longer listed, is read-only, is never checked again and cannot be restored, but stays readable by id. */
+  discardedAt?: Timestamp | null;
 
   /** Creation timestamp */
   createdAt: Timestamp;
