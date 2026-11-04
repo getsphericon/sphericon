@@ -26,3 +26,7 @@ export const TELEGRAM_ACTIONS = [
   'telegram.unbound',
   'telegram.unsubscribed',
 ] as const
+
+// A Contact giving its consent to SMS marketing (ADR 0077) and a text it sent from its phone
+// (ADR 0076).
+export const SMS_ACTIONS = ['sms.confirmed', 'sms.received'] as const

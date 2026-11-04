@@ -75,6 +75,10 @@ const (
 	// NameTelegramUnsubscribed is a Contact stopping all of the Workspace's Telegram marketing in
 	// Telegram: a STOP keyword, the unsubscribe button, or blocking the bot (ADR 0077).
 	NameTelegramUnsubscribed = "telegram.unsubscribed"
+
+	// NameSmsReceived is a text a Contact sent from its phone to an SMS Integration's sender
+	// (ADR 0076).
+	NameSmsReceived = "sms.received"
 )
 
 // reservedPrefixes are the namespaces of the actions only the system records: delivery
@@ -260,6 +264,7 @@ var registry = map[string]func() DomainEvent{
 	NameTelegramSent:          func() DomainEvent { return &TelegramSent{} },
 	NameTelegramClicked:       func() DomainEvent { return &TelegramClicked{} },
 	NameTelegramUnsubscribed:  func() DomainEvent { return &TelegramUnsubscribed{} },
+	NameSmsReceived:           func() DomainEvent { return &SmsReceived{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
 }

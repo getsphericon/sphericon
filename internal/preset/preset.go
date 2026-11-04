@@ -136,6 +136,9 @@ type InboundMessage struct {
 	Channel Channel `json:"channel"`
 	// Destination is the address the message came from, trimmed: on Telegram the user id.
 	Destination string `json:"destination"`
+	// Country is the country the provider says the sender is in (ISO 3166-1 alpha-2), where it
+	// says one: a phone number written without its country code is read with it.
+	Country string `json:"country,omitempty"`
 	// ChatID is the chat the message came in, where the Channel has one: a reply goes there.
 	ChatID string `json:"chat_id,omitempty"`
 	// Text is what the person wrote, as written, cut at MaxTextChars characters.

@@ -14,7 +14,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/samber/lo"
 
@@ -420,7 +419,7 @@ type Message struct {
 
 // Receive records telegram.received for the Contact the message's Destination is Bound to on bot,
 // its own or its Visitor's,
-// with the text cut at events.MaxReceivedText. A Destination that is unknown, or Bound to a Visitor
+// with the text cut by events.ReceivedText. A Destination that is unknown, or Bound to a Visitor
 // with no Contact, records nothing and creates no Contact. Run it inside the transaction s and pub
 // are bound to.
 func Receive(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, m Message) error {
@@ -444,19 +443,8 @@ func Receive(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.
 	}
 	return pub.Publish(ctx, &events.TelegramReceived{
 		WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email), IntegrationID: bot.ID,
-		Text: cut(m.Text, events.MaxReceivedText), DedupID: m.DedupKey,
+		Text: events.ReceivedText(m.Text), DedupID: m.DedupKey,
 	})
-}
-
-// cut is s cut to at most n bytes, never inside a character.
-func cut(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	for n > 0 && !utf8.RuneStart(s[n]) {
-		n--
-	}
-	return s[:n]
 }
 
 // AnnounceVisitor records telegram.bound for c, the Contact Identify has just resolved the Visitor

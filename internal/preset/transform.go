@@ -273,6 +273,7 @@ type rawInbound struct {
 	ID          string  `json:"id"`
 	Channel     string  `json:"channel"`
 	Destination string  `json:"destination"`
+	Country     *string `json:"country"`
 	ChatID      *string `json:"chat_id"`
 	Text        *string `json:"text"`
 	Payload     *string `json:"payload"`
@@ -296,6 +297,9 @@ func validateInbound(raw []byte) (InboundMessage, error) {
 		return InboundMessage{}, err
 	}
 	m := InboundMessage{ID: r.ID, Channel: Channel(r.Channel), Destination: dest}
+	if m.Country, err = optionalID("country", r.Country); err != nil {
+		return InboundMessage{}, err
+	}
 	if m.ChatID, err = optionalID("chat_id", r.ChatID); err != nil {
 		return InboundMessage{}, err
 	}

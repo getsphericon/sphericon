@@ -260,6 +260,11 @@ var telegramTriggers = []string{
 	events.NameTelegramBound, events.NameTelegramUnbound, "telegram.received", "telegram.clicked", "telegram.unsubscribed",
 }
 
+// smsTriggers are the `sms.` Events an Automation may start from or end on: a text the person sent
+// and the consent they gave. The send's own records (`sms.sent`) are infrastructure, like
+// `email.sent`.
+var smsTriggers = []string{events.NameSmsReceived, "sms.confirmed"}
+
 // validateTrigger refuses an empty trigger and an infrastructure Event as the trigger.
 func validateTrigger(trigger string) error {
 	if problem := eventProblem(trigger); problem != "" {
@@ -280,6 +285,9 @@ func eventProblem(action string) string {
 	}
 	if strings.HasPrefix(t, "telegram.") && !slices.Contains(telegramTriggers, t) {
 		return fmt.Sprintf("%q is not a customer action; use %s", action, strings.Join(telegramTriggers, ", "))
+	}
+	if strings.HasPrefix(t, "sms.") && !slices.Contains(smsTriggers, t) {
+		return fmt.Sprintf("%q is not a customer action; use %s", action, strings.Join(smsTriggers, ", "))
 	}
 	return ""
 }

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import {
   CONTACT_CHANGE_ACTIONS,
   ENROLLMENT_ACTIONS,
+  SMS_ACTIONS,
   TELEGRAM_ACTIONS,
 } from '../../utils/systemEvents.ts'
 import { HTTP_BODY_FORMAT, HTTP_HEADERS_FORMAT } from './httpFormat.ts'
@@ -42,6 +43,7 @@ export const TRIGGER_EVENTS = [
   'email.unsubscribed',
   ...ENROLLMENT_ACTIONS,
   ...TELEGRAM_ACTIONS,
+  ...SMS_ACTIONS,
 ] as const
 export const DEFAULT_TRIGGER_EVENT = TRIGGER_EVENTS[0]
 

@@ -1,6 +1,9 @@
 package events
 
-import "context"
+import (
+	"context"
+	"unicode/utf8"
+)
 
 // The System events of what happens to a Contact rather than what it does (#897): its Tags, its
 // Custom fields and its Enrollments. Each is published in the transaction of the change it
@@ -98,8 +101,22 @@ func (e *BindingChange) Project() Projection {
 	}
 }
 
-// MaxReceivedText is the most of a message TelegramReceived keeps, in bytes (1 KiB).
+// MaxReceivedText is the most of a message a received Event (TelegramReceived, SmsReceived)
+// keeps, in bytes (1 KiB).
 const MaxReceivedText = 1024
+
+// ReceivedText is a message's text as a received Event keeps it: cut at MaxReceivedText bytes,
+// never inside a character.
+func ReceivedText(s string) string {
+	n := MaxReceivedText
+	if len(s) <= n {
+		return s
+	}
+	for n > 0 && !utf8.RuneStart(s[n]) {
+		n--
+	}
+	return s[:n]
+}
 
 // TelegramReceived is a message a Contact sent a bot from a chat Bound to it (telegram.received),
 // recorded in the transaction of the Ingest request. Text is the message cut at MaxReceivedText;

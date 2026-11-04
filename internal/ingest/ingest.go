@@ -96,7 +96,7 @@ func (m *Module) interpreterFor(ch integration.Channel) Interpreter {
 	case integration.ChannelTelegram:
 		return telegram{bots: m.bots}
 	case integration.ChannelSms:
-		return Ignore{}
+		return sms{}
 	}
 	return Ignore{}
 }

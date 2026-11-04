@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { actionFilter } from '../utils/actionFilter.ts'
 
 // useEventActionLabel names an Event action for a person: an action the system records (`email.*`,
-// `marketing.*`, `contact.*`, `automation.*`, `telegram.*`, and the bus's `audit.entry` a webhook subscribes to)
+// `marketing.*`, `contact.*`, `automation.*`, `telegram.*`, `sms.*`, and the bus's `audit.entry` a webhook subscribes to)
 // and the first-party tracker's `page.view` by its words, any other action as it was tracked. The
 // action itself stays what is stored, filtered and sent; only the screen shows the words.
 export function useEventActionLabel() {
@@ -28,6 +28,8 @@ export function useEventActionLabel() {
       'telegram.unbound': t(($) => $.eventActions.telegramUnbound),
       'telegram.unsubscribed': t(($) => $.eventActions.telegramUnsubscribed),
       'telegram.sent': t(($) => $.eventActions.telegramSent),
+      'sms.confirmed': t(($) => $.eventActions.smsConfirmed),
+      'sms.received': t(($) => $.eventActions.smsReceived),
       'page.view': t(($) => $.eventActions.pageView),
       'email.sent': t(($) => $.eventActions.emailSent),
       'email.delivered': t(($) => $.eventActions.emailDelivered),

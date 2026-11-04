@@ -25,7 +25,8 @@ verify:
 # settles which statuses mean what: delivered is a delivery; undelivered, failed and canceled are
 # a drop; the statuses on the way (queued, sending, sent, ...) are a delay. A callback without a
 # MessageStatus that carries a Body is a message a person sent From their number: an Inbound
-# message, whose meaning (a STOP, a reply) the core reads. A repeated parameter is not read.
+# message with the country Twilio says the number is in (FromCountry), whose meaning (a STOP, a
+# reply) the core reads. A repeated parameter is not read.
 transform: |
   def keep: with_entries(select(.value != null and .value != ""));
   def str: if type == "string" then . else null end;
@@ -44,7 +45,8 @@ transform: |
      else
        ($b.From | str) as $from
        | select(($b.Body | type) == "string" and $from != null and $from != "")
-       | {kind: "inbound_message", id: $sid, channel: "sms", destination: $from, message_id: $sid, text: $b.Body}
+       | {kind: "inbound_message", id: $sid, channel: "sms", destination: $from,
+          country: ($b.FromCountry | str), message_id: $sid, text: $b.Body}
      end
    | keep]
 tests:
@@ -62,6 +64,7 @@ tests:
         - id: SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f
           channel: sms
           destination: '+14155552671'
+          country: US
           message_id: SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f
           text: Yes, see you at 5 👍
   - name: an undelivered status callback becomes a Delivery notice with Twilio's status and error code
@@ -130,6 +133,7 @@ tests:
         - id: SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f
           channel: sms
           destination: '+14155552671'
+          country: US
           message_id: SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f
           text: Yes, see you at 5 👍
   # Twilio's published example ("Webhooks security"): a voice callback, which the transform does

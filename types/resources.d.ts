@@ -1076,6 +1076,8 @@ export default interface Resources {
       "emailUnsubscribed": "Unsubscribed",
       "marketingConfirmed": "Confirmed opt-in",
       "pageView": "Visited a page",
+      "smsConfirmed": "Confirmed SMS opt-in",
+      "smsReceived": "Sent a text message",
       "telegramBound": "Telegram chat bound",
       "telegramClicked": "Clicked a link in a Telegram message",
       "telegramReceived": "Sent a Telegram message",
