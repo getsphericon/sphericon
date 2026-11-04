@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/smsrender"
@@ -398,10 +399,11 @@ type Converter interface {
 	// goverter:map . Kind | telegramConfigKind
 	// goverter:map BotID BotId
 	TelegramConfigToResource(source integrations.RedactedTelegram) siteapi.SiteTelegramConfig
+	// goverter:enum:transform value
+	SmsFromKindToResource(source messaging.SMSFromKind) siteapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind
 	// goverter:map AccountSID AccountSid
 	// goverter:map . ApiKeySid | twilioAPIKeySID
-	// goverter:map . FromKind | twilioFromKind
 	TwilioConfigToResource(source integrations.RedactedTwilio) siteapi.SiteTwilioConfig
 	// goverter:map Sent24h SentLast24h
 	ProviderLimitToStatus(source providerlimit.Status) siteapi.SiteProviderLimitStatus
@@ -1160,10 +1162,6 @@ func twilioAPIKeySID(c integrations.RedactedTwilio) siteapi.NilString {
 		return siteapi.NilString{Null: true}
 	}
 	return siteapi.NewNilString(c.APIKeySID)
-}
-
-func twilioFromKind(c integrations.RedactedTwilio) siteapi.SmsFromKind {
-	return siteapi.SmsFromKind(c.FromKind)
 }
 
 func telegramConfigKind(integrations.RedactedTelegram) siteapi.SiteTelegramConfigKind {

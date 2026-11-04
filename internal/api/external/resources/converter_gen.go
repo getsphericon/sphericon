@@ -34,6 +34,7 @@ import (
 	holdreason "github.com/getsphericon/sphericon/internal/holdreason"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
+	messaging "github.com/getsphericon/sphericon/internal/messaging"
 	orders "github.com/getsphericon/sphericon/internal/orders"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
@@ -1378,6 +1379,20 @@ func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) external
 	externalapiSmsConsent.OptOut = optNilSmsOptOut(c, source.OptOut)
 	return externalapiSmsConsent
 }
+func (c *ConverterImpl) SmsFromKindToResource(source messaging.SMSFromKind) external.SmsFromKind {
+	var externalapiSmsFromKind external.SmsFromKind
+	switch source {
+	case messaging.SMSFromAlphanumeric:
+		externalapiSmsFromKind = external.SmsFromKindAlphanumeric
+	case messaging.SMSFromMessagingService:
+		externalapiSmsFromKind = external.SmsFromKindMessagingService
+	case messaging.SMSFromNumber:
+		externalapiSmsFromKind = external.SmsFromKindNumber
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiSmsFromKind
+}
 func (c *ConverterImpl) SmsOptOutToResource(source *consent.SMSOptOut) external.SmsOptOut {
 	var externalapiSmsOptOut external.SmsOptOut
 	if source != nil {
@@ -1614,7 +1629,7 @@ func (c *ConverterImpl) TwilioConfigToResource(source integrations.RedactedTwili
 	externalapiTwilioConfig.AccountSid = source.AccountSID
 	externalapiTwilioConfig.ApiKeySid = twilioAPIKeySID(source)
 	externalapiTwilioConfig.From = source.From
-	externalapiTwilioConfig.FromKind = twilioFromKind(source)
+	externalapiTwilioConfig.FromKind = c.SmsFromKindToResource(source.FromKind)
 	externalapiTwilioConfig.CallbacksSet = source.CallbacksSet
 	return externalapiTwilioConfig
 }

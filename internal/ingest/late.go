@@ -34,8 +34,8 @@ type LateNoticeArgs struct {
 // Kind identifies the job.
 func (LateNoticeArgs) Kind() string { return "ingest_late_notice" }
 
-// InsertOpts: a reading that fails is the job's error, retried by river like any job; a notice that
-// still matches nothing queues the next reading itself.
+// InsertOpts retries a reading that fails like any job; a notice that still matches nothing queues
+// the next reading itself.
 func (LateNoticeArgs) InsertOpts() river.InsertOpts { return river.InsertOpts{MaxAttempts: 5} }
 
 // deferNotice queues n to be read again after the wait of the next attempt, in the request's

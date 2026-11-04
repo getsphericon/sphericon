@@ -1,7 +1,7 @@
 // The SMS counter (ADR 0078): what the editor shows as the marketer types. internal/smsrender
 // counts the same way for the save, and both agree on internal/smsrender/testdata/parts.json.
 
-export type SmsEncoding = 'GSM-7' | 'UCS-2'
+type SmsEncoding = 'GSM-7' | 'UCS-2'
 
 // A text as an SMS counts it: its encoding, its characters in that encoding (a GSM-7 extension
 // character is two, a UCS-2 character beyond the BMP two UTF-16 code units) and its parts.

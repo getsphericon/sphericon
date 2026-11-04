@@ -42,6 +42,7 @@ import (
 	instance "github.com/getsphericon/sphericon/internal/instance"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
+	messaging "github.com/getsphericon/sphericon/internal/messaging"
 	orders "github.com/getsphericon/sphericon/internal/orders"
 	outbound "github.com/getsphericon/sphericon/internal/outbound"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
@@ -2125,6 +2126,20 @@ func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) site.Sms
 	siteapiSmsConsent.OptOut = optNilSmsOptOut(c, source.OptOut)
 	return siteapiSmsConsent
 }
+func (c *ConverterImpl) SmsFromKindToResource(source messaging.SMSFromKind) site.SmsFromKind {
+	var siteapiSmsFromKind site.SmsFromKind
+	switch source {
+	case messaging.SMSFromAlphanumeric:
+		siteapiSmsFromKind = site.SmsFromKindAlphanumeric
+	case messaging.SMSFromMessagingService:
+		siteapiSmsFromKind = site.SmsFromKindMessagingService
+	case messaging.SMSFromNumber:
+		siteapiSmsFromKind = site.SmsFromKindNumber
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSmsFromKind
+}
 func (c *ConverterImpl) SmsLengthLimitToResource(source smsrender.Limit) site.SiteSmsLengthLimit {
 	var siteapiSiteSmsLengthLimit site.SiteSmsLengthLimit
 	siteapiSiteSmsLengthLimit.Gsm7 = count(source.GSM7)
@@ -2441,7 +2456,7 @@ func (c *ConverterImpl) TwilioConfigToResource(source integrations.RedactedTwili
 	siteapiSiteTwilioConfig.AccountSid = source.AccountSID
 	siteapiSiteTwilioConfig.ApiKeySid = twilioAPIKeySID(source)
 	siteapiSiteTwilioConfig.From = source.From
-	siteapiSiteTwilioConfig.FromKind = twilioFromKind(source)
+	siteapiSiteTwilioConfig.FromKind = c.SmsFromKindToResource(source.FromKind)
 	siteapiSiteTwilioConfig.CallbacksSet = source.CallbacksSet
 	return siteapiSiteTwilioConfig
 }
