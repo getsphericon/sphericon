@@ -10,9 +10,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/rules"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -46,6 +48,27 @@ func TestRuleActionSkipsAnAutomationThatIsNotActive(t *testing.T) {
 		Where(automationrun.ContactID(fixtures.ContactBobID), automationrun.AutomationIDIn(fixtures.AutomationJobsGreetingInactiveID, fixtures.AutomationJobsSingleEmailID)).
 		CountX(context.Background())
 	assert.Zero(t, enrolled)
+}
+
+// The Rule job reads the Automation before the Enrollment's lock: one deactivated since enrolls
+// nobody, because the Enrollment checks it again under that lock, as an Enrollment from a Trigger
+// does (ADR 0099).
+func TestAnAutomationDeactivatedAfterTheRuleJobsCheckEnrollsNobody(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	_, err := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule()).
+		Deactivate(ctx, s, fixtures.AutomationJobsGreetingID)
+	require.NoError(t, err)
+
+	made, err := stepping.EnrollOnRule(ctx, env.Bus, s, fixtures.AutomationJobsGreetingID, fixtures.ContactBobID, "evt-deactivated")
+
+	require.ErrorIs(t, err, automations.ErrInactive)
+	assert.False(t, made)
+	enrolled := env.DB.AutomationRun.Query().
+		Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactBobID)).
+		ExistX(ctx)
+	assert.False(t, enrolled)
 }
 
 func TestRuleActionSkipsAContactAlreadyEnrolled(t *testing.T) {

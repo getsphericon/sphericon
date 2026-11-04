@@ -183,9 +183,10 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // when it has none, of the default Integration's configured one; an active Automation that sends
 // email uses the domain of that configured From, as its steps carry no From of their own. A sent or
 // failed Broadcast is history and does not block. Deleting a deleted domain changes nothing; an
-// unknown id is ErrNotFound.
+// unknown id is ErrNotFound. The check and the discard hold the Workspace's lock (ADR 0099), so no
+// work becomes live between them.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	return m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.SendingDomain().Get(ctx, id)
 		if err != nil {
 			return notFound(err)

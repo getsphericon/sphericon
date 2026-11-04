@@ -104,6 +104,9 @@ func Enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 // sourceID (the Firing's source_id): the Enrollment began when that Event occurred and keeps its
 // action and properties, as the Rule's own http Action binds them (#752). When no such Event is
 // stored any more (Retention or an Erasure removed it), it begins now and its `event` is empty.
+// The Rule job reads the Automation before it enrolls, so a Deactivate or an Archive may have
+// landed since: under the lock it enrolls nobody and returns ErrInactive unless the Automation is
+// still kept and active (ADR 0099).
 func EnrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, sourceID string) (runID int64, enrolled bool, err error) {
 	fired, err := storedEvent(ctx, s, sourceID)
 	if err != nil {
@@ -113,7 +116,15 @@ func EnrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, auto
 	if fired != nil {
 		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
 	}
-	return enroll(ctx, s, pub, automationID, contactID, o, admitsAll)
+	inactive := false
+	runID, enrolled, err = enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) bool {
+		inactive = a.DiscardedAt != nil || a.Status != automation.StatusActive
+		return !inactive
+	})
+	if err == nil && inactive {
+		return 0, false, ErrInactive
+	}
+	return runID, enrolled, err
 }
 
 // EnrollOnTrigger enrolls the Contact as Enroll does, for the Event of the Origin (OriginOf): the

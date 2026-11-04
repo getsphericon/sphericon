@@ -69,6 +69,9 @@ var (
 	// ErrNoVersion: the Automation has no live version: it was never published, so nobody can
 	// be enrolled in it.
 	ErrNoVersion = errors.New("automations: automation has no live version")
+	// ErrInactive: the Automation a Rule enrolls into is inactive or archived by the time the
+	// Enrollment is made, so it enrolls nobody (EnrollOnRule).
+	ErrInactive = errors.New("automations: automation is not active")
 
 	errBodyAndDoc = errors.New("automations: a step writes a body or a doc, not both")
 )

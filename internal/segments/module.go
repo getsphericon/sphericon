@@ -37,7 +37,8 @@ type Module struct {
 }
 
 // New builds the Segments module. It holds no client: every call takes the
-// Workspace's scoped client (ADR 0017); the bus runs the archive in one transaction.
+// Workspace's scoped client (ADR 0017); the bus runs a save and the archive each in one
+// transaction under the Workspace's lock (ADR 0099).
 func New(bus *events.Bus) *Module { return &Module{bus: bus} }
 
 // CreateInput is a new Segment. A nil or empty Condition means "no rules yet".
@@ -66,17 +67,24 @@ func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, cond string) erro
 	return nil
 }
 
-// Create validates the condition and stores the Segment.
+// Create validates the condition and stores the Segment. It holds the Workspace's lock (ADR 0099):
+// the Condition may name a Tag, and the delete of that Tag checks for it under the same lock.
 func (s *Module) Create(ctx context.Context, ws *ent.Scoped, in CreateInput) (*ent.Segment, error) {
-	if in.Condition != nil {
-		if err := s.Validate(ctx, ws, *in.Condition); err != nil {
-			return nil, err
+	var seg *ent.Segment
+	err := s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
+		if in.Condition != nil {
+			if err := s.Validate(ctx, ts, *in.Condition); err != nil {
+				return err
+			}
 		}
-	}
-	return ws.Segment().Create().
-		SetName(in.Name).
-		SetNillableCondition(in.Condition).
-		Save(ctx)
+		var err error
+		seg, err = ts.Segment().Create().
+			SetName(in.Name).
+			SetNillableCondition(in.Condition).
+			Save(ctx)
+		return err
+	})
+	return seg, err
 }
 
 // Get returns one Segment. An unknown id is ErrNotFound.
@@ -88,17 +96,23 @@ func (s *Module) Get(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segmen
 	return seg, err
 }
 
-// Update validates a changed condition exactly as Create does, then applies the change.
+// Update validates a changed condition exactly as Create does, then applies the change, under the
+// Workspace's lock as Create.
 func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in UpdateInput) (*ent.Segment, error) {
-	if cond, ok := in.Condition.Get(); ok {
-		if err := s.Validate(ctx, ws, cond); err != nil {
-			return nil, err
+	var seg *ent.Segment
+	err := s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
+		if cond, ok := in.Condition.Get(); ok {
+			if err := s.Validate(ctx, ts, cond); err != nil {
+				return err
+			}
 		}
-	}
-	q := ws.Segment().UpdateOneID(id)
-	patch.ApplySet(in.Name, q.SetName)
-	patch.ApplySet(in.Condition, q.SetCondition)
-	seg, err := q.Save(ctx)
+		q := ts.Segment().UpdateOneID(id)
+		patch.ApplySet(in.Name, q.SetName)
+		patch.ApplySet(in.Condition, q.SetCondition)
+		var err error
+		seg, err = q.Save(ctx)
+		return err
+	})
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
 	}
@@ -176,9 +190,10 @@ func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params, 
 // Archive discards a Segment (ADR 0049), unless a draft Broadcast uses it: then it returns an
 // *inuse.Error naming those Broadcasts. A Broadcast past draft holds a copy of the Segment's
 // Condition (ADR 0065) and keeps its reference only as provenance, so it does not block. A missing
-// Segment is ErrNotFound; archiving an archived one changes nothing. It returns the Segment.
+// Segment is ErrNotFound; archiving an archived one changes nothing. It returns the Segment. The
+// check and the archive hold the Workspace's lock (ADR 0099), so no work becomes live between them.
 func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segment, error) {
-	err := s.bus.WithinScopedTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
+	err := s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
 		seg, err := ts.Segment().Get(ctx, id)
 		if ent.IsNotFound(err) {
 			return ErrNotFound

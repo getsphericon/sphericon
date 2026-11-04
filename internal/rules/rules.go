@@ -761,10 +761,26 @@ func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond *string, ev Even
 }
 
 // fire writes the Firing of the Rule version for the Event and queues its Actions job in the same
-// transaction. It returns nil when the Rule already fired for this Event.
+// transaction. It returns nil when the Rule already fired for this Event, and when, by the time the
+// Firing is written, the Rule no longer fires on v for it: Evaluate read the Rule before this
+// transaction, so a Delete, a Deactivate or a Publish may have landed since. It share-locks the
+// Rule's row and checks it again under the lock: those moves lock the row exclusively, so each has
+// either committed before the check or waits for the Firing (ADR 0098, ADR 0099).
 func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev Event) (*ent.RuleFiring, error) {
 	var fired *ent.RuleFiring
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+		still, err := ts.Rule().Query().
+			Where(
+				rule.ID(v.RuleID),
+				rule.StatusEQ(rule.StatusActive),
+				rule.ActivatedAtLTE(ev.RecordedAt),
+				rule.LiveVersionID(v.ID),
+			).
+			ForShare().
+			IDs(ctx)
+		if err != nil || len(still) == 0 {
+			return err
+		}
 		// Check first so a redelivered Event does not trip the unique index (a violation would
 		// poison the transaction); the index stays as the race safety net.
 		exists, err := ts.RuleFiring().Query().

@@ -155,10 +155,12 @@ func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 // send job (at `at`, nil for as soon as possible) in the same transaction. The write is a
 // compare-and-swap on the status, so two racing requests cannot both win, and a job that
 // cannot be queued rolls the claim back with it. check, when given, may refuse the claimed
-// Broadcast after the move, which rolls the move back.
+// Broadcast after the move, which rolls the move back. A claimed Broadcast is Live use, so the claim
+// holds the Workspace's lock (ADR 0099): a removal that checks for Live use waits for it, or it for
+// the removal, and the one that waits reads what the other committed.
 func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update, at *time.Time, check func(context.Context, *ent.Scoped, *ent.Broadcast) error) (*ent.Broadcast, error) {
 	var claimed *ent.Broadcast
-	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+	err := m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
 		if err := fire(ctx, ts, id, t, set); err != nil {
 			return notSendable(err)
 		}

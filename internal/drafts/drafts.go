@@ -11,7 +11,10 @@
 // Definition (merge and validate an edit, compare, write, the check before Publish and before
 // Archive), and the generated storage half (ent.VersionedStore, the scoped client's <N>Pointers)
 // moves the pointers and the state. Every move runs in one transaction under the row's lock, and
-// each write of the row is audited. It takes a *ent.Scoped on every call and holds no client.
+// each write of the row is audited. Create, Edit, Publish and Archive take the Workspace's lock
+// first (ADR 0099): a definition names Tags, Segments, Integrations and Automations whose removal
+// checks for it under that lock, Publish makes it Live use, and Archive checks what still needs it.
+// It takes a *ent.Scoped on every call and holds no client.
 package drafts
 
 import (
@@ -118,7 +121,7 @@ func (l *Lifecycle[O, V, E, B]) Get(ctx context.Context, s *ent.Scoped, id int64
 // edit is the whole definition.
 func (l *Lifecycle[O, V, E, B]) Create(ctx context.Context, s *ent.Scoped, owner func(ctx context.Context, ts *ent.Scoped) (int64, error), edit E) (*O, error) {
 	var id int64
-	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		body, err := l.def.Merge(ctx, ts, nil, edit)
 		if err != nil {
 			return err
@@ -144,7 +147,7 @@ func (l *Lifecycle[O, V, E, B]) Create(ctx context.Context, s *ent.Scoped, owner
 // draft in place. A definition equal to the one it starts from stores nothing. The status is
 // untouched. own, when given, changes the object's own row (its name) under the same lock.
 func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int64, own func(ctx context.Context, ts *ent.Scoped, row *O) error, edit E) (*O, error) {
-	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
 		st, err := l.lock(ctx, store, id)
 		if err != nil {
@@ -201,7 +204,7 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 // surfaces gate it by the publish scope. A discarded object is as good as absent here (NotFound);
 // an archived one is unarchived before it is published (Archived).
 func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
-	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
 		st, err := l.lock(ctx, store, id)
 		if err != nil {
@@ -299,7 +302,7 @@ func (l *Lifecycle[O, V, E, B]) Deactivate(ctx context.Context, s *ent.Scoped, i
 // object. A discardable kind archived here (the Automation, until it takes ArchiveMixin) is
 // stamped discarded_at by its store, so its discarded state counts as archived.
 func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
-	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
 		st, err := l.lock(ctx, store, id)
 		if err != nil {

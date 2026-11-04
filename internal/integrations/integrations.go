@@ -448,10 +448,11 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 // and the default one when it names none; an active Automation that sends email uses the one it
 // names, and the default one when it names none. A sent or failed Broadcast is history and does not
 // block. A deleted Integration gives up the default: its channel has none until another is
-// picked. Deleting a deleted Integration changes nothing. An unknown id is ErrNotFound.
+// picked. Deleting a deleted Integration changes nothing. An unknown id is ErrNotFound. The check
+// and the discard hold the Workspace's lock (ADR 0099), so no work becomes live between them.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	var released *ent.Integration
-	err := missing(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	err := missing(m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.Integration().Get(ctx, id)
 		if err != nil {
 			return err
