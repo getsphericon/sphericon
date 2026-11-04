@@ -37,8 +37,10 @@ type sms struct{ Ignore }
 // DeliveryNotice reads a final delivery report of a text: delivered, or undelivered with the
 // provider's error code. It lands on the text the provider's id names among the Integration's, and
 // moves it only forward: the first final report stamps it and records sms.delivered or
-// sms.undelivered, and any later one, a redelivery included, changes nothing. A report of no text we
-// sent records nothing. An undelivered report saying the number reaches no handset suppresses the
+// sms.undelivered, and any later one, a redelivery included, changes nothing. A report that names no
+// text yet is read again shortly (deferNotice): it may have come before the send recorded the
+// provider's id, and the provider does not post it again; one that never finds a text, a text we did
+// not send, records nothing. An undelivered report saying the number reaches no handset suppresses the
 // number like a hard bounce, as the same answer at send time does. A report of a text whose Contact
 // was erased records nothing: Erasure dropped the provider's id the report names the text by.
 func (sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) error {
@@ -51,8 +53,11 @@ func (sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) e
 		return nil // email's kinds: a Preset that names one on sms reports no final state
 	}
 	msg, err := outbound.FindSMSMessage(ctx, tx.Scoped, tx.Integration.ID, n.MessageID)
-	if err != nil || msg == nil {
+	if err != nil {
 		return err
+	}
+	if msg == nil {
+		return tx.deferNotice(ctx, n)
 	}
 	code := lo.Ternary(result == outbound.ResultUndelivered, n.ErrorCode, "")
 	moved, err := outbound.StampFinal(ctx, tx.Scoped, msg.ID, result, code, tx.Now)

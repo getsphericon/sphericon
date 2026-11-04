@@ -54,6 +54,11 @@ type Tx struct {
 	Now    time.Time
 
 	after *[]func(context.Context)
+	// queue queues a job in the transaction: a notice deferred until its message is committed.
+	queue events.Enqueuer
+	// attempt is how many times the facts were read before: 0 at the hook, n for a deferred
+	// notice's nth reading again.
+	attempt int
 }
 
 // After queues work for after the request's transaction commits, before the hook answers: a
@@ -107,14 +112,19 @@ func (m *Module) interpreterFor(ch integration.Channel) Interpreter {
 // mistake: it is dropped and logged, so the rest of the request still counts and the provider
 // does not redeliver it forever.
 func (m *Module) Interpret(ctx context.Context, s *ent.Scoped, row *ent.Integration, presetName string, res preset.Result, now time.Time) error {
+	return m.interpret(ctx, s, row, presetName, res, now, 0)
+}
+
+// interpret is Interpret for the facts read for the attempt-th time before (InterpretLate).
+func (m *Module) interpret(ctx context.Context, s *ent.Scoped, row *ent.Integration, presetName string, res preset.Result, now time.Time, attempt int) error {
 	if res.Empty() {
 		return nil
 	}
 	interp := m.interpreterFor(row.Channel)
 	var after []func(context.Context)
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
 		after = after[:0]
-		tx := Tx{Scoped: ts, Pub: pub, Integration: row, Preset: presetName, Now: now, after: &after}
+		tx := Tx{Scoped: ts, Pub: pub, Integration: row, Preset: presetName, Now: now, after: &after, queue: q, attempt: attempt}
 		for i := range res.Notices {
 			n := &res.Notices[i]
 			if string(n.Channel) != string(row.Channel) {
