@@ -372,6 +372,34 @@ test('shows what the live version does, its exit and goal events included, not t
   await expect.element(screen.getByText('Call a URL')).not.toBeInTheDocument()
 })
 
+test('a send step through a deleted Integration names it as deleted', async () => {
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        ...PENDING,
+        live: {
+          number: 1,
+          triggerEvent: 'signup',
+          exitEvents: [],
+          goalEvent: null,
+          steps: [{ type: 'email', subject: 'Second look', integrationId: '21' }],
+        },
+      },
+    }),
+    handleSiteAutomationReportsGet({ body: NO_FIGURES }),
+    handleSiteEnrollmentsList({ body: page([], 0) }),
+    handleSiteIntegrationsGet({
+      body: emailIntegration('21', 'Mailgun relay', { discardedAt: '2026-02-01T00:00:00Z' }),
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
+
+  await expect
+    .element(screen.getByText('Send email: Second look · Mailgun relay (deleted)'))
+    .toBeInTheDocument()
+})
+
 test('a draft above the live version is marked pending, and Publish makes it live', async () => {
   const published: string[] = []
   worker.use(

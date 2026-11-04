@@ -394,6 +394,7 @@ export default interface Resources {
       "httpUrlHint": "https://hooks.example.com/... (leave empty to keep the saved URL)",
       "httpUrlLabel": "URL",
       "integrationDefault": "Workspace default",
+      "integrationDeleted": "{{name}} (deleted)",
       "integrationLabel": "Integration",
       "leaveMessage": "Your changes to this automation are not saved.",
       "liveVersion": "Live version {{number}}",
@@ -1911,6 +1912,7 @@ export default interface Resources {
           "twilioHint": "Your own Twilio account, to text Contacts who agreed to it. Needs the Account SID, an API key or the Auth Token, and a sender."
         },
         "saved": "Provider saved",
+        "statusDeleted": "Deleted",
         "telegramWarning": {
           "body": "If the bot already sends its updates to another tool, that tool stops receiving them. Use a bot dedicated to sphericon.",
           "title": "Connecting replaces the bot's webhook"
@@ -2082,6 +2084,7 @@ export default interface Resources {
         "spf": "SPF (recommended)",
         "spfHint": "Advisory — does not gate sending.",
         "statusColumn": "Status",
+        "statusDeleted": "Deleted",
         "title": "Domains",
         "verified": "Verified",
         "verifiedNow": "Domain verified",

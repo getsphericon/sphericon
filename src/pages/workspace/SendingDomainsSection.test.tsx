@@ -76,6 +76,24 @@ test('shows a domain whose verification was lost apart from one never verified',
   await expect.element(screen.getByText('Verification lost', { exact: true })).toBeInTheDocument()
 })
 
+// The list leaves a deleted domain out; a record that says discardedAt is read-only all the same.
+test('a deleted domain shows as deleted and offers its records only', async () => {
+  worker.use(list([domain({ verified: true, discardedAt: '2026-02-01T00:00:00Z' })]))
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
+  )
+
+  await expect.element(screen.getByText('Deleted', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Verified', { exact: true })).not.toBeInTheDocument()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await expect.element(screen.getByRole('menuitem', { name: 'DNS records' })).toBeInTheDocument()
+  expect(screen.getByRole('menuitem', { name: 'Verify' }).elements()).toHaveLength(0)
+  expect(screen.getByRole('menuitem', { name: 'Delete' }).elements()).toHaveLength(0)
+  await screen.getByRole('menuitem', { name: 'DNS records' }).click()
+  await expect.element(screen.getByText('om1._domainkey.mail.acme.com')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Verify now' }).elements()).toHaveLength(0)
+})
+
 test('adds a domain', async () => {
   const bodies: unknown[] = []
   worker.use(

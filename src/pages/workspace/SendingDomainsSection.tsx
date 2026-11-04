@@ -37,7 +37,8 @@ interface DomainFormValues {
 }
 
 // SendingDomainsTable lists the domains with the records of the one opened; the section's boundary
-// shows the load and its failure. A deleted domain is not listed.
+// shows the load and its failure. A deleted domain is not listed, and one that says it is deleted
+// is read-only: its records stay readable, it is never verified or deleted again.
 function SendingDomainsTable({
   workspaceId,
   canEdit,
@@ -94,12 +95,16 @@ function SendingDomainsTable({
                     <Menu.Item onClick={() => onShowRecords(record.id)}>
                       {t(($) => $.settings.sendingDomains.showRecords)}
                     </Menu.Item>
-                    <Menu.Item disabled={verifying} onClick={() => onVerify(record.id)}>
-                      {t(($) => $.settings.sendingDomains.verify)}
-                    </Menu.Item>
-                    <Menu.Item color="red" onClick={() => onDelete(record)}>
-                      {t(($) => $.actions.delete)}
-                    </Menu.Item>
+                    {record.discardedAt ? null : (
+                      <>
+                        <Menu.Item disabled={verifying} onClick={() => onVerify(record.id)}>
+                          {t(($) => $.settings.sendingDomains.verify)}
+                        </Menu.Item>
+                        <Menu.Item color="red" onClick={() => onDelete(record)}>
+                          {t(($) => $.actions.delete)}
+                        </Menu.Item>
+                      </>
+                    )}
                   </RowActionsMenu>
                 </Group>
               )
@@ -112,7 +117,7 @@ function SendingDomainsTable({
         workspaceId={workspaceId}
         record={recordsDomain}
         onClose={onCloseRecords}
-        canVerify={canEdit}
+        canVerify={canEdit && !recordsDomain?.discardedAt}
       />
     </>
   )
