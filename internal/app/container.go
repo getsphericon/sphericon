@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/samber/do/v2"
@@ -177,22 +176,6 @@ type Handler struct {
 // `staff` license (ADR 0026, ADR 0038).
 type InternalHandler struct {
 	http.Handler
-}
-
-// eventsRuntime is the consume side of the domain-event system: the watermill router hosting
-// the outbox consumers. (The produce side is the *events.Bus.) Start
-// runs the router; Shutdown closes it.
-type eventsRuntime struct {
-	router *message.Router
-}
-
-func (e *eventsRuntime) Shutdown() error {
-	// A router that never ran has nothing to drain, and Close would wait out its
-	// timeout for handlers that were never started.
-	if !e.router.IsRunning() && !e.router.IsClosed() {
-		return nil
-	}
-	return e.router.Close()
 }
 
 // riverPool is the database/sql pool river runs on (separate from the one the ent client and
@@ -436,27 +419,13 @@ var editionPackage = do.Package(
 		}
 		bus.UseJobs(inserter)
 		// The consumers of the domain events: a publish inserts a job for each that wants it.
-		bus.UseConsumers(jobs.EventConsumers()...)
+		bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
 		return bus, nil
 	}),
-	// The consume side: the router with the consumers registered (the outbox tables come from
-	// the migrations). The automations subscriber enrolls and the webhooks subscriber
-	// dispatches via the river client.
-	do.Lazy(func(i do.Injector) (*eventsRuntime, error) {
-		db := do.MustInvoke[Database](i).DB
-		router, err := events.NewRouter(db)
-		if err != nil {
-			return nil, err
-		}
-		if err := events.RegisterSubscribers(router, db, do.MustInvoke[events.ConsumerHandlers](i)); err != nil {
-			return nil, err
-		}
-		return &eventsRuntime{router: router}, nil
-	}),
-	// Every consumer group's handler: the router runs them, and a replay of a group's dead
-	// letters runs that group's.
-	do.Lazy(func(i do.Injector) (events.ConsumerHandlers, error) {
-		return events.Handlers(do.MustInvoke[*ee.Edition](i).Consumers), nil
+	// Every outbox consumer group's handler, for a replay of a group's dead letters: none is left,
+	// every consumer is a River job (ADR 0101).
+	do.Lazy(func(do.Injector) (events.ConsumerHandlers, error) {
+		return events.Handlers(nil), nil
 	}),
 )
 

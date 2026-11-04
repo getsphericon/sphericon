@@ -25,7 +25,7 @@ func TestTheStoredAuditRowsKeepTheStaffIdWhileTheCustomerSeesStaff(t *testing.T)
 	c, _ := h.staffSession(t)
 	h.suspend(t, c, fixtures.AcmePublicID, "abuse report")
 	h.unsuspend(t, c, fixtures.AcmePublicID)
-	h.env.DeliverToEE(t)
+	h.env.WorkEditionJobs(t)
 
 	stored := h.env.DB.Scoped(fixtures.AcmeID).AuditEntry().Query().
 		Where(auditentry.ActionIn(events.ActionWorkspaceSuspend, events.ActionWorkspaceUnsuspend)).AllX(t.Context())

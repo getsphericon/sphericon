@@ -101,7 +101,7 @@ func TestVerifyAcceptsEachRecoveryCodeOnceAndRecordsItsUse(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, st.RecoveryCodesRemaining)
 
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 	n, err := env.DB.AuditEntry.Query().Where(
 		auditentry.WorkspaceID(fixtures.GlobexID),
 		auditentry.Action(events.ActionUserRecoveryCodeUse),
@@ -163,7 +163,7 @@ func TestResetIsAuditedInTheActingWorkspaceOnly(t *testing.T) {
 
 	require.NoError(t, env.SecondFactor.Reset(ctx, fixtures.SecondFactorSamID, jane, fixtures.GlobexID))
 
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 	got, err := env.DB.AuditEntry.Query().Where(auditentry.Action(events.ActionUserSecondFactorReset)).All(ctx)
 	require.NoError(t, err)
 	require.Len(t, got, 1)
@@ -196,7 +196,7 @@ func TestStaffResetIsAuditedInEveryWorkspaceOfTheUser(t *testing.T) {
 	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	assert.False(t, st.Enabled)
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 	got, err := env.DB.AuditEntry.Query().
 		Where(auditentry.Action(events.ActionUserSecondFactorReset)).
 		Order(ent.Asc(auditentry.FieldWorkspaceID)).

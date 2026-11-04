@@ -228,7 +228,7 @@ func TestEveryChangingSetRenewalAndClearIsRecordedUnderTheCredentialsName(t *tes
 	h.setHold(t, "audited", 2*time.Hour)
 	h.clearHold(t, "audited")
 	h.clearHold(t, "audited")
-	h.env.DeliverToEE(t)
+	h.env.WorkEditionJobs(t)
 
 	entries := h.env.DB.Scoped(fixtures.AcmeID).AuditEntry().Query().
 		Where(auditentry.TargetName("audited")).Order(auditentry.ByID()).AllX(t.Context())

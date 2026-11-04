@@ -9,6 +9,8 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ee/audit"
+	"github.com/getsphericon/sphericon/ee/export"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -94,6 +96,15 @@ func (env *TestEnv) WorkWebhookJobs(t *testing.T) {
 func (env *TestEnv) WorkWebhookJobOf(t *testing.T, published events.Envelope) {
 	t.Helper()
 	WorkEventJobOf(t, env, env.webhookWorker(t), published)
+}
+
+// WorkEditionJobs works every queued job of the Enterprise Edition's consumers, the Audit log's and
+// the Erasures stream's (WorkEventJobs), under the Instance's License as the application does.
+// Each call works them all again, so calling it twice exercises a retried job.
+func (env *TestEnv) WorkEditionJobs(t *testing.T) {
+	t.Helper()
+	WorkEventJobs(t, env, audit.NewEntryEventWorker(env.DB, env.license))
+	WorkEventJobs(t, env, export.NewErasureEventWorker(env.DB, env.license))
 }
 
 // QueuedDeliveries are the queued webhook deliveries, oldest first.

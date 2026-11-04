@@ -173,6 +173,8 @@ type TestEnv struct {
 	Orders *orders.Module
 
 	edition *ee.Edition // the EE parts, built like the composition root builds them
+	// license is the Instance's License, which the Edition's consumers check (WorkEditionJobs).
+	license *licensekey.License
 
 	sender    *outbound.Module // the Outbound module the queued Broadcast sends run through
 	jwtSecret string           // for tokens a test needs in a state the Tracker never mints
@@ -503,6 +505,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Holds:           do.MustInvoke[*holds.Holds](injector),
 		Orders:          do.MustInvoke[*orders.Module](injector),
 		edition:         edition,
+		license:         lic,
 		sender:          do.MustInvoke[*outbound.Module](injector),
 		jwtSecret:       cfg.JWTSecret,
 		now:             st.now,

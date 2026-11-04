@@ -146,7 +146,7 @@ func TestTheAuditEntryShowsSphericonStaffAndNeverTheStaffMember(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 	h.suspend(t, c, fixtures.AcmePublicID, "abuse report")
-	h.env.DeliverToEE(t)
+	h.env.WorkEditionJobs(t)
 
 	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)

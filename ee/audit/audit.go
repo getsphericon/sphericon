@@ -1,4 +1,4 @@
-// Package audit is the Enterprise Audit log (ADR 0022): the subscriber that persists
+// Package audit is the Enterprise Audit log (ADR 0022): the consumer that persists
 // `audit.entry` domain events into the append-only audit_entries table, and the read
 // side behind the /site page. It runs only under a license that includes the audit
 // feature; without one nothing is stored and nothing is readable.
@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/riverqueue/river"
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ee/licensekey"
@@ -22,31 +23,52 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
-// ConsumerName names the bus consumer group of the audit subscriber.
-const ConsumerName = events.GroupAudit
-
-// Consumer is the audit subscriber. It is the raw-client entry for audit entries (an
-// event envelope carries only a Workspace id, ADR 0017). It persists `audit.entry`
-// events, deduplicated by the envelope id so at-least-once redelivery writes one row,
-// and ignores every other event. Unlicensed, it consumes and discards.
-func Consumer(client *ent.Client, lic *licensekey.License) events.Subscriber {
-	return events.Subscriber{
-		Name: ConsumerName,
-		Handle: func(ctx context.Context, env events.Envelope) error {
-			if env.Name != events.NameAuditEntry || !lic.Has(licensekey.FeatureAudit) {
-				return nil
-			}
-			ev, err := events.Decode(env)
-			if err != nil {
-				return err
-			}
-			entry, ok := ev.(*events.AuditEntry)
-			if !ok {
-				return nil
-			}
-			return persist(ctx, client, env, entry)
-		},
+// EventConsumer is the Audit log's consumer of the domain events (ADR 0101): every Audit entry
+// inserts one EntryEventArgs job. The Edition registers it on the bus beside core's, so core
+// never depends on the Enterprise Edition.
+func EventConsumer() events.Consumer {
+	return events.Consumer{
+		Wants: func(env events.Envelope, _ events.DomainEvent) bool { return env.Name == events.NameAuditEntry },
+		Job:   func(env events.Envelope) river.JobArgs { return EntryEventArgs{events.EventJob{Envelope: env}} },
 	}
+}
+
+// EntryEventArgs is the Audit log's job: one Audit entry to store (ADR 0022).
+type EntryEventArgs struct {
+	events.EventJob
+}
+
+func (EntryEventArgs) Kind() string { return "event_audit" }
+
+// EntryEventWorker is the raw-client entry for audit entries (an event envelope carries only a
+// Workspace id, ADR 0017). It stores the entry, deduplicated by the envelope id so a retried job
+// writes one row. Unlicensed, it consumes and discards.
+type EntryEventWorker struct {
+	river.WorkerDefaults[EntryEventArgs]
+
+	client *ent.Client
+	lic    *licensekey.License
+}
+
+// NewEntryEventWorker builds the Audit log's consumer over the raw client.
+func NewEntryEventWorker(client *ent.Client, lic *licensekey.License) *EntryEventWorker {
+	return &EntryEventWorker{client: client, lic: lic}
+}
+
+func (w *EntryEventWorker) Work(ctx context.Context, job *river.Job[EntryEventArgs]) error {
+	if !w.lic.Has(licensekey.FeatureAudit) {
+		return nil
+	}
+	env := job.Args.Envelope
+	ev, err := events.Decode(env)
+	if err != nil {
+		return err
+	}
+	entry, ok := ev.(*events.AuditEntry)
+	if !ok {
+		return nil
+	}
+	return persist(ctx, w.client, env, entry)
 }
 
 // Forwarder wraps the webhook dispatcher so `audit.entry` reaches Webhook endpoints

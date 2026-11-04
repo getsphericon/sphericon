@@ -113,7 +113,7 @@ func TestExternalAuditStaffIdCannotBeProbed(t *testing.T) {
 	ctx := context.Background()
 	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse")
 	require.NoError(t, err)
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 	c := env.ExternalScoped(t, "audit:read")
 
 	count := func(p externalapi.AuditEntriesListParams) int {

@@ -51,13 +51,11 @@ type App struct {
 
 	injector       *do.RootScope
 	listener       net.Listener // caller-provided; nil means listen on Config.Port
-	events         *eventsRuntime
 	jobs           *jobsClient
 	shutdownOnce   sync.Once
 	closeOnce      sync.Once
 	closeErr       error
 	cancel         context.CancelFunc
-	eventsDone     chan struct{}
 	jobsStarted    bool // river's Start was attempted: its Stopped channel closes on success and on failure
 	done           chan error
 	shutdownReport *do.ShutdownReport
@@ -137,10 +135,6 @@ func newApp(cfg *config.Config, o options) (*App, error) {
 	if _, err := do.Invoke[*preset.Registry](injector); err != nil {
 		return nil, abort(injector, err)
 	}
-	evRuntime, err := do.Invoke[*eventsRuntime](injector)
-	if err != nil {
-		return nil, abort(injector, err)
-	}
 	jobsCli, err := do.Invoke[*jobsClient](injector)
 	if err != nil {
 		return nil, abort(injector, err)
@@ -193,7 +187,6 @@ func newApp(cfg *config.Config, o options) (*App, error) {
 		},
 		injector: injector,
 		done:     make(chan error, 1),
-		events:   evRuntime,
 		jobs:     jobsCli,
 	}, nil
 }
@@ -294,22 +287,6 @@ func (a *App) start(ctx context.Context) error {
 		}
 	}()
 
-	eventsErr := make(chan error, 1)
-	a.eventsDone = make(chan struct{})
-	go func() {
-		defer close(a.eventsDone)
-		if err := a.runEvents(ctx); err != nil {
-			eventsErr <- err
-		}
-	}()
-	select {
-	case <-a.events.router.Running():
-	case err := <-eventsErr:
-		return fmt.Errorf("start event router: %w", err)
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-
 	// Marked before the attempt: a Start that fails partway still closes river's Stopped
 	// channel, and Close waits for it so no worker outlives the unwind.
 	a.jobsStarted = true
@@ -339,7 +316,7 @@ func (a *App) WarmDocuments(ctx context.Context) error {
 // failed before serving. A binary waits on it next to its signals.
 func (a *App) Done() <-chan error { return a.done }
 
-// Close cancels the event router and the job workers, waits for them to stop, shuts
+// Close cancels the job workers, waits for them to stop, shuts
 // the HTTP servers down and then the container. Safe to call more than once and after
 // a failed Start; every call returns the first call's result.
 func (a *App) Close(ctx context.Context) error {
@@ -352,13 +329,6 @@ func (a *App) close(ctx context.Context) error {
 		a.cancel()
 	}
 	var errs []error
-	if a.eventsDone != nil {
-		select {
-		case <-a.eventsDone:
-		case <-ctx.Done():
-			errs = append(errs, fmt.Errorf("event router did not stop: %w", ctx.Err()))
-		}
-	}
 	if a.jobsStarted {
 		select {
 		case <-a.jobs.Stopped():
@@ -401,11 +371,6 @@ func (a *App) stop(ctx context.Context) error {
 		}
 	}
 	return errors.Join(errs...)
-}
-
-// runEvents runs the domain-event router (the outbox consumers). Blocks until ctx is cancelled; stop happens via Shutdown.
-func (a *App) runEvents(ctx context.Context) error {
-	return a.events.router.Run(ctx)
 }
 
 // runJobs starts the river worker pool. It returns once started; workers run

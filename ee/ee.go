@@ -43,8 +43,6 @@ type Edition struct {
 	Audit *audit.Log
 	// Export is the seat of the Export streams (ADR 0045); unlicensed, every stream answers 404.
 	Export *export.Streams
-	// Consumers are the extra bus subscribers (events.RegisterSubscribers).
-	Consumers []events.Subscriber
 	// Staff is the domain of the console's Enterprise sections and of the service endpoints
 	// (ADR 0026); every call refuses without the `staff` license.
 	Staff *staff.Module
@@ -54,21 +52,26 @@ type Edition struct {
 	now           func() time.Time
 }
 
-// New builds the Edition for a license. Subscribers are always registered and each
-// checks the license itself, so a key added later needs no rewiring and an unlicensed
-// instance stores nothing. The Enterprise sections of the Staff console take the core Staff
+// EventConsumers are the Edition's consumers of the domain events (ADR 0101): the Audit log's and
+// the Erasures stream's, for the composition root to register on the bus beside core's. They want
+// what they want whatever the license: each job checks the license itself (Jobs, ExportJobs), so
+// a key added later needs no rewiring and an unlicensed instance stores nothing.
+func EventConsumers() []events.Consumer {
+	return []events.Consumer{audit.EventConsumer(), export.EventConsumer()}
+}
+
+// New builds the Edition for a license. The Enterprise sections of the Staff console take the core Staff
 // member's sessions (staffSessions, nil while its sign-in is off), so the `staff` feature
 // refuses to start without them. The Audit log records its export through bus, which is
 // built before the Edition and takes the Edition's ent hooks from Hooks.
 func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, staffSessions *staffmembers.Sessions, staffCfg staff.Config) (*Edition, error) {
 	auditLog := audit.NewLog(lic, bus)
 	e := &Edition{
-		lic:       lic,
-		client:    client,
-		Audit:     auditLog,
-		Export:    export.New(lic),
-		Consumers: []events.Subscriber{audit.Consumer(client, lic), export.Consumer(client, lic)},
-		Staff:     staff.NewModule(client, lic, auditLog, staffCfg),
+		lic:    lic,
+		client: client,
+		Audit:  auditLog,
+		Export: export.New(lic),
+		Staff:  staff.NewModule(client, lic, auditLog, staffCfg),
 	}
 	e.abuseCfg = abuse.Config{Limits: staffCfg.Abuse, SupportEmail: staffCfg.SupportEmail}
 	e.now = staffCfg.Clock
@@ -177,6 +180,8 @@ func (e *Edition) Jobs(bus *events.Bus, sender messaging.EmailSender) jobs.Exten
 			river.AddWorker(w, retention.NewWorker(e.client, e.lic))
 			river.AddWorker(w, usage.NewWorker(e.client, e.lic))
 			river.AddWorker(w, abuse.NewWorker(detector))
+			// The Audit log's consumer (EventConsumers), which stores nothing without the audit license.
+			river.AddWorker(w, audit.NewEntryEventWorker(e.client, e.lic))
 		},
 		PeriodicJobs: []*river.PeriodicJob{retention.Periodic(), usage.Periodic(), abuse.Periodic()},
 		Webhooks:     e.Webhooks,
@@ -184,9 +189,9 @@ func (e *Edition) Jobs(bus *events.Bus, sender messaging.EmailSender) jobs.Exten
 }
 
 // ExportJobs is the river extension of the Export streams (ADR 0045): the prune job of the
-// Erasures stream over the instance's Event retention window (0 keeps every row). It is
-// separate from Jobs because it needs that window, a core setting; it removes nothing
-// without the `export` license.
+// Erasures stream over the instance's Event retention window (0 keeps every row), and the
+// stream's consumer of the domain events (EventConsumers). It is separate from Jobs because the
+// prune needs that window, a core setting; neither does anything without the `export` license.
 func (e *Edition) ExportJobs(eventsRetention time.Duration) jobs.Extension {
 	return export.Jobs(e.client, e.lic, eventsRetention)
 }

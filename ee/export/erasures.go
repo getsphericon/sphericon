@@ -14,32 +14,53 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobs"
 )
 
-// ConsumerName names the bus consumer group of the Export streams' subscriber.
-const ConsumerName = events.GroupExport
-
-// Consumer is the Export streams' bus subscriber, the raw-client entry of the tombstone
-// stream like the audit subscriber (an envelope carries only a Workspace id, ADR 0017). It
-// writes one Erasures row per `contact.erased` message, deduplicated by the envelope id so
-// at-least-once redelivery writes one row, and ignores every other event. Unlicensed, it
-// consumes and discards: an instance without the `export` feature stores nothing (ADR 0045).
-func Consumer(client *ent.Client, lic *licensekey.License) events.Subscriber {
-	return events.Subscriber{
-		Name: ConsumerName,
-		Handle: func(ctx context.Context, env events.Envelope) error {
-			if env.Name != events.NameContactErased || !lic.Has(licensekey.FeatureExport) {
-				return nil
-			}
-			ev, err := events.Decode(env)
-			if err != nil {
-				return err
-			}
-			erased, ok := ev.(*events.ContactErased)
-			if !ok {
-				return nil
-			}
-			return record(ctx, client, env, erased)
-		},
+// EventConsumer is the Erasures stream's consumer of the domain events (ADR 0101): every
+// `contact.erased` inserts one ErasureEventArgs job. The Edition registers it on the bus beside
+// core's, so core never depends on the Enterprise Edition.
+func EventConsumer() events.Consumer {
+	return events.Consumer{
+		Wants: func(env events.Envelope, _ events.DomainEvent) bool { return env.Name == events.NameContactErased },
+		Job:   func(env events.Envelope) river.JobArgs { return ErasureEventArgs{events.EventJob{Envelope: env}} },
 	}
+}
+
+// ErasureEventArgs is the Erasures stream's job: one Erasure to add to the stream (ADR 0045).
+type ErasureEventArgs struct {
+	events.EventJob
+}
+
+func (ErasureEventArgs) Kind() string { return "event_export_erasure" }
+
+// ErasureEventWorker is the raw-client entry of the tombstone stream like the audit consumer (an
+// envelope carries only a Workspace id, ADR 0017). It writes one Erasures row per
+// `contact.erased`, deduplicated by the envelope id so a retried job writes one row. Unlicensed,
+// it consumes and discards: an instance without the `export` feature stores nothing (ADR 0045).
+type ErasureEventWorker struct {
+	river.WorkerDefaults[ErasureEventArgs]
+
+	client *ent.Client
+	lic    *licensekey.License
+}
+
+// NewErasureEventWorker builds the Erasures stream's consumer over the raw client.
+func NewErasureEventWorker(client *ent.Client, lic *licensekey.License) *ErasureEventWorker {
+	return &ErasureEventWorker{client: client, lic: lic}
+}
+
+func (w *ErasureEventWorker) Work(ctx context.Context, job *river.Job[ErasureEventArgs]) error {
+	if !w.lic.Has(licensekey.FeatureExport) {
+		return nil
+	}
+	env := job.Args.Envelope
+	ev, err := events.Decode(env)
+	if err != nil {
+		return err
+	}
+	erased, ok := ev.(*events.ContactErased)
+	if !ok {
+		return nil
+	}
+	return record(ctx, w.client, env, erased)
 }
 
 func record(ctx context.Context, client *ent.Client, env events.Envelope, e *events.ContactErased) error {
@@ -107,7 +128,10 @@ func Periodic() *river.PeriodicJob {
 // Event retention window (ADR 0019, ADR 0045).
 func Jobs(client *ent.Client, lic *licensekey.License, retention time.Duration) jobs.Extension {
 	return jobs.Extension{
-		Workers:      func(w *river.Workers) { river.AddWorker(w, NewWorker(client, lic, retention)) },
+		Workers: func(w *river.Workers) {
+			river.AddWorker(w, NewWorker(client, lic, retention))
+			river.AddWorker(w, NewErasureEventWorker(client, lic))
+		},
 		PeriodicJobs: []*river.PeriodicJob{Periodic()},
 	}
 }
