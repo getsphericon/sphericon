@@ -344,6 +344,7 @@ export default interface Resources {
       "captured": "Captured, not delivered",
       "clicks": "Clicks",
       "complained": "Complained",
+      "count": "{{count, number}} automation" | "{{count, number}} automations",
       "createTitle": "New automation",
       "deactivate": "Deactivate",
       "delivered": "Delivered",

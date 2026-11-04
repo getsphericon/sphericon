@@ -343,6 +343,8 @@
     "captured": "Captured, not delivered",
     "clicks": "Clicks",
     "complained": "Complained",
+    "count_one": "{{count, number}} automation",
+    "count_other": "{{count, number}} automations",
     "createTitle": "New automation",
     "deactivate": "Deactivate",
     "delivered": "Delivered",

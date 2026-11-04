@@ -1,4 +1,4 @@
-import { Button, Group, Menu, Stack, Title } from '@mantine/core'
+import { Button, Group, Menu, Stack } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { useNavigate } from '@tanstack/react-router'
 import type { MouseEvent } from 'react'
@@ -122,22 +122,6 @@ export function AutomationsListPage() {
   return (
     <Stack flex={1}>
       <AutomationCreateModal opened={createOpened} onClose={closeCreate} />
-      <Group justify="space-between" align="center">
-        <Title order={2}>{t(($) => $.nav.automations)}</Title>
-        <Button onClick={openCreate}>{t(($) => $.automations.addAutomation)}</Button>
-      </Group>
-
-      <ArchiveViewControl
-        archived={archived}
-        onChange={(next) =>
-          void routeNavigate({
-            search: { archived: next || undefined },
-            replace: true,
-            viewTransition: false,
-          })
-        }
-      />
-
       <PagedTable
         page={page}
         onPageChange={(next) =>
@@ -148,6 +132,22 @@ export function AutomationsListPage() {
         }
         loadErrorTitle={t(($) => $.alerts.automationLoadErrorTitle)}
         collection={t(($) => $.nav.automations)}
+        pageHeader={{
+          actions: <Button onClick={openCreate}>{t(($) => $.automations.addAutomation)}</Button>,
+          count: (total) => t(($) => $.automations.count, { count: total }),
+          toolbar: (
+            <ArchiveViewControl
+              archived={archived}
+              onChange={(next) =>
+                void routeNavigate({
+                  search: { archived: next || undefined },
+                  replace: true,
+                  viewTransition: false,
+                })
+              }
+            />
+          ),
+        }}
         // The archived view is another place, not the list to create in: its empty state invites
         // nothing (docs/standards/ui.md, "Empty states").
         empty={
@@ -173,14 +173,14 @@ export function AutomationsListPage() {
             accessor: 'name',
             title: t(($) => $.automations.nameLabel),
             // The name is the link to the automation, so it is reachable by keyboard and opens in
-            // a new tab; it looks like the row's text, since the whole row opens it. The link keeps
+            // a new tab; it looks like the row's text, not underlined even on hover, since the whole row opens it. The link keeps
             // the row's own click from navigating a second time.
             render: (record) => (
               <AnchorLink
                 inherit
                 c="inherit"
                 fw={500}
-                underline="hover"
+                underline="never"
                 to={automationsDetailRoute.to}
                 params={{ workspaceId, automationId: record.id }}
                 onClick={(event: MouseEvent) => event.stopPropagation()}

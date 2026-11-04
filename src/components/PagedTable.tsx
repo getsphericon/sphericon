@@ -1,4 +1,4 @@
-import { ActionIcon, EmptyState, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, EmptyState, Group, Stack, Text, Title, Tooltip } from '@mantine/core'
 import { IconRefresh } from '@tabler/icons-react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { QueryKey, UseQueryOptions } from '@tanstack/react-query'
@@ -45,6 +45,18 @@ interface PagedTableProps<TPage extends Page, TError extends ApiErrorLike, TKey 
   }
   // Opens the clicked row; the rows then highlight on hover.
   onRowClick?: (record: TPage['items'][number]) => void
+  // A list that is the whole page puts its page header here (Cloudscape's full-page table): the
+  // collection's name is the page title with `actions` (the create button) at its right, so the
+  // table does not repeat the title above itself. `toolbar` (the archived view, the filters) and
+  // the count of what it shows share the row of the refresh button.
+  pageHeader?: PageHeader
+}
+
+interface PageHeader {
+  actions?: ReactNode
+  toolbar?: ReactNode
+  // The count of what the view shows ("6 automations"), beside the toolbar.
+  count: (total: number) => string
 }
 
 // A server-paged mantine-datatable over a generated list query: owns the page, the load
@@ -61,10 +73,9 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
   onRowClick,
   page = 1,
   onPageChange,
+  pageHeader,
 }: PagedTableProps<TPage, TError, TKey>) {
-  const { t } = useTranslation()
   const paginationText = usePaginationText()
-  const refreshLabel = t(($) => $.table.refresh)
   const list = useQuery({ ...options({ page, pageSize }), placeholderData: keepPreviousData })
   // A deferred render is a React transition, which is what lets the ViewTransition below
   // cross-fade the old rows into the new ones when they arrive.
@@ -81,33 +92,14 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
   return (
     // It grows into the page's free height, so an empty list's state sits in the page's middle.
     <Stack flex={1}>
-      <Group justify="space-between" gap="xs">
-        <Text fw={600}>
-          {t(($) => $.table.collection, { name: collection, total: totalItems })}
-        </Text>
-        <Group gap="xs">
-          {/* Announced politely each time it changes, so a screen reader hears that the refresh
-            landed without the focus moving. */}
-          <Text component="output" size="sm" c="dimmed" aria-live="polite">
-            {refreshedAt ? (
-              <>
-                {t(($) => $.table.updated)} <RelativeTime value={refreshedAt} />
-              </>
-            ) : null}
-          </Text>
-          <Tooltip label={refreshLabel} withArrow>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              aria-label={refreshLabel}
-              loading={list.isFetching}
-              onClick={() => void list.refetch()}
-            >
-              <IconRefresh size={16} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      </Group>
+      <PagedTableHeader
+        collection={collection}
+        total={data?.totalItems}
+        pageHeader={pageHeader}
+        refreshedAt={refreshedAt}
+        fetching={list.isFetching}
+        onRefresh={() => void list.refetch()}
+      />
 
       {list.isError ? <ApiErrorAlert error={list.error} title={loadErrorTitle} /> : null}
 
@@ -117,18 +109,22 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
         </CenteredEmptyState>
       ) : null}
 
-      {/* While the first page loads only the skeleton shows: an empty table would flash its
-          empty state under it. */}
-      {list.isLoading ? <TableSkeleton /> : null}
-      {list.isLoading || nothing ? null : (
+      {/* Until the first page is on screen only the skeleton shows. It waits for the deferred
+          rows, not the request: the request settles a render before they arrive, and a table
+          drawn in that render would flash its empty state. A failed first load shows the alert
+          alone, since an error is not an empty list. */}
+      {data === undefined && !list.isError ? <TableSkeleton /> : null}
+      {data === undefined || nothing ? null : (
         <ViewTransition>
           <DataTable<TPage['items'][number]>
-            minHeight={data?.items.length ? 0 : 200}
+            minHeight={data.items.length > 0 ? 0 : 200}
             withTableBorder
+            // Striped, so the eye keeps its row across the columns (docs/standards/ui.md).
+            striped
             {...(onRowClick
               ? { highlightOnHover: true, onRowClick: ({ record }) => onRowClick(record) }
               : {})}
-            records={data?.items ?? []}
+            records={data.items}
             columns={columns}
             totalRecords={totalItems}
             paginationText={paginationText}
@@ -145,5 +141,78 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
         </ViewTransition>
       )}
     </Stack>
+  )
+}
+
+// The rows above the table. A full-page list puts its page header first, the collection's name as
+// the title and the actions at its right, then its toolbar and count beside the refresh. Other
+// lists name the collection with its count where the toolbar goes.
+function PagedTableHeader({
+  collection,
+  total,
+  pageHeader,
+  refreshedAt,
+  fetching,
+  onRefresh,
+}: {
+  collection: string
+  total: number | undefined
+  pageHeader: PageHeader | undefined
+  refreshedAt: string | null
+  fetching: boolean
+  onRefresh: () => void
+}) {
+  const { t } = useTranslation()
+  const refreshLabel = t(($) => $.table.refresh)
+  return (
+    <>
+      {pageHeader ? (
+        // The page's title stands apart from the toolbar and the table under it.
+        <Group justify="space-between" align="center" mb="md">
+          <Title order={2}>{collection}</Title>
+          {pageHeader.actions}
+        </Group>
+      ) : null}
+      <Group justify="space-between" gap="xs">
+        {pageHeader ? (
+          <Group gap="md">
+            {pageHeader.toolbar}
+            {/* The count of the view on screen (the archived one counts its own), once the first
+                page is in: a zero before it would be a guess. */}
+            {total === undefined ? null : (
+              <Text size="sm" c="dimmed">
+                {pageHeader.count(total)}
+              </Text>
+            )}
+          </Group>
+        ) : (
+          <Text fw={600}>
+            {t(($) => $.table.collection, { name: collection, total: total ?? 0 })}
+          </Text>
+        )}
+        <Group gap="xs">
+          {/* Announced politely each time it changes, so a screen reader hears that the refresh
+            landed without the focus moving. */}
+          <Text component="output" size="sm" c="dimmed" aria-live="polite">
+            {refreshedAt ? (
+              <>
+                {t(($) => $.table.updated)} <RelativeTime value={refreshedAt} />
+              </>
+            ) : null}
+          </Text>
+          <Tooltip label={refreshLabel} withArrow>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              aria-label={refreshLabel}
+              loading={fetching}
+              onClick={onRefresh}
+            >
+              <IconRefresh size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      </Group>
+    </>
   )
 }

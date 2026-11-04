@@ -63,10 +63,14 @@ a form needs no code of its own for them. A form on a bare `useForm` has to be m
 
 - A list of resources is a `PagedTable` (`mantine-datatable`) on a route with a `page` search
   param. Columns run left to right by importance; a header does not change when a filter applies.
+- A list that is the whole page is its page header (`pageHeader`): the collection's name is the
+  title and the create button is at its right. The row under it holds the archived view, the
+  filters and the count of what the view shows ("6 automations", the archived view counting its
+  own), with the refresh button at its right; the table does not repeat the title above itself.
 - When a click on the row opens the resource, the first column names it and is a link to it
   (`AnchorLink`), so it is reachable by keyboard and opens in a new tab. The link looks like the
-  row's text (its color, weight 500, underlined on hover): the whole row is the target, the name
-  is not singled out. Numbers are right-aligned.
+  row's text (its color, weight 500, no underline): the whole row is the target, the name
+  is not singled out. Numbers are right-aligned. Rows are striped.
 - Header actions act on the collection or the selection; a row's actions are in its
   `RowActionsMenu`. One primary button per page. Order: view, edit, other, delete, create. A row
   offers the same state actions as the resource's page (Publish where that page enables it). Only
@@ -127,7 +131,8 @@ unpublished changes above a live version are a detail of that status, not a seco
   zero results, "Clear filter".
 - In Mantine: `EmptyState` (`@mantine/core`) with its `title` and `description`, and the action as
   a `Button variant="default"` inside `EmptyState.Actions`.
-- The count shows with the collection ("Contacts (0)").
+- The count shows with the collection ("Contacts (0)", or "0 automations" in a list with a page
+  header).
 - A list with nothing in it (its total is 0, from either state) shows the empty state in place of
   the table, centered in the page's free height, under the count. A departure from Cloudscape,
   which keeps it inside the table, so that an empty page does not read as a table with a strip at
