@@ -69,7 +69,8 @@ type ownerKey struct {
 	id   int64
 }
 
-// ownerNames reads the names of the Broadcasts and Automations the clicks name.
+// ownerNames reads the names of the Broadcasts and Automations the clicks name, archived ones
+// too: clicks are history (ADR 0099).
 func ownerNames(ctx context.Context, s *ent.Scoped, rows []linkclicks.OwnerClicks) (map[ownerKey]string, error) {
 	if len(rows) == 0 {
 		return nil, nil
@@ -83,14 +84,14 @@ func ownerNames(ctx context.Context, s *ent.Scoped, rows []linkclicks.OwnerClick
 		}
 	}
 	names := map[ownerKey]string{}
-	broadcasts, err := s.Broadcast().Query().Where(broadcast.IDIn(broadcastIDs...)).All(ctx)
+	broadcasts, err := s.Broadcast().QueryWithDiscarded().Where(broadcast.IDIn(broadcastIDs...)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
 	for _, b := range broadcasts {
 		names[ownerKey{OwnerBroadcast, b.ID}] = b.Name
 	}
-	automations, err := s.Automation().Query().Where(automation.IDIn(automationIDs...)).All(ctx)
+	automations, err := s.Automation().QueryWithDiscarded().Where(automation.IDIn(automationIDs...)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
