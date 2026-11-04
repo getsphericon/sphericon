@@ -27,6 +27,12 @@ const (
 	FieldDestination = "destination"
 	// FieldProvenance holds the string denoting the provenance field in the database.
 	FieldProvenance = "provenance"
+	// FieldWording holds the string denoting the wording field in the database.
+	FieldWording = "wording"
+	// FieldSource holds the string denoting the source field in the database.
+	FieldSource = "source"
+	// FieldBrand holds the string denoting the brand field in the database.
+	FieldBrand = "brand"
 	// FieldContactID holds the string denoting the contact_id field in the database.
 	FieldContactID = "contact_id"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -60,6 +66,9 @@ var Columns = []string{
 	FieldChannel,
 	FieldDestination,
 	FieldProvenance,
+	FieldWording,
+	FieldSource,
+	FieldBrand,
 	FieldContactID,
 }
 
@@ -94,6 +103,7 @@ const DefaultChannel = ChannelEmail
 const (
 	ChannelEmail    Channel = "email"
 	ChannelTelegram Channel = "telegram"
+	ChannelSms      Channel = "sms"
 )
 
 func (c Channel) String() string {
@@ -103,7 +113,7 @@ func (c Channel) String() string {
 // ChannelValidator is a validator for the "channel" field enum values. It is called by the builders before save.
 func ChannelValidator(c Channel) error {
 	switch c {
-	case ChannelEmail, ChannelTelegram:
+	case ChannelEmail, ChannelTelegram, ChannelSms:
 		return nil
 	default:
 		return fmt.Errorf("confirmation: invalid enum value for channel field: %q", c)
@@ -118,6 +128,7 @@ const (
 	ProvenanceDoubleOptIn   Provenance = "double_opt_in"
 	ProvenanceGrandfathered Provenance = "grandfathered"
 	ProvenanceImported      Provenance = "imported"
+	ProvenanceKeyword       Provenance = "keyword"
 )
 
 func (pr Provenance) String() string {
@@ -127,7 +138,7 @@ func (pr Provenance) String() string {
 // ProvenanceValidator is a validator for the "provenance" field enum values. It is called by the builders before save.
 func ProvenanceValidator(pr Provenance) error {
 	switch pr {
-	case ProvenanceDoubleOptIn, ProvenanceGrandfathered, ProvenanceImported:
+	case ProvenanceDoubleOptIn, ProvenanceGrandfathered, ProvenanceImported, ProvenanceKeyword:
 		return nil
 	default:
 		return fmt.Errorf("confirmation: invalid enum value for provenance field: %q", pr)
@@ -170,6 +181,21 @@ func ByDestination(opts ...sql.OrderTermOption) OrderOption {
 // ByProvenance orders the results by the provenance field.
 func ByProvenance(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProvenance, opts...).ToFunc()
+}
+
+// ByWording orders the results by the wording field.
+func ByWording(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWording, opts...).ToFunc()
+}
+
+// BySource orders the results by the source field.
+func BySource(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSource, opts...).ToFunc()
+}
+
+// ByBrand orders the results by the brand field.
+func ByBrand(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBrand, opts...).ToFunc()
 }
 
 // ByContactID orders the results by the contact_id field.

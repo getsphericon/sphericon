@@ -544,7 +544,7 @@
   subject_id: erin@initech.test
   email: erin@initech.test
   action: marketing.confirmed
-  properties: '{"provenance":"double_opt_in","ip":"203.0.113.7"}'
+  properties: '{"channel":"email","provenance":"double_opt_in","ip":"203.0.113.7"}'
   workspace_id: 3
   occurred_at: '2026-01-01 06:00:00'
   created_at: '2026-01-01 06:00:00'
@@ -593,7 +593,7 @@
   contact_id: 800
   email: export.subject@example.com
   action: marketing.confirmed
-  properties: '{"ip":"203.0.113.9"}'
+  properties: '{"channel":"email","ip":"203.0.113.9"}'
   workspace_id: 1
   occurred_at: '2026-02-01 09:00:00'
   created_at: '2026-02-01 09:00:00'
@@ -5096,18 +5096,21 @@
 - id: 9300 # fixture: EventGothamSubscribedLateOnThe7th
   email: a@gotham.test
   action: marketing.confirmed
+  properties: '{"channel":"email"}'
   workspace_id: 61
   occurred_at: '2026-03-08 04:59:00+00' # 23:59 EST on 7 March
   created_at: '2026-03-08 04:59:00+00'
 - id: 9301 # fixture: EventGothamSubscribedAtMidnightOnThe8th
   email: b@gotham.test
   action: marketing.confirmed
+  properties: '{"channel":"email"}'
   workspace_id: 61
   occurred_at: '2026-03-08 05:00:00+00' # midnight EST on 8 March
   created_at: '2026-03-08 05:00:00+00'
 - id: 9302 # fixture: EventGothamSubscribedLateOnThe8th
   email: c@gotham.test
   action: marketing.confirmed
+  properties: '{"channel":"email"}'
   workspace_id: 61
   occurred_at: '2026-03-09 03:59:00+00' # 23:59 EDT on 8 March
   created_at: '2026-03-09 03:59:00+00'
@@ -5126,13 +5129,22 @@
 - id: 9305 # fixture: EventGothamSubscribedOnThe6th
   email: f@gotham.test
   action: marketing.confirmed
+  properties: '{"channel":"email"}'
   workspace_id: 61
   occurred_at: '2026-03-06 15:00:00+00' # 10:00 EST on 6 March
   created_at: '2026-03-06 15:00:00+00'
+# A phone's SMS consent the same day: the report is about email, so it counts nowhere (#1037).
+- id: 9330 # fixture: EventGothamSmsConfirmedOnThe6th
+  action: marketing.confirmed
+  properties: '{"channel":"sms","provenance":"imported"}'
+  workspace_id: 61
+  occurred_at: '2026-03-06 16:00:00+00'
+  created_at: '2026-03-06 16:00:00+00'
 # Backfilled: it happened on 9 March but was recorded on 10 March, so it lands on the 9th.
 - id: 9306 # fixture: EventGothamSubscribedBackfilled
   email: g@gotham.test
   action: marketing.confirmed
+  properties: '{"channel":"email"}'
   workspace_id: 61
   occurred_at: '2026-03-09 15:00:00+00'
   created_at: '2026-03-10 09:00:00+00'

@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -37,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
@@ -136,6 +138,7 @@ import (
 // goverter:extend broadcastContent
 // goverter:extend emailContentChannel
 // goverter:extend telegramContentChannel
+// goverter:extend optNilSmsConfirmation
 type Converter interface {
 	// The contact is read with its tags loaded (`WithTags`).
 	// goverter:map Edges.Tags Tags
@@ -404,6 +407,11 @@ type Converter interface {
 	BindingToResource(source bindings.Chat) siteapi.SiteBindingResource
 	// goverter:useEmptyOnNil:slice
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
+	SmsConsentToResource(source consent.ContactSMS) siteapi.SiteSmsConsent
+	// goverter:map CreatedAt ConfirmedAt
+	SmsConfirmationToResource(source *ent.Confirmation) siteapi.SiteSmsConfirmation
+	// goverter:enum:transform value
+	ConfirmationProvenanceToResource(source confirmation.Provenance) siteapi.ConfirmationProvenance
 	TagToResource(source *ent.Tag) siteapi.SiteTagResource
 	// goverter:useEmptyOnNil:slice
 	TagsToResources(source []*ent.Tag) []siteapi.SiteTagResource
@@ -768,6 +776,14 @@ func providerLimitSource(c Converter, v providerlimit.Source) siteapi.NilSitePro
 // optNilSendCap is null exactly when no Send cap applies.
 func optNilSendCap(c Converter, v *providerlimit.SendCapStatus) siteapi.OptNilSiteSendCap {
 	return convert.NilVia[siteapi.OptNilSiteSendCap](v, c.SendCapToResource)
+}
+
+// optNilSmsConfirmation is absent exactly when the phone has no SMS Confirmation.
+func optNilSmsConfirmation(c Converter, v *ent.Confirmation) siteapi.OptNilSiteSmsConfirmation {
+	if v == nil {
+		return siteapi.OptNilSiteSmsConfirmation{}
+	}
+	return siteapi.NewOptNilSiteSmsConfirmation(c.SmsConfirmationToResource(v))
 }
 
 // broadcastLimit is null exactly when nothing limits the Broadcast (its limit is empty).

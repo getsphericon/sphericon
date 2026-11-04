@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -359,6 +360,7 @@ type Converter interface {
 
 	SuppressionToResource(source *ent.Suppression) externalapi.SuppressionResource
 	UnsubscribeToResource(source *ent.Unsubscribe) externalapi.UnsubscribeResource
+	ConfirmationToResource(source *ent.Confirmation) externalapi.ConfirmationResource
 
 	// The Data export members (ADR 0021): the contract's typed projection of the
 	// stored rows, so the ent JSON tags are never the public format.
@@ -468,9 +470,13 @@ type Converter interface {
 	// goverter:enum:transform value
 	RuleStatusToResource(source rule.Status) externalapi.RuleStatus
 	// goverter:enum:transform value
-	SuppressionChannelToResource(source suppression.Channel) externalapi.ConsentChannel
+	SuppressionChannelToResource(source suppression.Channel) externalapi.SuppressionChannel
 	// goverter:enum:transform value
 	UnsubscribeChannelToResource(source unsubscribe.Channel) externalapi.ConsentChannel
+	// goverter:enum:transform value
+	ConfirmationChannelToResource(source confirmation.Channel) externalapi.ConsentChannel
+	// goverter:enum:transform value
+	ConfirmationProvenanceToResource(source confirmation.Provenance) externalapi.ConfirmationProvenance
 	// goverter:enum:transform value
 	SuppressionReasonToResource(source suppression.Reason) externalapi.SuppressionReason
 	// goverter:enum:transform value

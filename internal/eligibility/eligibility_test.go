@@ -233,3 +233,61 @@ func TestCheckOnTelegramAsksNoConfirmation(t *testing.T) {
 	assert.True(t, d.Eligible)
 	assert.False(t, decide(t, env, fixtures.LumonID, "nobody@example.com", eligibility.SourceBroadcasts).Eligible, "email there does ask for one")
 }
+
+// smsMatrix returns the matrix phones of a Workspace that the point Check on sms admits and the
+// phones of the Contacts the batch Predicate keeps, for one source.
+func smsMatrix(t *testing.T, env *testhelper.TestEnv, ws int64, phones []string, source string) (byCheck, byPredicate []string) {
+	t.Helper()
+	ctx := context.Background()
+	s := env.DB.Scoped(ws)
+	for _, p := range phones {
+		d, err := eligibility.Check(ctx, s, eligibility.ChannelSMS, p, source)
+		require.NoError(t, err)
+		if d.Eligible {
+			byCheck = append(byCheck, p)
+		}
+	}
+	kept, err := s.Contact().Query().Where(eligibility.Audience(eligibility.PhoneDestination(), source)).All(ctx)
+	require.NoError(t, err)
+	for _, c := range kept {
+		byPredicate = append(byPredicate, *c.Phone)
+	}
+	return byCheck, byPredicate
+}
+
+// On sms a Confirmation is always required (ADR 0077): a number without one is not eligible whether
+// the Workspace's confirmed-opt-in setting is on (Lumon) or off (Tyrell), one with a Confirmation is,
+// and an opt-out of everything on sms blocks it. The point Check and the audience agree.
+func TestSMSRequiresAConfirmationWhateverTheEmailSetting(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	for name, tc := range map[string]struct {
+		ws     int64
+		phones []string
+		want   []string
+	}{
+		"gate off": {fixtures.TyrellID, []string{fixtures.TyrellMatrixCleanPhone, fixtures.TyrellMatrixUnsubEverythingPhone, fixtures.TyrellMatrixConfirmedPhone},
+			[]string{fixtures.TyrellMatrixConfirmedPhone}},
+		"gate on": {fixtures.LumonID, []string{fixtures.LumonMatrixCleanPhone, fixtures.LumonMatrixUnsubEverythingPhone, fixtures.LumonMatrixConfirmedPhone},
+			[]string{fixtures.LumonMatrixConfirmedPhone}},
+	} {
+		byCheck, byPredicate := smsMatrix(t, env, tc.ws, tc.phones, eligibility.SourceBroadcasts)
+		assert.ElementsMatch(t, tc.want, byCheck, "%s: point Check", name)
+		assert.ElementsMatch(t, tc.want, byPredicate, "%s: batch Predicate", name)
+	}
+}
+
+// The reasons a number is not eligible on sms: no Confirmation, or an opt-out of everything.
+func TestSMSReasons(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.TyrellID)
+
+	unconfirmed, err := eligibility.Check(ctx, s, eligibility.ChannelSMS, fixtures.TyrellMatrixCleanPhone, eligibility.SourceBroadcasts)
+	require.NoError(t, err)
+	optedOut, err := eligibility.Check(ctx, s, eligibility.ChannelSMS, fixtures.TyrellMatrixUnsubEverythingPhone, eligibility.AutomationSource(7))
+	require.NoError(t, err)
+
+	assert.Equal(t, eligibility.ReasonUnconfirmed, unconfirmed.Reason)
+	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, optedOut.Reason)
+}

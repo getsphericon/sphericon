@@ -31,6 +31,12 @@ type Confirmation struct {
 	Destination string `json:"destination,omitempty"`
 	// Provenance holds the value of the "provenance" field.
 	Provenance confirmation.Provenance `json:"provenance,omitempty"`
+	// Wording holds the value of the "wording" field.
+	Wording *string `json:"wording,omitempty"`
+	// Source holds the value of the "source" field.
+	Source *string `json:"source,omitempty"`
+	// Brand holds the value of the "brand" field.
+	Brand *string `json:"brand,omitempty"`
 	// ContactID holds the value of the "contact_id" field.
 	ContactID *int64 `json:"contact_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -79,7 +85,7 @@ func (*Confirmation) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case confirmation.FieldID, confirmation.FieldWorkspaceID, confirmation.FieldContactID:
 			values[i] = new(sql.NullInt64)
-		case confirmation.FieldChannel, confirmation.FieldDestination, confirmation.FieldProvenance:
+		case confirmation.FieldChannel, confirmation.FieldDestination, confirmation.FieldProvenance, confirmation.FieldWording, confirmation.FieldSource, confirmation.FieldBrand:
 			values[i] = new(sql.NullString)
 		case confirmation.FieldCreatedAt, confirmation.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -139,6 +145,27 @@ func (_m *Confirmation) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field provenance", values[i])
 			} else if value.Valid {
 				_m.Provenance = confirmation.Provenance(value.String)
+			}
+		case confirmation.FieldWording:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field wording", values[i])
+			} else if value.Valid {
+				_m.Wording = new(string)
+				*_m.Wording = value.String
+			}
+		case confirmation.FieldSource:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source", values[i])
+			} else if value.Valid {
+				_m.Source = new(string)
+				*_m.Source = value.String
+			}
+		case confirmation.FieldBrand:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field brand", values[i])
+			} else if value.Valid {
+				_m.Brand = new(string)
+				*_m.Brand = value.String
 			}
 		case confirmation.FieldContactID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -210,6 +237,21 @@ func (_m *Confirmation) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("provenance=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Provenance))
+	builder.WriteString(", ")
+	if v := _m.Wording; v != nil {
+		builder.WriteString("wording=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.Source; v != nil {
+		builder.WriteString("source=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.Brand; v != nil {
+		builder.WriteString("brand=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	if v := _m.ContactID; v != nil {
 		builder.WriteString("contact_id=")

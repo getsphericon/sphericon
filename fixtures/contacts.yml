@@ -387,6 +387,15 @@
   created_at: '2026-02-01 00:00:00'
   updated_at: '2026-02-01 00:00:00'
 
+# An Acme Contact with a phone and no SMS Confirmation or opt-out (#1037): the API records them.
+- id: 810 # fixture: ContactTexter
+  email: texter@example.com
+  phone: '+14155550810'
+  first_name: Tess
+  workspace_id: 1
+  created_at: '2026-02-01 00:00:00'
+  updated_at: '2026-02-01 00:00:00'
+
 # The email-less Contact of the job tests (internal/jobs): known by subject id only, so an
 # email step has nowhere to send.
 - id: 5560 # fixture: ContactJobsNoEmail
@@ -926,8 +935,11 @@
   created_at: '{{hoursAgo 2304}}'
   updated_at: '{{hoursAgo 2184}}'
 # Eligibility matrix (#555): one Contact per opt-out state, in a Workspace with the confirmation gate on (Lumon) and one with it off (Tyrell).
+# The clean, unsubscribed-from-everything and confirmed ones also have a phone, for the same states on
+# sms (#1037): no Confirmation, a Confirmation with an opt-out of everything, a Confirmation.
 - id: 5510 # fixture: TyrellMatrixClean
   email: clean@tyrell.test
+  phone: '+14155551510'
   workspace_id: 56
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -938,6 +950,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 5512 # fixture: TyrellMatrixUnsubEverything
   email: unsub-everything@tyrell.test
+  phone: '+14155551512'
   workspace_id: 56
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -953,6 +966,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 5515 # fixture: TyrellMatrixConfirmed
   email: confirmed@tyrell.test
+  phone: '+14155551515'
   workspace_id: 56
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -968,6 +982,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 5520 # fixture: LumonMatrixClean
   email: clean@lumon.test
+  phone: '+14155551520'
   workspace_id: 55
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -978,6 +993,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 5522 # fixture: LumonMatrixUnsubEverything
   email: unsub-everything@lumon.test
+  phone: '+14155551522'
   workspace_id: 55
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -993,6 +1009,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 5525 # fixture: LumonMatrixConfirmed
   email: confirmed@lumon.test
+  phone: '+14155551525'
   workspace_id: 55
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

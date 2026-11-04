@@ -1349,14 +1349,89 @@ export const ConditionOperator = {
 export type ConditionOperator = typeof ConditionOperator[keyof typeof ConditionOperator];
 
 /**
- * A Channel a destination can be suppressed or opt out on
+ * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
  */
-export const ConsentChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
+export const ConfirmationProvenance = {
+  DOUBLE_OPT_IN: 'double_opt_in',
+  KEYWORD: 'keyword',
+  IMPORTED: 'imported',
+  GRANDFATHERED: 'grandfathered'
+} as const;
 
 /**
- * A Channel a destination can be suppressed or opt out on
+ * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
+ */
+export type ConfirmationProvenance = typeof ConfirmationProvenance[keyof typeof ConfirmationProvenance];
+
+/**
+ * A recorded consent of a destination on a Channel (ADR 0077): on `sms` a text goes only to a number that has one
+ */
+export type ConfirmationResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The Channel the confirmation is on
+   */
+  channel: ConsentChannel;
+  /**
+   * Normalized destination: the phone number in E.164 on `sms`
+   */
+  destination: string;
+  /**
+   * How the consent was obtained
+   */
+  provenance: ConfirmationProvenance;
+  /**
+   * The consent wording the person was shown; absent when the confirmation carries no evidence
+   */
+  wording?: string | null;
+  /**
+   * Where the consent was collected; absent when the confirmation carries no evidence
+   */
+  source?: string | null;
+  /**
+   * The brand the person agreed to hear from; absent when the confirmation carries no evidence
+   */
+  brand?: string | null;
+  /**
+   * When the consent was recorded
+   */
+  createdAt: Timestamp;
+};
+
+/**
+ * A Channel a destination can opt out on or confirm on
+ */
+export const ConsentChannel = {
+  EMAIL: 'email',
+  TELEGRAM: 'telegram',
+  SMS: 'sms'
+} as const;
+
+/**
+ * A Channel a destination can opt out on or confirm on
  */
 export type ConsentChannel = typeof ConsentChannel[keyof typeof ConsentChannel];
+
+/**
+ * The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `marketing.confirmed` Event to answer a proof request
+ */
+export type ConsentEvidence = {
+  /**
+   * The consent wording the person was shown and agreed to
+   */
+  wording: string;
+  /**
+   * Where the consent was collected: a form, a page, a checkout, a verification service
+   */
+  source: string;
+  /**
+   * The brand the person agreed to hear from
+   */
+  brand: string;
+};
 
 /**
  * Per-item result of a contacts batch, in request order
@@ -1436,6 +1511,18 @@ export type ContactExportConfirmation = {
    * How the confirmation was obtained
    */
   provenance: string;
+  /**
+   * The consent wording the person was shown, on a confirmation recorded with its evidence
+   */
+  wording?: string | null;
+  /**
+   * Where the consent was collected, on a confirmation recorded with its evidence
+   */
+  source?: string | null;
+  /**
+   * The brand the person agreed to hear from, on a confirmation recorded with its evidence
+   */
+  brand?: string | null;
   /**
    * Creation timestamp
    */
@@ -1935,6 +2022,32 @@ export type CreateBroadcastInput = {
 };
 
 /**
+ * Request body for recording consent collected outside sphericon
+ */
+export type CreateConfirmationInput = {
+  /**
+   * The Channel the consent is for. Only `sms` takes a recorded consent: email is confirmed by its own double opt-in link, and a Telegram chat is its own opt-in
+   */
+  channel: ConsentChannel;
+  /**
+   * The phone number that consented, with its country code; stored in E.164
+   */
+  destination: string;
+  /**
+   * The consent wording the person was shown and agreed to
+   */
+  wording: string;
+  /**
+   * Where the consent was collected: a form, a page, a checkout, a verification service
+   */
+  source: string;
+  /**
+   * The brand the person agreed to hear from
+   */
+  brand: string;
+};
+
+/**
  * Request body for creating a contact
  */
 export type CreateContactInput = {
@@ -2070,7 +2183,7 @@ export type CreateSuppressionInput = {
   /**
    * The Channel to stop sending on; `email` when omitted
    */
-  channel?: ConsentChannel;
+  channel?: SuppressionChannel;
   /**
    * What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`
    */
@@ -2109,11 +2222,11 @@ export type CreateUnsubscribeInput = {
    */
   channel?: ConsentChannel;
   /**
-   * What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`. A Telegram opt-out covers every bot of the Workspace
+   * What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone number with its country code on `sms` (stored in E.164). A Telegram opt-out covers every bot of the Workspace; an SMS opt-out covers every sender of the Workspace
    */
   destination: string;
   /**
-   * The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave entirely). On `telegram` only `everything` (the default) is accepted: a person stops all of the Workspace's Telegram messages
+   * The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave entirely). On `telegram` and `sms` only `everything` (the default) is accepted: a person stops all of the Workspace's messages on the Channel
    */
   sendingSource?: string;
 };
@@ -4238,6 +4351,16 @@ export type SmtpConfigInput = {
 };
 
 /**
+ * A Channel a destination can be suppressed on
+ */
+export const SuppressionChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
+
+/**
+ * A Channel a destination can be suppressed on
+ */
+export type SuppressionChannel = typeof SuppressionChannel[keyof typeof SuppressionChannel];
+
+/**
  * Why a destination is on the suppression (do-not-send) list
  */
 export const SuppressionReason = {
@@ -4262,7 +4385,7 @@ export type SuppressionResource = {
   /**
    * The Channel the suppression is on
    */
-  channel: ConsentChannel;
+  channel: SuppressionChannel;
   /**
    * Normalized destination: the lower-cased email address, or the Telegram user id
    */
@@ -4656,7 +4779,7 @@ export type UnsubscribeResource = {
    */
   channel: ConsentChannel;
   /**
-   * Normalized destination: the lower-cased email address, or the Telegram user id
+   * Normalized destination: the lower-cased email address, the Telegram user id, or the phone number in E.164
    */
   destination: string;
   /**
@@ -4955,6 +5078,12 @@ export type UpsertContactInput = {
    * JavaScript `Date`: that serializes as UTC and lands on the previous day east of UTC
    */
   customFields?: JsonObject | null;
+  /**
+   * The evidence of the SMS consent the contact's phone gave outside sphericon: records an
+   * `imported` SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone
+   * stays unreachable on SMS. An item with it and no phone fails
+   */
+  smsConsent?: ConsentEvidence;
 };
 
 /**
@@ -7168,6 +7297,47 @@ export type CapturedMessagesGetResponses = {
 };
 
 export type CapturedMessagesGetResponse = CapturedMessagesGetResponses[keyof CapturedMessagesGetResponses];
+
+export type ConfirmationsCreateData = {
+  body: CreateConfirmationInput;
+  path?: never;
+  query?: never;
+  url: '/confirmations';
+};
+
+export type ConfirmationsCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type ConfirmationsCreateError = ConfirmationsCreateErrors[keyof ConfirmationsCreateErrors];
+
+export type ConfirmationsCreateResponses = {
+  /**
+   * The request has succeeded and a new resource has been created as a result.
+   */
+  201: ConfirmationResource;
+};
+
+export type ConfirmationsCreateResponse = ConfirmationsCreateResponses[keyof ConfirmationsCreateResponses];
 
 export type ContactsListData = {
   body?: never;

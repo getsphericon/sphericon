@@ -71,7 +71,7 @@ var (
 		"tracking_domains_list", "tracking_domains_set", "tracking_domains_verify",
 		"integrations_list", "integrations_create", "integrations_get", "integrations_update", "integrations_delete", "presets_list",
 		"captured_messages_list", "captured_messages_get", "captured_messages_delete",
-		"suppressions_create", "unsubscribes_create",
+		"suppressions_create", "unsubscribes_create", "confirmations_create",
 		"email_lint", "email_schema", "brand_get", "templates_list", "templates_create", "templates_get", "templates_update", "templates_delete",
 		"webhooks_list", "webhooks_create", "webhooks_get", "webhooks_update", "webhooks_delete",
 		"webhooks_regenerate_secret", "webhooks_test",

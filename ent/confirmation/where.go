@@ -75,6 +75,21 @@ func Destination(v string) predicate.Confirmation {
 	return predicate.Confirmation(sql.FieldEQ(FieldDestination, v))
 }
 
+// Wording applies equality check predicate on the "wording" field. It's identical to WordingEQ.
+func Wording(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldEQ(FieldWording, v))
+}
+
+// Source applies equality check predicate on the "source" field. It's identical to SourceEQ.
+func Source(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldEQ(FieldSource, v))
+}
+
+// Brand applies equality check predicate on the "brand" field. It's identical to BrandEQ.
+func Brand(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldEQ(FieldBrand, v))
+}
+
 // ContactID applies equality check predicate on the "contact_id" field. It's identical to ContactIDEQ.
 func ContactID(v int64) predicate.Confirmation {
 	return predicate.Confirmation(sql.FieldEQ(FieldContactID, v))
@@ -283,6 +298,231 @@ func ProvenanceIn(vs ...Provenance) predicate.Confirmation {
 // ProvenanceNotIn applies the NotIn predicate on the "provenance" field.
 func ProvenanceNotIn(vs ...Provenance) predicate.Confirmation {
 	return predicate.Confirmation(sql.FieldNotIn(FieldProvenance, vs...))
+}
+
+// WordingEQ applies the EQ predicate on the "wording" field.
+func WordingEQ(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldEQ(FieldWording, v))
+}
+
+// WordingNEQ applies the NEQ predicate on the "wording" field.
+func WordingNEQ(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldNEQ(FieldWording, v))
+}
+
+// WordingIn applies the In predicate on the "wording" field.
+func WordingIn(vs ...string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldIn(FieldWording, vs...))
+}
+
+// WordingNotIn applies the NotIn predicate on the "wording" field.
+func WordingNotIn(vs ...string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldNotIn(FieldWording, vs...))
+}
+
+// WordingGT applies the GT predicate on the "wording" field.
+func WordingGT(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldGT(FieldWording, v))
+}
+
+// WordingGTE applies the GTE predicate on the "wording" field.
+func WordingGTE(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldGTE(FieldWording, v))
+}
+
+// WordingLT applies the LT predicate on the "wording" field.
+func WordingLT(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldLT(FieldWording, v))
+}
+
+// WordingLTE applies the LTE predicate on the "wording" field.
+func WordingLTE(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldLTE(FieldWording, v))
+}
+
+// WordingContains applies the Contains predicate on the "wording" field.
+func WordingContains(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldContains(FieldWording, v))
+}
+
+// WordingHasPrefix applies the HasPrefix predicate on the "wording" field.
+func WordingHasPrefix(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldHasPrefix(FieldWording, v))
+}
+
+// WordingHasSuffix applies the HasSuffix predicate on the "wording" field.
+func WordingHasSuffix(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldHasSuffix(FieldWording, v))
+}
+
+// WordingIsNil applies the IsNil predicate on the "wording" field.
+func WordingIsNil() predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldIsNull(FieldWording))
+}
+
+// WordingNotNil applies the NotNil predicate on the "wording" field.
+func WordingNotNil() predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldNotNull(FieldWording))
+}
+
+// WordingEqualFold applies the EqualFold predicate on the "wording" field.
+func WordingEqualFold(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldEqualFold(FieldWording, v))
+}
+
+// WordingContainsFold applies the ContainsFold predicate on the "wording" field.
+func WordingContainsFold(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldContainsFold(FieldWording, v))
+}
+
+// SourceEQ applies the EQ predicate on the "source" field.
+func SourceEQ(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldEQ(FieldSource, v))
+}
+
+// SourceNEQ applies the NEQ predicate on the "source" field.
+func SourceNEQ(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldNEQ(FieldSource, v))
+}
+
+// SourceIn applies the In predicate on the "source" field.
+func SourceIn(vs ...string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldIn(FieldSource, vs...))
+}
+
+// SourceNotIn applies the NotIn predicate on the "source" field.
+func SourceNotIn(vs ...string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldNotIn(FieldSource, vs...))
+}
+
+// SourceGT applies the GT predicate on the "source" field.
+func SourceGT(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldGT(FieldSource, v))
+}
+
+// SourceGTE applies the GTE predicate on the "source" field.
+func SourceGTE(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldGTE(FieldSource, v))
+}
+
+// SourceLT applies the LT predicate on the "source" field.
+func SourceLT(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldLT(FieldSource, v))
+}
+
+// SourceLTE applies the LTE predicate on the "source" field.
+func SourceLTE(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldLTE(FieldSource, v))
+}
+
+// SourceContains applies the Contains predicate on the "source" field.
+func SourceContains(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldContains(FieldSource, v))
+}
+
+// SourceHasPrefix applies the HasPrefix predicate on the "source" field.
+func SourceHasPrefix(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldHasPrefix(FieldSource, v))
+}
+
+// SourceHasSuffix applies the HasSuffix predicate on the "source" field.
+func SourceHasSuffix(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldHasSuffix(FieldSource, v))
+}
+
+// SourceIsNil applies the IsNil predicate on the "source" field.
+func SourceIsNil() predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldIsNull(FieldSource))
+}
+
+// SourceNotNil applies the NotNil predicate on the "source" field.
+func SourceNotNil() predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldNotNull(FieldSource))
+}
+
+// SourceEqualFold applies the EqualFold predicate on the "source" field.
+func SourceEqualFold(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldEqualFold(FieldSource, v))
+}
+
+// SourceContainsFold applies the ContainsFold predicate on the "source" field.
+func SourceContainsFold(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldContainsFold(FieldSource, v))
+}
+
+// BrandEQ applies the EQ predicate on the "brand" field.
+func BrandEQ(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldEQ(FieldBrand, v))
+}
+
+// BrandNEQ applies the NEQ predicate on the "brand" field.
+func BrandNEQ(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldNEQ(FieldBrand, v))
+}
+
+// BrandIn applies the In predicate on the "brand" field.
+func BrandIn(vs ...string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldIn(FieldBrand, vs...))
+}
+
+// BrandNotIn applies the NotIn predicate on the "brand" field.
+func BrandNotIn(vs ...string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldNotIn(FieldBrand, vs...))
+}
+
+// BrandGT applies the GT predicate on the "brand" field.
+func BrandGT(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldGT(FieldBrand, v))
+}
+
+// BrandGTE applies the GTE predicate on the "brand" field.
+func BrandGTE(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldGTE(FieldBrand, v))
+}
+
+// BrandLT applies the LT predicate on the "brand" field.
+func BrandLT(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldLT(FieldBrand, v))
+}
+
+// BrandLTE applies the LTE predicate on the "brand" field.
+func BrandLTE(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldLTE(FieldBrand, v))
+}
+
+// BrandContains applies the Contains predicate on the "brand" field.
+func BrandContains(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldContains(FieldBrand, v))
+}
+
+// BrandHasPrefix applies the HasPrefix predicate on the "brand" field.
+func BrandHasPrefix(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldHasPrefix(FieldBrand, v))
+}
+
+// BrandHasSuffix applies the HasSuffix predicate on the "brand" field.
+func BrandHasSuffix(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldHasSuffix(FieldBrand, v))
+}
+
+// BrandIsNil applies the IsNil predicate on the "brand" field.
+func BrandIsNil() predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldIsNull(FieldBrand))
+}
+
+// BrandNotNil applies the NotNil predicate on the "brand" field.
+func BrandNotNil() predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldNotNull(FieldBrand))
+}
+
+// BrandEqualFold applies the EqualFold predicate on the "brand" field.
+func BrandEqualFold(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldEqualFold(FieldBrand, v))
+}
+
+// BrandContainsFold applies the ContainsFold predicate on the "brand" field.
+func BrandContainsFold(v string) predicate.Confirmation {
+	return predicate.Confirmation(sql.FieldContainsFold(FieldBrand, v))
 }
 
 // ContactIDEQ applies the EQ predicate on the "contact_id" field.

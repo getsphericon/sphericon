@@ -36,6 +36,7 @@ var catalogColumns = []struct {
 	{"id", "ID", true},
 	{"public_id", "PublicID", false},
 	{"email", "Email", false},
+	{"phone", "Phone", false},
 	{"prefix", "Prefix", false},
 	{"collect_key", "CollectKey", false},
 	{"ingest_key", "IngestKey", false},

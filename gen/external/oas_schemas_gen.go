@@ -5619,13 +5619,194 @@ func (s *ConditionOperator) UnmarshalText(data []byte) error {
 	}
 }
 
-// A Channel a destination can be suppressed or opt out on.
+// How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a
+// keyword (the person texted START), imported (consent an API client or an import collected itself,
+// with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A
+// Confirmation is replaced only by a stronger one.
+// Ref: #/components/schemas/ConfirmationProvenance
+type ConfirmationProvenance string
+
+const (
+	ConfirmationProvenanceDoubleOptIn   ConfirmationProvenance = "double_opt_in"
+	ConfirmationProvenanceKeyword       ConfirmationProvenance = "keyword"
+	ConfirmationProvenanceImported      ConfirmationProvenance = "imported"
+	ConfirmationProvenanceGrandfathered ConfirmationProvenance = "grandfathered"
+)
+
+// AllValues returns all ConfirmationProvenance values.
+func (ConfirmationProvenance) AllValues() []ConfirmationProvenance {
+	return []ConfirmationProvenance{
+		ConfirmationProvenanceDoubleOptIn,
+		ConfirmationProvenanceKeyword,
+		ConfirmationProvenanceImported,
+		ConfirmationProvenanceGrandfathered,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConfirmationProvenance) MarshalText() ([]byte, error) {
+	switch s {
+	case ConfirmationProvenanceDoubleOptIn:
+		return []byte(s), nil
+	case ConfirmationProvenanceKeyword:
+		return []byte(s), nil
+	case ConfirmationProvenanceImported:
+		return []byte(s), nil
+	case ConfirmationProvenanceGrandfathered:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConfirmationProvenance) UnmarshalText(data []byte) error {
+	switch ConfirmationProvenance(data) {
+	case ConfirmationProvenanceDoubleOptIn:
+		*s = ConfirmationProvenanceDoubleOptIn
+		return nil
+	case ConfirmationProvenanceKeyword:
+		*s = ConfirmationProvenanceKeyword
+		return nil
+	case ConfirmationProvenanceImported:
+		*s = ConfirmationProvenanceImported
+		return nil
+	case ConfirmationProvenanceGrandfathered:
+		*s = ConfirmationProvenanceGrandfathered
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A recorded consent of a destination on a Channel (ADR 0077): on `sms` a text goes only to a number
+// that has one.
+// Ref: #/components/schemas/ConfirmationResource
+type ConfirmationResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The Channel the confirmation is on.
+	Channel ConsentChannel `json:"channel"`
+	// Normalized destination: the phone number in E.164 on `sms`.
+	Destination string `json:"destination"`
+	// How the consent was obtained.
+	Provenance ConfirmationProvenance `json:"provenance"`
+	// The consent wording the person was shown; absent when the confirmation carries no evidence.
+	Wording OptNilString `json:"wording"`
+	// Where the consent was collected; absent when the confirmation carries no evidence.
+	Source OptNilString `json:"source"`
+	// The brand the person agreed to hear from; absent when the confirmation carries no evidence.
+	Brand OptNilString `json:"brand"`
+	// When the consent was recorded.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *ConfirmationResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetChannel returns the value of Channel.
+func (s *ConfirmationResource) GetChannel() ConsentChannel {
+	return s.Channel
+}
+
+// GetDestination returns the value of Destination.
+func (s *ConfirmationResource) GetDestination() string {
+	return s.Destination
+}
+
+// GetProvenance returns the value of Provenance.
+func (s *ConfirmationResource) GetProvenance() ConfirmationProvenance {
+	return s.Provenance
+}
+
+// GetWording returns the value of Wording.
+func (s *ConfirmationResource) GetWording() OptNilString {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *ConfirmationResource) GetSource() OptNilString {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *ConfirmationResource) GetBrand() OptNilString {
+	return s.Brand
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *ConfirmationResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *ConfirmationResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *ConfirmationResource) SetChannel(val ConsentChannel) {
+	s.Channel = val
+}
+
+// SetDestination sets the value of Destination.
+func (s *ConfirmationResource) SetDestination(val string) {
+	s.Destination = val
+}
+
+// SetProvenance sets the value of Provenance.
+func (s *ConfirmationResource) SetProvenance(val ConfirmationProvenance) {
+	s.Provenance = val
+}
+
+// SetWording sets the value of Wording.
+func (s *ConfirmationResource) SetWording(val OptNilString) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *ConfirmationResource) SetSource(val OptNilString) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *ConfirmationResource) SetBrand(val OptNilString) {
+	s.Brand = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *ConfirmationResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+func (*ConfirmationResource) confirmationsCreateRes() {}
+
+type ConfirmationsCreateBadRequest ProblemDetails
+
+func (*ConfirmationsCreateBadRequest) confirmationsCreateRes() {}
+
+type ConfirmationsCreateForbidden ProblemDetails
+
+func (*ConfirmationsCreateForbidden) confirmationsCreateRes() {}
+
+type ConfirmationsCreateUnauthorized ProblemDetails
+
+func (*ConfirmationsCreateUnauthorized) confirmationsCreateRes() {}
+
+type ConfirmationsCreateUnprocessableEntity ProblemDetails
+
+func (*ConfirmationsCreateUnprocessableEntity) confirmationsCreateRes() {}
+
+// A Channel a destination can opt out on or confirm on.
 // Ref: #/components/schemas/ConsentChannel
 type ConsentChannel string
 
 const (
 	ConsentChannelEmail    ConsentChannel = "email"
 	ConsentChannelTelegram ConsentChannel = "telegram"
+	ConsentChannelSMS      ConsentChannel = "sms"
 )
 
 // AllValues returns all ConsentChannel values.
@@ -5633,6 +5814,7 @@ func (ConsentChannel) AllValues() []ConsentChannel {
 	return []ConsentChannel{
 		ConsentChannelEmail,
 		ConsentChannelTelegram,
+		ConsentChannelSMS,
 	}
 }
 
@@ -5642,6 +5824,8 @@ func (s ConsentChannel) MarshalText() ([]byte, error) {
 	case ConsentChannelEmail:
 		return []byte(s), nil
 	case ConsentChannelTelegram:
+		return []byte(s), nil
+	case ConsentChannelSMS:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -5657,9 +5841,54 @@ func (s *ConsentChannel) UnmarshalText(data []byte) error {
 	case ConsentChannelTelegram:
 		*s = ConsentChannelTelegram
 		return nil
+	case ConsentChannelSMS:
+		*s = ConsentChannelSMS
+		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable
+// `marketing.confirmed` Event to answer a proof request.
+// Ref: #/components/schemas/ConsentEvidence
+type ConsentEvidence struct {
+	// The consent wording the person was shown and agreed to.
+	Wording string `json:"wording"`
+	// Where the consent was collected: a form, a page, a checkout, a verification service.
+	Source string `json:"source"`
+	// The brand the person agreed to hear from.
+	Brand string `json:"brand"`
+}
+
+// GetWording returns the value of Wording.
+func (s *ConsentEvidence) GetWording() string {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *ConsentEvidence) GetSource() string {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *ConsentEvidence) GetBrand() string {
+	return s.Brand
+}
+
+// SetWording sets the value of Wording.
+func (s *ConsentEvidence) SetWording(val string) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *ConsentEvidence) SetSource(val string) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *ConsentEvidence) SetBrand(val string) {
+	s.Brand = val
 }
 
 // Per-item result of a contacts batch, in request order.
@@ -5830,6 +6059,12 @@ type ContactExportConfirmation struct {
 	Destination string `json:"destination"`
 	// How the confirmation was obtained.
 	Provenance string `json:"provenance"`
+	// The consent wording the person was shown, on a confirmation recorded with its evidence.
+	Wording OptNilString `json:"wording"`
+	// Where the consent was collected, on a confirmation recorded with its evidence.
+	Source OptNilString `json:"source"`
+	// The brand the person agreed to hear from, on a confirmation recorded with its evidence.
+	Brand OptNilString `json:"brand"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -5852,6 +6087,21 @@ func (s *ContactExportConfirmation) GetDestination() string {
 // GetProvenance returns the value of Provenance.
 func (s *ContactExportConfirmation) GetProvenance() string {
 	return s.Provenance
+}
+
+// GetWording returns the value of Wording.
+func (s *ContactExportConfirmation) GetWording() OptNilString {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *ContactExportConfirmation) GetSource() OptNilString {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *ContactExportConfirmation) GetBrand() OptNilString {
+	return s.Brand
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -5877,6 +6127,21 @@ func (s *ContactExportConfirmation) SetDestination(val string) {
 // SetProvenance sets the value of Provenance.
 func (s *ContactExportConfirmation) SetProvenance(val string) {
 	s.Provenance = val
+}
+
+// SetWording sets the value of Wording.
+func (s *ContactExportConfirmation) SetWording(val OptNilString) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *ContactExportConfirmation) SetSource(val OptNilString) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *ContactExportConfirmation) SetBrand(val OptNilString) {
+	s.Brand = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -7561,6 +7826,72 @@ func (s *CreateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
 }
 
+// Request body for recording consent collected outside sphericon.
+// Ref: #/components/schemas/CreateConfirmationInput
+type CreateConfirmationInput struct {
+	// The Channel the consent is for. Only `sms` takes a recorded consent: email is confirmed by its own
+	// double opt-in link, and a Telegram chat is its own opt-in.
+	Channel ConsentChannel `json:"channel"`
+	// The phone number that consented, with its country code; stored in E.164.
+	Destination string `json:"destination"`
+	// The consent wording the person was shown and agreed to.
+	Wording string `json:"wording"`
+	// Where the consent was collected: a form, a page, a checkout, a verification service.
+	Source string `json:"source"`
+	// The brand the person agreed to hear from.
+	Brand string `json:"brand"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *CreateConfirmationInput) GetChannel() ConsentChannel {
+	return s.Channel
+}
+
+// GetDestination returns the value of Destination.
+func (s *CreateConfirmationInput) GetDestination() string {
+	return s.Destination
+}
+
+// GetWording returns the value of Wording.
+func (s *CreateConfirmationInput) GetWording() string {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *CreateConfirmationInput) GetSource() string {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *CreateConfirmationInput) GetBrand() string {
+	return s.Brand
+}
+
+// SetChannel sets the value of Channel.
+func (s *CreateConfirmationInput) SetChannel(val ConsentChannel) {
+	s.Channel = val
+}
+
+// SetDestination sets the value of Destination.
+func (s *CreateConfirmationInput) SetDestination(val string) {
+	s.Destination = val
+}
+
+// SetWording sets the value of Wording.
+func (s *CreateConfirmationInput) SetWording(val string) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *CreateConfirmationInput) SetSource(val string) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *CreateConfirmationInput) SetBrand(val string) {
+	s.Brand = val
+}
+
 // Request body for creating a contact.
 // Ref: #/components/schemas/CreateContactInput
 type CreateContactInput struct {
@@ -7935,13 +8266,13 @@ func (s *CreateSendingDomainInput) SetDkimSelector(val OptString) {
 // Ref: #/components/schemas/CreateSuppressionInput
 type CreateSuppressionInput struct {
 	// The Channel to stop sending on; `email` when omitted.
-	Channel OptConsentChannel `json:"channel"`
+	Channel OptSuppressionChannel `json:"channel"`
 	// What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`.
 	Destination string `json:"destination"`
 }
 
 // GetChannel returns the value of Channel.
-func (s *CreateSuppressionInput) GetChannel() OptConsentChannel {
+func (s *CreateSuppressionInput) GetChannel() OptSuppressionChannel {
 	return s.Channel
 }
 
@@ -7951,7 +8282,7 @@ func (s *CreateSuppressionInput) GetDestination() string {
 }
 
 // SetChannel sets the value of Channel.
-func (s *CreateSuppressionInput) SetChannel(val OptConsentChannel) {
+func (s *CreateSuppressionInput) SetChannel(val OptSuppressionChannel) {
 	s.Channel = val
 }
 
@@ -8020,12 +8351,13 @@ func (s *CreateTemplateInput) SetDoc(val OptEditorDocument) {
 type CreateUnsubscribeInput struct {
 	// The Channel the destination opted out on; `email` when omitted.
 	Channel OptConsentChannel `json:"channel"`
-	// What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`. A Telegram
-	// opt-out covers every bot of the Workspace.
+	// What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone
+	// number with its country code on `sms` (stored in E.164). A Telegram opt-out covers every bot of the
+	// Workspace; an SMS opt-out covers every sender of the Workspace.
 	Destination string `json:"destination"`
 	// The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave
-	// entirely). On `telegram` only `everything` (the default) is accepted: a person stops all of the
-	// Workspace's Telegram messages.
+	// entirely). On `telegram` and `sms` only `everything` (the default) is accepted: a person stops all
+	// of the Workspace's messages on the Channel.
 	SendingSource OptString `json:"sendingSource"`
 }
 
@@ -12386,6 +12718,52 @@ func (o OptConsentChannel) Or(d ConsentChannel) ConsentChannel {
 	return d
 }
 
+// NewOptConsentEvidence returns new OptConsentEvidence with value set to v.
+func NewOptConsentEvidence(v ConsentEvidence) OptConsentEvidence {
+	return OptConsentEvidence{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptConsentEvidence is optional ConsentEvidence.
+type OptConsentEvidence struct {
+	Value ConsentEvidence
+	Set   bool
+}
+
+// IsSet returns true if OptConsentEvidence was set.
+func (o OptConsentEvidence) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptConsentEvidence) Reset() {
+	var v ConsentEvidence
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptConsentEvidence) SetTo(v ConsentEvidence) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptConsentEvidence) Get() (v ConsentEvidence, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptConsentEvidence) Or(d ConsentEvidence) ConsentEvidence {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptCustomFieldType returns new OptCustomFieldType with value set to v.
 func NewOptCustomFieldType(v CustomFieldType) OptCustomFieldType {
 	return OptCustomFieldType{
@@ -14278,6 +14656,52 @@ func (o OptString) Or(d string) string {
 	return d
 }
 
+// NewOptSuppressionChannel returns new OptSuppressionChannel with value set to v.
+func NewOptSuppressionChannel(v SuppressionChannel) OptSuppressionChannel {
+	return OptSuppressionChannel{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSuppressionChannel is optional SuppressionChannel.
+type OptSuppressionChannel struct {
+	Value SuppressionChannel
+	Set   bool
+}
+
+// IsSet returns true if OptSuppressionChannel was set.
+func (o OptSuppressionChannel) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSuppressionChannel) Reset() {
+	var v SuppressionChannel
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSuppressionChannel) SetTo(v SuppressionChannel) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSuppressionChannel) Get() (v SuppressionChannel, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSuppressionChannel) Or(d SuppressionChannel) SuppressionChannel {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptTimestamp returns new OptTimestamp with value set to v.
 func NewOptTimestamp(v Timestamp) OptTimestamp {
 	return OptTimestamp{
@@ -15047,6 +15471,7 @@ func (*ProblemDetailsHeaders) capturedMessagesDeleteAllRes() {}
 func (*ProblemDetailsHeaders) capturedMessagesDeleteRes()    {}
 func (*ProblemDetailsHeaders) capturedMessagesGetRes()       {}
 func (*ProblemDetailsHeaders) capturedMessagesListRes()      {}
+func (*ProblemDetailsHeaders) confirmationsCreateRes()       {}
 func (*ProblemDetailsHeaders) contactsBatchUpsertRes()       {}
 func (*ProblemDetailsHeaders) contactsCreateRes()            {}
 func (*ProblemDetailsHeaders) contactsDeleteRes()            {}
@@ -17931,6 +18356,49 @@ func (s *SmtpConfigKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// A Channel a destination can be suppressed on.
+// Ref: #/components/schemas/SuppressionChannel
+type SuppressionChannel string
+
+const (
+	SuppressionChannelEmail    SuppressionChannel = "email"
+	SuppressionChannelTelegram SuppressionChannel = "telegram"
+)
+
+// AllValues returns all SuppressionChannel values.
+func (SuppressionChannel) AllValues() []SuppressionChannel {
+	return []SuppressionChannel{
+		SuppressionChannelEmail,
+		SuppressionChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SuppressionChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case SuppressionChannelEmail:
+		return []byte(s), nil
+	case SuppressionChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SuppressionChannel) UnmarshalText(data []byte) error {
+	switch SuppressionChannel(data) {
+	case SuppressionChannelEmail:
+		*s = SuppressionChannelEmail
+		return nil
+	case SuppressionChannelTelegram:
+		*s = SuppressionChannelTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Why a destination is on the suppression (do-not-send) list.
 // Ref: #/components/schemas/SuppressionReason
 type SuppressionReason string
@@ -17987,7 +18455,7 @@ type SuppressionResource struct {
 	// Unique identifier.
 	ID EntityId `json:"id"`
 	// The Channel the suppression is on.
-	Channel ConsentChannel `json:"channel"`
+	Channel SuppressionChannel `json:"channel"`
 	// Normalized destination: the lower-cased email address, or the Telegram user id.
 	Destination string `json:"destination"`
 	// Why the destination is suppressed.
@@ -18002,7 +18470,7 @@ func (s *SuppressionResource) GetID() EntityId {
 }
 
 // GetChannel returns the value of Channel.
-func (s *SuppressionResource) GetChannel() ConsentChannel {
+func (s *SuppressionResource) GetChannel() SuppressionChannel {
 	return s.Channel
 }
 
@@ -18027,7 +18495,7 @@ func (s *SuppressionResource) SetID(val EntityId) {
 }
 
 // SetChannel sets the value of Channel.
-func (s *SuppressionResource) SetChannel(val ConsentChannel) {
+func (s *SuppressionResource) SetChannel(val SuppressionChannel) {
 	s.Channel = val
 }
 
@@ -19706,7 +20174,8 @@ type UnsubscribeResource struct {
 	ID EntityId `json:"id"`
 	// The Channel the opt-out is on.
 	Channel ConsentChannel `json:"channel"`
-	// Normalized destination: the lower-cased email address, or the Telegram user id.
+	// Normalized destination: the lower-cased email address, the Telegram user id, or the phone number in
+	// E.164.
 	Destination string `json:"destination"`
 	// The sending source opted out of: `broadcasts`, `automation:<id>` or `everything`.
 	SendingSource string `json:"sendingSource"`
@@ -20428,6 +20897,10 @@ type UpsertContactInput struct {
 	// time zone) or text. Send a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that
 	// serializes as UTC and lands on the previous day east of UTC.
 	CustomFields OptNilJsonObject `json:"customFields"`
+	// The evidence of the SMS consent the contact's phone gave outside sphericon: records an `imported`
+	// SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone stays unreachable
+	// on SMS. An item with it and no phone fails.
+	SmsConsent OptConsentEvidence `json:"smsConsent"`
 }
 
 // GetSubjectId returns the value of SubjectId.
@@ -20490,6 +20963,11 @@ func (s *UpsertContactInput) GetCustomFields() OptNilJsonObject {
 	return s.CustomFields
 }
 
+// GetSmsConsent returns the value of SmsConsent.
+func (s *UpsertContactInput) GetSmsConsent() OptConsentEvidence {
+	return s.SmsConsent
+}
+
 // SetSubjectId sets the value of SubjectId.
 func (s *UpsertContactInput) SetSubjectId(val OptNilString) {
 	s.SubjectId = val
@@ -20548,6 +21026,11 @@ func (s *UpsertContactInput) SetAvatar(val OptNilImageUrl) {
 // SetCustomFields sets the value of CustomFields.
 func (s *UpsertContactInput) SetCustomFields(val OptNilJsonObject) {
 	s.CustomFields = val
+}
+
+// SetSmsConsent sets the value of SmsConsent.
+func (s *UpsertContactInput) SetSmsConsent(val OptConsentEvidence) {
+	s.SmsConsent = val
 }
 
 // Request body for upserting contacts in batch.

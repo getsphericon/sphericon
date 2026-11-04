@@ -6,8 +6,12 @@ import (
 	"strings"
 )
 
-// ChannelEmail identifies the email channel; sms is reserved.
+// ChannelEmail identifies the email channel.
 const ChannelEmail = "email"
+
+// ChannelSMS identifies the SMS channel, whose Destination is the Contact's phone in E.164 and
+// which always asks for a Confirmation (ADR 0077).
+const ChannelSMS = "sms"
 
 // ChannelTelegram identifies the Telegram channel, whose Destinations are Bindings.
 const ChannelTelegram = "telegram"

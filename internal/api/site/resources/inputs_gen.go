@@ -18,6 +18,7 @@ import (
 	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	consent "github.com/getsphericon/sphericon/internal/consent"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
@@ -307,6 +308,15 @@ func (c *InputsImpl) BroadcastsOrder(source site.SiteBroadcastsOrder) broadcasts
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return broadcastsOrder
+}
+func (c *InputsImpl) ConsentEvidence(source *site.ConsentEvidence) consent.Evidence {
+	var consentEvidence consent.Evidence
+	if source != nil {
+		consentEvidence.Wording = (*source).Wording
+		consentEvidence.Source = (*source).Source
+		consentEvidence.Brand = (*source).Brand
+	}
+	return consentEvidence
 }
 func (c *InputsImpl) ContactAttributes(source site.SiteCreateContactInput) contacts.Attributes {
 	var contactsAttributes contacts.Attributes

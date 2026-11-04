@@ -117,10 +117,15 @@ var (
 	ErrorsCheckFields                           = ID{key: "errors.check_fields"}
 	ErrorsConfirmLinkBad                        = ID{key: "errors.confirm_link_bad"}
 	ErrorsConfirmLinkInvalid                    = ID{key: "errors.confirm_link_invalid"}
+	ErrorsConfirmationChannel                   = ID{key: "errors.confirmation_channel"}
 	ErrorsConnectionNotFound                    = ID{key: "errors.connection_not_found"}
+	ErrorsConsentBrandEmpty                     = ID{key: "errors.consent_brand_empty"}
+	ErrorsConsentSourceEmpty                    = ID{key: "errors.consent_source_empty"}
+	ErrorsConsentWordingEmpty                   = ID{key: "errors.consent_wording_empty"}
 	ErrorsContactExportIdentifier               = ID{key: "errors.contact_export_identifier"}
 	ErrorsContactIdentityRequired               = ID{key: "errors.contact_identity_required"}
 	ErrorsContactNotFound                       = ID{key: "errors.contact_not_found"}
+	ErrorsContactPhoneMissing                   = ID{key: "errors.contact_phone_missing"}
 	ErrorsCurrencyUnknown                       = ID{key: "errors.currency_unknown"}
 	ErrorsCurrentPasswordIncorrect              = ID{key: "errors.current_password_incorrect"}
 	ErrorsCurrentPasswordRequired               = ID{key: "errors.current_password_required"}
@@ -275,6 +280,7 @@ var (
 	ErrorsSendingHeld                           = ID{key: "errors.sending_held"}
 	ErrorsSendingSourceAutomationUnknown        = ID{key: "errors.sending_source_automation_unknown"}
 	ErrorsSendingSourceInvalid                  = ID{key: "errors.sending_source_invalid"}
+	ErrorsSendingSourceSms                      = ID{key: "errors.sending_source_sms"}
 	ErrorsSendingSourceTelegram                 = ID{key: "errors.sending_source_telegram"}
 	ErrorsSigninPendingGone                     = ID{key: "errors.signin_pending_gone"}
 	ErrorsSigninProviderUnknown                 = ID{key: "errors.signin_provider_unknown"}

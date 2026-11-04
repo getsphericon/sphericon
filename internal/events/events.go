@@ -475,30 +475,44 @@ func (e *EmailDelivery) Project() Projection {
 }
 
 // MarketingConfirmed is emitted when a destination confirms its subscription
-// (double opt-in, ADR 0013). It is the immutable source of truth for the
-// confirmation — the derived Confirmation row is the read-model — and carries the
-// GDPR Art. 7 proof: when, how (provenance), and the confirming IP. Publishing it
-// also lets a welcome automation trigger on "marketing.confirmed".
+// (double opt-in on email, ADR 0013; consent recorded with its evidence or a START on sms,
+// ADR 0077). It is the immutable source of truth for the confirmation — the derived
+// Confirmation row is the read-model — and carries the GDPR Art. 7 proof: when, how
+// (provenance), the confirming IP of a double opt-in, and the evidence of consent collected
+// outside sphericon (the wording shown, its source, the brand). Publishing it also lets a
+// welcome automation trigger on "marketing.confirmed".
 type MarketingConfirmed struct {
-	WorkspaceID int64  `json:"workspaceId"`
-	ContactID   int64  `json:"contactId,omitempty"`
-	Email       string `json:"email"`
-	Provenance  string `json:"provenance"`   // double_opt_in|grandfathered|imported
-	IP          string `json:"ip,omitempty"` // confirming client IP (double_opt_in only)
+	WorkspaceID int64 `json:"workspaceId"`
+	ContactID   int64 `json:"contactId,omitempty"`
+	// Channel is the Channel confirmed on: email or sms.
+	Channel string `json:"channel"`
+	// Email is the confirmed address on email; Phone the confirmed number on sms.
+	Email      string `json:"email,omitempty"`
+	Phone      string `json:"phone,omitempty"`
+	Provenance string `json:"provenance"`   // double_opt_in|keyword|imported|grandfathered
+	IP         string `json:"ip,omitempty"` // confirming client IP (double_opt_in only)
+	// The evidence of an imported Confirmation (ADR 0077); empty on any other.
+	Wording string `json:"wording,omitempty"`
+	Source  string `json:"source,omitempty"`
+	Brand   string `json:"brand,omitempty"`
 }
 
 func (*MarketingConfirmed) EventName() string  { return NameMarketingConfirmed }
 func (*MarketingConfirmed) EventVersion() int  { return 1 }
 func (e *MarketingConfirmed) Workspace() int64 { return e.WorkspaceID }
 func (e *MarketingConfirmed) Project() Projection {
-	props := map[string]any{}
-	if e.Provenance != "" {
-		props["provenance"] = e.Provenance
+	props := map[string]any{"channel": e.Channel}
+	for k, v := range map[string]string{
+		"provenance": e.Provenance, "ip": e.IP, "wording": e.Wording, "source": e.Source, "brand": e.Brand,
+	} {
+		if v != "" {
+			props[k] = v
+		}
 	}
-	if e.IP != "" {
-		props["ip"] = e.IP
+	return Projection{
+		Subject: e.Email, Action: NameMarketingConfirmed, Email: e.Email, Phone: e.Phone, Properties: props,
+		ContactID: e.ContactID,
 	}
-	return Projection{Subject: e.Email, Action: NameMarketingConfirmed, Email: e.Email, Properties: props, ContactID: e.ContactID}
 }
 
 // CollectedEvent wraps a customer's own event ingested via the collect or external

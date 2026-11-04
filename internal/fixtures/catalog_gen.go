@@ -517,6 +517,22 @@ const (
 	ConfirmationLiamDestination = "liam.python@codebasics.dev"
 	// ConfirmationLiamID is from fixtures/confirmations.
 	ConfirmationLiamID = 1
+	// ConfirmationLumonSmsDestination is from fixtures/confirmations.
+	ConfirmationLumonSmsDestination = "+14155551525"
+	// ConfirmationLumonSmsID is from fixtures/confirmations.
+	ConfirmationLumonSmsID = 5506
+	// ConfirmationSmsGrandfatheredDestination is from fixtures/confirmations.
+	ConfirmationSmsGrandfatheredDestination = "+14155550821"
+	// ConfirmationSmsGrandfatheredID is from fixtures/confirmations.
+	ConfirmationSmsGrandfatheredID = 3
+	// ConfirmationSmsKeywordDestination is from fixtures/confirmations.
+	ConfirmationSmsKeywordDestination = "+14155550820"
+	// ConfirmationSmsKeywordID is from fixtures/confirmations.
+	ConfirmationSmsKeywordID = 2
+	// ConfirmationTyrellSmsDestination is from fixtures/confirmations.
+	ConfirmationTyrellSmsDestination = "+14155551515"
+	// ConfirmationTyrellSmsID is from fixtures/confirmations.
+	ConfirmationTyrellSmsID = 5504
 	// ContactAliceEmail is from fixtures/contacts.
 	ContactAliceEmail = "alice@example.com"
 	// ContactAliceID is from fixtures/contacts.
@@ -545,6 +561,8 @@ const (
 	ContactErasableEmail = "erin@initech.test"
 	// ContactErasableID is from fixtures/contacts.
 	ContactErasableID = 300
+	// ContactErasablePhone is from fixtures/contacts.
+	ContactErasablePhone = "+14155550300"
 	// ContactExportHeavyEmail is from fixtures/contacts.
 	ContactExportHeavyEmail = "export.heavy@example.com"
 	// ContactExportHeavyID is from fixtures/contacts.
@@ -553,6 +571,8 @@ const (
 	ContactExportSubjectEmail = "export.subject@example.com"
 	// ContactExportSubjectID is from fixtures/contacts.
 	ContactExportSubjectID = 800
+	// ContactExportSubjectPhone is from fixtures/contacts.
+	ContactExportSubjectPhone = "+14155550800"
 	// ContactGlobexEmail is from fixtures/contacts.
 	ContactGlobexEmail = "pat@globex.test"
 	// ContactGlobexID is from fixtures/contacts.
@@ -599,6 +619,12 @@ const (
 	ContactTelegramErasableEmail = "mason.sql@codebasics.dev"
 	// ContactTelegramErasableID is from fixtures/contacts.
 	ContactTelegramErasableID = 106
+	// ContactTexterEmail is from fixtures/contacts.
+	ContactTexterEmail = "texter@example.com"
+	// ContactTexterID is from fixtures/contacts.
+	ContactTexterID = 810
+	// ContactTexterPhone is from fixtures/contacts.
+	ContactTexterPhone = "+14155550810"
 	// ContactUnsubscribedEverythingEmail is from fixtures/contacts.
 	ContactUnsubscribedEverythingEmail = "scarlett.sql@codebasics.dev"
 	// ContactUnsubscribedEverythingID is from fixtures/contacts.
@@ -773,6 +799,8 @@ const (
 	EventErasableCreatedEmail = "erin@initech.test"
 	// EventErasableCreatedID is from fixtures/events.
 	EventErasableCreatedID = 958
+	// EventErasableCreatedPhone is from fixtures/events.
+	EventErasableCreatedPhone = "+14155550300"
 	// EventErasableCustomAction is from fixtures/events.
 	EventErasableCustomAction = "plan_upgraded"
 	// EventErasableCustomEmail is from fixtures/events.
@@ -833,6 +861,10 @@ const (
 	EventGothamSignupEmail = "i@gotham.test"
 	// EventGothamSignupID is from fixtures/events.
 	EventGothamSignupID = 9308
+	// EventGothamSmsConfirmedOnThe6thAction is from fixtures/events.
+	EventGothamSmsConfirmedOnThe6thAction = "marketing.confirmed"
+	// EventGothamSmsConfirmedOnThe6thID is from fixtures/events.
+	EventGothamSmsConfirmedOnThe6thID = 9330
 	// EventGothamSubscribedAtMidnightOnThe8thAction is from fixtures/events.
 	EventGothamSubscribedAtMidnightOnThe8thAction = "marketing.confirmed"
 	// EventGothamSubscribedAtMidnightOnThe8thEmail is from fixtures/events.
@@ -1455,10 +1487,14 @@ const (
 	LumonMatrixCleanEmail = "clean@lumon.test"
 	// LumonMatrixCleanID is from fixtures/contacts.
 	LumonMatrixCleanID = 5520
+	// LumonMatrixCleanPhone is from fixtures/contacts.
+	LumonMatrixCleanPhone = "+14155551520"
 	// LumonMatrixConfirmedEmail is from fixtures/contacts.
 	LumonMatrixConfirmedEmail = "confirmed@lumon.test"
 	// LumonMatrixConfirmedID is from fixtures/contacts.
 	LumonMatrixConfirmedID = 5525
+	// LumonMatrixConfirmedPhone is from fixtures/contacts.
+	LumonMatrixConfirmedPhone = "+14155551525"
 	// LumonMatrixConfirmedSuppressedEmail is from fixtures/contacts.
 	LumonMatrixConfirmedSuppressedEmail = "confirmed-suppressed@lumon.test"
 	// LumonMatrixConfirmedSuppressedID is from fixtures/contacts.
@@ -1483,6 +1519,8 @@ const (
 	LumonMatrixUnsubEverythingEmail = "unsub-everything@lumon.test"
 	// LumonMatrixUnsubEverythingID is from fixtures/contacts.
 	LumonMatrixUnsubEverythingID = 5522
+	// LumonMatrixUnsubEverythingPhone is from fixtures/contacts.
+	LumonMatrixUnsubEverythingPhone = "+14155551522"
 	// LumonName is from fixtures/workspaces.
 	LumonName = "Lumon"
 	// LumonPublicID is from fixtures/workspaces.
@@ -1555,10 +1593,14 @@ const (
 	OscorpAnnaEmail = "anna@oscorp.test"
 	// OscorpAnnaID is from fixtures/contacts.
 	OscorpAnnaID = 5540
+	// OscorpAnnaPhone is from fixtures/contacts.
+	OscorpAnnaPhone = "+49301234568"
 	// OscorpBellaEmail is from fixtures/contacts.
 	OscorpBellaEmail = "bella@oscorp.test"
 	// OscorpBellaID is from fixtures/contacts.
 	OscorpBellaID = 5542
+	// OscorpBellaPhone is from fixtures/contacts.
+	OscorpBellaPhone = "+33612345678"
 	// OscorpCollectKey is from fixtures/workspaces.
 	OscorpCollectKey = "omck_test_oscorp_collect_key"
 	// OscorpID is from fixtures/workspaces.
@@ -2367,10 +2409,14 @@ const (
 	TyrellMatrixCleanEmail = "clean@tyrell.test"
 	// TyrellMatrixCleanID is from fixtures/contacts.
 	TyrellMatrixCleanID = 5510
+	// TyrellMatrixCleanPhone is from fixtures/contacts.
+	TyrellMatrixCleanPhone = "+14155551510"
 	// TyrellMatrixConfirmedEmail is from fixtures/contacts.
 	TyrellMatrixConfirmedEmail = "confirmed@tyrell.test"
 	// TyrellMatrixConfirmedID is from fixtures/contacts.
 	TyrellMatrixConfirmedID = 5515
+	// TyrellMatrixConfirmedPhone is from fixtures/contacts.
+	TyrellMatrixConfirmedPhone = "+14155551515"
 	// TyrellMatrixConfirmedSuppressedEmail is from fixtures/contacts.
 	TyrellMatrixConfirmedSuppressedEmail = "confirmed-suppressed@tyrell.test"
 	// TyrellMatrixConfirmedSuppressedID is from fixtures/contacts.
@@ -2395,6 +2441,8 @@ const (
 	TyrellMatrixUnsubEverythingEmail = "unsub-everything@tyrell.test"
 	// TyrellMatrixUnsubEverythingID is from fixtures/contacts.
 	TyrellMatrixUnsubEverythingID = 5512
+	// TyrellMatrixUnsubEverythingPhone is from fixtures/contacts.
+	TyrellMatrixUnsubEverythingPhone = "+14155551512"
 	// TyrellName is from fixtures/workspaces.
 	TyrellName = "Tyrell"
 	// TyrellPublicID is from fixtures/workspaces.

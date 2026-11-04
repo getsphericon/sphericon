@@ -633,9 +633,12 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString},
-		{Name: "provenance", Type: field.TypeEnum, Enums: []string{"double_opt_in", "grandfathered", "imported"}},
+		{Name: "provenance", Type: field.TypeEnum, Enums: []string{"double_opt_in", "grandfathered", "imported", "keyword"}},
+		{Name: "wording", Type: field.TypeString, Nullable: true},
+		{Name: "source", Type: field.TypeString, Nullable: true},
+		{Name: "brand", Type: field.TypeString, Nullable: true},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -647,13 +650,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "confirmations_contacts_contact",
-				Columns:    []*schema.Column{ConfirmationsColumns[6]},
+				Columns:    []*schema.Column{ConfirmationsColumns[9]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "confirmations_workspaces_confirmations",
-				Columns:    []*schema.Column{ConfirmationsColumns[7]},
+				Columns:    []*schema.Column{ConfirmationsColumns[10]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -662,12 +665,12 @@ var (
 			{
 				Name:    "confirmations_ws_channel_dest",
 				Unique:  true,
-				Columns: []*schema.Column{ConfirmationsColumns[7], ConfirmationsColumns[3], ConfirmationsColumns[4]},
+				Columns: []*schema.Column{ConfirmationsColumns[10], ConfirmationsColumns[3], ConfirmationsColumns[4]},
 			},
 			{
 				Name:    "confirmations_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{ConfirmationsColumns[6]},
+				Columns: []*schema.Column{ConfirmationsColumns[9]},
 			},
 		},
 	}
@@ -2671,7 +2674,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "sending_source", Type: field.TypeString},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
@@ -3126,8 +3129,8 @@ func init() {
 		Table: "confirmations",
 	}
 	ConfirmationsTable.Annotation.Checks = map[string]string{
-		"confirmations_channel_check":    "channel IN ('email', 'telegram')",
-		"confirmations_provenance_check": "provenance IN ('double_opt_in', 'grandfathered', 'imported')",
+		"confirmations_channel_check":    "channel IN ('email', 'telegram', 'sms')",
+		"confirmations_provenance_check": "provenance IN ('double_opt_in', 'grandfathered', 'imported', 'keyword')",
 	}
 	ConsentRecordsTable.ForeignKeys[0].RefTable = LegalDocumentVersionsTable
 	ConsentRecordsTable.ForeignKeys[1].RefTable = UsersTable
@@ -3413,7 +3416,7 @@ func init() {
 		Table: "unsubscribes",
 	}
 	UnsubscribesTable.Annotation.Checks = map[string]string{
-		"unsubscribes_channel_check": "channel IN ('email', 'telegram')",
+		"unsubscribes_channel_check": "channel IN ('email', 'telegram', 'sms')",
 	}
 	UsagesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	UsagesTable.Annotation = &entsql.Annotation{

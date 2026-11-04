@@ -13853,6 +13853,9 @@ type ConfirmationMutation struct {
 	channel          *confirmation.Channel
 	destination      *string
 	provenance       *confirmation.Provenance
+	wording          *string
+	source           *string
+	brand            *string
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -14183,6 +14186,153 @@ func (m *ConfirmationMutation) ResetProvenance() {
 	m.provenance = nil
 }
 
+// SetWording sets the "wording" field.
+func (m *ConfirmationMutation) SetWording(s string) {
+	m.wording = &s
+}
+
+// Wording returns the value of the "wording" field in the mutation.
+func (m *ConfirmationMutation) Wording() (r string, exists bool) {
+	v := m.wording
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWording returns the old "wording" field's value of the Confirmation entity.
+// If the Confirmation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConfirmationMutation) OldWording(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWording is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWording requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWording: %w", err)
+	}
+	return oldValue.Wording, nil
+}
+
+// ClearWording clears the value of the "wording" field.
+func (m *ConfirmationMutation) ClearWording() {
+	m.wording = nil
+	m.clearedFields[confirmation.FieldWording] = struct{}{}
+}
+
+// WordingCleared returns if the "wording" field was cleared in this mutation.
+func (m *ConfirmationMutation) WordingCleared() bool {
+	_, ok := m.clearedFields[confirmation.FieldWording]
+	return ok
+}
+
+// ResetWording resets all changes to the "wording" field.
+func (m *ConfirmationMutation) ResetWording() {
+	m.wording = nil
+	delete(m.clearedFields, confirmation.FieldWording)
+}
+
+// SetSource sets the "source" field.
+func (m *ConfirmationMutation) SetSource(s string) {
+	m.source = &s
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *ConfirmationMutation) Source() (r string, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the Confirmation entity.
+// If the Confirmation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConfirmationMutation) OldSource(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ClearSource clears the value of the "source" field.
+func (m *ConfirmationMutation) ClearSource() {
+	m.source = nil
+	m.clearedFields[confirmation.FieldSource] = struct{}{}
+}
+
+// SourceCleared returns if the "source" field was cleared in this mutation.
+func (m *ConfirmationMutation) SourceCleared() bool {
+	_, ok := m.clearedFields[confirmation.FieldSource]
+	return ok
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *ConfirmationMutation) ResetSource() {
+	m.source = nil
+	delete(m.clearedFields, confirmation.FieldSource)
+}
+
+// SetBrand sets the "brand" field.
+func (m *ConfirmationMutation) SetBrand(s string) {
+	m.brand = &s
+}
+
+// Brand returns the value of the "brand" field in the mutation.
+func (m *ConfirmationMutation) Brand() (r string, exists bool) {
+	v := m.brand
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBrand returns the old "brand" field's value of the Confirmation entity.
+// If the Confirmation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConfirmationMutation) OldBrand(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBrand is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBrand requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBrand: %w", err)
+	}
+	return oldValue.Brand, nil
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (m *ConfirmationMutation) ClearBrand() {
+	m.brand = nil
+	m.clearedFields[confirmation.FieldBrand] = struct{}{}
+}
+
+// BrandCleared returns if the "brand" field was cleared in this mutation.
+func (m *ConfirmationMutation) BrandCleared() bool {
+	_, ok := m.clearedFields[confirmation.FieldBrand]
+	return ok
+}
+
+// ResetBrand resets all changes to the "brand" field.
+func (m *ConfirmationMutation) ResetBrand() {
+	m.brand = nil
+	delete(m.clearedFields, confirmation.FieldBrand)
+}
+
 // SetContactID sets the "contact_id" field.
 func (m *ConfirmationMutation) SetContactID(i int64) {
 	m.contact = &i
@@ -14320,7 +14470,7 @@ func (m *ConfirmationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ConfirmationMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, confirmation.FieldCreatedAt)
 	}
@@ -14338,6 +14488,15 @@ func (m *ConfirmationMutation) Fields() []string {
 	}
 	if m.provenance != nil {
 		fields = append(fields, confirmation.FieldProvenance)
+	}
+	if m.wording != nil {
+		fields = append(fields, confirmation.FieldWording)
+	}
+	if m.source != nil {
+		fields = append(fields, confirmation.FieldSource)
+	}
+	if m.brand != nil {
+		fields = append(fields, confirmation.FieldBrand)
 	}
 	if m.contact != nil {
 		fields = append(fields, confirmation.FieldContactID)
@@ -14362,6 +14521,12 @@ func (m *ConfirmationMutation) Field(name string) (ent.Value, bool) {
 		return m.Destination()
 	case confirmation.FieldProvenance:
 		return m.Provenance()
+	case confirmation.FieldWording:
+		return m.Wording()
+	case confirmation.FieldSource:
+		return m.Source()
+	case confirmation.FieldBrand:
+		return m.Brand()
 	case confirmation.FieldContactID:
 		return m.ContactID()
 	}
@@ -14385,6 +14550,12 @@ func (m *ConfirmationMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldDestination(ctx)
 	case confirmation.FieldProvenance:
 		return m.OldProvenance(ctx)
+	case confirmation.FieldWording:
+		return m.OldWording(ctx)
+	case confirmation.FieldSource:
+		return m.OldSource(ctx)
+	case confirmation.FieldBrand:
+		return m.OldBrand(ctx)
 	case confirmation.FieldContactID:
 		return m.OldContactID(ctx)
 	}
@@ -14438,6 +14609,27 @@ func (m *ConfirmationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProvenance(v)
 		return nil
+	case confirmation.FieldWording:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWording(v)
+		return nil
+	case confirmation.FieldSource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
+		return nil
+	case confirmation.FieldBrand:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBrand(v)
+		return nil
 	case confirmation.FieldContactID:
 		v, ok := value.(int64)
 		if !ok {
@@ -14478,6 +14670,15 @@ func (m *ConfirmationMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *ConfirmationMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(confirmation.FieldWording) {
+		fields = append(fields, confirmation.FieldWording)
+	}
+	if m.FieldCleared(confirmation.FieldSource) {
+		fields = append(fields, confirmation.FieldSource)
+	}
+	if m.FieldCleared(confirmation.FieldBrand) {
+		fields = append(fields, confirmation.FieldBrand)
+	}
 	if m.FieldCleared(confirmation.FieldContactID) {
 		fields = append(fields, confirmation.FieldContactID)
 	}
@@ -14495,6 +14696,15 @@ func (m *ConfirmationMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *ConfirmationMutation) ClearField(name string) error {
 	switch name {
+	case confirmation.FieldWording:
+		m.ClearWording()
+		return nil
+	case confirmation.FieldSource:
+		m.ClearSource()
+		return nil
+	case confirmation.FieldBrand:
+		m.ClearBrand()
+		return nil
 	case confirmation.FieldContactID:
 		m.ClearContactID()
 		return nil
@@ -14523,6 +14733,15 @@ func (m *ConfirmationMutation) ResetField(name string) error {
 		return nil
 	case confirmation.FieldProvenance:
 		m.ResetProvenance()
+		return nil
+	case confirmation.FieldWording:
+		m.ResetWording()
+		return nil
+	case confirmation.FieldSource:
+		m.ResetSource()
+		return nil
+	case confirmation.FieldBrand:
+		m.ResetBrand()
 		return nil
 	case confirmation.FieldContactID:
 		m.ResetContactID()

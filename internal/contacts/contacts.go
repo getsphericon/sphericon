@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -124,6 +125,10 @@ type UpsertInput struct {
 	SubjectID, Email, Phone        *string
 	GuessedTimeZone, GuessedLocale *string
 	CustomFields                   map[string]any
+	// SMSConsent is the evidence of SMS consent the Contact's phone gave outside sphericon (an
+	// import's consent columns): the upsert records an imported SMS Confirmation for the phone in
+	// the same transaction (ADR 0077). nil records none.
+	SMSConsent *consent.Evidence
 }
 
 // Result is the outcome of an Upsert.
@@ -373,7 +378,13 @@ func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 	}
 	if existing != nil {
 		c, err := enrich(ctx, s, pub, existing.ID, in, typed, ch)
-		return Result{Contact: c}, err
+		if err != nil {
+			return Result{}, err
+		}
+		if err := confirmSMS(ctx, s, pub, c, in); err != nil {
+			return Result{}, err
+		}
+		return Result{Contact: c}, nil
 	}
 
 	q := s.Contact().Create().
@@ -397,7 +408,25 @@ func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 			return Result{}, err
 		}
 	}
+	if err := confirmSMS(ctx, s, pub, c, in); err != nil {
+		return Result{}, err
+	}
 	return Result{Contact: c, Created: true}, nil
+}
+
+// confirmSMS records the SMS consent an upsert carries for the phone it names, or the Contact's
+// own when it names none: the evidence was collected for that number. Consent without a phone is
+// refused, so an import row never drops it silently.
+func confirmSMS(ctx context.Context, s *ent.Scoped, pub events.Publisher, c *ent.Contact, in UpsertInput) error {
+	if in.SMSConsent == nil {
+		return nil
+	}
+	number := lo.CoalesceOrEmpty(lo.FromPtr(in.Phone), lo.FromPtr(c.Phone))
+	if number == "" {
+		return consent.ErrNoPhone
+	}
+	_, err := consent.ConfirmSMSIn(ctx, s, pub, number, *in.SMSConsent)
+	return err
 }
 
 // withGuesses is the Core with the browser's guesses taking a time zone or locale the Core leaves

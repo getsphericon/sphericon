@@ -12,6 +12,7 @@ import (
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	consent "github.com/getsphericon/sphericon/internal/consent"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	eventlog "github.com/getsphericon/sphericon/internal/eventlog"
 	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
@@ -193,6 +194,22 @@ func (c *InputsImpl) BroadcastsListFilter(source external.BroadcastsListParams) 
 	broadcastsListFilter.Channel = broadcastChannelPtrIn(c, source.Channel)
 	return broadcastsListFilter
 }
+func (c *InputsImpl) ConfirmationEvidence(source *external.CreateConfirmationInput) consent.Evidence {
+	var consentEvidence consent.Evidence
+	if source != nil {
+		consentEvidence.Wording = (*source).Wording
+		consentEvidence.Source = (*source).Source
+		consentEvidence.Brand = (*source).Brand
+	}
+	return consentEvidence
+}
+func (c *InputsImpl) ConsentEvidence(source external.ConsentEvidence) consent.Evidence {
+	var consentEvidence consent.Evidence
+	consentEvidence.Wording = source.Wording
+	consentEvidence.Source = source.Source
+	consentEvidence.Brand = source.Brand
+	return consentEvidence
+}
 func (c *InputsImpl) ContactAttributes(source external.CreateContactInput) contacts.Attributes {
 	var contactsAttributes contacts.Attributes
 	contactsAttributes.SubjectID = nilStringPtrIn(source.SubjectId)
@@ -238,6 +255,7 @@ func (c *InputsImpl) ContactUpsert(source external.UpsertContactInput) contacts.
 	// contactsUpsertInput.GuessedTimeZone: ignore
 	// contactsUpsertInput.GuessedLocale: ignore
 	contactsUpsertInput.CustomFields = nilObjectIn(source.CustomFields)
+	contactsUpsertInput.SMSConsent = smsConsentIn(c, source.SmsConsent)
 	return contactsUpsertInput
 }
 func (c *InputsImpl) ContactUpserts(source []external.UpsertContactInput) []contacts.UpsertInput {
@@ -441,12 +459,12 @@ func (c *InputsImpl) SendingDomainUpdate(source *external.UpdateSendingDomainInp
 	}
 	return sendingdomainsUpdateInput
 }
-func (c *InputsImpl) SuppressionChannel(source external.ConsentChannel) suppression.Channel {
+func (c *InputsImpl) SuppressionChannel(source external.SuppressionChannel) suppression.Channel {
 	var suppressionChannel suppression.Channel
 	switch source {
-	case external.ConsentChannelEmail:
+	case external.SuppressionChannelEmail:
 		suppressionChannel = suppression.ChannelEmail
-	case external.ConsentChannelTelegram:
+	case external.SuppressionChannelTelegram:
 		suppressionChannel = suppression.ChannelTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))

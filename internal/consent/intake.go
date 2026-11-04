@@ -22,8 +22,9 @@ import (
 )
 
 // Intake: consent changes made by an authenticated caller (the SPA, an API token,
-// an agent over MCP) rather than by a signed link. Both only narrow reach, so the
-// agent may use them (ADR 0016); widening is a human's action elsewhere.
+// an agent over MCP) rather than by a signed link. The opt-outs here only narrow reach, so the
+// agent may use them (ADR 0016); the one widening is the evidence of consent the customer
+// collected (Confirm, ADR 0077), which never lifts an opt-out.
 
 var (
 	// ErrDestinationEmpty: the destination is blank after normalization.

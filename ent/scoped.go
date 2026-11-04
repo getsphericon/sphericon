@@ -10836,6 +10836,42 @@ func (x *ConfirmationScopedCreate) SetProvenance(v confirmation.Provenance) *Con
 	return x
 }
 
+// SetWording sets the "wording" field.
+func (x *ConfirmationScopedCreate) SetWording(v string) *ConfirmationScopedCreate {
+	x.b.SetWording(v)
+	return x
+}
+
+// SetNillableWording sets the "wording" field if the given value is not nil.
+func (x *ConfirmationScopedCreate) SetNillableWording(v *string) *ConfirmationScopedCreate {
+	x.b.SetNillableWording(v)
+	return x
+}
+
+// SetSource sets the "source" field.
+func (x *ConfirmationScopedCreate) SetSource(v string) *ConfirmationScopedCreate {
+	x.b.SetSource(v)
+	return x
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (x *ConfirmationScopedCreate) SetNillableSource(v *string) *ConfirmationScopedCreate {
+	x.b.SetNillableSource(v)
+	return x
+}
+
+// SetBrand sets the "brand" field.
+func (x *ConfirmationScopedCreate) SetBrand(v string) *ConfirmationScopedCreate {
+	x.b.SetBrand(v)
+	return x
+}
+
+// SetNillableBrand sets the "brand" field if the given value is not nil.
+func (x *ConfirmationScopedCreate) SetNillableBrand(v *string) *ConfirmationScopedCreate {
+	x.b.SetNillableBrand(v)
+	return x
+}
+
 // SetContactID sets the "contact_id" field.
 func (x *ConfirmationScopedCreate) SetContactID(v int64) *ConfirmationScopedCreate {
 	x.b.SetContactID(v)
@@ -10970,6 +11006,60 @@ func (u *ConfirmationScopedUpsert) SetProvenance(v confirmation.Provenance) *Con
 // UpdateProvenance sets the "provenance" field to the value that was provided on create.
 func (u *ConfirmationScopedUpsert) UpdateProvenance() *ConfirmationScopedUpsert {
 	u.u.SetExcluded(confirmation.FieldProvenance)
+	return u
+}
+
+// SetWording sets the "wording" field.
+func (u *ConfirmationScopedUpsert) SetWording(v string) *ConfirmationScopedUpsert {
+	u.u.Set(confirmation.FieldWording, v)
+	return u
+}
+
+// UpdateWording sets the "wording" field to the value that was provided on create.
+func (u *ConfirmationScopedUpsert) UpdateWording() *ConfirmationScopedUpsert {
+	u.u.SetExcluded(confirmation.FieldWording)
+	return u
+}
+
+// ClearWording clears the value of the "wording" field.
+func (u *ConfirmationScopedUpsert) ClearWording() *ConfirmationScopedUpsert {
+	u.u.SetNull(confirmation.FieldWording)
+	return u
+}
+
+// SetSource sets the "source" field.
+func (u *ConfirmationScopedUpsert) SetSource(v string) *ConfirmationScopedUpsert {
+	u.u.Set(confirmation.FieldSource, v)
+	return u
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ConfirmationScopedUpsert) UpdateSource() *ConfirmationScopedUpsert {
+	u.u.SetExcluded(confirmation.FieldSource)
+	return u
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *ConfirmationScopedUpsert) ClearSource() *ConfirmationScopedUpsert {
+	u.u.SetNull(confirmation.FieldSource)
+	return u
+}
+
+// SetBrand sets the "brand" field.
+func (u *ConfirmationScopedUpsert) SetBrand(v string) *ConfirmationScopedUpsert {
+	u.u.Set(confirmation.FieldBrand, v)
+	return u
+}
+
+// UpdateBrand sets the "brand" field to the value that was provided on create.
+func (u *ConfirmationScopedUpsert) UpdateBrand() *ConfirmationScopedUpsert {
+	u.u.SetExcluded(confirmation.FieldBrand)
+	return u
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (u *ConfirmationScopedUpsert) ClearBrand() *ConfirmationScopedUpsert {
+	u.u.SetNull(confirmation.FieldBrand)
 	return u
 }
 
@@ -11173,6 +11263,60 @@ func (x *ConfirmationScopedUpdateOne) SetNillableProvenance(v *confirmation.Prov
 	return x
 }
 
+// SetWording sets the "wording" field.
+func (x *ConfirmationScopedUpdateOne) SetWording(v string) *ConfirmationScopedUpdateOne {
+	x.b.SetWording(v)
+	return x
+}
+
+// SetNillableWording sets the "wording" field if the given value is not nil.
+func (x *ConfirmationScopedUpdateOne) SetNillableWording(v *string) *ConfirmationScopedUpdateOne {
+	x.b.SetNillableWording(v)
+	return x
+}
+
+// ClearWording clears the value of the "wording" field.
+func (x *ConfirmationScopedUpdateOne) ClearWording() *ConfirmationScopedUpdateOne {
+	x.b.ClearWording()
+	return x
+}
+
+// SetSource sets the "source" field.
+func (x *ConfirmationScopedUpdateOne) SetSource(v string) *ConfirmationScopedUpdateOne {
+	x.b.SetSource(v)
+	return x
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (x *ConfirmationScopedUpdateOne) SetNillableSource(v *string) *ConfirmationScopedUpdateOne {
+	x.b.SetNillableSource(v)
+	return x
+}
+
+// ClearSource clears the value of the "source" field.
+func (x *ConfirmationScopedUpdateOne) ClearSource() *ConfirmationScopedUpdateOne {
+	x.b.ClearSource()
+	return x
+}
+
+// SetBrand sets the "brand" field.
+func (x *ConfirmationScopedUpdateOne) SetBrand(v string) *ConfirmationScopedUpdateOne {
+	x.b.SetBrand(v)
+	return x
+}
+
+// SetNillableBrand sets the "brand" field if the given value is not nil.
+func (x *ConfirmationScopedUpdateOne) SetNillableBrand(v *string) *ConfirmationScopedUpdateOne {
+	x.b.SetNillableBrand(v)
+	return x
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (x *ConfirmationScopedUpdateOne) ClearBrand() *ConfirmationScopedUpdateOne {
+	x.b.ClearBrand()
+	return x
+}
+
 // SetContactID sets the "contact_id" field.
 func (x *ConfirmationScopedUpdateOne) SetContactID(v int64) *ConfirmationScopedUpdateOne {
 	x.b.SetContactID(v)
@@ -11301,6 +11445,60 @@ func (x *ConfirmationScopedUpdate) SetProvenance(v confirmation.Provenance) *Con
 // SetNillableProvenance sets the "provenance" field if the given value is not nil.
 func (x *ConfirmationScopedUpdate) SetNillableProvenance(v *confirmation.Provenance) *ConfirmationScopedUpdate {
 	x.b.SetNillableProvenance(v)
+	return x
+}
+
+// SetWording sets the "wording" field.
+func (x *ConfirmationScopedUpdate) SetWording(v string) *ConfirmationScopedUpdate {
+	x.b.SetWording(v)
+	return x
+}
+
+// SetNillableWording sets the "wording" field if the given value is not nil.
+func (x *ConfirmationScopedUpdate) SetNillableWording(v *string) *ConfirmationScopedUpdate {
+	x.b.SetNillableWording(v)
+	return x
+}
+
+// ClearWording clears the value of the "wording" field.
+func (x *ConfirmationScopedUpdate) ClearWording() *ConfirmationScopedUpdate {
+	x.b.ClearWording()
+	return x
+}
+
+// SetSource sets the "source" field.
+func (x *ConfirmationScopedUpdate) SetSource(v string) *ConfirmationScopedUpdate {
+	x.b.SetSource(v)
+	return x
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (x *ConfirmationScopedUpdate) SetNillableSource(v *string) *ConfirmationScopedUpdate {
+	x.b.SetNillableSource(v)
+	return x
+}
+
+// ClearSource clears the value of the "source" field.
+func (x *ConfirmationScopedUpdate) ClearSource() *ConfirmationScopedUpdate {
+	x.b.ClearSource()
+	return x
+}
+
+// SetBrand sets the "brand" field.
+func (x *ConfirmationScopedUpdate) SetBrand(v string) *ConfirmationScopedUpdate {
+	x.b.SetBrand(v)
+	return x
+}
+
+// SetNillableBrand sets the "brand" field if the given value is not nil.
+func (x *ConfirmationScopedUpdate) SetNillableBrand(v *string) *ConfirmationScopedUpdate {
+	x.b.SetNillableBrand(v)
+	return x
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (x *ConfirmationScopedUpdate) ClearBrand() *ConfirmationScopedUpdate {
+	x.b.ClearBrand()
 	return x
 }
 

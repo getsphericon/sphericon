@@ -11,6 +11,7 @@ import (
 	automationrun "github.com/getsphericon/sphericon/ent/automationrun"
 	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
 	capturedmessage "github.com/getsphericon/sphericon/ent/capturedmessage"
+	confirmation "github.com/getsphericon/sphericon/ent/confirmation"
 	contact "github.com/getsphericon/sphericon/ent/contact"
 	customfield "github.com/getsphericon/sphericon/ent/customfield"
 	integration "github.com/getsphericon/sphericon/ent/integration"
@@ -512,6 +513,37 @@ func (c *ConverterImpl) CnameRecordToResource(source trackingdomains.Record) ext
 	externalapiCnameRecord.Target = source.Target
 	return externalapiCnameRecord
 }
+func (c *ConverterImpl) ConfirmationChannelToResource(source confirmation.Channel) external.ConsentChannel {
+	var externalapiConsentChannel external.ConsentChannel
+	switch source {
+	case confirmation.ChannelEmail:
+		externalapiConsentChannel = external.ConsentChannelEmail
+	case confirmation.ChannelSms:
+		externalapiConsentChannel = external.ConsentChannelSMS
+	case confirmation.ChannelTelegram:
+		externalapiConsentChannel = external.ConsentChannelTelegram
+	// Skipped DefaultChannel(email) -> ConsentChannelEmail(email) because it duplicates ChannelEmail(email) -> ConsentChannelEmail(email)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiConsentChannel
+}
+func (c *ConverterImpl) ConfirmationProvenanceToResource(source confirmation.Provenance) external.ConfirmationProvenance {
+	var externalapiConfirmationProvenance external.ConfirmationProvenance
+	switch source {
+	case confirmation.ProvenanceDoubleOptIn:
+		externalapiConfirmationProvenance = external.ConfirmationProvenanceDoubleOptIn
+	case confirmation.ProvenanceGrandfathered:
+		externalapiConfirmationProvenance = external.ConfirmationProvenanceGrandfathered
+	case confirmation.ProvenanceImported:
+		externalapiConfirmationProvenance = external.ConfirmationProvenanceImported
+	case confirmation.ProvenanceKeyword:
+		externalapiConfirmationProvenance = external.ConfirmationProvenanceKeyword
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiConfirmationProvenance
+}
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) external.ContactExportConfirmation {
 	var externalapiContactExportConfirmation external.ContactExportConfirmation
 	if source != nil {
@@ -519,9 +551,26 @@ func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) external.
 		externalapiContactExportConfirmation.Channel = string((*source).Channel)
 		externalapiContactExportConfirmation.Destination = (*source).Destination
 		externalapiContactExportConfirmation.Provenance = string((*source).Provenance)
+		externalapiContactExportConfirmation.Wording = optNilString((*source).Wording)
+		externalapiContactExportConfirmation.Source = optNilString((*source).Source)
+		externalapiContactExportConfirmation.Brand = optNilString((*source).Brand)
 		externalapiContactExportConfirmation.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportConfirmation
+}
+func (c *ConverterImpl) ConfirmationToResource(source *ent.Confirmation) external.ConfirmationResource {
+	var externalapiConfirmationResource external.ConfirmationResource
+	if source != nil {
+		externalapiConfirmationResource.ID = external.EntityId((*source).ID)
+		externalapiConfirmationResource.Channel = c.ConfirmationChannelToResource((*source).Channel)
+		externalapiConfirmationResource.Destination = (*source).Destination
+		externalapiConfirmationResource.Provenance = c.ConfirmationProvenanceToResource((*source).Provenance)
+		externalapiConfirmationResource.Wording = optNilString((*source).Wording)
+		externalapiConfirmationResource.Source = optNilString((*source).Source)
+		externalapiConfirmationResource.Brand = optNilString((*source).Brand)
+		externalapiConfirmationResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return externalapiConfirmationResource
 }
 func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) external.ContactExportSource {
 	var externalapiContactExportSource external.ContactExportSource
@@ -1287,18 +1336,18 @@ func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) external.
 	externalapiTelegramStartLinkResource.ExpiresAt = timestamp(source.ExpiresAt)
 	return externalapiTelegramStartLinkResource
 }
-func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel) external.ConsentChannel {
-	var externalapiConsentChannel external.ConsentChannel
+func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel) external.SuppressionChannel {
+	var externalapiSuppressionChannel external.SuppressionChannel
 	switch source {
 	case suppression.ChannelEmail:
-		externalapiConsentChannel = external.ConsentChannelEmail
+		externalapiSuppressionChannel = external.SuppressionChannelEmail
 	case suppression.ChannelTelegram:
-		externalapiConsentChannel = external.ConsentChannelTelegram
-	// Skipped DefaultChannel(email) -> ConsentChannelEmail(email) because it duplicates ChannelEmail(email) -> ConsentChannelEmail(email)
+		externalapiSuppressionChannel = external.SuppressionChannelTelegram
+	// Skipped DefaultChannel(email) -> SuppressionChannelEmail(email) because it duplicates ChannelEmail(email) -> SuppressionChannelEmail(email)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return externalapiConsentChannel
+	return externalapiSuppressionChannel
 }
 func (c *ConverterImpl) SuppressionReasonToResource(source suppression.Reason) external.SuppressionReason {
 	var externalapiSuppressionReason external.SuppressionReason
@@ -1506,6 +1555,8 @@ func (c *ConverterImpl) UnsubscribeChannelToResource(source unsubscribe.Channel)
 	switch source {
 	case unsubscribe.ChannelEmail:
 		externalapiConsentChannel = external.ConsentChannelEmail
+	case unsubscribe.ChannelSms:
+		externalapiConsentChannel = external.ConsentChannelSMS
 	case unsubscribe.ChannelTelegram:
 		externalapiConsentChannel = external.ConsentChannelTelegram
 	// Skipped DefaultChannel(email) -> ConsentChannelEmail(email) because it duplicates ChannelEmail(email) -> ConsentChannelEmail(email)

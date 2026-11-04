@@ -141,6 +141,10 @@ type CapturedMessagesListRes interface {
 	capturedMessagesListRes()
 }
 
+type ConfirmationsCreateRes interface {
+	confirmationsCreateRes()
+}
+
 type ContactsBatchUpsertRes interface {
 	contactsBatchUpsertRes()
 }

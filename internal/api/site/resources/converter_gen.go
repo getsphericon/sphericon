@@ -10,6 +10,7 @@ import (
 	automationrun "github.com/getsphericon/sphericon/ent/automationrun"
 	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
 	capturedmessage "github.com/getsphericon/sphericon/ent/capturedmessage"
+	confirmation "github.com/getsphericon/sphericon/ent/confirmation"
 	consentrecord "github.com/getsphericon/sphericon/ent/consentrecord"
 	contact "github.com/getsphericon/sphericon/ent/contact"
 	customfield "github.com/getsphericon/sphericon/ent/customfield"
@@ -33,6 +34,7 @@ import (
 	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	consent "github.com/getsphericon/sphericon/internal/consent"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	emailrender "github.com/getsphericon/sphericon/internal/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/holdreason"
@@ -822,6 +824,22 @@ func (c *ConverterImpl) CnameRecordToResource(source trackingdomains.Record) sit
 	siteapiSiteCnameRecord.Target = source.Target
 	return siteapiSiteCnameRecord
 }
+func (c *ConverterImpl) ConfirmationProvenanceToResource(source confirmation.Provenance) site.ConfirmationProvenance {
+	var siteapiConfirmationProvenance site.ConfirmationProvenance
+	switch source {
+	case confirmation.ProvenanceDoubleOptIn:
+		siteapiConfirmationProvenance = site.ConfirmationProvenanceDoubleOptIn
+	case confirmation.ProvenanceGrandfathered:
+		siteapiConfirmationProvenance = site.ConfirmationProvenanceGrandfathered
+	case confirmation.ProvenanceImported:
+		siteapiConfirmationProvenance = site.ConfirmationProvenanceImported
+	case confirmation.ProvenanceKeyword:
+		siteapiConfirmationProvenance = site.ConfirmationProvenanceKeyword
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiConfirmationProvenance
+}
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) site.ContactExportConfirmation {
 	var siteapiContactExportConfirmation site.ContactExportConfirmation
 	if source != nil {
@@ -829,6 +847,9 @@ func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) site.Cont
 		siteapiContactExportConfirmation.Channel = string((*source).Channel)
 		siteapiContactExportConfirmation.Destination = (*source).Destination
 		siteapiContactExportConfirmation.Provenance = string((*source).Provenance)
+		siteapiContactExportConfirmation.Wording = optNilString((*source).Wording)
+		siteapiContactExportConfirmation.Source = optNilString((*source).Source)
+		siteapiContactExportConfirmation.Brand = optNilString((*source).Brand)
 		siteapiContactExportConfirmation.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiContactExportConfirmation
@@ -2043,6 +2064,24 @@ func (c *ConverterImpl) SignupItemsToSite(source []signupitems.Document) []site.
 		}
 	}
 	return siteapiSiteSignupItemList
+}
+func (c *ConverterImpl) SmsConfirmationToResource(source *ent.Confirmation) site.SiteSmsConfirmation {
+	var siteapiSiteSmsConfirmation site.SiteSmsConfirmation
+	if source != nil {
+		siteapiSiteSmsConfirmation.Provenance = c.ConfirmationProvenanceToResource((*source).Provenance)
+		siteapiSiteSmsConfirmation.Wording = optNilString((*source).Wording)
+		siteapiSiteSmsConfirmation.Source = optNilString((*source).Source)
+		siteapiSiteSmsConfirmation.Brand = optNilString((*source).Brand)
+		siteapiSiteSmsConfirmation.ConfirmedAt = timestamp((*source).CreatedAt)
+	}
+	return siteapiSiteSmsConfirmation
+}
+func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) site.SiteSmsConsent {
+	var siteapiSiteSmsConsent site.SiteSmsConsent
+	siteapiSiteSmsConsent.Phone = optNilString(source.Phone)
+	siteapiSiteSmsConsent.Confirmation = optNilSmsConfirmation(c, source.Confirmation)
+	siteapiSiteSmsConsent.OptedOutAt = optNilTimestamp(source.OptedOutAt)
+	return siteapiSiteSmsConsent
 }
 func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) site.SiteSmtpConfig {
 	var siteapiSiteSmtpConfig site.SiteSmtpConfig

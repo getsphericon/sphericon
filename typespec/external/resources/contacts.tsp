@@ -191,6 +191,11 @@ model UpsertContactInput {
    * Workspace time zone) or text. Send a date without time as a `YYYY-MM-DD` string, not a
    * JavaScript `Date`: that serializes as UTC and lands on the previous day east of UTC */
   customFields?: JsonObject | null;
+
+  /** The evidence of the SMS consent the contact's phone gave outside sphericon: records an
+   * `imported` SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone
+   * stays unreachable on SMS. An item with it and no phone fails */
+  smsConsent?: ConsentEvidence;
 }
 
 /** Request body for upserting contacts in batch */

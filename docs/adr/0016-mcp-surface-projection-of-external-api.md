@@ -7,6 +7,11 @@ status: accepted
 > Amended by [[0065-a-live-automation-or-rule-changes-only-by-publish]]: the send-class list is
 > Automation and Rule Publish, Email send, and Broadcast schedule and unschedule, and an edit of an
 > active Automation or Rule writes a draft.
+>
+> Amended by [[0077-consent-on-the-new-channels]] (#1037): recording consent the customer collected,
+> with its evidence (an `imported` SMS Confirmation), is an authoring operation on `/api` and MCP, in
+> `POST /confirmations` and in a batch upsert's consent columns. It never lifts an opt-out or a
+> Suppression, which stay absent.
 
 sphericon is operated by agents through an MCP server mounted at `/mcp` in the same binary
 (Streamable HTTP, official `modelcontextprotocol/go-sdk`). Its tools are **projected from the
@@ -55,7 +60,10 @@ modelled and stay out.
   ([[0061-access-to-an-operation-is-declared-in-the-contract]]).
 - **Consent only narrows through the agent.** An agent may add a Suppression or record an
   Unsubscribe. Resubscribing and lifting a Suppression are not exposed on `/api` or MCP at all:
-  they widen reach and assert consent, so a human (or the contact via link) does them.
+  they widen reach and assert consent, so a human (or the contact via link) does them. The one
+  widening is the evidence of consent the customer collected (an SMS Confirmation, ADR 0077): it is
+  the customer's own record, relayed with its wording, source and brand, and it never lifts an
+  opt-out.
 - **Contact-supplied text is untrusted by kind of field.** `first_name`, `last_name`, Custom field
   values, Event properties and Tag names always originate outside the workspace, so the contract
   marks them `x-untrusted` and the projection wraps them in tool results and states the rule in

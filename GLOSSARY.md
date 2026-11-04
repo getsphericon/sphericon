@@ -315,7 +315,7 @@ a mutable flag. Required on SMS and WhatsApp always, and on email only when the 
 the one positive layer (see Send-eligibility). Carries **provenance** — `double_opt_in` (clicked a
 confirmation link), `grandfathered` (existing contacts at policy-enablement), `imported`
 (asserted through the API or an import from the customer's server, with the consent wording, its source and the brand, by a customer who collected it, possibly through a verification service of their own) or `keyword` (a
-START sent on the Channel, from an On-site form's prefilled link carrying a Start token too); the strongest provenance wins on dedup. sphericon runs no SMS
+START sent on the Channel, from an On-site form's prefilled link carrying a Start token too); the strongest provenance wins (`double_opt_in` > `keyword` > `imported` > `grandfathered`): a weaker or equal one never replaces the one that stands. sphericon runs no SMS
 confirmation flow of its own. Confirmed via a signed link whose endpoint
 is method-split (`GET` = page, `POST` = confirm) — a scanner GET must never fabricate consent. An
 `everything` unsubscribe invalidates the gate row (the event log keeps the history), so returning

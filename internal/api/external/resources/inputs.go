@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/eventlog"
@@ -88,6 +89,7 @@ import (
 // goverter:extend broadcastContentIn
 // goverter:extend broadcastContentPatch
 // goverter:extend broadcastChannelPtrIn
+// goverter:extend smsConsentIn
 type Inputs interface {
 	// goverter:ignore Prepared
 	TemplateCreate(source *externalapi.CreateTemplateInput) templates.CreateInput
@@ -174,9 +176,22 @@ type Inputs interface {
 	RuleActionType(source externalapi.RuleActionType) rules.ActionType
 	// goverter:enum:transform value
 	BroadcastChannel(source externalapi.BroadcastChannel) broadcast.Channel
-	// goverter:enum:map ConsentChannelEmail ChannelEmail
-	// goverter:enum:map ConsentChannelTelegram ChannelTelegram
-	SuppressionChannel(source externalapi.ConsentChannel) suppression.Channel
+	// goverter:enum:map SuppressionChannelEmail ChannelEmail
+	// goverter:enum:map SuppressionChannelTelegram ChannelTelegram
+	SuppressionChannel(source externalapi.SuppressionChannel) suppression.Channel
+
+	// The evidence of consent a Confirmation carries, from its own body or a batch item's.
+	ConfirmationEvidence(source *externalapi.CreateConfirmationInput) consent.Evidence
+	ConsentEvidence(source externalapi.ConsentEvidence) consent.Evidence
+}
+
+// smsConsentIn is the SMS consent a batch item carries, nil when it carries none.
+func smsConsentIn(c Inputs, o externalapi.OptConsentEvidence) *consent.Evidence {
+	v, ok := o.Get()
+	if !ok {
+		return nil
+	}
+	return new(c.ConsentEvidence(v))
 }
 
 // goverter:context backfill

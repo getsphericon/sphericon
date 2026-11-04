@@ -1215,6 +1215,108 @@ func NewTelegramBroadcastContentBroadcastContentSum(v TelegramBroadcastContent) 
 	return s
 }
 
+// How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a
+// keyword (the person texted START), imported (consent an API client or an import collected itself,
+// with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A
+// Confirmation is replaced only by a stronger one.
+// Ref: #/components/schemas/ConfirmationProvenance
+type ConfirmationProvenance string
+
+const (
+	ConfirmationProvenanceDoubleOptIn   ConfirmationProvenance = "double_opt_in"
+	ConfirmationProvenanceKeyword       ConfirmationProvenance = "keyword"
+	ConfirmationProvenanceImported      ConfirmationProvenance = "imported"
+	ConfirmationProvenanceGrandfathered ConfirmationProvenance = "grandfathered"
+)
+
+// AllValues returns all ConfirmationProvenance values.
+func (ConfirmationProvenance) AllValues() []ConfirmationProvenance {
+	return []ConfirmationProvenance{
+		ConfirmationProvenanceDoubleOptIn,
+		ConfirmationProvenanceKeyword,
+		ConfirmationProvenanceImported,
+		ConfirmationProvenanceGrandfathered,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConfirmationProvenance) MarshalText() ([]byte, error) {
+	switch s {
+	case ConfirmationProvenanceDoubleOptIn:
+		return []byte(s), nil
+	case ConfirmationProvenanceKeyword:
+		return []byte(s), nil
+	case ConfirmationProvenanceImported:
+		return []byte(s), nil
+	case ConfirmationProvenanceGrandfathered:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConfirmationProvenance) UnmarshalText(data []byte) error {
+	switch ConfirmationProvenance(data) {
+	case ConfirmationProvenanceDoubleOptIn:
+		*s = ConfirmationProvenanceDoubleOptIn
+		return nil
+	case ConfirmationProvenanceKeyword:
+		*s = ConfirmationProvenanceKeyword
+		return nil
+	case ConfirmationProvenanceImported:
+		*s = ConfirmationProvenanceImported
+		return nil
+	case ConfirmationProvenanceGrandfathered:
+		*s = ConfirmationProvenanceGrandfathered
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable
+// `marketing.confirmed` Event to answer a proof request.
+// Ref: #/components/schemas/ConsentEvidence
+type ConsentEvidence struct {
+	// The consent wording the person was shown and agreed to.
+	Wording string `json:"wording"`
+	// Where the consent was collected: a form, a page, a checkout, a verification service.
+	Source string `json:"source"`
+	// The brand the person agreed to hear from.
+	Brand string `json:"brand"`
+}
+
+// GetWording returns the value of Wording.
+func (s *ConsentEvidence) GetWording() string {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *ConsentEvidence) GetSource() string {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *ConsentEvidence) GetBrand() string {
+	return s.Brand
+}
+
+// SetWording sets the value of Wording.
+func (s *ConsentEvidence) SetWording(val string) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *ConsentEvidence) SetSource(val string) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *ConsentEvidence) SetBrand(val string) {
+	s.Brand = val
+}
+
 // The contact's place in one broadcast's audience (how its send ended, and whether it was opened or
 // clicked, is in `outboundMessages`).
 // Ref: #/components/schemas/ContactExportBroadcastRecipient
@@ -1280,6 +1382,12 @@ type ContactExportConfirmation struct {
 	Destination string `json:"destination"`
 	// How the confirmation was obtained.
 	Provenance string `json:"provenance"`
+	// The consent wording the person was shown, on a confirmation recorded with its evidence.
+	Wording OptNilString `json:"wording"`
+	// Where the consent was collected, on a confirmation recorded with its evidence.
+	Source OptNilString `json:"source"`
+	// The brand the person agreed to hear from, on a confirmation recorded with its evidence.
+	Brand OptNilString `json:"brand"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -1302,6 +1410,21 @@ func (s *ContactExportConfirmation) GetDestination() string {
 // GetProvenance returns the value of Provenance.
 func (s *ContactExportConfirmation) GetProvenance() string {
 	return s.Provenance
+}
+
+// GetWording returns the value of Wording.
+func (s *ContactExportConfirmation) GetWording() OptNilString {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *ContactExportConfirmation) GetSource() OptNilString {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *ContactExportConfirmation) GetBrand() OptNilString {
+	return s.Brand
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -1327,6 +1450,21 @@ func (s *ContactExportConfirmation) SetDestination(val string) {
 // SetProvenance sets the value of Provenance.
 func (s *ContactExportConfirmation) SetProvenance(val string) {
 	s.Provenance = val
+}
+
+// SetWording sets the value of Wording.
+func (s *ContactExportConfirmation) SetWording(val OptNilString) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *ContactExportConfirmation) SetSource(val OptNilString) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *ContactExportConfirmation) SetBrand(val OptNilString) {
+	s.Brand = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -6348,6 +6486,74 @@ func (o OptNilSiteSendCap) Get() (v SiteSendCap, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilSiteSendCap) Or(d SiteSendCap) SiteSendCap {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilSiteSmsConfirmation returns new OptNilSiteSmsConfirmation with value set to v.
+func NewOptNilSiteSmsConfirmation(v SiteSmsConfirmation) OptNilSiteSmsConfirmation {
+	return OptNilSiteSmsConfirmation{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSiteSmsConfirmation is optional nullable SiteSmsConfirmation.
+type OptNilSiteSmsConfirmation struct {
+	Value SiteSmsConfirmation
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSiteSmsConfirmation was set.
+func (o OptNilSiteSmsConfirmation) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSiteSmsConfirmation) Reset() {
+	var v SiteSmsConfirmation
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSiteSmsConfirmation) SetTo(v SiteSmsConfirmation) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSiteSmsConfirmation) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSiteSmsConfirmation) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SiteSmsConfirmation
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSiteSmsConfirmation) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSiteSmsConfirmation) Get() (v SiteSmsConfirmation, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSiteSmsConfirmation) Or(d SiteSmsConfirmation) SiteSmsConfirmation {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -26228,6 +26434,150 @@ func (*SiteSignupSurveySubmitNoContent) siteSignupSurveySubmitRes() {}
 type SiteSignupSurveySubmitUnprocessableEntity ProblemDetails
 
 func (*SiteSignupSurveySubmitUnprocessableEntity) siteSignupSurveySubmitRes() {}
+
+// The SMS Confirmation of a contact's phone: when and how the number consented, with the evidence it
+// carries.
+// Ref: #/components/schemas/SiteSmsConfirmation
+type SiteSmsConfirmation struct {
+	// How the consent was obtained.
+	Provenance ConfirmationProvenance `json:"provenance"`
+	// The consent wording the person was shown; absent when the confirmation carries no evidence.
+	Wording OptNilString `json:"wording"`
+	// Where the consent was collected; absent when the confirmation carries no evidence.
+	Source OptNilString `json:"source"`
+	// The brand the person agreed to hear from; absent when the confirmation carries no evidence.
+	Brand OptNilString `json:"brand"`
+	// When the consent was recorded.
+	ConfirmedAt Timestamp `json:"confirmedAt"`
+}
+
+// GetProvenance returns the value of Provenance.
+func (s *SiteSmsConfirmation) GetProvenance() ConfirmationProvenance {
+	return s.Provenance
+}
+
+// GetWording returns the value of Wording.
+func (s *SiteSmsConfirmation) GetWording() OptNilString {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *SiteSmsConfirmation) GetSource() OptNilString {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *SiteSmsConfirmation) GetBrand() OptNilString {
+	return s.Brand
+}
+
+// GetConfirmedAt returns the value of ConfirmedAt.
+func (s *SiteSmsConfirmation) GetConfirmedAt() Timestamp {
+	return s.ConfirmedAt
+}
+
+// SetProvenance sets the value of Provenance.
+func (s *SiteSmsConfirmation) SetProvenance(val ConfirmationProvenance) {
+	s.Provenance = val
+}
+
+// SetWording sets the value of Wording.
+func (s *SiteSmsConfirmation) SetWording(val OptNilString) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *SiteSmsConfirmation) SetSource(val OptNilString) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *SiteSmsConfirmation) SetBrand(val OptNilString) {
+	s.Brand = val
+}
+
+// SetConfirmedAt sets the value of ConfirmedAt.
+func (s *SiteSmsConfirmation) SetConfirmedAt(val Timestamp) {
+	s.ConfirmedAt = val
+}
+
+// Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both
+// keyed by the number.
+// Ref: #/components/schemas/SiteSmsConsent
+type SiteSmsConsent struct {
+	// The contact's phone in E.164; absent when it has none, and then nothing else is.
+	Phone OptNilString `json:"phone"`
+	// The phone's SMS Confirmation; absent when the number never consented, and a text does not go to it.
+	Confirmation OptNilSiteSmsConfirmation `json:"confirmation"`
+	// When the phone opted out of every SMS of the Workspace; absent while it has not.
+	OptedOutAt OptNilTimestamp `json:"optedOutAt"`
+}
+
+// GetPhone returns the value of Phone.
+func (s *SiteSmsConsent) GetPhone() OptNilString {
+	return s.Phone
+}
+
+// GetConfirmation returns the value of Confirmation.
+func (s *SiteSmsConsent) GetConfirmation() OptNilSiteSmsConfirmation {
+	return s.Confirmation
+}
+
+// GetOptedOutAt returns the value of OptedOutAt.
+func (s *SiteSmsConsent) GetOptedOutAt() OptNilTimestamp {
+	return s.OptedOutAt
+}
+
+// SetPhone sets the value of Phone.
+func (s *SiteSmsConsent) SetPhone(val OptNilString) {
+	s.Phone = val
+}
+
+// SetConfirmation sets the value of Confirmation.
+func (s *SiteSmsConsent) SetConfirmation(val OptNilSiteSmsConfirmation) {
+	s.Confirmation = val
+}
+
+// SetOptedOutAt sets the value of OptedOutAt.
+func (s *SiteSmsConsent) SetOptedOutAt(val OptNilTimestamp) {
+	s.OptedOutAt = val
+}
+
+func (*SiteSmsConsent) siteSmsConsentsConfirmRes() {}
+func (*SiteSmsConsent) siteSmsConsentsGetRes()     {}
+func (*SiteSmsConsent) siteSmsConsentsOptOutRes()  {}
+
+type SiteSmsConsentsConfirmBadRequest ProblemDetails
+
+func (*SiteSmsConsentsConfirmBadRequest) siteSmsConsentsConfirmRes() {}
+
+type SiteSmsConsentsConfirmNotFound ProblemDetails
+
+func (*SiteSmsConsentsConfirmNotFound) siteSmsConsentsConfirmRes() {}
+
+type SiteSmsConsentsConfirmUnprocessableEntity ProblemDetails
+
+func (*SiteSmsConsentsConfirmUnprocessableEntity) siteSmsConsentsConfirmRes() {}
+
+type SiteSmsConsentsGetBadRequest ProblemDetails
+
+func (*SiteSmsConsentsGetBadRequest) siteSmsConsentsGetRes() {}
+
+type SiteSmsConsentsGetNotFound ProblemDetails
+
+func (*SiteSmsConsentsGetNotFound) siteSmsConsentsGetRes() {}
+
+type SiteSmsConsentsOptOutBadRequest ProblemDetails
+
+func (*SiteSmsConsentsOptOutBadRequest) siteSmsConsentsOptOutRes() {}
+
+type SiteSmsConsentsOptOutNotFound ProblemDetails
+
+func (*SiteSmsConsentsOptOutNotFound) siteSmsConsentsOptOutRes() {}
+
+type SiteSmsConsentsOptOutUnprocessableEntity ProblemDetails
+
+func (*SiteSmsConsentsOptOutUnprocessableEntity) siteSmsConsentsOptOutRes() {}
 
 // SMTP config without the password.
 // Ref: #/components/schemas/SiteSmtpConfig

@@ -82,12 +82,15 @@ func Stream(ctx context.Context, s *ent.Scoped, m Mapper, w io.Writer, c *ent.Co
 		return err
 	}
 
-	// The Contact's Destinations (ADR 0001): its email address. Rows are matched by
-	// Destination as well as by contact_id, so a transactional send to the address
-	// that never had a Contact is included.
+	// The Contact's Destinations (ADR 0001, 0075): its email address and its phone. Rows are
+	// matched by Destination as well as by contact_id, so a transactional send to the address
+	// that never had a Contact is included, and so is the consent of its number.
 	var destinations []string
 	if c.Email != nil {
 		destinations = append(destinations, strings.ToLower(*c.Email))
+	}
+	if c.Phone != nil {
+		destinations = append(destinations, *c.Phone)
 	}
 	visitorIDs := lo.Map(visitors, func(v *ent.Visitor, _ int) string { return v.VisitorID })
 

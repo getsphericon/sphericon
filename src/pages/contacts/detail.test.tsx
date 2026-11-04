@@ -14,6 +14,9 @@ import {
   handleSiteContactsGet,
   handleSiteEventsList,
   handleSiteIntegrationsList,
+  handleSiteSmsConsentsConfirm,
+  handleSiteSmsConsentsGet,
+  handleSiteSmsConsentsOptOut,
   handleSiteTelegramIssueStartLink,
   handleSiteTelegramListBindings,
   handleSiteWorkspacesList,
@@ -59,6 +62,7 @@ beforeEach(() => {
   worker.use(
     holding([]),
     handleSiteTelegramListBindings({ body: [] }),
+    handleSiteSmsConsentsGet({ body: {} }),
     handleSiteIntegrationsList({ body: [] }),
   )
 })
@@ -456,4 +460,68 @@ test('lists the Telegram chats of the contact and copies a start link', async ()
 
   await expect.element(screen.getByText(/Start link copied/)).toBeInTheDocument()
   expect(bodies).toEqual([{ integrationId: '9' }])
+})
+
+const TEXTER: SiteContactResource = { ...ADA, phone: '+14155550810' }
+
+test('shows the SMS consent of the contact phone with its evidence, and its opt-out', async () => {
+  worker.use(
+    handleSiteContactsGet({ body: TEXTER }),
+    NO_EVENTS,
+    handleSiteSmsConsentsGet({
+      body: {
+        phone: '+14155550810',
+        confirmation: {
+          provenance: 'imported',
+          wording: 'Text me offers from Acme',
+          source: 'checkout form',
+          brand: 'Acme',
+          confirmedAt: NOW,
+        },
+        optedOutAt: NOW,
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+
+  await expect.element(screen.getByRole('heading', { name: 'SMS' })).toBeInTheDocument()
+  await expect.element(screen.getByText('Recorded with evidence')).toBeInTheDocument()
+  await expect.element(screen.getByText('Text me offers from Acme')).toBeInTheDocument()
+  await expect.element(screen.getByText('checkout form')).toBeInTheDocument()
+  await expect.element(screen.getByText(/^Opted out of SMS on/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Record opt-out' }).query()).toBeNull()
+})
+
+test('records SMS consent with its evidence and an SMS opt-out', async () => {
+  const consents: unknown[] = []
+  let optOuts = 0
+  worker.use(
+    handleSiteContactsGet({ body: TEXTER }),
+    NO_EVENTS,
+    handleSiteSmsConsentsGet({ body: { phone: '+14155550810' } }),
+    handleSiteSmsConsentsConfirm(async ({ request }) => {
+      consents.push(await request.json())
+      return HttpResponse.json({ phone: '+14155550810' })
+    }),
+    handleSiteSmsConsentsOptOut(() => {
+      optOuts += 1
+      return HttpResponse.json({ phone: '+14155550810', optedOutAt: NOW })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+  await expect.element(screen.getByText(/^No SMS consent recorded/)).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Record consent' }).click()
+  await screen.getByLabelText(/^Consent wording/).fill('  Text me offers  ')
+  await screen.getByLabelText(/^Source/).fill('phone call')
+  await screen.getByLabelText(/^Brand/).fill('Acme')
+  await screen.getByRole('dialog').getByRole('button', { name: 'Record consent' }).click()
+  await expect.element(screen.getByText('SMS consent recorded.')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Record opt-out' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Record opt-out' }).click()
+
+  await expect.element(screen.getByText('SMS opt-out recorded.')).toBeInTheDocument()
+  expect(consents).toEqual([{ wording: 'Text me offers', source: 'phone call', brand: 'Acme' }])
+  expect(optOuts).toBe(1)
 })

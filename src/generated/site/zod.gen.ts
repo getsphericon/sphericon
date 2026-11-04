@@ -161,6 +161,25 @@ export const zAuditAction = z.enum([
 export const zBroadcastChannel = z.enum(['email', 'telegram']);
 
 /**
+ * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
+ */
+export const zConfirmationProvenance = z.enum([
+  'double_opt_in',
+  'keyword',
+  'imported',
+  'grandfathered'
+]);
+
+/**
+ * The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `marketing.confirmed` Event to answer a proof request
+ */
+export const zConsentEvidence = z.object({
+  wording: z.string().min(1).max(2000),
+  source: z.string().min(1).max(500),
+  brand: z.string().min(1).max(255)
+});
+
+/**
  * How the contact first came to exist
  */
 export const zContactExportSource = z.enum([
@@ -2616,6 +2635,9 @@ export const zContactExportConfirmation = z.object({
   channel: z.string(),
   destination: z.string(),
   provenance: z.string(),
+  wording: z.exactOptional(z.string().nullable()),
+  source: z.exactOptional(z.string().nullable()),
+  brand: z.exactOptional(z.string().nullable()),
   createdAt: zTimestamp
 });
 
@@ -3338,6 +3360,26 @@ export const zSiteSendingDomainResource = z.object({
 export const zSiteSetupProgress = z.object({
   steps: zSiteSetupSteps,
   completedAt: z.exactOptional(zTimestamp.nullable())
+});
+
+/**
+ * The SMS Confirmation of a contact's phone: when and how the number consented, with the evidence it carries
+ */
+export const zSiteSmsConfirmation = z.object({
+  provenance: zConfirmationProvenance,
+  wording: z.exactOptional(z.string().nullable()),
+  source: z.exactOptional(z.string().nullable()),
+  brand: z.exactOptional(z.string().nullable()),
+  confirmedAt: zTimestamp
+});
+
+/**
+ * Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both keyed by the number
+ */
+export const zSiteSmsConsent = z.object({
+  phone: z.exactOptional(z.string().nullable()),
+  confirmation: z.exactOptional(zSiteSmsConfirmation.nullable()),
+  optedOutAt: z.exactOptional(zTimestamp.nullable())
 });
 
 /**
@@ -5337,6 +5379,38 @@ export const zSiteTelegramListBindingsPath = z.object({
  * The request has succeeded.
  */
 export const zSiteTelegramListBindingsResponse = z.array(zSiteBindingResource);
+
+export const zSiteSmsConsentsConfirmBody = zConsentEvidence;
+
+export const zSiteSmsConsentsConfirmPath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSmsConsentsConfirmResponse = zSiteSmsConsent;
+
+export const zSiteSmsConsentsGetPath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSmsConsentsGetResponse = zSiteSmsConsent;
+
+export const zSiteSmsConsentsOptOutPath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSmsConsentsOptOutResponse = zSiteSmsConsent;
 
 export const zSiteTagsListForContactPath = z.object({
   workspaceId: zWorkspaceId,

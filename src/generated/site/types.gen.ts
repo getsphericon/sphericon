@@ -200,6 +200,39 @@ export type BroadcastContentInput = ({
 } & TelegramBroadcastContentInput);
 
 /**
+ * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
+ */
+export const ConfirmationProvenance = {
+  DOUBLE_OPT_IN: 'double_opt_in',
+  KEYWORD: 'keyword',
+  IMPORTED: 'imported',
+  GRANDFATHERED: 'grandfathered'
+} as const;
+
+/**
+ * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
+ */
+export type ConfirmationProvenance = typeof ConfirmationProvenance[keyof typeof ConfirmationProvenance];
+
+/**
+ * The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `marketing.confirmed` Event to answer a proof request
+ */
+export type ConsentEvidence = {
+  /**
+   * The consent wording the person was shown and agreed to
+   */
+  wording: string;
+  /**
+   * Where the consent was collected: a form, a page, a checkout, a verification service
+   */
+  source: string;
+  /**
+   * The brand the person agreed to hear from
+   */
+  brand: string;
+};
+
+/**
  * The contact's place in one broadcast's audience (how its send ended, and whether it was opened or clicked, is in `outboundMessages`)
  */
 export type ContactExportBroadcastRecipient = {
@@ -241,6 +274,18 @@ export type ContactExportConfirmation = {
    * How the confirmation was obtained
    */
   provenance: string;
+  /**
+   * The consent wording the person was shown, on a confirmation recorded with its evidence
+   */
+  wording?: string | null;
+  /**
+   * Where the consent was collected, on a confirmation recorded with its evidence
+   */
+  source?: string | null;
+  /**
+   * The brand the person agreed to hear from, on a confirmation recorded with its evidence
+   */
+  brand?: string | null;
   /**
    * Creation timestamp
    */
@@ -6201,6 +6246,50 @@ export type SiteSignupSurveyInput = {
 };
 
 /**
+ * The SMS Confirmation of a contact's phone: when and how the number consented, with the evidence it carries
+ */
+export type SiteSmsConfirmation = {
+  /**
+   * How the consent was obtained
+   */
+  provenance: ConfirmationProvenance;
+  /**
+   * The consent wording the person was shown; absent when the confirmation carries no evidence
+   */
+  wording?: string | null;
+  /**
+   * Where the consent was collected; absent when the confirmation carries no evidence
+   */
+  source?: string | null;
+  /**
+   * The brand the person agreed to hear from; absent when the confirmation carries no evidence
+   */
+  brand?: string | null;
+  /**
+   * When the consent was recorded
+   */
+  confirmedAt: Timestamp;
+};
+
+/**
+ * Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both keyed by the number
+ */
+export type SiteSmsConsent = {
+  /**
+   * The contact's phone in E.164; absent when it has none, and then nothing else is
+   */
+  phone?: string | null;
+  /**
+   * The phone's SMS Confirmation; absent when the number never consented, and a text does not go to it
+   */
+  confirmation?: SiteSmsConfirmation | null;
+  /**
+   * When the phone opted out of every SMS of the Workspace; absent while it has not
+   */
+  optedOutAt?: Timestamp | null;
+};
+
+/**
  * SMTP config without the password
  */
 export type SiteSmtpConfig = {
@@ -12074,6 +12163,110 @@ export type SiteTelegramListBindingsResponses = {
 };
 
 export type SiteTelegramListBindingsResponse = SiteTelegramListBindingsResponses[keyof SiteTelegramListBindingsResponses];
+
+export type SiteSmsConsentsConfirmData = {
+  body: ConsentEvidence;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations';
+};
+
+export type SiteSmsConsentsConfirmErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteSmsConsentsConfirmError = SiteSmsConsentsConfirmErrors[keyof SiteSmsConsentsConfirmErrors];
+
+export type SiteSmsConsentsConfirmResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSmsConsent;
+};
+
+export type SiteSmsConsentsConfirmResponse = SiteSmsConsentsConfirmResponses[keyof SiteSmsConsentsConfirmResponses];
+
+export type SiteSmsConsentsGetData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/sms-consent';
+};
+
+export type SiteSmsConsentsGetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteSmsConsentsGetError = SiteSmsConsentsGetErrors[keyof SiteSmsConsentsGetErrors];
+
+export type SiteSmsConsentsGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSmsConsent;
+};
+
+export type SiteSmsConsentsGetResponse = SiteSmsConsentsGetResponses[keyof SiteSmsConsentsGetResponses];
+
+export type SiteSmsConsentsOptOutData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs';
+};
+
+export type SiteSmsConsentsOptOutErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteSmsConsentsOptOutError = SiteSmsConsentsOptOutErrors[keyof SiteSmsConsentsOptOutErrors];
+
+export type SiteSmsConsentsOptOutResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSmsConsent;
+};
+
+export type SiteSmsConsentsOptOutResponse = SiteSmsConsentsOptOutResponses[keyof SiteSmsConsentsOptOutResponses];
 
 export type SiteTagsListForContactData = {
   body?: never;

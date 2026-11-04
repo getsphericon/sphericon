@@ -43,6 +43,7 @@ import { contactFullName, contactIdentifier, contactName } from '../../utils/con
 import { countryName } from '../../utils/countries.ts'
 import { can } from '../../utils/permissions.ts'
 import { formatPhone } from '../../utils/phone.ts'
+import { SmsSection } from './SmsSection.tsx'
 import { TelegramSection } from './TelegramSection.tsx'
 
 const EVENTS_PAGE_SIZE = 10
@@ -314,6 +315,8 @@ export function ContactDetailPage() {
           </Group>
         </>
       ) : null}
+
+      <SmsSection workspaceId={workspaceId} contactId={contactId} />
 
       <TelegramSection workspaceId={workspaceId} contactId={contactId} />
 

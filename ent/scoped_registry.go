@@ -818,6 +818,15 @@ func ScopedEntities() []ScopedEntity {
 				b.SetChannel(src.Channel)
 				b.SetDestination(src.Destination)
 				b.SetProvenance(src.Provenance)
+				if src.Wording != nil {
+					b.SetWording(*src.Wording)
+				}
+				if src.Source != nil {
+					b.SetSource(*src.Source)
+				}
+				if src.Brand != nil {
+					b.SetBrand(*src.Brand)
+				}
 				if src.ContactID != nil {
 					b.SetContactID(remap("Contact", *src.ContactID))
 				}

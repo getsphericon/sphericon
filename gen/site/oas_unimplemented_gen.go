@@ -1587,6 +1587,36 @@ func (UnimplementedHandler) SiteSignupSurveySubmit(ctx context.Context, req *Sit
 	return r, ht.ErrNotImplemented
 }
 
+// SiteSmsConsentsConfirm implements SiteSmsConsents_confirm operation.
+//
+// Record consent the contact's phone gave outside sphericon, as an `imported` SMS Confirmation with
+// its evidence (the same as `POST /api/confirmations`). A stronger Confirmation already on the number
+// stays. It does not lift an opt-out. 422 when the contact has no phone.
+//
+// POST /workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations
+func (UnimplementedHandler) SiteSmsConsentsConfirm(ctx context.Context, req *ConsentEvidence, params SiteSmsConsentsConfirmParams) (r SiteSmsConsentsConfirmRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteSmsConsentsGet implements SiteSmsConsents_get operation.
+//
+// Read the SMS Confirmation and opt-out of a contact's phone.
+//
+// GET /workspaces/{workspaceId}/contacts/{contactId}/sms-consent
+func (UnimplementedHandler) SiteSmsConsentsGet(ctx context.Context, params SiteSmsConsentsGetParams) (r SiteSmsConsentsGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteSmsConsentsOptOut implements SiteSmsConsents_optOut operation.
+//
+// Record an SMS opt-out that reached you by another route (an email, a call): the contact's number
+// gets no more texts from the Workspace. Idempotent. 422 when the contact has no phone.
+//
+// POST /workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs
+func (UnimplementedHandler) SiteSmsConsentsOptOut(ctx context.Context, params SiteSmsConsentsOptOutParams) (r SiteSmsConsentsOptOutRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteSuppressionsCreate implements SiteSuppressions_create operation.
 //
 // Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.

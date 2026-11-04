@@ -231,6 +231,16 @@ type Handler interface {
 	//
 	// GET /captured-messages
 	CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (CapturedMessagesListRes, error)
+	// ConfirmationsCreate implements Confirmations_create operation.
+	//
+	// Record consent a phone number gave outside sphericon (a form of your own, a verification service),
+	// as an `imported` confirmation with its evidence: the wording shown, where it was collected and the
+	// brand. The evidence is kept in the immutable `marketing.confirmed` event. A number already confirmed
+	// keeps its confirmation unless the new one is stronger, so the answer is the confirmation that
+	// stands. It does not lift an opt-out: only the person can, by texting START.
+	//
+	// POST /confirmations
+	ConfirmationsCreate(ctx context.Context, req *CreateConfirmationInput) (ConfirmationsCreateRes, error)
 	// ContactsBatchUpsert implements ContactsBatch_upsert operation.
 	//
 	// Upsert up to 1000 contacts by alias keys; a failing item does not affect the others.
@@ -706,8 +716,8 @@ type Handler interface {
 	TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (TrackingDomainsVerifyRes, error)
 	// UnsubscribesCreate implements Unsubscribes_create operation.
 	//
-	// Record that a destination unsubscribed from a sending source (default `broadcasts`). Idempotent.
-	// Resubscribing is not available through the API.
+	// Record that a destination unsubscribed from a sending source (default `broadcasts`), for an opt-out
+	// that reached you by any route. Idempotent. Resubscribing is not available through the API.
 	//
 	// POST /unsubscribes
 	UnsubscribesCreate(ctx context.Context, req *CreateUnsubscribeInput) (UnsubscribesCreateRes, error)

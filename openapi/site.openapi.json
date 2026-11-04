@@ -10,6 +10,9 @@
       "name": "Site Consent"
     },
     {
+      "name": "Site SMS consent"
+    },
+    {
       "name": "Site Custom Fields"
     },
     {
@@ -7672,6 +7675,210 @@
         "x-required-permissions": []
       }
     },
+    "/workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations": {
+      "post": {
+        "operationId": "SiteSmsConsents_confirm",
+        "description": "Record consent the contact's phone gave outside sphericon, as an `imported` SMS Confirmation\nwith its evidence (the same as `POST /api/confirmations`). A stronger Confirmation already on\nthe number stays. It does not lift an opt-out. 422 when the contact has no phone.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSmsConsent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site SMS consent"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentEvidence"
+              }
+            }
+          }
+        },
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/contacts/{contactId}/sms-consent": {
+      "get": {
+        "operationId": "SiteSmsConsents_get",
+        "description": "Read the SMS Confirmation and opt-out of a contact's phone",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSmsConsent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site SMS consent"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs": {
+      "post": {
+        "operationId": "SiteSmsConsents_optOut",
+        "description": "Record an SMS opt-out that reached you by another route (an email, a call): the contact's\nnumber gets no more texts from the Workspace. Idempotent. 422 when the contact has no phone.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSmsConsent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site SMS consent"],
+        "x-required-permissions": []
+      }
+    },
     "/workspaces/{workspaceId}/contacts/{contactId}/tags": {
       "get": {
         "operationId": "SiteTags_listForContact",
@@ -14706,6 +14913,36 @@
         },
         "description": "What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)"
       },
+      "ConfirmationProvenance": {
+        "type": "string",
+        "enum": ["double_opt_in", "keyword", "imported", "grandfathered"],
+        "description": "How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one."
+      },
+      "ConsentEvidence": {
+        "type": "object",
+        "required": ["wording", "source", "brand"],
+        "properties": {
+          "wording": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "description": "The consent wording the person was shown and agreed to"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "Where the consent was collected: a form, a page, a checkout, a verification service"
+          },
+          "brand": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "The brand the person agreed to hear from"
+          }
+        },
+        "description": "The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `marketing.confirmed` Event to answer a proof request"
+      },
       "ContactExportBroadcastRecipient": {
         "type": "object",
         "required": ["id", "broadcastId", "createdAt"],
@@ -14770,6 +15007,21 @@
           "provenance": {
             "type": "string",
             "description": "How the confirmation was obtained"
+          },
+          "wording": {
+            "type": "string",
+            "nullable": true,
+            "description": "The consent wording the person was shown, on a confirmation recorded with its evidence"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the consent was collected, on a confirmation recorded with its evidence"
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "description": "The brand the person agreed to hear from, on a confirmation recorded with its evidence"
           },
           "createdAt": {
             "allOf": [
@@ -22803,6 +23055,75 @@
           }
         },
         "description": "The answers to the Sign-up survey, sent once after its last screen. `role`, `companySize`\nand `mainGoal` are required; `heardFrom` is optional. Each `…Other` text is allowed only\nwith its question's `other` choice."
+      },
+      "SiteSmsConfirmation": {
+        "type": "object",
+        "required": ["provenance", "confirmedAt"],
+        "properties": {
+          "provenance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfirmationProvenance"
+              }
+            ],
+            "description": "How the consent was obtained"
+          },
+          "wording": {
+            "type": "string",
+            "nullable": true,
+            "description": "The consent wording the person was shown; absent when the confirmation carries no evidence"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the consent was collected; absent when the confirmation carries no evidence"
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "description": "The brand the person agreed to hear from; absent when the confirmation carries no evidence"
+          },
+          "confirmedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the consent was recorded"
+          }
+        },
+        "description": "The SMS Confirmation of a contact's phone: when and how the number consented, with the evidence it carries"
+      },
+      "SiteSmsConsent": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "The contact's phone in E.164; absent when it has none, and then nothing else is"
+          },
+          "confirmation": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSmsConfirmation"
+              }
+            ],
+            "nullable": true,
+            "description": "The phone's SMS Confirmation; absent when the number never consented, and a text does not go to it"
+          },
+          "optedOutAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the phone opted out of every SMS of the Workspace; absent while it has not"
+          }
+        },
+        "description": "Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both keyed by the number"
       },
       "SiteSmtpConfig": {
         "type": "object",

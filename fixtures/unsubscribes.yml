@@ -141,6 +141,23 @@
   workspace_id: 55
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# The matrix's opt-outs of everything on sms (#1037), keyed by the phone.
+- id: 5507
+  channel: sms
+  destination: '+14155551512'
+  sending_source: 'everything'
+  contact_id: 5512
+  workspace_id: 56
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5508
+  channel: sms
+  destination: '+14155551522'
+  sending_source: 'everything'
+  contact_id: 5522
+  workspace_id: 55
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
 - id: 5506 # fixture: UnsubscribeTyrellTransactional
   channel: email
   destination: txn-both@tyrell.test

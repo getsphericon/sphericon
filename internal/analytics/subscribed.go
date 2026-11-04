@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/eligibility"
@@ -57,8 +58,16 @@ func subscriptionSeries(ctx context.Context, s *ent.Scoped, days reportday.Windo
 		Subscribed   int    `sql:"subscribed"`
 		Unsubscribed int    `sql:"unsubscribed"`
 	}
+	// The report is about email: a phone's SMS consent is a marketing.confirmed Event too, and
+	// counts nowhere here.
+	confirmedOnEmail := event.And(event.Action(events.NameMarketingConfirmed), func(sel *sql.Selector) {
+		sel.Where(sqljson.ValueEQ(event.FieldProperties, eligibility.ChannelEmail, sqljson.Path("channel")))
+	})
 	err := s.Event().Query().
-		Where(event.OccurredAtGTE(days.Since), event.OccurredAtLT(days.Until)).
+		Where(
+			event.OccurredAtGTE(days.Since), event.OccurredAtLT(days.Until),
+			event.Or(confirmedOnEmail, event.Action(events.NameEmailUnsubscribed)),
+		).
 		Modify(func(sel *sql.Selector) {
 			moment := sel.C(event.FieldOccurredAt)
 			action := sel.C(event.FieldAction)
@@ -67,7 +76,6 @@ func subscriptionSeries(ctx context.Context, s *ent.Scoped, days reportday.Windo
 				sql.As("COUNT(*) FILTER (WHERE "+action+" = '"+events.NameEmailUnsubscribed+"')", "unsubscribed"),
 			)
 			sel.AppendSelectExprAs(reportday.Label(moment, days.Loc), "day").
-				Where(sql.In(action, events.NameMarketingConfirmed, events.NameEmailUnsubscribed)).
 				GroupBy("day")
 		}).
 		Scan(ctx, &rows)

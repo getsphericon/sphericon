@@ -174,6 +174,15 @@ model ContactExportConfirmation {
   /** How the confirmation was obtained */
   provenance: string;
 
+  /** The consent wording the person was shown, on a confirmation recorded with its evidence */
+  wording?: string | null;
+
+  /** Where the consent was collected, on a confirmation recorded with its evidence */
+  source?: string | null;
+
+  /** The brand the person agreed to hear from, on a confirmation recorded with its evidence */
+  brand?: string | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 }

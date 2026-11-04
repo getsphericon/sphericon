@@ -4478,6 +4478,121 @@
         "x-required-scopes": ["captured_messages:write"]
       }
     },
+    "/confirmations": {
+      "post": {
+        "operationId": "Confirmations_create",
+        "description": "Record consent a phone number gave outside sphericon (a form of your own, a verification\nservice), as an `imported` confirmation with its evidence: the wording shown, where it was\ncollected and the brand. The evidence is kept in the immutable `marketing.confirmed` event.\nA number already confirmed keeps its confirmation unless the new one is stronger, so the\nanswer is the confirmation that stands. It does not lift an opt-out: only the person can, by\ntexting START.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmationResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Consent"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConfirmationInput"
+              }
+            }
+          }
+        },
+        "x-required-scopes": ["contacts:write"]
+      }
+    },
     "/contacts": {
       "get": {
         "operationId": "Contacts_list",
@@ -12656,7 +12771,7 @@
     "/unsubscribes": {
       "post": {
         "operationId": "Unsubscribes_create",
-        "description": "Record that a destination unsubscribed from a sending source (default\n`broadcasts`). Idempotent. Resubscribing is not available through the API.",
+        "description": "Record that a destination unsubscribed from a sending source (default\n`broadcasts`), for an opt-out that reached you by any route. Idempotent. Resubscribing is not\navailable through the API.",
         "parameters": [],
         "responses": {
           "201": {
@@ -15743,10 +15858,98 @@
         "enum": ["eq", "neq", "contains", "beginsWith", "null", "notNull", "has", "doesNotHave"],
         "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,\nwhich the custom field lists as `ruleOperators` (a number custom field is also compared by a\nnumber leaf, a datetime one tested by the date leaves)."
       },
+      "ConfirmationProvenance": {
+        "type": "string",
+        "enum": ["double_opt_in", "keyword", "imported", "grandfathered"],
+        "description": "How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one."
+      },
+      "ConfirmationResource": {
+        "type": "object",
+        "required": ["id", "channel", "destination", "provenance", "createdAt"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConsentChannel"
+              }
+            ],
+            "description": "The Channel the confirmation is on"
+          },
+          "destination": {
+            "type": "string",
+            "description": "Normalized destination: the phone number in E.164 on `sms`"
+          },
+          "provenance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfirmationProvenance"
+              }
+            ],
+            "description": "How the consent was obtained"
+          },
+          "wording": {
+            "type": "string",
+            "nullable": true,
+            "description": "The consent wording the person was shown; absent when the confirmation carries no evidence"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the consent was collected; absent when the confirmation carries no evidence"
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "description": "The brand the person agreed to hear from; absent when the confirmation carries no evidence"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the consent was recorded"
+          }
+        },
+        "description": "A recorded consent of a destination on a Channel (ADR 0077): on `sms` a text goes only to a number that has one"
+      },
       "ConsentChannel": {
         "type": "string",
-        "enum": ["email", "telegram"],
-        "description": "A Channel a destination can be suppressed or opt out on"
+        "enum": ["email", "telegram", "sms"],
+        "description": "A Channel a destination can opt out on or confirm on"
+      },
+      "ConsentEvidence": {
+        "type": "object",
+        "required": ["wording", "source", "brand"],
+        "properties": {
+          "wording": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "description": "The consent wording the person was shown and agreed to"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "Where the consent was collected: a form, a page, a checkout, a verification service"
+          },
+          "brand": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "The brand the person agreed to hear from"
+          }
+        },
+        "description": "The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `marketing.confirmed` Event to answer a proof request"
       },
       "ContactBatchItemResult": {
         "type": "object",
@@ -15849,6 +16052,21 @@
           "provenance": {
             "type": "string",
             "description": "How the confirmation was obtained"
+          },
+          "wording": {
+            "type": "string",
+            "nullable": true,
+            "description": "The consent wording the person was shown, on a confirmation recorded with its evidence"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the consent was collected, on a confirmation recorded with its evidence"
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "description": "The brand the person agreed to hear from, on a confirmation recorded with its evidence"
           },
           "createdAt": {
             "allOf": [
@@ -16681,6 +16899,44 @@
         },
         "description": "Request body for creating a broadcast"
       },
+      "CreateConfirmationInput": {
+        "type": "object",
+        "required": ["channel", "destination", "wording", "source", "brand"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConsentChannel"
+              }
+            ],
+            "description": "The Channel the consent is for. Only `sms` takes a recorded consent: email is confirmed by its own double opt-in link, and a Telegram chat is its own opt-in"
+          },
+          "destination": {
+            "type": "string",
+            "maxLength": 320,
+            "description": "The phone number that consented, with its country code; stored in E.164"
+          },
+          "wording": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "description": "The consent wording the person was shown and agreed to"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "Where the consent was collected: a form, a page, a checkout, a verification service"
+          },
+          "brand": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "The brand the person agreed to hear from"
+          }
+        },
+        "description": "Request body for recording consent collected outside sphericon"
+      },
       "CreateContactInput": {
         "type": "object",
         "properties": {
@@ -16900,7 +17156,7 @@
           "channel": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ConsentChannel"
+                "$ref": "#/components/schemas/SuppressionChannel"
               }
             ],
             "description": "The Channel to stop sending on; `email` when omitted"
@@ -16955,11 +17211,11 @@
           "destination": {
             "type": "string",
             "maxLength": 320,
-            "description": "What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`. A Telegram opt-out covers every bot of the Workspace"
+            "description": "What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone number with its country code on `sms` (stored in E.164). A Telegram opt-out covers every bot of the Workspace; an SMS opt-out covers every sender of the Workspace"
           },
           "sendingSource": {
             "type": "string",
-            "description": "The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave entirely). On `telegram` only `everything` (the default) is accepted: a person stops all of the Workspace's Telegram messages"
+            "description": "The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave entirely). On `telegram` and `sms` only `everything` (the default) is accepted: a person stops all of the Workspace's messages on the Channel"
           }
         },
         "description": "Request body for recording an unsubscribe"
@@ -20003,6 +20259,11 @@
         },
         "description": "SMTP credentials"
       },
+      "SuppressionChannel": {
+        "type": "string",
+        "enum": ["email", "telegram"],
+        "description": "A Channel a destination can be suppressed on"
+      },
       "SuppressionReason": {
         "type": "string",
         "enum": ["bounce", "complaint", "manual"],
@@ -20023,7 +20284,7 @@
           "channel": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ConsentChannel"
+                "$ref": "#/components/schemas/SuppressionChannel"
               }
             ],
             "description": "The Channel the suppression is on"
@@ -20529,7 +20790,7 @@
           },
           "destination": {
             "type": "string",
-            "description": "Normalized destination: the lower-cased email address, or the Telegram user id"
+            "description": "Normalized destination: the lower-cased email address, the Telegram user id, or the phone number in E.164"
           },
           "sendingSource": {
             "type": "string",
@@ -20982,6 +21243,14 @@
             ],
             "nullable": true,
             "description": "Typed custom field values keyed by the field's machine key, merged into the contact's. A new\nkey's first value sets the field's type: a boolean, a number, a date (an ISO string:\n`2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the\nWorkspace time zone) or text. Send a date without time as a `YYYY-MM-DD` string, not a\nJavaScript `Date`: that serializes as UTC and lands on the previous day east of UTC"
+          },
+          "smsConsent": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConsentEvidence"
+              }
+            ],
+            "description": "The evidence of the SMS consent the contact's phone gave outside sphericon: records an\n`imported` SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone\nstays unreachable on SMS. An item with it and no phone fails"
           }
         },
         "description": "One contact to upsert, matched by its alias keys (subject id, email, phone). An alias key fills\nonly a contact that has none; every other attribute given replaces the contact's, and null clears\nit."

@@ -41,6 +41,7 @@ const (
 	CapturedMessagesDeleteAllOperation OperationName = "CapturedMessagesDeleteAll"
 	CapturedMessagesGetOperation       OperationName = "CapturedMessagesGet"
 	CapturedMessagesListOperation      OperationName = "CapturedMessagesList"
+	ConfirmationsCreateOperation       OperationName = "ConfirmationsCreate"
 	ContactsBatchUpsertOperation       OperationName = "ContactsBatchUpsert"
 	ContactsCreateOperation            OperationName = "ContactsCreate"
 	ContactsDeleteOperation            OperationName = "ContactsDelete"

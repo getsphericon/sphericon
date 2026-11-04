@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
@@ -103,6 +104,8 @@ type Inputs interface {
 	// goverter:ignore Prepared
 	TemplateCreate(source *siteapi.CreateTemplateInput) templates.CreateInput
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) templates.UpdateInput
+
+	ConsentEvidence(source *siteapi.ConsentEvidence) consent.Evidence
 
 	BroadcastCreate(source *siteapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
 	BroadcastUpdate(source *siteapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)
