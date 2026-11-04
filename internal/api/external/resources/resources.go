@@ -236,7 +236,7 @@ type Converter interface {
 	// goverter:ignore SecretsRetiring
 	// goverter:ignore HookUrl
 	// goverter:ignore ProviderLimit
-	// goverter:map DiscardedAt ArchivedAt
+	// goverter:map DiscardedAt DeletedAt
 	IntegrationToResource(source *ent.Integration) externalapi.IntegrationResource
 
 	// A Captured message names its From as the contract does, and the nullable parts as null.
@@ -319,7 +319,7 @@ type Converter interface {
 	// goverter:ignore SpfRecord
 	// goverter:ignore DmarcRecord
 	// The contract names the discarded state "archived" (ADR 0049).
-	// goverter:map DiscardedAt ArchivedAt
+	// goverter:map DiscardedAt DeletedAt
 	// goverter:map . Verified | sendingDomainVerified
 	SendingDomainToResource(source *ent.SendingDomain) externalapi.SendingDomainResource
 	// goverter:map . Type | dnsRecordType

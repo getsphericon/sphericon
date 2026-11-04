@@ -78,8 +78,8 @@ func TestSiteDefaultIntegrationArchiveRefusedWhileLiveWorkUsesIt(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	del := func() siteapi.SiteIntegrationsArchiveRes {
-		got, err := c.SiteIntegrationsArchive(ctx, siteapi.SiteIntegrationsArchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeDefaultID)})
+	del := func() siteapi.SiteIntegrationsDeleteRes {
+		got, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeDefaultID)})
 		require.NoError(t, err)
 		return got
 	}
@@ -98,7 +98,7 @@ func TestSiteDefaultIntegrationArchiveRefusedWhileLiveWorkUsesIt(t *testing.T) {
 	_, err = acme.Automation().Update().SetStatus(automation.StatusInactive).Save(ctx)
 	require.NoError(t, err)
 
-	assert.IsType(t, &siteapi.SiteIntegrationResource{}, del())
+	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, del())
 }
 
 // An Integration that is not the default is used only by a Broadcast that names it.
@@ -107,11 +107,11 @@ func TestSiteIntegrationArchiveNamedByALiveBroadcast(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	params := siteapi.SiteIntegrationsArchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeSesID)}
+	params := siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeSesID)}
 
 	_, err := acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetIntegrationID(fixtures.IntegrationAcmeSesID).Save(ctx)
 	require.NoError(t, err)
-	got, err := c.SiteIntegrationsArchive(ctx, params)
+	got, err := c.SiteIntegrationsDelete(ctx, params)
 	require.NoError(t, err)
 	refused, ok := got.(*siteapi.InUseProblemDetails)
 	require.True(t, ok)
@@ -119,20 +119,20 @@ func TestSiteIntegrationArchiveNamedByALiveBroadcast(t *testing.T) {
 
 	_, err = acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
-	got, err = c.SiteIntegrationsArchive(ctx, params)
+	got, err = c.SiteIntegrationsDelete(ctx, params)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationResource{}, got)
+	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, got)
 }
 
 // A Sending domain is used through the domain of a From address, not an id: a scheduled Broadcast
 // from news.acme.com blocks that domain, and a failed one from mail.acme.com does not block this.
-func TestSiteSendingDomainArchiveRefusedThroughAFromAddress(t *testing.T) {
+func TestSiteSendingDomainDeleteRefusedThroughAFromAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	del := func(id int64) siteapi.SiteSendingDomainsArchiveRes {
-		return archiveSendingDomain(t, c, id)
+	del := func(id int64) siteapi.SiteSendingDomainsDeleteRes {
+		return deleteSendingDomain(t, c, id)
 	}
 	_, err := acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetFromEmail("hello@" + fixtures.SendingDomainUnverifiedDomain).Save(ctx)
 	require.NoError(t, err)
@@ -143,18 +143,18 @@ func TestSiteSendingDomainArchiveRefusedThroughAFromAddress(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastScheduledName}}, usedBy(refused))
 
-	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, del(fixtures.SendingDomainVerifiedID))
+	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, del(fixtures.SendingDomainVerifiedID))
 }
 
 // A Broadcast with no From and an active Automation send from the default Integration's configured
 // From (hello@codebasics.dev), so that domain is refused until nothing live sends from it.
-func TestSiteSendingDomainArchiveRefusedThroughTheConfiguredFrom(t *testing.T) {
+func TestSiteSendingDomainDeleteRefusedThroughTheConfiguredFrom(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	del := func() siteapi.SiteSendingDomainsArchiveRes {
-		return archiveSendingDomain(t, c, fixtures.SendingDomainCodebasicsID)
+	del := func() siteapi.SiteSendingDomainsDeleteRes {
+		return deleteSendingDomain(t, c, fixtures.SendingDomainCodebasicsID)
 	}
 
 	refused, ok := del().(*siteapi.InUseProblemDetails)
@@ -167,7 +167,7 @@ func TestSiteSendingDomainArchiveRefusedThroughTheConfiguredFrom(t *testing.T) {
 	require.NoError(t, err)
 	_, err = acme.Automation().Update().SetStatus(automation.StatusInactive).Save(ctx)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, del())
+	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, del())
 }
 
 func TestDamagedStoredStepsDoNotPermitIntegrationRemoval(t *testing.T) {
@@ -178,7 +178,7 @@ func TestDamagedStoredStepsDoNotPermitIntegrationRemoval(t *testing.T) {
 		SetSteps(`[{"type":"wait"},`).Exec(ctx)
 	require.NoError(t, err)
 
-	_, err = env.Integrations.Archive(ctx, s, fixtures.IntegrationAcmeMailgunID)
+	err = env.Integrations.Delete(ctx, s, fixtures.IntegrationAcmeMailgunID)
 
 	require.Error(t, err, "an unreadable definition cannot prove the Integration unused")
 	var used *inuse.Error
@@ -197,7 +197,7 @@ func TestDamagedStoredStepsDoNotPermitSendingDomainRemoval(t *testing.T) {
 		SetSteps(`[{"type":"email"},`).Exec(ctx)
 	require.NoError(t, err)
 
-	_, err = c.SiteSendingDomainsArchive(ctx, siteapi.SiteSendingDomainsArchiveParams{
+	_, err = c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{
 		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SendingDomainCodebasicsID),
 	})
 
@@ -208,8 +208,8 @@ func TestDamagedStoredStepsDoNotPermitSendingDomainRemoval(t *testing.T) {
 	require.NoError(t, err)
 	kept, ok := got.(*siteapi.SiteSendingDomainResource)
 	require.Truef(t, ok, "got %T", got)
-	archived := kept.ArchivedAt.IsSet()
-	assert.False(t, archived)
+	deleted := kept.DeletedAt.IsSet()
+	assert.False(t, deleted)
 }
 
 // A draft's email does not establish a dependency; only the kept, active live version does.
@@ -242,10 +242,11 @@ func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) 
 				SetStatus(tc.status).SetNillableDiscardedAt(tc.archived).Exec(ctx)
 			require.NoError(t, err)
 
-			archived, err := env.Integrations.Archive(ctx, s, fixtures.IntegrationAcmeMailgunID)
+			require.NoError(t, env.Integrations.Delete(ctx, s, fixtures.IntegrationAcmeMailgunID))
 
+			deleted, err := env.Integrations.Get(ctx, s, fixtures.IntegrationAcmeMailgunID)
 			require.NoError(t, err)
-			assert.NotNil(t, archived.DiscardedAt)
+			assert.NotNil(t, deleted.DiscardedAt)
 		})
 	}
 }

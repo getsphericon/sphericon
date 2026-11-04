@@ -21,7 +21,7 @@ import (
 // rate limit as enforced and the last 24 hours of usage.
 func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.IntegrationsListParams) (externalapi.IntegrationsListRes, error) {
 	s := auth.TokenScoped(ctx)
-	page, err := h.integrations.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
+	page, err := h.integrations.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
 	}
@@ -120,35 +120,13 @@ func (h *Handlers) PresetsList(_ context.Context) (externalapi.PresetsListRes, e
 	return mapper.PresetsListPage(pagination.Whole(items)), nil
 }
 
-// IntegrationsArchive archives an Integration (ADR 0049): it leaves the list and gives up the
-// default, unless live work uses it (409).
-func (h *Handlers) IntegrationsArchive(ctx context.Context, params externalapi.IntegrationsArchiveParams) (externalapi.IntegrationsArchiveRes, error) {
-	s := auth.TokenScoped(ctx)
-	id := int64(params.ID)
-	row, err := h.integrations.Archive(ctx, s, id)
-	if err != nil {
+// IntegrationsDelete deletes an Integration for good (ADR 0049): it leaves the list and gives up
+// the default, unless live work uses it (409).
+func (h *Handlers) IntegrationsDelete(ctx context.Context, params externalapi.IntegrationsDeleteParams) (externalapi.IntegrationsDeleteRes, error) {
+	if err := h.integrations.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID)); err != nil {
 		return nil, err
 	}
-	res, err := h.integrationOne(ctx, s, row)
-	if err != nil {
-		return nil, err
-	}
-	return &res, nil
-}
-
-// IntegrationsUnarchive restores an archived Integration to the list. It is not the default.
-func (h *Handlers) IntegrationsUnarchive(ctx context.Context, params externalapi.IntegrationsUnarchiveParams) (externalapi.IntegrationsUnarchiveRes, error) {
-	s := auth.TokenScoped(ctx)
-	id := int64(params.ID)
-	row, err := h.integrations.Unarchive(ctx, s, id)
-	if err != nil {
-		return nil, err
-	}
-	res, err := h.integrationOne(ctx, s, row)
-	if err != nil {
-		return nil, err
-	}
-	return &res, nil
+	return &externalapi.IntegrationsDeleteNoContent{}, nil
 }
 
 // integrationOne renders a single row with its 24-hour usage.

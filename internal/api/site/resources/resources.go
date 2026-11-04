@@ -368,7 +368,7 @@ type Converter interface {
 	// goverter:ignore SecretsRetiring
 	// goverter:ignore HookUrl
 	// goverter:ignore ProviderLimit
-	// goverter:map DiscardedAt ArchivedAt
+	// goverter:map DiscardedAt DeletedAt
 	IntegrationToResource(source *ent.Integration) siteapi.SiteIntegrationResource
 	// The redacted provider configs: the handler only wraps the one that is set in the
 	// contract's oneOf, which goverter cannot express. Empty optional fields are omitted.
@@ -496,7 +496,7 @@ type Converter interface {
 	// goverter:ignore SpfRecord
 	// goverter:ignore DmarcRecord
 	// The contract names the discarded state "archived" (ADR 0049).
-	// goverter:map DiscardedAt ArchivedAt
+	// goverter:map DiscardedAt DeletedAt
 	// goverter:map . Verified | sendingDomainVerified
 	SendingDomainToResource(source *ent.SendingDomain) siteapi.SiteSendingDomainResource
 	// goverter:map . Type | dnsRecordType

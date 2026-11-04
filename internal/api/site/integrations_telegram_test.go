@@ -230,10 +230,10 @@ func TestSiteTelegramWebhookFollowsTheIntegration(t *testing.T) {
 		env.Telegram.FailOnce(telegramtest.DeleteWebhook, telegramtest.Unauthorized)
 		before := len(env.Telegram.RequestsOf(telegramtest.DeleteWebhook))
 
-		res, err := c.SiteIntegrationsArchive(ctx, siteapi.SiteIntegrationsArchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
+		res, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
 		require.NoError(t, err)
 
-		require.IsType(t, &siteapi.SiteIntegrationResource{}, res)
+		require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, res)
 		assert.Len(t, env.Telegram.RequestsOf(telegramtest.DeleteWebhook), before+1)
 	})
 }

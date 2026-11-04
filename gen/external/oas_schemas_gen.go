@@ -10229,14 +10229,14 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 	s.UsedBy = val
 }
 
-func (*InUseProblemDetails) automationsArchiveRes()    {}
-func (*InUseProblemDetails) automationsDeleteRes()     {}
-func (*InUseProblemDetails) customFieldsUpdateRes()    {}
-func (*InUseProblemDetails) integrationsArchiveRes()   {}
-func (*InUseProblemDetails) rulesDeleteRes()           {}
-func (*InUseProblemDetails) segmentsArchiveRes()       {}
-func (*InUseProblemDetails) sendingDomainsArchiveRes() {}
-func (*InUseProblemDetails) tagsDeleteRes()            {}
+func (*InUseProblemDetails) automationsArchiveRes()   {}
+func (*InUseProblemDetails) automationsDeleteRes()    {}
+func (*InUseProblemDetails) customFieldsUpdateRes()   {}
+func (*InUseProblemDetails) integrationsDeleteRes()   {}
+func (*InUseProblemDetails) rulesDeleteRes()          {}
+func (*InUseProblemDetails) segmentsArchiveRes()      {}
+func (*InUseProblemDetails) sendingDomainsDeleteRes() {}
+func (*InUseProblemDetails) tagsDeleteRes()           {}
 
 // Validation errors grouped by field.
 type InUseProblemDetailsErrors map[string][]string
@@ -10780,9 +10780,10 @@ type IntegrationResource struct {
 	// Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is
 	// an address, not the authentication (the Preset's signature or secret is).
 	HookUrl string `json:"hookUrl"`
-	// When the integration was archived; null while it is kept. An archived integration is never the
-	// default and takes no new work, but its hook still reads the provider's callbacks.
-	ArchivedAt OptNilTimestamp `json:"archivedAt"`
+	// When the integration was deleted; null while it is kept. A deleted integration is no longer listed
+	// and cannot be restored, but stays readable by id for the history that names it; it is never the
+	// default, takes no new work, and its hook still reads the provider's callbacks.
+	DeletedAt OptNilTimestamp `json:"deletedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -10859,9 +10860,9 @@ func (s *IntegrationResource) GetHookUrl() string {
 	return s.HookUrl
 }
 
-// GetArchivedAt returns the value of ArchivedAt.
-func (s *IntegrationResource) GetArchivedAt() OptNilTimestamp {
-	return s.ArchivedAt
+// GetDeletedAt returns the value of DeletedAt.
+func (s *IntegrationResource) GetDeletedAt() OptNilTimestamp {
+	return s.DeletedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -10944,9 +10945,9 @@ func (s *IntegrationResource) SetHookUrl(val string) {
 	s.HookUrl = val
 }
 
-// SetArchivedAt sets the value of ArchivedAt.
-func (s *IntegrationResource) SetArchivedAt(val OptNilTimestamp) {
-	s.ArchivedAt = val
+// SetDeletedAt sets the value of DeletedAt.
+func (s *IntegrationResource) SetDeletedAt(val OptNilTimestamp) {
+	s.DeletedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -10959,28 +10960,10 @@ func (s *IntegrationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*IntegrationResource) integrationsArchiveRes()       {}
 func (*IntegrationResource) integrationsCreateRes()        {}
 func (*IntegrationResource) integrationsGetRes()           {}
 func (*IntegrationResource) integrationsRegenerateKeyRes() {}
-func (*IntegrationResource) integrationsUnarchiveRes()     {}
 func (*IntegrationResource) integrationsUpdateRes()        {}
-
-type IntegrationsArchiveBadRequest ProblemDetails
-
-func (*IntegrationsArchiveBadRequest) integrationsArchiveRes() {}
-
-type IntegrationsArchiveForbidden ProblemDetails
-
-func (*IntegrationsArchiveForbidden) integrationsArchiveRes() {}
-
-type IntegrationsArchiveNotFound ProblemDetails
-
-func (*IntegrationsArchiveNotFound) integrationsArchiveRes() {}
-
-type IntegrationsArchiveUnauthorized ProblemDetails
-
-func (*IntegrationsArchiveUnauthorized) integrationsArchiveRes() {}
 
 type IntegrationsCreateBadRequest ProblemDetails
 
@@ -11001,6 +10984,27 @@ func (*IntegrationsCreateUnauthorized) integrationsCreateRes() {}
 type IntegrationsCreateUnprocessableEntity ProblemDetails
 
 func (*IntegrationsCreateUnprocessableEntity) integrationsCreateRes() {}
+
+type IntegrationsDeleteBadRequest ProblemDetails
+
+func (*IntegrationsDeleteBadRequest) integrationsDeleteRes() {}
+
+type IntegrationsDeleteForbidden ProblemDetails
+
+func (*IntegrationsDeleteForbidden) integrationsDeleteRes() {}
+
+// IntegrationsDeleteNoContent is response for IntegrationsDelete operation.
+type IntegrationsDeleteNoContent struct{}
+
+func (*IntegrationsDeleteNoContent) integrationsDeleteRes() {}
+
+type IntegrationsDeleteNotFound ProblemDetails
+
+func (*IntegrationsDeleteNotFound) integrationsDeleteRes() {}
+
+type IntegrationsDeleteUnauthorized ProblemDetails
+
+func (*IntegrationsDeleteUnauthorized) integrationsDeleteRes() {}
 
 type IntegrationsGetBadRequest ProblemDetails
 
@@ -11119,30 +11123,6 @@ func (*IntegrationsRegenerateKeyUnauthorized) integrationsRegenerateKeyRes() {}
 type IntegrationsRegenerateKeyUnprocessableEntity ProblemDetails
 
 func (*IntegrationsRegenerateKeyUnprocessableEntity) integrationsRegenerateKeyRes() {}
-
-type IntegrationsUnarchiveBadRequest ProblemDetails
-
-func (*IntegrationsUnarchiveBadRequest) integrationsUnarchiveRes() {}
-
-type IntegrationsUnarchiveConflict ProblemDetails
-
-func (*IntegrationsUnarchiveConflict) integrationsUnarchiveRes() {}
-
-type IntegrationsUnarchiveForbidden ProblemDetails
-
-func (*IntegrationsUnarchiveForbidden) integrationsUnarchiveRes() {}
-
-type IntegrationsUnarchiveNotFound ProblemDetails
-
-func (*IntegrationsUnarchiveNotFound) integrationsUnarchiveRes() {}
-
-type IntegrationsUnarchiveUnauthorized ProblemDetails
-
-func (*IntegrationsUnarchiveUnauthorized) integrationsUnarchiveRes() {}
-
-type IntegrationsUnarchiveUnprocessableEntity ProblemDetails
-
-func (*IntegrationsUnarchiveUnprocessableEntity) integrationsUnarchiveRes() {}
 
 type IntegrationsUpdateBadRequest ProblemDetails
 
@@ -15020,12 +15000,11 @@ func (*ProblemDetailsHeaders) enrollmentsListRes()           {}
 func (*ProblemDetailsHeaders) eventActionsListRes()          {}
 func (*ProblemDetailsHeaders) eventsBatchSubmitRes()         {}
 func (*ProblemDetailsHeaders) eventsCreateRes()              {}
-func (*ProblemDetailsHeaders) integrationsArchiveRes()       {}
 func (*ProblemDetailsHeaders) integrationsCreateRes()        {}
+func (*ProblemDetailsHeaders) integrationsDeleteRes()        {}
 func (*ProblemDetailsHeaders) integrationsGetRes()           {}
 func (*ProblemDetailsHeaders) integrationsListRes()          {}
 func (*ProblemDetailsHeaders) integrationsRegenerateKeyRes() {}
-func (*ProblemDetailsHeaders) integrationsUnarchiveRes()     {}
 func (*ProblemDetailsHeaders) integrationsUpdateRes()        {}
 func (*ProblemDetailsHeaders) presetsListRes()               {}
 func (*ProblemDetailsHeaders) ruleFiringsListRes()           {}
@@ -15048,11 +15027,10 @@ func (*ProblemDetailsHeaders) segmentsPreviewRes()           {}
 func (*ProblemDetailsHeaders) segmentsUnarchiveRes()         {}
 func (*ProblemDetailsHeaders) segmentsUpdateRes()            {}
 func (*ProblemDetailsHeaders) sendingDomainRatesListRes()    {}
-func (*ProblemDetailsHeaders) sendingDomainsArchiveRes()     {}
 func (*ProblemDetailsHeaders) sendingDomainsCreateRes()      {}
+func (*ProblemDetailsHeaders) sendingDomainsDeleteRes()      {}
 func (*ProblemDetailsHeaders) sendingDomainsGetRes()         {}
 func (*ProblemDetailsHeaders) sendingDomainsListRes()        {}
-func (*ProblemDetailsHeaders) sendingDomainsUnarchiveRes()   {}
 func (*ProblemDetailsHeaders) sendingDomainsUpdateRes()      {}
 func (*ProblemDetailsHeaders) sendingDomainsVerifyRes()      {}
 func (*ProblemDetailsHeaders) suppressionsCreateRes()        {}
@@ -17050,8 +17028,9 @@ type SendingDomainResource struct {
 	// When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or
 	// verified again since).
 	VerificationLostAt OptNilTimestamp `json:"verificationLostAt"`
-	// When the domain was archived; null while it is kept.
-	ArchivedAt OptNilTimestamp `json:"archivedAt"`
+	// When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot
+	// be restored, but stays readable by id.
+	DeletedAt OptNilTimestamp `json:"deletedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -17118,9 +17097,9 @@ func (s *SendingDomainResource) GetVerificationLostAt() OptNilTimestamp {
 	return s.VerificationLostAt
 }
 
-// GetArchivedAt returns the value of ArchivedAt.
-func (s *SendingDomainResource) GetArchivedAt() OptNilTimestamp {
-	return s.ArchivedAt
+// GetDeletedAt returns the value of DeletedAt.
+func (s *SendingDomainResource) GetDeletedAt() OptNilTimestamp {
+	return s.DeletedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -17193,9 +17172,9 @@ func (s *SendingDomainResource) SetVerificationLostAt(val OptNilTimestamp) {
 	s.VerificationLostAt = val
 }
 
-// SetArchivedAt sets the value of ArchivedAt.
-func (s *SendingDomainResource) SetArchivedAt(val OptNilTimestamp) {
-	s.ArchivedAt = val
+// SetDeletedAt sets the value of DeletedAt.
+func (s *SendingDomainResource) SetDeletedAt(val OptNilTimestamp) {
+	s.DeletedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -17208,28 +17187,10 @@ func (s *SendingDomainResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SendingDomainResource) sendingDomainsArchiveRes()   {}
-func (*SendingDomainResource) sendingDomainsCreateRes()    {}
-func (*SendingDomainResource) sendingDomainsGetRes()       {}
-func (*SendingDomainResource) sendingDomainsUnarchiveRes() {}
-func (*SendingDomainResource) sendingDomainsUpdateRes()    {}
-func (*SendingDomainResource) sendingDomainsVerifyRes()    {}
-
-type SendingDomainsArchiveBadRequest ProblemDetails
-
-func (*SendingDomainsArchiveBadRequest) sendingDomainsArchiveRes() {}
-
-type SendingDomainsArchiveForbidden ProblemDetails
-
-func (*SendingDomainsArchiveForbidden) sendingDomainsArchiveRes() {}
-
-type SendingDomainsArchiveNotFound ProblemDetails
-
-func (*SendingDomainsArchiveNotFound) sendingDomainsArchiveRes() {}
-
-type SendingDomainsArchiveUnauthorized ProblemDetails
-
-func (*SendingDomainsArchiveUnauthorized) sendingDomainsArchiveRes() {}
+func (*SendingDomainResource) sendingDomainsCreateRes() {}
+func (*SendingDomainResource) sendingDomainsGetRes()    {}
+func (*SendingDomainResource) sendingDomainsUpdateRes() {}
+func (*SendingDomainResource) sendingDomainsVerifyRes() {}
 
 type SendingDomainsCreateBadRequest ProblemDetails
 
@@ -17250,6 +17211,27 @@ func (*SendingDomainsCreateUnauthorized) sendingDomainsCreateRes() {}
 type SendingDomainsCreateUnprocessableEntity ProblemDetails
 
 func (*SendingDomainsCreateUnprocessableEntity) sendingDomainsCreateRes() {}
+
+type SendingDomainsDeleteBadRequest ProblemDetails
+
+func (*SendingDomainsDeleteBadRequest) sendingDomainsDeleteRes() {}
+
+type SendingDomainsDeleteForbidden ProblemDetails
+
+func (*SendingDomainsDeleteForbidden) sendingDomainsDeleteRes() {}
+
+// SendingDomainsDeleteNoContent is response for SendingDomainsDelete operation.
+type SendingDomainsDeleteNoContent struct{}
+
+func (*SendingDomainsDeleteNoContent) sendingDomainsDeleteRes() {}
+
+type SendingDomainsDeleteNotFound ProblemDetails
+
+func (*SendingDomainsDeleteNotFound) sendingDomainsDeleteRes() {}
+
+type SendingDomainsDeleteUnauthorized ProblemDetails
+
+func (*SendingDomainsDeleteUnauthorized) sendingDomainsDeleteRes() {}
 
 type SendingDomainsGetBadRequest ProblemDetails
 
@@ -17348,26 +17330,6 @@ func (*SendingDomainsListUnauthorized) sendingDomainsListRes() {}
 type SendingDomainsListUnprocessableEntity ProblemDetails
 
 func (*SendingDomainsListUnprocessableEntity) sendingDomainsListRes() {}
-
-type SendingDomainsUnarchiveBadRequest ProblemDetails
-
-func (*SendingDomainsUnarchiveBadRequest) sendingDomainsUnarchiveRes() {}
-
-type SendingDomainsUnarchiveConflict ProblemDetails
-
-func (*SendingDomainsUnarchiveConflict) sendingDomainsUnarchiveRes() {}
-
-type SendingDomainsUnarchiveForbidden ProblemDetails
-
-func (*SendingDomainsUnarchiveForbidden) sendingDomainsUnarchiveRes() {}
-
-type SendingDomainsUnarchiveNotFound ProblemDetails
-
-func (*SendingDomainsUnarchiveNotFound) sendingDomainsUnarchiveRes() {}
-
-type SendingDomainsUnarchiveUnauthorized ProblemDetails
-
-func (*SendingDomainsUnarchiveUnauthorized) sendingDomainsUnarchiveRes() {}
 
 type SendingDomainsUpdateBadRequest ProblemDetails
 

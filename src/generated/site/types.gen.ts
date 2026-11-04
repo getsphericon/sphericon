@@ -4287,9 +4287,9 @@ export type SiteIntegrationResource = {
    */
   hookUrl: string;
   /**
-   * When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks (a Telegram bot's webhook is removed, so Telegram sends it none).
+   * When the integration was deleted; null while it is kept. A deleted integration is no longer listed and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks (a Telegram bot's webhook is removed, so Telegram sends it none).
    */
-  archivedAt?: Timestamp | null;
+  deletedAt?: Timestamp | null;
   /**
    * Creation timestamp
    */
@@ -5833,9 +5833,9 @@ export type SiteSendingDomainResource = {
    */
   verificationLostAt?: Timestamp | null;
   /**
-   * When the domain was archived; null while it is kept.
+   * When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot be restored, but stays readable by id.
    */
-  archivedAt?: Timestamp | null;
+  deletedAt?: Timestamp | null;
   /**
    * Creation timestamp
    */
@@ -7630,11 +7630,6 @@ export type SiteIntegrationResourceKeyWorkspaceId = WorkspaceId;
 export type SiteIntegrationResourceParentKey = WorkspaceId;
 
 /**
- * true lists the archived integrations instead of the kept ones; the default hides them
- */
-export type SiteIntegrationsListFilter = boolean;
-
-/**
  * Unique identifier
  */
 export type SiteInvitationResourceKeyId = EntityId;
@@ -7735,11 +7730,6 @@ export type SiteSendingDomainResourceKeyWorkspaceId = WorkspaceId;
  * workspace resources (ADR 0043)
  */
 export type SiteSendingDomainResourceParentKey = WorkspaceId;
-
-/**
- * true lists the archived sending domains instead of the kept ones; the default hides them
- */
-export type SiteSendingDomainsListFilter = boolean;
 
 /**
  * true lists the lifted suppressions instead of the active ones; the default hides them
@@ -12582,12 +12572,7 @@ export type SiteIntegrationsListData = {
      */
     workspaceId: WorkspaceId;
   };
-  query?: {
-    /**
-     * true lists the archived integrations instead of the kept ones; the default hides them
-     */
-    archived?: boolean;
-  };
+  query?: never;
   url: '/workspaces/{workspaceId}/integrations';
 };
 
@@ -12659,6 +12644,55 @@ export type SiteIntegrationsCreateResponses = {
 };
 
 export type SiteIntegrationsCreateResponse = SiteIntegrationsCreateResponses[keyof SiteIntegrationsCreateResponses];
+
+export type SiteIntegrationsDeleteData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/integrations/{id}';
+};
+
+export type SiteIntegrationsDeleteErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
+};
+
+export type SiteIntegrationsDeleteError = SiteIntegrationsDeleteErrors[keyof SiteIntegrationsDeleteErrors];
+
+export type SiteIntegrationsDeleteResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteIntegrationsDeleteResponse = SiteIntegrationsDeleteResponses[keyof SiteIntegrationsDeleteResponses];
 
 export type SiteIntegrationsGetData = {
   body?: never;
@@ -12750,55 +12784,6 @@ export type SiteIntegrationsUpdateResponses = {
 
 export type SiteIntegrationsUpdateResponse = SiteIntegrationsUpdateResponses[keyof SiteIntegrationsUpdateResponses];
 
-export type SiteIntegrationsArchiveData = {
-  body?: never;
-  path: {
-    /**
-     * The Workspace id: its short opaque public address and the route key for nested
-     * workspace resources (ADR 0043)
-     */
-    workspaceId: WorkspaceId;
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/integrations/{id}/archive';
-};
-
-export type SiteIntegrationsArchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
-};
-
-export type SiteIntegrationsArchiveError = SiteIntegrationsArchiveErrors[keyof SiteIntegrationsArchiveErrors];
-
-export type SiteIntegrationsArchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SiteIntegrationResource;
-};
-
-export type SiteIntegrationsArchiveResponse = SiteIntegrationsArchiveResponses[keyof SiteIntegrationsArchiveResponses];
-
 export type SiteIntegrationsRegenerateKeyData = {
   body?: never;
   path: {
@@ -12845,57 +12830,6 @@ export type SiteIntegrationsRegenerateKeyResponses = {
 };
 
 export type SiteIntegrationsRegenerateKeyResponse = SiteIntegrationsRegenerateKeyResponses[keyof SiteIntegrationsRegenerateKeyResponses];
-
-export type SiteIntegrationsUnarchiveData = {
-  body?: never;
-  path: {
-    /**
-     * The Workspace id: its short opaque public address and the route key for nested
-     * workspace resources (ADR 0043)
-     */
-    workspaceId: WorkspaceId;
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/integrations/{id}/unarchive';
-};
-
-export type SiteIntegrationsUnarchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-};
-
-export type SiteIntegrationsUnarchiveError = SiteIntegrationsUnarchiveErrors[keyof SiteIntegrationsUnarchiveErrors];
-
-export type SiteIntegrationsUnarchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SiteIntegrationResource;
-};
-
-export type SiteIntegrationsUnarchiveResponse = SiteIntegrationsUnarchiveResponses[keyof SiteIntegrationsUnarchiveResponses];
 
 export type SiteInvitationsListData = {
   body?: never;
@@ -14623,10 +14557,6 @@ export type SiteSendingDomainsListData = {
      * Page size
      */
     pageSize?: number;
-    /**
-     * true lists the archived sending domains instead of the kept ones; the default hides them
-     */
-    archived?: boolean;
   };
   url: '/workspaces/{workspaceId}/sending-domains';
 };
@@ -14725,6 +14655,55 @@ export type SiteSendingDomainsCreateResponses = {
 
 export type SiteSendingDomainsCreateResponse = SiteSendingDomainsCreateResponses[keyof SiteSendingDomainsCreateResponses];
 
+export type SiteSendingDomainsDeleteData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/sending-domains/{id}';
+};
+
+export type SiteSendingDomainsDeleteErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
+};
+
+export type SiteSendingDomainsDeleteError = SiteSendingDomainsDeleteErrors[keyof SiteSendingDomainsDeleteErrors];
+
+export type SiteSendingDomainsDeleteResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteSendingDomainsDeleteResponse = SiteSendingDomainsDeleteResponses[keyof SiteSendingDomainsDeleteResponses];
+
 export type SiteSendingDomainsGetData = {
   body?: never;
   path: {
@@ -14763,102 +14742,6 @@ export type SiteSendingDomainsGetResponses = {
 };
 
 export type SiteSendingDomainsGetResponse = SiteSendingDomainsGetResponses[keyof SiteSendingDomainsGetResponses];
-
-export type SiteSendingDomainsArchiveData = {
-  body?: never;
-  path: {
-    /**
-     * The Workspace id: its short opaque public address and the route key for nested
-     * workspace resources (ADR 0043)
-     */
-    workspaceId: WorkspaceId;
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/sending-domains/{id}/archive';
-};
-
-export type SiteSendingDomainsArchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
-};
-
-export type SiteSendingDomainsArchiveError = SiteSendingDomainsArchiveErrors[keyof SiteSendingDomainsArchiveErrors];
-
-export type SiteSendingDomainsArchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SiteSendingDomainResource;
-};
-
-export type SiteSendingDomainsArchiveResponse = SiteSendingDomainsArchiveResponses[keyof SiteSendingDomainsArchiveResponses];
-
-export type SiteSendingDomainsUnarchiveData = {
-  body?: never;
-  path: {
-    /**
-     * The Workspace id: its short opaque public address and the route key for nested
-     * workspace resources (ADR 0043)
-     */
-    workspaceId: WorkspaceId;
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/sending-domains/{id}/unarchive';
-};
-
-export type SiteSendingDomainsUnarchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-};
-
-export type SiteSendingDomainsUnarchiveError = SiteSendingDomainsUnarchiveErrors[keyof SiteSendingDomainsUnarchiveErrors];
-
-export type SiteSendingDomainsUnarchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SiteSendingDomainResource;
-};
-
-export type SiteSendingDomainsUnarchiveResponse = SiteSendingDomainsUnarchiveResponses[keyof SiteSendingDomainsUnarchiveResponses];
 
 export type SiteSendingDomainsVerifyData = {
   body?: never;

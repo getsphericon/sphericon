@@ -54,7 +54,7 @@ var permissionMatrix = []guarded{
 	{siteapi.PermissionAuditRead, http.MethodGet, acmePath("/audit-entries"), "", ok, ok, refused},
 	{siteapi.PermissionAuditConfigure, http.MethodGet, acmePath("/audit-entries/retention"), "", ok, ok, refused},
 	{siteapi.PermissionTokensManage, http.MethodDelete, acmePath("/tokens/999999"), "", noRecord, noRecord, refused},
-	{siteapi.PermissionIntegrationsManage, http.MethodPost, acmePath("/integrations/999999/archive"), "", noRecord, noRecord, refused},
+	{siteapi.PermissionIntegrationsManage, http.MethodDelete, acmePath("/integrations/999999"), "", noRecord, noRecord, refused},
 	{siteapi.PermissionWebhooksManage, http.MethodGet, acmePath("/webhooks"), "", ok, ok, refused},
 	{siteapi.PermissionSendingDomainsManage, http.MethodPost, acmePath("/sending-domains/999999/verify"), "", noRecord, noRecord, refused},
 	{siteapi.PermissionContactsErase, http.MethodGet, acmePath("/contacts/lookup?email=nobody@example.com"), "", ok, ok, refused},

@@ -11507,8 +11507,90 @@ func decodeSiteIdentitiesUnlinkParams(args [1]string, argsEscaped bool, r *http.
 	return params, nil
 }
 
-// SiteIntegrationsArchiveParams is parameters of SiteIntegrations_archive operation.
-type SiteIntegrationsArchiveParams struct {
+// SiteIntegrationsCreateParams is parameters of SiteIntegrations_create operation.
+type SiteIntegrationsCreateParams struct {
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
+}
+
+func unpackSiteIntegrationsCreateParams(packed middleware.Parameters) (params SiteIntegrationsCreateParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	return params
+}
+
+func decodeSiteIntegrationsCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsCreateParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteIntegrationsDeleteParams is parameters of SiteIntegrations_delete operation.
+type SiteIntegrationsDeleteParams struct {
 	// The Workspace id: its short opaque public address and the route key for nested workspace resources
 	// (ADR 0043).
 	WorkspaceId WorkspaceId
@@ -11516,7 +11598,7 @@ type SiteIntegrationsArchiveParams struct {
 	ID EntityId
 }
 
-func unpackSiteIntegrationsArchiveParams(packed middleware.Parameters) (params SiteIntegrationsArchiveParams) {
+func unpackSiteIntegrationsDeleteParams(packed middleware.Parameters) (params SiteIntegrationsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "workspaceId",
@@ -11534,7 +11616,7 @@ func unpackSiteIntegrationsArchiveParams(packed middleware.Parameters) (params S
 	return params
 }
 
-func decodeSiteIntegrationsArchiveParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsArchiveParams, _ error) {
+func decodeSiteIntegrationsDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsDeleteParams, _ error) {
 	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
@@ -11643,88 +11725,6 @@ func decodeSiteIntegrationsArchiveParams(args [2]string, argsEscaped bool, r *ht
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "id",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// SiteIntegrationsCreateParams is parameters of SiteIntegrations_create operation.
-type SiteIntegrationsCreateParams struct {
-	// The Workspace id: its short opaque public address and the route key for nested workspace resources
-	// (ADR 0043).
-	WorkspaceId WorkspaceId
-}
-
-func unpackSiteIntegrationsCreateParams(packed middleware.Parameters) (params SiteIntegrationsCreateParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "workspaceId",
-			In:   "path",
-		}
-		params.WorkspaceId = packed[key].(WorkspaceId)
-	}
-	return params
-}
-
-func decodeSiteIntegrationsCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsCreateParams, _ error) {
-	// Decode path: workspaceId.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "workspaceId",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				var paramsDotWorkspaceIdVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotWorkspaceIdVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -11880,8 +11880,6 @@ type SiteIntegrationsListParams struct {
 	// The Workspace id: its short opaque public address and the route key for nested workspace resources
 	// (ADR 0043).
 	WorkspaceId WorkspaceId
-	// True lists the archived integrations instead of the kept ones; the default hides them.
-	Archived OptBool `json:",omitempty,omitzero"`
 }
 
 func unpackSiteIntegrationsListParams(packed middleware.Parameters) (params SiteIntegrationsListParams) {
@@ -11892,20 +11890,10 @@ func unpackSiteIntegrationsListParams(packed middleware.Parameters) (params Site
 		}
 		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
-	{
-		key := middleware.ParameterKey{
-			Name: "archived",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.Archived = v.(OptBool)
-		}
-	}
 	return params
 }
 
 func decodeSiteIntegrationsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsListParams, _ error) {
-	q := uri.NewQueryDecoder(r.URL.Query())
 	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
@@ -11963,47 +11951,6 @@ func decodeSiteIntegrationsListParams(args [1]string, argsEscaped bool, r *http.
 		return params, &ogenerrors.DecodeParamError{
 			Name: "workspaceId",
 			In:   "path",
-			Err:  err,
-		}
-	}
-	// Decode query: archived.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "archived",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotArchivedVal bool
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToBool(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotArchivedVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.Archived.SetTo(paramsDotArchivedVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "archived",
-			In:   "query",
 			Err:  err,
 		}
 	}
@@ -12038,149 +11985,6 @@ func unpackSiteIntegrationsRegenerateKeyParams(packed middleware.Parameters) (pa
 }
 
 func decodeSiteIntegrationsRegenerateKeyParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsRegenerateKeyParams, _ error) {
-	// Decode path: workspaceId.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "workspaceId",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				var paramsDotWorkspaceIdVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotWorkspaceIdVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "workspaceId",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	// Decode path: id.
-	if err := func() error {
-		param := args[1]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[1])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "id",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				var paramsDotIDVal int64
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToStringInt64(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotIDVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "id",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// SiteIntegrationsUnarchiveParams is parameters of SiteIntegrations_unarchive operation.
-type SiteIntegrationsUnarchiveParams struct {
-	// The Workspace id: its short opaque public address and the route key for nested workspace resources
-	// (ADR 0043).
-	WorkspaceId WorkspaceId
-	// Unique identifier.
-	ID EntityId
-}
-
-func unpackSiteIntegrationsUnarchiveParams(packed middleware.Parameters) (params SiteIntegrationsUnarchiveParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "workspaceId",
-			In:   "path",
-		}
-		params.WorkspaceId = packed[key].(WorkspaceId)
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "id",
-			In:   "path",
-		}
-		params.ID = packed[key].(EntityId)
-	}
-	return params
-}
-
-func decodeSiteIntegrationsUnarchiveParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsUnarchiveParams, _ error) {
 	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
@@ -18302,8 +18106,90 @@ func decodeSiteSegmentsUpdateParams(args [2]string, argsEscaped bool, r *http.Re
 	return params, nil
 }
 
-// SiteSendingDomainsArchiveParams is parameters of SiteSendingDomains_archive operation.
-type SiteSendingDomainsArchiveParams struct {
+// SiteSendingDomainsCreateParams is parameters of SiteSendingDomains_create operation.
+type SiteSendingDomainsCreateParams struct {
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
+}
+
+func unpackSiteSendingDomainsCreateParams(packed middleware.Parameters) (params SiteSendingDomainsCreateParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	return params
+}
+
+func decodeSiteSendingDomainsCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteSendingDomainsCreateParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteSendingDomainsDeleteParams is parameters of SiteSendingDomains_delete operation.
+type SiteSendingDomainsDeleteParams struct {
 	// The Workspace id: its short opaque public address and the route key for nested workspace resources
 	// (ADR 0043).
 	WorkspaceId WorkspaceId
@@ -18311,7 +18197,7 @@ type SiteSendingDomainsArchiveParams struct {
 	ID EntityId
 }
 
-func unpackSiteSendingDomainsArchiveParams(packed middleware.Parameters) (params SiteSendingDomainsArchiveParams) {
+func unpackSiteSendingDomainsDeleteParams(packed middleware.Parameters) (params SiteSendingDomainsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "workspaceId",
@@ -18329,7 +18215,7 @@ func unpackSiteSendingDomainsArchiveParams(packed middleware.Parameters) (params
 	return params
 }
 
-func decodeSiteSendingDomainsArchiveParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteSendingDomainsArchiveParams, _ error) {
+func decodeSiteSendingDomainsDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteSendingDomainsDeleteParams, _ error) {
 	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
@@ -18438,88 +18324,6 @@ func decodeSiteSendingDomainsArchiveParams(args [2]string, argsEscaped bool, r *
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "id",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// SiteSendingDomainsCreateParams is parameters of SiteSendingDomains_create operation.
-type SiteSendingDomainsCreateParams struct {
-	// The Workspace id: its short opaque public address and the route key for nested workspace resources
-	// (ADR 0043).
-	WorkspaceId WorkspaceId
-}
-
-func unpackSiteSendingDomainsCreateParams(packed middleware.Parameters) (params SiteSendingDomainsCreateParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "workspaceId",
-			In:   "path",
-		}
-		params.WorkspaceId = packed[key].(WorkspaceId)
-	}
-	return params
-}
-
-func decodeSiteSendingDomainsCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteSendingDomainsCreateParams, _ error) {
-	// Decode path: workspaceId.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "workspaceId",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				var paramsDotWorkspaceIdVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotWorkspaceIdVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -18679,8 +18483,6 @@ type SiteSendingDomainsListParams struct {
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
 	PageSize OptInt32 `json:",omitempty,omitzero"`
-	// True lists the archived sending domains instead of the kept ones; the default hides them.
-	Archived OptBool `json:",omitempty,omitzero"`
 }
 
 func unpackSiteSendingDomainsListParams(packed middleware.Parameters) (params SiteSendingDomainsListParams) {
@@ -18707,15 +18509,6 @@ func unpackSiteSendingDomainsListParams(packed middleware.Parameters) (params Si
 		}
 		if v, ok := packed[key]; ok {
 			params.PageSize = v.(OptInt32)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "archived",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.Archived = v.(OptBool)
 		}
 	}
 	return params
@@ -18922,190 +18715,6 @@ func decodeSiteSendingDomainsListParams(args [1]string, argsEscaped bool, r *htt
 		return params, &ogenerrors.DecodeParamError{
 			Name: "pageSize",
 			In:   "query",
-			Err:  err,
-		}
-	}
-	// Decode query: archived.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "archived",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotArchivedVal bool
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToBool(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotArchivedVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.Archived.SetTo(paramsDotArchivedVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "archived",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// SiteSendingDomainsUnarchiveParams is parameters of SiteSendingDomains_unarchive operation.
-type SiteSendingDomainsUnarchiveParams struct {
-	// The Workspace id: its short opaque public address and the route key for nested workspace resources
-	// (ADR 0043).
-	WorkspaceId WorkspaceId
-	// Unique identifier.
-	ID EntityId
-}
-
-func unpackSiteSendingDomainsUnarchiveParams(packed middleware.Parameters) (params SiteSendingDomainsUnarchiveParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "workspaceId",
-			In:   "path",
-		}
-		params.WorkspaceId = packed[key].(WorkspaceId)
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "id",
-			In:   "path",
-		}
-		params.ID = packed[key].(EntityId)
-	}
-	return params
-}
-
-func decodeSiteSendingDomainsUnarchiveParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteSendingDomainsUnarchiveParams, _ error) {
-	// Decode path: workspaceId.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "workspaceId",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				var paramsDotWorkspaceIdVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotWorkspaceIdVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "workspaceId",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	// Decode path: id.
-	if err := func() error {
-		param := args[1]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[1])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "id",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				var paramsDotIDVal int64
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToStringInt64(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotIDVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "id",
-			In:   "path",
 			Err:  err,
 		}
 	}

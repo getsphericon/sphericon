@@ -54,9 +54,9 @@ func TestExternalIntegrationsWritesNeedTheWriteScope(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.IntegrationsUpdateForbidden{}, upd)
 
-	del, err := reader.IntegrationsArchive(ctx, externalapi.IntegrationsArchiveParams{ID: id})
+	del, err := reader.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsArchiveForbidden{}, del)
+	assert.IsType(t, &externalapi.IntegrationsDeleteForbidden{}, del)
 
 	writer := env.ExternalScoped(t, "integrations:write")
 	get, err := writer.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: id})
@@ -205,9 +205,9 @@ func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.IntegrationsUpdateNotFound{}, upd)
 
-	del, err := c.IntegrationsArchive(ctx, externalapi.IntegrationsArchiveParams{ID: globex})
+	del, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: globex})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsArchiveNotFound{}, del)
+	assert.IsType(t, &externalapi.IntegrationsDeleteNotFound{}, del)
 
 	row, err := env.DB.Integration.Get(ctx, fixtures.IntegrationGlobexID)
 	require.NoError(t, err)

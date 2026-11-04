@@ -146,8 +146,8 @@ var (
 	ErrorsExportCursorInvalid                   = ID{key: "errors.export_cursor_invalid"}
 	ErrorsFeedCursorInvalid                     = ID{key: "errors.feed_cursor_invalid"}
 	ErrorsIdentityProofRequired                 = ID{key: "errors.identity_proof_required"}
-	ErrorsIntegrationArchivedDefault            = ID{key: "errors.integration_archived_default"}
 	ErrorsIntegrationDefaultConflict            = ID{key: "errors.integration_default_conflict"}
+	ErrorsIntegrationDeletedDefault             = ID{key: "errors.integration_deleted_default"}
 	ErrorsIntegrationInvalid                    = ID{key: "errors.integration_invalid"}
 	ErrorsIntegrationKindMismatch               = ID{key: "errors.integration_kind_mismatch"}
 	ErrorsIntegrationNotFound                   = ID{key: "errors.integration_not_found"}
@@ -255,7 +255,6 @@ var (
 	ErrorsSendInProgress                        = ID{key: "errors.send_in_progress"}
 	ErrorsSendKeyFailed                         = ID{key: "errors.send_key_failed"}
 	ErrorsSendRouteHeld                         = ID{key: "errors.send_route_held"}
-	ErrorsSendingDomainAddedAgain               = ID{key: "errors.sending_domain_added_again"}
 	ErrorsSendingDomainExists                   = ID{key: "errors.sending_domain_exists"}
 	ErrorsSendingDomainInvalid                  = ID{key: "errors.sending_domain_invalid"}
 	ErrorsSendingDomainNotFound                 = ID{key: "errors.sending_domain_not_found"}

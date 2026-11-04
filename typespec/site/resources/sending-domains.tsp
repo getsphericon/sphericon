@@ -68,20 +68,14 @@ model SiteSendingDomainResource {
   /** When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or verified again since) */
   verificationLostAt?: Timestamp | null;
 
-  /** When the domain was archived; null while it is kept. */
-  archivedAt?: Timestamp | null;
+  /** When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot be restored, but stays readable by id. */
+  deletedAt?: Timestamp | null;
 
   /** Creation timestamp */
   createdAt: Timestamp;
 
   /** Last update timestamp */
   updatedAt: Timestamp;
-}
-
-/** Filter of the sending domain list */
-model SiteSendingDomainsListFilter {
-  /** true lists the archived sending domains instead of the kept ones; the default hides them */
-  @query archived?: boolean;
 }
 
 @tag("Site Sending Domains")
@@ -94,7 +88,6 @@ interface SiteSendingDomains {
   list(
     ...ResourceCollectionParameters<SiteSendingDomainResource>,
     ...PageQuery,
-    ...SiteSendingDomainsListFilter,
   ):
     | Page<SiteSendingDomainResource>
     | BadRequestProblem
@@ -120,7 +113,7 @@ interface SiteSendingDomains {
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Get a sending domain by ID for the site UI */
+  /** Get a sending domain by ID for the site UI, deleted or not */
   @readsResource(SiteSendingDomainResource)
   @get
   @autoRoute
@@ -131,32 +124,19 @@ interface SiteSendingDomains {
     | NotFoundProblem;
 
   /**
-   * Archive a sending domain: it leaves the list and can be restored. Refused with 409 while a scheduled or sending broadcast or an active automation
-   * sends from it. Owners and admins only.
+   * Delete a sending domain for good: it leaves the list and is never restored; what it sent keeps its history.
+   * Refused with 409 while a scheduled or sending broadcast or an active automation sends from it. Owners and admins only.
    */
-  @action("archive")
+  @deletesResource(SiteSendingDomainResource)
+  @delete
   @autoRoute
   @requiresPermissions(#[Permission.sendingDomainsManage])
-  archive(...ResourceParameters<SiteSendingDomainResource>):
-    | SiteSendingDomainResource
+  delete(...ResourceParameters<SiteSendingDomainResource>):
+    | NoContentResponse
     | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | InUseProblem;
-
-  /**
-   * Restore an archived sending domain. It starts a new DNS check. Refused with 409 when the same domain was added
-   * again meanwhile. Owners and admins only.
-   */
-  @action("unarchive")
-  @autoRoute
-  @requiresPermissions(#[Permission.sendingDomainsManage])
-  unarchive(...ResourceParameters<SiteSendingDomainResource>):
-    | SiteSendingDomainResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | ConflictProblem;
 
   /**
    * Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of

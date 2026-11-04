@@ -67,9 +67,9 @@ var (
 		"broadcasts_list", "broadcasts_create", "broadcasts_get", "broadcasts_update", "broadcasts_delete",
 		"broadcasts_set_segment", "broadcasts_test_send", "broadcasts_report", "broadcasts_archive", "broadcasts_unarchive",
 		"events_record", "events_actions_list", "whoami", "workspace_get",
-		"custom_fields_list", "custom_fields_update", "sending_domains_list", "sending_domains_create", "sending_domains_get", "sending_domains_update", "sending_domains_archive", "sending_domains_unarchive", "sending_domains_verify", "sending_domains_rates",
+		"custom_fields_list", "custom_fields_update", "sending_domains_list", "sending_domains_create", "sending_domains_get", "sending_domains_update", "sending_domains_delete", "sending_domains_verify", "sending_domains_rates",
 		"tracking_domains_list", "tracking_domains_set", "tracking_domains_verify",
-		"integrations_list", "integrations_create", "integrations_get", "integrations_update", "integrations_archive", "integrations_unarchive", "presets_list",
+		"integrations_list", "integrations_create", "integrations_get", "integrations_update", "integrations_delete", "presets_list",
 		"captured_messages_list", "captured_messages_get", "captured_messages_delete",
 		"suppressions_create", "unsubscribes_create",
 		"email_lint", "email_schema", "brand_get", "templates_list", "templates_create", "templates_get", "templates_update", "templates_delete",
@@ -483,7 +483,7 @@ func TestMCPIntegrationsAreManagedWithoutLeakingSecrets(t *testing.T) {
 	require.False(t, res.IsError, text(t, res))
 	assert.NotContains(t, text(t, res), "mcp-secret-pw")
 
-	res = call(t, s, "integrations_archive", map[string]any{"id": created.ID})
+	res = call(t, s, "integrations_delete", map[string]any{"id": created.ID})
 	require.False(t, res.IsError, text(t, res))
 }
 
@@ -531,7 +531,7 @@ func TestMCPSendingDomainsAreManagedWithoutLeakingTheKey(t *testing.T) {
 	require.False(t, res.IsError, text(t, res))
 	assert.NotContains(t, text(t, res), "PRIVATE KEY")
 
-	res = call(t, s, "sending_domains_archive", map[string]any{"id": created.ID})
+	res = call(t, s, "sending_domains_delete", map[string]any{"id": created.ID})
 	require.False(t, res.IsError, text(t, res))
 }
 

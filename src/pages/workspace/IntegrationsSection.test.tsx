@@ -7,10 +7,9 @@ import {
   handleSiteIntegrationsRegenerateKey,
   handleSitePresetsList,
   handleSiteIntegrationsCreate,
-  handleSiteIntegrationsArchive,
+  handleSiteIntegrationsDelete,
   handleSiteIntegrationsList,
   handleSiteIntegrationsUpdate,
-  handleSiteIntegrationsUnarchive,
 } from '../../generated/site/msw.gen.ts'
 import type {
   Permission,
@@ -255,37 +254,54 @@ test('says why a second Test inbox is refused', async () => {
     .toBeInTheDocument()
 })
 
-test('removes a provider', async () => {
-  let removed = false
+// Deleting is for good, so the person types the provider's name before the button enables.
+async function confirmDelete(screen: Awaited<ReturnType<typeof renderWithRouter>>['screen']) {
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
+  const dialog = screen.getByRole('dialog')
+  await expect.element(dialog.getByText(/cannot be restored/)).toBeInTheDocument()
+  await dialog.getByLabelText('Type Primary SMTP to confirm').fill('Primary SMTP')
+  await dialog.getByRole('button', { name: 'Delete' }).click()
+}
+
+test('deletes a provider once its name is typed', async () => {
+  let deleted = false
   worker.use(
     list([smtp]),
-    handleSiteIntegrationsArchive(() => {
-      removed = true
-      return HttpResponse.json({ ...smtp, isDefault: false, archivedAt: '2026-02-01T00:00:00Z' })
+    handleSiteIntegrationsDelete(() => {
+      deleted = true
+      return new HttpResponse(null, { status: 204 })
     }),
   )
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
-  await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Remove' }).click()
+  await confirmDelete(screen)
 
-  await expect.poll(() => removed).toBe(true)
+  await expect.poll(() => deleted).toBe(true)
+  await expect.element(screen.getByText('Provider deleted')).toBeInTheDocument()
 })
 
-test('a provider that live work uses is not removed and the work is named', async () => {
+test('a provider that live work uses is not deleted and the work is named', async () => {
   worker.use(
     list([smtp]),
-    handleSiteIntegrationsArchive(() =>
+    handleSiteIntegrationsDelete(() =>
       problem(409, { usedBy: [{ kind: 'broadcast', id: '7', name: 'Summer sale teaser' }] }),
     ),
   )
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
-  await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Remove' }).click()
+  await confirmDelete(screen)
 
-  await expect.element(screen.getByText('Failed to remove provider')).toBeInTheDocument()
+  await expect.element(screen.getByText('Failed to delete the provider')).toBeInTheDocument()
   await expect.element(screen.getByText(/Broadcast "Summer sale teaser"/)).toBeInTheDocument()
+})
+
+test('offers no archived view: a deleted provider is gone for good', async () => {
+  worker.use(list([smtp]))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
+  expect(screen.getByText('Archived', { exact: true }).elements()).toHaveLength(0)
 })
 test('shows an error alert when providers fail to load', async () => {
   worker.use(handleSiteIntegrationsList(() => problem(500, { detail: 'boom' })))
@@ -540,7 +556,7 @@ test('a member without integrations:manage reads the providers but does not chan
   await expect
     .element(screen.getByRole('button', { name: 'Connect provider' }))
     .not.toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Remove' })).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'More actions' }).elements()).toHaveLength(0)
 })
 
@@ -562,7 +578,7 @@ test('a member who reads the Audit log but cannot manage providers gets only the
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await expect.element(screen.getByRole('menuitem', { name: 'View history' })).toBeInTheDocument()
-  expect(screen.getByRole('menuitem', { name: 'Remove' }).elements()).toHaveLength(0)
+  expect(screen.getByRole('menuitem', { name: 'Delete' }).elements()).toHaveLength(0)
 })
 
 // The built-in Presets as the server lists them (internal/preset/builtin), and a custom one with
@@ -817,52 +833,6 @@ test('regenerates the hook URL after a confirmation', async () => {
     .click()
 
   await expect.poll(() => calls).toEqual(['1'])
-})
-
-test('switches to the archived providers and restores one', async () => {
-  const restored: string[] = []
-  const archivedSmtp = {
-    ...smtp,
-    id: '9',
-    name: 'Old SMTP',
-    isDefault: false,
-    archivedAt: '2026-02-01T00:00:00Z',
-  }
-  worker.use(
-    handleSiteIntegrationsList(({ request }) =>
-      HttpResponse.json(
-        new URL(request.url).searchParams.get('archived') === 'true' ? [archivedSmtp] : [smtp],
-      ),
-    ),
-    handleSiteIntegrationsUnarchive(({ params }) => {
-      restored.push(params.id)
-      return HttpResponse.json({ ...archivedSmtp, archivedAt: null })
-    }),
-  )
-  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
-
-  await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
-  await screen.getByText('Archived', { exact: true }).click()
-  await expect.element(screen.getByText('Old SMTP')).toBeInTheDocument()
-  await expect.element(screen.getByText('Primary SMTP')).not.toBeInTheDocument()
-  await screen.getByRole('button', { name: 'More actions' }).click()
-  await expect.element(screen.getByRole('menuitem', { name: 'Remove' })).not.toBeInTheDocument()
-  await screen.getByRole('menuitem', { name: 'Restore' }).click()
-
-  await expect.poll(() => restored).toEqual(['9'])
-})
-
-test('an empty archive says so', async () => {
-  worker.use(
-    handleSiteIntegrationsList(({ request }) =>
-      HttpResponse.json(new URL(request.url).searchParams.get('archived') === 'true' ? [] : [smtp]),
-    ),
-  )
-  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
-
-  await screen.getByText('Archived', { exact: true }).click()
-
-  await expect.element(screen.getByText('No archived providers')).toBeInTheDocument()
 })
 
 const telegramBot: SiteIntegrationResource = {

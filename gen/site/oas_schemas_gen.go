@@ -3344,14 +3344,14 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 	s.UsedBy = val
 }
 
-func (*InUseProblemDetails) siteAutomationsArchiveRes()    {}
-func (*InUseProblemDetails) siteAutomationsDeleteRes()     {}
-func (*InUseProblemDetails) siteCustomFieldsUpdateRes()    {}
-func (*InUseProblemDetails) siteIntegrationsArchiveRes()   {}
-func (*InUseProblemDetails) siteRulesDeleteRes()           {}
-func (*InUseProblemDetails) siteSegmentsArchiveRes()       {}
-func (*InUseProblemDetails) siteSendingDomainsArchiveRes() {}
-func (*InUseProblemDetails) siteTagsDeleteRes()            {}
+func (*InUseProblemDetails) siteAutomationsArchiveRes()   {}
+func (*InUseProblemDetails) siteAutomationsDeleteRes()    {}
+func (*InUseProblemDetails) siteCustomFieldsUpdateRes()   {}
+func (*InUseProblemDetails) siteIntegrationsDeleteRes()   {}
+func (*InUseProblemDetails) siteRulesDeleteRes()          {}
+func (*InUseProblemDetails) siteSegmentsArchiveRes()      {}
+func (*InUseProblemDetails) siteSendingDomainsDeleteRes() {}
+func (*InUseProblemDetails) siteTagsDeleteRes()           {}
 
 // Validation errors grouped by field.
 type InUseProblemDetailsErrors map[string][]string
@@ -19052,10 +19052,11 @@ type SiteIntegrationResource struct {
 	// Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is
 	// an address, not the authentication (the Preset's signature or secret is).
 	HookUrl string `json:"hookUrl"`
-	// When the integration was archived; null while it is kept. An archived integration is never the
-	// default and takes no new work, but its hook still reads the provider's callbacks (a Telegram bot's
+	// When the integration was deleted; null while it is kept. A deleted integration is no longer listed
+	// and cannot be restored, but stays readable by id for the history that names it; it is never the
+	// default, takes no new work, and its hook still reads the provider's callbacks (a Telegram bot's
 	// webhook is removed, so Telegram sends it none).
-	ArchivedAt OptNilTimestamp `json:"archivedAt"`
+	DeletedAt OptNilTimestamp `json:"deletedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -19132,9 +19133,9 @@ func (s *SiteIntegrationResource) GetHookUrl() string {
 	return s.HookUrl
 }
 
-// GetArchivedAt returns the value of ArchivedAt.
-func (s *SiteIntegrationResource) GetArchivedAt() OptNilTimestamp {
-	return s.ArchivedAt
+// GetDeletedAt returns the value of DeletedAt.
+func (s *SiteIntegrationResource) GetDeletedAt() OptNilTimestamp {
+	return s.DeletedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -19217,9 +19218,9 @@ func (s *SiteIntegrationResource) SetHookUrl(val string) {
 	s.HookUrl = val
 }
 
-// SetArchivedAt sets the value of ArchivedAt.
-func (s *SiteIntegrationResource) SetArchivedAt(val OptNilTimestamp) {
-	s.ArchivedAt = val
+// SetDeletedAt sets the value of DeletedAt.
+func (s *SiteIntegrationResource) SetDeletedAt(val OptNilTimestamp) {
+	s.DeletedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -19232,24 +19233,10 @@ func (s *SiteIntegrationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteIntegrationResource) siteIntegrationsArchiveRes()       {}
 func (*SiteIntegrationResource) siteIntegrationsCreateRes()        {}
 func (*SiteIntegrationResource) siteIntegrationsGetRes()           {}
 func (*SiteIntegrationResource) siteIntegrationsRegenerateKeyRes() {}
-func (*SiteIntegrationResource) siteIntegrationsUnarchiveRes()     {}
 func (*SiteIntegrationResource) siteIntegrationsUpdateRes()        {}
-
-type SiteIntegrationsArchiveBadRequest ProblemDetails
-
-func (*SiteIntegrationsArchiveBadRequest) siteIntegrationsArchiveRes() {}
-
-type SiteIntegrationsArchiveForbidden ProblemDetails
-
-func (*SiteIntegrationsArchiveForbidden) siteIntegrationsArchiveRes() {}
-
-type SiteIntegrationsArchiveNotFound ProblemDetails
-
-func (*SiteIntegrationsArchiveNotFound) siteIntegrationsArchiveRes() {}
 
 type SiteIntegrationsCreateBadRequest ProblemDetails
 
@@ -19270,6 +19257,23 @@ func (*SiteIntegrationsCreateNotFound) siteIntegrationsCreateRes() {}
 type SiteIntegrationsCreateUnprocessableEntity ProblemDetails
 
 func (*SiteIntegrationsCreateUnprocessableEntity) siteIntegrationsCreateRes() {}
+
+type SiteIntegrationsDeleteBadRequest ProblemDetails
+
+func (*SiteIntegrationsDeleteBadRequest) siteIntegrationsDeleteRes() {}
+
+type SiteIntegrationsDeleteForbidden ProblemDetails
+
+func (*SiteIntegrationsDeleteForbidden) siteIntegrationsDeleteRes() {}
+
+// SiteIntegrationsDeleteNoContent is response for SiteIntegrationsDelete operation.
+type SiteIntegrationsDeleteNoContent struct{}
+
+func (*SiteIntegrationsDeleteNoContent) siteIntegrationsDeleteRes() {}
+
+type SiteIntegrationsDeleteNotFound ProblemDetails
+
+func (*SiteIntegrationsDeleteNotFound) siteIntegrationsDeleteRes() {}
 
 type SiteIntegrationsGetBadRequest ProblemDetails
 
@@ -19306,26 +19310,6 @@ func (*SiteIntegrationsRegenerateKeyNotFound) siteIntegrationsRegenerateKeyRes()
 type SiteIntegrationsRegenerateKeyUnprocessableEntity ProblemDetails
 
 func (*SiteIntegrationsRegenerateKeyUnprocessableEntity) siteIntegrationsRegenerateKeyRes() {}
-
-type SiteIntegrationsUnarchiveBadRequest ProblemDetails
-
-func (*SiteIntegrationsUnarchiveBadRequest) siteIntegrationsUnarchiveRes() {}
-
-type SiteIntegrationsUnarchiveConflict ProblemDetails
-
-func (*SiteIntegrationsUnarchiveConflict) siteIntegrationsUnarchiveRes() {}
-
-type SiteIntegrationsUnarchiveForbidden ProblemDetails
-
-func (*SiteIntegrationsUnarchiveForbidden) siteIntegrationsUnarchiveRes() {}
-
-type SiteIntegrationsUnarchiveNotFound ProblemDetails
-
-func (*SiteIntegrationsUnarchiveNotFound) siteIntegrationsUnarchiveRes() {}
-
-type SiteIntegrationsUnarchiveUnprocessableEntity ProblemDetails
-
-func (*SiteIntegrationsUnarchiveUnprocessableEntity) siteIntegrationsUnarchiveRes() {}
 
 type SiteIntegrationsUpdateBadRequest ProblemDetails
 
@@ -24736,8 +24720,9 @@ type SiteSendingDomainResource struct {
 	// When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or
 	// verified again since).
 	VerificationLostAt OptNilTimestamp `json:"verificationLostAt"`
-	// When the domain was archived; null while it is kept.
-	ArchivedAt OptNilTimestamp `json:"archivedAt"`
+	// When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot
+	// be restored, but stays readable by id.
+	DeletedAt OptNilTimestamp `json:"deletedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -24804,9 +24789,9 @@ func (s *SiteSendingDomainResource) GetVerificationLostAt() OptNilTimestamp {
 	return s.VerificationLostAt
 }
 
-// GetArchivedAt returns the value of ArchivedAt.
-func (s *SiteSendingDomainResource) GetArchivedAt() OptNilTimestamp {
-	return s.ArchivedAt
+// GetDeletedAt returns the value of DeletedAt.
+func (s *SiteSendingDomainResource) GetDeletedAt() OptNilTimestamp {
+	return s.DeletedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -24879,9 +24864,9 @@ func (s *SiteSendingDomainResource) SetVerificationLostAt(val OptNilTimestamp) {
 	s.VerificationLostAt = val
 }
 
-// SetArchivedAt sets the value of ArchivedAt.
-func (s *SiteSendingDomainResource) SetArchivedAt(val OptNilTimestamp) {
-	s.ArchivedAt = val
+// SetDeletedAt sets the value of DeletedAt.
+func (s *SiteSendingDomainResource) SetDeletedAt(val OptNilTimestamp) {
+	s.DeletedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -24894,23 +24879,9 @@ func (s *SiteSendingDomainResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteSendingDomainResource) siteSendingDomainsArchiveRes()   {}
-func (*SiteSendingDomainResource) siteSendingDomainsCreateRes()    {}
-func (*SiteSendingDomainResource) siteSendingDomainsGetRes()       {}
-func (*SiteSendingDomainResource) siteSendingDomainsUnarchiveRes() {}
-func (*SiteSendingDomainResource) siteSendingDomainsVerifyRes()    {}
-
-type SiteSendingDomainsArchiveBadRequest ProblemDetails
-
-func (*SiteSendingDomainsArchiveBadRequest) siteSendingDomainsArchiveRes() {}
-
-type SiteSendingDomainsArchiveForbidden ProblemDetails
-
-func (*SiteSendingDomainsArchiveForbidden) siteSendingDomainsArchiveRes() {}
-
-type SiteSendingDomainsArchiveNotFound ProblemDetails
-
-func (*SiteSendingDomainsArchiveNotFound) siteSendingDomainsArchiveRes() {}
+func (*SiteSendingDomainResource) siteSendingDomainsCreateRes() {}
+func (*SiteSendingDomainResource) siteSendingDomainsGetRes()    {}
+func (*SiteSendingDomainResource) siteSendingDomainsVerifyRes() {}
 
 type SiteSendingDomainsCreateBadRequest ProblemDetails
 
@@ -24931,6 +24902,23 @@ func (*SiteSendingDomainsCreateNotFound) siteSendingDomainsCreateRes() {}
 type SiteSendingDomainsCreateUnprocessableEntity ProblemDetails
 
 func (*SiteSendingDomainsCreateUnprocessableEntity) siteSendingDomainsCreateRes() {}
+
+type SiteSendingDomainsDeleteBadRequest ProblemDetails
+
+func (*SiteSendingDomainsDeleteBadRequest) siteSendingDomainsDeleteRes() {}
+
+type SiteSendingDomainsDeleteForbidden ProblemDetails
+
+func (*SiteSendingDomainsDeleteForbidden) siteSendingDomainsDeleteRes() {}
+
+// SiteSendingDomainsDeleteNoContent is response for SiteSendingDomainsDelete operation.
+type SiteSendingDomainsDeleteNoContent struct{}
+
+func (*SiteSendingDomainsDeleteNoContent) siteSendingDomainsDeleteRes() {}
+
+type SiteSendingDomainsDeleteNotFound ProblemDetails
+
+func (*SiteSendingDomainsDeleteNotFound) siteSendingDomainsDeleteRes() {}
 
 type SiteSendingDomainsGetBadRequest ProblemDetails
 
@@ -25017,22 +25005,6 @@ func (*SiteSendingDomainsListOK) siteSendingDomainsListRes() {}
 type SiteSendingDomainsListUnprocessableEntity ProblemDetails
 
 func (*SiteSendingDomainsListUnprocessableEntity) siteSendingDomainsListRes() {}
-
-type SiteSendingDomainsUnarchiveBadRequest ProblemDetails
-
-func (*SiteSendingDomainsUnarchiveBadRequest) siteSendingDomainsUnarchiveRes() {}
-
-type SiteSendingDomainsUnarchiveConflict ProblemDetails
-
-func (*SiteSendingDomainsUnarchiveConflict) siteSendingDomainsUnarchiveRes() {}
-
-type SiteSendingDomainsUnarchiveForbidden ProblemDetails
-
-func (*SiteSendingDomainsUnarchiveForbidden) siteSendingDomainsUnarchiveRes() {}
-
-type SiteSendingDomainsUnarchiveNotFound ProblemDetails
-
-func (*SiteSendingDomainsUnarchiveNotFound) siteSendingDomainsUnarchiveRes() {}
 
 type SiteSendingDomainsVerifyBadRequest ProblemDetails
 

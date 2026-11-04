@@ -317,12 +317,12 @@ type SiteInstanceGetReleaseRes interface {
 	siteInstanceGetReleaseRes()
 }
 
-type SiteIntegrationsArchiveRes interface {
-	siteIntegrationsArchiveRes()
-}
-
 type SiteIntegrationsCreateRes interface {
 	siteIntegrationsCreateRes()
+}
+
+type SiteIntegrationsDeleteRes interface {
+	siteIntegrationsDeleteRes()
 }
 
 type SiteIntegrationsGetRes interface {
@@ -335,10 +335,6 @@ type SiteIntegrationsListRes interface {
 
 type SiteIntegrationsRegenerateKeyRes interface {
 	siteIntegrationsRegenerateKeyRes()
-}
-
-type SiteIntegrationsUnarchiveRes interface {
-	siteIntegrationsUnarchiveRes()
 }
 
 type SiteIntegrationsUpdateRes interface {
@@ -569,12 +565,12 @@ type SiteSegmentsUpdateRes interface {
 	siteSegmentsUpdateRes()
 }
 
-type SiteSendingDomainsArchiveRes interface {
-	siteSendingDomainsArchiveRes()
-}
-
 type SiteSendingDomainsCreateRes interface {
 	siteSendingDomainsCreateRes()
+}
+
+type SiteSendingDomainsDeleteRes interface {
+	siteSendingDomainsDeleteRes()
 }
 
 type SiteSendingDomainsGetRes interface {
@@ -583,10 +579,6 @@ type SiteSendingDomainsGetRes interface {
 
 type SiteSendingDomainsListRes interface {
 	siteSendingDomainsListRes()
-}
-
-type SiteSendingDomainsUnarchiveRes interface {
-	siteSendingDomainsUnarchiveRes()
 }
 
 type SiteSendingDomainsVerifyRes interface {

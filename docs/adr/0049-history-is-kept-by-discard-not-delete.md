@@ -4,6 +4,10 @@ status: accepted
 
 # History is kept by Discard, not by delete
 
+> Amended by [[0097-a-deleted-integration-or-sending-domain-is-never-restored]]: an Integration and a
+> Sending domain are still discarded, but the contract deletes them (`DELETE`, `deletedAt`) and
+> never restores them; they have no `archived` filter and no `unarchive`.
+
 > Amended by [[0065-a-live-automation-or-rule-changes-only-by-publish]]: an Automation version also
 > holds the Trigger and the Integration, the live version is never rewritten, and only the draft
 > above it is rewritten in place.

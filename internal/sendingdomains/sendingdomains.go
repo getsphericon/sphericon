@@ -3,7 +3,7 @@
 // rule, and triggering a live verification. /site and /api are thin adapters over it.
 //
 // Handlers hand in a *ent.Scoped and domain-typed input (not their DTOs) and get back
-// the row or a domain refusal: validation.Error (a 422), ErrAlreadyExists or ErrAddedAgain (a
+// the row or a domain refusal: validation.Error (a 422), ErrAlreadyExists (a
 // 409), or ErrNotFound for an unknown id. The DKIM private key never leaves the module:
 // callers see the public record only, through Records.
 //
@@ -45,9 +45,6 @@ const DefaultSelector = "sphericon"
 var (
 	// ErrAlreadyExists means the Workspace already has this domain (Create).
 	ErrAlreadyExists = validation.Conflict("sendingdomains: this domain is already added", i18n.ErrorsSendingDomainExists)
-	// ErrAddedAgain means the Workspace added the domain again while this one was archived
-	// (Unarchive).
-	ErrAddedAgain = validation.Conflict("sendingdomains: this domain was added again", i18n.ErrorsSendingDomainAddedAgain)
 	// ErrNotFound means no Sending domain of that id is in the Workspace.
 	ErrNotFound = validation.NotFound("sendingdomains: sending domain not found", i18n.ErrorsSendingDomainNotFound)
 )
@@ -63,10 +60,8 @@ func notFound(err error) error {
 // selectorPattern is a DNS label sequence: letters, digits and hyphens, dot-separated.
 var selectorPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$`)
 
-// Verifier checks the DNS of one Sending domain: in the background after a restore, and
-// at once when a person asks for it.
+// Verifier checks the DNS of one Sending domain at once, when a person asks for it.
 type Verifier interface {
-	EnqueueSendingDomainVerify(ctx context.Context, sendingDomainID int64) error
 	VerifySendingDomain(ctx context.Context, sendingDomainID int64) error
 }
 
@@ -180,15 +175,16 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	return row, nil
 }
 
-// Archive discards a Sending domain (ADR 0049): it leaves the lists and keeps the record of mail sent from it. Live work that sends from it refuses it with an
-// *inuse.Error naming that work. A domain is used through the domain of a From address, not an
-// id: a scheduled or sending Broadcast uses the domain of its From address, and when it has none,
-// of the default Integration's configured one; an active Automation that sends email uses the
-// domain of that configured From, as its steps carry no From of their own. A sent or failed
-// Broadcast is history and does not block. Archiving an archived domain changes nothing; an
-// unknown id is ErrNotFound. It returns the domain.
-func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+// Delete discards a Sending domain for good (ADR 0049): it leaves the lists and is never
+// restored, and the record of mail sent from it stays. Live work that sends from it refuses the
+// delete with an *inuse.Error naming that work. A domain is used through the domain of a From
+// address, not an id: a scheduled or sending Broadcast uses the domain of its From address, and
+// when it has none, of the default Integration's configured one; an active Automation that sends
+// email uses the domain of that configured From, as its steps carry no From of their own. A sent or
+// failed Broadcast is history and does not block. Deleting a deleted domain changes nothing; an
+// unknown id is ErrNotFound.
+func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
+	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.SendingDomain().Get(ctx, id)
 		if err != nil {
 			return notFound(err)
@@ -205,47 +201,6 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Sen
 		}
 		return ts.SendingDomain().Discard(ctx, id)
 	})
-	if err != nil {
-		return nil, err
-	}
-	return m.Get(ctx, s, id)
-}
-
-// Unarchive brings an archived Sending domain back and starts a new DNS check. It returns ErrAddedAgain when the
-// Workspace added the same domain again meanwhile. Restoring a domain that is not archived
-// changes nothing; an unknown id is ErrNotFound. It returns the domain as the restore left it.
-func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
-	restored := false
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		row, err := ts.SendingDomain().Get(ctx, id)
-		if err != nil {
-			return notFound(err)
-		}
-		if row.DiscardedAt == nil {
-			return nil
-		}
-		taken, err := ts.SendingDomain().Query().Where(sendingdomain.Domain(row.Domain)).Exist(ctx)
-		if err != nil {
-			return err
-		}
-		if taken {
-			return ErrAddedAgain
-		}
-		restored = true
-		return ts.SendingDomain().Undiscard(ctx, id)
-	})
-	if db.IsUniqueViolation(err) {
-		return nil, ErrAddedAgain
-	}
-	if err != nil {
-		return nil, err
-	}
-	if restored {
-		if err := m.verify.EnqueueSendingDomainVerify(ctx, id); err != nil {
-			return nil, err
-		}
-	}
-	return m.Get(ctx, s, id)
 }
 
 // liveUsers is the live work whose From address is on the domain.
@@ -350,25 +305,18 @@ func validSelector(raw string) (string, error) {
 	return sel, nil
 }
 
-// Get returns the Sending domain with the id, archived or not; an unknown id, or one of another
+// Get returns the Sending domain with the id, deleted or not; an unknown id, or one of another
 // Workspace, is ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
 	row, err := s.SendingDomain().Get(ctx, id)
 	return row, notFound(err)
 }
 
-// List returns one page of the Workspace's Sending domains, ascending by id: the kept ones, or
-// with archived the archived ones.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.SendingDomain], error) {
-	rows := func() *ent.SendingDomainQuery {
-		if archived {
-			return s.SendingDomain().QueryDiscarded()
-		}
-		return s.SendingDomain().Query()
-	}
+// List returns one page of the Workspace's kept Sending domains, ascending by id.
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.SendingDomain], error) {
 	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
+		func(ctx context.Context) (int, error) { return s.SendingDomain().Query().Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.SendingDomain, error) {
-			return rows().Order(ent.Asc(sendingdomain.FieldID)).Limit(limit).Offset(offset).All(ctx)
+			return s.SendingDomain().Query().Order(ent.Asc(sendingdomain.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
 }

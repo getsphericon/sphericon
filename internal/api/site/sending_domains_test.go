@@ -74,10 +74,10 @@ func TestSiteSendingDomainsCRUD(t *testing.T) {
 	assert.False(t, verRes.Verified)
 	assert.True(t, verRes.LastCheckedAt.IsSet())
 
-	// Archive; a fetch by id still opens it, an unknown id is a 404.
-	archived, err := c.SiteSendingDomainsArchive(ctx, siteapi.SiteSendingDomainsArchiveParams{WorkspaceId: workspaceID, ID: res.ID})
+	// Delete; a fetch by id still opens it, an unknown id is a 404.
+	deleted, err := c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, archived)
+	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, deleted)
 
 	kept, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)

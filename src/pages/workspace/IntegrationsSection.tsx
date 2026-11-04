@@ -31,15 +31,13 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { ArchiveViewControl } from '../../components/ArchiveViewControl.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteIntegrationsCreateMutation,
-  siteIntegrationsArchiveMutation,
+  siteIntegrationsDeleteMutation,
   siteIntegrationsListOptions,
-  siteIntegrationsUnarchiveMutation,
   siteIntegrationsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
@@ -50,6 +48,7 @@ import type {
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
 import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
+import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_INTEGRATION } from '../../utils/auditFilter.ts'
 import { can } from '../../utils/permissions.ts'
@@ -164,36 +163,31 @@ function buildConfig(values: IntegrationFormValues): IntegrationConfigInput {
   }
 }
 
-// The Workspace's providers, the kept ones (read by the list and by the create form) or the
-// archived ones.
-const integrationsOptions = (workspaceId: string, archived = false) =>
-  siteIntegrationsListOptions({ path: { workspaceId }, query: { archived } })
+// The Workspace's providers, read by the list and by the create form. A deleted one is not listed.
+const integrationsOptions = (workspaceId: string) =>
+  siteIntegrationsListOptions({ path: { workspaceId } })
 
-// IntegrationsList shows the kept providers with the warnings about their send limits, or the
-// archived ones to restore; the section's boundary shows the load and its failure.
+// IntegrationsList shows the providers with the warnings about their send limits; the section's
+// boundary shows the load and its failure.
 function IntegrationsList({
   workspaceId,
-  archived,
   canManage,
   onMakeDefault,
   onEditLimits,
   onInbound,
-  onRemove,
-  onRestore,
+  onDelete,
 }: {
   workspaceId: string
-  archived: boolean
   canManage: boolean
   onMakeDefault: (id: string) => void
   onEditLimits: (record: SiteIntegrationResource) => void
   onInbound: (record: SiteIntegrationResource) => void
-  onRemove: (id: string) => void
-  onRestore: (id: string) => void
+  onDelete: (record: SiteIntegrationResource) => void
 }) {
   const { t } = useTranslation()
-  const records = useSuspenseQuery(integrationsOptions(workspaceId, archived)).data
+  const records = useSuspenseQuery(integrationsOptions(workspaceId)).data
   const warnings = useProviderLimitWarnings()
-  const historyOffered = useAuditLogOffered(workspaceId)
+  const historyOffered = useAuditLogOffered(workspaceId, records.length > 0)
   const channelLabels: Record<SiteIntegrationChannel, string> = {
     email: t(($) => $.settings.integrations.channels.email),
     sms: t(($) => $.settings.integrations.channels.sms),
@@ -206,16 +200,13 @@ function IntegrationsList({
     rows: records.filter((r) => r.channel === channel),
   }))
   // One alert per kind of warning, naming every provider it applies to, so a Workspace with
-  // several providers gets at most one block per kind. An archived provider sends nothing, so its
-  // limits are nothing to warn about.
-  const alerts = archived
-    ? []
-    : warnings.flatMap((copy) => {
-        const names = records
-          .filter((record) => record.providerLimit.warnings.includes(copy.warning))
-          .map((record) => record.name)
-        return names.length === 0 ? [] : [{ ...copy, names }]
-      })
+  // several providers gets at most one block per kind.
+  const alerts = warnings.flatMap((copy) => {
+    const names = records
+      .filter((record) => record.providerLimit.warnings.includes(copy.warning))
+      .map((record) => record.name)
+    return names.length === 0 ? [] : [{ ...copy, names }]
+  })
 
   return (
     <>
@@ -255,7 +246,7 @@ function IntegrationsList({
                 accessor: 'providerLimit',
                 title: t(($) => $.settings.integrations.providerLimit.title),
                 render: (record) => (
-                  <ProviderLimitStatus status={record.providerLimit} withWarnings={!archived} />
+                  <ProviderLimitStatus status={record.providerLimit} withWarnings />
                 ),
               },
               {
@@ -263,14 +254,7 @@ function IntegrationsList({
                 title: '',
                 render: (record) => (
                   <Group gap="xs" wrap="nowrap" justify="flex-end">
-                    {canManage && archived ? (
-                      <RowActionsMenu>
-                        <Menu.Item onClick={() => onRestore(record.id)}>
-                          {t(($) => $.actions.unarchive)}
-                        </Menu.Item>
-                      </RowActionsMenu>
-                    ) : null}
-                    {!archived && (canManage || historyOffered) ? (
+                    {canManage || historyOffered ? (
                       <RowActionsMenu>
                         {historyOffered ? (
                           <HistoryMenuItem
@@ -292,8 +276,8 @@ function IntegrationsList({
                             <Menu.Item onClick={() => onInbound(record)}>
                               {t(($) => $.settings.integrations.inbound.open)}
                             </Menu.Item>
-                            <Menu.Item color="red" onClick={() => onRemove(record.id)}>
-                              {t(($) => $.actions.remove)}
+                            <Menu.Item color="red" onClick={() => onDelete(record)}>
+                              {t(($) => $.actions.delete)}
                             </Menu.Item>
                           </>
                         ) : null}
@@ -303,15 +287,7 @@ function IntegrationsList({
                 ),
               },
             ]}
-            emptyState={
-              <EmptyState
-                title={
-                  archived
-                    ? t(($) => $.settings.integrations.emptyArchived)
-                    : t(($) => $.settings.integrations.empty)
-                }
-              />
-            }
+            emptyState={<EmptyState title={t(($) => $.settings.integrations.empty)} />}
           />
         </Stack>
       ))}
@@ -325,7 +301,6 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [advanced, { toggle: toggleAdvanced, close: closeAdvanced }] = useDisclosure(false)
   const [tile, setTile] = useState<Tile | null>(null)
-  const [archived, setArchived] = useState(false)
   const canManageIntegrations = can(workspace, 'integrations:manage')
 
   // The list the boundary below loads, read here only to know whether a provider exists yet.
@@ -355,15 +330,13 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
     onDone: dismissCreate,
   })
 
-  const removeMutation = useResourceMutation({
-    mutation: siteIntegrationsArchiveMutation(),
-    errorTitle: t(($) => $.settings.integrations.removeError),
-  })
-
-  const restoreMutation = useResourceMutation({
-    mutation: siteIntegrationsUnarchiveMutation(),
-    successMessage: t(($) => $.settings.integrations.restored),
-    errorTitle: t(($) => $.settings.integrations.restoreError),
+  // A deleted provider is never restored: the person types its name to confirm.
+  const deleteIntegration = useDeleteResource({
+    mutation: siteIntegrationsDeleteMutation(),
+    workspaceId,
+    successMessage: t(($) => $.settings.integrations.deleted),
+    errorTitle: t(($) => $.settings.integrations.deleteError),
+    consequence: t(($) => $.settings.integrations.deleteConsequence),
   })
 
   // Promoting a provider clears the channel's current default on the server.
@@ -429,22 +402,19 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
         {t(($) => $.settings.integrations.description)}
       </Text>
 
-      <ArchiveViewControl archived={archived} onChange={setArchived} mb="sm" />
       <QueryBoundary
         fallback={<TableSkeleton />}
         errorTitle={t(($) => $.settings.integrations.loadError)}
       >
         <IntegrationsList
           workspaceId={workspaceId}
-          archived={archived}
           canManage={canManageIntegrations}
           onMakeDefault={(id) =>
             defaultMutation.mutate({ path: { workspaceId, id }, body: { isDefault: true } })
           }
           onEditLimits={setEditing}
           onInbound={setInbound}
-          onRemove={(id) => removeMutation.mutate({ path: { workspaceId, id } })}
-          onRestore={(id) => restoreMutation.mutate({ path: { workspaceId, id } })}
+          onDelete={(record) => deleteIntegration(record.id, record.name)}
         />
       </QueryBoundary>
       {canManageIntegrations ? (

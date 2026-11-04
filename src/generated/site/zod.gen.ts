@@ -3123,7 +3123,7 @@ export const zSiteIntegrationResource = z.object({
   params: zJsonObject,
   secretsRetiring: z.array(z.string()),
   hookUrl: z.string(),
-  archivedAt: z.exactOptional(zTimestamp.nullable()),
+  deletedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3306,7 +3306,7 @@ export const zSiteSendingDomainResource = z.object({
   lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
   verifiedAt: z.exactOptional(zTimestamp.nullable()),
   verificationLostAt: z.exactOptional(zTimestamp.nullable()),
-  archivedAt: z.exactOptional(zTimestamp.nullable()),
+  deletedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -4056,11 +4056,6 @@ export const zSiteIntegrationResourceKeyWorkspaceId = zWorkspaceId;
 export const zSiteIntegrationResourceParentKey = zWorkspaceId;
 
 /**
- * true lists the archived integrations instead of the kept ones; the default hides them
- */
-export const zSiteIntegrationsListFilter = z.boolean();
-
-/**
  * Unique identifier
  */
 export const zSiteInvitationResourceKeyId = zEntityId;
@@ -4161,11 +4156,6 @@ export const zSiteSendingDomainResourceKeyWorkspaceId = zWorkspaceId;
  * workspace resources (ADR 0043)
  */
 export const zSiteSendingDomainResourceParentKey = zWorkspaceId;
-
-/**
- * true lists the archived sending domains instead of the kept ones; the default hides them
- */
-export const zSiteSendingDomainsListFilter = z.boolean();
 
 /**
  * true lists the lifted suppressions instead of the active ones; the default hides them
@@ -5452,10 +5442,6 @@ export const zSiteIntegrationsListPath = z.object({
   workspaceId: zWorkspaceId
 });
 
-export const zSiteIntegrationsListQuery = z.object({
-  archived: z.exactOptional(z.boolean())
-});
-
 /**
  * The request has succeeded.
  */
@@ -5471,6 +5457,16 @@ export const zSiteIntegrationsCreatePath = z.object({
  * The request has succeeded and a new resource has been created as a result.
  */
 export const zSiteIntegrationsCreateResponse = zSiteIntegrationResource;
+
+export const zSiteIntegrationsDeletePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteIntegrationsDeleteResponse = z.void();
 
 export const zSiteIntegrationsGetPath = z.object({
   workspaceId: zWorkspaceId,
@@ -5494,16 +5490,6 @@ export const zSiteIntegrationsUpdatePath = z.object({
  */
 export const zSiteIntegrationsUpdateResponse = zSiteIntegrationResource;
 
-export const zSiteIntegrationsArchivePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteIntegrationsArchiveResponse = zSiteIntegrationResource;
-
 export const zSiteIntegrationsRegenerateKeyPath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -5513,16 +5499,6 @@ export const zSiteIntegrationsRegenerateKeyPath = z.object({
  * The request has succeeded.
  */
 export const zSiteIntegrationsRegenerateKeyResponse = zSiteIntegrationResource;
-
-export const zSiteIntegrationsUnarchivePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteIntegrationsUnarchiveResponse = zSiteIntegrationResource;
 
 export const zSiteInvitationsListPath = z.object({
   workspaceId: zWorkspaceId
@@ -5791,8 +5767,7 @@ export const zSiteSendingDomainsListPath = z.object({
 
 export const zSiteSendingDomainsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().gte(1).lte(100).optional().default(25),
-  archived: z.exactOptional(z.boolean())
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
@@ -5817,6 +5792,16 @@ export const zSiteSendingDomainsCreatePath = z.object({
  */
 export const zSiteSendingDomainsCreateResponse = zSiteSendingDomainResource;
 
+export const zSiteSendingDomainsDeletePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteSendingDomainsDeleteResponse = z.void();
+
 export const zSiteSendingDomainsGetPath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -5826,26 +5811,6 @@ export const zSiteSendingDomainsGetPath = z.object({
  * The request has succeeded.
  */
 export const zSiteSendingDomainsGetResponse = zSiteSendingDomainResource;
-
-export const zSiteSendingDomainsArchivePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteSendingDomainsArchiveResponse = zSiteSendingDomainResource;
-
-export const zSiteSendingDomainsUnarchivePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteSendingDomainsUnarchiveResponse = zSiteSendingDomainResource;
 
 export const zSiteSendingDomainsVerifyPath = z.object({
   workspaceId: zWorkspaceId,

@@ -16,7 +16,7 @@ import (
 
 // SendingDomainsList returns the Workspace's Sending domains with the DNS records to publish.
 func (h *Handlers) SendingDomainsList(ctx context.Context, params externalapi.SendingDomainsListParams) (externalapi.SendingDomainsListRes, error) {
-	page, err := h.sendingDomains.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
+	page, err := h.sendingDomains.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
 	}
@@ -55,29 +55,13 @@ func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.Up
 	return &res, nil
 }
 
-// SendingDomainsArchive archives a Sending domain (ADR 0049): it leaves the list. Live sends from
-// it refuse it with 409.
-func (h *Handlers) SendingDomainsArchive(ctx context.Context, params externalapi.SendingDomainsArchiveParams) (externalapi.SendingDomainsArchiveRes, error) {
-	id := int64(params.ID)
-	s := auth.TokenScoped(ctx)
-	row, err := h.sendingDomains.Archive(ctx, s, id)
-	if err != nil {
+// SendingDomainsDelete deletes a Sending domain for good (ADR 0049): it leaves the list. Live
+// sends from it refuse it with 409.
+func (h *Handlers) SendingDomainsDelete(ctx context.Context, params externalapi.SendingDomainsDeleteParams) (externalapi.SendingDomainsDeleteRes, error) {
+	if err := h.sendingDomains.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID)); err != nil {
 		return nil, err
 	}
-	res := h.sendingDomainResource(row)
-	return &res, nil
-}
-
-// SendingDomainsUnarchive restores an archived Sending domain and starts a DNS check.
-func (h *Handlers) SendingDomainsUnarchive(ctx context.Context, params externalapi.SendingDomainsUnarchiveParams) (externalapi.SendingDomainsUnarchiveRes, error) {
-	id := int64(params.ID)
-	s := auth.TokenScoped(ctx)
-	row, err := h.sendingDomains.Unarchive(ctx, s, id)
-	if err != nil {
-		return nil, err
-	}
-	res := h.sendingDomainResource(row)
-	return &res, nil
+	return &externalapi.SendingDomainsDeleteNoContent{}, nil
 }
 
 // SendingDomainsVerify runs the live DNS check and returns the domain as the check left it

@@ -11,7 +11,7 @@ Goal: get a Sending domain to `verified`, so the Workspace can send from it. DKI
 - Take the records from the API, never from memory or from an earlier message: the DKIM key belongs to this domain only. Never print or ask for a private key; the API never returns one.
 - Verification is a live DNS check. You trigger it and read the result; you cannot mark a domain verified. A just-published record can take minutes or hours to appear, so a failed check right after publishing is not an error.
 - Change DNS only for the domain you were asked about, and only the records listed here. Create the missing ones, leave existing records alone, and do not delete anything. If an SPF or DMARC record already exists at that host, do not overwrite it: say so and let the human merge the values.
-- Do not archive a domain or change its selector unless the human asked: a new selector moves the DKIM record and un-verifies the domain.
+- Do not delete a domain or change its selector unless the human asked: a deleted domain is gone for good, and a new selector moves the DKIM record and un-verifies the domain.
 
 ## Steps
 

@@ -230,7 +230,7 @@ function WebhooksTable({
 }) {
   const { t } = useTranslation()
   const records = useSuspenseQuery(siteWebhooksListOptions({ path: { workspaceId } })).data.items
-  const historyOffered = useAuditLogOffered(workspaceId)
+  const historyOffered = useAuditLogOffered(workspaceId, records.length > 0)
 
   return (
     <DataTable

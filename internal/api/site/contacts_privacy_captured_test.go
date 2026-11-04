@@ -77,17 +77,17 @@ func TestSiteContactsDeleteErasesTheCapturedMessagesOfTheContact(t *testing.T) {
 	assert.Equal(t, globex, env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context()))
 }
 
-// Archiving a Test inbox stops capturing and keeps what it captured until it expires; only a
+// Deleting a Test inbox stops capturing and keeps what it captured until it expires; only a
 // Workspace deletion removes it sooner.
-func TestArchivingATestInboxKeepsItsCapturedMessages(t *testing.T) {
+func TestDeletingATestInboxKeepsItsCapturedMessages(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
-	out, err := c.SiteIntegrationsArchive(t.Context(), siteapi.SiteIntegrationsArchiveParams{
+	out, err := c.SiteIntegrationsDelete(t.Context(), siteapi.SiteIntegrationsDeleteParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.IntegrationGlobexInboxID),
 	})
 
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, out)
+	require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, out)
 	assert.Equal(t, 2, env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context()))
 }
