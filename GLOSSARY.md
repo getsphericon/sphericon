@@ -126,7 +126,9 @@ Custom field values, Tags and Confirmation are removed, as are its customer-trac
 reserved `email.*` Events and delivery records stay as anonymous rows, so deliverability and
 metering counts do not change. What survives is the minimum that keeps the refusal honored: the
 Unsubscribe rows and the active Suppression rows for its Destinations (lifted ones refuse
-nothing and go). It leaves a PII-free `contact.erased`
+nothing and go); on SMS they keep only the phone number's hash, which still refuses the number, and
+nothing else of the number stays (sphericon does not delete the texts in Twilio's own log). It
+leaves a PII-free `contact.erased`
 Event, stored without any Contact reference (its webhook delivery carries the customer's own
 subject_id so downstream copies can be erased). A person who later reappears (Identify, import) is a new Contact and
 is not blocked; surviving opt-outs still apply to them. The Workspace is the controller and sphericon
@@ -274,7 +276,8 @@ _Avoid_: Topic, list, mailing list, subscription group
 **Unsubscribe** (the record):
 A per-(workspace, channel, destination, Sending source) opt-out from marketing — keyed by
 destination, not by Contact, so it survives contact deletion and re-import (the GDPR-erasure
-case: the opt-out is the minimum data retained to honor the refusal). Toggleable: a contact can
+case: the opt-out is the minimum data retained to honor the refusal; on SMS it keeps the number's
+hash instead of the number once its Contact is erased). Toggleable: a contact can
 resubscribe.
 Absence means subscribed — there is no positive subscription row and no "subscribed" flag on
 the Contact. The default in-email link unsubscribes from the _sending source_ only;

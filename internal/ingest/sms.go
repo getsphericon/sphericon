@@ -39,8 +39,8 @@ type sms struct{ Ignore }
 // moves it only forward: the first final report stamps it and records sms.delivered or
 // sms.undelivered, and any later one, a redelivery included, changes nothing. A report of no text we
 // sent records nothing. An undelivered report saying the number reaches no handset suppresses the
-// number like a hard bounce, as the same answer at send time does. A text whose Contact was erased
-// is stamped, with no Event and no Suppression: the person is gone.
+// number like a hard bounce, as the same answer at send time does. A report of a text whose Contact
+// was erased records nothing: Erasure dropped the provider's id the report names the text by.
 func (sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) error {
 	result, action := outbound.ResultDelivered, events.NameSmsDelivered
 	switch n.Kind {

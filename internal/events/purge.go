@@ -25,7 +25,7 @@ import (
 // a Where predicate matches the args.
 type QueuePurger interface {
 	// PurgeOutbox deletes the Workspace's outbox envelopes and dead letters that name the Contact,
-	// by id or by one of its destinations (matched case-insensitively).
+	// by id or by one of its destinations, an address or a phone number (matched case-insensitively).
 	PurgeOutbox(ctx context.Context, workspaceID, contactID int64, destinations []string) error
 	// PurgeJobs deletes the river jobs of kind whose args integer field key is one of ids.
 	// A running job, or one a fetch holds locked to start it, is left to finish: its
@@ -33,7 +33,7 @@ type QueuePurger interface {
 	PurgeJobs(ctx context.Context, key jobkind.Key, ids []int64) error
 	// PurgeWebhookJobs deletes the queued deliveries to the Workspace's own webhook
 	// endpoints whose body names the Contact (contactId) or one of its
-	// destinations (data.email, case-insensitively). The body is the event payload
+	// destinations (data.email case-insensitively, or data.phone). The body is the event payload
 	// the endpoint would receive. A running (or locked) delivery is left to finish.
 	PurgeWebhookJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error
 }
@@ -57,11 +57,11 @@ func (p *txPublisher) PurgeOutbox(ctx context.Context, workspaceID, contactID in
 
 // namesSubject selects a Workspace's outbox envelopes (or dead letters, which have the same
 // columns) that name a data subject. An envelope's Workspace is its metadata's workspace_id, and
-// its payload is the event, which names the Contact as contactId and the address as email. A row
-// published before the envelope moved to the metadata (EnvelopeFrom) has the whole envelope as
-// its payload: its Workspace is workspaceId and the event is under data. The paths are ent's JSON
-// predicates; only the case-insensitive address match is written by hand (the lower() of a JSON
-// path has no predicate), around ent's own path expression.
+// its payload is the event, which names the Contact as contactId, the address as email and the
+// phone number as phone. A row published before the envelope moved to the metadata (EnvelopeFrom)
+// has the whole envelope as its payload: its Workspace is workspaceId and the event is under data.
+// The paths are ent's JSON predicates; only the case-insensitive match is written by hand (the
+// lower() of a JSON path has no predicate), around ent's own path expression.
 func namesSubject(workspaceID int64, contactID string, lowered []string) func(*sql.Selector) {
 	return func(s *sql.Selector) {
 		payload, metadata := s.C(outboxmessage.FieldPayload), s.C(outboxmessage.FieldMetadata)
@@ -75,6 +75,8 @@ func namesSubject(workspaceID int64, contactID string, lowered []string) func(*s
 				sqljson.ValueEQ(payload, contactID, sqljson.Path("data", "contactId")),
 				addressIn(payload, lowered, sqljson.Path("email")),
 				addressIn(payload, lowered, sqljson.Path("data", "email")),
+				addressIn(payload, lowered, sqljson.Path("phone")),
+				addressIn(payload, lowered, sqljson.Path("data", "phone")),
 			),
 		))
 	}
@@ -120,8 +122,8 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 		id = strconv.FormatInt(contactID, 10)
 	}
 	// DeliverWebhookArgs.Body is []byte, so river stores it as a base64 JSON string; it is the
-	// JSON event payload, naming the Contact at contactId / data.contactId and the address at
-	// data.email.
+	// JSON event payload, naming the Contact at contactId / data.contactId, the address at
+	// data.email, the phone number at data.phone.
 	return p.deleteJobs(ctx, river.NewJobDeleteManyParams().Kinds(jobkind.DeliverWebhook.Kind).
 		// raw sql: an integer field of the args matched against a list; river's delete filters
 		// stop at a job's own columns.
@@ -130,7 +132,8 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 		// raw sql: decodes a base64 JSON string of the args into a document and matches inside it.
 		Where("EXISTS (SELECT 1 FROM (SELECT convert_from(decode(args->>@purge_body_arg::text, 'base64'), 'UTF8')::jsonb AS body) b"+
 			" WHERE b.body->>'contactId' = @purge_contact::text OR b.body->'data'->>'contactId' = @purge_contact::text"+
-			" OR lower(b.body->'data'->>'email') = any(@purge_addresses::text[]))",
+			" OR lower(b.body->'data'->>'email') = any(@purge_addresses::text[])"+
+			" OR b.body->'data'->>'phone' = any(@purge_addresses::text[]))",
 			river.NamedArgs{"purge_body_arg": jobkind.DeliverWebhookBodyArg, "purge_contact": id, "purge_addresses": lowerAll(destinations)}))
 }
 

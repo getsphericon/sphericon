@@ -144,8 +144,9 @@ func (emailDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate
 }
 
 // PhoneDestination is the sms Destination: the Contact's phone, which it must have. It is stored in
-// E.164 on every door (ADR 0075), so the stores are matched on it as it is; every layer on sms is
-// keyed by the number, never by a sender number.
+// E.164 on every door (ADR 0075), so the stores are matched on it as it is, or on its hash, which
+// an erased Contact's opt-outs and Suppressions keep instead (ADR 0021); every layer on sms is keyed
+// by the number, never by a sender number.
 func PhoneDestination() Destination { return phoneDestination{} }
 
 type phoneDestination struct{}
@@ -331,6 +332,18 @@ func match(r ref, st store, channel string, extra ...string) *sql.Selector {
 		// raw sql: the same correlation, on the destination.
 		sql.P(func(b *sql.Builder) { b.WriteString(sub.C(st.destination)).WriteString(" = "); r.destination(b) }),
 		sql.EQ(sub.C(st.channel), channel),
+	}
+	if channel == ChannelSMS {
+		// On sms a row is keyed by the number or, once its Contact was erased, by the number's hash
+		// (phone.Hash, here in SQL), so an erased person's refusal holds when the number comes back.
+		// raw sql: the destination correlation, matched against the number or its SHA-256 hex.
+		conds[1] = sql.P(func(b *sql.Builder) {
+			b.WriteString(sub.C(st.destination)).WriteString(" IN (")
+			r.destination(b)
+			b.WriteString(", encode(sha256(convert_to(")
+			r.destination(b)
+			b.WriteString(", 'UTF8')), 'hex'))")
+		})
 	}
 	for _, col := range st.liveWhenNull {
 		conds = append(conds, sql.IsNull(sub.C(col)))

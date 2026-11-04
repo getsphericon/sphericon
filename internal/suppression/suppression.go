@@ -15,6 +15,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -201,12 +202,51 @@ func Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 // EraseContact is the Suppression part of the Contact's Erasure: its lifted rows are
 // deleted, since a lifted one refuses nothing any more, and its active rows only lose the
 // Contact reference, because they are keyed by destination and keep refusing the address.
-func EraseContact(ctx context.Context, s *ent.Scoped, contactID int64) error {
-	if _, err := s.Suppression().Delete().
-		Where(entsuppression.ContactID(contactID), entsuppression.LiftedAtNotNil()).
-		Exec(ctx); err != nil {
+// On sms a number leaves only its hash (ADR 0021): the rows of the Contact's phone, number ("" when
+// it has none), count as its own, and an active one keeps refusing by phone.Hash of the number. A
+// hashed one already standing (a person erased before with the number) makes it redundant.
+func EraseContact(ctx context.Context, s *ent.Scoped, contactID int64, number string) error {
+	mine := entsuppression.ContactID(contactID)
+	if number != "" {
+		mine = entsuppression.Or(mine, entsuppression.And(
+			entsuppression.ChannelEQ(entsuppression.ChannelSms), entsuppression.DestinationEQ(number)))
+	}
+	if _, err := s.Suppression().Delete().Where(mine, entsuppression.LiftedAtNotNil()).Exec(ctx); err != nil {
+		return err
+	}
+	if err := hashNumbers(ctx, s, mine); err != nil {
 		return err
 	}
 	_, err := s.Suppression().Update().Where(entsuppression.ContactID(contactID)).ClearContactID().Save(ctx)
 	return err
+}
+
+// hashNumbers rekeys the active sms Suppressions mine matches by the hash of their number.
+func hashNumbers(ctx context.Context, s *ent.Scoped, mine predicate.Suppression) error {
+	rows, err := s.Suppression().Query().
+		Where(mine, entsuppression.ChannelEQ(entsuppression.ChannelSms), entsuppression.LiftedAtIsNil()).
+		All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, r := range rows {
+		hashed := phone.Hash(r.Destination)
+		twin, err := s.Suppression().Query().Where(
+			entsuppression.ChannelEQ(entsuppression.ChannelSms),
+			entsuppression.DestinationEQ(hashed),
+			entsuppression.LiftedAtIsNil(),
+		).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if twin {
+			err = s.Suppression().DeleteOneID(r.ID).Exec(ctx)
+		} else {
+			err = s.Suppression().UpdateOneID(r.ID).SetDestination(hashed).Exec(ctx)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

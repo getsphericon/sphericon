@@ -69,6 +69,9 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 
 	byID := deliveryBody(t, env, &events.ContactCreated{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID})
 	byAddress := deliveryBody(t, env, &events.CollectedEvent{WorkspaceID: fixtures.InitechID, Action: "page_view", Email: "Erin@Initech.test"})
+	// Consent the Contact's number gave before any Contact had it names the number alone.
+	byNumber := deliveryBody(t, env, &events.SmsConfirmed{WorkspaceID: fixtures.InitechID, Phone: erasablePhone, Provenance: "keyword"})
+	otherNumber := deliveryBody(t, env, &events.SmsConfirmed{WorkspaceID: fixtures.InitechID, Phone: "+14155550198", Provenance: "keyword"})
 	bystander := deliveryBody(t, env, &events.ContactCreated{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactBystanderID, Email: fixtures.ContactBystanderEmail})
 	nobody := deliveryBody(t, env, &events.CollectedEvent{WorkspaceID: fixtures.InitechID, Action: "page_view", VisitorID: "anon-visitor"})
 	otherTenant := deliveryBody(t, env, &events.ContactCreated{WorkspaceID: fixtures.GlobexID, ContactID: fixtures.ContactErasableID, Email: fixtures.ContactErasableEmail})
@@ -91,8 +94,15 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 	assert.EqualValues(t, fixtures.ContactBystanderID, payload.ContactID)
 	assert.EqualValues(t, fixtures.ContactBystanderID, payload.Data.ContactID)
 	assert.Equal(t, fixtures.ContactBystanderEmail, payload.Data.Email)
+	var numbered struct {
+		Data struct {
+			Phone string `json:"phone"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(byNumber, &numbered))
+	assert.Equal(t, erasablePhone, numbered.Data.Phone)
 
-	names := make([]string, 0, 7)
+	names := make([]string, 0, 9)
 	for _, d := range []struct {
 		endpoint int64
 		id       string
@@ -100,6 +110,8 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 	}{
 		{fixtures.WebhookInitechID, "by-id", byID},
 		{fixtures.WebhookInitechID, "by-address", byAddress},
+		{fixtures.WebhookInitechID, "by-number", byNumber},
+		{fixtures.WebhookInitechID, "other-number", otherNumber},
 		{fixtures.WebhookInitechID, "by-top-level-id-only", onlyTopLevelID},
 		{fixtures.WebhookInitechID, "by-data-id-only", onlyDataID},
 		{fixtures.WebhookInitechID, "bystander", bystander},
@@ -112,7 +124,7 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 
 	scope := env.DB.Scoped(fixtures.InitechID)
 	require.NoError(t, env.Bus.WithinScopedPurgeTx(ctx, scope, func(_ *ent.Scoped, pub events.PurgingPublisher) error {
-		return pub.PurgeWebhookJobs(ctx, fixtures.InitechID, fixtures.ContactErasableID, []string{fixtures.ContactErasableEmail})
+		return pub.PurgeWebhookJobs(ctx, fixtures.InitechID, fixtures.ContactErasableID, []string{fixtures.ContactErasableEmail, erasablePhone})
 	}))
 
 	// The deliveries queued while building the bodies above stay in the queue too; only the
@@ -121,5 +133,8 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 		return fmt.Sprint(args["delivery_id"])
 	})
 	left := lo.Intersect(queuedIDs, names)
-	assert.ElementsMatch(t, []string{"bystander", "nobody", "other-tenant"}, left)
+	assert.ElementsMatch(t, []string{"bystander", "nobody", "other-tenant", "other-number"}, left)
 }
+
+// erasablePhone is the phone number the purge is handed with the erased Contact's address.
+const erasablePhone = "+14155550301"

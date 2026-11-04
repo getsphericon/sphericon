@@ -4,6 +4,8 @@
 package phone
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"strings"
 
@@ -45,6 +47,16 @@ func Normalize(raw, country string) (string, error) {
 		return "", ErrExtension
 	}
 	return phonenumbers.Format(n, phonenumbers.E164), nil
+}
+
+// Hash is the form a number takes on the opt-outs and Suppressions that outlive the Contact whose
+// phone it was (ADR 0021): the lowercase hex SHA-256 of the E.164 number, the value the Erasure
+// record keeps as the phone's hash. The eligibility layers on sms match a stored number by it too,
+// so the refusal holds when the person comes back with the number. A phone number is guessable, so
+// the hash keeps the number out of the rows, not out of reach.
+func Hash(number string) string {
+	sum := sha256.Sum256([]byte(number))
+	return hex.EncodeToString(sum[:])
 }
 
 func parse(raw, region string) (*phonenumbers.PhoneNumber, error) {

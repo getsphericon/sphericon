@@ -46,7 +46,8 @@ func (Unsubscribe) Fields() []ent.Field {
 			Values("email", "telegram", "sms").
 			Default("email"),
 		// Normalized channel-specific destination: the lower-cased email address, the Telegram
-		// user id, or the phone number in E.164.
+		// user id, or the phone number in E.164, which becomes its hash (phone.Hash) when the
+		// Contact whose phone it was is erased (ADR 0021).
 		field.String("destination").
 			NotEmpty(),
 		// The sending source the destination opted out of: "broadcasts",

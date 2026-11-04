@@ -36,7 +36,7 @@ adds the per-person path that ADR 0019's "evidentiary Events are never deleted" 
   the refusal stays honored. Events are found by `contact_id` and by the Contact's visitor ids
   (Identify stitches earlier anonymous Events onto the Contact, so `contact_id` already covers them).
 - **What survives:** `Unsubscribe` and `Suppression` rows keep their plaintext `destination`
-  (ADR 0001), `contact_id` cleared. `Confirmation` is deleted (fails safe: re-confirmation).
+  (ADR 0001), `contact_id` cleared (on SMS the number's hash instead, see the amendment below). `Confirmation` is deleted (fails safe: re-confirmation).
   `OutboundMessage` / `BroadcastRecipient` lose their destination and `contact_id`; for a destination
   with no Contact (a transactional send), erasure by email anonymizes `OutboundMessage` rows by
   destination. Visitors, tags, field values and
@@ -74,3 +74,34 @@ adds the per-person path that ADR 0019's "evidentiary Events are never deleted" 
 - **Async regulations with status** (Segment): rejected until a real contact's volume demands it.
 - **Mutating Events only by hard delete** (no `email.*` anonymization): rejected, it would move
   deliverability and usage numbers after every request.
+
+## Amendment: a phone number leaves only its hash (SMS, #1032)
+
+Erasing a Contact with a phone leaves nothing of its SMS life but the number's hash, the lowercase
+hex SHA-256 of the E.164 number that the Erasure record already keeps as its phone hash:
+
+- **SMS opt-outs and Suppressions** of the Contact, and those of its number that name no Contact (a
+  STOP from a number before any Contact had it), keep refusing the number, but keyed by that hash
+  instead of the number (`phone.Hash`). Every reader on sms matches a stored number or its hash: the
+  eligibility layers (in SQL, for one Check and for an Audience alike), STOP, START and the Contact
+  card. So a person imported again with the number stays opted out until a START lifts it, and a
+  START lifts the hashed opt-out. A lifted Suppression of the number goes. Email keeps the plaintext
+  address above; the hash is the exception the SMS spec asked for, and like the hashing rejected
+  below it is pseudonymization only: phone numbers are few enough to enumerate, so the hash keeps
+  the number out of the rows, not out of reach.
+- **SMS Confirmations** of the number go with the Contact's, those that name no Contact included
+  (recorded before any Contact had the number, by the API or a START), and so do their
+  `sms.confirmed` Events.
+- **SMS Outbound messages** lose their destination and the provider's reference (Twilio's SID,
+  which names the number and the text in Twilio's log), and the number where Twilio's words on a
+  refused text quote it. A delivery report that arrives after the Erasure finds no message and
+  records nothing. An anonymized `sms.delivered` or `sms.undelivered` Event loses its source id,
+  which carries the SID. `sms.received` (the person's words) is deleted; `sms.sent`,
+  `sms.delivered`, `sms.undelivered` and `sms.clicked` are anonymized like their email twins; the
+  short links of the Contact's texts are deleted. A Test send's links name no message and carry
+  sample data only, and a Test send keeps no number.
+- **Queued work**: the outbox envelopes and webhook deliveries that name the number (a contact-less
+  `sms.confirmed`) are purged with those that name the Contact.
+- **Twilio's copy is not in sphericon's control.** sphericon does not delete messages in Twilio:
+  Twilio's message log keeps the number and the text under the Workspace's own account, and the
+  Workspace erases them there.

@@ -74,7 +74,9 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.String("sending_domain").
 			Optional().
 			Nillable(),
-		// The provider's id for the accepted message (SES MessageId, SMTP Message-ID).
+		// The provider's id for the accepted message (SES MessageId, SMTP Message-ID, Twilio's SID).
+		// Cleared on a text when its Contact is erased: it names the number and the text in the
+		// provider's log (ADR 0021).
 		field.String("provider_message_id").
 			Optional().
 			Nillable(),

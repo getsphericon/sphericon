@@ -43,7 +43,9 @@ func (Suppression) Fields() []ent.Field {
 		field.Enum("channel").
 			Values("email", "telegram", "sms").
 			Default("email"),
-		// Normalized (lower-cased) channel-specific destination address.
+		// Normalized (lower-cased) channel-specific destination address. On sms the number in
+		// E.164, which becomes its hash (phone.Hash) when the Contact whose phone it was is erased
+		// (ADR 0021).
 		field.String("destination").
 			NotEmpty(),
 		// Why the destination is suppressed. Unsubscribe is NOT a suppression
