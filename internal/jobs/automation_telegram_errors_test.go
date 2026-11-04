@@ -44,7 +44,7 @@ func TestATelegramUnauthorizedHoldsTheBotUntilItsTokenIsSavedAgain(t *testing.T)
 	require.NoError(t, err)
 	assert.Equal(t, outbound.HoldProviderRefused, route.Hold, "the Send route reports the Hold")
 	assert.Equal(t, "provider_refused", outbound.HoldProviderRefused)
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramSent, nil))
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramSent, nil))
 
 	// While held, the step does not even ask Telegram.
 	asked := len(env.Telegram.RequestsOf(telegramtest.SendMessage))
@@ -64,7 +64,7 @@ func TestATelegramUnauthorizedHoldsTheBotUntilItsTokenIsSavedAgain(t *testing.T)
 	env.RunQueuedSteps(t, mod)
 
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, runID).Status)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramSent, nil))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, nil))
 }
 
 // A bot Telegram refused at a send and accepts again (the Owner unblocked it on Telegram's side) is
@@ -92,7 +92,7 @@ func TestAHeldTelegramIntegrationSavedWithTheSameTokenSendsAgain(t *testing.T) {
 			env.RunQueuedSteps(t, mod)
 			done := env.DB.AutomationRun.GetX(t.Context(), runID)
 			assert.Equal(t, automationrun.StatusCompleted, done.Status)
-			sent := env.OutboxCount(t, events.NameTelegramSent, nil)
+			sent := env.QueuedCount(t, events.NameTelegramSent, nil)
 			assert.Equal(t, 1, sent)
 		})
 	}
@@ -116,7 +116,7 @@ func TestAHeldTelegramIntegrationSavedWithATokenTelegramStillRefusesStaysHeld(t 
 	require.True(t, env.RunNextStep(t, mod))
 	waiting := env.DB.AutomationRun.GetX(t.Context(), runID)
 	assert.Equal(t, automationrun.StatusActive, waiting.Status)
-	sent := env.OutboxCount(t, events.NameTelegramSent, nil)
+	sent := env.QueuedCount(t, events.NameTelegramSent, nil)
 	assert.Zero(t, sent)
 }
 
@@ -213,7 +213,7 @@ func TestATelegramTooManyRequestsDefersTheStepAndItSendsLater(t *testing.T) {
 
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, runID).Status)
 	assert.Len(t, env.Telegram.RequestsOf(telegramtest.SendMessage), 2)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramSent, nil))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, nil))
 }
 
 // A 400 about the content fails that Contact's message with Telegram's description, and no other.
@@ -273,7 +273,7 @@ func TestATelegramForbiddenChatDoesNotKeepTheContactsOtherChatFromTheMessage(t *
 
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
 	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramSent, map[string]any{"destination": "555152"}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, map[string]any{"destination": "555152"}))
 	assert.Equal(t, 2, env.DB.Binding.Query().Where(binding.ContactID(fixtures.ContactBobID)).CountX(ctx), "no Binding goes")
 }
 
@@ -319,14 +319,14 @@ func TestATelegramDeadChatLosesItsBinding(t *testing.T) {
 			left := env.DB.Binding.Query().Where(binding.ContactID(fixtures.ContactBobID)).AllX(ctx)
 			require.Len(t, left, 1)
 			assert.Equal(t, "555132", left[0].Destination)
-			assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramUnbound, map[string]any{"contactId": fixtures.ContactBobID}))
-			assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramSent, map[string]any{"destination": "555132"}), "the other chat got it")
+			assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnbound, map[string]any{"contactId": fixtures.ContactBobID}))
+			assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, map[string]any{"destination": "555132"}), "the other chat got it")
 
 			env.Telegram.FailChat(telegramtest.SendMessage, 555132, gone)
 			env.RunQueuedSteps(t, mod)
 
 			assert.Zero(t, env.DB.Binding.Query().Where(binding.ContactID(fixtures.ContactBobID)).CountX(ctx))
-			assert.Equal(t, 2, env.OutboxCount(t, events.NameTelegramUnbound, nil))
+			assert.Equal(t, 2, env.QueuedCount(t, events.NameTelegramUnbound, nil))
 			skipped := env.DB.OutboundMessage.Query().
 				Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(ctx)
 			assert.Equal(t, "no_destination", *skipped.Reason)

@@ -5,9 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -15,7 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// unserializable cannot be marshalled into the outbox payload, so publishing it fails.
+// unserializable cannot be marshalled into an event, so publishing it fails.
 func unserializable() map[string]any { return map[string]any{"bad": make(chan int)} }
 
 func TestIngestCarriesTheEmailAndPhoneSnapshot(t *testing.T) {
@@ -24,7 +26,7 @@ func TestIngestCarriesTheEmailAndPhoneSnapshot(t *testing.T) {
 		{SubjectID: "s-1", Action: "page_view", Email: new("nobody@example.com"), Phone: new("+15550100")},
 	}))
 
-	got := outboxCollected(t, env)
+	got := queuedCollected(t, env)
 	require.Len(t, got, 1)
 	assert.Equal(t, "nobody@example.com", got[0].Email)
 	assert.Equal(t, "+15550100", got[0].Phone)
@@ -39,7 +41,7 @@ func TestIngestIsAtomicAcrossTheBatch(t *testing.T) {
 		{SubjectID: "bad", Action: "page_view", Properties: unserializable()},
 	})
 	require.Error(t, err)
-	assert.Empty(t, outboxCollected(t, env), "none of the batch is accepted")
+	assert.Empty(t, queuedCollected(t, env), "none of the batch is accepted")
 	assert.Zero(t, stored(t, env, "ok"), "none of the batch is recorded")
 }
 
@@ -62,7 +64,7 @@ func TestIngestEachIsolatesItems(t *testing.T) {
 	require.NotErrorIs(t, errs[3], events.ErrRejected)
 	require.NoError(t, errs[4], "an earlier failure does not affect later items")
 
-	got := outboxCollected(t, env)
+	got := queuedCollected(t, env)
 	require.Len(t, got, 2)
 	assert.Equal(t, "s-1", got[0].SubjectID)
 	assert.Equal(t, "s-5", got[1].SubjectID)
@@ -80,10 +82,14 @@ func TestIngestMarksBackfilledEvents(t *testing.T) {
 		{SubjectID: "s-2", Action: "purchase"},
 	}))
 
-	got := outboxCollected(t, env)
-	require.Len(t, got, 2)
-	assert.True(t, got[0].Backfill)
-	assert.False(t, got[1].Backfill)
+	// History is stored marked and handed to no consumer; the live Event is both.
+	backfill := lo.SliceToMap(env.StoredEvents(t, "purchase"), func(e *ent.Event) (string, bool) { return e.SubjectID, e.Backfill })
+	assert.True(t, backfill["s-1"])
+	assert.False(t, backfill["s-2"])
+	got := queuedCollected(t, env)
+	require.Len(t, got, 1)
+	assert.Equal(t, "s-2", got[0].SubjectID)
+	assert.False(t, got[0].Backfill)
 }
 
 // A resent Event with the same client id changes nothing once the first one is stored, and
@@ -98,7 +104,7 @@ func TestIngestSkipsAnEventItAlreadyStored(t *testing.T) {
 	require.NoError(t, m.Ingest(ctx, acme, []eventlog.Input{in}))
 	require.NoError(t, m.Ingest(ctx, acme, []eventlog.Input{in}))
 
-	got := outboxCollected(t, env)
+	got := queuedCollected(t, env)
 	require.Len(t, got, 1, "the resend is not published again")
 	assert.Equal(t, events.DedupKey(events.SourceAPI, fixtures.AcmeID, "order-1"), got[0].DedupID)
 	assert.Equal(t, 1, stored(t, env, "s-1"), "the resend is not recorded again")
@@ -127,7 +133,7 @@ func TestIngestRefusesReservedActions(t *testing.T) {
 		reason := rejected(t, err)
 		assert.Contains(t, reason, "reserved", action)
 	}
-	assert.Empty(t, outboxCollected(t, env))
+	assert.Empty(t, queuedCollected(t, env))
 }
 
 func TestIngestRefusesALiveEventThatIsHistory(t *testing.T) {
@@ -144,7 +150,7 @@ func TestIngestRefusesALiveEventThatIsHistory(t *testing.T) {
 		{SubjectID: "s-1", Action: "purchase", OccurredAt: testNow.Add(-liveWindow + time.Hour)},
 		{SubjectID: "s-2", Action: "purchase"},
 	}), "an event inside the window, or without a time, is live")
-	assert.Len(t, outboxCollected(t, env), 2)
+	assert.Len(t, queuedCollected(t, env), 2)
 }
 
 func TestBackfillNeedsATimeThatHasPassed(t *testing.T) {
@@ -173,6 +179,6 @@ func TestIngestPublishesARepeatedClientEventIDOnceInABatch(t *testing.T) {
 
 	require.NoError(t, newModule(env).Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{in, in}))
 
-	assert.Len(t, outboxCollected(t, env), 1)
+	assert.Len(t, queuedCollected(t, env), 1)
 	assert.Equal(t, 1, stored(t, env, "s-1"))
 }

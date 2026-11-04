@@ -123,7 +123,7 @@ func (chainArgs) Kind() string { return "event_chain_test" }
 func TestAnEventPublishedByAnEventJobIsCausedByTheHandledEvent(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := testhelper.RealDB(t)
-	bus := events.New(sqlDB)
+	bus := testhelper.BusOn(t, sqlDB)
 	inserter, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
 	tx, err := sqlDB.BeginTx(ctx, nil)
@@ -144,8 +144,7 @@ func TestAnEventPublishedByAnEventJobIsCausedByTheHandledEvent(t *testing.T) {
 	_, err = w.WorkJob(ctx, t, tx, queued.Job)
 
 	require.NoError(t, err)
-	published, err := testhelper.OutboxEnvelopesOn(ctx, db.NewEntClient(sqlDB), events.NameContactCreated)
-	require.NoError(t, err)
+	published := testhelper.QueuedEnvelopesOn(t, sqlDB, events.NameContactCreated)
 	require.NotEmpty(t, published)
 	last := published[len(published)-1]
 	assert.Equal(t, "01JROOT", last.CorrelationID)

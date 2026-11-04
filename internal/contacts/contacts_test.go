@@ -19,7 +19,7 @@ import (
 
 func createdEvents(t *testing.T, env *testhelper.TestEnv, contactID int64) int {
 	t.Helper()
-	return env.OutboxCount(t, "contact.created", map[string]any{"contactId": contactID})
+	return env.QueuedCount(t, "contact.created", map[string]any{"contactId": contactID})
 }
 
 func TestCreatePersistsAndPublishesContactCreated(t *testing.T) {

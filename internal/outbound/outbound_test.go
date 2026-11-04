@@ -115,7 +115,7 @@ func byKey(t *testing.T, env *testhelper.TestEnv, key string) *ent.OutboundMessa
 
 func sentEvents(t *testing.T, env *testhelper.TestEnv, messageID int64) int {
 	t.Helper()
-	return env.OutboxCount(t, "email.sent", map[string]any{"outboundMessageId": messageID})
+	return env.QueuedCount(t, "email.sent", map[string]any{"outboundMessageId": messageID})
 }
 
 func TestTransactionalSendRecordsMessageAndEvent(t *testing.T) {

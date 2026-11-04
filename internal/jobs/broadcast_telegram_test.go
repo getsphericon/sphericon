@@ -272,7 +272,7 @@ func TestATelegramBroadcastsUnsubscribeLinkAndButtonOptTheChatOutOfBroadcasts(t 
 	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.DestinationEQ("600061")).OnlyX(ctx)
 	assert.Equal(t, unsubscribe.ChannelTelegram, optOut.Channel)
 	assert.Equal(t, eligibility.SourceBroadcasts, optOut.SendingSource)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramUnsubscribed, map[string]any{"broadcastId": id, "via": events.UnsubscribedByLink}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnsubscribed, map[string]any{"broadcastId": id, "via": events.UnsubscribedByLink}))
 }
 
 // A bot whose token Telegram refuses holds the Broadcast with provider_refused: the recipient waits

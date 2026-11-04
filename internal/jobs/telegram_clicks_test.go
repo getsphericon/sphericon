@@ -101,11 +101,11 @@ func TestALinkAndAButtonOfASentTelegramMessageAreShortLinksThatRedirectAndRecord
 		resp := follow(t, env, path, browserUA)
 		assert.Equal(t, http.StatusFound, resp.Code)
 		assert.Equal(t, target, resp.Header().Get("Location"))
-		assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramClicked, map[string]any{
+		assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramClicked, map[string]any{
 			"contactId": fixtures.ContactBobID, "url": target, "automationId": automationID, "integrationId": bot.Integration.ID,
 		}), target)
 	}
-	clicks := env.OutboxEvents(t, events.NameTelegramClicked)
+	clicks := env.QueuedEvents(t, events.NameTelegramClicked)
 	require.Len(t, clicks, 2)
 	assert.NotZero(t, clicks[0].(*events.TelegramClicked).OutboundMessageID)
 	assert.False(t, clicks[0].(*events.TelegramClicked).Machine)
@@ -150,7 +150,7 @@ func TestAnUnknownShortLinkIsNotFoundAndRecordsNothing(t *testing.T) {
 	resp := follow(t, env, "/c/nosuchtoken", browserUA)
 
 	assert.Equal(t, http.StatusNotFound, resp.Code)
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramClicked, nil))
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramClicked, nil))
 }
 
 func TestTelegramsLinkPreviewFetcherIsMachineEngagementAndAPersonSetsTheRollupAndTheFigure(t *testing.T) {
@@ -182,7 +182,7 @@ func TestTelegramsLinkPreviewFetcherIsMachineEngagementAndAPersonSetsTheRollupAn
 	assert.Equal(t, 1, report.Clicked, "the Telegram report shows clicked")
 	assert.Nil(t, report.Opened)
 
-	clicks := env.OutboxEvents(t, events.NameTelegramClicked)
+	clicks := env.QueuedEvents(t, events.NameTelegramClicked)
 	require.Len(t, clicks, 2)
 	assert.True(t, clicks[0].(*events.TelegramClicked).Machine)
 	assert.False(t, clicks[1].(*events.TelegramClicked).Machine)
@@ -204,7 +204,7 @@ func TestAnAutomationTriggeredByATelegramClickIgnoresAMachineClick(t *testing.T)
 	runSteps(t, env)
 	text, _ := shortPaths(t, env)
 	consume := func() []jobs.EvaluateTriggerArgs {
-		envelopes := env.OutboxEnvelopes(t, events.NameTelegramClicked)
+		envelopes := env.QueuedEnvelopes(t, events.NameTelegramClicked)
 		env.WorkAutomationJobOf(t, envelopes[len(envelopes)-1])
 		return queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind())
 	}

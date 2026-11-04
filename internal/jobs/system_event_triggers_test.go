@@ -38,10 +38,10 @@ func queuedArgs[T any](t *testing.T, env *testhelper.TestEnv, kind string) []T {
 	return out
 }
 
-// onlyEnvelope is the one envelope of the name on the test's outbox.
+// onlyEnvelope is the one envelope of the name the test published.
 func onlyEnvelope(t *testing.T, env *testhelper.TestEnv, name string) events.Envelope {
 	t.Helper()
-	envelopes := env.OutboxEnvelopes(t, name)
+	envelopes := env.QueuedEnvelopes(t, name)
 	require.Len(t, envelopes, 1)
 	return envelopes[0]
 }
@@ -119,7 +119,7 @@ type triggerRouter struct {
 
 func (r *triggerRouter) deliver(t *testing.T) []string {
 	t.Helper()
-	envelopes := r.env.OutboxEnvelopes(t)
+	envelopes := r.env.QueuedEnvelopes(t)
 	for i := r.consumed; i < len(envelopes); i++ {
 		r.env.WorkAutomationJobOf(t, envelopes[i])
 	}

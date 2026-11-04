@@ -80,7 +80,7 @@ func TestATelegramStepSendsTheRenderedAndEscapedTextToTheBoundChat(t *testing.T)
 	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
 	assert.Equal(t, outboundmessage.ChannelTelegram, msg.Channel)
 	assert.Equal(t, "555001", msg.Destination)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramSent, map[string]any{
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, map[string]any{
 		"contactId": fixtures.ContactBobID, "automationId": automationID, "destination": "555001", "integrationId": bot.Integration.ID,
 	}))
 }
@@ -100,7 +100,7 @@ func TestAContactWithTwoBindingsGetsTwoCallsAndOneOutboundMessage(t *testing.T) 
 	msgs := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).AllX(t.Context())
 	require.Len(t, msgs, 1)
 	assert.Equal(t, "555011", msgs[0].Destination, "the first Binding that accepted it")
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramSent, nil))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, nil))
 }
 
 func TestAMixedSequenceSendsTheEmailsAndRecordsTheTelegramSkipForAContactWithNoBinding(t *testing.T) {
@@ -122,7 +122,7 @@ func TestAMixedSequenceSendsTheEmailsAndRecordsTheTelegramSkipForAContactWithNoB
 	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(t.Context())
 	assert.Equal(t, "no_destination", *skipped.Reason)
 	assert.Equal(t, 1, *skipped.AutomationStep)
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramSent, nil))
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramSent, nil))
 }
 
 func TestARenderedTextOverTheLimitFailsThatMessageAlone(t *testing.T) {
@@ -225,15 +225,15 @@ func TestTheUnsubscribeLinkOptsTheChatOutOfTheAutomationOnTelegramOnly(t *testin
 	assert.Equal(t, unsubscribe.ChannelTelegram, optOut.Channel)
 	assert.Equal(t, eligibility.AutomationSource(automationID), optOut.SendingSource)
 	assert.Equal(t, emailBefore, emailOptOuts(), "email to the same Contact keeps sending")
-	recorded := env.Outbox(t, events.NameTelegramUnsubscribed)
+	recorded := env.QueuedMessages(t, events.NameTelegramUnsubscribed)
 	require.Len(t, recorded, 1, "the link records telegram.unsubscribed")
 	assert.Equal(t, strconv.Itoa(fixtures.ContactBobID), fmt.Sprint(recorded[0].Data["contactId"]))
 	assert.Equal(t, events.UnsubscribedByLink, recorded[0].Data["via"])
 	assert.Equal(t, strconv.FormatInt(automationID, 10), fmt.Sprint(recorded[0].Data["automationId"]))
-	assert.Zero(t, env.OutboxCount(t, events.NameEmailUnsubscribed, nil), "and no email event")
+	assert.Zero(t, env.QueuedCount(t, events.NameEmailUnsubscribed, nil), "and no email event")
 
 	_, err = env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: link[1]})
 
 	require.NoError(t, err)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramUnsubscribed, nil), "a second click records nothing")
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnsubscribed, nil), "a second click records nothing")
 }

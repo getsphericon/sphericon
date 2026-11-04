@@ -113,8 +113,8 @@ func TestConfirmEndpoint(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, n, "repeated POST does not duplicate the confirmation")
 
-	// Exactly one marketing.confirmed event was published onto the outbox.
-	count := env.OutboxCount(t, "marketing.confirmed", map[string]any{"email": *c.Email})
+	// Exactly one marketing.confirmed event was published.
+	count := env.QueuedCount(t, "marketing.confirmed", map[string]any{"email": *c.Email})
 	assert.Equal(t, 1, count, "one confirmation event, published once")
 }
 
@@ -248,12 +248,10 @@ func TestTrackingEndpoints(t *testing.T) {
 	assert.Equal(t, 1, figures(t, env, b.ID).Unsubscribed)
 	assert.True(t, unsubscribedAt.Equal(*env.DB.BroadcastRecipient.GetX(ctx, rec.ID).UnsubscribedAt), "set once")
 
-	// Each endpoint published an engagement event onto the transactional outbox.
-	// The persist + automations subscribers consume these (the router isn't run
-	// under txdb; delivery and projection are covered by the events package
-	// tests). Assert the outbox carries all three events for this recipient.
-	forRecipient := lo.Filter(env.Outbox(t), func(m testhelper.OutboxMessage, _ int) bool { return m.Data["email"] == *c.Email })
-	names := lo.Map(forRecipient, func(m testhelper.OutboxMessage, _ int) string { return m.Envelope.Name })
+	// Each endpoint published an engagement event, which its consumers' jobs carry. Assert all
+	// three events were published for this recipient.
+	forRecipient := lo.Filter(env.QueuedMessages(t), func(m testhelper.QueuedMessage, _ int) bool { return m.Data["email"] == *c.Email })
+	names := lo.Map(forRecipient, func(m testhelper.QueuedMessage, _ int) string { return m.Envelope.Name })
 	assert.Contains(t, names, "email.opened")
 	assert.Contains(t, names, "email.clicked")
 	assert.Contains(t, names, "email.unsubscribed")
@@ -283,7 +281,7 @@ func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 	env.Server.ServeHTTP(w, req)
 	require.Equal(t, http.StatusNoContent, w.Code)
 
-	unsubscribed := env.Outbox(t, "email.unsubscribed")
+	unsubscribed := env.QueuedMessages(t, "email.unsubscribed")
 	require.Len(t, unsubscribed, 1)
 	assert.Equal(t, json.Number(strconv.Itoa(fixtures.OutboundMessageWelcomeID)), unsubscribed[0].Data["outboundMessageId"])
 }

@@ -18,7 +18,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/cleanup"
-	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/logging"
@@ -31,9 +30,12 @@ func TestAnEventCarriesItsChain(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := logging.WithRequestID(t.Context(), "req-chain")
 
-	first := publishIn(ctx, t, env, "first@example.com")
-	second := publishIn(events.Handling(t.Context(), first), t, env, "second@example.com")
-	alone := publishIn(t.Context(), t, env, "alone@example.com")
+	publishIn(ctx, t, env, "first@example.com")
+	first := lastCreated(t, env)
+	publishIn(events.Handling(t.Context(), first), t, env, "second@example.com")
+	second := lastCreated(t, env)
+	publishIn(t.Context(), t, env, "alone@example.com")
+	alone := lastCreated(t, env)
 
 	assert.Equal(t, "req-chain", first.CorrelationID)
 	assert.Empty(t, first.CausationID, "a chain starts at the request")
@@ -101,14 +103,18 @@ func linkedTo(spans []sdktrace.ReadOnlySpan, name, traceID string) bool {
 	return false
 }
 
-// publishIn publishes a ContactCreated in ctx and returns its envelope as the outbox holds it.
-func publishIn(ctx context.Context, t *testing.T, env *testhelper.TestEnv, email string) events.Envelope {
+// publishIn publishes a ContactCreated in ctx.
+func publishIn(ctx context.Context, t *testing.T, env *testhelper.TestEnv, email string) {
 	t.Helper()
 	require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(ctx, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: 7, Email: email})
 	}))
-	envelopes, err := testhelper.OutboxEnvelopesOn(ctx, env.DB, events.NameContactCreated)
-	require.NoError(t, err)
+}
+
+// lastCreated is the envelope of the last ContactCreated the test published, as its jobs carry it.
+func lastCreated(t *testing.T, env *testhelper.TestEnv) events.Envelope {
+	t.Helper()
+	envelopes := env.QueuedEnvelopes(t, events.NameContactCreated)
 	return envelopes[len(envelopes)-1]
 }
 
@@ -121,7 +127,7 @@ func (chainedArgs) Kind() string { return "chained" }
 func TestAJobKeepsTheChainItWasQueuedIn(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := testhelper.RealDB(t)
-	bus := events.New(sqlDB)
+	bus := testhelper.BusOn(t, sqlDB)
 	cfg := &river.Config{Middleware: []rivertype.Middleware{events.JobCorrelation()}}
 	inserter, err := river.NewClient(riverdatabasesql.New(sqlDB), cfg)
 	require.NoError(t, err)
@@ -140,8 +146,7 @@ func TestAJobKeepsTheChainItWasQueuedIn(t *testing.T) {
 	_, err = w.WorkJob(ctx, t, tx, queued.Job)
 
 	require.NoError(t, err)
-	published, err := testhelper.OutboxEnvelopesOn(ctx, db.NewEntClient(sqlDB), events.NameContactCreated)
-	require.NoError(t, err)
+	published := testhelper.QueuedEnvelopesOn(t, sqlDB, events.NameContactCreated)
 	require.NotEmpty(t, published)
 	assert.Equal(t, "01JROOT", published[len(published)-1].CorrelationID)
 	assert.Equal(t, "01JPARENT", published[len(published)-1].CausationID)

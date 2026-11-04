@@ -1,11 +1,7 @@
 package testhelper
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"slices"
 	"strconv"
 	"testing"
 	"time"
@@ -22,16 +18,7 @@ import (
 // The domain-event outbox is a watermill table that ent only generates a client for
 // (ent/schema/outbox_message.go), so tests read it through these helpers.
 
-// OutboxEnvelopes returns the envelopes published on the outbox in this test's
-// transaction, oldest first. With names, only envelopes of those event names.
-func (env *TestEnv) OutboxEnvelopes(t *testing.T, names ...string) []events.Envelope {
-	t.Helper()
-	envelopes, err := readOutbox(t.Context(), env.DB, names)
-	require.NoError(t, err)
-	return envelopes
-}
-
-// Publisher is a Publisher onto this test's outbox, for a test that calls a function taking the
+// Publisher is a Publisher onto this test's bus, for a test that calls a function taking the
 // Publisher of a transaction it owns (automations.Enroll) without opening one: each event is
 // published in a bus transaction of its own, which rides the test's.
 func (env *TestEnv) Publisher() events.Publisher { return PublisherOn(env.Bus) }
@@ -43,95 +30,6 @@ type busPublisher struct{ bus *events.Bus }
 
 func (p busPublisher) Publish(ctx context.Context, ev events.DomainEvent) error {
 	return p.bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error { return pub.Publish(ctx, ev) })
-}
-
-// OutboxEvents is OutboxEnvelopes decoded into their typed events.
-func (env *TestEnv) OutboxEvents(t *testing.T, names ...string) []events.DomainEvent {
-	t.Helper()
-	envelopes := env.OutboxEnvelopes(t, names...)
-	out := make([]events.DomainEvent, 0, len(envelopes))
-	for i := range envelopes {
-		ev, err := events.Decode(envelopes[i])
-		require.NoError(t, err)
-		out = append(out, ev)
-	}
-	return out
-}
-
-// OutboxMessage is one outbox envelope with its payload decoded generically
-// (numbers as json.Number, so ids compare exactly).
-type OutboxMessage struct {
-	Envelope events.Envelope
-	Data     map[string]any
-}
-
-// Outbox returns the outbox messages of this test's transaction, oldest first,
-// optionally only those of the given event names.
-func (env *TestEnv) Outbox(t *testing.T, names ...string) []OutboxMessage {
-	t.Helper()
-	envelopes := env.OutboxEnvelopes(t, names...)
-	out := make([]OutboxMessage, 0, len(envelopes))
-	for i := range envelopes {
-		e := &envelopes[i]
-		dec := json.NewDecoder(bytes.NewReader(e.Data))
-		dec.UseNumber()
-		var data map[string]any
-		require.NoError(t, dec.Decode(&data))
-		out = append(out, OutboxMessage{Envelope: *e, Data: data})
-	}
-	return out
-}
-
-// OutboxCount counts the outbox messages named name whose payload has every
-// key/value of match (values compare by their printed form: 42 matches "42").
-func (env *TestEnv) OutboxCount(t *testing.T, name string, match map[string]any) int {
-	t.Helper()
-	n := 0
-	messages := env.Outbox(t, name)
-	for i := range messages {
-		m := &messages[i]
-		ok := true
-		for k, want := range match {
-			if fmt.Sprint(m.Data[k]) != fmt.Sprint(want) {
-				ok = false
-				break
-			}
-		}
-		if ok {
-			n++
-		}
-	}
-	return n
-}
-
-// OutboxEnvelopesOn is OutboxEnvelopes for a database a test wrote to for real, read
-// through the ent client the test holds on it.
-func OutboxEnvelopesOn(ctx context.Context, client *ent.Client, names ...string) ([]events.Envelope, error) {
-	return readOutbox(ctx, client, names)
-}
-
-func readOutbox(ctx context.Context, client *ent.Client, names []string) ([]events.Envelope, error) {
-	messages, err := client.OutboxMessage.Query().Order(outboxmessage.ByID()).All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	var out []events.Envelope
-	for _, m := range messages {
-		var metadata map[string]string
-		if len(m.Metadata) > 0 {
-			if err := json.Unmarshal(m.Metadata, &metadata); err != nil {
-				return nil, err
-			}
-		}
-		e, err := events.EnvelopeFrom(m.UUID, m.Payload, metadata)
-		if err != nil {
-			return nil, err
-		}
-		if len(names) == 0 || slices.Contains(names, e.Name) {
-			out = append(out, e)
-		}
-	}
-	return out, nil
 }
 
 // OutboxRow is one raw outbox row: its position in the (transaction_id, offset)

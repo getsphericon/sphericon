@@ -35,7 +35,7 @@ func TestAuditEntryIsNotProjectedToAnEvent(t *testing.T) {
 	require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		return events.RecordAudit(ctx, pub, auditEntry(events.ActorUser))
 	}))
-	published := env.OutboxEnvelopes(t, events.NameAuditEntry)
+	published := env.QueuedEnvelopes(t, events.NameAuditEntry)
 	require.Len(t, published, 1)
 
 	after, err := env.DB.Event.Query().Count(ctx)
@@ -55,7 +55,7 @@ func TestRecordAuditSkipsIngestAndAnonymousActors(t *testing.T) {
 		require.NoError(t, events.RecordAudit(ctx, pub, auditEntry(events.ActorIngest)))
 		return events.RecordAudit(ctx, pub, auditEntry(""))
 	}))
-	assert.Empty(t, env.OutboxEnvelopes(t, events.NameAuditEntry))
+	assert.Empty(t, env.QueuedEnvelopes(t, events.NameAuditEntry))
 }
 
 // A rolled-back mutation leaves no Audit entry.
@@ -69,5 +69,5 @@ func TestRecordAuditRollsBackWithTheMutation(t *testing.T) {
 		return boom
 	})
 	require.ErrorIs(t, err, boom)
-	assert.Empty(t, env.OutboxEnvelopes(t, events.NameAuditEntry))
+	assert.Empty(t, env.QueuedEnvelopes(t, events.NameAuditEntry))
 }

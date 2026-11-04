@@ -66,7 +66,7 @@ func TestADeliveryReportThatComesBeforeItsTextIsCommittedIsReadAgainLater(t *tes
 	assert.Empty(t, deferred[0].Notice.Destination, "the job holds no number")
 	settled := env.DB.OutboundMessage.GetX(ctx, msg.ID)
 	assert.NotNil(t, settled.DeliveredAt, "the report stamps the text once it is there")
-	delivered := env.OutboxCount(t, events.NameSmsDelivered, map[string]any{"contactId": fixtures.ContactTexterID})
+	delivered := env.QueuedCount(t, events.NameSmsDelivered, map[string]any{"contactId": fixtures.ContactTexterID})
 	assert.Equal(t, 1, delivered)
 }
 
@@ -93,6 +93,6 @@ func TestADeliveryReportOfNoTextIsReadAgainABoundedNumberOfTimes(t *testing.T) {
 	queued := lateNotices(t, env)
 	attempts := lo.Map(queued, func(a ingest.LateNoticeArgs, _ int) int { return a.Attempt })
 	assert.Equal(t, []int{1, 2}, attempts, "the first reading again queues the second; the last queues none")
-	delivered := env.OutboxCount(t, events.NameSmsDelivered, nil)
+	delivered := env.QueuedCount(t, events.NameSmsDelivered, nil)
 	assert.Zero(t, delivered)
 }

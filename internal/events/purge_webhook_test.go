@@ -23,11 +23,11 @@ import (
 func deliveryBody(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent) []byte {
 	t.Helper()
 	ctx := context.Background()
-	before := len(env.OutboxEnvelopes(t))
+	before := len(env.QueuedEnvelopes(t))
 	require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(ctx, ev)
 	}))
-	envelopes := env.OutboxEnvelopes(t)
+	envelopes := env.QueuedEnvelopes(t)
 	require.Len(t, envelopes, before+1)
 
 	queued := len(env.QueuedDeliveries(t))

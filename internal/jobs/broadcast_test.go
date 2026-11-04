@@ -105,18 +105,16 @@ func TestSendBroadcastDeliversToEligibleContacts(t *testing.T) {
 		Where(broadcastrecipient.BroadcastID(fixtures.BroadcastDraftID), broadcastrecipient.ContactID(fixtures.ContactJobsNoEmailID)).
 		ExistX(ctx), "a contact without an email is not a recipient")
 
-	// Each send publishes an email.sent event onto the transactional outbox, so the
-	// send fact reaches the Event log (Events are the source of truth; persist runs
-	// off the bus, not under txdb — projection is covered by the events tests). One
-	// per sent recipient, no more (exactly-once).
-	assert.Equal(t, sent, countOutboxEvents(t, env, "email.sent", fixtures.BroadcastDraftID))
+	// Each send publishes an email.sent event, so the send fact reaches the Event log (Events
+	// are the source of truth). One per sent recipient, no more (exactly-once).
+	assert.Equal(t, sent, countPublished(t, env, "email.sent", fixtures.BroadcastDraftID))
 }
 
-// countOutboxEvents returns how many events of the given name for the given
-// broadcast sit in the transactional outbox.
-func countOutboxEvents(t *testing.T, env *testhelper.TestEnv, name string, broadcastID int64) int {
+// countPublished returns how many events of the given name for the given broadcast the
+// test published.
+func countPublished(t *testing.T, env *testhelper.TestEnv, name string, broadcastID int64) int {
 	t.Helper()
-	return env.OutboxCount(t, name, map[string]any{"broadcastId": broadcastID})
+	return env.QueuedCount(t, name, map[string]any{"broadcastId": broadcastID})
 }
 
 // A Workspace suspension that lands while a broadcast is mid-flight pauses it: the
@@ -327,7 +325,7 @@ func TestSendBroadcastMarksFailedOnSendError(t *testing.T) {
 		require.NotNil(t, m.Reason)
 	}
 
-	assert.Zero(t, countOutboxEvents(t, env, "email.sent", fixtures.BroadcastScheduledID), "no email.sent event when the send fails")
+	assert.Zero(t, countPublished(t, env, "email.sent", fixtures.BroadcastScheduledID), "no email.sent event when the send fails")
 }
 
 func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {

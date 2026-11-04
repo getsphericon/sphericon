@@ -69,7 +69,7 @@ func TestAnSMSBroadcastTextsOnlyTheConfirmedNumbers(t *testing.T) {
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id)).OnlyX(ctx)
 	assert.Equal(t, outboundmessage.ChannelSms, msg.Channel)
 	assert.Equal(t, sent[0].SID, lo.FromPtr(msg.ProviderMessageID))
-	smsSent := env.OutboxCount(t, events.NameSmsSent, map[string]any{"broadcastId": id, "contactId": fixtures.ContactTexterID})
+	smsSent := env.QueuedCount(t, events.NameSmsSent, map[string]any{"broadcastId": id, "contactId": fixtures.ContactTexterID})
 	assert.Equal(t, 1, smsSent)
 	figures := figuresOf(t, env, id)
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1}, figures)

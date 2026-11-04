@@ -28,7 +28,7 @@ import (
 
 // The hook over HTTP, on the committed Integrations of Acme that read their callbacks with
 // the generic Preset (ADR 0037). Every case posts a signed request to a hook URL and asserts
-// what it left behind: the response, the outbox, Suppression.
+// what it left behind: the response, the published events, Suppression.
 
 // hookClock is the instant the hook believes it is, and the one requests are signed at.
 var hookClock = time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
@@ -90,7 +90,7 @@ func TestHookOfAnUnknownKeyIsNotFound(t *testing.T) {
 	rec := signedPost(t, env, "omik_does_not_exist", secretA, "msg_1", failureBody("evt_1", "a@example.com", true))
 
 	assert.Equal(t, http.StatusNotFound, rec.Code)
-	assert.Empty(t, outboxEvents(t, env, "a@example.com"))
+	assert.Empty(t, queuedNotices(t, env, "a@example.com"))
 }
 
 // A Workspace in its deletion window takes no new data (ADR 0043): its hook answers 404 and
@@ -102,7 +102,7 @@ func TestHookOfADeletedWorkspaceIsNotFound(t *testing.T) {
 	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(hookClock).ExecX(t.Context())
 
 	assert.Equal(t, http.StatusNotFound, signedPost(t, env, key, secretA, "msg_1", body).Code)
-	assert.Empty(t, outboxEvents(t, env, fixtures.ContactAliceEmail))
+	assert.Empty(t, queuedNotices(t, env, fixtures.ContactAliceEmail))
 
 	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(t.Context())
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", body).Code)
@@ -116,13 +116,13 @@ func TestTwoIntegrationsOfAWorkspaceEachAcceptOnlyTheirOwnSecret(t *testing.T) {
 
 	assert.Equal(t, http.StatusForbidden, signedPost(t, env, fixtures.IntegrationAcmeGenericBIngestKey, secretA, "msg_1", body).Code)
 	assert.Equal(t, http.StatusForbidden, signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretB, "msg_1", body).Code)
-	assert.Empty(t, outboxEvents(t, env, fixtures.ContactAliceEmail))
+	assert.Empty(t, queuedNotices(t, env, fixtures.ContactAliceEmail))
 
 	require.Equal(t, http.StatusOK, signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", body).Code)
 	// Another event of the provider: the same one twice would be a repeat, published once.
 	other := failureBody("evt_2", strings.ToUpper(fixtures.ContactAliceEmail), true)
 	require.Equal(t, http.StatusOK, signedPost(t, env, fixtures.IntegrationAcmeGenericBIngestKey, secretB, "msg_2", other).Code)
-	got := outboxEvents(t, env, fixtures.ContactAliceEmail)
+	got := queuedNotices(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 2)
 	for _, f := range got {
 		assert.Equal(t, events.NameEmailBounced, f.Action)
@@ -146,7 +146,7 @@ func TestHookRefusesAnUnsignedOrUnreadableRequest(t *testing.T) {
 	// Correctly signed, but not JSON: the provider's to fix, not retried.
 	assert.Equal(t, http.StatusBadRequest, signedPost(t, env, key, secretA, "msg_1", "not json").Code)
 
-	assert.Empty(t, outboxEvents(t, env, "a@example.com"))
+	assert.Empty(t, queuedNotices(t, env, "a@example.com"))
 }
 
 // A valid request with nothing the Preset handles is accepted, so the provider does not
@@ -157,7 +157,7 @@ func TestHookAcceptsAValidRequestWithNothingToHandle(t *testing.T) {
 	rec := signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", `[]`)
 
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Empty(t, env.OutboxEvents(t, deliveryNames...))
+	assert.Empty(t, env.QueuedEvents(t, deliveryNames...))
 }
 
 // The generic Preset passes its body through, so it carries facts of every kind. An email
@@ -172,7 +172,7 @@ func TestAnEmailIntegrationAcceptsInboundMessagesAndReachabilityChangesAndRecord
 	rec := signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", body)
 
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Empty(t, env.OutboxEvents(t))
+	assert.Empty(t, env.QueuedEvents(t))
 }
 
 // A Delivery notice its Preset says is about a message of another Channel is the Preset's mistake
@@ -186,9 +186,9 @@ func TestAnEmailIntegrationRecordsNothingOfADeliveryNoticeOnAnotherChannel(t *te
 	rec := signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", body)
 
 	assert.Equal(t, http.StatusOK, rec.Code)
-	got := env.OutboxEvents(t, deliveryNames...)
+	got := env.QueuedEvents(t, deliveryNames...)
 	require.Len(t, got, 1)
-	assert.Len(t, outboxEvents(t, env, fixtures.ContactAliceEmail), 1)
+	assert.Len(t, queuedNotices(t, env, fixtures.ContactAliceEmail), 1)
 }
 
 // A malformed fact of a new kind fails the transform as a malformed Delivery notice does: the
@@ -206,7 +206,7 @@ func TestAMalformedFactIsRefusedLikeAMalformedDeliveryNotice(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, rec.Code, name)
 	}
-	assert.Empty(t, env.OutboxEvents(t))
+	assert.Empty(t, env.QueuedEvents(t))
 }
 
 // A hard bounce suppresses; a soft one is still published (the deliverability rates read
@@ -218,7 +218,7 @@ func TestHookSuppressesAHardBounceAndOnlyRecordsASoftOne(t *testing.T) {
 	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", failureBody("evt_hard", "hard@example.com", true)).Code)
 	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_2", failureBody("evt_soft", "soft@example.com", false)).Code)
 
-	soft := outboxEvents(t, env, "soft@example.com")
+	soft := queuedNotices(t, env, "soft@example.com")
 	require.Len(t, soft, 1)
 	assert.Equal(t, events.BounceKindSoft, soft[0].BounceKind)
 
@@ -299,7 +299,7 @@ func TestRotatingASecretKeepsTheOldOneValidUntilItIsRetired(t *testing.T) {
 	assert.Empty(t, retired.SecretsRetiring)
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, rotated, "msg_3", failureBody("evt_new2", "new2@example.com", true)).Code)
 	assert.Equal(t, http.StatusForbidden, signedPost(t, env, key, secretA, "msg_4", failureBody("evt_old2", "old2@example.com", true)).Code)
-	assert.Empty(t, outboxEvents(t, env, "old2@example.com"))
+	assert.Empty(t, queuedNotices(t, env, "old2@example.com"))
 }
 
 // Regenerating the key invalidates the old URL; the new one works, with the same secret.
@@ -363,7 +363,7 @@ func TestChoosingAPresetAgainNeedsItsParamsInFull(t *testing.T) {
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_2", failureBody("evt_1", "a@example.com", true)).Code)
 
 	// Both changes of the Preset are in the Audit log, the secret in neither.
-	audit := lo.Map(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
+	audit := lo.Map(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
 		e, ok := ev.(*events.AuditEntry)
 		require.Truef(t, ok, "got %T", ev)
 		raw, err := json.Marshal(e)
@@ -399,7 +399,7 @@ func TestChoosingAPresetAndRotatingASecretAreAuditedWithoutTheSecret(t *testing.
 	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Params: secretParam(rotated)})
 	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic"), Params: secretParam(newSecret("again-0123456789"))})
 
-	entries := env.OutboxEvents(t, events.NameAuditEntry)
+	entries := env.QueuedEvents(t, events.NameAuditEntry)
 	require.NotEmpty(t, entries)
 	for _, ev := range entries {
 		e, ok := ev.(*events.AuditEntry)

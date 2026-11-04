@@ -35,7 +35,7 @@ func TestEmailEngagementDedupIDBecomesDedupKey(t *testing.T) {
 
 	dedupOf := func(name string) string {
 		t.Helper()
-		msgs := env.OutboxEnvelopes(t, name)
+		msgs := env.QueuedEnvelopes(t, name)
 		require.Len(t, msgs, 1)
 		return msgs[0].DedupKey
 	}

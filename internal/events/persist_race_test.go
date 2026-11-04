@@ -22,7 +22,7 @@ func TestPublishingOneClientEventIdConcurrentlyStoresAndPublishesItOnce(t *testi
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
 	client := db.NewEntClient(sqlDB)
-	bus := events.New(sqlDB)
+	bus := testhelper.BusOn(t, sqlDB)
 	const action = "race_client_event"
 
 	var wg sync.WaitGroup
@@ -45,7 +45,5 @@ func TestPublishingOneClientEventIdConcurrentlyStoresAndPublishesItOnce(t *testi
 	n, err := client.Event.Query().Where(event.Action(action)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n, "stored once")
-	published, err := testhelper.OutboxEnvelopesOn(t.Context(), client, events.NameCollected)
-	require.NoError(t, err)
-	assert.Len(t, published, 1, "published once")
+	assert.Len(t, testhelper.QueuedEnvelopesOn(t, sqlDB, events.NameCollected), 1, "published once")
 }

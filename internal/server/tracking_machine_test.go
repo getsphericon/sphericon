@@ -52,7 +52,7 @@ func clickPathTo(t *testing.T, env *testhelper.TestEnv, messageID int64, dest st
 
 func onlyEngagement(t *testing.T, env *testhelper.TestEnv, name string) *events.EmailEngagement {
 	t.Helper()
-	got := env.OutboxEvents(t, name)
+	got := env.QueuedEvents(t, name)
 	require.Len(t, got, 1, name)
 	e, ok := got[0].(*events.EmailEngagement)
 	require.True(t, ok)
@@ -95,7 +95,7 @@ func TestAHitFromAPrivateRelayRangeIsMachine(t *testing.T) {
 		hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), personUA, addr)
 	}
 
-	opened := env.OutboxEvents(t, events.NameEmailOpened)
+	opened := env.QueuedEvents(t, events.NameEmailOpened)
 	require.Len(t, opened, 2)
 	for _, o := range opened {
 		assert.True(t, o.(*events.EmailEngagement).Machine)
@@ -193,7 +193,7 @@ func TestNeitherTheAddressNorTheUserAgentIsStored(t *testing.T) {
 
 	hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), scannerUA, relayAddr)
 
-	for _, e := range env.OutboxEnvelopes(t, events.NameEmailOpened) {
+	for _, e := range env.QueuedEnvelopes(t, events.NameEmailOpened) {
 		assert.NotContains(t, string(e.Data), relayAddr)
 		assert.NotContains(t, string(e.Data), "Googlebot")
 	}
@@ -211,9 +211,9 @@ func TestRefreshReplacesTheRangesAndAFailedRefreshKeepsThem(t *testing.T) {
 	path := openPath(t, env, fixtures.OutboundMessageTrackingSampleID)
 	machineHit := func(addr string) bool {
 		t.Helper()
-		before := len(env.OutboxEvents(t, events.NameEmailOpened))
+		before := len(env.QueuedEvents(t, events.NameEmailOpened))
 		hit(t, env, path, personUA, addr)
-		opened := env.OutboxEvents(t, events.NameEmailOpened)
+		opened := env.QueuedEvents(t, events.NameEmailOpened)
 		require.Len(t, opened, before+1)
 		return opened[before].(*events.EmailEngagement).Machine
 	}

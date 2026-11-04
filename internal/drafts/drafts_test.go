@@ -494,7 +494,7 @@ func TestTheMovesAreAudited(t *testing.T) {
 			_, err = k.revert(ctx, s, k.live)
 			require.NoError(t, err)
 
-			entries := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+			entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 				e, ok := ev.(*events.AuditEntry)
 				return e, ok && e.TargetType == k.target && e.TargetID == strconv.FormatInt(k.live, 10)
 			})

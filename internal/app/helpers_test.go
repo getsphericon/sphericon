@@ -57,6 +57,15 @@ func entClientOn(t *testing.T, url string) *ent.Client {
 	return client
 }
 
+// sqlDBOn opens a database handle of the test's own on the database at url.
+func sqlDBOn(t *testing.T, url string) *sql.DB {
+	t.Helper()
+	sqlDB, err := sql.Open("pgx", url)
+	require.NoError(t, err)
+	t.Cleanup(func() { cleanup.Close(sqlDB, "the test's database handle") })
+	return sqlDB
+}
+
 // listen opens a loopback listener on a free port.
 func listen(t *testing.T) net.Listener {
 	t.Helper()

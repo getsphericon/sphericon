@@ -252,7 +252,7 @@ func TestAConnectionActsAsItsUser(t *testing.T) {
 		externalapi.ContactsUpdateParams{ID: externalapi.EntityId(fixtures.ContactBobID)})
 	require.NoError(t, err)
 
-	got := env.OutboxEvents(t, events.NameAuditEntry)
+	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)
 	assert.Equal(t, events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.MemberMaryID), Name: fixtures.MemberMaryName + " via Fixture Connector"},
 		got[0].(*events.AuditEntry).Actor)

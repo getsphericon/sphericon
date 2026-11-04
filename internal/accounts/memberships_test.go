@@ -71,7 +71,7 @@ func TestChangeMembershipRoleInvariants(t *testing.T) {
 	})
 }
 
-// membershipUpdateEntries hands the outbox to the audit subscriber and counts the stored
+// membershipUpdateEntries works the Edition's jobs and counts the stored
 // `membership.update` entries.
 func membershipUpdateEntries(t *testing.T, env *testhelper.TestEnv) int {
 	t.Helper()

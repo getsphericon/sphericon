@@ -18,10 +18,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/visitors"
 )
 
-// outboxCollected decodes every CollectedEvent on the domain-event outbox.
-func outboxCollected(t *testing.T, env *testhelper.TestEnv) []*events.CollectedEvent {
+// queuedCollected decodes every CollectedEvent the test published.
+func queuedCollected(t *testing.T, env *testhelper.TestEnv) []*events.CollectedEvent {
 	t.Helper()
-	return lo.Map(env.OutboxEvents(t, events.NameCollected), func(ev events.DomainEvent, _ int) *events.CollectedEvent {
+	return lo.Map(env.QueuedEvents(t, events.NameCollected), func(ev events.DomainEvent, _ int) *events.CollectedEvent {
 		ce, ok := ev.(*events.CollectedEvent)
 		require.Truef(t, ok, "got %T", ev)
 		return ce
@@ -102,7 +102,7 @@ func TestCollectCarriesTheIdentityTheDeviceResolvesTo(t *testing.T) {
 		{VisitorID: "dev-anon", Action: "page_view"},
 	}))
 
-	got := outboxCollected(t, env)
+	got := queuedCollected(t, env)
 	require.Len(t, got, 2)
 	known, anon := got[0], got[1]
 	assert.Equal(t, "signup", known.Action)
@@ -131,7 +131,7 @@ func TestCollectTreatsAVanishedContactAsAnonymous(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t, visitors.Collect(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), []visitors.CollectEventInput{{VisitorID: "dev-gone", Action: "login"}}))
-	got := outboxCollected(t, env)
+	got := queuedCollected(t, env)
 	require.Len(t, got, 1)
 	assert.Zero(t, got[0].ContactID)
 }

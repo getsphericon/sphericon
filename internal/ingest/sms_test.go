@@ -52,11 +52,11 @@ func TestAReplyFromAKnownNumberIsRecordedAsSmsReceivedOnItsContact(t *testing.T)
 
 	require.Equal(t, http.StatusOK, posted.Code, posted.Body.String())
 	require.Equal(t, http.StatusOK, redelivered.Code, redelivered.Body.String())
-	got := env.Outbox(t, events.NameSmsReceived)
+	got := env.QueuedMessages(t, events.NameSmsReceived)
 	require.Len(t, got, 1, "a redelivered message carries the same key, so the Event is stored and published once")
 	key := fmt.Sprintf("sms:%d:SM0001", sms.Integration.ID)
 	assert.Equal(t, key, got[0].Envelope.DedupKey)
-	received := env.OutboxCount(t, events.NameSmsReceived, map[string]any{
+	received := env.QueuedCount(t, events.NameSmsReceived, map[string]any{
 		"contactId": c.ID, "integrationId": sms.Integration.ID, "text": "Is the sale still on?",
 	})
 	assert.Equal(t, 1, received)
@@ -73,7 +73,7 @@ func TestAReplyFromAKnownNumberInALocalFormatIsRecordedOnItsContact(t *testing.T
 	posted := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken, form)
 
 	require.Equal(t, http.StatusOK, posted.Code, posted.Body.String())
-	received := env.OutboxCount(t, events.NameSmsReceived, map[string]any{
+	received := env.QueuedCount(t, events.NameSmsReceived, map[string]any{
 		"contactId": c.ID, "phone": "+14155550177", "text": "See you at 5",
 	})
 	assert.Equal(t, 1, received)
@@ -83,7 +83,7 @@ func TestATextFromAnUnknownNumberCreatesNoContactAndNoEvent(t *testing.T) {
 	env := testhelper.Setup(t)
 	sms := env.ConnectTwilio(t)
 	contacts := env.DB.Contact.Query().CountX(t.Context())
-	before := len(env.OutboxEnvelopes(t))
+	before := len(env.QueuedEnvelopes(t))
 
 	stranger := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
 		inbound(sms, "SM0002", "+14155550199", "Who is this?"))
@@ -94,6 +94,6 @@ func TestATextFromAnUnknownNumberCreatesNoContactAndNoEvent(t *testing.T) {
 	require.Equal(t, http.StatusOK, notANumber.Code, notANumber.Body.String())
 	contactsAfter := env.DB.Contact.Query().CountX(t.Context())
 	assert.Equal(t, contacts, contactsAfter)
-	envelopes := env.OutboxEnvelopes(t)
+	envelopes := env.QueuedEnvelopes(t)
 	assert.Len(t, envelopes, before)
 }

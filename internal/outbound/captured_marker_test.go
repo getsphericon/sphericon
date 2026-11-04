@@ -53,8 +53,8 @@ func TestASendThroughASenderThatKeepsItsMailIsMarkedCapturedOnEverySurface(t *te
 
 		assert.True(t, env.DB.OutboundMessage.GetX(ctx, res.MessageID).Captured, surface)
 		match := map[string]any{"outboundMessageId": res.MessageID, "captured": true}
-		assert.Equal(t, 1, env.OutboxCount(t, events.NameEmailSent, match), surface)
-		assert.Equal(t, 1, env.OutboxCount(t, events.NameEmailDelivered, match), surface)
+		assert.Equal(t, 1, env.QueuedCount(t, events.NameEmailSent, match), surface)
+		assert.Equal(t, 1, env.QueuedCount(t, events.NameEmailDelivered, match), surface)
 	}
 }
 
@@ -69,6 +69,6 @@ func TestASendThroughASenderThatDeliversOutsideIsNotMarkedCaptured(t *testing.T)
 	require.NoError(t, err)
 
 	assert.False(t, env.DB.OutboundMessage.GetX(ctx, res.MessageID).Captured)
-	assert.Zero(t, env.OutboxCount(t, events.NameEmailSent, map[string]any{"outboundMessageId": res.MessageID, "captured": true}))
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameEmailSent, map[string]any{"outboundMessageId": res.MessageID}))
+	assert.Zero(t, env.QueuedCount(t, events.NameEmailSent, map[string]any{"outboundMessageId": res.MessageID, "captured": true}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameEmailSent, map[string]any{"outboundMessageId": res.MessageID}))
 }

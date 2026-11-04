@@ -17,12 +17,11 @@ import (
 )
 
 // Fixtures: workspace acme (1) has events page_view and purchase; contact 1 is
-// alice@example.com. Ingest publishes to the outbox (the persist subscriber is not
-// running under txdb), so assertions read the decoded outbox rows.
+// alice@example.com. Assertions read what Ingest published, decoded.
 
-func outboxCollected(t *testing.T, env *testhelper.TestEnv) []*events.CollectedEvent {
+func queuedCollected(t *testing.T, env *testhelper.TestEnv) []*events.CollectedEvent {
 	t.Helper()
-	return lo.Map(env.OutboxEvents(t), func(ev events.DomainEvent, _ int) *events.CollectedEvent {
+	return lo.Map(env.QueuedEvents(t), func(ev events.DomainEvent, _ int) *events.CollectedEvent {
 		ce, ok := ev.(*events.CollectedEvent)
 		require.Truef(t, ok, "got %T", ev)
 		return ce
@@ -39,7 +38,7 @@ func TestIngestAttachesEventToExistingContactByAlias(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	got := outboxCollected(t, env)
+	got := queuedCollected(t, env)
 	require.Len(t, got, 2)
 	assert.Equal(t, int64(fixtures.ContactAliceID), got[0].ContactID, "email alias resolves to the existing contact")
 	assert.Equal(t, int64(0), got[1].ContactID, "unknown identity stays anonymous")
@@ -55,7 +54,7 @@ func TestIngestCarriesPropertiesVerbatim(t *testing.T) {
 		{SubjectID: "s", Action: "added_to_cart", Properties: map[string]any{"sku": "A1"}},
 	}))
 
-	got := outboxCollected(t, env)
+	got := queuedCollected(t, env)
 	require.Len(t, got, 1)
 	assert.Equal(t, "A1", got[0].Properties["sku"])
 }

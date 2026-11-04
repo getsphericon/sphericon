@@ -18,7 +18,7 @@ import (
 func outboxRows(t *testing.T, env *testhelper.TestEnv, email string) int {
 	t.Helper()
 	n := 0
-	for _, ev := range env.OutboxEvents(t, events.NameContactCreated) {
+	for _, ev := range env.QueuedEvents(t, events.NameContactCreated) {
 		if ev.Project().Email == email {
 			n++
 		}

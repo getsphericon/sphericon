@@ -63,7 +63,7 @@ func TestSenderThatConfirmsOnAcceptanceIsStampedDeliveredOnce(t *testing.T) {
 	assert.NotNil(t, row.DeliveredAt)
 	assert.Nil(t, row.BouncedAt)
 	assert.Nil(t, row.ComplainedAt)
-	assert.Equal(t, 1, env.OutboxCount(t, "email.delivered", map[string]any{"outboundMessageId": res.MessageID}))
+	assert.Equal(t, 1, env.QueuedCount(t, "email.delivered", map[string]any{"outboundMessageId": res.MessageID}))
 }
 
 func TestSenderThatDoesNotConfirmIsNotStampedDelivered(t *testing.T) {
@@ -74,5 +74,5 @@ func TestSenderThatDoesNotConfirmIsNotStampedDelivered(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Nil(t, env.DB.OutboundMessage.GetX(ctx, res.MessageID).DeliveredAt)
-	assert.Zero(t, env.OutboxCount(t, "email.delivered", map[string]any{"outboundMessageId": res.MessageID}))
+	assert.Zero(t, env.QueuedCount(t, "email.delivered", map[string]any{"outboundMessageId": res.MessageID}))
 }

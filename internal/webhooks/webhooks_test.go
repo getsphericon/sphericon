@@ -361,12 +361,12 @@ func TestTestSendIsAuditedAsAWebhookEndpointTest(t *testing.T) {
 	acting := env.Bus.Act(env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser, ID: "7", Name: "John"})
 	rcv := newReceiver(t, "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", http.StatusOK)
 	pointAt(t, env, fixtures.WebhookCodebasicsID, rcv.srv.URL)
-	before := len(env.OutboxEvents(t, events.NameAuditEntry))
+	before := len(env.QueuedEvents(t, events.NameAuditEntry))
 
 	_, err := moduleAllowing(t, env, rcv).TestSend(context.Background(), acting, fixtures.WebhookCodebasicsID, "email.opened")
 	require.NoError(t, err)
 
-	all := env.OutboxEvents(t, events.NameAuditEntry)
+	all := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, all, before+1)
 	e := all[len(all)-1].(*events.AuditEntry)
 	assert.Equal(t, events.ActionWebhookEndpointTest, e.Action)
@@ -547,7 +547,7 @@ func TestRecordDeliveryDisablesOnGoneAndTellsTheOwnersOnce(t *testing.T) {
 	assert.Contains(t, sent[0].body, "https://hooks.example.com")
 	assert.NotContains(t, sent[0].body, "hidden")
 
-	entries := lo.FilterMap(r.env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+	entries := lo.FilterMap(r.env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		a := ev.(*events.AuditEntry)
 		return a, a.Action == "webhook_endpoint.update"
 	})

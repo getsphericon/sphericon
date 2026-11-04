@@ -44,7 +44,7 @@ func textIn(t *testing.T, env *testhelper.TestEnv, account testhelper.TwilioAcco
 }
 
 // assertNothingNames checks that no Event, Outbound message, Confirmation, opt-out, Suppression or
-// outbox envelope holds the number.
+// queued event job holds the number.
 func assertNothingNames(t *testing.T, env *testhelper.TestEnv, number string) {
 	t.Helper()
 	ctx := t.Context()
@@ -60,11 +60,11 @@ func assertNothingNames(t *testing.T, env *testhelper.TestEnv, number string) {
 	assert.Zero(t, stops, "no opt-out by the number")
 	suppressions := env.DB.Suppression.Query().Where(entsuppression.Destination(number)).CountX(ctx)
 	assert.Zero(t, suppressions, "no Suppression by the number")
-	envelopes := env.OutboxEnvelopes(t)
+	envelopes := env.QueuedEnvelopes(t)
 	naming := lo.FilterMap(envelopes, func(e events.Envelope, _ int) (string, bool) {
 		return e.Name, strings.Contains(string(e.Data)+e.DedupKey, digits)
 	})
-	assert.Empty(t, naming, "no outbox envelope names the number")
+	assert.Empty(t, naming, "no queued event names the number")
 }
 
 // erasedEvent is what an Event that outlives the Erasure keeps of the person: nothing.
@@ -131,7 +131,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	assert.Equal(t, []erasedMessage{{}, {}}, anonymous, "the texts keep no Contact, number or Twilio SID")
 	followed := follow(t, env, paths[0], browserUA)
 	assert.Equal(t, http.StatusNotFound, followed.Code, "the short link answers 404")
-	erased := env.OutboxEvents(t, events.NameContactErased)
+	erased := env.QueuedEvents(t, events.NameContactErased)
 	require.Len(t, erased, 1)
 	hash := erased[0].(*events.ContactErased).PhoneHash
 	assert.Equal(t, erasure.Hash(number), hash, "the Erasure record holds the phone's hash")

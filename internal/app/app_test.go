@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
 	"testing"
 
@@ -162,8 +163,7 @@ func TestResetSecondFactorByEmail(t *testing.T) {
 	assert.Empty(t, after.SecondFactorSecretEncrypted)
 	assert.Greater(t, after.SessionEpoch, before.SessionEpoch, "every session ends")
 
-	envelopes, err := testhelper.OutboxEnvelopesOn(ctx, client, events.NameAuditEntry)
-	require.NoError(t, err)
+	envelopes := testhelper.QueuedEnvelopesOn(t, sqlDBOn(t, os.Getenv("SPHERICON_DATABASE_URL")), events.NameAuditEntry)
 	// What each entry records, without the moment and the request it came from.
 	recorded := lo.Map(envelopes, func(e events.Envelope, _ int) events.AuditEntry {
 		ev, err := events.Decode(e)

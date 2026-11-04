@@ -21,7 +21,7 @@ import (
 
 // The built-in provider Presets over HTTP, on the committed Acme Integrations that use them
 // (fixtures/integrations.yml). Each case posts a provider's payload to the Integration's hook
-// URL and asserts what it left behind: the response, the outbox, Suppression.
+// URL and asserts what it left behind: the response, the published events, Suppression.
 
 // The credentials of the Postmark and Mailgun Integrations, spelled the way the fixtures do.
 const (
@@ -60,7 +60,7 @@ func mailgunPost(t *testing.T, env *testhelper.TestEnv, key, signingKey, eventDa
 func failuresFor(t *testing.T, env *testhelper.TestEnv, email string) []events.EmailDelivery {
 	t.Helper()
 	var out []events.EmailDelivery
-	for _, ev := range env.OutboxEvents(t, deliveryNames...) {
+	for _, ev := range env.QueuedEvents(t, deliveryNames...) {
 		f, ok := ev.(*events.EmailDelivery)
 		require.Truef(t, ok, "got %T", ev)
 		if f.Email == email {
@@ -167,7 +167,7 @@ func TestAVerifiedRequestTheTransformCannotReadAnswers5xxAndChangesNothing(t *te
 	rec := postmarkPost(t, env, fixtures.IntegrationAcmePostmarkIngestKey, postmarkUser, postmarkToken, body)
 
 	assert.GreaterOrEqual(t, rec.Code, http.StatusInternalServerError)
-	assert.Empty(t, env.OutboxEvents(t, deliveryNames...))
+	assert.Empty(t, env.QueuedEvents(t, deliveryNames...))
 }
 
 func TestMailgunIntegrationSuppressesPermanentFailuresAndComplaintsOnly(t *testing.T) {

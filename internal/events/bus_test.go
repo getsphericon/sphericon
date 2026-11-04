@@ -19,7 +19,7 @@ import (
 
 func outboxCount(t *testing.T, env *testhelper.TestEnv) int {
 	t.Helper()
-	return len(env.OutboxEnvelopes(t))
+	return len(env.QueuedEnvelopes(t))
 }
 
 // dataFor marshals a typed event into the envelope Data, as the publisher does.
