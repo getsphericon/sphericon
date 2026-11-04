@@ -164,6 +164,8 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 		return false
 	}, 10*time.Second, 50*time.Millisecond)
 	require.Eventually(t, func() bool { return exposes(t, srvAddr, "river_") }, 10*time.Second, 50*time.Millisecond)
+	// The fetch metrics come from otelriver's hook, which only a plugin installs.
+	require.Eventually(t, func() bool { return exposes(t, srvAddr, "river_job_get_available") }, 10*time.Second, 50*time.Millisecond)
 }
 
 // exposes reports whether the live exposition at addr contains substr.

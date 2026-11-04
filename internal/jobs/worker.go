@@ -174,159 +174,185 @@ const (
 	discardedJobRetention = 14 * 24 * time.Hour
 )
 
+// BaseConfig is the river configuration every client of the application shares, the worker
+// client and the insert-only one alike, and the one a test works a job with, so that the job
+// meets the plugins and middleware it meets in production.
+//
+// otelriver is a plugin, so it is both middleware (a span and metrics per job inserted and
+// worked) and a hook (the metrics of each fetch), through the global providers telemetry.Setup
+// sets (a no-op when telemetry is disabled, as in tests). With trace propagation a job carries
+// the trace context it was inserted in, and the span of its work links to it. Plugins run
+// outside the middleware, so the span covers what the middleware does.
+//
+// events.JobCorrelation carries the chain of the domain event being handled through the jobs
+// queued while handling it, to the events they publish; logging.JobLogs keeps the lines each job
+// logged on the job, shown on its page in the job queue UI.
+func BaseConfig() *river.Config {
+	return &river.Config{
+		Plugins:    []rivertype.Plugin{otelriver.NewMiddleware(&otelriver.MiddlewareConfig{EnableTracePropagation: true})},
+		Middleware: []rivertype.Middleware{events.JobCorrelation(), logging.JobLogs()},
+	}
+}
+
+// Queues are the queues the worker client works, each with its number of workers.
+func Queues() map[string]river.QueueConfig {
+	return map[string]river.QueueConfig{
+		river.QueueDefault:      {MaxWorkers: 5},
+		broadcasts.Queue:        {MaxWorkers: 10},
+		QueueWebhooks:           {MaxWorkers: 5},
+		stepping.QueueHTTPSteps: {MaxWorkers: 5},
+	}
+}
+
 // newRiverConfig builds the river config; extra are the Edition's periodic jobs, added to
 // core's.
 func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river.PeriodicJob) *river.Config {
-	return &river.Config{
-		CompletedJobRetentionPeriod: completedJobRetention,
-		CancelledJobRetentionPeriod: cancelledJobRetention,
-		DiscardedJobRetentionPeriod: discardedJobRetention,
-		Queues: map[string]river.QueueConfig{
-			river.QueueDefault:      {MaxWorkers: 5},
-			broadcasts.Queue:        {MaxWorkers: 10},
-			QueueWebhooks:           {MaxWorkers: 5},
-			stepping.QueueHTTPSteps: {MaxWorkers: 5},
-		},
-		// Stop lets running jobs finish for SoftStopTimeout, then cancels their contexts.
-		SoftStopTimeout: SoftStopTimeout,
-		Workers:         workers,
-		Logger:          logger,
-		ErrorHandler:    NewErrorHandler(logger),
-		// OTel spans + metrics per job insert/work, via the global providers set
-		// by telemetry.Setup (a no-op when telemetry is disabled, e.g. tests).
-		// events.JobCorrelation carries the chain of the domain event being handled through the
-		// jobs queued while handling it, to the events they publish; logging.JobLogs keeps the
-		// lines each job logged on the job, shown on its page in the job queue UI.
-		Middleware: []rivertype.Middleware{otelriver.NewMiddleware(nil), events.JobCorrelation(), logging.JobLogs()},
+	cfg := BaseConfig()
+	cfg.CompletedJobRetentionPeriod = completedJobRetention
+	cfg.CancelledJobRetentionPeriod = cancelledJobRetention
+	cfg.DiscardedJobRetentionPeriod = discardedJobRetention
+	cfg.Queues = Queues()
+	// Stop lets running jobs finish for SoftStopTimeout, then cancels their contexts.
+	cfg.SoftStopTimeout = SoftStopTimeout
+	cfg.Workers = workers
+	cfg.Logger = logger
+	cfg.ErrorHandler = NewErrorHandler(logger)
+	cfg.PeriodicJobs = periodicJobs(extra)
+	return cfg
+}
+
+// periodicJobs are core's periodic jobs, then extra, the Edition's.
+func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
+	return append([]*river.PeriodicJob{
 		// Re-validate every Sending domain's DKIM DNS periodically so a record
 		// that disappears flips the domain back to unverified (ADR 0010).
-		PeriodicJobs: append([]*river.PeriodicJob{
-			river.NewPeriodicJob(
-				river.PeriodicInterval(15*time.Minute),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return RecheckSendingDomainsArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
-			river.NewPeriodicJob(
-				river.PeriodicInterval(15*time.Minute),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return RecheckJoinDomainsArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
-			// Tracking domains are re-checked on their own cadence (ADR 0038, ADR 0071).
-			river.NewPeriodicJob(
-				river.PeriodicInterval(15*time.Minute),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return RecheckTrackingDomainsArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
-			river.NewPeriodicJob(
-				river.PeriodicInterval(time.Hour),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return RefreshSendQuotasArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
-			// Drop failed-attempt rows past their window (ADR 0025).
-			river.NewPeriodicJob(
-				river.PeriodicInterval(time.Hour),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return PurgeAuthAttemptsArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
-			// Remind Users a day before their Two-factor grace ends (ADR 0020).
-			river.NewPeriodicJob(
-				river.PeriodicInterval(secondFactorReminderInterval),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return RemindSecondFactorArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
-			// Prune the domain-events outbox below the slowest consumer (ADR 0019).
-			river.NewPeriodicJob(
-				river.PeriodicInterval(outboxPruneInterval),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return PruneOutboxArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
-			// Refresh the iCloud Private Relay egress ranges machine detection reads (ADR 0053).
-			river.NewPeriodicJob(
-				river.PeriodicInterval(privateRelayRefreshInterval),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return RefreshPrivateRelayArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
-			// Delete expired analytical Events daily at 03:00 UTC (ADR 0019).
-			river.NewPeriodicJob(
-				dailyAtUTC{hour: eventsRetentionHourUTC},
-				func() (river.JobArgs, *river.InsertOpts) {
-					return PruneEventsArgs{}, nil
-				},
-				nil,
-			),
-			// Erase Workspaces whose 30-day deletion window has passed (ADR 0043).
-			river.NewPeriodicJob(
-				river.PeriodicInterval(workspaceErasureInterval),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return EraseWorkspacesArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
-			// Delete stale Unverified Users daily at 04:00 UTC (ADR 0030).
-			river.NewPeriodicJob(
-				dailyAtUTC{hour: unverifiedUsersHourUTC},
-				func() (river.JobArgs, *river.InsertOpts) {
-					return PruneUnverifiedUsersArgs{}, nil
-				},
-				nil,
-			),
-			// Delete Captured messages past the Test inbox's retention window daily at 06:00 UTC (ADR 0058).
-			river.NewPeriodicJob(
-				dailyAtUTC{hour: capturedMessagesHourUTC},
-				func() (river.JobArgs, *river.InsertOpts) {
-					return PruneCapturedMessagesArgs{}, nil
-				},
-				nil,
-			),
-			// Delete spent Passkey challenges daily at 05:00 UTC (ADR 0051).
-			river.NewPeriodicJob(
-				dailyAtUTC{hour: passkeyChallengesHourUTC},
-				func() (river.JobArgs, *river.InsertOpts) {
-					return PrunePasskeyChallengesArgs{}, nil
-				},
-				nil,
-			),
-			// Delete the lapsed and used Start tokens daily at 04:00 UTC (ADR 0076).
-			river.NewPeriodicJob(
-				dailyAtUTC{hour: startTokensHourUTC},
-				func() (river.JobArgs, *river.InsertOpts) {
-					return PruneStartTokensArgs{}, nil
-				},
-				nil,
-			),
-			// Delete the expired pending sign-ups of the Sign-in providers hourly (ADR 0062).
-			river.NewPeriodicJob(
-				river.PeriodicInterval(pendingSignupsInterval),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return PrunePendingSignupsArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
-		}, extra...),
-	}
+		river.NewPeriodicJob(
+			river.PeriodicInterval(15*time.Minute),
+			func() (river.JobArgs, *river.InsertOpts) {
+				return RecheckSendingDomainsArgs{}, nil
+			},
+			&river.PeriodicJobOpts{RunOnStart: true},
+		),
+		river.NewPeriodicJob(
+			river.PeriodicInterval(15*time.Minute),
+			func() (river.JobArgs, *river.InsertOpts) {
+				return RecheckJoinDomainsArgs{}, nil
+			},
+			&river.PeriodicJobOpts{RunOnStart: true},
+		),
+		// Tracking domains are re-checked on their own cadence (ADR 0038, ADR 0071).
+		river.NewPeriodicJob(
+			river.PeriodicInterval(15*time.Minute),
+			func() (river.JobArgs, *river.InsertOpts) {
+				return RecheckTrackingDomainsArgs{}, nil
+			},
+			&river.PeriodicJobOpts{RunOnStart: true},
+		),
+		river.NewPeriodicJob(
+			river.PeriodicInterval(time.Hour),
+			func() (river.JobArgs, *river.InsertOpts) {
+				return RefreshSendQuotasArgs{}, nil
+			},
+			&river.PeriodicJobOpts{RunOnStart: true},
+		),
+		// Drop failed-attempt rows past their window (ADR 0025).
+		river.NewPeriodicJob(
+			river.PeriodicInterval(time.Hour),
+			func() (river.JobArgs, *river.InsertOpts) {
+				return PurgeAuthAttemptsArgs{}, nil
+			},
+			&river.PeriodicJobOpts{RunOnStart: true},
+		),
+		// Remind Users a day before their Two-factor grace ends (ADR 0020).
+		river.NewPeriodicJob(
+			river.PeriodicInterval(secondFactorReminderInterval),
+			func() (river.JobArgs, *river.InsertOpts) {
+				return RemindSecondFactorArgs{}, nil
+			},
+			&river.PeriodicJobOpts{RunOnStart: true},
+		),
+		// Prune the domain-events outbox below the slowest consumer (ADR 0019).
+		river.NewPeriodicJob(
+			river.PeriodicInterval(outboxPruneInterval),
+			func() (river.JobArgs, *river.InsertOpts) {
+				return PruneOutboxArgs{}, nil
+			},
+			&river.PeriodicJobOpts{RunOnStart: true},
+		),
+		// Refresh the iCloud Private Relay egress ranges machine detection reads (ADR 0053).
+		river.NewPeriodicJob(
+			river.PeriodicInterval(privateRelayRefreshInterval),
+			func() (river.JobArgs, *river.InsertOpts) {
+				return RefreshPrivateRelayArgs{}, nil
+			},
+			&river.PeriodicJobOpts{RunOnStart: true},
+		),
+		// Delete expired analytical Events daily at 03:00 UTC (ADR 0019).
+		river.NewPeriodicJob(
+			dailyAtUTC{hour: eventsRetentionHourUTC},
+			func() (river.JobArgs, *river.InsertOpts) {
+				return PruneEventsArgs{}, nil
+			},
+			nil,
+		),
+		// Erase Workspaces whose 30-day deletion window has passed (ADR 0043).
+		river.NewPeriodicJob(
+			river.PeriodicInterval(workspaceErasureInterval),
+			func() (river.JobArgs, *river.InsertOpts) {
+				return EraseWorkspacesArgs{}, nil
+			},
+			&river.PeriodicJobOpts{RunOnStart: true},
+		),
+		// Delete stale Unverified Users daily at 04:00 UTC (ADR 0030).
+		river.NewPeriodicJob(
+			dailyAtUTC{hour: unverifiedUsersHourUTC},
+			func() (river.JobArgs, *river.InsertOpts) {
+				return PruneUnverifiedUsersArgs{}, nil
+			},
+			nil,
+		),
+		// Delete Captured messages past the Test inbox's retention window daily at 06:00 UTC (ADR 0058).
+		river.NewPeriodicJob(
+			dailyAtUTC{hour: capturedMessagesHourUTC},
+			func() (river.JobArgs, *river.InsertOpts) {
+				return PruneCapturedMessagesArgs{}, nil
+			},
+			nil,
+		),
+		// Delete spent Passkey challenges daily at 05:00 UTC (ADR 0051).
+		river.NewPeriodicJob(
+			dailyAtUTC{hour: passkeyChallengesHourUTC},
+			func() (river.JobArgs, *river.InsertOpts) {
+				return PrunePasskeyChallengesArgs{}, nil
+			},
+			nil,
+		),
+		// Delete the lapsed and used Start tokens daily at 04:00 UTC (ADR 0076).
+		river.NewPeriodicJob(
+			dailyAtUTC{hour: startTokensHourUTC},
+			func() (river.JobArgs, *river.InsertOpts) {
+				return PruneStartTokensArgs{}, nil
+			},
+			nil,
+		),
+		// Delete the expired pending sign-ups of the Sign-in providers hourly (ADR 0062).
+		river.NewPeriodicJob(
+			river.PeriodicInterval(pendingSignupsInterval),
+			func() (river.JobArgs, *river.InsertOpts) {
+				return PrunePendingSignupsArgs{}, nil
+			},
+			&river.PeriodicJobOpts{RunOnStart: true},
+		),
+	}, extra...)
 }
 
 // NewInserter is the insert-only river client over db, for the transactional enqueues of
 // events.Bus.WithinScopedEnqueueTx: a job is inserted on the caller's *sql.Tx, so it exists
 // iff that transaction commits. It runs no workers; the Client's own river client works the jobs.
+// It has the worker client's plugins and middleware (BaseConfig), so a job it inserts carries
+// the trace context and the chain it was inserted in.
 func NewInserter(db *sql.DB) (*river.Client[*sql.Tx], error) {
-	return river.NewClient(riverdatabasesql.New(db), &river.Config{Middleware: []rivertype.Middleware{otelriver.NewMiddleware(nil), events.JobCorrelation()}})
+	return river.NewClient(riverdatabasesql.New(db), BaseConfig())
 }
 
 // Start begins processing jobs (run in a goroutine; returns once started).
