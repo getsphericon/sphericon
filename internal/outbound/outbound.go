@@ -42,7 +42,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
@@ -551,11 +550,11 @@ func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request
 // again. Before any has: stopped is the Held or Deferral Result the failure means (the caller drops
 // the claim), else the error is retryable, except a contentError, which is the message's own. A
 // target the provider says reaches no one is dropped (its Channel's unreachable, skip is the reason
-// it now has) and one whose user blocked the bot is the user's opt-out (recordBlocked, skip is
-// unsubscribed_everything); one that refuses the message for good, for that target alone
-// (chatRefusedError), is a failed target only. The message goes on to the others: first is nil when
-// none took it and none failed, and a contentError with the first refusal's description when none
-// took it and one refused.
+// it now has) and one whose person stopped at the provider (a blocked bot, a number that texted STOP
+// to the sender) is their opt-out (recordOptedOut, skip is unsubscribed_everything); one that refuses
+// the message for good, for that target alone (chatRefusedError), is a failed target only. The
+// message goes on to the others: first is nil when none took it and none failed, and a contentError
+// with the first refusal's description when none took it and one refused.
 func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req Request, rendered any, targets []target, origin messaging.Origin, msg *ent.OutboundMessage) (first *accepted, stopped *Result, skip string, err error) {
 	messageID := msg.ID
 	var refused *chatRefusedError
@@ -571,8 +570,8 @@ func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req R
 			}
 			continue
 		}
-		if blockedByUser(err) {
-			if err := m.recordBlocked(ctx, s, g, msg, t); err != nil {
+		if _, stopped := errors.AsType[optedOutError](err); stopped {
+			if err := m.recordOptedOut(ctx, s, req, g, msg, t); err != nil {
 				return first, nil, skip, err
 			}
 			// The person's opt-out outweighs a dropped target's reason.
@@ -967,24 +966,14 @@ func (m *Module) ListTransactional(ctx context.Context, s *ent.Scoped, p paginat
 		})
 }
 
-// blockedByUser reports whether the provider refused the send because the person blocked the sender.
-func blockedByUser(err error) bool {
-	te, ok := errors.AsType[*messaging.TelegramError](err)
-	return ok && te.Blocked()
-}
-
-// recordBlocked records that the user of target blocked the bot: the same Channel-wide opt-out and
-// telegram.unsubscribed as the update Telegram sends for it (ADR 0077), attributed to the message
-// that found out.
-func (m *Module) recordBlocked(ctx context.Context, s *ent.Scoped, g gateResult, msg *ent.OutboundMessage, t target) error {
-	var integrationID int64
-	if g.route.Integration != nil {
-		integrationID = g.route.Integration.ID
+// recordOptedOut records that the person at target stopped at the provider, which refused the send
+// for it: the Channel's opt-out (channel.optedOut), in a transaction of its own.
+func (m *Module) recordOptedOut(ctx context.Context, s *ent.Scoped, req Request, g gateResult, msg *ent.OutboundMessage, t target) error {
+	ch, err := m.channel(req.Channel())
+	if err != nil {
+		return err
 	}
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		return optout.StopTelegram(ctx, ts, pub, optout.TelegramStop{
-			Destination: t.dest, IntegrationID: integrationID, Via: events.UnsubscribedByBlock, Message: msg,
-			Now: m.now(), DedupKey: fmt.Sprintf("send:%d:%s", msg.ID, t.dest),
-		})
+		return ch.optedOut(ctx, ts, pub, g.route.Integration, msg, t, m.now())
 	})
 }

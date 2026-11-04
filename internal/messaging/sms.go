@@ -78,6 +78,9 @@ const (
 	SMSRefusalRate SMSRefusal = "rate"
 	// SMSRefusalDestination concerns the number alone: invalid, or not reachable from the sender.
 	SMSRefusalDestination SMSRefusal = "destination"
+	// SMSRefusalOptedOut says the person stopped the sender's messages at the provider (texted STOP
+	// to it there): the number's Channel-wide opt-out (ADR 0077), and the message is Skipped.
+	SMSRefusalOptedOut SMSRefusal = "opted_out"
 	// SMSRefusalDeadNumber says the number reaches no handset: it does not exist or is not a mobile
 	// number. It is suppressed like a hard bounce.
 	SMSRefusalDeadNumber SMSRefusal = "dead_number"

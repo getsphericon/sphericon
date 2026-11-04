@@ -1008,6 +1008,26 @@ func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) external
 	externalapiMessageRevenue.Amount = source.Credited.Amount
 	return externalapiMessageRevenue
 }
+func (c *ConverterImpl) OptOutViaToResource(source unsubscribe.Via) external.OptOutVia {
+	var externalapiOptOutVia external.OptOutVia
+	switch source {
+	case unsubscribe.ViaBlock:
+		externalapiOptOutVia = external.OptOutViaBlock
+	case unsubscribe.ViaButton:
+		externalapiOptOutVia = external.OptOutViaButton
+	case unsubscribe.ViaKeyword:
+		externalapiOptOutVia = external.OptOutViaKeyword
+	case unsubscribe.ViaLink:
+		externalapiOptOutVia = external.OptOutViaLink
+	case unsubscribe.ViaManual:
+		externalapiOptOutVia = external.OptOutViaManual
+	case unsubscribe.ViaRefusedSend:
+		externalapiOptOutVia = external.OptOutViaRefusedSend
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiOptOutVia
+}
 func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) external.ContactExportOutboundMessage {
 	var externalapiContactExportOutboundMessage external.ContactExportOutboundMessage
 	if source != nil {
@@ -1588,6 +1608,7 @@ func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) external.Co
 		externalapiContactExportUnsubscribe.Channel = string((*source).Channel)
 		externalapiContactExportUnsubscribe.Destination = (*source).Destination
 		externalapiContactExportUnsubscribe.SendingSource = (*source).SendingSource
+		externalapiContactExportUnsubscribe.Via = optNilOptOutVia(c, (*source).Via)
 		externalapiContactExportUnsubscribe.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportUnsubscribe

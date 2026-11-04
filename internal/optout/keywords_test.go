@@ -41,3 +41,26 @@ func TestIsStopKeyword(t *testing.T) {
 		})
 	}
 }
+
+func TestIsStartKeyword(t *testing.T) {
+	cases := []struct {
+		text  string
+		start bool
+	}{
+		{"START", true},
+		{"start", true},
+		{" Start\n", true},
+		{"UNSTOP", true},
+		{"unstop", true},
+		{"start again", false},
+		{"please start", false},
+		{"/start", false},
+		{"stop", false},
+		{"", false},
+	}
+	for _, c := range cases {
+		t.Run(c.text, func(t *testing.T) {
+			assert.Equal(t, c.start, optout.IsStartKeyword(c.text))
+		})
+	}
+}

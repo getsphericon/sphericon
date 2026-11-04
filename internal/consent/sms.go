@@ -6,9 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -90,6 +93,26 @@ func ConfirmSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, numb
 	})
 }
 
+// StartSMSIn reads a START the number texted (ADR 0077): it lifts the number's opt-out and records a
+// Confirmation with provenance keyword, since the person asked to receive again, inside the
+// transaction s and pub are bound to. A stronger Confirmation already on the number stays (recordIn),
+// so a repeated START records nothing twice. The Confirmation names the Contact whose phone the
+// number is, when there is one; a START creates no Contact.
+func StartSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string) error {
+	if err := optout.LiftSMS(ctx, s, number); err != nil {
+		return err
+	}
+	holder, err := s.Contact().Query().Where(contact.Phone(number)).OnlyID(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return fmt.Errorf("find the number's contact: %w", err)
+	}
+	_, err = recordIn(ctx, s, pub, grant{
+		channel: confirmation.ChannelSms, destination: number, provenance: confirmation.ProvenanceKeyword,
+		contactID: holder,
+	})
+	return err
+}
+
 // SMSUnsubscribe records an SMS opt-out that reached the Workspace by another route (an email, a
 // call): the number gets no more texts, whichever sender (optout.StopSMS). A manual opt-out is
 // Channel-wide, so only the `everything` source is accepted. Idempotent.
@@ -102,7 +125,7 @@ func SMSUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destina
 		return nil, ErrSMSSource
 	}
 	if err := settled(bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		return optout.StopSMS(ctx, ts, number)
+		return optout.StopSMS(ctx, ts, number, unsubscribe.ViaManual)
 	})); err != nil {
 		return nil, err
 	}
@@ -114,7 +137,14 @@ func SMSUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destina
 type ContactSMS struct {
 	Phone        *string
 	Confirmation *ent.Confirmation
-	OptedOutAt   *time.Time
+	OptOut       *SMSOptOut
+}
+
+// SMSOptOut is the opt-out of a phone from every SMS of the Workspace: how the person stopped, and
+// when.
+type SMSOptOut struct {
+	Via        unsubscribe.Via
+	OptedOutAt time.Time
 }
 
 // ReadContactSMS reads the SMS consent of a Contact's phone.
@@ -142,7 +172,8 @@ func ReadContactSMS(ctx context.Context, s *ent.Scoped, contactID int64) (Contac
 		return ContactSMS{}, err
 	}
 	if stop != nil {
-		out.OptedOutAt = &stop.CreatedAt
+		// Every SMS opt-out is recorded with its way (optout.StopSMS).
+		out.OptOut = &SMSOptOut{Via: lo.FromPtr(stop.Via), OptedOutAt: stop.CreatedAt}
 	}
 	return out, nil
 }

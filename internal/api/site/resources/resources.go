@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/abusewatch"
@@ -84,6 +85,7 @@ import (
 // goverter:extend nilFloat64
 // goverter:extend optNilString
 // goverter:extend optNilContactSource
+// goverter:extend optNilOptOutVia
 // goverter:extend optNilHoldReason
 // goverter:extend omitEmpty
 // goverter:extend optNilEmailAddress
@@ -140,6 +142,7 @@ import (
 // goverter:extend telegramContentChannel
 // goverter:extend smsContentChannel
 // goverter:extend optNilSmsConfirmation
+// goverter:extend optNilSmsOptOut
 type Converter interface {
 	// The contact is read with its tags loaded (`WithTags`).
 	// goverter:map Edges.Tags Tags
@@ -411,6 +414,9 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
 	SmsConsentToResource(source consent.ContactSMS) siteapi.SiteSmsConsent
+	SmsOptOutToResource(source *consent.SMSOptOut) siteapi.SiteSmsOptOut
+	// goverter:enum:transform value
+	OptOutViaToResource(source unsubscribe.Via) siteapi.OptOutVia
 	// goverter:map CreatedAt ConfirmedAt
 	SmsConfirmationToResource(source *ent.Confirmation) siteapi.SiteSmsConfirmation
 	// goverter:enum:transform value
@@ -787,6 +793,14 @@ func optNilSmsConfirmation(c Converter, v *ent.Confirmation) siteapi.OptNilSiteS
 		return siteapi.OptNilSiteSmsConfirmation{}
 	}
 	return siteapi.NewOptNilSiteSmsConfirmation(c.SmsConfirmationToResource(v))
+}
+
+// optNilSmsOptOut is absent exactly when the phone has no SMS opt-out.
+func optNilSmsOptOut(c Converter, v *consent.SMSOptOut) siteapi.OptNilSiteSmsOptOut {
+	if v == nil {
+		return siteapi.OptNilSiteSmsOptOut{}
+	}
+	return siteapi.NewOptNilSiteSmsOptOut(c.SmsOptOutToResource(v))
 }
 
 // broadcastLimit is null exactly when nothing limits the Broadcast (its limit is empty).
@@ -1204,6 +1218,10 @@ func ruleResults(c Converter, stored string) []siteapi.SiteRuleActionResult {
 
 func optNilContactSource(c Converter, v *contact.Source) siteapi.OptNilContactExportSource {
 	return convert.OptVia[siteapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
+}
+
+func optNilOptOutVia(c Converter, v *unsubscribe.Via) siteapi.OptNilOptOutVia {
+	return convert.OptVia[siteapi.OptNilOptOutVia](v, c.OptOutViaToResource)
 }
 
 func optNilHoldReason(c Converter, v *holdreason.Reason) siteapi.OptNilHoldReason {

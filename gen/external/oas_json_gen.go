@@ -16305,17 +16305,24 @@ func (s *ContactExportUnsubscribe) encodeFields(e *jx.Encoder) {
 		e.Str(s.SendingSource)
 	}
 	{
+		if s.Via.Set {
+			e.FieldStart("via")
+			s.Via.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfContactExportUnsubscribe = [5]string{
+var jsonFieldsNameOfContactExportUnsubscribe = [6]string{
 	0: "id",
 	1: "channel",
 	2: "destination",
 	3: "sendingSource",
-	4: "createdAt",
+	4: "via",
+	5: "createdAt",
 }
 
 // Decode decodes ContactExportUnsubscribe from json.
@@ -16373,8 +16380,18 @@ func (s *ContactExportUnsubscribe) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"sendingSource\"")
 			}
+		case "via":
+			if err := func() error {
+				s.Via.Reset()
+				if err := s.Via.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"via\"")
+			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -16393,7 +16410,7 @@ func (s *ContactExportUnsubscribe) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00011111,
+		0b00101111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -31842,6 +31859,55 @@ func (s *OptNilMaxPerSecond) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes OptOutVia as json.
+func (o OptNilOptOutVia) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes OptOutVia from json.
+func (o *OptNilOptOutVia) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilOptOutVia to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v OptOutVia
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilOptOutVia) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilOptOutVia) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SendCap as json.
 func (o OptNilSendCap) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -32036,6 +32102,54 @@ func (s OptNilTimestamp) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilTimestamp) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes OptOutVia as json.
+func (s OptOutVia) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes OptOutVia from json.
+func (s *OptOutVia) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode OptOutVia to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch OptOutVia(v) {
+	case OptOutViaKeyword:
+		*s = OptOutViaKeyword
+	case OptOutViaButton:
+		*s = OptOutViaButton
+	case OptOutViaBlock:
+		*s = OptOutViaBlock
+	case OptOutViaLink:
+		*s = OptOutViaLink
+	case OptOutViaRefusedSend:
+		*s = OptOutViaRefusedSend
+	case OptOutViaManual:
+		*s = OptOutViaManual
+	default:
+		*s = OptOutVia(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptOutVia) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptOutVia) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

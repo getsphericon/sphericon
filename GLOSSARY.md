@@ -287,12 +287,20 @@ unsubscribe page that the author put into the message. Its reversal (START, a re
 bot) lifts it.
 On Telegram the Destination is the user's id, so one stop covers every bot of the Workspace, and it
 is recorded with the `telegram.unsubscribed` System event: `/stop`, a STOP keyword (the core's list,
-shared with SMS later), a press on the message's unsubscribe button (a callback button with the fixed
+shared with SMS), a press on the message's unsubscribe button (a callback button with the fixed
 payload `unsubscribe`, attributed to the Broadcast or Automation of the message when its provider
 message id resolves to an Outbound message) and blocking the bot, which Telegram reports by an update
 or by refusing a send. A `/start`, bare or with a token, and unblocking the bot lift it. A deactivated
 user is no opt-out: the Binding goes (`telegram.unbound`). A stop from a Destination nobody is Bound to
 is still kept, and records nothing else.
+On SMS the Destination is the phone number in E.164, never the sender's, so changing the sender
+reactivates nobody. Every SMS opt-out is Channel-wide: a text that is exactly a STOP keyword (from any
+number, a Contact's or not; "please don't stop" is a reply), a send Twilio refuses with 21610 (the
+number texted STOP to the sender there; the message is Skipped), the `{{ unsubscribe_url }}` link of a
+text, and one recorded by hand. Each drops the number's SMS Confirmation. A text that is exactly START
+or UNSTOP lifts it and records a Confirmation with provenance `keyword` (`sms.confirmed`). sphericon
+answers neither. The row keeps how the person stopped (`via`: keyword, refused send, link, manual),
+which the Contact card shows.
 On email the opt-out is offered two ways with **identical scope**: the visible footer link and an RFC 8058
 **one-click** `List-Unsubscribe` header (Broadcast + Automation only, never Transactional — see
 ADR 0012), both carrying the same source-scoped token; a mailbox provider's one-click button never

@@ -113,6 +113,8 @@ var (
 	AccountNotActive = Refusal{Status: http.StatusBadRequest, Code: 20005, Message: "Account not active"}
 	// InvalidTo is a To that is no valid phone number.
 	InvalidTo = Refusal{Status: http.StatusBadRequest, Code: 21211, Message: "Invalid 'To' Phone Number"}
+	// Unsubscribed is a To that texted STOP to the sender: Twilio refuses it until it texts START.
+	Unsubscribed = Refusal{Status: http.StatusBadRequest, Code: 21610, Message: "Attempt to send to unsubscribed recipient"}
 	// NotMobile is a To that is no mobile number (a landline).
 	NotMobile = Refusal{Status: http.StatusBadRequest, Code: 21614, Message: "'To' number is not a valid mobile number"}
 	// Unknown is a code no table names.

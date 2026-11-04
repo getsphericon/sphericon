@@ -60332,6 +60332,7 @@ type UnsubscribeMutation struct {
 	channel          *unsubscribe.Channel
 	destination      *string
 	sending_source   *string
+	via              *unsubscribe.Via
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -60662,6 +60663,55 @@ func (m *UnsubscribeMutation) ResetSendingSource() {
 	m.sending_source = nil
 }
 
+// SetVia sets the "via" field.
+func (m *UnsubscribeMutation) SetVia(u unsubscribe.Via) {
+	m.via = &u
+}
+
+// Via returns the value of the "via" field in the mutation.
+func (m *UnsubscribeMutation) Via() (r unsubscribe.Via, exists bool) {
+	v := m.via
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVia returns the old "via" field's value of the Unsubscribe entity.
+// If the Unsubscribe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsubscribeMutation) OldVia(ctx context.Context) (v *unsubscribe.Via, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVia is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVia requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVia: %w", err)
+	}
+	return oldValue.Via, nil
+}
+
+// ClearVia clears the value of the "via" field.
+func (m *UnsubscribeMutation) ClearVia() {
+	m.via = nil
+	m.clearedFields[unsubscribe.FieldVia] = struct{}{}
+}
+
+// ViaCleared returns if the "via" field was cleared in this mutation.
+func (m *UnsubscribeMutation) ViaCleared() bool {
+	_, ok := m.clearedFields[unsubscribe.FieldVia]
+	return ok
+}
+
+// ResetVia resets all changes to the "via" field.
+func (m *UnsubscribeMutation) ResetVia() {
+	m.via = nil
+	delete(m.clearedFields, unsubscribe.FieldVia)
+}
+
 // SetContactID sets the "contact_id" field.
 func (m *UnsubscribeMutation) SetContactID(i int64) {
 	m.contact = &i
@@ -60799,7 +60849,7 @@ func (m *UnsubscribeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UnsubscribeMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, unsubscribe.FieldCreatedAt)
 	}
@@ -60817,6 +60867,9 @@ func (m *UnsubscribeMutation) Fields() []string {
 	}
 	if m.sending_source != nil {
 		fields = append(fields, unsubscribe.FieldSendingSource)
+	}
+	if m.via != nil {
+		fields = append(fields, unsubscribe.FieldVia)
 	}
 	if m.contact != nil {
 		fields = append(fields, unsubscribe.FieldContactID)
@@ -60841,6 +60894,8 @@ func (m *UnsubscribeMutation) Field(name string) (ent.Value, bool) {
 		return m.Destination()
 	case unsubscribe.FieldSendingSource:
 		return m.SendingSource()
+	case unsubscribe.FieldVia:
+		return m.Via()
 	case unsubscribe.FieldContactID:
 		return m.ContactID()
 	}
@@ -60864,6 +60919,8 @@ func (m *UnsubscribeMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldDestination(ctx)
 	case unsubscribe.FieldSendingSource:
 		return m.OldSendingSource(ctx)
+	case unsubscribe.FieldVia:
+		return m.OldVia(ctx)
 	case unsubscribe.FieldContactID:
 		return m.OldContactID(ctx)
 	}
@@ -60917,6 +60974,13 @@ func (m *UnsubscribeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSendingSource(v)
 		return nil
+	case unsubscribe.FieldVia:
+		v, ok := value.(unsubscribe.Via)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVia(v)
+		return nil
 	case unsubscribe.FieldContactID:
 		v, ok := value.(int64)
 		if !ok {
@@ -60957,6 +61021,9 @@ func (m *UnsubscribeMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *UnsubscribeMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(unsubscribe.FieldVia) {
+		fields = append(fields, unsubscribe.FieldVia)
+	}
 	if m.FieldCleared(unsubscribe.FieldContactID) {
 		fields = append(fields, unsubscribe.FieldContactID)
 	}
@@ -60974,6 +61041,9 @@ func (m *UnsubscribeMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *UnsubscribeMutation) ClearField(name string) error {
 	switch name {
+	case unsubscribe.FieldVia:
+		m.ClearVia()
+		return nil
 	case unsubscribe.FieldContactID:
 		m.ClearContactID()
 		return nil
@@ -61002,6 +61072,9 @@ func (m *UnsubscribeMutation) ResetField(name string) error {
 		return nil
 	case unsubscribe.FieldSendingSource:
 		m.ResetSendingSource()
+		return nil
+	case unsubscribe.FieldVia:
+		m.ResetVia()
 		return nil
 	case unsubscribe.FieldContactID:
 		m.ResetContactID()

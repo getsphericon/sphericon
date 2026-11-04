@@ -3229,17 +3229,24 @@ func (s *ContactExportUnsubscribe) encodeFields(e *jx.Encoder) {
 		e.Str(s.SendingSource)
 	}
 	{
+		if s.Via.Set {
+			e.FieldStart("via")
+			s.Via.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfContactExportUnsubscribe = [5]string{
+var jsonFieldsNameOfContactExportUnsubscribe = [6]string{
 	0: "id",
 	1: "channel",
 	2: "destination",
 	3: "sendingSource",
-	4: "createdAt",
+	4: "via",
+	5: "createdAt",
 }
 
 // Decode decodes ContactExportUnsubscribe from json.
@@ -3297,8 +3304,18 @@ func (s *ContactExportUnsubscribe) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"sendingSource\"")
 			}
+		case "via":
+			if err := func() error {
+				s.Via.Reset()
+				if err := s.Via.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"via\"")
+			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -3317,7 +3334,7 @@ func (s *ContactExportUnsubscribe) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00011111,
+		0b00101111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -8182,6 +8199,55 @@ func (s *OptNilMaxPerSecond) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes OptOutVia as json.
+func (o OptNilOptOutVia) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes OptOutVia from json.
+func (o *OptNilOptOutVia) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilOptOutVia to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v OptOutVia
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilOptOutVia) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilOptOutVia) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes RegionalFormat as json.
 func (o OptNilRegionalFormat) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -8476,6 +8542,55 @@ func (s *OptNilSiteSmsConfirmation) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteSmsOptOut as json.
+func (o OptNilSiteSmsOptOut) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes SiteSmsOptOut from json.
+func (o *OptNilSiteSmsOptOut) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilSiteSmsOptOut to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v SiteSmsOptOut
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilSiteSmsOptOut) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilSiteSmsOptOut) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes string as json.
 func (o OptNilString) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -8621,6 +8736,54 @@ func (s OptNilTimestamp) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilTimestamp) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes OptOutVia as json.
+func (s OptOutVia) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes OptOutVia from json.
+func (s *OptOutVia) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode OptOutVia to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch OptOutVia(v) {
+	case OptOutViaKeyword:
+		*s = OptOutViaKeyword
+	case OptOutViaButton:
+		*s = OptOutViaButton
+	case OptOutViaBlock:
+		*s = OptOutViaBlock
+	case OptOutViaLink:
+		*s = OptOutViaLink
+	case OptOutViaRefusedSend:
+		*s = OptOutViaRefusedSend
+	case OptOutViaManual:
+		*s = OptOutViaManual
+	default:
+		*s = OptOutVia(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptOutVia) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptOutVia) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -58489,9 +58652,9 @@ func (s *SiteSmsConsent) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.OptedOutAt.Set {
-			e.FieldStart("optedOutAt")
-			s.OptedOutAt.Encode(e)
+		if s.OptOut.Set {
+			e.FieldStart("optOut")
+			s.OptOut.Encode(e)
 		}
 	}
 }
@@ -58499,7 +58662,7 @@ func (s *SiteSmsConsent) encodeFields(e *jx.Encoder) {
 var jsonFieldsNameOfSiteSmsConsent = [3]string{
 	0: "phone",
 	1: "confirmation",
-	2: "optedOutAt",
+	2: "optOut",
 }
 
 // Decode decodes SiteSmsConsent from json.
@@ -58530,15 +58693,15 @@ func (s *SiteSmsConsent) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"confirmation\"")
 			}
-		case "optedOutAt":
+		case "optOut":
 			if err := func() error {
-				s.OptedOutAt.Reset()
-				if err := s.OptedOutAt.Decode(d); err != nil {
+				s.OptOut.Reset()
+				if err := s.OptOut.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"optedOutAt\"")
+				return errors.Wrap(err, "decode field \"optOut\"")
 			}
 		default:
 			return d.Skip()
@@ -58864,6 +59027,115 @@ func (s *SiteSmsConsentsOptOutUnprocessableEntity) MarshalJSON() ([]byte, error)
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteSmsConsentsOptOutUnprocessableEntity) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteSmsOptOut) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteSmsOptOut) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("via")
+		s.Via.Encode(e)
+	}
+	{
+		e.FieldStart("optedOutAt")
+		s.OptedOutAt.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSiteSmsOptOut = [2]string{
+	0: "via",
+	1: "optedOutAt",
+}
+
+// Decode decodes SiteSmsOptOut from json.
+func (s *SiteSmsOptOut) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSmsOptOut to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "via":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Via.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"via\"")
+			}
+		case "optedOutAt":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.OptedOutAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"optedOutAt\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteSmsOptOut")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteSmsOptOut) {
+					name = jsonFieldsNameOfSiteSmsOptOut[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteSmsOptOut) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSmsOptOut) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

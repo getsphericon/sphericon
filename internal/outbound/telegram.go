@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/binding"
@@ -16,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -162,9 +164,9 @@ func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request,
 const unsubscribeURLTag = "unsubscribe_url"
 
 // bindUnsubscribeURL binds `unsubscribe_url` when the text uses it: a link that opts the message's
-// Destination (a Telegram user id, a phone number) out of the message's source, on the message's
-// Channel only (ADR 0078). A send with no source has nothing to unsubscribe from, so the tag renders
-// empty there.
+// Destination (a Telegram user id, a phone number) out on the message's Channel only (ADR 0078): of
+// the message's source on Telegram, of everything on SMS, where every opt-out is Channel-wide (ADR
+// 0077). A send with no source has nothing to unsubscribe from, so the tag renders empty there.
 func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Request, dest string, ws *ent.Workspace, onChannel messaging.Channel, text string, vars map[string]any) error {
 	if !strings.Contains(text, unsubscribeURLTag) {
 		return nil
@@ -177,9 +179,13 @@ func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Requ
 	if err != nil {
 		return err
 	}
+	source := req.Source
+	if onChannel == messaging.ChannelSMS {
+		source = eligibility.SourceEverything
+	}
 	url, err := tr.UnsubscribeURL(tracking.UnsubTarget{
 		Channel:     onChannel,
-		Source:      req.Source,
+		Source:      source,
 		Destination: dest,
 		WorkspaceID: ws.ID,
 		ContactID:   req.contactID(),
@@ -226,9 +232,8 @@ func (a telegramAdapter) send(ctx context.Context, _ sendAs, msg any, to target,
 // and the description together. A 401 is the bot's (a Hold), a 429 the rate (a Deferral of at least
 // retry_after), a deactivated user or a missing chat the chat's (the Binding goes), any other 403 the chat's too
 // (it is refused for that chat only), any other 400 the message's own (it fails with Telegram's
-// description). A 403 for a block is the person's
-// opt-out and is left as it came, for the sender to record. Anything else, a network error or a
-// 5xx included, is left as it came: a retryable error.
+// description). A 403 for a block is the person's opt-out (optedOutError), for the send to record.
+// Anything else, a network error or a 5xx included, is left as it came: a retryable error.
 func classifyTelegram(err error) error {
 	te, ok := errors.AsType[*messaging.TelegramError](err)
 	if !ok {
@@ -243,7 +248,9 @@ func classifyTelegram(err error) error {
 	case te.Code == http.StatusForbidden && strings.Contains(desc, "user is deactivated"),
 		te.Code == http.StatusBadRequest && strings.Contains(desc, "chat not found"):
 		return unreachableError{err}
-	case te.Code == http.StatusForbidden && !te.Blocked():
+	case te.Blocked():
+		return optedOutError{err}
+	case te.Code == http.StatusForbidden:
 		return chatRefusedError{te.Description}
 	case te.Code == http.StatusBadRequest:
 		return contentError{errors.New(te.Description)}
@@ -259,6 +266,20 @@ func (c telegramChannel) unreachable(ctx context.Context, s *ent.Scoped, pub eve
 		return "", err
 	}
 	return eligibility.ReasonNoDestination, nil
+}
+
+// optedOut records that the user of the target blocked the bot: the same Channel-wide opt-out and
+// telegram.unsubscribed as the update Telegram sends for it (ADR 0077), attributed to the message
+// that found out.
+func (telegramChannel) optedOut(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, msg *ent.OutboundMessage, to target, now time.Time) error {
+	var integrationID int64
+	if integ != nil {
+		integrationID = integ.ID
+	}
+	return optout.StopTelegram(ctx, s, pub, optout.TelegramStop{
+		Destination: to.dest, IntegrationID: integrationID, Via: events.UnsubscribedByBlock, Message: msg,
+		Now: now, DedupKey: fmt.Sprintf("send:%d:%s", msg.ID, to.dest),
+	})
 }
 
 // publishSent publishes telegram.sent, with the Broadcast or Automation the message came from.

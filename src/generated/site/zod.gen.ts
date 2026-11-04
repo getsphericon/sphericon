@@ -394,6 +394,18 @@ export const zMaxPerDay = z.int().gte(1).lte(100000000);
 export const zMaxPerSecond = z.int().gte(1).lte(10000);
 
 /**
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ */
+export const zOptOutVia = z.enum([
+  'keyword',
+  'button',
+  'block',
+  'link',
+  'refused_send',
+  'manual'
+]);
+
+/**
  * What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding
  * spaces are trimmed before the name is stored, so a name of spaces only is refused too.
  */
@@ -2767,6 +2779,7 @@ export const zContactExportUnsubscribe = z.object({
   channel: z.string(),
   destination: z.string(),
   sendingSource: z.string(),
+  via: z.exactOptional(zOptOutVia.nullable()),
   createdAt: zTimestamp
 });
 
@@ -3404,12 +3417,20 @@ export const zSiteSmsConfirmation = z.object({
 });
 
 /**
+ * The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped
+ */
+export const zSiteSmsOptOut = z.object({
+  via: zOptOutVia,
+  optedOutAt: zTimestamp
+});
+
+/**
  * Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both keyed by the number
  */
 export const zSiteSmsConsent = z.object({
   phone: z.exactOptional(z.string().nullable()),
   confirmation: z.exactOptional(zSiteSmsConfirmation.nullable()),
-  optedOutAt: z.exactOptional(zTimestamp.nullable())
+  optOut: z.exactOptional(zSiteSmsOptOut.nullable())
 });
 
 /**

@@ -16624,6 +16624,15 @@
             "type": "string",
             "description": "The sending source (kind of mail) opted out of"
           },
+          "via": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OptOutVia"
+              }
+            ],
+            "nullable": true,
+            "description": "How the person stopped; absent on email"
+          },
           "createdAt": {
             "allOf": [
               {
@@ -19061,6 +19070,11 @@
           }
         },
         "description": "Orders credited to a broadcast or an automation and their net revenue (ADR 0064)"
+      },
+      "OptOutVia": {
+        "type": "string",
+        "enum": ["keyword", "button", "block", "link", "refused_send", "manual"],
+        "description": "How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)"
       },
       "Permission": {
         "type": "string",

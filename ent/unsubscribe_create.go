@@ -84,6 +84,20 @@ func (_c *UnsubscribeCreate) SetSendingSource(v string) *UnsubscribeCreate {
 	return _c
 }
 
+// SetVia sets the "via" field.
+func (_c *UnsubscribeCreate) SetVia(v unsubscribe.Via) *UnsubscribeCreate {
+	_c.mutation.SetVia(v)
+	return _c
+}
+
+// SetNillableVia sets the "via" field if the given value is not nil.
+func (_c *UnsubscribeCreate) SetNillableVia(v *unsubscribe.Via) *UnsubscribeCreate {
+	if v != nil {
+		_c.SetVia(*v)
+	}
+	return _c
+}
+
 // SetContactID sets the "contact_id" field.
 func (_c *UnsubscribeCreate) SetContactID(v int64) *UnsubscribeCreate {
 	_c.mutation.SetContactID(v)
@@ -198,6 +212,11 @@ func (_c *UnsubscribeCreate) check() error {
 			return &ValidationError{Name: "sending_source", err: fmt.Errorf(`ent: validator failed for field "Unsubscribe.sending_source": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.Via(); ok {
+		if err := unsubscribe.ViaValidator(v); err != nil {
+			return &ValidationError{Name: "via", err: fmt.Errorf(`ent: validator failed for field "Unsubscribe.via": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Unsubscribe.workspace"`)}
 	}
@@ -253,6 +272,10 @@ func (_c *UnsubscribeCreate) createSpec() (*Unsubscribe, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SendingSource(); ok {
 		_spec.SetField(unsubscribe.FieldSendingSource, field.TypeString, value)
 		_node.SendingSource = value
+	}
+	if value, ok := _c.mutation.Via(); ok {
+		_spec.SetField(unsubscribe.FieldVia, field.TypeEnum, value)
+		_node.Via = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -400,6 +423,24 @@ func (u *UnsubscribeUpsert) UpdateSendingSource() *UnsubscribeUpsert {
 	return u
 }
 
+// SetVia sets the "via" field.
+func (u *UnsubscribeUpsert) SetVia(v unsubscribe.Via) *UnsubscribeUpsert {
+	u.Set(unsubscribe.FieldVia, v)
+	return u
+}
+
+// UpdateVia sets the "via" field to the value that was provided on create.
+func (u *UnsubscribeUpsert) UpdateVia() *UnsubscribeUpsert {
+	u.SetExcluded(unsubscribe.FieldVia)
+	return u
+}
+
+// ClearVia clears the value of the "via" field.
+func (u *UnsubscribeUpsert) ClearVia() *UnsubscribeUpsert {
+	u.SetNull(unsubscribe.FieldVia)
+	return u
+}
+
 // SetContactID sets the "contact_id" field.
 func (u *UnsubscribeUpsert) SetContactID(v int64) *UnsubscribeUpsert {
 	u.Set(unsubscribe.FieldContactID, v)
@@ -536,6 +577,27 @@ func (u *UnsubscribeUpsertOne) SetSendingSource(v string) *UnsubscribeUpsertOne 
 func (u *UnsubscribeUpsertOne) UpdateSendingSource() *UnsubscribeUpsertOne {
 	return u.Update(func(s *UnsubscribeUpsert) {
 		s.UpdateSendingSource()
+	})
+}
+
+// SetVia sets the "via" field.
+func (u *UnsubscribeUpsertOne) SetVia(v unsubscribe.Via) *UnsubscribeUpsertOne {
+	return u.Update(func(s *UnsubscribeUpsert) {
+		s.SetVia(v)
+	})
+}
+
+// UpdateVia sets the "via" field to the value that was provided on create.
+func (u *UnsubscribeUpsertOne) UpdateVia() *UnsubscribeUpsertOne {
+	return u.Update(func(s *UnsubscribeUpsert) {
+		s.UpdateVia()
+	})
+}
+
+// ClearVia clears the value of the "via" field.
+func (u *UnsubscribeUpsertOne) ClearVia() *UnsubscribeUpsertOne {
+	return u.Update(func(s *UnsubscribeUpsert) {
+		s.ClearVia()
 	})
 }
 
@@ -844,6 +906,27 @@ func (u *UnsubscribeUpsertBulk) SetSendingSource(v string) *UnsubscribeUpsertBul
 func (u *UnsubscribeUpsertBulk) UpdateSendingSource() *UnsubscribeUpsertBulk {
 	return u.Update(func(s *UnsubscribeUpsert) {
 		s.UpdateSendingSource()
+	})
+}
+
+// SetVia sets the "via" field.
+func (u *UnsubscribeUpsertBulk) SetVia(v unsubscribe.Via) *UnsubscribeUpsertBulk {
+	return u.Update(func(s *UnsubscribeUpsert) {
+		s.SetVia(v)
+	})
+}
+
+// UpdateVia sets the "via" field to the value that was provided on create.
+func (u *UnsubscribeUpsertBulk) UpdateVia() *UnsubscribeUpsertBulk {
+	return u.Update(func(s *UnsubscribeUpsert) {
+		s.UpdateVia()
+	})
+}
+
+// ClearVia clears the value of the "via" field.
+func (u *UnsubscribeUpsertBulk) ClearVia() *UnsubscribeUpsertBulk {
+	return u.Update(func(s *UnsubscribeUpsert) {
+		s.ClearVia()
 	})
 }
 

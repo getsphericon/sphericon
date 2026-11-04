@@ -39,7 +39,7 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 	require.Truef(t, ok, "got %T", initial)
 	assert.Equal(t, fixtures.ContactTexterPhone, before.Phone.Value)
 	assert.False(t, before.Confirmation.Set, "no consent yet")
-	assert.False(t, before.OptedOutAt.Set, "no opt-out yet")
+	assert.False(t, before.OptOut.Set, "no opt-out yet")
 
 	after, ok := confirmed.(*siteapi.SiteSmsConsent)
 	require.Truef(t, ok, "got %T", confirmed)
@@ -53,7 +53,8 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 
 	stopped, ok := optedOut.(*siteapi.SiteSmsConsent)
 	require.Truef(t, ok, "got %T", optedOut)
-	assert.True(t, stopped.OptedOutAt.Set, "opted out")
+	require.True(t, stopped.OptOut.Set, "opted out")
+	assert.Equal(t, siteapi.OptOutViaManual, stopped.OptOut.Value.Via, "recorded by hand: an off-channel opt-out")
 	assert.False(t, stopped.Confirmation.Set, "the opt-out drops the stale consent")
 }
 

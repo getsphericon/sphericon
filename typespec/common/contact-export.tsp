@@ -135,6 +135,9 @@ model ContactExportUnsubscribe {
   /** The sending source (kind of mail) opted out of */
   sendingSource: string;
 
+  /** How the person stopped; absent on email */
+  via?: OptOutVia | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 }

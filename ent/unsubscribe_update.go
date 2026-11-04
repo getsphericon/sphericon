@@ -93,6 +93,26 @@ func (_u *UnsubscribeUpdate) SetNillableSendingSource(v *string) *UnsubscribeUpd
 	return _u
 }
 
+// SetVia sets the "via" field.
+func (_u *UnsubscribeUpdate) SetVia(v unsubscribe.Via) *UnsubscribeUpdate {
+	_u.mutation.SetVia(v)
+	return _u
+}
+
+// SetNillableVia sets the "via" field if the given value is not nil.
+func (_u *UnsubscribeUpdate) SetNillableVia(v *unsubscribe.Via) *UnsubscribeUpdate {
+	if v != nil {
+		_u.SetVia(*v)
+	}
+	return _u
+}
+
+// ClearVia clears the value of the "via" field.
+func (_u *UnsubscribeUpdate) ClearVia() *UnsubscribeUpdate {
+	_u.mutation.ClearVia()
+	return _u
+}
+
 // SetContactID sets the "contact_id" field.
 func (_u *UnsubscribeUpdate) SetContactID(v int64) *UnsubscribeUpdate {
 	_u.mutation.SetContactID(v)
@@ -193,6 +213,11 @@ func (_u *UnsubscribeUpdate) check() error {
 			return &ValidationError{Name: "sending_source", err: fmt.Errorf(`ent: validator failed for field "Unsubscribe.sending_source": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Via(); ok {
+		if err := unsubscribe.ViaValidator(v); err != nil {
+			return &ValidationError{Name: "via", err: fmt.Errorf(`ent: validator failed for field "Unsubscribe.via": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Unsubscribe.workspace"`)
 	}
@@ -228,6 +253,12 @@ func (_u *UnsubscribeUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if value, ok := _u.mutation.SendingSource(); ok {
 		_spec.SetField(unsubscribe.FieldSendingSource, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Via(); ok {
+		_spec.SetField(unsubscribe.FieldVia, field.TypeEnum, value)
+	}
+	if _u.mutation.ViaCleared() {
+		_spec.ClearField(unsubscribe.FieldVia, field.TypeEnum)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -371,6 +402,26 @@ func (_u *UnsubscribeUpdateOne) SetNillableSendingSource(v *string) *Unsubscribe
 	return _u
 }
 
+// SetVia sets the "via" field.
+func (_u *UnsubscribeUpdateOne) SetVia(v unsubscribe.Via) *UnsubscribeUpdateOne {
+	_u.mutation.SetVia(v)
+	return _u
+}
+
+// SetNillableVia sets the "via" field if the given value is not nil.
+func (_u *UnsubscribeUpdateOne) SetNillableVia(v *unsubscribe.Via) *UnsubscribeUpdateOne {
+	if v != nil {
+		_u.SetVia(*v)
+	}
+	return _u
+}
+
+// ClearVia clears the value of the "via" field.
+func (_u *UnsubscribeUpdateOne) ClearVia() *UnsubscribeUpdateOne {
+	_u.mutation.ClearVia()
+	return _u
+}
+
 // SetContactID sets the "contact_id" field.
 func (_u *UnsubscribeUpdateOne) SetContactID(v int64) *UnsubscribeUpdateOne {
 	_u.mutation.SetContactID(v)
@@ -484,6 +535,11 @@ func (_u *UnsubscribeUpdateOne) check() error {
 			return &ValidationError{Name: "sending_source", err: fmt.Errorf(`ent: validator failed for field "Unsubscribe.sending_source": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Via(); ok {
+		if err := unsubscribe.ViaValidator(v); err != nil {
+			return &ValidationError{Name: "via", err: fmt.Errorf(`ent: validator failed for field "Unsubscribe.via": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Unsubscribe.workspace"`)
 	}
@@ -536,6 +592,12 @@ func (_u *UnsubscribeUpdateOne) sqlSave(ctx context.Context) (_node *Unsubscribe
 	}
 	if value, ok := _u.mutation.SendingSource(); ok {
 		_spec.SetField(unsubscribe.FieldSendingSource, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Via(); ok {
+		_spec.SetField(unsubscribe.FieldVia, field.TypeEnum, value)
+	}
+	if _u.mutation.ViaCleared() {
+		_spec.ClearField(unsubscribe.FieldVia, field.TypeEnum)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

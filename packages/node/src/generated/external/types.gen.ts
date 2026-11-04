@@ -1882,6 +1882,10 @@ export type ContactExportUnsubscribe = {
    */
   sendingSource: string;
   /**
+   * How the person stopped; absent on email
+   */
+  via?: OptOutVia | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -3467,6 +3471,23 @@ export type MessageRevenue = {
    */
   amount: number;
 };
+
+/**
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ */
+export const OptOutVia = {
+  KEYWORD: 'keyword',
+  BUTTON: 'button',
+  BLOCK: 'block',
+  LINK: 'link',
+  REFUSED_SEND: 'refused_send',
+  MANUAL: 'manual'
+} as const;
+
+/**
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ */
+export type OptOutVia = typeof OptOutVia[keyof typeof OptOutVia];
 
 /**
  * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),

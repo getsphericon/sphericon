@@ -335,6 +335,36 @@ func SendingSourceContainsFold(v string) predicate.Unsubscribe {
 	return predicate.Unsubscribe(sql.FieldContainsFold(FieldSendingSource, v))
 }
 
+// ViaEQ applies the EQ predicate on the "via" field.
+func ViaEQ(v Via) predicate.Unsubscribe {
+	return predicate.Unsubscribe(sql.FieldEQ(FieldVia, v))
+}
+
+// ViaNEQ applies the NEQ predicate on the "via" field.
+func ViaNEQ(v Via) predicate.Unsubscribe {
+	return predicate.Unsubscribe(sql.FieldNEQ(FieldVia, v))
+}
+
+// ViaIn applies the In predicate on the "via" field.
+func ViaIn(vs ...Via) predicate.Unsubscribe {
+	return predicate.Unsubscribe(sql.FieldIn(FieldVia, vs...))
+}
+
+// ViaNotIn applies the NotIn predicate on the "via" field.
+func ViaNotIn(vs ...Via) predicate.Unsubscribe {
+	return predicate.Unsubscribe(sql.FieldNotIn(FieldVia, vs...))
+}
+
+// ViaIsNil applies the IsNil predicate on the "via" field.
+func ViaIsNil() predicate.Unsubscribe {
+	return predicate.Unsubscribe(sql.FieldIsNull(FieldVia))
+}
+
+// ViaNotNil applies the NotNil predicate on the "via" field.
+func ViaNotNil() predicate.Unsubscribe {
+	return predicate.Unsubscribe(sql.FieldNotNull(FieldVia))
+}
+
 // ContactIDEQ applies the EQ predicate on the "contact_id" field.
 func ContactIDEQ(v int64) predicate.Unsubscribe {
 	return predicate.Unsubscribe(sql.FieldEQ(FieldContactID, v))

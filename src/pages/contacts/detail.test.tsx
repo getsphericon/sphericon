@@ -478,7 +478,7 @@ test('shows the SMS consent of the contact phone with its evidence, and its opt-
           brand: 'Acme',
           confirmedAt: NOW,
         },
-        optedOutAt: NOW,
+        optOut: { via: 'keyword', optedOutAt: NOW },
       },
     }),
   )
@@ -490,6 +490,7 @@ test('shows the SMS consent of the contact phone with its evidence, and its opt-
   await expect.element(screen.getByText('Text me offers from Acme')).toBeInTheDocument()
   await expect.element(screen.getByText('checkout form')).toBeInTheDocument()
   await expect.element(screen.getByText(/^Opted out of SMS on/)).toBeInTheDocument()
+  await expect.element(screen.getByText('How they opted out: Texted STOP.')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Record opt-out' }).query()).toBeNull()
 })
 
@@ -506,7 +507,10 @@ test('records SMS consent with its evidence and an SMS opt-out', async () => {
     }),
     handleSiteSmsConsentsOptOut(() => {
       optOuts += 1
-      return HttpResponse.json({ phone: '+14155550810', optedOutAt: NOW })
+      return HttpResponse.json({
+        phone: '+14155550810',
+        optOut: { via: 'manual', optedOutAt: NOW },
+      })
     }),
   )
 

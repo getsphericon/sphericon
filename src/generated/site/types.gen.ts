@@ -641,6 +641,10 @@ export type ContactExportUnsubscribe = {
    */
   sendingSource: string;
   /**
+   * How the person stopped; absent on email
+   */
+  via?: OptOutVia | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -1153,6 +1157,23 @@ export type MaxPerDay = number;
  * A per-second Provider limit the caller may set
  */
 export type MaxPerSecond = number;
+
+/**
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ */
+export const OptOutVia = {
+  KEYWORD: 'keyword',
+  BUTTON: 'button',
+  BLOCK: 'block',
+  LINK: 'link',
+  REFUSED_SEND: 'refused_send',
+  MANUAL: 'manual'
+} as const;
+
+/**
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ */
+export type OptOutVia = typeof OptOutVia[keyof typeof OptOutVia];
 
 /**
  * What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding
@@ -6296,9 +6317,23 @@ export type SiteSmsConsent = {
    */
   confirmation?: SiteSmsConfirmation | null;
   /**
-   * When the phone opted out of every SMS of the Workspace; absent while it has not
+   * The phone's opt-out of every SMS of the Workspace; absent while it has none
    */
-  optedOutAt?: Timestamp | null;
+  optOut?: SiteSmsOptOut | null;
+};
+
+/**
+ * The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped
+ */
+export type SiteSmsOptOut = {
+  /**
+   * How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link), a send Twilio refused because the number had texted STOP to the sender there (refused_send), or recorded by hand (manual)
+   */
+  via: OptOutVia;
+  /**
+   * When the phone opted out
+   */
+  optedOutAt: Timestamp;
 };
 
 /**

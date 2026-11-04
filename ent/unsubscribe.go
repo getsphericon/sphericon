@@ -31,6 +31,8 @@ type Unsubscribe struct {
 	Destination string `json:"destination,omitempty"`
 	// SendingSource holds the value of the "sending_source" field.
 	SendingSource string `json:"sending_source,omitempty"`
+	// Via holds the value of the "via" field.
+	Via *unsubscribe.Via `json:"via,omitempty"`
 	// ContactID holds the value of the "contact_id" field.
 	ContactID *int64 `json:"contact_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -79,7 +81,7 @@ func (*Unsubscribe) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case unsubscribe.FieldID, unsubscribe.FieldWorkspaceID, unsubscribe.FieldContactID:
 			values[i] = new(sql.NullInt64)
-		case unsubscribe.FieldChannel, unsubscribe.FieldDestination, unsubscribe.FieldSendingSource:
+		case unsubscribe.FieldChannel, unsubscribe.FieldDestination, unsubscribe.FieldSendingSource, unsubscribe.FieldVia:
 			values[i] = new(sql.NullString)
 		case unsubscribe.FieldCreatedAt, unsubscribe.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -139,6 +141,13 @@ func (_m *Unsubscribe) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field sending_source", values[i])
 			} else if value.Valid {
 				_m.SendingSource = value.String
+			}
+		case unsubscribe.FieldVia:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field via", values[i])
+			} else if value.Valid {
+				_m.Via = new(unsubscribe.Via)
+				*_m.Via = unsubscribe.Via(value.String)
 			}
 		case unsubscribe.FieldContactID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -210,6 +219,11 @@ func (_m *Unsubscribe) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sending_source=")
 	builder.WriteString(_m.SendingSource)
+	builder.WriteString(", ")
+	if v := _m.Via; v != nil {
+		builder.WriteString("via=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	if v := _m.ContactID; v != nil {
 		builder.WriteString("contact_id=")

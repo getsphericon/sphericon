@@ -2459,6 +2459,8 @@ type ContactExportUnsubscribe struct {
 	Destination string `json:"destination"`
 	// The sending source (kind of mail) opted out of.
 	SendingSource string `json:"sendingSource"`
+	// How the person stopped; absent on email.
+	Via OptNilOptOutVia `json:"via"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -2481,6 +2483,11 @@ func (s *ContactExportUnsubscribe) GetDestination() string {
 // GetSendingSource returns the value of SendingSource.
 func (s *ContactExportUnsubscribe) GetSendingSource() string {
 	return s.SendingSource
+}
+
+// GetVia returns the value of Via.
+func (s *ContactExportUnsubscribe) GetVia() OptNilOptOutVia {
+	return s.Via
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -2506,6 +2513,11 @@ func (s *ContactExportUnsubscribe) SetDestination(val string) {
 // SetSendingSource sets the value of SendingSource.
 func (s *ContactExportUnsubscribe) SetSendingSource(val string) {
 	s.SendingSource = val
+}
+
+// SetVia sets the value of Via.
+func (s *ContactExportUnsubscribe) SetVia(val OptNilOptOutVia) {
+	s.Via = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -6216,6 +6228,74 @@ func (o OptNilMaxPerSecond) Or(d MaxPerSecond) MaxPerSecond {
 	return d
 }
 
+// NewOptNilOptOutVia returns new OptNilOptOutVia with value set to v.
+func NewOptNilOptOutVia(v OptOutVia) OptNilOptOutVia {
+	return OptNilOptOutVia{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilOptOutVia is optional nullable OptOutVia.
+type OptNilOptOutVia struct {
+	Value OptOutVia
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilOptOutVia was set.
+func (o OptNilOptOutVia) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilOptOutVia) Reset() {
+	var v OptOutVia
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilOptOutVia) SetTo(v OptOutVia) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilOptOutVia) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilOptOutVia) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v OptOutVia
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilOptOutVia) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilOptOutVia) Get() (v OptOutVia, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilOptOutVia) Or(d OptOutVia) OptOutVia {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilRegionalFormat returns new OptNilRegionalFormat with value set to v.
 func NewOptNilRegionalFormat(v RegionalFormat) OptNilRegionalFormat {
 	return OptNilRegionalFormat{
@@ -6624,6 +6704,74 @@ func (o OptNilSiteSmsConfirmation) Or(d SiteSmsConfirmation) SiteSmsConfirmation
 	return d
 }
 
+// NewOptNilSiteSmsOptOut returns new OptNilSiteSmsOptOut with value set to v.
+func NewOptNilSiteSmsOptOut(v SiteSmsOptOut) OptNilSiteSmsOptOut {
+	return OptNilSiteSmsOptOut{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSiteSmsOptOut is optional nullable SiteSmsOptOut.
+type OptNilSiteSmsOptOut struct {
+	Value SiteSmsOptOut
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSiteSmsOptOut was set.
+func (o OptNilSiteSmsOptOut) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSiteSmsOptOut) Reset() {
+	var v SiteSmsOptOut
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSiteSmsOptOut) SetTo(v SiteSmsOptOut) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSiteSmsOptOut) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSiteSmsOptOut) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SiteSmsOptOut
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSiteSmsOptOut) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSiteSmsOptOut) Get() (v SiteSmsOptOut, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSiteSmsOptOut) Or(d SiteSmsOptOut) SiteSmsOptOut {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilString returns new OptNilString with value set to v.
 func NewOptNilString(v string) OptNilString {
 	return OptNilString{
@@ -6826,6 +6974,80 @@ func (o OptNilTimestamp) Or(d Timestamp) Timestamp {
 		return v
 	}
 	return d
+}
+
+// How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword),
+// a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider
+// refused because the person had stopped at the provider (refused_send), or an opt-out recorded by
+// hand in the app or through the API, which reached the Workspace by another route (manual).
+// Ref: #/components/schemas/OptOutVia
+type OptOutVia string
+
+const (
+	OptOutViaKeyword     OptOutVia = "keyword"
+	OptOutViaButton      OptOutVia = "button"
+	OptOutViaBlock       OptOutVia = "block"
+	OptOutViaLink        OptOutVia = "link"
+	OptOutViaRefusedSend OptOutVia = "refused_send"
+	OptOutViaManual      OptOutVia = "manual"
+)
+
+// AllValues returns all OptOutVia values.
+func (OptOutVia) AllValues() []OptOutVia {
+	return []OptOutVia{
+		OptOutViaKeyword,
+		OptOutViaButton,
+		OptOutViaBlock,
+		OptOutViaLink,
+		OptOutViaRefusedSend,
+		OptOutViaManual,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s OptOutVia) MarshalText() ([]byte, error) {
+	switch s {
+	case OptOutViaKeyword:
+		return []byte(s), nil
+	case OptOutViaButton:
+		return []byte(s), nil
+	case OptOutViaBlock:
+		return []byte(s), nil
+	case OptOutViaLink:
+		return []byte(s), nil
+	case OptOutViaRefusedSend:
+		return []byte(s), nil
+	case OptOutViaManual:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *OptOutVia) UnmarshalText(data []byte) error {
+	switch OptOutVia(data) {
+	case OptOutViaKeyword:
+		*s = OptOutViaKeyword
+		return nil
+	case OptOutViaButton:
+		*s = OptOutViaButton
+		return nil
+	case OptOutViaBlock:
+		*s = OptOutViaBlock
+		return nil
+	case OptOutViaLink:
+		*s = OptOutViaLink
+		return nil
+	case OptOutViaRefusedSend:
+		*s = OptOutViaRefusedSend
+		return nil
+	case OptOutViaManual:
+		*s = OptOutViaManual
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // NewOptProblemCode returns new OptProblemCode with value set to v.
@@ -26586,8 +26808,8 @@ type SiteSmsConsent struct {
 	Phone OptNilString `json:"phone"`
 	// The phone's SMS Confirmation; absent when the number never consented, and a text does not go to it.
 	Confirmation OptNilSiteSmsConfirmation `json:"confirmation"`
-	// When the phone opted out of every SMS of the Workspace; absent while it has not.
-	OptedOutAt OptNilTimestamp `json:"optedOutAt"`
+	// The phone's opt-out of every SMS of the Workspace; absent while it has none.
+	OptOut OptNilSiteSmsOptOut `json:"optOut"`
 }
 
 // GetPhone returns the value of Phone.
@@ -26600,9 +26822,9 @@ func (s *SiteSmsConsent) GetConfirmation() OptNilSiteSmsConfirmation {
 	return s.Confirmation
 }
 
-// GetOptedOutAt returns the value of OptedOutAt.
-func (s *SiteSmsConsent) GetOptedOutAt() OptNilTimestamp {
-	return s.OptedOutAt
+// GetOptOut returns the value of OptOut.
+func (s *SiteSmsConsent) GetOptOut() OptNilSiteSmsOptOut {
+	return s.OptOut
 }
 
 // SetPhone sets the value of Phone.
@@ -26615,9 +26837,9 @@ func (s *SiteSmsConsent) SetConfirmation(val OptNilSiteSmsConfirmation) {
 	s.Confirmation = val
 }
 
-// SetOptedOutAt sets the value of OptedOutAt.
-func (s *SiteSmsConsent) SetOptedOutAt(val OptNilTimestamp) {
-	s.OptedOutAt = val
+// SetOptOut sets the value of OptOut.
+func (s *SiteSmsConsent) SetOptOut(val OptNilSiteSmsOptOut) {
+	s.OptOut = val
 }
 
 func (*SiteSmsConsent) siteSmsConsentsConfirmRes() {}
@@ -26655,6 +26877,37 @@ func (*SiteSmsConsentsOptOutNotFound) siteSmsConsentsOptOutRes() {}
 type SiteSmsConsentsOptOutUnprocessableEntity ProblemDetails
 
 func (*SiteSmsConsentsOptOutUnprocessableEntity) siteSmsConsentsOptOutRes() {}
+
+// The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped.
+// Ref: #/components/schemas/SiteSmsOptOut
+type SiteSmsOptOut struct {
+	// How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link),
+	// a send Twilio refused because the number had texted STOP to the sender there (refused_send), or
+	// recorded by hand (manual).
+	Via OptOutVia `json:"via"`
+	// When the phone opted out.
+	OptedOutAt Timestamp `json:"optedOutAt"`
+}
+
+// GetVia returns the value of Via.
+func (s *SiteSmsOptOut) GetVia() OptOutVia {
+	return s.Via
+}
+
+// GetOptedOutAt returns the value of OptedOutAt.
+func (s *SiteSmsOptOut) GetOptedOutAt() Timestamp {
+	return s.OptedOutAt
+}
+
+// SetVia sets the value of Via.
+func (s *SiteSmsOptOut) SetVia(val OptOutVia) {
+	s.Via = val
+}
+
+// SetOptedOutAt sets the value of OptedOutAt.
+func (s *SiteSmsOptOut) SetOptedOutAt(val Timestamp) {
+	s.OptedOutAt = val
+}
 
 // SMTP config without the password.
 // Ref: #/components/schemas/SiteSmtpConfig

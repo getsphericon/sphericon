@@ -54,6 +54,7 @@ func TestClassifySortsTwilioRefusalsByWhomTheyConcern(t *testing.T) {
 		{"To region not permitted", 400, 21408, messaging.SMSRefusalDestination},
 		{"unverified To on a trial", 400, 21608, messaging.SMSRefusalDestination},
 		{"To and From do not work together", 400, 21612, messaging.SMSRefusalDestination},
+		{"To texted STOP to the sender", 400, 21610, messaging.SMSRefusalOptedOut},
 		{"not a mobile number", 400, 21614, messaging.SMSRefusalDeadNumber},
 		{"unknown handset", 400, 30005, messaging.SMSRefusalDeadNumber},
 		{"landline", 400, 30006, messaging.SMSRefusalDeadNumber},

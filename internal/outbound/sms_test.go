@@ -1,15 +1,20 @@
 package outbound_test
 
 import (
+	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -67,6 +72,38 @@ func TestTheProviderLimitOfATwilioIntegrationPacesItsTexts(t *testing.T) {
 	assert.Equal(t, providerlimit.CauseProviderLimit, second.Cause)
 	assert.Positive(t, second.Wait)
 	assert.Len(t, env.Twilio.Messages(), 1, "Twilio is not asked for the deferred text")
+}
+
+// Twilio refuses a text with 21610 to a number that texted STOP to the sender at Twilio: that is the
+// number's Channel-wide opt-out here too (ADR 0077), and the message is Skipped as the next one
+// would be.
+func TestATextTwilioRefusesAsOptedOutRecordsTheOptOutAndIsSkipped(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	account := connectConfirmedTexter(t, env)
+	env.Twilio.RefuseSends(twiliotest.Unsubscribed)
+
+	res := sendText(t, env, textTo(t, env, account, "sms:1"))
+
+	assert.Equal(t, outbound.Skipped, res.Outcome)
+	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, res.Reason)
+	msg := env.DB.OutboundMessage.GetX(ctx, res.MessageID)
+	assert.Equal(t, outboundmessage.StatusSkipped, msg.Status)
+	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, lo.FromPtr(msg.Reason))
+	stop := env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(unsubscribe.ChannelSms), unsubscribe.DestinationEQ(fixtures.ContactTexterPhone)).OnlyX(ctx)
+	assert.Equal(t, eligibility.SourceEverything, stop.SendingSource)
+	assert.Equal(t, unsubscribe.ViaRefusedSend, lo.FromPtr(stop.Via))
+	assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(stop.ContactID))
+	assert.False(t, env.DB.Confirmation.Query().Where(confirmation.ChannelEQ(confirmation.ChannelSms), confirmation.DestinationEQ(fixtures.ContactTexterPhone)).ExistX(ctx),
+		"the refused number's consent ends with its stop")
+
+	again := sendText(t, env, textTo(t, env, account, "sms:2"))
+
+	assert.Equal(t, outbound.Skipped, again.Outcome)
+	sends := lo.Filter(env.Twilio.Requests(), func(r twiliotest.Request, _ int) bool {
+		return strings.HasSuffix(r.Path, "/Messages.json")
+	})
+	assert.Len(t, sends, 1, "Twilio is not asked again for a number that stopped")
 }
 
 func TestTheSendCapCountsTextsWithEmail(t *testing.T) {

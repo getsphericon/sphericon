@@ -99,6 +99,10 @@ func TestEachWayToStopIsTheChannelWideOptOutAndTelegramUnsubscribed(t *testing.T
 			w.post(t, env, bot)
 
 			assert.True(t, optedOut(t, env, optOutUser))
+			row := env.DB.Unsubscribe.Query().Where(
+				unsubscribe.ChannelEQ(unsubscribe.ChannelTelegram), unsubscribe.Destination(strconv.FormatInt(optOutUser, 10)),
+			).OnlyX(t.Context())
+			assert.Equal(t, w.via, string(lo.FromPtr(row.Via)), "the opt-out keeps how the person stopped")
 			recorded := env.Outbox(t, events.NameTelegramUnsubscribed)
 			require.Len(t, recorded, 1)
 			assert.Equal(t, strconv.Itoa(fixtures.ContactBobID), fmt.Sprint(recorded[0].Data["contactId"]))

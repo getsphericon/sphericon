@@ -35852,6 +35852,18 @@ func (x *UnsubscribeScopedCreate) SetSendingSource(v string) *UnsubscribeScopedC
 	return x
 }
 
+// SetVia sets the "via" field.
+func (x *UnsubscribeScopedCreate) SetVia(v unsubscribe.Via) *UnsubscribeScopedCreate {
+	x.b.SetVia(v)
+	return x
+}
+
+// SetNillableVia sets the "via" field if the given value is not nil.
+func (x *UnsubscribeScopedCreate) SetNillableVia(v *unsubscribe.Via) *UnsubscribeScopedCreate {
+	x.b.SetNillableVia(v)
+	return x
+}
+
 // SetContactID sets the "contact_id" field.
 func (x *UnsubscribeScopedCreate) SetContactID(v int64) *UnsubscribeScopedCreate {
 	x.b.SetContactID(v)
@@ -35986,6 +35998,24 @@ func (u *UnsubscribeScopedUpsert) SetSendingSource(v string) *UnsubscribeScopedU
 // UpdateSendingSource sets the "sending_source" field to the value that was provided on create.
 func (u *UnsubscribeScopedUpsert) UpdateSendingSource() *UnsubscribeScopedUpsert {
 	u.u.SetExcluded(unsubscribe.FieldSendingSource)
+	return u
+}
+
+// SetVia sets the "via" field.
+func (u *UnsubscribeScopedUpsert) SetVia(v unsubscribe.Via) *UnsubscribeScopedUpsert {
+	u.u.Set(unsubscribe.FieldVia, v)
+	return u
+}
+
+// UpdateVia sets the "via" field to the value that was provided on create.
+func (u *UnsubscribeScopedUpsert) UpdateVia() *UnsubscribeScopedUpsert {
+	u.u.SetExcluded(unsubscribe.FieldVia)
+	return u
+}
+
+// ClearVia clears the value of the "via" field.
+func (u *UnsubscribeScopedUpsert) ClearVia() *UnsubscribeScopedUpsert {
+	u.u.SetNull(unsubscribe.FieldVia)
 	return u
 }
 
@@ -36189,6 +36219,24 @@ func (x *UnsubscribeScopedUpdateOne) SetNillableSendingSource(v *string) *Unsubs
 	return x
 }
 
+// SetVia sets the "via" field.
+func (x *UnsubscribeScopedUpdateOne) SetVia(v unsubscribe.Via) *UnsubscribeScopedUpdateOne {
+	x.b.SetVia(v)
+	return x
+}
+
+// SetNillableVia sets the "via" field if the given value is not nil.
+func (x *UnsubscribeScopedUpdateOne) SetNillableVia(v *unsubscribe.Via) *UnsubscribeScopedUpdateOne {
+	x.b.SetNillableVia(v)
+	return x
+}
+
+// ClearVia clears the value of the "via" field.
+func (x *UnsubscribeScopedUpdateOne) ClearVia() *UnsubscribeScopedUpdateOne {
+	x.b.ClearVia()
+	return x
+}
+
 // SetContactID sets the "contact_id" field.
 func (x *UnsubscribeScopedUpdateOne) SetContactID(v int64) *UnsubscribeScopedUpdateOne {
 	x.b.SetContactID(v)
@@ -36317,6 +36365,24 @@ func (x *UnsubscribeScopedUpdate) SetSendingSource(v string) *UnsubscribeScopedU
 // SetNillableSendingSource sets the "sending_source" field if the given value is not nil.
 func (x *UnsubscribeScopedUpdate) SetNillableSendingSource(v *string) *UnsubscribeScopedUpdate {
 	x.b.SetNillableSendingSource(v)
+	return x
+}
+
+// SetVia sets the "via" field.
+func (x *UnsubscribeScopedUpdate) SetVia(v unsubscribe.Via) *UnsubscribeScopedUpdate {
+	x.b.SetVia(v)
+	return x
+}
+
+// SetNillableVia sets the "via" field if the given value is not nil.
+func (x *UnsubscribeScopedUpdate) SetNillableVia(v *unsubscribe.Via) *UnsubscribeScopedUpdate {
+	x.b.SetNillableVia(v)
+	return x
+}
+
+// ClearVia clears the value of the "via" field.
+func (x *UnsubscribeScopedUpdate) ClearVia() *UnsubscribeScopedUpdate {
+	x.b.ClearVia()
 	return x
 }
 

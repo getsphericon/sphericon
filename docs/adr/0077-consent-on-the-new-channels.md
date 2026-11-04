@@ -12,6 +12,12 @@ status: accepted
 > an action with no property filter, so a welcome email's Automation on `marketing.confirmed` would
 > otherwise enroll every Contact whose phone consented. `sms.confirmed` is consent proof, kept
 > whatever its age (ADR 0019).
+>
+> **Amended by #1041:** on SMS the `{{ unsubscribe_url }}` link of a text is Channel-wide too
+> (`everything`), like every other SMS opt-out, so no source-scoped opt-out exists on SMS. A START
+> from a number no Contact has lifts its opt-out and records its `keyword` Confirmation, keyed by
+> the number, without creating a Contact. An opt-out keeps how the person stopped (`via`) for the
+> Contact card.
 
 Send-eligibility (ADR 0013) has four layers keyed by (Channel, Destination): Suppression, an
 `everything` Unsubscribe, a source Unsubscribe, and a Confirmation that only a Workspace requiring

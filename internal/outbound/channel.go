@@ -39,6 +39,11 @@ type channel interface {
 	// suppresses the number. skip is the Skipped reason Send-eligibility now gives the target
 	// (no_destination, suppressed). It runs in a transaction of its own, outside the send's claim.
 	unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, req Request, to target, messageID int64) (skip string, err error)
+	// optedOut records the Channel-wide opt-out of a target whose provider refused the message
+	// because the person stopped at the provider (an optedOutError of send: a blocked bot, a number
+	// that texted STOP to the sender), attributed to msg, the message that found out (ADR 0077). It
+	// runs in a transaction of its own, outside the send's claim.
+	optedOut(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, msg *ent.OutboundMessage, to target, now time.Time) error
 }
 
 // target is one place a message goes: dest is its Destination, the key of Send-eligibility and what
@@ -120,6 +125,15 @@ type unreachableError struct{ err error }
 
 func (e unreachableError) Error() string { return "outbound: unreachable: " + e.err.Error() }
 func (e unreachableError) Unwrap() error { return e.err }
+
+// optedOutError is a provider adapter's word that the person at the target stopped the Workspace's
+// messages at the provider (Telegram's "bot was blocked by the user", Twilio's 21610 to a number that
+// texted STOP): the Channel's opt-out is recorded (channel.optedOut), and the message goes on to the
+// others.
+type optedOutError struct{ err error }
+
+func (e optedOutError) Error() string { return "outbound: opted out: " + e.err.Error() }
+func (e optedOutError) Unwrap() error { return e.err }
 
 // chatRefusedError is a provider adapter's word that one target refuses the message for good and
 // that the refusal is that target's alone (Telegram's 403 "bot can't initiate conversation", an

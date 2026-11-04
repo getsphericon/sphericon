@@ -89,6 +89,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optNilString
 // goverter:extend optNilSendCap
 // goverter:extend optNilContactSource
+// goverter:extend optNilOptOutVia
 // goverter:extend optNilHoldReason
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
@@ -442,6 +443,8 @@ type Converter interface {
 	CapturedMessageSurfaceToResource(source capturedmessage.Surface) externalapi.CapturedMessageSurface
 	// goverter:enum:transform value
 	ContactExportSourceToResource(source contact.Source) externalapi.ContactExportSource
+	// goverter:enum:transform value
+	OptOutViaToResource(source unsubscribe.Via) externalapi.OptOutVia
 	// goverter:enum:transform value
 	HoldReasonToResource(source holdreason.Reason) externalapi.HoldReason
 	// goverter:enum:transform value
@@ -838,6 +841,10 @@ func ruleResults(c Converter, stored string) []externalapi.RuleActionResult {
 
 func optNilContactSource(c Converter, v *contact.Source) externalapi.OptNilContactExportSource {
 	return convert.OptVia[externalapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
+}
+
+func optNilOptOutVia(c Converter, v *unsubscribe.Via) externalapi.OptNilOptOutVia {
+	return convert.OptVia[externalapi.OptNilOptOutVia](v, c.OptOutViaToResource)
 }
 
 func optNilHoldReason(c Converter, v *holdreason.Reason) externalapi.OptNilHoldReason {

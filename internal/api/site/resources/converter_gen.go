@@ -22,6 +22,7 @@ import (
 	signupitem "github.com/getsphericon/sphericon/ent/signupitem"
 	suppression "github.com/getsphericon/sphericon/ent/suppression"
 	trackingdomain "github.com/getsphericon/sphericon/ent/trackingdomain"
+	unsubscribe "github.com/getsphericon/sphericon/ent/unsubscribe"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	site "github.com/getsphericon/sphericon/gen/site"
 	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
@@ -1494,6 +1495,26 @@ func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) site.Sit
 	siteapiSiteMessageRevenue.Amount = source.Credited.Amount
 	return siteapiSiteMessageRevenue
 }
+func (c *ConverterImpl) OptOutViaToResource(source unsubscribe.Via) site.OptOutVia {
+	var siteapiOptOutVia site.OptOutVia
+	switch source {
+	case unsubscribe.ViaBlock:
+		siteapiOptOutVia = site.OptOutViaBlock
+	case unsubscribe.ViaButton:
+		siteapiOptOutVia = site.OptOutViaButton
+	case unsubscribe.ViaKeyword:
+		siteapiOptOutVia = site.OptOutViaKeyword
+	case unsubscribe.ViaLink:
+		siteapiOptOutVia = site.OptOutViaLink
+	case unsubscribe.ViaManual:
+		siteapiOptOutVia = site.OptOutViaManual
+	case unsubscribe.ViaRefusedSend:
+		siteapiOptOutVia = site.OptOutViaRefusedSend
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiOptOutVia
+}
 func (c *ConverterImpl) OptionalConsentDecisionToResource(source consentrecord.Decision) site.SiteOptionalConsentDecision {
 	var siteapiSiteOptionalConsentDecision site.SiteOptionalConsentDecision
 	switch source {
@@ -2094,8 +2115,16 @@ func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) site.Sit
 	var siteapiSiteSmsConsent site.SiteSmsConsent
 	siteapiSiteSmsConsent.Phone = optNilString(source.Phone)
 	siteapiSiteSmsConsent.Confirmation = optNilSmsConfirmation(c, source.Confirmation)
-	siteapiSiteSmsConsent.OptedOutAt = optNilTimestamp(source.OptedOutAt)
+	siteapiSiteSmsConsent.OptOut = optNilSmsOptOut(c, source.OptOut)
 	return siteapiSiteSmsConsent
+}
+func (c *ConverterImpl) SmsOptOutToResource(source *consent.SMSOptOut) site.SiteSmsOptOut {
+	var siteapiSiteSmsOptOut site.SiteSmsOptOut
+	if source != nil {
+		siteapiSiteSmsOptOut.Via = c.OptOutViaToResource((*source).Via)
+		siteapiSiteSmsOptOut.OptedOutAt = timestamp((*source).OptedOutAt)
+	}
+	return siteapiSiteSmsOptOut
 }
 func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) site.SiteSmtpConfig {
 	var siteapiSiteSmtpConfig site.SiteSmtpConfig
@@ -2404,6 +2433,7 @@ func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) site.Contac
 		siteapiContactExportUnsubscribe.Channel = string((*source).Channel)
 		siteapiContactExportUnsubscribe.Destination = (*source).Destination
 		siteapiContactExportUnsubscribe.SendingSource = (*source).SendingSource
+		siteapiContactExportUnsubscribe.Via = optNilOptOutVia(c, (*source).Via)
 		siteapiContactExportUnsubscribe.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiContactExportUnsubscribe

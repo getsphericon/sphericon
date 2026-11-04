@@ -1,6 +1,8 @@
 package jobs_test
 
 import (
+	"net/http"
+	"net/url"
 	"regexp"
 	"testing"
 
@@ -19,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -184,7 +187,9 @@ func TestAMixedSequenceSendsTheEmailsAndRecordsTheSMSSkipForAContactWithNoPhone(
 	assert.Equal(t, 1, lo.FromPtr(skipped.AutomationStep))
 }
 
-func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfTheAutomation(t *testing.T) {
+// The unsubscribe link of a text is the number's Channel-wide opt-out (ADR 0077): a person who
+// stops one Automation's texts stops every SMS of the Workspace, as a STOP does.
+func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfEverySMS(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	account := env.ConnectTwilio(t)
@@ -203,5 +208,38 @@ func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfTheAutomation(t *testing.T) {
 	assert.IsType(t, &siteapi.SitePublicUnsubscribesPerformNoContent{}, out)
 	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.DestinationEQ(fixtures.ContactTexterPhone)).OnlyX(ctx)
 	assert.Equal(t, unsubscribe.ChannelSms, optOut.Channel)
-	assert.Equal(t, eligibility.AutomationSource(automationID), optOut.SendingSource)
+	assert.Equal(t, eligibility.SourceEverything, optOut.SendingSource)
+	assert.Equal(t, unsubscribe.ViaLink, lo.FromPtr(optOut.Via))
+	dec, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelSMS, fixtures.ContactTexterPhone, eligibility.SourceBroadcasts)
+	require.NoError(t, err)
+	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason, "a Broadcast's text does not go either")
+}
+
+// Send-eligibility is read when each text goes (ADR 0077): a STOP that arrives after an
+// Enrollment's first text is honoured for its second.
+func TestASTOPBetweenTwoTextsOfAnEnrollmentSkipsTheSecond(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	account := env.ConnectTwilio(t)
+	automationID := smsAutomation(t, env, smsStep(account, "First"), smsStep(account, "Second"))
+	confirmSMS(t, env, fixtures.ContactTexterPhone)
+	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	stepper := stepperWith(env, env.OutboundModule(), stepping.WithClock(passingClock()))
+	require.True(t, env.RunNextStep(t, stepper))
+	require.Len(t, env.Twilio.Messages(), 1)
+
+	stopped := env.PostTwilioCallback(t, account.Integration.HookUrl, account.Account.AuthToken, url.Values{
+		"MessageSid": {"SM0201"}, "AccountSid": {account.Account.SID}, "From": {fixtures.ContactTexterPhone},
+		"To": {testhelper.TwilioNumber}, "Body": {"STOP"}, "NumMedia": {"0"}, "SmsStatus": {"received"},
+	})
+	require.Equal(t, http.StatusOK, stopped.Code, stopped.Body.String())
+	env.RunQueuedSteps(t, stepper)
+
+	sent := env.Twilio.Messages()
+	require.Len(t, sent, 1, "only the text before the STOP went out")
+	assert.Equal(t, "First", sent[0].Body)
+	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, runID).Status)
+	second := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(ctx)
+	assert.Equal(t, 1, lo.FromPtr(second.AutomationStep))
+	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, lo.FromPtr(second.Reason))
 }

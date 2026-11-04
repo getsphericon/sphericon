@@ -416,6 +416,10 @@ var refusals = map[int]messaging.SMSRefusal{
 	21608: messaging.SMSRefusalDestination,
 	21612: messaging.SMSRefusalDestination,
 
+	// The person. 21610: "Attempt to send to unsubscribed recipient": the To texted STOP to this
+	// sender, and Twilio refuses every message from it until the To texts START.
+	21610: messaging.SMSRefusalOptedOut,
+
 	// A number that reaches no handset. 21614 (at send time): the To is not a valid mobile number,
 	// a landline. 30005 and 30006 (in a delivery report): an unknown handset, no longer in service,
 	// and a landline or an unreachable carrier.

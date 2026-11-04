@@ -17,9 +17,10 @@ import (
 // Automation (ADR 0077). Like an opt-out of everything on email it deletes the number's SMS
 // Confirmation, so stale consent never reactivates: only a new Confirmation (the START that lifts
 // the opt-out) makes the number reachable again; the sms.confirmed Event stays as proof. It
-// is idempotent: a number already opted out changes nothing. Run it inside the transaction s is
+// is idempotent: a number already opted out changes nothing, and keeps the way it first stopped.
+// via is how the person stopped, which the Contact card shows. Run it inside the transaction s is
 // bound to.
-func StopSMS(ctx context.Context, s *ent.Scoped, number string) error {
+func StopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) error {
 	exists, err := s.Unsubscribe().Query().Where(smsEverything(number)...).Exist(ctx)
 	if err != nil {
 		return fmt.Errorf("find opt-out: %w", err)
@@ -30,7 +31,8 @@ func StopSMS(ctx context.Context, s *ent.Scoped, number string) error {
 	create := s.Unsubscribe().Create().
 		SetChannel(unsubscribe.ChannelSms).
 		SetDestination(number).
-		SetSendingSource(eligibility.SourceEverything)
+		SetSendingSource(eligibility.SourceEverything).
+		SetVia(via)
 	holder, err := s.Contact().Query().Where(contact.Phone(number)).OnlyID(ctx)
 	switch {
 	case err == nil:
@@ -46,6 +48,15 @@ func StopSMS(ctx context.Context, s *ent.Scoped, number string) error {
 		confirmation.DestinationEQ(number),
 	).Exec(ctx); err != nil {
 		return fmt.Errorf("drop confirmation: %w", err)
+	}
+	return nil
+}
+
+// LiftSMS lifts the Channel-wide opt-out of a phone number: the person texted START. Nothing to
+// lift is a no-op. It records no consent: the START's Confirmation is the caller's to record.
+func LiftSMS(ctx context.Context, s *ent.Scoped, number string) error {
+	if _, err := s.Unsubscribe().Delete().Where(smsEverything(number)...).Exec(ctx); err != nil {
+		return fmt.Errorf("lift opt-out: %w", err)
 	}
 	return nil
 }

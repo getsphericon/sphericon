@@ -2677,6 +2677,7 @@ var (
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "sending_source", Type: field.TypeString},
+		{Name: "via", Type: field.TypeEnum, Nullable: true, Enums: []string{"keyword", "button", "block", "link", "refused_send", "manual"}},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -2688,13 +2689,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "unsubscribes_contacts_contact",
-				Columns:    []*schema.Column{UnsubscribesColumns[6]},
+				Columns:    []*schema.Column{UnsubscribesColumns[7]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "unsubscribes_workspaces_unsubscribes",
-				Columns:    []*schema.Column{UnsubscribesColumns[7]},
+				Columns:    []*schema.Column{UnsubscribesColumns[8]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2703,12 +2704,12 @@ var (
 			{
 				Name:    "unsubscribes_ws_channel_dest_source",
 				Unique:  true,
-				Columns: []*schema.Column{UnsubscribesColumns[7], UnsubscribesColumns[3], UnsubscribesColumns[4], UnsubscribesColumns[5]},
+				Columns: []*schema.Column{UnsubscribesColumns[8], UnsubscribesColumns[3], UnsubscribesColumns[4], UnsubscribesColumns[5]},
 			},
 			{
 				Name:    "unsubscribes_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{UnsubscribesColumns[6]},
+				Columns: []*schema.Column{UnsubscribesColumns[7]},
 			},
 		},
 	}
@@ -3417,6 +3418,7 @@ func init() {
 	}
 	UnsubscribesTable.Annotation.Checks = map[string]string{
 		"unsubscribes_channel_check": "channel IN ('email', 'telegram', 'sms')",
+		"unsubscribes_via_check":     "via IN ('keyword', 'button', 'block', 'link', 'refused_send', 'manual')",
 	}
 	UsagesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	UsagesTable.Annotation = &entsql.Annotation{

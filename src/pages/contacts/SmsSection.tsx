@@ -9,7 +9,7 @@ import {
   siteSmsConsentsGetOptions,
   siteSmsConsentsOptOutMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { ConfirmationProvenance } from '../../generated/site/types.gen.ts'
+import type { ConfirmationProvenance, OptOutVia } from '../../generated/site/types.gen.ts'
 import { zConsentEvidence } from '../../generated/site/zod.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useFormat } from '../../hooks/useFormat.ts'
@@ -29,7 +29,8 @@ const evidenceSchema = z.object({
 })
 
 // Whether the contact's phone may be texted (ADR 0077): a text goes only to a number with an SMS
-// Confirmation and no SMS opt-out. The card shows both, keyed by the number, and records what
+// Confirmation and no SMS opt-out. The card shows both, keyed by the number, with how the person
+// opted out (a STOP, the link in a text, a send Twilio refused, by hand), and records what
 // reached the Workspace by another route: consent collected elsewhere, with its evidence, and an
 // opt-out. A contact without a phone has nothing to show.
 export function SmsSection({ workspaceId, contactId }: Props) {
@@ -40,6 +41,15 @@ export function SmsSection({ workspaceId, contactId }: Props) {
   const path = { workspaceId, contactId }
   const consent = useQuery(siteSmsConsentsGetOptions({ path }))
   const form = useSchemaForm(evidenceSchema, { wording: '', source: '', brand: '' })
+
+  const optOutVias: Record<OptOutVia, string> = {
+    keyword: t(($) => $.contacts.smsOptOutViaKeyword),
+    button: t(($) => $.contacts.smsOptOutViaButton),
+    block: t(($) => $.contacts.smsOptOutViaBlock),
+    link: t(($) => $.contacts.smsOptOutViaLink),
+    refused_send: t(($) => $.contacts.smsOptOutViaRefusedSend),
+    manual: t(($) => $.contacts.smsOptOutViaManual),
+  }
 
   const provenances: Record<ConfirmationProvenance, string> = {
     double_opt_in: t(($) => $.contacts.smsProvenanceDoubleOptIn),
@@ -68,7 +78,7 @@ export function SmsSection({ workspaceId, contactId }: Props) {
     return null
   }
   const confirmation = state.confirmation
-  const optedOutAt = state.optedOutAt
+  const stop = state.optOut
 
   const onOptOut = () =>
     confirmOptOut({
@@ -86,17 +96,22 @@ export function SmsSection({ workspaceId, contactId }: Props) {
           <Button variant="default" onClick={openConsent}>
             {t(($) => $.contacts.smsRecordConsent)}
           </Button>
-          {optedOutAt ? null : (
+          {stop ? null : (
             <Button variant="default" color="red" loading={optOut.isPending} onClick={onOptOut}>
               {t(($) => $.contacts.smsRecordOptOut)}
             </Button>
           )}
         </Group>
       </Group>
-      {optedOutAt ? (
-        <Text c="red" size="sm">
-          {t(($) => $.contacts.smsOptedOut, { at: formatDateTime(optedOutAt) })}
-        </Text>
+      {stop ? (
+        <Stack gap={0}>
+          <Text c="red" size="sm">
+            {t(($) => $.contacts.smsOptedOut, { at: formatDateTime(stop.optedOutAt) })}
+          </Text>
+          <Text c="dimmed" size="sm">
+            {t(($) => $.contacts.smsOptOutVia, { via: optOutVias[stop.via] })}
+          </Text>
+        </Stack>
       ) : null}
       {confirmation ? (
         <Table variant="vertical" layout="fixed" withTableBorder>

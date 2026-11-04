@@ -2479,6 +2479,9 @@ func ScopedEntities() []ScopedEntity {
 				b.SetChannel(src.Channel)
 				b.SetDestination(src.Destination)
 				b.SetSendingSource(src.SendingSource)
+				if src.Via != nil {
+					b.SetVia(*src.Via)
+				}
 				if src.ContactID != nil {
 					b.SetContactID(remap("Contact", *src.ContactID))
 				}

@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -42,6 +43,9 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 		// The Workspace comes from the signed unsubscribe token (no membership or api
 		// token here), so this is a scope source outside the site/external/job list.
 		sc := events.Ingest(tx.Scoped(target.WorkspaceID))
+		if target.Channel == messaging.ChannelSMS {
+			return recordSMSLink(ctx, sc, target, dest)
+		}
 		exists, err := sc.Unsubscribe().Query().Where(
 			unsubscribe.ChannelEQ(channel),
 			unsubscribe.DestinationEQ(dest),
@@ -56,6 +60,10 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 			SetSendingSource(target.Source)
 		if target.ContactID != 0 {
 			create.SetContactID(target.ContactID)
+		}
+		if target.Channel == messaging.ChannelTelegram {
+			// On email the email.unsubscribed Event says how; on Telegram the row does.
+			create.SetVia(unsubscribe.ViaLink)
 		}
 		if _, err := create.Save(ctx); err != nil {
 			return err
@@ -101,6 +109,26 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 			OutboundMessageID: target.OutboundMessageID,
 		})
 	}))
+}
+
+// recordSMSLink records the click on a text's unsubscribe link: on SMS every opt-out is the
+// number's Channel-wide one (ADR 0077), whatever source the link names, with the same effects as a
+// STOP (optout.StopSMS), and the Broadcast the text came from counts it. The Automation's Enrollment
+// goes on: its next text is Skipped like any other, and a step on another Channel still runs.
+func recordSMSLink(ctx context.Context, sc *ent.Scoped, target tracking.UnsubTarget, number string) error {
+	before, err := optout.SMSOptOut(ctx, sc, number)
+	if err != nil || before != nil {
+		return err
+	}
+	if err := optout.StopSMS(ctx, sc, number, unsubscribe.ViaLink); err != nil {
+		return err
+	}
+	if target.BroadcastID != 0 && target.ContactID != 0 {
+		if _, err := broadcasts.RecordUnsubscribe(ctx, sc, target.BroadcastID, target.ContactID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // publishTelegramUnsubscribed records telegram.unsubscribed for the Contact a Telegram unsubscribe

@@ -4,13 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/phone"
 	"github.com/getsphericon/sphericon/internal/smsrender"
 	"github.com/getsphericon/sphericon/internal/suppression"
@@ -78,6 +81,13 @@ func (smsChannel) unreachable(ctx context.Context, s *ent.Scoped, _ events.Publi
 	return eligibility.ReasonSuppressed, nil
 }
 
+// optedOut records that the number stopped at the provider, which refused the text for it (Twilio's
+// 21610: the number texted STOP to the sender): the number's Channel-wide opt-out (ADR 0077), the
+// same as a STOP texted to sphericon, keyed by the number whichever sender found out.
+func (smsChannel) optedOut(ctx context.Context, s *ent.Scoped, _ events.Publisher, _ *ent.Integration, _ *ent.OutboundMessage, to target, _ time.Time) error {
+	return optout.StopSMS(ctx, s, to.dest, unsubscribe.ViaRefusedSend)
+}
+
 // smsMessage is a rendered text, as the provider takes it.
 type smsMessage struct{ body string }
 
@@ -136,7 +146,8 @@ func (a smsAdapter) send(ctx context.Context, _ sendAs, msg any, to target, _ me
 
 // classifySMS takes the course a refusal of the provider calls for, by whom the provider's adapter
 // says it concerns (ADR 0079): the account holds the Integration (HoldProviderRefused), a rate signal
-// defers the send, a number that reaches no handset is suppressed, and a refusal of the number or one
+// defers the send, a number that opted out at the provider is the person's stop (optedOutError, the
+// send records it and Skips the message), a number that reaches no handset is suppressed, and a refusal of the number or one
 // that tells nothing fails this message alone (ReasonMessageRefused), with the provider's words and
 // code. A failure of the provider itself or of the network is left as it came: a retryable error.
 func classifySMS(err error) error {
@@ -149,6 +160,8 @@ func classifySMS(err error) error {
 		return fmt.Errorf("%w: %w", holdError{reason: HoldProviderRefused}, err)
 	case messaging.SMSRefusalRate:
 		return deferError{wait: DeferralBackoff, err: err}
+	case messaging.SMSRefusalOptedOut:
+		return optedOutError{err}
 	case messaging.SMSRefusalDeadNumber:
 		return unreachableError{err}
 	case messaging.SMSRefusalDestination, messaging.SMSRefusalAmbiguous:
