@@ -21,6 +21,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
+import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -532,4 +533,26 @@ test('with no enabled Integration no Channel is offered, and the way to add one 
   await expect.element(screen.getByText(/No channel can send yet/)).toBeInTheDocument()
   await expect.element(screen.getByRole('radio', { name: 'Email' })).not.toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Continue' })).toBeDisabled()
+})
+
+// An archived Broadcast is read-only until it is unarchived (ADR 0100): its edit URL opens its
+// report, which has no Edit, instead of a form whose Save would answer 409.
+test('an archived broadcast opens its report instead of the form', async () => {
+  serve('draft')
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({ ...broadcast('draft'), archivedAt: '2026-01-02T00:00:00Z' }),
+    ),
+  )
+
+  const { screen, navigate } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await expect
+    .poll(() => navigate)
+    .toHaveBeenCalledWith({
+      to: broadcastsReportRoute.to,
+      params: { workspaceId: 'TestWs01', broadcastId: '7' },
+      replace: true,
+    })
+  await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()
 })

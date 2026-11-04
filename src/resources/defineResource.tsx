@@ -1,7 +1,7 @@
 import { Modal, Stack, Title } from '@mantine/core'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import type { QueryKey, UseMutationOptions, UseSuspenseQueryOptions } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { Navigate, useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
 import { useState } from 'react'
 import type { ComponentType, ReactNode } from 'react'
@@ -90,6 +90,12 @@ export interface ResourceDescription<
   // Which revision of the resource the form edits, when something besides the form's own save
   // can replace what it edits (a Rule's draft dropped by Revert): a new revision reloads the form.
   revision?: (loaded: TResource) => string
+  // The page the edit URL of a resource that takes no edit opens instead of the form (an archived
+  // one, read-only until it is unarchived, ADR 0100); undefined for a resource that is edited.
+  readOnlyTarget?: (
+    loaded: TResource,
+    params: { workspaceId: string; id: string },
+  ) => { to: string; params: Record<string, string> } | undefined
 }
 
 export interface ResourceEditPageProps<TResource> {
@@ -234,6 +240,11 @@ export function defineResource<
     const { workspaceId } = workspaceRoute.useParams()
     const id = resource.editRoute.useParams()[resource.idParam]
     const { data } = useSuspenseQuery(resource.getOptions({ path: { workspaceId, id } }))
+
+    const readOnly = resource.readOnlyTarget?.(data, { workspaceId, id })
+    if (readOnly) {
+      return <Navigate {...readOnly} replace />
+    }
 
     return (
       <EditForm

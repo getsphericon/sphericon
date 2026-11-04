@@ -16,6 +16,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
+import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { Route as segmentsCreateRoute } from '../../routes/workspaces/$workspaceId/segments/new.tsx'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
@@ -250,4 +251,31 @@ test('editing shows no form while the segment loads, then the loaded values', as
   gate.resolve(undefined)
 
   await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Mail users')
+})
+
+// An archived Segment is read-only until it is unarchived (ADR 0100): its edit URL opens its page,
+// which has no Edit, instead of a form whose Save would answer 409.
+test('an archived segment opens its page instead of the form', async () => {
+  serveCatalogue()
+  worker.use(
+    handleSiteSegmentsGet(() =>
+      HttpResponse.json({
+        id: '7',
+        name: 'Mail users',
+        condition: RULE,
+        archivedAt: '2026-01-02T00:00:00Z',
+      }),
+    ),
+  )
+
+  const { screen, navigate } = await renderWithRouter(<SegmentEditPage />, EDIT_ROUTE)
+
+  await expect
+    .poll(() => navigate)
+    .toHaveBeenCalledWith({
+      to: segmentsDetailRoute.to,
+      params: { workspaceId: 'TestWs01', segmentId: '7' },
+      replace: true,
+    })
+  await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()
 })
