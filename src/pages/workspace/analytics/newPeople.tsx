@@ -1,5 +1,5 @@
 import { BarChart } from '@mantine/charts'
-import { EmptyState, SimpleGrid, Stack, Text } from '@mantine/core'
+import { SimpleGrid, Stack, Text } from '@mantine/core'
 import { IconChartBar } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +10,7 @@ import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as newPeopleRoute } from '../../../routes/workspaces/$workspaceId/analytics/new-people.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
+import { ReportEmpty } from './ReportEmpty.tsx'
 
 // NewPeoplePage is the New people report: the Contacts created per Report day, by Contact source.
 export function NewPeoplePage() {
@@ -39,7 +40,11 @@ function NewPeopleReport() {
         <StatCard label={t(($) => $.analytics.newPeople.total)} value={report.total} />
       </SimpleGrid>
       {report.total === 0 ? (
-        <EmptyState icon={<IconChartBar />} title={t(($) => $.analytics.newPeople.empty)} />
+        <ReportEmpty
+          chartHeight={300}
+          icon={<IconChartBar />}
+          title={t(($) => $.analytics.newPeople.empty)}
+        />
       ) : (
         <BarChart
           h={300}

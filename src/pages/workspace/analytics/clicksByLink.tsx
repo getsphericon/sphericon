@@ -1,4 +1,4 @@
-import { Alert, EmptyState, Group, Stack, Table, Text } from '@mantine/core'
+import { Alert, Group, Stack, Table, Text } from '@mantine/core'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
@@ -11,6 +11,7 @@ import { Route as clicksByLinkRoute } from '../../../routes/workspaces/$workspac
 import { Route as automationRoute } from '../../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as broadcastReportRoute } from '../../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
+import { ReportEmpty } from './ReportEmpty.tsx'
 
 // The window is `<days>d`; the retention note compares its days with the instance's retention.
 function windowDays(range: string): number {
@@ -55,7 +56,7 @@ function ClicksByLinkReport() {
   const retentionDays = report.eventsRetentionDays
 
   return (
-    <Stack>
+    <Stack flex={1}>
       {retentionDays > 0 && retentionDays < windowDays(range) && (
         <Alert color="yellow">
           {t(($) => $.analytics.clicksByLink.retentionNote, { days: retentionDays })}
@@ -63,7 +64,7 @@ function ClicksByLinkReport() {
       )}
 
       {report.links.length === 0 ? (
-        <EmptyState title={t(($) => $.analytics.clicksByLink.empty)} />
+        <ReportEmpty title={t(($) => $.analytics.clicksByLink.empty)} />
       ) : (
         <Stack gap="xs">
           <Text size="sm" c="dimmed">

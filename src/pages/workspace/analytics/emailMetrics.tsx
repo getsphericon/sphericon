@@ -1,5 +1,5 @@
 import { AreaChart, DonutChart } from '@mantine/charts'
-import { EmptyState, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import { IconChartBar } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +10,7 @@ import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as emailMetricsRoute } from '../../../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
+import { ReportEmpty } from './ReportEmpty.tsx'
 
 // EmailMetricsPage is the Email metrics report: KPI cards and charts for the section's window.
 export function EmailMetricsPage() {
@@ -57,7 +58,11 @@ function EmailMetricsReport() {
             />
           </SimpleGrid>
           {email.sentCount === 0 ? (
-            <EmptyState icon={<IconChartBar />} title={t(($) => $.analytics.email.empty)} />
+            <ReportEmpty
+              chartHeight={260}
+              icon={<IconChartBar />}
+              title={t(($) => $.analytics.email.empty)}
+            />
           ) : (
             <AreaChart
               h={260}
@@ -116,7 +121,11 @@ function EmailMetricsReport() {
                 ]}
               />
             ) : (
-              <EmptyState icon={<IconChartBar />} title={t(($) => $.analytics.contacts.empty)} />
+              <ReportEmpty
+                chartHeight={200}
+                icon={<IconChartBar />}
+                title={t(($) => $.analytics.contacts.empty)}
+              />
             )}
           </Stack>
 

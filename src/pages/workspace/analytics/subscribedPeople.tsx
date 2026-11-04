@@ -1,5 +1,5 @@
 import { BarChart } from '@mantine/charts'
-import { EmptyState, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core'
+import { SimpleGrid, Stack, Table, Text, Title } from '@mantine/core'
 import { IconChartBar } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +10,7 @@ import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as subscribedPeopleRoute } from '../../../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
+import { ReportEmpty } from './ReportEmpty.tsx'
 
 // signed is a net with its sign spelled out, so a day that lost people reads at a glance.
 function signed(net: number) {
@@ -45,7 +46,8 @@ function SubscribedPeopleReport() {
       <Stack gap="xs">
         <Title order={4}>{t(($) => $.analytics.subscribedPeople.flow)}</Title>
         {changedDays.length === 0 ? (
-          <EmptyState
+          <ReportEmpty
+            chartHeight={260}
             icon={<IconChartBar />}
             title={t(($) => $.analytics.subscribedPeople.empty)}
           />

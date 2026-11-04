@@ -114,6 +114,8 @@ everywhere, and mark the badge that has details with an info icon.
 - In Mantine: `EmptyState` (`@mantine/core`) with its `title` and `description`, and the action as
   a `Button variant="default"` inside `EmptyState.Actions`.
 - The count shows with the collection ("Contacts (0)").
+- An analytics report that is empty as a whole centers its empty state in the section's free
+  height; an empty chart keeps the chart's height, its empty state in the middle (`ReportEmpty`).
 - An error is not an empty state: Cloudscape's empty-states page says to use an alert or a toast.
   (Its table-view page puts a fetch error in an alert inside the table's empty area; `PagedTable`
   puts the same `ApiErrorAlert` above the table. That is a departure, kept because the table keeps

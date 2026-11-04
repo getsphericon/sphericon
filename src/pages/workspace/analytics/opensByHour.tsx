@@ -1,5 +1,5 @@
 import { MatrixChart } from '@mantine/charts'
-import { EmptyState, ScrollArea, Stack, Text } from '@mantine/core'
+import { ScrollArea, Stack, Text } from '@mantine/core'
 import { IconChartBar } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -8,6 +8,7 @@ import { siteAnalyticsOpensByHourOptions } from '../../../generated/site/@tansta
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { Route as opensByHourRoute } from '../../../routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
+import { ReportEmpty } from './ReportEmpty.tsx'
 
 // ISO weekdays, Monday first: the report's `weekday` 1 to 7.
 const WEEKDAYS = [
@@ -42,7 +43,7 @@ function OpensByHourReport() {
   ).data
 
   if (report.total === 0) {
-    return <EmptyState icon={<IconChartBar />} title={t(($) => $.analytics.opensByHour.empty)} />
+    return <ReportEmpty icon={<IconChartBar />} title={t(($) => $.analytics.opensByHour.empty)} />
   }
 
   const days = WEEKDAYS.map((key) => t(($) => $.analytics.opensByHour.weekdays[key]))
