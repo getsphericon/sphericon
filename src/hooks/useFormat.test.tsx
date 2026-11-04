@@ -1,11 +1,20 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
+import { HttpResponse } from 'msw'
+import { StrictMode } from 'react'
 import { expect, test } from 'vitest'
+import { render } from 'vitest-browser-react'
 
-import { siteUserGetMeQueryKey } from '../generated/site/@tanstack/react-query.gen.ts'
+import {
+  siteUserGetMeOptions,
+  siteUserGetMeQueryKey,
+} from '../generated/site/@tanstack/react-query.gen.ts'
+import { handleSiteUserGetMe } from '../generated/site/msw.gen.ts'
 import type { SiteUserResource } from '../generated/site/types.gen.ts'
+import { trackQueryClient } from '../test/queryClients.ts'
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
+import { worker } from '../test/worker.ts'
 import { formatDateTime } from '../utils/datetime.ts'
-import { useFormat } from './useFormat.ts'
+import { useFormat, useRegionalFormat, useTimeZone } from './useFormat.ts'
 
 const AT = '2026-03-08T00:00:00Z'
 const LOAD = 'Load profile'
@@ -125,4 +134,39 @@ test('writes every kind of figure in the cached Regional format', async () => {
     .toBe(
       '08.03.2026 | 08.03.2026 | 8. März 2026 | 1.234,5 | 50 % | 1.234,50 € | duration | +50 % | +10 | vor 5 Minuten',
     )
+})
+
+function ProfileReaders() {
+  useTimeZone()
+  useRegionalFormat()
+  return null
+}
+
+// The readers take the profile from the cache and never load it, so they never cancel the load a
+// guard awaits either. As query observers they did: the last one to leave while the profile was
+// on its way (StrictMode leaves and comes back on every mount in development) aborted the request,
+// and the route showed "The page could not be loaded".
+test('a profile reader that leaves while the profile loads does not cancel the load', async () => {
+  const { promise: answered, resolve: answer } = Promise.withResolvers<undefined>()
+  worker.use(
+    handleSiteUserGetMe(async () => {
+      await answered
+      return HttpResponse.json(me)
+    }),
+  )
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  trackQueryClient(queryClient)
+
+  const loading = queryClient.query(siteUserGetMeOptions())
+  const screen = await render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <ProfileReaders />
+      </QueryClientProvider>
+    </StrictMode>,
+  )
+  await screen.unmount()
+  answer(undefined)
+
+  await expect(loading).resolves.toStrictEqual(me)
 })

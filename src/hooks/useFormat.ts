@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useCallback, useMemo, useSyncExternalStore } from 'react'
 
-import { siteUserGetMeOptions } from '../generated/site/@tanstack/react-query.gen.ts'
+import { siteUserGetMeQueryKey } from '../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteUserResource } from '../generated/site/types.gen.ts'
 import { resolveLocale } from '../i18n.ts'
 import { formatChange, formatPointChange } from '../utils/change.ts'
 import {
@@ -18,27 +19,41 @@ import { formatPercent } from '../utils/percent.ts'
 
 type DateInput = Parameters<typeof formatDateTime>[0]
 
+const timeZoneOf = (me: SiteUserResource) => me.timezone ?? undefined
+const regionalFormatOf = (me: SiteUserResource) => me.regionalFormat ?? undefined
+
+// useCachedProfile reads one field of the profile in the cache and re-renders when it changes. It
+// subscribes to the cache, not to the query: a query observer that leaves while the profile is on
+// its way cancels that request (it is the last observer and the request took the abort signal),
+// and the guard awaiting it fails the route. StrictMode leaves and comes back on every mount in
+// development, so the readers at the root did it on every page load. `pick` returns a primitive,
+// so a change elsewhere in the cache re-renders nothing.
+function useCachedProfile(pick: (me: SiteUserResource) => string | undefined): string | undefined {
+  const queryClient = useQueryClient()
+  const subscribe = useCallback(
+    (onChange: () => void) => queryClient.getQueryCache().subscribe(onChange),
+    [queryClient],
+  )
+  const read = () => {
+    const me = queryClient.getQueryData<SiteUserResource>(siteUserGetMeQueryKey())
+    return me === undefined ? undefined : pick(me)
+  }
+  return useSyncExternalStore(subscribe, read)
+}
+
 // useTimeZone is the User time zone (ADR 0068), or undefined for the browser's. It reads the
 // profile from the cache and never fetches it: a signed-in page's guard has loaded it, and where
 // there is none (a public page, the Staff console) or the User chose no zone, the browser's zone
 // holds. A saved zone re-renders every caller through the cache.
 export function useTimeZone(): string | undefined {
-  return useQuery({
-    ...siteUserGetMeOptions(),
-    enabled: false,
-    select: (me) => me.timezone ?? undefined,
-  }).data
+  return useCachedProfile(timeZoneOf)
 }
 
 // useRegionalFormat is the User's Regional format (#1010): the locale, with its region, their
 // dates, times and numbers are written in, or undefined while they chose none. Read from the
 // cache like the time zone, so a public page and the Staff console never have one.
 export function useRegionalFormat(): string | undefined {
-  return useQuery({
-    ...siteUserGetMeOptions(),
-    enabled: false,
-    select: (me) => me.regionalFormat ?? undefined,
-  }).data
+  return useCachedProfile(regionalFormatOf)
 }
 
 // useLocale is the locale a signed-in page writes dates, times and numbers in: the User's
