@@ -114,8 +114,15 @@ everywhere, and mark the badge that has details with an info icon.
 - In Mantine: `EmptyState` (`@mantine/core`) with its `title` and `description`, and the action as
   a `Button variant="default"` inside `EmptyState.Actions`.
 - The count shows with the collection ("Contacts (0)").
-- An analytics report that is empty as a whole centers its empty state in the section's free
-  height; an empty chart keeps the chart's height, its empty state in the middle (`ReportEmpty`).
+- A list with nothing in it (its total is 0, from either state) shows the empty state in place of
+  the table, centered in the page's free height, under the count. A departure from Cloudscape,
+  which keeps it inside the table, so that an empty page does not read as a table with a strip at
+  the top. A later page that comes back empty while the total is not keeps its table and
+  pagination. An analytics report that is empty as a whole does the same; an empty chart beside
+  other figures keeps the chart's height, its empty state in the middle.
+- In code: `CenteredEmptyState` (`src/components/`). `DashboardShell` stretches the main area to
+  the viewport as a column; the page's root `Stack` takes `flex={1}`, and so does every wrapper
+  between it and the empty state, or the state stays at the top.
 - An error is not an empty state: Cloudscape's empty-states page says to use an alert or a toast.
   (Its table-view page puts a fetch error in an alert inside the table's empty area; `PagedTable`
   puts the same `ApiErrorAlert` above the table. That is a departure, kept because the table keeps
@@ -123,8 +130,8 @@ everywhere, and mark the badge that has details with an info icon.
 - An empty value in a cell or a key-value row is a hyphen, not a blank and not `0`.
 
 `PagedTable` takes the anatomy as `collection` (the name in the count, "Contacts (0)") and `empty`
-(`title`, an optional `description`, and the `action` button). A list that is not a `PagedTable`
-renders the same by hand.
+(`title`, an optional `description`, and the `action` button), and centers it when the list is
+empty. A list that is not a `PagedTable` renders the same by hand (`suppressions/list.tsx`).
 
 ## Loading
 

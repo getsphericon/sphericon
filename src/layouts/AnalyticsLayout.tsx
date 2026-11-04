@@ -14,10 +14,10 @@ export function AnalyticsLayout() {
   const range = useAnalyticsRange()
   const navigate = useNavigate()
 
-  // The section takes the main area's free height (the viewport less the header and the shell's
-  // padding), so a report that is empty as a whole centers its ReportEmpty in what is left.
+  // The section grows into the main area's free height, so a report that is empty as a whole
+  // centers its CenteredEmptyState in what is left below the window.
   return (
-    <Stack mih="calc(100dvh - var(--app-shell-header-offset, 0rem) - 2 * var(--app-shell-padding))">
+    <Stack flex={1}>
       <SegmentedControl
         w={{ base: '100%', sm: 'fit-content' }}
         value={range}

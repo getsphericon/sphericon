@@ -2,6 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredEmptyState } from '../../../components/CenteredEmptyState.tsx'
 import { EventActionName } from '../../../components/EventActionName.tsx'
 import { RelativeTime } from '../../../components/RelativeTime.tsx'
 import { AnchorLink } from '../../../components/RouterLink.tsx'
@@ -10,7 +11,6 @@ import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { Route as activityRoute } from '../../../routes/workspaces/$workspaceId/activity.tsx'
 import { Route as eventsRoute } from '../../../routes/workspaces/$workspaceId/analytics/events.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
-import { ReportEmpty } from './ReportEmpty.tsx'
 
 // EventsReportPage is the Events report: every action of the section's window with how often it
 // happened, for how many Contacts and when it last did. An action opens the Activity feed on it.
@@ -33,7 +33,7 @@ function EventsReport() {
   ).data.actions
 
   return actions.length === 0 ? (
-    <ReportEmpty title={t(($) => $.analytics.events.empty)} />
+    <CenteredEmptyState title={t(($) => $.analytics.events.empty)} />
   ) : (
     <DataTable
       withTableBorder

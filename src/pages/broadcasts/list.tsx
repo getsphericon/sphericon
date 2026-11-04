@@ -53,7 +53,7 @@ export function BroadcastsListPage() {
   const routeNavigate = broadcastsRoute.useNavigate()
 
   return (
-    <Stack>
+    <Stack flex={1}>
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.broadcasts)}</Title>
         <ButtonLink to={broadcastsCreateRoute.to} params={{ workspaceId }}>

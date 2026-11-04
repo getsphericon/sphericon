@@ -4,13 +4,13 @@ import { IconChartBar } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredEmptyState } from '../../../components/CenteredEmptyState.tsx'
 import { StatCard } from '../../../components/StatCard.tsx'
 import { siteAnalyticsOverviewOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as emailMetricsRoute } from '../../../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
-import { ReportEmpty } from './ReportEmpty.tsx'
 
 // EmailMetricsPage is the Email metrics report: KPI cards and charts for the section's window.
 export function EmailMetricsPage() {
@@ -58,8 +58,8 @@ function EmailMetricsReport() {
             />
           </SimpleGrid>
           {email.sentCount === 0 ? (
-            <ReportEmpty
-              chartHeight={260}
+            <CenteredEmptyState
+              height={260}
               icon={<IconChartBar />}
               title={t(($) => $.analytics.email.empty)}
             />
@@ -121,8 +121,8 @@ function EmailMetricsReport() {
                 ]}
               />
             ) : (
-              <ReportEmpty
-                chartHeight={200}
+              <CenteredEmptyState
+                height={200}
                 icon={<IconChartBar />}
                 title={t(($) => $.analytics.contacts.empty)}
               />

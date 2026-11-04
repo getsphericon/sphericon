@@ -2,6 +2,7 @@ import { Alert, Group, Stack, Table, Text } from '@mantine/core'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredEmptyState } from '../../../components/CenteredEmptyState.tsx'
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import { siteAnalyticsClicksByLinkOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsLinkOwner } from '../../../generated/site/types.gen.ts'
@@ -11,7 +12,6 @@ import { Route as clicksByLinkRoute } from '../../../routes/workspaces/$workspac
 import { Route as automationRoute } from '../../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as broadcastReportRoute } from '../../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
-import { ReportEmpty } from './ReportEmpty.tsx'
 
 // The window is `<days>d`; the retention note compares its days with the instance's retention.
 function windowDays(range: string): number {
@@ -64,7 +64,7 @@ function ClicksByLinkReport() {
       )}
 
       {report.links.length === 0 ? (
-        <ReportEmpty title={t(($) => $.analytics.clicksByLink.empty)} />
+        <CenteredEmptyState title={t(($) => $.analytics.clicksByLink.empty)} />
       ) : (
         <Stack gap="xs">
           <Text size="sm" c="dimmed">

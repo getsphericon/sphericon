@@ -37,7 +37,7 @@ export function SegmentsListPage() {
   const routeNavigate = segmentsRoute.useNavigate()
 
   return (
-    <Stack>
+    <Stack flex={1}>
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.segments)}</Title>
         <ButtonLink to={segmentsCreateRoute.to} params={{ workspaceId }}>

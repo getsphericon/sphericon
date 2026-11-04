@@ -69,7 +69,7 @@ export function AutomationsListPage() {
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
 
   return (
-    <Stack>
+    <Stack flex={1}>
       <AutomationCreateModal opened={createOpened} onClose={closeCreate} />
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.automations)}</Title>

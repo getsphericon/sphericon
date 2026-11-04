@@ -3,12 +3,12 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredEmptyState } from '../../../components/CenteredEmptyState.tsx'
 import { siteAnalyticsDeliverabilityOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as deliverabilityRoute } from '../../../routes/workspaces/$workspaceId/analytics/deliverability.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
-import { ReportEmpty } from './ReportEmpty.tsx'
 
 // DeliverabilityPage is the Deliverability report: each Sending domain's Complaint and Bounce
 // rate over the section's window, with the counts they are made of. Numbers only: the core sets no
@@ -33,7 +33,7 @@ function DeliverabilityReport() {
   ).data.domains
 
   if (domains.length === 0) {
-    return <ReportEmpty title={t(($) => $.analytics.deliverability.empty)} />
+    return <CenteredEmptyState title={t(($) => $.analytics.deliverability.empty)} />
   }
 
   return (
