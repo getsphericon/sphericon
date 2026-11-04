@@ -378,7 +378,7 @@ _Avoid_: Delivery pipeline, send path (unqualified), mailer
 The one answer to how a send on a Channel leaves through an Integration of that Channel: the one it
 names, else that Channel's default, never another Channel's, with the provider adapter built for
 it, whether that sender delivers outside, its Provider limit and why it cannot send, if it cannot.
-A named Integration that is disabled, archived or of another Channel holds the route
+A named Integration that is disabled, deleted or of another Channel holds the route
 (`no_integration`), never the default in its place. Every send asks it (Outbound send, a Test send,
 the Broadcast planner's pace), and so do the moments that arm a send: an Automation's Publish (with
 an email step) and a Broadcast's Schedule are refused while the route cannot send. A draft may still
@@ -493,9 +493,9 @@ Contact is enrolled and walks the Automation's ordered steps (send on a Channel,
 surface where every Channel meets. Each
 Automation is its own unsubscribe Sending source. What it does is its **live version**: an edit
 writes a draft, and only **Publish** makes it live. Publishing starts enrolling; deactivating
-stops _new_ enrollments but lets in-flight Enrollments finish (deactivate ≠ halt). Removing
-one is **Archive** (a **Discard**) once no Enrollment is active, which hides it and enrolls
-nobody while its Enrollments stay; only an Automation with no Enrollments at all is purged.
+stops _new_ enrollments but lets in-flight Enrollments finish (deactivate ≠ halt).
+An Automation is never deleted: it is **Archived** once no Enrollment is active, which hides it
+and enrolls nobody while its Enrollments stay.
 _Avoid_: Workflow, flow, journey, drip, campaign
 
 **Automation version**:
@@ -529,7 +529,7 @@ _Avoid_: Activate, launch, go live, deploy
 **Revert**:
 Dropping the draft of an Automation, a Rule or an On-site form, so that its live version is again
 the latest. It changes nothing that sends or shows.
-_Avoid_: Discard (that is the soft-delete mechanism), reset, undo
+_Avoid_: Discard (that is a delete that keeps the row), reset, undo
 
 **Trigger**:
 The single Event action that enrolls a Contact into an Automation (e.g. "contact.created", a
@@ -638,20 +638,30 @@ _Avoid_: Theme, style guide
 
 ### Operational
 
+**Archive**:
+Putting aside a row of a kind that is never deleted (a Broadcast, an Automation, a Segment): it
+leaves the working lists and takes no part in new work, is listed among the archived ones and comes
+back by **Unarchive**. Its history stays, and reports still count it. A row in **Live use** cannot
+be archived.
+_Avoid_: Delete, Discard, soft delete, hide
+
 **Discard**:
-Taking a row out of working lists while keeping it, by stamping `discarded_at`; **Undiscard**
-clears the stamp. It is the one mechanism behind what the UI calls Archive (a Broadcast, an
-Automation, a Segment: a list view of the archived ones restores them) or Delete (an
-Integration, a Sending domain, a Rule with Firings: never restored, still readable by id, ADR
-0097 and ADR 0098; a Workspace, restorable for its window). A Sign-up item is archived for good: it stays listed,
-marked archived, and is never restored. A discarded row is hidden from
-lists and from new work, but not from history: reports still count it. A row that other live
-work depends on cannot be discarded. **Purge** is the physical removal, allowed only for what
-has no history (a draft Broadcast, an Automation with no Enrollments) and for erasure. The
-raw, undiscardable fact rows (Events, Outbound messages, Audit entries, Suppressions) are never
-discarded.
-_Avoid_: Soft delete, archive (as the mechanism), trash, tombstone (a tombstone is the row an
-erased Workspace leaves)
+What Delete does to a row of a kind other rows may refer to (an Integration, a Sending domain, a
+Rule, a Sign-up item, a Workspace): the row leaves every list and every new work for good, yet is
+kept, so what refers to it still shows its name and reports still count it. It is never restored,
+except a Workspace within its window. A row in **Live use** cannot be discarded. A kind nothing can
+refer to (a Tag, a Template, a Brand kit, a Webhook endpoint, a Membership, an Invitation) is
+deleted outright. Fact rows (Events, Outbound messages, Audit entries, Suppressions) are neither
+discarded nor deleted: only Retention and erasure remove them.
+_Avoid_: Archive, soft delete, trash, tombstone (a tombstone is the row an erased Workspace leaves)
+
+**Live use**:
+Work that will still send or act through a row: a scheduled or sending Broadcast, the live
+version of an active Automation, any version an unfinished Enrollment stands on, and an active
+Rule. A Broadcast or step uses the Integration it sends through (its own, or its Channel's
+default) and the Sending domain of the From address it actually sends from. A row in Live use
+cannot be archived or discarded.
+_Avoid_: Dependency, reference, in use
 
 **Integration**:
 A workspace-scoped, **outbound** connection to a sending provider, external or built in (the Test
@@ -666,8 +676,8 @@ connects the bot before the save commits: Telegram must accept the token, an edi
 new token of the same bot, and the bot's webhook is pointed at the Integration's Ingest hook with
 a secret sphericon generates (replacing any webhook the bot had), read with the built-in
 `telegram` Preset, which no other Integration takes. Its Provider limit is 30 a second, from
-Telegram's side. While it is enabled and not archived it holds the bot's webhook: regenerating
-its hook key moves the webhook, and disabling or archiving it removes the webhook.
+Telegram's side. While it is enabled and not deleted it holds the bot's webhook: regenerating
+its hook key moves the webhook, and disabling or deleting it removes the webhook.
 _Avoid_: Provider (alone), ESP, sender, connector
 
 **Test inbox**:
@@ -1178,7 +1188,7 @@ the Instance serves: a **required acceptance** (a checkbox without which no User
 **optional consent** (an unticked checkbox sign-up never depends on) or a **notice** (a link, nothing
 to tick). Each has its own Legal document, and one may stand for consent to the operator's mailings.
 An Instance has none until a Staff member adds them: the core ships no legal text and knows no law.
-An item no longer asked is archived (a **Discard**), never deleted.
+An item no longer asked is deleted (a **Discard**): its published Legal document versions keep it.
 _Avoid_: Consent (for the item), checkbox, terms (as the general name), retire
 
 **Legal document**:

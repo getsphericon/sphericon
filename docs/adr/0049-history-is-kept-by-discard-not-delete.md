@@ -15,6 +15,21 @@ status: accepted
 > holds the Trigger and the Integration, the live version is never rewritten, and only the draft
 > above it is rewritten in place.
 
+> Amended by [[0065-a-live-automation-or-rule-changes-only-by-publish]] again: a scheduled Broadcast
+> holds a copy of its Segment's Condition, so only a draft Broadcast's Segment was blocked, and
+> [[0099-live-use-is-what-will-still-send-and-upkeep-skips-a-deleted-row]] unblocks that too.
+
+> Amended by [[0071-a-tracking-domain-is-the-workspaces-own-not-a-sending-domains]]: a Sending domain
+> serves no Tracking host, so what this ADR says of the tracking host gate, `tls/ask`, the change log
+> and the Instance-wide domain index no longer applies to it.
+
+> Amended by [[0099-live-use-is-what-will-still-send-and-upkeep-skips-a-deleted-row]]: what uses a
+> row is Live use, a check and its removal take a Workspace lock, inventory counts leave archived rows
+> out, and every upkeep job skips a deleted row, not only the DNS re-checks.
+
+> Amended by [[0100-archive-is-not-discard]]: Archive and Discard are two states, each kind has one of
+> them, Discard is not the mechanism behind Archive, and no row is purged for having no history.
+
 Only a Workspace was removed softly (ADR 0043); every other row was removed with `DeleteOneID`.
 That broke history in three places: deleting an Automation cascaded away its Enrollments (the
 Outbound messages stayed, the record of who was enrolled and why a run failed did not), deleting a

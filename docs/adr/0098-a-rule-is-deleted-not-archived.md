@@ -4,6 +4,9 @@ status: accepted
 
 # A Rule is deleted, not archived
 
+> Amended by [[0100-archive-is-not-discard]]: Delete always discards, a Rule with no Firings too, and
+> the field is `discardedAt`.
+
 A Rule had both Archive and Delete (ADR 0049, ADR 0054): Delete purged only a Rule that had never
 fired and answered 409 for one with Firings, which had to be archived instead, and an archived view
 of the Rules list restored them. The maintainer chose to drop Archive for Rules and keep Delete as
