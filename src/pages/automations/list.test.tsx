@@ -352,6 +352,8 @@ test('typing a name and picking a state put them in the URL search and keep the 
   )
 
   const { screen, navigate } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+  // Typed once the list has loaded, so the page does not render anew under the pending search.
+  await expect.element(screen.getByText('Welcome flow')).toBeInTheDocument()
   await screen.getByRole('textbox', { name: 'Search by name' }).fill(' welcome ')
   await expect
     .poll(() => searches(navigate, { sort: 'name', page: 2 }))

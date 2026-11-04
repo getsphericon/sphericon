@@ -21,7 +21,7 @@ import {
   siteAutomationsListOptions,
   siteAutomationsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
+import type { SiteAutomationResource, SortDirection } from '../../generated/site/types.gen.ts'
 import { zSiteAutomationState } from '../../generated/site/zod.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
@@ -112,7 +112,7 @@ export function AutomationsListPage() {
   // unless it says Z to A. The default order is the absent params, so the plain URL is the list.
   const column = sort ?? 'createdAt'
   // A column picked anew starts in its own direction; the column already sorted by turns round.
-  const changeSort = (nextColumn: string, nextDirection: 'asc' | 'desc') => {
+  const changeSort = (nextColumn: string, nextDirection: SortDirection) => {
     const nextSort = nextColumn === 'name' ? 'name' : 'createdAt'
     const turned = nextSort === column ? nextDirection : defaultDirection(nextSort)
     changeSearch({

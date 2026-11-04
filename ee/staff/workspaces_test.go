@@ -23,10 +23,12 @@ import (
 // (never Contacts, content, Events or the Workspace's secret keys).
 func requireMetadataOnly(t *testing.T, w map[string]any) {
 	t.Helper()
+	// contract-copy: the keys of a staff Workspace response, not the automations sort order
 	allowed := []string{"id", "name", "createdAt", "suspension", "deliverability", "holds", "exempt", "warned", "abuse", "discardedAt", "erasedAt", "sendCap"}
 	for k := range w {
 		assert.Contains(t, allowed, k)
 	}
+	// contract-copy: the keys every staff Workspace response carries, not a sort order
 	for _, k := range []string{"id", "name", "createdAt"} {
 		assert.Contains(t, w, k)
 	}
