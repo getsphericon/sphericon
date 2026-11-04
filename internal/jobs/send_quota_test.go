@@ -3,6 +3,7 @@ package jobs_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +31,7 @@ func envCipher(t *testing.T) *secrets.Cipher {
 
 func TestRefreshSendQuotasWorkerFansOutOneJobPerSESIntegration(t *testing.T) {
 	e := newRiverEnv(t)
-	ses, err := e.DB.Integration.Query().Where(integration.ProviderEQ(integration.ProviderSes)).Count(t.Context())
+	ses, err := e.DB.Integration.Query().Where(integration.ProviderEQ(integration.ProviderSes), integration.DiscardedAtIsNil()).Count(t.Context())
 	require.NoError(t, err)
 	require.Positive(t, ses)
 
@@ -89,4 +90,35 @@ func TestIntegrationsDueForQuotaRefreshAreTheSESOnes(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, ids, int64(fixtures.IntegrationAcmeSesID))
 	assert.NotContains(t, ids, int64(fixtures.IntegrationAcmeDefaultID))
+}
+
+// A deleted Integration is not kept working (ADR 0099): its credential sends nothing, so the
+// provider is not asked for its quota.
+func TestIntegrationsDueForQuotaRefreshLeaveADeletedIntegrationOut(t *testing.T) {
+	env := testhelper.Setup(t)
+	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeSesID).SetDiscardedAt(time.Now()).ExecX(t.Context())
+
+	ids, err := jobs.IntegrationsDueForQuotaRefresh(t.Context(), env.DB, 100)
+
+	require.NoError(t, err)
+	assert.NotContains(t, ids, int64(fixtures.IntegrationAcmeSesID))
+	assert.Contains(t, ids, int64(fixtures.IntegrationAcmeSesImpliedID))
+}
+
+// A refresh queued before the Integration was deleted checks again when it runs and stores nothing.
+func TestRefreshIntegrationQuotaOfAnIntegrationDeletedAfterItWasQueuedChangesNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeSesID).SetDiscardedAt(time.Now()).ExecX(ctx)
+	fake := &testhelper.FakeSES{}
+	fake.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
+	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, envCipher(t), fake.Catalog())
+
+	err := worker.Work(ctx, job(jobs.RefreshIntegrationQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID}))
+
+	require.NoError(t, err)
+	row, err := env.DB.Integration.Get(ctx, fixtures.IntegrationAcmeSesID)
+	require.NoError(t, err)
+	assert.Nil(t, row.ProviderQuotaCheckedAt)
+	assert.Nil(t, row.ProviderMaxPerSecond)
 }

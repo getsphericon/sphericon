@@ -312,3 +312,42 @@ func TestDevTXTLookup_answersASendingDomainsDMARCRecord(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, row.DmarcFoundAt)
 }
+
+// A check queued before its domain was deleted checks again when it runs (ADR 0099): a deleted
+// domain is not kept working, so the check stores nothing and tells no Owner it lost verification.
+func TestVerify_aDeletedDomainChangesNothingAndNotifiesNoOne(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	before, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainArchivedID)
+	require.NoError(t, err)
+	require.True(t, dkimstate.Is(before), "the deleted fixture domain was verified")
+
+	err = module(env, dnstest.Resolver(t, nil).LookupTXT).Verify(ctx, fixtures.SendingDomainArchivedID)
+
+	require.NoError(t, err)
+	after, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainArchivedID)
+	require.NoError(t, err)
+	assert.Equal(t, before.LastCheckedAt, after.LastCheckedAt)
+	assert.Equal(t, before.VerificationLostAt, after.VerificationLostAt)
+	assert.Equal(t, before.DmarcCheckedAt, after.DmarcCheckedAt)
+	assert.Empty(t, env.SystemMail.Messages())
+}
+
+// A domain deleted while its DNS is being looked up is not judged by the check either.
+func TestVerifyDKIM_aDomainDeletedDuringTheCheckNotifiesNoOne(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	gone := dnstest.Resolver(t, nil).LookupTXT
+	deleting := func(ctx context.Context, name string) ([]string, error) {
+		env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).SetDiscardedAt(time.Now()).ExecX(ctx)
+		return gone(ctx, name)
+	}
+
+	_, err := module(env, deleting).VerifyDKIM(ctx, fixtures.SendingDomainVerifiedID)
+
+	require.NoError(t, err)
+	row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
+	require.NoError(t, err)
+	assert.Nil(t, row.VerificationLostAt)
+	assert.Empty(t, env.SystemMail.Messages())
+}

@@ -214,13 +214,17 @@ func checkLicense(r *Report, in Input) {
 	r.add("license key", Pass, "valid: "+strings.Join(features, ", "), "")
 }
 
-// checkDKIM resolves the DKIM record of every Sending domain of every Workspace.
+// checkDKIM resolves the DKIM record of every Sending domain of every live Workspace; a deleted
+// domain is not kept working (ADR 0099), so it is left out.
 func checkDKIM(ctx context.Context, r *Report, in Input) {
 	if in.Ent == nil {
 		r.add("dkim", Fail, "not checked: the database is unreachable", "Fix the database check above first.")
 		return
 	}
-	domains, err := in.Ent.SendingDomain.Query().Where(sendingdomain.HasWorkspaceWith(accounts.Live())).Order(ent.Asc(sendingdomain.FieldID)).All(ctx)
+	domains, err := in.Ent.SendingDomain.Query().
+		Where(sendingdomain.DiscardedAtIsNil(), sendingdomain.HasWorkspaceWith(accounts.Live())).
+		Order(ent.Asc(sendingdomain.FieldID)).
+		All(ctx)
 	if err != nil {
 		r.add("dkim", Fail, "cannot list the Sending domains: "+err.Error(), "Fix the database check above first.")
 		return

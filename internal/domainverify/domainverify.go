@@ -40,10 +40,14 @@ func New(client *ent.Client, lookup sending.TXTLookup, notify ownernotice.Notify
 
 // Verify checks one Sending domain: its DKIM, then its DMARC record. A DKIM lookup error is
 // returned so the job retries; DMARC never fails the check nor changes its DKIM result (ADR 0012).
+// A deleted domain is not kept working (ADR 0099): a check queued before the deletion does nothing.
 func (m *Module) Verify(ctx context.Context, id int64) error {
 	dom, err := m.client.SendingDomain.Get(ctx, id)
 	if err != nil {
 		return err
+	}
+	if dom.DiscardedAt != nil {
+		return nil
 	}
 	if _, err := m.verifyDKIM(ctx, dom); err != nil {
 		return err
@@ -66,7 +70,9 @@ func (m *Module) checkDMARC(ctx context.Context, dom *ent.SendingDomain) {
 		return
 	}
 	now := time.Now()
-	upd := m.client.Scoped(dom.WorkspaceID).SendingDomain().UpdateOneID(dom.ID).SetDmarcCheckedAt(now)
+	upd := m.client.Scoped(dom.WorkspaceID).SendingDomain().UpdateOneID(dom.ID).
+		Where(sendingdomain.DiscardedAtIsNil()).
+		SetDmarcCheckedAt(now)
 	switch {
 	case found && dom.DmarcFoundAt == nil:
 		upd.Where(sendingdomain.DmarcFoundAtIsNil()).SetDmarcFoundAt(now)
@@ -84,16 +90,21 @@ func (m *Module) checkDMARC(ctx context.Context, dom *ent.SendingDomain) {
 // stops being. It returns the resulting verified state. A check that loses a live domain's verification mails the Owners, best-effort:
 // a failed notice never fails the check. The write is a compare-and-swap on the state the check
 // read, so a check that lost to another one stores nothing and reports no flip: the Owners are
-// told once per loss (ADR 0046).
+// told once per loss (ADR 0046). A deleted domain is not checked: its stored state is the answer
+// (ADR 0099).
 func (m *Module) VerifyDKIM(ctx context.Context, id int64) (verified bool, err error) {
 	dom, err := m.client.SendingDomain.Get(ctx, id)
 	if err != nil {
 		return false, err
 	}
+	if dom.DiscardedAt != nil {
+		return dkimstate.Is(dom), nil
+	}
 	return m.verifyDKIM(ctx, dom)
 }
 
-// verifyDKIM is VerifyDKIM of a domain already read.
+// verifyDKIM is VerifyDKIM of a kept domain already read. The write lands only while the domain
+// is still kept, so one deleted during the lookup is neither changed nor reported.
 func (m *Module) verifyDKIM(ctx context.Context, dom *ent.SendingDomain) (verified bool, err error) {
 	id := dom.ID
 	verified, err = sending.VerifyDKIM(ctx, m.lookup, dom.DkimSelector, dom.Domain, dom.DkimPublicKey)
@@ -103,7 +114,9 @@ func (m *Module) verifyDKIM(ctx context.Context, dom *ent.SendingDomain) (verifi
 
 	now := time.Now()
 	was := dkimstate.Is(dom)
-	upd := m.client.Scoped(dom.WorkspaceID).SendingDomain().UpdateOneID(id).SetLastCheckedAt(now)
+	upd := m.client.Scoped(dom.WorkspaceID).SendingDomain().UpdateOneID(id).
+		Where(sendingdomain.DiscardedAtIsNil()).
+		SetLastCheckedAt(now)
 	flipped := false
 	if verified != was {
 		// Compare-and-swap on the state the check read: the write lands only while the row
@@ -117,7 +130,7 @@ func (m *Module) verifyDKIM(ctx context.Context, dom *ent.SendingDomain) (verifi
 	}
 	if err := upd.Exec(ctx); err != nil {
 		if ent.IsNotFound(err) {
-			// Lost the swap (or the domain is gone): the stored state is the answer.
+			// Lost the swap (or the domain is deleted or gone): the stored state is the answer.
 			current, gerr := m.client.SendingDomain.Get(ctx, id)
 			if gerr != nil {
 				return false, gerr
@@ -142,7 +155,7 @@ func (m *Module) notifyUnverified(ctx context.Context, dom *ent.SendingDomain) {
 // Due returns up to limit ids of the Sending domains whose DKIM is to be re-checked,
 // least-recently-checked first with NULLS FIRST: a freshly added, never-checked domain is
 // verified soonest rather than starved behind already-checked ones (plain ASC sorts NULLs
-// last in Postgres). A deleted (discarded) domain is skipped (ADR 0049).
+// last in Postgres). A deleted (discarded) domain is skipped (ADR 0099).
 func (m *Module) Due(ctx context.Context, limit int) ([]int64, error) {
 	return m.client.SendingDomain.Query().
 		Where(sendingdomain.DiscardedAtIsNil()).
