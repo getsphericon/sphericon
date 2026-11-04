@@ -105,8 +105,12 @@ export function useAuditActionLabel() {
       'webhook_endpoint.delete': t(($) => $.auditActions.webhookEndpointDelete),
     }
     // An entry an older release recorded with an action the contract has since dropped is still in
-    // the log: it reads as its code.
-    const byCode: Partial<Record<string, string>> = words
+    // the log: it reads as its words when they are known, and as its code otherwise.
+    const past: Partial<Record<string, string>> = {
+      // v0.2 to v0.3 recorded unarchiving an Integration as its restore (gone with ADR 0100).
+      'integration.restore': t(($) => $.auditActions.integrationRestore),
+    }
+    const byCode: Partial<Record<string, string>> = { ...past, ...words }
     return (action: string): string => byCode[action] ?? action
   }, [t])
 }
