@@ -56,9 +56,9 @@ type ScopedEntity struct {
 	// Name is the entity's schema name.
 	Name string
 	// AuditActions are the actions its Audit entries record (`<entity>.<verb>`, the entity being
-	// schema.Audited.Action): create, update and delete, then discard and restore for a discardable
-	// entity and archive and unarchive for an archivable one (ADR 0100). None when the entity is not
-	// audited.
+	// schema.Audited.Action): create, update and delete (Purge), then discard for a discardable
+	// entity, which is never restored, and archive and unarchive for an archivable one (ADR 0100).
+	// None when the entity is not audited.
 	AuditActions []string
 	// IDs lists the ids of the Workspace's rows, read through the raw client.
 	IDs func(ctx context.Context, c *Client, ws int64) ([]int64, error)
@@ -1258,7 +1258,7 @@ func ScopedEntities() []ScopedEntity {
 		},
 		{
 			Name:         "Integration",
-			AuditActions: []string{"integration.create", "integration.update", "integration.delete", "integration.discard", "integration.restore"},
+			AuditActions: []string{"integration.create", "integration.update", "integration.delete", "integration.discard"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Integration.Query().Where(integration.WorkspaceID(ws)).Order(Asc(integration.FieldID)).IDs(ctx)
 			},
@@ -1818,7 +1818,7 @@ func ScopedEntities() []ScopedEntity {
 		},
 		{
 			Name:         "Rule",
-			AuditActions: []string{"rule.create", "rule.update", "rule.delete", "rule.discard", "rule.restore"},
+			AuditActions: []string{"rule.create", "rule.update", "rule.delete", "rule.discard"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Rule.Query().Where(rule.WorkspaceID(ws)).Order(Asc(rule.FieldID)).IDs(ctx)
 			},
@@ -2153,7 +2153,7 @@ func ScopedEntities() []ScopedEntity {
 		},
 		{
 			Name:         "SendingDomain",
-			AuditActions: []string{"sending_domain.create", "sending_domain.update", "sending_domain.delete", "sending_domain.discard", "sending_domain.restore"},
+			AuditActions: []string{"sending_domain.create", "sending_domain.update", "sending_domain.delete", "sending_domain.discard"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.SendingDomain.Query().Where(sendingdomain.WorkspaceID(ws)).Order(Asc(sendingdomain.FieldID)).IDs(ctx)
 			},

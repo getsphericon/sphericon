@@ -78,7 +78,6 @@ export function useAuditActionLabel() {
       'integration.update': t(($) => $.auditActions.integrationUpdate),
       'integration.delete': t(($) => $.auditActions.integrationDelete),
       'integration.discard': t(($) => $.auditActions.integrationDiscard),
-      'integration.restore': t(($) => $.auditActions.integrationRestore),
       'join_domain.create': t(($) => $.auditActions.joinDomainCreate),
       'join_domain.update': t(($) => $.auditActions.joinDomainUpdate),
       'join_domain.delete': t(($) => $.auditActions.joinDomainDelete),
@@ -86,7 +85,6 @@ export function useAuditActionLabel() {
       'rule.update': t(($) => $.auditActions.ruleUpdate),
       'rule.delete': t(($) => $.auditActions.ruleDelete),
       'rule.discard': t(($) => $.auditActions.ruleDiscard),
-      'rule.restore': t(($) => $.auditActions.ruleRestore),
       'segment.create': t(($) => $.auditActions.segmentCreate),
       'segment.update': t(($) => $.auditActions.segmentUpdate),
       'segment.delete': t(($) => $.auditActions.segmentDelete),
@@ -96,7 +94,6 @@ export function useAuditActionLabel() {
       'sending_domain.update': t(($) => $.auditActions.sendingDomainUpdate),
       'sending_domain.delete': t(($) => $.auditActions.sendingDomainDelete),
       'sending_domain.discard': t(($) => $.auditActions.sendingDomainDiscard),
-      'sending_domain.restore': t(($) => $.auditActions.sendingDomainRestore),
       'tag.create': t(($) => $.auditActions.tagCreate),
       'tag.update': t(($) => $.auditActions.tagUpdate),
       'tag.delete': t(($) => $.auditActions.tagDelete),
@@ -107,6 +104,9 @@ export function useAuditActionLabel() {
       'webhook_endpoint.update': t(($) => $.auditActions.webhookEndpointUpdate),
       'webhook_endpoint.delete': t(($) => $.auditActions.webhookEndpointDelete),
     }
-    return (action: AnyAuditAction): string => words[action]
+    // An entry an older release recorded with an action the contract has since dropped is still in
+    // the log: it reads as its code.
+    const byCode: Partial<Record<string, string>> = words
+    return (action: string): string => byCode[action] ?? action
   }, [t])
 }

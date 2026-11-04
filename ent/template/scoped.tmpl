@@ -130,11 +130,6 @@ func (t *{{ $N }}Scoped) Query() *{{ $N }}Query {
 func (t *{{ $N }}Scoped) QueryWithDiscarded() *{{ $N }}Query {
 	return t.s.c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(t.s.ws))
 }
-
-// QueryDiscarded returns a {{ $N }} query confined to the Workspace that sees only discarded rows.
-func (t *{{ $N }}Scoped) QueryDiscarded() *{{ $N }}Query {
-	return t.QueryWithDiscarded().Where({{ $P }}.DiscardedAtNotNil())
-}
 {{ end }}
 {{ if $R }}
 // QueryWithArchived returns a {{ $N }} query confined to the Workspace that also sees archived rows.
@@ -200,50 +195,15 @@ func (t *{{ $N }}Scoped) setArchived(ctx context.Context, id int64, where []pred
 }
 {{ end }}{{ if $D }}
 // Discard stamps discarded_at on the kept {{ $N }} with the id (ps fence it further); a row of
-// another Workspace, an already discarded row or one a predicate excludes is not found.
+// another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
+// row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *{{ $N }}Scoped) Discard(ctx context.Context, id int64, ps ...predicate.{{ $N }}) error {
-	return t.setDiscarded(ctx, id, true, ps)
-}
-
-// Undiscard clears discarded_at on the discarded {{ $N }} with the id; a row that is not
-// discarded is not found.
-func (t *{{ $N }}Scoped) Undiscard(ctx context.Context, id int64) error {
-	return t.setDiscarded(ctx, id, false, nil)
-}
-
-// Restore is Undiscard that leaves a kept {{ $N }} as it is: only a row that does not exist in the
-// Workspace is not found.
-func (t *{{ $N }}Scoped) Restore(ctx context.Context, id int64) error {
-	err := t.Undiscard(ctx, id)
-	if !IsNotFound(err) {
-		return err
-	}
-	_, err = t.Get(ctx, id)
-	return err
-}
-
-func (t *{{ $N }}Scoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.{{ $N }}) error {
-	where := append([]predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws)}, ps...)
-	if discard {
-		where = append(where, {{ $P }}.DiscardedAtIsNil())
-	} else {
-		where = append(where, {{ $P }}.DiscardedAtNotNil())
-	}
+	where := append([]predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.DiscardedAtIsNil()}, ps...)
 	write := func(c *Client) (*{{ $N }}, error) {
-		u := c.{{ $N }}.UpdateOneID(id).Where(where...)
-		if discard {
-			u.SetDiscardedAt(time.Now())
-		} else {
-			u.ClearDiscardedAt()
-		}
-		return u.Save(ctx)
+		return c.{{ $N }}.UpdateOneID(id).Where(where...).SetDiscardedAt(time.Now()).Save(ctx)
 	}
 	{{- if $A }}
 	if t.s.auditing() {
-		verb := "restore"
-		if discard {
-			verb = "discard"
-		}
 		return t.s.audited(ctx, func(ts *Scoped) error {
 			before, err := ts.c.{{ $N }}.Query().Where(where...).Only(ctx)
 			if err != nil {
@@ -253,7 +213,7 @@ func (t *{{ $N }}Scoped) setDiscarded(ctx context.Context, id int64, discard boo
 			if err != nil {
 				return err
 			}
-			return ts.record(ctx, auditChange{{ $N }}(verb, before, after))
+			return ts.record(ctx, auditChange{{ $N }}("discard", before, after))
 		})
 	}
 	{{- end }}

@@ -234,8 +234,6 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "integration.discard":
 		return nil
-	case "integration.restore":
-		return nil
 	case "join_domain.create":
 		return nil
 	case "join_domain.update":
@@ -249,8 +247,6 @@ func (s AuditAction) Validate() error {
 	case "rule.delete":
 		return nil
 	case "rule.discard":
-		return nil
-	case "rule.restore":
 		return nil
 	case "segment.create":
 		return nil
@@ -269,8 +265,6 @@ func (s AuditAction) Validate() error {
 	case "sending_domain.delete":
 		return nil
 	case "sending_domain.discard":
-		return nil
-	case "sending_domain.restore":
 		return nil
 	case "tag.create":
 		return nil

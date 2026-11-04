@@ -399,8 +399,6 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionIntegrationDelete
 	case AuditActionIntegrationDiscard:
 		*s = AuditActionIntegrationDiscard
-	case AuditActionIntegrationRestore:
-		*s = AuditActionIntegrationRestore
 	case AuditActionJoinDomainCreate:
 		*s = AuditActionJoinDomainCreate
 	case AuditActionJoinDomainUpdate:
@@ -415,8 +413,6 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionRuleDelete
 	case AuditActionRuleDiscard:
 		*s = AuditActionRuleDiscard
-	case AuditActionRuleRestore:
-		*s = AuditActionRuleRestore
 	case AuditActionSegmentCreate:
 		*s = AuditActionSegmentCreate
 	case AuditActionSegmentUpdate:
@@ -435,8 +431,6 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionSendingDomainDelete
 	case AuditActionSendingDomainDiscard:
 		*s = AuditActionSendingDomainDiscard
-	case AuditActionSendingDomainRestore:
-		*s = AuditActionSendingDomainRestore
 	case AuditActionTagCreate:
 		*s = AuditActionTagCreate
 	case AuditActionTagUpdate:

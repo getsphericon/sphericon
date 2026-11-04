@@ -85,7 +85,7 @@ func isSurface(path string) bool {
 }
 
 // startsRead reports whether a method of the ent package named name starts a read: the generated
-// Get and GetX, a query (Query, QueryWithDiscarded, QueryDiscarded, an edge's QueryX) and the scoped
+// Get and GetX, a query (Query, QueryWithDiscarded, QueryArchived, an edge's QueryX) and the scoped
 // client's Workspace.
 func startsRead(name, named string) bool {
 	return name == "Get" || name == "GetX" || strings.HasPrefix(name, "Query") ||

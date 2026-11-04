@@ -188,9 +188,6 @@ enum AuditAction {
   /** Deleted an integration for good (it stays as history) */
   integrationDiscard: "integration.discard",
 
-  /** Restored an integration */
-  integrationRestore: "integration.restore",
-
   /** Created a join domain */
   joinDomainCreate: "join_domain.create",
 
@@ -209,11 +206,8 @@ enum AuditAction {
   /** Deleted a rule */
   ruleDelete: "rule.delete",
 
-  /** Deleted a rule that has firings, which are kept */
+  /** Deleted a rule for good (its firings stay as history) */
   ruleDiscard: "rule.discard",
-
-  /** Restored a deleted rule (no surface does it) */
-  ruleRestore: "rule.restore",
 
   /** Created a segment */
   segmentCreate: "segment.create",
@@ -241,9 +235,6 @@ enum AuditAction {
 
   /** Deleted a sending domain for good (it stays as history) */
   sendingDomainDiscard: "sending_domain.discard",
-
-  /** Restored a sending domain */
-  sendingDomainRestore: "sending_domain.restore",
 
   /** Created a tag */
   tagCreate: "tag.create",

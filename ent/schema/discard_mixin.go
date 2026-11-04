@@ -7,12 +7,12 @@ import (
 )
 
 // DiscardMixin gives an entity the nullable discarded_at stamp (ADR 0049, glossary Discard):
-// the row is hidden from lists and from new work but kept, and Undiscard clears the stamp.
-// There is no discarded_by: the Audit entry (discard, restore) names the actor.
+// the row is hidden from lists and from new work but kept, and never brought back (ADR 0100); only
+// a Workspace returns, within its window. There is no discarded_by: the Audit entry names the actor.
 //
-// A Workspace-owned entity that embeds it gets Discard, Undiscard and Purge on the scoped
-// client and no Delete; list queries hide discarded rows (QueryWithDiscarded sees all), and
-// by-id reads and UpdateOneID see every row. The Workspace takes only the field: it has no
+// A Workspace-owned entity that embeds it gets Discard and Purge (Workspace erasure) on the scoped
+// client and no Delete or Undiscard; list queries hide discarded rows (QueryWithDiscarded sees all),
+// and by-id reads and UpdateOneID see every row. The Workspace takes only the field: it has no
 // scoped wrapper and keeps its compare-and-swap lifecycle (ADR 0046). An entity takes either this
 // mixin or ArchiveMixin, never both (ADR 0100).
 //

@@ -71,7 +71,6 @@ const names: Record<AnyAuditAction, string> = {
   'integration.update': 'Changed an integration',
   'integration.delete': 'Deleted an integration',
   'integration.discard': 'Deleted an integration',
-  'integration.restore': 'Restored an integration',
   'join_domain.create': 'Created a join domain',
   'join_domain.update': 'Changed a join domain',
   'join_domain.delete': 'Deleted a join domain',
@@ -79,7 +78,6 @@ const names: Record<AnyAuditAction, string> = {
   'rule.update': 'Changed a rule',
   'rule.delete': 'Deleted a rule',
   'rule.discard': 'Deleted a rule, keeping its firings',
-  'rule.restore': 'Restored a rule',
   'segment.create': 'Created a segment',
   'segment.update': 'Changed a segment',
   'segment.delete': 'Deleted a segment',
@@ -89,7 +87,6 @@ const names: Record<AnyAuditAction, string> = {
   'sending_domain.update': 'Changed a sending domain',
   'sending_domain.delete': 'Deleted a sending domain',
   'sending_domain.discard': 'Deleted a sending domain',
-  'sending_domain.restore': 'Restored a sending domain',
   'tag.create': 'Created a tag',
   'tag.update': 'Changed a tag',
   'tag.delete': 'Deleted a tag',
@@ -116,4 +113,12 @@ test('an action keeps its code on hover', async () => {
   await screen.getByText('Suspended the workspace').hover()
 
   await expect.element(screen.getByText('workspace.suspend')).toBeInTheDocument()
+})
+
+// An entry an older release recorded (an Integration's `restore`, gone with ADR 0100) is still
+// served from the log: it shows its code rather than nothing.
+test('an action the contract no longer declares is shown by its code', async () => {
+  const screen = await renderWithProviders(<AuditActionName action="integration.restore" />)
+
+  await expect.element(screen.getByText('integration.restore', { exact: true })).toBeInTheDocument()
 })

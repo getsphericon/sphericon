@@ -416,7 +416,6 @@ const (
 	AuditActionIntegrationUpdate           AuditAction = "integration.update"
 	AuditActionIntegrationDelete           AuditAction = "integration.delete"
 	AuditActionIntegrationDiscard          AuditAction = "integration.discard"
-	AuditActionIntegrationRestore          AuditAction = "integration.restore"
 	AuditActionJoinDomainCreate            AuditAction = "join_domain.create"
 	AuditActionJoinDomainUpdate            AuditAction = "join_domain.update"
 	AuditActionJoinDomainDelete            AuditAction = "join_domain.delete"
@@ -424,7 +423,6 @@ const (
 	AuditActionRuleUpdate                  AuditAction = "rule.update"
 	AuditActionRuleDelete                  AuditAction = "rule.delete"
 	AuditActionRuleDiscard                 AuditAction = "rule.discard"
-	AuditActionRuleRestore                 AuditAction = "rule.restore"
 	AuditActionSegmentCreate               AuditAction = "segment.create"
 	AuditActionSegmentUpdate               AuditAction = "segment.update"
 	AuditActionSegmentDelete               AuditAction = "segment.delete"
@@ -434,7 +432,6 @@ const (
 	AuditActionSendingDomainUpdate         AuditAction = "sending_domain.update"
 	AuditActionSendingDomainDelete         AuditAction = "sending_domain.delete"
 	AuditActionSendingDomainDiscard        AuditAction = "sending_domain.discard"
-	AuditActionSendingDomainRestore        AuditAction = "sending_domain.restore"
 	AuditActionTagCreate                   AuditAction = "tag.create"
 	AuditActionTagUpdate                   AuditAction = "tag.update"
 	AuditActionTagDelete                   AuditAction = "tag.delete"
@@ -510,7 +507,6 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionIntegrationUpdate,
 		AuditActionIntegrationDelete,
 		AuditActionIntegrationDiscard,
-		AuditActionIntegrationRestore,
 		AuditActionJoinDomainCreate,
 		AuditActionJoinDomainUpdate,
 		AuditActionJoinDomainDelete,
@@ -518,7 +514,6 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionRuleUpdate,
 		AuditActionRuleDelete,
 		AuditActionRuleDiscard,
-		AuditActionRuleRestore,
 		AuditActionSegmentCreate,
 		AuditActionSegmentUpdate,
 		AuditActionSegmentDelete,
@@ -528,7 +523,6 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionSendingDomainUpdate,
 		AuditActionSendingDomainDelete,
 		AuditActionSendingDomainDiscard,
-		AuditActionSendingDomainRestore,
 		AuditActionTagCreate,
 		AuditActionTagUpdate,
 		AuditActionTagDelete,
@@ -666,8 +660,6 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionIntegrationDiscard:
 		return []byte(s), nil
-	case AuditActionIntegrationRestore:
-		return []byte(s), nil
 	case AuditActionJoinDomainCreate:
 		return []byte(s), nil
 	case AuditActionJoinDomainUpdate:
@@ -681,8 +673,6 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 	case AuditActionRuleDelete:
 		return []byte(s), nil
 	case AuditActionRuleDiscard:
-		return []byte(s), nil
-	case AuditActionRuleRestore:
 		return []byte(s), nil
 	case AuditActionSegmentCreate:
 		return []byte(s), nil
@@ -701,8 +691,6 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 	case AuditActionSendingDomainDelete:
 		return []byte(s), nil
 	case AuditActionSendingDomainDiscard:
-		return []byte(s), nil
-	case AuditActionSendingDomainRestore:
 		return []byte(s), nil
 	case AuditActionTagCreate:
 		return []byte(s), nil
@@ -913,9 +901,6 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionIntegrationDiscard:
 		*s = AuditActionIntegrationDiscard
 		return nil
-	case AuditActionIntegrationRestore:
-		*s = AuditActionIntegrationRestore
-		return nil
 	case AuditActionJoinDomainCreate:
 		*s = AuditActionJoinDomainCreate
 		return nil
@@ -936,9 +921,6 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 		return nil
 	case AuditActionRuleDiscard:
 		*s = AuditActionRuleDiscard
-		return nil
-	case AuditActionRuleRestore:
-		*s = AuditActionRuleRestore
 		return nil
 	case AuditActionSegmentCreate:
 		*s = AuditActionSegmentCreate
@@ -966,9 +948,6 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 		return nil
 	case AuditActionSendingDomainDiscard:
 		*s = AuditActionSendingDomainDiscard
-		return nil
-	case AuditActionSendingDomainRestore:
-		*s = AuditActionSendingDomainRestore
 		return nil
 	case AuditActionTagCreate:
 		*s = AuditActionTagCreate
