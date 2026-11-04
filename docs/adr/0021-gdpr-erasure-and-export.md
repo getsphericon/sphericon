@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded in part by ADR 0101 (queued work is River jobs: the outbox rows and dead letters it purged no longer exist)
 ---
 
 # GDPR erasure and subject-access export: delete is erasure, Events are the one append-only exception

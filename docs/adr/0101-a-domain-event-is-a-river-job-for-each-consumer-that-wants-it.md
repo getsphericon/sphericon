@@ -22,10 +22,12 @@ no consumer depends on the order it buys:
 
 We drop the outbox. Publishing an event inserts, in the producer's transaction, one River job for
 each consumer that wants it. This is how Rails Event Store, Laravel's queued listeners and Spring
-Modulith's event publication registry deliver to asynchronous handlers: a row per handler per
-event, written with the state change, with no ordering promised. River adds what they leave to the
-application: retries with backoff, rows claimed with `SKIP LOCKED`, and an insert that commits with
-the state.
+Modulith's event publication registry deliver to asynchronous handlers: a job or a row per
+handler per event, with no ordering promised. Each of them leaves something to the application:
+Rails Event Store, by default, and Laravel, with `after_commit`, enqueue after the commit and lose
+the job if the process stops in between, while Spring Modulith has no retry scheduler and no row
+claiming. River has all three: an insert that commits with the state, retries with backoff, and
+rows claimed with `SKIP LOCKED`.
 
 ## Decisions
 
