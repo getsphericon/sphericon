@@ -13,10 +13,8 @@ import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/seg
 // What the form submits: the create input, which always carries a Condition (a Segment is one).
 export type SegmentPayload = Pick<SiteCreateSegmentInput, 'name' | 'condition'>
 
-export interface SegmentValues {
-  name: string
-  condition: ConditionDraft
-}
+// What the form holds: the create input, with the Condition as a draft the builder edits.
+export type SegmentValues = Pick<SiteCreateSegmentInput, 'name'> & { condition: ConditionDraft }
 
 export function SegmentForm({
   form,

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { SiteAuditActorKind } from '../generated/site/types.gen.ts'
+import type { SiteAuditActor } from '../generated/site/types.gen.ts'
 import { zAuditAction, zSiteAuditActorKind } from '../generated/site/zod.gen.ts'
 
 // The Audit log filter lives in the settings route's search, so a Change history link
@@ -54,10 +54,7 @@ export function auditQuery(filter: AuditFilter) {
 }
 
 // An actor as the "By" filter offers it: a kind, and an id unless the kind has none.
-interface AuditActorRef {
-  kind: SiteAuditActorKind
-  id?: string | null | undefined
-}
+type AuditActorRef = Pick<SiteAuditActor, 'kind' | 'id'>
 
 // actorValue is the "By" select's value of an actor: its kind, then its id when it has one.
 export function actorValue(actor: AuditActorRef) {
@@ -66,7 +63,9 @@ export function actorValue(actor: AuditActorRef) {
 
 // filterActorValue is the "By" select's value for the actor the filter narrows to.
 export function filterActorValue(filter: AuditFilter) {
-  return filter.actorKind ? actorValue({ kind: filter.actorKind, id: filter.actorId }) : null
+  return filter.actorKind
+    ? actorValue({ kind: filter.actorKind, id: filter.actorId ?? null })
+    : null
 }
 
 // withActor narrows the filter to the actor of a "By" select value, or, for none or a value

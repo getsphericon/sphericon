@@ -29,3 +29,22 @@ export function maxItemsOf(schema: z.ZodArray): number {
   }
   return maxItems
 }
+
+// The longest a string of the contract may be (TypeSpec @maxLength -> zod), for an input's
+// maxLength; a string without one fails at once, as a range does.
+export function maxLengthOf(schema: { maxLength: number | null }): number {
+  if (schema.maxLength === null) {
+    throw new Error('the contract declares no longest length for this string')
+  }
+  return schema.maxLength
+}
+
+// The most rows one page of a list holds: the bound of its query's pageSize (optional, with a
+// default), for a picker that reads a short list whole.
+export function maxPageSize(query: {
+  shape: {
+    pageSize: { unwrap(): { unwrap(): { minValue: number | null; maxValue: number | null } } }
+  }
+}): number {
+  return boundsOf(query.shape.pageSize.unwrap().unwrap()).max
+}

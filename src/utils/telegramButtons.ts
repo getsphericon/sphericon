@@ -1,8 +1,9 @@
 import * as z from 'zod'
 
 import type { TelegramButton } from '../generated/site/types.gen.ts'
+import { zTelegramButton } from '../generated/site/zod.gen.ts'
 
-const buttons = z.array(z.object({ label: z.string(), url: z.string() }))
+const buttons = z.array(zTelegramButton)
 
 // The buttons of a Telegram node are held on the canvas as JSON text: its form holds only strings.
 export const buttonsCodec = {

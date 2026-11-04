@@ -15,10 +15,12 @@ import {
   siteContactsListOptions,
   siteTagsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { zSiteTagsListQuery } from '../../generated/site/zod.gen.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
+import { maxPageSize } from '../../utils/bounds.ts'
 import { contactFullName, contactIdentifier, contactName } from '../../utils/contactName.ts'
 import { countryOptions } from '../../utils/countries.ts'
 import { ContactCreateModal } from './resource.tsx'
@@ -38,7 +40,10 @@ function TagFilter({
   // Fetched once the dropdown first opens: a list read for its contacts needs no Tags.
   const [opened, setOpened] = useState(false)
   const tags = useQuery({
-    ...siteTagsListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
+    ...siteTagsListOptions({
+      path: { workspaceId },
+      query: { pageSize: maxPageSize(zSiteTagsListQuery) },
+    }),
     enabled: opened,
   })
   const names = (tags.data?.items ?? []).map((item) => item.name)

@@ -1,3 +1,5 @@
+import type { SiteSmsLengthLimit } from '../generated/site/types.gen.ts'
+
 // The SMS counter (ADR 0078): what the editor shows as the marketer types. internal/smsrender
 // counts the same way for the save, and both agree on internal/smsrender/testdata/parts.json.
 
@@ -26,19 +28,15 @@ function parts(n: number, single: number, each: number): number {
 
 // The longest text the SMS provider sends, in characters of each encoding as measureSms counts
 // them: the Workspace's `smsMaxLength`.
-export interface SmsLengthLimit {
-  gsm7: number
-  ucs2: number
-}
 
 // The most characters size's encoding allows under limit.
-export function smsLimitOf(size: SmsSize, limit: SmsLengthLimit): number {
+export function smsLimitOf(size: SmsSize, limit: SiteSmsLengthLimit): number {
   return size.encoding === 'UCS-2' ? limit.ucs2 : limit.gsm7
 }
 
 // Whether a text of size is longer than the provider sends in its encoding: the editor flags it,
 // as the save refuses it.
-export function tooLongForSms(size: SmsSize, limit: SmsLengthLimit): boolean {
+export function tooLongForSms(size: SmsSize, limit: SiteSmsLengthLimit): boolean {
   return size.characters > smsLimitOf(size, limit)
 }
 

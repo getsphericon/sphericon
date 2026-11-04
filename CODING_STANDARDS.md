@@ -60,8 +60,13 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 - **Rule 6, `check:copies` (`cmd/contractcopy`, in `check`).** It reads the generated `openapi/*.openapi.json`
   and fails on a hand-written copy of its values: a Go list, `case` list or TypeScript array or union of
   literals that restates an enum (all of its values, or three or more that are a quarter of a larger one),
-  a Go or TypeScript `Max*`/`Min*`/`Default*` constant equal to a declared length, range or default, and a
-  fixture scope (`fixtures/*.yml`, which cannot import Go) the contract does not declare. A value that only
+  the `value`s of a TypeScript list of options (a Select's `data`) that restate an enum, a Go or TypeScript
+  `Max*`/`Min*`/`Default*` constant or a request's `query: { pageSize }` equal to a declared length, range or
+  default, a TypeScript interface, object type or `z.object` whose fields are exactly those of a contract
+  schema (two or more; a `z.object` whose every field reads a generated `z…` schema is derived and passes),
+  and a fixture scope (`fixtures/*.yml`, which cannot import Go) the contract does not declare. A shape is
+  taken from the generated type (`Pick`, `Omit`, an indexed access), a bound from the generated zod
+  (`maxPageSize`, `maxLengthOf`, `maxItemsOf` in `src/utils/bounds.ts`). A value that only
   looks like a contract value (an OAuth limit, a secret floor) carries `// contract-copy: <reason>` on its
   line or the line above; a marker without a reason is still a finding, and there is no baseline file. Typed
   Go `const` blocks are domain vocabulary and are not read. Tests use the generated constants

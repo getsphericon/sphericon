@@ -27,6 +27,7 @@
     "dist",
     "dist-release",
     "packages/*/dist",
-    "internal/server/assets/spa"
+    "internal/server/assets/spa",
+    "internal/contractcopy/testdata"
   ]
 }
