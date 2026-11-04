@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.6.0](https://github.com/getsphericon/sphericon/compare/v0.5.0...v0.6.0) (2026-11-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* DATABASE_URL is now SPHERICON_DATABASE_URL, and its file sibling DATABASE_URL_FILE is SPHERICON_DATABASE_URL_FILE; the Helm chart's Secret and a compose setup carry the new key. Development and tooling variables are renamed too: TEST_DB_URL, E2E_DB_URL and DIFF_DB_URL are SPHERICON_TEST_DATABASE_URL, SPHERICON_E2E_DATABASE_URL and SPHERICON_DIFF_DATABASE_URL; APP_HOST, API_HOST, COLLECT_HOST, MAIL_HOST, DEMO_HOST, DB_NAMES, CADDY_HTTP_PORT, DEMO_COLLECT_URL, DEMO_COLLECT_KEY, DEMO_API_URL, DEMO_API_TOKEN, PR_TITLE, PR_BODY, PR_BODY_FILE, BASE, VERSION, FUZZTIME, GO_CACHE_LIMIT_GB, TEST_EMAIL_RENDERER and HOLD take the SPHERICON_ prefix (HOLD is SPHERICON_E2E_HOLD). Upgrade: before starting this release, rename DATABASE_URL to SPHERICON_DATABASE_URL (or DATABASE_URL_FILE to SPHERICON_DATABASE_URL_FILE) wherever the Instance's environment is set: the Helm values or Secret, the compose file, the systemd unit. The value stays the same.
+* **rules:** the /site and /api Rules lose the archive and unarchive operations, the archived list filter and archivedAt, and UsedByKind loses firing; deleting a Rule that has fired now succeeds (it is discarded with its Firings kept) instead of answering 409, and a Rule archived before the upgrade counts as deleted. Upgrade: nothing to run on the instance; an integration that archived or restored Rules calls delete instead, and a client generated from the OpenAPI document drops those operations when it is regenerated.
+* delete an Integration or a Sending domain for good, and put View history into the row menu ([#1055](https://github.com/getsphericon/sphericon/issues/1055))
+
+### Features
+
+* **automations:** search the list by name, keep one state and sort it by name or creation ([0ec8273](https://github.com/getsphericon/sphericon/commit/0ec8273226261c7d2caf65a21d3c2e0f79cc1c68))
+* delete an Integration or a Sending domain for good, and put View history into the row menu ([#1055](https://github.com/getsphericon/sphericon/issues/1055)) ([400ef0c](https://github.com/getsphericon/sphericon/commit/400ef0cd220e73ac5123f3a9a28b7582da4bd764))
+* **rules:** drop Rule archiving, Delete discards a Rule with Firings ([#1056](https://github.com/getsphericon/sphericon/issues/1056)) ([3d56348](https://github.com/getsphericon/sphericon/commit/3d56348a575dc1b58f55b6d6c3bf58f329d5da28))
+* **rules:** read a deleted Rule by id with deletedAt and its Firings ([#1057](https://github.com/getsphericon/sphericon/issues/1057)) ([36013f5](https://github.com/getsphericon/sphericon/commit/36013f5a33a779304e216b8620c5d269b6c1e9cb))
+* **web:** give a full-page list its page header and stop the load flash ([8fc266b](https://github.com/getsphericon/sphericon/commit/8fc266bbfd7454a6e0f46eb8a3db52c398811011))
+* **web:** group the overview's attention items of one kind into one row ([#1050](https://github.com/getsphericon/sphericon/issues/1050)) ([bf1fe66](https://github.com/getsphericon/sphericon/commit/bf1fe665bb498ead251934e4820eaa33a027ed58))
+* **web:** make the automations list the reference list of the design rules ([e6c93c1](https://github.com/getsphericon/sphericon/commit/e6c93c12f7d46e637b0e9ab4c848d95d39e6ee6d))
+* **web:** move Activity to just above Settings in the workspace navbar ([4faf5fd](https://github.com/getsphericon/sphericon/commit/4faf5fd28de23432116382d1ba2a3b393dd3745f))
+* **web:** open a status's details in a popover on its badge ([#1053](https://github.com/getsphericon/sphericon/issues/1053)) ([a50aed6](https://github.com/getsphericon/sphericon/commit/a50aed6e0dbaa36fd7960348c3f34be623ede36b))
+* **web:** search the automations list, filter it by status and sort it by name or creation ([d4a15ff](https://github.com/getsphericon/sphericon/commit/d4a15ff203eb1f30a1799bc45817c6e130915964))
+
+
+### Bug Fixes
+
+* **fixtures:** subscribe the demo webhooks to events the system sends ([80ebcc9](https://github.com/getsphericon/sphericon/commit/80ebcc97a3f302cc300ad72fbe986a1262cbeaf8))
+* **web:** center an empty list's or report's state on the page ([#1054](https://github.com/getsphericon/sphericon/issues/1054)) ([c940543](https://github.com/getsphericon/sphericon/commit/c940543050f215cb39ff943cebcbdb3fdee562da))
+* **web:** read the profile's zone and Regional format from the cache without cancelling its load ([ebe0307](https://github.com/getsphericon/sphericon/commit/ebe03073102024eaa03465d73c75bd43bc15101d))
+* **web:** size a link without a size of its own like the text around it ([#1051](https://github.com/getsphericon/sphericon/issues/1051)) ([86aabbd](https://github.com/getsphericon/sphericon/commit/86aabbda320350db7297cf077bdfcb4e1aa5b555))
+
+
+### Code Refactoring
+
+* prefix every environment variable of the app and its tooling with SPHERICON_ ([#1058](https://github.com/getsphericon/sphericon/issues/1058)) ([833a038](https://github.com/getsphericon/sphericon/commit/833a038b2b8cdfbf5e9b53ca5dae428ed1f175ab))
+
 ## [0.5.0](https://github.com/getsphericon/sphericon/compare/v0.4.0...v0.5.0) (2026-11-03)
 
 
