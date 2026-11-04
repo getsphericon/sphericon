@@ -141,18 +141,11 @@ func TestClientEnqueuesEveryJobKind(t *testing.T) {
 	require.NoError(t, e.client.Enqueue(ctx, mailjobs.EmailChangeConfirm("a@example.com", "tok", true)))
 	require.NoError(t, e.client.Enqueue(ctx, mailjobs.MemberInviteArgs{Email: "a@example.com", InviteURL: "https://x/invite", WorkspaceName: "Acme", InviterName: "Jane"}))
 	require.NoError(t, e.client.Enqueue(ctx, mailjobs.SecondFactorRequired(fixtures.UmbrellaID)))
-	created, err := json.Marshal(&events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail})
-	require.NoError(t, err)
-	require.NoError(t, e.client.OnEvent(ctx, events.AutomationEvent{
-		ContactID: fixtures.ContactAliceID, Action: events.NameContactCreated,
-		Envelope: events.Envelope{ID: "evt_enqueue", Name: events.NameContactCreated, Version: 1, WorkspaceID: fixtures.AcmeID, Data: created},
-	}))
 
 	assert.Equal(t, []string{
 		"send_welcome",
 		"send_auth_mail", "send_auth_mail", "send_auth_mail",
 		"send_member_invite", "second_factor_required_notify",
-		"automation_evaluate_trigger",
 	}, e.queued(t))
 }
 

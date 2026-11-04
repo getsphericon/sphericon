@@ -98,7 +98,7 @@ func TestPruneOutboxSkipsWhenAGroupHasNullAck(t *testing.T) {
 	tx := env.OutboxRows(t)[0].TxID
 	env.AgeOutbox(t, outboxFloor+time.Hour)
 	setAllCursors(t, env, tx, off[1])
-	env.SetOutboxCursor(t, events.GroupAutomations, tx, nil)
+	env.SetOutboxCursor(t, events.GroupWebhooks, tx, nil)
 
 	prune(t, env)
 

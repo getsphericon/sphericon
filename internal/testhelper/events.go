@@ -1,6 +1,7 @@
 package testhelper
 
 import (
+	"database/sql"
 	"encoding/json"
 	"testing"
 	"time"
@@ -47,6 +48,55 @@ func WorkEventJobs[T river.JobArgs](t *testing.T, env *TestEnv, worker river.Wor
 func (env *TestEnv) WorkOrderJobs(t *testing.T) {
 	t.Helper()
 	WorkEventJobs(t, env, jobs.NewOrderEventWorker(env.DB, env.Orders))
+}
+
+// WorkEventJobOf works the queued job of the kind worker works that the publish of published
+// inserted, and nothing when the consumer's filter left it out.
+func WorkEventJobOf[T river.JobArgs](t *testing.T, env *TestEnv, worker river.Worker[T], published events.Envelope) {
+	t.Helper()
+	var kind T
+	for _, args := range env.JobsOf(t, kind.Kind()) {
+		if decodeArgs[events.EventJob](t, args).ID == published.ID {
+			require.NoError(t, Work(t.Context(), t, worker, decodeArgs[T](t, args)), kind.Kind())
+		}
+	}
+}
+
+// WorkAutomationJobOf works the automations job the publish of published inserted, if any
+// (WorkEventJobOf).
+func (env *TestEnv) WorkAutomationJobOf(t *testing.T, published events.Envelope) {
+	t.Helper()
+	WorkEventJobOf(t, env, jobs.NewAutomationEventWorker(env.Inserter(t)), published)
+}
+
+// WorkRuleJobOf works the rules job the publish of published inserted, if any (WorkEventJobOf).
+func (env *TestEnv) WorkRuleJobOf(t *testing.T, published events.Envelope) {
+	t.Helper()
+	WorkEventJobOf(t, env, jobs.NewRuleEventWorker(env.Inserter(t)), published)
+}
+
+// Inserter is a river client over the test's connection with the application's configuration,
+// for a worker that queues follow-up jobs: what it queues is in the test's transaction, where
+// JobsOf reads it.
+func (env *TestEnv) Inserter(t *testing.T) *river.Client[*sql.Tx] {
+	t.Helper()
+	inserter, err := jobs.NewInserter(env.SQLDB)
+	require.NoError(t, err)
+	return inserter
+}
+
+// WorkAutomationJobs works every queued automations job (WorkEventJobs): each queues the
+// evaluation of its Event against the Automations (jobs.EvaluateTriggerArgs).
+func (env *TestEnv) WorkAutomationJobs(t *testing.T) {
+	t.Helper()
+	WorkEventJobs(t, env, jobs.NewAutomationEventWorker(env.Inserter(t)))
+}
+
+// WorkRuleJobs works every queued rules job (WorkEventJobs): each queues the evaluation of its
+// Event against the Rules (jobs.EvaluateRulesArgs).
+func (env *TestEnv) WorkRuleJobs(t *testing.T) {
+	t.Helper()
+	WorkEventJobs(t, env, jobs.NewRuleEventWorker(env.Inserter(t)))
 }
 
 // decodeArgs is a queued job's args, read back as JobsOf returns them, decoded into T.

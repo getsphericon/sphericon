@@ -203,10 +203,9 @@ func TestAnAutomationTriggeredByATelegramClickIgnoresAMachineClick(t *testing.T)
 	enrollVia(t, env, sender, fixtures.ContactLiamID)
 	runSteps(t, env)
 	text, _ := shortPaths(t, env)
-	client := queueingClient(t, env)
 	consume := func() []jobs.EvaluateTriggerArgs {
 		envelopes := env.OutboxEnvelopes(t, events.NameTelegramClicked)
-		require.NoError(t, events.AutomationsConsumer(client)(events.Message(envelopes[len(envelopes)-1])))
+		env.WorkAutomationJobOf(t, envelopes[len(envelopes)-1])
 		return queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind())
 	}
 

@@ -84,21 +84,6 @@ func entryBy(actor events.Actor, action string) *events.AuditEntry {
 	return &events.AuditEntry{WorkspaceID: fixtures.InitechID, Actor: actor, Action: action, TargetType: "membership"}
 }
 
-// The automations consumer enrolls the contact on the event's semantic action.
-func TestAutomationsConsumerEnrollsContact(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	require.NoError(t, events.AutomationsConsumer(queueingJobs(t, env))(msgFor(t, &events.EmailEngagement{
-		Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail,
-	})))
-
-	queued := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
-	require.Len(t, queued, 1)
-	assert.EqualValues(t, fixtures.AcmeID, queued[0]["workspace_id"])
-	assert.EqualValues(t, fixtures.ContactAliceID, queued[0]["contact_id"])
-	assert.Equal(t, events.NameEmailOpened, queued[0]["action"])
-}
-
 // The goal Event is evaluated before the trigger's evaluation has run: its own evaluation finds no
 // Enrollment to end, but its row was stored when it was published, so the trigger's evaluation
 // then makes the Enrollment already at its goal (#751).
@@ -120,67 +105,6 @@ func TestAGoalEventConsumedBeforeTheTriggerEndsTheEnrollmentWhenItIsMade(t *test
 		Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusGoalReached, run.Status)
-}
-
-// When the Event occurred travels with the job: an Event older than an Enrollment ends nothing
-// (#751).
-func TestAutomationsConsumerSaysWhenTheEventOccurred(t *testing.T) {
-	env := testhelper.Setup(t)
-	occurred := time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
-
-	require.NoError(t, events.AutomationsConsumer(queueingJobs(t, env))(msgAt(t, &events.CollectedEvent{
-		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Action: "payment_succeeded", OccurredAt: occurred,
-	}, occurred)))
-
-	queued := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
-	require.Len(t, queued, 1)
-	assert.Equal(t, "2026-03-01T12:00:00Z", queued[0]["occurred_at"])
-}
-
-// The Automation whose email the Event came from travels with the job, so it can refuse to
-// enroll the Contact into itself (ADR 0053).
-func TestAutomationsConsumerNamesTheAutomationOfTheEmail(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	require.NoError(t, events.AutomationsConsumer(queueingJobs(t, env))(msgFor(t, &events.EmailEngagement{
-		Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
-		Email: fixtures.ContactAliceEmail, AutomationID: fixtures.AutomationOnOpenID,
-	})))
-
-	queued := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
-	require.Len(t, queued, 1)
-	assert.EqualValues(t, fixtures.AutomationOnOpenID, queued[0]["source_automation_id"])
-}
-
-// A machine open or click is recorded but enrolls nobody (ADR 0053).
-func TestAutomationsConsumerSkipsMachineEngagement(t *testing.T) {
-	env := testhelper.Setup(t)
-	enroll := events.AutomationsConsumer(queueingJobs(t, env))
-
-	for _, action := range []string{events.NameEmailOpened, events.NameEmailClicked} {
-		require.NoError(t, enroll(msgFor(t, &events.EmailEngagement{
-			Action: action, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
-			Email: fixtures.ContactAliceEmail, Machine: true,
-		})))
-	}
-	assert.Empty(t, env.JobsOf(t, jobkind.EvaluateTrigger.Kind))
-
-	require.NoError(t, enroll(msgFor(t, &events.EmailEngagement{
-		Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
-		Email: fixtures.ContactAliceEmail,
-	})))
-	assert.Len(t, env.JobsOf(t, jobkind.EvaluateTrigger.Kind), 1, "a person's open still enrolls")
-}
-
-// Collected (customer) events carry no contact, so they are not enrolled.
-func TestAutomationsConsumerSkipsContactlessEvents(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	require.NoError(t, events.AutomationsConsumer(queueingJobs(t, env))(msgFor(t, &events.CollectedEvent{
-		WorkspaceID: fixtures.AcmeID, SubjectID: "visitor:x", Action: "page_view",
-	})))
-
-	assert.Empty(t, env.JobsOf(t, jobkind.EvaluateTrigger.Kind))
 }
 
 // The webhooks consumer queues a delivery with the semantic action and a payload built
@@ -217,34 +141,19 @@ func TestWebhooksConsumerCarriesTheErasedSubject(t *testing.T) {
 	assert.Equal(t, "user-9", data["subjectId"])
 }
 
-// A backfilled event is recorded but neither enrolls its contact nor reaches a webhook
-// endpoint; the same event without the flag does both.
-func TestBackfilledEventsTriggerNeitherAutomationsNorWebhooks(t *testing.T) {
+// A backfilled event is recorded but reaches no webhook endpoint; the same event without the flag
+// does.
+func TestBackfilledEventsReachNoWebhook(t *testing.T) {
 	env := testhelper.Setup(t)
-	client := queueingJobs(t, env)
-	enroll, deliver := events.AutomationsConsumer(client), events.WebhooksConsumer(env.DB, client)
+	deliver := events.WebhooksConsumer(env.DB, queueingJobs(t, env))
 
 	history := &events.CollectedEvent{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, SubjectID: "s-7", Action: "purchase", Backfill: true}
-	require.NoError(t, enroll(msgFor(t, history)))
 	require.NoError(t, deliver(msgFor(t, history)))
-	assert.Empty(t, env.JobsOf(t, jobkind.EvaluateTrigger.Kind))
 	assert.Empty(t, env.JobsOf(t, jobkind.DeliverWebhook.Kind))
 
 	live := &events.CollectedEvent{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, SubjectID: "s-7", Action: "purchase"}
-	require.NoError(t, enroll(msgFor(t, live)))
 	require.NoError(t, deliver(msgFor(t, live)))
-	assert.Len(t, env.JobsOf(t, jobkind.EvaluateTrigger.Kind), 1)
 	assert.Contains(t, deliveries(t, env), int64(fixtures.WebhookInitechID))
-}
-
-// The automations consumer skips an Audit entry: an administrative action never
-// enrolls anyone.
-func TestAutomationsConsumerSkipsAuditEntries(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	require.NoError(t, events.AutomationsConsumer(queueingJobs(t, env))(msgFor(t, entryBy(events.Actor{Kind: events.ActorUser}, "membership.update"))))
-
-	assert.Empty(t, env.JobsOf(t, jobkind.EvaluateTrigger.Kind))
 }
 
 // The webhooks consumer hands an Audit entry on under its bus type (not the entry's

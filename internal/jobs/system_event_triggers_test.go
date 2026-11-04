@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
@@ -19,24 +17,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
-
-// queueingClient is the jobs client the consumers hand an Event to, queueing into this test's
-// transaction, so what they queue is read back with JobsOf.
-func queueingClient(t *testing.T, env *testhelper.TestEnv) *jobs.Client {
-	t.Helper()
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	client, err := jobs.NewClient(riverdatabasesql.New(env.SQLDB), env.DB, newMod(env, nil), env.Cipher, env.Bus, env.SystemMail,
-		nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, nil, jobs.Retention{})
-	require.NoError(t, err)
-	return client
-}
 
 // queuedArgs are the args of the jobs of kind left on the queue, decoded as T.
 func queuedArgs[T any](t *testing.T, env *testhelper.TestEnv, kind string) []T {
@@ -74,7 +59,7 @@ func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 	_, err := tags.New(env.Bus).Apply(ctx, acme, fixtures.ContactLiamID, "onboarding-ready")
 	require.NoError(t, err)
 	tagged := onlyEnvelope(t, env, events.NameContactTagged)
-	require.NoError(t, events.AutomationsConsumer(queueingClient(t, env))(events.Message(tagged)))
+	env.WorkAutomationJobOf(t, tagged)
 	triggers := queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind())
 	require.Len(t, triggers, 1)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
@@ -94,7 +79,6 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	client := queueingClient(t, env)
 	env.DB.RuleVersionTrigger.Update().
 		Where(ruleversiontrigger.VersionID(fixtures.RuleTagClickedLiveVersionID)).
 		SetAction(events.NameAutomationCompleted).
@@ -103,7 +87,7 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
 
 	completed := onlyEnvelope(t, env, events.NameAutomationCompleted)
-	require.NoError(t, events.RulesConsumer(client)(events.Message(completed)))
+	env.WorkRuleJobOf(t, completed)
 	evaluations := queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind)
 	require.Len(t, evaluations, 1)
 	m := rules.New(env.Cipher, env.Bus)
@@ -115,7 +99,7 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	require.Len(t, fired, 1)
 	require.NoError(t, m.RunActions(ctx, acme, fired[0].ID, ruleRunners(env)))
 	tagged := onlyEnvelope(t, env, events.NameContactTagged)
-	require.NoError(t, events.RulesConsumer(client)(events.Message(tagged)))
+	env.WorkRuleJobOf(t, tagged)
 	evaluationsAfter := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
 	aliceTags := tagsOf(t, env, fixtures.ContactAliceID)
 
@@ -125,12 +109,11 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	assert.Len(t, evaluationsAfter, 1, "the Action's own contact.tagged queues no evaluation")
 }
 
-// triggerRouter plays the router and a worker for the Automations: deliver hands every Event
-// published since its last call to the Automations consumer, runs the trigger evaluations that
+// triggerRouter plays river for the Automations: deliver works the automations job of every Event
+// published since its last call, runs the trigger evaluations that
 // queued, and returns their actions.
 type triggerRouter struct {
 	env                 *testhelper.TestEnv
-	client              *jobs.Client
 	consumed, evaluated int
 }
 
@@ -138,7 +121,7 @@ func (r *triggerRouter) deliver(t *testing.T) []string {
 	t.Helper()
 	envelopes := r.env.OutboxEnvelopes(t)
 	for i := r.consumed; i < len(envelopes); i++ {
-		require.NoError(t, events.AutomationsConsumer(r.client)(events.Message(envelopes[i])))
+		r.env.WorkAutomationJobOf(t, envelopes[i])
 	}
 	r.consumed = len(envelopes)
 	triggers := queuedArgs[jobs.EvaluateTriggerArgs](t, r.env, jobs.EvaluateTriggerArgs{}.Kind())
@@ -162,7 +145,7 @@ func TestAnAutomationTriggeredByMarketingConfirmedIgnoresAnSMSConfirmation(t *te
 	ctx := t.Context()
 	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
 	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameMarketingConfirmed).ExecX(ctx)
-	router := &triggerRouter{env: env, client: queueingClient(t, env)}
+	router := &triggerRouter{env: env}
 	runs := func() []*ent.AutomationRun {
 		t.Helper()
 		return env.DB.AutomationRun.Query().

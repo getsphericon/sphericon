@@ -51,7 +51,7 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 	require.NoError(t, err)
 	reader, err := river.NewClient(riverdatabasesql.New(sqlDB), &river.Config{})
 	require.NoError(t, err)
-	require.NoError(t, events.RegisterSubscribers(router, sqlDB, events.Handlers(client, queue, queue, queue, nil), testhelper.PrivateOutbox()))
+	require.NoError(t, events.RegisterSubscribers(router, sqlDB, events.Handlers(client, queue, nil), testhelper.PrivateOutbox()))
 
 	runCtx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
@@ -68,8 +68,8 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 	require.Eventually(t, func() bool {
 		persisted, err := client.Event.Query().Where(event.SubjectID(dest)).Exist(ctx)
 		assert.NoError(t, err)
-		return persisted && queued(ctx, t, reader, jobkind.EvaluateTrigger.Kind) >= 1 && queued(ctx, t, reader, jobkind.DeliverWebhook.Kind) >= 1
-	}, 15*time.Second, 50*time.Millisecond, "the Event is stored, and automations and webhooks see it")
+		return persisted && queued(ctx, t, reader, jobkind.DeliverWebhook.Kind) >= 1
+	}, 15*time.Second, 50*time.Millisecond, "the Event is stored, and the webhooks consumer sees it")
 	// Delivery is at-least-once: a serialization failure while acking redelivers the
 	// message, so a consumer may see it more than once, never a different event.
 	deliveries, err := reader.JobList(ctx, river.NewJobListParams().Kinds(jobkind.DeliverWebhook.Kind).First(100))

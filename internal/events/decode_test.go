@@ -32,9 +32,7 @@ func envelopeMsg(t *testing.T, name, data string) *message.Message {
 // silently. (The error comes before the consumer touches its dependency, hence nil.)
 func TestConsumersRejectUndecodableMessages(t *testing.T) {
 	consumers := map[string]message.NoPublishHandlerFunc{
-		"webhooks":    events.WebhooksConsumer(nil, nil),
-		"automations": events.AutomationsConsumer(nil),
-		"rules":       events.RulesConsumer(nil),
+		"webhooks": events.WebhooksConsumer(nil, nil),
 	}
 	for name, handle := range consumers {
 		require.Error(t, handle(rawMsg("not json")), name+": not an envelope")

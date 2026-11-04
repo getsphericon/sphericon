@@ -31,20 +31,6 @@ type EvaluateRulesArgs struct {
 
 func (EvaluateRulesArgs) Kind() string { return jobkind.RuleEvaluate.Kind }
 
-// OnRuleEvent queues the evaluation of an Event against the Workspace's Rules. It is the seam the
-// Rules consumer calls (events.RuleEvaluator).
-func (c *Client) OnRuleEvent(ctx context.Context, ev events.RuleEvent) error {
-	_, err := c.river.Insert(ctx, EvaluateRulesArgs{
-		WorkspaceID: ev.WorkspaceID,
-		ContactID:   ev.ContactID,
-		Action:      ev.Action,
-		SourceID:    ev.SourceID,
-		RecordedAt:  ev.RecordedAt,
-		Properties:  ev.Properties,
-	}, nil)
-	return err
-}
-
 // EvaluateRulesWorker loads the Contact and hands the Event to the Rule module, which writes a
 // Firing and queues its Actions job for every Rule that fires.
 type EvaluateRulesWorker struct {

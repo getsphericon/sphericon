@@ -1,9 +1,11 @@
 package jobs
 
 import (
+	"cmp"
 	"context"
 
 	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/rivertype"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -21,7 +23,117 @@ func EventConsumers() []events.Consumer {
 	return []events.Consumer{
 		{Wants: suppresses, Job: func(env events.Envelope) river.JobArgs { return SuppressEventArgs{events.EventJob{Envelope: env}} }},
 		{Wants: isOrder, Job: func(env events.Envelope) river.JobArgs { return OrderEventArgs{events.EventJob{Envelope: env}} }},
+		{Wants: triggers, Job: func(env events.Envelope) river.JobArgs { return AutomationEventArgs{events.EventJob{Envelope: env}} }},
+		{Wants: firesRules, Job: func(env events.Envelope) river.JobArgs { return RuleEventArgs{events.EventJob{Envelope: env}} }},
 	}
+}
+
+// Inserter queues a job. An event consumer that turns its event into work queues the work with
+// it: the worker client in production, a client over the test's connection in a test, where the
+// test reads what was queued.
+type Inserter interface {
+	Insert(ctx context.Context, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error)
+}
+
+// triggers wants an Event a Contact's Automations may react to: one with a Contact, live (loaded
+// history enrolls nobody) and made by a person (a scanner's open or click neither enrolls nor ends
+// an Enrollment, ADR 0053). An administrative action (an Audit entry) is never one.
+func triggers(_ events.Envelope, ev events.DomainEvent) bool {
+	if _, unprojected := ev.(events.Unprojected); unprojected || events.IsBackfill(ev) {
+		return false
+	}
+	p := ev.Project()
+	return p.ContactID != 0 && !p.Machine
+}
+
+// firesRules wants what triggers wants, except an event a Rule's Action published (its envelope
+// carries CausedBy): Rules never chain (ADR 0054).
+func firesRules(env events.Envelope, ev events.DomainEvent) bool {
+	return env.CausedBy == "" && triggers(env, ev)
+}
+
+// AutomationEventArgs is the automations consumer's job: an Event that may enroll its Contact, end
+// an Enrollment of the Contact or bring one to its goal (#751).
+type AutomationEventArgs struct {
+	events.EventJob
+}
+
+func (AutomationEventArgs) Kind() string { return "event_automation" }
+
+// AutomationEventWorker queues the evaluation of an Event against the Automations
+// (EvaluateTriggerArgs), on the Event's semantic action, so a Trigger can be "contact.created" or a
+// customer's "page_view". The Event's row was stored when it was published, so the evaluation finds
+// it among the Contact's.
+type AutomationEventWorker struct {
+	river.WorkerDefaults[AutomationEventArgs]
+
+	queue Inserter
+}
+
+// NewAutomationEventWorker is the automations consumer's worker, which queues on queue.
+func NewAutomationEventWorker(queue Inserter) *AutomationEventWorker {
+	return &AutomationEventWorker{queue: queue}
+}
+
+func (w *AutomationEventWorker) Work(ctx context.Context, job *river.Job[AutomationEventArgs]) error {
+	env := job.Args.Envelope
+	ev, err := events.Decode(env)
+	if err != nil {
+		return err
+	}
+	p := ev.Project()
+	_, err = w.queue.Insert(ctx, EvaluateTriggerArgs{
+		WorkspaceID:        env.WorkspaceID,
+		ContactID:          p.ContactID,
+		Action:             p.Action,
+		SourceAutomationID: p.AutomationID,
+		OccurredAt:         env.OccurredAt,
+		SourceID:           env.SourceID(),
+	}, nil)
+	return err
+}
+
+// RuleEventArgs is the rules consumer's job (ADR 0054): an Event that may fire a Rule.
+type RuleEventArgs struct {
+	events.EventJob
+}
+
+func (RuleEventArgs) Kind() string { return "event_rule" }
+
+// RuleEventWorker queues the evaluation of an Event against the Workspace's Rules
+// (EvaluateRulesArgs). The Event's row was stored when it was published, so a Condition that counts
+// the Contact's Events counts the one that fired the Rule. A Firing is unique on the Event's source
+// id, so a retried job fires a Rule once.
+type RuleEventWorker struct {
+	river.WorkerDefaults[RuleEventArgs]
+
+	queue Inserter
+}
+
+// NewRuleEventWorker is the rules consumer's worker, which queues on queue.
+func NewRuleEventWorker(queue Inserter) *RuleEventWorker {
+	return &RuleEventWorker{queue: queue}
+}
+
+func (w *RuleEventWorker) Work(ctx context.Context, job *river.Job[RuleEventArgs]) error {
+	env := job.Args.Envelope
+	ev, err := events.Decode(env)
+	if err != nil {
+		return err
+	}
+	p := ev.Project()
+	// Rules act only on events recorded after they were activated; an envelope from before
+	// RecordedAt existed says when it occurred.
+	recorded := cmp.Or(env.RecordedAt, env.OccurredAt)
+	_, err = w.queue.Insert(ctx, EvaluateRulesArgs{
+		WorkspaceID: env.WorkspaceID,
+		ContactID:   p.ContactID,
+		Action:      p.Action,
+		SourceID:    env.SourceID(),
+		RecordedAt:  recorded,
+		Properties:  events.BoundedProperties(p.Properties),
+	}, nil)
+	return err
 }
 
 // OrderEventArgs is the orders consumer's job (ADR 0064): a collected order Event that makes or

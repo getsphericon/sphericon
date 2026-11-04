@@ -113,12 +113,13 @@ func TestAReceivedEventTriggersAutomationsAndReachesWebhooks(t *testing.T) {
 	client := queueingJobs(t, env)
 	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).SetEventTypes([]string{events.NameTelegramReceived}).ExecX(t.Context())
 
-	require.NoError(t, events.AutomationsConsumer(client)(events.Message(envelopes[0])))
+	env.WorkAutomationJobs(t)
 	require.NoError(t, events.WebhooksConsumer(env.DB, client)(events.Message(envelopes[0])))
 
-	triggers := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
+	triggers := lo.Filter(env.JobsOf(t, jobkind.EvaluateTrigger.Kind), func(args map[string]any, _ int) bool {
+		return args["action"] == events.NameTelegramReceived
+	})
 	require.Len(t, triggers, 1)
-	assert.Equal(t, events.NameTelegramReceived, triggers[0]["action"])
 	assert.EqualValues(t, fixtures.ContactBobID, triggers[0]["contact_id"])
 	delivered := deliveries(t, env)
 	require.Contains(t, delivered, int64(fixtures.WebhookCodebasicsID))

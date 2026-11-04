@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -15,6 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -210,37 +211,36 @@ func TestEvaluateComparesANumberProperty(t *testing.T) {
 	assert.Equal(t, 0, text)
 }
 
-// evaluateAtOnce is the evaluation queue run in place: it hands the Event to the module as the
-// evaluation job does.
-type evaluateAtOnce struct {
-	m *rules.Module
-	s *ent.Scoped
-}
-
-func (e evaluateAtOnce) OnRuleEvent(ctx context.Context, ev events.RuleEvent) error {
-	_, err := e.m.Evaluate(ctx, e.s, rules.Event{
-		ContactID: ev.ContactID, Action: ev.Action, SourceID: ev.SourceID, RecordedAt: ev.RecordedAt, Properties: ev.Properties,
-	})
-	return err
-}
-
-// recorded is the bus message of a Contact's Event recorded now.
-func recorded(t *testing.T, env *testhelper.TestEnv, id string, contactID int64, action string) *message.Message {
+// record publishes a Contact's Event recorded now, which stores it and queues its rules job.
+func record(t *testing.T, env *testhelper.TestEnv, id string, contactID int64, action string) {
 	t.Helper()
 	ev := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, ContactID: contactID, SubjectID: id, Action: action}
 	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(t.Context(), ev)
 	}))
-	published := env.OutboxEnvelopes(t, events.NameCollected)
-	return events.Message(published[len(published)-1])
 }
 
-// A Rule's Condition counts the Contact's Events, the one that fired it included: RuleSecondRevisit
-// fires on a second rule_revisit within a week. Liam did one yesterday, Alice none.
+// evaluateQueued hands every queued rule evaluation to the module, as the evaluation job does.
+func evaluateQueued(t *testing.T, env *testhelper.TestEnv, m *rules.Module) {
+	t.Helper()
+	for _, raw := range env.JobsOf(t, jobkind.RuleEvaluate.Kind) {
+		encoded, err := json.Marshal(raw)
+		require.NoError(t, err)
+		var args jobs.EvaluateRulesArgs
+		require.NoError(t, json.Unmarshal(encoded, &args))
+		_, err = m.Evaluate(t.Context(), env.DB.Scoped(args.WorkspaceID), rules.Event{
+			ContactID: args.ContactID, Action: args.Action, SourceID: args.SourceID, RecordedAt: args.RecordedAt, Properties: args.Properties,
+		})
+		require.NoError(t, err)
+	}
+}
+
+// A Rule's Condition counts the Contact's Events, the one that fired it included: the Event is
+// stored when it is published, before its rules job runs (#751). RuleSecondRevisit fires on a
+// second rule_revisit within a week. Liam did one yesterday, Alice none.
 func TestEvaluateCountsTheEventThatFiredTheRule(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	consume := events.RulesConsumer(evaluateAtOnce{m: rules.New(env.Cipher, env.Bus), s: env.DB.Scoped(fixtures.AcmeID)})
 	firedFor := func(contactID int64) bool {
 		ok, err := env.DB.RuleFiring.Query().
 			Where(rulefiring.RuleID(fixtures.RuleSecondRevisitID), rulefiring.ContactID(contactID)).
@@ -249,8 +249,10 @@ func TestEvaluateCountsTheEventThatFiredTheRule(t *testing.T) {
 		return ok
 	}
 
-	require.NoError(t, consume(recorded(t, env, "revisit-liam", fixtures.ContactLiamID, "rule_revisit")))
-	require.NoError(t, consume(recorded(t, env, "revisit-alice", fixtures.ContactAliceID, "rule_revisit")))
+	record(t, env, "revisit-liam", fixtures.ContactLiamID, "rule_revisit")
+	record(t, env, "revisit-alice", fixtures.ContactAliceID, "rule_revisit")
+	env.WorkRuleJobs(t)
+	evaluateQueued(t, env, rules.New(env.Cipher, env.Bus))
 	liam := firedFor(fixtures.ContactLiamID)
 	alice := firedFor(fixtures.ContactAliceID)
 

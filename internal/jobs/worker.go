@@ -136,9 +136,13 @@ func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outb
 	river.AddWorker(workers, NewPrunePendingSignupsWorker(acc, time.Now))
 	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, time.Now))
 	river.AddWorker(workers, NewEraseWorkspacesWorker(workspacedeletion.New(entClient, bus), time.Now))
-	// The consumers of the domain events (EventConsumers).
+	// The consumers of the domain events (EventConsumers). Those that queue the work an event
+	// calls for queue it through the client itself, which exists once the workers are registered.
+	c := &Client{ent: entClient, domains: domains, appURL: appURL}
 	river.AddWorker(workers, NewSuppressEventWorker(entClient))
 	river.AddWorker(workers, NewOrderEventWorker(entClient, orders.New(acc)))
+	river.AddWorker(workers, NewAutomationEventWorker(clientInserter{c}))
+	river.AddWorker(workers, NewRuleEventWorker(clientInserter{c}))
 
 	var extraPeriodic []*river.PeriodicJob
 	for _, e := range ext {
@@ -159,7 +163,16 @@ func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outb
 	if err != nil {
 		return nil, err
 	}
-	return &Client{river: rc, ent: entClient, domains: domains, appURL: appURL}, nil
+	c.river = rc
+	return c, nil
+}
+
+// clientInserter queues through the Client's river client, which NewClient sets after it has
+// registered the workers that take it.
+type clientInserter struct{ c *Client }
+
+func (q clientInserter) Insert(ctx context.Context, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error) {
+	return q.c.river.Insert(ctx, args, opts)
 }
 
 // SoftStopTimeout is how long a stopping client lets its running jobs finish before it
@@ -386,22 +399,4 @@ func (c *Client) EnqueueIntegrationQuotaRefresh(ctx context.Context, integration
 // returns once they are done: the result is on the row.
 func (c *Client) VerifySendingDomain(ctx context.Context, sendingDomainID int64) error {
 	return c.domains.Verify(ctx, sendingDomainID)
-}
-
-// OnEvent queues the evaluation of an Event against the Automations: the Enrollments it ends
-// and the Automations it enrolls the Contact into. The Event's row was written when the event was
-// published, so the evaluation finds the Event among the Contact's when it checks what ended an
-// Enrollment before it was made (#751). It is the trigger seam injected into the event-recording
-// paths; a no-op implementation keeps tests inert (no river runtime, writes roll back with the
-// tx). Fire-and-forget: it is best-effort and must never block the write.
-func (c *Client) OnEvent(ctx context.Context, ev events.AutomationEvent) error {
-	_, err := c.river.Insert(ctx, EvaluateTriggerArgs{
-		WorkspaceID:        ev.Envelope.WorkspaceID,
-		ContactID:          ev.ContactID,
-		Action:             ev.Action,
-		SourceAutomationID: ev.SourceAutomationID,
-		OccurredAt:         ev.Envelope.OccurredAt,
-		SourceID:           ev.Envelope.SourceID(),
-	}, nil)
-	return err
 }

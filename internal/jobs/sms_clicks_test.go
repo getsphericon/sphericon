@@ -170,10 +170,9 @@ func TestAnSMSStepsLinkClickRecordsTheAutomationAndTriggersAnother(t *testing.T)
 	runSteps(t, env)
 	paths := smsShortPaths(t, env)
 	require.Len(t, paths, 1)
-	client := queueingClient(t, env)
 	consume := func() []jobs.EvaluateTriggerArgs {
 		envelopes := env.OutboxEnvelopes(t, events.NameSmsClicked)
-		require.NoError(t, events.AutomationsConsumer(client)(events.Message(envelopes[len(envelopes)-1])))
+		env.WorkAutomationJobOf(t, envelopes[len(envelopes)-1])
 		return queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind())
 	}
 

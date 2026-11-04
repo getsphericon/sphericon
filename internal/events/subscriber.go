@@ -18,46 +18,6 @@ import (
 	"github.com/samber/lo"
 )
 
-// AutomationEvent is an Event an Automation may react to, as the Automations consumer hands it to
-// the queue: the Contact it is for, its action, the Automation whose email it came from (0 for any
-// other Event) and its Envelope, which says the Workspace and when the Event occurred (the Event
-// row's occurred_at), and from which the queue stores the Event's row.
-type AutomationEvent struct {
-	ContactID          int64
-	Action             string
-	SourceAutomationID int64
-	Envelope           Envelope
-}
-
-// Enroller enrolls a contact into automations matching an event action and ends the
-// Enrollments the action exits or reaches the goal of. The automations subscriber delegates to
-// it, keeping durable execution in river: the implementation enqueues an EvaluateTrigger job. The
-// Event's row was written when the event was published, so the job that ends or makes an
-// Enrollment always sees the Event among the Contact's (#751).
-type Enroller interface {
-	OnEvent(ctx context.Context, ev AutomationEvent) error
-}
-
-// RuleEvent is an Event a Rule may react to, as the Rules consumer hands it to the queue: the
-// Contact it is for, its action, the id a Firing is unique on (the DedupKey, else the envelope
-// id: what the Event row is stored under as source_id), when it was recorded and the properties
-// it carries.
-type RuleEvent struct {
-	WorkspaceID int64
-	ContactID   int64
-	Action      string
-	SourceID    string
-	RecordedAt  time.Time
-	Properties  map[string]any
-}
-
-// RuleEvaluator queues the evaluation of an Event against the Workspace's Rules. The Rules
-// subscriber delegates to it, keeping durable execution in river (the implementation enqueues
-// an evaluation job), like Enroller does for Automations.
-type RuleEvaluator interface {
-	OnRuleEvent(ctx context.Context, ev RuleEvent) error
-}
-
 // WebhookDispatcher fans an event out to the workspace's matching webhook
 // endpoints. The webhooks subscriber delegates to it, keeping durable delivery
 // (per-endpoint jobs, retries) in river.
@@ -96,9 +56,7 @@ func NewRouter(db *sql.DB, opts ...RouterOption) (*message.Router, error) {
 // know whose cursors bound what it may delete, so a new subscriber is added here
 // and nowhere else.
 const (
-	GroupAutomations = "automations"
-	GroupRules       = "rules"
-	GroupWebhooks    = "webhooks"
+	GroupWebhooks = "webhooks"
 	// GroupAudit is the Enterprise audit subscriber's group (ee/audit). Core lists it
 	// so the outbox prune never deletes an Audit entry the subscriber has not consumed
 	// (ADR 0022); the subscriber is always registered, licensed or not.
@@ -110,7 +68,7 @@ const (
 
 // coreGroups are the groups core wires itself, in registration order.
 func coreGroups() []string {
-	return []string{GroupAutomations, GroupRules, GroupWebhooks}
+	return []string{GroupWebhooks}
 }
 
 // ConsumerGroups lists every consumer group registered in code, in registration
@@ -158,11 +116,9 @@ func (hs ConsumerHandlers) Of(group string) (message.NoPublishHandlerFunc, bool)
 // then extra, the consumers owned outside core (the Enterprise audit subscriber, ee/), each its
 // own group named like its handler. RegisterSubscribers runs them on the router, and
 // ReplayDeadLetters runs one group's dead letters through its handler.
-func Handlers(client *ent.Client, enroller Enroller, rules RuleEvaluator, dispatcher WebhookDispatcher, extra []Subscriber) ConsumerHandlers {
+func Handlers(client *ent.Client, dispatcher WebhookDispatcher, extra []Subscriber) ConsumerHandlers {
 	hs := make(ConsumerHandlers, 0, len(coreGroups())+len(extra))
 	hs = append(hs, ConsumerHandlers{
-		{GroupAutomations, "enroll_automations", AutomationsConsumer(enroller)},
-		{GroupRules, "evaluate_rules", RulesConsumer(rules)},
 		{GroupWebhooks, "dispatch_webhooks", WebhooksConsumer(client, dispatcher)},
 	}...)
 	for _, c := range extra {
@@ -284,44 +240,6 @@ func WebhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.
 	}
 }
 
-// AutomationsConsumer enrolls the event's contact into matching automations and ends the
-// Enrollments the event exits or reaches the goal of (#751). It skips events with no contact
-// (ContactID == 0, e.g. anonymous collect events), loaded history and machine engagement, which
-// neither enroll nor end anything.
-func AutomationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
-	return func(msg *message.Message) error {
-		env, err := EnvelopeOf(msg)
-		if err != nil {
-			return err
-		}
-		ev, err := Decode(env)
-		if err != nil {
-			return err
-		}
-		if _, skip := ev.(Unprojected); skip {
-			return nil // an administrative action is never an automation trigger
-		}
-		if IsBackfill(ev) {
-			return nil // loaded history never enrolls a contact
-		}
-		p := ev.Project()
-		if p.ContactID == 0 {
-			return nil // no contact to enroll (e.g. an anonymous collected event)
-		}
-		if p.Machine {
-			return nil // software opened or clicked: a scanner neither enrolls nor ends (ADR 0053)
-		}
-		// Enroll on the semantic action so a trigger can be "contact.created" or a
-		// customer action like "page_view". The envelope's occurred_at is the Event row's.
-		return enroller.OnEvent(msg.Context(), AutomationEvent{
-			ContactID:          p.ContactID,
-			Action:             p.Action,
-			SourceAutomationID: p.AutomationID,
-			Envelope:           env,
-		})
-	}
-}
-
 // PropertiesBound is the most JSON an Event's properties may weigh to be shown to a Rule or copied
 // onto an Enrollment (#752): the per-event limit ingest applies by default, so ingest already refuses
 // larger customer events. A larger one reaching a Rule or an Enrollment anyway has no properties,
@@ -342,56 +260,6 @@ func BoundedProperties(props map[string]any) map[string]any {
 		return nil
 	}
 	return props
-}
-
-// machineEvent reports whether ev was caused by a machine (a mail scanner's open or click, ADR
-// 0053), which never triggers a Rule.
-func machineEvent(ev DomainEvent) bool { return ev.Project().Machine }
-
-// RulesConsumer queues the evaluation of the event against the Workspace's Rules (ADR 0054).
-// Like the Automations consumer it skips the events that are never a trigger, and it also skips
-// an event with no Contact, a machine event and an event a Rule's Action published (its
-// envelope carries CausedBy). The Event's row was written when the event was published, so a
-// Condition that counts the Contact's Events counts the one that fired the Rule.
-func RulesConsumer(rules RuleEvaluator) message.NoPublishHandlerFunc {
-	return func(msg *message.Message) error {
-		env, err := EnvelopeOf(msg)
-		if err != nil {
-			return err
-		}
-		if env.CausedBy != "" {
-			return nil // an Action's own event: Rules never chain
-		}
-		ev, err := Decode(env)
-		if err != nil {
-			return err
-		}
-		if _, skip := ev.(Unprojected); skip {
-			return nil
-		}
-		if IsBackfill(ev) {
-			return nil // loaded history never fires a Rule
-		}
-		if machineEvent(ev) {
-			return nil
-		}
-		p := ev.Project()
-		if p.ContactID == 0 {
-			return nil // no Contact to act on
-		}
-		recorded := env.RecordedAt
-		if recorded.IsZero() {
-			recorded = env.OccurredAt
-		}
-		return rules.OnRuleEvent(msg.Context(), RuleEvent{
-			WorkspaceID: env.WorkspaceID,
-			ContactID:   p.ContactID,
-			Action:      p.Action,
-			SourceID:    env.SourceID(),
-			RecordedAt:  recorded,
-			Properties:  BoundedProperties(p.Properties),
-		})
-	}
 }
 
 // NewSubscriber builds a watermill-sql subscriber for the outbox topic under a
