@@ -1,16 +1,15 @@
-import { Badge, Tooltip } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
+import { DetailsBadge } from './DetailsBadge.tsx'
+
 // ScopesBadge shows a credential's scopes in a table cell: their count on a badge, the scopes
-// themselves in its tooltip. The tables of API tokens, Connections and Personal tokens share it.
+// themselves in its popover. The tables of API tokens, Connections and Personal tokens share it.
 export function ScopesBadge({ scopes }: { scopes: readonly string[] }) {
   const { t } = useTranslation()
 
   return (
-    <Tooltip label={scopes.join(', ')} multiline maw={320} withArrow>
-      <Badge variant="light" color="gray">
-        {t(($) => $.settings.scopesCount, { count: scopes.length })}
-      </Badge>
-    </Tooltip>
+    <DetailsBadge variant="light" color="gray" details={[scopes.join(', ')]}>
+      {t(($) => $.settings.scopesCount, { count: scopes.length })}
+    </DetailsBadge>
   )
 }

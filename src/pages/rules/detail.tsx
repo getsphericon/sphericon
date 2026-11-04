@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { DetailsBadge } from '../../components/DetailsBadge.tsx'
 import { DraftControls } from '../../components/DraftControls.tsx'
 import { EventActionBadge, EventActionName } from '../../components/EventActionName.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
@@ -184,14 +185,13 @@ export function RuleDetailPage() {
                 {record.results.map((result, index) => (
                   <Group key={index} gap="xs">
                     <Text size="sm">{t(($) => $.rules.actionType[result.type])}</Text>
-                    <Badge variant="light" color={resultColor[result.status]}>
+                    <DetailsBadge
+                      variant="light"
+                      color={resultColor[result.status]}
+                      details={[result.detail]}
+                    >
                       {t(($) => $.rules.firingStatus[result.status])}
-                    </Badge>
-                    {result.detail ? (
-                      <Text size="xs" c="dimmed">
-                        {result.detail}
-                      </Text>
-                    ) : null}
+                    </DetailsBadge>
                   </Group>
                 ))}
                 {record.completedAt ? null : (

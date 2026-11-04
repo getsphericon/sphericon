@@ -69,7 +69,7 @@ test('shows the rule and each Firing with its Event, Contact and every Action re
     .element(screen.getByRole('link', { name: '33' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/contacts/33')
   await expect.element(screen.getByText('Succeeded')).toBeInTheDocument()
-  await expect.element(screen.getByText('Skipped')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Skipped' }).click()
   await expect.element(screen.getByText('the contact has no such tag')).toBeInTheDocument()
 })
 
