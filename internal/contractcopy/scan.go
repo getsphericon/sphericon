@@ -139,10 +139,23 @@ func stringLit(e ast.Expr) (string, bool) {
 }
 
 var (
-	tsString   = regexp.MustCompile(`'([^'\\\n]*)'|"([^"\\\n]*)"`)
-	tsArray    = regexp.MustCompile(`\[\s*(?:(?:'[^'\\\n]*'|"[^"\\\n]*")\s*,?\s*)+\]`)
-	tsUnion    = regexp.MustCompile(`(?:'[^'\\\n]*'|"[^"\\\n]*")(?:\s*\|\s*(?:'[^'\\\n]*'|"[^"\\\n]*"))+`)
-	tsLimit    = regexp.MustCompile(`\b((?:MAX|MIN|DEFAULT)_[A-Z_]+|max|min|maxLength|minLength)\s*(?:=|=\{|:)\s*(\d[\d_]*)\b`)
+	tsString = regexp.MustCompile(`'([^'\\\n]*)'|"([^"\\\n]*)"`)
+	tsArray  = regexp.MustCompile(`\[\s*(?:(?:'[^'\\\n]*'|"[^"\\\n]*")\s*,?\s*)+\]`)
+	tsUnion  = regexp.MustCompile(`(?:'[^'\\\n]*'|"[^"\\\n]*")(?:\s*\|\s*(?:'[^'\\\n]*'|"[^"\\\n]*"))+`)
+	tsLimit  = regexp.MustCompile(`\b((?:MAX|MIN|DEFAULT)_[A-Z_]+|max|min|maxLength|minLength)\s*(?:=|=\{|:)\s*(\d[\d_]*)\b`)
+	// tsOptions is an array literal with no array inside it, and tsOptionValue the `value` of each
+	// of its entries: a Select's options, one per value of an enum.
+	tsOptions     = regexp.MustCompile(`\[[^\[\]]*\]`)
+	tsOptionValue = regexp.MustCompile(`\bvalue:\s*(?:'([^'\\\n]*)'|"([^"\\\n]*)")`)
+	// tsShape opens a declaration of fields: an interface that extends nothing, an object type,
+	// or a zod object.
+	tsShape = regexp.MustCompile(`\binterface\s+\w+\s*\{|\btype\s+\w+\s*=\s*\{|\bz\.object\(\s*\{`)
+	// tsQueryLimit is a page size a request's query names: a response's own pageSize, in a test's
+	// mock, is the server's value and not read.
+	tsQueryLimit = regexp.MustCompile(`\bquery:\s*\{[^{}]*?\b(pageSize)\s*:\s*(\d[\d_]*)\b`)
+	// tsDerived is a generated zod schema a field is read from (`trimmed(zButton.shape.label)`).
+	tsDerived  = regexp.MustCompile(`\bz[A-Z]\w*`)
+	tsField    = regexp.MustCompile(`^\s*(?:readonly\s+)?([A-Za-z_$][\w$]*)\??\s*:`)
 	tsNoteLine = regexp.MustCompile(`contract-copy:\s*\S`)
 )
 
@@ -172,7 +185,37 @@ func scanTS(path string, c Contract) ([]string, error) {
 			}
 		}
 	}
-	for _, m := range tsLimit.FindAllStringSubmatchIndex(src, -1) {
+	for _, m := range tsOptions.FindAllStringIndex(src, -1) {
+		var values []string
+		for _, s := range tsOptionValue.FindAllStringSubmatch(src[m[0]:m[1]], -1) {
+			values = append(values, s[1]+s[2])
+		}
+		line := lineOf(m[0])
+		if len(values) >= 2 && c.copiesEnum(values) && !documented(notes, line) {
+			found = append(found, finding{line, message("the values of a list of options repeat a TypeSpec enum")})
+		}
+	}
+	for _, m := range tsShape.FindAllStringIndex(src, -1) {
+		fields, derived := topLevelFields(src[m[1]:])
+		line := lineOf(m[0])
+		if derived {
+			continue
+		}
+		if name := c.Shapes[shapeKey(fields)]; len(fields) >= 2 && name != "" && !documented(notes, line) {
+			found = append(found, finding{line, message(fmt.Sprintf(
+				"a type or schema declares the fields of %s, which the generated client exports", name))})
+		}
+	}
+	for _, re := range []*regexp.Regexp{tsLimit, tsQueryLimit} {
+		found = append(found, limitMatches(src, re, c, notes, lineOf)...)
+	}
+	return format(path, found), nil
+}
+
+// limitMatches are the matches of re (a name, then an integer) whose value is a contract limit.
+func limitMatches(src string, re *regexp.Regexp, c Contract, notes map[int]bool, lineOf func(int) int) []finding {
+	var found []finding
+	for _, m := range re.FindAllStringSubmatchIndex(src, -1) {
 		v, err := strconv.ParseInt(strings.ReplaceAll(src[m[4]:m[5]], "_", ""), 10, 64)
 		line := lineOf(m[0])
 		if err == nil && c.Limits[v] && !documented(notes, line) {
@@ -180,7 +223,7 @@ func scanTS(path string, c Contract) ([]string, error) {
 				fmt.Sprintf("%s = %d repeats a limit TypeSpec declares", src[m[2]:m[3]], v))})
 		}
 	}
-	return format(path, found), nil
+	return found
 }
 
 var fixtureScope = regexp.MustCompile(`[a-z_]+:[a-z_]+`)
@@ -213,4 +256,39 @@ func scanFixture(path string, c Contract) ([]string, error) {
 		}
 	}
 	return format(path, found), nil
+}
+
+// topLevelFields are the names of the fields a declaration of fields lists, read from the text
+// after its opening brace up to the matching one; nested objects, calls and arrays are skipped (a
+// generic's comma splits a member, which then names no second field). derived is whether every
+// field is read from a generated zod schema: a form's schema made of the contract's own parts.
+func topLevelFields(body string) (fields []string, derived bool) {
+	depth, start := 0, 0
+	derived = true
+	member := func(end int) {
+		if m := tsField.FindStringSubmatch(body[start:end]); m != nil {
+			fields = append(fields, m[1])
+			derived = derived && tsDerived.MatchString(body[start:end])
+		}
+	}
+	for i, r := range body {
+		switch r {
+		case '{', '(', '[':
+			depth++
+		case ')', ']':
+			depth--
+		case '}':
+			if depth == 0 {
+				member(i)
+				return fields, derived && len(fields) > 0
+			}
+			depth--
+		case ',', ';', '\n':
+			if depth == 0 {
+				member(i)
+				start = i + 1
+			}
+		}
+	}
+	return fields, false
 }

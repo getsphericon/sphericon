@@ -1,7 +1,8 @@
 // Package contractcopy is rule 6 ("knowledge has one place") for the values a TypeSpec contract
-// declares: it reads the generated openapi/*.openapi.json for its enums and numeric limits and
-// reports a hand-written Go or TypeScript copy of them, and a fixture scope the contract does not
-// declare. Go is read through go/parser, TypeScript through patterns (the frontend has no Go types
+// declares: it reads the generated openapi/*.openapi.json for its enums, numeric limits and the
+// fields of its object schemas, and reports a hand-written Go or TypeScript copy of them (in
+// TypeScript also a list of options and a type or zod object with a schema's fields), and a
+// fixture scope the contract does not declare. Go is read through go/parser, TypeScript through patterns (the frontend has no Go types
 // to ask).
 //
 // Typed Go const blocks are the domain's own vocabulary and are not read.
@@ -26,11 +27,20 @@ const marker = "contract-copy:"
 // fix is the one remedy every finding ends with.
 const fix = "generate it from TypeSpec"
 
-// Contract is what the OpenAPI documents declare: every enum (a sorted set of values) and every
-// numeric limit.
+// Contract is what the OpenAPI documents declare: every enum (a sorted set of values), every
+// numeric limit, and the fields of every object schema (its sorted property names, two or more,
+// joined by shapeKey) with the name of the schema.
 type Contract struct {
 	Enums  [][]string
 	Limits map[int64]bool
+	Shapes map[string]string
+}
+
+// shapeKey is the key of a set of field names in Contract.Shapes.
+func shapeKey(fields []string) string {
+	sorted := slices.Clone(fields)
+	slices.Sort(sorted)
+	return strings.Join(slices.Compact(sorted), ",")
 }
 
 func message(what string) string {
@@ -92,7 +102,7 @@ func LoadContract(dir string) (Contract, error) {
 	if len(files) == 0 {
 		return Contract{}, fmt.Errorf("no OpenAPI documents in %s", dir)
 	}
-	c := Contract{Limits: map[int64]bool{}}
+	c := Contract{Limits: map[int64]bool{}, Shapes: map[string]string{}}
 	seen := map[string]bool{}
 	for _, f := range files {
 		raw, err := os.ReadFile(f)
@@ -104,8 +114,36 @@ func LoadContract(dir string) (Contract, error) {
 			return c, fmt.Errorf("%s: %w", f, err)
 		}
 		c.collect(doc, seen)
+		c.collectShapes(doc)
 	}
 	return c, nil
+}
+
+// collectShapes records the fields of every named object schema of doc. Of two schemas with the
+// same fields, the one first by name is named.
+func (c *Contract) collectShapes(doc any) {
+	root, _ := doc.(map[string]any)
+	components, _ := root["components"].(map[string]any)
+	schemas, _ := components["schemas"].(map[string]any)
+	names := make([]string, 0, len(schemas))
+	for name := range schemas {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	for _, name := range names {
+		schema, _ := schemas[name].(map[string]any)
+		props, _ := schema["properties"].(map[string]any)
+		if len(props) < 2 {
+			continue
+		}
+		fields := make([]string, 0, len(props))
+		for field := range props {
+			fields = append(fields, field)
+		}
+		if key := shapeKey(fields); c.Shapes[key] == "" {
+			c.Shapes[key] = name
+		}
+	}
 }
 
 var limitKeys = []string{"maxLength", "minLength", "maximum", "minimum", "maxItems", "minItems", "default"}

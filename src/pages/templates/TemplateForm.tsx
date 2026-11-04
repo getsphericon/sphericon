@@ -9,10 +9,8 @@ import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/ro
 import { Route as templatesRoute } from '../../routes/workspaces/$workspaceId/templates/index.tsx'
 import type { MessageDoc } from '../../utils/messageDoc.ts'
 
-export interface TemplateValues {
-  name: string
-  subject: string
-  body: string
+// What the form holds: the create input with every text given, and no document until one is made.
+export type TemplateValues = Required<Pick<CreateTemplateInput, 'name' | 'subject' | 'body'>> & {
   doc: MessageDoc | null
 }
 

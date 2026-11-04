@@ -4,16 +4,14 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { siteWorkspacesListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
+import type { SmsBroadcastContent } from '../../generated/site/types.gen.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { CONTACT_TAGS, UNSUBSCRIBE_URL_TAG } from '../../utils/mergeTags.ts'
 import { measureSms, smsLimitOf, tooLongForSms } from '../../utils/smsParts.ts'
 
 // SmsContent is an SMS's Message content: the text, and whether its links go out as short tracked
 // links (ADR 0083).
-export interface SmsContent {
-  text: string
-  linkTracking: boolean
-}
+export type SmsContent = Omit<SmsBroadcastContent, 'channel'>
 
 interface Props {
   value: SmsContent

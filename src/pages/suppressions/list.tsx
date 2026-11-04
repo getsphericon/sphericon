@@ -246,6 +246,13 @@ export function SuppressionsListPage() {
       onConfirm: () => liftMutation.mutate({ path: { workspaceId, id } }),
     })
 
+  // One option per Channel, in the order a person reads them.
+  const channelLabels: Record<SiteSuppressionChannel, string> = {
+    email: t(($) => $.suppressions.channelEmail),
+    telegram: t(($) => $.suppressions.channelTelegram),
+    sms: t(($) => $.suppressions.channelSms),
+  }
+
   return (
     <Stack gap={0} flex={1}>
       <Group justify="space-between" mb="sm">
@@ -291,11 +298,7 @@ export function SuppressionsListPage() {
           <Stack>
             <NativeSelect
               label={t(($) => $.suppressions.channelLabel)}
-              data={[
-                { value: 'email', label: t(($) => $.suppressions.channelEmail) },
-                { value: 'telegram', label: t(($) => $.suppressions.channelTelegram) },
-                { value: 'sms', label: t(($) => $.suppressions.channelSms) },
-              ]}
+              data={Object.entries(channelLabels).map(([value, label]) => ({ value, label }))}
               {...form.getInputProps('channel')}
             />
             <TextInput

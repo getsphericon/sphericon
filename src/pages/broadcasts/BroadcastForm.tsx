@@ -19,11 +19,17 @@ import type {
   CreateBroadcastInput,
   TelegramButton,
 } from '../../generated/site/types.gen.ts'
-import { zBroadcastChannel } from '../../generated/site/zod.gen.ts'
+import {
+  zBroadcastChannel,
+  zSiteSegmentsListQuery,
+  zSiteSendingDomainsListQuery,
+  zSiteTemplatesListQuery,
+} from '../../generated/site/zod.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as emailsRoute } from '../../routes/workspaces/$workspaceId/settings/emails.tsx'
+import { maxPageSize } from '../../utils/bounds.ts'
 import { joinEmail, splitEmail } from '../../utils/emailAddress.ts'
 import type { MessageDoc } from '../../utils/messageDoc.ts'
 import { SendCapWarning } from './SendCapWarning.tsx'
@@ -130,7 +136,10 @@ function TelegramBroadcastForm({
   const { workspaceId } = workspaceRoute.useParams()
 
   const segmentsQuery = useQuery(
-    siteSegmentsListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
+    siteSegmentsListOptions({
+      path: { workspaceId },
+      query: { pageSize: maxPageSize(zSiteSegmentsListQuery) },
+    }),
   )
   const segmentOptions = [
     { value: '', label: t(($) => $.broadcasts.segmentAll) },
@@ -223,7 +232,10 @@ function SmsBroadcastForm({
   const { workspaceId } = workspaceRoute.useParams()
 
   const segmentsQuery = useQuery(
-    siteSegmentsListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
+    siteSegmentsListOptions({
+      path: { workspaceId },
+      query: { pageSize: maxPageSize(zSiteSegmentsListQuery) },
+    }),
   )
   const segmentOptions = [
     { value: '', label: t(($) => $.broadcasts.segmentAll) },
@@ -301,7 +313,10 @@ function EmailBroadcastForm({
   const { workspaceId } = workspaceRoute.useParams()
 
   const segmentsQuery = useQuery(
-    siteSegmentsListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
+    siteSegmentsListOptions({
+      path: { workspaceId },
+      query: { pageSize: maxPageSize(zSiteSegmentsListQuery) },
+    }),
   )
   const segmentOptions = [
     { value: '', label: t(($) => $.broadcasts.segmentAll) },
@@ -321,7 +336,10 @@ function EmailBroadcastForm({
   // source of truth and refuses another. A saved From whose domain lost verification stays
   // visible, marked, so the reason for a hold can be seen.
   const domainsQuery = useQuery(
-    siteSendingDomainsListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
+    siteSendingDomainsListOptions({
+      path: { workspaceId },
+      query: { pageSize: maxPageSize(zSiteSendingDomainsListQuery) },
+    }),
   )
   const verifiedDomains = (domainsQuery.data?.items ?? [])
     .filter((d) => d.verified)
@@ -347,7 +365,10 @@ function EmailBroadcastForm({
   }
 
   const templatesQuery = useQuery(
-    siteTemplatesListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
+    siteTemplatesListOptions({
+      path: { workspaceId },
+      query: { pageSize: maxPageSize(zSiteTemplatesListQuery) },
+    }),
   )
   const templates = templatesQuery.data?.items ?? []
 

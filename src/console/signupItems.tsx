@@ -29,7 +29,12 @@ import {
 } from '../generated/staff/@tanstack/react-query.gen.ts'
 import { SignupItemKind } from '../generated/staff/types.gen.ts'
 import type { StaffSignupItemResource } from '../generated/staff/types.gen.ts'
-import { zSignupItemKey, zSignupItemKind, zSignupItemTitle } from '../generated/staff/zod.gen.ts'
+import {
+  zSignupItemKey,
+  zSignupItemKind,
+  zSignupItemTitle,
+  zStaffSignupItemInput,
+} from '../generated/staff/zod.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { trimmed, useSchemaForm } from '../resources/schemaForm.ts'
 import { Route as consoleSignupItemRoute } from '../routes/console/_authed/signup-items.$itemId.tsx'
@@ -43,7 +48,7 @@ const addItemSchema = z.object({
   key: trimmed(zSignupItemKey),
   title: trimmed(zSignupItemTitle),
   kind: z.custom<SignupItemKind | null>().pipe(zSignupItemKind),
-  mailingsConsent: z.boolean(),
+  mailingsConsent: zStaffSignupItemInput.shape.mailingsConsent.unwrap(),
 })
 
 function AddItemForm() {

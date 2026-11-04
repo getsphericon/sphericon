@@ -22,10 +22,12 @@ import {
   siteEventsActionsOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteCreateRuleInput, SiteRuleAction } from '../../generated/site/types.gen.ts'
+import { zSiteAutomationsListQuery } from '../../generated/site/zod.gen.ts'
 import { useEventActionFilter } from '../../hooks/useEventActionLabel.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as rulesRoute } from '../../routes/workspaces/$workspaceId/rules/index.tsx'
+import { maxPageSize } from '../../utils/bounds.ts'
 import { newAction, ruleActionKinds, takesAutomation, takesCall, takesTag } from './actions.ts'
 import { HttpActionFields } from './HttpActionFields.tsx'
 
@@ -33,11 +35,11 @@ import { HttpActionFields } from './HttpActionFields.tsx'
 export type RulePayload = Pick<SiteCreateRuleInput, 'name' | 'triggerEvents'> &
   Required<Pick<SiteCreateRuleInput, 'condition' | 'actions'>>
 
-export interface RuleValues {
-  name: string
-  triggerEvents: string[]
+// What the form holds: the create input, with the Condition as a draft the builder edits.
+export type RuleValues = Required<
+  Pick<SiteCreateRuleInput, 'name' | 'triggerEvents' | 'actions'>
+> & {
   condition: ConditionDraft
-  actions: SiteRuleAction[]
 }
 
 export function RuleForm({
@@ -54,7 +56,10 @@ export function RuleForm({
   const knownEvents = useQuery(siteEventsActionsOptions({ path: { workspaceId } }))
   // The automations an enroll action can pick from; read only once an action needs them.
   const automationsQuery = useQuery({
-    ...siteAutomationsListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
+    ...siteAutomationsListOptions({
+      path: { workspaceId },
+      query: { pageSize: maxPageSize(zSiteAutomationsListQuery) },
+    }),
     enabled: actions.some((action) => takesAutomation(action.type)),
   })
   const automationOptions = (automationsQuery.data?.items ?? []).map((automation) => ({
