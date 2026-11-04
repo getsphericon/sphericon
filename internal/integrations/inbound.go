@@ -264,15 +264,16 @@ func samePreset(a, b *string) bool {
 // reaches the entry.
 //
 // A Telegram Integration that holds its bot's webhook points it at the new URL first; Telegram's
-// refusal refuses the regeneration and the old key stays.
+// refusal refuses the regeneration and the old key stays. A deleted Integration keeps its key: it
+// is ErrNotFound, as an unknown id is.
 func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
 	key, err := credentials.GenerateIngestKey()
 	if err != nil {
 		return nil, err
 	}
-	current, err := s.Integration().Get(ctx, id)
+	current, err := m.editable(ctx, s, id)
 	if err != nil {
-		return nil, missing(err)
+		return nil, err
 	}
 	if current.Provider == integration.ProviderTelegram && holdsWebhook(current.Enabled, current.DiscardedAt) {
 		cfg, err := m.telegramConfigOf(current)
@@ -295,7 +296,7 @@ func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (*e
 	}
 	var row *ent.Integration
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		upd := ts.Integration().UpdateOneID(id).SetIngestKey(key)
+		upd := ts.Integration().UpdateOneID(id).Where(integration.DiscardedAtIsNil()).SetIngestKey(key)
 		if sealed != nil {
 			upd.SetConfigEncrypted(*sealed)
 		}

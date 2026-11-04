@@ -16110,7 +16110,8 @@ func (s *Server) handleSiteIntegrationsListRequest(args [1]string, argsEscaped b
 // handleSiteIntegrationsRegenerateKeyRequest handles SiteIntegrations_regenerateKey operation.
 //
 // Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
-// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
+// integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404.
+// Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 func (s *Server) handleSiteIntegrationsRegenerateKeyRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -16301,7 +16302,7 @@ func (s *Server) handleSiteIntegrationsRegenerateKeyRequest(args [2]string, args
 
 // handleSiteIntegrationsUpdateRequest handles SiteIntegrations_update operation.
 //
-// Update an integration. Owners and admins only.
+// Update an integration; a deleted one is read-only and answers 404. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/integrations/{id}
 func (s *Server) handleSiteIntegrationsUpdateRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -28274,7 +28275,8 @@ func (s *Server) handleSiteSendingDomainsListRequest(args [1]string, argsEscaped
 // handleSiteSendingDomainsVerifyRequest handles SiteSendingDomains_verify operation.
 //
 // Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of the
-// returned domain are the outcome. Owners and admins only.
+// returned domain are the outcome; a deleted domain is never checked again (404). Owners and admins
+// only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/verify
 func (s *Server) handleSiteSendingDomainsVerifyRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

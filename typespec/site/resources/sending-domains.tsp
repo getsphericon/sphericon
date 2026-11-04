@@ -140,7 +140,8 @@ interface SiteSendingDomains {
 
   /**
    * Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of
-   * the returned domain are the outcome. Owners and admins only.
+   * the returned domain are the outcome; a deleted domain is never checked again (404). Owners and
+   * admins only.
    */
   @action("verify")
   @autoRoute

@@ -87,15 +87,32 @@ func TestSiteIntegrationsDeletingTheDefaultLeavesTheChannelWithout(t *testing.T)
 	assert.Empty(t, defaults)
 }
 
-// A deleted Integration cannot be made the default.
-func TestSiteIntegrationsDeletedOneCannotBecomeTheDefault(t *testing.T) {
+// A deleted Integration is read, never changed (ADR 0100): an edit, a promotion to the default and
+// a new hook key answer 404, and Get still answers.
+func TestSiteIntegrationsDeletedOneIsReadOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	id := idStr(fixtures.IntegrationAcmeArchivedID)
+	path := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id}
 
-	got, err := c.SiteIntegrationsUpdate(context.Background(), &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
-		siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeArchivedID)})
+	renamed, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptString("Renamed")}, path)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationsUpdateUnprocessableEntity{}, got)
+	assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, renamed)
+
+	promoted, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)}, path)
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, promoted)
+
+	rekeyed, err := c.SiteIntegrationsRegenerateKey(ctx, siteapi.SiteIntegrationsRegenerateKeyParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteIntegrationsRegenerateKeyNotFound{}, rekeyed)
+
+	got, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+	row, ok := got.(*siteapi.SiteIntegrationResource)
+	require.Truef(t, ok, "got %T", got)
+	assert.Equal(t, "Old relay (archived)", row.Name, "the refused edit left it as it was")
 }
 
 // A sent Broadcast's report keeps naming the Integration it went through after that Integration

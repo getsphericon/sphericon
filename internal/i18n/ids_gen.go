@@ -154,7 +154,6 @@ var (
 	ErrorsFeedCursorInvalid                     = ID{key: "errors.feed_cursor_invalid"}
 	ErrorsIdentityProofRequired                 = ID{key: "errors.identity_proof_required"}
 	ErrorsIntegrationDefaultConflict            = ID{key: "errors.integration_default_conflict"}
-	ErrorsIntegrationDeletedDefault             = ID{key: "errors.integration_deleted_default"}
 	ErrorsIntegrationInvalid                    = ID{key: "errors.integration_invalid"}
 	ErrorsIntegrationKindMismatch               = ID{key: "errors.integration_kind_mismatch"}
 	ErrorsIntegrationNotFound                   = ID{key: "errors.integration_not_found"}

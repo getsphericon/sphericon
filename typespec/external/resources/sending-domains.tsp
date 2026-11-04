@@ -134,7 +134,7 @@ interface SendingDomains {
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Update a resource */
+  /** Update a Sending domain; a deleted one is read-only and answers 404 */
   @updatesResource(SendingDomainResource)
   @put
   @autoRoute
@@ -166,7 +166,7 @@ interface SendingDomains {
     | NotFoundProblem
     | InUseProblem;
 
-  /** Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller. */
+  /** Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked again (404). */
   @action("verify")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])

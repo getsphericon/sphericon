@@ -191,7 +191,7 @@ interface Integrations {
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Update an integration */
+  /** Update an integration; a deleted one is read-only and answers 404 */
   @updatesResource(IntegrationResource)
   @put
   @autoRoute
@@ -223,7 +223,7 @@ interface Integrations {
     | NotFoundProblem
     | InUseProblem;
 
-  /** Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Needs a person: hidden from MCP. */
+  /** Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Needs a person: hidden from MCP. */
   @action("regenerate-key")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.integrationsWrite])

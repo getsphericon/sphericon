@@ -459,13 +459,13 @@ type Invoker interface {
 	//
 	// Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
 	// pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
-	// is a 422). Needs a person: hidden from MCP.
+	// is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
 	//
 	// POST /integrations/{id}/regenerate-key
 	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error)
 	// IntegrationsUpdate invokes Integrations_update operation.
 	//
-	// Update an integration.
+	// Update an integration; a deleted one is read-only and answers 404.
 	//
 	// PUT /integrations/{id}
 	IntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (IntegrationsUpdateRes, error)
@@ -616,14 +616,15 @@ type Invoker interface {
 	SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (SendingDomainsListRes, error)
 	// SendingDomainsUpdate invokes SendingDomains_update operation.
 	//
-	// Update a resource.
+	// Update a Sending domain; a deleted one is read-only and answers 404.
 	//
 	// PUT /sending-domains/{id}
 	SendingDomainsUpdate(ctx context.Context, request *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (SendingDomainsUpdateRes, error)
 	// SendingDomainsVerify invokes SendingDomains_verify operation.
 	//
 	// Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`,
-	// `lastCheckedAt`). Verification is never set by the caller.
+	// `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked
+	// again (404).
 	//
 	// POST /sending-domains/{id}/verify
 	SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (SendingDomainsVerifyRes, error)
@@ -9569,7 +9570,7 @@ func (c *Client) sendIntegrationsList(ctx context.Context, params IntegrationsLi
 //
 // Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
 // pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
-// is a 422). Needs a person: hidden from MCP.
+// is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
 //
 // POST /integrations/{id}/regenerate-key
 func (c *Client) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error) {
@@ -9704,7 +9705,7 @@ func (c *Client) sendIntegrationsRegenerateKey(ctx context.Context, params Integ
 
 // IntegrationsUpdate invokes Integrations_update operation.
 //
-// Update an integration.
+// Update an integration; a deleted one is read-only and answers 404.
 //
 // PUT /integrations/{id}
 func (c *Client) IntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (IntegrationsUpdateRes, error) {
@@ -12959,7 +12960,7 @@ func (c *Client) sendSendingDomainsList(ctx context.Context, params SendingDomai
 
 // SendingDomainsUpdate invokes SendingDomains_update operation.
 //
-// Update a resource.
+// Update a Sending domain; a deleted one is read-only and answers 404.
 //
 // PUT /sending-domains/{id}
 func (c *Client) SendingDomainsUpdate(ctx context.Context, request *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (SendingDomainsUpdateRes, error) {
@@ -13097,7 +13098,8 @@ func (c *Client) sendSendingDomainsUpdate(ctx context.Context, request *UpdateSe
 // SendingDomainsVerify invokes SendingDomains_verify operation.
 //
 // Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`,
-// `lastCheckedAt`). Verification is never set by the caller.
+// `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked
+// again (404).
 //
 // POST /sending-domains/{id}/verify
 func (c *Client) SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (SendingDomainsVerifyRes, error) {

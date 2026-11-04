@@ -747,7 +747,7 @@ export const integrationsGet = <ThrowOnError extends boolean = false>(options: O
 });
 
 /**
- * Update an integration
+ * Update an integration; a deleted one is read-only and answers 404
  */
 export const integrationsUpdate = <ThrowOnError extends boolean = false>(options: Options<IntegrationsUpdateData, ThrowOnError>): RequestResult<IntegrationsUpdateResponses, IntegrationsUpdateErrors, ThrowOnError> => (options.client ?? client).put<IntegrationsUpdateResponses, IntegrationsUpdateErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -760,7 +760,7 @@ export const integrationsUpdate = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Needs a person: hidden from MCP.
+ * Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
  */
 export const integrationsRegenerateKey = <ThrowOnError extends boolean = false>(options: Options<IntegrationsRegenerateKeyData, ThrowOnError>): RequestResult<IntegrationsRegenerateKeyResponses, IntegrationsRegenerateKeyErrors, ThrowOnError> => (options.client ?? client).post<IntegrationsRegenerateKeyResponses, IntegrationsRegenerateKeyErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -1004,7 +1004,7 @@ export const sendingDomainsGet = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * Update a resource
+ * Update a Sending domain; a deleted one is read-only and answers 404
  */
 export const sendingDomainsUpdate = <ThrowOnError extends boolean = false>(options: Options<SendingDomainsUpdateData, ThrowOnError>): RequestResult<SendingDomainsUpdateResponses, SendingDomainsUpdateErrors, ThrowOnError> => (options.client ?? client).put<SendingDomainsUpdateResponses, SendingDomainsUpdateErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -1017,7 +1017,7 @@ export const sendingDomainsUpdate = <ThrowOnError extends boolean = false>(optio
 });
 
 /**
- * Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller.
+ * Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked again (404).
  */
 export const sendingDomainsVerify = <ThrowOnError extends boolean = false>(options: Options<SendingDomainsVerifyData, ThrowOnError>): RequestResult<SendingDomainsVerifyResponses, SendingDomainsVerifyErrors, ThrowOnError> => (options.client ?? client).post<SendingDomainsVerifyResponses, SendingDomainsVerifyErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],

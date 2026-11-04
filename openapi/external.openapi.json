@@ -8045,7 +8045,7 @@
       },
       "put": {
         "operationId": "Integrations_update",
-        "description": "Update an integration",
+        "description": "Update an integration; a deleted one is read-only and answers 404",
         "parameters": [
           {
             "$ref": "#/components/parameters/IntegrationResourceKey"
@@ -8294,7 +8294,7 @@
     "/integrations/{id}/regenerate-key": {
       "post": {
         "operationId": "Integrations_regenerateKey",
-        "description": "Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Needs a person: hidden from MCP.",
+        "description": "Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.",
         "parameters": [
           {
             "$ref": "#/components/parameters/IntegrationResourceKey"
@@ -11115,7 +11115,7 @@
       },
       "put": {
         "operationId": "SendingDomains_update",
-        "description": "Update a resource",
+        "description": "Update a Sending domain; a deleted one is read-only and answers 404",
         "parameters": [
           {
             "$ref": "#/components/parameters/SendingDomainResourceKey"
@@ -11364,7 +11364,7 @@
     "/sending-domains/{id}/verify": {
       "post": {
         "operationId": "SendingDomains_verify",
-        "description": "Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller.",
+        "description": "Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked again (404).",
         "parameters": [
           {
             "$ref": "#/components/parameters/SendingDomainResourceKey"

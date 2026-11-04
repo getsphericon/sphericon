@@ -632,7 +632,7 @@ func (UnimplementedHandler) IntegrationsList(ctx context.Context, params Integra
 //
 // Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
 // pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
-// is a 422). Needs a person: hidden from MCP.
+// is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
 //
 // POST /integrations/{id}/regenerate-key
 func (UnimplementedHandler) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (r IntegrationsRegenerateKeyRes, _ error) {
@@ -641,7 +641,7 @@ func (UnimplementedHandler) IntegrationsRegenerateKey(ctx context.Context, param
 
 // IntegrationsUpdate implements Integrations_update operation.
 //
-// Update an integration.
+// Update an integration; a deleted one is read-only and answers 404.
 //
 // PUT /integrations/{id}
 func (UnimplementedHandler) IntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params IntegrationsUpdateParams) (r IntegrationsUpdateRes, _ error) {
@@ -864,7 +864,7 @@ func (UnimplementedHandler) SendingDomainsList(ctx context.Context, params Sendi
 
 // SendingDomainsUpdate implements SendingDomains_update operation.
 //
-// Update a resource.
+// Update a Sending domain; a deleted one is read-only and answers 404.
 //
 // PUT /sending-domains/{id}
 func (UnimplementedHandler) SendingDomainsUpdate(ctx context.Context, req *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (r SendingDomainsUpdateRes, _ error) {
@@ -874,7 +874,8 @@ func (UnimplementedHandler) SendingDomainsUpdate(ctx context.Context, req *Updat
 // SendingDomainsVerify implements SendingDomains_verify operation.
 //
 // Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`,
-// `lastCheckedAt`). Verification is never set by the caller.
+// `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked
+// again (404).
 //
 // POST /sending-domains/{id}/verify
 func (UnimplementedHandler) SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (r SendingDomainsVerifyRes, _ error) {

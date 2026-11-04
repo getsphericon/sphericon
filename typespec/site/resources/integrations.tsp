@@ -260,7 +260,7 @@ namespace SiteIntegrations {
     | BadRequestProblem
     | NotFoundProblem;
 
-  /** Update an integration. Owners and admins only. */
+  /** Update an integration; a deleted one is read-only and answers 404. Owners and admins only. */
   @updatesResource(SiteIntegrationResource)
   @put
   @autoRoute
@@ -276,7 +276,7 @@ namespace SiteIntegrations {
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only. */
+  /** Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Owners and admins only. */
   @action("regenerate-key")
   @post
   @autoRoute

@@ -3148,7 +3148,7 @@ export const siteIntegrationsGetOptions = (options: Options<SiteIntegrationsGetD
 export const siteIntegrationsUpdateMutationKey = (options?: Partial<Options<SiteIntegrationsUpdateData>>) => createMutationKey('siteIntegrationsUpdate', options, ['Site Integrations']);
 
 /**
- * Update an integration. Owners and admins only.
+ * Update an integration; a deleted one is read-only and answers 404. Owners and admins only.
  */
 export const siteIntegrationsUpdateMutation = (options?: Partial<Options<SiteIntegrationsUpdateData>>): UseMutationOptions<SiteIntegrationsUpdateResponse, SiteIntegrationsUpdateError, Options<SiteIntegrationsUpdateData>> => {
   const mutationOptions: UseMutationOptions<SiteIntegrationsUpdateResponse, SiteIntegrationsUpdateError, Options<SiteIntegrationsUpdateData>> = {
@@ -3168,7 +3168,7 @@ export const siteIntegrationsUpdateMutation = (options?: Partial<Options<SiteInt
 export const siteIntegrationsRegenerateKeyMutationKey = (options?: Partial<Options<SiteIntegrationsRegenerateKeyData>>) => createMutationKey('siteIntegrationsRegenerateKey', options, ['Site Integrations']);
 
 /**
- * Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
+ * Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Owners and admins only.
  */
 export const siteIntegrationsRegenerateKeyMutation = (options?: Partial<Options<SiteIntegrationsRegenerateKeyData>>): UseMutationOptions<SiteIntegrationsRegenerateKeyResponse, SiteIntegrationsRegenerateKeyError, Options<SiteIntegrationsRegenerateKeyData>> => {
   const mutationOptions: UseMutationOptions<SiteIntegrationsRegenerateKeyResponse, SiteIntegrationsRegenerateKeyError, Options<SiteIntegrationsRegenerateKeyData>> = {
@@ -4196,7 +4196,8 @@ export const siteSendingDomainsVerifyMutationKey = (options?: Partial<Options<Si
 
 /**
  * Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of
- * the returned domain are the outcome. Owners and admins only.
+ * the returned domain are the outcome; a deleted domain is never checked again (404). Owners and
+ * admins only.
  */
 export const siteSendingDomainsVerifyMutation = (options?: Partial<Options<SiteSendingDomainsVerifyData>>): UseMutationOptions<SiteSendingDomainsVerifyResponse, SiteSendingDomainsVerifyError, Options<SiteSendingDomainsVerifyData>> => {
   const mutationOptions: UseMutationOptions<SiteSendingDomainsVerifyResponse, SiteSendingDomainsVerifyError, Options<SiteSendingDomainsVerifyData>> = {

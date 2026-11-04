@@ -2746,7 +2746,7 @@ export const siteIntegrationsGet = <ThrowOnError extends boolean = false>(option
 });
 
 /**
- * Update an integration. Owners and admins only.
+ * Update an integration; a deleted one is read-only and answers 404. Owners and admins only.
  */
 export const siteIntegrationsUpdate = <ThrowOnError extends boolean = false>(options: Options<SiteIntegrationsUpdateData, ThrowOnError>): RequestResult<SiteIntegrationsUpdateResponses, SiteIntegrationsUpdateErrors, ThrowOnError> => (options.client ?? client).put<SiteIntegrationsUpdateResponses, SiteIntegrationsUpdateErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -2768,7 +2768,7 @@ export const siteIntegrationsUpdate = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
- * Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
+ * Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Owners and admins only.
  */
 export const siteIntegrationsRegenerateKey = <ThrowOnError extends boolean = false>(options: Options<SiteIntegrationsRegenerateKeyData, ThrowOnError>): RequestResult<SiteIntegrationsRegenerateKeyResponses, SiteIntegrationsRegenerateKeyErrors, ThrowOnError> => (options.client ?? client).post<SiteIntegrationsRegenerateKeyResponses, SiteIntegrationsRegenerateKeyErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -3617,7 +3617,8 @@ export const siteSendingDomainsGet = <ThrowOnError extends boolean = false>(opti
 
 /**
  * Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of
- * the returned domain are the outcome. Owners and admins only.
+ * the returned domain are the outcome; a deleted domain is never checked again (404). Owners and
+ * admins only.
  */
 export const siteSendingDomainsVerify = <ThrowOnError extends boolean = false>(options: Options<SiteSendingDomainsVerifyData, ThrowOnError>): RequestResult<SiteSendingDomainsVerifyResponses, SiteSendingDomainsVerifyErrors, ThrowOnError> => (options.client ?? client).post<SiteSendingDomainsVerifyResponses, SiteSendingDomainsVerifyErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

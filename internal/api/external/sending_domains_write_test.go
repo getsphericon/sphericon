@@ -202,6 +202,36 @@ func TestExternalSendingDomainsDelete(t *testing.T) {
 	assert.IsType(t, &externalapi.SendingDomainResource{}, again, "a deleted name is free again")
 }
 
+// A deleted Sending domain is read, never changed (ADR 0100): an edit, even an empty or an invalid
+// one, and Verify answer 404, and Get still answers.
+func TestExternalSendingDomainsDeletedOneIsReadOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
+	id := entityIDString(fixtures.SendingDomainArchivedID)
+
+	for _, in := range []externalapi.UpdateSendingDomainInput{
+		{DkimSelector: externalapi.NewOptString("s2")},
+		{},
+		{DkimSelector: externalapi.NewOptString("bad selector!")},
+	} {
+		res, err := c.SendingDomainsUpdate(ctx, &in, externalapi.SendingDomainsUpdateParams{ID: id})
+		require.NoError(t, err)
+		assert.IsType(t, &externalapi.SendingDomainsUpdateNotFound{}, res)
+	}
+
+	verified, err := c.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.SendingDomainsVerifyNotFound{}, verified)
+
+	got, err := c.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
+	require.NoError(t, err)
+	row, ok := got.(*externalapi.SendingDomainResource)
+	require.Truef(t, ok, "got %T", got)
+	assert.Equal(t, "sphericon", row.DkimSelector, "the refused edit left it as it was")
+	assert.False(t, row.LastCheckedAt.Set && !row.LastCheckedAt.Null, "no check ran")
+}
+
 func TestExternalSendingDomainsStayInTheirWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()

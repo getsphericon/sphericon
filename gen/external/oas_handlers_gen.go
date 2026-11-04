@@ -11991,7 +11991,7 @@ func (s *Server) handleIntegrationsListRequest(args [0]string, argsEscaped bool,
 //
 // Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
 // pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
-// is a 422). Needs a person: hidden from MCP.
+// is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
 //
 // POST /integrations/{id}/regenerate-key
 func (s *Server) handleIntegrationsRegenerateKeyRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -12178,7 +12178,7 @@ func (s *Server) handleIntegrationsRegenerateKeyRequest(args [1]string, argsEsca
 
 // handleIntegrationsUpdateRequest handles Integrations_update operation.
 //
-// Update an integration.
+// Update an integration; a deleted one is read-only and answers 404.
 //
 // PUT /integrations/{id}
 func (s *Server) handleIntegrationsUpdateRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -16742,7 +16742,7 @@ func (s *Server) handleSendingDomainsListRequest(args [0]string, argsEscaped boo
 
 // handleSendingDomainsUpdateRequest handles SendingDomains_update operation.
 //
-// Update a resource.
+// Update a Sending domain; a deleted one is read-only and answers 404.
 //
 // PUT /sending-domains/{id}
 func (s *Server) handleSendingDomainsUpdateRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -16945,7 +16945,8 @@ func (s *Server) handleSendingDomainsUpdateRequest(args [1]string, argsEscaped b
 // handleSendingDomainsVerifyRequest handles SendingDomains_verify operation.
 //
 // Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`,
-// `lastCheckedAt`). Verification is never set by the caller.
+// `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked
+// again (404).
 //
 // POST /sending-domains/{id}/verify
 func (s *Server) handleSendingDomainsVerifyRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

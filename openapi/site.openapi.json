@@ -9090,7 +9090,7 @@
       },
       "put": {
         "operationId": "SiteIntegrations_update",
-        "description": "Update an integration. Owners and admins only.",
+        "description": "Update an integration; a deleted one is read-only and answers 404. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.workspaceId"
@@ -9237,7 +9237,7 @@
     "/workspaces/{workspaceId}/integrations/{id}/regenerate-key": {
       "post": {
         "operationId": "SiteIntegrations_regenerateKey",
-        "description": "Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.",
+        "description": "Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.workspaceId"
@@ -12003,7 +12003,7 @@
     "/workspaces/{workspaceId}/sending-domains/{id}/verify": {
       "post": {
         "operationId": "SiteSendingDomains_verify",
-        "description": "Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of\nthe returned domain are the outcome. Owners and admins only.",
+        "description": "Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of\nthe returned domain are the outcome; a deleted domain is never checked again (404). Owners and\nadmins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSendingDomainResourceKey.workspaceId"

@@ -106,6 +106,19 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integra
 	return row, nil
 }
 
+// editable returns the Integration of the id for its owner to change. A deleted one is read, never
+// changed (ADR 0100): it is ErrNotFound, as an unknown id is.
+func (m *Module) editable(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
+	row, err := m.Get(ctx, s, id)
+	if err != nil {
+		return nil, err
+	}
+	if row.DiscardedAt != nil {
+		return nil, ErrNotFound
+	}
+	return row, nil
+}
+
 // Option tunes the module.
 type Option func(*Module)
 
@@ -298,9 +311,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	return row, nil
 }
 
-// Update applies a partial edit. An unknown id is ErrNotFound.
+// Update applies a partial edit. An unknown id, or a deleted Integration's, is ErrNotFound.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Integration, error) {
-	row, err := m.Get(ctx, s, id)
+	row, err := m.editable(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -345,9 +358,6 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	// default first, in the same transaction as the update.
 	isDefault, _ := in.IsDefault.Get()
 	promote := isDefault && !row.IsDefault
-	if promote && row.DiscardedAt != nil {
-		return nil, &validation.Error{Field: "isDefault", Message: i18n.T(i18n.ErrorsIntegrationDeletedDefault, nil)}
-	}
 
 	var updated *ent.Integration
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
@@ -356,7 +366,8 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 				return err
 			}
 		}
-		upd := ts.Integration().UpdateOneID(row.ID)
+		// A Delete that landed meanwhile leaves no row to edit.
+		upd := ts.Integration().UpdateOneID(row.ID).Where(integration.DiscardedAtIsNil())
 		applyEdit(upd, in, name, sealed, inb)
 		if tg.connected {
 			upd.SetProviderMaxPerSecond(telegramPerSecond)
@@ -366,7 +377,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return err
 	})
 	if err != nil {
-		return nil, conflictOf(err)
+		return nil, missing(conflictOf(err))
 	}
 	if tg.release {
 		m.release(ctx, updated)

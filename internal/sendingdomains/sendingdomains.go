@@ -135,39 +135,40 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 }
 
 // Update edits a Sending domain. Changing the selector moves the DKIM record, so the
-// domain becomes unverified until the new record is published and checked.
+// domain becomes unverified until the new record is published and checked. An unknown id, or a
+// deleted domain's, is ErrNotFound, whatever the edit.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.SendingDomain, error) {
-	var selector string
-	given, changes := in.Selector.Get()
-	if changes {
-		var err error
-		if selector, err = validSelector(given); err != nil {
-			return nil, err
-		}
-	}
-
 	var row *ent.SendingDomain
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		cur, err := ts.SendingDomain().Get(ctx, id)
+		cur, err := editable(ctx, ts, id)
 		if err != nil {
-			return notFound(err)
+			return err
 		}
 		row = cur
-		if !changes || selector == cur.DkimSelector {
+		given, changes := in.Selector.Get()
+		if !changes {
+			return nil
+		}
+		selector, err := validSelector(given)
+		if err != nil {
+			return err
+		}
+		if selector == cur.DkimSelector {
 			return nil
 		}
 		if dkimstate.Is(cur) {
 			// The published record is under the old selector: the verification is lost. The
 			// loss lands only while the domain is still verified; a miss means a check moved
 			// it meanwhile, and the plain edit below stands.
-			row, err = ts.SendingDomain().UpdateOneID(id).Where(dkimstate.Verified()).
+			row, err = ts.SendingDomain().UpdateOneID(id).Where(dkimstate.Verified(), sendingdomain.DiscardedAtIsNil()).
 				SetDkimSelector(selector).SetVerificationLostAt(time.Now()).Save(ctx)
 			if !ent.IsNotFound(err) {
 				return err
 			}
 		}
-		row, err = ts.SendingDomain().UpdateOneID(id).SetDkimSelector(selector).Save(ctx)
-		return err
+		// A Delete that landed meanwhile leaves no row to edit.
+		row, err = ts.SendingDomain().UpdateOneID(id).Where(sendingdomain.DiscardedAtIsNil()).SetDkimSelector(selector).Save(ctx)
+		return notFound(err)
 	})
 	if err != nil {
 		return nil, err
@@ -259,10 +260,10 @@ func (m *Module) configuredFromDomain(ctx context.Context, s *ent.Scoped) (strin
 
 // Verify runs the live DNS check of the domain now and returns the domain as the check left
 // it: `verified`, `lastCheckedAt`, `dmarcCheckedAt` and `dmarcFoundAt` are the outcome. It confirms the domain is in the
-// Workspace first (ErrNotFound).
+// Workspace and kept first: an unknown or a deleted domain is ErrNotFound.
 func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
-	if _, err := s.SendingDomain().Get(ctx, id); err != nil {
-		return nil, notFound(err)
+	if _, err := editable(ctx, s, id); err != nil {
+		return nil, err
 	}
 	if err := m.verify.VerifySendingDomain(ctx, id); err != nil {
 		return nil, err
@@ -303,6 +304,19 @@ func validSelector(raw string) (string, error) {
 		return "", &validation.Error{Field: "dkimSelector", Message: i18n.T(i18n.ErrorsDkimSelectorInvalid, nil)}
 	}
 	return sel, nil
+}
+
+// editable returns the Sending domain of the id for its owner to change. A deleted one is read,
+// never changed (ADR 0100): it is ErrNotFound, as an unknown id is.
+func editable(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
+	row, err := s.SendingDomain().Get(ctx, id)
+	if err != nil {
+		return nil, notFound(err)
+	}
+	if row.DiscardedAt != nil {
+		return nil, ErrNotFound
+	}
+	return row, nil
 }
 
 // Get returns the Sending domain with the id, deleted or not; an unknown id, or one of another

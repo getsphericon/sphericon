@@ -636,13 +636,14 @@ type Handler interface {
 	// SiteIntegrationsRegenerateKey implements SiteIntegrations_regenerateKey operation.
 	//
 	// Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
-	// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
+	// integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404.
+	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 	SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error)
 	// SiteIntegrationsUpdate implements SiteIntegrations_update operation.
 	//
-	// Update an integration. Owners and admins only.
+	// Update an integration; a deleted one is read-only and answers 404. Owners and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/integrations/{id}
 	SiteIntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (SiteIntegrationsUpdateRes, error)
@@ -1100,7 +1101,8 @@ type Handler interface {
 	// SiteSendingDomainsVerify implements SiteSendingDomains_verify operation.
 	//
 	// Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of the
-	// returned domain are the outcome. Owners and admins only.
+	// returned domain are the outcome; a deleted domain is never checked again (404). Owners and admins
+	// only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/verify
 	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error)

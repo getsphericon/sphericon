@@ -899,7 +899,8 @@ func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params Sit
 // SiteIntegrationsRegenerateKey implements SiteIntegrations_regenerateKey operation.
 //
 // Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
-// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
+// integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404.
+// Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (r SiteIntegrationsRegenerateKeyRes, _ error) {
@@ -908,7 +909,7 @@ func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, p
 
 // SiteIntegrationsUpdate implements SiteIntegrations_update operation.
 //
-// Update an integration. Owners and admins only.
+// Update an integration; a deleted one is read-only and answers 404. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/integrations/{id}
 func (UnimplementedHandler) SiteIntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (r SiteIntegrationsUpdateRes, _ error) {
@@ -1558,7 +1559,8 @@ func (UnimplementedHandler) SiteSendingDomainsList(ctx context.Context, params S
 // SiteSendingDomainsVerify implements SiteSendingDomains_verify operation.
 //
 // Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of the
-// returned domain are the outcome. Owners and admins only.
+// returned domain are the outcome; a deleted domain is never checked again (404). Owners and admins
+// only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/verify
 func (UnimplementedHandler) SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (r SiteSendingDomainsVerifyRes, _ error) {
