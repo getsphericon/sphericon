@@ -531,3 +531,24 @@ test('records SMS consent with its evidence and an SMS opt-out', async () => {
   expect(consents).toEqual([{ wording: 'Text me offers', source: 'phone call', brand: 'Acme' }])
   expect(optOuts).toBe(1)
 })
+
+test('a consent texted with START carries no evidence, so its evidence rows show a dash', async () => {
+  worker.use(
+    handleSiteContactsGet({ body: TEXTER }),
+    NO_EVENTS,
+    handleSiteSmsConsentsGet({
+      body: {
+        phone: '+14155550810',
+        confirmation: { provenance: 'keyword', confirmedAt: NOW },
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+
+  await expect.element(screen.getByRole('row', { name: 'How Texted START' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('row', { name: 'Consent wording —' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('row', { name: 'Source —' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('row', { name: 'Brand —' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Record opt-out' })).toBeInTheDocument()
+})

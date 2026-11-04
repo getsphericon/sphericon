@@ -66,7 +66,13 @@ test('stepsToGraph starts the chain with the Trigger node, linked to each step',
 test('stepsToGraph defaults missing step fields', () => {
   const { nodes } = stepsToGraph(
     on('contact.created'),
-    [{ type: 'email' }, { type: 'wait' }, { type: 'apply_tag' }],
+    [
+      { type: 'email' },
+      { type: 'wait' },
+      { type: 'apply_tag' },
+      { type: 'telegram' },
+      { type: 'sms' },
+    ],
     {},
   )
 
@@ -74,6 +80,15 @@ test('stepsToGraph defaults missing step fields', () => {
     { integrationId: '', subject: '', body: '', doc: '' },
     { seconds: 0 },
     { tag: '' },
+    {
+      integrationId: '',
+      text: '',
+      unsubscribeButton: '',
+      imageUrl: '',
+      buttons: '',
+      linkPreview: '',
+    },
+    { integrationId: '', text: '', linkTracking: '' },
   ])
 })
 

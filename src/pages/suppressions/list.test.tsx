@@ -76,6 +76,21 @@ test('lists suppressed addresses with their reason', async () => {
   await expect.element(screen.getByText('Manual', { exact: true })).toBeInTheDocument()
 })
 
+test('a number erased with its Contact shows as an erased number, never as its hash', async () => {
+  const hash = 'a'.repeat(64)
+  worker.use(
+    list([
+      suppression({ channel: 'sms', destination: '+14155550132', reason: 'manual' }),
+      suppression({ id: '2', channel: 'sms', destination: hash, reason: 'manual' }),
+    ]),
+  )
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByText('+14155550132')).toBeInTheDocument()
+  await expect.element(screen.getByText('Erased number')).toBeInTheDocument()
+  expect(screen.getByText(hash).query()).toBeNull()
+})
+
 test('adds a suppression', async () => {
   const bodies: unknown[] = []
   worker.use(

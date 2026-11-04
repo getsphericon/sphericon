@@ -211,10 +211,11 @@ test('a click names its link without the scheme, the whole one on hover, and the
     .toBeVisible()
 })
 
-test('a bounce says whether it was hard or soft', async () => {
+test('a bounce says whether it was hard or soft, and one of no known kind only that it bounced', async () => {
   serveEmails(
     emailEvent('1', 'email.bounced', { broadcastId: 5, bounceKind: 'hard' }),
     emailEvent('2', 'email.bounced', { broadcastId: 5, bounceKind: 'soft' }),
+    emailEvent('3', 'email.bounced', { broadcastId: 5 }),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
@@ -223,6 +224,24 @@ test('a bounce says whether it was hard or soft', async () => {
     .toBeVisible()
   await expect
     .element(screen.getByRole('row', { name: /Bounced \(soft\): "Welcome to Hexlet"/ }))
+    .toBeVisible()
+  await expect
+    .element(screen.getByRole('row', { name: /Bounced: "Welcome to Hexlet"/ }))
+    .toBeVisible()
+})
+
+test('a delayed and a dropped email say so', async () => {
+  serveEmails(
+    emailEvent('1', 'email.delayed', { broadcastId: 5 }),
+    emailEvent('2', 'email.dropped', { broadcastId: 5 }),
+  )
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
+
+  await expect
+    .element(screen.getByRole('row', { name: /Delayed "Welcome to Hexlet"/ }))
+    .toBeVisible()
+  await expect
+    .element(screen.getByRole('row', { name: /Dropped "Welcome to Hexlet"/ }))
     .toBeVisible()
 })
 

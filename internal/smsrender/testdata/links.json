@@ -65,6 +65,15 @@
       "parts": 1
     },
     {
+      "name": "a scheme followed by nothing but punctuation is no link, and counts as written",
+      "text": [["Go to https://... now", 1]],
+      "links": [],
+      "linkLength": 30,
+      "encoding": "GSM-7",
+      "characters": 21,
+      "parts": 1
+    },
+    {
       "name": "an untracked link counts as written",
       "text": [["Shop https://shop.example/x", 1]],
       "links": ["https://shop.example/x"],
