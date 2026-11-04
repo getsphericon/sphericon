@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"context"
 	"fmt"
-	"hash/fnv"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -82,18 +81,11 @@ func RecordOrder(ctx context.Context, client *ent.Client, recorder OrderRecorder
 	// One transaction at a time reads the order Events of a Workspace: an Order Completed that
 	// creates an Order and an Event that finds it missing and is held would otherwise cross, and
 	// the held one would wait for ever.
-	if err := postgres.LockTx(ctx, tx.Client(), orderLockKey(env.WorkspaceID)); err != nil {
+	if err := postgres.LockTx(ctx, tx.Client(), advisoryKey("orders", env.WorkspaceID)); err != nil {
 		return fmt.Errorf("lock the orders of the Workspace: %w", err)
 	}
 	if err := recorder.Record(ctx, tx.Client().Scoped(env.WorkspaceID), in); err != nil {
 		return err
 	}
 	return tx.Commit()
-}
-
-// orderLockKey is the advisory lock of one Workspace's order Events.
-func orderLockKey(workspaceID int64) int64 {
-	h := fnv.New32a()
-	_, _ = fmt.Fprintf(h, "orders:%d", workspaceID)
-	return int64(h.Sum32())
 }
