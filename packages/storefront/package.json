@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.6",
-    "@mantine/core": "^9.7.4",
+    "@mantine/core": "^9.7.5",
     "@sphericon/analytics": "workspace:*",
     "@sphericon/node": "workspace:*",
     "hono": "^4.13.16",

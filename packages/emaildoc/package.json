@@ -8,7 +8,7 @@
     "build": "node build.mjs"
   },
   "dependencies": {
-    "@react-email/editor": "1.7.18",
+    "@react-email/editor": "1.7.19",
     "@tiptap/core": "3.32.2",
     "esbuild": "0.28.2",
     "react": "19.3.1",

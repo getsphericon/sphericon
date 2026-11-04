@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@sourcegraph/scip-typescript':
-        specifier: 0.6.0
-        version: 0.6.0
+        specifier: 0.6.1
+        version: 0.6.1
 
 packages:
 
@@ -30,8 +30,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@sourcegraph/scip-typescript@0.6.0':
-    resolution: {integrity: sha512-x+DseP0Z5GMqAg8GtBTeVZ/4DXb7d38M1f9TVHZ/KBTbe9XJxrZjtdqHF5Uwnu0M5s1kwE49Ty8pbLxrMH+Fbw==}
+  '@sourcegraph/scip-typescript@0.6.1':
+    resolution: {integrity: sha512-qzwShoo4+KKweXiok3bnJ9cE56e3t6LphsggHEPh9vqk9wFa0ND3Dx9K7mE1Qv+DxLKRxeoD6/wfqc7kSskLiA==}
     engines: {node: '>=22.23.4'}
     hasBin: true
 
@@ -139,7 +139,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@sourcegraph/scip-typescript@0.6.0':
+  '@sourcegraph/scip-typescript@0.6.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       commander: 15.0.0

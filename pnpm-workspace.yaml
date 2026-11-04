@@ -43,13 +43,13 @@ minimumReleaseAgeExclude:
   - '@typespec/versioning@0.87.0'
   - i18next-cli@1.75.1 || 1.75.2 || 1.77.0 || 1.79.1 || 1.80.7 || 1.82.4
   - knip@6.41.0 || 6.42.1
-  - '@mantine/charts@9.7.3'
-  - '@mantine/core@9.7.3'
-  - '@mantine/form@9.7.3'
-  - '@mantine/hooks@9.7.3'
-  - '@mantine/modals@9.7.3'
-  - '@mantine/notifications@9.7.3'
-  - '@mantine/store@9.7.3'
+  - '@mantine/charts@9.7.3 || 9.7.5'
+  - '@mantine/core@9.7.3 || 9.7.5'
+  - '@mantine/form@9.7.3 || 9.7.5'
+  - '@mantine/hooks@9.7.3 || 9.7.5'
+  - '@mantine/modals@9.7.3 || 9.7.5'
+  - '@mantine/notifications@9.7.3 || 9.7.5'
+  - '@mantine/store@9.7.3 || 9.7.5'
   - react-i18next@17.1.0 || 17.1.4 || 17.1.12
   - '@oxfmt/binding-android-arm-eabi@0.74.0 || 0.76.0'
   - '@oxfmt/binding-android-arm64@0.74.0 || 0.76.0'
@@ -105,9 +105,10 @@ minimumReleaseAgeExclude:
   - '@tanstack/router-plugin@1.168.48'
   - oxlint-tsgolint@7.0.2005
   - size-limit@14.3.0
-  - '@react-email/editor@1.7.18'
+  - '@react-email/editor@1.7.18 || 1.7.19'
   - '@tanstack/query-devtools@5.105.3'
   - '@tanstack/react-query-devtools@5.105.3'
+  - '@mantine/dates@9.7.5'
 # Transitive dependencies of the build tooling that an advisory has fixed; pnpm picks the fixed
 # release whichever package asks for them.
 overrides:
