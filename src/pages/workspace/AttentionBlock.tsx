@@ -128,21 +128,17 @@ const GROUP_MESSAGE = {
 const isGrouped = (kind: SiteAttentionKind): kind is keyof typeof GROUP_MESSAGE =>
   Object.hasOwn(GROUP_MESSAGE, kind)
 
-// groupKey is the row an item belongs to: one per grouped kind (and hold reason), one per item of
-// any other kind.
-const groupKey = (item: SiteAttentionItem) =>
-  isGrouped(item.kind)
-    ? `${item.kind}:${item.holdReason ?? ''}`
-    : `${item.kind}:${item.subject?.id ?? ''}`
-
 type Row = [SiteAttentionItem, ...SiteAttentionItem[]]
 
-// rowsOf groups the items into rows. A row stands where its first item stood, so the most urgent
-// and the oldest still come first.
-function rowsOf(items: SiteAttentionItem[]): Row[] {
+// rowsOf groups the items into rows: one per grouped kind (and hold reason), one per item of any
+// other kind. A row stands where its first item stood, so the most urgent and the oldest still
+// come first.
+function rowsOf(items: SiteAttentionItem[]): Map<string, Row> {
   const rows = new Map<string, Row>()
-  for (const item of items) {
-    const key = groupKey(item)
+  for (const [index, item] of items.entries()) {
+    const key = isGrouped(item.kind)
+      ? `${item.kind}:${item.holdReason ?? ''}`
+      : `${item.kind}#${index}`
     const row = rows.get(key)
     if (row === undefined) {
       rows.set(key, [item])
@@ -150,7 +146,7 @@ function rowsOf(items: SiteAttentionItem[]): Row[] {
       row.push(item)
     }
   }
-  return [...rows.values()]
+  return rows
 }
 
 interface ActionProps {
@@ -231,13 +227,21 @@ const OBJECT_ACTIONS: ReadonlySet<ComponentType<ActionProps>> = new Set([
   AutomationAction,
 ])
 
+// SHOWN_NAMES is how many names a row lists before it counts the rest. Only a row whose link goes
+// to a page that lists them all counts the rest: names that link to their own objects are all
+// shown, or some could not be reached from here.
+const SHOWN_NAMES = 3
+
 // Names are the objects of a grouped row, each a link to it where it has a page of its own.
 function Names({ items, workspaceId }: { items: Row; workspaceId: string }) {
+  const { t } = useTranslation()
   const Action = ACTION[items[0].kind]
   const links = Action !== null && OBJECT_ACTIONS.has(Action)
+  const shown = links ? items : items.slice(0, SHOWN_NAMES)
+  const rest = items.length - shown.length
   return (
     <Text size="sm" c="dimmed">
-      {items.map((item, index) => (
+      {shown.map((item, index) => (
         <Fragment key={item.subject?.id ?? index}>
           {index > 0 && ', '}
           {links ? (
@@ -247,6 +251,7 @@ function Names({ items, workspaceId }: { items: Row; workspaceId: string }) {
           )}
         </Fragment>
       ))}
+      {rest > 0 && ` ${t(($) => $.overview.attention.more, { count: rest })}`}
     </Text>
   )
 }
@@ -257,13 +262,12 @@ function AttentionRow({ items, workspaceId }: { items: Row; workspaceId: string 
   const { t } = useTranslation()
   const format = useFormat()
   const [first] = items
-  // Only a grouped kind's row holds more than one item.
-  const grouped = items.length > 1
+  const grouped = items.length > 1 && isGrouped(first.kind)
   const { color, Icon } = SEVERITY_ICON[first.severity]
   const Action = ACTION[first.kind]
   const showAction = Action !== null && !(grouped && OBJECT_ACTIONS.has(Action))
   const message =
-    grouped && isGrouped(first.kind)
+    items.length > 1 && isGrouped(first.kind)
       ? GROUP_MESSAGE[first.kind](t, first, items.length)
       : MESSAGE[first.kind](t, first, format)
 
@@ -305,8 +309,8 @@ function AttentionItems({ workspaceId }: { workspaceId: string }) {
     <Card withBorder padding="lg">
       <Stack gap="sm">
         <Title order={4}>{t(($) => $.overview.attention.title)}</Title>
-        {rowsOf(items).map((row) => (
-          <AttentionRow key={groupKey(row[0])} items={row} workspaceId={workspaceId} />
+        {[...rowsOf(items)].map(([key, row]) => (
+          <AttentionRow key={key} items={row} workspaceId={workspaceId} />
         ))}
       </Stack>
     </Card>

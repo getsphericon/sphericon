@@ -1331,7 +1331,7 @@ export default interface Resources {
           "integrationProviderProbation": "Your provider has put the account behind {{count, number}} integration under review. It still sends: keep bounces and complaints low." | "Your providers have put the accounts behind {{count, number}} integrations under review. They still send: keep bounces and complaints low.",
           "integrationProviderRefused": "The credentials of {{count, number}} integration were refused by its provider: nothing sends through it until it is saved again with working ones." | "The credentials of {{count, number}} integrations were refused by their providers: nothing sends through them until each is saved again with working ones.",
           "integrationProviderSandbox": "{{count, number}} integration is in its provider's sandbox: it sends only to addresses verified with the provider." | "{{count, number}} integrations are in their provider's sandbox: they send only to addresses verified with the provider.",
-          "integrationProviderStopped": "Your provider has stopped the account behind {{count, number}} integration: nothing sends through it until the provider reinstates it." | "Your providers have stopped the accounts behind {{count, number}} integrations: nothing sends through them until the provider reinstates them.",
+          "integrationProviderStopped": "Your provider has stopped the account behind {{count, number}} integration: nothing sends through it until the provider reinstates it." | "Your providers have stopped the accounts behind {{count, number}} integrations: nothing sends through them until they are reinstated.",
           "providerLimitSpent": "{{count, number}} integration has sent its daily limit: the rest goes out as the limit refills." | "{{count, number}} integrations have sent their daily limits: the rest goes out as the limits refill.",
           "sendingDomainNotBulkReady": "{{count, number}} sending domain has no published DMARC record: Gmail and Yahoo reject or spam-folder bulk mail from it. Publish the suggested DMARC record, then verify the domain again." | "{{count, number}} sending domains have no published DMARC record: Gmail and Yahoo reject or spam-folder bulk mail from them. Publish the suggested DMARC records, then verify the domains again.",
           "sendingDomainVerificationLost": "The DKIM record of {{count, number}} sending domain is gone: mail from it is held until the domain verifies again." | "The DKIM records of {{count, number}} sending domains are gone: mail from them is held until they verify again.",
@@ -1359,6 +1359,7 @@ export default interface Resources {
           "bounce": "bounce",
           "complaint": "complaint"
         },
+        "more": "and {{count, number}} more" | "and {{count, number}} more",
         "title": "Needs attention"
       },
       "audience": {
