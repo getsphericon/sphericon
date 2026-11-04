@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -45,7 +46,8 @@ var (
 	// ErrEnrollmentNotFound: no such Enrollment of the Automation in this Workspace.
 	ErrEnrollmentNotFound = validation.NotFound("automations: enrollment not found", i18n.ErrorsEnrollmentNotFound)
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
-	// without a tag name, or an email step whose content cannot render.
+	// without a tag name, an email step whose content cannot render, or an SMS step whose text
+	// takes more segments than the provider sends.
 	ErrInvalidStep = validation.Refuse("automations: invalid step", i18n.ErrorsAutomationStepInvalid)
 	// ErrInvalidTrigger: the trigger is an infrastructure Event (a send or a delivery notice)
 	// that no Automation may start from (ADR 0053).
@@ -134,6 +136,10 @@ func validate(steps []automationsteps.Step) error {
 			}
 			if err := smsrender.Check(s.Text); err != nil {
 				return ErrInvalidStep.With(err.Error())
+			}
+			// Twilio is the one SMS provider, so its part limit is the one a text is held to.
+			if err := smsrender.CheckParts(s.Text, twilio.MaxParts); err != nil {
+				return ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
 			}
 		case automationsteps.HTTP:
 		case automationsteps.Wait:

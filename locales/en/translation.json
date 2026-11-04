@@ -2369,7 +2369,12 @@
     }
   },
   "smsEditor": {
+    "characters_one": "{{count, number}} character",
+    "characters_other": "{{count, number}} characters",
+    "counter": "{{characters}} · {{encoding}} · {{segments}}",
     "insertMergeTag": "Insert a merge tag",
+    "segments_one": "{{count, number}} segment",
+    "segments_other": "{{count, number}} segments",
     "textHint": "Plain text. Merge tags are written as they are, and nothing is added to the message.",
     "textLabel": "Message"
   },

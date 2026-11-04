@@ -1,6 +1,7 @@
 package automations_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -97,4 +98,23 @@ func TestAnSMSStepNeedsATextThatRenders(t *testing.T) {
 			require.ErrorIs(t, err, automations.ErrInvalidStep)
 		})
 	}
+}
+
+// Twilio's part limit is ten segments: 670 UCS-2 characters save, one more is refused.
+func TestSavingAnSMSStepOverTwiliosPartLimitIsRefused(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	atLimit := strings.Repeat("я", 670)
+
+	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+		Steps: &[]automationsteps.Step{smsVia(nil, atLimit)},
+	})
+	require.NoError(t, err)
+	_, err = m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+		Steps: &[]automationsteps.Step{smsVia(nil, atLimit+"я")},
+	})
+
+	require.ErrorIs(t, err, automations.ErrInvalidStep)
+	assert.ErrorContains(t, err, "step 1: the text is 671 characters in UCS-2, 11 segments; it may take 10 segments at most")
 }

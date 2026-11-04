@@ -2332,7 +2332,10 @@ export default interface Resources {
       }
     },
     "smsEditor": {
+      "characters": "{{count, number}} character" | "{{count, number}} characters",
+      "counter": "{{characters}} · {{encoding}} · {{segments}}",
       "insertMergeTag": "Insert a merge tag",
+      "segments": "{{count, number}} segment" | "{{count, number}} segments",
       "textHint": "Plain text. Merge tags are written as they are, and nothing is added to the message.",
       "textLabel": "Message"
     },

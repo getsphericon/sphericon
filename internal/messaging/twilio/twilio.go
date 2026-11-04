@@ -26,6 +26,12 @@ import (
 // DefaultAPIURL is Twilio's own REST API.
 const DefaultAPIURL = "https://api.twilio.com"
 
+// MaxParts is the most segments a text sent through Twilio may take, counted as
+// smsrender.Measure counts them. Twilio takes a body of up to 1,600 characters and advises
+// against more than ten segments; ten segments stay under 1,600 characters in either encoding
+// (1,530 in GSM-7, 670 in UCS-2), so a text within them always goes.
+const MaxParts = 10
+
 // timeout bounds one REST call. twilio-go builds its requests without the caller's context, so the
 // client below carries the context in; the timeout also bounds a call whose context has none.
 const timeout = 15 * time.Second
