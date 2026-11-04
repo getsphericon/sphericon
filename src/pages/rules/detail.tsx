@@ -99,26 +99,37 @@ export function RuleDetailPage() {
       <Group justify="space-between" align="flex-start" wrap="wrap">
         <Group>
           <Title order={4}>{rule.name}</Title>
-          <Badge variant="light" color={rule.status === 'active' ? 'teal' : 'gray'}>
-            {rule.status === 'active'
-              ? t(($) => $.rules.statusActive)
-              : t(($) => $.rules.statusInactive)}
-          </Badge>
+          {rule.deletedAt ? (
+            <Badge variant="light" color="red">
+              {t(($) => $.rules.statusDeleted)}
+            </Badge>
+          ) : (
+            <Badge variant="light" color={rule.status === 'active' ? 'teal' : 'gray'}>
+              {rule.status === 'active'
+                ? t(($) => $.rules.statusActive)
+                : t(($) => $.rules.statusInactive)}
+            </Badge>
+          )}
         </Group>
         <Group gap="xs">
-          <DraftControls workspaceId={workspaceId} resource={rule} {...ruleDraftActions(t)} />
-          {rule.status === 'active' ? (
-            <Button
-              variant="default"
-              loading={deactivate.isPending}
-              onClick={() => deactivate.mutate({ path })}
-            >
-              {t(($) => $.rules.deactivate)}
-            </Button>
-          ) : null}
-          <ButtonLink variant="default" to={rulesEditRoute.to} params={{ workspaceId, ruleId }}>
-            {t(($) => $.actions.edit)}
-          </ButtonLink>
+          {/* A deleted Rule is kept for its Firings and changes no more (ADR 0098). */}
+          {rule.deletedAt ? null : (
+            <>
+              <DraftControls workspaceId={workspaceId} resource={rule} {...ruleDraftActions(t)} />
+              {rule.status === 'active' ? (
+                <Button
+                  variant="default"
+                  loading={deactivate.isPending}
+                  onClick={() => deactivate.mutate({ path })}
+                >
+                  {t(($) => $.rules.deactivate)}
+                </Button>
+              ) : null}
+              <ButtonLink variant="default" to={rulesEditRoute.to} params={{ workspaceId, ruleId }}>
+                {t(($) => $.actions.edit)}
+              </ButtonLink>
+            </>
+          )}
           <ButtonLink variant="subtle" to={rulesRoute.to} params={{ workspaceId }}>
             {t(($) => $.actions.back)}
           </ButtonLink>

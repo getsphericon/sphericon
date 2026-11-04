@@ -64,10 +64,14 @@ func (a Action) Summary() string {
 // draft, as Evaluate does (the same Trigger event match and the same Condition evaluation, against
 // the Contact's data now) and reports what would happen. It writes nothing and runs nothing: no Firing, no job, no Action. Unlike a
 // real firing it ignores the Rule's status and activation time, so an inactive Rule can be tried.
+// A deleted Rule acts on nothing, so it is not found here.
 func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, ruleID, eventID int64) (DryRun, error) {
 	r, err := m.Get(ctx, s, ruleID)
 	if err != nil {
 		return DryRun{}, err
+	}
+	if r.DiscardedAt != nil {
+		return DryRun{}, ErrNotFound
 	}
 	stored, err := s.Event().Get(ctx, eventID)
 	if ent.IsNotFound(err) {

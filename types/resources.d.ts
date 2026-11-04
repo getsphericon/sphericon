@@ -1543,6 +1543,7 @@ export default interface Resources {
       "noRecords": "No rules yet",
       "publish": "Publish",
       "statusActive": "Active",
+      "statusDeleted": "Deleted",
       "statusInactive": "Inactive",
       "statusLabel": "Status",
       "triggerColumn": "Trigger events",

@@ -49,7 +49,7 @@ func (Rule) Edges() []ent.Edge {
 	return []ent.Edge{
 		// A Firing dies with its Rule's row (the key cascades, for the Workspace's erasure).
 		// Rules.Delete purges only a Rule with no Firings, so in use the cascade removes
-		// nothing: a Rule with Firings is discarded and its Firings stay.
+		// nothing: a Rule with Firings is discarded and it and its Firings stay readable.
 		edge.To("firings", RuleFiring.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}

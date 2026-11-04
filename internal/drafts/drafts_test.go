@@ -184,16 +184,20 @@ func ruleKind(env *testhelper.TestEnv) kind {
 
 // kinds are the Versioned definitions, each built on a test's environment: every test runs for
 // each, in a transaction of its own.
-var kinds = []struct {
+type kindRow struct {
 	name  string
 	build func(env *testhelper.TestEnv) kind
-}{
+}
+
+var kinds = []kindRow{
 	{"automation", automationKind},
 	{"rule", ruleKind},
 }
 
 // archivableKinds are the kinds with an Archive: a Rule is deleted instead (ADR 0098).
-var archivableKinds = kinds[:1]
+var archivableKinds = []kindRow{
+	{"automation", automationKind},
+}
 
 func TestArchiveOfAnotherWorkspacesObjectIsNotFound(t *testing.T) {
 	for _, row := range archivableKinds {

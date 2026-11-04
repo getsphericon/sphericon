@@ -8,6 +8,7 @@ import { useDeferredValue, ViewTransition } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import type { SortDirection } from '../generated/site/types.gen.ts'
 import { usePaginationText } from '../hooks/usePaginationText.ts'
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
 import { ApiErrorAlert } from './ApiErrorAlert.tsx'
@@ -58,8 +59,8 @@ interface PagedTableProps<TPage extends Page, TError extends ApiErrorLike, TKey 
 // The column a list is sorted by (its accessor) and the direction, with the change of either.
 interface Sort {
   column: string
-  direction: 'asc' | 'desc'
-  onChange: (column: string, direction: 'asc' | 'desc') => void
+  direction: SortDirection
+  onChange: (column: string, direction: SortDirection) => void
 }
 
 interface PageHeader {

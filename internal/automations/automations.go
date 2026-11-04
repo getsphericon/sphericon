@@ -660,6 +660,9 @@ func Senders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error) {
 	return senders, nil
 }
 
+// Editable never refuses: an archived Automation is edited as a kept one is.
+func (versioned) Editable(*ent.Automation) error { return nil }
+
 // Archivable refuses to archive an Automation a kept Rule enrolls Contacts in, or one with active
 // Enrollments: an *inuse.Error carrying them.
 func (versioned) Archivable(ctx context.Context, ts *ent.Scoped, a *ent.Automation) error {

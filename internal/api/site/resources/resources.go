@@ -445,6 +445,7 @@ type Converter interface {
 
 	// The contract names the discarded state "archived" (ADR 0049). The live version and the draft
 	// are the edges the rules module loads (ADR 0065).
+	// goverter:map DiscardedAt DeletedAt
 	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | ruleVersionOrNull
 	RuleToResource(source *ent.Rule) siteapi.SiteRuleResource

@@ -15970,6 +15970,9 @@ type RuleResource struct {
 	Draft NilRuleVersion `json:"draft"`
 	// When the Rule last became active by Publish. It acts only on Events recorded after it.
 	ActivatedAt OptNilTimestamp `json:"activatedAt"`
+	// When the Rule was deleted, keeping its Firings; null while it is kept. A deleted Rule is read by id
+	// only and changes no more.
+	DeletedAt OptNilTimestamp `json:"deletedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -16004,6 +16007,11 @@ func (s *RuleResource) GetDraft() NilRuleVersion {
 // GetActivatedAt returns the value of ActivatedAt.
 func (s *RuleResource) GetActivatedAt() OptNilTimestamp {
 	return s.ActivatedAt
+}
+
+// GetDeletedAt returns the value of DeletedAt.
+func (s *RuleResource) GetDeletedAt() OptNilTimestamp {
+	return s.DeletedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -16044,6 +16052,11 @@ func (s *RuleResource) SetDraft(val NilRuleVersion) {
 // SetActivatedAt sets the value of ActivatedAt.
 func (s *RuleResource) SetActivatedAt(val OptNilTimestamp) {
 	s.ActivatedAt = val
+}
+
+// SetDeletedAt sets the value of DeletedAt.
+func (s *RuleResource) SetDeletedAt(val OptNilTimestamp) {
+	s.DeletedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.

@@ -642,8 +642,8 @@ _Avoid_: Theme, style guide
 Taking a row out of working lists while keeping it, by stamping `discarded_at`; **Undiscard**
 clears the stamp. It is the one mechanism behind what the UI calls Archive (a Broadcast, an
 Automation, a Segment: a list view of the archived ones restores them) or Delete (an
-Integration, a Sending domain: never restored, still readable by id; a Rule with Firings: never
-restored, not found by id, ADR 0098; a Workspace, restorable for its window). A Sign-up item is archived for good: it stays listed,
+Integration, a Sending domain, a Rule with Firings: never restored, still readable by id, ADR
+0097 and ADR 0098; a Workspace, restorable for its window). A Sign-up item is archived for good: it stays listed,
 marked archived, and is never restored. A discarded row is hidden from
 lists and from new work, but not from history: reports still count it. A row that other live
 work depends on cannot be discarded. **Purge** is the physical removal, allowed only for what
