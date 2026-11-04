@@ -74,7 +74,8 @@ func TestSiteSMSBroadcastToASegmentTextsTheConfirmedNumbersAndReportsItsFigures(
 	require.Truef(t, ok, "got %T", got)
 
 	assert.Equal(t, siteapi.BroadcastChannelSMS, made.Channel)
-	assert.Equal(t, "Hi {{ first_name }}, 20% off today", testhelper.SiteSMSOf(made).Text)
+	content := testhelper.SiteSMSOf(made)
+	assert.Equal(t, "Hi {{ first_name }}, 20% off today", content.Text)
 	assert.Empty(t, made.Warnings, "email's lint does not apply to a text")
 	texts := env.Twilio.Messages()
 	require.Len(t, texts, 1, "the Segment's other phone has no Confirmation")
@@ -139,7 +140,8 @@ func TestSiteSMSBroadcastTestSendGoesToTheTypedNumberAndLeavesNoMessage(t *testi
 	assert.Equal(t, testhelper.TwilioNumber, texts[0].From)
 	assert.Equal(t, "Hi Alex, stop: ", texts[0].Body, "sample merge data, no unsubscribe link")
 	assert.Empty(t, texts[0].StatusCallback, "no delivery report: there is no message for it to land on")
-	assert.Equal(t, messagesBefore, env.DB.OutboundMessage.Query().CountX(ctx), "a Test send leaves no Outbound message")
+	messagesAfter := env.DB.OutboundMessage.Query().CountX(ctx)
+	assert.Equal(t, messagesBefore, messagesAfter, "a Test send leaves no Outbound message")
 	assert.IsType(t, &siteapi.SiteBroadcastsTestSendUnprocessableEntity{}, invalid, "a number without its country code is refused")
 	assert.IsType(t, &siteapi.SiteBroadcastsTestSendUnprocessableEntity{}, emailOnly, "an SMS Broadcast is tested on a phone")
 }
@@ -154,8 +156,10 @@ func TestSiteEmailBroadcastTestSendWithoutAnEmailIsRefused(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsTestSendUnprocessableEntity{}, res)
-	assert.Empty(t, env.CustomerMail.Messages())
-	assert.Empty(t, env.Twilio.Messages())
+	mails := env.CustomerMail.Messages()
+	assert.Empty(t, mails)
+	texts := env.Twilio.Messages()
+	assert.Empty(t, texts)
 }
 
 // Twilio's refusal of a Test send is the author's to read: a typed number that reaches no handset
@@ -184,7 +188,8 @@ func TestSiteSMSBroadcastTestSendRefusedByTwilioSuppressesAndHoldsNothing(t *tes
 	refused, ok := deadNumber.(*siteapi.SiteBroadcastsTestSendUnprocessableEntity)
 	require.Truef(t, ok, "got %T", deadNumber)
 	assert.Contains(t, refused.Detail.Value, "not a valid mobile number (error 21614)")
-	assert.False(t, env.DB.Suppression.Query().Where(entsuppression.Destination("+14155550199")).ExistX(ctx), "a typed number is not suppressed")
+	suppressed := env.DB.Suppression.Query().Where(entsuppression.Destination("+14155550199")).ExistX(ctx)
+	assert.False(t, suppressed, "a typed number is not suppressed")
 	assert.IsType(t, &siteapi.SiteBroadcastsTestSendUnprocessableEntity{}, refusedAccount)
 	assert.IsType(t, &siteapi.SiteBroadcastResource{}, scheduled, "the Integration is not held by a Test send")
 }
@@ -237,7 +242,8 @@ func TestSiteSMSBroadcastSaveCountsTrackedLinksAsShortLinks(t *testing.T) {
 	require.True(t, found)
 	assert.EqualValues(t, linkLength, acme.ShortLinkLength)
 	assert.Greater(t, linkLength, len("https://x/c/")+10)
-	assert.True(t, testhelper.SiteSMSOf(b).LinkTracking, "tracking is on by default")
+	content := testhelper.SiteSMSOf(b)
+	assert.True(t, content.LinkTracking, "tracking is on by default")
 	refused, ok := edited.(*siteapi.SiteBroadcastsUpdateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", edited)
 	assert.Contains(t, refused.Detail.Value, "11 segments", "1622 characters as written")
@@ -255,8 +261,10 @@ func TestSiteSMSBroadcastScheduleRefusesABlankText(t *testing.T) {
 		return res
 	}
 
-	assert.IsType(t, &siteapi.SiteBroadcastsScheduleUnprocessableEntity{}, schedule("  "))
-	assert.IsType(t, &siteapi.SiteBroadcastResource{}, schedule("Hello"))
+	blank := schedule("  ")
+	assert.IsType(t, &siteapi.SiteBroadcastsScheduleUnprocessableEntity{}, blank)
+	written := schedule("Hello")
+	assert.IsType(t, &siteapi.SiteBroadcastResource{}, written)
 }
 
 func TestSiteBroadcastListFiltersSMSBroadcasts(t *testing.T) {
@@ -272,5 +280,6 @@ func TestSiteBroadcastListFiltersSMSBroadcasts(t *testing.T) {
 	require.NoError(t, err)
 	list, ok := res.(*siteapi.SiteBroadcastsListOK)
 	require.Truef(t, ok, "got %T", res)
-	assert.Equal(t, []siteapi.EntityId{made.ID}, lo.Map(list.Items, func(b siteapi.SiteBroadcastResource, _ int) siteapi.EntityId { return b.ID }))
+	ids := lo.Map(list.Items, func(b siteapi.SiteBroadcastResource, _ int) siteapi.EntityId { return b.ID })
+	assert.Equal(t, []siteapi.EntityId{made.ID}, ids)
 }

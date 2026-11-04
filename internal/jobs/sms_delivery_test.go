@@ -51,12 +51,16 @@ func TestAnSMSBroadcastsDeliveredAndUndeliveredFiguresMatchTheReports(t *testing
 	id := smsBroadcast(t, env, account, "Sale today")
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
 
-	reportStatus(t, env, account, textOf(t, env, fixtures.ContactTexterPhone), "sent", "")
-	reportStatus(t, env, account, textOf(t, env, fixtures.ContactTexterPhone), "delivered", "")
-	reportStatus(t, env, account, textOf(t, env, alicePhone), "undelivered", "30003")
-	reportStatus(t, env, account, textOf(t, env, alicePhone), "delivered", "")
+	tessText := textOf(t, env, fixtures.ContactTexterPhone)
+	aliceText := textOf(t, env, alicePhone)
 
-	st, err := broadcasts.StatsFor(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, id))
+	reportStatus(t, env, account, tessText, "sent", "")
+	reportStatus(t, env, account, tessText, "delivered", "")
+	reportStatus(t, env, account, aliceText, "undelivered", "30003")
+	reportStatus(t, env, account, aliceText, "delivered", "")
+
+	b := env.DB.Broadcast.GetX(ctx, id)
+	st, err := broadcasts.StatsFor(ctx, env.DB.Scoped(fixtures.AcmeID), b)
 	require.NoError(t, err)
 	assert.Equal(t, broadcasts.Stats{Channel: broadcast.ChannelSms, Recipients: 3, Sent: 3, Delivered: 1, Undelivered: 1}, st[id],
 		"Bob's text has no final report: it is neither")
@@ -82,7 +86,8 @@ func TestAnAutomationTriggeredByAnUndeliveredTextEnrollsItsContact(t *testing.T)
 	id := smsBroadcast(t, env, account, "Sale today")
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
 
-	reportStatus(t, env, account, textOf(t, env, fixtures.ContactTexterPhone), "undelivered", "30007")
+	text := textOf(t, env, fixtures.ContactTexterPhone)
+	reportStatus(t, env, account, text, "undelivered", "30007")
 	undelivered := onlyEnvelope(t, env, events.NameSmsUndelivered)
 	require.NoError(t, events.AutomationsConsumer(queueingClient(t, env))(events.Message(undelivered)))
 	triggers := queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind())

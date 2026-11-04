@@ -46,10 +46,12 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 	assert.Equal(t, siteapi.ConfirmationProvenanceImported, after.Confirmation.Value.Provenance)
 	assert.Equal(t, "phone call", after.Confirmation.Value.Source.Value)
 	assert.True(t, eligible.Eligible)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{
+	smsConfirmed := env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{
 		"phone": fixtures.ContactTexterPhone, "contactId": fixtures.ContactTexterID, "source": "phone call",
-	}))
-	assert.Equal(t, 0, env.OutboxCount(t, events.NameMarketingConfirmed, nil), "marketing.confirmed is email's")
+	})
+	assert.Equal(t, 1, smsConfirmed)
+	marketingConfirmed := env.OutboxCount(t, events.NameMarketingConfirmed, nil)
+	assert.Equal(t, 0, marketingConfirmed, "marketing.confirmed is email's")
 
 	stopped, ok := optedOut.(*siteapi.SiteSmsConsent)
 	require.Truef(t, ok, "got %T", optedOut)

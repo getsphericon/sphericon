@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -57,7 +58,8 @@ func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(
 
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
 
-	body := env.Twilio.Messages()[0].Body
+	sent := env.Twilio.Messages()
+	body := sent[0].Body
 	assert.NotContains(t, body, "shop.test", "no link goes out as written")
 	assert.Contains(t, body, "/e/u/", "the opt-out link goes straight to the unsubscribe page")
 	paths := smsShortPaths(t, env)
@@ -65,9 +67,9 @@ func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(
 	assert.NotEqual(t, paths[0], paths[1])
 	linkLength, err := env.OutboundModule().ShortLinkLength(ctx, env.DB.Scoped(fixtures.AcmeID))
 	require.NoError(t, err)
-	for _, link := range smsShortLink.FindAllString(body, -1) {
-		assert.Len(t, link, linkLength, "the counter's length is the length that goes out")
-	}
+	links := smsShortLink.FindAllString(body, -1)
+	lengths := lo.Map(links, func(link string, _ int) int { return len(link) })
+	assert.Equal(t, []int{linkLength, linkLength}, lengths, "the counter's length is the length that goes out")
 	assert.Regexp(t, `^Sale: https?://\S+/c/\S{11} or your cart https?://\S+/c/\S{11}\. Stop: `, body,
 		"the punctuation after a link stays text")
 	clicked := func() bool {
@@ -79,13 +81,15 @@ func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(
 		assert.Equal(t, http.StatusFound, resp.Code, "a preview fetch is redirected like anyone")
 		assert.Equal(t, smsOffer, resp.Header().Get("Location"))
 	}
-	assert.False(t, clicked(), "a preview fetch sets no rollup")
+	clickedAfterPreviews := clicked()
+	assert.False(t, clickedAfterPreviews, "a preview fetch sets no rollup")
 
 	resp := follow(t, env, paths[1], browserUA)
 
 	assert.Equal(t, http.StatusFound, resp.Code)
 	assert.Equal(t, smsCart, resp.Header().Get("Location"))
-	assert.True(t, clicked(), "a person's click sets the recipient's rollup")
+	clickedAfterClick := clicked()
+	assert.True(t, clickedAfterClick, "a person's click sets the recipient's rollup")
 	report, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Report(ctx, env.DB.Scoped(fixtures.AcmeID), id)
 	require.NoError(t, err)
 	assert.Equal(t, 1, report.Clicked, "the SMS report shows clicked")
@@ -115,8 +119,10 @@ func TestAnSMSBroadcastWithLinkTrackingOffGoesOutAsWritten(t *testing.T) {
 
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), b.ID))
 
-	assert.Equal(t, text, env.Twilio.Messages()[0].Body)
-	assert.Zero(t, env.DB.TrackedLink.Query().Where(trackedlink.HasOutboundMessageWith(outboundmessage.BroadcastID(b.ID))).CountX(ctx), "no short link was made")
+	sent := env.Twilio.Messages()
+	assert.Equal(t, text, sent[0].Body)
+	tracked := env.DB.TrackedLink.Query().Where(trackedlink.HasOutboundMessageWith(outboundmessage.BroadcastID(b.ID))).CountX(ctx)
+	assert.Zero(t, tracked, "no short link was made")
 }
 
 func TestATestSendOfAnSMSBroadcastShowsTheShortLinksAndTheirClicksRecordNothing(t *testing.T) {
@@ -141,9 +147,12 @@ func TestATestSendOfAnSMSBroadcastShowsTheShortLinksAndTheirClicksRecordNothing(
 	resp := follow(t, env, path, browserUA)
 	assert.Equal(t, http.StatusFound, resp.Code)
 	assert.Equal(t, smsOffer, resp.Header().Get("Location"))
-	assert.Zero(t, env.OutboxCount(t, events.NameSmsClicked, nil), "a Test send's click records nothing")
-	assert.Zero(t, env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id)).CountX(ctx), "a Test send records no message")
-	assert.Equal(t, 1, env.DB.TrackedLink.Query().Where(trackedlink.OutboundMessageIDIsNil()).CountX(ctx))
+	smsClicked := env.OutboxCount(t, events.NameSmsClicked, nil)
+	assert.Zero(t, smsClicked, "a Test send's click records nothing")
+	messages := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id)).CountX(ctx)
+	assert.Zero(t, messages, "a Test send records no message")
+	unattached := env.DB.TrackedLink.Query().Where(trackedlink.OutboundMessageIDIsNil()).CountX(ctx)
+	assert.Equal(t, 1, unattached)
 }
 
 // sms.clicked is a Trigger like email.clicked: a person's click on an SMS step's link enrolls the
@@ -169,7 +178,8 @@ func TestAnSMSStepsLinkClickRecordsTheAutomationAndTriggersAnother(t *testing.T)
 	}
 
 	follow(t, env, paths[0], whatsAppUA)
-	assert.Empty(t, consume(), "the preview fetch starts nothing")
+	previewTriggers := consume()
+	assert.Empty(t, previewTriggers, "the preview fetch starts nothing")
 
 	follow(t, env, paths[0], browserUA)
 	triggers := consume()
@@ -181,7 +191,8 @@ func TestAnSMSStepsLinkClickRecordsTheAutomationAndTriggersAnother(t *testing.T)
 	assert.Equal(t, events.NameSmsClicked, *run.EventAction)
 	assert.Equal(t, smsCart, run.EventProperties["url"])
 	clicks := env.OutboxEvents(t, events.NameSmsClicked)
-	assert.Equal(t, sender, clicks[len(clicks)-1].(*events.SmsClicked).AutomationID)
+	last := clicks[len(clicks)-1].(*events.SmsClicked)
+	assert.Equal(t, sender, last.AutomationID)
 }
 
 func TestAnSMSStepWithLinkTrackingOffSendsItsLinksAsWritten(t *testing.T) {

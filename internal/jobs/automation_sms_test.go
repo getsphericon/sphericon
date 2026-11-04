@@ -80,16 +80,18 @@ func TestAnSMSStepSendsTheRenderedTextToTheConfirmedPhone(t *testing.T) {
 	assert.Equal(t, testhelper.TwilioNumber, sent[0].From)
 	assert.Equal(t, "Hi Tess & co, your cart <is> waiting", sent[0].Body, "plain text: nothing is escaped")
 	assert.Equal(t, account.Integration.HookUrl, sent[0].StatusCallback, "every send asks for its delivery reports at the hook")
-	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(t.Context(), runID).Status)
+	run := env.DB.AutomationRun.GetX(t.Context(), runID)
+	assert.Equal(t, automationrun.StatusCompleted, run.Status)
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
 	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
 	assert.Equal(t, outboundmessage.ChannelSms, msg.Channel)
 	assert.Equal(t, fixtures.ContactTexterPhone, msg.Destination)
 	assert.Equal(t, sent[0].SID, lo.FromPtr(msg.ProviderMessageID), "Twilio's SID is the provider reference")
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsSent, map[string]any{
+	smsSent := env.OutboxCount(t, events.NameSmsSent, map[string]any{
 		"contactId": fixtures.ContactTexterID, "automationId": automationID, "destination": fixtures.ContactTexterPhone,
 		"integrationId": account.Integration.ID, "outboundMessageId": msg.ID,
-	}))
+	})
+	assert.Equal(t, 1, smsSent)
 }
 
 func TestAnSMSStepThroughAMessagingServiceSendsFromTheService(t *testing.T) {
@@ -155,13 +157,16 @@ func TestAnSMSStepSkipsAContactItCannotTextAndMovesOn(t *testing.T) {
 
 			runSteps(t, env)
 
-			assert.Empty(t, env.Twilio.Messages())
-			assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(t.Context(), runID).Status, "the Enrollment moves on")
+			sent := env.Twilio.Messages()
+			assert.Empty(t, sent)
+			run := env.DB.AutomationRun.GetX(t.Context(), runID)
+			assert.Equal(t, automationrun.StatusCompleted, run.Status, "the Enrollment moves on")
 			skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
 			assert.Equal(t, outboundmessage.StatusSkipped, skipped.Status)
 			assert.Equal(t, outboundmessage.ChannelSms, skipped.Channel)
 			assert.Equal(t, tc.reason, lo.FromPtr(skipped.Reason))
-			assert.Zero(t, env.OutboxCount(t, events.NameSmsSent, nil))
+			smsSent := env.OutboxCount(t, events.NameSmsSent, nil)
+			assert.Zero(t, smsSent)
 		})
 	}
 }
@@ -178,10 +183,13 @@ func TestAMixedSequenceSendsTheEmailsAndRecordsTheSMSSkipForAContactWithNoPhone(
 
 	runSteps(t, env)
 
-	subjects := lo.Map(env.CustomerMail.Messages(), func(m messaging.EmailMessage, _ int) string { return m.Subject })
+	mails := env.CustomerMail.Messages()
+	subjects := lo.Map(mails, func(m messaging.EmailMessage, _ int) string { return m.Subject })
 	assert.Equal(t, []string{"First", "Last"}, subjects)
-	assert.Empty(t, env.Twilio.Messages())
-	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(t.Context(), runID).Status)
+	texts := env.Twilio.Messages()
+	assert.Empty(t, texts)
+	run := env.DB.AutomationRun.GetX(t.Context(), runID)
+	assert.Equal(t, automationrun.StatusCompleted, run.Status)
 	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(t.Context())
 	assert.Equal(t, eligibility.ReasonNoDestination, lo.FromPtr(skipped.Reason))
 	assert.Equal(t, 1, lo.FromPtr(skipped.AutomationStep))
@@ -226,7 +234,8 @@ func TestASTOPBetweenTwoTextsOfAnEnrollmentSkipsTheSecond(t *testing.T) {
 	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
 	stepper := stepperWith(env, env.OutboundModule(), stepping.WithClock(passingClock()))
 	require.True(t, env.RunNextStep(t, stepper))
-	require.Len(t, env.Twilio.Messages(), 1)
+	first := env.Twilio.Messages()
+	require.Len(t, first, 1)
 
 	stopped := env.PostTwilioCallback(t, account.Integration.HookUrl, account.Account.AuthToken, url.Values{
 		"MessageSid": {"SM0201"}, "AccountSid": {account.Account.SID}, "From": {fixtures.ContactTexterPhone},
@@ -238,7 +247,8 @@ func TestASTOPBetweenTwoTextsOfAnEnrollmentSkipsTheSecond(t *testing.T) {
 	sent := env.Twilio.Messages()
 	require.Len(t, sent, 1, "only the text before the STOP went out")
 	assert.Equal(t, "First", sent[0].Body)
-	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, runID).Status)
+	run := env.DB.AutomationRun.GetX(ctx, runID)
+	assert.Equal(t, automationrun.StatusCompleted, run.Status)
 	second := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(ctx)
 	assert.Equal(t, 1, lo.FromPtr(second.AutomationStep))
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, lo.FromPtr(second.Reason))

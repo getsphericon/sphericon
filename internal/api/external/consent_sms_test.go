@@ -56,7 +56,8 @@ func TestAnAPIAssertedSMSConfirmationRecordsItsEvidenceAndMakesTheNumberEligible
 		"wording": "Yes, text me offers from Acme. Reply STOP to opt out.", "source": "checkout form", "brand": "Acme",
 	})
 	assert.Equal(t, 1, evidence)
-	assert.Equal(t, 0, env.OutboxCount(t, events.NameMarketingConfirmed, nil), "marketing.confirmed is email's")
+	marketingConfirmed := env.OutboxCount(t, events.NameMarketingConfirmed, nil)
+	assert.Equal(t, 0, marketingConfirmed, "marketing.confirmed is email's")
 }
 
 // A weaker provenance never replaces a stronger one: an import over a START keeps the START and
@@ -72,7 +73,8 @@ func TestAnImportedSMSConfirmationLeavesAStrongerOneStanding(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.ConfirmationProvenanceKeyword, standing.Provenance)
 	assert.False(t, standing.Wording.Set, "the START carries no wording")
-	assert.Equal(t, 0, env.OutboxCount(t, events.NameSmsConfirmed, nil))
+	smsConfirmed := env.OutboxCount(t, events.NameSmsConfirmed, nil)
+	assert.Equal(t, 0, smsConfirmed)
 }
 
 // A stronger provenance replaces a weaker one with its own evidence.
@@ -87,7 +89,8 @@ func TestAnImportedSMSConfirmationReplacesAGrandfatheredOne(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.ConfirmationProvenanceImported, standing.Provenance)
 	assert.Equal(t, "checkout form", standing.Source.Value)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{"phone": fixtures.ConfirmationSmsGrandfatheredDestination}))
+	smsConfirmed := env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{"phone": fixtures.ConfirmationSmsGrandfatheredDestination})
+	assert.Equal(t, 1, smsConfirmed)
 }
 
 func TestAnSMSConfirmationIsRefusedOffSMSWithoutACountryCodeOrWithoutEvidence(t *testing.T) {
@@ -108,7 +111,8 @@ func TestAnSMSConfirmationIsRefusedOffSMSWithoutACountryCodeOrWithoutEvidence(t 
 	assert.IsType(t, new(externalapi.ConfirmationsCreateUnprocessableEntity), email)
 	assert.IsType(t, new(externalapi.ConfirmationsCreateUnprocessableEntity), local)
 	assert.IsType(t, new(externalapi.ConfirmationsCreateUnprocessableEntity), brand)
-	assert.Equal(t, eligibility.ReasonUnconfirmed, smsDecision(t, env, fixtures.ContactTexterPhone).Reason)
+	decision := smsDecision(t, env, fixtures.ContactTexterPhone)
+	assert.Equal(t, eligibility.ReasonUnconfirmed, decision.Reason)
 }
 
 // An SMS opt-out that reached the Workspace by another route blocks the number on every sender,
@@ -130,7 +134,8 @@ func TestAnOffChannelSMSOptOutBlocksTheNumber(t *testing.T) {
 	assert.Equal(t, externalapi.ConsentChannelSMS, created.Channel)
 	assert.Equal(t, fixtures.ContactTexterPhone, created.Destination)
 	assert.Equal(t, eligibility.SourceEverything, created.SendingSource)
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, smsDecision(t, env, fixtures.ContactTexterPhone).Reason)
+	decision := smsDecision(t, env, fixtures.ContactTexterPhone)
+	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, decision.Reason)
 }
 
 // An opt-out of everything on sms drops the number's Confirmation, however strong: stale consent
@@ -189,8 +194,12 @@ func TestABatchUpsertRecordsSMSConsentFromItsItems(t *testing.T) {
 	assert.Equal(t, []externalapi.ContactBatchStatus{
 		externalapi.ContactBatchStatusCreated, externalapi.ContactBatchStatusCreated, externalapi.ContactBatchStatusFailed,
 	}, statuses)
-	assert.True(t, smsDecision(t, env, "+14155550830").Eligible)
-	assert.Equal(t, eligibility.ReasonUnconfirmed, smsDecision(t, env, "+14155550831").Reason)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{"phone": "+14155550830", "source": "store signup sheet"}))
-	assert.Equal(t, 0, env.OutboxCount(t, events.NameMarketingConfirmed, nil), "marketing.confirmed is email's")
+	withConsent := smsDecision(t, env, "+14155550830")
+	assert.True(t, withConsent.Eligible)
+	withoutConsent := smsDecision(t, env, "+14155550831")
+	assert.Equal(t, eligibility.ReasonUnconfirmed, withoutConsent.Reason)
+	smsConfirmed := env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{"phone": "+14155550830", "source": "store signup sheet"})
+	assert.Equal(t, 1, smsConfirmed)
+	marketingConfirmed := env.OutboxCount(t, events.NameMarketingConfirmed, nil)
+	assert.Equal(t, 0, marketingConfirmed, "marketing.confirmed is email's")
 }

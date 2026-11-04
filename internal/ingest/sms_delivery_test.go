@@ -65,11 +65,13 @@ func TestADeliveredReportStampsTheTextAndRecordsSmsDelivered(t *testing.T) {
 	got := env.DB.OutboundMessage.GetX(t.Context(), msg.ID)
 	assert.NotNil(t, got.DeliveredAt)
 	assert.Nil(t, got.UndeliveredAt)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsDelivered, map[string]any{
+	delivered := env.OutboxCount(t, events.NameSmsDelivered, map[string]any{
 		"contactId": fixtures.ContactTexterID, "outboundMessageId": msg.ID, "integrationId": account.Integration.ID,
 		"destination": fixtures.ContactTexterPhone,
-	}), "a redelivered report records nothing more")
-	assert.Zero(t, env.OutboxCount(t, events.NameSmsUndelivered, nil))
+	})
+	assert.Equal(t, 1, delivered, "a redelivered report records nothing more")
+	undelivered := env.OutboxCount(t, events.NameSmsUndelivered, nil)
+	assert.Zero(t, undelivered)
 }
 
 func TestAnUndeliveredOrFailedReportStampsTheTextWithTheErrorCodeAndRecordsSmsUndelivered(t *testing.T) {
@@ -85,12 +87,14 @@ func TestAnUndeliveredOrFailedReportStampsTheTextWithTheErrorCodeAndRecordsSmsUn
 			assert.Equal(t, "30003", lo.FromPtr(got.UndeliveredCode))
 			assert.Nil(t, got.DeliveredAt)
 			assert.Equal(t, outboundmessage.StatusSent, got.Status, "Twilio accepted it: it stays Sent")
-			assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsUndelivered, map[string]any{
+			undelivered := env.OutboxCount(t, events.NameSmsUndelivered, map[string]any{
 				"contactId": fixtures.ContactTexterID, "outboundMessageId": msg.ID, "errorCode": "30003",
-			}))
-			assert.Zero(t, env.OutboxCount(t, events.NameSmsDelivered, nil))
-			assert.Zero(t, env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(entsuppression.ChannelSms)).CountX(t.Context()),
-				"an unreachable handset is no dead number")
+			})
+			assert.Equal(t, 1, undelivered)
+			delivered := env.OutboxCount(t, events.NameSmsDelivered, nil)
+			assert.Zero(t, delivered)
+			suppressions := env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(entsuppression.ChannelSms)).CountX(t.Context())
+			assert.Zero(t, suppressions, "an unreachable handset is no dead number")
 		})
 	}
 }
@@ -98,31 +102,38 @@ func TestAnUndeliveredOrFailedReportStampsTheTextWithTheErrorCodeAndRecordsSmsUn
 // Reports arrive out of order: a status on the way after the final one, or the other final one
 // after it, changes neither the stamps nor the Events.
 func TestAReportNeverMovesATextBackwards(t *testing.T) {
+	delivered := finalState{Delivered: true}
+	undelivered := finalState{Undelivered: true, Code: "30008"}
 	cases := map[string]struct {
-		first, then, thenCode string
-		delivered             bool
+		first, firstCode, then, thenCode string
+		want                             finalState
 	}{
-		"sent after delivered":        {first: "delivered", then: "sent", delivered: true},
-		"undelivered after delivered": {first: "delivered", then: "undelivered", thenCode: "30003", delivered: true},
-		"delivered after undelivered": {first: "undelivered", then: "delivered"},
-		"sending after undelivered":   {first: "undelivered", then: "sending"},
+		"sent after delivered":        {first: "delivered", then: "sent", want: delivered},
+		"undelivered after delivered": {first: "delivered", then: "undelivered", thenCode: "30003", want: delivered},
+		"delivered after undelivered": {first: "undelivered", firstCode: "30008", then: "delivered", want: undelivered},
+		"sending after undelivered":   {first: "undelivered", firstCode: "30008", then: "sending", want: undelivered},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			account, text, msg := sentText(t, env)
-			firstCode := lo.Ternary(c.first == "undelivered", "30008", "")
-			report(t, env, account, text, c.first, firstCode)
+			report(t, env, account, text, c.first, c.firstCode)
 
 			report(t, env, account, text, c.then, c.thenCode)
 
 			got := env.DB.OutboundMessage.GetX(t.Context(), msg.ID)
-			assert.Equal(t, c.delivered, got.DeliveredAt != nil)
-			assert.Equal(t, !c.delivered, got.UndeliveredAt != nil)
-			assert.Equal(t, firstCode, lo.FromPtr(got.UndeliveredCode))
-			assert.Len(t, env.OutboxEnvelopes(t, events.NameSmsDelivered, events.NameSmsUndelivered), 1)
+			state := finalState{Delivered: got.DeliveredAt != nil, Undelivered: got.UndeliveredAt != nil, Code: lo.FromPtr(got.UndeliveredCode)}
+			assert.Equal(t, c.want, state)
+			reports := env.OutboxEnvelopes(t, events.NameSmsDelivered, events.NameSmsUndelivered)
+			assert.Len(t, reports, 1)
 		})
 	}
+}
+
+// finalState is where a text's delivery reports left it: delivered, or undelivered with a code.
+type finalState struct {
+	Delivered, Undelivered bool
+	Code                   string
 }
 
 func TestAReportOfAnUnknownTextChangesNothing(t *testing.T) {
@@ -137,8 +148,10 @@ func TestAReportOfAnUnknownTextChangesNothing(t *testing.T) {
 	got := env.DB.OutboundMessage.GetX(t.Context(), msg.ID)
 	assert.Nil(t, got.DeliveredAt)
 	assert.Nil(t, got.UndeliveredAt)
-	assert.Empty(t, env.OutboxEnvelopes(t, events.NameSmsDelivered, events.NameSmsUndelivered))
-	assert.Zero(t, env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(entsuppression.ChannelSms)).CountX(t.Context()))
+	reports := env.OutboxEnvelopes(t, events.NameSmsDelivered, events.NameSmsUndelivered)
+	assert.Empty(t, reports)
+	suppressions := env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(entsuppression.ChannelSms)).CountX(t.Context())
+	assert.Zero(t, suppressions)
 }
 
 // An undelivered report saying the number reaches no handset (Twilio's 30005, 30006) suppresses the
@@ -155,7 +168,8 @@ func TestAnUndeliveredReportOfADeadNumberSuppressesIt(t *testing.T) {
 			assert.Equal(t, fixtures.ContactTexterPhone, suppressed.Destination)
 			assert.Equal(t, entsuppression.ReasonBounce, suppressed.Reason)
 			assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(suppressed.ContactID))
-			assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsUndelivered, map[string]any{"errorCode": code}))
+			undelivered := env.OutboxCount(t, events.NameSmsUndelivered, map[string]any{"errorCode": code})
+			assert.Equal(t, 1, undelivered)
 		})
 	}
 }

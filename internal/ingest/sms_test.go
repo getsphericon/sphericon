@@ -57,9 +57,10 @@ func TestAReplyFromAKnownNumberIsRecordedAsSmsReceivedOnItsContact(t *testing.T)
 	key := fmt.Sprintf("sms:%d:SM0001", sms.Integration.ID)
 	assert.Equal(t, key, got[0].Envelope.DedupKey)
 	assert.Equal(t, key, got[1].Envelope.DedupKey, "a redelivered message carries the same key, so the Event is stored once")
-	assert.Equal(t, 2, env.OutboxCount(t, events.NameSmsReceived, map[string]any{
+	received := env.OutboxCount(t, events.NameSmsReceived, map[string]any{
 		"contactId": c.ID, "integrationId": sms.Integration.ID, "text": "Is the sale still on?",
-	}))
+	})
+	assert.Equal(t, 2, received)
 }
 
 // A sender Twilio names in a local format is read with the country Twilio says it is in.
@@ -73,9 +74,10 @@ func TestAReplyFromAKnownNumberInALocalFormatIsRecordedOnItsContact(t *testing.T
 	posted := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken, form)
 
 	require.Equal(t, http.StatusOK, posted.Code, posted.Body.String())
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsReceived, map[string]any{
+	received := env.OutboxCount(t, events.NameSmsReceived, map[string]any{
 		"contactId": c.ID, "phone": "+14155550177", "text": "See you at 5",
-	}))
+	})
+	assert.Equal(t, 1, received)
 }
 
 func TestATextFromAnUnknownNumberCreatesNoContactAndNoEvent(t *testing.T) {
@@ -91,6 +93,8 @@ func TestATextFromAnUnknownNumberCreatesNoContactAndNoEvent(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, stranger.Code, stranger.Body.String())
 	require.Equal(t, http.StatusOK, notANumber.Code, notANumber.Body.String())
-	assert.Equal(t, contacts, env.DB.Contact.Query().CountX(t.Context()))
-	assert.Len(t, env.OutboxEnvelopes(t), before)
+	contactsAfter := env.DB.Contact.Query().CountX(t.Context())
+	assert.Equal(t, contacts, contactsAfter)
+	envelopes := env.OutboxEnvelopes(t)
+	assert.Len(t, envelopes, before)
 }

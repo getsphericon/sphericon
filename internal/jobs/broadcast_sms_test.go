@@ -57,19 +57,22 @@ func TestAnSMSBroadcastTextsOnlyTheConfirmedNumbers(t *testing.T) {
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
 
 	recipients := env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(id)).AllX(ctx)
-	assert.Equal(t, []int64{fixtures.ContactTexterID}, lo.Map(recipients, func(r *ent.BroadcastRecipient, _ int) int64 { return r.ContactID }),
-		"a phone without a Confirmation, or a suppressed one, is not frozen")
+	frozen := lo.Map(recipients, func(r *ent.BroadcastRecipient, _ int) int64 { return r.ContactID })
+	assert.Equal(t, []int64{fixtures.ContactTexterID}, frozen, "a phone without a Confirmation, or a suppressed one, is not frozen")
 	sent := env.Twilio.Messages()
 	require.Len(t, sent, 1)
 	assert.Equal(t, fixtures.ContactTexterPhone, sent[0].To)
 	assert.Equal(t, "Hi Tess & co, <sale> today", sent[0].Body)
 	assert.Equal(t, account.Integration.HookUrl, sent[0].StatusCallback)
-	assert.Equal(t, broadcast.StatusSent, env.DB.Broadcast.GetX(ctx, id).Status)
+	b := env.DB.Broadcast.GetX(ctx, id)
+	assert.Equal(t, broadcast.StatusSent, b.Status)
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id)).OnlyX(ctx)
 	assert.Equal(t, outboundmessage.ChannelSms, msg.Channel)
 	assert.Equal(t, sent[0].SID, lo.FromPtr(msg.ProviderMessageID))
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsSent, map[string]any{"broadcastId": id, "contactId": fixtures.ContactTexterID}))
-	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1}, figuresOf(t, env, id))
+	smsSent := env.OutboxCount(t, events.NameSmsSent, map[string]any{"broadcastId": id, "contactId": fixtures.ContactTexterID})
+	assert.Equal(t, 1, smsSent)
+	figures := figuresOf(t, env, id)
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1}, figures)
 }
 
 // A Recipient frozen with a confirmed phone is checked again when its text is sent: one that lost
@@ -99,17 +102,20 @@ func TestAnSMSBroadcastSkipsARecipientThatLostItsPhoneOrOptedOutWithTheReason(t 
 	}
 
 	assert.Len(t, ids, 4)
-	assert.Equal(t, []string{fixtures.ContactTexterPhone}, lo.Map(env.Twilio.Messages(), func(m twiliotest.Message, _ int) string { return m.To }))
-	reasons := map[int64]string{}
-	for _, m := range env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).AllX(ctx) {
-		reasons[lo.FromPtr(m.ContactID)] = lo.FromPtr(m.Reason)
-	}
+	sent := env.Twilio.Messages()
+	texted := lo.Map(sent, func(m twiliotest.Message, _ int) string { return m.To })
+	assert.Equal(t, []string{fixtures.ContactTexterPhone}, texted)
+	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).AllX(ctx)
+	reasons := lo.Associate(skipped, func(m *ent.OutboundMessage) (int64, string) {
+		return lo.FromPtr(m.ContactID), lo.FromPtr(m.Reason)
+	})
 	assert.Equal(t, map[int64]string{
 		fixtures.ContactAliceID:         eligibility.ReasonNoDestination,
 		fixtures.ContactExportSubjectID: eligibility.ReasonUnsubscribedEverything,
 		fixtures.ContactBobID:           eligibility.ReasonSuppressed,
 	}, reasons)
-	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 1, Skipped: 3}, figuresOf(t, env, id))
+	figures := figuresOf(t, env, id)
+	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 1, Skipped: 3}, figures)
 }
 
 func TestAnSMSBroadcastPacesAtTheProviderLimit(t *testing.T) {

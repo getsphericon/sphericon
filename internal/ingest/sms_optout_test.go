@@ -70,7 +70,8 @@ func TestASTOPFromAContactsNumberOptsTheNumberOutOfEverySMS(t *testing.T) {
 	sms := env.ConnectTwilio(t)
 	c := textingContact(t, env)
 	confirmNumber(t, env, knownNumber)
-	require.True(t, textable(t, env, knownNumber).Eligible)
+	before := textable(t, env, knownNumber)
+	require.True(t, before.Eligible)
 
 	posted := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
 		inbound(sms, "SM0101", knownNumber, " Stop\n"))
@@ -84,8 +85,10 @@ func TestASTOPFromAContactsNumberOptsTheNumberOutOfEverySMS(t *testing.T) {
 	assert.Equal(t, eligibility.SourceEverything, stop.SendingSource)
 	assert.Equal(t, unsubscribe.ViaKeyword, lo.FromPtr(stop.Via))
 	assert.Equal(t, int64(c.ID), lo.FromPtr(stop.ContactID))
-	assert.Nil(t, smsConfirmationOf(t, env, knownNumber), "the stop drops the consent it ends")
-	assert.Zero(t, env.OutboxCount(t, events.NameSmsReceived, nil), "a STOP is no reply")
+	consent := smsConfirmationOf(t, env, knownNumber)
+	assert.Nil(t, consent, "the stop drops the consent it ends")
+	replies := env.OutboxCount(t, events.NameSmsReceived, nil)
+	assert.Zero(t, replies, "a STOP is no reply")
 }
 
 func TestASTOPFromANumberNoContactHasStillOptsItOut(t *testing.T) {
@@ -100,8 +103,10 @@ func TestASTOPFromANumberNoContactHasStillOptsItOut(t *testing.T) {
 	stop := optOutOf(t, env, "+14155550199")
 	require.NotNil(t, stop)
 	assert.Nil(t, stop.ContactID)
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, textable(t, env, "+14155550199").Reason)
-	assert.Equal(t, contacts, env.DB.Contact.Query().CountX(t.Context()), "a stranger's STOP creates no Contact")
+	dec := textable(t, env, "+14155550199")
+	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
+	contactsAfter := env.DB.Contact.Query().CountX(t.Context())
+	assert.Equal(t, contacts, contactsAfter, "a stranger's STOP creates no Contact")
 }
 
 func TestAStopInsideASentenceIsAReplyNotAnOptOut(t *testing.T) {
@@ -114,9 +119,12 @@ func TestAStopInsideASentenceIsAReplyNotAnOptOut(t *testing.T) {
 		inbound(sms, "SM0103", knownNumber, "please don't stop"))
 
 	require.Equal(t, http.StatusOK, posted.Code, posted.Body.String())
-	assert.Nil(t, optOutOf(t, env, knownNumber))
-	assert.True(t, textable(t, env, knownNumber).Eligible)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsReceived, map[string]any{"text": "please don't stop"}))
+	stop := optOutOf(t, env, knownNumber)
+	assert.Nil(t, stop)
+	dec := textable(t, env, knownNumber)
+	assert.True(t, dec.Eligible)
+	replies := env.OutboxCount(t, events.NameSmsReceived, map[string]any{"text": "please don't stop"})
+	assert.Equal(t, 1, replies)
 }
 
 func TestARedeliveredSTOPRecordsOneOptOut(t *testing.T) {
@@ -130,7 +138,8 @@ func TestARedeliveredSTOPRecordsOneOptOut(t *testing.T) {
 		require.Equal(t, http.StatusOK, posted.Code, posted.Body.String())
 	}
 
-	assert.NotNil(t, optOutOf(t, env, knownNumber))
+	stop := optOutOf(t, env, knownNumber)
+	assert.NotNil(t, stop)
 }
 
 func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesOut(t *testing.T) {
@@ -141,22 +150,27 @@ func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesO
 	stopped := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
 		inbound(sms, "SM0105", knownNumber, "STOP"))
 	require.Equal(t, http.StatusOK, stopped.Code, stopped.Body.String())
-	require.False(t, textable(t, env, knownNumber).Eligible)
+	whileStopped := textable(t, env, knownNumber)
+	require.False(t, whileStopped.Eligible)
 
 	started := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
 		inbound(sms, "SM0106", knownNumber, "unstop"))
 
 	require.Equal(t, http.StatusOK, started.Code, started.Body.String())
-	assert.Nil(t, optOutOf(t, env, knownNumber))
+	stop := optOutOf(t, env, knownNumber)
+	assert.Nil(t, stop)
 	consent := smsConfirmationOf(t, env, knownNumber)
 	require.NotNil(t, consent)
 	assert.Equal(t, confirmation.ProvenanceKeyword, consent.Provenance)
 	assert.Equal(t, int64(c.ID), lo.FromPtr(consent.ContactID))
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{
+	smsConfirmed := env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{
 		"provenance": "keyword", "contactId": c.ID,
-	}))
-	assert.Zero(t, env.OutboxCount(t, events.NameMarketingConfirmed, nil), "SMS consent is not email's")
-	assert.Zero(t, env.OutboxCount(t, events.NameSmsReceived, nil), "a START is no reply")
+	})
+	assert.Equal(t, 1, smsConfirmed)
+	marketingConfirmed := env.OutboxCount(t, events.NameMarketingConfirmed, nil)
+	assert.Zero(t, marketingConfirmed, "SMS consent is not email's")
+	replies := env.OutboxCount(t, events.NameSmsReceived, nil)
+	assert.Zero(t, replies, "a START is no reply")
 
 	contact := env.DB.Contact.GetX(t.Context(), int64(c.ID))
 	id := int64(sms.Integration.ID)
@@ -180,7 +194,8 @@ func TestNeitherSTOPNorSTARTIsAnswered(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, stopped.Code, stopped.Body.String())
 	require.Equal(t, http.StatusOK, started.Code, started.Body.String())
-	assert.Empty(t, env.Twilio.Messages(), "no text goes back")
+	sent := env.Twilio.Messages()
+	assert.Empty(t, sent, "no text goes back")
 	assert.NotContains(t, stopped.Body.String(), "<Message")
 	assert.NotContains(t, started.Body.String(), "<Message")
 }
@@ -199,10 +214,12 @@ func TestASTARTFromANumberNoContactHasLiftsItsStop(t *testing.T) {
 		inbound(sms, "SM0110", "+14155550199", "START"))
 
 	require.Equal(t, http.StatusOK, started.Code, started.Body.String())
-	assert.Nil(t, optOutOf(t, env, "+14155550199"))
+	stop := optOutOf(t, env, "+14155550199")
+	assert.Nil(t, stop)
 	consent := smsConfirmationOf(t, env, "+14155550199")
 	require.NotNil(t, consent)
 	assert.Equal(t, confirmation.ProvenanceKeyword, consent.Provenance)
 	assert.Nil(t, consent.ContactID)
-	assert.Equal(t, contacts, env.DB.Contact.Query().CountX(t.Context()))
+	contactsAfter := env.DB.Contact.Query().CountX(t.Context())
+	assert.Equal(t, contacts, contactsAfter)
 }
