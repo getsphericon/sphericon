@@ -461,6 +461,10 @@ const (
 	BroadcastSentViaArchivedIntegrationName = "Spring digest"
 	// BroadcastSentViaArchivedIntegrationSubject is from fixtures/broadcasts.
 	BroadcastSentViaArchivedIntegrationSubject = "Your spring digest"
+	// BroadcastTelegramDraftID is from fixtures/broadcasts.
+	BroadcastTelegramDraftID = 112
+	// BroadcastTelegramDraftName is from fixtures/broadcasts.
+	BroadcastTelegramDraftName = "Telegram course news"
 	// CaptonCleoMembershipID is from fixtures/memberships.
 	CaptonCleoMembershipID = 5710
 	// CaptonCollectKey is from fixtures/workspaces.

@@ -226,6 +226,18 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 
+# A Telegram draft that names no Integration: once scheduled it sends through the Telegram
+# default, never the email one (ADR 0099).
+- id: 112 # fixture: BroadcastTelegramDraft
+  name: Telegram course news
+  channel: telegram
+  text: 'The SQL course is live'
+  buttons: '[]'
+  status: draft
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: BroadcastGlobex
   name: Globex only

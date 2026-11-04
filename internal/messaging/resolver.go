@@ -131,22 +131,34 @@ func HasIntegrationOn(ctx context.Context, s *ent.Scoped, channel Channel) (bool
 	return s.Integration().Query().Where(integration.ChannelEQ(integration.Channel(channel))).Exist(ctx)
 }
 
-// Integration is the enabled Integration of channel that a send on that Channel goes through: the
-// one named by id, or the Channel's default when id is nil. A named Integration that is disabled,
-// discarded or of another Channel is ErrNoProvider, never the default in its place: no send goes
-// through another Channel's Integration (ADR 0079). A send asks the Send route of outbound
+// Integration is the enabled Integration of channel that a send on that Channel goes through
+// (Through): the one named by id, or the Channel's default when id is nil. A disabled one is
+// ErrNoProvider, never the default in its place. A send asks the Send route of outbound
 // (outbound.Module.Route), which reads it, never this directly.
 func Integration(ctx context.Context, s *ent.Scoped, channel Channel, id *int64) (*ent.Integration, error) {
+	row, err := Through(ctx, s, channel, id)
+	if err != nil {
+		return nil, err
+	}
+	if !row.Enabled {
+		return nil, ErrNoProvider
+	}
+	return row, nil
+}
+
+// Through is the Integration of channel that work on that Channel naming id goes through, enabled
+// or not: the one named by id, or the Channel's default when id is nil. A named Integration that is
+// discarded or of another Channel is ErrNoProvider, never the default in its place: no send goes
+// through another Channel's Integration (ADR 0079). It is the one answer both a send (Integration)
+// and the Live use of an Integration or a Sending domain (ADR 0099) read: a disabled Integration
+// still carries the work that names it once it is enabled again.
+func Through(ctx context.Context, s *ent.Scoped, channel Channel, id *int64) (*ent.Integration, error) {
 	which := integration.IsDefault(true)
 	if id != nil {
 		which = integration.ID(*id)
 	}
 	row, err := s.Integration().Query().
-		Where(
-			integration.ChannelEQ(integration.Channel(channel)),
-			which,
-			integration.Enabled(true),
-		).
+		Where(integration.ChannelEQ(integration.Channel(channel)), which).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrNoProvider

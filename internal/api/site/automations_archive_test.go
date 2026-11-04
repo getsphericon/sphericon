@@ -186,7 +186,8 @@ func TestSiteAutomationsArchiveIsAudited(t *testing.T) {
 	assert.Equal(t, "Notify Slack on signup", entries[0].TargetName)
 }
 
-// An archived Automation is not live work: it no longer holds the default Integration.
+// An archived Automation no Enrollment stands on is not live work: it no longer holds the default
+// Integration.
 func TestArchivedAutomationDoesNotUseTheDefaultIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -207,6 +208,7 @@ func TestArchivedAutomationDoesNotUseTheDefaultIntegration(t *testing.T) {
 	for _, id := range acme.Automation().Query().Where(automation.StatusEQ(automation.StatusActive)).IDsX(ctx) {
 		require.NoError(t, acme.Automation().Discard(ctx, id))
 	}
+	finishEnrollments(t, acme)
 
 	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, del())
 }

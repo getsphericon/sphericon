@@ -16,9 +16,9 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
@@ -443,11 +443,11 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 }
 
 // Delete discards an Integration for good (ADR 0049): it leaves the lists and is never restored,
-// and what it sent keeps its history. Live work that uses it refuses the delete with an
-// *inuse.Error naming that work. A scheduled or sending Broadcast uses the Integration it names,
-// and the default one when it names none; an active Automation that sends email uses the one it
-// names, and the default one when it names none. A sent or failed Broadcast is history and does not
-// block. A deleted Integration gives up the default: its channel has none until another is
+// and what it sent keeps its history. Its Live use (ADR 0099) refuses the delete with an
+// *inuse.Error naming that work: a scheduled or sending Broadcast, the live version of an active
+// Automation or a version an unfinished Enrollment stands on, whose send goes through it, the
+// Integration it names or, naming none, its own Channel's default. A sent or failed Broadcast is
+// history and does not block. A deleted Integration gives up the default: its channel has none until another is
 // picked. Deleting a deleted Integration changes nothing. An unknown id is ErrNotFound. The check
 // and the discard hold the Workspace's lock (ADR 0099), so no work becomes live between them.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
@@ -486,33 +486,14 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	return nil
 }
 
-// liveUsers is the live work that uses the Integration.
+// liveUsers is the Live use of the Integration (ADR 0099): the work whose sends go through it, by
+// the same resolution a send takes (messaging.Through).
 func liveUsers(ctx context.Context, s *ent.Scoped, row *ent.Integration) ([]inuse.User, error) {
-	uses := broadcast.IntegrationID(row.ID)
-	if ch := broadcast.Channel(row.Channel); row.IsDefault && broadcast.ChannelValidator(ch) == nil {
-		// A Broadcast that names no Integration sends through its Channel's default one.
-		uses = broadcast.Or(uses, broadcast.And(broadcast.IntegrationIDIsNil(), broadcast.ChannelEQ(ch)))
-	}
-	live, err := s.Broadcast().Query().
-		Where(uses, broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).
-		Order(ent.Asc(broadcast.FieldID)).
-		All(ctx)
+	sends, err := liveuse.Sends(ctx, s)
 	if err != nil {
 		return nil, err
 	}
-	users := inuse.Broadcasts(live)
-	// A send step of the Integration's Channel that names it, or names none while it is that
-	// Channel's default, sends through it (ADR 0081).
-	sending, err := liveuse.SendingAutomations(ctx, s, messaging.Channel(row.Channel), func(id *int64) bool {
-		if id == nil {
-			return row.IsDefault
-		}
-		return *id == row.ID
-	})
-	if err != nil {
-		return nil, err
-	}
-	return append(users, sending...), nil
+	return liveuse.Users(lo.Filter(sends, func(send liveuse.Send, _ int) bool { return send.Uses(row.ID) })), nil
 }
 
 // requireProviderLimit refuses an SES Integration with its own endpoint that is left without

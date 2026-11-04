@@ -257,7 +257,7 @@ func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.
 		return failedContent(err)
 	}
 	// A System sender that names no From cannot send: refuse before a slot is taken.
-	from, name := effectiveFrom(m.system, "", "")
+	from, name := messaging.EffectiveFrom(m.system, "", "")
 	if from == "" {
 		return Result{Outcome: Refused, Reason: RefuseNoSystemSender}, nil
 	}

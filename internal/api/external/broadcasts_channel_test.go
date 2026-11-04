@@ -53,22 +53,27 @@ func TestExternalBroadcastRefusesAnIntegrationOfAnotherChannel(t *testing.T) {
 	assert.IsType(t, &externalapi.BroadcastsCreateUnprocessableEntity{}, got)
 }
 
-// The API's list filters by Channel.
+// The API's list filters by Channel: email lists the email Broadcasts, telegram the Telegram one,
+// and together they are all of them.
 func TestExternalBroadcastsListFiltersByChannel(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
 	ctx := t.Context()
+	list := func(channel externalapi.OptBroadcastChannel) *externalapi.BroadcastsListOK {
+		t.Helper()
+		got, err := c.BroadcastsList(ctx, externalapi.BroadcastsListParams{Channel: channel})
+		require.NoError(t, err)
+		page, ok := got.(*externalapi.BroadcastsListOK)
+		require.Truef(t, ok, "got %T", got)
+		return page
+	}
 
-	all, err := c.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
-	require.NoError(t, err)
-	email, err := c.BroadcastsList(ctx, externalapi.BroadcastsListParams{Channel: externalapi.NewOptBroadcastChannel(externalapi.BroadcastChannelEmail)})
-	require.NoError(t, err)
-	everyList, ok := all.(*externalapi.BroadcastsListOK)
-	require.Truef(t, ok, "got %T", all)
-	emailList, ok := email.(*externalapi.BroadcastsListOK)
-	require.Truef(t, ok, "got %T", email)
+	everyList := list(externalapi.OptBroadcastChannel{})
+	emailList := list(externalapi.NewOptBroadcastChannel(externalapi.BroadcastChannelEmail))
+	telegramList := list(externalapi.NewOptBroadcastChannel(externalapi.BroadcastChannelTelegram))
 	channels := lo.Uniq(lo.Map(emailList.Items, func(b externalapi.BroadcastResource, _ int) externalapi.BroadcastChannel { return b.Channel }))
 
-	assert.Equal(t, everyList.TotalItems, emailList.TotalItems)
 	assert.Equal(t, []externalapi.BroadcastChannel{externalapi.BroadcastChannelEmail}, channels)
+	assert.Equal(t, []string{fixtures.BroadcastTelegramDraftName}, lo.Map(telegramList.Items, func(b externalapi.BroadcastResource, _ int) string { return b.Name }))
+	assert.Equal(t, everyList.TotalItems, emailList.TotalItems+telegramList.TotalItems)
 }

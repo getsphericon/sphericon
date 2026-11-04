@@ -11,6 +11,7 @@
 package messaging
 
 import (
+	"cmp"
 	"context"
 
 	"github.com/wneessen/go-mail"
@@ -104,6 +105,17 @@ type Receipt struct {
 // Sending-domain stamp use the address that will really go on the wire.
 type DefaultFromer interface {
 	DefaultFrom() (addr, name string)
+}
+
+// EffectiveFrom is the From a message goes out with through sender: the given one, else the
+// sender's configured default (DefaultFromer). Outbound send stamps and gates by it, and the Live
+// use of a Sending domain (ADR 0099) finds the domain a send goes out from by it.
+func EffectiveFrom(sender EmailSender, from, name string) (address, displayName string) {
+	if d, ok := sender.(DefaultFromer); ok {
+		df, dn := d.DefaultFrom()
+		return cmp.Or(from, df), cmp.Or(name, dn)
+	}
+	return from, name
 }
 
 // OutsideDeliverer is implemented by a sender that says whether its provider delivers
