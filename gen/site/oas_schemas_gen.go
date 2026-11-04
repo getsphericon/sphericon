@@ -2425,7 +2425,8 @@ func (s *CreateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 // Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox
 // (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused
 // with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save;
-// a refusal is a 422.
+// a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks
+// set before the save; a refusal is a 422.
 // Ref: #/components/schemas/CreateIntegrationInput
 type CreateIntegrationInput struct {
 	Name      string  `json:"name"`
@@ -2440,10 +2441,11 @@ type CreateIntegrationInput struct {
 	Config    IntegrationConfigInput `json:"config"`
 	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A
 	// Telegram integration takes none: it always reads its bot's updates with the built-in `telegram`
-	// Preset.
+	// Preset. A Twilio integration always reads its callbacks with the built-in `twilio` Preset, which no
+	// other integration takes.
 	Preset OptNilString `json:"preset"`
 	// The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram
-	// integration takes none.
+	// integration takes none; a Twilio integration takes the `twilio` Preset's `auth_token`, required.
 	Params OptJsonObject `json:"params"`
 }
 
@@ -3450,6 +3452,7 @@ type IntegrationConfigInputSum struct {
 	SesConfigInput      SesConfigInput
 	InboxConfigInput    InboxConfigInput
 	TelegramConfigInput TelegramConfigInput
+	TwilioConfigInput   TwilioConfigInput
 }
 
 // IntegrationConfigInputSumType is oneOf type of IntegrationConfigInputSum.
@@ -3461,6 +3464,7 @@ const (
 	SesConfigInputIntegrationConfigInputSum      IntegrationConfigInputSumType = "ses"
 	InboxConfigInputIntegrationConfigInputSum    IntegrationConfigInputSumType = "inbox"
 	TelegramConfigInputIntegrationConfigInputSum IntegrationConfigInputSumType = "telegram"
+	TwilioConfigInputIntegrationConfigInputSum   IntegrationConfigInputSumType = "twilio"
 )
 
 // IsSmtpConfigInput reports whether IntegrationConfigInputSum is SmtpConfigInput.
@@ -3481,6 +3485,11 @@ func (s IntegrationConfigInputSum) IsInboxConfigInput() bool {
 // IsTelegramConfigInput reports whether IntegrationConfigInputSum is TelegramConfigInput.
 func (s IntegrationConfigInputSum) IsTelegramConfigInput() bool {
 	return s.Type == TelegramConfigInputIntegrationConfigInputSum
+}
+
+// IsTwilioConfigInput reports whether IntegrationConfigInputSum is TwilioConfigInput.
+func (s IntegrationConfigInputSum) IsTwilioConfigInput() bool {
+	return s.Type == TwilioConfigInputIntegrationConfigInputSum
 }
 
 // SetSmtpConfigInput sets IntegrationConfigInputSum to SmtpConfigInput.
@@ -3564,6 +3573,27 @@ func (s IntegrationConfigInputSum) GetTelegramConfigInput() (v TelegramConfigInp
 func NewTelegramConfigInputIntegrationConfigInputSum(v TelegramConfigInput) IntegrationConfigInputSum {
 	var s IntegrationConfigInputSum
 	s.SetTelegramConfigInput(v)
+	return s
+}
+
+// SetTwilioConfigInput sets IntegrationConfigInputSum to TwilioConfigInput.
+func (s *IntegrationConfigInputSum) SetTwilioConfigInput(v TwilioConfigInput) {
+	s.Type = TwilioConfigInputIntegrationConfigInputSum
+	s.TwilioConfigInput = v
+}
+
+// GetTwilioConfigInput returns TwilioConfigInput and true boolean if IntegrationConfigInputSum is TwilioConfigInput.
+func (s IntegrationConfigInputSum) GetTwilioConfigInput() (v TwilioConfigInput, ok bool) {
+	if !s.IsTwilioConfigInput() {
+		return v, false
+	}
+	return s.TwilioConfigInput, true
+}
+
+// NewTwilioConfigInputIntegrationConfigInputSum returns new IntegrationConfigInputSum from TwilioConfigInput.
+func NewTwilioConfigInputIntegrationConfigInputSum(v TwilioConfigInput) IntegrationConfigInputSum {
+	var s IntegrationConfigInputSum
+	s.SetTwilioConfigInput(v)
 	return s
 }
 
@@ -19076,6 +19106,7 @@ type SiteIntegrationConfigSum struct {
 	SiteSesConfig      SiteSesConfig
 	SiteInboxConfig    SiteInboxConfig
 	SiteTelegramConfig SiteTelegramConfig
+	SiteTwilioConfig   SiteTwilioConfig
 }
 
 // SiteIntegrationConfigSumType is oneOf type of SiteIntegrationConfigSum.
@@ -19087,6 +19118,7 @@ const (
 	SiteSesConfigSiteIntegrationConfigSum      SiteIntegrationConfigSumType = "ses"
 	SiteInboxConfigSiteIntegrationConfigSum    SiteIntegrationConfigSumType = "inbox"
 	SiteTelegramConfigSiteIntegrationConfigSum SiteIntegrationConfigSumType = "telegram"
+	SiteTwilioConfigSiteIntegrationConfigSum   SiteIntegrationConfigSumType = "twilio"
 )
 
 // IsSiteSmtpConfig reports whether SiteIntegrationConfigSum is SiteSmtpConfig.
@@ -19107,6 +19139,11 @@ func (s SiteIntegrationConfigSum) IsSiteInboxConfig() bool {
 // IsSiteTelegramConfig reports whether SiteIntegrationConfigSum is SiteTelegramConfig.
 func (s SiteIntegrationConfigSum) IsSiteTelegramConfig() bool {
 	return s.Type == SiteTelegramConfigSiteIntegrationConfigSum
+}
+
+// IsSiteTwilioConfig reports whether SiteIntegrationConfigSum is SiteTwilioConfig.
+func (s SiteIntegrationConfigSum) IsSiteTwilioConfig() bool {
+	return s.Type == SiteTwilioConfigSiteIntegrationConfigSum
 }
 
 // SetSiteSmtpConfig sets SiteIntegrationConfigSum to SiteSmtpConfig.
@@ -19193,6 +19230,27 @@ func NewSiteTelegramConfigSiteIntegrationConfigSum(v SiteTelegramConfig) SiteInt
 	return s
 }
 
+// SetSiteTwilioConfig sets SiteIntegrationConfigSum to SiteTwilioConfig.
+func (s *SiteIntegrationConfigSum) SetSiteTwilioConfig(v SiteTwilioConfig) {
+	s.Type = SiteTwilioConfigSiteIntegrationConfigSum
+	s.SiteTwilioConfig = v
+}
+
+// GetSiteTwilioConfig returns SiteTwilioConfig and true boolean if SiteIntegrationConfigSum is SiteTwilioConfig.
+func (s SiteIntegrationConfigSum) GetSiteTwilioConfig() (v SiteTwilioConfig, ok bool) {
+	if !s.IsSiteTwilioConfig() {
+		return v, false
+	}
+	return s.SiteTwilioConfig, true
+}
+
+// NewSiteTwilioConfigSiteIntegrationConfigSum returns new SiteIntegrationConfigSum from SiteTwilioConfig.
+func NewSiteTwilioConfigSiteIntegrationConfigSum(v SiteTwilioConfig) SiteIntegrationConfigSum {
+	var s SiteIntegrationConfigSum
+	s.SetSiteTwilioConfig(v)
+	return s
+}
+
 // Concrete sending provider.
 // Ref: #/components/schemas/SiteIntegrationProvider
 type SiteIntegrationProvider string
@@ -19202,6 +19260,7 @@ const (
 	SiteIntegrationProviderSes      SiteIntegrationProvider = "ses"
 	SiteIntegrationProviderInbox    SiteIntegrationProvider = "inbox"
 	SiteIntegrationProviderTelegram SiteIntegrationProvider = "telegram"
+	SiteIntegrationProviderTwilio   SiteIntegrationProvider = "twilio"
 )
 
 // AllValues returns all SiteIntegrationProvider values.
@@ -19211,6 +19270,7 @@ func (SiteIntegrationProvider) AllValues() []SiteIntegrationProvider {
 		SiteIntegrationProviderSes,
 		SiteIntegrationProviderInbox,
 		SiteIntegrationProviderTelegram,
+		SiteIntegrationProviderTwilio,
 	}
 }
 
@@ -19224,6 +19284,8 @@ func (s SiteIntegrationProvider) MarshalText() ([]byte, error) {
 	case SiteIntegrationProviderInbox:
 		return []byte(s), nil
 	case SiteIntegrationProviderTelegram:
+		return []byte(s), nil
+	case SiteIntegrationProviderTwilio:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -19244,6 +19306,9 @@ func (s *SiteIntegrationProvider) UnmarshalText(data []byte) error {
 		return nil
 	case SiteIntegrationProviderTelegram:
 		*s = SiteIntegrationProviderTelegram
+		return nil
+	case SiteIntegrationProviderTwilio:
+		*s = SiteIntegrationProviderTwilio
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -27768,6 +27833,118 @@ type SiteTransactionalEmailsListUnprocessableEntity ProblemDetails
 
 func (*SiteTransactionalEmailsListUnprocessableEntity) siteTransactionalEmailsListRes() {}
 
+// A Twilio account without its secret.
+// Ref: #/components/schemas/SiteTwilioConfig
+type SiteTwilioConfig struct {
+	Kind SiteTwilioConfigKind `json:"kind"`
+	// The Account SID.
+	AccountSid string `json:"accountSid"`
+	// The API key messages are sent with; null when they are sent with the Auth Token.
+	ApiKeySid NilString `json:"apiKeySid"`
+	// What messages go out from.
+	From string `json:"from"`
+	// What kind of sender `from` is.
+	FromKind SmsFromKind `json:"fromKind"`
+	// Whether connecting pointed the sender's callbacks at the hook. False for an alphanumeric sender ID,
+	// which receives nothing, and when the credentials may not change the sender: then paste `hookUrl`
+	// into Twilio as the sender's inbound and status callback.
+	CallbacksSet bool `json:"callbacksSet"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteTwilioConfig) GetKind() SiteTwilioConfigKind {
+	return s.Kind
+}
+
+// GetAccountSid returns the value of AccountSid.
+func (s *SiteTwilioConfig) GetAccountSid() string {
+	return s.AccountSid
+}
+
+// GetApiKeySid returns the value of ApiKeySid.
+func (s *SiteTwilioConfig) GetApiKeySid() NilString {
+	return s.ApiKeySid
+}
+
+// GetFrom returns the value of From.
+func (s *SiteTwilioConfig) GetFrom() string {
+	return s.From
+}
+
+// GetFromKind returns the value of FromKind.
+func (s *SiteTwilioConfig) GetFromKind() SmsFromKind {
+	return s.FromKind
+}
+
+// GetCallbacksSet returns the value of CallbacksSet.
+func (s *SiteTwilioConfig) GetCallbacksSet() bool {
+	return s.CallbacksSet
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteTwilioConfig) SetKind(val SiteTwilioConfigKind) {
+	s.Kind = val
+}
+
+// SetAccountSid sets the value of AccountSid.
+func (s *SiteTwilioConfig) SetAccountSid(val string) {
+	s.AccountSid = val
+}
+
+// SetApiKeySid sets the value of ApiKeySid.
+func (s *SiteTwilioConfig) SetApiKeySid(val NilString) {
+	s.ApiKeySid = val
+}
+
+// SetFrom sets the value of From.
+func (s *SiteTwilioConfig) SetFrom(val string) {
+	s.From = val
+}
+
+// SetFromKind sets the value of FromKind.
+func (s *SiteTwilioConfig) SetFromKind(val SmsFromKind) {
+	s.FromKind = val
+}
+
+// SetCallbacksSet sets the value of CallbacksSet.
+func (s *SiteTwilioConfig) SetCallbacksSet(val bool) {
+	s.CallbacksSet = val
+}
+
+type SiteTwilioConfigKind string
+
+const (
+	SiteTwilioConfigKindTwilio SiteTwilioConfigKind = "twilio"
+)
+
+// AllValues returns all SiteTwilioConfigKind values.
+func (SiteTwilioConfigKind) AllValues() []SiteTwilioConfigKind {
+	return []SiteTwilioConfigKind{
+		SiteTwilioConfigKindTwilio,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteTwilioConfigKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteTwilioConfigKindTwilio:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteTwilioConfigKind) UnmarshalText(data []byte) error {
+	switch SiteTwilioConfigKind(data) {
+	case SiteTwilioConfigKindTwilio:
+		*s = SiteTwilioConfigKindTwilio
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Site request body for updating an automation. The name changes at once; the trigger, exit and goal
 // events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
 // version's, and publishing makes the draft live.
@@ -29597,6 +29774,56 @@ type SiteWorkspacesUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteWorkspacesUpdateUnprocessableEntity) siteWorkspacesUpdateRes() {}
 
+// What an SMS integration's messages go out from.
+// Ref: #/components/schemas/SmsFromKind
+type SmsFromKind string
+
+const (
+	SmsFromKindNumber           SmsFromKind = "number"
+	SmsFromKindAlphanumeric     SmsFromKind = "alphanumeric"
+	SmsFromKindMessagingService SmsFromKind = "messagingService"
+)
+
+// AllValues returns all SmsFromKind values.
+func (SmsFromKind) AllValues() []SmsFromKind {
+	return []SmsFromKind{
+		SmsFromKindNumber,
+		SmsFromKindAlphanumeric,
+		SmsFromKindMessagingService,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SmsFromKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SmsFromKindNumber:
+		return []byte(s), nil
+	case SmsFromKindAlphanumeric:
+		return []byte(s), nil
+	case SmsFromKindMessagingService:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SmsFromKind) UnmarshalText(data []byte) error {
+	switch SmsFromKind(data) {
+	case SmsFromKindNumber:
+		*s = SmsFromKindNumber
+		return nil
+	case SmsFromKindAlphanumeric:
+		*s = SmsFromKindAlphanumeric
+		return nil
+	case SmsFromKindMessagingService:
+		*s = SmsFromKindMessagingService
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // SMTP credentials.
 // Ref: #/components/schemas/SmtpConfigInput
 type SmtpConfigInput struct {
@@ -30151,6 +30378,110 @@ type TimeZoneName string
 
 type Timestamp time.Time
 
+// A Workspace's own Twilio account on the `sms` channel. Saving it reads the sender with the
+// credentials (a wrong or revoked key is a 422) and points the sender's inbound messages, and a
+// Messaging Service's delivery reports, at the integration's hook. The Auth Token that signs Twilio's
+// callbacks is the `twilio` Preset's `auth_token` param, kept and rotated apart from these credentials.
+// Ref: #/components/schemas/TwilioConfigInput
+type TwilioConfigInput struct {
+	Kind TwilioConfigInputKind `json:"kind"`
+	// The Account SID (`AC…`).
+	AccountSid string `json:"accountSid"`
+	// An API key's SID (`SK…`) to send with; omit or null to send with the Account SID and its Auth
+	// Token.
+	ApiKeySid OptNilString `json:"apiKeySid"`
+	// The API key's secret, or the Auth Token when no API key is given. Write-only: blank on an update
+	// keeps the stored one while the Account SID and the API key stay the same.
+	Secret string `json:"secret"`
+	// What messages go out from: a phone number of the account in E.164 (`+15017250604`), an alphanumeric
+	// sender ID of up to 11 characters, or a Messaging Service SID (`MG…`).
+	From string `json:"from"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TwilioConfigInput) GetKind() TwilioConfigInputKind {
+	return s.Kind
+}
+
+// GetAccountSid returns the value of AccountSid.
+func (s *TwilioConfigInput) GetAccountSid() string {
+	return s.AccountSid
+}
+
+// GetApiKeySid returns the value of ApiKeySid.
+func (s *TwilioConfigInput) GetApiKeySid() OptNilString {
+	return s.ApiKeySid
+}
+
+// GetSecret returns the value of Secret.
+func (s *TwilioConfigInput) GetSecret() string {
+	return s.Secret
+}
+
+// GetFrom returns the value of From.
+func (s *TwilioConfigInput) GetFrom() string {
+	return s.From
+}
+
+// SetKind sets the value of Kind.
+func (s *TwilioConfigInput) SetKind(val TwilioConfigInputKind) {
+	s.Kind = val
+}
+
+// SetAccountSid sets the value of AccountSid.
+func (s *TwilioConfigInput) SetAccountSid(val string) {
+	s.AccountSid = val
+}
+
+// SetApiKeySid sets the value of ApiKeySid.
+func (s *TwilioConfigInput) SetApiKeySid(val OptNilString) {
+	s.ApiKeySid = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *TwilioConfigInput) SetSecret(val string) {
+	s.Secret = val
+}
+
+// SetFrom sets the value of From.
+func (s *TwilioConfigInput) SetFrom(val string) {
+	s.From = val
+}
+
+type TwilioConfigInputKind string
+
+const (
+	TwilioConfigInputKindTwilio TwilioConfigInputKind = "twilio"
+)
+
+// AllValues returns all TwilioConfigInputKind values.
+func (TwilioConfigInputKind) AllValues() []TwilioConfigInputKind {
+	return []TwilioConfigInputKind{
+		TwilioConfigInputKindTwilio,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TwilioConfigInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TwilioConfigInputKindTwilio:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TwilioConfigInputKind) UnmarshalText(data []byte) error {
+	switch TwilioConfigInputKind(data) {
+	case TwilioConfigInputKindTwilio:
+		*s = TwilioConfigInputKindTwilio
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Request body for updating a draft broadcast: an omitted field keeps its value, null clears it.
 // Ref: #/components/schemas/UpdateBroadcastInput
 type UpdateBroadcastInput struct {
@@ -30221,10 +30552,11 @@ type UpdateIntegrationInput struct {
 	MaxPerDay OptNilMaxPerDay           `json:"maxPerDay"`
 	Config    OptIntegrationConfigInput `json:"config"`
 	// Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no
-	// secret carries over. A Telegram integration's Preset is fixed.
+	// secret carries over. A Telegram or Twilio integration's Preset is fixed.
 	Preset OptNilString `json:"preset"`
 	// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
-	// rotates it (the old one stays valid until retired). A Telegram integration takes none.
+	// rotates it (the old one stays valid until retired): a Twilio integration's `auth_token` rotates this
+	// way, leaving its send credentials as they are. A Telegram integration takes none.
 	Params OptJsonObject `json:"params"`
 	// Stop accepting the retiring value of every rotating secret.
 	RetireSecrets OptBool `json:"retireSecrets"`

@@ -186,7 +186,7 @@ type telegramEdit struct {
 func (m *Module) editTelegram(ctx context.Context, row *ent.Integration, in UpdateInput) (telegramEdit, error) {
 	params, _ := in.Params.Get()
 	if name := in.Preset.Over(row.Preset); (in.Preset.Changes() && (name == nil || *name != TelegramPreset)) || len(params) > 0 {
-		return telegramEdit{}, &validation.Error{Field: "preset", Message: i18n.T(i18n.ErrorsIntegrationTelegramPresetFixed, nil)}
+		return telegramEdit{}, &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationTelegramPresetFixed, nil)}
 	}
 	stored, err := m.telegramConfigOf(row)
 	if err != nil {
@@ -265,9 +265,9 @@ func telegramRefusal(err error, id i18n.ID) error {
 		return &validation.Error{Field: fieldToken, Message: i18n.T(i18n.ErrorsIntegrationTelegramTokenRefused, nil)}
 	}
 	if tg, ok := errors.AsType[*messaging.TelegramError](err); ok {
-		return &validation.Error{Field: fieldConfig, Message: i18n.T(id, map[string]any{"Detail": tg.Description})}
+		return &validation.Error{Field: fieldConfig, Message: i18n.T(id, map[string]any{detailKey: tg.Description})}
 	}
-	return &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationTelegramUnreachable, map[string]any{"Detail": err.Error()})}
+	return &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationTelegramUnreachable, map[string]any{detailKey: err.Error()})}
 }
 
 // fieldToken is the field a refusal of the bot token is on.
@@ -278,23 +278,35 @@ func tokenFormatError() error {
 }
 
 // presetFits refuses a Preset or params a write names that do not fit the provider: a Telegram
-// Integration takes neither (its Preset is fixed), and no other Integration takes the telegram
-// Preset.
+// Integration takes neither (its Preset is fixed), a Twilio Integration only its own Preset's params,
+// and no other Integration takes the telegram or the twilio Preset.
 func presetFits(provider integration.Provider, name *string, params map[string]any) error {
-	if provider == integration.ProviderTelegram {
+	switch provider {
+	case integration.ProviderTelegram:
 		if name != nil || len(params) > 0 {
-			return &validation.Error{Field: "preset", Message: i18n.T(i18n.ErrorsIntegrationTelegramPresetFixed, nil)}
+			return &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationTelegramPresetFixed, nil)}
 		}
 		return nil
+	case integration.ProviderTwilio:
+		if name != nil && *name != TwilioPreset {
+			return &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationTwilioPresetFixed, nil)}
+		}
+		return nil
+	case integration.ProviderSMTP, integration.ProviderSes, integration.ProviderInbox:
 	}
 	if name != nil && *name == TelegramPreset {
-		return &validation.Error{Field: "preset", Message: i18n.T(i18n.ErrorsIntegrationPresetTelegramOnly, nil)}
+		return &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationPresetTelegramOnly, nil)}
+	}
+	if name != nil && *name == TwilioPreset {
+		return &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationPresetTwilioOnly, nil)}
 	}
 	return nil
 }
 
 // Choosable is the Presets a caller may name on an Integration, by name: every Preset of the
-// Instance but the telegram one, which is fixed to Telegram Integrations.
+// Instance but the telegram one, which is fixed to Telegram Integrations and has no param to show.
+// The twilio Preset is listed for its params (a Twilio Integration's Auth Token), though only a
+// Twilio Integration takes it.
 func (m *Module) Choosable() []*preset.Preset {
 	names := m.presets.Names()
 	out := make([]*preset.Preset, 0, len(names))

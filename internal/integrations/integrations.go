@@ -40,6 +40,12 @@ import (
 // fieldConfig is the field a refusal of the provider config is on.
 const fieldConfig = "config"
 
+// fieldPreset is the field a refusal of the Preset is on.
+const fieldPreset = "preset"
+
+// detailKey is the template value that carries a provider's own words into a refusal.
+const detailKey = "Detail"
+
 // ErrDefaultConflict means another default Integration already exists for the channel.
 var ErrDefaultConflict = validation.Conflict("a default provider already exists for this channel", i18n.ErrorsIntegrationDefaultConflict)
 
@@ -148,6 +154,7 @@ type ConfigInput struct {
 	SES      *SESConfig
 	Inbox    *InboxConfig
 	Telegram *TelegramConfig
+	Twilio   *TwilioConfig
 }
 
 // CreateInput is a new Integration. Enabled defaults to true when nil; a nil Provider limit
@@ -204,7 +211,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		enabled = *in.Enabled
 	}
 	// An SES Integration reads its callbacks with the `ses` Preset unless told otherwise; a Telegram
-	// one always with the `telegram` Preset, its webhook secret generated here.
+	// one always with the `telegram` Preset, its webhook secret generated here; a Twilio one always
+	// with the `twilio` Preset, its Auth Token the caller's param.
 	presetName, params := in.Preset, in.Params
 	var providerPerSecond *int
 	switch provider {
@@ -220,6 +228,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		*presetName = TelegramPreset
 		providerPerSecond = new(int)
 		*providerPerSecond = telegramPerSecond
+	case integration.ProviderTwilio:
+		presetName = new(string)
+		*presetName = TwilioPreset
 	}
 	inb, err := m.sealInbound(nil, inboundChange{preset: patch.FromPtr(presetName), params: params})
 	if err != nil {
@@ -233,6 +244,13 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		// The bot is connected before the save: Telegram refuses a wrong token or a webhook it cannot
 		// reach, and the save is refused with it.
 		if plaintext, err = m.connectNew(ctx, tokenOf(in.Config.Telegram), key, currentSecret(params["secret"]), enabled); err != nil {
+			return nil, err
+		}
+	}
+	if provider == integration.ProviderTwilio {
+		// The account is checked and its sender pointed at the hook before the save: Twilio refuses
+		// a wrong or revoked key, and the save is refused with it.
+		if plaintext, err = m.connectTwilio(ctx, twilioStored(in.Config.Twilio), key); err != nil {
 			return nil, err
 		}
 	}
@@ -305,6 +323,11 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 			return nil, err
 		}
 		sealed = tg.sealed
+	} else if row.Provider == integration.ProviderTwilio {
+		// New credentials or a new sender are checked with Twilio before the save commits.
+		if sealed, err = m.editTwilio(ctx, row, in); err != nil {
+			return nil, err
+		}
 	} else if sealed, err = m.sealEditedConfig(row, in.Config.Ptr()); err != nil {
 		return nil, err
 	}
@@ -454,9 +477,9 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 // liveUsers is the live work that uses the Integration.
 func liveUsers(ctx context.Context, s *ent.Scoped, row *ent.Integration) ([]inuse.User, error) {
 	uses := broadcast.IntegrationID(row.ID)
-	if row.IsDefault && row.Channel == integration.ChannelEmail {
-		// A Broadcast that names no Integration sends through the default email one.
-		uses = broadcast.Or(uses, broadcast.IntegrationIDIsNil())
+	if ch := broadcast.Channel(row.Channel); row.IsDefault && broadcast.ChannelValidator(ch) == nil {
+		// A Broadcast that names no Integration sends through its Channel's default one.
+		uses = broadcast.Or(uses, broadcast.And(broadcast.IntegrationIDIsNil(), broadcast.ChannelEQ(ch)))
 	}
 	live, err := s.Broadcast().Query().
 		Where(uses, broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).
@@ -594,6 +617,19 @@ func (m *Module) encode(in ConfigInput) (integration.Provider, integration.Chann
 	case in.Inbox != nil:
 		provider = integration.ProviderInbox
 		plaintext = []byte("{}")
+	case in.Twilio != nil:
+		// A blank secret is an update that keeps the stored one; the rest of the config is checked
+		// when it connects.
+		c := twilioStored(in.Twilio)
+		if c.Secret == "" {
+			c.Secret = "kept"
+		}
+		if err := validTwilio(c); err != nil {
+			return "", "", nil, err
+		}
+		channel, _ := m.catalog.ChannelOf(messaging.ProviderTwilio)
+		plaintext, err = json.Marshal(twilioStored(in.Twilio))
+		return integration.ProviderTwilio, integration.Channel(channel), plaintext, err
 	case in.Telegram != nil:
 		// A blank token is an update that keeps the stored one; the bot's id and @username come from
 		// getMe when it connects.
@@ -669,6 +705,8 @@ func mergeSecrets(provider integration.Provider, next, prev []byte) ([]byte, err
 		return next, nil // no secret
 	case integration.ProviderTelegram:
 		return next, nil // never merged here: editTelegram carries the token forward
+	case integration.ProviderTwilio:
+		return next, nil // never merged here: editTwilio carries the secret forward
 	}
 	return next, nil
 }
@@ -683,6 +721,7 @@ type RedactedConfig struct {
 	SES      *RedactedSES
 	Inbox    *RedactedInbox
 	Telegram *RedactedTelegram
+	Twilio   *RedactedTwilio
 }
 
 type (
@@ -740,6 +779,8 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 			return RedactedConfig{}, err
 		}
 		return RedactedConfig{Telegram: &RedactedTelegram{BotID: c.BotID, Username: c.Username}}, nil
+	case integration.ProviderTwilio:
+		return redactTwilio(plaintext)
 	}
 	return RedactedConfig{}, errUnknownProvider
 }

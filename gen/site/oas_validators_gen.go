@@ -1076,6 +1076,11 @@ func (s IntegrationConfigInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case TwilioConfigInputIntegrationConfigInputSum:
+		if err := s.TwilioConfigInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -7145,6 +7150,11 @@ func (s SiteIntegrationConfigSum) Validate() error {
 			return err
 		}
 		return nil
+	case SiteTwilioConfigSiteIntegrationConfigSum:
+		if err := s.SiteTwilioConfig.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -7159,6 +7169,8 @@ func (s SiteIntegrationProvider) Validate() error {
 	case "inbox":
 		return nil
 	case "telegram":
+		return nil
+	case "twilio":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -13054,6 +13066,49 @@ func (s *SiteTransactionalEmailsListUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *SiteTwilioConfig) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.FromKind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "fromKind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteTwilioConfigKind) Validate() error {
+	switch s {
+	case "twilio":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *SiteUpdateAutomationInput) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -14465,6 +14520,19 @@ func (s *SiteWorkspacesUpdateUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s SmsFromKind) Validate() error {
+	switch s {
+	case "number":
+		return nil
+	case "alphanumeric":
+		return nil
+	case "messagingService":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *SmtpConfigInput) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -14696,6 +14764,38 @@ func (s *TestSendBroadcastInput) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s *TwilioConfigInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s TwilioConfigInputKind) Validate() error {
+	switch s {
+	case "twilio":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *UpdateBroadcastInput) Validate() error {

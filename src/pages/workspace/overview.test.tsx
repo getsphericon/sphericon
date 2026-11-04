@@ -459,6 +459,9 @@ test('an unfinished checklist is shown with its steps', async () => {
 
   await expect.element(screen.getByText('Set up Sphericon')).toBeInTheDocument()
   await expect.element(screen.getByText('Waiting for DNS')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Connect Twilio' }))
+    .toHaveAttribute('href', expect.stringContaining('/settings/emails'))
 })
 
 test('a finished checklist is not shown', async () => {

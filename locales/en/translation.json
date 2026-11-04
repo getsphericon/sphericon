@@ -1770,6 +1770,7 @@
     "integrations": {
       "advanced": "Advanced settings",
       "back": "Back",
+      "carrierRegistration": "Registering your SMS sender with carriers is yours to do in Twilio: US 10DLC brand and campaign, toll-free verification, short codes, operator contracts in other countries. sphericon does not check it.",
       "channels": {
         "email": "Email",
         "sms": "SMS",
@@ -1783,10 +1784,16 @@
       "deleteConsequence": "The provider stops sending and is deleted for good: it cannot be restored. What it already sent keeps its history and reports.",
       "deleted": "Provider deleted",
       "deleteError": "Failed to delete the provider",
-      "description": "Connect the providers this workspace sends through: an email provider for mail, a Telegram bot for Telegram. Each channel has its own default.",
+      "description": "Connect the providers this workspace sends through: an email provider for mail, a Telegram bot for Telegram, a Twilio account for SMS. Each channel has its own default.",
       "empty": "No providers connected yet",
       "fields": {
         "accessKeyId": "Access key ID",
+        "accountSid": "Account SID",
+        "apiKeySecret": "API key secret",
+        "apiKeySid": "API key SID",
+        "authToken": "Auth Token",
+        "authTokenHint": "Twilio signs its callbacks with it, even when messages are sent with an API key.",
+        "authTokenSendsHint": "Messages are sent with it, and Twilio signs its callbacks with it.",
         "endpoint": "Custom endpoint",
         "endpointHint": "The provider’s SES API address.",
         "from": "From address",
@@ -1796,8 +1803,13 @@
         "port": "Port",
         "region": "AWS region",
         "secretAccessKey": "Secret access key",
+        "smsFrom": "Send from",
+        "smsFromHint": "A number of the account (+15017250604), an alphanumeric sender ID of up to 11 characters, or a Messaging Service SID (MG…).",
         "token": "Bot token",
         "tokenHint": "The token @BotFather gave you for the bot.",
+        "twilioApiKey": "An API key",
+        "twilioAuthTokenOnly": "The Auth Token",
+        "twilioCredential": "Send with",
         "username": "Username"
       },
       "inbound": {
@@ -1883,14 +1895,20 @@
         "sesHint": "AWS SES. Needs a region and an access key.",
         "smtpHint": "Any SMTP server.",
         "telegram": "Telegram bot",
-        "telegramHint": "Your own bot from @BotFather, to message the people who start it."
+        "telegramHint": "Your own bot from @BotFather, to message the people who start it.",
+        "twilio": "Twilio",
+        "twilioHint": "Your own Twilio account, to text Contacts who agreed to it. Needs the Account SID, an API key or the Auth Token, and a sender."
       },
       "saved": "Provider saved",
       "telegramWarning": {
         "body": "If the bot already sends its updates to another tool, that tool stops receiving them. Use a bot dedicated to sphericon.",
         "title": "Connecting replaces the bot's webhook"
       },
-      "title": "Providers"
+      "title": "Providers",
+      "twilioCallbacks": {
+        "body": "sphericon could not set where Twilio posts replies and delivery reports for this sender. In the Twilio Console, paste this address as the inbound message webhook and the status callback, method POST. An alphanumeric sender ID receives no replies.",
+        "title": "Give Twilio the address of {{name}}"
+      }
     },
     "loadErrorTitle": "Failed to load workspace",
     "mcp": {
@@ -2182,6 +2200,10 @@
     "description": "Your path to your first email. Each turns done by itself when the thing exists, in any order.",
     "done": "Done",
     "loadError": "Failed to load the setup checklist",
+    "sms": {
+      "action": "Connect Twilio",
+      "description": "Want to text your Contacts too? Connect your Twilio account as the SMS Integration."
+    },
     "steps": {
       "contact": {
         "actions": {

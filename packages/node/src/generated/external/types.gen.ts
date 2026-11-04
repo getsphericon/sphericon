@@ -1994,7 +1994,7 @@ export type CreateContactInput = {
 };
 
 /**
- * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422
+ * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks set before the save; a refusal is a 422
  */
 export type CreateIntegrationInput = {
   name: string;
@@ -2010,11 +2010,11 @@ export type CreateIntegrationInput = {
   maxPerDay?: MaxPerDay | null;
   config: IntegrationConfigInput;
   /**
-   * Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A Telegram integration takes none: it always reads its bot's updates with the built-in `telegram` Preset
+   * Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A Telegram integration takes none: it always reads its bot's updates with the built-in `telegram` Preset. A Twilio integration always reads its callbacks with the built-in `twilio` Preset, which no other integration takes
    */
   preset?: string | null;
   /**
-   * The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram integration takes none
+   * The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram integration takes none; a Twilio integration takes the `twilio` Preset's `auth_token`, required
    */
   params?: JsonObject;
 };
@@ -3094,7 +3094,9 @@ export type IntegrationConfig = ({
   kind: 'inbox';
 } & InboxConfig) | ({
   kind: 'telegram';
-} & TelegramConfig);
+} & TelegramConfig) | ({
+  kind: 'twilio';
+} & TwilioConfig);
 
 /**
  * Provider config submitted by the caller, discriminated by `kind`.
@@ -3107,7 +3109,9 @@ export type IntegrationConfigInput = ({
   kind: 'inbox';
 } & InboxConfigInput) | ({
   kind: 'telegram';
-} & TelegramConfigInput);
+} & TelegramConfigInput) | ({
+  kind: 'twilio';
+} & TwilioConfigInput);
 
 /**
  * Concrete sending provider
@@ -3116,7 +3120,8 @@ export const IntegrationProvider = {
   SMTP: 'smtp',
   SES: 'ses',
   INBOX: 'inbox',
-  TELEGRAM: 'telegram'
+  TELEGRAM: 'telegram',
+  TWILIO: 'twilio'
 } as const;
 
 /**
@@ -4194,6 +4199,20 @@ export const SetupScope = {
 export type SetupScope = typeof SetupScope[keyof typeof SetupScope];
 
 /**
+ * What an SMS integration's messages go out from
+ */
+export const SmsFromKind = {
+  NUMBER: 'number',
+  ALPHANUMERIC: 'alphanumeric',
+  MESSAGING_SERVICE: 'messagingService'
+} as const;
+
+/**
+ * What an SMS integration's messages go out from
+ */
+export type SmsFromKind = typeof SmsFromKind[keyof typeof SmsFromKind];
+
+/**
  * SMTP config without the password
  */
 export type SmtpConfig = {
@@ -4575,6 +4594,56 @@ export const TransactionalSendStatus = { SENT: 'sent', SUPPRESSED: 'suppressed' 
 export type TransactionalSendStatus = typeof TransactionalSendStatus[keyof typeof TransactionalSendStatus];
 
 /**
+ * A Twilio account without its secret
+ */
+export type TwilioConfig = {
+  kind: 'twilio';
+  /**
+   * The Account SID
+   */
+  accountSid: string;
+  /**
+   * The API key messages are sent with; null when they are sent with the Auth Token
+   */
+  apiKeySid: string | null;
+  /**
+   * What messages go out from
+   */
+  from: string;
+  /**
+   * What kind of sender `from` is
+   */
+  fromKind: SmsFromKind;
+  /**
+   * Whether connecting pointed the sender's callbacks at the hook. False for an alphanumeric sender ID, which receives nothing, and when the credentials may not change the sender: then paste `hookUrl` into Twilio as the sender's inbound and status callback
+   */
+  callbacksSet: boolean;
+};
+
+/**
+ * A Workspace's own Twilio account on the `sms` channel. Saving it reads the sender with the credentials (a wrong or revoked key is a 422) and points the sender's inbound messages, and a Messaging Service's delivery reports, at the integration's hook. The Auth Token that signs Twilio's callbacks is the `twilio` Preset's `auth_token` param, kept and rotated apart from these credentials
+ */
+export type TwilioConfigInput = {
+  kind: 'twilio';
+  /**
+   * The Account SID (`AC…`)
+   */
+  accountSid: string;
+  /**
+   * An API key's SID (`SK…`) to send with; omit or null to send with the Account SID and its Auth Token
+   */
+  apiKeySid?: string | null;
+  /**
+   * The API key's secret, or the Auth Token when no API key is given. Write-only: blank on an update keeps the stored one while the Account SID and the API key stay the same
+   */
+  secret: string;
+  /**
+   * What messages go out from: a phone number of the account in E.164 (`+15017250604`), an alphanumeric sender ID of up to 11 characters, or a Messaging Service SID (`MG…`)
+   */
+  from: string;
+};
+
+/**
  * A per-sending-source opt-out of marketing
  */
 export type UnsubscribeResource = {
@@ -4731,11 +4800,11 @@ export type UpdateIntegrationInput = {
   maxPerDay?: MaxPerDay | null;
   config?: IntegrationConfigInput;
   /**
-   * Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over. A Telegram integration's Preset is fixed
+   * Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over. A Telegram or Twilio integration's Preset is fixed
    */
   preset?: string | null;
   /**
-   * The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired). A Telegram integration takes none
+   * The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired): a Twilio integration's `auth_token` rotates this way, leaving its send credentials as they are. A Telegram integration takes none
    */
   params?: JsonObject;
   /**

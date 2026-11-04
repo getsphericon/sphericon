@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/messaging/telegram"
+	"github.com/getsphericon/sphericon/internal/messaging/twilio"
 )
 
 // FakeSES stands in for the SES account behind every "ses" Integration the server
@@ -83,8 +84,9 @@ func (s quotaSender) SendQuota(ctx context.Context) (messaging.Quota, error) {
 }
 
 // catalogWith is the built-in catalog with SES's quota lookup answered by fake, and Telegram's
-// bots reached at telegramAPIURL (the fake Bot API of the env).
-func catalogWith(fake *FakeSES, telegramAPIURL string) *messaging.Catalog {
+// bots reached at telegramAPIURL (the fake Bot API of the env) and Twilio's accounts at twilioAPIURL
+// (the fake REST API of the env).
+func catalogWith(fake *FakeSES, telegramAPIURL, twilioAPIURL string) *messaging.Catalog {
 	descriptor := ses.Descriptor()
 	descriptor.Build = func(config []byte, deps messaging.Deps) (any, error) {
 		built, err := ses.Descriptor().Build(config, deps)
@@ -97,5 +99,5 @@ func catalogWith(fake *FakeSES, telegramAPIURL string) *messaging.Catalog {
 		}
 		return quotaSender{EmailSender: sender, fake: fake}, nil
 	}
-	return messaging.NewCatalog(smtp.Descriptor(), descriptor, inbox.Descriptor(), telegram.Descriptor(telegramAPIURL))
+	return messaging.NewCatalog(smtp.Descriptor(), descriptor, inbox.Descriptor(), telegram.Descriptor(telegramAPIURL), twilio.Descriptor(twilioAPIURL))
 }

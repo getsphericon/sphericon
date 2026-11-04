@@ -153,6 +153,7 @@ var (
 	ErrorsIntegrationNotFound                   = ID{key: "errors.integration_not_found"}
 	ErrorsIntegrationOneInbox                   = ID{key: "errors.integration_one_inbox"}
 	ErrorsIntegrationPresetTelegramOnly         = ID{key: "errors.integration_preset_telegram_only"}
+	ErrorsIntegrationPresetTwilioOnly           = ID{key: "errors.integration_preset_twilio_only"}
 	ErrorsIntegrationProviderLimitRequired      = ID{key: "errors.integration_provider_limit_required"}
 	ErrorsIntegrationSecretRequired             = ID{key: "errors.integration_secret_required"}
 	ErrorsIntegrationTelegramOtherBot           = ID{key: "errors.integration_telegram_other_bot"}
@@ -162,6 +163,16 @@ var (
 	ErrorsIntegrationTelegramTokenRefused       = ID{key: "errors.integration_telegram_token_refused"}
 	ErrorsIntegrationTelegramUnreachable        = ID{key: "errors.integration_telegram_unreachable"}
 	ErrorsIntegrationTelegramWebhookRefused     = ID{key: "errors.integration_telegram_webhook_refused"}
+	ErrorsIntegrationTwilioAccountSid           = ID{key: "errors.integration_twilio_account_sid"}
+	ErrorsIntegrationTwilioApiKeySid            = ID{key: "errors.integration_twilio_api_key_sid"}
+	ErrorsIntegrationTwilioError                = ID{key: "errors.integration_twilio_error"}
+	ErrorsIntegrationTwilioFrom                 = ID{key: "errors.integration_twilio_from"}
+	ErrorsIntegrationTwilioPresetFixed          = ID{key: "errors.integration_twilio_preset_fixed"}
+	ErrorsIntegrationTwilioRefused              = ID{key: "errors.integration_twilio_refused"}
+	ErrorsIntegrationTwilioSecret               = ID{key: "errors.integration_twilio_secret"}
+	ErrorsIntegrationTwilioSecretRequired       = ID{key: "errors.integration_twilio_secret_required"}
+	ErrorsIntegrationTwilioSenderNotFound       = ID{key: "errors.integration_twilio_sender_not_found"}
+	ErrorsIntegrationTwilioUnreachable          = ID{key: "errors.integration_twilio_unreachable"}
 	ErrorsInvalidCredentials                    = ID{key: "errors.invalid_credentials"}
 	ErrorsInvitationLinkNotFound                = ID{key: "errors.invitation_link_not_found"}
 	ErrorsInvitationNotFound                    = ID{key: "errors.invitation_not_found"}

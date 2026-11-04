@@ -79,10 +79,11 @@ const (
 
 // reservedPrefixes are the namespaces of the actions only the system records: delivery
 // (`email.*`), consent (`marketing.*`), the Contact's lifecycle, Tags and Custom fields
-// (`contact.*`), its Enrollments (`automation.*`) and its Telegram Bindings (`telegram.*`). Some are evidence (ADR 0013, ADR 0019), and
+// (`contact.*`), its Enrollments (`automation.*`), its Telegram Bindings (`telegram.*`) and its SMS
+// (`sms.*`). Some are evidence (ADR 0013, ADR 0019), and
 // an Automation, a Rule or a Segment that names one must be sure the system recorded it, so a
 // customer's own Event never carries one.
-var reservedPrefixes = []string{"email.", "marketing.", "contact.", "automation.", "telegram."}
+var reservedPrefixes = []string{"email.", "marketing.", "contact.", "automation.", "telegram.", "sms."}
 
 // ReservedAction reports whether action belongs to the system and is refused from a
 // customer's Event.

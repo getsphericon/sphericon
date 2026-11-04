@@ -1250,7 +1250,8 @@ export const zSiteIntegrationProvider = z.enum([
   'smtp',
   'ses',
   'inbox',
-  'telegram'
+  'telegram',
+  'twilio'
 ]);
 
 /**
@@ -2206,16 +2207,6 @@ export const zSiteTelegramConfig = z.object({
 });
 
 /**
- * Provider config returned to the UI, discriminated by `kind`. Secrets are omitted.
- */
-export const zSiteIntegrationConfig = z.discriminatedUnion('kind', [
-  zSiteSmtpConfig.extend({ kind: z.literal('smtp') }),
-  zSiteSesConfig.extend({ kind: z.literal('ses') }),
-  zSiteInboxConfig.extend({ kind: z.literal('inbox') }),
-  zSiteTelegramConfig.extend({ kind: z.literal('telegram') })
-]);
-
-/**
  * What a test send did: the address the preview went out from
  */
 export const zSiteTestSendBroadcastResult = z.object({
@@ -2341,6 +2332,38 @@ export const zSiteWebhookTestResult = z.object({
   status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   kind: z.exactOptional(zSiteWebhookErrorKind)
 });
+
+/**
+ * What an SMS integration's messages go out from
+ */
+export const zSmsFromKind = z.enum([
+  'number',
+  'alphanumeric',
+  'messagingService'
+]);
+
+/**
+ * A Twilio account without its secret
+ */
+export const zSiteTwilioConfig = z.object({
+  kind: z.enum(['twilio']),
+  accountSid: z.string(),
+  apiKeySid: z.string().nullable(),
+  from: z.string(),
+  fromKind: zSmsFromKind,
+  callbacksSet: z.boolean()
+});
+
+/**
+ * Provider config returned to the UI, discriminated by `kind`. Secrets are omitted.
+ */
+export const zSiteIntegrationConfig = z.discriminatedUnion('kind', [
+  zSiteSmtpConfig.extend({ kind: z.literal('smtp') }),
+  zSiteSesConfig.extend({ kind: z.literal('ses') }),
+  zSiteInboxConfig.extend({ kind: z.literal('inbox') }),
+  zSiteTelegramConfig.extend({ kind: z.literal('telegram') }),
+  zSiteTwilioConfig.extend({ kind: z.literal('twilio') })
+]);
 
 /**
  * SMTP credentials
@@ -2488,30 +2511,6 @@ export const zCreateBroadcastInput = z.object({
 export const zTelegramConfigInput = z.object({
   kind: z.enum(['telegram']),
   token: z.string()
-});
-
-/**
- * Provider config submitted by the caller, discriminated by `kind`.
- */
-export const zIntegrationConfigInput = z.discriminatedUnion('kind', [
-  zSmtpConfigInput.extend({ kind: z.literal('smtp') }),
-  zSesConfigInput.extend({ kind: z.literal('ses') }),
-  zInboxConfigInput.extend({ kind: z.literal('inbox') }),
-  zTelegramConfigInput.extend({ kind: z.literal('telegram') })
-]);
-
-/**
- * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422
- */
-export const zCreateIntegrationInput = z.object({
-  name: z.string(),
-  enabled: z.exactOptional(z.boolean()),
-  isDefault: z.exactOptional(z.boolean()),
-  maxPerSecond: z.exactOptional(zMaxPerSecond.nullable()),
-  maxPerDay: z.exactOptional(zMaxPerDay.nullable()),
-  config: zIntegrationConfigInput,
-  preset: z.exactOptional(z.string().nullable()),
-  params: z.exactOptional(zJsonObject)
 });
 
 /**
@@ -3470,6 +3469,42 @@ export const zTokenOnlyScope = z.enum([
   'audit:read',
   'export:read'
 ]);
+
+/**
+ * A Workspace's own Twilio account on the `sms` channel. Saving it reads the sender with the credentials (a wrong or revoked key is a 422) and points the sender's inbound messages, and a Messaging Service's delivery reports, at the integration's hook. The Auth Token that signs Twilio's callbacks is the `twilio` Preset's `auth_token` param, kept and rotated apart from these credentials
+ */
+export const zTwilioConfigInput = z.object({
+  kind: z.enum(['twilio']),
+  accountSid: z.string(),
+  apiKeySid: z.exactOptional(z.string().nullable()),
+  secret: z.string(),
+  from: z.string()
+});
+
+/**
+ * Provider config submitted by the caller, discriminated by `kind`.
+ */
+export const zIntegrationConfigInput = z.discriminatedUnion('kind', [
+  zSmtpConfigInput.extend({ kind: z.literal('smtp') }),
+  zSesConfigInput.extend({ kind: z.literal('ses') }),
+  zInboxConfigInput.extend({ kind: z.literal('inbox') }),
+  zTelegramConfigInput.extend({ kind: z.literal('telegram') }),
+  zTwilioConfigInput.extend({ kind: z.literal('twilio') })
+]);
+
+/**
+ * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks set before the save; a refusal is a 422
+ */
+export const zCreateIntegrationInput = z.object({
+  name: z.string(),
+  enabled: z.exactOptional(z.boolean()),
+  isDefault: z.exactOptional(z.boolean()),
+  maxPerSecond: z.exactOptional(zMaxPerSecond.nullable()),
+  maxPerDay: z.exactOptional(zMaxPerDay.nullable()),
+  config: zIntegrationConfigInput,
+  preset: z.exactOptional(z.string().nullable()),
+  params: z.exactOptional(zJsonObject)
+});
 
 /**
  * Request body for updating a draft broadcast: an omitted field keeps its value, null clears it

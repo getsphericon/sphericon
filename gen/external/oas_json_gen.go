@@ -26550,6 +26550,30 @@ func (s IntegrationConfigInputSum) encodeFields(e *jx.Encoder) {
 				e.Str(s.Token)
 			}
 		}
+	case TwilioConfigInputIntegrationConfigInputSum:
+		e.FieldStart("kind")
+		e.Str("twilio")
+		{
+			s := s.TwilioConfigInput
+			{
+				e.FieldStart("accountSid")
+				e.Str(s.AccountSid)
+			}
+			{
+				if s.ApiKeySid.Set {
+					e.FieldStart("apiKeySid")
+					s.ApiKeySid.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("secret")
+				e.Str(s.Secret)
+			}
+			{
+				e.FieldStart("from")
+				e.Str(s.From)
+			}
+		}
 	}
 }
 
@@ -26588,6 +26612,9 @@ func (s *IntegrationConfigInputSum) Decode(d *jx.Decoder) error {
 				case "telegram":
 					s.Type = TelegramConfigInputIntegrationConfigInputSum
 					found = true
+				case "twilio":
+					s.Type = TwilioConfigInputIntegrationConfigInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -26616,6 +26643,10 @@ func (s *IntegrationConfigInputSum) Decode(d *jx.Decoder) error {
 		}
 	case TelegramConfigInputIntegrationConfigInputSum:
 		if err := s.TelegramConfigInput.Decode(d); err != nil {
+			return err
+		}
+	case TwilioConfigInputIntegrationConfigInputSum:
+		if err := s.TwilioConfigInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -26725,6 +26756,32 @@ func (s IntegrationConfigSum) encodeFields(e *jx.Encoder) {
 				e.Str(s.Username)
 			}
 		}
+	case TwilioConfigIntegrationConfigSum:
+		e.FieldStart("kind")
+		e.Str("twilio")
+		{
+			s := s.TwilioConfig
+			{
+				e.FieldStart("accountSid")
+				e.Str(s.AccountSid)
+			}
+			{
+				e.FieldStart("apiKeySid")
+				s.ApiKeySid.Encode(e)
+			}
+			{
+				e.FieldStart("from")
+				e.Str(s.From)
+			}
+			{
+				e.FieldStart("fromKind")
+				s.FromKind.Encode(e)
+			}
+			{
+				e.FieldStart("callbacksSet")
+				e.Bool(s.CallbacksSet)
+			}
+		}
 	}
 }
 
@@ -26763,6 +26820,9 @@ func (s *IntegrationConfigSum) Decode(d *jx.Decoder) error {
 				case "telegram":
 					s.Type = TelegramConfigIntegrationConfigSum
 					found = true
+				case "twilio":
+					s.Type = TwilioConfigIntegrationConfigSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -26791,6 +26851,10 @@ func (s *IntegrationConfigSum) Decode(d *jx.Decoder) error {
 		}
 	case TelegramConfigIntegrationConfigSum:
 		if err := s.TelegramConfig.Decode(d); err != nil {
+			return err
+		}
+	case TwilioConfigIntegrationConfigSum:
+		if err := s.TwilioConfig.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -26836,6 +26900,8 @@ func (s *IntegrationProvider) Decode(d *jx.Decoder) error {
 		*s = IntegrationProviderInbox
 	case IntegrationProviderTelegram:
 		*s = IntegrationProviderTelegram
+	case IntegrationProviderTwilio:
+		*s = IntegrationProviderTwilio
 	default:
 		*s = IntegrationProvider(v)
 	}
@@ -41356,6 +41422,48 @@ func (s *SetTrackingDomainInput) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SmsFromKind as json.
+func (s SmsFromKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SmsFromKind from json.
+func (s *SmsFromKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SmsFromKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SmsFromKind(v) {
+	case SmsFromKindNumber:
+		*s = SmsFromKindNumber
+	case SmsFromKindAlphanumeric:
+		*s = SmsFromKindAlphanumeric
+	case SmsFromKindMessagingService:
+		*s = SmsFromKindMessagingService
+	default:
+		*s = SmsFromKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SmsFromKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SmsFromKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *SmtpConfig) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -47169,6 +47277,419 @@ func (s TransactionalSendStatus) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *TransactionalSendStatus) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *TwilioConfig) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *TwilioConfig) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("accountSid")
+		e.Str(s.AccountSid)
+	}
+	{
+		e.FieldStart("apiKeySid")
+		s.ApiKeySid.Encode(e)
+	}
+	{
+		e.FieldStart("from")
+		e.Str(s.From)
+	}
+	{
+		e.FieldStart("fromKind")
+		s.FromKind.Encode(e)
+	}
+	{
+		e.FieldStart("callbacksSet")
+		e.Bool(s.CallbacksSet)
+	}
+}
+
+var jsonFieldsNameOfTwilioConfig = [6]string{
+	0: "kind",
+	1: "accountSid",
+	2: "apiKeySid",
+	3: "from",
+	4: "fromKind",
+	5: "callbacksSet",
+}
+
+// Decode decodes TwilioConfig from json.
+func (s *TwilioConfig) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TwilioConfig to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "accountSid":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.AccountSid = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"accountSid\"")
+			}
+		case "apiKeySid":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.ApiKeySid.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"apiKeySid\"")
+			}
+		case "from":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.From = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"from\"")
+			}
+		case "fromKind":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.FromKind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromKind\"")
+			}
+		case "callbacksSet":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Bool()
+				s.CallbacksSet = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"callbacksSet\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode TwilioConfig")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00111111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfTwilioConfig) {
+					name = jsonFieldsNameOfTwilioConfig[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *TwilioConfig) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TwilioConfig) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *TwilioConfigInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *TwilioConfigInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("accountSid")
+		e.Str(s.AccountSid)
+	}
+	{
+		if s.ApiKeySid.Set {
+			e.FieldStart("apiKeySid")
+			s.ApiKeySid.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("secret")
+		e.Str(s.Secret)
+	}
+	{
+		e.FieldStart("from")
+		e.Str(s.From)
+	}
+}
+
+var jsonFieldsNameOfTwilioConfigInput = [5]string{
+	0: "kind",
+	1: "accountSid",
+	2: "apiKeySid",
+	3: "secret",
+	4: "from",
+}
+
+// Decode decodes TwilioConfigInput from json.
+func (s *TwilioConfigInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TwilioConfigInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "accountSid":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.AccountSid = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"accountSid\"")
+			}
+		case "apiKeySid":
+			if err := func() error {
+				s.ApiKeySid.Reset()
+				if err := s.ApiKeySid.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"apiKeySid\"")
+			}
+		case "secret":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.Secret = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"secret\"")
+			}
+		case "from":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Str()
+				s.From = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"from\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode TwilioConfigInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00011011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfTwilioConfigInput) {
+					name = jsonFieldsNameOfTwilioConfigInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *TwilioConfigInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TwilioConfigInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes TwilioConfigInputKind as json.
+func (s TwilioConfigInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes TwilioConfigInputKind from json.
+func (s *TwilioConfigInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TwilioConfigInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch TwilioConfigInputKind(v) {
+	case TwilioConfigInputKindTwilio:
+		*s = TwilioConfigInputKindTwilio
+	default:
+		*s = TwilioConfigInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s TwilioConfigInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TwilioConfigInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes TwilioConfigKind as json.
+func (s TwilioConfigKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes TwilioConfigKind from json.
+func (s *TwilioConfigKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TwilioConfigKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch TwilioConfigKind(v) {
+	case TwilioConfigKindTwilio:
+		*s = TwilioConfigKindTwilio
+	default:
+		*s = TwilioConfigKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s TwilioConfigKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TwilioConfigKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

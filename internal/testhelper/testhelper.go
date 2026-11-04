@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/telegram/telegramtest"
+	"github.com/getsphericon/sphericon/internal/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -189,6 +190,10 @@ type TestEnv struct {
 	// Telegram is the fake Bot API every Telegram Integration's bot is reached at
 	// (SPHERICON_TELEGRAM_BOT_API_URL points at it): add bots, script failures, read the calls.
 	Telegram *telegramtest.Server
+
+	// Twilio is the fake REST API every SMS Integration's Twilio account is reached at
+	// (SPHERICON_TWILIO_API_URL points at it): add accounts, keys and senders, read the calls.
+	Twilio *twiliotest.Server
 
 	// Machine is the detector the tracking endpoints judge hits by, fed by PrivateRelay, the
 	// scripted source of the published Private Relay list: Refresh replaces the stored ranges.
@@ -423,6 +428,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	fakeSES := &FakeSES{}
 	botAPI := telegramtest.New(t)
 	cfg.TelegramBotAPIURL = botAPI.URL()
+	twilioAPI := twiliotest.New(t)
+	cfg.TwilioAPIURL = twilioAPI.URL()
 	relay := &FakeRelayRanges{}
 	confirmations := &Confirmations{}
 
@@ -434,7 +441,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	do.OverrideValue(injector, Passwords())
 	do.OverrideValue(injector, app.SystemSender{EmailSender: systemSender})
 	// SES's quota lookup is answered by a fake instead of the AWS API.
-	do.OverrideValue(injector, catalogWith(fakeSES, cfg.TelegramBotAPIURL))
+	do.OverrideValue(injector, catalogWith(fakeSES, cfg.TelegramBotAPIURL, cfg.TwilioAPIURL))
 	do.OverrideValue(injector, stubTXT)
 	do.OverrideValue[machine.Source](injector, relay)
 	do.OverrideValue(injector, presets)
@@ -504,6 +511,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		CustomerMail:    customerMail,
 		SES:             fakeSES,
 		Telegram:        botAPI,
+		Twilio:          twilioAPI,
 		Machine:         do.MustInvoke[*machine.Detector](injector),
 		PrivateRelay:    relay,
 		Confirmations:   confirmations,

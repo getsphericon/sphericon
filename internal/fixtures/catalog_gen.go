@@ -1330,9 +1330,9 @@ const (
 	// IntegrationAcmeSmsIngestKey is from fixtures/integrations.
 	IntegrationAcmeSmsIngestKey = "omik_test_integrationacmesms"
 	// IntegrationAcmeSmsName is from fixtures/integrations.
-	IntegrationAcmeSmsName = "SMS relay (reserved Channel)"
+	IntegrationAcmeSmsName = "Acme Twilio"
 	// IntegrationAcmeSmsProvider is from fixtures/integrations.
-	IntegrationAcmeSmsProvider = "smtp"
+	IntegrationAcmeSmsProvider = "twilio"
 	// IntegrationAcmeTelegramID is from fixtures/integrations.
 	IntegrationAcmeTelegramID = 9
 	// IntegrationAcmeTelegramIngestKey is from fixtures/integrations.

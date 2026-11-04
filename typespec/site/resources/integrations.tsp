@@ -24,6 +24,9 @@ enum SiteIntegrationProvider {
 
   /** A Telegram bot, through the Bot API */
   telegram,
+
+  /** A Twilio account, on the `sms` channel */
+  twilio,
 }
 
 /** Where an effective Provider limit comes from */
@@ -119,6 +122,26 @@ model SiteTelegramConfig {
   username: string;
 }
 
+/** A Twilio account without its secret */
+model SiteTwilioConfig {
+  kind: "twilio";
+
+  /** The Account SID */
+  accountSid: string;
+
+  /** The API key messages are sent with; null when they are sent with the Auth Token */
+  apiKeySid: string | null;
+
+  /** What messages go out from */
+  from: string;
+
+  /** What kind of sender `from` is */
+  fromKind: SmsFromKind;
+
+  /** Whether connecting pointed the sender's callbacks at the hook. False for an alphanumeric sender ID, which receives nothing, and when the credentials may not change the sender: then paste `hookUrl` into Twilio as the sender's inbound and status callback */
+  callbacksSet: boolean;
+}
+
 /** Provider config returned to the UI, discriminated by `kind`. Secrets are omitted. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union SiteIntegrationConfig {
@@ -126,6 +149,7 @@ union SiteIntegrationConfig {
   ses: SiteSesConfig,
   inbox: SiteInboxConfig,
   telegram: SiteTelegramConfig,
+  twilio: SiteTwilioConfig,
 }
 
 // The input config (carries secrets; write-only) is common/integrations.tsp.

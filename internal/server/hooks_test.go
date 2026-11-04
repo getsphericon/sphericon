@@ -265,9 +265,9 @@ func TestHookRedeliveryHasTheEffectOfOnce(t *testing.T) {
 	assert.InDelta(t, 1, scrape.Value(t, "email_send_outcomes_total", map[string]string{"provider": "generic", "status": "bounce"}), 0)
 }
 
-func updateParams(t *testing.T, c *externalapi.Client, id int64, update externalapi.UpdateIntegrationInput) *externalapi.IntegrationResource {
+func updateParams(t *testing.T, c *externalapi.Client, id int64, update *externalapi.UpdateIntegrationInput) *externalapi.IntegrationResource {
 	t.Helper()
-	res, err := c.IntegrationsUpdate(t.Context(), &update, externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(id)})
+	res, err := c.IntegrationsUpdate(t.Context(), update, externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(id)})
 	require.NoError(t, err)
 	out, ok := res.(*externalapi.IntegrationResource)
 	require.Truef(t, ok, "got %T", res)
@@ -289,7 +289,7 @@ func TestRotatingASecretKeepsTheOldOneValidUntilItIsRetired(t *testing.T) {
 	key := fixtures.IntegrationAcmeGenericAIngestKey
 	rotated := newSecret("rotated-0123456789")
 
-	read := updateParams(t, c, id, externalapi.UpdateIntegrationInput{Params: secretParam(rotated)})
+	read := updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Params: secretParam(rotated)})
 	assert.Equal(t, []string{"secret"}, read.SecretsRetiring)
 	shown := string(read.Params["secret"])
 	assert.NotContains(t, shown, rotated)
@@ -298,7 +298,7 @@ func TestRotatingASecretKeepsTheOldOneValidUntilItIsRetired(t *testing.T) {
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, rotated, "msg_1", failureBody("evt_new", "new@example.com", true)).Code)
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_2", failureBody("evt_old", "old@example.com", true)).Code)
 
-	retired := updateParams(t, c, id, externalapi.UpdateIntegrationInput{RetireSecrets: externalapi.NewOptBool(true)})
+	retired := updateParams(t, c, id, &externalapi.UpdateIntegrationInput{RetireSecrets: externalapi.NewOptBool(true)})
 	assert.Empty(t, retired.SecretsRetiring)
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, rotated, "msg_3", failureBody("evt_new2", "new2@example.com", true)).Code)
 	assert.Equal(t, http.StatusForbidden, signedPost(t, env, key, secretA, "msg_4", failureBody("evt_old2", "old2@example.com", true)).Code)
@@ -352,7 +352,7 @@ func TestChoosingAPresetAgainNeedsItsParamsInFull(t *testing.T) {
 	id := int64(fixtures.IntegrationAcmeGenericAID)
 	key := fixtures.IntegrationAcmeGenericAIngestKey
 
-	removed := updateParams(t, c, id, externalapi.UpdateIntegrationInput{Preset: externalapi.OptNilString{Set: true, Null: true}})
+	removed := updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Preset: externalapi.OptNilString{Set: true, Null: true}})
 	assert.True(t, removed.Preset.Null)
 	assert.Equal(t, http.StatusNotFound, signedPost(t, env, key, secretA, "msg_1", failureBody("evt_1", "a@example.com", true)).Code,
 		"an SMTP Integration with no Preset receives nothing")
@@ -362,7 +362,7 @@ func TestChoosingAPresetAgainNeedsItsParamsInFull(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.IntegrationsUpdateUnprocessableEntity{}, res)
 
-	updateParams(t, c, id, externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic"), Params: secretParam(secretA)})
+	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic"), Params: secretParam(secretA)})
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_2", failureBody("evt_1", "a@example.com", true)).Code)
 
 	// Both changes of the Preset are in the Audit log, the secret in neither.
@@ -399,8 +399,8 @@ func TestChoosingAPresetAndRotatingASecretAreAuditedWithoutTheSecret(t *testing.
 	id := int64(fixtures.IntegrationAcmeGenericAID)
 	rotated := newSecret("audited-0123456789")
 
-	updateParams(t, c, id, externalapi.UpdateIntegrationInput{Params: secretParam(rotated)})
-	updateParams(t, c, id, externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic"), Params: secretParam(newSecret("again-0123456789"))})
+	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Params: secretParam(rotated)})
+	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic"), Params: secretParam(newSecret("again-0123456789"))})
 
 	entries := env.OutboxEvents(t, events.NameAuditEntry)
 	require.NotEmpty(t, entries)

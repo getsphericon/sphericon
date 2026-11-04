@@ -67,6 +67,9 @@ enum IntegrationProvider {
 
   /** A Telegram bot, through the Bot API */
   telegram,
+
+  /** A Twilio account, on the `sms` channel */
+  twilio,
 }
 
 /** Where an effective Provider limit comes from */

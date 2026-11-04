@@ -678,6 +678,17 @@ a secret sphericon generates (replacing any webhook the bot had), read with the 
 `telegram` Preset, which no other Integration takes. Its Provider limit is 30 a second, from
 Telegram's side. While it is enabled and not deleted it holds the bot's webhook: regenerating
 its hook key moves the webhook, and disabling or deleting it removes the webhook.
+A **Twilio** Integration is the Workspace's own Twilio account on the `sms` Channel. Its send
+credential (an API key and its secret, or the Account SID and its Auth Token) and its sender (a
+number of the account, an alphanumeric sender ID or a Messaging Service) are its config; the Auth
+Token that signs Twilio's callbacks is the param of the built-in `twilio` Preset, which no other
+Integration takes, so either is rotated alone. Saving it reads the sender with the credentials
+before the save commits (a wrong or revoked key, or a sender the account does not have, refuses
+the save) and points the sender's callbacks at the Ingest hook where Twilio's API allows it (a
+number's inbound webhook, a Messaging Service's inbound and status webhooks), again when its hook
+key is regenerated; otherwise the hook URL is shown to paste into Twilio. Archiving it leaves the
+sender's webhooks as they are. Its Provider limit is the user's alone. Registering the sender with
+carriers (10DLC, toll-free verification, short codes) is the Workspace's.
 _Avoid_: Provider (alone), ESP, sender, connector
 
 **Test inbox**:

@@ -1,9 +1,11 @@
 package server_test
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
+	"log/slog"
 	"maps"
 	"net/http"
 	"net/http/httptest"
@@ -80,4 +82,30 @@ func TestATwilioCallbackSignedForAnotherURLIsRefused(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, changedQuery.Code)
 	assert.Equal(t, http.StatusForbidden, droppedQuery.Code)
 	assert.Equal(t, http.StatusForbidden, anotherHost.Code)
+}
+
+// A Twilio account connected through the app has its callbacks signed with its Auth Token: the hook
+// takes a callback so signed, and refuses and logs one signed with anything else, so nobody can
+// forge a STOP, a delivery report or a reply.
+func TestATwilioCallbackOfAConnectedAccountIsTakenAndAForgedOneRefusedAndLogged(t *testing.T) {
+	var logs bytes.Buffer
+	prev := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(prev) })
+	env := setupHooks(t)
+	sms := env.ConnectTwilio(t)
+	status := url.Values{
+		"MessageSid": {"SM0123"}, "MessageStatus": {"delivered"}, "To": {"+14155552671"},
+		"From": {testhelper.TwilioNumber}, "AccountSid": {sms.Account.SID},
+	}
+
+	signed := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken, status)
+	require.Equal(t, http.StatusOK, signed.Code, signed.Body.String())
+	assert.NotContains(t, logs.String(), "not authentic")
+
+	forged := env.PostTwilioCallback(t, sms.Integration.HookUrl, "notTheAuthToken", status)
+	assert.Equal(t, http.StatusForbidden, forged.Code)
+	assert.Contains(t, logs.String(), `"level":"WARN"`)
+	assert.Contains(t, logs.String(), "not authentic")
+	assert.Contains(t, logs.String(), `"preset":"twilio"`)
 }

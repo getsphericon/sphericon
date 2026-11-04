@@ -128,6 +128,8 @@ func (h *hook) servePreset(w http.ResponseWriter, r *http.Request, row *ent.Inte
 	res, err := p.Handle(ctx, req, params, h.now())
 	switch {
 	case errors.Is(err, preset.ErrUnauthentic):
+		// A forged callback (a STOP, a delivery report, a reply) is refused and left on record.
+		log.Warn("hooks: refused a request that is not authentic", "integration_id", row.ID, "preset", p.Name())
 		writeProblem(w, http.StatusForbidden, "the request is not authentic")
 		return
 	case errors.Is(err, preset.ErrUnavailable):

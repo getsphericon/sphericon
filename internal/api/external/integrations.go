@@ -166,6 +166,8 @@ func (h *Handlers) integrationResource(row *ent.Integration, limit providerlimit
 		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewInboxConfigIntegrationConfigSum(externalapi.InboxConfig{Kind: externalapi.InboxConfigKindInbox})}
 	case cfg.Telegram != nil:
 		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewTelegramConfigIntegrationConfigSum(mapper.TelegramConfigToResource(*cfg.Telegram))}
+	case cfg.Twilio != nil:
+		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewTwilioConfigIntegrationConfigSum(mapper.TwilioConfigToResource(*cfg.Twilio))}
 	}
 	return res, nil
 }

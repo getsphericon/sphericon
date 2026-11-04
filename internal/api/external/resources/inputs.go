@@ -407,6 +407,11 @@ func integrationConfigIn(in externalapi.IntegrationConfigInput) (integrations.Co
 		return integrations.ConfigInput{Inbox: &integrations.InboxConfig{}}, nil
 	case externalapi.TelegramConfigInputIntegrationConfigInputSum:
 		return integrations.ConfigInput{Telegram: &integrations.TelegramConfig{Token: in.OneOf.TelegramConfigInput.Token}}, nil
+	case externalapi.TwilioConfigInputIntegrationConfigInputSum:
+		c := in.OneOf.TwilioConfigInput
+		return integrations.ConfigInput{Twilio: &integrations.TwilioConfig{
+			AccountSID: c.AccountSid, APIKeySID: c.ApiKeySid.Or(""), Secret: c.Secret, From: c.From,
+		}}, nil
 	}
 	return integrations.ConfigInput{}, errUnknownProvider
 }

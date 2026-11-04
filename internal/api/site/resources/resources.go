@@ -379,6 +379,11 @@ type Converter interface {
 	// goverter:map . Kind | telegramConfigKind
 	// goverter:map BotID BotId
 	TelegramConfigToResource(source integrations.RedactedTelegram) siteapi.SiteTelegramConfig
+	// goverter:map . Kind | twilioConfigKind
+	// goverter:map AccountSID AccountSid
+	// goverter:map . ApiKeySid | twilioAPIKeySID
+	// goverter:map . FromKind | twilioFromKind
+	TwilioConfigToResource(source integrations.RedactedTwilio) siteapi.SiteTwilioConfig
 	// goverter:map Sent24h SentLast24h
 	ProviderLimitToStatus(source providerlimit.Status) siteapi.SiteProviderLimitStatus
 	// goverter:map Sent24h SentLast24h
@@ -1083,6 +1088,22 @@ func smtpConfigKind(integrations.RedactedSMTP) siteapi.SiteSmtpConfigKind {
 
 func sesConfigKind(integrations.RedactedSES) siteapi.SiteSesConfigKind {
 	return siteapi.SiteSesConfigKindSes
+}
+
+func twilioConfigKind(integrations.RedactedTwilio) siteapi.SiteTwilioConfigKind {
+	return siteapi.SiteTwilioConfigKindTwilio
+}
+
+// twilioAPIKeySID is the API key messages are sent with, null when they are sent with the Auth Token.
+func twilioAPIKeySID(c integrations.RedactedTwilio) siteapi.NilString {
+	if c.APIKeySID == "" {
+		return siteapi.NilString{Null: true}
+	}
+	return siteapi.NewNilString(c.APIKeySID)
+}
+
+func twilioFromKind(c integrations.RedactedTwilio) siteapi.SmsFromKind {
+	return siteapi.SmsFromKind(c.FromKind)
 }
 
 func telegramConfigKind(integrations.RedactedTelegram) siteapi.SiteTelegramConfigKind {

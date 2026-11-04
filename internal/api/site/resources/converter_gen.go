@@ -1262,6 +1262,8 @@ func (c *ConverterImpl) IntegrationProviderToResource(source integration.Provide
 		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderSes
 	case integration.ProviderTelegram:
 		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderTelegram
+	case integration.ProviderTwilio:
+		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderTwilio
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -2329,6 +2331,16 @@ func (c *ConverterImpl) TransactionalMessagesToResources(source []*ent.OutboundM
 		siteapiSiteTransactionalEmailResourceList[i] = c.TransactionalMessageToResource(source[i])
 	}
 	return siteapiSiteTransactionalEmailResourceList
+}
+func (c *ConverterImpl) TwilioConfigToResource(source integrations.RedactedTwilio) site.SiteTwilioConfig {
+	var siteapiSiteTwilioConfig site.SiteTwilioConfig
+	siteapiSiteTwilioConfig.Kind = twilioConfigKind(source)
+	siteapiSiteTwilioConfig.AccountSid = source.AccountSID
+	siteapiSiteTwilioConfig.ApiKeySid = twilioAPIKeySID(source)
+	siteapiSiteTwilioConfig.From = source.From
+	siteapiSiteTwilioConfig.FromKind = twilioFromKind(source)
+	siteapiSiteTwilioConfig.CallbacksSet = source.CallbacksSet
+	return siteapiSiteTwilioConfig
 }
 func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) site.ContactExportUnsubscribe {
 	var siteapiContactExportUnsubscribe site.ContactExportUnsubscribe

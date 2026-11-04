@@ -873,6 +873,8 @@ func (c *ConverterImpl) IntegrationProviderToResource(source integration.Provide
 		externalapiIntegrationProvider = external.IntegrationProviderSes
 	case integration.ProviderTelegram:
 		externalapiIntegrationProvider = external.IntegrationProviderTelegram
+	case integration.ProviderTwilio:
+		externalapiIntegrationProvider = external.IntegrationProviderTwilio
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1488,6 +1490,16 @@ func (c *ConverterImpl) TransactionalSendStatusToResource(source transactional.S
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return externalapiTransactionalSendStatus
+}
+func (c *ConverterImpl) TwilioConfigToResource(source integrations.RedactedTwilio) external.TwilioConfig {
+	var externalapiTwilioConfig external.TwilioConfig
+	externalapiTwilioConfig.Kind = twilioConfigKind(source)
+	externalapiTwilioConfig.AccountSid = source.AccountSID
+	externalapiTwilioConfig.ApiKeySid = twilioAPIKeySID(source)
+	externalapiTwilioConfig.From = source.From
+	externalapiTwilioConfig.FromKind = twilioFromKind(source)
+	externalapiTwilioConfig.CallbacksSet = source.CallbacksSet
+	return externalapiTwilioConfig
 }
 func (c *ConverterImpl) UnsubscribeChannelToResource(source unsubscribe.Channel) external.ConsentChannel {
 	var externalapiConsentChannel external.ConsentChannel

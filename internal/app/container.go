@@ -320,7 +320,7 @@ var messagingPackage = do.Package(
 	// The provider catalog (registry of email providers).
 	do.Lazy(func(i do.Injector) (*messaging.Catalog, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		return registry.New(cfg.SMTPAllowPrivateHosts, cfg.TelegramBotAPIURL), nil
+		return registry.New(cfg.SMTPAllowPrivateHosts, cfg.TelegramBotAPIURL, cfg.TwilioAPIURL), nil
 	}),
 	// The Tink cipher (credential encryption); fails fast at boot on a bad key.
 	do.Lazy(func(i do.Injector) (*secrets.Cipher, error) {

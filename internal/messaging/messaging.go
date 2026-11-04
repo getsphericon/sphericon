@@ -21,7 +21,8 @@ type Channel string
 
 const (
 	ChannelEmail Channel = "email"
-	// ChannelSMS is reserved; no SMS provider is implemented yet.
+	// ChannelSMS reaches a person at their phone number through a Workspace's own SMS provider
+	// account (Twilio).
 	ChannelSMS Channel = "sms"
 	// ChannelTelegram reaches a person through a Workspace's own Telegram bot.
 	ChannelTelegram Channel = "telegram"
@@ -39,6 +40,8 @@ const (
 	ProviderInbox Provider = "inbox"
 	// ProviderTelegram is a Workspace's own Telegram bot, reached through the Bot API.
 	ProviderTelegram Provider = "telegram"
+	// ProviderTwilio is a Workspace's own Twilio account, on the SMS Channel.
+	ProviderTwilio Provider = "twilio"
 )
 
 // EmailMessage is the channel-specific payload for email sends. HTML is used

@@ -150,7 +150,7 @@ func (m *Module) sealInbound(row *ent.Integration, in inboundChange) (inbound, e
 	}
 	p, ok := m.presets.Get(*name)
 	if !ok {
-		return inbound{}, &validation.Error{Field: "preset", Message: i18n.T(i18n.ErrorsPresetUnknown, map[string]any{"Name": *name})}
+		return inbound{}, &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsPresetUnknown, map[string]any{"Name": *name})}
 	}
 
 	var prev map[string]any
@@ -283,10 +283,24 @@ func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (*e
 			return nil, err
 		}
 	}
+	// A Twilio Integration points its sender's callbacks at the new URL first; Twilio's refusal
+	// refuses the regeneration and the old key stays.
+	var sealed *string
+	if current.Provider == integration.ProviderTwilio {
+		enc, err := m.repointTwilio(ctx, current, key)
+		if err != nil {
+			return nil, err
+		}
+		sealed = &enc
+	}
 	var row *ent.Integration
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		upd := ts.Integration().UpdateOneID(id).SetIngestKey(key)
+		if sealed != nil {
+			upd.SetConfigEncrypted(*sealed)
+		}
 		var err error
-		row, err = ts.Integration().UpdateOneID(id).SetIngestKey(key).Save(ctx)
+		row, err = upd.Save(ctx)
 		return err
 	})
 	if err != nil {
@@ -306,7 +320,7 @@ func paramsRefusal(err error) error {
 			field, id = "params."+name, i18n.ErrorsPresetParamInvalid
 		}
 		for _, m := range messages {
-			fields[field] = append(fields[field], i18n.T(id, map[string]any{"Detail": m}))
+			fields[field] = append(fields[field], i18n.T(id, map[string]any{detailKey: m}))
 		}
 	}
 	return &validation.FieldsError{Fields: fields}

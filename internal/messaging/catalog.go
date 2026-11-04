@@ -139,6 +139,13 @@ var instruments = map[Channel]func(Provider, any) (any, error){
 		}
 		return bot, nil
 	},
+	ChannelSMS: func(provider Provider, built any) (any, error) {
+		sender, ok := built.(SMSSender)
+		if !ok {
+			return nil, fmt.Errorf("provider %q did not build an SMSSender", provider)
+		}
+		return sender, nil
+	},
 }
 
 // BuildEmail builds an EmailSender for an email-channel provider from deps: Build, typed.
@@ -165,4 +172,17 @@ func (c *Catalog) BuildTelegram(provider Provider, config []byte) (TelegramBot, 
 		return nil, fmt.Errorf("provider %q did not build a TelegramBot", provider)
 	}
 	return bot, nil
+}
+
+// BuildSMS builds the SMSSender of an sms-channel provider: Build, typed.
+func (c *Catalog) BuildSMS(provider Provider, config []byte) (SMSSender, error) {
+	built, err := c.Build(ChannelSMS, provider, config, Deps{})
+	if err != nil {
+		return nil, err
+	}
+	sender, ok := built.(SMSSender)
+	if !ok {
+		return nil, fmt.Errorf("provider %q did not build an SMSSender", provider)
+	}
+	return sender, nil
 }
