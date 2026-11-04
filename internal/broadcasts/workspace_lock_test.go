@@ -126,7 +126,7 @@ func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceL
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	integs := integrations.New(bus, cipher, nil, nil, nil, "")
-	domains := sendingdomains.New(bus, cipher, nil, messaging.NewResolver(cipher, registry.New(cfg.SMTPAllowPrivateHosts, cfg.TelegramBotAPIURL)))
+	domains := sendingdomains.New(bus, cipher, nil, messaging.NewResolver(cipher, registry.New(cfg.SMTPAllowPrivateHosts, cfg.TelegramBotAPIURL, cfg.TwilioAPIURL)))
 	segs := segments.New(bus)
 	catalogue := tags.New(bus)
 	ruleset := rules.New(cipher, bus)
