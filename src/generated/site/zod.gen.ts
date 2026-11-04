@@ -3771,6 +3771,7 @@ export const zSiteRuleResource = z.object({
   live: z.lazy((): any => zSiteRuleVersion).nullable(),
   draft: z.lazy((): any => zSiteRuleVersion).nullable(),
   activatedAt: z.exactOptional(zTimestamp.nullable()),
+  deletedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });

@@ -6,8 +6,8 @@ status: accepted
 
 A Rule had both Archive and Delete (ADR 0049, ADR 0054): Delete purged only a Rule that had never
 fired and answered 409 for one with Firings, which had to be archived instead, and an archived view
-of the Rules list restored them. Nobody restores a reaction to an Event: a Rule is recreated in a
-minute, while the second verb and the refused Delete made removing one a two-step puzzle.
+of the Rules list restored them. The maintainer chose to drop Archive for Rules and keep Delete as
+the one way to remove one, as ADR 0097 did for an Integration and a Sending domain.
 
 ## Decisions
 
@@ -19,10 +19,12 @@ minute, while the second verb and the refused Delete made removing one a two-ste
   it is made inactive in the same move and never fires again; its Firings stay until retention or
   erasure removes them (ADR 0019, ADR 0021). The Audit entry is `rule.discard`, labelled as a delete
   that keeps the Firings.
-- **A deleted Rule is gone for every read and move.** Get, the Firings list, the dry run, Update,
-  Publish, Revert, Deactivate and a second Delete answer 404. Nothing restores it: `Undiscard` is
-  called for a Rule by no surface. A Firing already running finishes, since the job entry points
-  read discarded rows (ADR 0049).
+- **A deleted Rule is read, never changed.** As for an Integration (ADR 0097), Get still answers for
+  it, with `deletedAt` set, and so does the list of its Firings, so its page shows what it did. The
+  list leaves it out. Update, Publish, Revert, Deactivate and the dry run answer 404: the lifecycle
+  checks the row under its lock (`Editable` in `internal/drafts`). A second Delete changes nothing.
+  Nothing restores it: no surface calls `Undiscard` for a Rule. A Firing already running finishes,
+  since the job entry points read discarded rows (ADR 0049).
 - **What stays with Archive.** The Automation, the Broadcast and the Segment keep their archive (an
-  Integration and a Sending domain are deleted, ADR 0097); the shared lifecycle (`internal/drafts`) is unchanged, and the
-  Rule calls its Archive as the second half of Delete.
+  Integration and a Sending domain are deleted, ADR 0097). The Rule calls the shared lifecycle's
+  Archive as the second half of Delete.

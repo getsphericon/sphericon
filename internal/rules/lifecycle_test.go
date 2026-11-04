@@ -14,7 +14,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/rule"
-	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -25,33 +24,35 @@ import (
 
 func acme(env *testhelper.TestEnv) *ent.Scoped { return env.DB.Scoped(fixtures.AcmeID) }
 
-// A Rule with Firings is discarded by Delete: it leaves the list and every by-id read, it stops
-// firing, and its Firings stay as history (ADR 0049).
+// A Rule with Firings is discarded by Delete: it leaves the list and stops firing, and it is still
+// read by id, inactive and marked deleted, with its Firings (ADR 0049, ADR 0098).
 func TestDeleteOfARuleWithFiringsHidesItStopsItFiringAndKeepsTheFirings(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
-	firings := func() int {
-		n, err := acme(env).RuleFiring().Query().Where(rulefiring.RuleID(fixtures.RuleTagClickedID)).Count(ctx)
-		require.NoError(t, err)
-		return n
-	}
-	before := firings()
-	require.Positive(t, before)
+	page := pagination.Params{Page: 1, PageSize: 100}
+	before, err := m.Firings(ctx, acme(env), fixtures.RuleTagClickedID, page)
+	require.NoError(t, err)
+	require.NotEmpty(t, before.Items)
 
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleTagClickedID))
 
-	kept, err := m.List(ctx, acme(env), pagination.Params{Page: 1, PageSize: 100})
+	kept, err := m.List(ctx, acme(env), page)
 	require.NoError(t, err)
 	assert.NotContains(t, lo.Map(kept.Items, func(r *ent.Rule, _ int) int64 { return r.ID }), int64(fixtures.RuleTagClickedID))
-	_, err = m.Get(ctx, acme(env), fixtures.RuleTagClickedID)
-	require.ErrorIs(t, err, rules.ErrNotFound)
 	assert.Empty(t, evaluate(t, env, fixtures.ContactAliceID, "rule_click", "evt-after-delete"))
-	assert.Equal(t, before, firings())
+	got, err := m.Get(ctx, acme(env), fixtures.RuleTagClickedID)
+	require.NoError(t, err, "a deleted Rule is still read by id")
+	assert.NotNil(t, got.DiscardedAt)
+	assert.Equal(t, rule.StatusInactive, got.Status)
+	after, err := m.Firings(ctx, acme(env), fixtures.RuleTagClickedID, page)
+	require.NoError(t, err)
+	assert.Equal(t, before.TotalItems, after.TotalItems, "its Firings stay readable")
 }
 
-// A deleted Rule is gone for every move: none of them reaches it.
-func TestADeletedRuleIsNotFoundByAnyMove(t *testing.T) {
+// A deleted Rule changes no more: every move but a second Delete is not found, and that one
+// changes nothing.
+func TestADeletedRuleTakesNoMove(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
@@ -61,19 +62,19 @@ func TestADeletedRuleIsNotFoundByAnyMove(t *testing.T) {
 
 	name := "renamed"
 	moves := map[string]func() error{
-		"delete":     func() error { return m.Delete(ctx, s, id) },
 		"update":     func() error { _, err := m.Update(ctx, s, id, rules.UpdateInput{Name: &name}); return err },
 		"publish":    func() error { _, err := m.Publish(ctx, s, id); return err },
 		"revert":     func() error { _, err := m.Revert(ctx, s, id); return err },
 		"deactivate": func() error { _, err := m.Deactivate(ctx, s, id); return err },
-		"firings": func() error {
-			_, err := m.Firings(ctx, s, id, pagination.Params{Page: 1, PageSize: 10})
-			return err
-		},
+		"dry run":    func() error { _, err := m.DryRun(ctx, s, id, 999999); return err },
 	}
 	for move, run := range moves {
-		assert.ErrorIs(t, run(), rules.ErrNotFound, move)
+		require.ErrorIs(t, run(), rules.ErrNotFound, move)
 	}
+	require.NoError(t, m.Delete(ctx, s, id), "deleting a deleted Rule changes nothing")
+	got, err := m.Get(ctx, s, id)
+	require.NoError(t, err)
+	assert.Equal(t, fixtures.RuleTagClickedName, got.Name)
 }
 
 // Publishing and deleting a fired Rule at the same moment leave it deleted and inactive, or active
@@ -94,7 +95,7 @@ func TestPublishingAndDeletingARuleAtOnceNeverLeaveItDeletedAndActive(t *testing
 	wg.Go(func() { deleteErr = m.Delete(t.Context(), s, fixtures.RuleTagClickedID) })
 	wg.Wait()
 
-	got, err := s.Rule().QueryWithDiscarded().Where(rule.ID(fixtures.RuleTagClickedID)).Only(t.Context())
+	got, err := m.Get(t.Context(), s, fixtures.RuleTagClickedID)
 	require.NoError(t, err)
 	assert.False(t, got.DiscardedAt != nil && got.Status == rule.StatusActive, "deleted and active (publish: %v, delete: %v)", publishErr, deleteErr)
 }

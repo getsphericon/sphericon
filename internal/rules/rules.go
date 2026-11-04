@@ -246,9 +246,6 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // starts from stores nothing. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Rule, error) {
 	rename := func(ctx context.Context, ts *ent.Scoped, r *ent.Rule) error {
-		if r.DiscardedAt != nil {
-			return ErrNotFound // deleted, its Firings kept
-		}
 		if in.Name == nil || *in.Name == r.Name {
 			return nil
 		}
@@ -287,6 +284,14 @@ func (versioned) Publishable(ctx context.Context, ts *ent.Scoped, draft *ent.Rul
 
 // Archivable never refuses: Delete discards a Rule with Firings, which are history and stay.
 func (versioned) Archivable(context.Context, *ent.Scoped, *ent.Rule) error { return nil }
+
+// Editable refuses a deleted Rule: it is kept for its Firings and changes no more.
+func (versioned) Editable(r *ent.Rule) error {
+	if r.DiscardedAt != nil {
+		return ErrNotFound
+	}
+	return nil
+}
 
 // merge lays the fields of an edit over the version it starts from (nil for a new Rule) and
 // validates what it changes. An http Action that names one of the base's Actions by ID keeps the
@@ -358,10 +363,10 @@ func rewrite(ctx context.Context, s *ent.Scoped, draft *ent.RuleVersion, def def
 	return saveTriggers(ctx, s, draft.ID, def.triggers)
 }
 
-// Get returns one Rule of the Workspace with its live and draft versions. A deleted Rule kept for
-// its Firings is not found.
+// Get returns one Rule of the Workspace with its live and draft versions, a deleted one too (kept
+// for its Firings, DiscardedAt set), so its Firings stay readable (ADR 0098).
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
-	r, err := withVersions(s.Rule().Query().Where(rule.ID(id))).Only(ctx)
+	r, err := withVersions(s.Rule().QueryWithDiscarded().Where(rule.ID(id))).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
 	}
@@ -398,16 +403,13 @@ func versions(r *ent.Rule) []*ent.RuleVersion {
 	return lo.Compact([]*ent.RuleVersion{live, draft})
 }
 
-// Delete removes a Rule (ADR 0049). One with no Firings is purged, with its versions. One with
-// Firings is discarded so they stay as history: it is deactivated under the lock Publish takes, so
-// it never fires again, and it leaves the lists and every by-id read for good. Deleting a deleted
-// Rule is not found.
+// Delete removes a Rule (ADR 0049, ADR 0098). One with no Firings is purged, with its versions.
+// One with Firings is discarded so they stay as history: it is deactivated under the lock Publish
+// takes, so it never fires again, and it leaves the lists for good; Get still reads it. Deleting a
+// deleted Rule changes nothing.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	n, err := s.Rule().Purge().Where(rule.ID(id), rule.Not(rule.HasFirings())).Exec(ctx)
 	if err != nil || n > 0 {
-		return err
-	}
-	if _, err := m.Get(ctx, s, id); err != nil {
 		return err
 	}
 	_, err = m.life.Archive(ctx, s, id)
@@ -499,9 +501,6 @@ func publishable(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion) error {
 // authoring, and an audited write of the Rule. A Rule with no draft, or one never published
 // (whose draft is its whole definition), has nothing to revert (ErrNothingToRevert).
 func (m *Module) Revert(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
-	if _, err := m.Get(ctx, s, id); err != nil {
-		return nil, err // a deleted Rule has nothing to revert
-	}
 	return m.life.Revert(ctx, s, id)
 }
 
@@ -511,7 +510,7 @@ func (m *Module) Deactivate(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 	return m.life.Deactivate(ctx, s, id)
 }
 
-// Firings returns one page of a Rule's Firings, newest first.
+// Firings returns one page of a Rule's Firings, newest first, a deleted Rule's too.
 func (m *Module) Firings(ctx context.Context, s *ent.Scoped, ruleID int64, p pagination.Params) (pagination.Page[*ent.RuleFiring], error) {
 	if _, err := m.Get(ctx, s, ruleID); err != nil {
 		return pagination.Page[*ent.RuleFiring]{}, err

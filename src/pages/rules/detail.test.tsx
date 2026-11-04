@@ -123,6 +123,23 @@ test('shows an error alert when the rule cannot be loaded', async () => {
   await expect.element(screen.getByText('rule not found')).toBeVisible()
 })
 
+test('a deleted rule is shown as deleted with its firings and offers no change', async () => {
+  worker.use(
+    handleSiteRulesGet({
+      body: { ...EDITED, status: 'inactive', deletedAt: TIMESTAMPS.updatedAt },
+    }),
+    handleSiteRuleFiringsList({ body: page([FIRING], 1) }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleDetailPage />, DETAIL_ROUTE)
+
+  await expect.element(screen.getByText('Deleted', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByRole('cell', { name: 'signed_up' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('link', { name: 'Edit' })).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Revert' })).not.toBeInTheDocument()
+})
+
 test('a rule never published shows no pending changes and offers no Revert', async () => {
   worker.use(handleSiteRulesGet({ body: RULE }), handleSiteRuleFiringsList({ body: page([], 0) }))
 

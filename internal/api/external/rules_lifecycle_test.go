@@ -22,11 +22,17 @@ func TestExternalRulesDeleteRemovesARuleWithOrWithoutFirings(t *testing.T) {
 		deleted, err := c.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: id})
 		require.NoError(t, err)
 		assert.IsType(t, &externalapi.RulesDeleteNoContent{}, deleted)
-
-		gone, err := c.RulesGet(ctx, externalapi.RulesGetParams{ID: id})
-		require.NoError(t, err)
-		assert.IsType(t, &externalapi.RulesGetNotFound{}, gone)
 	}
+
+	gone, err := c.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleInactiveID)})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.RulesGetNotFound{}, gone)
+	kept, err := c.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleTagClickedID)})
+	require.NoError(t, err)
+	res, ok := kept.(*externalapi.RuleResource)
+	require.Truef(t, ok, "got %T", kept)
+	_, deletedAt := res.DeletedAt.Get()
+	assert.True(t, deletedAt, "a Rule with Firings is kept, marked deleted")
 }
 
 func TestExternalRulesDeleteNeedsTheAutomationsWriteScope(t *testing.T) {

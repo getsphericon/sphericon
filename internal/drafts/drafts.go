@@ -41,6 +41,9 @@ type Definition[O, V, E, B any] interface {
 	Publishable(ctx context.Context, ts *ent.Scoped, version *V) error
 	// Archivable refuses to archive the object while live work still needs it.
 	Archivable(ctx context.Context, ts *ent.Scoped, row *O) error
+	// Editable refuses an edit or a Revert of the object as it is under the lock: a deleted Rule,
+	// kept for its Firings, takes neither.
+	Editable(row *O) error
 }
 
 // Errors are the refusals of one kind of definition, in its own words.
@@ -132,6 +135,9 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 		store := l.def.Store(ts)
 		st, err := l.lock(ctx, store, id)
 		if err != nil {
+			return err
+		}
+		if err := l.def.Editable(st.Row); err != nil {
 			return err
 		}
 		if own != nil {
@@ -227,6 +233,9 @@ func (l *Lifecycle[O, V, E, B]) Revert(ctx context.Context, s *ent.Scoped, id in
 		store := l.def.Store(ts)
 		st, err := l.lock(ctx, store, id)
 		if err != nil {
+			return err
+		}
+		if err := l.def.Editable(st.Row); err != nil {
 			return err
 		}
 		if st.LiveID == nil || st.DraftID == nil {
