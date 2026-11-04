@@ -346,6 +346,7 @@ export default interface Resources {
       "complained": "Complained",
       "count": "{{count, number}} automation" | "{{count, number}} automations",
       "createTitle": "New automation",
+      "createdLabel": "Created",
       "deactivate": "Deactivate",
       "delivered": "Delivered",
       "editMessage": "Edit message",
@@ -401,6 +402,7 @@ export default interface Resources {
       "noArchivedRecords": "No archived automations",
       "noEndEvent": "None",
       "noEnrollments": "No contacts enrolled yet",
+      "noMatches": "No automations match",
       "noRecords": "No automations",
       "opens": "Opens",
       "pendingDetails": "It runs its last published version: the changes made since then are not published yet.",
@@ -426,11 +428,14 @@ export default interface Resources {
         "revenue": "Revenue in the period",
         "title": "Results"
       },
+      "searchPlaceholder": "Search by name",
       "state": {
         "active": "Active",
         "draft": "Draft",
         "inactive": "Inactive"
       },
+      "stateAll": "All statuses",
+      "stateFilter": "Status",
       "statusLabel": "Status",
       "stepApplyTag": "Apply tag",
       "stepEmail": "Send email",

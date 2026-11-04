@@ -345,6 +345,7 @@
     "complained": "Complained",
     "count_one": "{{count, number}} automation",
     "count_other": "{{count, number}} automations",
+    "createdLabel": "Created",
     "createTitle": "New automation",
     "deactivate": "Deactivate",
     "delivered": "Delivered",
@@ -401,6 +402,7 @@
     "noArchivedRecords": "No archived automations",
     "noEndEvent": "None",
     "noEnrollments": "No contacts enrolled yet",
+    "noMatches": "No automations match",
     "noRecords": "No automations",
     "opens": "Opens",
     "pendingDetails": "It runs its last published version: the changes made since then are not published yet.",
@@ -426,11 +428,14 @@
       "revenue": "Revenue in the period",
       "title": "Results"
     },
+    "searchPlaceholder": "Search by name",
     "state": {
       "active": "Active",
       "draft": "Draft",
       "inactive": "Inactive"
     },
+    "stateAll": "All statuses",
+    "stateFilter": "Status",
     "statusLabel": "Status",
     "stepApplyTag": "Apply tag",
     "stepEmail": "Send email",

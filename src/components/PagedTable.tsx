@@ -3,7 +3,7 @@ import { IconRefresh } from '@tabler/icons-react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { QueryKey, UseQueryOptions } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
-import type { DataTableColumn } from 'mantine-datatable'
+import type { DataTableColumn, DataTableSortProps } from 'mantine-datatable'
 import { useDeferredValue, ViewTransition } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -50,6 +50,16 @@ interface PagedTableProps<TPage extends Page, TError extends ApiErrorLike, TKey 
   // table does not repeat the title above itself. `toolbar` (the archived view, the filters) and
   // the count of what it shows share the row of the refresh button.
   pageHeader?: PageHeader
+  // The order the server sorts the whole collection in, from the route's search, and the change of
+  // it from a sortable column's header; a new order starts again from the first page.
+  sort?: Sort
+}
+
+// The column a list is sorted by (its accessor) and the direction, with the change of either.
+interface Sort {
+  column: string
+  direction: 'asc' | 'desc'
+  onChange: (column: string, direction: 'asc' | 'desc') => void
 }
 
 interface PageHeader {
@@ -74,6 +84,7 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
   page = 1,
   onPageChange,
   pageHeader,
+  sort,
 }: PagedTableProps<TPage, TError, TKey>) {
   const paginationText = usePaginationText()
   const list = useQuery({ ...options({ page, pageSize }), placeholderData: keepPreviousData })
@@ -88,6 +99,12 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
   // It is the total that says so, not the page: a later page can come back empty while the list
   // is not, and its table keeps the pagination back.
   const nothing = data !== undefined && totalItems === 0
+  const sortProps: DataTableSortProps<TPage['items'][number]> = sort
+    ? {
+        sortStatus: { columnAccessor: sort.column, direction: sort.direction },
+        onSortStatusChange: (next) => sort.onChange(String(next.columnAccessor), next.direction),
+      }
+    : {}
 
   return (
     // It grows into the page's free height, so an empty list's state sits in the page's middle.
@@ -124,6 +141,7 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
             {...(onRowClick
               ? { highlightOnHover: true, onRowClick: ({ record }) => onRowClick(record) }
               : {})}
+            {...sortProps}
             records={data.items}
             columns={columns}
             totalRecords={totalItems}

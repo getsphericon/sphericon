@@ -3,11 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { DetailsBadge } from '../../components/DetailsBadge.tsx'
 import type {
   SiteAutomationResource,
-  SiteAutomationStatus,
+  SiteAutomationState as AutomationState,
 } from '../../generated/site/types.gen.ts'
-
-// An Automation never published is a draft; once published, its status from the contract.
-type AutomationState = 'draft' | SiteAutomationStatus
 
 const STATE_COLORS: Record<AutomationState, string> = {
   draft: 'gray',

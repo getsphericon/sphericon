@@ -18,6 +18,14 @@ import { worker } from '../../test/worker.ts'
 import { AutomationsListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(automationsRoute, { workspaceId: 'TestWs01' })
+
+// Every search the page navigated to, each worked out from the search it was on: a change updates
+// its own keys of the search and leaves the others.
+type Navigate = Awaited<ReturnType<typeof renderWithRouter>>['navigate']
+const searches = (navigate: Navigate, from: Record<string, unknown>) =>
+  navigate.mock.calls.map(([options]) =>
+    typeof options?.search === 'function' ? options.search(from) : options?.search,
+  )
 const ARCHIVED_ROUTE = { ...LIST_ROUTE, initialPath: `${LIST_ROUTE.initialPath}?archived=true` }
 const NOW = '2026-01-01T00:00:00Z'
 
@@ -60,9 +68,11 @@ test('lists automations with their status: Draft until first published', async (
   await expect
     .element(screen.getByRole('link', { name: 'Welcome flow' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/automations/1')
-  await expect.element(screen.getByText('Active', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByText('Draft', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByText('Inactive', { exact: true })).toBeInTheDocument()
+  // In the table: the state filter above it offers the same words.
+  const table = screen.getByRole('table')
+  await expect.element(table.getByText('Active', { exact: true })).toBeInTheDocument()
+  await expect.element(table.getByText('Draft', { exact: true })).toBeInTheDocument()
+  await expect.element(table.getByText('Inactive', { exact: true })).toBeInTheDocument()
 })
 
 test('unpublished changes open as the details of the status', async () => {
@@ -241,9 +251,9 @@ test('the archived control opens the archived view through the URL', async () =>
   const { screen, navigate } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
   await screen.getByText('Archived', { exact: true }).click()
 
-  expect(navigate).toHaveBeenCalledWith(
-    expect.objectContaining({ search: { archived: true }, replace: true }),
-  )
+  await expect
+    .poll(() => searches(navigate, { name: 'flow', page: 2 }))
+    .toContainEqual({ archived: true, name: 'flow', page: undefined })
 })
 
 test('the archived view lists archived automations and restores one', async () => {
@@ -306,4 +316,83 @@ test('an automation with active enrollments is not archived and their count is s
   await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
   await expect.element(screen.getByText(/3 enrollments of "Welcome flow"/)).toBeInTheDocument()
+})
+
+test('the list asks the API with the search, the state and the order in the URL', async () => {
+  const requested: Record<string, string>[] = []
+  worker.use(
+    handleSiteAutomationsList(({ request }) => {
+      requested.push(Object.fromEntries(new URL(request.url).searchParams))
+      return HttpResponse.json({ items: [WELCOME], totalItems: 1 })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationsListPage />, {
+    ...LIST_ROUTE,
+    initialPath: `${LIST_ROUTE.initialPath}?name=welcome&state=active&sort=name&direction=desc`,
+  })
+
+  await expect
+    .element(screen.getByRole('textbox', { name: 'Search by name' }))
+    .toHaveValue('welcome')
+  await expect.element(screen.getByRole('combobox', { name: 'Status' })).toHaveValue('Active')
+  await expect
+    .poll(() => requested[0])
+    .toMatchObject({
+      name: 'welcome',
+      state: 'active',
+      sort: 'name',
+      direction: 'desc',
+    })
+})
+
+test('typing a name and picking a state put them in the URL search and keep the order', async () => {
+  worker.use(
+    handleSiteAutomationsList(() => HttpResponse.json({ items: [WELCOME], totalItems: 1 })),
+  )
+
+  const { screen, navigate } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+  await screen.getByRole('textbox', { name: 'Search by name' }).fill(' welcome ')
+  await expect
+    .poll(() => searches(navigate, { sort: 'name', page: 2 }))
+    .toContainEqual({ sort: 'name', name: 'welcome', page: undefined })
+
+  await screen.getByRole('combobox', { name: 'Status' }).click()
+  await screen.getByRole('option', { name: 'Draft' }).click()
+  await expect
+    .poll(() => searches(navigate, { sort: 'name', page: 2 }))
+    .toContainEqual({ sort: 'name', state: 'draft', page: undefined })
+})
+
+test('a search that matches nothing offers to clear it, not to create an automation', async () => {
+  worker.use(handleSiteAutomationsList(() => HttpResponse.json({ items: [], totalItems: 0 })))
+
+  const { screen, navigate } = await renderWithRouter(<AutomationsListPage />, {
+    ...LIST_ROUTE,
+    initialPath: `${LIST_ROUTE.initialPath}?name=nothing&state=draft`,
+  })
+
+  await expect.element(screen.getByText('No automations match')).toBeInTheDocument()
+  await expect.element(screen.getByText('No automations', { exact: true })).not.toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Clear filter' }).click()
+  await expect
+    .poll(() => searches(navigate, { name: 'nothing', state: 'draft', sort: 'name' }))
+    .toContainEqual({ name: undefined, state: undefined, sort: 'name', page: undefined })
+})
+
+test('a sortable header orders the list; the default order is the plain URL', async () => {
+  worker.use(
+    handleSiteAutomationsList(() => HttpResponse.json({ items: [WELCOME], totalItems: 1 })),
+  )
+
+  const { screen, navigate } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+  await screen.getByTitle('Name').click()
+  await expect
+    .poll(() => searches(navigate, {}))
+    .toContainEqual({ sort: 'name', direction: undefined, page: undefined })
+
+  await screen.getByTitle('Created').click()
+  await expect
+    .poll(() => searches(navigate, { sort: 'name' }))
+    .toContainEqual({ sort: undefined, direction: 'asc', page: undefined })
 })

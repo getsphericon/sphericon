@@ -80,6 +80,12 @@ a form needs no code of its own for them. A form on a bare `useForm` has to be m
 - Filters search the whole collection, not the loaded page. A text filter for a known value; a
   single-value filter per property for a few properties; a property filter (a query builder) when
   there are many.
+- The search and the single-value filters sit in the toolbar row, after the archived view; each
+  lives in the route's search, so the view is linkable, and a change starts again from the first
+  page. A filter that matches nothing is zero results, not an empty list ("Empty states").
+- A sortable column sorts the whole collection on the server. A column picked anew starts in its
+  own direction (a name A to Z, a date the newest first); a second click turns it round. The
+  default order is the absent search param, so the plain URL is the list as it first shows.
 - Paging clears the selection; so do sorting, a filter and a change of columns.
 - Selection (not built yet): a header checkbox selects the rows of the page only, and an action
   applies to those rows. A bulk delete confirms with the number of resources (rule above).
