@@ -8,6 +8,7 @@ import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { EmailFields, TelegramFields, TwilioFields } from './integrationFields.tsx'
 import { credentialsSchema, storedValues } from './integrationForm.ts'
+import { useIntegrationGone } from './integrationGone.ts'
 
 interface CredentialsModalProps {
   workspaceId: string
@@ -52,13 +53,18 @@ function CredentialsForm({ workspaceId, integration, onClose }: CredentialsFormP
   const { config } = integration
   const form = useSchemaForm(credentialsSchema(integration), storedValues(integration))
 
+  const gone = useIntegrationGone(workspaceId, onClose)
+  const errorTitle = t(($) => $.settings.integrations.credentials.saveError)
   const updateMutation = useResourceMutation({
     mutation: siteIntegrationsUpdateMutation(),
     successMessage: t(($) => $.settings.integrations.credentials.saved),
-    errorTitle: t(($) => $.settings.integrations.credentials.saveError),
+    errorTitle,
     // The provider refusing the credentials is this form's usual failure: it shows in the form,
-    // which stays open to correct them.
-    handleError: () => true,
+    // which stays open to correct them. A provider deleted meanwhile closes the form instead.
+    handleError: async (error) => {
+      await gone(errorTitle)(error)
+      return true
+    },
     onDone: onClose,
   })
 

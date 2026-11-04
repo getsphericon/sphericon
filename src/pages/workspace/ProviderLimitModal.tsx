@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { siteIntegrationsUpdateMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useIntegrationGone } from './integrationGone.ts'
 import {
   fromLimit,
   requiresProviderLimit,
@@ -68,10 +69,13 @@ function ProviderLimitForm({ workspaceId, integration, onClose }: ProviderLimitF
     validate,
   })
 
+  const gone = useIntegrationGone(workspaceId, onClose)
+  const errorTitle = t(($) => $.settings.integrations.providerLimit.saveError)
   const updateMutation = useResourceMutation({
     mutation: siteIntegrationsUpdateMutation(),
     successMessage: t(($) => $.settings.integrations.providerLimit.saved),
-    errorTitle: t(($) => $.settings.integrations.providerLimit.saveError),
+    errorTitle,
+    handleError: gone(errorTitle),
     onDone: onClose,
   })
 

@@ -116,15 +116,12 @@ func EnrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, auto
 	if fired != nil {
 		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
 	}
-	inactive := false
-	runID, enrolled, err = enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) bool {
-		inactive = a.ArchivedAt != nil || a.Status != automation.StatusActive
-		return !inactive
+	return enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) (bool, error) {
+		if !active(a) {
+			return false, ErrInactive
+		}
+		return true, nil
 	})
-	if err == nil && inactive {
-		return 0, false, ErrInactive
-	}
-	return runID, enrolled, err
 }
 
 // EnrollOnTrigger enrolls the Contact as Enroll does, for the Event of the Origin (OriginOf): the
@@ -133,21 +130,27 @@ func EnrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, auto
 // Deactivate or an Archive may have landed since: under the lock it enrolls nobody (runID 0) unless
 // the Automation is still kept, active and started by the action in its live version.
 func EnrollOnTrigger(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o Origin) (runID int64, enrolled bool, err error) {
-	return enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) bool {
+	return enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) (bool, error) {
 		live := a.Edges.LiveVersion
-		return a.ArchivedAt == nil && a.Status == automation.StatusActive && live != nil && live.TriggerEvent == o.Action
+		return active(a) && live != nil && live.TriggerEvent == o.Action, nil
 	})
 }
 
-func admitsAll(*ent.Automation) bool { return true }
+func admitsAll(*ent.Automation) (bool, error) { return true, nil }
+
+// active is whether the Automation is kept and active, so it may enroll anybody.
+func active(a *ent.Automation) bool {
+	return a.ArchivedAt == nil && a.Status == automation.StatusActive
+}
 
 // enroll makes the Enrollment that began on the Event of o when admits, called under the share lock
 // with the Automation and its live version, accepts it, and copies o's action and properties onto it
-// (#752). An exit or goal Event of the live version recorded for the Contact since o occurred may
-// have been handled before the Enrollment existed, with nothing to end then: the Enrollment is made
-// already ended by the first of them (exited or goal_reached, so it counts and the Contact stays
-// enrolled once ever), and no step is to run.
-func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o Origin, admits func(*ent.Automation) bool) (runID int64, enrolled bool, err error) {
+// (#752). admits answers whether the Enrollment is made: a refusal with an error returns that
+// error, one without makes nothing and returns none. An exit or goal Event of the live version
+// recorded for the Contact since o occurred may have been handled before the Enrollment existed,
+// with nothing to end then: the Enrollment is made already ended by the first of them (exited or
+// goal_reached, so it counts and the Contact stays enrolled once ever), and no step is to run.
+func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o Origin, admits func(*ent.Automation) (bool, error)) (runID int64, enrolled bool, err error) {
 	locked, err := LockContact(ctx, s, contactID)
 	if err != nil {
 		return 0, false, err
@@ -182,8 +185,9 @@ func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 	if a.LiveVersionID == nil {
 		return 0, false, ErrNoVersion
 	}
-	if !admits(a) {
-		return 0, false, nil
+	admitted, err := admits(a)
+	if err != nil || !admitted {
+		return 0, false, err
 	}
 	ending, endedAt, ended, err := endedSince(ctx, s, a.Edges.LiveVersion, contactID, o.OccurredAt)
 	if err != nil {

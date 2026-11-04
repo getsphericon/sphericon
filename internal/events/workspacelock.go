@@ -41,16 +41,17 @@ func (b *Bus) WithinWorkspaceLockEnqueueTx(ctx context.Context, s *ent.Scoped, f
 }
 
 func lockWorkspace(ctx context.Context, tx *ent.Client, s *ent.Scoped) error {
-	if err := postgres.LockTx(ctx, tx, workspaceLockKey(s.WorkspaceID())); err != nil {
+	if err := postgres.LockTx(ctx, tx, advisoryKey("workspace", s.WorkspaceID())); err != nil {
 		return fmt.Errorf("lock the Workspace: %w", err)
 	}
 	return nil
 }
 
-// workspaceLockKey is the advisory lock of one Workspace's removals and the writes that create
-// Live use. Two Workspaces whose keys collide only take turns.
-func workspaceLockKey(workspaceID int64) int64 {
+// advisoryKey is the key of one Workspace's advisory lock of a kind: "workspace" for its removals
+// and the writes that create Live use, "orders" for its order Events. Each kind hashes apart from
+// the others, and two Workspaces whose keys collide only take turns.
+func advisoryKey(kind string, workspaceID int64) int64 {
 	h := fnv.New32a()
-	_, _ = fmt.Fprintf(h, "workspace:%d", workspaceID)
+	_, _ = fmt.Fprintf(h, "%s:%d", kind, workspaceID)
 	return int64(h.Sum32())
 }

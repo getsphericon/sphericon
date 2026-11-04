@@ -1834,6 +1834,7 @@ export default interface Resources {
           "twilioCredential": "Send with",
           "username": "Username"
         },
+        "gone": "This provider was deleted, so the change was not made. The list shows the providers that remain.",
         "inbound": {
           "description": "Where this provider posts bounces and complaints. Choose how its callbacks are verified and read; the secret is stored encrypted and never shown again.",
           "hookUrl": "Hook URL",

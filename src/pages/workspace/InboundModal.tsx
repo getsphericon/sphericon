@@ -16,6 +16,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useIntegrationGone } from './integrationGone.ts'
 import {
   formSchema,
   formUi,
@@ -56,7 +57,12 @@ export function InboundModal({ workspaceId, integration, onClose }: InboundModal
       title={t(($) => $.settings.integrations.inbound.title, { name: integration?.name ?? '' })}
     >
       {integration ? (
-        <InboundForm key={integration.id} workspaceId={workspaceId} integration={integration} />
+        <InboundForm
+          key={integration.id}
+          workspaceId={workspaceId}
+          integration={integration}
+          onClose={onClose}
+        />
       ) : null}
     </Modal>
   )
@@ -65,9 +71,11 @@ export function InboundModal({ workspaceId, integration, onClose }: InboundModal
 function InboundForm({
   workspaceId,
   integration,
+  onClose,
 }: {
   workspaceId: string
   integration: SiteIntegrationResource
+  onClose: () => void
 }) {
   const { t } = useTranslation()
   // A Telegram bot's Preset is fixed and its webhook is set by sphericon: nothing here to choose.
@@ -86,23 +94,29 @@ function InboundForm({
   const saved = selected && own ? savedSecrets(selected, integration.params) : new Set<string>()
 
   const invalidate = [siteIntegrationsListQueryKey({ path: { workspaceId } })]
+  const gone = useIntegrationGone(workspaceId, onClose)
+  const saveError = t(($) => $.settings.integrations.inbound.saveError)
+  const regenerateError = t(($) => $.settings.integrations.inbound.regenerateError)
   const saveMutation = useResourceMutation({
     mutation: siteIntegrationsUpdateMutation(),
     invalidate,
     successMessage: t(($) => $.settings.integrations.inbound.saved),
-    errorTitle: t(($) => $.settings.integrations.inbound.saveError),
+    errorTitle: saveError,
+    handleError: gone(saveError),
   })
   const retireMutation = useResourceMutation({
     mutation: siteIntegrationsUpdateMutation(),
     invalidate,
     successMessage: t(($) => $.settings.integrations.inbound.retired),
-    errorTitle: t(($) => $.settings.integrations.inbound.saveError),
+    errorTitle: saveError,
+    handleError: gone(saveError),
   })
   const regenerateMutation = useResourceMutation({
     mutation: siteIntegrationsRegenerateKeyMutation(),
     invalidate,
     successMessage: t(($) => $.settings.integrations.inbound.regenerated),
-    errorTitle: t(($) => $.settings.integrations.inbound.regenerateError),
+    errorTitle: regenerateError,
+    handleError: gone(regenerateError),
   })
 
   const onPresetChange = (value: string | null) => {
