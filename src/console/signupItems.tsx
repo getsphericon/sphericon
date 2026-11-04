@@ -130,8 +130,8 @@ function swapped(items: StaffSignupItemResource[], a: number, b: number): string
   return ids.with(a, second).with(b, first)
 }
 
-// Move an item one place up or down the sign-up form: the server takes the order of every item,
-// archived ones included.
+// Move an item one place up or down the sign-up form: the server takes the order of every item
+// listed (a deleted one is not).
 function MoveButtons({
   items,
   index,
@@ -210,16 +210,7 @@ function SignupItemsTable() {
         {
           accessor: 'title',
           title: t(($) => $.console.signupItems.columns.title),
-          render: (record) => (
-            <Group gap="xs">
-              <Text size="sm">{record.title}</Text>
-              {record.archivedAt ? (
-                <Badge color="gray" variant="outline">
-                  {t(($) => $.console.signupItems.archivedBadge)}
-                </Badge>
-              ) : null}
-            </Group>
-          ),
+          render: (record) => <Text size="sm">{record.title}</Text>,
         },
         {
           accessor: 'key',

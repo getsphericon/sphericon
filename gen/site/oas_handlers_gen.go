@@ -17864,7 +17864,7 @@ func (s *Server) handleSiteJoinDomainsVerifyRequest(args [2]string, argsEscaped 
 // handleSiteLegalDocumentsGetRequest handles SiteLegalDocuments_get operation.
 //
 // The current version of a Sign-up item's Legal document, for its public page. Public. 404 for an
-// unknown or archived item and for one with no published version. Answered while an acceptance is
+// unknown or deleted item and for one with no published version. Answered while an acceptance is
 // pending, for the screen that shows the new texts (ADR 0062).
 //
 // GET /legal-documents/{key}
@@ -18008,7 +18008,7 @@ func (s *Server) handleSiteLegalDocumentsGetRequest(args [1]string, argsEscaped 
 
 // handleSiteLegalDocumentsSignupItemsRequest handles SiteLegalDocuments_signupItems operation.
 //
-// The Sign-up items in effect: those not archived that have a published version, with that version's
+// The Sign-up items in effect: those not deleted that have a published version, with that version's
 // label. Public; empty when the Instance has none. Answered while an acceptance is pending (ADR 0062).
 //
 // GET /signup-items
@@ -19294,7 +19294,7 @@ func (s *Server) handleSiteOAuthDescribeRequest(args [0]string, argsEscaped bool
 
 // handleSiteOptionalConsentsListRequest handles SiteOptionalConsents_list operation.
 //
-// The optional consents in effect (not archived, with a published version) and the User's current
+// The optional consents in effect (not deleted, with a published version) and the User's current
 // answer to each. They belong to the User, so no Workspace is read. Empty when the Instance has none.
 // A required acceptance and a notice are not listed: they are not the User's to change.
 //

@@ -50,7 +50,7 @@ model SiteOptionalConsentChange {
 @route("/me/optional-consents")
 @tag("Site User")
 namespace SiteOptionalConsents {
-  /** The optional consents in effect (not archived, with a published version) and the User's
+  /** The optional consents in effect (not deleted, with a published version) and the User's
    * current answer to each. They belong to the User, so no Workspace is read. Empty when the
    * Instance has none. A required acceptance and a notice are not listed: they are not the User's
    * to change. */

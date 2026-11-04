@@ -38,11 +38,8 @@ test('sends nothing when the Instance has no Sign-up items', () => {
   expect(signupItemAnswers([], {})).toBeUndefined()
 })
 
-test('publishing stops Users only for a required acceptance that is in effect', () => {
-  const required = { kind: StaffSignupItemKind.REQUIRED_ACCEPTANCE }
-
-  expect(publishStopsUsers(required)).toBe(true)
-  expect(publishStopsUsers({ ...required, archivedAt: '2026-10-20T00:00:00Z' })).toBe(false)
+test('publishing stops Users only for a required acceptance', () => {
+  expect(publishStopsUsers({ kind: StaffSignupItemKind.REQUIRED_ACCEPTANCE })).toBe(true)
   expect(publishStopsUsers({ kind: StaffSignupItemKind.OPTIONAL_CONSENT })).toBe(false)
   expect(publishStopsUsers({ kind: StaffSignupItemKind.NOTICE })).toBe(false)
 })

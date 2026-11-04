@@ -1927,195 +1927,6 @@ func (s *Server) handleStaffMeGetRequest(args [0]string, argsEscaped bool, w htt
 	}
 }
 
-// handleStaffSignupItemsArchiveRequest handles StaffSignupItems_archive operation.
-//
-// Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its published
-// versions stay. Archiving an archived item changes nothing, and an archived item is never restored.
-// The item that stands for consent to the operator's mailings is refused (422) until it is unmarked.
-//
-// POST /signup-items/{id}/archive
-func (s *Server) handleStaffSignupItemsArchiveRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("StaffSignupItems_archive"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.HTTPRouteKey.String("/signup-items/{id}/archive"),
-	}
-	// Add attributes from config.
-	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
-
-	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), StaffSignupItemsArchiveOperation,
-		trace.WithAttributes(otelAttrs...),
-		serverSpanKind,
-	)
-	defer span.End()
-
-	// Add Labeler to context.
-	labeler := &Labeler{attrs: otelAttrs}
-	ctx = contextWithLabeler(ctx, labeler)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		elapsedDuration := time.Since(startTime)
-
-		attrSet := labeler.AttributeSet()
-		attrs := attrSet.ToSlice()
-		code := statusWriter.status
-		if code != 0 {
-			codeAttr := semconv.HTTPResponseStatusCode(code)
-			attrs = append(attrs, codeAttr)
-			span.SetAttributes(attrs...)
-		}
-		attrOpt := metric.WithAttributes(attrs...)
-
-		// Increment request counter.
-		s.requests.Add(ctx, 1, attrOpt)
-
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
-	}()
-
-	var (
-		recordError = func(stage string, err error) {
-			span.RecordError(err)
-
-			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
-			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
-			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
-			// max redirects exceeded), in which case status MUST be set to Error.
-			code := statusWriter.status
-			if code < 100 || code >= 500 {
-				span.SetStatus(codes.Error, stage)
-			}
-
-			attrSet := labeler.AttributeSet()
-			attrs := attrSet.ToSlice()
-			if code != 0 {
-				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
-			}
-
-			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
-		}
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: StaffSignupItemsArchiveOperation,
-			ID:   "StaffSignupItems_archive",
-		}
-	)
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			sctx, ok, err := s.securityApiKeyAuth(ctx, StaffSignupItemsArchiveOperation, r)
-			if err != nil {
-				err = &ogenerrors.SecurityError{
-					OperationContext: opErrContext,
-					Security:         "ApiKeyAuth",
-					Err:              err,
-				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
-				return
-			}
-			if ok {
-				satisfied[0] |= 1 << 0
-				ctx = sctx
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			err = &ogenerrors.SecurityError{
-				OperationContext: opErrContext,
-				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
-			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
-			return
-		}
-	}
-	params, err := decodeStaffSignupItemsArchiveParams(args, argsEscaped, r)
-	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeParams", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	var rawBody []byte
-
-	var response StaffSignupItemsArchiveRes
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    StaffSignupItemsArchiveOperation,
-			OperationSummary: "",
-			OperationID:      "StaffSignupItems_archive",
-			Body:             nil,
-			RawBody:          rawBody,
-			Params: middleware.Parameters{
-				{
-					Name: "id",
-					In:   "path",
-				}: params.ID,
-			},
-			Raw: r,
-		}
-
-		type (
-			Request  = struct{}
-			Params   = StaffSignupItemsArchiveParams
-			Response = StaffSignupItemsArchiveRes
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			unpackStaffSignupItemsArchiveParams,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.StaffSignupItemsArchive(ctx, params)
-				return response, err
-			},
-		)
-	} else {
-		response, err = s.h.StaffSignupItemsArchive(ctx, params)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeStaffSignupItemsArchiveResponse(response, w, span); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
 // handleStaffSignupItemsCreateRequest handles StaffSignupItems_create operation.
 //
 // Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional consent, and
@@ -2304,9 +2115,199 @@ func (s *Server) handleStaffSignupItemsCreateRequest(args [0]string, argsEscaped
 	}
 }
 
+// handleStaffSignupItemsDeleteRequest handles StaffSignupItems_delete operation.
+//
+// Delete the Sign-up item: it leaves the sign-up form, its public page and this list at once, and is
+// never restored; its published versions and Users' answers stay. Deleting a deleted item changes
+// nothing. The item that stands for consent to the operator's mailings is refused (422) until it is
+// unmarked.
+//
+// DELETE /signup-items/{id}
+func (s *Server) handleStaffSignupItemsDeleteRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("StaffSignupItems_delete"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.HTTPRouteKey.String("/signup-items/{id}"),
+	}
+	// Add attributes from config.
+	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
+
+	// Start a span for this request.
+	ctx, span := s.cfg.Tracer.Start(r.Context(), StaffSignupItemsDeleteOperation,
+		trace.WithAttributes(otelAttrs...),
+		serverSpanKind,
+	)
+	defer span.End()
+
+	// Add Labeler to context.
+	labeler := &Labeler{attrs: otelAttrs}
+	ctx = contextWithLabeler(ctx, labeler)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		elapsedDuration := time.Since(startTime)
+
+		attrSet := labeler.AttributeSet()
+		attrs := attrSet.ToSlice()
+		code := statusWriter.status
+		if code != 0 {
+			codeAttr := semconv.HTTPResponseStatusCode(code)
+			attrs = append(attrs, codeAttr)
+			span.SetAttributes(attrs...)
+		}
+		attrOpt := metric.WithAttributes(attrs...)
+
+		// Increment request counter.
+		s.requests.Add(ctx, 1, attrOpt)
+
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
+	}()
+
+	var (
+		recordError = func(stage string, err error) {
+			span.RecordError(err)
+
+			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
+			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
+			// max redirects exceeded), in which case status MUST be set to Error.
+			code := statusWriter.status
+			if code < 100 || code >= 500 {
+				span.SetStatus(codes.Error, stage)
+			}
+
+			attrSet := labeler.AttributeSet()
+			attrs := attrSet.ToSlice()
+			if code != 0 {
+				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
+			}
+
+			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: StaffSignupItemsDeleteOperation,
+			ID:   "StaffSignupItems_delete",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityApiKeyAuth(ctx, StaffSignupItemsDeleteOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKeyAuth",
+					Err:              err,
+				}
+				defer recordError("Security:ApiKeyAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeStaffSignupItemsDeleteParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response StaffSignupItemsDeleteRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    StaffSignupItemsDeleteOperation,
+			OperationSummary: "",
+			OperationID:      "StaffSignupItems_delete",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "id",
+					In:   "path",
+				}: params.ID,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = StaffSignupItemsDeleteParams
+			Response = StaffSignupItemsDeleteRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackStaffSignupItemsDeleteParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.StaffSignupItemsDelete(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.StaffSignupItemsDelete(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeStaffSignupItemsDeleteResponse(response, w, span); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleStaffSignupItemsGetRequest handles StaffSignupItems_get operation.
 //
-// One Sign-up item.
+// One Sign-up item, a deleted one too.
 //
 // GET /signup-items/{id}
 func (s *Server) handleStaffSignupItemsGetRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -2493,7 +2494,7 @@ func (s *Server) handleStaffSignupItemsGetRequest(args [1]string, argsEscaped bo
 
 // handleStaffSignupItemsListRequest handles StaffSignupItems_list operation.
 //
-// The Instance's Sign-up items, archived ones included, in the order of the sign-up form.
+// The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form.
 //
 // GET /signup-items
 func (s *Server) handleStaffSignupItemsListRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -2854,7 +2855,8 @@ func (s *Server) handleStaffSignupItemsListVersionsRequest(args [1]string, argsE
 // handleStaffSignupItemsPublishRequest handles StaffSignupItems_publish operation.
 //
 // Publish the draft as a new version under a label: it takes effect at once, and is never changed or
-// removed afterwards. A label the item already has, and an item without a draft, are refused (422).
+// removed afterwards. A label the item already has, and an item without a draft, are refused (422); a
+// deleted item is not found.
 //
 // POST /signup-items/{id}/versions
 func (s *Server) handleStaffSignupItemsPublishRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -3057,7 +3059,7 @@ func (s *Server) handleStaffSignupItemsPublishRequest(args [1]string, argsEscape
 // handleStaffSignupItemsReorderRequest handles StaffSignupItems_reorder operation.
 //
 // Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that is not
-// every item's id exactly once is refused (422).
+// the id of every item that is not deleted, exactly once, is refused (422).
 //
 // PUT /signup-items/order
 func (s *Server) handleStaffSignupItemsReorderRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -3245,7 +3247,7 @@ func (s *Server) handleStaffSignupItemsReorderRequest(args [0]string, argsEscape
 // handleStaffSignupItemsSaveDraftRequest handles StaffSignupItems_saveDraft operation.
 //
 // Save the draft of the item's Legal document. It is edited freely and changes nothing a visitor sees
-// until it is published.
+// until it is published. A deleted item is not found.
 //
 // PUT /signup-items/{id}/draft
 func (s *Server) handleStaffSignupItemsSaveDraftRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -3447,8 +3449,8 @@ func (s *Server) handleStaffSignupItemsSaveDraftRequest(args [1]string, argsEsca
 
 // handleStaffSignupItemsUpdateRequest handles StaffSignupItems_update operation.
 //
-// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent
-// or is archived, and a second mailings consent are refused (422).
+// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent,
+// and a second mailings consent are refused (422); a deleted item is not found.
 //
 // PATCH /signup-items/{id}
 func (s *Server) handleStaffSignupItemsUpdateRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

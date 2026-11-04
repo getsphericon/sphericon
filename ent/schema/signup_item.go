@@ -13,9 +13,9 @@ import (
 // SignupItem is one thing the Instance asks or tells a person at sign-up (ADR 0062): a required
 // acceptance, an optional consent or a notice, set by a Staff member. It belongs to the Instance,
 // not to a Workspace, so it has no scoped wrapper; only internal/signupitems reads and writes it.
-// An item is never deleted: its published Legal document versions keep it, and it is archived
-// instead (DiscardMixin, glossary Discard): it then leaves the sign-up form and its public page,
-// and is never restored.
+// Delete discards an item (DiscardMixin, glossary Discard, ADR 0100): its published Legal document
+// versions keep the row, which leaves the sign-up form, its public page and the Staff list, is
+// read-only and is never restored.
 type SignupItem struct {
 	ent.Schema
 }
@@ -37,8 +37,8 @@ func (SignupItem) Fields() []ent.Field {
 			StorageKey("id").
 			Immutable(),
 		// The item's address: its public page is served at a fixed path of the key. Unique across
-		// archived items too, not partial as DiscardMixin asks: a User's answers are matched to an
-		// item by its key, so a new item that took an archived one's key would inherit its answers.
+		// deleted items too, not partial as DiscardMixin asks: a User's answers are matched to an
+		// item by its key, so a new item that took a deleted one's key would inherit its answers.
 		field.String("key").
 			NotEmpty().
 			MaxLen(64).

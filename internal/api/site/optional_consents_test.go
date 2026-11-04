@@ -152,8 +152,8 @@ func TestAConsentNotInEffectIsNotFound(t *testing.T) {
 	acceptTermsAs(t, env, fixtures.MemberMaryEmail)
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 	cases := map[string]string{
-		"archived": fixtures.OperatorNewsKey,
-		"unknown":  "no-such-item",
+		"deleted": fixtures.OperatorNewsKey,
+		"unknown": "no-such-item",
 	}
 	for name, key := range cases {
 		t.Run(name, func(t *testing.T) {

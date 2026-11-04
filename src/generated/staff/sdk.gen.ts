@@ -5,8 +5,8 @@ import * as z from 'zod';
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { StaffAuthLoginData, StaffAuthLoginErrors, StaffAuthLoginResponses, StaffAuthLogoutData, StaffAuthLogoutErrors, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorErrors, StaffAuthSecondFactorResponses, StaffInstanceAcknowledgeNoticeData, StaffInstanceAcknowledgeNoticeErrors, StaffInstanceAcknowledgeNoticeResponses, StaffInstanceClearDefaultSendCapData, StaffInstanceClearDefaultSendCapErrors, StaffInstanceClearDefaultSendCapResponses, StaffInstanceGetStateData, StaffInstanceGetStateErrors, StaffInstanceGetStateResponses, StaffInstanceListAuditEntriesData, StaffInstanceListAuditEntriesErrors, StaffInstanceListAuditEntriesResponses, StaffInstancePreviewTelemetryReportData, StaffInstancePreviewTelemetryReportErrors, StaffInstancePreviewTelemetryReportResponses, StaffInstanceSetDefaultSendCapData, StaffInstanceSetDefaultSendCapErrors, StaffInstanceSetDefaultSendCapResponses, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryErrors, StaffInstanceSetTelemetryResponses, StaffMeGetData, StaffMeGetErrors, StaffMeGetResponses, StaffSignupItemsArchiveData, StaffSignupItemsArchiveErrors, StaffSignupItemsArchiveResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateErrors, StaffSignupItemsCreateResponses, StaffSignupItemsGetData, StaffSignupItemsGetErrors, StaffSignupItemsGetResponses, StaffSignupItemsListData, StaffSignupItemsListErrors, StaffSignupItemsListResponses, StaffSignupItemsListVersionsData, StaffSignupItemsListVersionsErrors, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishErrors, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderErrors, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftErrors, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateErrors, StaffSignupItemsUpdateResponses } from './types.gen.ts';
-import { zStaffAuthLoginBody, zStaffAuthSecondFactorBody, zStaffInstanceListAuditEntriesQuery, zStaffInstanceSetDefaultSendCapBody, zStaffInstanceSetTelemetryBody, zStaffSignupItemsArchivePath, zStaffSignupItemsCreateBody, zStaffSignupItemsGetPath, zStaffSignupItemsListVersionsPath, zStaffSignupItemsPublishBody, zStaffSignupItemsPublishPath, zStaffSignupItemsReorderBody, zStaffSignupItemsSaveDraftBody, zStaffSignupItemsSaveDraftPath, zStaffSignupItemsUpdateBody, zStaffSignupItemsUpdatePath } from './zod.gen.ts';
+import type { StaffAuthLoginData, StaffAuthLoginErrors, StaffAuthLoginResponses, StaffAuthLogoutData, StaffAuthLogoutErrors, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorErrors, StaffAuthSecondFactorResponses, StaffInstanceAcknowledgeNoticeData, StaffInstanceAcknowledgeNoticeErrors, StaffInstanceAcknowledgeNoticeResponses, StaffInstanceClearDefaultSendCapData, StaffInstanceClearDefaultSendCapErrors, StaffInstanceClearDefaultSendCapResponses, StaffInstanceGetStateData, StaffInstanceGetStateErrors, StaffInstanceGetStateResponses, StaffInstanceListAuditEntriesData, StaffInstanceListAuditEntriesErrors, StaffInstanceListAuditEntriesResponses, StaffInstancePreviewTelemetryReportData, StaffInstancePreviewTelemetryReportErrors, StaffInstancePreviewTelemetryReportResponses, StaffInstanceSetDefaultSendCapData, StaffInstanceSetDefaultSendCapErrors, StaffInstanceSetDefaultSendCapResponses, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryErrors, StaffInstanceSetTelemetryResponses, StaffMeGetData, StaffMeGetErrors, StaffMeGetResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateErrors, StaffSignupItemsCreateResponses, StaffSignupItemsDeleteData, StaffSignupItemsDeleteErrors, StaffSignupItemsDeleteResponses, StaffSignupItemsGetData, StaffSignupItemsGetErrors, StaffSignupItemsGetResponses, StaffSignupItemsListData, StaffSignupItemsListErrors, StaffSignupItemsListResponses, StaffSignupItemsListVersionsData, StaffSignupItemsListVersionsErrors, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishErrors, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderErrors, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftErrors, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateErrors, StaffSignupItemsUpdateResponses } from './types.gen.ts';
+import { zStaffAuthLoginBody, zStaffAuthSecondFactorBody, zStaffInstanceListAuditEntriesQuery, zStaffInstanceSetDefaultSendCapBody, zStaffInstanceSetTelemetryBody, zStaffSignupItemsCreateBody, zStaffSignupItemsDeletePath, zStaffSignupItemsGetPath, zStaffSignupItemsListVersionsPath, zStaffSignupItemsPublishBody, zStaffSignupItemsPublishPath, zStaffSignupItemsReorderBody, zStaffSignupItemsSaveDraftBody, zStaffSignupItemsSaveDraftPath, zStaffSignupItemsUpdateBody, zStaffSignupItemsUpdatePath } from './zod.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -240,7 +240,7 @@ export const staffMeGet = <ThrowOnError extends boolean = false>(options?: Optio
 });
 
 /**
- * The Instance's Sign-up items, archived ones included, in the order of the sign-up form
+ * The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form
  */
 export const staffSignupItemsList = <ThrowOnError extends boolean = false>(options?: Options<StaffSignupItemsListData, ThrowOnError>): RequestResult<StaffSignupItemsListResponses, StaffSignupItemsListErrors, ThrowOnError> => (options?.client ?? client).get<StaffSignupItemsListResponses, StaffSignupItemsListErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -282,7 +282,7 @@ export const staffSignupItemsCreate = <ThrowOnError extends boolean = false>(opt
 
 /**
  * Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that
- * is not every item's id exactly once is refused (422).
+ * is not the id of every item that is not deleted, exactly once, is refused (422).
  */
 export const staffSignupItemsReorder = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsReorderData, ThrowOnError>): RequestResult<StaffSignupItemsReorderResponses, StaffSignupItemsReorderErrors, ThrowOnError> => (options.client ?? client).put<StaffSignupItemsReorderResponses, StaffSignupItemsReorderErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -304,7 +304,28 @@ export const staffSignupItemsReorder = <ThrowOnError extends boolean = false>(op
 });
 
 /**
- * One Sign-up item
+ * Delete the Sign-up item: it leaves the sign-up form, its public page and this list at once,
+ * and is never restored; its published versions and Users' answers stay. Deleting a deleted item
+ * changes nothing. The item that stands for consent to the operator's mailings is refused (422)
+ * until it is unmarked.
+ */
+export const staffSignupItemsDelete = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsDeleteData, ThrowOnError>): RequestResult<StaffSignupItemsDeleteResponses, StaffSignupItemsDeleteErrors, ThrowOnError> => (options.client ?? client).delete<StaffSignupItemsDeleteResponses, StaffSignupItemsDeleteErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: zStaffSignupItemsDeletePath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/signup-items/{id}',
+  ...options
+});
+
+/**
+ * One Sign-up item, a deleted one too
  */
 export const staffSignupItemsGet = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsGetData, ThrowOnError>): RequestResult<StaffSignupItemsGetResponses, StaffSignupItemsGetErrors, ThrowOnError> => (options.client ?? client).get<StaffSignupItemsGetResponses, StaffSignupItemsGetErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -323,7 +344,7 @@ export const staffSignupItemsGet = <ThrowOnError extends boolean = false>(option
 
 /**
  * Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional
- * consent or is archived, and a second mailings consent are refused (422).
+ * consent, and a second mailings consent are refused (422); a deleted item is not found.
  */
 export const staffSignupItemsUpdate = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsUpdateData, ThrowOnError>): RequestResult<StaffSignupItemsUpdateResponses, StaffSignupItemsUpdateErrors, ThrowOnError> => (options.client ?? client).patch<StaffSignupItemsUpdateResponses, StaffSignupItemsUpdateErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -345,29 +366,8 @@ export const staffSignupItemsUpdate = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
- * Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its
- * published versions stay. Archiving an archived item changes nothing, and an archived item is never
- * restored. The item that stands for consent to the operator's mailings is refused (422) until
- * it is unmarked.
- */
-export const staffSignupItemsArchive = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsArchiveData, ThrowOnError>): RequestResult<StaffSignupItemsArchiveResponses, StaffSignupItemsArchiveErrors, ThrowOnError> => (options.client ?? client).post<StaffSignupItemsArchiveResponses, StaffSignupItemsArchiveErrors, ThrowOnError>({
-  requestValidator: async (data) => await z.object({
-    body: z.never().optional(),
-    path: zStaffSignupItemsArchivePath,
-    query: z.never().optional()
-  }).parseAsync(data),
-  security: [{
-      in: 'cookie',
-      name: 'STAFF_JWT',
-      type: 'apiKey'
-    }],
-  url: '/signup-items/{id}/archive',
-  ...options
-});
-
-/**
  * Save the draft of the item's Legal document. It is edited freely and changes nothing a
- * visitor sees until it is published.
+ * visitor sees until it is published. A deleted item is not found.
  */
 export const staffSignupItemsSaveDraft = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsSaveDraftData, ThrowOnError>): RequestResult<StaffSignupItemsSaveDraftResponses, StaffSignupItemsSaveDraftErrors, ThrowOnError> => (options.client ?? client).put<StaffSignupItemsSaveDraftResponses, StaffSignupItemsSaveDraftErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -410,7 +410,7 @@ export const staffSignupItemsListVersions = <ThrowOnError extends boolean = fals
 /**
  * Publish the draft as a new version under a label: it takes effect at once, and is never
  * changed or removed afterwards. A label the item already has, and an item without a draft,
- * are refused (422).
+ * are refused (422); a deleted item is not found.
  */
 export const staffSignupItemsPublish = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsPublishData, ThrowOnError>): RequestResult<StaffSignupItemsPublishResponses, StaffSignupItemsPublishErrors, ThrowOnError> => (options.client ?? client).post<StaffSignupItemsPublishResponses, StaffSignupItemsPublishErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

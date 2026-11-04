@@ -762,14 +762,14 @@ export default interface Resources {
         "perDayLabel": "Messages per 24 hours"
       },
       "signupItem": {
-        "archive": "Archive",
-        "archiveDescription": "It leaves the sign-up form and its public page at once, and cannot be restored. Its published versions stay listed.",
-        "archiveDone": "Item archived",
-        "archiveError": "Could not archive the item",
-        "archiveTitle": "Archive this item?",
-        "archived": "Archived",
-        "archivedDescription": "Archived {{date}}: it is no longer asked at sign-up and its public page is gone. Its published versions stay listed.",
         "currentVersion": "Current version: {{label}}, published {{date}}",
+        "delete": "Delete",
+        "deleteDescription": "It leaves the sign-up form, its public page and the list at once, and cannot be restored. Its published versions and the answers Users gave stay.",
+        "deleteDone": "Item deleted",
+        "deleteError": "Could not delete the item",
+        "deleteTitle": "Delete this item?",
+        "deleted": "Deleted",
+        "deletedDescription": "Deleted {{date}}: it is no longer asked at sign-up or listed, its public page is gone and it cannot be changed. Its published versions and the answers Users gave stay.",
         "draftDescription": "Markdown. Visitors see nothing of the draft until it is published.",
         "draftError": "Could not save the draft",
         "draftLabel": "Draft",
@@ -814,7 +814,6 @@ export default interface Resources {
           "title": "Add an item",
           "titleLabel": "Title"
         },
-        "archivedBadge": "Archived",
         "columns": {
           "key": "Key",
           "kind": "Kind",

@@ -53,7 +53,7 @@ model SiteLegalDocument {
 
 @tag("Site Legal Documents")
 namespace SiteLegalDocuments {
-  /** The Sign-up items in effect: those not archived that have a published version, with that
+  /** The Sign-up items in effect: those not deleted that have a published version, with that
    * version's label. Public; empty when the Instance has none. Answered while an acceptance
    * is pending (ADR 0062). */
   @useAuth(NoAuth)
@@ -66,7 +66,7 @@ namespace SiteLegalDocuments {
   };
 
   /** The current version of a Sign-up item's Legal document, for its public page. Public. 404
-   * for an unknown or archived item and for one with no published version. Answered while an
+   * for an unknown or deleted item and for one with no published version. Answered while an
    * acceptance is pending, for the screen that shows the new texts (ADR 0062). */
   @useAuth(NoAuth)
   @allowedWhileAcceptancePending

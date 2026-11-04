@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/signup"
+	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -102,6 +103,19 @@ func TestASignUpRecordsEveryAnswerAndEveryNoticeShownOnTheNewUser(t *testing.T) 
 	assert.Equal(t, []string{termsAcceptedRecord, newsDeclinedRecord, noticeShownRecord}, r.decided(t, "grace@example.com"))
 }
 
+// ADR 0100: a deleted item leaves the form, but the answers Users gave to it stay.
+func TestTheAnswersToADeletedItemStay(t *testing.T) {
+	r := newRig(t, 5)
+	r.withItems(t)
+	_, err := r.signUpAnswering(t, "grace@example.com", termsAccepted, newsUnticked)
+	require.NoError(t, err)
+
+	err = signupitems.New(r.db, r.env.Bus, nil).Delete(t.Context(), fixtures.OperatorNewsID)
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{termsAcceptedRecord, newsDeclinedRecord, noticeShownRecord}, r.decided(t, "grace@example.com"))
+}
+
 func TestAnOptionalConsentLeftOutOfTheAnswersIsNotRecorded(t *testing.T) {
 	r := newRig(t, 5)
 	r.withItems(t)
@@ -128,7 +142,7 @@ func TestAnUnknownItemOrAStaleVersionInTheAnswersIsRefused(t *testing.T) {
 	}
 }
 
-// With no item in effect (the fixture items are archived) a Sign-up asks and records nothing.
+// With no item in effect (the fixture items are deleted) a Sign-up asks and records nothing.
 func TestWithNoItemsInEffectASignUpAsksAndRecordsNothing(t *testing.T) {
 	r := newRig(t, 5)
 

@@ -9,7 +9,7 @@ import {
   handleStaffSignupItemsListVersions,
   handleStaffSignupItemsPublish,
   handleStaffSignupItemsReorder,
-  handleStaffSignupItemsArchive,
+  handleStaffSignupItemsDelete,
   handleStaffSignupItemsSaveDraft,
   handleStaffSignupItemsUpdate,
 } from '../generated/staff/msw.gen.ts'
@@ -81,18 +81,6 @@ test('lists the items with their current version, or that none is published', as
   await expect.element(screen.getByText('2026-10', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Not published', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Mailings consent', { exact: true })).toBeInTheDocument()
-})
-
-test('an archived item is marked as archived in the list', async () => {
-  worker.use(
-    handleStaffSignupItemsList({
-      body: { items: [item({ archivedAt: '2026-10-20T00:00:00Z' })] },
-    }),
-  )
-
-  const { screen } = await renderWithRouter(<ConsoleSignupItemsPage />, LIST)
-
-  await expect.element(screen.getByText('Archived', { exact: true })).toBeInTheDocument()
 })
 
 test('moving an item sends the new order of every item', async () => {
@@ -345,31 +333,39 @@ test('retitling sends the new title', async () => {
   await expect.poll(() => updates).toEqual([{ title: 'Terms of use' }])
 })
 
-test('archiving asks first, then shows the item archived', async () => {
-  let archived = 0
-  let stored = item()
+test('deleting asks first, then goes back to the list', async () => {
+  let deleted = 0
+  serveItem(item())
   worker.use(
-    handleStaffSignupItemsGet(() => HttpResponse.json(stored)),
-    handleStaffSignupItemsListVersions({ body: { items: [] } }),
-    handleStaffSignupItemsArchive(() => {
-      archived += 1
-      stored = { ...stored, archivedAt: '2026-10-29T00:00:00Z' }
-      return HttpResponse.json(stored)
+    handleStaffSignupItemsDelete(() => {
+      deleted += 1
+      return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<ConsoleSignupItemPage />, ITEM)
+  const { screen, navigate } = await renderWithRouter(<ConsoleSignupItemPage />, ITEM)
 
-  await screen.getByRole('button', { name: 'Archive' }).click()
+  await screen.getByRole('button', { name: 'Delete' }).click()
   const dialog = screen.getByRole('dialog')
   await expect
-    .element(dialog.getByText('leaves the sign-up form and its public page', { exact: false }))
+    .element(dialog.getByText('leaves the sign-up form, its public page', { exact: false }))
     .toBeInTheDocument()
-  expect(archived).toBe(0)
-  await dialog.getByRole('button', { name: 'Archive' }).click()
+  expect(deleted).toBe(0)
+  await dialog.getByRole('button', { name: 'Delete' }).click()
 
-  await expect.poll(() => archived).toBe(1)
-  await expect.element(screen.getByText('Archived', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Archive' })).not.toBeInTheDocument()
+  await expect.poll(() => deleted).toBe(1)
+  await expect.poll(() => navigate.mock.calls).toEqual([[{ to: consoleSignupItemsRoute.to }]])
+})
+
+test('a deleted item is shown read-only', async () => {
+  serveItem(item({ discardedAt: '2026-10-29T00:00:00Z' }), [version('2026-10')])
+
+  const { screen } = await renderWithRouter(<ConsoleSignupItemPage />, ITEM)
+
+  await expect.element(screen.getByText('Deleted', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('2026-10', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+  await expect.element(screen.getByLabelText('Title')).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Save draft' })).not.toBeInTheDocument()
 })
 
 test('an optional consent is marked as the mailings consent', async () => {

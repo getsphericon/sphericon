@@ -106,14 +106,6 @@ type Invoker interface {
 	//
 	// GET /me
 	StaffMeGet(ctx context.Context) (StaffMeGetRes, error)
-	// StaffSignupItemsArchive invokes StaffSignupItems_archive operation.
-	//
-	// Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its published
-	// versions stay. Archiving an archived item changes nothing, and an archived item is never restored.
-	// The item that stands for consent to the operator's mailings is refused (422) until it is unmarked.
-	//
-	// POST /signup-items/{id}/archive
-	StaffSignupItemsArchive(ctx context.Context, params StaffSignupItemsArchiveParams) (StaffSignupItemsArchiveRes, error)
 	// StaffSignupItemsCreate invokes StaffSignupItems_create operation.
 	//
 	// Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional consent, and
@@ -121,15 +113,24 @@ type Invoker interface {
 	//
 	// POST /signup-items
 	StaffSignupItemsCreate(ctx context.Context, request *StaffSignupItemInput) (StaffSignupItemsCreateRes, error)
+	// StaffSignupItemsDelete invokes StaffSignupItems_delete operation.
+	//
+	// Delete the Sign-up item: it leaves the sign-up form, its public page and this list at once, and is
+	// never restored; its published versions and Users' answers stay. Deleting a deleted item changes
+	// nothing. The item that stands for consent to the operator's mailings is refused (422) until it is
+	// unmarked.
+	//
+	// DELETE /signup-items/{id}
+	StaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) (StaffSignupItemsDeleteRes, error)
 	// StaffSignupItemsGet invokes StaffSignupItems_get operation.
 	//
-	// One Sign-up item.
+	// One Sign-up item, a deleted one too.
 	//
 	// GET /signup-items/{id}
 	StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (StaffSignupItemsGetRes, error)
 	// StaffSignupItemsList invokes StaffSignupItems_list operation.
 	//
-	// The Instance's Sign-up items, archived ones included, in the order of the sign-up form.
+	// The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form.
 	//
 	// GET /signup-items
 	StaffSignupItemsList(ctx context.Context) (StaffSignupItemsListRes, error)
@@ -143,28 +144,29 @@ type Invoker interface {
 	// StaffSignupItemsPublish invokes StaffSignupItems_publish operation.
 	//
 	// Publish the draft as a new version under a label: it takes effect at once, and is never changed or
-	// removed afterwards. A label the item already has, and an item without a draft, are refused (422).
+	// removed afterwards. A label the item already has, and an item without a draft, are refused (422); a
+	// deleted item is not found.
 	//
 	// POST /signup-items/{id}/versions
 	StaffSignupItemsPublish(ctx context.Context, request *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (StaffSignupItemsPublishRes, error)
 	// StaffSignupItemsReorder invokes StaffSignupItems_reorder operation.
 	//
 	// Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that is not
-	// every item's id exactly once is refused (422).
+	// the id of every item that is not deleted, exactly once, is refused (422).
 	//
 	// PUT /signup-items/order
 	StaffSignupItemsReorder(ctx context.Context, request *StaffSignupItemOrder) (StaffSignupItemsReorderRes, error)
 	// StaffSignupItemsSaveDraft invokes StaffSignupItems_saveDraft operation.
 	//
 	// Save the draft of the item's Legal document. It is edited freely and changes nothing a visitor sees
-	// until it is published.
+	// until it is published. A deleted item is not found.
 	//
 	// PUT /signup-items/{id}/draft
 	StaffSignupItemsSaveDraft(ctx context.Context, request *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (StaffSignupItemsSaveDraftRes, error)
 	// StaffSignupItemsUpdate invokes StaffSignupItems_update operation.
 	//
-	// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent
-	// or is archived, and a second mailings consent are refused (422).
+	// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent,
+	// and a second mailings consent are refused (422); a deleted item is not found.
 	//
 	// PATCH /signup-items/{id}
 	StaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (StaffSignupItemsUpdateRes, error)
@@ -1449,143 +1451,6 @@ func (c *Client) sendStaffMeGet(ctx context.Context) (res StaffMeGetRes, err err
 	return result, nil
 }
 
-// StaffSignupItemsArchive invokes StaffSignupItems_archive operation.
-//
-// Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its published
-// versions stay. Archiving an archived item changes nothing, and an archived item is never restored.
-// The item that stands for consent to the operator's mailings is refused (422) until it is unmarked.
-//
-// POST /signup-items/{id}/archive
-func (c *Client) StaffSignupItemsArchive(ctx context.Context, params StaffSignupItemsArchiveParams) (StaffSignupItemsArchiveRes, error) {
-	res, err := c.sendStaffSignupItemsArchive(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendStaffSignupItemsArchive(ctx context.Context, params StaffSignupItemsArchiveParams) (res StaffSignupItemsArchiveRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("StaffSignupItems_archive"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/signup-items/{id}/archive"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupItemsArchiveOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [3]string
-	pathParts[0] = "/signup-items/"
-	{
-		// Encode "id" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "id",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/archive"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "POST", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, StaffSignupItemsArchiveOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeStaffSignupItemsArchiveResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
 // StaffSignupItemsCreate invokes StaffSignupItems_create operation.
 //
 // Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional consent, and
@@ -1703,9 +1568,146 @@ func (c *Client) sendStaffSignupItemsCreate(ctx context.Context, request *StaffS
 	return result, nil
 }
 
+// StaffSignupItemsDelete invokes StaffSignupItems_delete operation.
+//
+// Delete the Sign-up item: it leaves the sign-up form, its public page and this list at once, and is
+// never restored; its published versions and Users' answers stay. Deleting a deleted item changes
+// nothing. The item that stands for consent to the operator's mailings is refused (422) until it is
+// unmarked.
+//
+// DELETE /signup-items/{id}
+func (c *Client) StaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) (StaffSignupItemsDeleteRes, error) {
+	res, err := c.sendStaffSignupItemsDelete(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendStaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) (res StaffSignupItemsDeleteRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("StaffSignupItems_delete"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/signup-items/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupItemsDeleteOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/signup-items/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, StaffSignupItemsDeleteOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeStaffSignupItemsDeleteResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // StaffSignupItemsGet invokes StaffSignupItems_get operation.
 //
-// One Sign-up item.
+// One Sign-up item, a deleted one too.
 //
 // GET /signup-items/{id}
 func (c *Client) StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (StaffSignupItemsGetRes, error) {
@@ -1839,7 +1841,7 @@ func (c *Client) sendStaffSignupItemsGet(ctx context.Context, params StaffSignup
 
 // StaffSignupItemsList invokes StaffSignupItems_list operation.
 //
-// The Instance's Sign-up items, archived ones included, in the order of the sign-up form.
+// The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form.
 //
 // GET /signup-items
 func (c *Client) StaffSignupItemsList(ctx context.Context) (StaffSignupItemsListRes, error) {
@@ -2089,7 +2091,8 @@ func (c *Client) sendStaffSignupItemsListVersions(ctx context.Context, params St
 // StaffSignupItemsPublish invokes StaffSignupItems_publish operation.
 //
 // Publish the draft as a new version under a label: it takes effect at once, and is never changed or
-// removed afterwards. A label the item already has, and an item without a draft, are refused (422).
+// removed afterwards. A label the item already has, and an item without a draft, are refused (422); a
+// deleted item is not found.
 //
 // POST /signup-items/{id}/versions
 func (c *Client) StaffSignupItemsPublish(ctx context.Context, request *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (StaffSignupItemsPublishRes, error) {
@@ -2228,7 +2231,7 @@ func (c *Client) sendStaffSignupItemsPublish(ctx context.Context, request *Staff
 // StaffSignupItemsReorder invokes StaffSignupItems_reorder operation.
 //
 // Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that is not
-// every item's id exactly once is refused (422).
+// the id of every item that is not deleted, exactly once, is refused (422).
 //
 // PUT /signup-items/order
 func (c *Client) StaffSignupItemsReorder(ctx context.Context, request *StaffSignupItemOrder) (StaffSignupItemsReorderRes, error) {
@@ -2345,7 +2348,7 @@ func (c *Client) sendStaffSignupItemsReorder(ctx context.Context, request *Staff
 // StaffSignupItemsSaveDraft invokes StaffSignupItems_saveDraft operation.
 //
 // Save the draft of the item's Legal document. It is edited freely and changes nothing a visitor sees
-// until it is published.
+// until it is published. A deleted item is not found.
 //
 // PUT /signup-items/{id}/draft
 func (c *Client) StaffSignupItemsSaveDraft(ctx context.Context, request *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (StaffSignupItemsSaveDraftRes, error) {
@@ -2483,8 +2486,8 @@ func (c *Client) sendStaffSignupItemsSaveDraft(ctx context.Context, request *Sta
 
 // StaffSignupItemsUpdate invokes StaffSignupItems_update operation.
 //
-// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent
-// or is archived, and a second mailings consent are refused (422).
+// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent,
+// and a second mailings consent are refused (422); a deleted item is not found.
 //
 // PATCH /signup-items/{id}
 func (c *Client) StaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (StaffSignupItemsUpdateRes, error) {

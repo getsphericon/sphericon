@@ -15,6 +15,7 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
@@ -25,8 +26,8 @@ import { PageSkeleton } from '../components/Skeletons.tsx'
 import {
   staffSignupItemsGetOptions,
   staffSignupItemsListVersionsOptions,
+  staffSignupItemsDeleteMutation,
   staffSignupItemsPublishMutation,
-  staffSignupItemsArchiveMutation,
   staffSignupItemsSaveDraftMutation,
   staffSignupItemsUpdateMutation,
 } from '../generated/staff/@tanstack/react-query.gen.ts'
@@ -37,6 +38,7 @@ import { useConfirmation } from '../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { trimmed, useSchemaForm } from '../resources/schemaForm.ts'
 import { Route as consoleSignupItemRoute } from '../routes/console/_authed/signup-items.$itemId.tsx'
+import { Route as consoleSignupItemsRoute } from '../routes/console/_authed/signup-items.index.tsx'
 import { Route as legalDocumentRoute } from '../routes/legal.$key.tsx'
 import { publishStopsUsers } from '../utils/signupItems.ts'
 import { formatDateTime } from './format.ts'
@@ -71,14 +73,17 @@ function TitleForm({ item }: { item: StaffSignupItemResource }) {
   )
 }
 
-// Archive the item: it leaves the sign-up form and its public page, and cannot be put back.
-function ArchiveButton({ item }: { item: StaffSignupItemResource }) {
+// Delete the item: it leaves the sign-up form, its public page and the list, and cannot be put
+// back, so the page goes back to the list.
+function DeleteButton({ item }: { item: StaffSignupItemResource }) {
   const { t } = useTranslation()
   const confirm = useConfirmation()
+  const navigate = useNavigate()
   const mutation = useResourceMutation({
-    mutation: staffSignupItemsArchiveMutation(),
-    successMessage: t(($) => $.console.signupItem.archiveDone),
-    errorTitle: t(($) => $.console.signupItem.archiveError),
+    mutation: staffSignupItemsDeleteMutation(),
+    successMessage: t(($) => $.console.signupItem.deleteDone),
+    errorTitle: t(($) => $.console.signupItem.deleteError),
+    onDone: async () => navigate({ to: consoleSignupItemsRoute.to }),
   })
 
   return (
@@ -88,14 +93,14 @@ function ArchiveButton({ item }: { item: StaffSignupItemResource }) {
       loading={mutation.isPending}
       onClick={() =>
         confirm({
-          title: t(($) => $.console.signupItem.archiveTitle),
-          description: t(($) => $.console.signupItem.archiveDescription),
-          confirmLabel: t(($) => $.console.signupItem.archive),
+          title: t(($) => $.console.signupItem.deleteTitle),
+          description: t(($) => $.console.signupItem.deleteDescription),
+          confirmLabel: t(($) => $.console.signupItem.delete),
           onConfirm: () => mutation.mutate({ path: { id: item.id } }),
         })
       }
     >
-      {t(($) => $.console.signupItem.archive)}
+      {t(($) => $.console.signupItem.delete)}
     </Button>
   )
 }
@@ -282,7 +287,8 @@ function PublishForm({ item, unsaved }: { item: StaffSignupItemResource; unsaved
 }
 
 // A Sign-up item and its Legal document (ADR 0062): the draft, its publishing, and the version in
-// effect with a link to its public page.
+// effect with a link to its public page. A deleted item is read-only (ADR 0100): only its versions
+// are shown.
 export function ConsoleSignupItemPage() {
   const { t } = useTranslation()
   return (
@@ -299,6 +305,7 @@ function ConsoleSignupItem() {
   const { t } = useTranslation()
   const { itemId } = consoleSignupItemRoute.useParams()
   const item = useSuspenseQuery(staffSignupItemsGetOptions({ path: { id: itemId } })).data
+  const deleted = item.discardedAt !== undefined
 
   return (
     <Stack>
@@ -307,9 +314,9 @@ function ConsoleSignupItem() {
           <Title order={2}>{item.title}</Title>
           <Group gap="xs">
             <Badge variant="light">{t(($) => $.console.signupItems.kind[item.kind])}</Badge>
-            {item.archivedAt ? (
+            {deleted ? (
               <Badge color="gray" variant="outline">
-                {t(($) => $.console.signupItem.archived)}
+                {t(($) => $.console.signupItem.deleted)}
               </Badge>
             ) : null}
             <Text size="sm" c="dimmed">
@@ -317,18 +324,20 @@ function ConsoleSignupItem() {
             </Text>
           </Group>
         </Stack>
-        {item.archivedAt ? null : <ArchiveButton item={item} />}
+        {deleted ? null : <DeleteButton item={item} />}
       </Group>
-      {item.archivedAt ? (
+      {item.discardedAt ? (
         <Alert color="gray" variant="light">
-          {t(($) => $.console.signupItem.archivedDescription, {
-            date: formatDateTime(item.archivedAt),
+          {t(($) => $.console.signupItem.deletedDescription, {
+            date: formatDateTime(item.discardedAt),
           })}
         </Alert>
       ) : null}
       {/* Remounted when the saved title changes, so the form starts from it. */}
-      <TitleForm key={item.title} item={item} />
-      {item.kind === SignupItemKind.OPTIONAL_CONSENT ? <MailingsSwitch item={item} /> : null}
+      {deleted ? null : <TitleForm key={item.title} item={item} />}
+      {!deleted && item.kind === SignupItemKind.OPTIONAL_CONSENT ? (
+        <MailingsSwitch item={item} />
+      ) : null}
       <Card withBorder>
         <Stack gap="xs">
           {item.currentVersion ? (
@@ -348,13 +357,15 @@ function ConsoleSignupItem() {
           )}
         </Stack>
       </Card>
-      <Card withBorder>
-        <Stack>
-          <Title order={4}>{t(($) => $.console.signupItem.draftTitle)}</Title>
-          {/* Remounted when the saved draft changes, so the editor starts from it. */}
-          <DraftEditor key={item.draft ?? ''} item={item} />
-        </Stack>
-      </Card>
+      {deleted ? null : (
+        <Card withBorder>
+          <Stack>
+            <Title order={4}>{t(($) => $.console.signupItem.draftTitle)}</Title>
+            {/* Remounted when the saved draft changes, so the editor starts from it. */}
+            <DraftEditor key={item.draft ?? ''} item={item} />
+          </Stack>
+        </Card>
+      )}
       <Card withBorder>
         <Stack>
           <Title order={4}>{t(($) => $.console.signupItem.versionsTitle)}</Title>

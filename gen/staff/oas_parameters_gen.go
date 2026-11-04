@@ -161,12 +161,12 @@ func decodeStaffInstanceListAuditEntriesParams(args [0]string, argsEscaped bool,
 	return params, nil
 }
 
-// StaffSignupItemsArchiveParams is parameters of StaffSignupItems_archive operation.
-type StaffSignupItemsArchiveParams struct {
+// StaffSignupItemsDeleteParams is parameters of StaffSignupItems_delete operation.
+type StaffSignupItemsDeleteParams struct {
 	ID EntityId
 }
 
-func unpackStaffSignupItemsArchiveParams(packed middleware.Parameters) (params StaffSignupItemsArchiveParams) {
+func unpackStaffSignupItemsDeleteParams(packed middleware.Parameters) (params StaffSignupItemsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -177,7 +177,7 @@ func unpackStaffSignupItemsArchiveParams(packed middleware.Parameters) (params S
 	return params
 }
 
-func decodeStaffSignupItemsArchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffSignupItemsArchiveParams, _ error) {
+func decodeStaffSignupItemsDeleteParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffSignupItemsDeleteParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]

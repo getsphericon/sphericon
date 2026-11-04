@@ -34,7 +34,7 @@ export function signupItemField(key: string) {
 }
 
 // Whether publishing a new version of the item stops every User who has not accepted it (ADR
-// 0062): only a required acceptance that is in effect does; an archived one is asked of no one.
-export function publishStopsUsers(item: Pick<StaffSignupItemResource, 'kind' | 'archivedAt'>) {
-  return item.kind === StaffSignupItemKind.REQUIRED_ACCEPTANCE && !item.archivedAt
+// 0062): a required acceptance does; a deleted one cannot be published at all.
+export function publishStopsUsers(item: Pick<StaffSignupItemResource, 'kind'>) {
+  return item.kind === StaffSignupItemKind.REQUIRED_ACCEPTANCE
 }

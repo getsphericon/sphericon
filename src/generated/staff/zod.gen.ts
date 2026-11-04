@@ -274,7 +274,7 @@ export const zStaffSignupItemInput = z.object({
 });
 
 /**
- * The new order of the sign-up form: the id of every Sign-up item, archived ones included, each
+ * The new order of the sign-up form: the id of every Sign-up item that is not deleted, each
  * once
  */
 export const zStaffSignupItemOrder = z.object({
@@ -355,7 +355,7 @@ export const zStaffSignupItemResource = z.object({
   mailingsConsent: z.boolean(),
   draft: z.exactOptional(zLegalDocumentMarkdown),
   currentVersion: z.exactOptional(zStaffLegalDocumentVersion),
-  archivedAt: z.exactOptional(zTimestamp),
+  discardedAt: z.exactOptional(zTimestamp),
   createdAt: zTimestamp
 });
 
@@ -510,6 +510,15 @@ export const zStaffSignupItemsReorderBody = zStaffSignupItemOrder;
  */
 export const zStaffSignupItemsReorderResponse = zStaffSignupItemList;
 
+export const zStaffSignupItemsDeletePath = z.object({
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zStaffSignupItemsDeleteResponse = z.void();
+
 export const zStaffSignupItemsGetPath = z.object({
   id: zEntityId
 });
@@ -529,15 +538,6 @@ export const zStaffSignupItemsUpdatePath = z.object({
  * The request has succeeded.
  */
 export const zStaffSignupItemsUpdateResponse = zStaffSignupItemResource;
-
-export const zStaffSignupItemsArchivePath = z.object({
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zStaffSignupItemsArchiveResponse = zStaffSignupItemResource;
 
 export const zStaffSignupItemsSaveDraftBody = zStaffLegalDocumentDraftInput;
 

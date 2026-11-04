@@ -45,12 +45,12 @@ type StaffMeGetRes interface {
 	staffMeGetRes()
 }
 
-type StaffSignupItemsArchiveRes interface {
-	staffSignupItemsArchiveRes()
-}
-
 type StaffSignupItemsCreateRes interface {
 	staffSignupItemsCreateRes()
+}
+
+type StaffSignupItemsDeleteRes interface {
+	staffSignupItemsDeleteRes()
 }
 
 type StaffSignupItemsGetRes interface {

@@ -3,7 +3,7 @@
 
 import { http, type HttpHandler, HttpResponse, type HttpResponseResolver, type RequestHandlerOptions as RequestHandlerOptions2 } from 'msw';
 
-import type { ClientOptions, StaffAuthLoginData, StaffAuthLoginResponses, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorResponses, StaffInstanceAcknowledgeNoticeResponses, StaffInstanceClearDefaultSendCapResponses, StaffInstanceGetStateResponses, StaffInstanceListAuditEntriesResponses, StaffInstancePreviewTelemetryReportResponses, StaffInstanceSetDefaultSendCapData, StaffInstanceSetDefaultSendCapResponses, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryResponses, StaffMeGetResponses, StaffSignupItemsArchiveResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateResponses, StaffSignupItemsGetResponses, StaffSignupItemsListResponses, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateResponses } from './types.gen.ts';
+import type { ClientOptions, StaffAuthLoginData, StaffAuthLoginResponses, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorResponses, StaffInstanceAcknowledgeNoticeResponses, StaffInstanceClearDefaultSendCapResponses, StaffInstanceGetStateResponses, StaffInstanceListAuditEntriesResponses, StaffInstancePreviewTelemetryReportResponses, StaffInstanceSetDefaultSendCapData, StaffInstanceSetDefaultSendCapResponses, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryResponses, StaffMeGetResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateResponses, StaffSignupItemsDeleteResponses, StaffSignupItemsGetResponses, StaffSignupItemsListResponses, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateResponses } from './types.gen.ts';
 
 export type RequestHandlerOptions = RequestHandlerOptions2 & {
   baseUrl?: ClientOptions['baseUrl'];
@@ -388,6 +388,37 @@ export function handleStaffSignupItemsReorder(response?: HandleStaffSignupItemsR
   }, options);
 }
 
+export type HandleStaffSignupItemsDeleteResponse = {
+  body: StaffSignupItemsDeleteResponses[204];
+  status?: 204;
+};
+
+/**
+ * Handler for the `DELETE /signup-items/{id}` operation.
+ */
+export function handleStaffSignupItemsDelete(response?: HandleStaffSignupItemsDeleteResponse | HttpResponseResolver<{
+  id: string;
+}, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.delete<{
+    id: string;
+  }, never>(`${options?.baseUrl ?? '*'}/signup-items/:id`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return new HttpResponse(body, { status: response?.status ?? 204 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
 export type HandleStaffSignupItemsGetResponse = {
   body: StaffSignupItemsGetResponses[200];
   status?: 200;
@@ -433,37 +464,6 @@ export function handleStaffSignupItemsUpdate(response?: HandleStaffSignupItemsUp
   return http.patch<{
     id: string;
   }, StaffSignupItemsUpdateData['body']>(`${options?.baseUrl ?? '*'}/signup-items/:id`, info => {
-    if (typeof response === 'function') {
-      return response(info);
-    }
-    const body = response?.body;
-    if (body !== undefined) {
-      return HttpResponse.json(body, { status: response?.status ?? 200 });
-    }
-    if (options?.responseFallback === 'passthrough') {
-      return;
-    }
-    return new Response('Not Implemented', {
-      status: 501,
-      statusText: 'Not Implemented'
-    });
-  }, options);
-}
-
-export type HandleStaffSignupItemsArchiveResponse = {
-  body: StaffSignupItemsArchiveResponses[200];
-  status?: 200;
-};
-
-/**
- * Handler for the `POST /signup-items/{id}/archive` operation.
- */
-export function handleStaffSignupItemsArchive(response?: HandleStaffSignupItemsArchiveResponse | HttpResponseResolver<{
-  id: string;
-}, never>, options?: RequestHandlerOptions): HttpHandler {
-  return http.post<{
-    id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/signup-items/:id/archive`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -632,6 +632,10 @@ export type MswHandlerFactories = {
    */
   staffSignupItemsReorder: typeof handleStaffSignupItemsReorder;
   /**
+   * Handler for the `DELETE /signup-items/{id}` operation.
+   */
+  staffSignupItemsDelete: typeof handleStaffSignupItemsDelete;
+  /**
    * Handler for the `GET /signup-items/{id}` operation.
    */
   staffSignupItemsGet: typeof handleStaffSignupItemsGet;
@@ -639,10 +643,6 @@ export type MswHandlerFactories = {
    * Handler for the `PATCH /signup-items/{id}` operation.
    */
   staffSignupItemsUpdate: typeof handleStaffSignupItemsUpdate;
-  /**
-   * Handler for the `POST /signup-items/{id}/archive` operation.
-   */
-  staffSignupItemsArchive: typeof handleStaffSignupItemsArchive;
   /**
    * Handler for the `PUT /signup-items/{id}/draft` operation.
    */
@@ -686,9 +686,9 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     staffSignupItemsList: wrap(handleStaffSignupItemsList),
     staffSignupItemsCreate: wrap(handleStaffSignupItemsCreate),
     staffSignupItemsReorder: wrap(handleStaffSignupItemsReorder),
+    staffSignupItemsDelete: wrap(handleStaffSignupItemsDelete),
     staffSignupItemsGet: wrap(handleStaffSignupItemsGet),
     staffSignupItemsUpdate: wrap(handleStaffSignupItemsUpdate),
-    staffSignupItemsArchive: wrap(handleStaffSignupItemsArchive),
     staffSignupItemsSaveDraft: wrap(handleStaffSignupItemsSaveDraft),
     staffSignupItemsListVersions: wrap(handleStaffSignupItemsListVersions),
     staffSignupItemsPublish: wrap(handleStaffSignupItemsPublish)
@@ -705,7 +705,6 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     return [
       invoke(pick.staffInstanceAcknowledgeNotice, overrides.staffInstanceAcknowledgeNotice),
       invoke(pick.staffInstancePreviewTelemetryReport, overrides.staffInstancePreviewTelemetryReport),
-      invoke(pick.staffSignupItemsArchive, overrides.staffSignupItemsArchive),
       invoke(pick.staffSignupItemsSaveDraft, overrides.staffSignupItemsSaveDraft),
       invoke(pick.staffSignupItemsListVersions, overrides.staffSignupItemsListVersions),
       invoke(pick.staffSignupItemsPublish, overrides.staffSignupItemsPublish),
@@ -717,6 +716,7 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
       invoke(pick.staffInstanceSetDefaultSendCap, overrides.staffInstanceSetDefaultSendCap),
       invoke(pick.staffInstanceSetTelemetry, overrides.staffInstanceSetTelemetry),
       invoke(pick.staffSignupItemsReorder, overrides.staffSignupItemsReorder),
+      invoke(pick.staffSignupItemsDelete, overrides.staffSignupItemsDelete),
       invoke(pick.staffSignupItemsGet, overrides.staffSignupItemsGet),
       invoke(pick.staffSignupItemsUpdate, overrides.staffSignupItemsUpdate),
       invoke(pick.staffInstanceGetState, overrides.staffInstanceGetState),

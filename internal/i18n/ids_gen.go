@@ -285,9 +285,8 @@ var (
 	ErrorsSendingSourceTelegram                 = ID{key: "errors.sending_source_telegram"}
 	ErrorsSigninPendingGone                     = ID{key: "errors.signin_pending_gone"}
 	ErrorsSigninProviderUnknown                 = ID{key: "errors.signin_provider_unknown"}
-	ErrorsSignupItemArchiveMailings             = ID{key: "errors.signup_item_archive_mailings"}
+	ErrorsSignupItemDeleteMailings              = ID{key: "errors.signup_item_delete_mailings"}
 	ErrorsSignupItemKeyTaken                    = ID{key: "errors.signup_item_key_taken"}
-	ErrorsSignupItemMailingsArchived            = ID{key: "errors.signup_item_mailings_archived"}
 	ErrorsSignupItemMailingsKind                = ID{key: "errors.signup_item_mailings_kind"}
 	ErrorsSignupItemMailingsTaken               = ID{key: "errors.signup_item_mailings_taken"}
 	ErrorsSignupItemNotFound                    = ID{key: "errors.signup_item_not_found"}
