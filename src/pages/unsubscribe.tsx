@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { CenteredLayout } from '../components/CenteredLayout.tsx'
 import { sitePublicUnsubscribesPerformMutation } from '../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteIntegrationChannel } from '../generated/site/types.gen.ts'
+import { useUnsubscribeCopy } from '../hooks/useUnsubscribeCopy.ts'
 import { Route as unsubscribeRoute } from '../routes/unsubscribe.tsx'
-import { useUnsubscribeCopy } from './unsubscribeCopy.ts'
 
 // Public unsubscribe confirmation page (ADR 0012 / RFC 8058). The GET
 // /e/u/{token} endpoint redirects here and records nothing — the opt-out happens

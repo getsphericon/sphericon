@@ -2,7 +2,7 @@ import { expect, test } from 'vitest'
 
 import links from '../../internal/smsrender/testdata/links.json' with { type: 'json' }
 import table from '../../internal/smsrender/testdata/parts.json' with { type: 'json' }
-import { measureSms, smsLimitOf, smsLinks } from './smsParts.ts'
+import { measureSms, smsLinks, tooLongForSms } from './smsParts.ts'
 
 // The table the backend counter reads too (internal/smsrender): the two agree on every case.
 const cases = table.cases.map((c) => ({
@@ -21,8 +21,7 @@ const limitCases = table.limitCases.map((c) => ({
 }))
 
 test.each(limitCases)('$name', ({ text, fits }) => {
-  const size = measureSms(text)
-  expect(size.characters <= smsLimitOf(size, table.limit)).toBe(fits)
+  expect(tooLongForSms(measureSms(text), table.limit)).toBe(!fits)
 })
 
 // The links table (internal/smsrender/testdata/links.json): the links found, and the figures with

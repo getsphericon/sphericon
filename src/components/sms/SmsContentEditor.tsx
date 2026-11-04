@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { siteWorkspacesListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { CONTACT_TAGS, UNSUBSCRIBE_URL_TAG } from '../../utils/mergeTags.ts'
-import { measureSms, smsLimitOf } from '../../utils/smsParts.ts'
+import { measureSms, smsLimitOf, tooLongForSms } from '../../utils/smsParts.ts'
 
 // SmsContent is an SMS's Message content: the text, and whether its links go out as short tracked
 // links (ADR 0083).
@@ -40,8 +40,7 @@ export function SmsContentEditor({ value, onChange, extraTags = NO_TAGS }: Props
   const field = useRef<HTMLTextAreaElement>(null)
   const tags = [...CONTACT_TAGS, ...extraTags, UNSUBSCRIBE_URL_TAG]
   const size = measureSms(value.text, value.linkTracking ? linkLength : 0)
-  const limit = workspace ? smsLimitOf(size, workspace.smsMaxLength) : null
-  const tooLong = limit !== null && size.characters > limit
+  const tooLong = workspace ? tooLongForSms(size, workspace.smsMaxLength) : false
 
   const insert = (tag: string) => {
     const at = field.current?.selectionStart ?? value.text.length
@@ -86,7 +85,10 @@ export function SmsContentEditor({ value, onChange, extraTags = NO_TAGS }: Props
       </Group>
       {tooLong ? (
         <Text size="sm" c="red">
-          {t(($) => $.smsEditor.tooLong, { limit, encoding: size.encoding })}
+          {t(($) => $.smsEditor.tooLong, {
+            limit: workspace ? smsLimitOf(size, workspace.smsMaxLength) : 0,
+            encoding: size.encoding,
+          })}
         </Text>
       ) : null}
       <Switch

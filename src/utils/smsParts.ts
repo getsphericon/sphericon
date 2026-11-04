@@ -36,6 +36,12 @@ export function smsLimitOf(size: SmsSize, limit: SmsLengthLimit): number {
   return size.encoding === 'UCS-2' ? limit.ucs2 : limit.gsm7
 }
 
+// Whether a text of size is longer than the provider sends in its encoding: the editor flags it,
+// as the save refuses it.
+export function tooLongForSms(size: SmsSize, limit: SmsLengthLimit): boolean {
+  return size.characters > smsLimitOf(size, limit)
+}
+
 // A link as a phone finds it: an absolute http(s) URL up to the next whitespace, a Liquid tag inside
 // it part of it, a lone `{` its end. Whitespace is spelled out, as in internal/smsrender/links.go:
 // the two regexp engines differ on what `\s` covers.

@@ -2,8 +2,8 @@ import { Anchor, Card, Stack, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../components/CenteredLayout.tsx'
+import { useUnsubscribeCopy } from '../hooks/useUnsubscribeCopy.ts'
 import { Route as unsubscribedRoute } from '../routes/unsubscribed.tsx'
-import { useUnsubscribeCopy } from './unsubscribeCopy.ts'
 
 // Public confirmation page the unsubscribe endpoint (/e/u/{token}) redirects to
 // after recording the opt-out. The backend passes the deliberate "unsubscribe
