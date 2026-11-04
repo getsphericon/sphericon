@@ -180,7 +180,7 @@ type InternalHandler struct {
 }
 
 // eventsRuntime is the consume side of the domain-event system: the watermill router hosting
-// the persist/automations/webhooks subscribers. (The produce side is the *events.Bus.) Start
+// the outbox consumers. (The produce side is the *events.Bus.) Start
 // runs the router; Shutdown closes it.
 type eventsRuntime struct {
 	router *message.Router

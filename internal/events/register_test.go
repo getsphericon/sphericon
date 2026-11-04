@@ -73,7 +73,7 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 		suppressed, err := client.Suppression.Query().Where(suppression.Destination(dest)).Exist(ctx)
 		assert.NoError(t, err)
 		return persisted && suppressed && queued(ctx, t, reader, jobkind.EvaluateTrigger.Kind) >= 1 && queued(ctx, t, reader, jobkind.DeliverWebhook.Kind) >= 1
-	}, 15*time.Second, 50*time.Millisecond, "persist, suppression, automations and webhooks must all see the event")
+	}, 15*time.Second, 50*time.Millisecond, "the Event is stored, and suppression, automations and webhooks all see it")
 	// Delivery is at-least-once: a serialization failure while acking redelivers the
 	// message, so a consumer may see it more than once, never a different event.
 	deliveries, err := reader.JobList(ctx, river.NewJobListParams().Kinds(jobkind.DeliverWebhook.Kind).First(100))

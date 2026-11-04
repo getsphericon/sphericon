@@ -154,9 +154,9 @@ type Envelope struct {
 	WorkspaceID int64           `json:"workspaceId"` // every event is workspace-scoped
 	OccurredAt  time.Time       `json:"occurredAt"`
 	Data        json.RawMessage `json:"data"` // the typed event, marshaled
-	// DedupKey is the persist idempotency key. Empty ⇒ use ID. An event with a
-	// natural upstream id (a provider notification) sets it so at-least-once
-	// redelivery dedupes, while ID stays a short ULID for the message-id column.
+	// DedupKey is the Event row's source id. Empty ⇒ use ID. An event with a
+	// natural upstream id (a provider notification) sets it so a redelivery is a
+	// repeat Publish drops, while ID stays a short ULID for the message-id column.
 	DedupKey string `json:"dedupKey,omitempty"`
 	// RecordedAt is when the event was published, as opposed to OccurredAt, which a client may
 	// backdate. Rules act only on events recorded after they were activated (ADR 0054).
@@ -227,8 +227,8 @@ type DomainEvent interface {
 
 // identifiable is an optional DomainEvent capability: an event with a stable
 // upstream id (a provider notification, an external message) implements it so the
-// publisher records that id as the envelope's DedupKey, making at-least-once
-// redelivery idempotent at the persist layer (which dedupes on source_id). The
+// publisher records that id as the envelope's DedupKey, which its Event row is
+// stored under (source_id): a redelivery finds the row and is not published. The
 // id does NOT become the message id, which stays a short ULID.
 type identifiable interface {
 	EventID() string
@@ -350,7 +350,7 @@ func (e *ContactErased) Project() Projection {
 // EmailEngagement is emitted when one of our emails is sent to a recipient, or
 // when the recipient opens, clicks, or unsubscribes from a broadcast email.
 // Action is the specific name; URL is set for clicks only. DedupID, when set,
-// makes the persist projection idempotent under at-least-once redelivery — the
+// makes a second publish of the same send a repeat that is dropped — the
 // send path sets it (a deterministic per-recipient/per-step key) so a job retry
 // can't write a second email.sent row; open/click/unsubscribe leave it empty and
 // fall back to the envelope ULID.
@@ -451,7 +451,7 @@ type EmailDelivery struct {
 	BroadcastID       int64  `json:"broadcastId,omitempty"`
 	AutomationID      int64  `json:"automationId,omitempty"`
 	// DedupID is the stable upstream id (e.g. SNS messageId + recipient) used as
-	// the envelope id so a redelivered provider notification dedupes at persist.
+	// the Event's source id, so a redelivered provider notification is dropped as a repeat.
 	DedupID string `json:"dedupId,omitempty"`
 	// Captured is set when the message went through a sender that delivers nowhere outside.
 	Captured bool `json:"captured,omitempty"`
@@ -572,7 +572,7 @@ type CollectedEvent struct {
 	Phone       string         `json:"phone,omitempty"`
 	Properties  map[string]any `json:"properties,omitempty"`
 	OccurredAt  time.Time      `json:"occurredAt,omitzero"`
-	// DedupID is the persist idempotency key of an event the client gave a clientEventId
+	// DedupID is the Event's source id when the client gave it a clientEventId
 	// (DedupKey: the source, the Workspace and that id). Empty for an event without one.
 	DedupID string `json:"dedupId,omitempty"`
 	// Backfill marks an event loaded from history: it is recorded, but no Automation enrolls

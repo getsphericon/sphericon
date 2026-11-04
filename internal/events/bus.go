@@ -101,12 +101,16 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 		return fmt.Errorf("outbox publisher: %w", err)
 	}
 
-	if err := fn(txClient, &txPublisher{wm: wm, tx: sqlTx, client: txClient, jobs: b.jobs}); err != nil {
+	pub := &txPublisher{wm: wm, tx: sqlTx, client: txClient, jobs: b.jobs}
+	if err := fn(txClient, pub); err != nil {
 		_ = sqlTx.Rollback()
 		return err
 	}
 	if err := sqlTx.Commit(); err != nil {
 		return fmt.Errorf("commit tx: %w", err)
+	}
+	for _, f := range pub.committed {
+		f()
 	}
 	return nil
 }
@@ -164,8 +168,13 @@ type txPublisher struct {
 	client *ent.Client
 	// jobs is the bus's job queue (nil when it was given none); a purge of the queue runs on tx.
 	jobs JobQueue
+	// committed runs once tx has committed, in order.
+	committed []func()
 }
 
+// Publish stamps the envelope of ev and, for an event that is an Event (not Unprojected),
+// writes its row in the transaction. An event whose row already exists is a repeat, and is
+// not published again: no consumer sees it twice.
 func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 	data, err := json.Marshal(ev)
 	if err != nil {
@@ -176,8 +185,8 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 		occurred = time.Now().UTC()
 	}
 	// The message id is always a fresh ULID (short, fits the outbox uuid column).
-	// An event with a natural upstream id supplies a DedupKey instead, which the
-	// persist consumer uses as source_id so redelivery dedupes.
+	// An event with a natural upstream id supplies a DedupKey instead, which its Event
+	// row is stored under (source_id), so a redelivery is told from a new event.
 	var dedupKey string
 	if idv, ok := ev.(identifiable); ok {
 		dedupKey = idv.EventID()
@@ -194,6 +203,16 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 		CausedBy:    causeOf(ctx),
 	}
 	stamp(ctx, &env)
+	if _, unprojected := ev.(Unprojected); !unprojected {
+		first, err := storeEvent(ctx, p.client, env, ev)
+		if err != nil {
+			return err
+		}
+		if !first {
+			return nil // a repeat: published when it first arrived
+		}
+		p.committed = append(p.committed, func() { recordProviderOutcome(context.WithoutCancel(ctx), ev) })
+	}
 	msg := Message(env)
 	injectTrace(ctx, msg)
 	return p.wm.Publish(TopicDomainEvents, msg)

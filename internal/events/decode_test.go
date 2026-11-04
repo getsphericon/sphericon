@@ -34,7 +34,7 @@ func TestConsumersRejectUndecodableMessages(t *testing.T) {
 	consumers := map[string]message.NoPublishHandlerFunc{
 		"webhooks":    events.WebhooksConsumer(nil, nil),
 		"automations": events.AutomationsConsumer(nil),
-		"rules":       events.RulesConsumer(nil, nil),
+		"rules":       events.RulesConsumer(nil),
 	}
 	for name, handle := range consumers {
 		require.Error(t, handle(rawMsg("not json")), name+": not an envelope")
@@ -43,12 +43,10 @@ func TestConsumersRejectUndecodableMessages(t *testing.T) {
 	}
 }
 
-// The persist and suppression consumers hand the envelope to Persist and Suppress, which
-// refuse one they cannot decode the same way.
-func TestPersistAndSuppressRejectUndecodableEnvelopes(t *testing.T) {
+// The suppression consumer hands the envelope to Suppress, which refuses one it cannot decode
+// the same way.
+func TestSuppressRejectsUndecodableEnvelopes(t *testing.T) {
 	ctx := t.Context()
-	require.ErrorContains(t, events.Persist(ctx, nil, envelopeOf("no.such.event", "{}")), "unknown event")
-	require.ErrorContains(t, events.Persist(ctx, nil, envelopeOf(events.NameContactCreated, `"scalar"`)), "decode")
 	require.ErrorContains(t, events.Suppress(ctx, nil, envelopeOf("no.such.event", "{}")), "unknown event")
 	require.ErrorContains(t, events.Suppress(ctx, nil, envelopeOf(events.NameContactCreated, `"scalar"`)), "decode")
 }

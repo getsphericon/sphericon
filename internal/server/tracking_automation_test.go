@@ -95,7 +95,6 @@ func TestAutomationReportShowsOpensClicksAndTheLinkTable(t *testing.T) {
 	}
 	// The mail of another Automation is not this one's figure.
 	trackingGet(t, env, openPath(t, env, fixtures.OutboundMessageAutomationOnOpenID))
-	persistEngagement(t, env)
 
 	report := automationReport(t, env, fixtures.AutomationWelcomeSeriesID)
 	assert.EqualValues(t, 2, report.Opens)

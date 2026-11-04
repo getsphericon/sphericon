@@ -224,9 +224,8 @@ func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target 
 // click (ADR 0053): a repeated open or a second click is a real engagement, not a duplicate.
 // What is counted once is the Outbound message's stamp, a conditional UPDATE
 // (... WHERE opened_at IS NULL, in the outbound module) that backs the unique figures of
-// every surface: a Broadcast, an Automation and a tracked Transactional send. The
-// persist subscriber writes the Event log row and the automations subscriber enrolls the
-// contact, both off the bus.
+// every surface: a Broadcast, an Automation and a tracked Transactional send. Publishing the
+// engagement writes the Event log row; the automations consumer enrolls the contact off the bus.
 
 // engaged is the Outbound message a tracking token names, with the Contact it went to when
 // there is one. A Transactional send to an address with no Contact is kept by address.

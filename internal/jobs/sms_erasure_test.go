@@ -43,16 +43,6 @@ func textIn(t *testing.T, env *testhelper.TestEnv, account testhelper.TwilioAcco
 	require.Equal(t, http.StatusOK, res.Code, res.Body.String())
 }
 
-// projectOutbox writes the Event rows of everything on the outbox, as the persist subscriber
-// would (no router runs under txdb).
-func projectOutbox(t *testing.T, env *testhelper.TestEnv) {
-	t.Helper()
-	envelopes := env.OutboxEnvelopes(t)
-	for i := range envelopes {
-		require.NoError(t, events.Persist(t.Context(), env.DB, envelopes[i]), envelopes[i].Name)
-	}
-}
-
 // assertNothingNames checks that no Event, Outbound message, Confirmation, opt-out, Suppression or
 // outbox envelope holds the number.
 func assertNothingNames(t *testing.T, env *testhelper.TestEnv, number string) {
@@ -114,7 +104,6 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	textIn(t, env, account, "SM0301", number, "Thanks, my card is 4111")
 	textIn(t, env, account, "SM0302", number, "STOP")
 	env.SuppressNumber(ctx, number)
-	projectOutbox(t, env)
 	kinds := []string{events.NameSmsClicked, events.NameSmsDelivered, events.NameSmsSent}
 	kept := env.DB.Event.Query().Where(event.ContactID(fixtures.ContactTexterID), event.ActionIn(kinds...)).IDsX(ctx)
 	require.Len(t, kept, len(kinds))
@@ -188,7 +177,6 @@ func TestErasingAContactRemovesTheConsentItsNumberGaveBeforeItWasAContact(t *tes
 	const number = "+14155550177"
 	confirmSMS(t, env, number)
 	textIn(t, env, account, "SM0401", number, "START")
-	projectOutbox(t, env)
 	res, err := env.ExternalScoped(t, "contacts:write").ContactsCreate(ctx, &externalapi.CreateContactInput{
 		Phone: externalapi.NewOptNilString(number),
 	})

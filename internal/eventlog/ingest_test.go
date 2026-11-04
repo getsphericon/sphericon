@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -39,6 +40,7 @@ func TestIngestIsAtomicAcrossTheBatch(t *testing.T) {
 	})
 	require.Error(t, err)
 	assert.Empty(t, outboxCollected(t, env), "none of the batch is accepted")
+	assert.Zero(t, stored(t, env, "ok"), "none of the batch is recorded")
 }
 
 func TestIngestEachIsolatesItems(t *testing.T) {
@@ -94,14 +96,20 @@ func TestIngestSkipsAnEventItAlreadyStored(t *testing.T) {
 	in := eventlog.Input{SubjectID: "s-1", Action: "purchase", ClientEventID: "order-1"}
 
 	require.NoError(t, m.Ingest(ctx, acme, []eventlog.Input{in}))
-	for _, envelope := range env.OutboxEnvelopes(t, events.NameCollected) {
-		require.NoError(t, events.Persist(ctx, env.DB, envelope))
-	}
 	require.NoError(t, m.Ingest(ctx, acme, []eventlog.Input{in}))
 
 	got := outboxCollected(t, env)
 	require.Len(t, got, 1, "the resend is not published again")
 	assert.Equal(t, events.DedupKey(events.SourceAPI, fixtures.AcmeID, "order-1"), got[0].DedupID)
+	assert.Equal(t, 1, stored(t, env, "s-1"), "the resend is not recorded again")
+}
+
+// stored counts the stored Events of a subject.
+func stored(t *testing.T, env *testhelper.TestEnv, subject string) int {
+	t.Helper()
+	n, err := env.DB.Event.Query().Where(event.WorkspaceID(fixtures.AcmeID), event.SubjectID(subject)).Count(t.Context())
+	require.NoError(t, err)
+	return n
 }
 
 func rejected(t *testing.T, err error) string {
@@ -157,8 +165,8 @@ func TestBackfillNeedsATimeThatHasPassed(t *testing.T) {
 	assert.NoError(t, errs[2], "history older than the live window is exactly what a backfill is for")
 }
 
-// The same client id twice in one batch is one Event: a live one would otherwise enroll or
-// deliver twice before the persist consumer ever sees the repeat.
+// The same client id twice in one batch is one Event, recorded and published once: a live one
+// would otherwise enroll or deliver twice.
 func TestIngestPublishesARepeatedClientEventIDOnceInABatch(t *testing.T) {
 	env := testhelper.Setup(t)
 	in := eventlog.Input{SubjectID: "s-1", Action: "purchase", ClientEventID: "order-1"}
@@ -166,4 +174,5 @@ func TestIngestPublishesARepeatedClientEventIDOnceInABatch(t *testing.T) {
 	require.NoError(t, newModule(env).Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{in, in}))
 
 	assert.Len(t, outboxCollected(t, env), 1)
+	assert.Equal(t, 1, stored(t, env, "s-1"))
 }

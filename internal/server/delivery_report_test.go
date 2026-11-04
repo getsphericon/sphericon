@@ -69,7 +69,6 @@ func TestExternalBroadcastReportCountsTheDeliveryResult(t *testing.T) {
 func TestAutomationReportCountsTheDeliveryResultAndSurvivesEventPruning(t *testing.T) {
 	env := testhelper.Setup(t)
 	trackingGet(t, env, openPath(t, env, fixtures.OutboundMessageAutomationTrackedID))
-	persistEngagement(t, env)
 
 	before := automationReport(t, env, fixtures.AutomationWelcomeSeriesID)
 	assert.EqualValues(t, 1, before.Opens)

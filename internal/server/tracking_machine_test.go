@@ -85,7 +85,6 @@ func TestAScannerClickRedirectsAndCountsNowhere(t *testing.T) {
 	assert.Nil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).ClickedAt, "a machine click stamps nothing")
 	assert.Zero(t, figures(t, env, fixtures.BroadcastSentUntrackedID).Clicked)
 
-	persistEngagement(t, env)
 	assert.Empty(t, linkClicks(t, env), "a machine click is no row of the link table")
 }
 
@@ -129,7 +128,6 @@ func TestAMachineOpenOfAnAutomationEmailIsNoFigureOfTheReport(t *testing.T) {
 	hit(t, env, openPath(t, env, id), scannerUA, personAddr)
 	hit(t, env, clickPathTo(t, env, id, linkA), personUA, personAddr)
 	hit(t, env, clickPathTo(t, env, id, linkB), scannerUA, personAddr)
-	persistEngagement(t, env)
 
 	report := automationReport(t, env, fixtures.AutomationWelcomeSeriesID)
 	assert.EqualValues(t, 1, report.Opens)
@@ -157,13 +155,11 @@ func TestAMachineOpenOrClickIsNoMatchOfASegmentCondition(t *testing.T) {
 
 	hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), scannerUA, personAddr)
 	hit(t, env, clickPathTo(t, env, fixtures.OutboundMessageTrackingSampleID, linkA), scannerUA, personAddr)
-	persistEngagement(t, env)
 	assert.Zero(t, matching(events.NameEmailOpened), "a machine open is no open")
 	assert.Zero(t, matching(events.NameEmailClicked), "a machine click is no click")
 
 	hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), personUA, personAddr)
 	hit(t, env, clickPathTo(t, env, fixtures.OutboundMessageTrackingSampleID, linkB), personUA, personAddr)
-	persistEngagement(t, env)
 	assert.EqualValues(t, 1, matching(events.NameEmailOpened))
 	assert.EqualValues(t, 1, matching(events.NameEmailClicked))
 }
@@ -187,7 +183,6 @@ func TestTheEventListLeavesOutMachineEventsUnlessAskedFor(t *testing.T) {
 
 	hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), scannerUA, personAddr)
 	hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), personUA, personAddr)
-	persistEngagement(t, env)
 
 	assert.EqualValues(t, 1, list(false).TotalItems, "the page and its total leave the machine open out")
 	assert.EqualValues(t, 2, list(true).TotalItems)
@@ -197,7 +192,6 @@ func TestNeitherTheAddressNorTheUserAgentIsStored(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), scannerUA, relayAddr)
-	persistEngagement(t, env)
 
 	for _, e := range env.OutboxEnvelopes(t, events.NameEmailOpened) {
 		assert.NotContains(t, string(e.Data), relayAddr)

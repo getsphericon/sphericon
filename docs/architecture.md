@@ -150,7 +150,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;
   4. jobs and event subscribers, right after the row that names the Workspace is loaded
      (`client.Scoped(run.WorkspaceID)` in `internal/jobs`; `EvaluateTriggerWorker` loads the
-     contact and scopes from its Workspace; `events.Persist`/`Suppress`, and the webhooks
+     contact and scopes from its Workspace; `events.Suppress`, and the webhooks
      consumer, which builds the scope it hands to `Dispatch` from the event envelope: the
      bus subscriber is the raw-client entry, an envelope carries only a Workspace id; and the
      orders consumer (`events.RecordOrder`, ADR 0064), which opens a transaction on the raw
@@ -263,7 +263,8 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   (`WithoutLicense()` for the unlicensed case); core reaches EE only through interfaces
   (`site.AuditLog`, `events.Consumer`). The audit table's ent schema sits in `ent/schema`
   (ent has one schema package) but is written and read only by `ee/audit`. An Audit entry is
-  an unprojected event (`events.Unprojected`): persist, automations and webhooks skip it.
+  an unprojected event (`events.Unprojected`): it has no Event row, and automations and
+  webhooks skip it.
   The Audit table's only remover is `ee/retention` (the `retention` license feature, a
   Workspace `retention_days` window, one hourly river job registered through `Edition.Jobs()`).
   An explicit entry, one no audited write produces (a Workspace setting, a login, a membership

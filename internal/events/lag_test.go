@@ -31,11 +31,11 @@ func TestOutboxLagIsReportedPerConsumerGroup(t *testing.T) {
 	env.AgeOutbox(t, 2*time.Minute)
 	rows := env.OutboxRows(t)
 	last := rows[len(rows)-1]
-	env.SetOutboxCursor(t, events.GroupPersist, last.TxID, &last.Offset)
+	env.SetOutboxCursor(t, events.GroupAutomations, last.TxID, &last.Offset)
 
 	scrape := metricstest.ScrapeMetrics(t)
-	assert.Zero(t, scrape.Value(t, "outbox_lag_seconds", map[string]string{"consumer_group": events.GroupPersist}), "caught up")
-	for _, g := range []string{events.GroupAutomations, events.GroupWebhooks, events.GroupSuppression} {
+	assert.Zero(t, scrape.Value(t, "outbox_lag_seconds", map[string]string{"consumer_group": events.GroupAutomations}), "caught up")
+	for _, g := range []string{events.GroupRules, events.GroupWebhooks, events.GroupSuppression} {
 		assert.GreaterOrEqual(t, scrape.Value(t, "outbox_lag_seconds", map[string]string{"consumer_group": g}), 120.0, g)
 	}
 }
@@ -54,5 +54,5 @@ func TestDeadLettersAreReportedPerConsumerGroup(t *testing.T) {
 
 	scrape := metricstest.ScrapeMetrics(t)
 	assert.InDelta(t, 1.0, scrape.Value(t, "outbox_dead_letters", map[string]string{"consumer_group": events.GroupWebhooks}), 0)
-	assert.Zero(t, scrape.Value(t, "outbox_dead_letters", map[string]string{"consumer_group": events.GroupPersist}))
+	assert.Zero(t, scrape.Value(t, "outbox_dead_letters", map[string]string{"consumer_group": events.GroupAutomations}))
 }

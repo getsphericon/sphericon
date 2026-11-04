@@ -75,7 +75,6 @@ func TestSESDeliveryStampIsSetOnce(t *testing.T) {
 
 	postNotice(t, env, "delivery")
 	postNotice(t, env, "delivery")
-	persistOutbox(t, env)
 
 	m := sesAliceMessage(t, env)
 	require.NotNil(t, m.DeliveredAt)

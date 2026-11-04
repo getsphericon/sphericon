@@ -12,7 +12,6 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -100,45 +99,18 @@ func TestAutomationsConsumerEnrollsContact(t *testing.T) {
 	assert.Equal(t, events.NameEmailOpened, queued[0]["action"])
 }
 
-// The Event's row is stored before its evaluation is queued, so the job that ends or makes an
-// Enrollment finds the Event among the Contact's whichever consumer runs first (#751); the persist
-// consumer's write of the same envelope, or a redelivery, stores no second row.
-func TestAutomationsConsumerStoresTheEventBeforeItQueuesTheJob(t *testing.T) {
-	env := testhelper.Setup(t)
-	consume := events.AutomationsConsumer(queueingJobs(t, env))
-	paid := &events.CollectedEvent{
-		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Action: "payment_succeeded", OccurredAt: time.Now(),
-	}
-	stored := func() int {
-		t.Helper()
-		n, err := env.DB.Event.Query().Where(event.SourceID("evt_test")).Count(t.Context())
-		require.NoError(t, err)
-		return n
-	}
-
-	require.NoError(t, consume(msgFor(t, paid)))
-	afterFirst := stored()
-	require.NoError(t, consume(msgFor(t, paid)))
-	afterSecond := stored()
-	queued := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
-
-	assert.Equal(t, 1, afterFirst, "the row is there once the job is queued")
-	assert.Len(t, queued, 2)
-	assert.Equal(t, 1, afterSecond, "a second write of the envelope stores no second row")
-}
-
-// The goal Event reaches the Automations consumer before the trigger's evaluation has run: its own
-// evaluation finds no Enrollment to end, but its row is stored, so the trigger's evaluation then
-// makes the Enrollment already at its goal, without waiting for the persist consumer.
+// The goal Event is evaluated before the trigger's evaluation has run: its own evaluation finds no
+// Enrollment to end, but its row was stored when it was published, so the trigger's evaluation
+// then makes the Enrollment already at its goal (#751).
 func TestAGoalEventConsumedBeforeTheTriggerEndsTheEnrollmentWhenItIsMade(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	failed := time.Now().Add(-time.Hour)
 	paid := failed.Add(30 * time.Minute)
-	require.NoError(t, events.AutomationsConsumer(queueingJobs(t, env))(msgAt(t, &events.CollectedEvent{
+	publishAlone(t, env, &events.CollectedEvent{
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Action: "payment_succeeded", OccurredAt: paid,
-	}, paid)))
+	})
 
 	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "payment_succeeded", OccurredAt: paid}, 0))
 	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "payment_failed", OccurredAt: failed}, 0))

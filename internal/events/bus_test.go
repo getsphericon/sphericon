@@ -85,18 +85,27 @@ func TestBusWithinTxRollsBackBoth(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, exists, "contact must not be committed when the unit of work fails")
 	assert.Equal(t, before, outboxCount(t, env), "no event published on rollback")
+	stored, err := env.DB.Event.Query().Where(event.Email("outbox-rollback@example.com")).Exist(ctx)
+	require.NoError(t, err)
+	assert.False(t, stored, "no Event stored on rollback")
 }
 
-// Persist projects an envelope to the durable Event row. This is the load-bearing
-// check on the projection (the router doesn't run under txdb): every column —
-// including the resolved contact_id, visitor_id, phone, a non-now OccurredAt, and
-// opaque Properties — must land. Uses a CollectedEvent because it exercises them all.
-func TestPersistWritesEventProjection(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
+// publishAlone publishes ev in a bus transaction of its own.
+func publishAlone(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent) {
+	t.Helper()
+	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
+		return pub.Publish(t.Context(), ev)
+	}))
+}
 
+// Publishing an Event writes its row in the producer's transaction: every column, the resolved
+// contact_id, visitor_id, phone, a non-now OccurredAt and the opaque Properties included. A
+// CollectedEvent exercises them all.
+func TestPublishStoresTheEvent(t *testing.T) {
+	env := testhelper.Setup(t)
 	occurred := time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC)
-	collected := &events.CollectedEvent{
+
+	publishAlone(t, env, &events.CollectedEvent{
 		WorkspaceID: fixtures.AcmeID,
 		ContactID:   fixtures.ContactAliceID,
 		VisitorID:   "visitor-abc",
@@ -106,18 +115,10 @@ func TestPersistWritesEventProjection(t *testing.T) {
 		Phone:       "+15550100",
 		Properties:  map[string]any{"path": "/pricing"},
 		OccurredAt:  occurred,
-	}
-	envlp := events.Envelope{
-		ID:          "01J0PERSISTTEST00000000000",
-		Name:        events.NameCollected,
-		Version:     1,
-		WorkspaceID: fixtures.AcmeID,
-		OccurredAt:  occurred,
-		Data:        dataFor(t, collected),
-	}
-	require.NoError(t, events.Persist(ctx, env.DB, envlp))
+		DedupID:     "store-projection",
+	})
 
-	row, err := env.DB.Event.Query().Where(event.SourceID(envlp.ID)).Only(ctx)
+	row, err := env.DB.Event.Query().Where(event.SourceID("store-projection")).Only(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, "page_view", row.Action)
 	assert.Equal(t, "visitor:abc", row.SubjectID)
@@ -134,25 +135,19 @@ func TestPersistWritesEventProjection(t *testing.T) {
 	assert.Equal(t, "/pricing", row.Properties["path"])
 }
 
-// An Event outlives its Contact (GLOSSARY: Event). Delivery is asynchronous, so the
-// Contact can be gone, or never have been this Workspace's, when the event is persisted:
-// the row is written unlinked instead of failing on the contact_id foreign key.
-func TestPersistLeavesAnEventUnlinkedWhenItsContactIsGone(t *testing.T) {
+// An Event outlives its Contact (GLOSSARY: Event): an event about a Contact that is gone, or that
+// was never this Workspace's, is stored unlinked instead of failing on the contact_id foreign key.
+func TestPublishStoresAnEventUnlinkedWhenItsContactIsGone(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
 
 	for id, contactID := range map[string]int64{
 		// A Contact that is gone: its id no longer exists.
-		"01J0PERSISTGONE0000000000": 999999,
+		"store-gone": 999999,
 		// Globex's contact is not an Acme contact.
-		"01J0PERSISTFOREIGN00000000": fixtures.ContactGlobexID,
+		"store-foreign": fixtures.ContactGlobexID,
 	} {
-		collected := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, ContactID: contactID, Action: "page_view"}
-		require.NoError(t, events.Persist(ctx, env.DB, events.Envelope{
-			ID: id, Name: events.NameCollected, Version: 1, WorkspaceID: fixtures.AcmeID,
-			OccurredAt: time.Now(), Data: dataFor(t, collected),
-		}))
-		row, err := env.DB.Event.Query().Where(event.SourceID(id)).Only(ctx)
+		publishAlone(t, env, &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, ContactID: contactID, Action: "page_view", DedupID: id})
+		row, err := env.DB.Event.Query().Where(event.SourceID(id)).Only(t.Context())
 		require.NoError(t, err)
 		assert.Nil(t, row.ContactID, id)
 	}
@@ -173,24 +168,21 @@ func TestDeletingAContactKeepsItsEvents(t *testing.T) {
 	assert.Nil(t, kept.ContactID)
 }
 
-// At-least-once delivery can redeliver an envelope; persist must dedupe on the
-// source id (envelope ULID) so the projection row is written at most once.
-func TestPersistIsIdempotent(t *testing.T) {
+// An event whose source id is already stored (a provider's redelivery) is a repeat: it is not an
+// error, and it is neither stored nor published again.
+func TestARepeatedEventIsStoredAndPublishedOnce(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
-
-	envlp := events.Envelope{
-		ID:          "01J0IDEMPOTENT00000000000",
-		Name:        events.NameContactCreated,
-		Version:     1,
-		WorkspaceID: fixtures.AcmeID,
-		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
-		Data:        dataFor(t, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: 7, Email: "dedupe@example.com"}),
+	before := outboxCount(t, env)
+	bounce := &events.EmailDelivery{
+		Action: events.NameEmailBounced, WorkspaceID: fixtures.AcmeID, Email: "repeat@example.com",
+		BounceKind: events.BounceKindHard, DedupID: "sns-1/repeat@example.com",
 	}
-	require.NoError(t, events.Persist(ctx, env.DB, envlp))
-	require.NoError(t, events.Persist(ctx, env.DB, envlp)) // redelivery
 
-	n, err := env.DB.Event.Query().Where(event.SourceID(envlp.ID)).Count(ctx)
+	publishAlone(t, env, bounce)
+	publishAlone(t, env, bounce)
+
+	n, err := env.DB.Event.Query().Where(event.SourceID("sns-1/repeat@example.com")).Count(t.Context())
 	require.NoError(t, err)
-	assert.Equal(t, 1, n, "redelivered envelope must not write a second row")
+	assert.Equal(t, 1, n, "one row")
+	assert.Equal(t, before+1, outboxCount(t, env), "published once")
 }

@@ -18,8 +18,8 @@ import (
 // the Orders credited to it, in the Reporting currency, never stored. Which Order is credited to
 // which is the orders module's, tested there; these tests read what the reports sum.
 
-// clicked stores one email.clicked Event of Alice at the given time, as the tracker and the
-// persist subscriber would have left it: the click an Order of hers after it is credited by.
+// clicked stores one email.clicked Event of Alice at the given time, as the tracker would have
+// left it: the click an Order of hers after it is credited by.
 func clicked(t *testing.T, env *testhelper.TestEnv, click events.EmailEngagement, at time.Time) {
 	t.Helper()
 	click.Action = events.NameEmailClicked
@@ -31,9 +31,7 @@ func clicked(t *testing.T, env *testhelper.TestEnv, click events.EmailEngagement
 		return pub.Publish(t.Context(), &click)
 	}))
 	sent := env.OutboxEnvelopes(t, events.NameEmailClicked)
-	stored := sent[len(sent)-1]
-	stored.OccurredAt = at
-	require.NoError(t, events.Persist(t.Context(), env.DB, stored))
+	env.BackdateEvent(t, sent[len(sent)-1], at)
 }
 
 func setupCredit(t *testing.T) *testhelper.TestEnv {

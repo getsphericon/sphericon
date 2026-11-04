@@ -3,7 +3,6 @@ package jobs_test
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"sync"
 	"testing"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/cleanup"
@@ -48,13 +48,11 @@ func (q *holdingQueue) InsertTx(ctx context.Context, tx *sql.Tx, args river.JobA
 	return q.JobQueue.InsertTx(ctx, tx, args, opts)
 }
 
-// stored writes the Event's row, as the Automations consumer does before it queues the Event's job.
-func stored(t *testing.T, e *realEnv, ev events.DomainEvent, occurred time.Time) {
+// stored publishes the Event, which writes its row before any consumer queues the Event's job.
+func stored(t *testing.T, e *realEnv, ev events.DomainEvent) {
 	t.Helper()
-	data, err := json.Marshal(ev)
-	require.NoError(t, err)
-	require.NoError(t, events.Persist(t.Context(), e.client, events.Envelope{
-		ID: "evt_paid", Name: ev.EventName(), Version: ev.EventVersion(), WorkspaceID: ev.Workspace(), OccurredAt: occurred, Data: data,
+	require.NoError(t, e.bus(t).WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
+		return pub.Publish(t.Context(), ev)
 	}))
 }
 
@@ -85,7 +83,7 @@ func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 	<-hold.reached
 	stored(t, e, &events.CollectedEvent{
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Action: "payment_succeeded", OccurredAt: paid,
-	}, paid)
+	})
 	ending := e.bus(t)
 	ended, endDone := make(chan error, 1), make(chan struct{})
 	go func() {

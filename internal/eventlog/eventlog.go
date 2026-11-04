@@ -4,8 +4,8 @@
 // workspace's distinct-action query. The /site and /api handlers are thin adapters
 // over it and no longer duplicate either piece.
 //
-// The persist subscriber writes the Event rows asynchronously from the outbox, so
-// Ingest is accept-then-process.
+// Publishing an Event writes its row in Ingest's transaction; what reacts to it
+// (Automations, Rules, webhooks) runs asynchronously, so Ingest is accept-then-process.
 package eventlog
 
 import (
@@ -100,26 +100,13 @@ func (m *Module) Ingest(ctx context.Context, s *ent.Scoped, inputs []Input) erro
 		}
 	}
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		inBatch := map[string]bool{}
 		for _, in := range inputs {
+			// A client event id is the Event's source id. A repeat of it, inside this batch or
+			// from an earlier request, is the same Event: Publish finds its row and publishes
+			// nothing, so it is recorded and reacted to once.
 			dedupID := ""
 			if in.ClientEventID != "" {
 				dedupID = events.DedupKey(events.SourceAPI, ts.WorkspaceID(), in.ClientEventID)
-				// A repeat inside this batch is the same Event. A stored one is a resend of an
-				// Event that arrived. One still on the outbox from another request is published
-				// again and the persist subscriber's unique source_id keeps one row; a live Event
-				// in that window can still enroll or deliver twice.
-				if inBatch[dedupID] {
-					continue
-				}
-				inBatch[dedupID] = true
-				stored, err := alreadyStored(ctx, ts, dedupID)
-				if err != nil {
-					return err
-				}
-				if stored {
-					continue
-				}
 			}
 			contactID, err := contacts.ResolveID(ctx, ts, in.SubjectID, in.Email, in.Phone)
 			if err != nil {
@@ -158,11 +145,6 @@ func (m *Module) IngestEach(ctx context.Context, s *ent.Scoped, inputs []Input) 
 		errs[i] = m.Ingest(ctx, s, []Input{in})
 	}
 	return errs
-}
-
-// alreadyStored reports whether an Event with this dedup key is already a row.
-func alreadyStored(ctx context.Context, s *ent.Scoped, dedupID string) (bool, error) {
-	return s.Event().Query().Where(event.SourceID(dedupID)).Exist(ctx)
 }
 
 // Actions returns the workspace's distinct Event actions, sorted.

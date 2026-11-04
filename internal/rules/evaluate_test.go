@@ -225,15 +225,14 @@ func (e evaluateAtOnce) OnRuleEvent(ctx context.Context, ev events.RuleEvent) er
 }
 
 // recorded is the bus message of a Contact's Event recorded now.
-func recorded(t *testing.T, id string, contactID int64, action string) *message.Message {
+func recorded(t *testing.T, env *testhelper.TestEnv, id string, contactID int64, action string) *message.Message {
 	t.Helper()
 	ev := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, ContactID: contactID, SubjectID: id, Action: action}
-	data, err := json.Marshal(ev)
-	require.NoError(t, err)
-	now := time.Now()
-	return events.Message(events.Envelope{
-		ID: id, Name: ev.EventName(), Version: ev.EventVersion(), WorkspaceID: fixtures.AcmeID, OccurredAt: now, RecordedAt: now, Data: data,
-	})
+	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
+		return pub.Publish(t.Context(), ev)
+	}))
+	published := env.OutboxEnvelopes(t, events.NameCollected)
+	return events.Message(published[len(published)-1])
 }
 
 // A Rule's Condition counts the Contact's Events, the one that fired it included: RuleSecondRevisit
@@ -241,7 +240,7 @@ func recorded(t *testing.T, id string, contactID int64, action string) *message.
 func TestEvaluateCountsTheEventThatFiredTheRule(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	consume := events.RulesConsumer(env.DB, evaluateAtOnce{m: rules.New(env.Cipher, env.Bus), s: env.DB.Scoped(fixtures.AcmeID)})
+	consume := events.RulesConsumer(evaluateAtOnce{m: rules.New(env.Cipher, env.Bus), s: env.DB.Scoped(fixtures.AcmeID)})
 	firedFor := func(contactID int64) bool {
 		ok, err := env.DB.RuleFiring.Query().
 			Where(rulefiring.RuleID(fixtures.RuleSecondRevisitID), rulefiring.ContactID(contactID)).
@@ -250,8 +249,8 @@ func TestEvaluateCountsTheEventThatFiredTheRule(t *testing.T) {
 		return ok
 	}
 
-	require.NoError(t, consume(recorded(t, "revisit-liam", fixtures.ContactLiamID, "rule_revisit")))
-	require.NoError(t, consume(recorded(t, "revisit-alice", fixtures.ContactAliceID, "rule_revisit")))
+	require.NoError(t, consume(recorded(t, env, "revisit-liam", fixtures.ContactLiamID, "rule_revisit")))
+	require.NoError(t, consume(recorded(t, env, "revisit-alice", fixtures.ContactAliceID, "rule_revisit")))
 	liam := firedFor(fixtures.ContactLiamID)
 	alice := firedFor(fixtures.ContactAliceID)
 

@@ -52,8 +52,8 @@ func ordersConsumer(client *ent.Client, recorder OrderRecorder) message.NoPublis
 	}
 }
 
-// RecordOrder is the orders subscriber's work on one envelope; exported, like Persist and
-// Suppress, so it can be driven without running the router. An order Event is handed to the
+// RecordOrder is the orders subscriber's work on one envelope; exported, like Suppress, so it
+// can be driven without running the router. An order Event is handed to the
 // recorder; every other event is passed over.
 func RecordOrder(ctx context.Context, client *ent.Client, recorder OrderRecorder, env Envelope) error {
 	ev, err := Decode(env)

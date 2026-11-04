@@ -82,25 +82,3 @@ func TestWithinTxRollsBackAndRepanics(t *testing.T) {
 	})
 	assert.Zero(t, outboxRows(t, env, "panicked@example.com"))
 }
-
-// Persisting a collected event carries the visitor and phone onto the projection row.
-func TestPersistCollectedEventProjectsVisitorAndPhone(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-
-	data := dataFor(t, &events.CollectedEvent{
-		WorkspaceID: fixtures.AcmeID, VisitorID: "vis-1", Action: "page_view", Phone: "+15550100", Email: "vis@example.com",
-	})
-	require.NoError(t, events.Persist(ctx, env.DB, events.Envelope{
-		ID: "01J0PERSISTCOLLECTED00000", Name: events.NameCollected, Version: 1, WorkspaceID: fixtures.AcmeID, Data: data,
-	}))
-
-	got, err := env.DB.Event.Query().Where(event.SourceID("01J0PERSISTCOLLECTED00000")).Only(ctx)
-	require.NoError(t, err)
-	require.NotNil(t, got.VisitorID)
-	require.NotNil(t, got.Phone)
-	require.NotNil(t, got.Email)
-	assert.Equal(t, "vis-1", *got.VisitorID)
-	assert.Equal(t, "+15550100", *got.Phone)
-	assert.Equal(t, "vis@example.com", *got.Email)
-}

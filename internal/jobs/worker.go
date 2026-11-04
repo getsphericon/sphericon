@@ -380,16 +380,12 @@ func (c *Client) VerifySendingDomain(ctx context.Context, sendingDomainID int64)
 }
 
 // OnEvent queues the evaluation of an Event against the Automations: the Enrollments it ends
-// and the Automations it enrolls the Contact into. It stores the Event's row first (events.Persist,
-// idempotent: the persist consumer writes the same row), so the evaluation finds the Event among
-// the Contact's when it checks what ended an Enrollment before it was made (#751). It is the
-// trigger seam injected into the event-recording paths; a no-op implementation keeps tests inert
-// (no river runtime, writes roll back with the tx). Fire-and-forget: it is best-effort and must
-// never block the write.
+// and the Automations it enrolls the Contact into. The Event's row was written when the event was
+// published, so the evaluation finds the Event among the Contact's when it checks what ended an
+// Enrollment before it was made (#751). It is the trigger seam injected into the event-recording
+// paths; a no-op implementation keeps tests inert (no river runtime, writes roll back with the
+// tx). Fire-and-forget: it is best-effort and must never block the write.
 func (c *Client) OnEvent(ctx context.Context, ev events.AutomationEvent) error {
-	if err := events.Persist(ctx, c.ent, ev.Envelope); err != nil {
-		return err
-	}
 	_, err := c.river.Insert(ctx, EvaluateTriggerArgs{
 		WorkspaceID:        ev.Envelope.WorkspaceID,
 		ContactID:          ev.ContactID,

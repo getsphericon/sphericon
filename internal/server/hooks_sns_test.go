@@ -59,15 +59,6 @@ func outboxEvents(t *testing.T, env *testhelper.TestEnv, email string) []events.
 	return out
 }
 
-// persistOutbox plays the persist consumer over everything published so far.
-func persistOutbox(t *testing.T, env *testhelper.TestEnv) {
-	t.Helper()
-	envelopes := env.OutboxEnvelopes(t, deliveryNames...)
-	for i := range envelopes {
-		require.NoError(t, events.Persist(t.Context(), env.DB, envelopes[i]))
-	}
-}
-
 // A hard bounce for a known Contact publishes one failure linked to it, keyed by the
 // SNS message id plus the recipient, with the From domain echoed, and suppresses it.
 func TestSESHookSuppressesAHardBounce(t *testing.T) {
@@ -182,7 +173,6 @@ func TestSESHookCountsOutcomesAndDedupesRedelivery(t *testing.T) {
 	require.Equal(t, http.StatusOK, postSNS(t, env, key, bounce).Code)
 	require.Equal(t, http.StatusOK, postSNS(t, env, key, bounce).Code)
 	require.Equal(t, http.StatusOK, postSNS(t, env, key, snsNotification(t, "complaint")).Code)
-	persistOutbox(t, env)
 
 	n, err := env.DB.Event.Query().Where(event.SourceID("sns-msg-1/" + fixtures.ContactAliceEmail)).Count(t.Context())
 	require.NoError(t, err)

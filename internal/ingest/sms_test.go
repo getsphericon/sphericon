@@ -53,14 +53,13 @@ func TestAReplyFromAKnownNumberIsRecordedAsSmsReceivedOnItsContact(t *testing.T)
 	require.Equal(t, http.StatusOK, posted.Code, posted.Body.String())
 	require.Equal(t, http.StatusOK, redelivered.Code, redelivered.Body.String())
 	got := env.Outbox(t, events.NameSmsReceived)
-	require.Len(t, got, 2)
+	require.Len(t, got, 1, "a redelivered message carries the same key, so the Event is stored and published once")
 	key := fmt.Sprintf("sms:%d:SM0001", sms.Integration.ID)
 	assert.Equal(t, key, got[0].Envelope.DedupKey)
-	assert.Equal(t, key, got[1].Envelope.DedupKey, "a redelivered message carries the same key, so the Event is stored once")
 	received := env.OutboxCount(t, events.NameSmsReceived, map[string]any{
 		"contactId": c.ID, "integrationId": sms.Integration.ID, "text": "Is the sale still on?",
 	})
-	assert.Equal(t, 2, received)
+	assert.Equal(t, 1, received)
 }
 
 // A sender Twilio names in a local format is read with the country Twilio says it is in.

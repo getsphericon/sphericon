@@ -39,13 +39,12 @@ func TestAMessageFromABoundContactIsRecordedAsReceived(t *testing.T) {
 	assert.Equal(t, 200, posted.Code)
 	assert.Equal(t, 200, redelivered.Code)
 	keys := lo.Map(env.OutboxEnvelopes(t, events.NameTelegramReceived), func(e events.Envelope, _ int) string { return e.DedupKey })
-	assert.Equal(t, []string{
-		fmt.Sprintf("telegram:%d:1", bot.Integration.ID), fmt.Sprintf("telegram:%d:1", bot.Integration.ID),
-	}, keys, "a redelivered update carries the same key, so the Event is stored once")
+	assert.Equal(t, []string{fmt.Sprintf("telegram:%d:1", bot.Integration.ID)}, keys,
+		"a redelivered update carries the same key, so the Event is stored and published once")
 	asBob := map[string]any{
 		"contactId": fixtures.ContactBobID, "integrationId": bot.Integration.ID, "text": "Where is my order?",
 	}
-	assert.Equal(t, 2, env.OutboxCount(t, events.NameTelegramReceived, asBob))
+	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramReceived, asBob))
 }
 
 func TestAReceivedTextIsCutAtOneKiB(t *testing.T) {

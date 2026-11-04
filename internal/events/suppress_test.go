@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -91,33 +90,6 @@ func TestPublishDeliveryFailureWithLongDedupID(t *testing.T) {
 		})
 	})
 	require.NoError(t, err)
-}
-
-// The DedupKey makes persist idempotent across at-least-once redelivery.
-func TestPersistDedupesOnDedupKey(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-
-	envlp := events.Envelope{
-		ID:          "01J0DELIVERYFAILURE0000001",
-		Name:        events.NameEmailBounced,
-		Version:     1,
-		WorkspaceID: fixtures.AcmeID,
-		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
-		DedupKey:    "sns-msg-1/bounce@example.com",
-		Data: dataFor(t, &events.EmailDelivery{
-			Action: events.NameEmailBounced, WorkspaceID: fixtures.AcmeID,
-			Email: "bounce@example.com", BounceKind: events.BounceKindHard,
-		}),
-	}
-	// Same DedupKey, different envelope ID (a redelivery) → one persisted row.
-	require.NoError(t, events.Persist(ctx, env.DB, envlp))
-	envlp.ID = "01J0DELIVERYFAILURE0000002"
-	require.NoError(t, events.Persist(ctx, env.DB, envlp))
-
-	n, err := env.DB.Event.Query().Where(event.SourceID(envlp.DedupKey)).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, n, "same DedupKey must persist at most once")
 }
 
 // A hard bounce suppresses the address with reason "bounce".

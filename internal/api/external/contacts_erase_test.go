@@ -335,7 +335,6 @@ func TestExternalContactsEraseEmitsContactErasedOnce(t *testing.T) {
 	assert.NotContains(t, data, "phone")
 
 	// The stored Event holds no PII and no Contact reference.
-	require.NoError(t, events.Persist(ctx, env.DB, envelopes[0]))
 	stored, err := env.DB.Event.Query().Where(event.Action(events.NameContactErased)).Only(ctx)
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.InitechID, stored.WorkspaceID)

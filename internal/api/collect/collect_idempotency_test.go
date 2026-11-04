@@ -22,16 +22,6 @@ func clientEvent(id, action string) collectapi.CollectEventInput {
 	}
 }
 
-// persistOutbox hands every envelope on the outbox to the persist subscriber, as the
-// router would (no router runs under txdb).
-func persistOutbox(t *testing.T, env *testhelper.TestEnv) {
-	t.Helper()
-	envelopes := env.OutboxEnvelopes(t)
-	for i := range envelopes {
-		require.NoError(t, events.Persist(t.Context(), env.DB, envelopes[i]))
-	}
-}
-
 func countAction(t *testing.T, env *testhelper.TestEnv, action string) int {
 	t.Helper()
 	n, err := env.DB.Event.Query().Where(event.Action(action)).Count(t.Context())
@@ -48,13 +38,11 @@ func TestARetriedEventIsCountedOnce(t *testing.T) {
 	res, err := c.CollectEventsCreate(ctx, batch)
 	require.NoError(t, err)
 	require.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res)
-	persistOutbox(t, env)
 
 	// The client never saw the answer and sends the batch again.
 	res, err = c.CollectEventsCreate(ctx, batch)
 	require.NoError(t, err)
 	assert.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res, "a repeat is accepted")
-	persistOutbox(t, env)
 
 	assert.Equal(t, 1, countAction(t, env, "idem_after_delivery"))
 	assert.Len(t, env.OutboxEnvelopes(t, events.NameCollected), 1, "a repeat publishes nothing")
@@ -69,7 +57,6 @@ func TestARepeatSentBeforeDeliveryIsStillCountedOnce(t *testing.T) {
 		_, err := c.CollectEventsCreate(t.Context(), batch)
 		require.NoError(t, err)
 	}
-	persistOutbox(t, env)
 
 	assert.Equal(t, 1, countAction(t, env, "idem_before_delivery"))
 }
@@ -82,7 +69,6 @@ func TestClientEventIdsAreUniquePerWorkspace(t *testing.T) {
 		_, err := env.CollectWithKey(t, key).CollectEventsCreate(t.Context(), batch)
 		require.NoError(t, err)
 	}
-	persistOutbox(t, env)
 
 	assert.Equal(t, 2, countAction(t, env, "idem_two_workspaces"))
 }
@@ -96,7 +82,6 @@ func TestEventsWithoutAClientEventIdAreNotDeduplicated(t *testing.T) {
 		_, err := c.CollectEventsCreate(t.Context(), batch)
 		require.NoError(t, err)
 	}
-	persistOutbox(t, env)
 
 	assert.Equal(t, 2, countAction(t, env, "idem_no_id"))
 }

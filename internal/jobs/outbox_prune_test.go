@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -99,7 +98,7 @@ func TestPruneOutboxSkipsWhenAGroupHasNullAck(t *testing.T) {
 	tx := env.OutboxRows(t)[0].TxID
 	env.AgeOutbox(t, outboxFloor+time.Hour)
 	setAllCursors(t, env, tx, off[1])
-	env.SetOutboxCursor(t, events.GroupPersist, tx, nil)
+	env.SetOutboxCursor(t, events.GroupAutomations, tx, nil)
 
 	prune(t, env)
 
@@ -120,22 +119,4 @@ func TestPruneOutboxRemovesRetiredGroupOffsets(t *testing.T) {
 	assert.NotContains(t, cursors, "retired_group")
 	assert.Len(t, cursors, len(events.ConsumerGroups()), "registered groups keep their cursor rows")
 	assert.Equal(t, off[1:], remainingOffsets(t, env), "the retired group no longer pins the outbox")
-}
-
-func TestPruneOutboxRedeliveryDoesNotDuplicateEvents(t *testing.T) {
-	env, off := pruneEnv(t, 2)
-	ctx := context.Background()
-	tx := env.OutboxRows(t)[0].TxID
-	env.AgeOutbox(t, outboxFloor+time.Hour)
-	setAllCursors(t, env, tx, off[0])
-	first := env.OutboxEnvelopes(t)[0]
-
-	require.NoError(t, events.Persist(ctx, env.DB, first))
-	prune(t, env)
-	// At-least-once: the group whose ack was lost sees the same message again.
-	require.NoError(t, events.Persist(ctx, env.DB, first))
-
-	n, err := env.DB.Event.Query().Where(event.SourceID(first.ID)).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, n)
 }

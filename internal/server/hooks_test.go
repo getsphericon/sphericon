@@ -121,7 +121,9 @@ func TestTwoIntegrationsOfAWorkspaceEachAcceptOnlyTheirOwnSecret(t *testing.T) {
 	assert.Empty(t, outboxEvents(t, env, fixtures.ContactAliceEmail))
 
 	require.Equal(t, http.StatusOK, signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", body).Code)
-	require.Equal(t, http.StatusOK, signedPost(t, env, fixtures.IntegrationAcmeGenericBIngestKey, secretB, "msg_2", body).Code)
+	// Another event of the provider: the same one twice would be a repeat, published once.
+	other := failureBody("evt_2", strings.ToUpper(fixtures.ContactAliceEmail), true)
+	require.Equal(t, http.StatusOK, signedPost(t, env, fixtures.IntegrationAcmeGenericBIngestKey, secretB, "msg_2", other).Code)
 	got := outboxEvents(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 2)
 	for _, f := range got {
@@ -252,9 +254,6 @@ func TestHookRedeliveryHasTheEffectOfOnce(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", body).Code)
 	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", body).Code)
-	for _, envelope := range env.OutboxEnvelopes(t, events.NameEmailBounced) {
-		require.NoError(t, events.Persist(t.Context(), env.DB, envelope))
-	}
 	applySuppression(t, env)
 
 	n, err := env.DB.Event.Query().Where(event.SourceID("evt_1/" + fixtures.ContactAliceEmail)).Count(t.Context())

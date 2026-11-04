@@ -14,9 +14,6 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/samber/lo"
 )
@@ -34,17 +31,17 @@ type AutomationEvent struct {
 
 // Enroller enrolls a contact into automations matching an event action and ends the
 // Enrollments the action exits or reaches the goal of. The automations subscriber delegates to
-// it, keeping durable execution in river. The implementation stores the Event's row first, through
-// the idempotent Persist the persist consumer runs too, then enqueues an EvaluateTrigger job: the
-// job that ends or makes an Enrollment always sees the Event among the Contact's (#751), whichever
-// consumer runs first.
+// it, keeping durable execution in river: the implementation enqueues an EvaluateTrigger job. The
+// Event's row was written when the event was published, so the job that ends or makes an
+// Enrollment always sees the Event among the Contact's (#751).
 type Enroller interface {
 	OnEvent(ctx context.Context, ev AutomationEvent) error
 }
 
 // RuleEvent is an Event a Rule may react to, as the Rules consumer hands it to the queue: the
 // Contact it is for, its action, the id a Firing is unique on (the DedupKey, else the envelope
-// id: what persist stores as source_id), when it was recorded and the properties it carries.
+// id: what the Event row is stored under as source_id), when it was recorded and the properties
+// it carries.
 type RuleEvent struct {
 	WorkspaceID int64
 	ContactID   int64
@@ -99,7 +96,6 @@ func NewRouter(db *sql.DB, opts ...RouterOption) (*message.Router, error) {
 // know whose cursors bound what it may delete, so a new subscriber is added here
 // and nowhere else.
 const (
-	GroupPersist     = "persist"
 	GroupAutomations = "automations"
 	GroupRules       = "rules"
 	GroupWebhooks    = "webhooks"
@@ -117,7 +113,7 @@ const (
 
 // coreGroups are the groups core wires itself, in registration order.
 func coreGroups() []string {
-	return []string{GroupPersist, GroupAutomations, GroupRules, GroupWebhooks, GroupSuppression, GroupOrders}
+	return []string{GroupAutomations, GroupRules, GroupWebhooks, GroupSuppression, GroupOrders}
 }
 
 // ConsumerGroups lists every consumer group registered in code, in registration
@@ -168,9 +164,8 @@ func (hs ConsumerHandlers) Of(group string) (message.NoPublishHandlerFunc, bool)
 func Handlers(client *ent.Client, enroller Enroller, rules RuleEvaluator, dispatcher WebhookDispatcher, orders OrderRecorder, extra []Consumer) ConsumerHandlers {
 	hs := make(ConsumerHandlers, 0, len(coreGroups())+len(extra))
 	hs = append(hs, ConsumerHandlers{
-		{GroupPersist, "persist_event", persistConsumer(client)},
 		{GroupAutomations, "enroll_automations", AutomationsConsumer(enroller)},
-		{GroupRules, "evaluate_rules", RulesConsumer(client, rules)},
+		{GroupRules, "evaluate_rules", RulesConsumer(rules)},
 		{GroupWebhooks, "dispatch_webhooks", WebhooksConsumer(client, dispatcher)},
 		{GroupSuppression, "update_suppression", suppressionConsumer(client)},
 		{GroupOrders, "record_orders", ordersConsumer(client, orders)},
@@ -373,10 +368,9 @@ func machineEvent(ev DomainEvent) bool { return ev.Project().Machine }
 // RulesConsumer queues the evaluation of the event against the Workspace's Rules (ADR 0054).
 // Like the Automations consumer it skips the events that are never a trigger, and it also skips
 // an event with no Contact, a machine event and an event a Rule's Action published (its
-// envelope carries CausedBy). It stores the Event's row first, through the idempotent Persist the
-// persist consumer runs too, so a Condition that counts the Contact's Events counts the one that
-// fired the Rule, whichever consumer runs first.
-func RulesConsumer(client *ent.Client, rules RuleEvaluator) message.NoPublishHandlerFunc {
+// envelope carries CausedBy). The Event's row was written when the event was published, so a
+// Condition that counts the Contact's Events counts the one that fired the Rule.
+func RulesConsumer(rules RuleEvaluator) message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
 		env, err := EnvelopeOf(msg)
 		if err != nil {
@@ -401,9 +395,6 @@ func RulesConsumer(client *ent.Client, rules RuleEvaluator) message.NoPublishHan
 		p := ev.Project()
 		if p.ContactID == 0 {
 			return nil // no Contact to act on
-		}
-		if err := Persist(msg.Context(), client, env); err != nil {
-			return err
 		}
 		recorded := env.RecordedAt
 		if recorded.IsZero() {
@@ -445,109 +436,4 @@ type SubscribeOption func(*watermillsql.SubscriberConfig)
 // adapter must keep the outbox table layout of the producer.
 func WithSchemaAdapter(a watermillsql.SchemaAdapter) SubscribeOption {
 	return func(cfg *watermillsql.SubscriberConfig) { cfg.SchemaAdapter = a }
-}
-
-func persistConsumer(client *ent.Client) message.NoPublishHandlerFunc {
-	return func(msg *message.Message) error {
-		env, err := EnvelopeOf(msg)
-		if err != nil {
-			return err
-		}
-		return Persist(msg.Context(), client, env)
-	}
-}
-
-// Persist writes the durable Event-projection row for a domain event. It is the
-// one place the engagement log is written, replacing scattered Event.Create
-// calls. Exported so the projection logic can be unit-tested directly without
-// running the router.
-//
-// It decodes the typed event and writes the row from its Project(), so any event
-// type projects faithfully without persist knowing the concrete fields.
-func Persist(ctx context.Context, client *ent.Client, env Envelope) error {
-	ev, err := Decode(env)
-	if err != nil {
-		return err
-	}
-	if _, skip := ev.(Unprojected); skip {
-		return nil // not an Event: no row, so no segment or trigger can see it
-	}
-	p := ev.Project()
-
-	create := client.Event.Create().
-		SetWorkspaceID(env.WorkspaceID).
-		SetSubjectID(p.Subject).
-		SetAction(p.Action).
-		SetProperties(p.Properties).
-		SetOccurredAt(env.OccurredAt).
-		SetBackfill(IsBackfill(ev)).
-		SetMachine(p.Machine).
-		SetCaptured(p.Captured).
-		SetNillableBroadcastID(lo.EmptyableToPtr(p.BroadcastID)).
-		SetNillableAutomationID(lo.EmptyableToPtr(p.AutomationID)).
-		SetNillableURL(lo.EmptyableToPtr(p.URL))
-	// Dedup on the source id (Envelope.SourceID). Empty ⇒ leave source_id NULL (distinct under
-	// the unique index) rather than "", so a missing id never collides and false-dedupes a
-	// distinct event.
-	if sourceID := env.SourceID(); sourceID != "" {
-		create.SetSourceID(sourceID)
-	}
-	// The authoritative Contact link, resolved at ingest. 0 ⇒ anonymous (leave null).
-	// Delivery is asynchronous, so the Contact may be gone by now (erased, deleted): the
-	// Event outlives it unlinked rather than violating the contact_id FK.
-	if p.ContactID != 0 {
-		linked, err := client.Contact.Query().
-			Where(contact.ID(p.ContactID), contact.WorkspaceID(env.WorkspaceID)).Exist(ctx)
-		if err != nil {
-			return fmt.Errorf("resolve contact of event %q: %w", env.Name, err)
-		}
-		if linked {
-			create.SetContactID(p.ContactID)
-		}
-	}
-	if p.VisitorID != "" {
-		create.SetVisitorID(p.VisitorID)
-	}
-	if p.Email != "" {
-		create.SetEmail(p.Email)
-	}
-	if p.Phone != "" {
-		create.SetPhone(p.Phone)
-	}
-	// Idempotent: at-least-once delivery can redeliver an envelope after a crash,
-	// and SNS redelivers notifications with the same DedupKey; dedupe on the
-	// source_id so the projection row is written at most once. ent reports a
-	// conflict skipped by DoNothing as sql.ErrNoRows, which is how a first write
-	// is told from a duplicate: the bounce/complaint outcome counter ticks only on
-	// the first.
-	err = create.OnConflictColumns(event.FieldSourceID).DoNothing().Exec(ctx)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("persist event %q: %w", env.Name, err)
-	}
-	recordProviderOutcome(ctx, ev)
-	return nil
-}
-
-// recordProviderOutcome counts a newly persisted provider bounce or complaint on
-// the send-outcome counter. Counting here, at the one place a duplicate is
-// detected, keeps SNS redeliveries from counting twice.
-func recordProviderOutcome(ctx context.Context, ev DomainEvent) {
-	f, ok := ev.(*EmailDelivery)
-	if !ok || f.Provider == "" {
-		return
-	}
-	var status messaging.SendStatus
-	switch f.Action {
-	case NameEmailBounced:
-		status = messaging.SendBounce
-	case NameEmailComplained:
-		status = messaging.SendComplaint
-	default:
-		return
-	}
-	// Provider is the Preset's name (ADR 0037), or "ses" for the SES adapter.
-	messaging.RecordSendOutcome(ctx, messaging.Provider(f.Provider), status)
 }

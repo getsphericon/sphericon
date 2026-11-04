@@ -403,8 +403,7 @@ func (a *App) stop(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
-// runEvents runs the domain-event router (persist/automations/webhooks
-// subscribers). Blocks until ctx is cancelled; stop happens via Shutdown.
+// runEvents runs the domain-event router (the outbox consumers). Blocks until ctx is cancelled; stop happens via Shutdown.
 func (a *App) runEvents(ctx context.Context) error {
 	return a.events.router.Run(ctx)
 }

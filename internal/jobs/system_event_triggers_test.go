@@ -103,7 +103,7 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
 
 	completed := onlyEnvelope(t, env, events.NameAutomationCompleted)
-	require.NoError(t, events.RulesConsumer(env.DB, client)(events.Message(completed)))
+	require.NoError(t, events.RulesConsumer(client)(events.Message(completed)))
 	evaluations := queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind)
 	require.Len(t, evaluations, 1)
 	m := rules.New(env.Cipher, env.Bus)
@@ -115,7 +115,7 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	require.Len(t, fired, 1)
 	require.NoError(t, m.RunActions(ctx, acme, fired[0].ID, ruleRunners(env)))
 	tagged := onlyEnvelope(t, env, events.NameContactTagged)
-	require.NoError(t, events.RulesConsumer(env.DB, client)(events.Message(tagged)))
+	require.NoError(t, events.RulesConsumer(client)(events.Message(tagged)))
 	evaluationsAfter := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
 	aliceTags := tagsOf(t, env, fixtures.ContactAliceID)
 

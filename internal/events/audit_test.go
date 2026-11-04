@@ -24,8 +24,8 @@ func auditEntry(actorKind string) *events.AuditEntry {
 	}
 }
 
-// An Audit entry is administrative history, not a data-plane fact: the persist
-// consumer writes no Event row for it, so no segment or trigger can ever see it.
+// An Audit entry is administrative history, not a data-plane fact: publishing it
+// writes no Event row, so no segment or trigger can ever see it.
 func TestAuditEntryIsNotProjectedToAnEvent(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -38,7 +38,6 @@ func TestAuditEntryIsNotProjectedToAnEvent(t *testing.T) {
 	published := env.OutboxEnvelopes(t, events.NameAuditEntry)
 	require.Len(t, published, 1)
 
-	require.NoError(t, events.Persist(ctx, env.DB, published[0]))
 	after, err := env.DB.Event.Query().Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, before, after)
