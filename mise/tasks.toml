@@ -22,7 +22,7 @@ run = ["node mise/scripts/check-dev-ports.ts", "mise daemons start caddy"]
 
 ["dev:down"]
 description = "Stop this checkout's dev stack (never the shared Postgres: `mise -C <primary checkout> daemons stop db` stops it for everyone)"
-run = "mise daemons stop caddy backend frontend demo mailpit"
+run = "mise daemons stop caddy backend frontend demo mailpit dns"
 
 ["dev:restart"]
 description = "Restart this checkout's dev stack (dev:down, then dev; the shared Postgres keeps running)"
@@ -183,7 +183,7 @@ names=""
 if out=$(mise -C "$path" env 2>/dev/null); then
   names=$(printf '%s\n' "$out" | sed -n "s/^export SPHERICON_DB_NAMES=//p" | tr -d "'")
 fi
-mise -C "$path" daemons stop caddy backend frontend demo mailpit >/dev/null 2>&1 || true
+mise -C "$path" daemons stop caddy backend frontend demo mailpit dns >/dev/null 2>&1 || true
 
 if [ -z "$names" ]; then
   echo "worktrees:rm: cannot read SPHERICON_DB_NAMES of $path, its databases are left for worktrees:gc" >&2
