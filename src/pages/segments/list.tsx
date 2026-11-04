@@ -111,7 +111,6 @@ export function SegmentsListPage() {
                         {t(($) => $.actions.edit)}
                       </MenuItemLink>
                       <Menu.Item
-                        color="red"
                         onClick={() =>
                           archiveSegment.mutate({ path: { workspaceId, id: record.id } })
                         }

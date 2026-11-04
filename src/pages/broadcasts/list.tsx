@@ -184,7 +184,6 @@ export function BroadcastsListPage() {
                       </Menu.Item>
                     ) : (
                       <Menu.Item
-                        color="red"
                         onClick={() =>
                           archiveBroadcast.mutate({ path: { workspaceId, id: record.id } })
                         }
