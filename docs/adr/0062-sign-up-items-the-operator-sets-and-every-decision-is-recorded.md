@@ -10,8 +10,7 @@ first Workspace at once. What a person must accept or may agree to depends on th
 serves (terms and a privacy notice in one, a separate consent to the processing of personal data or to
 advertising mail in another), and an open-core Instance can run in any of them, so the core cannot
 know the rules. It gives the operator a mechanism instead: **Sign-up items**, each with a versioned
-**Legal document**, and a **Consent record** of every decision. The research behind this is in
-`docs/research/signup-consent-prior-art.md`.
+**Legal document**, and a **Consent record** of every decision.
 
 ## Decisions
 

@@ -112,8 +112,8 @@ type Failure struct {
 	RetryAfter  int
 }
 
-// The refusals the Bot API answers, in Telegram's own words (docs/research on the
-// research/telegram-bot-api branch, from the telegram-bot-api server's source).
+// The refusals the Bot API answers, in Telegram's own words (from the telegram-bot-api
+// server's source).
 var (
 	// Unauthorized is a wrong or revoked token.
 	Unauthorized = Failure{Code: http.StatusUnauthorized, Description: "Unauthorized"}

@@ -5,13 +5,13 @@ status: accepted
 # On-site popups and forms are built, as an effort of their own
 
 Popups, banners and forms on the customer's site were added to the channels map
-(getsphericon/sphericon#916). The research (`research/on-site-messages-and-forms`) found two roles:
+(getsphericon/sphericon#916). The research found two roles:
 a capture form for visitors (Klaviyo, OptinMonster, Sumo, Mautic) and an on-site message addressed
 to a known person (Customer.io, Braze), which the big engines serve with one object; the web push
 soft prompt is itself an on-site message. A first answer was to ship none and leave them to form
 tools. The maintainer reversed it: on-site campaigns are one of the platform's main features, as
 Drip Onsite is Drip's (pop-ups, slide-ins, sticky bars, sidebars, embedded forms; targeting by page,
-Segment and cart; an SMS consent element; `docs/research/drip-com-feature-analysis.md`, section 6).
+Segment and cart; an SMS consent element).
 
 ## Decisions
 

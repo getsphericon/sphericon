@@ -7,7 +7,7 @@ status: accepted
 ADR 0084 decided that sphericon shows popups, banners and forms on the customer's site through its
 tracker, designed by a map of their own (getsphericon/sphericon#948). Its first ticket
 (getsphericon/sphericon#952) settled what the thing is. The research for that map found that the
-vendors converge on one content model (`research/on-site-builders`): a short run of screens, an
+vendors converge on one content model: a short run of screens, an
 optional success screen, a teaser that belongs to the same message, one design with per-device
 overrides. ActiveCampaign names the two roles apart: **Forms** (inline, floating bar, floating box,
 modal) capture visitors, and **Site messages** are shown to known contacts by an automation action.

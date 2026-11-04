@@ -9,7 +9,7 @@ Send-eligibility is keyed by (channel, Destination), but nothing beyond email wa
 SMS, WhatsApp, Telegram, web push and mobile push showed two things the email model never had to
 face: one provider account may serve several channels (Twilio, Bird and Vonage send SMS and
 WhatsApp), and on most new channels an address only works through the connection that obtained it.
-The research behind this is on the `research/*` branches linked from the map issue
+The research behind this was done for the map issue
 (getsphericon/sphericon#916).
 
 ## Decisions

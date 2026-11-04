@@ -12,8 +12,8 @@ status: accepted
 > always open, in both Modes; nothing closes it and `create-owner` stays for automation.
 
 An Instance answers `signup` to anyone who reaches it, so a Self-hoster who exposes a fresh
-Instance hands the first Workspace to whoever arrives first. Four of the self-hosted projects read
-(`docs/research/self-hosted-deploy-prior-art.md`) have a deliberate first-admin step or a switch
+Instance hands the first Workspace to whoever arrives first. Four of the self-hosted projects surveyed
+have a deliberate first-admin step or a switch
 that closes open registration.
 
 ## Decisions

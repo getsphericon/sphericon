@@ -10,7 +10,7 @@ status: accepted
 Send-eligibility (ADR 0013) has four layers keyed by (Channel, Destination): Suppression, an
 `everything` Unsubscribe, a source Unsubscribe, and a Confirmation that only a Workspace requiring
 confirmed opt-in asks for. That fits email. The research on the map issue
-(getsphericon/sphericon#916, `research/channel-consent-rules`) found that every new Channel needs a
+(getsphericon/sphericon#916) found that every new Channel needs a
 positive opt-in, that a STOP revokes all of a sender's marketing on the Channel (FCC 26-67,
 GDPR, WhatsApp policy), and that providers report both a person's choice and a dead address.
 

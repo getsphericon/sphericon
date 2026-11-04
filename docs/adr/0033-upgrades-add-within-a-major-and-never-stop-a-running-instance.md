@@ -7,8 +7,7 @@ status: accepted
 A self-hosted Instance is upgraded by whoever runs it, often several releases late, while customer
 sites keep sending events to it. So an Upgrade has to work from any release, and neither it nor a
 failed one may take a running Instance down: the tracker would lose the events of that window. The
-rules below make a jump safe without asking the Self-hoster to step through every release. The
-research behind them is `docs/research/self-hoster-upgrade-prior-art.md`.
+rules below make a jump safe without asking the Self-hoster to step through every release.
 
 ## Decisions
 

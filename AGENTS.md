@@ -227,6 +227,13 @@ Every change, however small, is made in a worktree, created in Claude's default 
 
 Before running the `to-spec` skill, call the `advisor` tool first and take its advice into account. The skill is vendored, so this rule lives here rather than in the skill.
 
+### Research notes stay out of this repository
+
+A research note (the file the `research` skill writes, the `research/<name>` branch of the
+`wayfinder` skill) is never committed to this repository or pushed to it, on any branch: the
+maintainers keep such notes elsewhere. An ADR or a ticket that rests on research states the finding
+itself, not a pointer to a note. The skills are vendored, so this rule lives here rather than in them.
+
 ### Rebase onto main before marking ready
 
 In `implement-spec`, before marking the draft PR ready, rebase the integration branch onto a freshly

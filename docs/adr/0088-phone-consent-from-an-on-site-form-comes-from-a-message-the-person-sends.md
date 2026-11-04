@@ -5,7 +5,7 @@ status: accepted
 # Phone consent from an On-site form comes from a message the person sends
 
 An On-site form (ADR 0085) posts through the tracker's public collect key, so a submit proves only
-that some browser typed an address or a number (`research/browser-form-consent`). In the US the
+that some browser typed an address or a number. In the US the
 seller carries the whole burden of proving consent, and consent typed by someone else is none; in
 Germany double opt-in documents an email consent and proves nothing about a phone, and the DSK
 rates SMS codes as weak evidence. The legal targets are the US and the EU. While charting, the map

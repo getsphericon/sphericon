@@ -8,7 +8,7 @@ Display rules split the work: the browser decides when, the server decides whom 
 tracker today is one script, `t.js`, and `/collect`, both on the Workspace's Tracking domain, a CNAME
 to the Instance's edge (ADR 0059, ADR 0071). uBlock Origin on Firefox and Brave resolve a CNAME and
 apply their lists to the canonical name, so one listing of the edge's name would block every
-customer at once (`research/on-site-runtime`, section 6). Popups annoy more than tracking does, and
+customer at once. Popups annoy more than tracking does, and
 an annoyance list that blocks them should not take clicks, attribution and Identify with them.
 Klaviyo serves its forms from `static.klaviyo.com` and Sleeknote keeps its analytics on a host of
 its own; Drip, Customer.io and Braze are blocked as one host. Decided in the delivery ticket

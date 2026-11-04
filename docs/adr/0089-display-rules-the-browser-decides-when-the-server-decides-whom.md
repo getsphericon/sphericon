@@ -5,7 +5,7 @@ status: accepted
 # Display rules: the browser decides when, the server decides whom
 
 An On-site form (ADR 0085) shows on the customer's site by its Display rules. The vendors read for
-the map (getsphericon/sphericon#948, `research/on-site-messages-and-forms`) all evaluate triggers in
+the map (getsphericon/sphericon#948) all evaluate triggers in
 the browser and select the eligible audience on the server. A Segment's Condition tests one
 Contact's fields, Tags and Events on the server (ADR 0029), so an anonymous Visitor is in no
 Segment. sphericon has no cart model and no GeoIP. Decided in the display rules ticket

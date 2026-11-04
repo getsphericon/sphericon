@@ -13,7 +13,7 @@ Who may call an operation was decided in each handler: 102 `auth.HasScope` check
 API and 34 `accounts.Can…` checks on `/site`. They had drifted (a missing scope answered 401 at 99
 sites and 403 at 3), a new operation was open until someone remembered its check, and the frontend
 kept its own copy of the Role table (`useCurrentRole.ts`). The comparison with six Go projects and
-cal.com ([handler-and-module-organization-prior-art](../research/handler-and-module-organization-prior-art.md))
+cal.com
 showed the same drift wherever checks are opt-in, and the `/service` surface already showed the
 cure: its scopes are declared on each operation and enforced in one place
 ([[0026-operator-console-and-abuse-detector]]). Access is now declared in TypeSpec for every

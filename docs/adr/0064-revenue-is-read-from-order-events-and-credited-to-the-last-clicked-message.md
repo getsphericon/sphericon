@@ -9,7 +9,7 @@ currency. The Instance sells nothing itself, so revenue is a fact the Workspace'
 arrives as Events in the shape of the RudderStack E-Commerce Events spec, unchanged, so a Workspace that
 already sends those events to a customer data platform sends the same ones to Sphericon with no
 translation. Attribution is the part the spec leaves to the email tool; the choices below are
-Sphericon's. The research behind this is in `docs/research/revenue-and-attribution-prior-art.md`.
+Sphericon's.
 
 ## Decisions
 

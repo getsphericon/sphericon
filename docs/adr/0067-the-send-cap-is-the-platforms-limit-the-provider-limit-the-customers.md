@@ -10,7 +10,7 @@ is not: it protects the customer's provider account. The SaaS needs a limit of i
 customer cannot change, because tenants who bring their own SES or SMTP still put the platform's
 reputation at risk. The links of every message sent without a serving Tracking domain are built on
 the Instance's host, and a blocklist such as Spamhaus DBL lists a domain found in message bodies
-together with all its subdomains ([send limits research](../research/send-limits-prior-art.md)).
+together with all its subdomains.
 So there are two limits with two owners, and each gets its own name.
 
 ## Decisions

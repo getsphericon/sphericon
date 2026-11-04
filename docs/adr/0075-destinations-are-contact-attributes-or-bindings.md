@@ -9,7 +9,7 @@ the Integration that obtained it. It left open where each Destination lives. A C
 alias keys (subject_id, email, phone), and the phone was only trimmed, so `+7 999 123-45-67` and
 `89991234567` were two different Contacts. A Telegram chat comes from the person writing to a bot,
 a web push subscription from a browser that may not be identified yet, and both can be many per
-person. The research is linked from the map issue (getsphericon/sphericon#916).
+person. The research was done for the map issue (getsphericon/sphericon#916).
 
 ## Decisions
 

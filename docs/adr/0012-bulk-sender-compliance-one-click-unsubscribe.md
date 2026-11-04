@@ -132,4 +132,4 @@ Automation. If a marketing message cannot get its unsubscribe artefacts it is a 
 never sent without them; the opt-in confirmation mail is not a marketing send and must not carry a
 placeholder target. Transactional is still untouched. Cited prior art: Listmonk ships one-click
 headers on opt-in mails pointing at an all-zero placeholder campaign, so a provider's one-click
-"succeeds" and changes nothing (see `docs/research/outbound-send-prior-art.md`).
+"succeeds" and changes nothing.

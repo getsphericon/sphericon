@@ -6,14 +6,13 @@ status: accepted
 
 Message content is a subject plus an MJML body today (ADR 0003, ADR 0005, the glossary). The body field
 is a plain `Textarea`, an agent that drafts through MCP gets an MJML string and nothing else (no brand,
-no vocabulary, no feedback), and a malformed body fails only when a send is planned. The research in
-`docs/research/ai-email-design-landscape.md` and `docs/research/embeddable-email-editors.md` shows that
+no vocabulary, no feedback), and a malformed body fails only when a send is planned. A survey of the
+AI email tools and the embeddable editors shows that
 the vendors whose agents produce good-looking mail narrow what the agent writes, hold the brand as data
 and give the agent a lint. The one actively maintained MIT editor that fits React 19 and Mantine without
 a hosted service is `@react-email/editor`: it stores its own JSON document and emits HTML, not MJML.
 
-Two throwaway prototypes (in worktrees, not kept) tested it; their findings are in
-`docs/research/email-editor-prototype-findings.md` and `docs/research/embedded-js-prototype-findings.md`.
+Two throwaway prototypes (in worktrees, not kept) tested it.
 What shaped this decision:
 
 - The editor cannot load its own HTML export back without growing it, and drops what it does not model

@@ -128,8 +128,7 @@ Outbound message row. Queueing it would add latency to password resets and OTPs 
   primitive that serves idempotency, per-message status, provider correlation and an activity log.
 - **Keep Transactional outside the module.** Rejected: it needs the same Suppression, domain gate,
   freeze check and signing; separating it recreates the duplication this ADR removes.
-- **Eligibility only at planning time (what Listmonk does; see
-  `docs/research/outbound-send-prior-art.md`).** Rejected: a late unsubscribe or Suppression still
+- **Eligibility only at planning time (what Listmonk does).** Rejected: a late unsubscribe or Suppression still
   sends within the already-fetched batch.
 - **An external workflow engine for the send pipeline.** Rejected for now: Automation is a linear
   sequence with no branching (see GLOSSARY "Step"); revisit when branching is real.

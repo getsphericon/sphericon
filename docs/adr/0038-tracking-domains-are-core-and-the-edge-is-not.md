@@ -5,7 +5,7 @@ status: superseded in part by ADR 0071 (a Tracking domain is the Workspace's own
 # Tracking domains are a core feature; the edge that terminates their TLS is not
 
 Customers want the links in their mail on their own hostname (a CNAME). Links are built from the one
-`SPHERICON_APP_URL` today. The SaaS deployment (ADR 0002 in the platform repository) left the edge open: its ALB holds 25 certificates by default, a
+`SPHERICON_APP_URL` today. The SaaS deployment left the edge open: its ALB holds 25 certificates by default, a
 quota AWS lists as adjustable with no stated maximum, so the quota is not what decides this. What
 decides it is that an ALB certificate needs a DNS validation record in the customer's zone as well
 as the CNAME, while a CloudFront multi-tenant distribution validates over HTTP and renews on its own.
@@ -64,8 +64,5 @@ chosen.
 
 ## Consequences
 
-CloudFront tenant pricing is by tenant and the figures found disagree: confirm them on AWS's pricing
-page before the platform ticket is built, and confirm how a tenant passes the customer's host to the
-origin without needing the origin's certificate to cover it. Removing a Sending domain or its CNAME
-leaves links already in inboxes pointing at a host that no longer reaches us: the Instance's own
-host keeps serving them, the customer's does not, and the documentation says so.
+Removing a Sending domain or its CNAME leaves links already in inboxes pointing at a host that no
+longer reaches us: the Instance's own host keeps serving them, the customer's does not, and the documentation says so.

@@ -10,8 +10,8 @@ status: accepted
 The Workspace overview showed the Setup checklist, a revenue block, two cards to create a Broadcast
 or an Automation and the things created last. What stops a Workspace's mail (a Sending domain that
 lost its record, a provider that stopped the account, a held Broadcast) was each on its own page, and
-the revenue block kept a "No orders yet" placeholder on every Workspace that sells nothing. The prior
-art is in `docs/research/workspace-overview-prior-art.md`: most email tools lead their home page with
+the revenue block kept a "No orders yet" placeholder on every Workspace that sells nothing. In the prior
+art, most email tools lead their home page with
 recent items or setup and put problems on a separate health page; Klaviyo leads with an alerts block
 that is there only while something is wrong, and no vendor shows an empty revenue figure to an
 account without a shop.

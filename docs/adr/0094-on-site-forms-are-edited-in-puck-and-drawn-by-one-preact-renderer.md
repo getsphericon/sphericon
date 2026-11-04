@@ -5,10 +5,10 @@ status: accepted
 # On-site forms are edited in Puck and drawn by one Preact renderer in a shadow root
 
 An On-site form (ADR 0085) needs an editor in the app and a renderer on the customer's site. The
-research (`research/on-site-builders`) found two live embeddable builders, Puck (MIT, a closed JSON
+research found two live embeddable builders, Puck (MIT, a closed JSON
 tree drawn by our own components) and GrapesJS (BSD, free-form HTML and CSS), and that no React
 renderer fits beside the tracker (React alone is ~99 kB gzip). The runtime research
-(`research/on-site-runtime`) left the isolation open. A throwaway prototype
+left the isolation open. A throwaway prototype
 (`prototype/onsite-form-builder`, `packages/storefront/src/prototype-onsite/`) compared three
 editors on the demo storefront: Puck's canvas, a fixed layout filled by a form, and a block list
 with an inspector. The maintainer chose Puck for how it lays out the space: a block palette and an

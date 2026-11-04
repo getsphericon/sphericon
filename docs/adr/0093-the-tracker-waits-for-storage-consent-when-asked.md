@@ -10,8 +10,8 @@ reading back from, the visitor's device need consent unless it is strictly neces
 the visitor asked for, whether or not it is personal data (Planet49; EDPB Guidelines 2/2023). WP29
 Opinion 04/2012 exempts customisation the user explicitly requested, by a click, only for the
 session or a short term. Showing a form stores nothing. Klaviyo splits its tracking scripts from its
-forms so that a consent manager can block one and keep the other
-(`research/browser-form-consent`, section 7). The legal targets are the US and the EU. Decided in the
+forms so that a consent manager can block one and keep the other.
+The legal targets are the US and the EU. Decided in the
 frequency ticket of the on-site map (getsphericon/sphericon#957).
 
 ## Decisions
