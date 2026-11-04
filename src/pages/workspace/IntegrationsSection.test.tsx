@@ -616,6 +616,36 @@ test('the Test inbox has no credentials to save', async () => {
     .not.toBeInTheDocument()
 })
 
+// A provider someone else deletes while its window is open: every write of the window answers 404,
+// and the list that loads after it no longer has the provider.
+const deletedMeanwhile = (row: SiteIntegrationResource) => {
+  let rows = [row]
+  return {
+    list: handleSiteIntegrationsList(() => HttpResponse.json(rows)),
+    gone: () => {
+      rows = []
+      return problem(404, { title: 'Not Found', detail: 'integration not found' })
+    },
+  }
+}
+
+const GONE =
+  'This provider was deleted, so the change was not made. The list shows the providers that remain.'
+
+test('a Provider limit window whose provider was deleted closes and the list drops it', async () => {
+  const deleted = deletedMeanwhile(limited)
+  worker.use(deleted.list, handleSiteIntegrationsUpdate(deleted.gone))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Provider limit' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Save limits' }).click()
+
+  await expect.element(screen.getByText(GONE)).toBeInTheDocument()
+  await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Primary SMTP')).not.toBeInTheDocument()
+})
+
 test('makes another provider the default, and the default offers no such action', async () => {
   const backup: SiteIntegrationResource = {
     ...smtp,
@@ -926,6 +956,23 @@ test('regenerates the hook URL after a confirmation', async () => {
   await expect.poll(() => calls).toEqual(['1'])
 })
 
+test('an Inbound window whose provider was deleted closes and the list drops it', async () => {
+  const deleted = deletedMeanwhile(smtp)
+  worker.use(
+    deleted.list,
+    handleSitePresetsList({ body: PRESETS }),
+    handleSiteIntegrationsUpdate(deleted.gone),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await openInbound(screen)
+  await screen.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText(GONE)).toBeInTheDocument()
+  await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Primary SMTP')).not.toBeInTheDocument()
+})
+
 const telegramBot: SiteIntegrationResource = {
   ...smtp,
   id: '7',
@@ -1011,6 +1058,19 @@ test("saves a Telegram bot's stored token again when the token is left blank", a
 
   await expect.poll(() => bodies).toEqual([{ config: { kind: 'telegram', token: '' } }])
   await expect.element(dialog).not.toBeInTheDocument()
+})
+
+test('a Credentials window whose provider was deleted closes and the list drops it', async () => {
+  const deleted = deletedMeanwhile(telegramBot)
+  worker.use(deleted.list, handleSiteIntegrationsUpdate(deleted.gone))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  const dialog = await openCredentials(screen)
+  await dialog.getByRole('button', { name: 'Save credentials' }).click()
+
+  await expect.element(screen.getByText(GONE)).toBeInTheDocument()
+  await expect.element(dialog).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Telegram bot')).not.toBeInTheDocument()
 })
 
 test("a provider's refusal of the credentials shows in the form, which stays open", async () => {
