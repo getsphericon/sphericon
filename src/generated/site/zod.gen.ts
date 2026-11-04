@@ -1056,7 +1056,7 @@ export const zSiteConditionNumberLeaf = z.object({
 
 /**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,
+ * notNull; the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its type,
  * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
  * number leaf, a datetime one tested by the date leaves).
  */

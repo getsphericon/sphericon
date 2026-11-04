@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/reportday"
 )
@@ -50,6 +51,10 @@ const (
 	// telegramField marks a leaf as the Telegram condition (ADR 0075): operator "has" or
 	// "doesNotHave", no value.
 	telegramField = "telegram"
+
+	// smsField marks a leaf as the "can be texted" condition: operator "has" or "doesNotHave", no
+	// value.
+	smsField = "sms"
 	// triggerFieldPrefix marks a leaf as a test on the triggering Event's own properties:
 	// "trigger:<key>". Valid only in a Rule (RulePredicate); a Segment refuses it.
 	triggerFieldPrefix = "trigger:"
@@ -293,6 +298,8 @@ func (c *compiler) rule(ctx context.Context, r Leaf) (predicate.Contact, error) 
 		return tagRule(op, r.Value)
 	case r.Field == telegramField:
 		return telegramRule(op)
+	case r.Field == smsField:
+		return smsRule(op)
 	case strings.HasPrefix(r.Field, customFieldPrefix):
 		return c.custom(ctx, strings.TrimPrefix(r.Field, customFieldPrefix), op, r.Value)
 	case strings.HasPrefix(r.Field, triggerFieldPrefix):
@@ -604,6 +611,24 @@ func telegramRule(op operator) (predicate.Contact, error) {
 		return contact.Not(p), nil
 	default:
 		return nil, fmt.Errorf("unsupported operator %q for telegram field", op)
+	}
+}
+
+// smsRule is the subject can (or cannot) be texted: its phone is a Destination Send-eligibility on
+// sms lets a marketing text reach, that is, one with an SMS Confirmation and no SMS opt-out or
+// Suppression (ADR 0077). A phone alone is "phone is set"; on Telegram the Binding is itself the
+// opt-in, on sms the Confirmation is, so the counterpart of the Telegram condition is the eligible
+// phone. Evaluated live through the audience predicate, the rule's single definition. Every SMS
+// opt-out is of everything, so the Sending source named here changes nothing.
+func smsRule(op operator) (predicate.Contact, error) {
+	p := eligibility.Audience(eligibility.PhoneDestination(), eligibility.SourceBroadcasts)
+	switch op {
+	case opHas:
+		return p, nil
+	case opDoesNotHave:
+		return contact.Not(p), nil
+	default:
+		return nil, fmt.Errorf("unsupported operator %q for sms field", op)
 	}
 }
 

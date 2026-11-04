@@ -243,3 +243,30 @@ func TestExternalSegmentsWorkspaceIsolation(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SegmentsArchiveNotFound{}, del)
 }
+
+// The "can be texted" condition is accepted on /api: a Segment stores it, and a preview counts the
+// Texter only once an API client has recorded the consent of the Texter's phone.
+func TestExternalSegmentsTakeTheCanBeTextedCondition(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	c := env.ExternalScoped(t, "segments:read", "segments:write", "contacts:write")
+	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"eq","value":"` +
+		fixtures.ContactTexterEmail + `"},{"kind":"rule","field":"sms","operator":"has"}]}`
+	preview := func() externalapi.SegmentsPreviewRes {
+		t.Helper()
+		out, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def))})
+		require.NoError(t, err)
+		return out
+	}
+
+	created, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Texter", Condition: testhelper.ExternalRuleGroup(t, def)})
+	require.NoError(t, err)
+	before := preview()
+	_, err = c.ConfirmationsCreate(ctx, smsConsent(fixtures.ContactTexterPhone))
+	require.NoError(t, err)
+	after := preview()
+
+	assert.IsType(t, &externalapi.SegmentResource{}, created)
+	assert.Equal(t, &externalapi.PreviewSegmentResult{Count: 0}, before)
+	assert.Equal(t, &externalapi.PreviewSegmentResult{Count: 1}, after)
+}

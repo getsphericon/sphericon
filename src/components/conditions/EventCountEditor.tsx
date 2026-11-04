@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { zSiteConditionEventLeaf } from '../../generated/site/zod.gen.ts'
 import { eventCount, eventCountOf, eventFieldPrefix, isCountOperator } from './condition.ts'
-import { telegramField } from './fieldOperators.ts'
+import { smsField, telegramField } from './fieldOperators.ts'
 
 // The least count and window the contract takes (atLeast's own floor of one is the server's), as
 // the inputs' min.
@@ -25,7 +25,7 @@ function typed(input: unknown): number | undefined {
 // stays blank and is marked required. Every other field keeps the Mantine editor.
 export function EventCountEditor(props: MantineValueEditorProps) {
   const { t } = useTranslation()
-  if (props.field === telegramField) {
+  if (props.field === telegramField || props.field === smsField) {
     return null
   }
   if (!props.field.startsWith(eventFieldPrefix)) {

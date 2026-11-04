@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -228,4 +229,61 @@ func TestTelegramConditions(t *testing.T) {
 	// Only has / doesNotHave are valid for the telegram field.
 	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"eq","value":""}]}`))
 	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"has"}]}`))
+}
+
+// The sms field selects the Contacts that can be texted: a phone with an SMS Confirmation, no SMS
+// opt-out and no Suppression, Send-eligibility on sms read live. Fixtures (the eligibility matrix of
+// Tyrell, confirmed opt-in off, and Lumon, on): "clean" has a phone and no Confirmation,
+// "unsubscribed from everything" a phone with a Confirmation and an SMS opt-out, "confirmed" a phone
+// with a Confirmation; the others have no phone. Lumon's email gate changes nothing on sms.
+func TestSMSConditions(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	matching := func(ws int64, op string) []int64 {
+		t.Helper()
+		g := condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("sms", op, ""))}
+		s := env.DB.Scoped(ws)
+		p, err := condition.Compile(ctx, s, g)
+		require.NoError(t, err)
+		ids, err := s.Contact().Query().Where(p).IDs(ctx)
+		require.NoError(t, err)
+		return ids
+	}
+	everyone := func(ws int64) []int64 {
+		t.Helper()
+		ids, err := env.DB.Scoped(ws).Contact().Query().IDs(ctx)
+		require.NoError(t, err)
+		return ids
+	}
+
+	for _, ws := range []struct {
+		id                                int64
+		clean, unsubEverything, confirmed int64
+		phoneless                         []int64
+	}{
+		{fixtures.TyrellID, fixtures.TyrellMatrixCleanID, fixtures.TyrellMatrixUnsubEverythingID, fixtures.TyrellMatrixConfirmedID,
+			[]int64{fixtures.TyrellMatrixSuppressedID, fixtures.TyrellMatrixUnsubBroadcastsID, fixtures.TyrellMatrixConfirmedSuppressedID}},
+		{fixtures.LumonID, fixtures.LumonMatrixCleanID, fixtures.LumonMatrixUnsubEverythingID, fixtures.LumonMatrixConfirmedID,
+			[]int64{fixtures.LumonMatrixSuppressedID, fixtures.LumonMatrixUnsubBroadcastsID, fixtures.LumonMatrixConfirmedSuppressedID}},
+	} {
+		has, hasNot := matching(ws.id, "has"), matching(ws.id, "doesNotHave")
+		assert.Equal(t, []int64{ws.confirmed}, has, "workspace %d", ws.id)
+		assert.Subset(t, hasNot, append([]int64{ws.clean, ws.unsubEverything}, ws.phoneless...), "workspace %d", ws.id)
+		assert.ElementsMatch(t, everyone(ws.id), append(has, hasNot...), "the complement, workspace %d", ws.id)
+	}
+
+	// Live: confirming the clean phone moves it in, opting the confirmed one out moves it out.
+	tyrell := env.DB.Scoped(fixtures.TyrellID)
+	_, err := consent.ConfirmContactSMS(ctx, env.Bus, tyrell, fixtures.TyrellMatrixCleanID,
+		consent.Evidence{Wording: "Text me offers.", Source: "test", Brand: "Tyrell"})
+	require.NoError(t, err)
+	_, err = consent.OptOutContactSMS(ctx, env.Bus, tyrell, fixtures.TyrellMatrixConfirmedID)
+	require.NoError(t, err)
+	assert.Equal(t, []int64{fixtures.TyrellMatrixCleanID}, matching(fixtures.TyrellID, "has"))
+	assert.Contains(t, matching(fixtures.TyrellID, "doesNotHave"), int64(fixtures.TyrellMatrixConfirmedID))
+
+	// Only has / doesNotHave are valid for the sms field.
+	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"sms","operator":"eq","value":""}]}`))
+	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"sms","operator":"doesNotHave"}]}`))
 }

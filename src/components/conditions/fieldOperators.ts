@@ -38,6 +38,8 @@ export const textOperators: Operator[] = [
 
 // The Telegram field: a Contact has a chat bound or does not.
 export const telegramField = 'telegram'
+// The SMS field: a Contact has a phone that can be texted (a Confirmation, no opt-out) or does not.
+export const smsField = 'sms'
 export const haveOperators: Operator[] = [
   SiteConditionOperator.HAS,
   SiteConditionOperator.DOES_NOT_HAVE,
