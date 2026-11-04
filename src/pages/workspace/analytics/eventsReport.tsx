@@ -8,12 +8,12 @@ import { RelativeTime } from '../../../components/RelativeTime.tsx'
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import { siteAnalyticsEventsOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
+import { Route as activityRoute } from '../../../routes/workspaces/$workspaceId/activity.tsx'
 import { Route as eventsRoute } from '../../../routes/workspaces/$workspaceId/analytics/events.tsx'
-import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
 
 // EventsReportPage is the Events report: every action of the section's window with how often it
-// happened, for how many Contacts and when it last did. An action opens Recent activity on it.
+// happened, for how many Contacts and when it last did. An action opens the Activity feed on it.
 export function EventsReportPage() {
   const { t } = useTranslation()
   return (
@@ -46,9 +46,9 @@ function EventsReport() {
           title: t(($) => $.analytics.events.action),
           render: (record) => (
             <AnchorLink
-              to={recentActivityRoute.to}
+              to={activityRoute.to}
               params={{ workspaceId }}
-              search={{ range, action: record.action }}
+              search={{ action: record.action }}
             >
               <EventActionName action={record.action} />
             </AnchorLink>

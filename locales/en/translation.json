@@ -58,7 +58,7 @@
     "subject": "Subject",
     "subjectId": "Subject ID",
     "time": "Time",
-    "title": "Recent activity"
+    "title": "Activity"
   },
   "alerts": {
     "automationArchiveErrorTitle": "Failed to archive automation",
@@ -162,7 +162,6 @@
       "events": "Events",
       "newPeople": "New people",
       "opensByHour": "Opens by hour",
-      "recentActivity": "Recent activity",
       "subscribedPeople": "Subscribed people"
     },
     "newPeople": {
@@ -1213,6 +1212,7 @@
     "revenue": "Revenue"
   },
   "nav": {
+    "activity": "Activity",
     "analytics": "Analytics",
     "automations": "Automations",
     "banners": "Banners",

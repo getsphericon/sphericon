@@ -12,7 +12,7 @@ function CodePicker() {
   return <TagsInput label="Events" data={actions} filter={filter} />
 }
 
-// A picker whose options carry the words, as the Recent activity filter does.
+// A picker whose options carry the words, as the Activity feed's filter does.
 function LabelPicker() {
   const filter = useEventActionFilter()
   const labelOf = useEventActionLabel()

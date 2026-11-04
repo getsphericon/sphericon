@@ -1,12 +1,12 @@
 import { expect, test } from 'vitest'
 
+import { Route as activityRoute } from '../routes/workspaces/$workspaceId/activity.tsx'
 import { Route as clicksByLinkRoute } from '../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
 import { Route as deliverabilityRoute } from '../routes/workspaces/$workspaceId/analytics/deliverability.tsx'
 import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { Route as eventsRoute } from '../routes/workspaces/$workspaceId/analytics/events.tsx'
 import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
 import { Route as opensByHourRoute } from '../routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
-import { Route as recentActivityRoute } from '../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as subscribedPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
 import { Route as automationsRoute } from '../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as brandKitRoute } from '../routes/workspaces/$workspaceId/brand-kit.tsx'
@@ -26,6 +26,7 @@ import { AppNavbar } from './AppNavbar.tsx'
 
 const SECTIONS = [
   ['Overview', overviewRoute],
+  ['Activity', activityRoute],
   ['Settings', settingsRoute],
 ] as const
 
@@ -61,7 +62,6 @@ const ANALYTICS_SECTIONS = [
   ['Opens by hour', opensByHourRoute],
   ['Deliverability', deliverabilityRoute],
   ['Events', eventsRoute],
-  ['Recent activity', recentActivityRoute],
 ] as const
 
 test.each(SECTIONS)('%s links to its workspace-scoped route', async (label, target) => {

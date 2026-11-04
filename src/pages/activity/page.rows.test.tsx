@@ -8,17 +8,17 @@ import {
   handleSiteEventsActions,
   handleSiteEventsList,
   handleSiteTagsList,
-} from '../../../generated/site/msw.gen.ts'
-import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
-import { page, TIMESTAMPS } from '../../../test/payloads.ts'
-import { problem } from '../../../test/problem.ts'
-import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
-import { routeMount } from '../../../test/routeMount.ts'
-import { worker } from '../../../test/worker.ts'
-import { RecentActivityPage } from './recentActivity.tsx'
+} from '../../generated/site/msw.gen.ts'
+import { Route as activityRoute } from '../../routes/workspaces/$workspaceId/activity.tsx'
+import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { problem } from '../../test/problem.ts'
+import { renderWithRouter } from '../../test/renderWithRouter.tsx'
+import { routeMount } from '../../test/routeMount.ts'
+import { worker } from '../../test/worker.ts'
+import { ActivityPage } from './page.tsx'
 
 const WORKSPACE_ID = 'TestWs01'
-const mount = routeMount(recentActivityRoute, { workspaceId: WORKSPACE_ID })
+const mount = routeMount(activityRoute, { workspaceId: WORKSPACE_ID })
 
 const event = (id: string, action: string, properties: Record<string, unknown>) => ({
   id,
@@ -62,7 +62,7 @@ test('a Tag change names the Tag, linked while it exists', async () => {
     event('1', 'contact.tagged', { tag: 'vip' }),
     event('2', 'contact.untagged', { tag: 'gone' }),
   )
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect.element(screen.getByRole('link', { name: '"vip"' })).toBeVisible()
   await expect.element(screen.getByRole('row', { name: /Untagged "gone"/ })).toBeVisible()
@@ -74,7 +74,7 @@ test('a Custom field change names the field by its name, and a clear says so', a
     event('1', 'contact.field_changed', { key: 'plan', value: 'pro' }),
     event('2', 'contact.field_changed', { key: 'plan' }),
   )
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect.element(screen.getByText('Set Plan to "pro"')).toBeVisible()
   await expect.element(screen.getByText('Cleared Plan')).toBeVisible()
@@ -82,7 +82,7 @@ test('a Custom field change names the field by its name, and a clear says so', a
 
 test('a Custom field no longer defined is named by its key, its value as JSON', async () => {
   serve(event('1', 'contact.field_changed', { key: 'seats', value: 4 }))
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect.element(screen.getByText('Set seats to "4"')).toBeVisible()
 })
@@ -94,7 +94,7 @@ test('an Enrollment names its Automation, and one that is gone by the words of i
     event('3', 'automation.enrolled', { automationId: 7 }),
     event('4', 'automation.completed', { automationId: 7 }),
   )
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   const linked = (row: RegExp) =>
     screen.getByRole('row', { name: row }).getByRole('link', { name: '"Onboarding"' })
@@ -109,7 +109,7 @@ test('a page view names the page by its title, the path when it has none', async
     event('1', 'page.view', { title: 'Pricing', path: '/pricing', url: 'https://x.test/pricing' }),
     event('2', 'page.view', { path: '/docs' }),
   )
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect.element(screen.getByText('Visited "Pricing"')).toBeVisible()
   await expect.element(screen.getByText('Visited "/docs"')).toBeVisible()
@@ -157,7 +157,7 @@ test('an email Event names the email by its subject, linked to the Broadcast whi
     emailEvent('4', 'email.unsubscribed', { broadcastId: 5 }),
     emailEvent('5', 'email.complained', { broadcastId: 5 }),
   )
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect
     .element(
@@ -194,7 +194,7 @@ test('a click names its link without the scheme, the whole one on hover, and the
       url: 'https://hexlet.io/courses/python/lessons/loops-and-conditions?utm=mail',
     }),
   )
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect
     .element(
@@ -216,7 +216,7 @@ test('a bounce says whether it was hard or soft', async () => {
     emailEvent('1', 'email.bounced', { broadcastId: 5, bounceKind: 'hard' }),
     emailEvent('2', 'email.bounced', { broadcastId: 5, bounceKind: 'soft' }),
   )
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect
     .element(screen.getByRole('row', { name: /Bounced \(hard\): "Welcome to Hexlet"/ }))
@@ -232,7 +232,7 @@ test('an email Event whose message kept no subject shows the words of its action
     subjectless('2', 'email.clicked', { broadcastId: 5, url: 'https://hexlet.io/courses' }),
     subjectless('3', 'email.bounced', { broadcastId: 5, bounceKind: 'hard' }),
   )
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect.element(screen.getByText('Opened an email')).toBeVisible()
   await expect.element(screen.getByText('Clicked a link in an email')).toBeVisible()
@@ -246,7 +246,7 @@ test('an Event without what its row names shows the words of its action', async 
     event('3', 'automation.enrolled', {}),
     event('4', 'page.view', { title: null }),
   )
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect.element(screen.getByText('Was tagged')).toBeVisible()
   await expect.element(screen.getByText('Had a custom field changed')).toBeVisible()

@@ -39,6 +39,7 @@ import { Route as ConsoleAuthedIndexRouteImport } from './routes/console/_authed
 import { Route as ConsoleAuthedEnterpriseRouteRouteImport } from './routes/console/_authed/_enterprise/route'
 import { Route as ConsoleAuthedInstanceRouteImport } from './routes/console/_authed/instance'
 import { Route as WorkspacesWorkspaceIdIndexRouteImport } from './routes/workspaces/$workspaceId/index'
+import { Route as WorkspacesWorkspaceIdActivityRouteImport } from './routes/workspaces/$workspaceId/activity'
 import { Route as WorkspacesWorkspaceIdAnalyticsRouteRouteImport } from './routes/workspaces/$workspaceId/analytics/route'
 import { Route as WorkspacesWorkspaceIdBrandKitRouteImport } from './routes/workspaces/$workspaceId/brand-kit'
 import { Route as WorkspacesWorkspaceIdSettingsRouteRouteImport } from './routes/workspaces/$workspaceId/settings/route'
@@ -51,7 +52,6 @@ import { Route as WorkspacesWorkspaceIdAnalyticsEmailMetricsRouteImport } from '
 import { Route as WorkspacesWorkspaceIdAnalyticsEventsRouteImport } from './routes/workspaces/$workspaceId/analytics/events'
 import { Route as WorkspacesWorkspaceIdAnalyticsNewPeopleRouteImport } from './routes/workspaces/$workspaceId/analytics/new-people'
 import { Route as WorkspacesWorkspaceIdAnalyticsOpensByHourRouteImport } from './routes/workspaces/$workspaceId/analytics/opens-by-hour'
-import { Route as WorkspacesWorkspaceIdAnalyticsRecentActivityRouteImport } from './routes/workspaces/$workspaceId/analytics/recent-activity'
 import { Route as WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRouteImport } from './routes/workspaces/$workspaceId/analytics/subscribed-people'
 import { Route as WorkspacesWorkspaceIdAutomationsIndexRouteImport } from './routes/workspaces/$workspaceId/automations/index'
 import { Route as WorkspacesWorkspaceIdBroadcastsIndexRouteImport } from './routes/workspaces/$workspaceId/broadcasts/index'
@@ -269,6 +269,16 @@ const WorkspacesWorkspaceIdIndexRoute =
   } as any).lazy(() =>
     import('./routes/workspaces/$workspaceId/index.lazy').then((d) => d.Route),
   )
+const WorkspacesWorkspaceIdActivityRoute =
+  WorkspacesWorkspaceIdActivityRouteImport.update({
+    id: '/activity',
+    path: '/activity',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/activity.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdAnalyticsRouteRoute =
   WorkspacesWorkspaceIdAnalyticsRouteRouteImport.update({
     id: '/analytics',
@@ -378,16 +388,6 @@ const WorkspacesWorkspaceIdAnalyticsOpensByHourRoute =
     getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
   } as any).lazy(() =>
     import('./routes/workspaces/$workspaceId/analytics/opens-by-hour.lazy').then(
-      (d) => d.Route,
-    ),
-  )
-const WorkspacesWorkspaceIdAnalyticsRecentActivityRoute =
-  WorkspacesWorkspaceIdAnalyticsRecentActivityRouteImport.update({
-    id: '/recent-activity',
-    path: '/recent-activity',
-    getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
-  } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/analytics/recent-activity.lazy').then(
       (d) => d.Route,
     ),
   )
@@ -811,6 +811,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRouteRouteWithChildren
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
   '/console/instance': typeof ConsoleAuthedInstanceRoute
+  '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/console/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
@@ -821,7 +822,6 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/analytics/events': typeof WorkspacesWorkspaceIdAnalyticsEventsRoute
   '/workspaces/$workspaceId/analytics/new-people': typeof WorkspacesWorkspaceIdAnalyticsNewPeopleRoute
   '/workspaces/$workspaceId/analytics/opens-by-hour': typeof WorkspacesWorkspaceIdAnalyticsOpensByHourRoute
-  '/workspaces/$workspaceId/analytics/recent-activity': typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
   '/workspaces/$workspaceId/analytics/subscribed-people': typeof WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
@@ -889,6 +889,7 @@ export interface FileRoutesByTo {
   '/workspaces/new': typeof WorkspacesNewRoute
   '/account': typeof AccountIndexRoute
   '/console/instance': typeof ConsoleAuthedInstanceRoute
+  '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/signup-items/$itemId': typeof ConsoleAuthedSignupItemsItemIdRoute
@@ -898,7 +899,6 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/analytics/events': typeof WorkspacesWorkspaceIdAnalyticsEventsRoute
   '/workspaces/$workspaceId/analytics/new-people': typeof WorkspacesWorkspaceIdAnalyticsNewPeopleRoute
   '/workspaces/$workspaceId/analytics/opens-by-hour': typeof WorkspacesWorkspaceIdAnalyticsOpensByHourRoute
-  '/workspaces/$workspaceId/analytics/recent-activity': typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
   '/workspaces/$workspaceId/analytics/subscribed-people': typeof WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
@@ -973,6 +973,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRouteRouteWithChildren
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
   '/console/_authed/instance': typeof ConsoleAuthedInstanceRoute
+  '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/console/_authed/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
@@ -983,7 +984,6 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/analytics/events': typeof WorkspacesWorkspaceIdAnalyticsEventsRoute
   '/workspaces/$workspaceId/analytics/new-people': typeof WorkspacesWorkspaceIdAnalyticsNewPeopleRoute
   '/workspaces/$workspaceId/analytics/opens-by-hour': typeof WorkspacesWorkspaceIdAnalyticsOpensByHourRoute
-  '/workspaces/$workspaceId/analytics/recent-activity': typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
   '/workspaces/$workspaceId/analytics/subscribed-people': typeof WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
@@ -1057,6 +1057,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/analytics'
     | '/workspaces/$workspaceId/settings'
     | '/console/instance'
+    | '/workspaces/$workspaceId/activity'
     | '/workspaces/$workspaceId/brand-kit'
     | '/console/'
     | '/workspaces/$workspaceId/'
@@ -1067,7 +1068,6 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/analytics/events'
     | '/workspaces/$workspaceId/analytics/new-people'
     | '/workspaces/$workspaceId/analytics/opens-by-hour'
-    | '/workspaces/$workspaceId/analytics/recent-activity'
     | '/workspaces/$workspaceId/analytics/subscribed-people'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/rules/new'
@@ -1135,6 +1135,7 @@ export interface FileRouteTypes {
     | '/workspaces/new'
     | '/account'
     | '/console/instance'
+    | '/workspaces/$workspaceId/activity'
     | '/workspaces/$workspaceId/brand-kit'
     | '/workspaces/$workspaceId'
     | '/console/signup-items/$itemId'
@@ -1144,7 +1145,6 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/analytics/events'
     | '/workspaces/$workspaceId/analytics/new-people'
     | '/workspaces/$workspaceId/analytics/opens-by-hour'
-    | '/workspaces/$workspaceId/analytics/recent-activity'
     | '/workspaces/$workspaceId/analytics/subscribed-people'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/rules/new'
@@ -1218,6 +1218,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/analytics'
     | '/workspaces/$workspaceId/settings'
     | '/console/_authed/instance'
+    | '/workspaces/$workspaceId/activity'
     | '/workspaces/$workspaceId/brand-kit'
     | '/console/_authed/'
     | '/workspaces/$workspaceId/'
@@ -1228,7 +1229,6 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/analytics/events'
     | '/workspaces/$workspaceId/analytics/new-people'
     | '/workspaces/$workspaceId/analytics/opens-by-hour'
-    | '/workspaces/$workspaceId/analytics/recent-activity'
     | '/workspaces/$workspaceId/analytics/subscribed-people'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/rules/new'
@@ -1509,6 +1509,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdIndexRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
+    '/workspaces/$workspaceId/activity': {
+      id: '/workspaces/$workspaceId/activity'
+      path: '/activity'
+      fullPath: '/workspaces/$workspaceId/activity'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdActivityRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
     '/workspaces/$workspaceId/analytics': {
       id: '/workspaces/$workspaceId/analytics'
       path: '/analytics'
@@ -1591,13 +1598,6 @@ declare module '@tanstack/react-router' {
       path: '/opens-by-hour'
       fullPath: '/workspaces/$workspaceId/analytics/opens-by-hour'
       preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsOpensByHourRouteImport
-      parentRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteRoute
-    }
-    '/workspaces/$workspaceId/analytics/recent-activity': {
-      id: '/workspaces/$workspaceId/analytics/recent-activity'
-      path: '/recent-activity'
-      fullPath: '/workspaces/$workspaceId/analytics/recent-activity'
-      preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteRoute
     }
     '/workspaces/$workspaceId/analytics/subscribed-people': {
@@ -1949,7 +1949,6 @@ interface WorkspacesWorkspaceIdAnalyticsRouteRouteChildren {
   WorkspacesWorkspaceIdAnalyticsEventsRoute: typeof WorkspacesWorkspaceIdAnalyticsEventsRoute
   WorkspacesWorkspaceIdAnalyticsNewPeopleRoute: typeof WorkspacesWorkspaceIdAnalyticsNewPeopleRoute
   WorkspacesWorkspaceIdAnalyticsOpensByHourRoute: typeof WorkspacesWorkspaceIdAnalyticsOpensByHourRoute
-  WorkspacesWorkspaceIdAnalyticsRecentActivityRoute: typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
   WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute: typeof WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute
   WorkspacesWorkspaceIdAnalyticsIndexRoute: typeof WorkspacesWorkspaceIdAnalyticsIndexRoute
 }
@@ -1968,8 +1967,6 @@ const WorkspacesWorkspaceIdAnalyticsRouteRouteChildren: WorkspacesWorkspaceIdAna
       WorkspacesWorkspaceIdAnalyticsNewPeopleRoute,
     WorkspacesWorkspaceIdAnalyticsOpensByHourRoute:
       WorkspacesWorkspaceIdAnalyticsOpensByHourRoute,
-    WorkspacesWorkspaceIdAnalyticsRecentActivityRoute:
-      WorkspacesWorkspaceIdAnalyticsRecentActivityRoute,
     WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute:
       WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute,
     WorkspacesWorkspaceIdAnalyticsIndexRoute:
@@ -2023,6 +2020,7 @@ const WorkspacesWorkspaceIdSettingsRouteRouteWithChildren =
 interface WorkspacesWorkspaceIdRouteRouteChildren {
   WorkspacesWorkspaceIdAnalyticsRouteRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteRouteWithChildren
   WorkspacesWorkspaceIdSettingsRouteRoute: typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
+  WorkspacesWorkspaceIdActivityRoute: typeof WorkspacesWorkspaceIdActivityRoute
   WorkspacesWorkspaceIdBrandKitRoute: typeof WorkspacesWorkspaceIdBrandKitRoute
   WorkspacesWorkspaceIdIndexRoute: typeof WorkspacesWorkspaceIdIndexRoute
   WorkspacesWorkspaceIdBroadcastsNewRoute: typeof WorkspacesWorkspaceIdBroadcastsNewRoute
@@ -2060,6 +2058,7 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
       WorkspacesWorkspaceIdAnalyticsRouteRouteWithChildren,
     WorkspacesWorkspaceIdSettingsRouteRoute:
       WorkspacesWorkspaceIdSettingsRouteRouteWithChildren,
+    WorkspacesWorkspaceIdActivityRoute: WorkspacesWorkspaceIdActivityRoute,
     WorkspacesWorkspaceIdBrandKitRoute: WorkspacesWorkspaceIdBrandKitRoute,
     WorkspacesWorkspaceIdIndexRoute: WorkspacesWorkspaceIdIndexRoute,
     WorkspacesWorkspaceIdBroadcastsNewRoute:

@@ -4,39 +4,38 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../../components/ApiErrorAlert.tsx'
-import { EventActionOption } from '../../../components/EventActionName.tsx'
-import { DetailedEventRowDetails } from '../../../components/EventRowDetails.tsx'
-import { EventSummary } from '../../../components/EventSummary.tsx'
-import { RelativeTime } from '../../../components/RelativeTime.tsx'
-import { TableSkeleton } from '../../../components/Skeletons.tsx'
+import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { EventActionOption } from '../../components/EventActionName.tsx'
+import { DetailedEventRowDetails } from '../../components/EventRowDetails.tsx'
+import { EventSummary } from '../../components/EventSummary.tsx'
+import { RelativeTime } from '../../components/RelativeTime.tsx'
+import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteEventsActionsOptions,
   siteEventsListOptions,
-} from '../../../generated/site/@tanstack/react-query.gen.ts'
-import { useEventActionFilter, useEventActionLabel } from '../../../hooks/useEventActionLabel.ts'
-import { usePaginationText } from '../../../hooks/usePaginationText.ts'
-import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
-import { Route as workspaceRoute } from '../../../routes/workspaces/$workspaceId/route.tsx'
-import { withPage } from '../../../searchSchemas.ts'
+} from '../../generated/site/@tanstack/react-query.gen.ts'
+import { useEventActionFilter, useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
+import { usePaginationText } from '../../hooks/usePaginationText.ts'
+import { Route as activityRoute } from '../../routes/workspaces/$workspaceId/activity.tsx'
+import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
+import { withPage } from '../../searchSchemas.ts'
 
 const PAGE_SIZE = 25
 const LIVE_REFETCH_MS = 5000
 
-// RecentActivityPage is a read-only feed of the workspace's tracking events, most
+// ActivityPage is a read-only feed of the workspace's tracking events, most
 // recent first. Live mode polls so newly tracked events surface without a
 // manual reload — the primary way to verify that tracking works.
-export function RecentActivityPage() {
+export function ActivityPage() {
   const { t } = useTranslation()
   const paginationText = usePaginationText()
   const actionFilter = useEventActionFilter()
   const { workspaceId } = workspaceRoute.useParams()
   const [live, setLive] = useState(true)
   const labelOf = useEventActionLabel()
-  // The filter and the page are the URL's; another filter starts on its first page, and the
-  // analytics window rides along.
-  const { action = '', page = 1 } = recentActivityRoute.useSearch()
-  const navigate = recentActivityRoute.useNavigate()
+  // The filter and the page are the URL's; another filter starts on its first page.
+  const { action = '', page = 1 } = activityRoute.useSearch()
+  const navigate = activityRoute.useNavigate()
   const applyAction = (next: string | null) =>
     void navigate({
       search: (prev) => ({ ...prev, action: next ?? undefined, page: undefined }),
