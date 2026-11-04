@@ -242,6 +242,113 @@ test('every kind of item is a sentence, with a link where there is somewhere to 
     .toBeInTheDocument()
 })
 
+test('items of one kind are one sentence that names them all, with one link', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          { kind: 'webhookDisabled', severity: 'notice', ...about('1', 'https://a.test/x') },
+          { kind: 'sendingDomainNotBulkReady', severity: 'notice', ...about('2', 'mail.acme.com') },
+          { kind: 'webhookDisabled', severity: 'notice', ...about('3', 'https://b.test/y') },
+          { kind: 'sendingDomainNotBulkReady', severity: 'notice', ...about('4', 'news.acme.com') },
+          { kind: 'sendingDomainNotBulkReady', severity: 'notice', ...about('5', 'shop.acme.com') },
+          { kind: 'sendingDomainNotBulkReady', severity: 'notice', ...about('6', 'help.acme.com') },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByText('2 webhooks disabled themselves after failing deliveries.'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('https://a.test/x, https://b.test/y')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/4 sending domains have no published DMARC record/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByText('mail.acme.com, news.acme.com, shop.acme.com and 1 more'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('link', { name: 'Open webhooks' })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open email settings' }))
+    .toBeInTheDocument()
+})
+
+test('items of a kind that carries its own figures are never grouped', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          {
+            kind: 'deliverabilityWarning',
+            severity: 'degraded',
+            count: 1,
+            abuse: { domain: 'a.test', metric: 'bounce', rate: 0.05 },
+          },
+          {
+            kind: 'deliverabilityWarning',
+            severity: 'degraded',
+            count: 1,
+            abuse: { domain: 'b.test', metric: 'complaint', rate: 0.002 },
+          },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText(/bounce rate on a.test is 5%/)).toBeInTheDocument()
+  await expect.element(screen.getByText(/complaint rate on b.test is 0.2%/)).toBeInTheDocument()
+})
+
+test('grouped broadcasts link each by its name, and differ by what holds them', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          {
+            kind: 'broadcastHeld',
+            severity: 'blocked',
+            ...about('12', 'Spring launch'),
+            holdReason: 'unverified_domain',
+          },
+          {
+            kind: 'broadcastHeld',
+            severity: 'blocked',
+            ...about('13', 'Summer launch'),
+            holdReason: 'unverified_domain',
+          },
+          {
+            kind: 'broadcastHeld',
+            severity: 'blocked',
+            ...about('14', 'Autumn launch'),
+            holdReason: 'no_integration',
+          },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByText(/2 broadcasts are on hold. The sender domain is not verified/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Spring launch' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/12/report')
+  await expect
+    .element(screen.getByRole('link', { name: 'Summer launch' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/13/report')
+  await expect.element(screen.getByText(/Autumn launch is on hold/)).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open the broadcast' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/14/report')
+})
+
 test('a held broadcast says what lifts the hold', async () => {
   worker.use(
     handleSiteAttentionGet({

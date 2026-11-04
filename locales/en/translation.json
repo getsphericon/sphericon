@@ -1332,6 +1332,30 @@
         "suppressions": "Review suppressions",
         "webhooks": "Open webhooks"
       },
+      "groups": {
+        "automationCannotSend_one": "{{count, number}} automation cannot send its emails: each one waits until this is fixed. {{reason}}",
+        "automationCannotSend_other": "{{count, number}} automations cannot send their emails: each one waits until this is fixed. {{reason}}",
+        "broadcastFailed_one": "{{count, number}} broadcast failed to send.",
+        "broadcastFailed_other": "{{count, number}} broadcasts failed to send.",
+        "broadcastHeld_one": "{{count, number}} broadcast is on hold. {{reason}}",
+        "broadcastHeld_other": "{{count, number}} broadcasts are on hold. {{reason}}",
+        "integrationProviderProbation_one": "Your provider has put the account behind {{count, number}} integration under review. It still sends: keep bounces and complaints low.",
+        "integrationProviderProbation_other": "Your providers have put the accounts behind {{count, number}} integrations under review. They still send: keep bounces and complaints low.",
+        "integrationProviderRefused_one": "The credentials of {{count, number}} integration were refused by its provider: nothing sends through it until it is saved again with working ones.",
+        "integrationProviderRefused_other": "The credentials of {{count, number}} integrations were refused by their providers: nothing sends through them until each is saved again with working ones.",
+        "integrationProviderSandbox_one": "{{count, number}} integration is in its provider's sandbox: it sends only to addresses verified with the provider.",
+        "integrationProviderSandbox_other": "{{count, number}} integrations are in their provider's sandbox: they send only to addresses verified with the provider.",
+        "integrationProviderStopped_one": "Your provider has stopped the account behind {{count, number}} integration: nothing sends through it until the provider reinstates it.",
+        "integrationProviderStopped_other": "Your providers have stopped the accounts behind {{count, number}} integrations: nothing sends through them until they are reinstated.",
+        "providerLimitSpent_one": "{{count, number}} integration has sent its daily limit: the rest goes out as the limit refills.",
+        "providerLimitSpent_other": "{{count, number}} integrations have sent their daily limits: the rest goes out as the limits refill.",
+        "sendingDomainNotBulkReady_one": "{{count, number}} sending domain has no published DMARC record: Gmail and Yahoo reject or spam-folder bulk mail from it. Publish the suggested DMARC record, then verify the domain again.",
+        "sendingDomainNotBulkReady_other": "{{count, number}} sending domains have no published DMARC record: Gmail and Yahoo reject or spam-folder bulk mail from them. Publish the suggested DMARC records, then verify the domains again.",
+        "sendingDomainVerificationLost_one": "The DKIM record of {{count, number}} sending domain is gone: mail from it is held until the domain verifies again.",
+        "sendingDomainVerificationLost_other": "The DKIM records of {{count, number}} sending domains are gone: mail from them is held until they verify again.",
+        "webhookDisabled_one": "{{count, number}} webhook disabled itself after failing deliveries.",
+        "webhookDisabled_other": "{{count, number}} webhooks disabled themselves after failing deliveries."
+      },
       "kinds": {
         "automationCannotSend": "{{name}} cannot send its emails: each one waits until this is fixed. {{reason}}",
         "broadcastFailed": "{{name}} failed to send.",
@@ -1356,6 +1380,8 @@
         "bounce": "bounce",
         "complaint": "complaint"
       },
+      "more_one": "and {{count, number}} more",
+      "more_other": "and {{count, number}} more",
       "title": "Needs attention"
     },
     "audience": {
