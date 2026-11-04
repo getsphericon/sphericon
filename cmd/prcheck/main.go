@@ -1,5 +1,5 @@
 // Command prcheck runs the pull request body checks (internal/prcheck) in CI: the body comes from
-// PR_BODY and the diff of the markers check from stdin.
+// SPHERICON_PR_BODY and the diff of the markers check from stdin.
 package main
 
 import (
@@ -11,12 +11,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/prcheck"
 )
 
-const usage = `usage: the body is the PR_BODY environment variable
+const usage = `usage: the body is the SPHERICON_PR_BODY environment variable
   prcheck disclosure
   git diff --unified=0 BASE...HEAD | prcheck markers`
 
 func main() {
-	if err := run(os.Args[1:], os.Getenv("PR_BODY"), os.Stdin); err != nil {
+	if err := run(os.Args[1:], os.Getenv("SPHERICON_PR_BODY"), os.Stdin); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}

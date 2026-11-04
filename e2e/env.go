@@ -63,7 +63,7 @@ const SystemSenderFrom = "noreply@sphericon.e2e.test"
 
 // Boot starts Mailpit and the full application (event router, job queue, HTTP server)
 // on a free loopback port and returns the Env with a stop function. The database named
-// by DATABASE_URL must already be migrated (the e2e task does that on a fresh one).
+// by SPHERICON_DATABASE_URL must already be migrated (the e2e task does that on a fresh one).
 func Boot() (*Env, func(), error) {
 	ctx := context.Background()
 	mp, stopMailpit, err := StartMailpit(ctx)

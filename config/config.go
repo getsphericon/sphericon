@@ -87,7 +87,7 @@ type DBPool struct {
 	// RiverMaxConns bounds river's own queries (fetch, completion, leader election); job
 	// workers use the database/sql pool, so it need not match river's MaxWorkers sum. The
 	// LISTEN connection river is told of new jobs on is one more, outside this bound
-	// (db.OpenRiverListener). LISTEN needs a session of its own: behind PgBouncer, DATABASE_URL
+	// (db.OpenRiverListener). LISTEN needs a session of its own: behind PgBouncer, SPHERICON_DATABASE_URL
 	// must reach Postgres directly or a pool in session mode, never transaction mode.
 	RiverMaxConns int32
 }
@@ -323,7 +323,7 @@ type environment struct {
 	// `sslmode=verify-full` with `sslrootcert` also verifies the server's certificate. The job queue
 	// LISTENs for new jobs on a session of its own: behind PgBouncer, it must reach Postgres directly
 	// or a pool in session mode, never transaction mode.
-	DatabaseURL string `env:"DATABASE_URL,required,notEmpty"`
+	DatabaseURL string `env:"SPHERICON_DATABASE_URL,required,notEmpty"`
 	// The port the public HTTP server listens on, on every interface.
 	Port string `env:"PORT" envDefault:"3000"`
 	// The public origin of the Instance, `https://` in production: sessions, mailed links and
@@ -831,7 +831,7 @@ func readEnvFiles(files []string) (map[string]string, error) {
 // and `sphericon doctor` redacts each value from everything it prints. This is the one list of
 // them; TestEverySecretVariableIsRedacted fails when a secret-looking variable is missing.
 var secretVariables = []string{
-	"DATABASE_URL",
+	"SPHERICON_DATABASE_URL",
 	"SPHERICON_JWT_SECRET",
 	"SPHERICON_JWT_SECRET_SECONDARY",
 	"SPHERICON_STAFF_JWT_SECRET",
@@ -1146,7 +1146,7 @@ func envFiles(rootDir, envName string) []string {
 
 // SecretValues lists every secret value of the process: the ones the configuration read (none
 // when cfg is nil, a load that failed) and the ones still in the environment, plus the password
-// inside DATABASE_URL, raw and as the URL spells it. `sphericon doctor` redacts them from
+// inside SPHERICON_DATABASE_URL, raw and as the URL spells it. `sphericon doctor` redacts them from
 // everything it prints.
 func SecretValues(cfg *Config) []string {
 	var values []string

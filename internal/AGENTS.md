@@ -20,7 +20,7 @@ a worker called directly. A test that needs a **real commit** (code that opens i
 the outbox router, concurrent workers, a lock one transaction holds against another, a statement
 that fails and must not abort the rest, a whole `app.App`, a river runtime) cannot ride one. It takes
 a database of its own instead: `testhelper.RealDB(t)` (a `*sql.DB`), `RealDBURL(t)` (a URL, e.g.
-`t.Setenv("DATABASE_URL", ...)` for an app) or `EmptyDBURL(t)` (no schema, to migrate a fresh
+`t.Setenv("SPHERICON_DATABASE_URL", ...)` for an app) or `EmptyDBURL(t)` (no schema, to migrate a fresh
 instance). `RealDB` is a clone of a second database the process leases and loads with the fixtures
 at the same moment as `Setup`'s, so both see the same rows with the same relative dates; the clone
 is dropped when the test ends, so no test cleans up by hand or resets state at its start. A test
@@ -34,7 +34,7 @@ start (more on a busy machine), so `testhelper.Renderer()`, the renderer of `Set
 test builds itself (`templates.New(testhelper.Renderer())`), runs our own checks and fakes the
 editor's schema check and export: the body is the document's text as paragraphs. A test of what the
 export makes of a document takes `testhelper.RealRenderer()`, and asserts the brand or the markup
-only there. The nightly run sets `TEST_EMAIL_RENDERER=goja`, which makes `Renderer` the real one.
+only there. The nightly run sets `SPHERICON_TEST_EMAIL_RENDERER=goja`, which makes `Renderer` the real one.
 
 **Build test scenarios on the committed fixtures (review rules 10 and 11).** Reference fixture rows through the catalog constants below
 (`fixtures.BroadcastDraftID`, `fixtures.ContactAliceID`, `fixtures.SegmentActiveID`, …),

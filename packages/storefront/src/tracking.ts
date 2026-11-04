@@ -4,12 +4,12 @@ import type { DataRouter, Location } from 'react-router'
 import { ENROLL_PATH } from '../server/enroll.ts'
 import type { EnrollRequest } from '../server/enroll.ts'
 
-// The tracker posts to the `collect.` host (COLLECT_HOST), not to the `api.` host: Caddy rewrites
+// The tracker posts to the `collect.` host (SPHERICON_COLLECT_HOST), not to the `api.` host: Caddy rewrites
 // every path there to /api/*, so /collect would resolve to /api/collect.
 export function startTracking(): void {
   initTracking({
-    collectKey: import.meta.env.DEMO_COLLECT_KEY,
-    baseUrl: import.meta.env.DEMO_COLLECT_URL,
+    collectKey: import.meta.env.SPHERICON_DEMO_COLLECT_KEY,
+    baseUrl: import.meta.env.SPHERICON_DEMO_COLLECT_URL,
   })
 }
 

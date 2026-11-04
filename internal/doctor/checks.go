@@ -34,7 +34,7 @@ func checkDatabase(ctx context.Context, r *Report, in Input) {
 			detail = in.DBErr.Error()
 		}
 		r.add("database", Fail, "cannot reach the database: "+detail,
-			"Check DATABASE_URL (host, port, user, password, database name) and that Postgres accepts connections from this machine.")
+			"Check SPHERICON_DATABASE_URL (host, port, user, password, database name) and that Postgres accepts connections from this machine.")
 		r.add("postgres version", Fail, "not checked: the database is unreachable", "Fix the database check above first.")
 		return
 	}
@@ -42,14 +42,14 @@ func checkDatabase(ctx context.Context, r *Report, in Input) {
 	st, err := appdb.Status(ctx, in.DB)
 	if err != nil {
 		r.add("database", Fail, "cannot read the schema: "+err.Error(),
-			"Check DATABASE_URL and that the user may read the schema; on a new database run `sphericon migrate`.")
+			"Check SPHERICON_DATABASE_URL and that the user may read the schema; on a new database run `sphericon migrate`.")
 	} else {
 		checkSchema(ctx, r, in, st)
 	}
 
 	major, err := postgres.ServerMajor(ctx, in.DB)
 	if err != nil {
-		r.add("postgres version", Fail, "cannot read the server version: "+err.Error(), "Check DATABASE_URL.")
+		r.add("postgres version", Fail, "cannot read the server version: "+err.Error(), "Check SPHERICON_DATABASE_URL.")
 		return
 	}
 	switch {

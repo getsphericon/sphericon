@@ -1,4 +1,4 @@
-// The dev Caddy listens on CADDY_PORT and CADDY_HTTP_PORT: 443 and 80 in the primary checkout.
+// The dev Caddy listens on CADDY_PORT and SPHERICON_CADDY_HTTP_PORT: 443 and 80 in the primary checkout.
 // Linux lets an unprivileged process bind a port only from net.ipv4.ip_unprivileged_port_start
 // up (1024 by default), so there Caddy fails with `bind: permission denied`, which only its
 // daemon log shows. This stops `mise run dev` first and says what to do. macOS has no such limit.
@@ -10,7 +10,7 @@ if (process.platform !== 'linux') {
 }
 
 const caddyPort = Number(process.env.CADDY_PORT)
-const caddyHttpPort = Number(process.env.CADDY_HTTP_PORT)
+const caddyHttpPort = Number(process.env.SPHERICON_CADDY_HTTP_PORT)
 const lowest = Math.min(caddyPort, caddyHttpPort)
 
 function unprivilegedStart(): number {

@@ -95,9 +95,9 @@ jobs:
       contents: read
       packages: write
     env:
-      TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
-      REGISTRY_USER: ${{ github.actor }}
-      REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SPHERICON_TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+      SPHERICON_REGISTRY_USER: ${{ github.actor }}
+      SPHERICON_REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -108,5 +108,5 @@ jobs:
           cache: false
       - name: Publish the chart
         run: |
-          printf '%s' "$REGISTRY_TOKEN" | helm registry login ghcr.io --username "$REGISTRY_USER" --password-stdin
-          mise run release:chart -- "${TAG_NAME#v}" oci://ghcr.io/getsphericon/charts
+          printf '%s' "$SPHERICON_REGISTRY_TOKEN" | helm registry login ghcr.io --username "$SPHERICON_REGISTRY_USER" --password-stdin
+          mise run release:chart -- "${SPHERICON_TAG_NAME#v}" oci://ghcr.io/getsphericon/charts

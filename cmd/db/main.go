@@ -60,14 +60,14 @@ func newRoot() *cli.Command {
 				ArgsUsage: "<migration-name>",
 				Arguments: []cli.Argument{&cli.StringArg{Name: "name", Required: true}},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return devdb.GenerateMigration(ctx, "migrations", os.Getenv("DIFF_DB_URL"), cmd.StringArg("name"))
+					return devdb.GenerateMigration(ctx, "migrations", os.Getenv("SPHERICON_DIFF_DATABASE_URL"), cmd.StringArg("name"))
 				},
 			},
 		},
 	}
 }
 
-// onDatabase runs task on the database DATABASE_URL of this environment points at and logs what
+// onDatabase runs task on the database SPHERICON_DATABASE_URL of this environment points at and logs what
 // it did.
 func onDatabase(ctx context.Context, task func(ctx context.Context, databaseURL string) (string, error)) error {
 	envName := os.Getenv("SPHERICON_ENV")

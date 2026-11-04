@@ -36,7 +36,7 @@ func TestConfigLoadModeIsSelfHostedUnlessSaaS(t *testing.T) {
 }
 
 func TestConfigLoadModeDecidesWhatDiffers(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_MODE", "")
 
 	selfHosted, err := config.Load("test")
@@ -56,7 +56,7 @@ func TestConfigLoadModeDecidesWhatDiffers(t *testing.T) {
 }
 
 func TestConfigLoadSaaSRequiresWhatOnlyADeploymentGives(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_MODE", "saas")
 	t.Setenv("PORT", "3000")
 	t.Setenv("SPHERICON_METRICS_ADDR", "")
@@ -82,7 +82,7 @@ func TestConfigLoadSaaSRequiresWhatOnlyADeploymentGives(t *testing.T) {
 }
 
 func TestConfigLoadSentryDSNIsOffUnlessSet(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_SENTRY_DSN", "")
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
@@ -104,7 +104,7 @@ type jwtSecretCase struct {
 // own .env: the mode is pinned, as it decides what else a valid config needs.
 func loadWithJWTSecret(t *testing.T, tc jwtSecretCase) error {
 	t.Helper()
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_MODE", "selfhosted")
 	t.Setenv("SPHERICON_JWT_SECRET", tc.jwtSecret)
 	_, err := config.Load(tc.env)
@@ -165,7 +165,7 @@ func TestConfigTrackerOrigin(t *testing.T) {
 }
 
 func TestConfigLoadDBPoolDefaults(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	want := config.DBPool{MaxOpenConns: 15, MaxIdleConns: 15, ConnMaxLifetime: 30 * time.Minute, RiverMaxConns: 25}
@@ -173,7 +173,7 @@ func TestConfigLoadDBPoolDefaults(t *testing.T) {
 }
 
 func TestConfigLoadDBPoolFromEnv(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_DB_MAX_OPEN_CONNS", "7")
 	t.Setenv("SPHERICON_DB_MAX_IDLE_CONNS", "3")
 	t.Setenv("SPHERICON_DB_CONN_MAX_LIFETIME", "5m")
@@ -185,7 +185,7 @@ func TestConfigLoadDBPoolFromEnv(t *testing.T) {
 }
 
 func TestConfigLoadDBPoolIdleFollowsOpen(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_DB_MAX_OPEN_CONNS", "9")
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
@@ -200,7 +200,7 @@ func TestConfigLoadDBPoolRejectsInvalid(t *testing.T) {
 		"zero river":    {"SPHERICON_RIVER_DB_MAX_CONNS": "0"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			t.Setenv("DATABASE_URL", "postgres://x")
+			t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 			for k, v := range env {
 				t.Setenv(k, v)
 			}
@@ -211,14 +211,14 @@ func TestConfigLoadDBPoolRejectsInvalid(t *testing.T) {
 }
 
 func TestConfigLoadBodyLimitDefaults(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	require.Equalf(t, (config.BodyLimits{Default: 1 << 20, Collect: 500 << 10, CollectEvent: 32 << 10}), cfg.BodyLimits, "defaults = %+v", cfg.BodyLimits)
 }
 
 func TestConfigLoadOutboxFloor(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	require.Equalf(t, 7*24*time.Hour, cfg.OutboxFloor, "default OutboxFloor = %v, want 7 days", cfg.OutboxFloor)
@@ -234,7 +234,7 @@ func TestConfigLoadOutboxFloor(t *testing.T) {
 }
 
 func TestConfigLoadEventsRetention(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	require.Equalf(t, 400*24*time.Hour, cfg.EventsRetention, "default EventsRetention = %v, want 400 days", cfg.EventsRetention)
@@ -250,7 +250,7 @@ func TestConfigLoadEventsRetention(t *testing.T) {
 }
 
 func TestConfigLoadUnverifiedUserRetention(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	require.Equalf(t, 7*24*time.Hour, cfg.UnverifiedUserRetention, "default UnverifiedUserRetention = %v, want 7 days", cfg.UnverifiedUserRetention)
@@ -266,7 +266,7 @@ func TestConfigLoadUnverifiedUserRetention(t *testing.T) {
 }
 
 func TestConfigLoadTestInboxSettings(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	require.Equal(t, 7*24*time.Hour, cfg.TestInboxRetention, "default retention is 7 days")
@@ -281,7 +281,7 @@ func TestConfigLoadTestInboxSettings(t *testing.T) {
 }
 
 func TestConfigLoadRejectsATestInboxThatKeepsNothing(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	for name, value := range map[string]string{
 		"SPHERICON_TEST_INBOX_RETENTION_DAYS": "0",
 		"SPHERICON_TEST_INBOX_MAX_MESSAGES":   "0",
@@ -295,7 +295,7 @@ func TestConfigLoadRejectsATestInboxThatKeepsNothing(t *testing.T) {
 }
 
 func TestConfigLoadSystemEmailReplyTo(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	require.Empty(t, cfg.SystemEmailReplyTo, "unset by default")
@@ -307,7 +307,7 @@ func TestConfigLoadSystemEmailReplyTo(t *testing.T) {
 }
 
 func TestConfigLoadRejectsAnInvalidSystemEmailReplyTo(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	for _, value := range []string{"not an address", "Support <help@example.com>", "a@example.com, b@example.com", "help@"} {
 		t.Run(value, func(t *testing.T) {
 			t.Setenv("SPHERICON_SYSTEM_EMAIL_REPLY_TO", value)
@@ -318,7 +318,7 @@ func TestConfigLoadRejectsAnInvalidSystemEmailReplyTo(t *testing.T) {
 }
 
 func TestConfigLoadSystemEmailFromAcceptsADisplayName(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	require.Equal(t, "noreply@sphericon.localhost", cfg.SystemEmailFrom)
@@ -332,7 +332,7 @@ func TestConfigLoadSystemEmailFromAcceptsADisplayName(t *testing.T) {
 }
 
 func TestConfigLoadRejectsAnInvalidSystemEmailFrom(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	for _, value := range []string{"not an address", "a@example.com, b@example.com", "help@"} {
 		t.Run(value, func(t *testing.T) {
 			t.Setenv("SPHERICON_SYSTEM_EMAIL_FROM", value)
@@ -350,7 +350,7 @@ type addrCase struct {
 
 func loadWithMetricsAddr(t *testing.T, tc addrCase) (*config.Config, error) {
 	t.Helper()
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("PORT", tc.port)
 	t.Setenv("SPHERICON_METRICS_ADDR", tc.addr)
 	return config.Load("test")
@@ -389,7 +389,7 @@ func TestConfigLoadMetricsAddrRefusesACollisionOrAMalformedOne(t *testing.T) {
 }
 
 func TestConfigLoadE2EProfileDisablesRateLimits(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("e2e")
 	require.NoError(t, err)
 	require.Equalf(t, (config.RateLimits{}), cfg.RateLimits, "e2e rate limits = %+v, want all disabled", cfg.RateLimits)
@@ -400,7 +400,7 @@ func TestConfigLoadE2EProfileDisablesRateLimits(t *testing.T) {
 }
 
 func TestConfigLoadE2EProfileHonoursExplicitRateLimit(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_RATE_LIMIT_API_PER_MINUTE", "5")
 	cfg, err := config.Load("e2e")
 	require.NoError(t, err)
@@ -408,7 +408,7 @@ func TestConfigLoadE2EProfileHonoursExplicitRateLimit(t *testing.T) {
 }
 
 func TestConfigLoadE2EProfileIgnoresMetricsAddr(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_METRICS_ADDR", "127.0.0.1:9090")
 	cfg, err := config.Load("e2e")
 	require.NoError(t, err)
@@ -427,7 +427,7 @@ type internalAddrCase struct {
 
 func loadWithInternalAddr(t *testing.T, tc internalAddrCase) (*config.Config, error) {
 	t.Helper()
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("PORT", tc.port)
 	t.Setenv("SPHERICON_METRICS_ADDR", tc.metrics)
 	t.Setenv("SPHERICON_INTERNAL_ADDR", tc.addr)
@@ -466,7 +466,7 @@ func TestConfigLoadInternalAddrRefusesACollisionOrAMalformedOne(t *testing.T) {
 }
 
 func TestConfigLoadE2EProfileIgnoresInternalAddr(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_INTERNAL_ADDR", "127.0.0.1:3400")
 	cfg, err := config.Load("e2e")
 	require.NoError(t, err)
@@ -474,7 +474,7 @@ func TestConfigLoadE2EProfileIgnoresInternalAddr(t *testing.T) {
 }
 
 func TestConfigLoadSMTPAllowPrivateHostsFollowsTheEnvironmentUnlessSet(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	require.True(t, cfg.SMTPAllowPrivateHosts, "a non-production environment allows private SMTP hosts by default")
@@ -486,7 +486,7 @@ func TestConfigLoadSMTPAllowPrivateHostsFollowsTheEnvironmentUnlessSet(t *testin
 }
 
 func TestConfigLoadAbuseLimitsDefaultToTheADR(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	assert.Equal(t, 1000, cfg.AbuseVolumeFloor)
@@ -505,7 +505,7 @@ func TestConfigLoadRejectsAbuseLimitsThatCannotWork(t *testing.T) {
 		"zero warning":                {"SPHERICON_ABUSE_WARN_BOUNCE_PERCENT": "0"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			t.Setenv("DATABASE_URL", "postgres://x")
+			t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 			for k, v := range env {
 				t.Setenv(k, v)
 			}
@@ -516,7 +516,7 @@ func TestConfigLoadRejectsAbuseLimitsThatCannotWork(t *testing.T) {
 }
 
 func TestConfigLoadOutboundAllowIsEmptyByDefaultAndRejectsMalformedValues(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	_, err := config.Load("test")
 	require.NoError(t, err)
 
@@ -541,13 +541,13 @@ func secretFile(t *testing.T, content string) string {
 // comes from its file.
 func TestConfigLoadSecretFromFile(t *testing.T) {
 	for _, name := range []string{
-		"DATABASE_URL", "SPHERICON_JWT_SECRET", "SPHERICON_JWT_SECRET_SECONDARY", "SPHERICON_ENCRYPTION_KEY",
+		"SPHERICON_DATABASE_URL", "SPHERICON_JWT_SECRET", "SPHERICON_JWT_SECRET_SECONDARY", "SPHERICON_ENCRYPTION_KEY",
 		"SPHERICON_SMTP_PASS", "SPHERICON_LICENSE_KEY",
 	} {
 		t.Setenv(name, "")
 	}
 	other := strings.Repeat("m3", 16)
-	t.Setenv("DATABASE_URL_FILE", secretFile(t, "postgres://from-file\n"))
+	t.Setenv("SPHERICON_DATABASE_URL_FILE", secretFile(t, "postgres://from-file\n"))
 	t.Setenv("SPHERICON_JWT_SECRET_FILE", secretFile(t, strongSecret+"\r\n"))
 	t.Setenv("SPHERICON_JWT_SECRET_SECONDARY_FILE", secretFile(t, other))
 	t.Setenv("SPHERICON_ENCRYPTION_KEY_FILE", secretFile(t, "keyset"))
@@ -569,8 +569,8 @@ func TestConfigLoadSecretFromFile(t *testing.T) {
 }
 
 func TestConfigLoadExplicitSecretWinsOverFile(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://explicit")
-	t.Setenv("DATABASE_URL_FILE", filepath.Join(t.TempDir(), "missing"))
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://explicit")
+	t.Setenv("SPHERICON_DATABASE_URL_FILE", filepath.Join(t.TempDir(), "missing"))
 
 	cfg, err := config.Load("test")
 	require.NoErrorf(t, err, "Load: %v", err)
@@ -585,7 +585,7 @@ func TestConfigLoadSecretFileMustBeReadableAndNotEmpty(t *testing.T) {
 	}
 	for name, path := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Setenv("DATABASE_URL", "postgres://x")
+			t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 			t.Setenv("SPHERICON_LICENSE_KEY", "")
 			t.Setenv("SPHERICON_LICENSE_KEY_FILE", path)
 
@@ -598,7 +598,7 @@ func TestConfigLoadSecretFileMustBeReadableAndNotEmpty(t *testing.T) {
 // loadWithSecondarySecret pins the mode, as loadWithJWTSecret does.
 func loadWithSecondarySecret(t *testing.T, env, secondary string) (*config.Config, error) {
 	t.Helper()
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_MODE", "selfhosted")
 	t.Setenv("SPHERICON_JWT_SECRET", strongSecret)
 	t.Setenv("SPHERICON_JWT_SECRET_SECONDARY", secondary)
@@ -649,7 +649,7 @@ func TestConfigLoadEventLiveWindow(t *testing.T) {
 	require.Error(t, err, "a live window under an hour must be rejected: it cannot be switched off")
 }
 
-var secretLooking = regexp.MustCompile(`SECRET|TOKEN|_PASS$|_KEY$|_KEY_ID$|^DATABASE_URL$`)
+var secretLooking = regexp.MustCompile(`SECRET|TOKEN|_PASS$|_KEY$|_KEY_ID$|^SPHERICON_DATABASE_URL$`)
 
 // secretVariables are the variables Load reads whose names look secret. Their companions are set,
 // for a secret Load refuses alone: the account link's URL, the sign-in providers' client ids.
@@ -740,7 +740,7 @@ func TestConfigLoadRefusesAValueThatBreaksItsRule(t *testing.T) {
 		"SPHERICON_RIVER_DB_MAX_CONNS=0":                               "SPHERICON_RIVER_DB_MAX_CONNS must be positive",
 	} {
 		t.Run(env, func(t *testing.T) {
-			t.Setenv("DATABASE_URL", "postgres://x")
+			t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 			name, value, _ := strings.Cut(env, "=")
 			t.Setenv(name, value)
 			_, err := config.Load("test")
@@ -762,7 +762,7 @@ func TestConfigLoadProfileDefaults(t *testing.T) {
 		"production":  {config.DefaultRateLimits, "json", false},
 	} {
 		t.Run(profile, func(t *testing.T) {
-			t.Setenv("DATABASE_URL", "postgres://x")
+			t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 			t.Setenv("SPHERICON_JWT_SECRET", strongSecret)
 			cfg, err := config.Load(profile)
 			require.NoError(t, err)
@@ -774,7 +774,7 @@ func TestConfigLoadProfileDefaults(t *testing.T) {
 }
 
 func TestConfigLoadAVariableReplacesItsProfileDefault(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE", "7")
 	t.Setenv("SPHERICON_LOG_FORMAT", "json")
 	t.Setenv("SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS", "false")

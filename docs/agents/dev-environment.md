@@ -25,13 +25,13 @@ depends on `db:up`, and so does `dev`; `dev:down` leaves the server running
 (`mise -C <primary> daemons stop db` stops it for everyone). The primary checkout must be on a
 commit that has this setup.
 
-`PGHOST`, `PGPORT`, `PGUSER`, `PGDATABASE` and `DATABASE_URL` are set in `[env]`, so they are
+`PGHOST`, `PGPORT`, `PGUSER`, `PGDATABASE` and `SPHERICON_DATABASE_URL` are set in `[env]`, so they are
 identical in every checkout without a daemon (a `db` daemon exports its own offset port and
 database for a linked worktree, which `[env]` overrides). The database is `sphericon_<dir>`: the
 checkout's directory name lowercased to `[a-z0-9_]`, cut to 31 characters plus a hash of the path
-when it exceeds 40, so with the `_test`, `_e2e` and `_diff` twins (`TEST_DB_URL`, `E2E_DB_URL`,
-`DIFF_DB_URL`; `DB_NAMES` lists all four) every name stays under Postgres's 63-byte identifier
-limit and nothing is truncated or collides. Never set `DATABASE_URL` in `.env`: explicit values
+when it exceeds 40, so with the `_test`, `_e2e` and `_diff` twins (`SPHERICON_TEST_DATABASE_URL`, `SPHERICON_E2E_DATABASE_URL`,
+`SPHERICON_DIFF_DATABASE_URL`; `SPHERICON_DB_NAMES` lists all four) every name stays under Postgres's 63-byte identifier
+limit and nothing is truncated or collides. Never set `SPHERICON_DATABASE_URL` in `.env`: explicit values
 override it. `SPHERICON_PG_HOST` / `SPHERICON_PG_PORT` point every checkout at another server (an
 external Postgres): one that answers is used as is and never started. CI runs the same path: its
 single checkout is its own primary.
@@ -42,15 +42,15 @@ own on `PGHOST:PGPORT` (as another user, or via `SPHERICON_PG_HOST` / `SPHERICON
 `db:up` uses a server that already answers.
 
 Never hand-name a scratch database. `mise run worktrees:rm <path>` removes a worktree with its
-databases (the four of `DB_NAMES`, the test workers' `_w<i>` clones and `_tpl_<hash>` templates) and
+databases (the four of `SPHERICON_DB_NAMES`, the test workers' `_w<i>` clones and `_tpl_<hash>` templates) and
 its daemons, from the primary checkout. `mise run worktrees:gc` (also run by `setup` and
 `worktrees:prune`, and by `db:up` of the primary checkout in the background at most once a day, never on CI or with
 `SPHERICON_PG_HOST` set; its log is `<git dir>/sphericon-gc.log`) is the net under it for a worktree
 deleted any other way; `--apply` to act, a dry run otherwise. It drops the shared server's databases that
-no live worktree's `DB_NAMES` covers and runs `mise daemons prune --yes` for dead state; it
+no live worktree's `SPHERICON_DB_NAMES` covers and runs `mise daemons prune --yes` for dead state; it
 refuses to drop anything when it cannot enumerate or read a live worktree, including one on a
-commit from before `DB_NAMES` (rebase it onto main), and never touches the primary's daemon.
-It also empties the Go build cache once it outgrows `GO_CACHE_LIMIT_GB` (40 by default): the
+commit from before `SPHERICON_DB_NAMES` (rebase it onto main), and never touches the primary's daemon.
+It also empties the Go build cache once it outgrows `SPHERICON_GO_CACHE_LIMIT_GB` (40 by default): the
 cache keys carry each worktree's path, so every worktree compiles everything again into it.
 The `testdb_tpl_*` databases are what pgtestdb left behind: `testhelper.RealDB` no longer uses it,
 but the server still holds its leftovers, owned by no checkout. gc drops an instance after a day (a
@@ -66,7 +66,7 @@ Test packages run in parallel, each process on a database of its own, through
 lock on the shared test database, released when the process ends), cloned from
 `<test db>_tpl_<hash>`, a schema-only template built once per hash of the schema and the bus. The
 fixtures are loaded into the worker at the start of every process, because they use relative
-dates. `DATABASE_URL` is rewritten to that database for the process, so a test that loads the
+dates. `SPHERICON_DATABASE_URL` is rewritten to that database for the process, so a test that loads the
 config reaches it too. `worktrees:gc` keeps these with their checkout. The end-to-end suite keeps
 one database and `-p 1`.
 
@@ -114,7 +114,7 @@ rewrites `mise.lock`), run `mise run check`, commit as `build(deps):`.
 **https://api.sphericon.localhost** — Caddy rewrites `/*` → `/api/*` to the same backend, so
 the subdomain root mirrors the binary's `/api` path (RudderStack-style edge; the binary
 stays path-based). In prod the ingress in front of the binary does the same rewrite for
-`api.sphericon.app`. Daemons: `db`, `dns` (CoreDNS for Sending domain and Join domain verification: `dev/Corefile`, zones in `dev/dns/`, UDP and TCP on :15353, offset in a linked worktree; the backend reads it through `SPHERICON_DNS_ADDR`), `mailpit` (web UI at :8025, behind Caddy at **https://mailpit.localhost** (`MAIL_HOST`); SMTP :1025),
+`api.sphericon.app`. Daemons: `db`, `dns` (CoreDNS for Sending domain and Join domain verification: `dev/Corefile`, zones in `dev/dns/`, UDP and TCP on :15353, offset in a linked worktree; the backend reads it through `SPHERICON_DNS_ADDR`), `mailpit` (web UI at :8025, behind Caddy at **https://mailpit.localhost** (`SPHERICON_MAIL_HOST`); SMTP :1025),
 `backend` (real Go server under air on `:3300`, hot reload), `frontend` (Vite on `:5173`),
 `demo` (Vite on `:5373`: the Brightpath demo storefront, `packages/storefront`, a customer site on its
 own origin `brightpath.localhost` that sends events through `@sphericon/analytics` and the
@@ -128,7 +128,7 @@ the gitignored `.env` (read by the app) or `.mise.local.toml`.
 **A public URL for the running stack.** `mise run dev:tunnel` opens a Cloudflare Quick Tunnel
 (`cloudflared`, no account) to this checkout's Caddy and prints a random
 `https://<name>.trycloudflare.com`, alive until Ctrl+C: enough to open the app on a phone. The
-tunnel sends `APP_HOST` as Host and SNI, so Caddy, Vite and the backend see the usual origin, but
+tunnel sends `SPHERICON_APP_HOST` as Host and SNI, so Caddy, Vite and the backend see the usual origin, but
 `SPHERICON_APP_URL` stays local: sign in with a password (a Passkey is bound to the local host),
 links in sent mail point at the local origin, and HMR does not reach the phone (reload by hand).
 The dev stack's secrets and seeded passwords are public, so close the tunnel when you are done.
@@ -142,11 +142,11 @@ stack fails to start with an error naming the daemon and the other project. Pin 
 in its `.mise.local.toml` (`[daemons.backend]` ... `port = 3601`, the same for `frontend`,
 `mailpit` and `caddy`; SMTP, metrics and Caddy's admin/HTTP ports follow from them). mise
 resolves the ports at config load, so
-`[env]` templates them (`PORT`, `SPHERICON_SMTP_PORT`, `SPHERICON_METRICS_ADDR`, `SPHERICON_APP_URL`, `APP_HOST`, `API_HOST`), and
-the Caddyfile (`{$BACKEND_PORT}`, `{$APP_HOST}`, ...), `vite.config.ts` and the `ready_cmd`s read the
+`[env]` templates them (`PORT`, `SPHERICON_SMTP_PORT`, `SPHERICON_METRICS_ADDR`, `SPHERICON_APP_URL`, `SPHERICON_APP_HOST`, `SPHERICON_API_HOST`), and
+the Caddyfile (`{$BACKEND_PORT}`, `{$SPHERICON_APP_HOST}`, ...), `vite.config.ts` and the `ready_cmd`s read the
 exported `<NAME>_PORT` (`ready_port` cannot be templated). Ports with no daemon of their own (SMTP,
 metrics) are the base plus that same offset; Caddy's admin API (`CADDY_ADMIN`, 2019 + offset, what
-`caddy trust --address "$CADDY_ADMIN"` reads) and HTTP redirect listener (`CADDY_HTTP_PORT`: 80 in
+`caddy trust --address "$CADDY_ADMIN"` reads) and HTTP redirect listener (`SPHERICON_CADDY_HTTP_PORT`: 80 in
 the primary checkout, 4000 + offset elsewhere) are per instance too. A linked worktree's origin is
 `https://<dir-name>.sphericon.localhost:<caddy port>` (API: `https://api.<dir-name>.sphericon.localhost:<caddy port>`):
 browser cookies are shared across the ports of one host, so a per-worktree host keeps the session

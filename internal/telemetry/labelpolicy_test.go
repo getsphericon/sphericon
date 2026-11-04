@@ -57,7 +57,7 @@ func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 	t.Cleanup(func() { cleanup.Report("shut srv down", srv.Shutdown(context.Background())) })
 
 	env := testhelper.Setup(t)
-	// Loaded after Setup: it points DATABASE_URL at this process's database, where river's
+	// Loaded after Setup: it points SPHERICON_DATABASE_URL at this process's database, where river's
 	// tables are, and the job runtime below opens its own pool on it.
 	cfg, err := config.Load("test")
 	require.NoError(t, err)

@@ -49,7 +49,7 @@ func Drop(ctx context.Context, databaseURL string) (string, error) {
 func admin(ctx context.Context, databaseURL string, fn func(adminDB *sql.DB, dbName, ident string) (string, error)) (string, error) {
 	u, err := url.Parse(databaseURL)
 	if err != nil {
-		return "", fmt.Errorf("parse DATABASE_URL: %w", err)
+		return "", fmt.Errorf("parse SPHERICON_DATABASE_URL: %w", err)
 	}
 
 	dbName := strings.TrimPrefix(u.Path, "/")
@@ -68,7 +68,7 @@ func admin(ctx context.Context, databaseURL string, fn func(adminDB *sql.DB, dbN
 }
 
 // quoteIdent has the server quote a database name, so no escaping of our own stands between a
-// name from DATABASE_URL and the CREATE or DROP DATABASE that takes it: those commands accept an
+// name from SPHERICON_DATABASE_URL and the CREATE or DROP DATABASE that takes it: those commands accept an
 // identifier and not a bound parameter.
 func quoteIdent(ctx context.Context, adminDB *sql.DB, name string) (string, error) {
 	var quoted string
