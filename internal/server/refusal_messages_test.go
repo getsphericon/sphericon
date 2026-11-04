@@ -84,13 +84,13 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 			},
 		},
 		{
-			name: "not archivable", want: "only a sent or failed broadcast can be archived",
+			name: "not archivable", want: "a scheduled or sending broadcast cannot be archived",
 			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsArchive(t.Context(), siteapi.SiteBroadcastsArchiveParams{WorkspaceId: ws, ID: site(fixtures.BroadcastDraftID)})
+				res, err := c.SiteBroadcastsArchive(t.Context(), siteapi.SiteBroadcastsArchiveParams{WorkspaceId: ws, ID: site(fixtures.BroadcastScheduledID)})
 				return res, err
 			},
 			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.BroadcastsArchive(t.Context(), externalapi.BroadcastsArchiveParams{ID: ext(fixtures.BroadcastDraftID)})
+				res, err := c.BroadcastsArchive(t.Context(), externalapi.BroadcastsArchiveParams{ID: ext(fixtures.BroadcastScheduledID)})
 				return res, err
 			},
 		},
