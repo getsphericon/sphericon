@@ -4,6 +4,9 @@ status: accepted
 
 # A Rule is a stateless reaction to an Event, built on the Segment's Condition tree
 
+> Amended by [[0098-a-rule-is-deleted-not-archived]]: a Rule has no Archive; Delete discards one
+> with Firings and purges one without.
+
 > Amended by [[0065-a-live-automation-or-rule-changes-only-by-publish]]: a Rule is versioned, an edit
 > writes a draft, Publish makes it live, and the lifecycle is `active` and `inactive`.
 

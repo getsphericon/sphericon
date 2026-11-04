@@ -696,7 +696,6 @@ export const UsedByKind = {
   SEGMENT: 'segment',
   RULE: 'rule',
   ENROLLMENT: 'enrollment',
-  FIRING: 'firing',
   MESSAGE: 'message'
 } as const;
 

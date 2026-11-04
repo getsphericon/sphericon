@@ -131,9 +131,6 @@ enum UsedByKind {
    * the Automation is archived, all of them when it is deleted */
   enrollment,
 
-  /** The Firings of a Rule, as one entry carrying their count: history that a delete would lose */
-  firing,
-
   /** The Outbound messages an Automation has sent, as one entry carrying their count: facts that
    * a delete would orphan, which stay even when no Enrollment is left */
   message,

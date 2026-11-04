@@ -912,13 +912,6 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/rules/{ruleId}/firings
 	SiteRuleFiringsList(ctx context.Context, params SiteRuleFiringsListParams) (SiteRuleFiringsListRes, error)
-	// SiteRulesArchive implements SiteRules_archive operation.
-	//
-	// Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
-	// Firings. It can be restored, inactive.
-	//
-	// POST /workspaces/{workspaceId}/rules/{id}/archive
-	SiteRulesArchive(ctx context.Context, params SiteRulesArchiveParams) (SiteRulesArchiveRes, error)
 	// SiteRulesCreate implements SiteRules_create operation.
 	//
 	// Create a resource from the site UI.
@@ -970,12 +963,6 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/revert
 	SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (SiteRulesRevertRes, error)
-	// SiteRulesUnarchive implements SiteRules_unarchive operation.
-	//
-	// Restore an archived Rule to the list, inactive.
-	//
-	// POST /workspaces/{workspaceId}/rules/{id}/unarchive
-	SiteRulesUnarchive(ctx context.Context, params SiteRulesUnarchiveParams) (SiteRulesUnarchiveRes, error)
 	// SiteRulesUpdate implements SiteRules_update operation.
 	//
 	// Update a resource from the site UI.

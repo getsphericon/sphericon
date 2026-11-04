@@ -652,16 +652,6 @@ func (UnimplementedHandler) RuleFiringsList(ctx context.Context, params RuleFiri
 	return r, ht.ErrNotImplemented
 }
 
-// RulesArchive implements Rules_archive operation.
-//
-// Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
-// Firings. It can be restored, inactive.
-//
-// POST /rules/{id}/archive
-func (UnimplementedHandler) RulesArchive(ctx context.Context, params RulesArchiveParams) (r RulesArchiveRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // RulesCreate implements Rules_create operation.
 //
 // Create a resource.
@@ -735,15 +725,6 @@ func (UnimplementedHandler) RulesPublish(ctx context.Context, params RulesPublis
 //
 // POST /rules/{id}/revert
 func (UnimplementedHandler) RulesRevert(ctx context.Context, params RulesRevertParams) (r RulesRevertRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// RulesUnarchive implements Rules_unarchive operation.
-//
-// Restore an archived Rule to the list, inactive.
-//
-// POST /rules/{id}/unarchive
-func (UnimplementedHandler) RulesUnarchive(ctx context.Context, params RulesUnarchiveParams) (r RulesUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

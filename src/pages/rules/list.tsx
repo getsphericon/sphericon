@@ -2,18 +2,15 @@ import { Badge, Group, Menu, Stack, Title } from '@mantine/core'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { ArchiveViewControl } from '../../components/ArchiveViewControl.tsx'
 import { EventActionNames } from '../../components/EventActionName.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteRulesPublishMutation,
-  siteRulesArchiveMutation,
   siteRulesDeactivateMutation,
   siteRulesDeleteMutation,
   siteRulesListOptions,
-  siteRulesUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -38,17 +35,6 @@ export function RulesListPage() {
     successMessage: t(($) => $.notifications.ruleDeactivated),
     errorTitle: t(($) => $.alerts.ruleStatusErrorTitle),
   })
-
-  const archive = useResourceMutation({
-    mutation: siteRulesArchiveMutation(),
-    successMessage: t(($) => $.notifications.ruleArchived),
-    errorTitle: t(($) => $.alerts.ruleArchiveErrorTitle),
-  })
-  const restore = useResourceMutation({
-    mutation: siteRulesUnarchiveMutation(),
-    successMessage: t(($) => $.notifications.ruleRestored),
-    errorTitle: t(($) => $.alerts.ruleRestoreErrorTitle),
-  })
   const deleteRule = useDeleteResource({
     mutation: siteRulesDeleteMutation(),
     workspaceId,
@@ -56,7 +42,7 @@ export function RulesListPage() {
     errorTitle: t(($) => $.alerts.ruleDeleteErrorTitle),
     consequence: t(($) => $.confirmations.deleteRule),
   })
-  const { archived = false, page } = rulesRoute.useSearch()
+  const { page } = rulesRoute.useSearch()
   const routeNavigate = rulesRoute.useNavigate()
 
   return (
@@ -68,25 +54,12 @@ export function RulesListPage() {
         </ButtonLink>
       </Group>
 
-      <ArchiveViewControl
-        archived={archived}
-        onChange={(next) =>
-          void routeNavigate({
-            search: { archived: next || undefined },
-            replace: true,
-            viewTransition: false,
-          })
-        }
-      />
-
       <PagedTable
         page={page}
         onPageChange={(next) =>
           void routeNavigate({ search: withPage(next), viewTransition: false })
         }
-        options={(query) =>
-          siteRulesListOptions({ path: { workspaceId }, query: { ...query, archived } })
-        }
+        options={(query) => siteRulesListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.alerts.ruleLoadErrorTitle)}
         collection={t(($) => $.nav.rules)}
         empty={{
@@ -127,57 +100,31 @@ export function RulesListPage() {
             render: (record) => (
               <Group justify="flex-end">
                 <RowActionsMenu>
-                  {record.archivedAt ? (
+                  <MenuItemLink
+                    to={rulesDetailRoute.to}
+                    params={{ workspaceId, ruleId: record.id }}
+                  >
+                    {t(($) => $.actions.view)}
+                  </MenuItemLink>
+                  {record.status === 'active' ? (
                     <Menu.Item
-                      onClick={() => restore.mutate({ path: { workspaceId, id: record.id } })}
+                      onClick={() => deactivate.mutate({ path: { workspaceId, id: record.id } })}
                     >
-                      {t(($) => $.actions.unarchive)}
+                      {t(($) => $.rules.deactivate)}
                     </Menu.Item>
                   ) : (
-                    [
-                      <MenuItemLink
-                        key="view"
-                        to={rulesDetailRoute.to}
-                        params={{ workspaceId, ruleId: record.id }}
-                      >
-                        {t(($) => $.actions.view)}
-                      </MenuItemLink>,
-                      record.status === 'active' ? (
-                        <Menu.Item
-                          key="toggle"
-                          onClick={() =>
-                            deactivate.mutate({ path: { workspaceId, id: record.id } })
-                          }
-                        >
-                          {t(($) => $.rules.deactivate)}
-                        </Menu.Item>
-                      ) : (
-                        <Menu.Item
-                          key="toggle"
-                          onClick={() => publish.mutate({ path: { workspaceId, id: record.id } })}
-                        >
-                          {t(($) => $.rules.publish)}
-                        </Menu.Item>
-                      ),
-                      <MenuItemLink
-                        key="edit"
-                        to={rulesEditRoute.to}
-                        params={{ workspaceId, ruleId: record.id }}
-                      >
-                        {t(($) => $.actions.edit)}
-                      </MenuItemLink>,
-                      <Menu.Item
-                        key="archive"
-                        color="red"
-                        onClick={() => archive.mutate({ path: { workspaceId, id: record.id } })}
-                      >
-                        {t(($) => $.actions.archive)}
-                      </Menu.Item>,
-                      <Menu.Item key="delete" color="red" onClick={() => deleteRule(record.id)}>
-                        {t(($) => $.actions.delete)}
-                      </Menu.Item>,
-                    ]
+                    <Menu.Item
+                      onClick={() => publish.mutate({ path: { workspaceId, id: record.id } })}
+                    >
+                      {t(($) => $.rules.publish)}
+                    </Menu.Item>
                   )}
+                  <MenuItemLink to={rulesEditRoute.to} params={{ workspaceId, ruleId: record.id }}>
+                    {t(($) => $.actions.edit)}
+                  </MenuItemLink>
+                  <Menu.Item color="red" onClick={() => deleteRule(record.id)}>
+                    {t(($) => $.actions.delete)}
+                  </Menu.Item>
                 </RowActionsMenu>
               </Group>
             ),

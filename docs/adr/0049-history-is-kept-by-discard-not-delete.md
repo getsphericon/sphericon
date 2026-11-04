@@ -8,6 +8,9 @@ status: accepted
 > Sending domain are still discarded, but the contract deletes them (`DELETE`, `deletedAt`) and
 > never restores them; they have no `archived` filter and no `unarchive`.
 
+> Amended by [[0098-a-rule-is-deleted-not-archived]]: a Rule has no Archive; Delete discards one
+> with Firings and purges one without.
+
 > Amended by [[0065-a-live-automation-or-rule-changes-only-by-publish]]: an Automation version also
 > holds the Trigger and the Integration, the live version is never rewritten, and only the draft
 > above it is rewritten in place.

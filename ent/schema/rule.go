@@ -13,8 +13,8 @@ import (
 // recorded for a Contact and its Condition holds, its Actions run at once. The definition
 // (Trigger events, Condition, Actions) lives in its Rule versions (ADR 0065): the Rule points
 // at its live version, what it does, and at its draft, the unpublished one above live. The
-// name, the status and archiving stay on the Rule. A Rule has Firings, which are history: it
-// is discarded, and only a Rule with none is purged (ADR 0049).
+// name and the status stay on the Rule. A Rule has Firings, which are history: Delete discards a
+// Rule with Firings and purges one with none (ADR 0049, ADR 0098).
 type Rule struct {
 	ent.Schema
 }
@@ -49,7 +49,7 @@ func (Rule) Edges() []ent.Edge {
 	return []ent.Edge{
 		// A Firing dies with its Rule's row (the key cascades, for the Workspace's erasure).
 		// Rules.Delete purges only a Rule with no Firings, so in use the cascade removes
-		// nothing: a Rule with Firings is archived and its Firings stay readable.
+		// nothing: a Rule with Firings is discarded and its Firings stay.
 		edge.To("firings", RuleFiring.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}

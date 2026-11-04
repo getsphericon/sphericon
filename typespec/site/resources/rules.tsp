@@ -112,9 +112,6 @@ model SiteRuleResource {
   /** When the Rule last became active by Publish. It acts only on Events recorded after it. */
   activatedAt?: Timestamp | null;
 
-  /** When the Rule was archived; null while it is kept */
-  archivedAt?: Timestamp | null;
-
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -189,32 +186,8 @@ interface SiteRules
   extends WorkspaceCrud<
       SiteRuleResource,
       SiteCreateRuleInput,
-      SiteUpdateRuleInput,
-      never,
-      InUseProblem,
-      ArchivedFilter
+      SiteUpdateRuleInput
     > {
-  /**
-   * Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and
-   * keeps its Firings. It can be restored, inactive.
-   */
-  @action("archive")
-  @autoRoute
-  @requiresPermissions(#[])
-  archive(...ResourceParameters<SiteRuleResource>):
-    | SiteRuleResource
-    | BadRequestProblem
-    | NotFoundProblem;
-
-  /** Restore an archived Rule to the list, inactive */
-  @action("unarchive")
-  @autoRoute
-  @requiresPermissions(#[])
-  unarchive(...ResourceParameters<SiteRuleResource>):
-    | SiteRuleResource
-    | BadRequestProblem
-    | NotFoundProblem;
-
   /** Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with neither draft nor live version. */
   @action("publish")
   @autoRoute

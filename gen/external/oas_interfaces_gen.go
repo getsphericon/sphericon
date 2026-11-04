@@ -265,10 +265,6 @@ type RuleFiringsListRes interface {
 	ruleFiringsListRes()
 }
 
-type RulesArchiveRes interface {
-	rulesArchiveRes()
-}
-
 type RulesCreateRes interface {
 	rulesCreateRes()
 }
@@ -299,10 +295,6 @@ type RulesPublishRes interface {
 
 type RulesRevertRes interface {
 	rulesRevertRes()
-}
-
-type RulesUnarchiveRes interface {
-	rulesUnarchiveRes()
 }
 
 type RulesUpdateRes interface {

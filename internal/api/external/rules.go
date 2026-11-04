@@ -13,7 +13,7 @@ import (
 // publishing takes the send-class automations:publish (ADR 0016, ADR 0065).
 
 func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListParams) (externalapi.RulesListRes, error) {
-	page, err := h.rules.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
+	page, err := h.rules.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
 	}
@@ -56,37 +56,13 @@ func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleI
 	return &res, nil
 }
 
-// RulesDelete purges a Rule that has no Firings; one with Firings is archived instead (409).
+// RulesDelete removes a Rule: one with Firings is discarded so they stay as history.
 func (h *Handlers) RulesDelete(ctx context.Context, params externalapi.RulesDeleteParams) (externalapi.RulesDeleteRes, error) {
 	err := h.rules.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
 	}
 	return &externalapi.RulesDeleteNoContent{}, nil
-}
-
-// RulesArchive archives a Rule (ADR 0049): it acts on nothing and keeps its Firings.
-func (h *Handlers) RulesArchive(ctx context.Context, params externalapi.RulesArchiveParams) (externalapi.RulesArchiveRes, error) {
-	ws := auth.TokenScoped(ctx)
-	id := int64(params.ID)
-	r, err := h.rules.Archive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	res := mapper.RuleToResource(r)
-	return &res, nil
-}
-
-// RulesUnarchive restores an archived Rule, as a draft.
-func (h *Handlers) RulesUnarchive(ctx context.Context, params externalapi.RulesUnarchiveParams) (externalapi.RulesUnarchiveRes, error) {
-	ws := auth.TokenScoped(ctx)
-	id := int64(params.ID)
-	r, err := h.rules.Unarchive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	res := mapper.RuleToResource(r)
-	return &res, nil
 }
 
 // RulesPublish needs automations:publish, which authoring scopes never imply (ADR 0016, ADR 0065).

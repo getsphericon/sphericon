@@ -3348,7 +3348,6 @@ func (*InUseProblemDetails) siteAutomationsArchiveRes()   {}
 func (*InUseProblemDetails) siteAutomationsDeleteRes()    {}
 func (*InUseProblemDetails) siteCustomFieldsUpdateRes()   {}
 func (*InUseProblemDetails) siteIntegrationsDeleteRes()   {}
-func (*InUseProblemDetails) siteRulesDeleteRes()          {}
 func (*InUseProblemDetails) siteSegmentsArchiveRes()      {}
 func (*InUseProblemDetails) siteSendingDomainsDeleteRes() {}
 func (*InUseProblemDetails) siteTagsDeleteRes()           {}
@@ -23532,8 +23531,6 @@ type SiteRuleResource struct {
 	Draft NilSiteRuleVersion `json:"draft"`
 	// When the Rule last became active by Publish. It acts only on Events recorded after it.
 	ActivatedAt OptNilTimestamp `json:"activatedAt"`
-	// When the Rule was archived; null while it is kept.
-	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -23568,11 +23565,6 @@ func (s *SiteRuleResource) GetDraft() NilSiteRuleVersion {
 // GetActivatedAt returns the value of ActivatedAt.
 func (s *SiteRuleResource) GetActivatedAt() OptNilTimestamp {
 	return s.ActivatedAt
-}
-
-// GetArchivedAt returns the value of ArchivedAt.
-func (s *SiteRuleResource) GetArchivedAt() OptNilTimestamp {
-	return s.ArchivedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -23615,11 +23607,6 @@ func (s *SiteRuleResource) SetActivatedAt(val OptNilTimestamp) {
 	s.ActivatedAt = val
 }
 
-// SetArchivedAt sets the value of ArchivedAt.
-func (s *SiteRuleResource) SetArchivedAt(val OptNilTimestamp) {
-	s.ArchivedAt = val
-}
-
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteRuleResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -23630,13 +23617,11 @@ func (s *SiteRuleResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteRuleResource) siteRulesArchiveRes()    {}
 func (*SiteRuleResource) siteRulesCreateRes()     {}
 func (*SiteRuleResource) siteRulesDeactivateRes() {}
 func (*SiteRuleResource) siteRulesGetRes()        {}
 func (*SiteRuleResource) siteRulesPublishRes()    {}
 func (*SiteRuleResource) siteRulesRevertRes()     {}
-func (*SiteRuleResource) siteRulesUnarchiveRes()  {}
 func (*SiteRuleResource) siteRulesUpdateRes()     {}
 
 // Rule lifecycle status: active reacts to Events, inactive acts on nothing.
@@ -23734,14 +23719,6 @@ func (s *SiteRuleVersion) SetCondition(val OptSiteConditionGroup) {
 func (s *SiteRuleVersion) SetActions(val []SiteRuleAction) {
 	s.Actions = val
 }
-
-type SiteRulesArchiveBadRequest ProblemDetails
-
-func (*SiteRulesArchiveBadRequest) siteRulesArchiveRes() {}
-
-type SiteRulesArchiveNotFound ProblemDetails
-
-func (*SiteRulesArchiveNotFound) siteRulesArchiveRes() {}
 
 type SiteRulesCreateBadRequest ProblemDetails
 
@@ -23893,14 +23870,6 @@ func (*SiteRulesRevertNotFound) siteRulesRevertRes() {}
 type SiteRulesRevertUnprocessableEntity ProblemDetails
 
 func (*SiteRulesRevertUnprocessableEntity) siteRulesRevertRes() {}
-
-type SiteRulesUnarchiveBadRequest ProblemDetails
-
-func (*SiteRulesUnarchiveBadRequest) siteRulesUnarchiveRes() {}
-
-type SiteRulesUnarchiveNotFound ProblemDetails
-
-func (*SiteRulesUnarchiveNotFound) siteRulesUnarchiveRes() {}
 
 type SiteRulesUpdateBadRequest ProblemDetails
 
@@ -30222,7 +30191,6 @@ const (
 	UsedByKindSegment    UsedByKind = "segment"
 	UsedByKindRule       UsedByKind = "rule"
 	UsedByKindEnrollment UsedByKind = "enrollment"
-	UsedByKindFiring     UsedByKind = "firing"
 	UsedByKindMessage    UsedByKind = "message"
 )
 
@@ -30234,7 +30202,6 @@ func (UsedByKind) AllValues() []UsedByKind {
 		UsedByKindSegment,
 		UsedByKindRule,
 		UsedByKindEnrollment,
-		UsedByKindFiring,
 		UsedByKindMessage,
 	}
 }
@@ -30251,8 +30218,6 @@ func (s UsedByKind) MarshalText() ([]byte, error) {
 	case UsedByKindRule:
 		return []byte(s), nil
 	case UsedByKindEnrollment:
-		return []byte(s), nil
-	case UsedByKindFiring:
 		return []byte(s), nil
 	case UsedByKindMessage:
 		return []byte(s), nil
@@ -30278,9 +30243,6 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return nil
 	case UsedByKindEnrollment:
 		*s = UsedByKindEnrollment
-		return nil
-	case UsedByKindFiring:
-		*s = UsedByKindFiring
 		return nil
 	case UsedByKindMessage:
 		*s = UsedByKindMessage

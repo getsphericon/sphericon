@@ -1289,16 +1289,6 @@ func (UnimplementedHandler) SiteRuleFiringsList(ctx context.Context, params Site
 	return r, ht.ErrNotImplemented
 }
 
-// SiteRulesArchive implements SiteRules_archive operation.
-//
-// Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
-// Firings. It can be restored, inactive.
-//
-// POST /workspaces/{workspaceId}/rules/{id}/archive
-func (UnimplementedHandler) SiteRulesArchive(ctx context.Context, params SiteRulesArchiveParams) (r SiteRulesArchiveRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // SiteRulesCreate implements SiteRules_create operation.
 //
 // Create a resource from the site UI.
@@ -1371,15 +1361,6 @@ func (UnimplementedHandler) SiteRulesPublish(ctx context.Context, params SiteRul
 //
 // POST /workspaces/{workspaceId}/rules/{id}/revert
 func (UnimplementedHandler) SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (r SiteRulesRevertRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SiteRulesUnarchive implements SiteRules_unarchive operation.
-//
-// Restore an archived Rule to the list, inactive.
-//
-// POST /workspaces/{workspaceId}/rules/{id}/unarchive
-func (UnimplementedHandler) SiteRulesUnarchive(ctx context.Context, params SiteRulesUnarchiveParams) (r SiteRulesUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

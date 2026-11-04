@@ -469,10 +469,6 @@ type SiteRuleFiringsListRes interface {
 	siteRuleFiringsListRes()
 }
 
-type SiteRulesArchiveRes interface {
-	siteRulesArchiveRes()
-}
-
 type SiteRulesCreateRes interface {
 	siteRulesCreateRes()
 }
@@ -503,10 +499,6 @@ type SiteRulesPublishRes interface {
 
 type SiteRulesRevertRes interface {
 	siteRulesRevertRes()
-}
-
-type SiteRulesUnarchiveRes interface {
-	siteRulesUnarchiveRes()
 }
 
 type SiteRulesUpdateRes interface {

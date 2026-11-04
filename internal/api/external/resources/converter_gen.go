@@ -1149,7 +1149,6 @@ func (c *ConverterImpl) RuleToResource(source *ent.Rule) external.RuleResource {
 		externalapiRuleResource.Live = ruleVersionOrNull(c, (*source).Edges.LiveVersion)
 		externalapiRuleResource.Draft = ruleVersionOrNull(c, (*source).Edges.DraftVersion)
 		externalapiRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
-		externalapiRuleResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiRuleResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiRuleResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

@@ -449,13 +449,6 @@ type Handler interface {
 	//
 	// GET /rules/{ruleId}/firings
 	RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (RuleFiringsListRes, error)
-	// RulesArchive implements Rules_archive operation.
-	//
-	// Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
-	// Firings. It can be restored, inactive.
-	//
-	// POST /rules/{id}/archive
-	RulesArchive(ctx context.Context, params RulesArchiveParams) (RulesArchiveRes, error)
 	// RulesCreate implements Rules_create operation.
 	//
 	// Create a resource.
@@ -508,12 +501,6 @@ type Handler interface {
 	//
 	// POST /rules/{id}/revert
 	RulesRevert(ctx context.Context, params RulesRevertParams) (RulesRevertRes, error)
-	// RulesUnarchive implements Rules_unarchive operation.
-	//
-	// Restore an archived Rule to the list, inactive.
-	//
-	// POST /rules/{id}/unarchive
-	RulesUnarchive(ctx context.Context, params RulesUnarchiveParams) (RulesUnarchiveRes, error)
 	// RulesUpdate implements Rules_update operation.
 	//
 	// Update a resource.

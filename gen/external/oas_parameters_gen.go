@@ -5980,79 +5980,6 @@ func decodeRuleFiringsListParams(args [1]string, argsEscaped bool, r *http.Reque
 	return params, nil
 }
 
-// RulesArchiveParams is parameters of Rules_archive operation.
-type RulesArchiveParams struct {
-	// Unique identifier.
-	ID EntityId
-}
-
-func unpackRulesArchiveParams(packed middleware.Parameters) (params RulesArchiveParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "id",
-			In:   "path",
-		}
-		params.ID = packed[key].(EntityId)
-	}
-	return params
-}
-
-func decodeRulesArchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params RulesArchiveParams, _ error) {
-	// Decode path: id.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "id",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				var paramsDotIDVal int64
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToStringInt64(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotIDVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "id",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
 // RulesDeactivateParams is parameters of Rules_deactivate operation.
 type RulesDeactivateParams struct {
 	// Unique identifier.
@@ -6351,8 +6278,6 @@ type RulesListParams struct {
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
 	PageSize OptInt32 `json:",omitempty,omitzero"`
-	// True lists the archived resources instead of the kept ones; the default hides them.
-	Archived OptBool `json:",omitempty,omitzero"`
 }
 
 func unpackRulesListParams(packed middleware.Parameters) (params RulesListParams) {
@@ -6372,15 +6297,6 @@ func unpackRulesListParams(packed middleware.Parameters) (params RulesListParams
 		}
 		if v, ok := packed[key]; ok {
 			params.PageSize = v.(OptInt32)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "archived",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.Archived = v.(OptBool)
 		}
 	}
 	return params
@@ -6530,47 +6446,6 @@ func decodeRulesListParams(args [0]string, argsEscaped bool, r *http.Request) (p
 			Err:  err,
 		}
 	}
-	// Decode query: archived.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "archived",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotArchivedVal bool
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToBool(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotArchivedVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.Archived.SetTo(paramsDotArchivedVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "archived",
-			In:   "query",
-			Err:  err,
-		}
-	}
 	return params, nil
 }
 
@@ -6665,79 +6540,6 @@ func unpackRulesRevertParams(packed middleware.Parameters) (params RulesRevertPa
 }
 
 func decodeRulesRevertParams(args [1]string, argsEscaped bool, r *http.Request) (params RulesRevertParams, _ error) {
-	// Decode path: id.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "id",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				var paramsDotIDVal int64
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToStringInt64(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotIDVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "id",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// RulesUnarchiveParams is parameters of Rules_unarchive operation.
-type RulesUnarchiveParams struct {
-	// Unique identifier.
-	ID EntityId
-}
-
-func unpackRulesUnarchiveParams(packed middleware.Parameters) (params RulesUnarchiveParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "id",
-			In:   "path",
-		}
-		params.ID = packed[key].(EntityId)
-	}
-	return params
-}
-
-func decodeRulesUnarchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params RulesUnarchiveParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]

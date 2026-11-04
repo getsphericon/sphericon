@@ -209,10 +209,10 @@ enum AuditAction {
   /** Deleted a rule */
   ruleDelete: "rule.delete",
 
-  /** Archived a rule */
+  /** Deleted a rule that has firings, which are kept */
   ruleDiscard: "rule.discard",
 
-  /** Restored a rule */
+  /** Restored a deleted rule (no surface does it) */
   ruleRestore: "rule.restore",
 
   /** Created a segment */
