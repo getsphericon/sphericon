@@ -242,6 +242,81 @@ test('every kind of item is a sentence, with a link where there is somewhere to 
     .toBeInTheDocument()
 })
 
+test('items of one kind are one sentence that names them all, with one link', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          { kind: 'webhookDisabled', severity: 'notice', ...about('1', 'https://a.test/x') },
+          { kind: 'sendingDomainNotBulkReady', severity: 'notice', ...about('2', 'mail.acme.com') },
+          { kind: 'webhookDisabled', severity: 'notice', ...about('3', 'https://b.test/y') },
+          { kind: 'sendingDomainNotBulkReady', severity: 'notice', ...about('4', 'news.acme.com') },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByText('2 webhooks disabled themselves after failing deliveries.'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('https://a.test/x, https://b.test/y')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/2 sending domains have no published DMARC record/))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('mail.acme.com, news.acme.com')).toBeInTheDocument()
+  await expect.element(screen.getByRole('link', { name: 'Open webhooks' })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open email settings' }))
+    .toBeInTheDocument()
+})
+
+test('grouped broadcasts link each by its name, and differ by what holds them', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          {
+            kind: 'broadcastHeld',
+            severity: 'blocked',
+            ...about('12', 'Spring launch'),
+            holdReason: 'unverified_domain',
+          },
+          {
+            kind: 'broadcastHeld',
+            severity: 'blocked',
+            ...about('13', 'Summer launch'),
+            holdReason: 'unverified_domain',
+          },
+          {
+            kind: 'broadcastHeld',
+            severity: 'blocked',
+            ...about('14', 'Autumn launch'),
+            holdReason: 'no_integration',
+          },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByText(/2 broadcasts are on hold. The sender domain is not verified/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Spring launch' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/12/report')
+  await expect
+    .element(screen.getByRole('link', { name: 'Summer launch' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/13/report')
+  await expect.element(screen.getByText(/Autumn launch is on hold/)).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Open the broadcast' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/14/report')
+})
+
 test('a held broadcast says what lifts the hold', async () => {
   worker.use(
     handleSiteAttentionGet({
