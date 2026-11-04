@@ -27,10 +27,20 @@ depended on the row's past.
     Membership, Invitation), as ADR 0049 already had it.
   - Facts (Event, Outbound message, Audit entry, Suppression) stay as ADR 0049 has them. Only
     Retention and erasure physically remove an archived or discarded row.
-- **An archived or a discarded row is read-only.** Edits, Publish, Revert, Deactivate and the
-  like answer 404 for a discarded row (as ADR 0097 and ADR 0098 have it for an Integration and a
-  Rule) and 409 for an archived one until it is unarchived. Provider hooks, tracking and other
-  history still reach both.
+- **An archived or a discarded row is read-only to its owner.** Edits, Publish, Revert, Deactivate
+  and the like answer 404 for a discarded row (as ADR 0097 and ADR 0098 have it for an Integration
+  and a Rule) and 409 for an archived one until it is unarchived. The refusal lives in the modules
+  and the lifecycle (`Editable` in `internal/drafts`), not in the scoped client: the system still
+  writes both, from a Broadcast's delivery counters and provider hooks to quota, DNS state and
+  rekey.
+- **The Audit log names the action as the owner sees it.** An archivable kind records `archive` and
+  `unarchive`; a discardable one records `discard` and has no `restore` (the Workspace keeps its
+  `delete` and `restore`, ADR 0046). The migration rewrites the stored `discard` and `restore`
+  entries of Broadcasts, Automations and Segments to the new names.
+- **What changes for a person.** A draft Broadcast is archived, not deleted, and the Broadcast and
+  Automation lists lose Delete. A Sign-up item leaves the Staff list once deleted. An Automation is
+  kept from archiving by an active Rule that enrolls into it, no longer by any kept one: Publish of
+  a Rule already refuses an archived Automation.
 - **Live use blocks both** (ADR 0099). A draft is not Live use: archiving a Segment that only a
   draft Broadcast names is allowed, and scheduling that draft is then refused.
 - **The contract names the state as the owner does.** An archivable resource has `archivedAt`, the
@@ -41,7 +51,9 @@ depended on the row's past.
 - **The scoped client follows the kinds.** An entity with the archive column gets `Archive`,
   `Unarchive` and no `Delete`; one with the discard column gets `Discard` and no `Delete` or
   `Undiscard`, the Workspace's window keeping its own lifecycle (ADR 0046). `Query()` hides archived
-  and discarded rows; the readers ADR 0049 and ADR 0099 name see them.
+  and discarded rows; the readers ADR 0049 and ADR 0099 name see them. A Versioned definition
+  (ADR 0065) takes either column: the shared lifecycle archives an Automation and discards a Rule,
+  the discard keeping today's deactivation under the Publish lock.
 
 ## Considered Options
 
