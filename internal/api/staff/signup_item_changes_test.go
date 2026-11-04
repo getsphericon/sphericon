@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/consentrecord"
+	"github.com/getsphericon/sphericon/ent/legaldocumentversion"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -183,7 +185,7 @@ func TestABlankTitleIsRefused(t *testing.T) {
 	assert.Equal(t, before, after, "the title is unchanged")
 }
 
-func TestADeletedItemLeavesTheFormItsPageAndTheListButKeepsItsVersions(t *testing.T) {
+func TestADeletedItemLeavesTheFormItsPageAndTheListButKeepsItsVersionsAndAnswers(t *testing.T) {
 	h := newHarness(t)
 	c := h.console(t)
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID, fixtures.DataNoticeID)
@@ -198,6 +200,11 @@ func TestADeletedItemLeavesTheFormItsPageAndTheListButKeepsItsVersions(t *testin
 	assert.True(t, item.DiscardedAt.Set, "it is still read by id, deleted")
 	listed := versions(t, c, fixtures.ServiceTermsID)
 	assert.Equal(t, []staffapi.LegalDocumentLabel{fixtures.ServiceTermsCurrentLabel, fixtures.ServiceTermsStaleLabel}, labels(listed))
+	answers, err := h.env.DB.ConsentRecord.Query().
+		Where(consentrecord.HasVersionWith(legaldocumentversion.ItemID(fixtures.ServiceTermsID))).
+		IDs(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, []int64{fixtures.MaryTermsAcceptedID}, answers, "the Users' answers to it stay, so consent stays provable")
 }
 
 func TestDeletingADeletedItemKeepsTheMomentItWasDeleted(t *testing.T) {
