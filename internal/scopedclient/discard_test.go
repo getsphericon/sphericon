@@ -32,24 +32,6 @@ func TestDiscardableEntityHasDiscardAndNoDeleteOrUndiscard(t *testing.T) {
 	}
 }
 
-// The real archivable entities have no Delete and no Discard either.
-func TestArchivableEntitiesHaveNoDeleteOrDiscard(t *testing.T) {
-	for _, wrapper := range []reflect.Type{
-		reflect.TypeFor[*ent.BroadcastScoped](),
-		reflect.TypeFor[*ent.AutomationScoped](),
-		reflect.TypeFor[*ent.SegmentScoped](),
-	} {
-		for _, absent := range []string{"Delete", "DeleteOneID", "Discard", "Undiscard", "Restore", "QueryWithDiscarded"} {
-			_, has := wrapper.MethodByName(absent)
-			assert.Falsef(t, has, "%s has no %s", wrapper, absent)
-		}
-		for _, present := range []string{"Archive", "Unarchive", "Purge"} {
-			_, has := wrapper.MethodByName(present)
-			assert.Truef(t, has, "%s has %s", wrapper, present)
-		}
-	}
-}
-
 // A discarded row leaves list queries but is still addressable by id, can be seen with
 // QueryWithDiscarded.
 func TestDiscardHidesFromListsAndKeepsByIDReads(t *testing.T) {

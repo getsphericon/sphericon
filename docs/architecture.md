@@ -114,8 +114,7 @@ also gets `<N>Pointers` (`ent/template/scoped_versioned.tmpl`, `ent.VersionedSto
 live and draft pointers and its status; `internal/drafts` is the one lifecycle over them and the
 only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `Archive`, `Unarchive`,
 `QueryArchived`, `QueryWithArchived` and `Purge` in place of `Delete`, one with `DiscardMixin`
-`Discard` and `Purge` (ADR 0100); a mixin no production entity takes yet is generated and tested
-on the test-only client `ent/scopedtest` (schema in `ent/schema/scopedtest`).
+`Discard` and `Purge` (ADR 0100); `internal/scopedclient` tests them on the production entities.
 
 - **Handlers and domain modules hold no `*ent.Client` and no bare `int64` workspace id.**
   They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and never call

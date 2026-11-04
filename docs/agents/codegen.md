@@ -15,7 +15,6 @@ typespec/{site,external,collect,staff,staffee,service,telemetry}   ──tsp com
 src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack Router file-based route tree)
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
-ent/schema/scopedtest/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scopedtest/  (a client of test-only entities: a mixin no production entity takes yet, tested in internal/scopedclient)
 ent + gen/{site,external,staff,staffee,service}  ──goverter (cmd/goverter)──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
 gen/{site,external,staff} request bodies  ──goverter──▶ internal/api/{site,external,staff}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/patch fields)
 gen/service request bodies  ──goverter──▶ ee/staff/resources/service_inputs_gen.go  (`ServiceInputs`; no gen/staffee body is a module input)

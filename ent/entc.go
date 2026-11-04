@@ -3,7 +3,6 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"slices"
 	"strings"
@@ -14,39 +13,27 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// The flags default to the production client. `mise run generate:backend` runs it a second time
-// for the client of test-only entities: -schema ./schema/scopedtest -target ./scopedtest
-// -package .../ent/scopedtest -snapshot=false.
 func main() {
-	schemaDir := flag.String("schema", "./schema", "the schema package to load")
-	target := flag.String("target", ".", "the directory the client is written to")
-	pkg := flag.String("package", "github.com/getsphericon/sphericon/ent", "the import path of the target")
-	snapshot := flag.Bool("snapshot", true, "write the schema snapshot (internal/schema.go)")
-	flag.Parse()
-	var features []gen.Feature
-	if *snapshot {
-		features = append(features, gen.FeatureSnapshot)
-	}
-	features = append(features,
-		gen.FeatureUpsert,
-		// Modifier exposes .Modify() on query builders, used by the analytics
-		// dashboard for date_trunc day-bucketed engagement aggregates.
-		gen.FeatureModifier,
-		// Lock exposes .ForUpdate() on query builders: accounts locks the Workspace's
-		// owner rows so the Owner invariant holds under concurrent role changes.
-		gen.FeatureLock,
-		// ExecQuery exposes ExecContext on the client: internal/workspacefeed takes
-		// its advisory lock and the next feed position in raw SQL.
-		gen.FeatureExecQuery,
-		// VersionedMigration generates migrate.NamedDiff, which cmd/db uses to write
-		// the next migration straight from the ent schema.
-		gen.FeatureVersionedMigration,
-	)
-	err := entc.Generate(*schemaDir, &gen.Config{
-		Target:   *target,
-		Package:  *pkg,
-		IDType:   &field.TypeInfo{Type: field.TypeInt64},
-		Features: features,
+	err := entc.Generate("./schema", &gen.Config{
+		Target:  ".",
+		Package: "github.com/getsphericon/sphericon/ent",
+		IDType:  &field.TypeInfo{Type: field.TypeInt64},
+		Features: []gen.Feature{
+			gen.FeatureSnapshot,
+			gen.FeatureUpsert,
+			// Modifier exposes .Modify() on query builders, used by the analytics
+			// dashboard for date_trunc day-bucketed engagement aggregates.
+			gen.FeatureModifier,
+			// Lock exposes .ForUpdate() on query builders: accounts locks the Workspace's
+			// owner rows so the Owner invariant holds under concurrent role changes.
+			gen.FeatureLock,
+			// ExecQuery exposes ExecContext on the client: internal/workspacefeed takes
+			// its advisory lock and the next feed position in raw SQL.
+			gen.FeatureExecQuery,
+			// VersionedMigration generates migrate.NamedDiff, which cmd/db uses to write
+			// the next migration straight from the ent schema.
+			gen.FeatureVersionedMigration,
+		},
 		// The scoped client (ADR 0017): ent/template/scoped*.tmpl generate ent/scoped*.go.
 		Templates: []*gen.Template{
 			gen.MustParse(gen.NewTemplate("scoped").Funcs(scopedFuncs()).ParseDir("template")),

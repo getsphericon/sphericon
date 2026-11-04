@@ -3,4 +3,3 @@
 package ent
 
 //go:generate go run -mod=mod entc.go
-//go:generate go run -mod=mod entc.go -schema ./schema/scopedtest -target ./scopedtest -package github.com/getsphericon/sphericon/ent/scopedtest -snapshot=false
