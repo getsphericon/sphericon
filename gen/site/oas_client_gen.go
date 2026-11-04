@@ -385,8 +385,9 @@ type Invoker interface {
 	SiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (SiteBroadcastLinksListRes, error)
 	// SiteBroadcastsArchive invokes SiteBroadcasts_archive operation.
 	//
-	// Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and figures, and
-	// can be restored. A draft is deleted and a scheduled or sending broadcast cannot be archived (422).
+	// Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
+	// figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be
+	// archived (409). Archiving an archived broadcast changes nothing.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/archive
 	SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (SiteBroadcastsArchiveRes, error)
@@ -396,12 +397,6 @@ type Invoker interface {
 	//
 	// POST /workspaces/{workspaceId}/broadcasts
 	SiteBroadcastsCreate(ctx context.Context, request *CreateBroadcastInput, params SiteBroadcastsCreateParams) (SiteBroadcastsCreateRes, error)
-	// SiteBroadcastsDelete invokes SiteBroadcasts_delete operation.
-	//
-	// Delete a resource from the site UI.
-	//
-	// DELETE /workspaces/{workspaceId}/broadcasts/{id}
-	SiteBroadcastsDelete(ctx context.Context, params SiteBroadcastsDeleteParams) (SiteBroadcastsDeleteRes, error)
 	// SiteBroadcastsGet invokes SiteBroadcasts_get operation.
 	//
 	// Get a resource by ID for the site UI.
@@ -420,14 +415,14 @@ type Invoker interface {
 	// are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and
 	// rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through
 	// cannot send (disabled or archived, or no default): a draft may name such an integration, only
-	// scheduling it is refused.
+	// scheduling it is refused. An archived broadcast is a 409 too.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
 	SiteBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (SiteBroadcastsScheduleRes, error)
 	// SiteBroadcastsSend invokes SiteBroadcasts_send operation.
 	//
 	// Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-	// resolved from; an archived segment is refused.
+	// resolved from; an archived segment is refused. An archived broadcast is a 409.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/send
 	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error)
@@ -444,7 +439,7 @@ type Invoker interface {
 	SiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
 	// SiteBroadcastsUnarchive invokes SiteBroadcasts_unarchive operation.
 	//
-	// Restore an archived broadcast to the list.
+	// Bring an archived broadcast back to the list, in the status it had.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
 	SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (SiteBroadcastsUnarchiveRes, error)
@@ -8159,8 +8154,9 @@ func (c *Client) sendSiteBroadcastLinksList(ctx context.Context, params SiteBroa
 
 // SiteBroadcastsArchive invokes SiteBroadcasts_archive operation.
 //
-// Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and figures, and
-// can be restored. A draft is deleted and a scheduled or sending broadcast cannot be archived (422).
+// Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
+// figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be
+// archived (409). Archiving an archived broadcast changes nothing.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/archive
 func (c *Client) SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (SiteBroadcastsArchiveRes, error) {
@@ -8446,162 +8442,6 @@ func (c *Client) sendSiteBroadcastsCreate(ctx context.Context, request *CreateBr
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteBroadcastsCreateResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// SiteBroadcastsDelete invokes SiteBroadcasts_delete operation.
-//
-// Delete a resource from the site UI.
-//
-// DELETE /workspaces/{workspaceId}/broadcasts/{id}
-func (c *Client) SiteBroadcastsDelete(ctx context.Context, params SiteBroadcastsDeleteParams) (SiteBroadcastsDeleteRes, error) {
-	res, err := c.sendSiteBroadcastsDelete(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendSiteBroadcastsDelete(ctx context.Context, params SiteBroadcastsDeleteParams) (res SiteBroadcastsDeleteRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("SiteBroadcasts_delete"),
-		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/broadcasts/{id}"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SiteBroadcastsDeleteOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [4]string
-	pathParts[0] = "/workspaces/"
-	{
-		// Encode "workspaceId" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "workspaceId",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/broadcasts/"
-	{
-		// Encode "id" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "id",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[3] = encoded
-	}
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "DELETE", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, SiteBroadcastsDeleteOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeSiteBroadcastsDeleteResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -9021,7 +8861,7 @@ func (c *Client) sendSiteBroadcastsList(ctx context.Context, params SiteBroadcas
 // are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and
 // rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through
 // cannot send (disabled or archived, or no default): a draft may name such an integration, only
-// scheduling it is refused.
+// scheduling it is refused. An archived broadcast is a 409 too.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
 func (c *Client) SiteBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (SiteBroadcastsScheduleRes, error) {
@@ -9182,7 +9022,7 @@ func (c *Client) sendSiteBroadcastsSchedule(ctx context.Context, request *Schedu
 // SiteBroadcastsSend invokes SiteBroadcasts_send operation.
 //
 // Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-// resolved from; an archived segment is refused.
+// resolved from; an archived segment is refused. An archived broadcast is a 409.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/send
 func (c *Client) SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error) {
@@ -9504,7 +9344,7 @@ func (c *Client) sendSiteBroadcastsTestSend(ctx context.Context, request *TestSe
 
 // SiteBroadcastsUnarchive invokes SiteBroadcasts_unarchive operation.
 //
-// Restore an archived broadcast to the list.
+// Bring an archived broadcast back to the list, in the status it had.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
 func (c *Client) SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (SiteBroadcastsUnarchiveRes, error) {

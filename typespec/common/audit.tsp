@@ -135,10 +135,10 @@ enum AuditAction {
   broadcastDelete: "broadcast.delete",
 
   /** Archived a broadcast */
-  broadcastDiscard: "broadcast.discard",
+  broadcastArchive: "broadcast.archive",
 
-  /** Restored a broadcast */
-  broadcastRestore: "broadcast.restore",
+  /** Unarchived a broadcast */
+  broadcastUnarchive: "broadcast.unarchive",
 
   /** Created a contact */
   contactCreate: "contact.create",

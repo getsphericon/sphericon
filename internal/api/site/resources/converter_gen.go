@@ -731,7 +731,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 		siteapiSiteBroadcastResource.FailedAt = optNilTimestamp((*source).FailedAt)
 		// siteapiSiteBroadcastResource.Stats: ignore
 		// siteapiSiteBroadcastResource.Progress: ignore
-		siteapiSiteBroadcastResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteBroadcastResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		siteapiSiteBroadcastResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteBroadcastResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

@@ -127,8 +127,8 @@ export const AuditAction = {
   BROADCAST_CREATE: 'broadcast.create',
   BROADCAST_UPDATE: 'broadcast.update',
   BROADCAST_DELETE: 'broadcast.delete',
-  BROADCAST_DISCARD: 'broadcast.discard',
-  BROADCAST_RESTORE: 'broadcast.restore',
+  BROADCAST_ARCHIVE: 'broadcast.archive',
+  BROADCAST_UNARCHIVE: 'broadcast.unarchive',
   CONTACT_CREATE: 'contact.create',
   CONTACT_UPDATE: 'contact.update',
   CONTACT_DELETE: 'contact.delete',
@@ -913,7 +913,7 @@ export type BroadcastResource = {
    */
   failedAt?: Timestamp | null;
   /**
-   * When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived.
+   * When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it is unarchived.
    */
   archivedAt?: Timestamp | null;
   /**
@@ -6773,56 +6773,6 @@ export type BroadcastsCreateResponses = {
 
 export type BroadcastsCreateResponse = BroadcastsCreateResponses[keyof BroadcastsCreateResponses];
 
-export type BroadcastsDeleteData = {
-  body?: never;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/broadcasts/{id}';
-};
-
-export type BroadcastsDeleteErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type BroadcastsDeleteError = BroadcastsDeleteErrors[keyof BroadcastsDeleteErrors];
-
-export type BroadcastsDeleteResponses = {
-  /**
-   * There is no content to send for this request, but the headers may be useful.
-   */
-  204: void;
-};
-
-export type BroadcastsDeleteResponse = BroadcastsDeleteResponses[keyof BroadcastsDeleteResponses];
-
 export type BroadcastsGetData = {
   body?: never;
   path: {
@@ -6899,6 +6849,10 @@ export type BroadcastsUpdateErrors = {
    */
   404: ProblemDetails;
   /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -6949,9 +6903,9 @@ export type BroadcastsArchiveErrors = {
    */
   404: ProblemDetails;
   /**
-   * RFC 7807 validation response
+   * RFC 7807 conflict response
    */
-  422: ProblemDetails;
+  409: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
@@ -7098,6 +7052,10 @@ export type BroadcastsSetSegmentErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 validation response
    */

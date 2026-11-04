@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -72,20 +73,23 @@ func TestSiteBroadcastsArchiveAndRestore(t *testing.T) {
 	assert.Contains(t, broadcastIDs(listBroadcasts(t, c, false)), id)
 }
 
-// A failed broadcast is history too; a draft, a scheduled and a sending one are not archived.
-func TestSiteBroadcastsArchiveOnlySentOrFailed(t *testing.T) {
+// A draft and a failed broadcast are archived too; a scheduled and a sending one are work in
+// flight and are refused with 409.
+func TestSiteBroadcastsArchiveRefusesWorkInFlight(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	failed, err := c.SiteBroadcastsArchive(ctx, archiveParams(fixtures.BroadcastFailedID))
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastResource{}, failed)
-
-	for _, id := range []int64{fixtures.BroadcastDraftID, fixtures.BroadcastScheduledID, fixtures.BroadcastSendingID} {
+	for _, id := range []int64{fixtures.BroadcastDraftID, fixtures.BroadcastFailedID} {
 		out, err := c.SiteBroadcastsArchive(ctx, archiveParams(id))
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteBroadcastsArchiveUnprocessableEntity{}, out, "broadcast %d", id)
+		assert.IsType(t, &siteapi.SiteBroadcastResource{}, out, "broadcast %d", id)
+	}
+
+	for _, id := range []int64{fixtures.BroadcastScheduledID, fixtures.BroadcastSendingID} {
+		out, err := c.SiteBroadcastsArchive(ctx, archiveParams(id))
+		require.NoError(t, err)
+		assert.IsType(t, &siteapi.SiteBroadcastsArchiveConflict{}, out, "broadcast %d", id)
 	}
 
 	missing, err := c.SiteBroadcastsArchive(ctx, archiveParams(999999))
@@ -93,25 +97,61 @@ func TestSiteBroadcastsArchiveOnlySentOrFailed(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteBroadcastsArchiveNotFound{}, missing)
 }
 
-// Deleting removes a draft for good; a sent broadcast is archived, never deleted.
-func TestSiteBroadcastsDeleteOnlyPurgesDrafts(t *testing.T) {
+// A draft is archived, not deleted: it leaves the list for the archived view and comes back a
+// draft when unarchived.
+func TestSiteADraftBroadcastIsArchivedAndUnarchived(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	del := func(id int64) (siteapi.SiteBroadcastsDeleteRes, error) {
-		return c.SiteBroadcastsDelete(ctx, siteapi.SiteBroadcastsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
-	}
+	id := int64(fixtures.BroadcastDraftID)
 
-	gone, err := del(fixtures.BroadcastDraftID)
+	out, err := c.SiteBroadcastsArchive(ctx, archiveParams(id))
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsDeleteNoContent{}, gone)
-	draftGone, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastDraftID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsGetNotFound{}, draftGone, "a draft is purged, not archived")
+	archived, ok := out.(*siteapi.SiteBroadcastResource)
+	require.Truef(t, ok, "got %T", out)
+	assert.True(t, archived.ArchivedAt.IsSet())
+	assert.NotContains(t, broadcastIDs(listBroadcasts(t, c, false)), id)
+	assert.Contains(t, broadcastIDs(listBroadcasts(t, c, true)), id)
 
-	sent, err := del(fixtures.BroadcastSentID)
+	back, err := c.SiteBroadcastsUnarchive(ctx, siteapi.SiteBroadcastsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsDeleteUnprocessableEntity{}, sent)
+	restored, ok := back.(*siteapi.SiteBroadcastResource)
+	require.Truef(t, ok, "got %T", back)
+	assert.False(t, restored.ArchivedAt.IsSet())
+	assert.Equal(t, siteapi.SiteBroadcastStatusDraft, restored.Status)
+	assert.Contains(t, broadcastIDs(listBroadcasts(t, c, false)), id)
+}
+
+// An archived draft is read-only until it is unarchived: an edit, a schedule and a send answer
+// 409 and leave it as it was.
+func TestSiteAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	id := siteapi.EntityId(fixtures.BroadcastDraftID)
+	_, err := c.SiteBroadcastsArchive(ctx, archiveParams(fixtures.BroadcastDraftID))
+	require.NoError(t, err)
+
+	upd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptString("Renamed")},
+		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteBroadcastsUpdateConflict{}, upd)
+
+	sched, err := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
+		siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteBroadcastsScheduleConflict{}, sched)
+
+	send, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteBroadcastsSendConflict{}, send)
+
+	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+	kept, ok := got.(*siteapi.SiteBroadcastResource)
+	require.Truef(t, ok, "got %T", got)
+	assert.Equal(t, fixtures.BroadcastDraftName, kept.Name)
+	assert.Equal(t, siteapi.SiteBroadcastStatusDraft, kept.Status)
 }
 
 // The dashboard counts an archived broadcast: archiving moves no figure.
@@ -139,7 +179,7 @@ func TestSiteAnalyticsIgnoresArchiving(t *testing.T) {
 	assert.Equal(t, before, after)
 }
 
-// Archive and restore are recorded in the Audit log with their actor.
+// Archive and unarchive are recorded in the Audit log with their actor.
 func TestSiteBroadcastsArchiveIsAudited(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -156,7 +196,7 @@ func TestSiteBroadcastsArchiveIsAudited(t *testing.T) {
 		return entry
 	})
 	actions := lo.Map(entries, func(e *events.AuditEntry, _ int) string { return e.Action })
-	assert.Equal(t, []string{"broadcast.discard", "broadcast.restore"}, actions)
+	assert.Equal(t, []string{"broadcast.archive", "broadcast.unarchive"}, actions)
 	assert.Equal(t, events.ActorUser, entries[0].Actor.Kind)
 	assert.Equal(t, "Python crash course is here", entries[0].TargetName)
 }

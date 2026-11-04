@@ -26,7 +26,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holdreason"
@@ -45,9 +44,12 @@ var (
 	ErrNotFound = validation.NotFound("broadcasts: broadcast not found", i18n.ErrorsBroadcastNotFound)
 	// ErrNotSendable: the Broadcast is past draft/scheduled (sending, sent, failed).
 	ErrNotSendable = validation.Refuse("broadcasts: broadcast is not a draft or scheduled", i18n.ErrorsBroadcastNotSendable)
-	// ErrNotArchivable: only a sent or failed Broadcast is archived; a draft is deleted and a
-	// scheduled or sending one is still work in flight.
-	ErrNotArchivable = validation.Refuse("broadcasts: only a sent or failed broadcast can be archived", i18n.ErrorsBroadcastNotArchivable)
+	// ErrNotArchivable: a scheduled or sending Broadcast is work in flight, Live use of itself
+	// (ADR 0099), so it is not archived.
+	ErrNotArchivable = validation.Conflict("broadcasts: a scheduled or sending broadcast cannot be archived", i18n.ErrorsBroadcastNotArchivable)
+	// ErrArchived: the Broadcast is archived, so it is read-only to its owner until it is
+	// unarchived (ADR 0100).
+	ErrArchived = validation.Conflict("broadcasts: broadcast is archived", i18n.ErrorsBroadcastArchived)
 	// ErrNotScheduled: the Broadcast is not scheduled, so there is no schedule to clear.
 	ErrNotScheduled = validation.Refuse("broadcasts: broadcast is not scheduled", i18n.ErrorsBroadcastNotScheduled)
 )
@@ -155,12 +157,16 @@ func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 // send job (at `at`, nil for as soon as possible) in the same transaction. The write is a
 // compare-and-swap on the status, so two racing requests cannot both win, and a job that
 // cannot be queued rolls the claim back with it. check, when given, may refuse the claimed
-// Broadcast after the move, which rolls the move back. A claimed Broadcast is Live use, so the claim
+// Broadcast after the move, which rolls the move back. An archived Broadcast is read-only and is
+// ErrArchived. A claimed Broadcast is Live use, so the claim
 // holds the Workspace's lock (ADR 0099): a removal that checks for Live use waits for it, or it for
 // the removal, and the one that waits reads what the other committed.
 func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update, at *time.Time, check func(context.Context, *ent.Scoped, *ent.Broadcast) error) (*ent.Broadcast, error) {
 	var claimed *ent.Broadcast
 	err := m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+		if err := m.notArchived(ctx, ts, id); err != nil {
+			return err
+		}
 		if err := fire(ctx, ts, id, t, set); err != nil {
 			return notSendable(err)
 		}
@@ -189,12 +195,12 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, 
 
 var (
 	// ErrNotDraft: the Broadcast is past draft (scheduled, sending, sent, failed) and
-	// can no longer be edited, re-targeted or deleted through the authoring surface.
+	// can no longer be edited or re-targeted through the authoring surface.
 	ErrNotDraft = validation.Refuse("broadcasts: broadcast is not a draft", i18n.ErrorsBroadcastNotDraft)
 	// ErrSegmentNotFound: the Segment does not exist in this Workspace.
 	ErrSegmentNotFound = validation.Refuse("broadcasts: segment not found", i18n.ErrorsBroadcastSegmentNotFound)
-	// ErrSegmentArchived: a draft leaving draft names an archived Segment, which takes no part in
-	// new work (ADR 0100); the refusal names it.
+	// ErrSegmentArchived: a draft leaving draft, or a write that sets the Segment, names an archived
+	// Segment, which takes no part in new work (ADR 0100); the refusal names it.
 	ErrSegmentArchived = validation.Refuse("broadcasts: segment archived", i18n.ErrorsBroadcastSegmentArchived)
 	// ErrIntegrationNotFound: the Integration does not exist in this Workspace or is archived.
 	ErrIntegrationNotFound = validation.Refuse("broadcasts: integration not found", i18n.ErrorsBroadcastIntegrationNotFound)
@@ -319,12 +325,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent
 // another Channel than the Broadcast's never sends it (ADR 0074) and is refused too.
 func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, channel messaging.Channel, segmentID, integrationID *int64) error {
 	if segmentID != nil {
-		ok, err := s.Segment().Query().Where(segment.ID(*segmentID)).Exist(ctx)
-		if err != nil {
+		if err := keptSegment(ctx, s, *segmentID); err != nil {
 			return err
-		}
-		if !ok {
-			return ErrSegmentNotFound
 		}
 	}
 	if integrationID == nil {
@@ -343,6 +345,23 @@ func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, channel messaging
 	}
 	if !onChannel {
 		return ErrIntegrationOtherChannel
+	}
+	return nil
+}
+
+// keptSegment refuses a Segment a write sets on a Broadcast that is missing from the Workspace
+// (ErrSegmentNotFound) or archived (ErrSegmentArchived, naming it): an archived Segment leaves new
+// work (ADR 0100). A Broadcast already pointing at one keeps it as history.
+func keptSegment(ctx context.Context, s *ent.Scoped, id int64) error {
+	seg, err := s.Segment().Get(ctx, id)
+	if ent.IsNotFound(err) {
+		return ErrSegmentNotFound
+	}
+	if err != nil {
+		return err
+	}
+	if seg.ArchivedAt != nil {
+		return ErrSegmentArchived.With(seg.Name)
 	}
 	return nil
 }
@@ -369,7 +388,7 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f
 	rows := func() *ent.BroadcastQuery {
 		q := s.Broadcast().Query()
 		if f.Archived {
-			q = s.Broadcast().QueryDiscarded()
+			q = s.Broadcast().QueryArchived()
 		}
 		if len(f.Statuses) > 0 {
 			q = q.Where(broadcast.StatusIn(f.Statuses...))
@@ -423,6 +442,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateIn
 	if err != nil {
 		return nil, err
 	}
+	if cur.ArchivedAt != nil {
+		return nil, ErrArchived
+	}
 	channel := messaging.Channel(cur.Channel)
 	if f.Content != nil && f.Content.Channel() != channel {
 		return nil, ErrChannelFixed
@@ -446,16 +468,12 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateIn
 // is nil. It never schedules or sends.
 func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id int64, segmentID *int64) (*ent.Broadcast, error) {
 	if segmentID != nil {
-		ok, err := s.Segment().Query().Where(segment.ID(*segmentID)).Exist(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
+		if err := keptSegment(ctx, s, *segmentID); err != nil {
 			// A foreign or unknown broadcast is still reported as such first.
-			if _, err := m.Get(ctx, s, id); err != nil {
-				return nil, err
+			if _, getErr := m.Get(ctx, s, id); getErr != nil {
+				return nil, getErr
 			}
-			return nil, ErrSegmentNotFound
+			return nil, err
 		}
 	}
 	u := s.Broadcast().Update().Where(draftOf(id)).SetNillableSegmentID(segmentID)
@@ -465,42 +483,41 @@ func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id int64, segmen
 	return m.editDraft(ctx, s, id, u)
 }
 
-// DeleteDraft purges a draft Broadcast (ADR 0049). Past draft the Broadcast is history (its
-// recipients and report) and is archived instead, never removed.
-func (m *Module) DeleteDraft(ctx context.Context, s *ent.Scoped, id int64) error {
-	n, err := s.Broadcast().Purge().Where(draftOf(id)).Exec(ctx)
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return m.notDraftOrNotFound(ctx, s, id)
-	}
-	return nil
-}
+// archivable is the statuses a Broadcast is archived in: a draft and a finished one. A scheduled
+// or sending Broadcast is work in flight, Live use of itself (ADR 0099).
+var archivable = []broadcast.Status{broadcast.StatusDraft, broadcast.StatusSent, broadcast.StatusFailed}
 
-// Archive discards a sent or failed Broadcast (ADR 0049) and returns it: it leaves the lists but
-// its Recipients, report, tracking and figures stay. A draft is purged (DeleteDraft) and a
-// scheduled or sending Broadcast is work in flight, so both are ErrNotArchivable. Archiving an
-// archived Broadcast changes nothing.
+// Archive puts a draft, sent or failed Broadcast aside (ADR 0100) and returns it: it leaves the
+// lists for the archived view, its Recipients, report, tracking and figures stay, and it is
+// read-only until unarchived. A Broadcast is never deleted. A scheduled or sending one is
+// ErrNotArchivable. Archiving an archived Broadcast changes nothing. It holds the Workspace's
+// lock, as a claim does, and the claim refuses an archived draft, so an Archive and a Schedule
+// that race cannot leave an archived Broadcast scheduled.
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
-	err := s.Broadcast().Discard(ctx, id, broadcast.StatusIn(broadcast.StatusSent, broadcast.StatusFailed))
-	if err != nil && !ent.IsNotFound(err) {
-		return nil, err
-	}
-	b, err := m.Get(ctx, s, id)
+	var archived *ent.Broadcast
+	err := m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		err := ts.Broadcast().Archive(ctx, id, broadcast.StatusIn(archivable...))
+		if err != nil && !ent.IsNotFound(err) {
+			return err
+		}
+		if archived, err = m.Get(ctx, ts, id); err != nil {
+			return err
+		}
+		if !lo.Contains(archivable, archived.Status) {
+			return ErrNotArchivable
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	if b.Status != broadcast.StatusSent && b.Status != broadcast.StatusFailed {
-		return nil, ErrNotArchivable
-	}
-	return b, nil
+	return archived, nil
 }
 
-// Unarchive brings an archived Broadcast back to the lists and returns it. Restoring a Broadcast
-// that is not archived changes nothing.
+// Unarchive brings an archived Broadcast back to the lists, in the status it had, and returns it.
+// Unarchiving a Broadcast that is not archived changes nothing.
 func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
-	err := s.Broadcast().Restore(ctx, id)
+	err := s.Broadcast().Unarchive(ctx, id)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
 	}
@@ -532,8 +549,9 @@ func (m *Module) Report(ctx context.Context, s *ent.Scoped, id int64) (Report, e
 	return Report{Status: b.Status, HoldReason: b.HoldReason, Figures: figures[id].Figures()}, nil
 }
 
+// draftOf matches the Broadcast while it is a draft its owner may edit: not archived.
 func draftOf(id int64) predicate.Broadcast {
-	return broadcast.And(broadcast.ID(id), broadcast.StatusEQ(broadcast.StatusDraft))
+	return broadcast.And(broadcast.ID(id), broadcast.StatusEQ(broadcast.StatusDraft), broadcast.ArchivedAtIsNil())
 }
 
 func (m *Module) editDraft(ctx context.Context, s *ent.Scoped, id int64, u *ent.BroadcastScopedUpdate) (*ent.Broadcast, error) {
@@ -548,8 +566,21 @@ func (m *Module) editDraft(ctx context.Context, s *ent.Scoped, id int64, u *ent.
 }
 
 func (m *Module) notDraftOrNotFound(ctx context.Context, s *ent.Scoped, id int64) error {
-	if _, err := m.Get(ctx, s, id); err != nil {
+	if err := m.notArchived(ctx, s, id); err != nil {
 		return err
 	}
 	return ErrNotDraft
+}
+
+// notArchived is ErrArchived for an archived Broadcast and ErrNotFound for one the Workspace does
+// not have.
+func (m *Module) notArchived(ctx context.Context, s *ent.Scoped, id int64) error {
+	b, err := m.Get(ctx, s, id)
+	if err != nil {
+		return err
+	}
+	if b.ArchivedAt != nil {
+		return ErrArchived
+	}
+	return nil
 }

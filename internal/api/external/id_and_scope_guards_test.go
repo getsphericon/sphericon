@@ -45,9 +45,6 @@ func idGuardCases() []guardCase {
 		{"BroadcastsUpdate", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
 			return c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{}, externalapi.BroadcastsUpdateParams{ID: id})
 		}, &externalapi.BroadcastsUpdateForbidden{}, &externalapi.BroadcastsUpdateUnauthorized{}, &externalapi.BroadcastsUpdateBadRequest{}},
-		{"BroadcastsDelete", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.BroadcastsDelete(ctx, externalapi.BroadcastsDeleteParams{ID: id})
-		}, &externalapi.BroadcastsDeleteForbidden{}, &externalapi.BroadcastsDeleteUnauthorized{}, &externalapi.BroadcastsDeleteBadRequest{}},
 		{"BroadcastsSetSegment", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
 			return c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}}, externalapi.BroadcastsSetSegmentParams{ID: id})
 		}, &externalapi.BroadcastsSetSegmentForbidden{}, &externalapi.BroadcastsSetSegmentUnauthorized{}, &externalapi.BroadcastsSetSegmentBadRequest{}},

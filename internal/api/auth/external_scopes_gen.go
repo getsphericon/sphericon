@@ -32,7 +32,6 @@ var ExternalOperationScopes = map[externalapi.OperationName][]apitokens.Scope{
 	externalapi.BrandKitGetOperation:               {apitokens.ScopeTemplatesRead},
 	externalapi.BroadcastsArchiveOperation:         {apitokens.ScopeBroadcastsWrite},
 	externalapi.BroadcastsCreateOperation:          {apitokens.ScopeBroadcastsWrite},
-	externalapi.BroadcastsDeleteOperation:          {apitokens.ScopeBroadcastsWrite},
 	externalapi.BroadcastsGetOperation:             {apitokens.ScopeBroadcastsRead},
 	externalapi.BroadcastsListOperation:            {apitokens.ScopeBroadcastsRead},
 	externalapi.BroadcastsReportOperation:          {apitokens.ScopeBroadcastsRead},

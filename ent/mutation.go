@@ -9288,7 +9288,7 @@ type BroadcastMutation struct {
 	id                 *int64
 	created_at         *time.Time
 	updated_at         *time.Time
-	discarded_at       *time.Time
+	archived_at        *time.Time
 	name               *string
 	channel            *broadcast.Channel
 	subject            *string
@@ -9539,53 +9539,53 @@ func (m *BroadcastMutation) ResetWorkspaceID() {
 	m.workspace = nil
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (m *BroadcastMutation) SetDiscardedAt(t time.Time) {
-	m.discarded_at = &t
+// SetArchivedAt sets the "archived_at" field.
+func (m *BroadcastMutation) SetArchivedAt(t time.Time) {
+	m.archived_at = &t
 }
 
-// DiscardedAt returns the value of the "discarded_at" field in the mutation.
-func (m *BroadcastMutation) DiscardedAt() (r time.Time, exists bool) {
-	v := m.discarded_at
+// ArchivedAt returns the value of the "archived_at" field in the mutation.
+func (m *BroadcastMutation) ArchivedAt() (r time.Time, exists bool) {
+	v := m.archived_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDiscardedAt returns the old "discarded_at" field's value of the Broadcast entity.
+// OldArchivedAt returns the old "archived_at" field's value of the Broadcast entity.
 // If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastMutation) OldDiscardedAt(ctx context.Context) (v *time.Time, err error) {
+func (m *BroadcastMutation) OldArchivedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDiscardedAt is only allowed on UpdateOne operations")
+		return v, errors.New("OldArchivedAt is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDiscardedAt requires an ID field in the mutation")
+		return v, errors.New("OldArchivedAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDiscardedAt: %w", err)
+		return v, fmt.Errorf("querying old value for OldArchivedAt: %w", err)
 	}
-	return oldValue.DiscardedAt, nil
+	return oldValue.ArchivedAt, nil
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (m *BroadcastMutation) ClearDiscardedAt() {
-	m.discarded_at = nil
-	m.clearedFields[broadcast.FieldDiscardedAt] = struct{}{}
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (m *BroadcastMutation) ClearArchivedAt() {
+	m.archived_at = nil
+	m.clearedFields[broadcast.FieldArchivedAt] = struct{}{}
 }
 
-// DiscardedAtCleared returns if the "discarded_at" field was cleared in this mutation.
-func (m *BroadcastMutation) DiscardedAtCleared() bool {
-	_, ok := m.clearedFields[broadcast.FieldDiscardedAt]
+// ArchivedAtCleared returns if the "archived_at" field was cleared in this mutation.
+func (m *BroadcastMutation) ArchivedAtCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldArchivedAt]
 	return ok
 }
 
-// ResetDiscardedAt resets all changes to the "discarded_at" field.
-func (m *BroadcastMutation) ResetDiscardedAt() {
-	m.discarded_at = nil
-	delete(m.clearedFields, broadcast.FieldDiscardedAt)
+// ResetArchivedAt resets all changes to the "archived_at" field.
+func (m *BroadcastMutation) ResetArchivedAt() {
+	m.archived_at = nil
+	delete(m.clearedFields, broadcast.FieldArchivedAt)
 }
 
 // SetName sets the "name" field.
@@ -10861,8 +10861,8 @@ func (m *BroadcastMutation) Fields() []string {
 	if m.workspace != nil {
 		fields = append(fields, broadcast.FieldWorkspaceID)
 	}
-	if m.discarded_at != nil {
-		fields = append(fields, broadcast.FieldDiscardedAt)
+	if m.archived_at != nil {
+		fields = append(fields, broadcast.FieldArchivedAt)
 	}
 	if m.name != nil {
 		fields = append(fields, broadcast.FieldName)
@@ -10947,8 +10947,8 @@ func (m *BroadcastMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case broadcast.FieldWorkspaceID:
 		return m.WorkspaceID()
-	case broadcast.FieldDiscardedAt:
-		return m.DiscardedAt()
+	case broadcast.FieldArchivedAt:
+		return m.ArchivedAt()
 	case broadcast.FieldName:
 		return m.Name()
 	case broadcast.FieldChannel:
@@ -11010,8 +11010,8 @@ func (m *BroadcastMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldUpdatedAt(ctx)
 	case broadcast.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
-	case broadcast.FieldDiscardedAt:
-		return m.OldDiscardedAt(ctx)
+	case broadcast.FieldArchivedAt:
+		return m.OldArchivedAt(ctx)
 	case broadcast.FieldName:
 		return m.OldName(ctx)
 	case broadcast.FieldChannel:
@@ -11088,12 +11088,12 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetWorkspaceID(v)
 		return nil
-	case broadcast.FieldDiscardedAt:
+	case broadcast.FieldArchivedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDiscardedAt(v)
+		m.SetArchivedAt(v)
 		return nil
 	case broadcast.FieldName:
 		v, ok := value.(string)
@@ -11289,8 +11289,8 @@ func (m *BroadcastMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *BroadcastMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(broadcast.FieldDiscardedAt) {
-		fields = append(fields, broadcast.FieldDiscardedAt)
+	if m.FieldCleared(broadcast.FieldArchivedAt) {
+		fields = append(fields, broadcast.FieldArchivedAt)
 	}
 	if m.FieldCleared(broadcast.FieldSubject) {
 		fields = append(fields, broadcast.FieldSubject)
@@ -11360,8 +11360,8 @@ func (m *BroadcastMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *BroadcastMutation) ClearField(name string) error {
 	switch name {
-	case broadcast.FieldDiscardedAt:
-		m.ClearDiscardedAt()
+	case broadcast.FieldArchivedAt:
+		m.ClearArchivedAt()
 		return nil
 	case broadcast.FieldSubject:
 		m.ClearSubject()
@@ -11434,8 +11434,8 @@ func (m *BroadcastMutation) ResetField(name string) error {
 	case broadcast.FieldWorkspaceID:
 		m.ResetWorkspaceID()
 		return nil
-	case broadcast.FieldDiscardedAt:
-		m.ResetDiscardedAt()
+	case broadcast.FieldArchivedAt:
+		m.ResetArchivedAt()
 		return nil
 	case broadcast.FieldName:
 		m.ResetName()

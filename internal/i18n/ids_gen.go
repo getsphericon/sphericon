@@ -100,6 +100,7 @@ var (
 	ErrorsBrandkitFooter                        = ID{key: "errors.brandkit_footer"}
 	ErrorsBrandkitLogo                          = ID{key: "errors.brandkit_logo"}
 	ErrorsBrandkitNotSaved                      = ID{key: "errors.brandkit_not_saved"}
+	ErrorsBroadcastArchived                     = ID{key: "errors.broadcast_archived"}
 	ErrorsBroadcastChannelFixed                 = ID{key: "errors.broadcast_channel_fixed"}
 	ErrorsBroadcastChannelNoIntegration         = ID{key: "errors.broadcast_channel_no_integration"}
 	ErrorsBroadcastFromNotVerified              = ID{key: "errors.broadcast_from_not_verified"}

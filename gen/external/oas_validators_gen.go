@@ -260,9 +260,9 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "broadcast.delete":
 		return nil
-	case "broadcast.discard":
+	case "broadcast.archive":
 		return nil
-	case "broadcast.restore":
+	case "broadcast.unarchive":
 		return nil
 	case "contact.create":
 		return nil
@@ -1767,6 +1767,14 @@ func (s *BroadcastsArchiveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *BroadcastsArchiveConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *BroadcastsArchiveForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1784,14 +1792,6 @@ func (s *BroadcastsArchiveNotFound) Validate() error {
 }
 
 func (s *BroadcastsArchiveUnauthorized) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *BroadcastsArchiveUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1824,46 +1824,6 @@ func (s *BroadcastsCreateUnauthorized) Validate() error {
 }
 
 func (s *BroadcastsCreateUnprocessableEntity) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *BroadcastsDeleteBadRequest) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *BroadcastsDeleteForbidden) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *BroadcastsDeleteNotFound) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *BroadcastsDeleteUnauthorized) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *BroadcastsDeleteUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -2063,6 +2023,14 @@ func (s *BroadcastsSetSegmentBadRequest) Validate() error {
 	return nil
 }
 
+func (s *BroadcastsSetSegmentConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *BroadcastsSetSegmentForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -2208,6 +2176,14 @@ func (s *BroadcastsUnscheduleUnprocessableEntity) Validate() error {
 }
 
 func (s *BroadcastsUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *BroadcastsUpdateConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

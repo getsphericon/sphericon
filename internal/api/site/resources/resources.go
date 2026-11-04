@@ -294,8 +294,6 @@ type Converter interface {
 	// Warnings are the lint of the content just saved (ADR 0040): the handler attaches them
 	// to the response of a save.
 	// goverter:ignore Warnings
-	// The contract names the discarded state "archived" (ADR 0049).
-	// goverter:map DiscardedAt ArchivedAt
 	// goverter:map . Content | broadcastContent
 	BroadcastToResource(source *ent.Broadcast) siteapi.SiteBroadcastResource
 	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.

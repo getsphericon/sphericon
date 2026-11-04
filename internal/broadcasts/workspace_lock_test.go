@@ -151,6 +151,7 @@ func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceL
 			return err
 		}},
 		{"send a Broadcast", func() error { _, err := sends.Send(ctx, s, fixtures.BroadcastScheduledID); return err }},
+		{"archive a Broadcast", func() error { _, err := sends.Archive(ctx, s, fixtures.BroadcastFailedID); return err }},
 		{"create a Rule", func() error { _, err := ruleset.Create(ctx, s, rules.CreateInput{Name: "New"}); return err }},
 		{"update a Rule", func() error {
 			_, err := ruleset.Update(ctx, s, fixtures.RuleInactiveID, rules.UpdateInput{Name: renamed})

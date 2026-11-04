@@ -64,7 +64,7 @@ var (
 		"segments_list", "segments_create", "segments_get", "segments_update", "segments_archive", "segments_unarchive", "segments_preview",
 		"contacts_upsert_batch", "events_record_batch",
 		"contacts_list", "contacts_create", "contacts_get", "contacts_update", "contacts_delete", "contacts_erase_by", "contacts_export",
-		"broadcasts_list", "broadcasts_create", "broadcasts_get", "broadcasts_update", "broadcasts_delete",
+		"broadcasts_list", "broadcasts_create", "broadcasts_get", "broadcasts_update",
 		"broadcasts_set_segment", "broadcasts_test_send", "broadcasts_report", "broadcasts_archive", "broadcasts_unarchive",
 		"events_record", "events_actions_list", "whoami", "workspace_get",
 		"custom_fields_list", "custom_fields_update", "sending_domains_list", "sending_domains_create", "sending_domains_get", "sending_domains_update", "sending_domains_delete", "sending_domains_verify", "sending_domains_rates",

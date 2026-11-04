@@ -66,7 +66,6 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteBroadcastLinksListOperation:                    []string{},
 	SiteBroadcastsArchiveOperation:                     []string{},
 	SiteBroadcastsCreateOperation:                      []string{},
-	SiteBroadcastsDeleteOperation:                      []string{},
 	SiteBroadcastsGetOperation:                         []string{},
 	SiteBroadcastsListOperation:                        []string{},
 	SiteBroadcastsScheduleOperation:                    []string{},

@@ -26,7 +26,7 @@ func listedBroadcastIDs(t *testing.T, c *externalapi.Client, archived bool) []ex
 }
 
 // A sent broadcast is archived and restored through /api; the list hides it by default and
-// shows it with archived=true; a draft is not archivable and a scheduled one is refused.
+// shows it with archived=true. A draft is archived too; a scheduled one is refused with 409.
 func TestExternalBroadcastsArchiveAndRestore(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
@@ -56,10 +56,30 @@ func TestExternalBroadcastsArchiveAndRestore(t *testing.T) {
 
 	draft, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsArchiveUnprocessableEntity{}, draft)
+	assert.IsType(t, &externalapi.BroadcastResource{}, draft)
 	sched, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: schedBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsArchiveUnprocessableEntity{}, sched)
+	assert.IsType(t, &externalapi.BroadcastsArchiveConflict{}, sched)
+}
+
+// An archived draft is read-only through /api until it is unarchived: an edit and a change of
+// its Segment answer 409.
+func TestExternalAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, authorScopes...)
+	ctx := context.Background()
+	_, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: draftBroadcast})
+	require.NoError(t, err)
+
+	upd, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("Renamed")},
+		externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.BroadcastsUpdateConflict{}, upd)
+
+	seg, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
+		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.BroadcastsSetSegmentConflict{}, seg)
 }
 
 func TestExternalBroadcastsArchiveNeedsTheWriteScope(t *testing.T) {

@@ -71,9 +71,9 @@ func WorkspaceID(v int64) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldWorkspaceID, v))
 }
 
-// DiscardedAt applies equality check predicate on the "discarded_at" field. It's identical to DiscardedAtEQ.
-func DiscardedAt(v time.Time) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldEQ(FieldDiscardedAt, v))
+// ArchivedAt applies equality check predicate on the "archived_at" field. It's identical to ArchivedAtEQ.
+func ArchivedAt(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldArchivedAt, v))
 }
 
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
@@ -266,54 +266,54 @@ func WorkspaceIDNotIn(vs ...int64) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldNotIn(FieldWorkspaceID, vs...))
 }
 
-// DiscardedAtEQ applies the EQ predicate on the "discarded_at" field.
-func DiscardedAtEQ(v time.Time) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldEQ(FieldDiscardedAt, v))
+// ArchivedAtEQ applies the EQ predicate on the "archived_at" field.
+func ArchivedAtEQ(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldArchivedAt, v))
 }
 
-// DiscardedAtNEQ applies the NEQ predicate on the "discarded_at" field.
-func DiscardedAtNEQ(v time.Time) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldNEQ(FieldDiscardedAt, v))
+// ArchivedAtNEQ applies the NEQ predicate on the "archived_at" field.
+func ArchivedAtNEQ(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNEQ(FieldArchivedAt, v))
 }
 
-// DiscardedAtIn applies the In predicate on the "discarded_at" field.
-func DiscardedAtIn(vs ...time.Time) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldIn(FieldDiscardedAt, vs...))
+// ArchivedAtIn applies the In predicate on the "archived_at" field.
+func ArchivedAtIn(vs ...time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIn(FieldArchivedAt, vs...))
 }
 
-// DiscardedAtNotIn applies the NotIn predicate on the "discarded_at" field.
-func DiscardedAtNotIn(vs ...time.Time) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldNotIn(FieldDiscardedAt, vs...))
+// ArchivedAtNotIn applies the NotIn predicate on the "archived_at" field.
+func ArchivedAtNotIn(vs ...time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotIn(FieldArchivedAt, vs...))
 }
 
-// DiscardedAtGT applies the GT predicate on the "discarded_at" field.
-func DiscardedAtGT(v time.Time) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldGT(FieldDiscardedAt, v))
+// ArchivedAtGT applies the GT predicate on the "archived_at" field.
+func ArchivedAtGT(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGT(FieldArchivedAt, v))
 }
 
-// DiscardedAtGTE applies the GTE predicate on the "discarded_at" field.
-func DiscardedAtGTE(v time.Time) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldGTE(FieldDiscardedAt, v))
+// ArchivedAtGTE applies the GTE predicate on the "archived_at" field.
+func ArchivedAtGTE(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGTE(FieldArchivedAt, v))
 }
 
-// DiscardedAtLT applies the LT predicate on the "discarded_at" field.
-func DiscardedAtLT(v time.Time) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldLT(FieldDiscardedAt, v))
+// ArchivedAtLT applies the LT predicate on the "archived_at" field.
+func ArchivedAtLT(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLT(FieldArchivedAt, v))
 }
 
-// DiscardedAtLTE applies the LTE predicate on the "discarded_at" field.
-func DiscardedAtLTE(v time.Time) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldLTE(FieldDiscardedAt, v))
+// ArchivedAtLTE applies the LTE predicate on the "archived_at" field.
+func ArchivedAtLTE(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLTE(FieldArchivedAt, v))
 }
 
-// DiscardedAtIsNil applies the IsNil predicate on the "discarded_at" field.
-func DiscardedAtIsNil() predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldIsNull(FieldDiscardedAt))
+// ArchivedAtIsNil applies the IsNil predicate on the "archived_at" field.
+func ArchivedAtIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldArchivedAt))
 }
 
-// DiscardedAtNotNil applies the NotNil predicate on the "discarded_at" field.
-func DiscardedAtNotNil() predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldNotNull(FieldDiscardedAt))
+// ArchivedAtNotNil applies the NotNil predicate on the "archived_at" field.
+func ArchivedAtNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldArchivedAt))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.

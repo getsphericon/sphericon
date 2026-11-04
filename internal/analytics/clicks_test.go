@@ -48,7 +48,7 @@ func TestClicksByLinkNameAnArchivedBroadcastAndAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, acme.Broadcast().Discard(ctx, fixtures.BroadcastSentID))
+	require.NoError(t, acme.Broadcast().Archive(ctx, fixtures.BroadcastSentID))
 	require.NoError(t, acme.Automation().Discard(ctx, fixtures.AutomationWinBackID))
 
 	links, err := analytics.New().ClicksByLink(ctx, acme, analytics.Window30Days)

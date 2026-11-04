@@ -507,8 +507,9 @@ func (UnimplementedHandler) SiteBroadcastLinksList(ctx context.Context, params S
 
 // SiteBroadcastsArchive implements SiteBroadcasts_archive operation.
 //
-// Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and figures, and
-// can be restored. A draft is deleted and a scheduled or sending broadcast cannot be archived (422).
+// Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
+// figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be
+// archived (409). Archiving an archived broadcast changes nothing.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/archive
 func (UnimplementedHandler) SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (r SiteBroadcastsArchiveRes, _ error) {
@@ -521,15 +522,6 @@ func (UnimplementedHandler) SiteBroadcastsArchive(ctx context.Context, params Si
 //
 // POST /workspaces/{workspaceId}/broadcasts
 func (UnimplementedHandler) SiteBroadcastsCreate(ctx context.Context, req *CreateBroadcastInput, params SiteBroadcastsCreateParams) (r SiteBroadcastsCreateRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SiteBroadcastsDelete implements SiteBroadcasts_delete operation.
-//
-// Delete a resource from the site UI.
-//
-// DELETE /workspaces/{workspaceId}/broadcasts/{id}
-func (UnimplementedHandler) SiteBroadcastsDelete(ctx context.Context, params SiteBroadcastsDeleteParams) (r SiteBroadcastsDeleteRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -557,7 +549,7 @@ func (UnimplementedHandler) SiteBroadcastsList(ctx context.Context, params SiteB
 // are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and
 // rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through
 // cannot send (disabled or archived, or no default): a draft may name such an integration, only
-// scheduling it is refused.
+// scheduling it is refused. An archived broadcast is a 409 too.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
 func (UnimplementedHandler) SiteBroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (r SiteBroadcastsScheduleRes, _ error) {
@@ -567,7 +559,7 @@ func (UnimplementedHandler) SiteBroadcastsSchedule(ctx context.Context, req *Sch
 // SiteBroadcastsSend implements SiteBroadcasts_send operation.
 //
 // Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-// resolved from; an archived segment is refused.
+// resolved from; an archived segment is refused. An archived broadcast is a 409.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/send
 func (UnimplementedHandler) SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (r SiteBroadcastsSendRes, _ error) {
@@ -590,7 +582,7 @@ func (UnimplementedHandler) SiteBroadcastsTestSend(ctx context.Context, req *Tes
 
 // SiteBroadcastsUnarchive implements SiteBroadcasts_unarchive operation.
 //
-// Restore an archived broadcast to the list.
+// Bring an archived broadcast back to the list, in the status it had.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
 func (UnimplementedHandler) SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (r SiteBroadcastsUnarchiveRes, _ error) {

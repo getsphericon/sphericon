@@ -54,7 +54,6 @@ var operationRolesBearerAuth = map[string][]string{
 	BrandKitGetOperation:               []string{},
 	BroadcastsArchiveOperation:         []string{},
 	BroadcastsCreateOperation:          []string{},
-	BroadcastsDeleteOperation:          []string{},
 	BroadcastsGetOperation:             []string{},
 	BroadcastsListOperation:            []string{},
 	BroadcastsReportOperation:          []string{},

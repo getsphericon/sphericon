@@ -549,7 +549,7 @@ func ScopedEntities() []ScopedEntity {
 		},
 		{
 			Name:         "Broadcast",
-			AuditActions: []string{"broadcast.create", "broadcast.update", "broadcast.delete", "broadcast.discard", "broadcast.restore"},
+			AuditActions: []string{"broadcast.create", "broadcast.update", "broadcast.delete", "broadcast.archive", "broadcast.unarchive"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Broadcast.Query().Where(broadcast.WorkspaceID(ws)).Order(Asc(broadcast.FieldID)).IDs(ctx)
 			},
@@ -576,8 +576,8 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.Broadcast().Create()
-				if src.DiscardedAt != nil {
-					b.SetDiscardedAt(*src.DiscardedAt)
+				if src.ArchivedAt != nil {
+					b.SetArchivedAt(*src.ArchivedAt)
 				}
 				b.SetName(src.Name)
 				b.SetChannel(src.Channel)

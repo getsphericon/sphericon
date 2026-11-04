@@ -3,7 +3,6 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteBroadcastsArchive,
-  handleSiteBroadcastsDelete,
   handleSiteBroadcastsList,
   handleSiteBroadcastsUnarchive,
 } from '../../generated/site/msw.gen.ts'
@@ -121,20 +120,20 @@ test('Report and Edit link with the broadcast id; Edit is only enabled for draft
     .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/1/edit')
 })
 
-test('deleting a broadcast asks for confirmation, deletes it and refreshes the list', async () => {
-  const deleted: string[] = []
+test('a draft has no Delete: archiving it calls archive and refreshes the list', async () => {
+  const archived: string[] = []
   let listFetches = 0
   worker.use(
     handleSiteBroadcastsList(() => {
       listFetches++
       return HttpResponse.json({
-        items: deleted.length > 0 ? [HELD] : [DRAFT, HELD],
+        items: archived.length > 0 ? [HELD] : [DRAFT, HELD],
         totalItems: 2,
       })
     }),
-    handleSiteBroadcastsDelete(({ params }) => {
-      deleted.push(params.id)
-      return new HttpResponse(null, { status: 204 })
+    handleSiteBroadcastsArchive(({ params }) => {
+      archived.push(params.id)
+      return HttpResponse.json({ ...DRAFT, archivedAt: '2026-01-01T00:00:00Z' })
     }),
   )
 
@@ -142,14 +141,23 @@ test('deleting a broadcast asks for confirmation, deletes it and refreshes the l
   await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
 
   await screen.getByRole('button', { name: 'More actions' }).first().click()
-  await screen.getByRole('menuitem', { name: 'Delete' }).click()
-  expect(deleted).toEqual([])
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+  await expect.element(screen.getByRole('menuitem', { name: 'Delete' })).not.toBeInTheDocument()
+  await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
-  await expect.poll(() => deleted).toEqual(['1'])
-  await expect.element(screen.getByText('Broadcast deleted')).toBeInTheDocument()
+  await expect.poll(() => archived).toEqual(['1'])
+  await expect.element(screen.getByText('Broadcast archived')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.element(screen.getByText('Spring launch')).not.toBeInTheDocument()
+})
+
+test('a sending broadcast is work in flight and offers no Archive', async () => {
+  worker.use(handleSiteBroadcastsList(() => HttpResponse.json({ items: [HELD], totalItems: 1 })))
+
+  const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+
+  await expect.element(screen.getByRole('menuitem', { name: 'Report' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('menuitem', { name: 'Archive' })).not.toBeInTheDocument()
 })
 
 test('the page in the URL is the page of the broadcasts requested', async () => {
@@ -179,18 +187,17 @@ test('choosing a page of the broadcasts puts it in the URL', async () => {
   expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ search: expect.any(Function) }))
 })
 
-test('a failed delete shows the error toast and keeps the broadcast', async () => {
+test('a failed archive shows the error toast and keeps the broadcast', async () => {
   worker.use(
     handleSiteBroadcastsList(() => HttpResponse.json({ items: [DRAFT], totalItems: 1 })),
-    handleSiteBroadcastsDelete(() => problem(500)),
+    handleSiteBroadcastsArchive(() => problem(500)),
   )
 
   const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
   await screen.getByRole('button', { name: 'More actions' }).first().click()
-  await screen.getByRole('menuitem', { name: 'Delete' }).click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+  await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
-  await expect.element(screen.getByText('Failed to delete broadcast')).toBeInTheDocument()
+  await expect.element(screen.getByText('Failed to archive broadcast')).toBeInTheDocument()
   await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
 })
 

@@ -2980,11 +2980,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 									if len(elem) == 0 {
 										switch r.Method {
-										case "DELETE":
-											s.handleSiteBroadcastsDeleteRequest([2]string{
-												args[0],
-												args[1],
-											}, elemIsEscaped, w, r)
 										case "GET":
 											s.handleSiteBroadcastsGetRequest([2]string{
 												args[0],
@@ -2997,7 +2992,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											}, elemIsEscaped, w, r)
 										default:
 											s.notAllowed(w, r, notAllowedParams{
-												allowedMethods: "DELETE,GET,PUT",
+												allowedMethods: "GET,PUT",
 												allowedHeaders: rn65AllowedHeaders,
 												acceptPost:     "",
 												acceptPatch:    "",
@@ -8654,15 +8649,6 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 									if len(elem) == 0 {
 										switch method {
-										case "DELETE":
-											r.name = SiteBroadcastsDeleteOperation
-											r.summary = ""
-											r.operationID = "SiteBroadcasts_delete"
-											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{workspaceId}/broadcasts/{id}"
-											r.args = args
-											r.count = 2
-											return r, true
 										case "GET":
 											r.name = SiteBroadcastsGetOperation
 											r.summary = ""

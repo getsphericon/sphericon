@@ -84,7 +84,7 @@ func ownerNames(ctx context.Context, s *ent.Scoped, rows []linkclicks.OwnerClick
 		}
 	}
 	names := map[ownerKey]string{}
-	broadcasts, err := s.Broadcast().QueryWithDiscarded().Where(broadcast.IDIn(broadcastIDs...)).All(ctx)
+	broadcasts, err := s.Broadcast().QueryWithArchived().Where(broadcast.IDIn(broadcastIDs...)).All(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -482,8 +482,8 @@ const (
 	AuditActionBroadcastCreate             AuditAction = "broadcast.create"
 	AuditActionBroadcastUpdate             AuditAction = "broadcast.update"
 	AuditActionBroadcastDelete             AuditAction = "broadcast.delete"
-	AuditActionBroadcastDiscard            AuditAction = "broadcast.discard"
-	AuditActionBroadcastRestore            AuditAction = "broadcast.restore"
+	AuditActionBroadcastArchive            AuditAction = "broadcast.archive"
+	AuditActionBroadcastUnarchive          AuditAction = "broadcast.unarchive"
 	AuditActionContactCreate               AuditAction = "contact.create"
 	AuditActionContactUpdate               AuditAction = "contact.update"
 	AuditActionContactDelete               AuditAction = "contact.delete"
@@ -576,8 +576,8 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionBroadcastCreate,
 		AuditActionBroadcastUpdate,
 		AuditActionBroadcastDelete,
-		AuditActionBroadcastDiscard,
-		AuditActionBroadcastRestore,
+		AuditActionBroadcastArchive,
+		AuditActionBroadcastUnarchive,
 		AuditActionContactCreate,
 		AuditActionContactUpdate,
 		AuditActionContactDelete,
@@ -714,9 +714,9 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionBroadcastDelete:
 		return []byte(s), nil
-	case AuditActionBroadcastDiscard:
+	case AuditActionBroadcastArchive:
 		return []byte(s), nil
-	case AuditActionBroadcastRestore:
+	case AuditActionBroadcastUnarchive:
 		return []byte(s), nil
 	case AuditActionContactCreate:
 		return []byte(s), nil
@@ -943,11 +943,11 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionBroadcastDelete:
 		*s = AuditActionBroadcastDelete
 		return nil
-	case AuditActionBroadcastDiscard:
-		*s = AuditActionBroadcastDiscard
+	case AuditActionBroadcastArchive:
+		*s = AuditActionBroadcastArchive
 		return nil
-	case AuditActionBroadcastRestore:
-		*s = AuditActionBroadcastRestore
+	case AuditActionBroadcastUnarchive:
+		*s = AuditActionBroadcastUnarchive
 		return nil
 	case AuditActionContactCreate:
 		*s = AuditActionContactCreate
@@ -3602,7 +3602,8 @@ type BroadcastResource struct {
 	SentAt OptNilTimestamp `json:"sentAt"`
 	// When the broadcast failed.
 	FailedAt OptNilTimestamp `json:"failedAt"`
-	// When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived.
+	// When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it
+	// is unarchived.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
@@ -3807,6 +3808,10 @@ type BroadcastsArchiveBadRequest ProblemDetails
 
 func (*BroadcastsArchiveBadRequest) broadcastsArchiveRes() {}
 
+type BroadcastsArchiveConflict ProblemDetails
+
+func (*BroadcastsArchiveConflict) broadcastsArchiveRes() {}
+
 type BroadcastsArchiveForbidden ProblemDetails
 
 func (*BroadcastsArchiveForbidden) broadcastsArchiveRes() {}
@@ -3818,10 +3823,6 @@ func (*BroadcastsArchiveNotFound) broadcastsArchiveRes() {}
 type BroadcastsArchiveUnauthorized ProblemDetails
 
 func (*BroadcastsArchiveUnauthorized) broadcastsArchiveRes() {}
-
-type BroadcastsArchiveUnprocessableEntity ProblemDetails
-
-func (*BroadcastsArchiveUnprocessableEntity) broadcastsArchiveRes() {}
 
 type BroadcastsCreateBadRequest ProblemDetails
 
@@ -3838,31 +3839,6 @@ func (*BroadcastsCreateUnauthorized) broadcastsCreateRes() {}
 type BroadcastsCreateUnprocessableEntity ProblemDetails
 
 func (*BroadcastsCreateUnprocessableEntity) broadcastsCreateRes() {}
-
-type BroadcastsDeleteBadRequest ProblemDetails
-
-func (*BroadcastsDeleteBadRequest) broadcastsDeleteRes() {}
-
-type BroadcastsDeleteForbidden ProblemDetails
-
-func (*BroadcastsDeleteForbidden) broadcastsDeleteRes() {}
-
-// BroadcastsDeleteNoContent is response for BroadcastsDelete operation.
-type BroadcastsDeleteNoContent struct{}
-
-func (*BroadcastsDeleteNoContent) broadcastsDeleteRes() {}
-
-type BroadcastsDeleteNotFound ProblemDetails
-
-func (*BroadcastsDeleteNotFound) broadcastsDeleteRes() {}
-
-type BroadcastsDeleteUnauthorized ProblemDetails
-
-func (*BroadcastsDeleteUnauthorized) broadcastsDeleteRes() {}
-
-type BroadcastsDeleteUnprocessableEntity ProblemDetails
-
-func (*BroadcastsDeleteUnprocessableEntity) broadcastsDeleteRes() {}
 
 type BroadcastsGetBadRequest ProblemDetails
 
@@ -4006,6 +3982,10 @@ type BroadcastsSetSegmentBadRequest ProblemDetails
 
 func (*BroadcastsSetSegmentBadRequest) broadcastsSetSegmentRes() {}
 
+type BroadcastsSetSegmentConflict ProblemDetails
+
+func (*BroadcastsSetSegmentConflict) broadcastsSetSegmentRes() {}
+
 type BroadcastsSetSegmentForbidden ProblemDetails
 
 func (*BroadcastsSetSegmentForbidden) broadcastsSetSegmentRes() {}
@@ -4086,6 +4066,10 @@ func (*BroadcastsUnscheduleUnprocessableEntity) broadcastsUnscheduleRes() {}
 type BroadcastsUpdateBadRequest ProblemDetails
 
 func (*BroadcastsUpdateBadRequest) broadcastsUpdateRes() {}
+
+type BroadcastsUpdateConflict ProblemDetails
+
+func (*BroadcastsUpdateConflict) broadcastsUpdateRes() {}
 
 type BroadcastsUpdateForbidden ProblemDetails
 
@@ -15879,7 +15863,6 @@ func (*ProblemDetailsHeaders) automationsUpdateRes()         {}
 func (*ProblemDetailsHeaders) brandKitGetRes()               {}
 func (*ProblemDetailsHeaders) broadcastsArchiveRes()         {}
 func (*ProblemDetailsHeaders) broadcastsCreateRes()          {}
-func (*ProblemDetailsHeaders) broadcastsDeleteRes()          {}
 func (*ProblemDetailsHeaders) broadcastsGetRes()             {}
 func (*ProblemDetailsHeaders) broadcastsListRes()            {}
 func (*ProblemDetailsHeaders) broadcastsReportRes()          {}

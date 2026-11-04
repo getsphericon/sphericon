@@ -64,16 +64,7 @@ func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.Update
 	return &res, nil
 }
 
-func (h *Handlers) BroadcastsDelete(ctx context.Context, params externalapi.BroadcastsDeleteParams) (externalapi.BroadcastsDeleteRes, error) {
-	id := int64(params.ID)
-	err := h.broadcasts.DeleteDraft(ctx, auth.TokenScoped(ctx), id)
-	if err != nil {
-		return nil, err
-	}
-	return &externalapi.BroadcastsDeleteNoContent{}, nil
-}
-
-// BroadcastsArchive archives a sent or failed broadcast (ADR 0049).
+// BroadcastsArchive archives a draft, sent or failed broadcast (ADR 0100).
 func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.BroadcastsArchiveParams) (externalapi.BroadcastsArchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
@@ -85,7 +76,7 @@ func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.Bro
 	return &res, nil
 }
 
-// BroadcastsUnarchive restores an archived broadcast.
+// BroadcastsUnarchive brings an archived broadcast back to the list.
 func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.BroadcastsUnarchiveParams) (externalapi.BroadcastsUnarchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)

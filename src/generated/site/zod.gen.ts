@@ -107,8 +107,8 @@ export const zAuditAction = z.enum([
   'broadcast.create',
   'broadcast.update',
   'broadcast.delete',
-  'broadcast.discard',
-  'broadcast.restore',
+  'broadcast.archive',
+  'broadcast.unarchive',
   'contact.create',
   'contact.update',
   'contact.delete',
@@ -5211,16 +5211,6 @@ export const zSiteBroadcastLinksListPath = z.object({
  * The request has succeeded.
  */
 export const zSiteBroadcastLinksListResponse = zSiteBroadcastLinkClicksList;
-
-export const zSiteBroadcastsDeletePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * There is no content to send for this request, but the headers may be useful.
- */
-export const zSiteBroadcastsDeleteResponse = z.void();
 
 export const zSiteBroadcastsGetPath = z.object({
   workspaceId: zWorkspaceId,

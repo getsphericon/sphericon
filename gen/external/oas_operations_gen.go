@@ -27,7 +27,6 @@ const (
 	BrandKitGetOperation               OperationName = "BrandKitGet"
 	BroadcastsArchiveOperation         OperationName = "BroadcastsArchive"
 	BroadcastsCreateOperation          OperationName = "BroadcastsCreate"
-	BroadcastsDeleteOperation          OperationName = "BroadcastsDelete"
 	BroadcastsGetOperation             OperationName = "BroadcastsGet"
 	BroadcastsListOperation            OperationName = "BroadcastsList"
 	BroadcastsReportOperation          OperationName = "BroadcastsReport"

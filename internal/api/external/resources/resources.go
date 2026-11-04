@@ -136,8 +136,6 @@ type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	// goverter:useEmptyOnNil:slice
 	ContactsToResources(source []*ent.Contact) []externalapi.ContactResource
-	// The contract names the discarded state "archived" (ADR 0049).
-	// goverter:map DiscardedAt ArchivedAt
 	// goverter:map . Content | broadcastContent
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
 	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.

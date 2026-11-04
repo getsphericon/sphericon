@@ -83,8 +83,8 @@ const (
 	AuditActionBroadcastCreate             AuditAction = "broadcast.create"
 	AuditActionBroadcastUpdate             AuditAction = "broadcast.update"
 	AuditActionBroadcastDelete             AuditAction = "broadcast.delete"
-	AuditActionBroadcastDiscard            AuditAction = "broadcast.discard"
-	AuditActionBroadcastRestore            AuditAction = "broadcast.restore"
+	AuditActionBroadcastArchive            AuditAction = "broadcast.archive"
+	AuditActionBroadcastUnarchive          AuditAction = "broadcast.unarchive"
 	AuditActionContactCreate               AuditAction = "contact.create"
 	AuditActionContactUpdate               AuditAction = "contact.update"
 	AuditActionContactDelete               AuditAction = "contact.delete"
@@ -177,8 +177,8 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionBroadcastCreate,
 		AuditActionBroadcastUpdate,
 		AuditActionBroadcastDelete,
-		AuditActionBroadcastDiscard,
-		AuditActionBroadcastRestore,
+		AuditActionBroadcastArchive,
+		AuditActionBroadcastUnarchive,
 		AuditActionContactCreate,
 		AuditActionContactUpdate,
 		AuditActionContactDelete,
@@ -315,9 +315,9 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionBroadcastDelete:
 		return []byte(s), nil
-	case AuditActionBroadcastDiscard:
+	case AuditActionBroadcastArchive:
 		return []byte(s), nil
-	case AuditActionBroadcastRestore:
+	case AuditActionBroadcastUnarchive:
 		return []byte(s), nil
 	case AuditActionContactCreate:
 		return []byte(s), nil
@@ -544,11 +544,11 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionBroadcastDelete:
 		*s = AuditActionBroadcastDelete
 		return nil
-	case AuditActionBroadcastDiscard:
-		*s = AuditActionBroadcastDiscard
+	case AuditActionBroadcastArchive:
+		*s = AuditActionBroadcastArchive
 		return nil
-	case AuditActionBroadcastRestore:
-		*s = AuditActionBroadcastRestore
+	case AuditActionBroadcastUnarchive:
+		*s = AuditActionBroadcastUnarchive
 		return nil
 	case AuditActionContactCreate:
 		*s = AuditActionContactCreate

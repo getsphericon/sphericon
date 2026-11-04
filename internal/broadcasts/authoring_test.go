@@ -122,19 +122,6 @@ func TestSetSegment(t *testing.T) {
 	assert.Error(t, err, "update failure")
 }
 
-func TestDeleteDraft(t *testing.T) {
-	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
-	ctx := context.Background()
-
-	require.NoError(t, m.DeleteDraft(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID))
-	assert.False(t, env.DB.Broadcast.Query().Where(broadcast.ID(fixtures.BroadcastDraftID)).ExistX(ctx))
-
-	require.ErrorIs(t, m.DeleteDraft(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID), broadcasts.ErrNotDraft)
-	require.ErrorIs(t, m.DeleteDraft(ctx, env.DB.Scoped(fixtures.AcmeID), 987654), broadcasts.ErrNotFound)
-	assert.Error(t, m.DeleteDraft(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastEmptyAudienceID))
-}
-
 func TestReport(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
@@ -222,16 +209,16 @@ func TestArchiveKeepsABroadcastAddressableAndIsWorkspaceScoped(t *testing.T) {
 
 	archived, err := m.Archive(ctx, s, fixtures.BroadcastFailedID)
 	require.NoError(t, err)
-	assert.NotNil(t, archived.DiscardedAt, "Archive returns the archived Broadcast")
+	assert.NotNil(t, archived.ArchivedAt, "Archive returns the archived Broadcast")
 	got, err := m.Get(ctx, s, fixtures.BroadcastFailedID)
 	require.NoError(t, err, "an archived Broadcast is still addressable by id")
-	assert.NotNil(t, got.DiscardedAt)
+	assert.NotNil(t, got.ArchivedAt)
 
 	_, err = m.Archive(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastFailedID)
 	require.ErrorIs(t, err, broadcasts.ErrNotFound, "another Workspace's Broadcast is not found")
-	_, err = m.Archive(ctx, s, fixtures.BroadcastDraftID)
+	_, err = m.Archive(ctx, s, fixtures.BroadcastScheduledID)
 	require.ErrorIs(t, err, broadcasts.ErrNotArchivable)
-	_, err = m.Get(ctx, s, fixtures.BroadcastDraftID)
+	_, err = m.Get(ctx, s, fixtures.BroadcastScheduledID)
 	assert.NoError(t, err)
 }
 
@@ -245,12 +232,12 @@ func TestArchiveAndUnarchiveReturnTheBroadcast(t *testing.T) {
 	require.NoError(t, err)
 	again, err := m.Archive(ctx, s, fixtures.BroadcastFailedID)
 	require.NoError(t, err)
-	assert.NotNil(t, again.DiscardedAt, "archiving an archived Broadcast returns it as it is")
+	assert.NotNil(t, again.ArchivedAt, "archiving an archived Broadcast returns it as it is")
 
 	restored, err := m.Unarchive(ctx, s, fixtures.BroadcastFailedID)
 	require.NoError(t, err)
 	assert.Equal(t, int64(fixtures.BroadcastFailedID), restored.ID)
-	assert.Nil(t, restored.DiscardedAt, "Unarchive returns the restored Broadcast")
+	assert.Nil(t, restored.ArchivedAt, "Unarchive returns the restored Broadcast")
 }
 
 func TestUpdatePatchClearsANullAndKeepsAnAbsentField(t *testing.T) {

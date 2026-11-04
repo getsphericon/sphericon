@@ -198,9 +198,9 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "broadcast.delete":
 		return nil
-	case "broadcast.discard":
+	case "broadcast.archive":
 		return nil
-	case "broadcast.restore":
+	case "broadcast.unarchive":
 		return nil
 	case "contact.create":
 		return nil
@@ -4485,7 +4485,7 @@ func (s *SiteBroadcastsArchiveBadRequest) Validate() error {
 	return nil
 }
 
-func (s *SiteBroadcastsArchiveNotFound) Validate() error {
+func (s *SiteBroadcastsArchiveConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -4493,7 +4493,7 @@ func (s *SiteBroadcastsArchiveNotFound) Validate() error {
 	return nil
 }
 
-func (s *SiteBroadcastsArchiveUnprocessableEntity) Validate() error {
+func (s *SiteBroadcastsArchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -4518,30 +4518,6 @@ func (s *SiteBroadcastsCreateNotFound) Validate() error {
 }
 
 func (s *SiteBroadcastsCreateUnprocessableEntity) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteBroadcastsDeleteBadRequest) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteBroadcastsDeleteNotFound) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteBroadcastsDeleteUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -4682,6 +4658,14 @@ func (s *SiteBroadcastsSendBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteBroadcastsSendConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteBroadcastsSendNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4739,6 +4723,14 @@ func (s *SiteBroadcastsUnarchiveNotFound) Validate() error {
 }
 
 func (s *SiteBroadcastsUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBroadcastsUpdateConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

@@ -115,10 +115,10 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionBroadcastUpdate
 	case AuditActionBroadcastDelete:
 		*s = AuditActionBroadcastDelete
-	case AuditActionBroadcastDiscard:
-		*s = AuditActionBroadcastDiscard
-	case AuditActionBroadcastRestore:
-		*s = AuditActionBroadcastRestore
+	case AuditActionBroadcastArchive:
+		*s = AuditActionBroadcastArchive
+	case AuditActionBroadcastUnarchive:
+		*s = AuditActionBroadcastUnarchive
 	case AuditActionContactCreate:
 		*s = AuditActionContactCreate
 	case AuditActionContactUpdate:

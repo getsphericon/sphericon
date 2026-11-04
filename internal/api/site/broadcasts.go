@@ -135,19 +135,8 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.Update
 	return &res, nil
 }
 
-func (h *Handlers) SiteBroadcastsDelete(ctx context.Context, params siteapi.SiteBroadcastsDeleteParams) (siteapi.SiteBroadcastsDeleteRes, error) {
-	ws := workspaceScope(ctx)
-
-	id := int64(params.ID)
-	err := h.broadcasts.DeleteDraft(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	return &siteapi.SiteBroadcastsDeleteNoContent{}, nil
-}
-
-// SiteBroadcastsArchive archives a sent or failed broadcast (ADR 0049): it leaves the list but
-// keeps its report, tracking and figures.
+// SiteBroadcastsArchive archives a draft, sent or failed broadcast (ADR 0100): it leaves the list
+// but keeps its report, tracking and figures.
 func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.SiteBroadcastsArchiveParams) (siteapi.SiteBroadcastsArchiveRes, error) {
 	ws := workspaceScope(ctx)
 
@@ -163,7 +152,7 @@ func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.Sit
 	return &res, nil
 }
 
-// SiteBroadcastsUnarchive restores an archived broadcast to the list.
+// SiteBroadcastsUnarchive brings an archived broadcast back to the list.
 func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.SiteBroadcastsUnarchiveParams) (siteapi.SiteBroadcastsUnarchiveRes, error) {
 	ws := workspaceScope(ctx)
 

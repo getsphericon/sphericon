@@ -127,8 +127,9 @@ type Handler interface {
 	BrandKitGet(ctx context.Context) (BrandKitGetRes, error)
 	// BroadcastsArchive implements Broadcasts_archive operation.
 	//
-	// Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be
-	// restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived.
+	// Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and
+	// can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409).
+	// Archiving an archived broadcast changes nothing.
 	//
 	// POST /broadcasts/{id}/archive
 	BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (BroadcastsArchiveRes, error)
@@ -138,12 +139,6 @@ type Handler interface {
 	//
 	// POST /broadcasts
 	BroadcastsCreate(ctx context.Context, req *CreateBroadcastInput) (BroadcastsCreateRes, error)
-	// BroadcastsDelete implements Broadcasts_delete operation.
-	//
-	// Delete a resource.
-	//
-	// DELETE /broadcasts/{id}
-	BroadcastsDelete(ctx context.Context, params BroadcastsDeleteParams) (BroadcastsDeleteRes, error)
 	// BroadcastsGet implements Broadcasts_get operation.
 	//
 	// Get a resource by ID.
@@ -168,14 +163,15 @@ type Handler interface {
 	// segment's condition: recipients are resolved at send time from that copy, so a later edit of the
 	// segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when
 	// the integration it sends through cannot send (disabled or archived, or no default): a draft may name
-	// such an integration, only scheduling it is refused. Send-class: needs the broadcasts:send scope, and
-	// mcp:send over MCP.
+	// such an integration, only scheduling it is refused, and so is an archived broadcast. Send-class:
+	// needs the broadcasts:send scope, and mcp:send over MCP.
 	//
 	// POST /broadcasts/{id}/schedule
 	BroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params BroadcastsScheduleParams) (BroadcastsScheduleRes, error)
 	// BroadcastsSetSegment implements Broadcasts_setSegment operation.
 	//
-	// Set the Segment of a draft broadcast, or null for all contacts. Does not send.
+	// Set the Segment of a draft broadcast, or null for all contacts. Does not send. An archived broadcast
+	// is a 409.
 	//
 	// PUT /broadcasts/{id}/segment
 	BroadcastsSetSegment(ctx context.Context, req *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (BroadcastsSetSegmentRes, error)
@@ -190,7 +186,7 @@ type Handler interface {
 	BroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error)
 	// BroadcastsUnarchive implements Broadcasts_unarchive operation.
 	//
-	// Restore an archived broadcast to the list.
+	// Bring an archived broadcast back to the list, in the status it had.
 	//
 	// POST /broadcasts/{id}/unarchive
 	BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (BroadcastsUnarchiveRes, error)

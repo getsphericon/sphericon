@@ -71,9 +71,8 @@ var (
 		"POST": "Authorization,Content-Type",
 	}
 	rn26AllowedHeaders = map[string]string{
-		"DELETE": "Authorization",
-		"GET":    "Authorization",
-		"PUT":    "Authorization,Content-Type",
+		"GET": "Authorization",
+		"PUT": "Authorization,Content-Type",
 	}
 	rn27AllowedHeaders = map[string]string{
 		"POST": "Authorization",
@@ -980,10 +979,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 						if len(elem) == 0 {
 							switch r.Method {
-							case "DELETE":
-								s.handleBroadcastsDeleteRequest([1]string{
-									args[0],
-								}, elemIsEscaped, w, r)
 							case "GET":
 								s.handleBroadcastsGetRequest([1]string{
 									args[0],
@@ -994,7 +989,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								}, elemIsEscaped, w, r)
 							default:
 								s.notAllowed(w, r, notAllowedParams{
-									allowedMethods: "DELETE,GET,PUT",
+									allowedMethods: "GET,PUT",
 									allowedHeaders: rn26AllowedHeaders,
 									acceptPost:     "",
 									acceptPatch:    "",
@@ -4016,15 +4011,6 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 						if len(elem) == 0 {
 							switch method {
-							case "DELETE":
-								r.name = BroadcastsDeleteOperation
-								r.summary = ""
-								r.operationID = "Broadcasts_delete"
-								r.operationGroup = ""
-								r.pathPattern = "/broadcasts/{id}"
-								r.args = args
-								r.count = 1
-								return r, true
 							case "GET":
 								r.name = BroadcastsGetOperation
 								r.summary = ""

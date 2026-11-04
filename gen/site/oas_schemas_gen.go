@@ -398,8 +398,8 @@ const (
 	AuditActionBroadcastCreate             AuditAction = "broadcast.create"
 	AuditActionBroadcastUpdate             AuditAction = "broadcast.update"
 	AuditActionBroadcastDelete             AuditAction = "broadcast.delete"
-	AuditActionBroadcastDiscard            AuditAction = "broadcast.discard"
-	AuditActionBroadcastRestore            AuditAction = "broadcast.restore"
+	AuditActionBroadcastArchive            AuditAction = "broadcast.archive"
+	AuditActionBroadcastUnarchive          AuditAction = "broadcast.unarchive"
 	AuditActionContactCreate               AuditAction = "contact.create"
 	AuditActionContactUpdate               AuditAction = "contact.update"
 	AuditActionContactDelete               AuditAction = "contact.delete"
@@ -492,8 +492,8 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionBroadcastCreate,
 		AuditActionBroadcastUpdate,
 		AuditActionBroadcastDelete,
-		AuditActionBroadcastDiscard,
-		AuditActionBroadcastRestore,
+		AuditActionBroadcastArchive,
+		AuditActionBroadcastUnarchive,
 		AuditActionContactCreate,
 		AuditActionContactUpdate,
 		AuditActionContactDelete,
@@ -630,9 +630,9 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionBroadcastDelete:
 		return []byte(s), nil
-	case AuditActionBroadcastDiscard:
+	case AuditActionBroadcastArchive:
 		return []byte(s), nil
-	case AuditActionBroadcastRestore:
+	case AuditActionBroadcastUnarchive:
 		return []byte(s), nil
 	case AuditActionContactCreate:
 		return []byte(s), nil
@@ -859,11 +859,11 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionBroadcastDelete:
 		*s = AuditActionBroadcastDelete
 		return nil
-	case AuditActionBroadcastDiscard:
-		*s = AuditActionBroadcastDiscard
+	case AuditActionBroadcastArchive:
+		*s = AuditActionBroadcastArchive
 		return nil
-	case AuditActionBroadcastRestore:
-		*s = AuditActionBroadcastRestore
+	case AuditActionBroadcastUnarchive:
+		*s = AuditActionBroadcastUnarchive
 		return nil
 	case AuditActionContactCreate:
 		*s = AuditActionContactCreate
@@ -14396,7 +14396,8 @@ type SiteBroadcastResource struct {
 	// Progress and ETA while the broadcast is sending; null otherwise. Returned by get and send only,
 	// never by the list.
 	Progress OptNilSiteBroadcastProgress `json:"progress"`
-	// When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived.
+	// When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it
+	// is unarchived.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
@@ -14906,13 +14907,13 @@ type SiteBroadcastsArchiveBadRequest ProblemDetails
 
 func (*SiteBroadcastsArchiveBadRequest) siteBroadcastsArchiveRes() {}
 
+type SiteBroadcastsArchiveConflict ProblemDetails
+
+func (*SiteBroadcastsArchiveConflict) siteBroadcastsArchiveRes() {}
+
 type SiteBroadcastsArchiveNotFound ProblemDetails
 
 func (*SiteBroadcastsArchiveNotFound) siteBroadcastsArchiveRes() {}
-
-type SiteBroadcastsArchiveUnprocessableEntity ProblemDetails
-
-func (*SiteBroadcastsArchiveUnprocessableEntity) siteBroadcastsArchiveRes() {}
 
 type SiteBroadcastsCreateBadRequest ProblemDetails
 
@@ -14925,23 +14926,6 @@ func (*SiteBroadcastsCreateNotFound) siteBroadcastsCreateRes() {}
 type SiteBroadcastsCreateUnprocessableEntity ProblemDetails
 
 func (*SiteBroadcastsCreateUnprocessableEntity) siteBroadcastsCreateRes() {}
-
-type SiteBroadcastsDeleteBadRequest ProblemDetails
-
-func (*SiteBroadcastsDeleteBadRequest) siteBroadcastsDeleteRes() {}
-
-// SiteBroadcastsDeleteNoContent is response for SiteBroadcastsDelete operation.
-type SiteBroadcastsDeleteNoContent struct{}
-
-func (*SiteBroadcastsDeleteNoContent) siteBroadcastsDeleteRes() {}
-
-type SiteBroadcastsDeleteNotFound ProblemDetails
-
-func (*SiteBroadcastsDeleteNotFound) siteBroadcastsDeleteRes() {}
-
-type SiteBroadcastsDeleteUnprocessableEntity ProblemDetails
-
-func (*SiteBroadcastsDeleteUnprocessableEntity) siteBroadcastsDeleteRes() {}
 
 type SiteBroadcastsGetBadRequest ProblemDetails
 
@@ -15099,6 +15083,10 @@ type SiteBroadcastsSendBadRequest ProblemDetails
 
 func (*SiteBroadcastsSendBadRequest) siteBroadcastsSendRes() {}
 
+type SiteBroadcastsSendConflict ProblemDetails
+
+func (*SiteBroadcastsSendConflict) siteBroadcastsSendRes() {}
+
 type SiteBroadcastsSendNotFound ProblemDetails
 
 func (*SiteBroadcastsSendNotFound) siteBroadcastsSendRes() {}
@@ -15130,6 +15118,10 @@ func (*SiteBroadcastsUnarchiveNotFound) siteBroadcastsUnarchiveRes() {}
 type SiteBroadcastsUpdateBadRequest ProblemDetails
 
 func (*SiteBroadcastsUpdateBadRequest) siteBroadcastsUpdateRes() {}
+
+type SiteBroadcastsUpdateConflict ProblemDetails
+
+func (*SiteBroadcastsUpdateConflict) siteBroadcastsUpdateRes() {}
 
 type SiteBroadcastsUpdateNotFound ProblemDetails
 

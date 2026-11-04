@@ -117,8 +117,8 @@ export const AuditAction = {
   BROADCAST_CREATE: 'broadcast.create',
   BROADCAST_UPDATE: 'broadcast.update',
   BROADCAST_DELETE: 'broadcast.delete',
-  BROADCAST_DISCARD: 'broadcast.discard',
-  BROADCAST_RESTORE: 'broadcast.restore',
+  BROADCAST_ARCHIVE: 'broadcast.archive',
+  BROADCAST_UNARCHIVE: 'broadcast.unarchive',
   CONTACT_CREATE: 'contact.create',
   CONTACT_UPDATE: 'contact.update',
   CONTACT_DELETE: 'contact.delete',
@@ -2935,7 +2935,7 @@ export type SiteBroadcastResource = {
    */
   progress?: SiteBroadcastProgress | null;
   /**
-   * When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived.
+   * When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it is unarchived.
    */
   archivedAt?: Timestamp | null;
   /**
@@ -11396,49 +11396,6 @@ export type SiteBroadcastLinksListResponses = {
 
 export type SiteBroadcastLinksListResponse = SiteBroadcastLinksListResponses[keyof SiteBroadcastLinksListResponses];
 
-export type SiteBroadcastsDeleteData = {
-  body?: never;
-  path: {
-    /**
-     * The Workspace id: its short opaque public address and the route key for nested
-     * workspace resources (ADR 0043)
-     */
-    workspaceId: WorkspaceId;
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/broadcasts/{id}';
-};
-
-export type SiteBroadcastsDeleteErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-};
-
-export type SiteBroadcastsDeleteError = SiteBroadcastsDeleteErrors[keyof SiteBroadcastsDeleteErrors];
-
-export type SiteBroadcastsDeleteResponses = {
-  /**
-   * There is no content to send for this request, but the headers may be useful.
-   */
-  204: void;
-};
-
-export type SiteBroadcastsDeleteResponse = SiteBroadcastsDeleteResponses[keyof SiteBroadcastsDeleteResponses];
-
 export type SiteBroadcastsGetData = {
   body?: never;
   path: {
@@ -11505,6 +11462,10 @@ export type SiteBroadcastsUpdateErrors = {
    */
   404: ProblemDetails;
   /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -11548,9 +11509,9 @@ export type SiteBroadcastsArchiveErrors = {
    */
   404: ProblemDetails;
   /**
-   * RFC 7807 validation response
+   * RFC 7807 conflict response
    */
-  422: ProblemDetails;
+  409: ProblemDetails;
 };
 
 export type SiteBroadcastsArchiveError = SiteBroadcastsArchiveErrors[keyof SiteBroadcastsArchiveErrors];
@@ -11637,6 +11598,10 @@ export type SiteBroadcastsSendErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 validation response
    */

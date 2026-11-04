@@ -85,10 +85,6 @@ type BroadcastsCreateRes interface {
 	broadcastsCreateRes()
 }
 
-type BroadcastsDeleteRes interface {
-	broadcastsDeleteRes()
-}
-
 type BroadcastsGetRes interface {
 	broadcastsGetRes()
 }

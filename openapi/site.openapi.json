@@ -6462,6 +6462,16 @@
               }
             }
           },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "RFC 7807 validation response",
             "content": {
@@ -6485,61 +6495,12 @@
           }
         },
         "x-required-permissions": []
-      },
-      "delete": {
-        "operationId": "SiteBroadcasts_delete",
-        "description": "Delete a resource from the site UI",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
-          },
-          {
-            "$ref": "#/components/parameters/SiteBroadcastResourceKey.id"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
-          },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Site Broadcasts"],
-        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}/archive": {
       "post": {
         "operationId": "SiteBroadcasts_archive",
-        "description": "Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and\nfigures, and can be restored. A draft is deleted and a scheduled or sending broadcast\ncannot be archived (422).",
+        "description": "Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and\nfigures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot\nbe archived (409). Archiving an archived broadcast changes nothing.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -6579,8 +6540,8 @@
               }
             }
           },
-          "422": {
-            "description": "RFC 7807 validation response",
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6597,7 +6558,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/schedule": {
       "post": {
         "operationId": "SiteBroadcasts_schedule",
-        "description": "Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused.",
+        "description": "Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -6675,7 +6636,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/send": {
       "post": {
         "operationId": "SiteBroadcasts_send",
-        "description": "Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused.",
+        "description": "Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. An archived broadcast is a 409.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -6707,6 +6668,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6845,7 +6816,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/unarchive": {
       "post": {
         "operationId": "SiteBroadcasts_unarchive",
-        "description": "Restore an archived broadcast to the list",
+        "description": "Bring an archived broadcast back to the list, in the status it had",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -14831,8 +14802,8 @@
           "broadcast.create",
           "broadcast.update",
           "broadcast.delete",
-          "broadcast.discard",
-          "broadcast.restore",
+          "broadcast.archive",
+          "broadcast.unarchive",
           "contact.create",
           "contact.update",
           "contact.delete",
@@ -18598,7 +18569,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived."
+            "description": "When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it is unarchived."
           },
           "createdAt": {
             "allOf": [

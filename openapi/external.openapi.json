@@ -3014,6 +3014,16 @@
               }
             }
           },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "RFC 7807 validation response",
             "content": {
@@ -3081,122 +3091,12 @@
           }
         },
         "x-required-scopes": ["broadcasts:write"]
-      },
-      "delete": {
-        "operationId": "Broadcasts_delete",
-        "description": "Delete a resource",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/BroadcastResourceKey"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
-          },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "RFC 7807 unauthorized response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "RFC 7807 forbidden response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
-            "headers": {
-              "Retry-After": {
-                "required": true,
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Limit": {
-                "required": true,
-                "description": "The request budget of the window that was exceeded",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Remaining": {
-                "required": true,
-                "description": "Requests left in the current window",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Reset": {
-                "required": true,
-                "description": "Unix time at which the window resets",
-                "schema": {
-                  "type": "integer",
-                  "format": "int64"
-                }
-              }
-            },
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Broadcasts"],
-        "x-required-scopes": ["broadcasts:write"]
       }
     },
     "/broadcasts/{id}/archive": {
       "post": {
         "operationId": "Broadcasts_archive",
-        "description": "Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived.",
+        "description": "Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409). Archiving an archived broadcast changes nothing.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BroadcastResourceKey"
@@ -3253,8 +3153,8 @@
               }
             }
           },
-          "422": {
-            "description": "RFC 7807 validation response",
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3424,7 +3324,7 @@
     "/broadcasts/{id}/schedule": {
       "post": {
         "operationId": "Broadcasts_schedule",
-        "description": "Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. Send-class: needs the broadcasts:send scope, and mcp:send over MCP.",
+        "description": "Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. Send-class: needs the broadcasts:send scope, and mcp:send over MCP.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BroadcastResourceKey"
@@ -3566,7 +3466,7 @@
     "/broadcasts/{id}/segment": {
       "put": {
         "operationId": "Broadcasts_setSegment",
-        "description": "Set the Segment of a draft broadcast, or null for all contacts. Does not send.",
+        "description": "Set the Segment of a draft broadcast, or null for all contacts. Does not send. An archived broadcast is a 409.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BroadcastResourceKey"
@@ -3615,6 +3515,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3817,7 +3727,7 @@
     "/broadcasts/{id}/unarchive": {
       "post": {
         "operationId": "Broadcasts_unarchive",
-        "description": "Restore an archived broadcast to the list",
+        "description": "Bring an archived broadcast back to the list, in the status it had",
         "parameters": [
           {
             "$ref": "#/components/parameters/BroadcastResourceKey"
@@ -14367,8 +14277,8 @@
           "broadcast.create",
           "broadcast.update",
           "broadcast.delete",
-          "broadcast.discard",
-          "broadcast.restore",
+          "broadcast.archive",
+          "broadcast.unarchive",
           "contact.create",
           "contact.update",
           "contact.delete",
@@ -15416,7 +15326,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived."
+            "description": "When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it is unarchived."
           },
           "createdAt": {
             "allOf": [

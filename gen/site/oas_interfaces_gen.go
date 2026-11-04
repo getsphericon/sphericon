@@ -185,10 +185,6 @@ type SiteBroadcastsCreateRes interface {
 	siteBroadcastsCreateRes()
 }
 
-type SiteBroadcastsDeleteRes interface {
-	siteBroadcastsDeleteRes()
-}
-
 type SiteBroadcastsGetRes interface {
 	siteBroadcastsGetRes()
 }

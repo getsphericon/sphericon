@@ -54,7 +54,6 @@ const (
 	SiteBroadcastLinksListOperation                    OperationName = "SiteBroadcastLinksList"
 	SiteBroadcastsArchiveOperation                     OperationName = "SiteBroadcastsArchive"
 	SiteBroadcastsCreateOperation                      OperationName = "SiteBroadcastsCreate"
-	SiteBroadcastsDeleteOperation                      OperationName = "SiteBroadcastsDelete"
 	SiteBroadcastsGetOperation                         OperationName = "SiteBroadcastsGet"
 	SiteBroadcastsListOperation                        OperationName = "SiteBroadcastsList"
 	SiteBroadcastsScheduleOperation                    OperationName = "SiteBroadcastsSchedule"

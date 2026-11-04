@@ -46,7 +46,7 @@ model BroadcastResource {
   /** When the broadcast failed */
   failedAt?: Timestamp | null;
 
-  /** When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived. */
+  /** When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it is unarchived. */
   archivedAt?: Timestamp | null;
 
   /** Creation timestamp */
@@ -130,20 +130,21 @@ model BroadcastsListFilter {
   @query channel?: BroadcastChannel;
 }
 
+/** A broadcast is archived, never deleted (ADR 0100). An archived broadcast is read-only until it
+ * is unarchived: an update, a change of its Segment or a schedule of one is a 409. */
 @tag("Broadcasts")
 interface Broadcasts
-  extends ExternalCrud<
+  extends ExternalCrudKept<
       BroadcastResource,
       CreateBroadcastInput,
       UpdateBroadcastInput,
       ApiTokenScope.broadcastsRead,
       ApiTokenScope.broadcastsWrite,
-      ApiTokenScope.broadcastsWrite,
       never,
-      never,
-      BroadcastsListFilter
+      BroadcastsListFilter,
+      ConflictProblem
     > {
-  /** Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived. */
+  /** Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409). Archiving an archived broadcast changes nothing. */
   @action("archive")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.broadcastsWrite])
@@ -154,9 +155,9 @@ interface Broadcasts
     | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | ConflictProblem;
 
-  /** Restore an archived broadcast to the list */
+  /** Bring an archived broadcast back to the list, in the status it had */
   @action("unarchive")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.broadcastsWrite])
@@ -168,7 +169,7 @@ interface Broadcasts
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Set the Segment of a draft broadcast, or null for all contacts. Does not send. */
+  /** Set the Segment of a draft broadcast, or null for all contacts. Does not send. An archived broadcast is a 409. */
   @action("segment")
   @put
   @autoRoute
@@ -183,6 +184,7 @@ interface Broadcasts
     | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
+    | ConflictProblem
     | UnprocessableEntityProblem;
 
   /** Send a rendered preview with sample merge data to a single address: an email broadcast to the `email` given, an SMS broadcast to the `phone` given, through the broadcast's Integration. Never sends to the audience, and leaves no message and no figure. Telegram has no Test send (ADR 0080), so a Telegram broadcast is a 422. */
@@ -201,7 +203,7 @@ interface Broadcasts
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
+  /** Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
   @action("schedule")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.broadcastsSend])

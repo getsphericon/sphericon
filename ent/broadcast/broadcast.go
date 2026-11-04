@@ -22,8 +22,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldWorkspaceID holds the string denoting the workspace_id field in the database.
 	FieldWorkspaceID = "workspace_id"
-	// FieldDiscardedAt holds the string denoting the discarded_at field in the database.
-	FieldDiscardedAt = "discarded_at"
+	// FieldArchivedAt holds the string denoting the archived_at field in the database.
+	FieldArchivedAt = "archived_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldChannel holds the string denoting the channel field in the database.
@@ -116,7 +116,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldWorkspaceID,
-	FieldDiscardedAt,
+	FieldArchivedAt,
 	FieldName,
 	FieldChannel,
 	FieldSubject,
@@ -253,9 +253,9 @@ func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWorkspaceID, opts...).ToFunc()
 }
 
-// ByDiscardedAt orders the results by the discarded_at field.
-func ByDiscardedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDiscardedAt, opts...).ToFunc()
+// ByArchivedAt orders the results by the archived_at field.
+func ByArchivedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldArchivedAt, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.

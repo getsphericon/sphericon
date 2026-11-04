@@ -8305,8 +8305,9 @@ func (s *Server) handleSiteBroadcastLinksListRequest(args [2]string, argsEscaped
 
 // handleSiteBroadcastsArchiveRequest handles SiteBroadcasts_archive operation.
 //
-// Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and figures, and
-// can be restored. A draft is deleted and a scheduled or sending broadcast cannot be archived (422).
+// Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
+// figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be
+// archived (409). Archiving an archived broadcast changes nothing.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/archive
 func (s *Server) handleSiteBroadcastsArchiveRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -8689,197 +8690,6 @@ func (s *Server) handleSiteBroadcastsCreateRequest(args [1]string, argsEscaped b
 	}
 
 	if err := encodeSiteBroadcastsCreateResponse(response, w, span); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
-// handleSiteBroadcastsDeleteRequest handles SiteBroadcasts_delete operation.
-//
-// Delete a resource from the site UI.
-//
-// DELETE /workspaces/{workspaceId}/broadcasts/{id}
-func (s *Server) handleSiteBroadcastsDeleteRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("SiteBroadcasts_delete"),
-		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/broadcasts/{id}"),
-	}
-	// Add attributes from config.
-	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
-
-	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteBroadcastsDeleteOperation,
-		trace.WithAttributes(otelAttrs...),
-		serverSpanKind,
-	)
-	defer span.End()
-
-	// Add Labeler to context.
-	labeler := &Labeler{attrs: otelAttrs}
-	ctx = contextWithLabeler(ctx, labeler)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		elapsedDuration := time.Since(startTime)
-
-		attrSet := labeler.AttributeSet()
-		attrs := attrSet.ToSlice()
-		code := statusWriter.status
-		if code != 0 {
-			codeAttr := semconv.HTTPResponseStatusCode(code)
-			attrs = append(attrs, codeAttr)
-			span.SetAttributes(attrs...)
-		}
-		attrOpt := metric.WithAttributes(attrs...)
-
-		// Increment request counter.
-		s.requests.Add(ctx, 1, attrOpt)
-
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
-	}()
-
-	var (
-		recordError = func(stage string, err error) {
-			span.RecordError(err)
-
-			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
-			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
-			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
-			// max redirects exceeded), in which case status MUST be set to Error.
-			code := statusWriter.status
-			if code < 100 || code >= 500 {
-				span.SetStatus(codes.Error, stage)
-			}
-
-			attrSet := labeler.AttributeSet()
-			attrs := attrSet.ToSlice()
-			if code != 0 {
-				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
-			}
-
-			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
-		}
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: SiteBroadcastsDeleteOperation,
-			ID:   "SiteBroadcasts_delete",
-		}
-	)
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			sctx, ok, err := s.securityApiKeyAuth(ctx, SiteBroadcastsDeleteOperation, r)
-			if err != nil {
-				err = &ogenerrors.SecurityError{
-					OperationContext: opErrContext,
-					Security:         "ApiKeyAuth",
-					Err:              err,
-				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
-				return
-			}
-			if ok {
-				satisfied[0] |= 1 << 0
-				ctx = sctx
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			err = &ogenerrors.SecurityError{
-				OperationContext: opErrContext,
-				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
-			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
-			return
-		}
-	}
-	params, err := decodeSiteBroadcastsDeleteParams(args, argsEscaped, r)
-	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeParams", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	var rawBody []byte
-
-	var response SiteBroadcastsDeleteRes
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    SiteBroadcastsDeleteOperation,
-			OperationSummary: "",
-			OperationID:      "SiteBroadcasts_delete",
-			Body:             nil,
-			RawBody:          rawBody,
-			Params: middleware.Parameters{
-				{
-					Name: "workspaceId",
-					In:   "path",
-				}: params.WorkspaceId,
-				{
-					Name: "id",
-					In:   "path",
-				}: params.ID,
-			},
-			Raw: r,
-		}
-
-		type (
-			Request  = struct{}
-			Params   = SiteBroadcastsDeleteParams
-			Response = SiteBroadcastsDeleteRes
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			unpackSiteBroadcastsDeleteParams,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteBroadcastsDelete(ctx, params)
-				return response, err
-			},
-		)
-	} else {
-		response, err = s.h.SiteBroadcastsDelete(ctx, params)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeSiteBroadcastsDeleteResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -9296,7 +9106,7 @@ func (s *Server) handleSiteBroadcastsListRequest(args [1]string, argsEscaped boo
 // are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and
 // rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through
 // cannot send (disabled or archived, or no default): a draft may name such an integration, only
-// scheduling it is refused.
+// scheduling it is refused. An archived broadcast is a 409 too.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
 func (s *Server) handleSiteBroadcastsScheduleRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -9503,7 +9313,7 @@ func (s *Server) handleSiteBroadcastsScheduleRequest(args [2]string, argsEscaped
 // handleSiteBroadcastsSendRequest handles SiteBroadcasts_send operation.
 //
 // Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-// resolved from; an archived segment is refused.
+// resolved from; an archived segment is refused. An archived broadcast is a 409.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/send
 func (s *Server) handleSiteBroadcastsSendRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -9905,7 +9715,7 @@ func (s *Server) handleSiteBroadcastsTestSendRequest(args [2]string, argsEscaped
 
 // handleSiteBroadcastsUnarchiveRequest handles SiteBroadcasts_unarchive operation.
 //
-// Restore an archived broadcast to the list.
+// Bring an archived broadcast back to the list, in the status it had.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
 func (s *Server) handleSiteBroadcastsUnarchiveRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

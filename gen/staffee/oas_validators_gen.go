@@ -97,9 +97,9 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "broadcast.delete":
 		return nil
-	case "broadcast.discard":
+	case "broadcast.archive":
 		return nil
-	case "broadcast.restore":
+	case "broadcast.unarchive":
 		return nil
 	case "contact.create":
 		return nil
