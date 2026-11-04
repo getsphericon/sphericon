@@ -10,9 +10,7 @@ import {
   Group,
   Menu,
   Modal,
-  NumberInput,
   Paper,
-  SegmentedControl,
   Stack,
   Text,
   TextInput,
@@ -45,7 +43,6 @@ import {
   siteIntegrationsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
-  IntegrationConfigInput,
   SiteIntegrationChannel,
   SiteIntegrationProvider,
   SiteIntegrationResource,
@@ -57,15 +54,17 @@ import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_INTEGRATION } from '../../utils/auditFilter.ts'
 import { can } from '../../utils/permissions.ts'
 import { HistoryMenuItem } from './AuditLogSection.tsx'
+import { CredentialsModal } from './CredentialsModal.tsx'
 import { InboundModal } from './InboundModal.tsx'
+import { EmailFields, TelegramFields, TwilioFields } from './integrationFields.tsx'
+import { buildConfig, hasCredentials, INITIAL_VALUES, paramsOf } from './integrationForm.ts'
+import type { IntegrationFormValues } from './integrationForm.ts'
 import {
-  NO_LIMITS,
   requiresProviderLimit,
   toLimit,
   useProviderLimitValidators,
   useProviderLimitWarnings,
 } from './providerLimit.ts'
-import type { ProviderLimitValues } from './providerLimit.ts'
 import { ProviderLimitFields } from './ProviderLimitFields.tsx'
 import { ProviderLimitModal } from './ProviderLimitModal.tsx'
 import { ProviderLimitStatus } from './ProviderLimitStatus.tsx'
@@ -99,58 +98,8 @@ function channelOf(tile: Tile | null): SiteIntegrationChannel {
   return tile === null ? 'email' : CHANNEL_OF[providerOf(tile)]
 }
 
-// How a Twilio account sends: with an API key and its secret, or with the Auth Token.
-type TwilioCredential = 'apiKey' | 'authToken'
-
 // contract-copy: the Channels in the order the list groups them
 const CHANNELS: SiteIntegrationChannel[] = ['email', 'telegram', 'sms']
-
-// Flat form state; the provider-specific config object is assembled on submit
-// from whichever fields the selected provider uses.
-interface IntegrationFormValues extends ProviderLimitValues {
-  name: string
-  provider: ProviderKind
-  isDefault: boolean
-  host: string
-  port: number
-  username: string
-  password: string
-  region: string
-  accessKeyId: string
-  secretAccessKey: string
-  endpoint: string
-  from: string
-  fromName: string
-  token: string
-  twilioCredential: TwilioCredential
-  accountSid: string
-  apiKeySid: string
-  apiKeySecret: string
-  authToken: string
-}
-
-const INITIAL_VALUES: IntegrationFormValues = {
-  name: '',
-  provider: 'smtp',
-  isDefault: false,
-  host: '',
-  port: 587,
-  username: '',
-  password: '',
-  region: '',
-  accessKeyId: '',
-  secretAccessKey: '',
-  endpoint: '',
-  from: '',
-  fromName: '',
-  token: '',
-  twilioCredential: 'apiKey',
-  accountSid: '',
-  apiKeySid: '',
-  apiKeySecret: '',
-  authToken: '',
-  ...NO_LIMITS,
-}
 
 // A provider left unnamed is called after where it sends from.
 function defaultName(values: IntegrationFormValues): string {
@@ -167,186 +116,6 @@ function defaultName(values: IntegrationFormValues): string {
   return URL.canParse(endpoint) ? new URL(endpoint).host : `Amazon SES (${values.region.trim()})`
 }
 
-function buildConfig(values: IntegrationFormValues): IntegrationConfigInput {
-  if (values.provider === 'telegram') {
-    return { kind: 'telegram', token: values.token.trim() }
-  }
-  if (values.provider === 'twilio') {
-    const withKey = values.twilioCredential === 'apiKey'
-    return {
-      kind: 'twilio',
-      accountSid: values.accountSid.trim(),
-      apiKeySid: withKey ? values.apiKeySid.trim() : null,
-      secret: withKey ? values.apiKeySecret.trim() : values.authToken.trim(),
-      from: values.from.trim(),
-    }
-  }
-  if (values.provider === 'ses') {
-    return {
-      kind: 'ses',
-      region: values.region.trim(),
-      accessKeyId: values.accessKeyId.trim(),
-      secretAccessKey: values.secretAccessKey,
-      endpoint: values.endpoint.trim() || null,
-      from: values.from.trim(),
-      fromName: values.fromName.trim() || null,
-    }
-  }
-  return {
-    kind: 'smtp',
-    host: values.host.trim(),
-    port: values.port,
-    username: values.username.trim() || null,
-    password: values.password || null,
-    from: values.from.trim(),
-    fromName: values.fromName.trim() || null,
-  }
-}
-
-// EmailFields asks for an email provider's credentials, SES's or an SMTP server's, and its From.
-function EmailFields({
-  form,
-  isSes,
-}: {
-  form: Pick<ReturnType<typeof useForm<IntegrationFormValues>>, 'getInputProps'>
-  isSes: boolean
-}) {
-  const { t } = useTranslation()
-  return (
-    <>
-      {isSes ? (
-        <Group grow>
-          <TextInput
-            label={t(($) => $.settings.integrations.fields.region)}
-            required
-            {...form.getInputProps('region')}
-          />
-          <TextInput
-            label={t(($) => $.settings.integrations.fields.accessKeyId)}
-            required
-            {...form.getInputProps('accessKeyId')}
-          />
-          <TextInput
-            label={t(($) => $.settings.integrations.fields.secretAccessKey)}
-            type="password"
-            required
-            {...form.getInputProps('secretAccessKey')}
-          />
-        </Group>
-      ) : null}
-      {isSes ? null : (
-        <>
-          <Group grow>
-            <TextInput
-              label={t(($) => $.settings.integrations.fields.host)}
-              required
-              {...form.getInputProps('host')}
-            />
-            <NumberInput
-              label={t(($) => $.settings.integrations.fields.port)}
-              required
-              {...form.getInputProps('port')}
-            />
-          </Group>
-          <Group grow>
-            <TextInput
-              label={t(($) => $.settings.integrations.fields.username)}
-              {...form.getInputProps('username')}
-            />
-            <TextInput
-              label={t(($) => $.settings.integrations.fields.password)}
-              type="password"
-              {...form.getInputProps('password')}
-            />
-          </Group>
-        </>
-      )}
-      <TextInput
-        label={t(($) => $.settings.integrations.fields.from)}
-        required
-        {...form.getInputProps('from')}
-      />
-    </>
-  )
-}
-
-// TwilioFields asks for a Twilio account: the Account SID, the send credential (an API key and its
-// secret, or the Auth Token), the Auth Token its callbacks are signed with, and the sender.
-function TwilioFields({
-  form,
-}: {
-  form: Pick<ReturnType<typeof useForm<IntegrationFormValues>>, 'getInputProps' | 'values'>
-}) {
-  const { t } = useTranslation()
-  const withAPIKey = form.values.twilioCredential === 'apiKey'
-  return (
-    <>
-      <TextInput
-        label={t(($) => $.settings.integrations.fields.accountSid)}
-        placeholder="AC…"
-        required
-        {...form.getInputProps('accountSid')}
-      />
-      <SegmentedControl
-        aria-label={t(($) => $.settings.integrations.fields.twilioCredential)}
-        data={[
-          {
-            value: 'apiKey',
-            label: t(($) => $.settings.integrations.fields.twilioApiKey),
-          },
-          {
-            value: 'authToken',
-            label: t(($) => $.settings.integrations.fields.twilioAuthTokenOnly),
-          },
-        ]}
-        {...form.getInputProps('twilioCredential')}
-      />
-      {withAPIKey ? (
-        <Group grow align="flex-start">
-          <TextInput
-            label={t(($) => $.settings.integrations.fields.apiKeySid)}
-            placeholder="SK…"
-            required
-            {...form.getInputProps('apiKeySid')}
-          />
-          <TextInput
-            label={t(($) => $.settings.integrations.fields.apiKeySecret)}
-            type="password"
-            required
-            {...form.getInputProps('apiKeySecret')}
-          />
-        </Group>
-      ) : null}
-      <TextInput
-        label={t(($) => $.settings.integrations.fields.authToken)}
-        description={
-          withAPIKey
-            ? t(($) => $.settings.integrations.fields.authTokenHint)
-            : t(($) => $.settings.integrations.fields.authTokenSendsHint)
-        }
-        type="password"
-        required
-        {...form.getInputProps('authToken')}
-      />
-      <TextInput
-        label={t(($) => $.settings.integrations.fields.smsFrom)}
-        description={t(($) => $.settings.integrations.fields.smsFromHint)}
-        required
-        {...form.getInputProps('from')}
-      />
-      <Text c="dimmed" size="sm">
-        {t(($) => $.settings.integrations.carrierRegistration)}
-      </Text>
-    </>
-  )
-}
-
-// paramsOf is the params a new Integration is created with: a Twilio account's callbacks are signed
-// with its Auth Token, kept apart from the send credential so either rotates alone.
-function paramsOf(values: IntegrationFormValues): { params?: { auth_token: string } } {
-  return values.provider === 'twilio' ? { params: { auth_token: values.authToken.trim() } } : {}
-}
-
 // The Workspace's providers, read by the list and by the create form. A deleted one is not listed.
 const integrationsOptions = (workspaceId: string) =>
   siteIntegrationsListOptions({ path: { workspaceId } })
@@ -358,6 +127,7 @@ function IntegrationsList({
   canManage,
   onMakeDefault,
   onEditLimits,
+  onCredentials,
   onInbound,
   onDelete,
 }: {
@@ -365,6 +135,7 @@ function IntegrationsList({
   canManage: boolean
   onMakeDefault: (id: string) => void
   onEditLimits: (record: SiteIntegrationResource) => void
+  onCredentials: (record: SiteIntegrationResource) => void
   onInbound: (record: SiteIntegrationResource) => void
   onDelete: (record: SiteIntegrationResource) => void
 }) {
@@ -484,6 +255,11 @@ function IntegrationsList({
                         ) : null}
                         {canManage ? (
                           <>
+                            {hasCredentials(record) ? (
+                              <Menu.Item onClick={() => onCredentials(record)}>
+                                {t(($) => $.settings.integrations.credentials.open)}
+                              </Menu.Item>
+                            ) : null}
                             <Menu.Item onClick={() => onEditLimits(record)}>
                               {t(($) => $.settings.integrations.providerLimit.edit)}
                             </Menu.Item>
@@ -509,7 +285,32 @@ function IntegrationsList({
   )
 }
 
-export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceResource }) {
+// linkedIntegration is the Integration a link opened the credentials of, once the list has it: one
+// with credentials, for a member who may save them.
+function linkedIntegration(
+  records: SiteIntegrationResource[] | undefined,
+  id: string | undefined,
+  canManage: boolean,
+): SiteIntegrationResource | null {
+  if (!canManage || id === undefined) {
+    return null
+  }
+  return records?.find((r) => r.id === id && hasCredentials(r)) ?? null
+}
+
+interface IntegrationsSectionProps {
+  workspace: SiteWorkspaceResource
+  // The id of an Integration whose credentials open on arrival (a link that names it), and what
+  // closing them does to that link.
+  linkedId?: string | undefined
+  onLinkedClosed?: () => void
+}
+
+export function IntegrationsSection({
+  workspace,
+  linkedId,
+  onLinkedClosed,
+}: IntegrationsSectionProps) {
   const workspaceId = workspace.id
   const { t } = useTranslation()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
@@ -529,6 +330,16 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
   })
   const [editing, setEditing] = useState<SiteIntegrationResource | null>(null)
   const [inbound, setInbound] = useState<SiteIntegrationResource | null>(null)
+  // The Integration whose credentials are open, from its row's menu.
+  const [credentialsOf, setCredentialsOf] = useState<SiteIntegrationResource | null>(null)
+  const linked = linkedIntegration(integrationsQuery.data, linkedId, canManageIntegrations)
+
+  function closeCredentials() {
+    setCredentialsOf(null)
+    if (linkedId !== undefined) {
+      onLinkedClosed?.()
+    }
+  }
 
   function dismissCreate() {
     form.reset()
@@ -636,6 +447,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
             defaultMutation.mutate({ path: { workspaceId, id }, body: { isDefault: true } })
           }
           onEditLimits={setEditing}
+          onCredentials={setCredentialsOf}
           onInbound={setInbound}
           onDelete={(record) => deleteIntegration(record.id, record.name)}
         />
@@ -698,13 +510,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                     >
                       {t(($) => $.settings.integrations.telegramWarning.body)}
                     </Alert>
-                    <TextInput
-                      label={t(($) => $.settings.integrations.fields.token)}
-                      description={t(($) => $.settings.integrations.fields.tokenHint)}
-                      type="password"
-                      required
-                      {...form.getInputProps('token')}
-                    />
+                    <TelegramFields form={form} />
                   </>
                 ) : null}
                 {isTwilio ? <TwilioFields form={form} /> : null}
@@ -804,6 +610,11 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
         workspaceId={workspaceId}
         integration={editing}
         onClose={() => setEditing(null)}
+      />
+      <CredentialsModal
+        workspaceId={workspaceId}
+        integration={credentialsOf ?? linked}
+        onClose={closeCredentials}
       />
       <InboundModal
         workspaceId={workspaceId}

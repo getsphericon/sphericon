@@ -242,6 +242,56 @@ test('every kind of item is a sentence, with a link where there is somewhere to 
     .toBeInTheDocument()
 })
 
+test('a refused integration links to the form that saves its credentials', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          {
+            kind: 'integrationProviderRefused',
+            severity: 'blocked',
+            ...about('8', 'Twilio (+15017250604)'),
+          },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByText(/Twilio \(\+15017250604\)'s credentials or account were refused/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Save its credentials' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings/emails?integration=%228%22')
+})
+
+test('refused integrations in one row each link to their own credentials', async () => {
+  worker.use(
+    handleSiteAttentionGet({
+      body: {
+        items: [
+          { kind: 'integrationProviderRefused', severity: 'blocked', ...about('8', 'Twilio') },
+          { kind: 'integrationProviderRefused', severity: 'blocked', ...about('9', 'News bot') },
+        ],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByText(/The credentials of 2 integrations were refused/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'News bot' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings/emails?integration=%229%22')
+  await expect
+    .element(screen.getByRole('link', { name: 'Twilio' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings/emails?integration=%228%22')
+})
+
 test('items of one kind are one sentence that names them all, with one link', async () => {
   worker.use(
     handleSiteAttentionGet({
