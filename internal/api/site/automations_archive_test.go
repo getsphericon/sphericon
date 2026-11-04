@@ -192,8 +192,8 @@ func TestArchivedAutomationDoesNotUseTheDefaultIntegration(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	del := func() siteapi.SiteIntegrationsArchiveRes {
-		got, err := c.SiteIntegrationsArchive(ctx, siteapi.SiteIntegrationsArchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeDefaultID)})
+	del := func() siteapi.SiteIntegrationsDeleteRes {
+		got, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeDefaultID)})
 		require.NoError(t, err)
 		return got
 	}
@@ -208,5 +208,5 @@ func TestArchivedAutomationDoesNotUseTheDefaultIntegration(t *testing.T) {
 		require.NoError(t, acme.Automation().Discard(ctx, id))
 	}
 
-	assert.IsType(t, &siteapi.SiteIntegrationResource{}, del())
+	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, del())
 }

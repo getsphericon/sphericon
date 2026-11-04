@@ -66,8 +66,8 @@ model SendingDomainResource {
   /** When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or verified again since) */
   verificationLostAt?: Timestamp | null;
 
-  /** When the domain was archived; null while it is kept. */
-  archivedAt?: Timestamp | null;
+  /** When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot be restored, but stays readable by id. */
+  deletedAt?: Timestamp | null;
 
   /** Creation timestamp */
   createdAt: Timestamp;
@@ -86,12 +86,6 @@ model UpdateSendingDomainInput {
   dkimSelector?: string;
 }
 
-/** Filter of the Sending domain list */
-model SendingDomainsListFilter {
-  /** true lists the archived Sending domains instead of the kept ones; the default hides them */
-  @query archived?: boolean;
-}
-
 @tag("Sending domains")
 interface SendingDomains {
   /** List resources with pagination */
@@ -99,11 +93,7 @@ interface SendingDomains {
   @get
   @autoRoute
   @requiresScopes(#[ApiTokenScope.sendingDomainsRead])
-  list(
-    ...ResourceCollectionParameters<SendingDomainResource>,
-    ...PageQuery,
-    ...SendingDomainsListFilter,
-  ):
+  list(...ResourceCollectionParameters<SendingDomainResource>, ...PageQuery):
     | Page<SendingDomainResource>
     | BadRequestProblem
     | UnauthorizedProblem
@@ -162,31 +152,19 @@ interface SendingDomains {
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Archive a Sending domain: it leaves the list and can be restored. Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends from it. */
-  @action("archive")
+  /** Delete a Sending domain for good: it leaves the list and is never restored; what it sent keeps its history. Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends from it. */
+  @deletesResource(SendingDomainResource)
+  @delete
   @autoRoute
   @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])
-  archive(...ResourceParameters<SendingDomainResource>):
-    | SendingDomainResource
+  delete(...ResourceParameters<SendingDomainResource>):
+    | NoContentResponse
     | BadRequestProblem
     | UnauthorizedProblem
     | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | InUseProblem;
-
-  /** Restore an archived Sending domain. It starts a new DNS check. Refused with 409 when the same domain was added again meanwhile. */
-  @action("unarchive")
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])
-  unarchive(...ResourceParameters<SendingDomainResource>):
-    | SendingDomainResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | ConflictProblem;
 
   /** Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller. */
   @action("verify")

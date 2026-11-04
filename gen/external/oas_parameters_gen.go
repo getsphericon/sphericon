@@ -5274,13 +5274,13 @@ func decodeExportMessagesParams(args [0]string, argsEscaped bool, r *http.Reques
 	return params, nil
 }
 
-// IntegrationsArchiveParams is parameters of Integrations_archive operation.
-type IntegrationsArchiveParams struct {
+// IntegrationsDeleteParams is parameters of Integrations_delete operation.
+type IntegrationsDeleteParams struct {
 	// Unique identifier.
 	ID EntityId
 }
 
-func unpackIntegrationsArchiveParams(packed middleware.Parameters) (params IntegrationsArchiveParams) {
+func unpackIntegrationsDeleteParams(packed middleware.Parameters) (params IntegrationsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -5291,7 +5291,7 @@ func unpackIntegrationsArchiveParams(packed middleware.Parameters) (params Integ
 	return params
 }
 
-func decodeIntegrationsArchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params IntegrationsArchiveParams, _ error) {
+func decodeIntegrationsDeleteParams(args [1]string, argsEscaped bool, r *http.Request) (params IntegrationsDeleteParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -5426,8 +5426,6 @@ type IntegrationsListParams struct {
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
 	PageSize OptInt32 `json:",omitempty,omitzero"`
-	// True lists the archived integrations instead of the kept ones; the default hides them.
-	Archived OptBool `json:",omitempty,omitzero"`
 }
 
 func unpackIntegrationsListParams(packed middleware.Parameters) (params IntegrationsListParams) {
@@ -5447,15 +5445,6 @@ func unpackIntegrationsListParams(packed middleware.Parameters) (params Integrat
 		}
 		if v, ok := packed[key]; ok {
 			params.PageSize = v.(OptInt32)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "archived",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.Archived = v.(OptBool)
 		}
 	}
 	return params
@@ -5605,47 +5594,6 @@ func decodeIntegrationsListParams(args [0]string, argsEscaped bool, r *http.Requ
 			Err:  err,
 		}
 	}
-	// Decode query: archived.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "archived",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotArchivedVal bool
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToBool(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotArchivedVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.Archived.SetTo(paramsDotArchivedVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "archived",
-			In:   "query",
-			Err:  err,
-		}
-	}
 	return params, nil
 }
 
@@ -5667,79 +5615,6 @@ func unpackIntegrationsRegenerateKeyParams(packed middleware.Parameters) (params
 }
 
 func decodeIntegrationsRegenerateKeyParams(args [1]string, argsEscaped bool, r *http.Request) (params IntegrationsRegenerateKeyParams, _ error) {
-	// Decode path: id.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "id",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				var paramsDotIDVal int64
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToStringInt64(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotIDVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "id",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// IntegrationsUnarchiveParams is parameters of Integrations_unarchive operation.
-type IntegrationsUnarchiveParams struct {
-	// Unique identifier.
-	ID EntityId
-}
-
-func unpackIntegrationsUnarchiveParams(packed middleware.Parameters) (params IntegrationsUnarchiveParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "id",
-			In:   "path",
-		}
-		params.ID = packed[key].(EntityId)
-	}
-	return params
-}
-
-func decodeIntegrationsUnarchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params IntegrationsUnarchiveParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -7607,13 +7482,13 @@ func decodeSendingDomainRatesListParams(args [0]string, argsEscaped bool, r *htt
 	return params, nil
 }
 
-// SendingDomainsArchiveParams is parameters of SendingDomains_archive operation.
-type SendingDomainsArchiveParams struct {
+// SendingDomainsDeleteParams is parameters of SendingDomains_delete operation.
+type SendingDomainsDeleteParams struct {
 	// Unique identifier.
 	ID EntityId
 }
 
-func unpackSendingDomainsArchiveParams(packed middleware.Parameters) (params SendingDomainsArchiveParams) {
+func unpackSendingDomainsDeleteParams(packed middleware.Parameters) (params SendingDomainsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -7624,7 +7499,7 @@ func unpackSendingDomainsArchiveParams(packed middleware.Parameters) (params Sen
 	return params
 }
 
-func decodeSendingDomainsArchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params SendingDomainsArchiveParams, _ error) {
+func decodeSendingDomainsDeleteParams(args [1]string, argsEscaped bool, r *http.Request) (params SendingDomainsDeleteParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -7759,8 +7634,6 @@ type SendingDomainsListParams struct {
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
 	PageSize OptInt32 `json:",omitempty,omitzero"`
-	// True lists the archived Sending domains instead of the kept ones; the default hides them.
-	Archived OptBool `json:",omitempty,omitzero"`
 }
 
 func unpackSendingDomainsListParams(packed middleware.Parameters) (params SendingDomainsListParams) {
@@ -7780,15 +7653,6 @@ func unpackSendingDomainsListParams(packed middleware.Parameters) (params Sendin
 		}
 		if v, ok := packed[key]; ok {
 			params.PageSize = v.(OptInt32)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "archived",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.Archived = v.(OptBool)
 		}
 	}
 	return params
@@ -7935,120 +7799,6 @@ func decodeSendingDomainsListParams(args [0]string, argsEscaped bool, r *http.Re
 		return params, &ogenerrors.DecodeParamError{
 			Name: "pageSize",
 			In:   "query",
-			Err:  err,
-		}
-	}
-	// Decode query: archived.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "archived",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotArchivedVal bool
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToBool(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotArchivedVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.Archived.SetTo(paramsDotArchivedVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "archived",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// SendingDomainsUnarchiveParams is parameters of SendingDomains_unarchive operation.
-type SendingDomainsUnarchiveParams struct {
-	// Unique identifier.
-	ID EntityId
-}
-
-func unpackSendingDomainsUnarchiveParams(packed middleware.Parameters) (params SendingDomainsUnarchiveParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "id",
-			In:   "path",
-		}
-		params.ID = packed[key].(EntityId)
-	}
-	return params
-}
-
-func decodeSendingDomainsUnarchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params SendingDomainsUnarchiveParams, _ error) {
-	// Decode path: id.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "id",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				var paramsDotIDVal int64
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToStringInt64(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotIDVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "id",
-			In:   "path",
 			Err:  err,
 		}
 	}

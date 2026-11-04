@@ -105,18 +105,13 @@ func TestSiteSecondTestInboxIsRefusedNamingTheRule(t *testing.T) {
 	assert.Contains(t, refused.Detail.Value, "at most one Test inbox")
 }
 
-func TestSiteRestoringATestInboxIsRefusedWhileAnotherIsKept(t *testing.T) {
+func TestSiteDeletingATestInboxFreesThePlaceForAnother(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	first := createInbox(t, c).(*siteapi.SiteIntegrationResource)
-	archiveIntegration(t, c, int64(first.ID))
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, createInbox(t, c), "the archived one frees the place")
+	require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegration(t, c, int64(first.ID)))
 
-	out := unarchiveIntegration(t, c, int64(first.ID))
-
-	refused, ok := out.(*siteapi.SiteIntegrationsUnarchiveConflict)
-	require.Truef(t, ok, "got %T", out)
-	assert.Contains(t, refused.Detail.Value, "at most one Test inbox")
+	assert.IsType(t, &siteapi.SiteIntegrationResource{}, createInbox(t, c), "the deleted one frees the place")
 }
 
 func TestSiteCapturedMessagesAreListedNewestFirstAndOnlyForTheOwnWorkspace(t *testing.T) {

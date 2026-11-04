@@ -341,27 +341,3 @@ func TestAHeldTestSendAnswers422AlikeOnBothSurfaces(t *testing.T) {
 	assert.Equal(t, http.StatusUnprocessableEntity, ext.status)
 	assert.JSONEq(t, want, ext.body)
 }
-
-// Restoring an archived Sending domain whose domain was added again is refused (409), alike on
-// both surfaces.
-func TestRestoringASendingDomainAddedAgainAnswers409AlikeOnBothSurfaces(t *testing.T) {
-	env := testhelper.Setup(t)
-	var site, ext answer
-	siteClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&site))
-	extClient := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeSendingDomainsWrite)), capture(&ext))
-	again, err := siteClient.SiteSendingDomainsCreate(t.Context(), &siteapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainArchivedDomain},
-		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteSendingDomainResource{}, again)
-
-	_, err = siteClient.SiteSendingDomainsUnarchive(t.Context(), siteapi.SiteSendingDomainsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.SendingDomainArchivedID})
-	require.NoError(t, err)
-	_, err = extClient.SendingDomainsUnarchive(t.Context(), externalapi.SendingDomainsUnarchiveParams{ID: fixtures.SendingDomainArchivedID})
-	require.NoError(t, err)
-
-	want := `{"status":409,"title":"Conflict","detail":"this domain was added again; archive that one first"}`
-	assert.Equal(t, http.StatusConflict, site.status)
-	assert.JSONEq(t, want, site.body)
-	assert.Equal(t, http.StatusConflict, ext.status)
-	assert.JSONEq(t, want, ext.body)
-}

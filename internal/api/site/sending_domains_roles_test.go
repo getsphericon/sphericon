@@ -32,13 +32,9 @@ func TestSiteSendingDomainsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteSendingDomainsCreateForbidden), made)
 
-	archived, err := member.SiteSendingDomainsArchive(ctx, siteapi.SiteSendingDomainsArchiveParams{WorkspaceId: workspaceID, ID: id})
+	deleted, err := member.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteSendingDomainsArchiveForbidden), archived)
-
-	unarchived, err := member.SiteSendingDomainsUnarchive(ctx, siteapi.SiteSendingDomainsUnarchiveParams{WorkspaceId: workspaceID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteSendingDomainsUnarchiveForbidden), unarchived)
+	assert.IsType(t, new(siteapi.SiteSendingDomainsDeleteForbidden), deleted)
 
 	verified, err := member.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)

@@ -142,7 +142,7 @@ func (m *Module) notifyUnverified(ctx context.Context, dom *ent.SendingDomain) {
 // Due returns up to limit ids of the Sending domains whose DKIM is to be re-checked,
 // least-recently-checked first with NULLS FIRST: a freshly added, never-checked domain is
 // verified soonest rather than starved behind already-checked ones (plain ASC sorts NULLs
-// last in Postgres). An archived domain is skipped (ADR 0049).
+// last in Postgres). A deleted (discarded) domain is skipped (ADR 0049).
 func (m *Module) Due(ctx context.Context, limit int) ([]int64, error) {
 	return m.client.SendingDomain.Query().
 		Where(sendingdomain.DiscardedAtIsNil()).

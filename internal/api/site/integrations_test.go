@@ -138,10 +138,9 @@ func TestSiteIntegrationsCRUD(t *testing.T) {
 	updRes := updated.(*siteapi.SiteIntegrationResource)
 	assert.Equal(t, "Renamed SMTP", updRes.Name)
 
-	// There is no delete: archiving takes it out of the default list (ADR 0049).
-	archived := archiveIntegration(t, c, int64(res.ID))
-	assert.IsType(t, &siteapi.SiteIntegrationResource{}, archived)
-	assert.NotContains(t, integrationIDs(listIntegrations(t, c, false)), int64(res.ID))
+	// Delete takes it out of the list for good; the row is discarded, not removed (ADR 0049).
+	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegration(t, c, int64(res.ID)))
+	assert.NotContains(t, integrationIDs(listIntegrations(t, c)), int64(res.ID))
 }
 
 func TestSiteIntegrationsRejectsWrongProviderOnUpdate(t *testing.T) {
@@ -279,9 +278,9 @@ func TestSiteIntegrationsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteIntegrationsUpdateForbidden), updated)
 
-	deleted, err := member.SiteIntegrationsArchive(ctx, siteapi.SiteIntegrationsArchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	deleted, err := member.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteIntegrationsArchiveForbidden), deleted)
+	assert.IsType(t, new(siteapi.SiteIntegrationsDeleteForbidden), deleted)
 
 	// Reading stays open to a member, secrets redacted.
 	got, err := member.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})

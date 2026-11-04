@@ -12,10 +12,10 @@ import (
 
 // SiteIntegrationsList returns the workspace's sending-provider integrations
 // with secrets redacted.
-func (h *Handlers) SiteIntegrationsList(ctx context.Context, params siteapi.SiteIntegrationsListParams) (siteapi.SiteIntegrationsListRes, error) {
+func (h *Handlers) SiteIntegrationsList(ctx context.Context, _ siteapi.SiteIntegrationsListParams) (siteapi.SiteIntegrationsListRes, error) {
 	s := workspaceScope(ctx)
 
-	rows, err := h.integrations.All(ctx, s, params.Archived.Or(false))
+	rows, err := h.integrations.All(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -124,38 +124,13 @@ func (h *Handlers) SitePresetsList(_ context.Context) ([]siteapi.SitePresetResou
 	return out, nil
 }
 
-// SiteIntegrationsArchive archives an integration (ADR 0049): it leaves the list and gives up the
-// default, unless live work uses it (409). Owners and admins only.
-func (h *Handlers) SiteIntegrationsArchive(ctx context.Context, params siteapi.SiteIntegrationsArchiveParams) (siteapi.SiteIntegrationsArchiveRes, error) {
-	s := workspaceScope(ctx)
-
-	id := int64(params.ID)
-	row, err := h.integrations.Archive(ctx, s, id)
-	if err != nil {
+// SiteIntegrationsDelete deletes an integration for good (ADR 0049): it leaves the list and gives
+// up the default, unless live work uses it (409). Owners and admins only.
+func (h *Handlers) SiteIntegrationsDelete(ctx context.Context, params siteapi.SiteIntegrationsDeleteParams) (siteapi.SiteIntegrationsDeleteRes, error) {
+	if err := h.integrations.Delete(ctx, workspaceScope(ctx), int64(params.ID)); err != nil {
 		return nil, err
 	}
-	res, err := h.integrationResource(ctx, s, row)
-	if err != nil {
-		return nil, err
-	}
-	return &res, nil
-}
-
-// SiteIntegrationsUnarchive restores an archived integration to the list. It is not the default.
-// Owners and admins only.
-func (h *Handlers) SiteIntegrationsUnarchive(ctx context.Context, params siteapi.SiteIntegrationsUnarchiveParams) (siteapi.SiteIntegrationsUnarchiveRes, error) {
-	s := workspaceScope(ctx)
-
-	id := int64(params.ID)
-	row, err := h.integrations.Unarchive(ctx, s, id)
-	if err != nil {
-		return nil, err
-	}
-	res, err := h.integrationResource(ctx, s, row)
-	if err != nil {
-		return nil, err
-	}
-	return &res, nil
+	return &siteapi.SiteIntegrationsDeleteNoContent{}, nil
 }
 
 // integrationToResource maps the row with goverter, then attaches what the mapper cannot

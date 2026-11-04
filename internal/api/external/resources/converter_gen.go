@@ -895,7 +895,7 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) external.
 		// externalapiIntegrationResource.Params: ignore
 		// externalapiIntegrationResource.SecretsRetiring: ignore
 		// externalapiIntegrationResource.HookUrl: ignore
-		externalapiIntegrationResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiIntegrationResource.DeletedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiIntegrationResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1244,7 +1244,7 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) exter
 		externalapiSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
 		externalapiSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
 		externalapiSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
-		externalapiSendingDomainResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiSendingDomainResource.DeletedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiSendingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

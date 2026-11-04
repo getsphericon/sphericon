@@ -108,8 +108,8 @@ model IntegrationResource {
   /** Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is) */
   hookUrl: string;
 
-  /** When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks. */
-  archivedAt?: Timestamp | null;
+  /** When the integration was deleted; null while it is kept. A deleted integration is no longer listed and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks. */
+  deletedAt?: Timestamp | null;
 
   /** Creation timestamp */
   createdAt: Timestamp;
@@ -118,15 +118,9 @@ model IntegrationResource {
   updatedAt: Timestamp;
 }
 
-/** Filter of the integration list */
-model IntegrationsListFilter {
-  /** true lists the archived integrations instead of the kept ones; the default hides them */
-  @query archived?: boolean;
-}
-
 /**
- * An integration is archived, never deleted (ADR 0049): its sent mail keeps the channel it went
- * through. Not built on ExternalCrud, which carries a delete.
+ * A deleted integration is discarded, not removed physically (ADR 0049): its sent mail keeps the
+ * channel it went through. Not built on ExternalCrud: its delete answers 409 while live work uses it.
  */
 @tag("Integrations")
 interface Integrations {
@@ -135,11 +129,7 @@ interface Integrations {
   @get
   @autoRoute
   @requiresScopes(#[ApiTokenScope.integrationsRead])
-  list(
-    ...ResourceCollectionParameters<IntegrationResource>,
-    ...PageQuery,
-    ...IntegrationsListFilter,
-  ):
+  list(...ResourceCollectionParameters<IntegrationResource>, ...PageQuery):
     | Page<IntegrationResource>
     | BadRequestProblem
     | UnauthorizedProblem
@@ -167,7 +157,7 @@ interface Integrations {
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Get an integration by ID, archived or not */
+  /** Get an integration by ID, deleted or not */
   @readsResource(IntegrationResource)
   @get
   @autoRoute
@@ -198,32 +188,19 @@ interface Integrations {
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them). A Telegram integration's webhook is removed, best effort. */
-  @action("archive")
+  /** Delete an integration for good: it leaves the list, gives up the default and is never restored; what it sent keeps its history. Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them). A Telegram integration's webhook is removed, best effort. */
+  @deletesResource(IntegrationResource)
+  @delete
   @autoRoute
   @requiresScopes(#[ApiTokenScope.integrationsWrite])
-  archive(...ResourceParameters<IntegrationResource>):
-    | IntegrationResource
+  delete(...ResourceParameters<IntegrationResource>):
+    | NoContentResponse
     | BadRequestProblem
     | UnauthorizedProblem
     | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | InUseProblem;
-
-  /** Restore an archived integration to the list. It is not the default; promote it with an update. An enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422 */
-  @action("unarchive")
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.integrationsWrite])
-  unarchive(...ResourceParameters<IntegrationResource>):
-    | IntegrationResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
 
   /** Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Needs a person: hidden from MCP. */
   @action("regenerate-key")

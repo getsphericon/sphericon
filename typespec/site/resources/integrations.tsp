@@ -180,8 +180,8 @@ model SiteIntegrationResource {
   /** Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is) */
   hookUrl: string;
 
-  /** When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks (a Telegram bot's webhook is removed, so Telegram sends it none). */
-  archivedAt?: Timestamp | null;
+  /** When the integration was deleted; null while it is kept. A deleted integration is no longer listed and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks (a Telegram bot's webhook is removed, so Telegram sends it none). */
+  deletedAt?: Timestamp | null;
 
   /** Creation timestamp */
   createdAt: Timestamp;
@@ -190,25 +190,16 @@ model SiteIntegrationResource {
   updatedAt: Timestamp;
 }
 
-/** Filter of the integration list */
-model SiteIntegrationsListFilter {
-  /** true lists the archived integrations instead of the kept ones; the default hides them */
-  @query archived?: boolean;
-}
-
 // Bespoke (not WorkspaceCrud): `list` returns a bare array, not a paginated
 // envelope. Nesting under /workspaces/{workspaceId} comes from @parentResource + @autoRoute.
 @tag("Site Integrations")
 namespace SiteIntegrations {
-  /** List the workspace's sending-provider integrations: the kept ones, or with `archived` the archived ones */
+  /** List the workspace's sending-provider integrations; a deleted one is not listed */
   @listsResource(SiteIntegrationResource)
   @get
   @autoRoute
   @requiresPermissions(#[])
-  op list(
-    ...ResourceCollectionParameters<SiteIntegrationResource>,
-    ...SiteIntegrationsListFilter,
-  ):
+  op list(...ResourceCollectionParameters<SiteIntegrationResource>):
     | {
         @statusCode statusCode: 200;
         @body body: SiteIntegrationResource[];
@@ -235,7 +226,7 @@ namespace SiteIntegrations {
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Get an integration by id */
+  /** Get an integration by id, deleted or not */
   @readsResource(SiteIntegrationResource)
   @get
   @autoRoute
@@ -273,30 +264,17 @@ namespace SiteIntegrations {
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. A Telegram integration's webhook is removed, best effort. Owners and admins only. */
-  @action("archive")
-  @post
+  /** Delete an integration for good: it leaves the list, gives up the default and is never restored; what it sent keeps its history. Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. A Telegram integration's webhook is removed, best effort. Owners and admins only. */
+  @deletesResource(SiteIntegrationResource)
+  @delete
   @autoRoute
   @requiresPermissions(#[Permission.integrationsManage])
-  op archive(...ResourceParameters<SiteIntegrationResource>):
-    | SiteIntegrationResource
+  op delete(...ResourceParameters<SiteIntegrationResource>):
+    | NoContentResponse
     | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | InUseProblem;
-
-  /** Restore an archived integration to the list. It is not the default; promote it with an update. Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins only. */
-  @action("unarchive")
-  @post
-  @autoRoute
-  @requiresPermissions(#[Permission.integrationsManage])
-  op unarchive(...ResourceParameters<SiteIntegrationResource>):
-    | SiteIntegrationResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
 }
 
 // A Preset's params are dynamic by nature, so the contract carries the Preset's JSON Schema

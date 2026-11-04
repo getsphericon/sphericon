@@ -24,9 +24,7 @@ export function TelegramSection({ workspaceId, contactId }: Props) {
   const { formatDateTime } = useFormat()
   const clipboard = useClipboard()
   const bindings = useQuery(siteTelegramListBindingsOptions({ path: { workspaceId, contactId } }))
-  const integrations = useQuery(
-    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
-  )
+  const integrations = useQuery(siteIntegrationsListOptions({ path: { workspaceId } }))
   const bots = (integrations.data ?? []).filter((i) => i.channel === 'telegram' && i.enabled)
   const chats = bindings.data ?? []
 

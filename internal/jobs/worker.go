@@ -352,13 +352,6 @@ func (c *Client) VerifySendingDomain(ctx context.Context, sendingDomainID int64)
 	return c.domains.Verify(ctx, sendingDomainID)
 }
 
-// EnqueueSendingDomainVerify schedules an immediate DKIM re-check of one Sending
-// domain (after a restore). Fire-and-forget: the result lands on the row.
-func (c *Client) EnqueueSendingDomainVerify(ctx context.Context, sendingDomainID int64) error {
-	_, err := c.river.Insert(ctx, VerifySendingDomainArgs{SendingDomainID: sendingDomainID}, nil)
-	return err
-}
-
 // OnEvent queues the evaluation of an Event against the Automations: the Enrollments it ends
 // and the Automations it enrolls the Contact into. It stores the Event's row first (events.Persist,
 // idempotent: the persist consumer writes the same row), so the evaluation finds the Event among

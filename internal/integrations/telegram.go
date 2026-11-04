@@ -310,16 +310,3 @@ func (m *Module) Choosable() []*preset.Preset {
 
 // tokenOf is the token a Telegram config input names, trimmed.
 func tokenOf(c *TelegramConfig) string { return strings.TrimSpace(c.Token) }
-
-// reconnectStored connects a stored Telegram Integration's bot at the hook of key: getMe (the token
-// may have been revoked since) and setWebhook, keeping the pending updates.
-func (m *Module) reconnectStored(ctx context.Context, row *ent.Integration, key string) error {
-	cfg, err := m.telegramConfigOf(row)
-	if err != nil {
-		return err
-	}
-	if _, err := m.identify(ctx, cfg.Token); err != nil {
-		return err
-	}
-	return m.reconnect(ctx, row, cfg.Token, key)
-}

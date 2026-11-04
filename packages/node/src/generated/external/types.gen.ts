@@ -3184,9 +3184,9 @@ export type IntegrationResource = {
    */
   hookUrl: string;
   /**
-   * When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks.
+   * When the integration was deleted; null while it is kept. A deleted integration is no longer listed and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks.
    */
-  archivedAt?: Timestamp | null;
+  deletedAt?: Timestamp | null;
   /**
    * Creation timestamp
    */
@@ -4102,9 +4102,9 @@ export type SendingDomainResource = {
    */
   verificationLostAt?: Timestamp | null;
   /**
-   * When the domain was archived; null while it is kept.
+   * When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot be restored, but stays readable by id.
    */
-  archivedAt?: Timestamp | null;
+  deletedAt?: Timestamp | null;
   /**
    * Creation timestamp
    */
@@ -5210,11 +5210,6 @@ export type ExportPageQueryLimit = number;
 export type IntegrationResourceKey = EntityId;
 
 /**
- * true lists the archived integrations instead of the kept ones; the default hides them
- */
-export type IntegrationsListFilter = boolean;
-
-/**
  * Page number (1-based)
  */
 export type PageQueryPage = number;
@@ -5238,11 +5233,6 @@ export type SegmentResourceKey = EntityId;
  * Unique identifier
  */
 export type SendingDomainResourceKey = EntityId;
-
-/**
- * true lists the archived Sending domains instead of the kept ones; the default hides them
- */
-export type SendingDomainsListFilter = boolean;
 
 /**
  * Unique identifier
@@ -8404,10 +8394,6 @@ export type IntegrationsListData = {
      * Page size
      */
     pageSize?: number;
-    /**
-     * true lists the archived integrations instead of the kept ones; the default hides them
-     */
-    archived?: boolean;
   };
   url: '/integrations';
 };
@@ -8512,6 +8498,58 @@ export type IntegrationsCreateResponses = {
 
 export type IntegrationsCreateResponse = IntegrationsCreateResponses[keyof IntegrationsCreateResponses];
 
+export type IntegrationsDeleteData = {
+  body?: never;
+  path: {
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/integrations/{id}';
+};
+
+export type IntegrationsDeleteErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type IntegrationsDeleteError = IntegrationsDeleteErrors[keyof IntegrationsDeleteErrors];
+
+export type IntegrationsDeleteResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type IntegrationsDeleteResponse = IntegrationsDeleteResponses[keyof IntegrationsDeleteResponses];
+
 export type IntegrationsGetData = {
   body?: never;
   path: {
@@ -8612,58 +8650,6 @@ export type IntegrationsUpdateResponses = {
 
 export type IntegrationsUpdateResponse = IntegrationsUpdateResponses[keyof IntegrationsUpdateResponses];
 
-export type IntegrationsArchiveData = {
-  body?: never;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/integrations/{id}/archive';
-};
-
-export type IntegrationsArchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type IntegrationsArchiveError = IntegrationsArchiveErrors[keyof IntegrationsArchiveErrors];
-
-export type IntegrationsArchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: IntegrationResource;
-};
-
-export type IntegrationsArchiveResponse = IntegrationsArchiveResponses[keyof IntegrationsArchiveResponses];
-
 export type IntegrationsRegenerateKeyData = {
   body?: never;
   path: {
@@ -8713,60 +8699,6 @@ export type IntegrationsRegenerateKeyResponses = {
 };
 
 export type IntegrationsRegenerateKeyResponse = IntegrationsRegenerateKeyResponses[keyof IntegrationsRegenerateKeyResponses];
-
-export type IntegrationsUnarchiveData = {
-  body?: never;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/integrations/{id}/unarchive';
-};
-
-export type IntegrationsUnarchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type IntegrationsUnarchiveError = IntegrationsUnarchiveErrors[keyof IntegrationsUnarchiveErrors];
-
-export type IntegrationsUnarchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: IntegrationResource;
-};
-
-export type IntegrationsUnarchiveResponse = IntegrationsUnarchiveResponses[keyof IntegrationsUnarchiveResponses];
 
 export type PresetsListData = {
   body?: never;
@@ -9810,10 +9742,6 @@ export type SendingDomainsListData = {
      * Page size
      */
     pageSize?: number;
-    /**
-     * true lists the archived Sending domains instead of the kept ones; the default hides them
-     */
-    archived?: boolean;
   };
   url: '/sending-domains';
 };
@@ -9981,6 +9909,58 @@ export type SendingDomainRatesListResponses = {
 
 export type SendingDomainRatesListResponse = SendingDomainRatesListResponses[keyof SendingDomainRatesListResponses];
 
+export type SendingDomainsDeleteData = {
+  body?: never;
+  path: {
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/sending-domains/{id}';
+};
+
+export type SendingDomainsDeleteErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type SendingDomainsDeleteError = SendingDomainsDeleteErrors[keyof SendingDomainsDeleteErrors];
+
+export type SendingDomainsDeleteResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SendingDomainsDeleteResponse = SendingDomainsDeleteResponses[keyof SendingDomainsDeleteResponses];
+
 export type SendingDomainsGetData = {
   body?: never;
   path: {
@@ -10080,108 +10060,6 @@ export type SendingDomainsUpdateResponses = {
 };
 
 export type SendingDomainsUpdateResponse = SendingDomainsUpdateResponses[keyof SendingDomainsUpdateResponses];
-
-export type SendingDomainsArchiveData = {
-  body?: never;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/sending-domains/{id}/archive';
-};
-
-export type SendingDomainsArchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type SendingDomainsArchiveError = SendingDomainsArchiveErrors[keyof SendingDomainsArchiveErrors];
-
-export type SendingDomainsArchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SendingDomainResource;
-};
-
-export type SendingDomainsArchiveResponse = SendingDomainsArchiveResponses[keyof SendingDomainsArchiveResponses];
-
-export type SendingDomainsUnarchiveData = {
-  body?: never;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/sending-domains/{id}/unarchive';
-};
-
-export type SendingDomainsUnarchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type SendingDomainsUnarchiveError = SendingDomainsUnarchiveErrors[keyof SendingDomainsUnarchiveErrors];
-
-export type SendingDomainsUnarchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SendingDomainResource;
-};
-
-export type SendingDomainsUnarchiveResponse = SendingDomainsUnarchiveResponses[keyof SendingDomainsUnarchiveResponses];
 
 export type SendingDomainsVerifyData = {
   body?: never;

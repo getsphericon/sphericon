@@ -3,9 +3,8 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteSendingDomainsCreate,
-  handleSiteSendingDomainsArchive,
+  handleSiteSendingDomainsDelete,
   handleSiteSendingDomainsList,
-  handleSiteSendingDomainsUnarchive,
   handleSiteSendingDomainsVerify,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
@@ -133,30 +132,39 @@ test('says the domain is not verified yet when the check finds no record', async
   await expect.element(screen.getByText('Not verified yet')).toBeInTheDocument()
 })
 
-test('removes a domain', async () => {
-  let removed = false
+// Deleting is for good, so the person types the domain before the button enables.
+async function confirmDelete(screen: Awaited<ReturnType<typeof renderWithRouter>>['screen']) {
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
+  const dialog = screen.getByRole('dialog')
+  await expect.element(dialog.getByText(/cannot be restored/)).toBeInTheDocument()
+  await dialog.getByLabelText('Type mail.acme.com to confirm').fill('mail.acme.com')
+  await dialog.getByRole('button', { name: 'Delete' }).click()
+}
+
+test('deletes a domain once it is typed', async () => {
+  let deleted = false
   worker.use(
     list([domain()]),
-    handleSiteSendingDomainsArchive(() => {
-      removed = true
-      return HttpResponse.json(domain({ archivedAt: '2026-02-01T00:00:00Z' }))
+    handleSiteSendingDomainsDelete(() => {
+      deleted = true
+      return new HttpResponse(null, { status: 204 })
     }),
   )
   const { screen } = await renderWithRouter(
     <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
   )
 
-  await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Remove' }).click()
+  await confirmDelete(screen)
 
-  await expect.poll(() => removed).toBe(true)
-  await expect.element(screen.getByText('Domain removed')).toBeInTheDocument()
+  await expect.poll(() => deleted).toBe(true)
+  await expect.element(screen.getByText('Domain deleted')).toBeInTheDocument()
 })
 
-test('a domain that live work sends from is not removed and the work is named', async () => {
+test('a domain that live work sends from is not deleted and the work is named', async () => {
   worker.use(
     list([domain()]),
-    handleSiteSendingDomainsArchive(() =>
+    handleSiteSendingDomainsDelete(() =>
       problem(409, { usedBy: [{ kind: 'automation', id: '3', name: 'Welcome series' }] }),
     ),
   )
@@ -164,11 +172,20 @@ test('a domain that live work sends from is not removed and the work is named', 
     <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
   )
 
-  await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Remove' }).click()
+  await confirmDelete(screen)
 
-  await expect.element(screen.getByText('Failed to remove domain')).toBeInTheDocument()
+  await expect.element(screen.getByText('Failed to delete the domain')).toBeInTheDocument()
   await expect.element(screen.getByText(/Automation "Welcome series"/)).toBeInTheDocument()
+})
+
+test('offers no archived view: a deleted domain is gone for good', async () => {
+  worker.use(list([domain()]))
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
+  )
+
+  await expect.element(screen.getByText('mail.acme.com')).toBeInTheDocument()
+  expect(screen.getByText('Archived', { exact: true }).elements()).toHaveLength(0)
 })
 
 test('shows an error alert when the list fails to load', async () => {
@@ -274,49 +291,4 @@ test('verifies a domain from its records modal and offers the agent prompt', asy
   await screen.getByRole('button', { name: 'Verify now' }).click()
 
   await expect.poll(() => verified).toBe(true)
-})
-
-// The list answers by the view asked: the kept domains, or the archived ones.
-const byView = (kept: SiteSendingDomainResource[], archived: SiteSendingDomainResource[]) =>
-  handleSiteSendingDomainsList(({ request }) => {
-    const items = new URL(request.url).searchParams.get('archived') === 'true' ? archived : kept
-    return HttpResponse.json(page(items))
-  })
-
-test('switches to the archived domains and restores one', async () => {
-  const restored: string[] = []
-  worker.use(
-    byView(
-      [domain()],
-      [domain({ id: '9', domain: 'old.acme.com', archivedAt: '2026-02-01T00:00:00Z' })],
-    ),
-    handleSiteSendingDomainsUnarchive(({ params }) => {
-      restored.push(params.id)
-      return HttpResponse.json(domain({ id: '9', domain: 'old.acme.com' }))
-    }),
-  )
-  const { screen } = await renderWithRouter(
-    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
-  )
-
-  await expect.element(screen.getByText('mail.acme.com')).toBeInTheDocument()
-  await screen.getByText('Archived', { exact: true }).click()
-  await expect.element(screen.getByText('old.acme.com')).toBeInTheDocument()
-  await expect.element(screen.getByText('mail.acme.com')).not.toBeInTheDocument()
-  await screen.getByRole('button', { name: 'More actions' }).click()
-  await expect.element(screen.getByRole('menuitem', { name: 'Remove' })).not.toBeInTheDocument()
-  await screen.getByRole('menuitem', { name: 'Restore' }).click()
-
-  await expect.poll(() => restored).toEqual(['9'])
-})
-
-test('an empty archive of domains says so', async () => {
-  worker.use(byView([domain()], []))
-  const { screen } = await renderWithRouter(
-    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
-  )
-
-  await screen.getByText('Archived', { exact: true }).click()
-
-  await expect.element(screen.getByText('No archived domains')).toBeInTheDocument()
 })

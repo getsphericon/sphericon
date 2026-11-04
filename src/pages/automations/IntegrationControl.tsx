@@ -19,9 +19,7 @@ export function integrationControl(channel: SiteIntegrationChannel): ComponentTy
     const { data, label, path } = props
     const { t } = useTranslation()
     const { workspaceId } = workspaceRoute.useParams()
-    const integrations = useQuery(
-      siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
-    )
+    const integrations = useQuery(siteIntegrationsListOptions({ path: { workspaceId } }))
     const value = typeof data === 'string' && data !== '' ? data : DEFAULT_INTEGRATION
 
     return (

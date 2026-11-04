@@ -323,7 +323,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	isDefault, _ := in.IsDefault.Get()
 	promote := isDefault && !row.IsDefault
 	if promote && row.DiscardedAt != nil {
-		return nil, &validation.Error{Field: "isDefault", Message: i18n.T(i18n.ErrorsIntegrationArchivedDefault, nil)}
+		return nil, &validation.Error{Field: "isDefault", Message: i18n.T(i18n.ErrorsIntegrationDeletedDefault, nil)}
 	}
 
 	var updated *ent.Integration
@@ -408,14 +408,14 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	patch.ApplySet(in.IsDefault, upd.SetIsDefault)
 }
 
-// Archive discards an Integration (ADR 0049), unless live work uses it: then it returns an
+// Delete discards an Integration for good (ADR 0049): it leaves the lists and is never restored,
+// and what it sent keeps its history. Live work that uses it refuses the delete with an
 // *inuse.Error naming that work. A scheduled or sending Broadcast uses the Integration it names,
 // and the default one when it names none; an active Automation that sends email uses the one it
 // names, and the default one when it names none. A sent or failed Broadcast is history and does not
-// block. An archived Integration gives up the default: its channel has none until another is
-// picked. Archiving an archived Integration changes nothing. An unknown id is ErrNotFound. It
-// returns the Integration.
-func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
+// block. A deleted Integration gives up the default: its channel has none until another is
+// picked. Deleting a deleted Integration changes nothing. An unknown id is ErrNotFound.
+func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	var released *ent.Integration
 	err := missing(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.Integration().Get(ctx, id)
@@ -443,33 +443,12 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Int
 		return ts.Integration().Discard(ctx, id)
 	}))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if released != nil {
 		m.release(ctx, released)
 	}
-	return m.Get(ctx, s, id)
-}
-
-// Unarchive brings an archived Integration back to the lists and returns it. It does not become
-// the default again. Restoring an Integration that is not archived changes nothing. An enabled
-// Telegram Integration connects its bot again first, and Telegram's refusal refuses the restore.
-// An unknown id is ErrNotFound.
-func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
-	// An enabled Telegram Integration takes its bot's webhook back before it is restored.
-	archived, err := s.Integration().QueryDiscarded().Where(integration.ID(id)).Only(ctx)
-	if err != nil && !ent.IsNotFound(err) {
-		return nil, err
-	}
-	if archived != nil && archived.Provider == integration.ProviderTelegram && archived.Enabled {
-		if err := m.reconnectStored(ctx, archived, archived.IngestKey); err != nil {
-			return nil, err
-		}
-	}
-	if err := conflictOf(missing(s.Integration().Restore(ctx, id))); err != nil {
-		return nil, err
-	}
-	return m.Get(ctx, s, id)
+	return nil
 }
 
 // liveUsers is the live work that uses the Integration.
@@ -765,26 +744,16 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 	return RedactedConfig{}, errUnknownProvider
 }
 
-// rows is the Workspace's Integrations: the kept ones, or with archived the archived ones.
-func rows(s *ent.Scoped, archived bool) *ent.IntegrationQuery {
-	if archived {
-		return s.Integration().QueryDiscarded()
-	}
-	return s.Integration().Query()
+// All returns every kept Integration of the Workspace, ascending by id.
+func (m *Module) All(ctx context.Context, s *ent.Scoped) ([]*ent.Integration, error) {
+	return s.Integration().Query().Order(ent.Asc(integration.FieldID)).All(ctx)
 }
 
-// All returns every kept Integration of the Workspace, or with archived every archived one,
-// ascending by id.
-func (m *Module) All(ctx context.Context, s *ent.Scoped, archived bool) ([]*ent.Integration, error) {
-	return rows(s, archived).Order(ent.Asc(integration.FieldID)).All(ctx)
-}
-
-// List returns one page of the Workspace's Integrations, ascending by id: the kept ones, or with
-// archived the archived ones.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Integration], error) {
+// List returns one page of the Workspace's kept Integrations, ascending by id.
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.Integration], error) {
 	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return rows(s, archived).Count(ctx) },
+		func(ctx context.Context) (int, error) { return s.Integration().Query().Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.Integration, error) {
-			return rows(s, archived).Order(ent.Asc(integration.FieldID)).Limit(limit).Offset(offset).All(ctx)
+			return s.Integration().Query().Order(ent.Asc(integration.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
 }

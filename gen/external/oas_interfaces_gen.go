@@ -233,12 +233,12 @@ type ExportMessagesRes interface {
 	exportMessagesRes()
 }
 
-type IntegrationsArchiveRes interface {
-	integrationsArchiveRes()
-}
-
 type IntegrationsCreateRes interface {
 	integrationsCreateRes()
+}
+
+type IntegrationsDeleteRes interface {
+	integrationsDeleteRes()
 }
 
 type IntegrationsGetRes interface {
@@ -251,10 +251,6 @@ type IntegrationsListRes interface {
 
 type IntegrationsRegenerateKeyRes interface {
 	integrationsRegenerateKeyRes()
-}
-
-type IntegrationsUnarchiveRes interface {
-	integrationsUnarchiveRes()
 }
 
 type IntegrationsUpdateRes interface {
@@ -345,12 +341,12 @@ type SendingDomainRatesListRes interface {
 	sendingDomainRatesListRes()
 }
 
-type SendingDomainsArchiveRes interface {
-	sendingDomainsArchiveRes()
-}
-
 type SendingDomainsCreateRes interface {
 	sendingDomainsCreateRes()
+}
+
+type SendingDomainsDeleteRes interface {
+	sendingDomainsDeleteRes()
 }
 
 type SendingDomainsGetRes interface {
@@ -359,10 +355,6 @@ type SendingDomainsGetRes interface {
 
 type SendingDomainsListRes interface {
 	sendingDomainsListRes()
-}
-
-type SendingDomainsUnarchiveRes interface {
-	sendingDomainsUnarchiveRes()
 }
 
 type SendingDomainsUpdateRes interface {

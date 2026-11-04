@@ -64,9 +64,7 @@ export function BroadcastForm(props: ResourceFormProps<CreateBroadcastInput, Bro
 function ChannelStep({ onChoose }: { onChoose: (channel: BroadcastChannel) => void }) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
-  const integrationsQuery = useQuery(
-    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
-  )
+  const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { workspaceId } }))
   const integrations = integrationsQuery.data ?? []
   const available = zBroadcastChannel.options.filter((channel) =>
     integrations.some((integration) => integration.enabled && integration.channel === channel),
@@ -135,9 +133,7 @@ function TelegramBroadcastForm({
   ]
 
   // The bot the broadcast sends and paces through; blank is the Channel's default.
-  const integrationsQuery = useQuery(
-    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
-  )
+  const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { workspaceId } }))
   const integrationOptions = [
     { value: '', label: t(($) => $.broadcasts.integrationDefault) },
     ...(integrationsQuery.data ?? [])
@@ -229,9 +225,7 @@ function EmailBroadcastForm({
   ]
 
   // The Integration the broadcast sends and paces through; blank is the Workspace default.
-  const integrationsQuery = useQuery(
-    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
-  )
+  const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { workspaceId } }))
   const integrationOptions = [
     { value: '', label: t(($) => $.broadcasts.integrationDefault) },
     ...(integrationsQuery.data ?? [])

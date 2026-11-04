@@ -4,6 +4,9 @@ status: accepted
 
 # The app covers every capability a User has, through a form
 
+> Amended by [[0097-a-deleted-integration-or-sending-domain-is-never-restored]]: restoring an
+> Integration or a Sending domain is no longer a capability, so the app has no view for it.
+
 sphericon is operated by agents first (ADR 0016), and the app had started to lean on that: an
 Integration's Preset params were a JSON editor "for support" because agents are the primary
 interface, an archived Integration or Sending domain could be archived but not restored, and an

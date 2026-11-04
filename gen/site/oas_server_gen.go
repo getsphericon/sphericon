@@ -605,31 +605,30 @@ type Handler interface {
 	//
 	// GET /instance/release
 	SiteInstanceGetRelease(ctx context.Context) (SiteInstanceGetReleaseRes, error)
-	// SiteIntegrationsArchive implements SiteIntegrations_archive operation.
-	//
-	// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
-	// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-	// email automation through the default, uses it. A Telegram integration's webhook is removed, best
-	// effort. Owners and admins only.
-	//
-	// POST /workspaces/{workspaceId}/integrations/{id}/archive
-	SiteIntegrationsArchive(ctx context.Context, params SiteIntegrationsArchiveParams) (SiteIntegrationsArchiveRes, error)
 	// SiteIntegrationsCreate implements SiteIntegrations_create operation.
 	//
 	// Create an integration. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations
 	SiteIntegrationsCreate(ctx context.Context, req *CreateIntegrationInput, params SiteIntegrationsCreateParams) (SiteIntegrationsCreateRes, error)
+	// SiteIntegrationsDelete implements SiteIntegrations_delete operation.
+	//
+	// Delete an integration for good: it leaves the list, gives up the default and is never restored; what
+	// it sent keeps its history. Refused with 409 while a scheduled or sending broadcast, or an active
+	// email automation through the default, uses it. A Telegram integration's webhook is removed, best
+	// effort. Owners and admins only.
+	//
+	// DELETE /workspaces/{workspaceId}/integrations/{id}
+	SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (SiteIntegrationsDeleteRes, error)
 	// SiteIntegrationsGet implements SiteIntegrations_get operation.
 	//
-	// Get an integration by id.
+	// Get an integration by id, deleted or not.
 	//
 	// GET /workspaces/{workspaceId}/integrations/{id}
 	SiteIntegrationsGet(ctx context.Context, params SiteIntegrationsGetParams) (SiteIntegrationsGetRes, error)
 	// SiteIntegrationsList implements SiteIntegrations_list operation.
 	//
-	// List the workspace's sending-provider integrations: the kept ones, or with `archived` the archived
-	// ones.
+	// List the workspace's sending-provider integrations; a deleted one is not listed.
 	//
 	// GET /workspaces/{workspaceId}/integrations
 	SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (SiteIntegrationsListRes, error)
@@ -640,15 +639,6 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 	SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error)
-	// SiteIntegrationsUnarchive implements SiteIntegrations_unarchive operation.
-	//
-	// Restore an archived integration to the list. It is not the default; promote it with an update.
-	// Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram
-	// integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins
-	// only.
-	//
-	// POST /workspaces/{workspaceId}/integrations/{id}/unarchive
-	SiteIntegrationsUnarchive(ctx context.Context, params SiteIntegrationsUnarchiveParams) (SiteIntegrationsUnarchiveRes, error)
 	// SiteIntegrationsUpdate implements SiteIntegrations_update operation.
 	//
 	// Update an integration. Owners and admins only.
@@ -1093,22 +1083,23 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/segments/{id}
 	SiteSegmentsUpdate(ctx context.Context, req *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (SiteSegmentsUpdateRes, error)
-	// SiteSendingDomainsArchive implements SiteSendingDomains_archive operation.
-	//
-	// Archive a sending domain: it leaves the list and can be restored. Refused with 409 while a scheduled
-	// or sending broadcast or an active automation sends from it. Owners and admins only.
-	//
-	// POST /workspaces/{workspaceId}/sending-domains/{id}/archive
-	SiteSendingDomainsArchive(ctx context.Context, params SiteSendingDomainsArchiveParams) (SiteSendingDomainsArchiveRes, error)
 	// SiteSendingDomainsCreate implements SiteSendingDomains_create operation.
 	//
 	// Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains
 	SiteSendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (SiteSendingDomainsCreateRes, error)
+	// SiteSendingDomainsDelete implements SiteSendingDomains_delete operation.
+	//
+	// Delete a sending domain for good: it leaves the list and is never restored; what it sent keeps its
+	// history. Refused with 409 while a scheduled or sending broadcast or an active automation sends from
+	// it. Owners and admins only.
+	//
+	// DELETE /workspaces/{workspaceId}/sending-domains/{id}
+	SiteSendingDomainsDelete(ctx context.Context, params SiteSendingDomainsDeleteParams) (SiteSendingDomainsDeleteRes, error)
 	// SiteSendingDomainsGet implements SiteSendingDomains_get operation.
 	//
-	// Get a sending domain by ID for the site UI.
+	// Get a sending domain by ID for the site UI, deleted or not.
 	//
 	// GET /workspaces/{workspaceId}/sending-domains/{id}
 	SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (SiteSendingDomainsGetRes, error)
@@ -1118,13 +1109,6 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/sending-domains
 	SiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (SiteSendingDomainsListRes, error)
-	// SiteSendingDomainsUnarchive implements SiteSendingDomains_unarchive operation.
-	//
-	// Restore an archived sending domain. It starts a new DNS check. Refused with 409 when the same domain
-	// was added again meanwhile. Owners and admins only.
-	//
-	// POST /workspaces/{workspaceId}/sending-domains/{id}/unarchive
-	SiteSendingDomainsUnarchive(ctx context.Context, params SiteSendingDomainsUnarchiveParams) (SiteSendingDomainsUnarchiveRes, error)
 	// SiteSendingDomainsVerify implements SiteSendingDomains_verify operation.
 	//
 	// Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of the

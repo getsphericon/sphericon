@@ -575,18 +575,6 @@ func (UnimplementedHandler) ExportMessages(ctx context.Context, params ExportMes
 	return r, ht.ErrNotImplemented
 }
 
-// IntegrationsArchive implements Integrations_archive operation.
-//
-// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
-// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-// email automation through the default, uses it (`usedBy` names them). A Telegram integration's
-// webhook is removed, best effort.
-//
-// POST /integrations/{id}/archive
-func (UnimplementedHandler) IntegrationsArchive(ctx context.Context, params IntegrationsArchiveParams) (r IntegrationsArchiveRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // IntegrationsCreate implements Integrations_create operation.
 //
 // Create an integration.
@@ -596,9 +584,21 @@ func (UnimplementedHandler) IntegrationsCreate(ctx context.Context, req *CreateI
 	return r, ht.ErrNotImplemented
 }
 
+// IntegrationsDelete implements Integrations_delete operation.
+//
+// Delete an integration for good: it leaves the list, gives up the default and is never restored; what
+// it sent keeps its history. Refused with 409 while a scheduled or sending broadcast, or an active
+// email automation through the default, uses it (`usedBy` names them). A Telegram integration's
+// webhook is removed, best effort.
+//
+// DELETE /integrations/{id}
+func (UnimplementedHandler) IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) (r IntegrationsDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // IntegrationsGet implements Integrations_get operation.
 //
-// Get an integration by ID, archived or not.
+// Get an integration by ID, deleted or not.
 //
 // GET /integrations/{id}
 func (UnimplementedHandler) IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (r IntegrationsGetRes, _ error) {
@@ -622,16 +622,6 @@ func (UnimplementedHandler) IntegrationsList(ctx context.Context, params Integra
 //
 // POST /integrations/{id}/regenerate-key
 func (UnimplementedHandler) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (r IntegrationsRegenerateKeyRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// IntegrationsUnarchive implements Integrations_unarchive operation.
-//
-// Restore an archived integration to the list. It is not the default; promote it with an update. An
-// enabled Telegram integration is connected again (its webhook set); Telegram's refusal is a 422.
-//
-// POST /integrations/{id}/unarchive
-func (UnimplementedHandler) IntegrationsUnarchive(ctx context.Context, params IntegrationsUnarchiveParams) (r IntegrationsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -839,22 +829,23 @@ func (UnimplementedHandler) SendingDomainRatesList(ctx context.Context, params S
 	return r, ht.ErrNotImplemented
 }
 
-// SendingDomainsArchive implements SendingDomains_archive operation.
-//
-// Archive a Sending domain: it leaves the list and can be restored. Refused with 409 (`usedBy`) while
-// a scheduled or sending Broadcast or an active Automation sends from it.
-//
-// POST /sending-domains/{id}/archive
-func (UnimplementedHandler) SendingDomainsArchive(ctx context.Context, params SendingDomainsArchiveParams) (r SendingDomainsArchiveRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // SendingDomainsCreate implements SendingDomains_create operation.
 //
 // Create a resource.
 //
 // POST /sending-domains
 func (UnimplementedHandler) SendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput) (r SendingDomainsCreateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SendingDomainsDelete implements SendingDomains_delete operation.
+//
+// Delete a Sending domain for good: it leaves the list and is never restored; what it sent keeps its
+// history. Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation
+// sends from it.
+//
+// DELETE /sending-domains/{id}
+func (UnimplementedHandler) SendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) (r SendingDomainsDeleteRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -873,16 +864,6 @@ func (UnimplementedHandler) SendingDomainsGet(ctx context.Context, params Sendin
 //
 // GET /sending-domains
 func (UnimplementedHandler) SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (r SendingDomainsListRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SendingDomainsUnarchive implements SendingDomains_unarchive operation.
-//
-// Restore an archived Sending domain. It starts a new DNS check. Refused with 409 when the same domain
-// was added again meanwhile.
-//
-// POST /sending-domains/{id}/unarchive
-func (UnimplementedHandler) SendingDomainsUnarchive(ctx context.Context, params SendingDomainsUnarchiveParams) (r SendingDomainsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

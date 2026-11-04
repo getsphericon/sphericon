@@ -856,18 +856,6 @@ func (UnimplementedHandler) SiteInstanceGetRelease(ctx context.Context) (r SiteI
 	return r, ht.ErrNotImplemented
 }
 
-// SiteIntegrationsArchive implements SiteIntegrations_archive operation.
-//
-// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
-// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
-// email automation through the default, uses it. A Telegram integration's webhook is removed, best
-// effort. Owners and admins only.
-//
-// POST /workspaces/{workspaceId}/integrations/{id}/archive
-func (UnimplementedHandler) SiteIntegrationsArchive(ctx context.Context, params SiteIntegrationsArchiveParams) (r SiteIntegrationsArchiveRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // SiteIntegrationsCreate implements SiteIntegrations_create operation.
 //
 // Create an integration. Owners and admins only.
@@ -877,9 +865,21 @@ func (UnimplementedHandler) SiteIntegrationsCreate(ctx context.Context, req *Cre
 	return r, ht.ErrNotImplemented
 }
 
+// SiteIntegrationsDelete implements SiteIntegrations_delete operation.
+//
+// Delete an integration for good: it leaves the list, gives up the default and is never restored; what
+// it sent keeps its history. Refused with 409 while a scheduled or sending broadcast, or an active
+// email automation through the default, uses it. A Telegram integration's webhook is removed, best
+// effort. Owners and admins only.
+//
+// DELETE /workspaces/{workspaceId}/integrations/{id}
+func (UnimplementedHandler) SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (r SiteIntegrationsDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteIntegrationsGet implements SiteIntegrations_get operation.
 //
-// Get an integration by id.
+// Get an integration by id, deleted or not.
 //
 // GET /workspaces/{workspaceId}/integrations/{id}
 func (UnimplementedHandler) SiteIntegrationsGet(ctx context.Context, params SiteIntegrationsGetParams) (r SiteIntegrationsGetRes, _ error) {
@@ -888,8 +888,7 @@ func (UnimplementedHandler) SiteIntegrationsGet(ctx context.Context, params Site
 
 // SiteIntegrationsList implements SiteIntegrations_list operation.
 //
-// List the workspace's sending-provider integrations: the kept ones, or with `archived` the archived
-// ones.
+// List the workspace's sending-provider integrations; a deleted one is not listed.
 //
 // GET /workspaces/{workspaceId}/integrations
 func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (r SiteIntegrationsListRes, _ error) {
@@ -903,18 +902,6 @@ func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params Sit
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (r SiteIntegrationsRegenerateKeyRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SiteIntegrationsUnarchive implements SiteIntegrations_unarchive operation.
-//
-// Restore an archived integration to the list. It is not the default; promote it with an update.
-// Refused with 409 when it is a Test inbox and the Workspace keeps another. An enabled Telegram
-// integration is connected again (its webhook set); Telegram's refusal is a 422. Owners and admins
-// only.
-//
-// POST /workspaces/{workspaceId}/integrations/{id}/unarchive
-func (UnimplementedHandler) SiteIntegrationsUnarchive(ctx context.Context, params SiteIntegrationsUnarchiveParams) (r SiteIntegrationsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1548,16 +1535,6 @@ func (UnimplementedHandler) SiteSegmentsUpdate(ctx context.Context, req *SiteUpd
 	return r, ht.ErrNotImplemented
 }
 
-// SiteSendingDomainsArchive implements SiteSendingDomains_archive operation.
-//
-// Archive a sending domain: it leaves the list and can be restored. Refused with 409 while a scheduled
-// or sending broadcast or an active automation sends from it. Owners and admins only.
-//
-// POST /workspaces/{workspaceId}/sending-domains/{id}/archive
-func (UnimplementedHandler) SiteSendingDomainsArchive(ctx context.Context, params SiteSendingDomainsArchiveParams) (r SiteSendingDomainsArchiveRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // SiteSendingDomainsCreate implements SiteSendingDomains_create operation.
 //
 // Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
@@ -1567,9 +1544,20 @@ func (UnimplementedHandler) SiteSendingDomainsCreate(ctx context.Context, req *C
 	return r, ht.ErrNotImplemented
 }
 
+// SiteSendingDomainsDelete implements SiteSendingDomains_delete operation.
+//
+// Delete a sending domain for good: it leaves the list and is never restored; what it sent keeps its
+// history. Refused with 409 while a scheduled or sending broadcast or an active automation sends from
+// it. Owners and admins only.
+//
+// DELETE /workspaces/{workspaceId}/sending-domains/{id}
+func (UnimplementedHandler) SiteSendingDomainsDelete(ctx context.Context, params SiteSendingDomainsDeleteParams) (r SiteSendingDomainsDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteSendingDomainsGet implements SiteSendingDomains_get operation.
 //
-// Get a sending domain by ID for the site UI.
+// Get a sending domain by ID for the site UI, deleted or not.
 //
 // GET /workspaces/{workspaceId}/sending-domains/{id}
 func (UnimplementedHandler) SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (r SiteSendingDomainsGetRes, _ error) {
@@ -1582,16 +1570,6 @@ func (UnimplementedHandler) SiteSendingDomainsGet(ctx context.Context, params Si
 //
 // GET /workspaces/{workspaceId}/sending-domains
 func (UnimplementedHandler) SiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (r SiteSendingDomainsListRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SiteSendingDomainsUnarchive implements SiteSendingDomains_unarchive operation.
-//
-// Restore an archived sending domain. It starts a new DNS check. Refused with 409 when the same domain
-// was added again meanwhile. Owners and admins only.
-//
-// POST /workspaces/{workspaceId}/sending-domains/{id}/unarchive
-func (UnimplementedHandler) SiteSendingDomainsUnarchive(ctx context.Context, params SiteSendingDomainsUnarchiveParams) (r SiteSendingDomainsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

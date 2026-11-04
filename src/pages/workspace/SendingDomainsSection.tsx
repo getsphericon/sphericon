@@ -17,16 +17,16 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { ArchiveViewControl } from '../../components/ArchiveViewControl.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
-  siteSendingDomainsArchiveMutation,
   siteSendingDomainsCreateMutation,
+  siteSendingDomainsDeleteMutation,
   siteSendingDomainsListOptions,
-  siteSendingDomainsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
+import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { useVerifySendingDomain } from '../../hooks/useVerifySendingDomain.ts'
 import { SendingDomainRecordsModal } from './SendingDomainRecordsModal.tsx'
@@ -36,39 +36,30 @@ interface DomainFormValues {
   domain: string
 }
 
-// SendingDomainsTable lists the kept domains with the records of the one opened, or the archived
-// ones to restore; the section's boundary shows the load and its failure.
+// SendingDomainsTable lists the domains with the records of the one opened; the section's boundary
+// shows the load and its failure. A deleted domain is not listed.
 function SendingDomainsTable({
   workspaceId,
-  archived,
   canEdit,
   recordsId,
   onShowRecords,
   onCloseRecords,
   verifying,
   onVerify,
-  removing,
-  onRemove,
-  restoring,
-  onRestore,
+  onDelete,
 }: {
   workspaceId: string
-  archived: boolean
   canEdit: boolean
   recordsId: string | null
   onShowRecords: (id: string) => void
   onCloseRecords: () => void
   verifying: boolean
   onVerify: (id: string) => void
-  removing: boolean
-  onRemove: (id: string) => void
-  restoring: boolean
-  onRestore: (id: string) => void
+  onDelete: (record: SiteSendingDomainResource) => void
 }) {
   const { t } = useTranslation()
-  const records = useSuspenseQuery(
-    siteSendingDomainsListOptions({ path: { workspaceId }, query: { archived } }),
-  ).data.items
+  const records = useSuspenseQuery(siteSendingDomainsListOptions({ path: { workspaceId } })).data
+    .items
   const recordsDomain = records.find((record) => record.id === recordsId)
 
   return (
@@ -76,24 +67,11 @@ function SendingDomainsTable({
       <DataTable
         minHeight={records.length === 0 ? 200 : 0}
         withTableBorder
-        highlightOnHover={!archived}
-        // An archived domain sends nothing: it has no records to set.
-        onRowClick={({ record }) => {
-          if (!archived) {
-            onShowRecords(record.id)
-          }
-        }}
+        highlightOnHover
+        onRowClick={({ record }) => onShowRecords(record.id)}
         records={records}
         idAccessor="id"
-        emptyState={
-          <EmptyState
-            title={
-              archived
-                ? t(($) => $.settings.sendingDomains.emptyArchived)
-                : t(($) => $.settings.sendingDomains.empty)
-            }
-          />
-        }
+        emptyState={<EmptyState title={t(($) => $.settings.sendingDomains.empty)} />}
         columns={[
           { accessor: 'domain' },
           {
@@ -109,17 +87,6 @@ function SendingDomainsTable({
               if (!canEdit) {
                 return null
               }
-              if (archived) {
-                return (
-                  <Group justify="flex-end">
-                    <RowActionsMenu>
-                      <Menu.Item disabled={restoring} onClick={() => onRestore(record.id)}>
-                        {t(($) => $.actions.unarchive)}
-                      </Menu.Item>
-                    </RowActionsMenu>
-                  </Group>
-                )
-              }
               return (
                 // A click in the cell must not toggle the row's expansion.
                 <Group justify="flex-end" onClick={(event) => event.stopPropagation()}>
@@ -130,8 +97,8 @@ function SendingDomainsTable({
                     <Menu.Item disabled={verifying} onClick={() => onVerify(record.id)}>
                       {t(($) => $.settings.sendingDomains.verify)}
                     </Menu.Item>
-                    <Menu.Item color="red" disabled={removing} onClick={() => onRemove(record.id)}>
-                      {t(($) => $.actions.remove)}
+                    <Menu.Item color="red" onClick={() => onDelete(record)}>
+                      {t(($) => $.actions.delete)}
                     </Menu.Item>
                   </RowActionsMenu>
                 </Group>
@@ -161,7 +128,6 @@ export function SendingDomainsSection({
   const { t } = useTranslation()
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
   const [recordsId, setRecordsId] = useState<string | null>(null)
-  const [archived, setArchived] = useState(false)
 
   const form = useForm<DomainFormValues>({ initialValues: { domain: '' } })
 
@@ -178,16 +144,13 @@ export function SendingDomainsSection({
 
   const verifyMutation = useVerifySendingDomain()
 
-  const removeMutation = useResourceMutation({
-    mutation: siteSendingDomainsArchiveMutation(),
-    successMessage: t(($) => $.settings.sendingDomains.removed),
-    errorTitle: t(($) => $.settings.sendingDomains.removeError),
-  })
-
-  const restoreMutation = useResourceMutation({
-    mutation: siteSendingDomainsUnarchiveMutation(),
-    successMessage: t(($) => $.settings.sendingDomains.restored),
-    errorTitle: t(($) => $.settings.sendingDomains.restoreError),
+  // A deleted domain is never restored: the person types the domain to confirm.
+  const deleteDomain = useDeleteResource({
+    mutation: siteSendingDomainsDeleteMutation(),
+    workspaceId,
+    successMessage: t(($) => $.settings.sendingDomains.deleted),
+    errorTitle: t(($) => $.settings.sendingDomains.deleteError),
+    consequence: t(($) => $.settings.sendingDomains.deleteConsequence),
   })
 
   return (
@@ -204,24 +167,19 @@ export function SendingDomainsSection({
         {t(($) => $.settings.sendingDomains.description)}
       </Text>
 
-      <ArchiveViewControl archived={archived} onChange={setArchived} mb="sm" />
       <QueryBoundary
         fallback={<TableSkeleton />}
         errorTitle={t(($) => $.settings.sendingDomains.loadError)}
       >
         <SendingDomainsTable
           workspaceId={workspaceId}
-          archived={archived}
           canEdit={canEdit}
           recordsId={recordsId}
           onShowRecords={setRecordsId}
           onCloseRecords={() => setRecordsId(null)}
           verifying={verifyMutation.isPending}
           onVerify={(id) => verifyMutation.mutate({ path: { workspaceId, id } })}
-          removing={removeMutation.isPending}
-          onRemove={(id) => removeMutation.mutate({ path: { workspaceId, id } })}
-          restoring={restoreMutation.isPending}
-          onRestore={(id) => restoreMutation.mutate({ path: { workspaceId, id } })}
+          onDelete={(record) => deleteDomain(record.id, record.domain)}
         />
       </QueryBoundary>
 

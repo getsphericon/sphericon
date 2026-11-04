@@ -14,7 +14,7 @@ import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import type { AuditFilter } from '../../utils/auditFilter.ts'
-import { AuditExportButton, AuditLogSection, ChangeHistoryLink } from './AuditLogSection.tsx'
+import { AuditExportButton, AuditLogSection } from './AuditLogSection.tsx'
 
 const WORKSPACE_ID = 'TestWs01'
 
@@ -333,28 +333,6 @@ test('says so when the filter matches nothing', async () => {
   )
 
   await expect.element(screen.getByText('No entries match the filters')).toBeInTheDocument()
-})
-
-test('the change history link opens the log filtered to the object', async () => {
-  worker.use(handleSiteAuditList({ body: { items: [] } }))
-  const { screen } = await renderWithRouter(
-    <ChangeHistoryLink workspaceId={WORKSPACE_ID} targetType="integration" targetId="5" />,
-  )
-
-  const link = screen.getByRole('link', { name: 'Change history' })
-  await expect.element(link).toBeInTheDocument()
-  const href = link.element().getAttribute('href') ?? ''
-  expect(href).toContain('targetType=integration')
-  expect(href).toContain('targetId=%225%22')
-})
-
-test('the change history link is not offered without the log', async () => {
-  worker.use(handleSiteAuditList(() => problem(402, { detail: 'no' })))
-  const { screen } = await renderWithRouter(
-    <ChangeHistoryLink workspaceId={WORKSPACE_ID} targetType="integration" targetId="5" />,
-  )
-
-  await expect.element(screen.getByRole('link', { name: 'Change history' })).not.toBeInTheDocument()
 })
 
 test('shows the empty state', async () => {

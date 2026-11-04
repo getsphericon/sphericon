@@ -86,11 +86,6 @@ func (j *testJobs) EnqueueIntegrationQuotaRefresh(ctx context.Context, integrati
 	return j.Enqueue(ctx, jobs.RefreshIntegrationQuotaArgs{IntegrationID: integrationID})
 }
 
-// EnqueueSendingDomainVerify re-checks the Sending domain's DKIM now.
-func (j *testJobs) EnqueueSendingDomainVerify(ctx context.Context, sendingDomainID int64) error {
-	return j.Enqueue(ctx, jobs.VerifySendingDomainArgs{SendingDomainID: sendingDomainID})
-}
-
 // VerifySendingDomain runs both checks of the Sending domain now, as the river client does.
 func (j *testJobs) VerifySendingDomain(ctx context.Context, sendingDomainID int64) error {
 	return j.domains.Verify(ctx, sendingDomainID)
