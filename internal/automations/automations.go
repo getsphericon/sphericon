@@ -20,7 +20,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/drafts"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
@@ -43,6 +42,9 @@ import (
 var (
 	// ErrNotFound: no such Automation in this Workspace.
 	ErrNotFound = validation.NotFound("automations: automation not found", i18n.ErrorsAutomationNotFound)
+	// ErrArchived: the Automation is archived, and an archived Automation is read-only until it is
+	// unarchived (ADR 0100): no edit, Publish, Revert or Deactivate.
+	ErrArchived = validation.Conflict("automations: automation is archived", i18n.ErrorsAutomationArchived)
 	// ErrEnrollmentNotFound: no such Enrollment of the Automation in this Workspace.
 	ErrEnrollmentNotFound = validation.NotFound("automations: enrollment not found", i18n.ErrorsEnrollmentNotFound)
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
@@ -233,6 +235,7 @@ func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, o
 	m := &Module{cipher: cipher, renderer: renderer, out: out, now: time.Now}
 	m.life = drafts.New(bus, versioned{m: m}, drafts.Errors{
 		NotFound:         ErrNotFound,
+		Archived:         ErrArchived,
 		NothingToPublish: ErrNothingToPublish,
 		NothingToRevert:  ErrNothingToRevert,
 	})
@@ -453,9 +456,9 @@ func namesTag(v *ent.AutomationVersion, name string) (bool, error) {
 }
 
 // Get returns one Automation of the Workspace, archived or not: an archived Automation is
-// still addressable (viewed, restored, its Enrollments listed).
+// still addressable (viewed, unarchived, its Enrollments listed).
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
-	a, err := withVersions(s.Automation().QueryWithDiscarded().Where(automation.ID(id))).Only(ctx)
+	a, err := withVersions(s.Automation().QueryWithArchived().Where(automation.ID(id))).Only(ctx)
 	return a, notFound(err)
 }
 
@@ -486,6 +489,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // draft in place. A definition equal to the draft's (or, with no draft, the live version's) stores
 // nothing. An edit of the Trigger, exit or goal events checks the three together (validateEvents),
 // so a new Trigger equal to a stored exit or goal event is refused too. The status is untouched.
+// An archived Automation is read-only: ErrArchived.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Automation, error) {
 	e := edit{trigger: in.TriggerEvent, exits: in.ExitEvents, goal: in.GoalEvent}
 	if in.Steps != nil {
@@ -703,14 +707,21 @@ func Senders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error) {
 	return senders, nil
 }
 
-// Editable never refuses: an archived Automation is edited as a kept one is.
+// Editable never refuses: the lifecycle itself refuses an archived Automation (ErrArchived), and
+// an Automation is never discarded.
 func (versioned) Editable(*ent.Automation) error { return nil }
 
-// Archivable refuses to archive an Automation a kept Rule enrolls Contacts in, or one with active
-// Enrollments: an *inuse.Error carrying them.
+// Archivable refuses to archive an Automation while it is Live use (ADR 0099): an active Rule
+// enrolls Contacts in it through its live version, or it has active Enrollments. The *inuse.Error
+// names them. A Rule that is not active does not hold it: its Publish refuses an archived
+// Automation.
 func (versioned) Archivable(ctx context.Context, ts *ent.Scoped, a *ent.Automation) error {
-	if err := refuseWhileEnrolledByRules(ctx, ts, a.ID); err != nil {
+	enrolling, err := rules.ActiveEnrollingInto(ctx, ts, a.ID)
+	if err != nil {
 		return err
+	}
+	if len(enrolling) > 0 {
+		return &inuse.Error{What: inuse.SubjectAutomation, Users: inuse.Rules(enrolling)}
 	}
 	active, err := ts.AutomationRun().Query().
 		Where(automationrun.AutomationID(a.ID), automationrun.StatusEQ(automationrun.StatusActive)).
@@ -749,59 +760,18 @@ func checkIntegration(ctx context.Context, s *ent.Scoped, id *int64) error {
 	return nil
 }
 
-// Delete purges an Automation that has no Enrollments and has sent nothing, with its versions
-// (ADR 0049). One with any Enrollment or Outbound message is history and is archived instead: an
-// *inuse.Error carrying their counts. The messages count apart from the Enrollments, because
-// Contact erasure removes a Contact's Enrollments and keeps the mail they sent.
-func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	if err := refuseWhileEnrolledByRules(ctx, s, id); err != nil {
-		return err
-	}
-	n, err := s.Automation().Purge().
-		Where(automation.ID(id), automation.Not(automation.HasRuns()), automation.Not(automation.HasOutboundMessages())).
-		Exec(ctx)
-	if err != nil {
-		return err
-	}
-	if n > 0 {
-		return nil
-	}
-	a, err := m.Get(ctx, s, id)
-	if err != nil {
-		return err
-	}
-	enrollments, err := s.AutomationRun().Query().Where(automationrun.AutomationID(id)).Count(ctx)
-	if err != nil {
-		return err
-	}
-	messages, err := s.OutboundMessage().Query().Where(outboundmessage.AutomationID(id)).Count(ctx)
-	if err != nil {
-		return err
-	}
-	var users []inuse.User
-	if enrollments > 0 {
-		users = append(users, inuse.Enrollments(id, a.Name, enrollments))
-	}
-	if messages > 0 {
-		users = append(users, inuse.Messages(id, a.Name, messages))
-	}
-	if len(users) == 0 {
-		return fmt.Errorf("automation %d: purge matched no row, yet it has no Enrollment and sent nothing", id)
-	}
-	return &inuse.Error{What: inuse.SubjectAutomation, Users: users}
-}
-
-// Archive discards an Automation (ADR 0049, internal/drafts): it leaves the lists and enrolls
-// nobody, and its Enrollments stay. It also makes the Automation inactive, so Unarchive never
-// re-arms it without a Publish. An Automation with active Enrollments, or one a kept Rule enrolls
-// Contacts in, is refused with an *inuse.Error naming them. Archiving an archived Automation
-// changes nothing. It returns the Automation.
+// Archive puts an Automation aside (ADR 0100, internal/drafts): it leaves the lists and enrolls
+// nobody, and its Enrollments stay. An Automation is archived, never deleted, a never-published
+// one too. Archive also makes the Automation inactive, so Unarchive never re-arms it without a
+// Publish. An Automation with active Enrollments, or one an active Rule enrolls Contacts in, is
+// refused with an *inuse.Error naming them. Archiving an archived Automation changes nothing. It
+// returns the Automation.
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
 	return m.life.Archive(ctx, s, id)
 }
 
 // Unarchive brings an archived Automation back to the lists, inactive: only Publish makes it
-// enroll again. Restoring one that is not archived changes nothing. It returns the Automation.
+// enroll again. Unarchiving one that is not archived changes nothing. It returns the Automation.
 func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
 	return m.life.Unarchive(ctx, s, id)
 }
@@ -812,22 +782,21 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.A
 // active one as it is; with neither it is refused. The Trigger, exit and goal events of the version
 // going live are checked again, and the Integration of each send step must still be kept and its
 // Send route able to send (outbound.ErrRouteHeld). Publish is send-class (ADR 0065): the surfaces gate it by the
-// publish scope. An archived Automation enrolls nobody and is restored before it is published, so
-// it is as good as absent here: ErrNotFound.
+// publish scope. An archived Automation is unarchived before it is published: ErrArchived.
 func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
 	return m.life.Publish(ctx, s, id)
 }
 
 // Revert drops the draft: the live version is again the Automation's latest. It is refused
 // unless there is a draft above a live version, since a never-published Automation's draft is
-// its whole definition. Revert is authoring.
+// its whole definition. Revert is authoring. An archived Automation is read-only: ErrArchived.
 func (m *Module) Revert(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
 	return m.life.Revert(ctx, s, id)
 }
 
 // Deactivate makes the Automation inactive: it stops new Enrollments, and in-flight ones finish.
 // Its live version and draft stay. It is authoring: it can only stop sending, never start it. An
-// archived Automation enrolls nobody, so it is as good as absent here: ErrNotFound.
+// archived Automation is read-only: ErrArchived.
 func (m *Module) Deactivate(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
 	return m.life.Deactivate(ctx, s, id)
 }
@@ -837,15 +806,4 @@ func notFound(err error) error {
 		return ErrNotFound
 	}
 	return err
-}
-
-// refuseWhileEnrolledByRules refuses the removal of an Automation a kept Rule enrolls Contacts
-// in, by its live version or its draft (ADR 0049, ADR 0054, ADR 0065): the *inuse.Error names
-// the Rules.
-func refuseWhileEnrolledByRules(ctx context.Context, s *ent.Scoped, id int64) error {
-	using, err := rules.EnrollingInto(ctx, s, id)
-	if err != nil || len(using) == 0 {
-		return err
-	}
-	return &inuse.Error{What: inuse.SubjectAutomation, Users: inuse.Rules(using)}
 }

@@ -46,7 +46,6 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteAutomationsArchiveOperation:                    {workspace: true},
 	siteapi.SiteAutomationsCreateOperation:                     {workspace: true},
 	siteapi.SiteAutomationsDeactivateOperation:                 {workspace: true},
-	siteapi.SiteAutomationsDeleteOperation:                     {workspace: true},
 	siteapi.SiteAutomationsDryRunHttpStepOperation:             {workspace: true},
 	siteapi.SiteAutomationsGetOperation:                        {workspace: true},
 	siteapi.SiteAutomationsListOperation:                       {workspace: true},

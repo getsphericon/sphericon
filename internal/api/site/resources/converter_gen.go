@@ -502,7 +502,7 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAu
 		siteapiSiteAutomationResource.Status = c.AutomationStatusToResource((*source).Status)
 		siteapiSiteAutomationResource.Live = automationVersionOrNull(c, (*source).Edges.LiveVersion)
 		siteapiSiteAutomationResource.Draft = automationVersionOrNull(c, (*source).Edges.DraftVersion)
-		siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		// siteapiSiteAutomationResource.Revenue: ignore
 		siteapiSiteAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -560,7 +560,7 @@ func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithR
 	siteapiSiteAutomationResource.Draft = automationVersionOrNull(c, pEntAutomationVersion2)
 	var pTimeTime *time.Time
 	if source.Automation != nil {
-		pTimeTime = source.Automation.DiscardedAt
+		pTimeTime = source.Automation.ArchivedAt
 	}
 	siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp(pTimeTime)
 	siteapiSiteAutomationResource.Revenue = optMessageRevenue(c, source.Revenue)

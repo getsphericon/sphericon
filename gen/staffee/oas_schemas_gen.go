@@ -75,8 +75,8 @@ const (
 	AuditActionAutomationCreate            AuditAction = "automation.create"
 	AuditActionAutomationUpdate            AuditAction = "automation.update"
 	AuditActionAutomationDelete            AuditAction = "automation.delete"
-	AuditActionAutomationDiscard           AuditAction = "automation.discard"
-	AuditActionAutomationRestore           AuditAction = "automation.restore"
+	AuditActionAutomationArchive           AuditAction = "automation.archive"
+	AuditActionAutomationUnarchive         AuditAction = "automation.unarchive"
 	AuditActionBrandKitCreate              AuditAction = "brand_kit.create"
 	AuditActionBrandKitUpdate              AuditAction = "brand_kit.update"
 	AuditActionBrandKitDelete              AuditAction = "brand_kit.delete"
@@ -169,8 +169,8 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionAutomationCreate,
 		AuditActionAutomationUpdate,
 		AuditActionAutomationDelete,
-		AuditActionAutomationDiscard,
-		AuditActionAutomationRestore,
+		AuditActionAutomationArchive,
+		AuditActionAutomationUnarchive,
 		AuditActionBrandKitCreate,
 		AuditActionBrandKitUpdate,
 		AuditActionBrandKitDelete,
@@ -299,9 +299,9 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionAutomationDelete:
 		return []byte(s), nil
-	case AuditActionAutomationDiscard:
+	case AuditActionAutomationArchive:
 		return []byte(s), nil
-	case AuditActionAutomationRestore:
+	case AuditActionAutomationUnarchive:
 		return []byte(s), nil
 	case AuditActionBrandKitCreate:
 		return []byte(s), nil
@@ -520,11 +520,11 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionAutomationDelete:
 		*s = AuditActionAutomationDelete
 		return nil
-	case AuditActionAutomationDiscard:
-		*s = AuditActionAutomationDiscard
+	case AuditActionAutomationArchive:
+		*s = AuditActionAutomationArchive
 		return nil
-	case AuditActionAutomationRestore:
-		*s = AuditActionAutomationRestore
+	case AuditActionAutomationUnarchive:
+		*s = AuditActionAutomationUnarchive
 		return nil
 	case AuditActionBrandKitCreate:
 		*s = AuditActionBrandKitCreate

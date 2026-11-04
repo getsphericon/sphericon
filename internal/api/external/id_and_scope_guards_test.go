@@ -30,9 +30,9 @@ func idGuardCases() []guardCase {
 		{"AutomationsUpdate", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
 			return c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{}, externalapi.AutomationsUpdateParams{ID: id})
 		}, &externalapi.AutomationsUpdateForbidden{}, &externalapi.AutomationsUpdateUnauthorized{}, &externalapi.AutomationsUpdateBadRequest{}},
-		{"AutomationsDelete", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.AutomationsDelete(ctx, externalapi.AutomationsDeleteParams{ID: id})
-		}, &externalapi.AutomationsDeleteForbidden{}, &externalapi.AutomationsDeleteUnauthorized{}, &externalapi.AutomationsDeleteBadRequest{}},
+		{"AutomationsArchive", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
+			return c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: id})
+		}, &externalapi.AutomationsArchiveForbidden{}, &externalapi.AutomationsArchiveUnauthorized{}, &externalapi.AutomationsArchiveBadRequest{}},
 		{"AutomationsPublish", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
 			return c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
 		}, &externalapi.AutomationsPublishForbidden{}, &externalapi.AutomationsPublishUnauthorized{}, &externalapi.AutomationsPublishBadRequest{}},

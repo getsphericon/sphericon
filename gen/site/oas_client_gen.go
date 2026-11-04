@@ -284,8 +284,8 @@ type Invoker interface {
 	// SiteAutomationsArchive invokes SiteAutomations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
-	// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
-	// (`usedBy` carries their count).
+	// its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or
+	// an active rule enrolls contacts in it (`usedBy` names them).
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/archive
 	SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (SiteAutomationsArchiveRes, error)
@@ -297,16 +297,10 @@ type Invoker interface {
 	SiteAutomationsCreate(ctx context.Context, request *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (SiteAutomationsCreateRes, error)
 	// SiteAutomationsDeactivate invokes SiteAutomations_deactivate operation.
 	//
-	// Deactivate an automation (stops new enrollments).
+	// Deactivate an automation (stops new enrollments). 409 when it is archived.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/deactivate
 	SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (SiteAutomationsDeactivateRes, error)
-	// SiteAutomationsDelete invokes SiteAutomations_delete operation.
-	//
-	// Delete a resource from the site UI.
-	//
-	// DELETE /workspaces/{workspaceId}/automations/{id}
-	SiteAutomationsDelete(ctx context.Context, params SiteAutomationsDeleteParams) (SiteAutomationsDeleteRes, error)
 	// SiteAutomationsDryRunHttpStep invokes SiteAutomations_dryRunHttpStep operation.
 	//
 	// Render an HTTP step's body for a Contact and validate it, calling nothing.
@@ -331,25 +325,28 @@ type Invoker interface {
 	// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 	// live sends through an integration that cannot send (disabled, archived, of another channel, or no
 	// default for the step's channel): a draft may name such an integration, only publishing it is
-	// refused.
+	// refused. 409 for an archived automation too.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/publish
 	SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (SiteAutomationsPublishRes, error)
 	// SiteAutomationsRevert invokes SiteAutomations_revert operation.
 	//
-	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
+	// 409 when the automation is archived.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/revert
 	SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (SiteAutomationsRevertRes, error)
 	// SiteAutomationsUnarchive invokes SiteAutomations_unarchive operation.
 	//
-	// Restore an archived automation to the list, inactive: only publish makes it enroll again.
+	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
+	// again.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/unarchive
 	SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (SiteAutomationsUnarchiveRes, error)
 	// SiteAutomationsUpdate invokes SiteAutomations_update operation.
 	//
-	// Update a resource from the site UI.
+	// Update an automation: its name, and its definition written to the draft. 409 when the automation is
+	// archived.
 	//
 	// PUT /workspaces/{workspaceId}/automations/{id}
 	SiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (SiteAutomationsUpdateRes, error)
@@ -5788,8 +5785,8 @@ func (c *Client) sendSiteAutomationReportsGet(ctx context.Context, params SiteAu
 // SiteAutomationsArchive invokes SiteAutomations_archive operation.
 //
 // Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
-// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
-// (`usedBy` carries their count).
+// its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or
+// an active rule enrolls contacts in it (`usedBy` names them).
 //
 // POST /workspaces/{workspaceId}/automations/{id}/archive
 func (c *Client) SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (SiteAutomationsArchiveRes, error) {
@@ -6084,7 +6081,7 @@ func (c *Client) sendSiteAutomationsCreate(ctx context.Context, request *SiteCre
 
 // SiteAutomationsDeactivate invokes SiteAutomations_deactivate operation.
 //
-// Deactivate an automation (stops new enrollments).
+// Deactivate an automation (stops new enrollments). 409 when it is archived.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/deactivate
 func (c *Client) SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (SiteAutomationsDeactivateRes, error) {
@@ -6232,162 +6229,6 @@ func (c *Client) sendSiteAutomationsDeactivate(ctx context.Context, params SiteA
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteAutomationsDeactivateResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// SiteAutomationsDelete invokes SiteAutomations_delete operation.
-//
-// Delete a resource from the site UI.
-//
-// DELETE /workspaces/{workspaceId}/automations/{id}
-func (c *Client) SiteAutomationsDelete(ctx context.Context, params SiteAutomationsDeleteParams) (SiteAutomationsDeleteRes, error) {
-	res, err := c.sendSiteAutomationsDelete(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendSiteAutomationsDelete(ctx context.Context, params SiteAutomationsDeleteParams) (res SiteAutomationsDeleteRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("SiteAutomations_delete"),
-		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/automations/{id}"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SiteAutomationsDeleteOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [4]string
-	pathParts[0] = "/workspaces/"
-	{
-		// Encode "workspaceId" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "workspaceId",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/automations/"
-	{
-		// Encode "id" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "id",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[3] = encoded
-	}
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "DELETE", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, SiteAutomationsDeleteOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeSiteAutomationsDeleteResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -6953,7 +6794,7 @@ func (c *Client) sendSiteAutomationsList(ctx context.Context, params SiteAutomat
 // draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 // live sends through an integration that cannot send (disabled, archived, of another channel, or no
 // default for the step's channel): a draft may name such an integration, only publishing it is
-// refused.
+// refused. 409 for an archived automation too.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/publish
 func (c *Client) SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (SiteAutomationsPublishRes, error) {
@@ -7110,7 +6951,8 @@ func (c *Client) sendSiteAutomationsPublish(ctx context.Context, params SiteAuto
 
 // SiteAutomationsRevert invokes SiteAutomations_revert operation.
 //
-// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
+// 409 when the automation is archived.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/revert
 func (c *Client) SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (SiteAutomationsRevertRes, error) {
@@ -7267,7 +7109,8 @@ func (c *Client) sendSiteAutomationsRevert(ctx context.Context, params SiteAutom
 
 // SiteAutomationsUnarchive invokes SiteAutomations_unarchive operation.
 //
-// Restore an archived automation to the list, inactive: only publish makes it enroll again.
+// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
+// again.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/unarchive
 func (c *Client) SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (SiteAutomationsUnarchiveRes, error) {
@@ -7424,7 +7267,8 @@ func (c *Client) sendSiteAutomationsUnarchive(ctx context.Context, params SiteAu
 
 // SiteAutomationsUpdate invokes SiteAutomations_update operation.
 //
-// Update a resource from the site UI.
+// Update an automation: its name, and its definition written to the draft. 409 when the automation is
+// archived.
 //
 // PUT /workspaces/{workspaceId}/automations/{id}
 func (c *Client) SiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (SiteAutomationsUpdateRes, error) {

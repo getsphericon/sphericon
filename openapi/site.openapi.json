@@ -5553,7 +5553,7 @@
       },
       "put": {
         "operationId": "SiteAutomations_update",
-        "description": "Update a resource from the site UI",
+        "description": "Update an automation: its name, and its definition written to the draft. 409 when the automation is archived.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -5593,6 +5593,16 @@
               }
             }
           },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "RFC 7807 validation response",
             "content": {
@@ -5616,61 +5626,12 @@
           }
         },
         "x-required-permissions": []
-      },
-      "delete": {
-        "operationId": "SiteAutomations_delete",
-        "description": "Delete a resource from the site UI",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
-          },
-          {
-            "$ref": "#/components/parameters/SiteAutomationResourceKey.id"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
-          },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "RFC 7807 conflict response for a removal refused because live work still uses the row\n(ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,\nIntegration, Sending domain or Automation answers it.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InUseProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Site Automations"],
-        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{id}/archive": {
       "post": {
         "operationId": "SiteAutomations_archive",
-        "description": "Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and\nkeeps its enrollments. It can be restored, inactive. Refused with 409 while it has active\nenrollments (`usedBy` carries their count).",
+        "description": "Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and\nkeeps its enrollments. It can be unarchived, inactive. Refused with 409 while it has active\nenrollments or an active rule enrolls contacts in it (`usedBy` names them).",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -5728,7 +5689,7 @@
     "/workspaces/{workspaceId}/automations/{id}/deactivate": {
       "post": {
         "operationId": "SiteAutomations_deactivate",
-        "description": "Deactivate an automation (stops new enrollments)",
+        "description": "Deactivate an automation (stops new enrollments). 409 when it is archived.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -5767,6 +5728,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "tags": ["Site Automations"],
@@ -5776,7 +5747,7 @@
     "/workspaces/{workspaceId}/automations/{id}/publish": {
       "post": {
         "operationId": "SiteAutomations_publish",
-        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts;\nwith no draft, the live version is resumed. 422 with neither. 409 when any send step of the version\ngoing live sends through an integration that cannot send (disabled, archived, of another\nchannel, or no default for the step's channel): a draft may name such an integration, only\npublishing it is refused.",
+        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts;\nwith no draft, the live version is resumed. 422 with neither. 409 when any send step of the version\ngoing live sends through an integration that cannot send (disabled, archived, of another\nchannel, or no default for the step's channel): a draft may name such an integration, only\npublishing it is refused. 409 for an archived automation too.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -5844,7 +5815,7 @@
     "/workspaces/{workspaceId}/automations/{id}/revert": {
       "post": {
         "operationId": "SiteAutomations_revert",
-        "description": "Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.",
+        "description": "Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live, 409 when the automation is archived.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -5884,6 +5855,16 @@
               }
             }
           },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "RFC 7807 validation response",
             "content": {
@@ -5902,7 +5883,7 @@
     "/workspaces/{workspaceId}/automations/{id}/unarchive": {
       "post": {
         "operationId": "SiteAutomations_unarchive",
-        "description": "Restore an archived automation to the list, inactive: only publish makes it enroll again",
+        "description": "Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -14794,8 +14775,8 @@
           "automation.create",
           "automation.update",
           "automation.delete",
-          "automation.discard",
-          "automation.restore",
+          "automation.archive",
+          "automation.unarchive",
           "brand_kit.create",
           "brand_kit.update",
           "brand_kit.delete",
@@ -24925,14 +24906,14 @@
           "count": {
             "type": "integer",
             "format": "int32",
-            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its Enrollments; a `message` entry names it and counts its\nsent Outbound messages."
+            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its active Enrollments."
           }
         },
         "description": "A row that uses the one a removal was refused for: what a client shows to say what to\nchange first"
       },
       "UsedByKind": {
         "type": "string",
-        "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "message"],
+        "enum": ["broadcast", "automation", "segment", "rule", "enrollment"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "UserName": {

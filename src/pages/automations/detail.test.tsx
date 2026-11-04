@@ -572,3 +572,46 @@ test('shows what each send step sent and skipped, by its position', async () => 
   await expect.element(screen.getByRole('row', { name: '1 41 3' })).toBeInTheDocument()
   await expect.element(screen.getByRole('row', { name: '3 17 29' })).toBeInTheDocument()
 })
+
+test('an archived automation is read-only: it offers no edit and no publish', async () => {
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        id: '1',
+        name: 'Old referral nudge',
+        status: 'inactive',
+        live: null,
+        draft: {
+          number: 1,
+          triggerEvent: 'contact.created',
+          exitEvents: [],
+          goalEvent: null,
+          steps: [],
+        },
+        archivedAt: TIMESTAMPS.updatedAt,
+        ...TIMESTAMPS,
+      },
+    }),
+    handleSiteAutomationReportsGet({
+      body: {
+        opens: 0,
+        clicks: 0,
+        delivered: 0,
+        bounced: 0,
+        complained: 0,
+        captured: 0,
+        revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
+        links: [],
+        steps: [],
+        results: NO_RESULTS,
+      },
+    }),
+    handleSiteEnrollmentsList({ body: page([], 0) }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
+
+  await expect.element(screen.getByText('Old referral nudge')).toBeInTheDocument()
+  await expect.element(screen.getByRole('link', { name: 'Edit' })).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).not.toBeInTheDocument()
+})

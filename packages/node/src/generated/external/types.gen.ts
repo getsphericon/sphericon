@@ -119,8 +119,8 @@ export const AuditAction = {
   AUTOMATION_CREATE: 'automation.create',
   AUTOMATION_UPDATE: 'automation.update',
   AUTOMATION_DELETE: 'automation.delete',
-  AUTOMATION_DISCARD: 'automation.discard',
-  AUTOMATION_RESTORE: 'automation.restore',
+  AUTOMATION_ARCHIVE: 'automation.archive',
+  AUTOMATION_UNARCHIVE: 'automation.unarchive',
   BRAND_KIT_CREATE: 'brand_kit.create',
   BRAND_KIT_UPDATE: 'brand_kit.update',
   BRAND_KIT_DELETE: 'brand_kit.delete',
@@ -5288,8 +5288,7 @@ export type UsedBy = {
   name: string;
   /**
    * How many rows the entry stands for; absent means one. An `enrollment` entry names the
-   * Automation (id, name) and counts its Enrollments; a `message` entry names it and counts its
-   * sent Outbound messages.
+   * Automation (id, name) and counts its active Enrollments.
    */
   count?: number;
 };
@@ -5303,8 +5302,7 @@ export const UsedByKind = {
   AUTOMATION: 'automation',
   SEGMENT: 'segment',
   RULE: 'rule',
-  ENROLLMENT: 'enrollment',
-  MESSAGE: 'message'
+  ENROLLMENT: 'enrollment'
 } as const;
 
 /**
@@ -6169,62 +6167,6 @@ export type EnrollmentsGetResponses = {
 
 export type EnrollmentsGetResponse = EnrollmentsGetResponses[keyof EnrollmentsGetResponses];
 
-export type AutomationsDeleteData = {
-  body?: never;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/automations/{id}';
-};
-
-export type AutomationsDeleteErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type AutomationsDeleteError = AutomationsDeleteErrors[keyof AutomationsDeleteErrors];
-
-export type AutomationsDeleteResponses = {
-  /**
-   * There is no content to send for this request, but the headers may be useful.
-   */
-  204: void;
-};
-
-export type AutomationsDeleteResponse = AutomationsDeleteResponses[keyof AutomationsDeleteResponses];
-
 export type AutomationsGetData = {
   body?: never;
   path: {
@@ -6300,6 +6242,10 @@ export type AutomationsUpdateErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -6402,6 +6348,10 @@ export type AutomationsDeactivateErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
@@ -6553,6 +6503,10 @@ export type AutomationsRevertErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 validation response
    */

@@ -263,8 +263,8 @@ type Handler interface {
 	// SiteAutomationsArchive implements SiteAutomations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
-	// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
-	// (`usedBy` carries their count).
+	// its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or
+	// an active rule enrolls contacts in it (`usedBy` names them).
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/archive
 	SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (SiteAutomationsArchiveRes, error)
@@ -276,16 +276,10 @@ type Handler interface {
 	SiteAutomationsCreate(ctx context.Context, req *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (SiteAutomationsCreateRes, error)
 	// SiteAutomationsDeactivate implements SiteAutomations_deactivate operation.
 	//
-	// Deactivate an automation (stops new enrollments).
+	// Deactivate an automation (stops new enrollments). 409 when it is archived.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/deactivate
 	SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (SiteAutomationsDeactivateRes, error)
-	// SiteAutomationsDelete implements SiteAutomations_delete operation.
-	//
-	// Delete a resource from the site UI.
-	//
-	// DELETE /workspaces/{workspaceId}/automations/{id}
-	SiteAutomationsDelete(ctx context.Context, params SiteAutomationsDeleteParams) (SiteAutomationsDeleteRes, error)
 	// SiteAutomationsDryRunHttpStep implements SiteAutomations_dryRunHttpStep operation.
 	//
 	// Render an HTTP step's body for a Contact and validate it, calling nothing.
@@ -310,25 +304,28 @@ type Handler interface {
 	// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 	// live sends through an integration that cannot send (disabled, archived, of another channel, or no
 	// default for the step's channel): a draft may name such an integration, only publishing it is
-	// refused.
+	// refused. 409 for an archived automation too.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/publish
 	SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (SiteAutomationsPublishRes, error)
 	// SiteAutomationsRevert implements SiteAutomations_revert operation.
 	//
-	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
+	// 409 when the automation is archived.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/revert
 	SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (SiteAutomationsRevertRes, error)
 	// SiteAutomationsUnarchive implements SiteAutomations_unarchive operation.
 	//
-	// Restore an archived automation to the list, inactive: only publish makes it enroll again.
+	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
+	// again.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/unarchive
 	SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (SiteAutomationsUnarchiveRes, error)
 	// SiteAutomationsUpdate implements SiteAutomations_update operation.
 	//
-	// Update a resource from the site UI.
+	// Update an automation: its name, and its definition written to the draft. 409 when the automation is
+	// archived.
 	//
 	// PUT /workspaces/{workspaceId}/automations/{id}
 	SiteAutomationsUpdate(ctx context.Context, req *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (SiteAutomationsUpdateRes, error)

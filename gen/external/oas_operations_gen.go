@@ -15,7 +15,6 @@ const (
 	AutomationsArchiveOperation        OperationName = "AutomationsArchive"
 	AutomationsCreateOperation         OperationName = "AutomationsCreate"
 	AutomationsDeactivateOperation     OperationName = "AutomationsDeactivate"
-	AutomationsDeleteOperation         OperationName = "AutomationsDelete"
 	AutomationsDryRunHttpStepOperation OperationName = "AutomationsDryRunHttpStep"
 	AutomationsGetOperation            OperationName = "AutomationsGet"
 	AutomationsListOperation           OperationName = "AutomationsList"

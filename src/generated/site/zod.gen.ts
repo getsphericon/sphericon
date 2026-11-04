@@ -99,8 +99,8 @@ export const zAuditAction = z.enum([
   'automation.create',
   'automation.update',
   'automation.delete',
-  'automation.discard',
-  'automation.restore',
+  'automation.archive',
+  'automation.unarchive',
   'brand_kit.create',
   'brand_kit.update',
   'brand_kit.delete',
@@ -3687,8 +3687,7 @@ export const zUsedByKind = z.enum([
   'automation',
   'segment',
   'rule',
-  'enrollment',
-  'message'
+  'enrollment'
 ]);
 
 /**
@@ -5055,16 +5054,6 @@ export const zSiteAutomationReportsGetQuery = z.object({
  * The request has succeeded.
  */
 export const zSiteAutomationReportsGetResponse = zSiteAutomationReport;
-
-export const zSiteAutomationsDeletePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * There is no content to send for this request, but the headers may be useful.
- */
-export const zSiteAutomationsDeleteResponse = z.void();
 
 export const zSiteAutomationsGetPath = z.object({
   workspaceId: zWorkspaceId,

@@ -37,8 +37,8 @@ type Handler interface {
 	// AutomationsArchive implements Automations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
-	// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
-	// (`usedBy` carries their count).
+	// its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or
+	// an active rule enrolls contacts in it (`usedBy` names them).
 	//
 	// POST /automations/{id}/archive
 	AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (AutomationsArchiveRes, error)
@@ -50,17 +50,11 @@ type Handler interface {
 	AutomationsCreate(ctx context.Context, req *CreateAutomationInput) (AutomationsCreateRes, error)
 	// AutomationsDeactivate implements Automations_deactivate operation.
 	//
-	// Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write
-	// scope.
+	// Deactivate an automation (stops new enrollments; in-flight ones finish). 409 when it is archived.
+	// Needs the automations:write scope.
 	//
 	// POST /automations/{id}/deactivate
 	AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (AutomationsDeactivateRes, error)
-	// AutomationsDelete implements Automations_delete operation.
-	//
-	// Delete a resource.
-	//
-	// DELETE /automations/{id}
-	AutomationsDelete(ctx context.Context, params AutomationsDeleteParams) (AutomationsDeleteRes, error)
 	// AutomationsDryRunHttpStep implements Automations_dryRunHttpStep operation.
 	//
 	// Render an HTTP step's body for a Contact and validate it, calling nothing.
@@ -85,7 +79,7 @@ type Handler interface {
 	// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 	// live sends through an integration that cannot send (disabled, archived, of another channel, or no
 	// default for the step's channel): a draft may name such an integration, only publishing it is
-	// refused. Needs the automations:publish scope.
+	// refused. 409 for an archived automation too. Needs the automations:publish scope.
 	//
 	// POST /automations/{id}/publish
 	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error)
@@ -100,20 +94,22 @@ type Handler interface {
 	AutomationsReport(ctx context.Context, params AutomationsReportParams) (AutomationsReportRes, error)
 	// AutomationsRevert implements Automations_revert operation.
 	//
-	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
-	// Needs the automations:write scope.
+	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
+	// 409 when the automation is archived. Needs the automations:write scope.
 	//
 	// POST /automations/{id}/revert
 	AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (AutomationsRevertRes, error)
 	// AutomationsUnarchive implements Automations_unarchive operation.
 	//
-	// Restore an archived automation to the list, inactive: only publish makes it enroll again.
+	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
+	// again.
 	//
 	// POST /automations/{id}/unarchive
 	AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (AutomationsUnarchiveRes, error)
 	// AutomationsUpdate implements Automations_update operation.
 	//
-	// Update a resource.
+	// Update an automation: its name, and its definition written to the draft. 409 when the automation is
+	// archived. Needs the automations:write scope.
 	//
 	// PUT /automations/{id}
 	AutomationsUpdate(ctx context.Context, req *UpdateAutomationInput, params AutomationsUpdateParams) (AutomationsUpdateRes, error)

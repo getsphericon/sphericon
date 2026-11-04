@@ -70,9 +70,9 @@ func WorkspaceID(v int64) predicate.Automation {
 	return predicate.Automation(sql.FieldEQ(FieldWorkspaceID, v))
 }
 
-// DiscardedAt applies equality check predicate on the "discarded_at" field. It's identical to DiscardedAtEQ.
-func DiscardedAt(v time.Time) predicate.Automation {
-	return predicate.Automation(sql.FieldEQ(FieldDiscardedAt, v))
+// ArchivedAt applies equality check predicate on the "archived_at" field. It's identical to ArchivedAtEQ.
+func ArchivedAt(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldArchivedAt, v))
 }
 
 // ActivatedAt applies equality check predicate on the "activated_at" field. It's identical to ActivatedAtEQ.
@@ -195,54 +195,54 @@ func WorkspaceIDNotIn(vs ...int64) predicate.Automation {
 	return predicate.Automation(sql.FieldNotIn(FieldWorkspaceID, vs...))
 }
 
-// DiscardedAtEQ applies the EQ predicate on the "discarded_at" field.
-func DiscardedAtEQ(v time.Time) predicate.Automation {
-	return predicate.Automation(sql.FieldEQ(FieldDiscardedAt, v))
+// ArchivedAtEQ applies the EQ predicate on the "archived_at" field.
+func ArchivedAtEQ(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldArchivedAt, v))
 }
 
-// DiscardedAtNEQ applies the NEQ predicate on the "discarded_at" field.
-func DiscardedAtNEQ(v time.Time) predicate.Automation {
-	return predicate.Automation(sql.FieldNEQ(FieldDiscardedAt, v))
+// ArchivedAtNEQ applies the NEQ predicate on the "archived_at" field.
+func ArchivedAtNEQ(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldNEQ(FieldArchivedAt, v))
 }
 
-// DiscardedAtIn applies the In predicate on the "discarded_at" field.
-func DiscardedAtIn(vs ...time.Time) predicate.Automation {
-	return predicate.Automation(sql.FieldIn(FieldDiscardedAt, vs...))
+// ArchivedAtIn applies the In predicate on the "archived_at" field.
+func ArchivedAtIn(vs ...time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldIn(FieldArchivedAt, vs...))
 }
 
-// DiscardedAtNotIn applies the NotIn predicate on the "discarded_at" field.
-func DiscardedAtNotIn(vs ...time.Time) predicate.Automation {
-	return predicate.Automation(sql.FieldNotIn(FieldDiscardedAt, vs...))
+// ArchivedAtNotIn applies the NotIn predicate on the "archived_at" field.
+func ArchivedAtNotIn(vs ...time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldNotIn(FieldArchivedAt, vs...))
 }
 
-// DiscardedAtGT applies the GT predicate on the "discarded_at" field.
-func DiscardedAtGT(v time.Time) predicate.Automation {
-	return predicate.Automation(sql.FieldGT(FieldDiscardedAt, v))
+// ArchivedAtGT applies the GT predicate on the "archived_at" field.
+func ArchivedAtGT(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldGT(FieldArchivedAt, v))
 }
 
-// DiscardedAtGTE applies the GTE predicate on the "discarded_at" field.
-func DiscardedAtGTE(v time.Time) predicate.Automation {
-	return predicate.Automation(sql.FieldGTE(FieldDiscardedAt, v))
+// ArchivedAtGTE applies the GTE predicate on the "archived_at" field.
+func ArchivedAtGTE(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldGTE(FieldArchivedAt, v))
 }
 
-// DiscardedAtLT applies the LT predicate on the "discarded_at" field.
-func DiscardedAtLT(v time.Time) predicate.Automation {
-	return predicate.Automation(sql.FieldLT(FieldDiscardedAt, v))
+// ArchivedAtLT applies the LT predicate on the "archived_at" field.
+func ArchivedAtLT(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldLT(FieldArchivedAt, v))
 }
 
-// DiscardedAtLTE applies the LTE predicate on the "discarded_at" field.
-func DiscardedAtLTE(v time.Time) predicate.Automation {
-	return predicate.Automation(sql.FieldLTE(FieldDiscardedAt, v))
+// ArchivedAtLTE applies the LTE predicate on the "archived_at" field.
+func ArchivedAtLTE(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldLTE(FieldArchivedAt, v))
 }
 
-// DiscardedAtIsNil applies the IsNil predicate on the "discarded_at" field.
-func DiscardedAtIsNil() predicate.Automation {
-	return predicate.Automation(sql.FieldIsNull(FieldDiscardedAt))
+// ArchivedAtIsNil applies the IsNil predicate on the "archived_at" field.
+func ArchivedAtIsNil() predicate.Automation {
+	return predicate.Automation(sql.FieldIsNull(FieldArchivedAt))
 }
 
-// DiscardedAtNotNil applies the NotNil predicate on the "discarded_at" field.
-func DiscardedAtNotNil() predicate.Automation {
-	return predicate.Automation(sql.FieldNotNull(FieldDiscardedAt))
+// ArchivedAtNotNil applies the NotNil predicate on the "archived_at" field.
+func ArchivedAtNotNil() predicate.Automation {
+	return predicate.Automation(sql.FieldNotNull(FieldArchivedAt))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.
@@ -547,29 +547,6 @@ func HasRuns() predicate.Automation {
 func HasRunsWith(preds ...predicate.AutomationRun) predicate.Automation {
 	return predicate.Automation(func(s *sql.Selector) {
 		step := newRunsStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasOutboundMessages applies the HasEdge predicate on the "outbound_messages" edge.
-func HasOutboundMessages() predicate.Automation {
-	return predicate.Automation(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, OutboundMessagesTable, OutboundMessagesColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasOutboundMessagesWith applies the HasEdge predicate on the "outbound_messages" edge with a given conditions (other predicates).
-func HasOutboundMessagesWith(preds ...predicate.OutboundMessage) predicate.Automation {
-	return predicate.Automation(func(s *sql.Selector) {
-		step := newOutboundMessagesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

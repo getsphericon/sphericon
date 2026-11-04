@@ -190,6 +190,7 @@
   "errors.automation_goal_event_invalid": "invalid goal event",
   "errors.automation_integration_not_found": "integration not found",
   "errors.automation_not_found": "automation not found",
+  "errors.automation_archived": "the automation is archived; unarchive it first",
   "errors.automation_nothing_to_publish": "nothing to publish",
   "errors.automation_nothing_to_revert": "no unpublished changes to revert",
   "errors.automation_step_invalid": "invalid step",

@@ -35,9 +35,8 @@ var (
 		"POST": "Authorization,Content-Type",
 	}
 	rn11AllowedHeaders = map[string]string{
-		"DELETE": "Authorization",
-		"GET":    "Authorization",
-		"PUT":    "Authorization,Content-Type",
+		"GET": "Authorization",
+		"PUT": "Authorization,Content-Type",
 	}
 	rn12AllowedHeaders = map[string]string{
 		"POST": "Authorization",
@@ -610,10 +609,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 							if len(elem) == 0 {
 								switch r.Method {
-								case "DELETE":
-									s.handleAutomationsDeleteRequest([1]string{
-										args[0],
-									}, elemIsEscaped, w, r)
 								case "GET":
 									s.handleAutomationsGetRequest([1]string{
 										args[0],
@@ -624,7 +619,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									}, elemIsEscaped, w, r)
 								default:
 									s.notAllowed(w, r, notAllowedParams{
-										allowedMethods: "DELETE,GET,PUT",
+										allowedMethods: "GET,PUT",
 										allowedHeaders: rn11AllowedHeaders,
 										acceptPost:     "",
 										acceptPatch:    "",
@@ -3644,15 +3639,6 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 							if len(elem) == 0 {
 								switch method {
-								case "DELETE":
-									r.name = AutomationsDeleteOperation
-									r.summary = ""
-									r.operationID = "Automations_delete"
-									r.operationGroup = ""
-									r.pathPattern = "/automations/{id}"
-									r.args = args
-									r.count = 1
-									return r, true
 								case "GET":
 									r.name = AutomationsGetOperation
 									r.summary = ""

@@ -182,7 +182,7 @@ func TestTheFailedRunsOfAnArchivedAutomationAreNoItem(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, acme.AutomationRun().UpdateOneID(fixtures.AutomationRunWelcomeCompletedID).
 		SetStatus(automationrun.StatusFailed).SetEndedAt(time.Now()).Exec(t.Context()))
-	require.NoError(t, acme.Automation().Discard(t.Context(), fixtures.AutomationWelcomeSeriesID))
+	require.NoError(t, acme.Automation().Archive(t.Context(), fixtures.AutomationWelcomeSeriesID))
 
 	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
 
@@ -479,7 +479,7 @@ func TestOnlyAnActiveAutomationThatSendsEmailInAWorkspaceThatSendsIsAnItem(t *te
 	require.NoError(t, acme.Automation().UpdateOneID(fixtures.AutomationWelcomeSeriesID).
 		SetStatus(automation.StatusInactive).Exec(t.Context()))
 	require.NoError(t, acme.Automation().UpdateOneID(fixtures.AutomationHoldDemoID).
-		SetStatus(automation.StatusInactive).SetDiscardedAt(time.Now()).Exec(t.Context()))
+		SetStatus(automation.StatusInactive).SetArchivedAt(time.Now()).Exec(t.Context()))
 
 	items := attentionOf(t, member, fixtures.AcmePublicID)
 

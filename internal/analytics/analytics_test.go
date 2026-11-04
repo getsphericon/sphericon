@@ -175,7 +175,7 @@ func TestArchivedAutomationsAreNotCounted(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	before, err := analytics.New().Overview(ctx, acme, analytics.Window30Days)
 	require.NoError(t, err)
-	require.NoError(t, acme.Automation().Discard(ctx, fixtures.AutomationWelcomeSeriesID))
+	require.NoError(t, acme.Automation().Archive(ctx, fixtures.AutomationWelcomeSeriesID))
 
 	after, err := analytics.New().Overview(ctx, acme, analytics.Window30Days)
 	require.NoError(t, err)

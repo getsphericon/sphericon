@@ -24,7 +24,7 @@ func TestExternalAutomationsRead(t *testing.T) {
 	require.NoError(t, err)
 	listed, ok := list.(*externalapi.AutomationsListOK)
 	require.Truef(t, ok, "got %T", list)
-	total, err := env.DB.Automation.Query().Where(automation.WorkspaceID(fixtures.AcmeID), automation.DiscardedAtIsNil()).Count(ctx)
+	total, err := env.DB.Automation.Query().Where(automation.WorkspaceID(fixtures.AcmeID), automation.ArchivedAtIsNil()).Count(ctx)
 	require.NoError(t, err)
 	assert.EqualValues(t, total, listed.TotalItems)
 
@@ -108,12 +108,12 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AutomationsUpdateUnprocessableEntity{}, badUpd)
 
-	del, err := c.AutomationsDelete(ctx, externalapi.AutomationsDeleteParams{ID: a.ID})
+	archived, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: a.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsDeleteNoContent{}, del)
-	again, err := c.AutomationsDelete(ctx, externalapi.AutomationsDeleteParams{ID: a.ID})
+	assert.IsType(t, &externalapi.AutomationResource{}, archived, "a never-published automation is archived")
+	again, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: a.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsDeleteNotFound{}, again)
+	assert.IsType(t, &externalapi.AutomationResource{}, again, "archiving it again changes nothing")
 
 	readOnly := env.ExternalScoped(t, "automations:read")
 	res, err := readOnly.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{Name: "x", TriggerEvent: "y"})

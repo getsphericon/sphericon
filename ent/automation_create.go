@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -60,16 +59,16 @@ func (_c *AutomationCreate) SetWorkspaceID(v int64) *AutomationCreate {
 	return _c
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (_c *AutomationCreate) SetDiscardedAt(v time.Time) *AutomationCreate {
-	_c.mutation.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (_c *AutomationCreate) SetArchivedAt(v time.Time) *AutomationCreate {
+	_c.mutation.SetArchivedAt(v)
 	return _c
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (_c *AutomationCreate) SetNillableDiscardedAt(v *time.Time) *AutomationCreate {
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (_c *AutomationCreate) SetNillableArchivedAt(v *time.Time) *AutomationCreate {
 	if v != nil {
-		_c.SetDiscardedAt(*v)
+		_c.SetArchivedAt(*v)
 	}
 	return _c
 }
@@ -185,21 +184,6 @@ func (_c *AutomationCreate) AddRuns(v ...*AutomationRun) *AutomationCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddRunIDs(ids...)
-}
-
-// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
-func (_c *AutomationCreate) AddOutboundMessageIDs(ids ...int64) *AutomationCreate {
-	_c.mutation.AddOutboundMessageIDs(ids...)
-	return _c
-}
-
-// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
-func (_c *AutomationCreate) AddOutboundMessages(v ...*OutboundMessage) *AutomationCreate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddOutboundMessageIDs(ids...)
 }
 
 // Mutation returns the AutomationMutation object of the builder.
@@ -322,9 +306,9 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 		_spec.SetField(automation.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := _c.mutation.DiscardedAt(); ok {
-		_spec.SetField(automation.FieldDiscardedAt, field.TypeTime, value)
-		_node.DiscardedAt = &value
+	if value, ok := _c.mutation.ArchivedAt(); ok {
+		_spec.SetField(automation.FieldArchivedAt, field.TypeTime, value)
+		_node.ArchivedAt = &value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(automation.FieldStatus, field.TypeEnum, value)
@@ -421,22 +405,6 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.OutboundMessagesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   automation.OutboundMessagesTable,
-			Columns: []string{automation.OutboundMessagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
 	return _node, _spec
 }
 
@@ -513,21 +481,21 @@ func (u *AutomationUpsert) UpdateWorkspaceID() *AutomationUpsert {
 	return u
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *AutomationUpsert) SetDiscardedAt(v time.Time) *AutomationUpsert {
-	u.Set(automation.FieldDiscardedAt, v)
+// SetArchivedAt sets the "archived_at" field.
+func (u *AutomationUpsert) SetArchivedAt(v time.Time) *AutomationUpsert {
+	u.Set(automation.FieldArchivedAt, v)
 	return u
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *AutomationUpsert) UpdateDiscardedAt() *AutomationUpsert {
-	u.SetExcluded(automation.FieldDiscardedAt)
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *AutomationUpsert) UpdateArchivedAt() *AutomationUpsert {
+	u.SetExcluded(automation.FieldArchivedAt)
 	return u
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *AutomationUpsert) ClearDiscardedAt() *AutomationUpsert {
-	u.SetNull(automation.FieldDiscardedAt)
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *AutomationUpsert) ClearArchivedAt() *AutomationUpsert {
+	u.SetNull(automation.FieldArchivedAt)
 	return u
 }
 
@@ -688,24 +656,24 @@ func (u *AutomationUpsertOne) UpdateWorkspaceID() *AutomationUpsertOne {
 	})
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *AutomationUpsertOne) SetDiscardedAt(v time.Time) *AutomationUpsertOne {
+// SetArchivedAt sets the "archived_at" field.
+func (u *AutomationUpsertOne) SetArchivedAt(v time.Time) *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
-		s.SetDiscardedAt(v)
+		s.SetArchivedAt(v)
 	})
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *AutomationUpsertOne) UpdateDiscardedAt() *AutomationUpsertOne {
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *AutomationUpsertOne) UpdateArchivedAt() *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
-		s.UpdateDiscardedAt()
+		s.UpdateArchivedAt()
 	})
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *AutomationUpsertOne) ClearDiscardedAt() *AutomationUpsertOne {
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *AutomationUpsertOne) ClearArchivedAt() *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
-		s.ClearDiscardedAt()
+		s.ClearArchivedAt()
 	})
 }
 
@@ -1045,24 +1013,24 @@ func (u *AutomationUpsertBulk) UpdateWorkspaceID() *AutomationUpsertBulk {
 	})
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *AutomationUpsertBulk) SetDiscardedAt(v time.Time) *AutomationUpsertBulk {
+// SetArchivedAt sets the "archived_at" field.
+func (u *AutomationUpsertBulk) SetArchivedAt(v time.Time) *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
-		s.SetDiscardedAt(v)
+		s.SetArchivedAt(v)
 	})
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *AutomationUpsertBulk) UpdateDiscardedAt() *AutomationUpsertBulk {
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *AutomationUpsertBulk) UpdateArchivedAt() *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
-		s.UpdateDiscardedAt()
+		s.UpdateArchivedAt()
 	})
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *AutomationUpsertBulk) ClearDiscardedAt() *AutomationUpsertBulk {
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *AutomationUpsertBulk) ClearArchivedAt() *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
-		s.ClearDiscardedAt()
+		s.ClearArchivedAt()
 	})
 }
 

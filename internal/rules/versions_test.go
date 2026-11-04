@@ -165,18 +165,23 @@ func TestADraftThatNamesATagUsesIt(t *testing.T) {
 	assert.Equal(t, []int64{fixtures.RuleTagClickedID}, lo.Map(draftOfActive, func(r *ent.Rule, _ int) int64 { return r.ID }))
 }
 
-func TestADraftThatEnrollsInAnAutomationKeepsItInUse(t *testing.T) {
+// Only an active Rule enrolls through its live version, so only that keeps an Automation from
+// being archived (ADR 0099, ADR 0100): a draft, the active Rule's or a never-published one's, does
+// not.
+func TestOnlyTheLiveVersionOfAnActiveRuleEnrollsInAnAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
-	enroll := []rules.Action{{Type: rules.ActionEnroll, AutomationID: fixtures.AutomationWelcomeSeriesID}}
+	enroll := []rules.Action{{Type: rules.ActionEnroll, AutomationID: fixtures.AutomationJobsWaitFirstID}}
 	_, err := m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Actions: &enroll})
 	require.NoError(t, err)
+	_, err = m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Actions: &enroll})
+	require.NoError(t, err)
 
-	using, err := rules.EnrollingInto(ctx, acme(env), fixtures.AutomationWelcomeSeriesID)
+	using, err := rules.ActiveEnrollingInto(ctx, acme(env), fixtures.AutomationJobsWaitFirstID)
 
 	require.NoError(t, err)
-	assert.Equal(t, []int64{fixtures.RuleInactiveID}, lo.Map(using, func(r *ent.Rule, _ int) int64 { return r.ID }))
+	assert.Equal(t, []int64{fixtures.RuleEnrollWaitFirstID}, lo.Map(using, func(r *ent.Rule, _ int) int64 { return r.ID }))
 }
 
 // A dry run tries what the author is editing: the draft when there is one.

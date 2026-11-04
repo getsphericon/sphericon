@@ -182,9 +182,9 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "automation.delete":
 		return nil
-	case "automation.discard":
+	case "automation.archive":
 		return nil
-	case "automation.restore":
+	case "automation.unarchive":
 		return nil
 	case "brand_kit.create":
 		return nil
@@ -3813,23 +3813,15 @@ func (s *SiteAutomationsDeactivateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteAutomationsDeactivateConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteAutomationsDeactivateNotFound) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteAutomationsDeleteBadRequest) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteAutomationsDeleteNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -3981,6 +3973,14 @@ func (s *SiteAutomationsRevertBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteAutomationsRevertConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteAutomationsRevertNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4025,6 +4025,14 @@ func (s *SiteAutomationsUnarchiveNotFound) Validate() error {
 }
 
 func (s *SiteAutomationsUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAutomationsUpdateConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -15342,8 +15350,6 @@ func (s UsedByKind) Validate() error {
 	case "rule":
 		return nil
 	case "enrollment":
-		return nil
-	case "message":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

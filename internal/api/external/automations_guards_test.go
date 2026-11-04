@@ -45,9 +45,9 @@ func TestExternalAutomationsAreWorkspaceScoped(t *testing.T) {
 			require.NoError(t, err)
 			assert.IsType(t, &externalapi.AutomationsDeactivateNotFound{}, deact)
 
-			del, err := c.AutomationsDelete(ctx, externalapi.AutomationsDeleteParams{ID: id})
+			archived, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: id})
 			require.NoError(t, err)
-			assert.IsType(t, &externalapi.AutomationsDeleteNotFound{}, del)
+			assert.IsType(t, &externalapi.AutomationsArchiveNotFound{}, archived)
 		})
 	}
 

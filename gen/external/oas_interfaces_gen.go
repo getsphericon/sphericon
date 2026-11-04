@@ -37,10 +37,6 @@ type AutomationsDeactivateRes interface {
 	automationsDeactivateRes()
 }
 
-type AutomationsDeleteRes interface {
-	automationsDeleteRes()
-}
-
 type AutomationsDryRunHttpStepRes interface {
 	automationsDryRunHttpStepRes()
 }

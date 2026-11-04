@@ -70,12 +70,14 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	require.Truef(t, ok, "got %T", upd)
 	assert.Equal(t, "Onboarding", updRes.Name)
 
-	// Delete, then a fetch by id resolves to 404.
-	del, err := c.SiteAutomationsDelete(ctx, siteapi.SiteAutomationsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
+	// Archive: it is kept, and a fetch by id still reads it, archived.
+	arch, err := c.SiteAutomationsArchive(ctx, siteapi.SiteAutomationsArchiveParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAutomationsDeleteNoContent{}, del)
+	assert.IsType(t, &siteapi.SiteAutomationResource{}, arch)
 
-	gone, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: workspaceID, ID: res.ID})
+	kept, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAutomationsGetNotFound{}, gone)
+	keptRes, ok := kept.(*siteapi.SiteAutomationResource)
+	require.Truef(t, ok, "got %T", kept)
+	assert.True(t, keptRes.ArchivedAt.IsSet())
 }

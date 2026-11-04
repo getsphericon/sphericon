@@ -424,7 +424,7 @@ func failedRuns(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, erro
 		Where(
 			automationrun.StatusEQ(automationrun.StatusFailed),
 			automationrun.EndedAtGTE(now.Add(-recent)),
-			automationrun.HasAutomationWith(automation.DiscardedAtIsNil()),
+			automationrun.HasAutomationWith(automation.ArchivedAtIsNil()),
 		).
 		WithAutomation().
 		Order(ent.Asc(automationrun.FieldEndedAt)).

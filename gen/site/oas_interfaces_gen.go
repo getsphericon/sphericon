@@ -129,10 +129,6 @@ type SiteAutomationsDeactivateRes interface {
 	siteAutomationsDeactivateRes()
 }
 
-type SiteAutomationsDeleteRes interface {
-	siteAutomationsDeleteRes()
-}
-
 type SiteAutomationsDryRunHttpStepRes interface {
 	siteAutomationsDryRunHttpStepRes()
 }

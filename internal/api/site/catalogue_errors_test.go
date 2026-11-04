@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -108,24 +107,13 @@ func TestSiteAutomationsErrorBranches(t *testing.T) {
 		assert.IsType(t, &siteapi.SiteAutomationsDeactivateNotFound{}, d2)
 	})
 
-	t.Run("delete", func(t *testing.T) {
-		r1, err := c.SiteAutomationsDelete(ctx, siteapi.SiteAutomationsDeleteParams{WorkspaceId: foreign, ID: known})
+	t.Run("archive", func(t *testing.T) {
+		r1, err := c.SiteAutomationsArchive(ctx, siteapi.SiteAutomationsArchiveParams{WorkspaceId: foreign, ID: known})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteAutomationsDeleteNotFound{}, r1)
-		r3, err := c.SiteAutomationsDelete(ctx, siteapi.SiteAutomationsDeleteParams{WorkspaceId: acme, ID: missing})
+		assert.IsType(t, &siteapi.SiteAutomationsArchiveNotFound{}, r1)
+		r2, err := c.SiteAutomationsArchive(ctx, siteapi.SiteAutomationsArchiveParams{WorkspaceId: acme, ID: missing})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteAutomationsDeleteNotFound{}, r3)
-		// A freshly created automation (no runs yet) is deleted for real.
-		made, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "Scratch", TriggerEvent: "contact.created"},
-			siteapi.SiteAutomationsCreateParams{WorkspaceId: acme})
-		require.NoError(t, err)
-		scratch := made.(*siteapi.SiteAutomationResource)
-		r4, err := c.SiteAutomationsDelete(ctx, siteapi.SiteAutomationsDeleteParams{WorkspaceId: acme, ID: scratch.ID})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteAutomationsDeleteNoContent{}, r4)
-		exists, err := env.DB.Automation.Query().Where(automation.ID(int64(scratch.ID))).Exist(ctx)
-		require.NoError(t, err)
-		assert.False(t, exists)
+		assert.IsType(t, &siteapi.SiteAutomationsArchiveNotFound{}, r2)
 	})
 }
 

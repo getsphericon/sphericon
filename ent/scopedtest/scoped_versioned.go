@@ -15,6 +15,10 @@ import (
 // discarded (ADR 0100).
 var ErrNotDiscardable = errors.New("ent: an archivable Versioned definition is archived, never discarded")
 
+// ErrNotArchivable: the lifecycle archived or unarchived a Versioned definition that is discarded,
+// never archived (ADR 0100).
+var ErrNotArchivable = errors.New("ent: a discardable Versioned definition is discarded, never archived")
+
 // VersionState is what the lifecycle reads of a Versioned definition's row: its state, its two
 // pointers and the versions they point at, as loaded on the row's edges (nil when there is none
 // or it was not loaded). Archived is set only for an archivable kind (archived_at), Discarded only
@@ -56,7 +60,8 @@ type VersionedStore[O, V any] interface {
 	Newest(ctx context.Context, id int64) (int, error)
 	// DeleteVersion removes a version of the row (a dropped draft, which nothing stands on).
 	DeleteVersion(ctx context.Context, id, versionID int64) error
-	// Archive puts the row aside and Unarchive brings it back (an archivable kind, ADR 0100).
+	// Archive puts the row aside and Unarchive brings it back (an archivable kind, ADR 0100); a
+	// discardable kind answers ErrNotArchivable.
 	Archive(ctx context.Context, id int64) error
 	Unarchive(ctx context.Context, id int64) error
 	// Discard removes the row for good, kept for what refers to it (a discardable kind, ADR

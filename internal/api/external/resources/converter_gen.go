@@ -280,7 +280,7 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.Au
 		externalapiAutomationResource.Status = c.AutomationStatusToResource((*source).Status)
 		externalapiAutomationResource.Live = automationVersionOrNull(c, (*source).Edges.LiveVersion)
 		externalapiAutomationResource.Draft = automationVersionOrNull(c, (*source).Edges.DraftVersion)
-		externalapiAutomationResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiAutomationResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		externalapiAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

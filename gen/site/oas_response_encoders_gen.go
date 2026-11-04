@@ -2042,43 +2042,7 @@ func encodeSiteAutomationsDeactivateResponse(response SiteAutomationsDeactivateR
 
 		return nil
 
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteAutomationsDeleteResponse(response SiteAutomationsDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAutomationsDeleteNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteAutomationsDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *InUseProblemDetails:
+	case *SiteAutomationsDeactivateConflict:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(409)
 
@@ -2353,6 +2317,18 @@ func encodeSiteAutomationsRevertResponse(response SiteAutomationsRevertRes, w ht
 
 		return nil
 
+	case *SiteAutomationsRevertConflict:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(409)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteAutomationsRevertUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)
@@ -2442,6 +2418,18 @@ func encodeSiteAutomationsUpdateResponse(response SiteAutomationsUpdateRes, w ht
 	case *SiteAutomationsUpdateNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAutomationsUpdateConflict:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(409)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

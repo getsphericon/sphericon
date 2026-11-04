@@ -51,19 +51,9 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 	return &res, nil
 }
 
-func (h *Handlers) SiteAutomationsDelete(ctx context.Context, params siteapi.SiteAutomationsDeleteParams) (siteapi.SiteAutomationsDeleteRes, error) {
-	ws := workspaceScope(ctx)
-
-	id := int64(params.ID)
-	err := h.automations.Delete(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	return &siteapi.SiteAutomationsDeleteNoContent{}, nil
-}
-
-// SiteAutomationsArchive archives an automation (ADR 0049): it leaves the list and enrolls
-// nobody, and keeps its enrollments. Active enrollments refuse it with 409.
+// SiteAutomationsArchive archives an automation (ADR 0100): it leaves the list and enrolls
+// nobody, and keeps its enrollments. Live use (active enrollments, an active rule) refuses it with
+// 409.
 func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.SiteAutomationsArchiveParams) (siteapi.SiteAutomationsArchiveRes, error) {
 	ws := workspaceScope(ctx)
 
@@ -76,7 +66,7 @@ func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.Si
 	return &res, nil
 }
 
-// SiteAutomationsUnarchive restores an archived automation to the list.
+// SiteAutomationsUnarchive brings an archived automation back to the list, inactive.
 func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.SiteAutomationsUnarchiveParams) (siteapi.SiteAutomationsUnarchiveRes, error) {
 	ws := workspaceScope(ctx)
 

@@ -243,7 +243,7 @@ func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) 
 				SetSteps(mailgunEmail).Exec(ctx)
 			require.NoError(t, err)
 			err = s.Automation().UpdateOneID(fixtures.AutomationWelcomeSeriesID).
-				SetStatus(tc.status).SetNillableDiscardedAt(tc.archived).Exec(ctx)
+				SetStatus(tc.status).SetNillableArchivedAt(tc.archived).Exec(ctx)
 			require.NoError(t, err)
 			// An Enrollment still standing on the version keeps it sending
 			// (TestSiteIntegrationIsUsedByTheVersionAnUnfinishedEnrollmentStandsOn).

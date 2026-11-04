@@ -20,7 +20,6 @@ var ExternalOperationScopes = map[externalapi.OperationName][]apitokens.Scope{
 	externalapi.AutomationsArchiveOperation:        {apitokens.ScopeAutomationsWrite},
 	externalapi.AutomationsCreateOperation:         {apitokens.ScopeAutomationsWrite},
 	externalapi.AutomationsDeactivateOperation:     {apitokens.ScopeAutomationsWrite},
-	externalapi.AutomationsDeleteOperation:         {apitokens.ScopeAutomationsWrite},
 	externalapi.AutomationsDryRunHttpStepOperation: {apitokens.ScopeAutomationsWrite, apitokens.ScopeContactsRead},
 	externalapi.AutomationsGetOperation:            {apitokens.ScopeAutomationsRead},
 	externalapi.AutomationsListOperation:           {apitokens.ScopeAutomationsRead},

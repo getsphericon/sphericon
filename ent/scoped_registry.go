@@ -218,7 +218,7 @@ func ScopedEntities() []ScopedEntity {
 		},
 		{
 			Name:         "Automation",
-			AuditActions: []string{"automation.create", "automation.update", "automation.delete", "automation.discard", "automation.restore"},
+			AuditActions: []string{"automation.create", "automation.update", "automation.delete", "automation.archive", "automation.unarchive"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Automation.Query().Where(automation.WorkspaceID(ws)).Order(Asc(automation.FieldID)).IDs(ctx)
 			},
@@ -245,8 +245,8 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.Automation().Create()
-				if src.DiscardedAt != nil {
-					b.SetDiscardedAt(*src.DiscardedAt)
+				if src.ArchivedAt != nil {
+					b.SetArchivedAt(*src.ArchivedAt)
 				}
 				b.SetStatus(src.Status)
 				if src.ActivatedAt != nil {
@@ -288,12 +288,6 @@ func ScopedEntities() []ScopedEntity {
 					Name: "runs", Target: "AutomationRun",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Automation().UpdateOneID(id).AddRunIDs(target).Exec(ctx)
-					},
-				},
-				{
-					Name: "outbound_messages", Target: "OutboundMessage",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.Automation().UpdateOneID(id).AddOutboundMessageIDs(target).Exec(ctx)
 					},
 				},
 			},

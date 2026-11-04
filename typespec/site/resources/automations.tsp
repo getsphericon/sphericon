@@ -252,24 +252,23 @@ model SiteAutomationsListFilter {
 }
 
 /**
- * Delete removes an automation that has no enrollments and has sent nothing for good; one with
- * either is history and is archived instead (ADR 0049), so a delete of it is a 409 whose `usedBy`
- * carries their counts.
+ * An automation is archived, never deleted (ADR 0100): it has no delete. An archived automation is
+ * read-only until it is unarchived: an edit, publish, revert or deactivate of it is a 409.
  */
 @tag("Site Automations")
 interface SiteAutomations
-  extends WorkspaceCrud<
+  extends WorkspaceCrudKept<
       SiteAutomationResource,
       SiteCreateAutomationInput,
       SiteUpdateAutomationInput,
       never,
-      InUseProblem,
-      SiteAutomationsListFilter
+      SiteAutomationsListFilter,
+      ConflictProblem
     > {
   /**
    * Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and
-   * keeps its enrollments. It can be restored, inactive. Refused with 409 while it has active
-   * enrollments (`usedBy` carries their count).
+   * keeps its enrollments. It can be unarchived, inactive. Refused with 409 while it has active
+   * enrollments or an active rule enrolls contacts in it (`usedBy` names them).
    */
   @action("archive")
   @autoRoute
@@ -280,7 +279,7 @@ interface SiteAutomations
     | NotFoundProblem
     | InUseProblem;
 
-  /** Restore an archived automation to the list, inactive: only publish makes it enroll again */
+  /** Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again */
   @action("unarchive")
   @autoRoute
   @requiresPermissions(#[])
@@ -294,7 +293,7 @@ interface SiteAutomations
    * with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version
    * going live sends through an integration that cannot send (disabled, archived, of another
    * channel, or no default for the step's channel): a draft may name such an integration, only
-   * publishing it is refused.
+   * publishing it is refused. 409 for an archived automation too.
    */
   @action("publish")
   @autoRoute
@@ -306,7 +305,7 @@ interface SiteAutomations
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. */
+  /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live, 409 when the automation is archived. */
   @action("revert")
   @autoRoute
   @requiresPermissions(#[])
@@ -314,16 +313,18 @@ interface SiteAutomations
     | SiteAutomationResource
     | BadRequestProblem
     | NotFoundProblem
+    | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Deactivate an automation (stops new enrollments) */
+  /** Deactivate an automation (stops new enrollments). 409 when it is archived. */
   @action("deactivate")
   @autoRoute
   @requiresPermissions(#[])
   deactivate(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
     | BadRequestProblem
-    | NotFoundProblem;
+    | NotFoundProblem
+    | ConflictProblem;
 
   /** Render an HTTP step's body for a Contact and validate it, calling nothing */
   @collectionAction(SiteAutomationResource, "dry-run-http-step")
@@ -476,8 +477,12 @@ namespace SiteAutomationReports {
   ): SiteAutomationReport | BadRequestProblem | NotFoundProblem;
 }
 
+@@doc(
+  SiteAutomations.update,
+  "Update an automation: its name, and its definition written to the draft. 409 when the automation is archived."
+);
+
 @@requiresPermissions(SiteAutomations.create, #[]);
-@@requiresPermissions(SiteAutomations.delete, #[]);
 @@requiresPermissions(SiteAutomations.get, #[]);
 @@requiresPermissions(SiteAutomations.list, #[]);
 @@requiresPermissions(SiteAutomations.update, #[]);

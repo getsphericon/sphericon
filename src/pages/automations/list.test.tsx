@@ -5,7 +5,6 @@ import {
   handleSiteAutomationsPublish,
   handleSiteAutomationsArchive,
   handleSiteAutomationsDeactivate,
-  handleSiteAutomationsDelete,
   handleSiteAutomationsList,
   handleSiteAutomationsUnarchive,
 } from '../../generated/site/msw.gen.ts'
@@ -207,42 +206,16 @@ test('deactivating an active automation calls the API', async () => {
   await expect.element(screen.getByText('Automation deactivated')).toBeInTheDocument()
 })
 
-test('deleting an automation asks for confirmation first', async () => {
-  const deleted: string[] = []
+test('an automation offers no delete: it is archived, never deleted', async () => {
   worker.use(
     handleSiteAutomationsList(() => HttpResponse.json({ items: [WELCOME], totalItems: 1 })),
-    handleSiteAutomationsDelete(({ params }) => {
-      deleted.push(params.id)
-      return new HttpResponse(null, { status: 204 })
-    }),
-  )
-
-  const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
-  await expect.element(screen.getByText('Welcome flow')).toBeInTheDocument()
-
-  await screen.getByRole('button', { name: 'More actions' }).first().click()
-  await screen.getByRole('menuitem', { name: 'Delete' }).click()
-  expect(deleted).toEqual([])
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
-
-  await expect.poll(() => deleted).toEqual(['1'])
-  await expect.element(screen.getByText('Automation deleted')).toBeInTheDocument()
-})
-
-test('an automation that sent mail is not deleted and the count of its messages is shown', async () => {
-  worker.use(
-    handleSiteAutomationsList(() => HttpResponse.json({ items: [WELCOME], totalItems: 1 })),
-    handleSiteAutomationsDelete(() =>
-      problem(409, { usedBy: [{ kind: 'message', id: '1', name: 'Welcome flow', count: 5 }] }),
-    ),
   )
 
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
   await screen.getByRole('button', { name: 'More actions' }).first().click()
-  await screen.getByRole('menuitem', { name: 'Delete' }).click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
-  await expect.element(screen.getByText(/5 messages sent by "Welcome flow"/)).toBeInTheDocument()
+  await expect.element(screen.getByRole('menuitem', { name: 'Archive' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('menuitem', { name: 'Delete' })).not.toBeInTheDocument()
 })
 
 test('the archived control opens the archived view through the URL', async () => {

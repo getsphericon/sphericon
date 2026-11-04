@@ -99,7 +99,7 @@ func Users(sends []Send) []inuse.User {
 // still run.
 func sendingVersions(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error) {
 	active, err := s.Automation().Query().
-		Where(automation.StatusEQ(automation.StatusActive), automation.DiscardedAtIsNil(), automation.LiveVersionIDNotNil()).
+		Where(automation.StatusEQ(automation.StatusActive), automation.ArchivedAtIsNil(), automation.LiveVersionIDNotNil()).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -116,7 +116,7 @@ func sendingVersions(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, err
 		return nil, err
 	}
 	byAutomation := lo.GroupBy(versions, func(v *ent.AutomationVersion) int64 { return v.AutomationID })
-	autos, err := s.Automation().QueryWithDiscarded().
+	autos, err := s.Automation().QueryWithArchived().
 		Where(automation.IDIn(lo.Keys(byAutomation)...)).
 		Order(ent.Asc(automation.FieldID)).
 		All(ctx)

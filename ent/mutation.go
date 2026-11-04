@@ -3353,34 +3353,31 @@ func (m *AuthAttemptMutation) ResetEdge(name string) error {
 // AutomationMutation represents an operation that mutates the Automation nodes in the graph.
 type AutomationMutation struct {
 	config
-	op                       Op
-	typ                      string
-	id                       *int64
-	created_at               *time.Time
-	updated_at               *time.Time
-	discarded_at             *time.Time
-	status                   *automation.Status
-	activated_at             *time.Time
-	name                     *string
-	clearedFields            map[string]struct{}
-	workspace                *int64
-	clearedworkspace         bool
-	versions                 map[int64]struct{}
-	removedversions          map[int64]struct{}
-	clearedversions          bool
-	live_version             *int64
-	clearedlive_version      bool
-	draft_version            *int64
-	cleareddraft_version     bool
-	runs                     map[int64]struct{}
-	removedruns              map[int64]struct{}
-	clearedruns              bool
-	outbound_messages        map[int64]struct{}
-	removedoutbound_messages map[int64]struct{}
-	clearedoutbound_messages bool
-	done                     bool
-	oldValue                 func(context.Context) (*Automation, error)
-	predicates               []predicate.Automation
+	op                   Op
+	typ                  string
+	id                   *int64
+	created_at           *time.Time
+	updated_at           *time.Time
+	archived_at          *time.Time
+	status               *automation.Status
+	activated_at         *time.Time
+	name                 *string
+	clearedFields        map[string]struct{}
+	workspace            *int64
+	clearedworkspace     bool
+	versions             map[int64]struct{}
+	removedversions      map[int64]struct{}
+	clearedversions      bool
+	live_version         *int64
+	clearedlive_version  bool
+	draft_version        *int64
+	cleareddraft_version bool
+	runs                 map[int64]struct{}
+	removedruns          map[int64]struct{}
+	clearedruns          bool
+	done                 bool
+	oldValue             func(context.Context) (*Automation, error)
+	predicates           []predicate.Automation
 }
 
 var _ ent.Mutation = (*AutomationMutation)(nil)
@@ -3595,53 +3592,53 @@ func (m *AutomationMutation) ResetWorkspaceID() {
 	m.workspace = nil
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (m *AutomationMutation) SetDiscardedAt(t time.Time) {
-	m.discarded_at = &t
+// SetArchivedAt sets the "archived_at" field.
+func (m *AutomationMutation) SetArchivedAt(t time.Time) {
+	m.archived_at = &t
 }
 
-// DiscardedAt returns the value of the "discarded_at" field in the mutation.
-func (m *AutomationMutation) DiscardedAt() (r time.Time, exists bool) {
-	v := m.discarded_at
+// ArchivedAt returns the value of the "archived_at" field in the mutation.
+func (m *AutomationMutation) ArchivedAt() (r time.Time, exists bool) {
+	v := m.archived_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDiscardedAt returns the old "discarded_at" field's value of the Automation entity.
+// OldArchivedAt returns the old "archived_at" field's value of the Automation entity.
 // If the Automation object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationMutation) OldDiscardedAt(ctx context.Context) (v *time.Time, err error) {
+func (m *AutomationMutation) OldArchivedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDiscardedAt is only allowed on UpdateOne operations")
+		return v, errors.New("OldArchivedAt is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDiscardedAt requires an ID field in the mutation")
+		return v, errors.New("OldArchivedAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDiscardedAt: %w", err)
+		return v, fmt.Errorf("querying old value for OldArchivedAt: %w", err)
 	}
-	return oldValue.DiscardedAt, nil
+	return oldValue.ArchivedAt, nil
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (m *AutomationMutation) ClearDiscardedAt() {
-	m.discarded_at = nil
-	m.clearedFields[automation.FieldDiscardedAt] = struct{}{}
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (m *AutomationMutation) ClearArchivedAt() {
+	m.archived_at = nil
+	m.clearedFields[automation.FieldArchivedAt] = struct{}{}
 }
 
-// DiscardedAtCleared returns if the "discarded_at" field was cleared in this mutation.
-func (m *AutomationMutation) DiscardedAtCleared() bool {
-	_, ok := m.clearedFields[automation.FieldDiscardedAt]
+// ArchivedAtCleared returns if the "archived_at" field was cleared in this mutation.
+func (m *AutomationMutation) ArchivedAtCleared() bool {
+	_, ok := m.clearedFields[automation.FieldArchivedAt]
 	return ok
 }
 
-// ResetDiscardedAt resets all changes to the "discarded_at" field.
-func (m *AutomationMutation) ResetDiscardedAt() {
-	m.discarded_at = nil
-	delete(m.clearedFields, automation.FieldDiscardedAt)
+// ResetArchivedAt resets all changes to the "archived_at" field.
+func (m *AutomationMutation) ResetArchivedAt() {
+	m.archived_at = nil
+	delete(m.clearedFields, automation.FieldArchivedAt)
 }
 
 // SetStatus sets the "status" field.
@@ -4052,60 +4049,6 @@ func (m *AutomationMutation) ResetRuns() {
 	m.removedruns = nil
 }
 
-// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by ids.
-func (m *AutomationMutation) AddOutboundMessageIDs(ids ...int64) {
-	if m.outbound_messages == nil {
-		m.outbound_messages = make(map[int64]struct{})
-	}
-	for i := range ids {
-		m.outbound_messages[ids[i]] = struct{}{}
-	}
-}
-
-// ClearOutboundMessages clears the "outbound_messages" edge to the OutboundMessage entity.
-func (m *AutomationMutation) ClearOutboundMessages() {
-	m.clearedoutbound_messages = true
-}
-
-// OutboundMessagesCleared reports if the "outbound_messages" edge to the OutboundMessage entity was cleared.
-func (m *AutomationMutation) OutboundMessagesCleared() bool {
-	return m.clearedoutbound_messages
-}
-
-// RemoveOutboundMessageIDs removes the "outbound_messages" edge to the OutboundMessage entity by IDs.
-func (m *AutomationMutation) RemoveOutboundMessageIDs(ids ...int64) {
-	if m.removedoutbound_messages == nil {
-		m.removedoutbound_messages = make(map[int64]struct{})
-	}
-	for i := range ids {
-		delete(m.outbound_messages, ids[i])
-		m.removedoutbound_messages[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedOutboundMessages returns the removed IDs of the "outbound_messages" edge to the OutboundMessage entity.
-func (m *AutomationMutation) RemovedOutboundMessagesIDs() (ids []int64) {
-	for id := range m.removedoutbound_messages {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// OutboundMessagesIDs returns the "outbound_messages" edge IDs in the mutation.
-func (m *AutomationMutation) OutboundMessagesIDs() (ids []int64) {
-	for id := range m.outbound_messages {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetOutboundMessages resets all changes to the "outbound_messages" edge.
-func (m *AutomationMutation) ResetOutboundMessages() {
-	m.outbound_messages = nil
-	m.clearedoutbound_messages = false
-	m.removedoutbound_messages = nil
-}
-
 // Where appends a list predicates to the AutomationMutation builder.
 func (m *AutomationMutation) Where(ps ...predicate.Automation) {
 	m.predicates = append(m.predicates, ps...)
@@ -4150,8 +4093,8 @@ func (m *AutomationMutation) Fields() []string {
 	if m.workspace != nil {
 		fields = append(fields, automation.FieldWorkspaceID)
 	}
-	if m.discarded_at != nil {
-		fields = append(fields, automation.FieldDiscardedAt)
+	if m.archived_at != nil {
+		fields = append(fields, automation.FieldArchivedAt)
 	}
 	if m.status != nil {
 		fields = append(fields, automation.FieldStatus)
@@ -4182,8 +4125,8 @@ func (m *AutomationMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case automation.FieldWorkspaceID:
 		return m.WorkspaceID()
-	case automation.FieldDiscardedAt:
-		return m.DiscardedAt()
+	case automation.FieldArchivedAt:
+		return m.ArchivedAt()
 	case automation.FieldStatus:
 		return m.Status()
 	case automation.FieldActivatedAt:
@@ -4209,8 +4152,8 @@ func (m *AutomationMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldUpdatedAt(ctx)
 	case automation.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
-	case automation.FieldDiscardedAt:
-		return m.OldDiscardedAt(ctx)
+	case automation.FieldArchivedAt:
+		return m.OldArchivedAt(ctx)
 	case automation.FieldStatus:
 		return m.OldStatus(ctx)
 	case automation.FieldActivatedAt:
@@ -4251,12 +4194,12 @@ func (m *AutomationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetWorkspaceID(v)
 		return nil
-	case automation.FieldDiscardedAt:
+	case automation.FieldArchivedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDiscardedAt(v)
+		m.SetArchivedAt(v)
 		return nil
 	case automation.FieldStatus:
 		v, ok := value.(automation.Status)
@@ -4326,8 +4269,8 @@ func (m *AutomationMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *AutomationMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(automation.FieldDiscardedAt) {
-		fields = append(fields, automation.FieldDiscardedAt)
+	if m.FieldCleared(automation.FieldArchivedAt) {
+		fields = append(fields, automation.FieldArchivedAt)
 	}
 	if m.FieldCleared(automation.FieldActivatedAt) {
 		fields = append(fields, automation.FieldActivatedAt)
@@ -4352,8 +4295,8 @@ func (m *AutomationMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *AutomationMutation) ClearField(name string) error {
 	switch name {
-	case automation.FieldDiscardedAt:
-		m.ClearDiscardedAt()
+	case automation.FieldArchivedAt:
+		m.ClearArchivedAt()
 		return nil
 	case automation.FieldActivatedAt:
 		m.ClearActivatedAt()
@@ -4381,8 +4324,8 @@ func (m *AutomationMutation) ResetField(name string) error {
 	case automation.FieldWorkspaceID:
 		m.ResetWorkspaceID()
 		return nil
-	case automation.FieldDiscardedAt:
-		m.ResetDiscardedAt()
+	case automation.FieldArchivedAt:
+		m.ResetArchivedAt()
 		return nil
 	case automation.FieldStatus:
 		m.ResetStatus()
@@ -4405,7 +4348,7 @@ func (m *AutomationMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AutomationMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 5)
 	if m.workspace != nil {
 		edges = append(edges, automation.EdgeWorkspace)
 	}
@@ -4420,9 +4363,6 @@ func (m *AutomationMutation) AddedEdges() []string {
 	}
 	if m.runs != nil {
 		edges = append(edges, automation.EdgeRuns)
-	}
-	if m.outbound_messages != nil {
-		edges = append(edges, automation.EdgeOutboundMessages)
 	}
 	return edges
 }
@@ -4455,27 +4395,18 @@ func (m *AutomationMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case automation.EdgeOutboundMessages:
-		ids := make([]ent.Value, 0, len(m.outbound_messages))
-		for id := range m.outbound_messages {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AutomationMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 5)
 	if m.removedversions != nil {
 		edges = append(edges, automation.EdgeVersions)
 	}
 	if m.removedruns != nil {
 		edges = append(edges, automation.EdgeRuns)
-	}
-	if m.removedoutbound_messages != nil {
-		edges = append(edges, automation.EdgeOutboundMessages)
 	}
 	return edges
 }
@@ -4496,19 +4427,13 @@ func (m *AutomationMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case automation.EdgeOutboundMessages:
-		ids := make([]ent.Value, 0, len(m.removedoutbound_messages))
-		for id := range m.removedoutbound_messages {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AutomationMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 5)
 	if m.clearedworkspace {
 		edges = append(edges, automation.EdgeWorkspace)
 	}
@@ -4523,9 +4448,6 @@ func (m *AutomationMutation) ClearedEdges() []string {
 	}
 	if m.clearedruns {
 		edges = append(edges, automation.EdgeRuns)
-	}
-	if m.clearedoutbound_messages {
-		edges = append(edges, automation.EdgeOutboundMessages)
 	}
 	return edges
 }
@@ -4544,8 +4466,6 @@ func (m *AutomationMutation) EdgeCleared(name string) bool {
 		return m.cleareddraft_version
 	case automation.EdgeRuns:
 		return m.clearedruns
-	case automation.EdgeOutboundMessages:
-		return m.clearedoutbound_messages
 	}
 	return false
 }
@@ -4585,9 +4505,6 @@ func (m *AutomationMutation) ResetEdge(name string) error {
 		return nil
 	case automation.EdgeRuns:
 		m.ResetRuns()
-		return nil
-	case automation.EdgeOutboundMessages:
-		m.ResetOutboundMessages()
 		return nil
 	}
 	return fmt.Errorf("unknown Automation edge %s", name)

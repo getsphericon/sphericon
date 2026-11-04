@@ -99,10 +99,10 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionAutomationUpdate
 	case AuditActionAutomationDelete:
 		*s = AuditActionAutomationDelete
-	case AuditActionAutomationDiscard:
-		*s = AuditActionAutomationDiscard
-	case AuditActionAutomationRestore:
-		*s = AuditActionAutomationRestore
+	case AuditActionAutomationArchive:
+		*s = AuditActionAutomationArchive
+	case AuditActionAutomationUnarchive:
+		*s = AuditActionAutomationUnarchive
 	case AuditActionBrandKitCreate:
 		*s = AuditActionBrandKitCreate
 	case AuditActionBrandKitUpdate:

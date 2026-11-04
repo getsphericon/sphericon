@@ -343,8 +343,6 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	LintFindingsToResource(source []emailrender.Finding) []siteapi.LintFinding
 
-	// The contract names the discarded state "archived" (ADR 0049).
-	// goverter:map DiscardedAt ArchivedAt
 	// The live version and the draft are the edges the automations module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | automationVersionOrNull
@@ -354,7 +352,6 @@ type Converter interface {
 	AutomationToResource(source *ent.Automation) siteapi.SiteAutomationResource
 	// An Automation with the revenue the automations module read for it (ADR 0064).
 	// goverter:autoMap Automation
-	// goverter:map Automation.DiscardedAt ArchivedAt
 	// goverter:map Automation.Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Automation.Edges.DraftVersion Draft | automationVersionOrNull
 	AutomationWithRevenueToResource(source automations.WithRevenue) siteapi.SiteAutomationResource

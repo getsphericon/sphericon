@@ -111,10 +111,10 @@ enum AuditAction {
   automationDelete: "automation.delete",
 
   /** Archived an automation */
-  automationDiscard: "automation.discard",
+  automationArchive: "automation.archive",
 
-  /** Restored an automation */
-  automationRestore: "automation.restore",
+  /** Restored an archived automation */
+  automationUnarchive: "automation.unarchive",
 
   /** Created the brand kit */
   brandKitCreate: "brand_kit.create",

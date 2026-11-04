@@ -43,8 +43,8 @@ export const zAuditAction = z.enum([
   'automation.create',
   'automation.update',
   'automation.delete',
-  'automation.discard',
-  'automation.restore',
+  'automation.archive',
+  'automation.unarchive',
   'brand_kit.create',
   'brand_kit.update',
   'brand_kit.delete',
@@ -551,8 +551,7 @@ export const zUsedByKind = z.enum([
   'automation',
   'segment',
   'rule',
-  'enrollment',
-  'message'
+  'enrollment'
 ]);
 
 /**

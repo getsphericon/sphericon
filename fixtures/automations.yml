@@ -61,11 +61,11 @@
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 6}}'
-# Archived (ADR 0049): a discarded inactive one with no Enrollments. Trigger unused elsewhere.
+# Archived (ADR 0100): an inactive one with no Enrollments and a draft. Trigger unused elsewhere.
 - id: 107 # fixture: AutomationArchived
   name: Old referral nudge
   status: inactive
-  discarded_at: '{{daysAgo 8}}'
+  archived_at: '{{daysAgo 8}}'
   draft_version_id: 107
   workspace_id: 1
   created_at: '{{daysAgo 60}}'
@@ -108,11 +108,11 @@
   updated_at: '2026-01-01 00:00:00'
 
 # Initech: an archived Automation whose Enrollment (ContactErasable's) still exists, so Contact
-# erasure must reach it (ADR 0049).
+# erasure must reach it (ADR 0049, ADR 0100).
 - id: 302 # fixture: AutomationInitechArchived
   name: Initech retired drip
   status: inactive
-  discarded_at: '2026-01-03 00:00:00'
+  archived_at: '2026-01-03 00:00:00'
   live_version_id: 302
   workspace_id: 3
   created_at: '2026-01-01 00:00:00'

@@ -149,20 +149,23 @@ function AutomationDetail() {
           <AutomationStatusBadge automation={automation} />
         </Group>
         <Group gap="xs">
+          {/* An archived automation is read-only until it is unarchived (ADR 0100). */}
           {automation.archivedAt ? null : (
-            <DraftControls
-              workspaceId={workspaceId}
-              resource={automation}
-              {...automationDraftActions(t)}
-            />
+            <>
+              <DraftControls
+                workspaceId={workspaceId}
+                resource={automation}
+                {...automationDraftActions(t)}
+              />
+              <ButtonLink
+                variant="default"
+                to={automationsEditRoute.to}
+                params={{ workspaceId, automationId }}
+              >
+                {t(($) => $.actions.edit)}
+              </ButtonLink>
+            </>
           )}
-          <ButtonLink
-            variant="default"
-            to={automationsEditRoute.to}
-            params={{ workspaceId, automationId }}
-          >
-            {t(($) => $.actions.edit)}
-          </ButtonLink>
           <ButtonLink variant="subtle" to={automationsRoute.to} params={{ workspaceId }}>
             {t(($) => $.actions.back)}
           </ButtonLink>

@@ -912,25 +912,27 @@ func requireAutomations(ctx context.Context, s *ent.Scoped, actions []Action) er
 	return nil
 }
 
-// EnrollingInto returns the kept Rules whose live version or draft has an Action enrolling
-// Contacts in the Automation. A removal of the Automation is refused while there are any (ADR
-// 0049, ADR 0054; spec #767, "In use").
-func EnrollingInto(ctx context.Context, s *ent.Scoped, automationID int64) ([]*ent.Rule, error) {
-	kept, err := withVersions(s.Rule().Query()).Order(ent.Asc(rule.FieldID)).All(ctx)
+// ActiveEnrollingInto returns the active Rules whose live version has an Action enrolling Contacts
+// in the Automation, in id order: Live use of the Automation, which refuses its Archive (ADR 0099,
+// ADR 0100). A draft enrolls nobody until it is published, and Publish refuses an archived
+// Automation, so neither a draft nor an inactive Rule counts.
+func ActiveEnrollingInto(ctx context.Context, s *ent.Scoped, automationID int64) ([]*ent.Rule, error) {
+	active, err := s.Rule().Query().
+		Where(rule.StatusEQ(rule.StatusActive), rule.HasLiveVersion()).
+		WithLiveVersion().
+		Order(ent.Asc(rule.FieldID)).
+		All(ctx)
 	if err != nil {
 		return nil, err
 	}
 	var using []*ent.Rule
-	for _, r := range kept {
-		for _, v := range versions(r) {
-			actions, err := DecodeActions(v.Actions)
-			if err != nil {
-				return nil, err
-			}
-			if slices.ContainsFunc(actions, func(a Action) bool { return a.EnrollsInto(automationID) }) {
-				using = append(using, r)
-				break
-			}
+	for _, r := range active {
+		actions, err := DecodeActions(r.Edges.LiveVersion.Actions)
+		if err != nil {
+			return nil, err
+		}
+		if slices.ContainsFunc(actions, func(a Action) bool { return a.EnrollsInto(automationID) }) {
+			using = append(using, r)
 		}
 	}
 	return using, nil

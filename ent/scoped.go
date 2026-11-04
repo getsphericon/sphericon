@@ -2271,43 +2271,40 @@ type AutomationScoped struct{ s *Scoped }
 // Automation returns the Automation entities of the Workspace.
 func (s *Scoped) Automation() *AutomationScoped { return &AutomationScoped{s: s} }
 
-// Query returns a Automation query already confined to the Workspace, hiding discarded rows
-// (a list query; QueryWithDiscarded sees them too).
+// Query returns a Automation query already confined to the Workspace, hiding archived rows
+// (a list query; QueryWithArchived sees them too).
 func (t *AutomationScoped) Query() *AutomationQuery {
-	return t.s.c.Automation.Query().Where(automation.WorkspaceID(t.s.ws), automation.DiscardedAtIsNil())
+	return t.s.c.Automation.Query().Where(automation.WorkspaceID(t.s.ws), automation.ArchivedAtIsNil())
 }
 
-// QueryWithDiscarded returns a Automation query confined to the Workspace that also sees discarded rows.
-func (t *AutomationScoped) QueryWithDiscarded() *AutomationQuery {
+// QueryWithArchived returns a Automation query confined to the Workspace that also sees archived rows.
+func (t *AutomationScoped) QueryWithArchived() *AutomationQuery {
 	return t.s.c.Automation.Query().Where(automation.WorkspaceID(t.s.ws))
 }
 
-// QueryDiscarded returns a Automation query confined to the Workspace that sees only discarded rows.
-func (t *AutomationScoped) QueryDiscarded() *AutomationQuery {
-	return t.QueryWithDiscarded().Where(automation.DiscardedAtNotNil())
+// QueryArchived returns a Automation query confined to the Workspace that sees only archived rows
+// (the archived view).
+func (t *AutomationScoped) QueryArchived() *AutomationQuery {
+	return t.QueryWithArchived().Where(automation.ArchivedAtNotNil())
 }
 
-// Get returns the Automation with the id, discarded or not; a row of another Workspace is not found.
+// Get returns the Automation with the id, archived or not; a row of another Workspace is not found.
 func (t *AutomationScoped) Get(ctx context.Context, id int64) (*Automation, error) {
-	return t.QueryWithDiscarded().Where(automation.ID(id)).Only(ctx)
+	return t.QueryWithArchived().Where(automation.ID(id)).Only(ctx)
 }
 
-// Discard stamps discarded_at on the kept Automation with the id (ps fence it further); a row of
-// another Workspace, an already discarded row or one a predicate excludes is not found.
-func (t *AutomationScoped) Discard(ctx context.Context, id int64, ps ...predicate.Automation) error {
-	return t.setDiscarded(ctx, id, true, ps)
+// Archive stamps archived_at on the kept Automation with the id (ps fence it further); a row of
+// another Workspace, an already archived row or one a predicate excludes is not found.
+func (t *AutomationScoped) Archive(ctx context.Context, id int64, ps ...predicate.Automation) error {
+	where := append([]predicate.Automation{automation.ID(id), automation.WorkspaceID(t.s.ws), automation.ArchivedAtIsNil()}, ps...)
+	return t.setArchived(ctx, id, where, "archive", func(u *AutomationUpdateOne) { u.SetArchivedAt(time.Now()) })
 }
 
-// Undiscard clears discarded_at on the discarded Automation with the id; a row that is not
-// discarded is not found.
-func (t *AutomationScoped) Undiscard(ctx context.Context, id int64) error {
-	return t.setDiscarded(ctx, id, false, nil)
-}
-
-// Restore is Undiscard that leaves a kept Automation as it is: only a row that does not exist in the
-// Workspace is not found.
-func (t *AutomationScoped) Restore(ctx context.Context, id int64) error {
-	err := t.Undiscard(ctx, id)
+// Unarchive clears archived_at on the Automation with the id. Unarchiving a kept row changes
+// nothing; only a row that does not exist in the Workspace is not found.
+func (t *AutomationScoped) Unarchive(ctx context.Context, id int64) error {
+	where := []predicate.Automation{automation.ID(id), automation.WorkspaceID(t.s.ws), automation.ArchivedAtNotNil()}
+	err := t.setArchived(ctx, id, where, "unarchive", func(u *AutomationUpdateOne) { u.ClearArchivedAt() })
 	if !IsNotFound(err) {
 		return err
 	}
@@ -2315,27 +2312,13 @@ func (t *AutomationScoped) Restore(ctx context.Context, id int64) error {
 	return err
 }
 
-func (t *AutomationScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Automation) error {
-	where := append([]predicate.Automation{automation.ID(id), automation.WorkspaceID(t.s.ws)}, ps...)
-	if discard {
-		where = append(where, automation.DiscardedAtIsNil())
-	} else {
-		where = append(where, automation.DiscardedAtNotNil())
-	}
+func (t *AutomationScoped) setArchived(ctx context.Context, id int64, where []predicate.Automation, verb string, set func(*AutomationUpdateOne)) error {
 	write := func(c *Client) (*Automation, error) {
 		u := c.Automation.UpdateOneID(id).Where(where...)
-		if discard {
-			u.SetDiscardedAt(time.Now())
-		} else {
-			u.ClearDiscardedAt()
-		}
+		set(u)
 		return u.Save(ctx)
 	}
 	if t.s.auditing() {
-		verb := "restore"
-		if discard {
-			verb = "discard"
-		}
 		return t.s.audited(ctx, func(ts *Scoped) error {
 			before, err := ts.c.Automation.Query().Where(where...).Only(ctx)
 			if err != nil {
@@ -2466,15 +2449,15 @@ func (x *AutomationScopedCreate) SetNillableUpdatedAt(v *time.Time) *AutomationS
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *AutomationScopedCreate) SetDiscardedAt(v time.Time) *AutomationScopedCreate {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *AutomationScopedCreate) SetArchivedAt(v time.Time) *AutomationScopedCreate {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *AutomationScopedCreate) SetNillableDiscardedAt(v *time.Time) *AutomationScopedCreate {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *AutomationScopedCreate) SetNillableArchivedAt(v *time.Time) *AutomationScopedCreate {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
@@ -2568,18 +2551,6 @@ func (x *AutomationScopedCreate) AddRuns(v ...*AutomationRun) *AutomationScopedC
 	return x
 }
 
-// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
-func (x *AutomationScopedCreate) AddOutboundMessageIDs(ids ...int64) *AutomationScopedCreate {
-	x.b.AddOutboundMessageIDs(ids...)
-	return x
-}
-
-// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
-func (x *AutomationScopedCreate) AddOutboundMessages(v ...*OutboundMessage) *AutomationScopedCreate {
-	x.b.AddOutboundMessages(v...)
-	return x
-}
-
 func (x *AutomationScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -2594,9 +2565,6 @@ func (x *AutomationScopedCreate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
-	}
-	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
-		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	return nil
 }
@@ -2704,21 +2672,21 @@ func (u *AutomationScopedUpsert) UpdateUpdatedAt() *AutomationScopedUpsert {
 	return u
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *AutomationScopedUpsert) SetDiscardedAt(v time.Time) *AutomationScopedUpsert {
-	u.u.Set(automation.FieldDiscardedAt, v)
+// SetArchivedAt sets the "archived_at" field.
+func (u *AutomationScopedUpsert) SetArchivedAt(v time.Time) *AutomationScopedUpsert {
+	u.u.Set(automation.FieldArchivedAt, v)
 	return u
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *AutomationScopedUpsert) UpdateDiscardedAt() *AutomationScopedUpsert {
-	u.u.SetExcluded(automation.FieldDiscardedAt)
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *AutomationScopedUpsert) UpdateArchivedAt() *AutomationScopedUpsert {
+	u.u.SetExcluded(automation.FieldArchivedAt)
 	return u
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *AutomationScopedUpsert) ClearDiscardedAt() *AutomationScopedUpsert {
-	u.u.SetNull(automation.FieldDiscardedAt)
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *AutomationScopedUpsert) ClearArchivedAt() *AutomationScopedUpsert {
+	u.u.SetNull(automation.FieldArchivedAt)
 	return u
 }
 
@@ -2972,21 +2940,21 @@ func (x *AutomationScopedUpdateOne) SetUpdatedAt(v time.Time) *AutomationScopedU
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *AutomationScopedUpdateOne) SetDiscardedAt(v time.Time) *AutomationScopedUpdateOne {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *AutomationScopedUpdateOne) SetArchivedAt(v time.Time) *AutomationScopedUpdateOne {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *AutomationScopedUpdateOne) SetNillableDiscardedAt(v *time.Time) *AutomationScopedUpdateOne {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *AutomationScopedUpdateOne) SetNillableArchivedAt(v *time.Time) *AutomationScopedUpdateOne {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (x *AutomationScopedUpdateOne) ClearDiscardedAt() *AutomationScopedUpdateOne {
-	x.b.ClearDiscardedAt()
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (x *AutomationScopedUpdateOne) ClearArchivedAt() *AutomationScopedUpdateOne {
+	x.b.ClearArchivedAt()
 	return x
 }
 
@@ -3152,36 +3120,6 @@ func (x *AutomationScopedUpdateOne) RemoveRuns(v ...*AutomationRun) *AutomationS
 	return x
 }
 
-// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
-func (x *AutomationScopedUpdateOne) AddOutboundMessageIDs(ids ...int64) *AutomationScopedUpdateOne {
-	x.b.AddOutboundMessageIDs(ids...)
-	return x
-}
-
-// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
-func (x *AutomationScopedUpdateOne) AddOutboundMessages(v ...*OutboundMessage) *AutomationScopedUpdateOne {
-	x.b.AddOutboundMessages(v...)
-	return x
-}
-
-// ClearOutboundMessages clears the "outbound_messages" edges to the OutboundMessage entity.
-func (x *AutomationScopedUpdateOne) ClearOutboundMessages() *AutomationScopedUpdateOne {
-	x.b.ClearOutboundMessages()
-	return x
-}
-
-// RemoveOutboundMessageIDs removes the "outbound_messages" edge to OutboundMessage entities by IDs.
-func (x *AutomationScopedUpdateOne) RemoveOutboundMessageIDs(ids ...int64) *AutomationScopedUpdateOne {
-	x.b.RemoveOutboundMessageIDs(ids...)
-	return x
-}
-
-// RemoveOutboundMessages removes "outbound_messages" edges to OutboundMessage entities.
-func (x *AutomationScopedUpdateOne) RemoveOutboundMessages(v ...*OutboundMessage) *AutomationScopedUpdateOne {
-	x.b.RemoveOutboundMessages(v...)
-	return x
-}
-
 func (x *AutomationScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -3196,9 +3134,6 @@ func (x *AutomationScopedUpdateOne) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
-	}
-	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
-		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	return nil
 }
@@ -3275,21 +3210,21 @@ func (x *AutomationScopedUpdate) SetUpdatedAt(v time.Time) *AutomationScopedUpda
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *AutomationScopedUpdate) SetDiscardedAt(v time.Time) *AutomationScopedUpdate {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *AutomationScopedUpdate) SetArchivedAt(v time.Time) *AutomationScopedUpdate {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *AutomationScopedUpdate) SetNillableDiscardedAt(v *time.Time) *AutomationScopedUpdate {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *AutomationScopedUpdate) SetNillableArchivedAt(v *time.Time) *AutomationScopedUpdate {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (x *AutomationScopedUpdate) ClearDiscardedAt() *AutomationScopedUpdate {
-	x.b.ClearDiscardedAt()
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (x *AutomationScopedUpdate) ClearArchivedAt() *AutomationScopedUpdate {
+	x.b.ClearArchivedAt()
 	return x
 }
 
@@ -3455,36 +3390,6 @@ func (x *AutomationScopedUpdate) RemoveRuns(v ...*AutomationRun) *AutomationScop
 	return x
 }
 
-// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
-func (x *AutomationScopedUpdate) AddOutboundMessageIDs(ids ...int64) *AutomationScopedUpdate {
-	x.b.AddOutboundMessageIDs(ids...)
-	return x
-}
-
-// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
-func (x *AutomationScopedUpdate) AddOutboundMessages(v ...*OutboundMessage) *AutomationScopedUpdate {
-	x.b.AddOutboundMessages(v...)
-	return x
-}
-
-// ClearOutboundMessages clears the "outbound_messages" edges to the OutboundMessage entity.
-func (x *AutomationScopedUpdate) ClearOutboundMessages() *AutomationScopedUpdate {
-	x.b.ClearOutboundMessages()
-	return x
-}
-
-// RemoveOutboundMessageIDs removes the "outbound_messages" edge to OutboundMessage entities by IDs.
-func (x *AutomationScopedUpdate) RemoveOutboundMessageIDs(ids ...int64) *AutomationScopedUpdate {
-	x.b.RemoveOutboundMessageIDs(ids...)
-	return x
-}
-
-// RemoveOutboundMessages removes "outbound_messages" edges to OutboundMessage entities.
-func (x *AutomationScopedUpdate) RemoveOutboundMessages(v ...*OutboundMessage) *AutomationScopedUpdate {
-	x.b.RemoveOutboundMessages(v...)
-	return x
-}
-
 func (x *AutomationScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -3499,9 +3404,6 @@ func (x *AutomationScopedUpdate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
-	}
-	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
-		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	return nil
 }

@@ -63,7 +63,6 @@ export default interface Resources {
     },
     "alerts": {
       "automationArchiveErrorTitle": "Failed to archive automation",
-      "automationDeleteErrorTitle": "Failed to delete automation",
       "automationLoadErrorTitle": "Failed to load automations",
       "automationRestoreErrorTitle": "Failed to restore automation",
       "automationSaveErrorMessage": "We couldn't save your automation. Please try again.",
@@ -238,10 +237,10 @@ export default interface Resources {
       "apiTokenDelete": "Deleted an API token",
       "apiTokenUpdate": "Changed an API token",
       "auditLogExport": "Exported the audit log",
+      "automationArchive": "Archived an automation",
       "automationCreate": "Created an automation",
       "automationDelete": "Deleted an automation",
-      "automationDiscard": "Archived an automation",
-      "automationRestore": "Restored an automation",
+      "automationUnarchive": "Restored an automation",
       "automationUpdate": "Changed an automation",
       "brandKitCreate": "Created the brand kit",
       "brandKitDelete": "Deleted the brand kit",
@@ -650,7 +649,6 @@ export default interface Resources {
       "title": "Confirm your subscription"
     },
     "confirmations": {
-      "deleteAutomation": "The automation is deleted for good. One that already enrolled contacts or sent mail cannot be deleted: archive it instead.",
       "deleteRule": "The rule stops firing and is deleted for good. What it has already done to contacts stays.",
       "deleteTag": "The tag is removed from the catalogue. A tag that a segment rule or an automation step uses cannot be deleted: change those first.",
       "deleteTemplate": "The template is deleted for good. Make sure no broadcast or automation still sends it.",
@@ -1295,7 +1293,6 @@ export default interface Resources {
       "automationArchived": "Automation archived",
       "automationCreated": "Automation created",
       "automationDeactivated": "Automation deactivated",
-      "automationDeleted": "Automation deleted",
       "automationPublished": "Automation published",
       "automationRestored": "Automation restored",
       "automationReverted": "Unpublished changes reverted",
@@ -1332,8 +1329,7 @@ export default interface Resources {
       "templateUpdated": "Template updated",
       "testSent": "Test email sent",
       "testTextSent": "Test text sent",
-      "usedByEnrollments": "{{count, number}} enrollment of \"{{name}}\"" | "{{count, number}} enrollments of \"{{name}}\"",
-      "usedByMessages": "{{count, number}} message sent by \"{{name}}\"" | "{{count, number}} messages sent by \"{{name}}\""
+      "usedByEnrollments": "{{count, number}} enrollment of \"{{name}}\"" | "{{count, number}} enrollments of \"{{name}}\""
     },
     "oauthConsent": {
       "allow": "Allow access",
@@ -2486,7 +2482,6 @@ export default interface Resources {
       "automation": "Automation",
       "broadcast": "Broadcast",
       "enrollment": "Enrollment",
-      "message": "Sent message",
       "rule": "Rule",
       "segment": "Segment"
     },

@@ -210,9 +210,7 @@ type Converter interface {
 	StartLinkToResource(source bindings.StartLink) externalapi.TelegramStartLinkResource
 	// goverter:useEmptyOnNil:slice
 	TagsToResources(source []*ent.Tag) []externalapi.TagResource
-	// The contract names the discarded state "archived" (ADR 0049). The live version and the
-	// draft are the edges the automations module loads (ADR 0065).
-	// goverter:map DiscardedAt ArchivedAt
+	// The live version and the draft are the edges the automations module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | automationVersionOrNull
 	AutomationToResource(source *ent.Automation) externalapi.AutomationResource

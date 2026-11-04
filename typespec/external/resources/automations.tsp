@@ -365,24 +365,22 @@ model AutomationStepFigures {
 }
 
 /**
- * Delete removes an automation that has no enrollments and has sent nothing for good; one with
- * either is history and is archived instead (ADR 0049), so a delete of it is a 409 whose `usedBy`
- * carries their counts.
+ * An automation is archived, never deleted (ADR 0100): it has no delete. An archived automation is
+ * read-only until it is unarchived: an edit, publish, revert or deactivate of it is a 409.
  */
 @tag("Automations")
 interface Automations
-  extends ExternalCrud<
+  extends ExternalCrudKept<
       AutomationResource,
       CreateAutomationInput,
       UpdateAutomationInput,
       ApiTokenScope.automationsRead,
       ApiTokenScope.automationsWrite,
-      ApiTokenScope.automationsWrite,
       never,
-      InUseProblem,
-      AutomationsListFilter
+      AutomationsListFilter,
+      ConflictProblem
     > {
-  /** Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments (`usedBy` carries their count). */
+  /** Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or an active rule enrolls contacts in it (`usedBy` names them). */
   @action("archive")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsWrite])
@@ -395,7 +393,7 @@ interface Automations
     | NotFoundProblem
     | InUseProblem;
 
-  /** Restore an archived automation to the list, inactive: only publish makes it enroll again */
+  /** Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again */
   @action("unarchive")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsWrite])
@@ -407,7 +405,7 @@ interface Automations
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. Needs the automations:publish scope. */
+  /** Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. 409 for an archived automation too. Needs the automations:publish scope. */
   @action("publish")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsPublish])
@@ -421,7 +419,7 @@ interface Automations
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. Needs the automations:write scope. */
+  /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live, 409 when the automation is archived. Needs the automations:write scope. */
   @action("revert")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsWrite])
@@ -432,6 +430,7 @@ interface Automations
     | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
+    | ConflictProblem
     | UnprocessableEntityProblem;
 
   /** Read the report: the engagement of the automation's emails over its whole history, and its
@@ -455,7 +454,7 @@ interface Automations
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write scope. */
+  /** Deactivate an automation (stops new enrollments; in-flight ones finish). 409 when it is archived. Needs the automations:write scope. */
   @action("deactivate")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsWrite])
@@ -465,7 +464,8 @@ interface Automations
     | UnauthorizedProblem
     | ForbiddenProblem
     | TooManyRequestsProblem
-    | NotFoundProblem;
+    | NotFoundProblem
+    | ConflictProblem;
 
   /** Render an HTTP step's body for a Contact and validate it, calling nothing */
   @collectionAction(AutomationResource, "dry-run-http-step")
@@ -483,3 +483,8 @@ interface Automations
     | NotFoundProblem
     | UnprocessableEntityProblem;
 }
+
+@@doc(
+  Automations.update,
+  "Update an automation: its name, and its definition written to the draft. 409 when the automation is archived. Needs the automations:write scope."
+);

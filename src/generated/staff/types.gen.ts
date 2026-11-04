@@ -681,8 +681,7 @@ export type UsedBy = {
   name: string;
   /**
    * How many rows the entry stands for; absent means one. An `enrollment` entry names the
-   * Automation (id, name) and counts its Enrollments; a `message` entry names it and counts its
-   * sent Outbound messages.
+   * Automation (id, name) and counts its active Enrollments.
    */
   count?: number;
 };
@@ -696,8 +695,7 @@ export const UsedByKind = {
   AUTOMATION: 'automation',
   SEGMENT: 'segment',
   RULE: 'rule',
-  ENROLLMENT: 'enrollment',
-  MESSAGE: 'message'
+  ENROLLMENT: 'enrollment'
 } as const;
 
 /**

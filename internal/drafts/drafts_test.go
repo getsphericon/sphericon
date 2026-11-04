@@ -70,6 +70,9 @@ type kind struct {
 	versions func(t *testing.T, id int64) []int
 
 	errNotFound, errNothingToRevert error
+	// errArchived is the 409 of an owner move of an archived object; only the archivableKinds have
+	// one.
+	errArchived error
 }
 
 func automationVersion(v *ent.AutomationVersion) version {
@@ -85,7 +88,7 @@ func automationView(a *ent.Automation, err error) (view, error) {
 	}
 	live, draft := automations.LiveAndDraft(a)
 	return view{
-		active: a.Status == automation.StatusActive, archived: a.DiscardedAt != nil, activatedAt: a.ActivatedAt,
+		active: a.Status == automation.StatusActive, archived: a.ArchivedAt != nil, activatedAt: a.ActivatedAt,
 		live: automationVersion(live), draft: automationVersion(draft),
 	}, nil
 }
@@ -128,6 +131,7 @@ func automationKind(env *testhelper.TestEnv) kind {
 			return lo.Map(rows, func(v *ent.AutomationVersion, _ int) int { return v.Version })
 		},
 		errNotFound: automations.ErrNotFound, errNothingToRevert: automations.ErrNothingToRevert,
+		errArchived: automations.ErrArchived,
 	}
 }
 
@@ -533,10 +537,37 @@ func TestArchiveLeavesTheObjectInactiveAndUnarchiveDoesNotRearmIt(t *testing.T) 
 
 			assert.True(t, archived.archived)
 			assert.False(t, archived.active, "an archived object acts on nothing")
-			require.ErrorIs(t, publishErr, k.errNotFound, "an archived object is restored before it is published")
+			require.ErrorIs(t, publishErr, k.errArchived, "an archived object is unarchived before it is published")
 			assert.False(t, restored.archived)
 			assert.False(t, restored.active, "restoring does not re-arm it")
 			assert.Equal(t, before.live, restored.live, "its live version stays")
+		})
+	}
+}
+
+// An archived object is read-only to its owner until it is unarchived (ADR 0100): an edit, Publish,
+// Revert and Deactivate are refused with the kind's 409, and the object stays as it was.
+func TestAnArchivedObjectTakesNoOwnerMove(t *testing.T) {
+	for _, row := range archivableKinds {
+		t.Run(row.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			k := row.build(env)
+			ctx := context.Background()
+			archived, err := k.archive(ctx, acme(env), k.live)
+			require.NoError(t, err)
+
+			_, editErr := k.edit(ctx, acme(env), k.live, "drafts-archived")
+			_, publishErr := k.publish(ctx, acme(env), k.live)
+			_, revertErr := k.revert(ctx, acme(env), k.live)
+			_, deactivateErr := k.deactivate(ctx, acme(env), k.live)
+			stored, err := k.get(ctx, acme(env), k.live)
+			require.NoError(t, err)
+
+			require.ErrorIs(t, editErr, k.errArchived)
+			require.ErrorIs(t, publishErr, k.errArchived)
+			require.ErrorIs(t, revertErr, k.errArchived)
+			require.ErrorIs(t, deactivateErr, k.errArchived)
+			assert.Equal(t, archived, stored)
 		})
 	}
 }

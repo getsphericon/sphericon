@@ -244,9 +244,9 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "automation.delete":
 		return nil
-	case "automation.discard":
+	case "automation.archive":
 		return nil
-	case "automation.restore":
+	case "automation.unarchive":
 		return nil
 	case "brand_kit.create":
 		return nil
@@ -1093,6 +1093,14 @@ func (s *AutomationsDeactivateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *AutomationsDeactivateConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AutomationsDeactivateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1110,46 +1118,6 @@ func (s *AutomationsDeactivateNotFound) Validate() error {
 }
 
 func (s *AutomationsDeactivateUnauthorized) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *AutomationsDeleteBadRequest) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *AutomationsDeleteForbidden) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *AutomationsDeleteNotFound) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *AutomationsDeleteUnauthorized) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *AutomationsDeleteUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1404,6 +1372,14 @@ func (s *AutomationsRevertBadRequest) Validate() error {
 	return nil
 }
 
+func (s *AutomationsRevertConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AutomationsRevertForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1469,6 +1445,14 @@ func (s *AutomationsUnarchiveUnauthorized) Validate() error {
 }
 
 func (s *AutomationsUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsUpdateConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -10651,8 +10635,6 @@ func (s UsedByKind) Validate() error {
 	case "rule":
 		return nil
 	case "enrollment":
-		return nil
-	case "message":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

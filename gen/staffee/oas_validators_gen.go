@@ -81,9 +81,9 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "automation.delete":
 		return nil
-	case "automation.discard":
+	case "automation.archive":
 		return nil
-	case "automation.restore":
+	case "automation.unarchive":
 		return nil
 	case "brand_kit.create":
 		return nil

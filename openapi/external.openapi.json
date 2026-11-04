@@ -1539,7 +1539,7 @@
       },
       "put": {
         "operationId": "Automations_update",
-        "description": "Update a resource",
+        "description": "Update an automation: its name, and its definition written to the draft. 409 when the automation is archived. Needs the automations:write scope.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -1588,6 +1588,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1663,132 +1673,12 @@
           }
         },
         "x-required-scopes": ["automations:write"]
-      },
-      "delete": {
-        "operationId": "Automations_delete",
-        "description": "Delete a resource",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/AutomationResourceKey"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
-          },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "RFC 7807 unauthorized response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "RFC 7807 forbidden response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "RFC 7807 conflict response for a removal refused because live work still uses the row\n(ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,\nIntegration, Sending domain or Automation answers it.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InUseProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
-            "headers": {
-              "Retry-After": {
-                "required": true,
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Limit": {
-                "required": true,
-                "description": "The request budget of the window that was exceeded",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Remaining": {
-                "required": true,
-                "description": "Requests left in the current window",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Reset": {
-                "required": true,
-                "description": "Unix time at which the window resets",
-                "schema": {
-                  "type": "integer",
-                  "format": "int64"
-                }
-              }
-            },
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Automations"],
-        "x-required-scopes": ["automations:write"]
       }
     },
     "/automations/{id}/archive": {
       "post": {
         "operationId": "Automations_archive",
-        "description": "Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments (`usedBy` carries their count).",
+        "description": "Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or an active rule enrolls contacts in it (`usedBy` names them).",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -1907,7 +1797,7 @@
     "/automations/{id}/deactivate": {
       "post": {
         "operationId": "Automations_deactivate",
-        "description": "Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write scope.",
+        "description": "Deactivate an automation (stops new enrollments; in-flight ones finish). 409 when it is archived. Needs the automations:write scope.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -1956,6 +1846,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2016,7 +1916,7 @@
     "/automations/{id}/publish": {
       "post": {
         "operationId": "Automations_publish",
-        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. Needs the automations:publish scope.",
+        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. 409 for an archived automation too. Needs the automations:publish scope.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -2272,7 +2172,7 @@
     "/automations/{id}/revert": {
       "post": {
         "operationId": "Automations_revert",
-        "description": "Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. Needs the automations:write scope.",
+        "description": "Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live, 409 when the automation is archived. Needs the automations:write scope.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -2321,6 +2221,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2391,7 +2301,7 @@
     "/automations/{id}/unarchive": {
       "post": {
         "operationId": "Automations_unarchive",
-        "description": "Restore an archived automation to the list, inactive: only publish makes it enroll again",
+        "description": "Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -14269,8 +14179,8 @@
           "automation.create",
           "automation.update",
           "automation.delete",
-          "automation.discard",
-          "automation.restore",
+          "automation.archive",
+          "automation.unarchive",
           "brand_kit.create",
           "brand_kit.update",
           "brand_kit.delete",
@@ -21546,14 +21456,14 @@
           "count": {
             "type": "integer",
             "format": "int32",
-            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its Enrollments; a `message` entry names it and counts its\nsent Outbound messages."
+            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its active Enrollments."
           }
         },
         "description": "A row that uses the one a removal was refused for: what a client shows to say what to\nchange first"
       },
       "UsedByKind": {
         "type": "string",
-        "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "message"],
+        "enum": ["broadcast", "automation", "segment", "rule", "enrollment"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "Versions": {

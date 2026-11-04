@@ -474,8 +474,8 @@ const (
 	AuditActionAutomationCreate            AuditAction = "automation.create"
 	AuditActionAutomationUpdate            AuditAction = "automation.update"
 	AuditActionAutomationDelete            AuditAction = "automation.delete"
-	AuditActionAutomationDiscard           AuditAction = "automation.discard"
-	AuditActionAutomationRestore           AuditAction = "automation.restore"
+	AuditActionAutomationArchive           AuditAction = "automation.archive"
+	AuditActionAutomationUnarchive         AuditAction = "automation.unarchive"
 	AuditActionBrandKitCreate              AuditAction = "brand_kit.create"
 	AuditActionBrandKitUpdate              AuditAction = "brand_kit.update"
 	AuditActionBrandKitDelete              AuditAction = "brand_kit.delete"
@@ -568,8 +568,8 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionAutomationCreate,
 		AuditActionAutomationUpdate,
 		AuditActionAutomationDelete,
-		AuditActionAutomationDiscard,
-		AuditActionAutomationRestore,
+		AuditActionAutomationArchive,
+		AuditActionAutomationUnarchive,
 		AuditActionBrandKitCreate,
 		AuditActionBrandKitUpdate,
 		AuditActionBrandKitDelete,
@@ -698,9 +698,9 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionAutomationDelete:
 		return []byte(s), nil
-	case AuditActionAutomationDiscard:
+	case AuditActionAutomationArchive:
 		return []byte(s), nil
-	case AuditActionAutomationRestore:
+	case AuditActionAutomationUnarchive:
 		return []byte(s), nil
 	case AuditActionBrandKitCreate:
 		return []byte(s), nil
@@ -919,11 +919,11 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionAutomationDelete:
 		*s = AuditActionAutomationDelete
 		return nil
-	case AuditActionAutomationDiscard:
-		*s = AuditActionAutomationDiscard
+	case AuditActionAutomationArchive:
+		*s = AuditActionAutomationArchive
 		return nil
-	case AuditActionAutomationRestore:
-		*s = AuditActionAutomationRestore
+	case AuditActionAutomationUnarchive:
+		*s = AuditActionAutomationUnarchive
 		return nil
 	case AuditActionBrandKitCreate:
 		*s = AuditActionBrandKitCreate
@@ -2604,6 +2604,10 @@ type AutomationsDeactivateBadRequest ProblemDetails
 
 func (*AutomationsDeactivateBadRequest) automationsDeactivateRes() {}
 
+type AutomationsDeactivateConflict ProblemDetails
+
+func (*AutomationsDeactivateConflict) automationsDeactivateRes() {}
+
 type AutomationsDeactivateForbidden ProblemDetails
 
 func (*AutomationsDeactivateForbidden) automationsDeactivateRes() {}
@@ -2615,31 +2619,6 @@ func (*AutomationsDeactivateNotFound) automationsDeactivateRes() {}
 type AutomationsDeactivateUnauthorized ProblemDetails
 
 func (*AutomationsDeactivateUnauthorized) automationsDeactivateRes() {}
-
-type AutomationsDeleteBadRequest ProblemDetails
-
-func (*AutomationsDeleteBadRequest) automationsDeleteRes() {}
-
-type AutomationsDeleteForbidden ProblemDetails
-
-func (*AutomationsDeleteForbidden) automationsDeleteRes() {}
-
-// AutomationsDeleteNoContent is response for AutomationsDelete operation.
-type AutomationsDeleteNoContent struct{}
-
-func (*AutomationsDeleteNoContent) automationsDeleteRes() {}
-
-type AutomationsDeleteNotFound ProblemDetails
-
-func (*AutomationsDeleteNotFound) automationsDeleteRes() {}
-
-type AutomationsDeleteUnauthorized ProblemDetails
-
-func (*AutomationsDeleteUnauthorized) automationsDeleteRes() {}
-
-type AutomationsDeleteUnprocessableEntity ProblemDetails
-
-func (*AutomationsDeleteUnprocessableEntity) automationsDeleteRes() {}
 
 type AutomationsDryRunHttpStepBadRequest ProblemDetails
 
@@ -2859,6 +2838,10 @@ type AutomationsRevertBadRequest ProblemDetails
 
 func (*AutomationsRevertBadRequest) automationsRevertRes() {}
 
+type AutomationsRevertConflict ProblemDetails
+
+func (*AutomationsRevertConflict) automationsRevertRes() {}
+
 type AutomationsRevertForbidden ProblemDetails
 
 func (*AutomationsRevertForbidden) automationsRevertRes() {}
@@ -2894,6 +2877,10 @@ func (*AutomationsUnarchiveUnauthorized) automationsUnarchiveRes() {}
 type AutomationsUpdateBadRequest ProblemDetails
 
 func (*AutomationsUpdateBadRequest) automationsUpdateRes() {}
+
+type AutomationsUpdateConflict ProblemDetails
+
+func (*AutomationsUpdateConflict) automationsUpdateRes() {}
 
 type AutomationsUpdateForbidden ProblemDetails
 
@@ -10692,7 +10679,6 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 }
 
 func (*InUseProblemDetails) automationsArchiveRes()   {}
-func (*InUseProblemDetails) automationsDeleteRes()    {}
 func (*InUseProblemDetails) customFieldsUpdateRes()   {}
 func (*InUseProblemDetails) integrationsDeleteRes()   {}
 func (*InUseProblemDetails) segmentsArchiveRes()      {}
@@ -15851,7 +15837,6 @@ func (*ProblemDetailsHeaders) authTokensListRes()            {}
 func (*ProblemDetailsHeaders) automationsArchiveRes()        {}
 func (*ProblemDetailsHeaders) automationsCreateRes()         {}
 func (*ProblemDetailsHeaders) automationsDeactivateRes()     {}
-func (*ProblemDetailsHeaders) automationsDeleteRes()         {}
 func (*ProblemDetailsHeaders) automationsDryRunHttpStepRes() {}
 func (*ProblemDetailsHeaders) automationsGetRes()            {}
 func (*ProblemDetailsHeaders) automationsListRes()           {}
@@ -21824,8 +21809,7 @@ type UsedBy struct {
 	// Its name.
 	Name string `json:"name"`
 	// How many rows the entry stands for; absent means one. An `enrollment` entry names the Automation
-	// (id, name) and counts its Enrollments; a `message` entry names it and counts its sent Outbound
-	// messages.
+	// (id, name) and counts its active Enrollments.
 	Count OptInt32 `json:"count"`
 }
 
@@ -21880,7 +21864,6 @@ const (
 	UsedByKindSegment    UsedByKind = "segment"
 	UsedByKindRule       UsedByKind = "rule"
 	UsedByKindEnrollment UsedByKind = "enrollment"
-	UsedByKindMessage    UsedByKind = "message"
 )
 
 // AllValues returns all UsedByKind values.
@@ -21891,7 +21874,6 @@ func (UsedByKind) AllValues() []UsedByKind {
 		UsedByKindSegment,
 		UsedByKindRule,
 		UsedByKindEnrollment,
-		UsedByKindMessage,
 	}
 }
 
@@ -21907,8 +21889,6 @@ func (s UsedByKind) MarshalText() ([]byte, error) {
 	case UsedByKindRule:
 		return []byte(s), nil
 	case UsedByKindEnrollment:
-		return []byte(s), nil
-	case UsedByKindMessage:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -21932,9 +21912,6 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return nil
 	case UsedByKindEnrollment:
 		*s = UsedByKindEnrollment
-		return nil
-	case UsedByKindMessage:
-		*s = UsedByKindMessage
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

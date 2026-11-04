@@ -2562,11 +2562,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 										if len(elem) == 0 {
 											switch r.Method {
-											case "DELETE":
-												s.handleSiteAutomationsDeleteRequest([2]string{
-													args[0],
-													args[1],
-												}, elemIsEscaped, w, r)
 											case "GET":
 												s.handleSiteAutomationsGetRequest([2]string{
 													args[0],
@@ -2579,7 +2574,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 												}, elemIsEscaped, w, r)
 											default:
 												s.notAllowed(w, r, notAllowedParams{
-													allowedMethods: "DELETE,GET,PUT",
+													allowedMethods: "GET,PUT",
 													allowedHeaders: rn49AllowedHeaders,
 													acceptPost:     "",
 													acceptPatch:    "",
@@ -8247,15 +8242,6 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 										if len(elem) == 0 {
 											switch method {
-											case "DELETE":
-												r.name = SiteAutomationsDeleteOperation
-												r.summary = ""
-												r.operationID = "SiteAutomations_delete"
-												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{workspaceId}/automations/{id}"
-												r.args = args
-												r.count = 2
-												return r, true
 											case "GET":
 												r.name = SiteAutomationsGetOperation
 												r.summary = ""

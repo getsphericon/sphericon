@@ -299,8 +299,7 @@ func (l *Lifecycle[O, V, E, B]) Deactivate(ctx context.Context, s *ent.Scoped, i
 // stays. It also makes the object inactive, under the same lock as Publish, so an archived object
 // is never active and unarchiving it brings it back inactive. The definition may refuse it while
 // live work still needs the object. Archiving an archived object changes nothing. It returns the
-// object. A discardable kind archived here (the Automation, until it takes ArchiveMixin) is
-// stamped discarded_at by its store, so its discarded state counts as archived.
+// object; a discardable kind is refused (ent.ErrNotArchivable).
 func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
 	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
@@ -308,7 +307,7 @@ func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id i
 		if err != nil {
 			return err
 		}
-		if st.Archived || st.Discarded {
+		if st.Archived {
 			return nil
 		}
 		if err := l.def.Archivable(ctx, ts, st.Row); err != nil {
@@ -328,7 +327,8 @@ func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id i
 }
 
 // Unarchive brings an archived object back to the lists, inactive: only Publish arms it again.
-// Unarchiving one that is not archived changes nothing. It returns the object.
+// Unarchiving one that is not archived changes nothing. It returns the object; a discardable kind
+// is refused (ent.ErrNotArchivable).
 func (l *Lifecycle[O, V, E, B]) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
 	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
@@ -336,7 +336,7 @@ func (l *Lifecycle[O, V, E, B]) Unarchive(ctx context.Context, s *ent.Scoped, id
 		if err != nil {
 			return err
 		}
-		if !st.Archived && !st.Discarded {
+		if !st.Archived {
 			return nil
 		}
 		if st.Active {

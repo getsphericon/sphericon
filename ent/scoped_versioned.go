@@ -17,6 +17,10 @@ import (
 // discarded (ADR 0100).
 var ErrNotDiscardable = errors.New("ent: an archivable Versioned definition is archived, never discarded")
 
+// ErrNotArchivable: the lifecycle archived or unarchived a Versioned definition that is discarded,
+// never archived (ADR 0100).
+var ErrNotArchivable = errors.New("ent: a discardable Versioned definition is discarded, never archived")
+
 // VersionState is what the lifecycle reads of a Versioned definition's row: its state, its two
 // pointers and the versions they point at, as loaded on the row's edges (nil when there is none
 // or it was not loaded). Archived is set only for an archivable kind (archived_at), Discarded only
@@ -58,7 +62,8 @@ type VersionedStore[O, V any] interface {
 	Newest(ctx context.Context, id int64) (int, error)
 	// DeleteVersion removes a version of the row (a dropped draft, which nothing stands on).
 	DeleteVersion(ctx context.Context, id, versionID int64) error
-	// Archive puts the row aside and Unarchive brings it back (an archivable kind, ADR 0100).
+	// Archive puts the row aside and Unarchive brings it back (an archivable kind, ADR 0100); a
+	// discardable kind answers ErrNotArchivable.
 	Archive(ctx context.Context, id int64) error
 	Unarchive(ctx context.Context, id int64) error
 	// Discard removes the row for good, kept for what refers to it (a discardable kind, ADR
@@ -75,7 +80,7 @@ func (_m *Automation) VersionState() VersionState[Automation, AutomationVersion]
 		ID:          _m.ID,
 		Active:      _m.Status == automation.StatusActive,
 		ActivatedAt: _m.ActivatedAt,
-		Discarded:   _m.DiscardedAt != nil,
+		Archived:    _m.ArchivedAt != nil,
 		LiveID:      _m.LiveVersionID,
 		DraftID:     _m.DraftVersionID,
 		Live:        _m.Edges.LiveVersion,
@@ -97,7 +102,7 @@ func (t *AutomationScoped) Pointers(with ...func(*AutomationVersionQuery)) *Auto
 }
 
 func (p *AutomationPointers) query(id int64) *AutomationQuery {
-	return p.t.QueryWithDiscarded().Where(automation.ID(id)).WithLiveVersion(p.with...).WithDraftVersion(p.with...)
+	return p.t.QueryWithArchived().Where(automation.ID(id)).WithLiveVersion(p.with...).WithDraftVersion(p.with...)
 }
 
 // Load returns the Automation with the id, archived or not, with its live version and draft.
@@ -166,21 +171,19 @@ func (p *AutomationPointers) DeleteVersion(ctx context.Context, id, versionID in
 	return p.t.s.AutomationVersion().DeleteOneID(versionID).Where(automationversion.AutomationID(id)).Exec(ctx)
 }
 
-// Archive stamps discarded_at, until the discardable kinds the lifecycle archives (ADR 0100: the
-// Automation) take ArchiveMixin.
+// Archive puts the Automation aside.
 func (p *AutomationPointers) Archive(ctx context.Context, id int64) error {
-	return p.t.Discard(ctx, id)
+	return p.t.Archive(ctx, id)
 }
 
-// Unarchive clears discarded_at, until the discardable kinds the lifecycle archives take
-// ArchiveMixin.
+// Unarchive brings the archived Automation back.
 func (p *AutomationPointers) Unarchive(ctx context.Context, id int64) error {
-	return p.t.Undiscard(ctx, id)
+	return p.t.Unarchive(ctx, id)
 }
 
-// Discard removes the Automation for good: it leaves the lists and is still read by id.
-func (p *AutomationPointers) Discard(ctx context.Context, id int64) error {
-	return p.t.Discard(ctx, id)
+// Discard answers ErrNotDiscardable: a Automation is archived, never discarded.
+func (p *AutomationPointers) Discard(context.Context, int64) error {
+	return ErrNotDiscardable
 }
 
 var _ VersionedStore[Rule, RuleVersion] = (*RulePointers)(nil)
@@ -283,16 +286,14 @@ func (p *RulePointers) DeleteVersion(ctx context.Context, id, versionID int64) e
 	return p.t.s.RuleVersion().DeleteOneID(versionID).Where(ruleversion.RuleID(id)).Exec(ctx)
 }
 
-// Archive stamps discarded_at, until the discardable kinds the lifecycle archives (ADR 0100: the
-// Automation) take ArchiveMixin.
-func (p *RulePointers) Archive(ctx context.Context, id int64) error {
-	return p.t.Discard(ctx, id)
+// Archive answers ErrNotArchivable: a Rule is discarded, never archived.
+func (p *RulePointers) Archive(context.Context, int64) error {
+	return ErrNotArchivable
 }
 
-// Unarchive clears discarded_at, until the discardable kinds the lifecycle archives take
-// ArchiveMixin.
-func (p *RulePointers) Unarchive(ctx context.Context, id int64) error {
-	return p.t.Undiscard(ctx, id)
+// Unarchive answers ErrNotArchivable: a Rule is discarded, never archived.
+func (p *RulePointers) Unarchive(context.Context, int64) error {
+	return ErrNotArchivable
 }
 
 // Discard removes the Rule for good: it leaves the lists and is still read by id.

@@ -45,8 +45,8 @@ export const AuditAction = {
   AUTOMATION_CREATE: 'automation.create',
   AUTOMATION_UPDATE: 'automation.update',
   AUTOMATION_DELETE: 'automation.delete',
-  AUTOMATION_DISCARD: 'automation.discard',
-  AUTOMATION_RESTORE: 'automation.restore',
+  AUTOMATION_ARCHIVE: 'automation.archive',
+  AUTOMATION_UNARCHIVE: 'automation.unarchive',
   BRAND_KIT_CREATE: 'brand_kit.create',
   BRAND_KIT_UPDATE: 'brand_kit.update',
   BRAND_KIT_DELETE: 'brand_kit.delete',
@@ -1019,8 +1019,7 @@ export type UsedBy = {
   name: string;
   /**
    * How many rows the entry stands for; absent means one. An `enrollment` entry names the
-   * Automation (id, name) and counts its Enrollments; a `message` entry names it and counts its
-   * sent Outbound messages.
+   * Automation (id, name) and counts its active Enrollments.
    */
   count?: number;
 };
@@ -1034,8 +1033,7 @@ export const UsedByKind = {
   AUTOMATION: 'automation',
   SEGMENT: 'segment',
   RULE: 'rule',
-  ENROLLMENT: 'enrollment',
-  MESSAGE: 'message'
+  ENROLLMENT: 'enrollment'
 } as const;
 
 /**

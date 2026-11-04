@@ -1438,22 +1438,6 @@ func (c *AutomationClient) QueryRuns(_m *Automation) *AutomationRunQuery {
 	return query
 }
 
-// QueryOutboundMessages queries the outbound_messages edge of a Automation.
-func (c *AutomationClient) QueryOutboundMessages(_m *Automation) *OutboundMessageQuery {
-	query := (&OutboundMessageClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(automation.Table, automation.FieldID, id),
-			sqlgraph.To(outboundmessage.Table, outboundmessage.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, automation.OutboundMessagesTable, automation.OutboundMessagesColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
 func (c *AutomationClient) Hooks() []Hook {
 	return c.hooks.Automation
