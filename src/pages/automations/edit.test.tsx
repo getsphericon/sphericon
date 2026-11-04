@@ -14,6 +14,7 @@ import type {
   SiteAutomationVersion,
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -388,4 +389,21 @@ test('Publish from the builder publishes the saved draft', async () => {
 
   await expect.poll(() => published).toEqual(['5'])
   await expect.element(screen.getByText('Automation published')).toBeInTheDocument()
+})
+
+// An archived Automation is read-only until it is unarchived (ADR 0100): its edit URL opens its page,
+// which has no Edit, instead of a builder whose Save would answer 409.
+test('an archived automation opens its page instead of the builder', async () => {
+  worker.use(handleSiteAutomationsGet({ body: { ...STORED, archivedAt: NOW } }))
+
+  const { screen, navigate } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect
+    .poll(() => navigate)
+    .toHaveBeenCalledWith({
+      to: automationsDetailRoute.to,
+      params: { workspaceId: 'TestWs01', automationId: '5' },
+      replace: true,
+    })
+  await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()
 })
