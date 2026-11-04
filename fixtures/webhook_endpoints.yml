@@ -19,7 +19,7 @@
 - id: 102 # fixture: WebhookCodebasicsFailing
   url: https://failing.codebasics.dev/hook
   secret_encrypted: '{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}'
-  event_types: '["segment.deleted"]'
+  event_types: '["contact.tagged","contact.untagged"]'
   consecutive_failures: 7
   failing_since: '{{hoursAgo 26}}'
   last_error_kind: http_status
@@ -71,14 +71,14 @@
 - id: 21001
   url: https://hooks.brightpath.example/sphericon
   secret_encrypted: '{{ encrypt "whsec_QnJpZ2h0cGF0aF9kZW1vX3NlY3JldF8wMDAwMDAwMDA=" }}'
-  event_types: '["segment.deleted"]'
+  event_types: '["automation.completed","automation.goal_reached"]'
   workspace_id: 20
   created_at: '{{daysAgo 90}}'
   updated_at: '{{daysAgo 90}}'
 - id: 21002
   url: https://crm.brightpath.example/hooks/contacts
   secret_encrypted: '{{ encrypt "whsec_QnJpZ2h0cGF0aF9kZW1vX3NlY3JldF8wMDAwMDAwMDA=" }}'
-  event_types: '["contact.created","contact.updated"]'
+  event_types: '["contact.created","contact.field_changed"]'
   consecutive_failures: 5
   failing_since: '{{hoursAgo 30}}'
   last_error_kind: http_status
