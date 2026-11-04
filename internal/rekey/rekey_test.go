@@ -11,10 +11,13 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/rekey"
+	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -153,6 +156,54 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 	// The old keyset alone no longer reads the rewritten rows: the rotation took effect.
 	_, err = cipherFor(t, cfg.EncryptionKey).Decrypt(integrations[0].ConfigEncrypted)
 	assert.ErrorIs(t, err, secrets.ErrCiphertext)
+}
+
+// A Rule version's http Actions are sealed per field too, and a Firing reads its version after the
+// Rule is deleted: every version of a deleted Rule, its draft included, reads under the retired key.
+func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	cfg, err := config.Load("test")
+	require.NoError(t, err)
+
+	// The HTTP Rule (fixture) has a live version with one http Action and an older one with two;
+	// a draft with a header and a signing secret makes a third version. The Rule has Firings, so
+	// deleting it discards it and keeps every version for them.
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	module := rules.New(env.Cipher, env.Bus)
+	_, err = module.Update(ctx, acme, fixtures.RuleHTTPExecutionID, rules.UpdateInput{Actions: &[]rules.Action{{
+		Type: rules.ActionHTTP, URL: "https://hooks.example.test/rule", Body: "{}", Secret: "whsec_rule_draft",
+		Headers: []httpcall.Header{{Name: "Authorization", Value: "Bearer rule-draft"}},
+	}}})
+	require.NoError(t, err)
+	require.NoError(t, module.Delete(ctx, acme, fixtures.RuleHTTPExecutionID))
+
+	rotatedKeyset, err := secrets.Rotate(cfg.EncryptionKey)
+	require.NoError(t, err)
+	_, err = rekey.New(env.DB, cipherFor(t, rotatedKeyset)).Run(ctx)
+	require.NoError(t, err)
+	retiredKeyset, err := secrets.Retire(rotatedKeyset)
+	require.NoError(t, err)
+	opener := rules.New(cipherFor(t, retiredKeyset), env.Bus)
+
+	versions, err := env.DB.RuleVersion.Query().Where(ruleversion.RuleID(fixtures.RuleHTTPExecutionID)).All(ctx)
+	require.NoError(t, err)
+	require.Len(t, versions, 3)
+	var opened []httpcall.Opened
+	for _, v := range versions {
+		actions, err := rules.DecodeActions(v.Actions)
+		require.NoError(t, err)
+		for _, a := range actions {
+			o, err := opener.OpenHTTP(a)
+			require.NoError(t, err, "rule version %d http Action %s", v.ID, a.ID)
+			opened = append(opened, o)
+		}
+	}
+	assert.Len(t, opened, 4, "the draft's Action, the live one and the older version's two")
+	assert.Contains(t, opened, httpcall.Opened{
+		URL: "https://hooks.example.test/rule", Secret: "whsec_rule_draft",
+		Headers: map[string]string{"Authorization": "Bearer rule-draft"},
+	})
 }
 
 // A value the keyset cannot read means a key is missing: the run stops and says where.

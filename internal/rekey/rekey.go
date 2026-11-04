@@ -6,17 +6,21 @@ package rekey
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/httpcall"
+	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
@@ -204,6 +208,19 @@ func (m *Module) sweeps() []sweep {
 			},
 			seal: m.sealSteps,
 		},
+		{
+			// Every version, the draft and those of a deleted Rule too: a Firing reads its version.
+			column: "rule_versions.actions",
+			page: func(ctx context.Context, after int64, n int) ([]row, error) {
+				rs, err := c.RuleVersion.Query().Where(ruleversion.IDGT(after)).Order(ent.Asc(ruleversion.FieldID)).Limit(n).All(ctx)
+				return rows(rs, func(e *ent.RuleVersion) row { return row{e.ID, e.Actions} }), err
+			},
+			rewrite: func(ctx context.Context, id int64, prev, next string) (bool, error) {
+				n, err := c.RuleVersion.Update().Where(ruleversion.ID(id), ruleversion.Actions(prev)).SetActions(next).Save(ctx)
+				return n > 0, err
+			},
+			seal: m.sealActions,
+		},
 	}
 }
 
@@ -214,36 +231,68 @@ func (m *Module) sealSteps(stored string) (sealed string, changed bool, err erro
 	if err != nil {
 		return "", false, err
 	}
-	rewrap := func(v *string) error {
-		next, did, err := m.cipher.Rewrap(*v)
-		if err != nil || !did {
-			return err
-		}
-		*v, changed = next, true
-		return nil
-	}
 	for i := range steps {
 		if steps[i].Type != automationsteps.HTTP {
 			continue
 		}
-		fields := []*string{&steps[i].URL, &steps[i].Secret}
-		for j := range steps[i].Headers {
-			fields = append(fields, &steps[i].Headers[j].Value)
+		did, err := m.rewrapHTTP(&steps[i].URL, &steps[i].Secret, steps[i].Headers)
+		if err != nil {
+			return "", false, err
 		}
-		for _, f := range fields {
-			if *f == "" {
-				continue
-			}
-			if err := rewrap(f); err != nil {
-				return "", false, err
-			}
-		}
+		changed = changed || did
 	}
 	if !changed {
 		return stored, false, nil
 	}
 	next, err := automations.Encode(steps)
 	return next, true, err
+}
+
+// sealActions rewraps the sealed fields of a Rule version's http Actions, as sealSteps does.
+func (m *Module) sealActions(stored string) (sealed string, changed bool, err error) {
+	actions, err := rules.DecodeActions(stored)
+	if err != nil {
+		return "", false, err
+	}
+	for i := range actions {
+		if actions[i].Type != rules.ActionHTTP {
+			continue
+		}
+		did, err := m.rewrapHTTP(&actions[i].URL, &actions[i].Secret, actions[i].Headers)
+		if err != nil {
+			return "", false, err
+		}
+		changed = changed || did
+	}
+	if !changed {
+		return stored, false, nil
+	}
+	next, err := json.Marshal(actions)
+	return string(next), true, err
+}
+
+// rewrapHTTP rewraps in place an HTTP call's sealed URL, signing secret and header values, and
+// reports whether any was under an older key.
+func (m *Module) rewrapHTTP(url, secret *string, headers []httpcall.Header) (bool, error) {
+	fields := make([]*string, 0, 2+len(headers))
+	fields = append(fields, url, secret)
+	for j := range headers {
+		fields = append(fields, &headers[j].Value)
+	}
+	var changed bool
+	for _, f := range fields {
+		if *f == "" {
+			continue
+		}
+		next, did, err := m.cipher.Rewrap(*f)
+		if err != nil {
+			return false, err
+		}
+		if did {
+			*f, changed = next, true
+		}
+	}
+	return changed, nil
 }
 
 func rows[E any](entities []E, of func(E) row) []row {
