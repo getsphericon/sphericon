@@ -339,7 +339,7 @@ export default interface Resources {
       "websiteUrl": "https://getsphericon.com"
     },
     "automations": {
-      "addAutomation": "New automation",
+      "addAutomation": "Create automation",
       "applyTagNodeDescription": "Add a tag to the contact.",
       "bounced": "Bounced",
       "branchesUnsupported": "Only a single linear path is saved. Nodes off the main chain were ignored.",
@@ -400,10 +400,12 @@ export default interface Resources {
       "liveVersion": "Live version {{number}}",
       "messageDone": "Done",
       "nameLabel": "Name",
+      "noArchivedRecords": "No archived automations",
       "noEndEvent": "None",
       "noEnrollments": "No contacts enrolled yet",
-      "noRecords": "No automations yet",
+      "noRecords": "No automations",
       "opens": "Opens",
+      "pendingDetails": "It runs its last published version: the changes made since then are not published yet.",
       "publish": "Publish",
       "removeTagNodeDescription": "Take a tag off the contact.",
       "results": {
@@ -426,8 +428,11 @@ export default interface Resources {
         "revenue": "Revenue in the period",
         "title": "Results"
       },
-      "statusActive": "Active",
-      "statusInactive": "Inactive",
+      "state": {
+        "active": "Active",
+        "draft": "Draft",
+        "inactive": "Inactive"
+      },
       "statusLabel": "Status",
       "stepApplyTag": "Apply tag",
       "stepEmail": "Send email",
