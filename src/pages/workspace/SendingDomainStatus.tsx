@@ -3,17 +3,10 @@ import { useTranslation } from 'react-i18next'
 
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
 
-// SendingDomainStatus is where a Sending domain stands: deleted (whatever its DNS said last),
-// verified, verification lost since it was verified, or still pending.
+// SendingDomainStatus is where a Sending domain stands: verified, verification lost since it was
+// verified, or still pending.
 export function SendingDomainStatus({ record }: { record: SiteSendingDomainResource }) {
   const { t } = useTranslation()
-  if (record.discardedAt) {
-    return (
-      <Badge color="red" variant="light">
-        {t(($) => $.settings.sendingDomains.statusDeleted)}
-      </Badge>
-    )
-  }
   if (record.verified) {
     return (
       <Badge color="teal" variant="light">

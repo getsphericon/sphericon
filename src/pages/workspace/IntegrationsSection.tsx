@@ -1,5 +1,4 @@
 import {
-  Badge,
   Box,
   EmptyState,
   Alert,
@@ -440,20 +439,7 @@ function IntegrationsList({
             records={rows}
             idAccessor="id"
             columns={[
-              {
-                accessor: 'name',
-                render: (record) =>
-                  record.discardedAt ? (
-                    <Group gap="xs">
-                      {record.name}
-                      <Badge variant="light" color="red">
-                        {t(($) => $.settings.integrations.statusDeleted)}
-                      </Badge>
-                    </Group>
-                  ) : (
-                    record.name
-                  ),
-              },
+              { accessor: 'name' },
               {
                 accessor: 'provider',
                 title: t(($) => $.settings.integrations.providerLabel),
@@ -480,43 +466,39 @@ function IntegrationsList({
               {
                 accessor: 'actions',
                 title: '',
-                render: (record) => {
-                  // A deleted provider is read-only: its history stays, nothing else is offered.
-                  const manage = canManage && !record.discardedAt
-                  return (
-                    <Group gap="xs" wrap="nowrap" justify="flex-end">
-                      {manage || historyOffered ? (
-                        <RowActionsMenu>
-                          {historyOffered ? (
-                            <HistoryMenuItem
-                              workspaceId={workspaceId}
-                              targetType={AUDIT_TARGET_INTEGRATION}
-                              targetId={record.id}
-                            />
-                          ) : null}
-                          {manage && !record.isDefault ? (
-                            <Menu.Item onClick={() => onMakeDefault(record.id)}>
-                              {t(($) => $.settings.integrations.makeDefault)}
+                render: (record) => (
+                  <Group gap="xs" wrap="nowrap" justify="flex-end">
+                    {canManage || historyOffered ? (
+                      <RowActionsMenu>
+                        {historyOffered ? (
+                          <HistoryMenuItem
+                            workspaceId={workspaceId}
+                            targetType={AUDIT_TARGET_INTEGRATION}
+                            targetId={record.id}
+                          />
+                        ) : null}
+                        {canManage && !record.isDefault ? (
+                          <Menu.Item onClick={() => onMakeDefault(record.id)}>
+                            {t(($) => $.settings.integrations.makeDefault)}
+                          </Menu.Item>
+                        ) : null}
+                        {canManage ? (
+                          <>
+                            <Menu.Item onClick={() => onEditLimits(record)}>
+                              {t(($) => $.settings.integrations.providerLimit.edit)}
                             </Menu.Item>
-                          ) : null}
-                          {manage ? (
-                            <>
-                              <Menu.Item onClick={() => onEditLimits(record)}>
-                                {t(($) => $.settings.integrations.providerLimit.edit)}
-                              </Menu.Item>
-                              <Menu.Item onClick={() => onInbound(record)}>
-                                {t(($) => $.settings.integrations.inbound.open)}
-                              </Menu.Item>
-                              <Menu.Item color="red" onClick={() => onDelete(record)}>
-                                {t(($) => $.actions.delete)}
-                              </Menu.Item>
-                            </>
-                          ) : null}
-                        </RowActionsMenu>
-                      ) : null}
-                    </Group>
-                  )
-                },
+                            <Menu.Item onClick={() => onInbound(record)}>
+                              {t(($) => $.settings.integrations.inbound.open)}
+                            </Menu.Item>
+                            <Menu.Item color="red" onClick={() => onDelete(record)}>
+                              {t(($) => $.actions.delete)}
+                            </Menu.Item>
+                          </>
+                        ) : null}
+                      </RowActionsMenu>
+                    ) : null}
+                  </Group>
+                ),
               },
             ]}
             emptyState={<EmptyState title={t(($) => $.settings.integrations.empty)} />}

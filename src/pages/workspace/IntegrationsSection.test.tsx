@@ -562,23 +562,6 @@ test('a member without integrations:manage reads the providers but does not chan
   expect(screen.getByRole('button', { name: 'More actions' }).elements()).toHaveLength(0)
 })
 
-// The list leaves a deleted provider out; a record that says discardedAt is read-only all the same.
-test('a deleted provider shows as deleted and offers its history only', async () => {
-  worker.use(
-    list([{ ...smtp, isDefault: false, discardedAt: '2026-02-01T00:00:00Z' }]),
-    handleSiteAuditList({ body: { items: [] } }),
-  )
-  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
-
-  await expect.element(screen.getByText('Deleted', { exact: true })).toBeInTheDocument()
-  await screen.getByRole('button', { name: 'More actions' }).click()
-  await expect.element(screen.getByRole('menuitem', { name: 'View history' })).toBeInTheDocument()
-  expect(screen.getByRole('menuitem', { name: 'Set as default' }).elements()).toHaveLength(0)
-  expect(screen.getByRole('menuitem', { name: 'Provider limit' }).elements()).toHaveLength(0)
-  expect(screen.getByRole('menuitem', { name: 'Inbound' }).elements()).toHaveLength(0)
-  expect(screen.getByRole('menuitem', { name: 'Delete' }).elements()).toHaveLength(0)
-})
-
 test("a provider's history opens the Audit log filtered to it", async () => {
   worker.use(list([smtp]), handleSiteAuditList({ body: { items: [] } }))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
