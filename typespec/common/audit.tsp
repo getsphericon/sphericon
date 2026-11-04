@@ -185,7 +185,7 @@ enum AuditAction {
   /** Deleted an integration */
   integrationDelete: "integration.delete",
 
-  /** Archived an integration */
+  /** Deleted an integration for good (it stays as history) */
   integrationDiscard: "integration.discard",
 
   /** Restored an integration */
@@ -239,7 +239,7 @@ enum AuditAction {
   /** Deleted a sending domain */
   sendingDomainDelete: "sending_domain.delete",
 
-  /** Archived a sending domain */
+  /** Deleted a sending domain for good (it stays as history) */
   sendingDomainDiscard: "sending_domain.discard",
 
   /** Restored a sending domain */
