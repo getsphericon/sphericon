@@ -1,3 +1,7 @@
+---
+status: superseded in part by ADR 0101 (there is no outbox to prune: domain events are River jobs)
+---
+
 # Event retention: analytical Events expire, evidentiary Events do not
 
 Events and the domain-event outbox grew without bound. We prune them in core with a configurable
