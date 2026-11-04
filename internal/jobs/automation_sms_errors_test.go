@@ -216,6 +216,36 @@ func TestATwilioRefusalOfTheNumberFailsThatMessageAndTheRunGoesOn(t *testing.T) 
 	}
 }
 
+// An alphanumeric sender ID is refused (21606) in a country that does not take sender IDs: that
+// concerns the number it went to, not the account, so the message fails and the Integration keeps
+// sending to the numbers it can reach.
+func TestATwilioRefusalOfAnAlphanumericSenderFailsThatMessageOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	account := env.ConnectTwilio(t)
+	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		Config: siteapi.NewOptIntegrationConfigInput(testhelper.SiteTwilio(account.Account.SID, account.Key.SID, account.Key.Secret, "Acme Shop")),
+	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: account.Integration.ID})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteIntegrationResource{}, res)
+	automationID := smsAutomation(t, env, smsStep(account, "Hello"))
+	confirmSMS(t, env, fixtures.ContactTexterPhone)
+	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	env.Twilio.RefuseNextSend(twiliotest.FromNotCapable)
+
+	runSteps(t, env)
+
+	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
+	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
+	assert.Contains(t, lo.FromPtr(msg.Reason), "message_refused: ")
+	assert.Contains(t, lo.FromPtr(msg.Reason), "(error 21606)")
+	run := env.DB.AutomationRun.GetX(ctx, runID)
+	assert.Equal(t, automationrun.StatusCompleted, run.Status, "the Enrollment goes on")
+	route, err := env.OutboundModule().Route(ctx, env.DB.Scoped(fixtures.AcmeID), "sms", new(int64(account.Integration.ID)))
+	require.NoError(t, err)
+	assert.Empty(t, route.Hold, "the Integration is not held")
+}
+
 // A number Twilio says is no mobile number is suppressed on sms like a hard bounce: the message is
 // Skipped as suppressed, the Enrollment goes on, and the next text to the number is skipped without
 // asking Twilio.

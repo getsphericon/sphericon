@@ -360,12 +360,18 @@ func (f roundTripper) RoundTrip(req *http.Request) (*http.Response, error) { ret
 // secret taken out of its text, its chain kept for errors.Is and errors.As.
 func (a *Account) refusal(err error) error {
 	if rest, ok := errors.AsType[*twclient.TwilioRestError](err); ok {
-		return &messaging.SMSError{Status: rest.Status, Code: rest.Code, Message: rest.Message, Refusal: Classify(rest.Status, rest.Code)}
+		return &messaging.SMSError{Status: rest.Status, Code: rest.Code, Message: rest.Message, Refusal: Classify(rest.Status, rest.Code, a.fromKind())}
 	}
 	if rest, ok := errors.AsType[*twclient.RestErrorV1](err); ok {
-		return &messaging.SMSError{Status: rest.HttpStatusCode, Code: rest.Code, Message: rest.Message, Refusal: Classify(rest.HttpStatusCode, rest.Code)}
+		return &messaging.SMSError{Status: rest.HttpStatusCode, Code: rest.Code, Message: rest.Message, Refusal: Classify(rest.HttpStatusCode, rest.Code, a.fromKind())}
 	}
 	return redacted{msg: strings.ReplaceAll(err.Error(), a.cfg.Secret, "<secret>"), cause: err}
+}
+
+// fromKind is the kind of sender the account sends from.
+func (a *Account) fromKind() messaging.SMSFromKind {
+	kind, _ := FromKind(a.cfg.From)
+	return kind
 }
 
 // redacted is an error whose text has the secret removed and whose cause is kept for Is and As.
@@ -383,6 +389,9 @@ func deref(s *string) string {
 	}
 	return *s
 }
+
+// codeFromNotCapable is Twilio's 21606: the From cannot send to the To.
+const codeFromNotCapable = 21606
 
 // The error-code table: whom each of Twilio's error codes concerns (ADR 0079). Each entry is
 // Twilio's own description at https://www.twilio.com/docs/api/errors/<code>. A code the table does
@@ -437,10 +446,13 @@ var refusals = map[int]messaging.SMSRefusal{
 	30008: messaging.SMSRefusalAmbiguous,
 }
 
-// Classify is whom Twilio's answer of HTTP status and error code concerns. The status decides
+// Classify is whom Twilio's answer of HTTP status and error code concerns, for a message sent from
+// a sender of kind from ("" when it is not known, as for a delivery report). The status decides
 // first, whatever the code: a 401 or a 403 is the account's, a 429 the rate's and a 5xx Twilio's
-// own failure (transient). Otherwise the code decides by the table, ambiguous when it is not there.
-func Classify(status, code int) messaging.SMSRefusal {
+// own failure (transient). Otherwise the code decides by the table, ambiguous when it is not there,
+// except 21606 from an alphanumeric sender ID: a sender ID has no number to be message-capable, so
+// the refusal is the To's country not taking sender IDs, which concerns that number alone.
+func Classify(status, code int, from messaging.SMSFromKind) messaging.SMSRefusal {
 	switch {
 	case status == http.StatusUnauthorized, status == http.StatusForbidden:
 		return messaging.SMSRefusalAccount
@@ -448,6 +460,9 @@ func Classify(status, code int) messaging.SMSRefusal {
 		return messaging.SMSRefusalRate
 	case status >= http.StatusInternalServerError:
 		return messaging.SMSRefusalTransient
+	}
+	if code == codeFromNotCapable && from == messaging.SMSFromAlphanumeric {
+		return messaging.SMSRefusalDestination
 	}
 	if r, ok := refusals[code]; ok {
 		return r

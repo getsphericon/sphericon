@@ -88,7 +88,7 @@ func deadNumber(provider integration.Provider, code string) bool {
 	if err != nil || provider != integration.ProviderTwilio {
 		return false
 	}
-	return twilio.Classify(0, n) == messaging.SMSRefusalDeadNumber
+	return twilio.Classify(0, n, "") == messaging.SMSRefusalDeadNumber
 }
 
 // InboundMessage reads a text for what it means: a stop, a start, or a reply.

@@ -110,6 +110,9 @@ var (
 	NotMobile = Refusal{Status: http.StatusBadRequest, Code: 21614, Message: "'To' number is not a valid mobile number"}
 	// Unknown is a code no table names.
 	Unknown = Refusal{Status: http.StatusBadRequest, Code: 29999, Message: "Something Twilio does not explain"}
+	// FromNotCapable is a From that cannot send to the To: a number that is not message-capable,
+	// or an alphanumeric sender ID the To's country does not take.
+	FromNotCapable = Refusal{Status: http.StatusBadRequest, Code: 21606, Message: "The 'From' phone number provided is not a valid message-capable Twilio phone number for this destination"}
 )
 
 // RefuseSends makes every message create answer r, after the credentials are checked, until
