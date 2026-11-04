@@ -7,6 +7,9 @@ status: accepted
 > Amended by [[0098-a-rule-is-deleted-not-archived]]: a Rule is deleted the same way, read by id
 > with `deletedAt`, and has no archived view.
 
+> Amended by [[0100-archive-is-not-discard]]: the field is `discardedAt`, and a deleted Integration or
+> Sending domain is read-only.
+
 ADR 0049 discarded an Integration and a Sending domain and named the state `archived` in the
 contract, with an `archived` list filter and an `unarchive` operation, and ADR 0066 then gave the app
 a view of the archived ones to restore them, as for a Broadcast or an Automation. Unlike those, a
