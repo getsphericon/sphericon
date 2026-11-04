@@ -7,7 +7,6 @@ import {
   Code,
   CopyButton,
   Group,
-  Loader,
   Menu,
   Modal,
   Select,
@@ -122,7 +121,7 @@ function MembersTabs({
                     data={MEMBER_ROLES}
                     value={changing ? roleChange.role : record.role}
                     disabled={changing}
-                    rightSection={changing ? <Loader size={14} /> : undefined}
+                    loading={changing}
                     onChange={(value) => {
                       if (value && value !== record.role) {
                         onChangeRole(record.id, value)
