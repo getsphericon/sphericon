@@ -74,7 +74,8 @@ function TitleForm({ item }: { item: StaffSignupItemResource }) {
 }
 
 // Delete the item: it leaves the sign-up form, its public page and the list, and cannot be put
-// back, so the page goes back to the list.
+// back, so the page goes back to the list. As it cannot be undone, the item's key is typed first
+// (docs/standards/ui.md, "Deleting").
 function DeleteButton({ item }: { item: StaffSignupItemResource }) {
   const { t } = useTranslation()
   const confirm = useConfirmation()
@@ -96,6 +97,7 @@ function DeleteButton({ item }: { item: StaffSignupItemResource }) {
           title: t(($) => $.console.signupItem.deleteTitle),
           description: t(($) => $.console.signupItem.deleteDescription),
           confirmLabel: t(($) => $.console.signupItem.delete),
+          typedName: item.key,
           onConfirm: () => mutation.mutate({ path: { id: item.id } }),
         })
       }

@@ -333,7 +333,9 @@ test('retitling sends the new title', async () => {
   await expect.poll(() => updates).toEqual([{ title: 'Terms of use' }])
 })
 
-test('deleting asks first, then goes back to the list', async () => {
+// A delete cannot be undone, so it takes the additional confirmation (docs/standards/ui.md,
+// "Deleting"): the item's key is typed before the button enables.
+test('deleting asks for the key first, then goes back to the list', async () => {
   let deleted = 0
   serveItem(item())
   worker.use(
@@ -349,7 +351,9 @@ test('deleting asks first, then goes back to the list', async () => {
   await expect
     .element(dialog.getByText('leaves the sign-up form, its public page', { exact: false }))
     .toBeInTheDocument()
+  await expect.element(dialog.getByRole('button', { name: 'Delete' })).toBeDisabled()
   expect(deleted).toBe(0)
+  await dialog.getByLabelText('Type terms to confirm').fill('terms')
   await dialog.getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => deleted).toBe(1)
