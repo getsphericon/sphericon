@@ -692,7 +692,7 @@ Integration takes, so either is rotated alone. Saving it reads the sender with t
 before the save commits (a wrong or revoked key, or a sender the account does not have, refuses
 the save) and points the sender's callbacks at the Ingest hook where Twilio's API allows it (a
 number's inbound webhook, a Messaging Service's inbound and status webhooks), again when its hook
-key is regenerated; otherwise the hook URL is shown to paste into Twilio. Archiving it leaves the
+key is regenerated; otherwise the hook URL is shown to paste into Twilio. Deleting it leaves the
 sender's webhooks as they are. Its Provider limit is the user's alone. Registering the sender with
 carriers (10DLC, toll-free verification, short codes) is the Workspace's.
 _Avoid_: Provider (alone), ESP, sender, connector

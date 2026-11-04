@@ -42,9 +42,9 @@ func TestExternalAnSMSStepIsPublishedAndKeepsItsIntegrationInUse(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.AutomationResource{}, published)
 
-	archived, err := c.IntegrationsArchive(ctx, externalapi.IntegrationsArchiveParams{ID: externalapi.EntityId(twilio)})
+	deleted, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: externalapi.EntityId(twilio)})
 	require.NoError(t, err)
-	users := usersOfRefusal(t, archived)
+	users := usersOfRefusal(t, deleted)
 	assert.Len(t, automationUsers(users, int64(a.ID)), 1, "the live SMS step sends through it")
 }
 

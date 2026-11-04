@@ -75,11 +75,9 @@ func TestExternalTwilioIntegrationLifecycle(t *testing.T) {
 	assert.Equal(t, []string{"auth_token"}, rotated.SecretsRetiring)
 	assert.Equal(t, read.Config, rotated.Config, "the send credential stays")
 
-	out, err := c.IntegrationsArchive(t.Context(), externalapi.IntegrationsArchiveParams{ID: row.ID})
+	out, err := c.IntegrationsDelete(t.Context(), externalapi.IntegrationsDeleteParams{ID: row.ID})
 	require.NoError(t, err)
-	archived, ok := out.(*externalapi.IntegrationResource)
-	require.Truef(t, ok, "got %T", out)
-	assert.True(t, archived.ArchivedAt.IsSet())
+	assert.IsType(t, &externalapi.IntegrationsDeleteNoContent{}, out)
 }
 
 // readBody is the resource as the API writes it.
