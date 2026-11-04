@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -125,7 +126,7 @@ func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceL
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	integs := integrations.New(bus, cipher, nil, nil, nil, "")
-	domains := sendingdomains.New(bus, cipher, nil)
+	domains := sendingdomains.New(bus, cipher, nil, messaging.NewResolver(cipher, registry.New(cfg.SMTPAllowPrivateHosts, cfg.TelegramBotAPIURL)))
 	segs := segments.New(bus)
 	catalogue := tags.New(bus)
 	ruleset := rules.New(cipher, bus)
