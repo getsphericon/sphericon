@@ -282,7 +282,7 @@ func (versioned) Publishable(ctx context.Context, ts *ent.Scoped, draft *ent.Rul
 	return publishable(ctx, ts, draft)
 }
 
-// Archivable never refuses: Delete discards a Rule with Firings, which are history and stay.
+// Archivable never refuses: a Rule is discarded, never archived (ADR 0100), so it is never asked.
 func (versioned) Archivable(context.Context, *ent.Scoped, *ent.Rule) error { return nil }
 
 // Editable refuses a deleted Rule: it is kept for its Firings and changes no more.
@@ -404,15 +404,15 @@ func versions(r *ent.Rule) []*ent.RuleVersion {
 }
 
 // Delete removes a Rule (ADR 0049, ADR 0098). One with no Firings is purged, with its versions.
-// One with Firings is discarded so they stay as history: it is deactivated under the lock Publish
-// takes, so it never fires again, and it leaves the lists for good; Get still reads it. Deleting a
-// deleted Rule changes nothing.
+// One with Firings is discarded so they stay as history (internal/drafts' Discard): it is
+// deactivated under the lock Publish takes, so it never fires again, and it leaves the lists for
+// good; Get still reads it. Deleting a deleted Rule changes nothing.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	n, err := s.Rule().Purge().Where(rule.ID(id), rule.Not(rule.HasFirings())).Exec(ctx)
 	if err != nil || n > 0 {
 		return err
 	}
-	_, err = m.life.Archive(ctx, s, id)
+	_, err = m.life.Discard(ctx, s, id)
 	return err
 }
 

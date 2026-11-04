@@ -56,8 +56,9 @@ type ScopedEntity struct {
 	// Name is the entity's schema name.
 	Name string
 	// AuditActions are the actions its Audit entries record (`<entity>.<verb>`, the entity being
-	// schema.Audited.Action): create, update and delete, and discard and restore for an entity that
-	// is archived rather than deleted. None when the entity is not audited.
+	// schema.Audited.Action): create, update and delete, then discard and restore for a discardable
+	// entity and archive and unarchive for an archivable one (ADR 0100). None when the entity is not
+	// audited.
 	AuditActions []string
 	// IDs lists the ids of the Workspace's rows, read through the raw client.
 	IDs func(ctx context.Context, c *Client, ws int64) ([]int64, error)

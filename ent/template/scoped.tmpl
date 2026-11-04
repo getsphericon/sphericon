@@ -24,7 +24,7 @@ import (
 
 var (
 	_ = time.Time{}
-	_ predicate.Contact
+	_ predicate.Workspace
 )
 
 // ErrNotInWorkspace: a reference id set on a scoped builder belongs to another Workspace
@@ -110,7 +110,8 @@ func (s *Scoped) verify{{ $n.Name }}(ctx context.Context, ids []int64) error {
 {{ $P := $n.Package }}
 {{ $A := auditOf $n }}
 {{ $D := discardable $n }}
-{{ $Del := "Delete" }}{{ if $D }}{{ $Del = "Purge" }}{{ end }}
+{{ $R := archivable $n }}
+{{ $Del := "Delete" }}{{ if or $D $R }}{{ $Del = "Purge" }}{{ end }}
 
 // {{ $N }}Scoped reaches {{ $N }} entities of one Workspace.
 type {{ $N }}Scoped struct{ s *Scoped }
@@ -119,9 +120,10 @@ type {{ $N }}Scoped struct{ s *Scoped }
 func (s *Scoped) {{ $N }}() *{{ $N }}Scoped { return &{{ $N }}Scoped{s: s} }
 
 // Query returns a {{ $N }} query already confined to the Workspace{{ if $D }}, hiding discarded rows
-// (a list query; QueryWithDiscarded sees them too){{ end }}.
+// (a list query; QueryWithDiscarded sees them too){{ end }}{{ if $R }}, hiding archived rows
+// (a list query; QueryWithArchived sees them too){{ end }}.
 func (t *{{ $N }}Scoped) Query() *{{ $N }}Query {
-	return t.s.c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(t.s.ws){{ if $D }}, {{ $P }}.DiscardedAtIsNil(){{ end }})
+	return t.s.c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(t.s.ws){{ if $D }}, {{ $P }}.DiscardedAtIsNil(){{ end }}{{ if $R }}, {{ $P }}.ArchivedAtIsNil(){{ end }})
 }
 {{ if $D }}
 // QueryWithDiscarded returns a {{ $N }} query confined to the Workspace that also sees discarded rows.
@@ -134,11 +136,69 @@ func (t *{{ $N }}Scoped) QueryDiscarded() *{{ $N }}Query {
 	return t.QueryWithDiscarded().Where({{ $P }}.DiscardedAtNotNil())
 }
 {{ end }}
-// Get returns the {{ $N }} with the id{{ if $D }}, discarded or not{{ end }}; a row of another Workspace is not found.
-func (t *{{ $N }}Scoped) Get(ctx context.Context, id int64) (*{{ $N }}, error) {
-	return t.Query{{ if $D }}WithDiscarded{{ end }}().Where({{ $P }}.ID(id)).Only(ctx)
+{{ if $R }}
+// QueryWithArchived returns a {{ $N }} query confined to the Workspace that also sees archived rows.
+func (t *{{ $N }}Scoped) QueryWithArchived() *{{ $N }}Query {
+	return t.s.c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(t.s.ws))
 }
-{{ if $D }}
+
+// QueryArchived returns a {{ $N }} query confined to the Workspace that sees only archived rows
+// (the archived view).
+func (t *{{ $N }}Scoped) QueryArchived() *{{ $N }}Query {
+	return t.QueryWithArchived().Where({{ $P }}.ArchivedAtNotNil())
+}
+{{ end }}
+// Get returns the {{ $N }} with the id{{ if $D }}, discarded or not{{ end }}{{ if $R }}, archived or not{{ end }}; a row of another Workspace is not found.
+func (t *{{ $N }}Scoped) Get(ctx context.Context, id int64) (*{{ $N }}, error) {
+	return t.Query{{ if $D }}WithDiscarded{{ end }}{{ if $R }}WithArchived{{ end }}().Where({{ $P }}.ID(id)).Only(ctx)
+}
+{{ if $R }}
+// Archive stamps archived_at on the kept {{ $N }} with the id (ps fence it further); a row of
+// another Workspace, an already archived row or one a predicate excludes is not found.
+func (t *{{ $N }}Scoped) Archive(ctx context.Context, id int64, ps ...predicate.{{ $N }}) error {
+	where := append([]predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.ArchivedAtIsNil()}, ps...)
+	return t.setArchived(ctx, id, where, "archive", func(u *{{ $N }}UpdateOne) { u.SetArchivedAt(time.Now()) })
+}
+
+// Unarchive clears archived_at on the {{ $N }} with the id. Unarchiving a kept row changes
+// nothing; only a row that does not exist in the Workspace is not found.
+func (t *{{ $N }}Scoped) Unarchive(ctx context.Context, id int64) error {
+	where := []predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.ArchivedAtNotNil()}
+	err := t.setArchived(ctx, id, where, "unarchive", func(u *{{ $N }}UpdateOne) { u.ClearArchivedAt() })
+	if !IsNotFound(err) {
+		return err
+	}
+	_, err = t.Get(ctx, id)
+	return err
+}
+
+func (t *{{ $N }}Scoped) setArchived(ctx context.Context, id int64, where []predicate.{{ $N }}, verb string, set func(*{{ $N }}UpdateOne)) error {
+	write := func(c *Client) (*{{ $N }}, error) {
+		u := c.{{ $N }}.UpdateOneID(id).Where(where...)
+		set(u)
+		return u.Save(ctx)
+	}
+	{{- if $A }}
+	if t.s.auditing() {
+		return t.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.{{ $N }}.Query().Where(where...).Only(ctx)
+			if err != nil {
+				return err
+			}
+			after, err := write(ts.c)
+			if err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChange{{ $N }}(verb, before, after))
+		})
+	}
+	{{- else }}
+	_ = verb
+	{{- end }}
+	_, err := write(t.s.c)
+	return err
+}
+{{ end }}{{ if $D }}
 // Discard stamps discarded_at on the kept {{ $N }} with the id (ps fence it further); a row of
 // another Workspace, an already discarded row or one a predicate excludes is not found.
 func (t *{{ $N }}Scoped) Discard(ctx context.Context, id int64, ps ...predicate.{{ $N }}) error {
@@ -208,7 +268,7 @@ type {{ $N }}ScopedDeleteOne struct {
 	b *{{ $N }}DeleteOne
 }
 
-// {{ $Del }}OneID {{ if $D }}physically removes{{ else }}deletes{{ end }} the {{ $N }} with the id; a row of another Workspace is not found.
+// {{ $Del }}OneID {{ if or $D $R }}physically removes{{ else }}deletes{{ end }} the {{ $N }} with the id; a row of another Workspace is not found.
 func (t *{{ $N }}Scoped) {{ $Del }}OneID(id int64) *{{ $N }}ScopedDeleteOne {
 	return &{{ $N }}ScopedDeleteOne{s: t.s, b: t.s.c.{{ $N }}.DeleteOneID(id).Where({{ $P }}.WorkspaceID(t.s.ws))}
 }
@@ -245,7 +305,7 @@ type {{ $N }}ScopedDelete struct {
 	b *{{ $N }}Delete
 }
 
-// {{ $Del }} {{ if $D }}physically removes{{ else }}deletes{{ end }} the {{ $N }} entities of the Workspace that match the predicates.
+// {{ $Del }} {{ if or $D $R }}physically removes{{ else }}deletes{{ end }} the {{ $N }} entities of the Workspace that match the predicates.
 func (t *{{ $N }}Scoped) {{ $Del }}() *{{ $N }}ScopedDelete {
 	return &{{ $N }}ScopedDelete{s: t.s, b: t.s.c.{{ $N }}.Delete().Where({{ $P }}.WorkspaceID(t.s.ws))}
 }

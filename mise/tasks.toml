@@ -469,6 +469,8 @@ run = "pnpm run i18n:types"
 description = "OpenAPI/ent -> Go (ent, ogen, goverter)"
 run = [
   "cd ent && heavy -- go run -mod=mod entc.go",
+  # The client of the test-only entities (ent/schema/scopedtest): a mixin no production entity takes yet.
+  "cd ent && heavy -- go run -mod=mod entc.go -schema ./schema/scopedtest -target ./scopedtest -package github.com/getsphericon/sphericon/ent/scopedtest -snapshot=false",
   "heavy -- go tool ogen --target gen/site --package siteapi --clean openapi/site.openapi.json",
   "heavy -- go tool ogen --target gen/external --package externalapi --clean openapi/external.openapi.json",
   "heavy -- go tool ogen --target gen/collect --package collectapi --clean openapi/collect.openapi.json",

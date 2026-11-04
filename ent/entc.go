@@ -3,6 +3,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"slices"
 	"strings"
@@ -13,27 +14,39 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
+// The flags default to the production client. `mise run generate:backend` runs it a second time
+// for the client of test-only entities: -schema ./schema/scopedtest -target ./scopedtest
+// -package .../ent/scopedtest -snapshot=false.
 func main() {
-	err := entc.Generate("./schema", &gen.Config{
-		Target:  ".",
-		Package: "github.com/getsphericon/sphericon/ent",
-		IDType:  &field.TypeInfo{Type: field.TypeInt64},
-		Features: []gen.Feature{
-			gen.FeatureSnapshot,
-			gen.FeatureUpsert,
-			// Modifier exposes .Modify() on query builders, used by the analytics
-			// dashboard for date_trunc day-bucketed engagement aggregates.
-			gen.FeatureModifier,
-			// Lock exposes .ForUpdate() on query builders: accounts locks the Workspace's
-			// owner rows so the Owner invariant holds under concurrent role changes.
-			gen.FeatureLock,
-			// ExecQuery exposes ExecContext on the client: internal/workspacefeed takes
-			// its advisory lock and the next feed position in raw SQL.
-			gen.FeatureExecQuery,
-			// VersionedMigration generates migrate.NamedDiff, which cmd/db uses to write
-			// the next migration straight from the ent schema.
-			gen.FeatureVersionedMigration,
-		},
+	schemaDir := flag.String("schema", "./schema", "the schema package to load")
+	target := flag.String("target", ".", "the directory the client is written to")
+	pkg := flag.String("package", "github.com/getsphericon/sphericon/ent", "the import path of the target")
+	snapshot := flag.Bool("snapshot", true, "write the schema snapshot (internal/schema.go)")
+	flag.Parse()
+	var features []gen.Feature
+	if *snapshot {
+		features = append(features, gen.FeatureSnapshot)
+	}
+	features = append(features,
+		gen.FeatureUpsert,
+		// Modifier exposes .Modify() on query builders, used by the analytics
+		// dashboard for date_trunc day-bucketed engagement aggregates.
+		gen.FeatureModifier,
+		// Lock exposes .ForUpdate() on query builders: accounts locks the Workspace's
+		// owner rows so the Owner invariant holds under concurrent role changes.
+		gen.FeatureLock,
+		// ExecQuery exposes ExecContext on the client: internal/workspacefeed takes
+		// its advisory lock and the next feed position in raw SQL.
+		gen.FeatureExecQuery,
+		// VersionedMigration generates migrate.NamedDiff, which cmd/db uses to write
+		// the next migration straight from the ent schema.
+		gen.FeatureVersionedMigration,
+	)
+	err := entc.Generate(*schemaDir, &gen.Config{
+		Target:   *target,
+		Package:  *pkg,
+		IDType:   &field.TypeInfo{Type: field.TypeInt64},
+		Features: features,
 		// The scoped client (ADR 0017): ent/template/scoped*.tmpl generate ent/scoped*.go.
 		Templates: []*gen.Template{
 			gen.MustParse(gen.NewTemplate("scoped").Funcs(scopedFuncs()).ParseDir("template")),
@@ -66,9 +79,12 @@ func scopedFuncs() template.FuncMap {
 			return out
 		},
 		"scopedIs": isScoped,
-		// discardable reports whether n embeds the DiscardMixin (ADR 0049): its scoped
+		// discardable reports whether n embeds the DiscardMixin (ADR 0049, ADR 0100): its scoped
 		// wrapper gets Discard, Undiscard and Purge instead of Delete.
 		"discardable": func(n *gen.Type) bool { return isScoped(n) && isDiscardable(n) },
+		// archivable reports whether n embeds the ArchiveMixin (ADR 0100): its scoped wrapper
+		// gets Archive, Unarchive and Purge instead of Delete.
+		"archivable": func(n *gen.Type) bool { return isScoped(n) && isArchivable(n) },
 		// versioned reports whether n embeds the VersionedMixin (ADR 0065, GLOSSARY: Versioned
 		// definition): its scoped wrapper gets the pointer operations (<N>Pointers) that
 		// internal/drafts runs the lifecycle on.
@@ -239,8 +255,25 @@ func isScoped(t *gen.Type) bool {
 }
 
 func isDiscardable(t *gen.Type) bool {
+	return mixesIn(t, "discarded_at")
+}
+
+// isArchivable reports whether t embeds the ArchiveMixin. An entity takes it or the DiscardMixin,
+// never both (ADR 0100): the generation fails on one with both.
+func isArchivable(t *gen.Type) bool {
+	if !mixesIn(t, "archived_at") {
+		return false
+	}
+	if isDiscardable(t) {
+		log.Fatalf("%s: an entity is archived or discarded, never both (ADR 0100): drop ArchiveMixin or DiscardMixin", t.Name)
+	}
+	return true
+}
+
+// mixesIn reports whether t has the field name from a mixin.
+func mixesIn(t *gen.Type, name string) bool {
 	for _, f := range t.Fields {
-		if f.Name == "discarded_at" && f.Position != nil && f.Position.MixedIn {
+		if f.Name == name && f.Position != nil && f.Position.MixedIn {
 			return true
 		}
 	}
@@ -248,17 +281,16 @@ func isDiscardable(t *gen.Type) bool {
 }
 
 // isVersioned reports whether t embeds the VersionedMixin, found by its mixed-in live_version_id.
-// A Versioned definition is Workspace-owned and discardable: the lifecycle archives it.
+// A Versioned definition is Workspace-owned and either archivable or discardable (ADR 0100): the
+// lifecycle archives the one and discards the other.
 func isVersioned(t *gen.Type) bool {
-	for _, f := range t.Fields {
-		if f.Name == "live_version_id" && f.Position != nil && f.Position.MixedIn {
-			if !isScoped(t) || !isDiscardable(t) {
-				log.Fatalf("%s: a Versioned definition needs WorkspaceMixin and DiscardMixin", t.Name)
-			}
-			return true
-		}
+	if !mixesIn(t, "live_version_id") {
+		return false
 	}
-	return false
+	if !isScoped(t) || isArchivable(t) == isDiscardable(t) {
+		log.Fatalf("%s: a Versioned definition needs WorkspaceMixin and either ArchiveMixin or DiscardMixin", t.Name)
+	}
+	return true
 }
 
 func versionOf(t *gen.Type) *gen.Type {

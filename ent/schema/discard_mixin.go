@@ -13,7 +13,8 @@ import (
 // A Workspace-owned entity that embeds it gets Discard, Undiscard and Purge on the scoped
 // client and no Delete; list queries hide discarded rows (QueryWithDiscarded sees all), and
 // by-id reads and UpdateOneID see every row. The Workspace takes only the field: it has no
-// scoped wrapper and keeps its compare-and-swap lifecycle (ADR 0046).
+// scoped wrapper and keeps its compare-and-swap lifecycle (ADR 0046). An entity takes either this
+// mixin or ArchiveMixin, never both (ADR 0100).
 //
 // A unique index on a discardable entity MUST be partial,
 // entsql.IndexWhere("discarded_at IS NULL"): otherwise a discarded row holds the name for ever.

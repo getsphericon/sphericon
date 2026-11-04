@@ -61,7 +61,7 @@ import (
 
 var (
 	_ = time.Time{}
-	_ predicate.Contact
+	_ predicate.Workspace
 )
 
 // ErrNotInWorkspace: a reference id set on a scoped builder belongs to another Workspace

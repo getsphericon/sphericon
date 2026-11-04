@@ -37,6 +37,7 @@ type version struct {
 type view struct {
 	active      bool
 	archived    bool
+	discarded   bool
 	activatedAt *time.Time
 	live, draft version
 }
@@ -61,9 +62,10 @@ type kind struct {
 	publish    func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
 	revert     func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
 	deactivate func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
-	// archive and unarchive are set only for the archivableKinds.
+	// archive and unarchive are set only for the archivableKinds, discard for the discardableKinds.
 	archive   func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
 	unarchive func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
+	discard   func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
 	// versions are the numbers of the object's versions, in order.
 	versions func(t *testing.T, id int64) []int
 
@@ -142,7 +144,7 @@ func ruleView(r *ent.Rule, err error) (view, error) {
 	}
 	live, draft := rules.LiveAndDraft(r)
 	return view{
-		active: r.Status == rule.StatusActive, archived: r.DiscardedAt != nil, activatedAt: r.ActivatedAt,
+		active: r.Status == rule.StatusActive, discarded: r.DiscardedAt != nil, activatedAt: r.ActivatedAt,
 		live: ruleVersion(live), draft: ruleVersion(draft),
 	}, nil
 }
@@ -168,6 +170,13 @@ func ruleKind(env *testhelper.TestEnv) kind {
 		},
 		deactivate: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
 			return ruleView(m.Deactivate(ctx, s, id))
+		},
+		// The live Rule has Firings, so Delete discards it rather than purging it.
+		discard: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
+			if err := m.Delete(ctx, s, id); err != nil {
+				return view{}, err
+			}
+			return ruleView(m.Get(ctx, s, id))
 		},
 		versions: func(t *testing.T, id int64) []int {
 			t.Helper()
@@ -197,6 +206,61 @@ var kinds = []kindRow{
 // archivableKinds are the kinds with an Archive: a Rule is deleted instead (ADR 0098).
 var archivableKinds = []kindRow{
 	{"automation", automationKind},
+}
+
+// discardableKinds are the kinds whose removal is a Discard (ADR 0100).
+var discardableKinds = []kindRow{
+	{"rule", ruleKind},
+}
+
+// Discard stops the object under the lock Publish takes and removes it for good: it is still read
+// by id, but every owner move after it is not found, and discarding it again changes nothing.
+func TestDiscardLeavesTheObjectInactiveAndTakesNoMoreMoves(t *testing.T) {
+	for _, row := range discardableKinds {
+		t.Run(row.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			k := row.build(env)
+			ctx := context.Background()
+			s := acme(env)
+			before, err := k.get(ctx, s, k.live)
+			require.NoError(t, err)
+			require.True(t, before.active)
+
+			discarded, err := k.discard(ctx, s, k.live)
+			require.NoError(t, err)
+			again, err := k.discard(ctx, s, k.live)
+			require.NoError(t, err, "discarding a discarded object changes nothing")
+			_, editErr := k.edit(ctx, s, k.live, "drafts-after-discard")
+			_, revertErr := k.revert(ctx, s, k.live)
+			_, publishErr := k.publish(ctx, s, k.live)
+			_, deactivateErr := k.deactivate(ctx, s, k.live)
+			stored, err := k.get(ctx, s, k.live)
+			require.NoError(t, err, "a discarded object is still read by id")
+
+			assert.True(t, discarded.discarded)
+			assert.False(t, discarded.active, "a discarded object acts on nothing")
+			assert.Equal(t, discarded, again)
+			assert.Equal(t, discarded, stored)
+			assert.Equal(t, before.live, stored.live, "its live version stays")
+			require.ErrorIs(t, editErr, k.errNotFound)
+			require.ErrorIs(t, revertErr, k.errNotFound)
+			require.ErrorIs(t, publishErr, k.errNotFound)
+			require.ErrorIs(t, deactivateErr, k.errNotFound)
+		})
+	}
+}
+
+func TestDiscardOfAnotherWorkspacesObjectIsNotFound(t *testing.T) {
+	for _, row := range discardableKinds {
+		t.Run(row.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			k := row.build(env)
+
+			_, err := k.discard(context.Background(), acme(env), k.foreign)
+
+			require.ErrorIs(t, err, k.errNotFound)
+		})
+	}
 }
 
 func TestArchiveOfAnotherWorkspacesObjectIsNotFound(t *testing.T) {

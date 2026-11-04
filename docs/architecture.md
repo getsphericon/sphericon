@@ -112,7 +112,10 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper). A Ve
 (`VersionedMixin` on the object, `VersionMixin` on its versions: the Automation and the Rule, ADR 0065)
 also gets `<N>Pointers` (`ent/template/scoped_versioned.tmpl`, `ent.VersionedStore`), the moves of its
 live and draft pointers and its status; `internal/drafts` is the one lifecycle over them and the
-only caller of their writes (`forbidigo`).
+only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `Archive`, `Unarchive`,
+`QueryArchived`, `QueryWithArchived` and `Purge` in place of `Delete`, one with `DiscardMixin`
+`Discard` and `Purge` (ADR 0100); a mixin no production entity takes yet is generated and tested
+on the test-only client `ent/scopedtest` (schema in `ent/schema/scopedtest`).
 
 - **Handlers and domain modules hold no `*ent.Client` and no bare `int64` workspace id.**
   They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and never call
