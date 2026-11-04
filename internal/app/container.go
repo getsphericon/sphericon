@@ -578,6 +578,7 @@ var deliveryPackage = do.Package(
 			outbound.WithTestSendBudget(do.MustInvoke[*accounts.Attempts](i)),
 			outbound.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
 			outbound.WithTelegramBots(do.MustInvoke[*messaging.Resolver](i)),
+			outbound.WithSMSSenders(do.MustInvoke[*messaging.Resolver](i), lazyHookURLs{i}),
 		}
 		if cfg.SystemMailConfigured() {
 			opts = append(opts, outbound.WithSystemSender(do.MustInvoke[SystemSender](i).EmailSender))
@@ -948,6 +949,14 @@ func urlHost(origin string) string {
 		return ""
 	}
 	return strings.ToLower(u.Hostname())
+}
+
+// lazyHookURLs resolves the Integrations module when an SMS is sent, not when Outbound is built:
+// the Integrations module needs the Enqueuer, which needs Outbound.
+type lazyHookURLs struct{ i do.Injector }
+
+func (l lazyHookURLs) HookURL(row *ent.Integration) string {
+	return do.MustInvoke[*integrations.Module](l.i).HookURL(row)
 }
 
 // lazyStartLinks resolves the bindings module when a start link is issued, not when Outbound is

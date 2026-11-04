@@ -19,6 +19,7 @@ type Kind string
 const (
 	Email     Kind = "email"
 	Telegram  Kind = "telegram"
+	SMS       Kind = "sms"
 	Wait      Kind = "wait"
 	ApplyTag  Kind = "apply_tag"
 	RemoveTag Kind = "remove_tag"
@@ -34,6 +35,8 @@ func (k Kind) Channel() (messaging.Channel, bool) {
 		return messaging.ChannelEmail, true
 	case Telegram:
 		return messaging.ChannelTelegram, true
+	case SMS:
+		return messaging.ChannelSMS, true
 	default:
 		return "", false
 	}
@@ -57,7 +60,8 @@ type Step struct {
 	Seconds       int             `json:"seconds,omitempty"`
 	Tag           string          `json:"tag,omitempty"`
 	// Text is a Telegram step's message: Telegram's HTML subset with Liquid merge tags. With an
-	// ImageURL it is the image's caption.
+	// ImageURL it is the image's caption. On an SMS step it is the text: plain, with Liquid merge
+	// tags.
 	Text string `json:"text,omitempty"`
 	// UnsubscribeButton is the label of a Telegram step's unsubscribe button, "" for none.
 	UnsubscribeButton string `json:"unsubscribeButton,omitempty"`

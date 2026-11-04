@@ -3621,6 +3621,8 @@ func (s SiteAutomationStepType) Validate() error {
 		return nil
 	case "telegram":
 		return nil
+	case "sms":
+		return nil
 	case "wait":
 		return nil
 	case "apply_tag":

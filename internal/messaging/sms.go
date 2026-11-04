@@ -19,6 +19,25 @@ type SMSSender interface {
 	// keeps no callback on this kind of sender or the credentials may not change it: the address is
 	// then given to the provider some other way (with each message, or by hand).
 	PointCallbacks(ctx context.Context, from SMSFrom, url string) (bool, error)
+	// Send hands one text to the provider, from the configured sender. A refusal of the provider's
+	// API is an error wrapping a *SMSError; a network error or a 5xx is a plain error, which a
+	// retry may get past.
+	Send(ctx context.Context, msg SMSMessage) (SMSSent, error)
+}
+
+// SMSMessage is one text to one number: the number in E.164, the text as it goes out, and where
+// the provider posts the message's delivery reports (the Integration's Ingest hook). The provider
+// keeps a status callback only on a Messaging Service, so every send names it.
+type SMSMessage struct {
+	To             string
+	Body           string
+	StatusCallback string
+}
+
+// SMSSent is what the provider answers to an accepted message: its id of the message, enough on
+// its own to find it again (Twilio's message SID).
+type SMSSent struct {
+	ID string
 }
 
 // SMSFromKind is what a message goes out from.

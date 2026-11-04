@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/smsrender"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -89,6 +90,8 @@ func Encode(steps []automationsteps.Step) (string, error) {
 				ImageURL: strings.TrimSpace(s.ImageURL), Buttons: s.Buttons, LinkPreview: s.LinkPreview,
 				UnsubscribeButton: strings.TrimSpace(s.UnsubscribeButton),
 			})
+		case automationsteps.SMS:
+			stored = append(stored, automationsteps.Step{Type: automationsteps.SMS, IntegrationID: s.IntegrationID, Text: s.Text})
 		default:
 			email := automationsteps.Step{Type: automationsteps.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
 			if len(s.Doc) > 0 {
@@ -123,6 +126,13 @@ func validate(steps []automationsteps.Step) error {
 				return ErrInvalidStep.With(err.Error())
 			}
 			if err := telegramrender.CheckButtons(s.Buttons); err != nil {
+				return ErrInvalidStep.With(err.Error())
+			}
+		case automationsteps.SMS:
+			if strings.TrimSpace(s.Text) == "" {
+				return ErrInvalidStep.With("an SMS step needs a text")
+			}
+			if err := smsrender.Check(s.Text); err != nil {
 				return ErrInvalidStep.With(err.Error())
 			}
 		case automationsteps.HTTP:
@@ -166,6 +176,8 @@ func (s SendStep) Content() (outbound.Content, error) {
 			NoLinkPreview:     s.Step.LinkPreview != nil && !*s.Step.LinkPreview,
 			UnsubscribeButton: s.Step.UnsubscribeButton,
 		}, nil
+	case automationsteps.SMS:
+		return outbound.SMSContent{Text: s.Step.Text}, nil
 	default:
 		return nil, fmt.Errorf("automations: step type %q has no message content", s.Step.Type)
 	}

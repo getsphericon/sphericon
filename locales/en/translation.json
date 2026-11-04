@@ -429,6 +429,7 @@
       "title": "Results"
     },
     "searchPlaceholder": "Search by name",
+    "smsNodeDescription": "Send a text message to the contact's phone.",
     "state": {
       "active": "Active",
       "draft": "Draft",
@@ -449,6 +450,7 @@
     "stepHttp": "Call a URL",
     "stepRemoveTag": "Remove tag",
     "stepsLabel": "Steps",
+    "stepSms": "Send SMS",
     "stepTelegram": "Send Telegram message",
     "stepTrigger": "Trigger",
     "stepWait": "Wait",
@@ -1082,6 +1084,7 @@
     "pageView": "Visited a page",
     "smsConfirmed": "Confirmed SMS opt-in",
     "smsReceived": "Sent a text message",
+    "smsSent": "Was sent a text message",
     "telegramBound": "Telegram chat bound",
     "telegramClicked": "Clicked a link in a Telegram message",
     "telegramReceived": "Sent a Telegram message",
@@ -2364,6 +2367,11 @@
       "product": "Product",
       "title": "What do you do?"
     }
+  },
+  "smsEditor": {
+    "insertMergeTag": "Insert a merge tag",
+    "textHint": "Plain text. Merge tags are written as they are, and nothing is added to the message.",
+    "textLabel": "Message"
   },
   "suppressions": {
     "channelEmail": "Email",

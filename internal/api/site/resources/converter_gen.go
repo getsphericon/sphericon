@@ -468,6 +468,8 @@ func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeHTTP
 	case automationsteps.RemoveTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeRemoveTag
+	case automationsteps.SMS:
+		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeSMS
 	case automationsteps.Telegram:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeTelegram
 	case automationsteps.Wait:

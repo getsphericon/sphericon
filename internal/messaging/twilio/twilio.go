@@ -214,6 +214,24 @@ func (a *Account) PointCallbacks(ctx context.Context, from messaging.SMSFrom, ho
 	return false, refused
 }
 
+// Send creates the message: from the configured number or alphanumeric sender ID, or through the
+// configured Messaging Service, which picks the number. It always names the status callback: a
+// number keeps none for messages, and the one a Messaging Service keeps may point elsewhere.
+func (a *Account) Send(ctx context.Context, msg messaging.SMSMessage) (messaging.SMSSent, error) {
+	params := (&api.CreateMessageParams{}).SetPathAccountSid(a.cfg.AccountSID).
+		SetTo(msg.To).SetBody(msg.Body).SetStatusCallback(msg.StatusCallback)
+	if kind, _ := FromKind(a.cfg.From); kind == messaging.SMSFromMessagingService {
+		params.SetMessagingServiceSid(a.cfg.From)
+	} else {
+		params.SetFrom(a.cfg.From)
+	}
+	created, err := a.api(ctx).CreateMessage(params)
+	if err != nil {
+		return messaging.SMSSent{}, a.refusal(err)
+	}
+	return messaging.SMSSent{ID: deref(created.Sid)}, nil
+}
+
 // api is the 2010-04-01 REST API of the account, its calls bound to ctx.
 func (a *Account) api(ctx context.Context) *api.ApiService {
 	return api.NewApiService(&twclient.RequestHandler{Client: a.client(ctx)})

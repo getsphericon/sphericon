@@ -4007,6 +4007,8 @@ func (s *AutomationStepType) Decode(d *jx.Decoder) error {
 		*s = AutomationStepTypeEmail
 	case AutomationStepTypeTelegram:
 		*s = AutomationStepTypeTelegram
+	case AutomationStepTypeSMS:
+		*s = AutomationStepTypeSMS
 	case AutomationStepTypeWait:
 		*s = AutomationStepTypeWait
 	case AutomationStepTypeApplyTag:

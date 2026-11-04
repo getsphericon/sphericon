@@ -20255,6 +20255,8 @@ func (s *SiteAutomationStepType) Decode(d *jx.Decoder) error {
 		*s = SiteAutomationStepTypeEmail
 	case SiteAutomationStepTypeTelegram:
 		*s = SiteAutomationStepTypeTelegram
+	case SiteAutomationStepTypeSMS:
+		*s = SiteAutomationStepTypeSMS
 	case SiteAutomationStepTypeWait:
 		*s = SiteAutomationStepTypeWait
 	case SiteAutomationStepTypeApplyTag:

@@ -7,12 +7,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // Which `sms.` Events may start, end or complete an Automation (#1032): what the person does, not
-// what the send infrastructure records.
+// what the send infrastructure records. And the SMS step's checks (ADR 0081): what a save and
+// Publish refuse.
 
 func TestSmsReceivedTriggersExitsAndCompletesButSmsSentDoesNot(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -37,4 +40,61 @@ func TestSmsReceivedTriggersExitsAndCompletesButSmsSentDoesNot(t *testing.T) {
 	require.ErrorIs(t, err, automations.ErrInvalidExitEvent)
 	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Goal", TriggerEvent: received, ExitEvents: []string{}, GoalEvent: &sent})
 	require.ErrorIs(t, err, automations.ErrInvalidGoalEvent)
+}
+
+func smsVia(id *int64, text string) automationsteps.Step {
+	return automationsteps.Step{Type: automationsteps.SMS, IntegrationID: id, Text: text}
+}
+
+func TestPublishIsRefusedForAnSMSStepThatCannotSend(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	email := int64(fixtures.IntegrationAcmeDefaultID)
+	cases := map[string]*int64{
+		"no default SMS Integration":        nil,
+		"an Integration of another Channel": &email,
+	}
+	for name, integration := range cases {
+		t.Run(name, func(t *testing.T) {
+			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+				Steps: &[]automationsteps.Step{smsVia(integration, "Hi")},
+			})
+			require.NoError(t, err, "a draft may name it")
+
+			_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID)
+
+			require.ErrorIs(t, err, outbound.ErrRouteHeld)
+		})
+	}
+}
+
+func TestPublishSendsAnSMSStepThroughItsTwilioIntegration(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	id := int64(env.ConnectTwilio(t).Integration.ID)
+	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+		Steps: &[]automationsteps.Step{smsVia(&id, "Hi")},
+	})
+	require.NoError(t, err)
+
+	_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID)
+
+	require.NoError(t, err)
+}
+
+func TestAnSMSStepNeedsATextThatRenders(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	for name, text := range map[string]string{"blank": "  ", "bad Liquid": "{% if %}"} {
+		t.Run(name, func(t *testing.T) {
+			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+				Steps: &[]automationsteps.Step{smsVia(nil, text)},
+			})
+
+			require.ErrorIs(t, err, automations.ErrInvalidStep)
+		})
+	}
 }

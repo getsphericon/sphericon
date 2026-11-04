@@ -248,6 +248,8 @@ func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind
 		externalapiAutomationStepType = external.AutomationStepTypeHTTP
 	case automationsteps.RemoveTag:
 		externalapiAutomationStepType = external.AutomationStepTypeRemoveTag
+	case automationsteps.SMS:
+		externalapiAutomationStepType = external.AutomationStepTypeSMS
 	case automationsteps.Telegram:
 		externalapiAutomationStepType = external.AutomationStepTypeTelegram
 	case automationsteps.Wait:

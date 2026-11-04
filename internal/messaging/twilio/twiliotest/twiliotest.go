@@ -1,7 +1,7 @@
 // Package twiliotest is a fake Twilio REST API on httptest, for tests that reach Twilio the way
 // production does: through the Instance's Twilio API base URL. It knows the accounts, API keys,
 // numbers and Messaging Services a test adds, checks the credentials of every call as Twilio does,
-// records every call, and keeps the webhooks a call sets. It also signs a callback as Twilio signs
+// records every call, keeps the webhooks a call sets and the messages it accepts. It also signs a callback as Twilio signs
 // the ones it posts.
 //
 // The harness (testhelper.Setup) starts one per test and points SPHERICON_TWILIO_API_URL at it, as
@@ -57,6 +57,18 @@ type Webhooks struct {
 	UseInboundWebhookOnNumber string
 }
 
+// Message is a message the fake accepted: the account it was sent on, the SID it gave it, and the
+// parameters of the call that created it.
+type Message struct {
+	Account             string
+	SID                 string
+	To                  string
+	From                string
+	MessagingServiceSID string
+	Body                string
+	StatusCallback      string
+}
+
 type sender struct {
 	account  string
 	sid      string
@@ -66,7 +78,8 @@ type sender struct {
 
 // Server is the fake API.
 type Server struct {
-	srv *httptest.Server
+	srv   *httptest.Server
+	start sync.Once
 
 	mu        sync.Mutex
 	accounts  map[string]Account
@@ -75,9 +88,12 @@ type Server struct {
 	services  map[string]*sender // by SID
 	forbidden map[string]bool    // sender SIDs the credentials may read but not change
 	requests  []Request
+	messages  []Message
 }
 
-// New starts a fake API, closed when the test ends.
+// New makes a fake API, closed when the test ends. It listens at once but serves from the first
+// account a test adds: a test that never uses it, such as one inside a testing/synctest bubble,
+// runs no goroutine of its own.
 func New(tb testing.TB) *Server {
 	tb.Helper()
 	s := &Server{
@@ -87,13 +103,16 @@ func New(tb testing.TB) *Server {
 		services:  map[string]*sender{},
 		forbidden: map[string]bool{},
 	}
-	s.srv = httptest.NewServer(http.HandlerFunc(s.serve))
+	s.srv = httptest.NewUnstartedServer(http.HandlerFunc(s.serve))
 	tb.Cleanup(s.srv.Close)
 	return s
 }
 
+// serving starts serving, once.
+func (s *Server) serving() { s.start.Do(s.srv.Start) }
+
 // URL is the base URL of the fake: SPHERICON_TWILIO_API_URL.
-func (s *Server) URL() string { return s.srv.URL }
+func (s *Server) URL() string { return "http://" + s.srv.Listener.Addr().String() }
 
 func sid(prefix string) string {
 	b := make([]byte, 16)
@@ -103,6 +122,7 @@ func sid(prefix string) string {
 
 // AddAccount adds an account with a fresh SID and Auth Token.
 func (s *Server) AddAccount() Account {
+	s.serving()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	a := Account{SID: sid("AC"), AuthToken: strings.TrimPrefix(sid("x"), "x")}
@@ -172,6 +192,13 @@ func (s *Server) Requests() []Request {
 	return slices.Clone(s.requests)
 }
 
+// Messages is every message the fake accepted, in order.
+func (s *Server) Messages() []Message {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return slices.Clone(s.messages)
+}
+
 // Sign is the X-Twilio-Signature Twilio sends with a callback it posts to rawURL with form, signed
 // with the account's Auth Token: the base64 HMAC-SHA1 of the URL followed by each POST parameter's
 // name and value, sorted by name.
@@ -220,42 +247,62 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.listNumbers(w, account, form)
+	case len(parts) == 4 && parts[0] == "2010-04-01" && parts[1] == "Accounts" && parts[3] == "Messages.json" && r.Method == http.MethodPost:
+		if parts[2] != account {
+			fail(w, http.StatusUnauthorized, 20003, "Authenticate")
+			return
+		}
+		s.createMessage(w, account, form)
 	case len(parts) == 5 && parts[0] == "2010-04-01" && parts[1] == "Accounts" && parts[3] == "IncomingPhoneNumbers" && r.Method == http.MethodPost:
-		n, ok := s.numbers[strings.TrimSuffix(parts[4], ".json")]
-		if parts[2] != account || !ok || n.account != account {
+		if parts[2] != account {
 			fail(w, http.StatusNotFound, 20404, "The requested resource was not found")
 			return
 		}
-		if s.forbidden[n.sid] {
-			fail(w, http.StatusForbidden, 20403, "Forbidden")
-			return
-		}
-		if v := form.Get("SmsUrl"); v != "" {
-			n.webhooks.Inbound = v
-		}
-		answer(w, numberJSON(n))
+		s.updateNumber(w, account, strings.TrimSuffix(parts[4], ".json"), form)
 	case len(parts) == 3 && parts[0] == "v1" && parts[1] == "Services":
-		m, ok := s.services[parts[2]]
-		if !ok || m.account != account {
-			fail(w, http.StatusNotFound, 20404, "The requested resource /Services/"+parts[2]+" was not found")
-			return
-		}
-		if r.Method == http.MethodPost {
-			if s.forbidden[m.sid] {
-				fail(w, http.StatusForbidden, 20403, "Forbidden")
-				return
-			}
-			m.webhooks.Inbound = form.Get("InboundRequestUrl")
-			m.webhooks.Status = form.Get("StatusCallback")
-			m.webhooks.UseInboundWebhookOnNumber = form.Get("UseInboundWebhookOnNumber")
-		}
-		answer(w, map[string]any{
-			"sid": m.sid, "account_sid": m.account, "friendly_name": "Sender",
-			"inbound_request_url": m.webhooks.Inbound, "status_callback": m.webhooks.Status,
-		})
+		s.service(w, r.Method, account, parts[2], form)
 	default:
 		fail(w, http.StatusNotFound, 20404, "The requested resource "+r.URL.Path+" was not found")
 	}
+}
+
+// updateNumber sets the inbound webhook of the account's number of that SID.
+func (s *Server) updateNumber(w http.ResponseWriter, account, numberSID string, form url.Values) {
+	n, ok := s.numbers[numberSID]
+	if !ok || n.account != account {
+		fail(w, http.StatusNotFound, 20404, "The requested resource was not found")
+		return
+	}
+	if s.forbidden[n.sid] {
+		fail(w, http.StatusForbidden, 20403, "Forbidden")
+		return
+	}
+	if v := form.Get("SmsUrl"); v != "" {
+		n.webhooks.Inbound = v
+	}
+	answer(w, numberJSON(n))
+}
+
+// service reads the account's Messaging Service of that SID or, on a POST, sets its webhooks.
+func (s *Server) service(w http.ResponseWriter, method, account, serviceSID string, form url.Values) {
+	m, ok := s.services[serviceSID]
+	if !ok || m.account != account {
+		fail(w, http.StatusNotFound, 20404, "The requested resource /Services/"+serviceSID+" was not found")
+		return
+	}
+	if method == http.MethodPost {
+		if s.forbidden[m.sid] {
+			fail(w, http.StatusForbidden, 20403, "Forbidden")
+			return
+		}
+		m.webhooks.Inbound = form.Get("InboundRequestUrl")
+		m.webhooks.Status = form.Get("StatusCallback")
+		m.webhooks.UseInboundWebhookOnNumber = form.Get("UseInboundWebhookOnNumber")
+	}
+	answer(w, map[string]any{
+		"sid": m.sid, "account_sid": m.account, "friendly_name": "Sender",
+		"inbound_request_url": m.webhooks.Inbound, "status_callback": m.webhooks.Status,
+	})
 }
 
 // authenticate is the account the call's credentials are of: the Account SID with its Auth Token,
@@ -283,6 +330,39 @@ func (s *Server) listNumbers(w http.ResponseWriter, account string, form url.Val
 		out = append(out, numberJSON(n))
 	}
 	answer(w, map[string]any{"incoming_phone_numbers": out, "page": 0, "page_size": len(out), "next_page_uri": nil})
+}
+
+// createMessage accepts a message as Twilio does: to a number, from a number or an alphanumeric
+// sender ID (From) or a Messaging Service of the account (MessagingServiceSid), with a body. A
+// Messaging Service the account does not have is refused.
+func (s *Server) createMessage(w http.ResponseWriter, account string, form url.Values) {
+	to, body, from, service := form.Get("To"), form.Get("Body"), form.Get("From"), form.Get("MessagingServiceSid")
+	switch {
+	case to == "":
+		fail(w, http.StatusBadRequest, 21604, "A 'To' phone number is required.")
+		return
+	case body == "":
+		fail(w, http.StatusBadRequest, 21602, "Message body is required.")
+		return
+	case from == "" && service == "":
+		fail(w, http.StatusBadRequest, 21603, "A 'From' or 'MessagingServiceSid' parameter is required to send a message.")
+		return
+	}
+	if m, ok := s.services[service]; service != "" && (!ok || m.account != account) {
+		fail(w, http.StatusBadRequest, 21701, "The Messaging Service Sid "+service+" is invalid.")
+		return
+	}
+	msg := Message{
+		Account: account, SID: sid("SM"), To: to, From: from, MessagingServiceSID: service, Body: body,
+		StatusCallback: form.Get("StatusCallback"),
+	}
+	s.messages = append(s.messages, msg)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	cleanup.Report("write the fake Twilio's answer", json.NewEncoder(w).Encode(map[string]any{
+		"sid": msg.SID, "account_sid": account, "to": to, "from": from, "messaging_service_sid": service,
+		"body": body, "status": "queued", "num_segments": "1", "direction": "outbound-api",
+	}))
 }
 
 func numberJSON(n *sender) map[string]any {

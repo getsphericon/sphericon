@@ -13021,14 +13021,18 @@ type SiteAutomationStep struct {
 	ClearSecret OptBool `json:"clearSecret"`
 	// Whether a signing secret is stored (HTTP steps, read only).
 	HasSecret OptBool `json:"hasSecret"`
-	// The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or
-	// omitted is that Channel's default. Each send step names its own, so one automation may send through
-	// several (ADR 0081).
+	// The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel;
+	// null or omitted is that Channel's default. Each send step names its own, so one automation may send
+	// through several (ADR 0081).
 	IntegrationId OptNilEntityId `json:"integrationId"`
 	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
 	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
 	// escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer
 	// one is refused.
+	//
+	// The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and
+	// `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the
+	// Contact's phone as written, with nothing appended.
 	Text OptString `json:"text"`
 	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
 	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
@@ -13282,6 +13286,7 @@ type SiteAutomationStepType string
 const (
 	SiteAutomationStepTypeEmail     SiteAutomationStepType = "email"
 	SiteAutomationStepTypeTelegram  SiteAutomationStepType = "telegram"
+	SiteAutomationStepTypeSMS       SiteAutomationStepType = "sms"
 	SiteAutomationStepTypeWait      SiteAutomationStepType = "wait"
 	SiteAutomationStepTypeApplyTag  SiteAutomationStepType = "apply_tag"
 	SiteAutomationStepTypeRemoveTag SiteAutomationStepType = "remove_tag"
@@ -13293,6 +13298,7 @@ func (SiteAutomationStepType) AllValues() []SiteAutomationStepType {
 	return []SiteAutomationStepType{
 		SiteAutomationStepTypeEmail,
 		SiteAutomationStepTypeTelegram,
+		SiteAutomationStepTypeSMS,
 		SiteAutomationStepTypeWait,
 		SiteAutomationStepTypeApplyTag,
 		SiteAutomationStepTypeRemoveTag,
@@ -13306,6 +13312,8 @@ func (s SiteAutomationStepType) MarshalText() ([]byte, error) {
 	case SiteAutomationStepTypeEmail:
 		return []byte(s), nil
 	case SiteAutomationStepTypeTelegram:
+		return []byte(s), nil
+	case SiteAutomationStepTypeSMS:
 		return []byte(s), nil
 	case SiteAutomationStepTypeWait:
 		return []byte(s), nil
@@ -13328,6 +13336,9 @@ func (s *SiteAutomationStepType) UnmarshalText(data []byte) error {
 		return nil
 	case SiteAutomationStepTypeTelegram:
 		*s = SiteAutomationStepTypeTelegram
+		return nil
+	case SiteAutomationStepTypeSMS:
+		*s = SiteAutomationStepTypeSMS
 		return nil
 	case SiteAutomationStepTypeWait:
 		*s = SiteAutomationStepTypeWait

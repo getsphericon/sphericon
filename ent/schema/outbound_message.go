@@ -52,7 +52,7 @@ func (OutboundMessage) Fields() []ent.Field {
 			NotEmpty().
 			Immutable(),
 		field.Enum("channel").
-			Values("email", "telegram").
+			Values("email", "telegram", "sms").
 			Default("email"),
 		// Normalized (lower-cased) channel-specific destination. Cleared (NULL) when the
 		// Contact it belonged to is erased (ADR 0021): the row stays as an anonymous

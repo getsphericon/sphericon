@@ -2150,14 +2150,18 @@ type AutomationStep struct {
 	ClearSecret OptBool `json:"clearSecret"`
 	// Whether a signing secret is stored (HTTP steps, read only).
 	HasSecret OptBool `json:"hasSecret"`
-	// The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or
-	// omitted is that Channel's default. Each send step names its own, so one automation may send through
-	// several (ADR 0081).
+	// The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel;
+	// null or omitted is that Channel's default. Each send step names its own, so one automation may send
+	// through several (ADR 0081).
 	IntegrationId OptNilEntityId `json:"integrationId"`
 	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
 	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
 	// escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer
 	// one is refused.
+	//
+	// The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and
+	// `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the
+	// Contact's phone as written, with nothing appended.
 	Text OptString `json:"text"`
 	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
 	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
@@ -2411,6 +2415,7 @@ type AutomationStepType string
 const (
 	AutomationStepTypeEmail     AutomationStepType = "email"
 	AutomationStepTypeTelegram  AutomationStepType = "telegram"
+	AutomationStepTypeSMS       AutomationStepType = "sms"
 	AutomationStepTypeWait      AutomationStepType = "wait"
 	AutomationStepTypeApplyTag  AutomationStepType = "apply_tag"
 	AutomationStepTypeRemoveTag AutomationStepType = "remove_tag"
@@ -2422,6 +2427,7 @@ func (AutomationStepType) AllValues() []AutomationStepType {
 	return []AutomationStepType{
 		AutomationStepTypeEmail,
 		AutomationStepTypeTelegram,
+		AutomationStepTypeSMS,
 		AutomationStepTypeWait,
 		AutomationStepTypeApplyTag,
 		AutomationStepTypeRemoveTag,
@@ -2435,6 +2441,8 @@ func (s AutomationStepType) MarshalText() ([]byte, error) {
 	case AutomationStepTypeEmail:
 		return []byte(s), nil
 	case AutomationStepTypeTelegram:
+		return []byte(s), nil
+	case AutomationStepTypeSMS:
 		return []byte(s), nil
 	case AutomationStepTypeWait:
 		return []byte(s), nil
@@ -2457,6 +2465,9 @@ func (s *AutomationStepType) UnmarshalText(data []byte) error {
 		return nil
 	case AutomationStepTypeTelegram:
 		*s = AutomationStepTypeTelegram
+		return nil
+	case AutomationStepTypeSMS:
+		*s = AutomationStepTypeSMS
 		return nil
 	case AutomationStepTypeWait:
 		*s = AutomationStepTypeWait

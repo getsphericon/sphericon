@@ -153,6 +153,8 @@ func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) auto
 		automationstepsKind = automationsteps.HTTP
 	case site.SiteAutomationStepTypeRemoveTag:
 		automationstepsKind = automationsteps.RemoveTag
+	case site.SiteAutomationStepTypeSMS:
+		automationstepsKind = automationsteps.SMS
 	case site.SiteAutomationStepTypeTelegram:
 		automationstepsKind = automationsteps.Telegram
 	case site.SiteAutomationStepTypeWait:

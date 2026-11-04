@@ -429,6 +429,7 @@ export default interface Resources {
         "title": "Results"
       },
       "searchPlaceholder": "Search by name",
+      "smsNodeDescription": "Send a text message to the contact's phone.",
       "state": {
         "active": "Active",
         "draft": "Draft",
@@ -448,6 +449,7 @@ export default interface Resources {
       },
       "stepHttp": "Call a URL",
       "stepRemoveTag": "Remove tag",
+      "stepSms": "Send SMS",
       "stepTelegram": "Send Telegram message",
       "stepTrigger": "Trigger",
       "stepWait": "Wait",
@@ -1078,6 +1080,7 @@ export default interface Resources {
       "pageView": "Visited a page",
       "smsConfirmed": "Confirmed SMS opt-in",
       "smsReceived": "Sent a text message",
+      "smsSent": "Was sent a text message",
       "telegramBound": "Telegram chat bound",
       "telegramClicked": "Clicked a link in a Telegram message",
       "telegramReceived": "Sent a Telegram message",
@@ -2327,6 +2330,11 @@ export default interface Resources {
         "product": "Product",
         "title": "What do you do?"
       }
+    },
+    "smsEditor": {
+      "insertMergeTag": "Insert a merge tag",
+      "textHint": "Plain text. Merge tags are written as they are, and nothing is added to the message.",
+      "textLabel": "Message"
     },
     "suppressions": {
       "channelEmail": "Email",

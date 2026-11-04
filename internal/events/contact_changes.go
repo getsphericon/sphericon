@@ -186,6 +186,50 @@ func (e *TelegramSent) Project() Projection {
 	}
 }
 
+// SmsSent is an Outbound send the SMS provider accepted (sms.sent), recorded with the Outbound
+// message in one transaction. Destination is the number in E.164; the Broadcast or Automation it
+// came from is named when there is one.
+type SmsSent struct {
+	WorkspaceID       int64  `json:"workspaceId"`
+	ContactID         int64  `json:"contactId"`
+	Email             string `json:"email,omitempty"`
+	IntegrationID     int64  `json:"integrationId,omitempty"`
+	Destination       string `json:"destination"`
+	BroadcastID       int64  `json:"broadcastId,omitempty"`
+	AutomationID      int64  `json:"automationId,omitempty"`
+	OutboundMessageID int64  `json:"outboundMessageId"`
+	Surface           string `json:"surface,omitempty"`
+	SendingSource     string `json:"sendingSource,omitempty"`
+	DedupID           string `json:"dedupId,omitempty"`
+}
+
+func (*SmsSent) EventName() string  { return NameSmsSent }
+func (*SmsSent) EventVersion() int  { return 1 }
+func (e *SmsSent) Workspace() int64 { return e.WorkspaceID }
+func (e *SmsSent) EventID() string  { return e.DedupID }
+func (e *SmsSent) Project() Projection {
+	props := map[string]any{"destination": e.Destination, "outboundMessageId": e.OutboundMessageID}
+	if e.IntegrationID != 0 {
+		props["integrationId"] = e.IntegrationID
+	}
+	if e.BroadcastID != 0 {
+		props["broadcastId"] = e.BroadcastID
+	}
+	if e.AutomationID != 0 {
+		props["automationId"] = e.AutomationID
+	}
+	if e.Surface != "" {
+		props["surface"] = e.Surface
+	}
+	if e.SendingSource != "" {
+		props["sendingSource"] = e.SendingSource
+	}
+	return Projection{
+		Subject: e.Email, Action: NameSmsSent, Email: e.Email, ContactID: e.ContactID,
+		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
+	}
+}
+
 // TelegramClicked is a click on a short tracked link of a Telegram message (telegram.clicked, ADR
 // 0083), with the URL it led to and the Broadcast or Automation and Outbound message it came from.
 // Machine is set on a hit made by software (Telegram's link-preview fetcher among them): it stays

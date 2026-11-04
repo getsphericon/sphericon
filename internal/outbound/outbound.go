@@ -214,7 +214,11 @@ type Module struct {
 	channels map[messaging.Channel]channel
 	senders  Senders
 	// bots builds the Telegram bots; nil while the Instance has none.
-	bots    TelegramBots
+	bots TelegramBots
+	// sms builds the SMS senders and hooks names where an SMS Integration's delivery reports are
+	// posted; nil while the Instance has none.
+	sms     SMSSenders
+	hooks   HookURLs
 	tracker *tracking.Tracker
 	// trackingHosts names the Workspace's serving Tracking domain; nil while the Instance offers
 	// none.
@@ -282,7 +286,9 @@ func (m *Module) AsSystem(s *ent.Scoped) *ent.Scoped {
 // New builds the module. tracker may be nil only if no marketing Request is sent.
 func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *tracking.Tracker, opts ...Option) *Module {
 	m := &Module{bus: bus, holds: hs, senders: senders, tracker: tracker, lease: DefaultLease, now: time.Now}
-	m.channels = map[messaging.Channel]channel{messaging.ChannelEmail: emailChannel{m: m}, messaging.ChannelTelegram: telegramChannel{m: m}}
+	m.channels = map[messaging.Channel]channel{
+		messaging.ChannelEmail: emailChannel{m: m}, messaging.ChannelTelegram: telegramChannel{m: m}, messaging.ChannelSMS: smsChannel{m: m},
+	}
 	for _, o := range opts {
 		o(m)
 	}

@@ -926,6 +926,7 @@ export const zSiteAutomationStepFigures = z.object({
 export const zSiteAutomationStepType = z.enum([
   'email',
   'telegram',
+  'sms',
   'wait',
   'apply_tag',
   'remove_tag',

@@ -124,7 +124,7 @@ func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request,
 		return nil, err
 	}
 	maps.Copy(vars, start)
-	if err := c.m.bindUnsubscribeURL(ctx, s, req, dest, ws, content, vars); err != nil {
+	if err := c.m.bindUnsubscribeURL(ctx, s, req, dest, ws, messaging.ChannelTelegram, content.Text, vars); err != nil {
 		return nil, err
 	}
 	text, err := telegramrender.Render(content.Text, vars)
@@ -160,11 +160,12 @@ func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request,
 // unsubscribeURLTag is the merge tag that renders the message's source-scoped unsubscribe link.
 const unsubscribeURLTag = "unsubscribe_url"
 
-// bindUnsubscribeURL binds `unsubscribe_url` when the text uses it: a link that opts the person's
-// Telegram user id out of the message's source, on Telegram only (ADR 0078). A send with no source
-// has nothing to unsubscribe from, so the tag renders empty there.
-func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Request, dest string, ws *ent.Workspace, content TelegramContent, vars map[string]any) error {
-	if !strings.Contains(content.Text, unsubscribeURLTag) {
+// bindUnsubscribeURL binds `unsubscribe_url` when the text uses it: a link that opts the message's
+// Destination (a Telegram user id, a phone number) out of the message's source, on the message's
+// Channel only (ADR 0078). A send with no source has nothing to unsubscribe from, so the tag renders
+// empty there.
+func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Request, dest string, ws *ent.Workspace, onChannel messaging.Channel, text string, vars map[string]any) error {
+	if !strings.Contains(text, unsubscribeURLTag) {
 		return nil
 	}
 	vars[unsubscribeURLTag] = ""
@@ -176,7 +177,7 @@ func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Requ
 		return err
 	}
 	url, err := tr.UnsubscribeURL(tracking.UnsubTarget{
-		Channel:     messaging.ChannelTelegram,
+		Channel:     onChannel,
 		Source:      req.Source,
 		Destination: dest,
 		WorkspaceID: ws.ID,

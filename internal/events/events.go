@@ -79,6 +79,9 @@ const (
 	// NameSmsReceived is a text a Contact sent from its phone to an SMS Integration's sender
 	// (ADR 0076).
 	NameSmsReceived = "sms.received"
+	// NameSmsSent is a text the SMS provider accepted for a Contact (ADR 0079): handed to the
+	// provider, not delivered; a delivery report says that.
+	NameSmsSent = "sms.sent"
 )
 
 // reservedPrefixes are the namespaces of the actions only the system records: delivery
@@ -265,6 +268,7 @@ var registry = map[string]func() DomainEvent{
 	NameTelegramClicked:       func() DomainEvent { return &TelegramClicked{} },
 	NameTelegramUnsubscribed:  func() DomainEvent { return &TelegramUnsubscribed{} },
 	NameSmsReceived:           func() DomainEvent { return &SmsReceived{} },
+	NameSmsSent:               func() DomainEvent { return &SmsSent{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
 }

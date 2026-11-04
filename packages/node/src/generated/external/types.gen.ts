@@ -610,13 +610,15 @@ export type AutomationStep = {
    */
   hasSecret?: boolean;
   /**
-   * The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or
+   * The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel; null or
    * omitted is that Channel's default. Each send step names its own, so one automation may send
    * through several (ADR 0081).
    */
   integrationId?: EntityId | null;
   /**
    * The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.
+   *
+   * The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone as written, with nothing appended.
    */
   text?: string;
   /**
@@ -662,6 +664,7 @@ export type AutomationStepFigures = {
 export const AutomationStepType = {
   EMAIL: 'email',
   TELEGRAM: 'telegram',
+  SMS: 'sms',
   WAIT: 'wait',
   APPLY_TAG: 'apply_tag',
   REMOVE_TAG: 'remove_tag',

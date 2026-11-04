@@ -88,11 +88,13 @@ func AutomationStep(a *ent.Automation, run *ent.AutomationRun, step int, integra
 }
 
 // contactDestination is the Contact's Destination on the Channel, "" when it has none: on email its
-// address.
+// address, on SMS its phone (stored in E.164, ADR 0075).
 func contactDestination(ch messaging.Channel, c *ent.Contact) string {
 	switch ch {
 	case messaging.ChannelEmail:
 		return lo.FromPtr(c.Email)
+	case messaging.ChannelSMS:
+		return lo.FromPtr(c.Phone)
 	default:
 		return ""
 	}

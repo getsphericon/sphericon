@@ -1629,7 +1629,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"broadcast", "automation", "transactional"}},
 		{Name: "idempotency_key", Type: field.TypeString},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString, Nullable: true},
 		{Name: "sending_source", Type: field.TypeString, Nullable: true},
 		{Name: "sending_domain", Type: field.TypeString, Nullable: true},
@@ -3272,7 +3272,7 @@ func init() {
 		Table: "outbound_messages",
 	}
 	OutboundMessagesTable.Annotation.Checks = map[string]string{
-		"outbound_messages_channel_check": "channel IN ('email', 'telegram')",
+		"outbound_messages_channel_check": "channel IN ('email', 'telegram', 'sms')",
 		"outbound_messages_kind_check":    "kind IN ('broadcast', 'automation', 'transactional')",
 		"outbound_messages_status_check":  "status IN ('pending', 'sent', 'skipped', 'failed')",
 	}

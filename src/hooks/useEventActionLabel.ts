@@ -30,6 +30,7 @@ export function useEventActionLabel() {
       'telegram.sent': t(($) => $.eventActions.telegramSent),
       'sms.confirmed': t(($) => $.eventActions.smsConfirmed),
       'sms.received': t(($) => $.eventActions.smsReceived),
+      'sms.sent': t(($) => $.eventActions.smsSent),
       'page.view': t(($) => $.eventActions.pageView),
       'email.sent': t(($) => $.eventActions.emailSent),
       'email.delivered': t(($) => $.eventActions.emailDelivered),
